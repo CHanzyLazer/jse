@@ -29,11 +29,13 @@ public class SP {
     public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {return getTaskOfScriptMethod(aScriptPath, aMethodName, aArgs).call();}
     /** 创建脚本类的实例 */
     public synchronized static ScriptObject newInstance(String aScriptPath, Object... aArgs) throws Exception {
-        // 获取脚本的类，底层自动进行了缓存
+        // 获取脚本的类，底层自动进行了缓存，并且在文件修改时会自动更新
         Class<?> tScriptClass = CLASS_LOADER.parseClass(new File(UT.IO.toAbsolutePath(aScriptPath)));
         // 获取 ScriptClass 的实例
         return newInstance_(tScriptClass, aArgs);
     }
+    /** 提供一个手动关闭 CLASS_LOADER 的接口 */
+    public synchronized static void close() throws IOException {CLASS_LOADER.close();}
     
     
     /** 获取脚本相关的 task，对于脚本的内容请使用这里的接口而不是 {@link UT.Hack}.getTaskOfStaticMethod */
@@ -124,5 +126,9 @@ public class SP {
         ClassLoader tMatlabClassLoader = null;
         try {tMatlabClassLoader = com.mathworks.jmi.ClassLoaderManager.getClassLoaderManager().getCurrentClassLoader();} catch (Throwable ignored) {}
         CLASS_LOADER = tMatlabClassLoader==null ? new GroovyClassLoader() : new GroovyClassLoader(tMatlabClassLoader);
+        // 在 JVM 关闭时关闭 CLASS_LOADER
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {CLASS_LOADER.close();} catch (IOException ignored) {}
+        }));
     }
 }

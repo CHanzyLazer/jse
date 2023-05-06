@@ -932,6 +932,8 @@ public class MathEX {
         private static ParforThreadPool POOL = new ParforThreadPool(1);
         public static void setThreadNum(int aThreadNum) {POOL.shutdown(); POOL = new ParforThreadPool(aThreadNum);}
         public static void closeThreadPool() {if (POOL.nThreads() > 1) setThreadNum(1);}
+        // 在 JVM 关闭时时关闭 POOL
+        static {Runtime.getRuntime().addShutdownHook(new Thread(() -> POOL.shutdown()));}
     }
     
     /// Special functions (in vector) or its operations

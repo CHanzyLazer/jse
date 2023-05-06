@@ -24,6 +24,4 @@ public interface IExecutorEX extends IThreadPoolContainer {
     void waitUntilDone() throws InterruptedException;
     int nTasks();
     int nThreads();
-    
-    @Deprecated int getTaskNumber();
 }

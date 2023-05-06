@@ -23,7 +23,6 @@ public class ExecutorsEX {
         @SuppressWarnings("ResultOfMethodCallIgnored") @Override public void awaitTermination() throws InterruptedException {mPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);}
         @SuppressWarnings("BusyWait") @Override public void waitUntilDone() throws InterruptedException {while (mPool.getActiveCount() > 0 || mPool.getQueue().size() > 0) Thread.sleep(100);}
         @Override public int nTasks() {return mPool.getActiveCount() + mPool.getQueue().size();}
-        @Deprecated @Override public int getTaskNumber() {return nTasks();}
     }
     
     

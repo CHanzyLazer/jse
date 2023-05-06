@@ -20,6 +20,4 @@ public abstract class AbstractThreadPoolContainer<TP extends IThreadPoolContaine
     @Override public void waitUntilDone() throws InterruptedException {if (mPool!=null) mPool.waitUntilDone();}
     @Override public int nTasks() {return mPool==null ? 0 : mPool.nTasks();}
     @Override public int nThreads() {return mPool==null ? 1 : mPool.nThreads();}
-    
-    @Deprecated @Override public int getTaskNumber() {return nTasks();}
 }

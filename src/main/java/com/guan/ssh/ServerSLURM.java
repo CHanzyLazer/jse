@@ -192,6 +192,7 @@ public final class ServerSLURM {
         return rServerSLURM;
     }
     
+    private final Thread mHook; // ShutdownHook
     
     /// 构造函数以及获取方式（用来区分私钥登录以及密码登录）
     private ServerSLURM(ServerSSH aSSH, int aMaxJobNumber, String aSqueueName) {this(aSSH, aMaxJobNumber, aMaxJobNumber, aSqueueName);}
@@ -205,6 +206,9 @@ public final class ServerSLURM {
         mPool = Executors.newSingleThreadExecutor();
         // 提交长期任务，不断从 mCmdList 获取指令并执行
         mPool.execute(this::keepSubmitFromList_);
+        // 在 JVM 意外关闭时手动执行杀死 kill
+        mHook = new Thread(() -> kill(false));
+        Runtime.getRuntime().addShutdownHook(mHook);
     }
     // 不提供密码则认为是私钥登录，提供密码则认为是密码登录，可能存在歧义的情况则会有 getPassword 方法专门指明
     public static ServerSLURM get        (int aMaxJobNumber, String aUsername, String aHostname                             ) {ServerSSH tSSH = ServerSSH.get        (aUsername, aHostname                  ); return new ServerSLURM(tSSH, aMaxJobNumber, tSSH.session().getUserName());}
@@ -313,14 +317,15 @@ public final class ServerSLURM {
         if (mDead) throw new RuntimeException("Can NOT get SSH from a Dead SLURM.");
         return mSSH;
     }
-    public void shutdown() {
+    private void shutdown_() {
         mDead = true;
         mPool.shutdown();
+        Runtime.getRuntime().removeShutdownHook(mHook);
     }
+    public void shutdown() {shutdown_();}
     public void shutdownNow() throws JSchException, IOException {
         cancelThis();
-        mDead = true;
-        mPool.shutdown();
+        shutdown_();
     }
     // 设置暂停，会挂起直到获得这个对象的锁，这样在外部调用后确实已经暂停，而在内部使用时不容易出现死锁
     public synchronized void pause() {mPause = true;}
@@ -333,8 +338,7 @@ public final class ServerSLURM {
         // 直接设置 mKilled 即可
         if (aWarning && mMirrorPath == null) System.out.println("WARNING: you killed a slurm without mirror, jobs submit from this may out of control!");
         mKilled = true;
-        mDead = true;
-        mPool.shutdown();
+        shutdown_();
     }
     // 一些参数设置
     public ServerSLURM setSleepTime(long aSleepTime) {
