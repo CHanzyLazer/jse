@@ -75,7 +75,7 @@ public class UT {
             if (aTask1 != null) {
                 if (aTask2 == null) return aTask1;
                 return new SerializableTask(() -> aTask1.call() && aTask2.call()) {
-                    @Override public String toString() {return String.format("%s{%s:%s}", Type.MERGE.name(), aTask1, aTask2);}
+                    @Override public String toString() {return String.format("%s{%s:%s}", Type.MERGE.name(), (aTask1 instanceof SerializableTask) ? aTask1 : Type.NULL.name(), (aTask2 instanceof SerializableTask) ? aTask2 : Type.NULL.name());}
                 };
             }
             return aTask2;

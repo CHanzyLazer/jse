@@ -28,7 +28,7 @@ public class SP {
     /** 调用指定脚本中的方法，会进行缓存 */
     public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {return getTaskOfScriptMethod(aScriptPath, aMethodName, aArgs).call();}
     /** 创建脚本类的实例 */
-    public synchronized static GroovyObject newInstance(String aScriptPath, Object... aArgs) throws Exception {
+    public synchronized static ScriptObject newInstance(String aScriptPath, Object... aArgs) throws Exception {
         // 获取脚本的类，底层自动进行了缓存
         Class<?> tScriptClass = CLASS_LOADER.parseClass(new File(UT.IO.toAbsolutePath(aScriptPath)));
         // 获取 ScriptClass 的实例
@@ -59,12 +59,12 @@ public class SP {
     
     
     /** 内部使用的方法，用于减少重复代码 */
-    public synchronized static GroovyObject newInstance_(Class<?> aScriptClass, Object... aArgs) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public synchronized static ScriptObject newInstance_(Class<?> aScriptClass, Object... aArgs) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
         // 获取兼容输入参数的构造函数来创建实例
         Constructor<?> tConstructor = UT.Hack.findConstructor_(aScriptClass, fArgs);
         if (tConstructor == null) throw new GroovyRuntimeException("Cannot find constructor with compatible args: " + aScriptClass.getName());
-        return (GroovyObject) tConstructor.newInstance(aArgs);
+        return new ScriptObject((GroovyObject)tConstructor.newInstance(aArgs));
     }
     public synchronized static TaskCall<?> getTaskOfScript_(final Class<?> aScriptClass, String... aArgs) {
         final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
