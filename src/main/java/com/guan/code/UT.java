@@ -114,23 +114,23 @@ public class UT {
     
     public static class Hack {
         
-        public static TaskCall<?> getTaskCallOfMethod_(Class<?> aClazz, final @Nullable Object aInstance, String aMethodName, Object... aArgs) {
+        public static TaskCall<Object> getTaskCallOfMethod_(Class<?> aClazz, final @Nullable Object aInstance, String aMethodName, Object... aArgs) {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             final Method m = findMethod_(aClazz, aMethodName, fArgs);
             if (m == null) throw new RuntimeException("No such method: " + aMethodName);
             convertArgs_(fArgs, m.getParameterTypes());
             return new TaskCall<>(() -> m.invoke(aInstance, fArgs));
         }
-        public static TaskCall<?> getTaskCallOfStaticMethod(String aClassName, String aMethodName, Object... aArgs) {
+        public static TaskCall<Object> getTaskCallOfStaticMethod(String aClassName, String aMethodName, Object... aArgs) {
             Class<?> tClass;
             try {tClass = Class.forName(aClassName);} catch (ClassNotFoundException e) {throw new RuntimeException(e);}
             return getTaskCallOfMethod_(tClass, null, aMethodName, aArgs);
         }
-        public static TaskRun     getTaskRunOfStaticMethod (              String aClassName, String aMethodName, Object... aArgs) {return TaskRun.get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
-        public static Task        getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) {return Task   .get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
-        public static TaskCall<?> getTaskCallOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return getTaskCallOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
-        public static TaskRun     getTaskRunOfMethod       (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return TaskRun.get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
-        public static Task        getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return Task   .get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+        public static TaskRun          getTaskRunOfStaticMethod (              String aClassName, String aMethodName, Object... aArgs) {return TaskRun.get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
+        public static Task             getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) {return Task   .get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
+        public static TaskCall<Object> getTaskCallOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return getTaskCallOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
+        public static TaskRun          getTaskRunOfMethod       (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return TaskRun.get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+        public static Task             getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) {return Task   .get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
         
         public static Method findMethod_(Class<?> aClazz, String aMethodName, Object @NotNull... aArgs) {
             Method[] tAllMethods = aClazz.getMethods();

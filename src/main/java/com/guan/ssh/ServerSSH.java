@@ -5,16 +5,13 @@ import com.guan.code.Encryptor;
 import com.guan.code.Task;
 import com.guan.code.UT;
 import com.jcraft.jsch.*;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import groovy.json.JsonBuilder;
+import groovy.json.JsonSlurper;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -49,38 +46,42 @@ public final class ServerSSH {
     Runnable doMemberChange = () -> {};
     
     /// 保存到文件以及从文件加载
+    @SuppressWarnings("rawtypes")
     public void save(String aFilePath) throws IOException {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
-        JSONObject rJson = new JSONObject();
+        Map rJson = new LinkedHashMap();
         save(rJson);
         FileWriter tFile = new FileWriter(aFilePath);
-        JSONObject.writeJSONString(rJson, tFile);
+        (new JsonBuilder(rJson)).writeTo(tFile);
         tFile.close();
     }
+    @SuppressWarnings("rawtypes")
     public static ServerSSH load(String aFilePath) throws Exception {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
         FileReader tFile = new FileReader(aFilePath);
-        JSONObject tJson = (JSONObject) new JSONParser().parse(tFile);
+        Map tJson = (Map) (new JsonSlurper()).parse(tFile);
         tFile.close();
         return load(tJson);
     }
     // 带有密码的读写
+    @SuppressWarnings("rawtypes")
     public void save(String aFilePath, String aKey) throws Exception {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
-        JSONObject rJson = new JSONObject();
+        Map rJson = new LinkedHashMap();
         save(rJson);
         Encryptor tEncryptor = new Encryptor(aKey);
-        Files.write(Paths.get(aFilePath), tEncryptor.getData(rJson.toJSONString()));
+        Files.write(Paths.get(aFilePath), tEncryptor.getData((new JsonBuilder(rJson)).toString()));
     }
+    @SuppressWarnings("rawtypes")
     public static ServerSSH load(String aFilePath, String aKey) throws Exception {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
         Decryptor tDecryptor = new Decryptor(aKey);
-        JSONObject tJson = (JSONObject) new JSONParser().parse(tDecryptor.get(Files.readAllBytes(Paths.get(aFilePath))));
+        Map tJson = (Map) (new JsonSlurper()).parseText(tDecryptor.get(Files.readAllBytes(Paths.get(aFilePath))));
         return load(tJson);
     }
     // 偏向于内部使用的保存到 json 和从 json 读取
-    @SuppressWarnings("unchecked")
-    public void save(JSONObject rJson) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void save(Map rJson) {
         rJson.put("Username", session().getUserName());
         rJson.put("Hostname", session().getHost());
         rJson.put("Port", session().getPort());
@@ -101,7 +102,8 @@ public final class ServerSSH {
         if (tCompressLevel > 0)
             rJson.put("CompressLevel", tCompressLevel);
     }
-    public static ServerSSH load(JSONObject aJson) throws Exception {
+    @SuppressWarnings("rawtypes")
+    public static ServerSSH load(Map aJson) throws Exception {
         String aUsername = (String) aJson.get("Username");
         String aHostname = (String) aJson.get("Hostname");
         int aPort = ((Number) aJson.get("Port")).intValue();

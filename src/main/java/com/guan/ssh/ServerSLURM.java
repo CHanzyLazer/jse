@@ -3,9 +3,8 @@ package com.guan.ssh;
 import com.guan.code.*;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import groovy.json.JsonBuilder;
+import groovy.json.JsonSlurper;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -57,54 +56,57 @@ public final class ServerSLURM {
     
     /// 保存到文件以及从文件加载
     public void save(String aFilePath) throws Exception {save(aFilePath, null);}
+    @SuppressWarnings("rawtypes")
     public static ServerSLURM load(String aFilePath) throws Exception {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
         FileReader tFile = new FileReader(aFilePath);
-        JSONObject tJson = (JSONObject) new JSONParser().parse(tFile);
+        Map tJson = (Map) (new JsonSlurper()).parse(tFile);
         tFile.close();
         return load(tJson);
     }
     // 带有密码的读写
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "rawtypes"})
     public void save(String aFilePath, String aKey) throws Exception {
         // 同样需要处理相对路径的问题
         aFilePath = UT.IO.toAbsolutePath(aFilePath);
         // 保存到 json
-        JSONObject rJson = new JSONObject();
+        Map rJson = new LinkedHashMap();
         save(rJson);
         // slurm 由于有自动保存的功能，需要先备份旧的文件
         File tFile = new File(aFilePath);
         if (tFile.exists()) Files.copy(tFile.toPath(), new File(aFilePath+".bak").toPath(), StandardCopyOption.REPLACE_EXISTING);
         // 开始写入
+        JsonBuilder tJsonBuilder = new JsonBuilder(rJson);
         if (aKey != null && !aKey.isEmpty()) {
             Encryptor tEncryptor = new Encryptor(aKey);
-            Files.write(Paths.get(aFilePath), tEncryptor.getData(rJson.toJSONString()));
+            Files.write(Paths.get(aFilePath), tEncryptor.getData(tJsonBuilder.toString()));
         } else {
             FileWriter tFileWriter = new FileWriter(aFilePath);
-            JSONObject.writeJSONString(rJson, tFileWriter);
+            tJsonBuilder.writeTo(tFileWriter);
             tFileWriter.close();
         }
         // 写入完成删除备份文件
         if (tFile.exists()) new File(aFilePath+".bak").delete();
     }
+    @SuppressWarnings("rawtypes")
     public static ServerSLURM load(String aFilePath, String aKey) throws Exception {
         aFilePath = UT.IO.toAbsolutePath(aFilePath); // 同样需要处理相对路径的问题
         Decryptor tDecryptor = new Decryptor(aKey);
-        JSONObject tJson = (JSONObject) new JSONParser().parse(tDecryptor.get(Files.readAllBytes(Paths.get(aFilePath))));
+        Map tJson = (Map) (new JsonSlurper()).parseText(tDecryptor.get(Files.readAllBytes(Paths.get(aFilePath))));
         return load(tJson);
     }
     // 偏向于内部使用的保存到 json 和从 json 读取
-    @SuppressWarnings("unchecked")
-    public synchronized void save(JSONObject rJson) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public synchronized void save(Map rJson) {
         // synchronized 修饰防止保存过程中出现了修改
         // 保存需要暂停，防止重复提交
         pause();
         // 先保存 ssh
-        JSONObject rJsonSSH = new JSONObject();
+        Map rJsonSSH = new LinkedHashMap();
         rJson.put("SSH", rJsonSSH);
         mSSH.save(rJsonSSH);
         // 再保存 slurm
-        JSONObject rJsonSLURM = new JSONObject();
+        Map rJsonSLURM = new LinkedHashMap();
         rJson.put("SLURM", rJsonSLURM);
         rJsonSLURM.put("MaxJobNumber", mMaxJobNumber);
         rJsonSLURM.put("SleepTime", mSleepTime);
@@ -123,7 +125,7 @@ public final class ServerSLURM {
             rJsonSLURM.put("RemoteMirrorPath", mRemoteMirrorPath);
         
         if (!mJobIDList.isEmpty()) {
-            JSONArray rJsonJobIDList = new JSONArray();
+            List rJsonJobIDList = new ArrayList();
             rJsonSLURM.put("JobIDList", rJsonJobIDList);
             // 按照 id，task 的顺序排列
             for (Map.Entry<Integer, Pair<Task, Integer>> tEntry : mJobIDList.entrySet()) {
@@ -134,7 +136,7 @@ public final class ServerSLURM {
         }
         
         if (!mCommandList.isEmpty()) {
-            JSONArray rJsonCommandList = new JSONArray();
+            List rJsonCommandList = new ArrayList();
             rJsonSLURM.put("CommandList", rJsonCommandList);
             // 按照 command, beforeTask, afterTask 的顺序排列
             for (Pair<Pair<Task, Task>, String> tPair : mCommandList) {
@@ -148,11 +150,12 @@ public final class ServerSLURM {
         
         // save 操作不自动解除暂停以防止重复提交
     }
-    public static ServerSLURM load(JSONObject aJson) throws Exception {
+    @SuppressWarnings("rawtypes")
+    public static ServerSLURM load(Map aJson) throws Exception {
         // 先加载 ssh
-        ServerSSH aSSH = ServerSSH.load((JSONObject) aJson.get("SSH"));
+        ServerSSH aSSH = ServerSSH.load((Map) aJson.get("SSH"));
         // 再加载 slurm
-        JSONObject tJsonSLURM = (JSONObject) aJson.get("SLURM");
+        Map tJsonSLURM = (Map) aJson.get("SLURM");
         int aMaxJobNumber = ((Number) tJsonSLURM.get("MaxJobNumber")).intValue();
         long aSleepTime = ((Number) tJsonSLURM.get("SleepTime")).longValue();
         String aJobName = (String) tJsonSLURM.get("JobName");
@@ -170,13 +173,13 @@ public final class ServerSLURM {
         
         // 获取任务队列
         if (tJsonSLURM.containsKey("JobIDList")) {
-            JSONArray tJsonJobIDList = (JSONArray) tJsonSLURM.get("JobIDList");
+            List tJsonJobIDList = (List) tJsonSLURM.get("JobIDList");
             for (int i = 1; i < tJsonJobIDList.size(); i+=2)
                 rServerSLURM.mJobIDList.put(((Number) tJsonJobIDList.get(i-1)).intValue(), new Pair<>(SerializableTask.fromString(rServerSLURM, (String) tJsonJobIDList.get(i)), DEFAULT_TOLERANT));
         }
         // 获取排队队列
         if (tJsonSLURM.containsKey("CommandList")) {
-            JSONArray tJsonCommandList = (JSONArray) tJsonSLURM.get("CommandList");
+            List tJsonCommandList = (List) tJsonSLURM.get("CommandList");
             for (int i = 2; i < tJsonCommandList.size(); i+=3)
                 rServerSLURM.mCommandList.add(new Pair<>(new Pair<>(SerializableTask.fromString(rServerSLURM, (String) tJsonCommandList.get(i-1)), SerializableTask.fromString(rServerSLURM, (String) tJsonCommandList.get(i))), (String) tJsonCommandList.get(i-2)));
         }
