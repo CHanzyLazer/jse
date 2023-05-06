@@ -13,7 +13,7 @@ tAtomData = GEN.atomDataFCC(3.61, 20);
 // 根据 result 来过滤 tAtomData，只保留 result>0 处的粒子
 tAtomData = GEN.filterThresholdFunc3AtomData(result, tAtomData);
 // 根据 AtomData 生成 Lmpdat，指定粒子质量为 63.546（Cu）
-jLmpdat = Lmpdat.fromAtomData(tAtomData, 63.546);
+jLmpdat = Lmpdat.fromAtomData(tAtomData, [63.546]);
 // 生成 AtomData 生成 lammps 的 Dump
 jDump = Dump.fromAtomData(tAtomData);
 

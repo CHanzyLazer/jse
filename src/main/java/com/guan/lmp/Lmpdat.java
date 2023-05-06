@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class Lmpdat extends AbstractAtomData {
     private final int mAtomTypeNum;
     private Box mBox;
     private final double @Nullable[] mMasses;
-    private double[][] mAtomData;
+    private final double[][] mAtomData;
     
     /**
      * 直接根据数据创建 Lmpdat
@@ -137,8 +138,8 @@ public class Lmpdat extends AbstractAtomData {
     public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:MathEX.Vec.copy(mMasses), MathEX.Mat.copy(mAtomData));}
     
     /** 从 IHasAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData) {return fromAtomData(aHasAtomData, null);}
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, double... aMasses) {
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData) {return fromAtomData(aHasAtomData, (double[])null);}
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, double[] aMasses) {
         // 粒子数据，需要符合 lmpdat 的格式
         double[][] tAtomData;
         int tAtomTypeNum = aHasAtomData.atomTypeNum();
@@ -153,13 +154,23 @@ public class Lmpdat extends AbstractAtomData {
         }
         return new Lmpdat(tAtomTypeNum, aHasAtomData.boxLo(), aHasAtomData.boxHi(), aMasses, tAtomData);
     }
+    /** 兼容 Groovy 的乱七八糟的数字数组 */
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, Collection<? extends Number> aMasses) {
+        double[] tMasses = new double[aMasses.size()];
+        int tIdx = 0;
+        for (Number tMass : aMasses) {
+            tMasses[tIdx] = tMass.doubleValue();
+            ++tIdx;
+        }
+        return fromAtomData(aHasAtomData, tMasses);
+    }
     
     
     /// 文件读写
     /**
      * 从文件 lammps 输出的文件中读取来实现初始化
      * @param aFilePath lammps 输出的 data 文件路径
-     * @return 读取得到的 Lmpdat 对象
+     * @return 读取得到的 Lmpdat 对象，如果文件不完整会直接返回 null
      * @throws IOException 如果读取失败
      */
     public static Lmpdat read(String aFilePath) throws IOException {
@@ -179,17 +190,17 @@ public class Lmpdat extends AbstractAtomData {
         // 跳过第一行
         ++idx;
         // 读取原子数目
-        idx = UT.Texts.findLineContaining(aLines, idx, "atoms"); tTokens = UT.Texts.splitBlank(aLines[idx]);
+        idx = UT.Texts.findLineContaining(aLines, idx, "atoms"); if (idx >= aLines.length) return null; tTokens = UT.Texts.splitBlank(aLines[idx]);
         tAtomNum = Integer.parseInt(tTokens[0]);
         // 读取原子种类数目
-        idx = UT.Texts.findLineContaining(aLines, idx, "atom types"); tTokens = UT.Texts.splitBlank(aLines[idx]);
+        idx = UT.Texts.findLineContaining(aLines, idx, "atom types"); if (idx >= aLines.length) return null; tTokens = UT.Texts.splitBlank(aLines[idx]);
         aAtomTypeNum = Integer.parseInt(tTokens[0]);
         // 读取模拟盒信息
-        idx = UT.Texts.findLineContaining(aLines, idx, "xlo xhi"); tTokens = UT.Texts.splitBlank(aLines[idx]);
+        idx = UT.Texts.findLineContaining(aLines, idx, "xlo xhi"); if (idx >= aLines.length) return null; tTokens = UT.Texts.splitBlank(aLines[idx]);
         double aXlo = Double.parseDouble(tTokens[0]); double aXhi = Double.parseDouble(tTokens[1]);
-        idx = UT.Texts.findLineContaining(aLines, idx, "ylo yhi"); tTokens = UT.Texts.splitBlank(aLines[idx]);
+        idx = UT.Texts.findLineContaining(aLines, idx, "ylo yhi"); if (idx >= aLines.length) return null; tTokens = UT.Texts.splitBlank(aLines[idx]);
         double aYlo = Double.parseDouble(tTokens[0]); double aYhi = Double.parseDouble(tTokens[1]);
-        idx = UT.Texts.findLineContaining(aLines, idx, "zlo zhi"); tTokens = UT.Texts.splitBlank(aLines[idx]);
+        idx = UT.Texts.findLineContaining(aLines, idx, "zlo zhi"); if (idx >= aLines.length) return null; tTokens = UT.Texts.splitBlank(aLines[idx]);
         double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]);
         // 兼容可能的斜方模拟盒
         tIdx = UT.Texts.findLineContaining(aLines, idx, "xy xz yz");
@@ -206,6 +217,7 @@ public class Lmpdat extends AbstractAtomData {
         if (tIdx < aLines.length) {
             idx = tIdx;
             ++idx; // 中间有一个空行
+            if (idx+aAtomTypeNum > aLines.length) return null;
             aMasses = new double[aAtomTypeNum];
             for (int i = 0; i < aAtomTypeNum; ++i) {
                 tTokens = UT.Texts.splitBlank(aLines[idx]);
@@ -219,6 +231,7 @@ public class Lmpdat extends AbstractAtomData {
         // 获取原子坐标信息
         idx = UT.Texts.findLineContaining(aLines, idx, "Atoms"); ++idx;
         ++idx; // 中间有一个空行
+        if (idx+tAtomNum > aLines.length) return null;
         aAtomData = new double[tAtomNum][ATOM_DATA_KEYS.length];
         for (int i = 0; i < tAtomNum; ++i) {
             tTokens = UT.Texts.splitBlank(aLines[idx]);

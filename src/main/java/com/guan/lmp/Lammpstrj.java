@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     private final SubLammpstrj[] mData;
     
     public Lammpstrj(SubLammpstrj... aData) {mData = aData==null ? new SubLammpstrj[0] : aData;}
-    public Lammpstrj(List<SubLammpstrj> aData) {mData = aData.toArray(new SubLammpstrj[0]);}
+    public Lammpstrj(Collection<SubLammpstrj> aData) {mData = aData.toArray(new SubLammpstrj[0]);}
     
     /** AbstractList stuffs */
     @Override public int size() {return mData.length;}
@@ -308,7 +309,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     /**
      * 从文件 lammps 输出的 dump 文件中读取来实现初始化
      * @param aFilePath lammps 输出的 dump 文件路径
-     * @return 读取得到的 Lammpstrj 对象
+     * @return 读取得到的 Lammpstrj 对象，如果文件不完整的帧会跳过
      * @throws IOException 如果读取失败
      */
     public static Lammpstrj read(String aFilePath) throws IOException {
@@ -359,6 +360,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             aAtomDataKeys = new String[tTokens.length-2];
             System.arraycopy(tTokens, 2, aAtomDataKeys, 0, aAtomDataKeys.length);
             ++idx;
+            if (idx+tAtomNum > aLines.length) break;
             aAtomData = new double[tAtomNum][aAtomDataKeys.length];
             for (int i = 0; i < tAtomNum; ++i) {
                 tTokens = UT.Texts.splitBlank(aLines[idx]);
