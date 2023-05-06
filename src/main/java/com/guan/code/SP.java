@@ -18,7 +18,7 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
  */
 @SuppressWarnings("UnusedReturnValue")
 public class SP {
-    private static final GroovyClassLoader CLASS_LOADER;
+    private static GroovyClassLoader CLASS_LOADER = null;
     
     /** 直接运行文本的脚本，底层不会进行缓存 */
     public synchronized static Object runText(String aText, String... aArgs) throws Exception {return getTaskOfText(aText, aArgs).call();}
@@ -34,8 +34,12 @@ public class SP {
         // 获取 ScriptClass 的实例
         return newInstance_(tScriptClass, aArgs);
     }
+    
     /** 提供一个手动关闭 CLASS_LOADER 的接口 */
-    public synchronized static void close() throws IOException {CLASS_LOADER.close();}
+    public synchronized static void close() throws IOException {if (CLASS_LOADER != null) {CLASS_LOADER.close(); CLASS_LOADER = null;}}
+    public synchronized static boolean isClosed() {return CLASS_LOADER == null;}
+    /** 提供一个手动刷新 CLASS_LOADER 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
+    public synchronized static void refresh() throws IOException {close(); initClassLoader_();}
     
     
     /** 获取脚本相关的 task，对于脚本的内容请使用这里的接口而不是 {@link UT.Hack}.getTaskOfStaticMethod */
@@ -122,13 +126,16 @@ public class SP {
     static {
         // 手动加载 UT，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
         UT.IO.init();
-        // 对于 matlab，需要重新指定 ClassLoader
-        ClassLoader tMatlabClassLoader = null;
-        try {tMatlabClassLoader = com.mathworks.jmi.ClassLoaderManager.getClassLoaderManager().getCurrentClassLoader();} catch (Throwable ignored) {}
-        CLASS_LOADER = tMatlabClassLoader==null ? new GroovyClassLoader() : new GroovyClassLoader(tMatlabClassLoader);
+        // 初始化 CLASS_LOADER
+        initClassLoader_();
         // 在 JVM 关闭时关闭 CLASS_LOADER
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {CLASS_LOADER.close();} catch (IOException ignored) {}
+            try {close();} catch (IOException ignored) {}
         }));
+    }
+    /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
+    private synchronized static void initClassLoader_() {
+        // 重新指定 ClassLoader 为这个类的实际加载器
+        CLASS_LOADER = new GroovyClassLoader(SP.class.getClassLoader());
     }
 }

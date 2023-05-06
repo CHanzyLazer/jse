@@ -43,7 +43,6 @@ tasks.register('runScript', JavaExec) {
 
 dependencies {
     compileOnly('org.jetbrains:annotations:24.0.1')             // debug
-    compileOnly files("lib/jmi.jar")                            // matlab jmi 兼容支持
     
     implementation('org.apache.groovy:groovy:4.0.11')           // 用于直接执行 groovy 脚本而不需要安装 groovy
     
