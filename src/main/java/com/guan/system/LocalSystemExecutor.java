@@ -64,23 +64,4 @@ public class LocalSystemExecutor extends AbstractThreadPoolContainer<IExecutorEX
     @Override public Future<Integer> submitSystem(String aCommand) {assert mPool!=null; return mPool.submit(() -> system(aCommand));}
     @Override public Future<Integer> submitSystem(String aCommand, String aOutFilePath) {assert mPool!=null; return mPool.submit(() -> system(aCommand, aOutFilePath));}
     @Override public Future<Integer> submitSystem(String aCommand, @Nullable PrintStream aOutPrintStream) {assert mPool!=null; return mPool.submit(() -> system(aCommand, aOutPrintStream));}
-    
-    
-    /** 在本地运行时不需要考虑这些附加的文件 */
-    @Override public int system_NO(String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system_NO(aCommand);}
-    @Override public int system   (String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand);}
-    @Override public int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand, aOutFilePath);}
-    @Override public int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand, aOutPrintStream);}
-    @Override public int system_NO(String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system_NO(aCommand);}
-    @Override public int system   (String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand);}
-    @Override public int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand, aOutFilePath);}
-    @Override public int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand, aOutPrintStream);}
-    @Override public Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem_NO(aCommand);}
-    @Override public Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand);}
-    @Override public Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand, aOutFilePath);}
-    @Override public Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand, aOutPrintStream);}
-    @Override public Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem_NO(aCommand);}
-    @Override public Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand);}
-    @Override public Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand, aOutFilePath);}
-    @Override public Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand, aOutPrintStream);}
 }

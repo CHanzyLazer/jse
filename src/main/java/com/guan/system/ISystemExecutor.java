@@ -23,21 +23,21 @@ public interface ISystemExecutor extends IThreadPoolContainer {
     Future<Integer> submitSystem(String aCommand, PrintStream aOutPrintStream);
     
     /** 在原本的 system 基础上，增加了附加相关的输入输出文件的功能，
-     * 主要用于在远程服务器情况下，在执行任务之前和任务完成后进行同步，使用 separator 进行分割 */
-    int system_NO(String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    int system   (String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    int system_NO(String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    int system   (String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse);
-    Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
-    Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse);
+     * 主要用于在远程服务器情况下，在执行任务之前和任务完成后进行同步，使用 separator 进行分割，默认不考虑附加的文件 */
+    default int system_NO(String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system_NO(aCommand);}
+    default int system   (String aCommand,                              @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand);}
+    default int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand, aOutFilePath);}
+    default int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return system(aCommand, aOutPrintStream);}
+    default int system_NO(String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system_NO(aCommand);}
+    default int system   (String aCommand,                              @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand);}
+    default int system   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand, aOutFilePath);}
+    default int system   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return system(aCommand, aOutPrintStream);}
+    default Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem_NO(aCommand);}
+    default Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand);}
+    default Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand, aOutFilePath);}
+    default Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator, String aFirstInFile, Object... aElse) {return submitSystem(aCommand, aOutPrintStream);}
+    default Future<Integer> submitSystem_NO(String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem_NO(aCommand);}
+    default Future<Integer> submitSystem   (String aCommand                             , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand);}
+    default Future<Integer> submitSystem   (String aCommand, String      aOutFilePath   , @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand, aOutFilePath);}
+    default Future<Integer> submitSystem   (String aCommand, PrintStream aOutPrintStream, @Nullable Object aSeparator1, @Nullable Object aSeparator2, String aFirstOutFile, Object... aElse) {return submitSystem(aCommand, aOutPrintStream);}
 }

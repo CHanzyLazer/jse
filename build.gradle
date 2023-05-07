@@ -3,9 +3,6 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
-group = "com.guan"
-version = "0.1"
-
 repositories {
     maven {
         name = "enonic"
@@ -16,30 +13,11 @@ repositories {
 
 sourceSets {
     main {java {srcDirs = ['src/main/java']}; resources {srcDirs = ['src/main/resources']}}
-    test {java {srcDirs = ['src/test/java']}; resources {srcDirs = ['src/test/resources', 'example']}} // 将 example 包含到测试的资源文件中
 }
 
 compileJava {
     options.encoding = "UTF-8"
 }
-compileTestJava {
-    options.encoding = "UTF-8"
-}
-
-tasks.register('runBenchmark', JavaExec) {
-    jvmArgs("-Xmx6144m") // 设置最大内存
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guan.test.ParBenchmark'
-}
-tasks.register('runKMC', JavaExec) {
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guan.test.TestKMC'
-}
-tasks.register('runScript', JavaExec) {
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guan.test.TestScript'
-}
-
 
 dependencies {
     compileOnly('org.jetbrains:annotations:24.0.1')             // debug
@@ -74,8 +52,8 @@ shadowJar {
 //  relocate('org.json.simple', 'shade.org.json.simple')
     // 不重命名 groovy 相关名称，避免 asm 错误，也方便 groovy 脚本直接使用 groovy 相关部分
     
-    // 修改目标文件夹
-    destinationDirectory = file('./bin')
+    // 修改目标文件夹，打包后添加到子项目中
+    destinationDirectory = file('./release/java')
 }
 
 build {

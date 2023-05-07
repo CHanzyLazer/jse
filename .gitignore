@@ -2,6 +2,6 @@
 __*
 
 build
-bin/*.jar
+release/*/*.jar
 
 !.gitignore

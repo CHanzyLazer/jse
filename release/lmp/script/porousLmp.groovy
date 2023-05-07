@@ -1,7 +1,10 @@
+package lmp.script
+
 // import jTool classes
 import com.guan.atom.Generator;
 import com.guan.lmp.Lmpdat;
 import com.guan.lmp.Dump;
+
 
 // 创建生成器，设置并行数为 4
 GEN = new Generator(4);
@@ -23,3 +26,4 @@ jDump.write('porous.lammpstrj');
 
 // 记得关闭生成器，释放资源
 GEN.shutdown();
+
