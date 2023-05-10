@@ -22,7 +22,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.guan.code.CS.COLOR_;
+
+import static com.guan.plot.Shapes.*;
+import static com.guan.plot.Strokes.*;
+import static com.guan.plot.Colors.COLOR_;
+
 
 /**
  * @author liqa
@@ -45,11 +49,11 @@ public class PlotterJFree implements IPlotter {
             mLineRender.setSeriesPaint(mID, mPaint);
             
             // 设置默认的线型，为了避免一些问题不在构造函数中调用自己的一些多态的方法
-            mLineRender.setLegendLine(new Line2D.Double(-super.mStroke.getSize()*LEGEND_SIZE, 0.0, super.mStroke.getSize()*LEGEND_SIZE, 0.0));
+            mLineRender.setLegendLine(new Line2D.Double(-super.mLineStroke.getSize() * LEGEND_SIZE, 0.0, super.mLineStroke.getSize() * LEGEND_SIZE, 0.0));
             if (mLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
-            else {mLineRender.setSeriesStroke(mID, super.mStroke); mLineRender.setSeriesLinesVisible(mID, true);}
+            else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
             if (mMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mShape); mLineRender.setSeriesShapesVisible(mID, true);}
+            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesShapesVisible(mID, true);}
         }
         
         @Override public ILine color(Paint aPaint) {mPaint = aPaint; mLineRender.notifyListeners(new RendererChangeEvent(mLineRender)); return this;}
@@ -57,11 +61,11 @@ public class PlotterJFree implements IPlotter {
         
         @Override protected void onLineTypeChange(LineType aOldLineType, LineType aNewLineType) {
             if (aNewLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
-            else {mLineRender.setSeriesStroke(mID, super.mStroke); mLineRender.setSeriesLinesVisible(mID, true);}
+            else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
         }
         @Override protected void onMarkerTypeChange(MarkerType aOldMarkerType, MarkerType aNewMarkerType) {
             if (aNewMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mShape); mLineRender.setSeriesShapesVisible(mID, true);}
+            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesShapesVisible(mID, true);}
         }
         @Override protected void onLineWidthChange(double aOldLineWidth, double aNewLineWidth) {
             // 线宽变化时需要同步调整 Legend 的长度
