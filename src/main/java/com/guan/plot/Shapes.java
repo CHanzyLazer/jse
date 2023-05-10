@@ -12,7 +12,7 @@ import java.awt.geom.*;
  * <p> 目前用于 plot 的 Markers 来使用 </p>
  */
 public class Shapes {
-    /** 各种 marker 形状的实现 */
+    /** 各种 marker 形状的实现，调整实际尺寸使得视觉上大小一致 */
     public static class NullShape extends AbstractResizableShape {
         public NullShape(double aSize) {super(aSize);}
         @Override protected Shape getShape(double aSize) {return null;}
@@ -27,20 +27,25 @@ public class Shapes {
             super.y = -aSize*0.5;
         }
     }
+    private final static double CIRCLE_MUL = 1.10;
     public static class Circle extends Ellipse2D.Double implements IResizableShape {
-        public Circle(double aSize) {super(-aSize*0.5, -aSize*0.5, aSize, aSize);}
-        @Override public double getSize() {return super.width;}
+        private double mSize;
+        public Circle(double aSize) {super(-aSize*0.5*CIRCLE_MUL, -aSize*0.5*CIRCLE_MUL, aSize*CIRCLE_MUL, aSize*CIRCLE_MUL); mSize = aSize;}
+        @Override public double getSize() {return mSize;}
         @Override public void setSize(double aSize) {
+            mSize = aSize;
+            aSize *= CIRCLE_MUL;
             super.width = aSize;
             super.height = aSize;
             super.x = -aSize*0.5;
             super.y = -aSize*0.5;
         }
     }
+    private final static double PLUS_MUL = 1.40;
     public static class Plus extends AbstractResizableShape {
         public Plus(double aSize) {super(aSize);}
         @Override protected Shape getShape(double aSize) {
-            double tLen = aSize*0.5;
+            double tLen = aSize*0.5*PLUS_MUL;
             Line2D hLine = new Line2D.Double(0-tLen, 0     , 0+tLen, 0     );
             Line2D vLine = new Line2D.Double(0     , 0-tLen, 0     , 0+tLen);
             GeneralPath tPlus = new GeneralPath();
@@ -51,10 +56,11 @@ public class Shapes {
     }
     private final static double SQRT2 = MathEX.Fast.sqrt(2.0);
     private final static double SQRT2_INV = 1.0/SQRT2;
+    private final static double ASTERISK_MUL = 1.30;
     public static class Asterisk extends AbstractResizableShape {
         public Asterisk(double aSize) {super(aSize);}
         @Override protected Shape getShape(double aSize) {
-            double tLen = aSize*0.5;
+            double tLen = aSize*0.5*ASTERISK_MUL;
             double dLen = tLen*SQRT2_INV;
             Line2D hLine  = new Line2D.Double(-tLen, 0.0  , +tLen, 0.0  );
             Line2D vLine  = new Line2D.Double(0.0  , -tLen, 0.0  , +tLen);
@@ -68,10 +74,11 @@ public class Shapes {
             return tAsterisk;
         }
     }
+    private final static double CROSS_MUL = PLUS_MUL;
     public static class Cross extends AbstractResizableShape {
         public Cross(double aSize) {super(aSize);}
         @Override protected Shape getShape(double aSize) {
-            double tLen = aSize*0.5;
+            double tLen = aSize*0.5*CROSS_MUL;
             double dLen = tLen*SQRT2_INV;
             Line2D dLine1 = new Line2D.Double(-dLen, -dLen, +dLen, +dLen);
             Line2D dLine2 = new Line2D.Double(-dLen, +dLen, +dLen, -dLen);
@@ -81,10 +88,11 @@ public class Shapes {
             return tCross;
         }
     }
+    private final static double DIAMOND_MUL = 0.90;
     public static class Diamond extends AbstractResizableShape {
         public Diamond(double aSize) {super(aSize);}
         @Override protected Shape getShape(double aSize) {
-            double tLen = aSize*0.5*SQRT2;
+            double tLen = aSize*0.5*SQRT2*DIAMOND_MUL;
             GeneralPath tDiamond = new GeneralPath();
             tDiamond.moveTo(0.0  , +tLen);
             tDiamond.lineTo(+tLen, 0.0  );
@@ -94,7 +102,7 @@ public class Shapes {
             return tDiamond;
         }
     }
-    private final static double TRIANGLE_MUL_X = 0.66;
+    private final static double TRIANGLE_MUL_X = 0.63;
     private final static double TRIANGLE_MUL_Y = TRIANGLE_MUL_X/MathEX.Fast.sqrt(3.0);
     public static class Triangle extends AbstractResizableShape {
         public Triangle(double aSize) {super(aSize);}
@@ -145,12 +153,6 @@ public class Shapes {
         }
     }
     
-    /** 全局常量记录默认值 */
-    public final static MarkerType DEFAULT_MARKER_TYPE = MarkerType.NULL;
-    public final static double DEFAULT_MARKER_SIZE = 12.0;
-    public final static IResizableShape NULL_SHAPE = new NullShape(DEFAULT_MARKER_SIZE);
-    public final static IResizableShape DEFAULT_MARKER_SHAPE = toShape(DEFAULT_MARKER_TYPE, DEFAULT_MARKER_SIZE);
-    
     public static IResizableShape toShape(MarkerType aMarkerType, double aMarkerSize) {
         switch (aMarkerType) {
         case NULL:              return NULL_SHAPE;
@@ -164,4 +166,10 @@ public class Shapes {
         default:                return toShape(DEFAULT_MARKER_TYPE, aMarkerSize);
         }
     }
+    
+    /** 全局常量记录默认值 */
+    public final static MarkerType DEFAULT_MARKER_TYPE = MarkerType.NULL;
+    public final static double DEFAULT_MARKER_SIZE = 12.0;
+    public final static IResizableShape NULL_SHAPE = new NullShape(DEFAULT_MARKER_SIZE);
+    public final static IResizableShape DEFAULT_MARKER_SHAPE = toShape(DEFAULT_MARKER_TYPE, DEFAULT_MARKER_SIZE);
 }

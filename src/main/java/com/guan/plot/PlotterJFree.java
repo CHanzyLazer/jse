@@ -53,7 +53,7 @@ public class PlotterJFree implements IPlotter {
             if (mLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
             else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
             if (mMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesShapesVisible(mID, true);}
+            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesOutlineStroke(mID, DEFAULT_MARKER_STROKE); mLineRender.setSeriesShapesVisible(mID, true);}
         }
         
         @Override public ILine color(Paint aPaint) {mPaint = aPaint; mLineRender.notifyListeners(new RendererChangeEvent(mLineRender)); return this;}
@@ -65,13 +65,16 @@ public class PlotterJFree implements IPlotter {
         }
         @Override protected void onMarkerTypeChange(MarkerType aOldMarkerType, MarkerType aNewMarkerType) {
             if (aNewMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesShapesVisible(mID, true);}
+            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesOutlineStroke(mID, getMarkerStroke(aNewMarkerType, super.mMarkerShape.getSize())); mLineRender.setSeriesShapesVisible(mID, true);}
         }
         @Override protected void onLineWidthChange(double aOldLineWidth, double aNewLineWidth) {
             // 线宽变化时需要同步调整 Legend 的长度
             mLineRender.setLegendLine(new Line2D.Double(-aNewLineWidth*LEGEND_SIZE, 0.0, aNewLineWidth*LEGEND_SIZE, 0.0));
         }
-        @Override protected void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize) {/**/}
+        @Override protected void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize) {
+            // Marker 大小变化时需要同步调整 Marker Stroke 的宽度
+            mLineRender.setSeriesOutlineStroke(mID, getMarkerStroke(super.mMarkerType, aNewMarkerSize));
+        }
     }
     
     

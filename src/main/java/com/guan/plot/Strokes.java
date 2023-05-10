@@ -101,10 +101,27 @@ public class Strokes {
         default:                return toStroke(DEFAULT_LINE_TYPE, aLineWidth);
         }
     }
+    public static IResizableStroke getMarkerStroke(Shapes.MarkerType aMarkerType, double aMarkerSize) {
+        switch (aMarkerType) {
+        case NULL:
+        case CIRCLE:
+        case SQUARE:
+        case DIAMOND:
+        case TRIANGLE:
+            return DEFAULT_MARKER_STROKE;
+        case PLUS:
+        case ASTERISK:
+        case CROSS:
+            return toStroke(LineType.SOLID, aMarkerSize*0.2);
+        default:
+            return getMarkerStroke(Shapes.DEFAULT_MARKER_TYPE, aMarkerSize);
+        }
+    }
     
     /** 全局常量记录默认值 */
     public final static LineType DEFAULT_LINE_TYPE = LineType.SOLID;
     public final static double DEFAULT_LINE_WIDTH = 2.0;
     public final static IResizableStroke NULL_STROKE = new NullStroke(DEFAULT_LINE_WIDTH);
     public final static IResizableStroke DEFAULT_LINE_STROKE = toStroke(DEFAULT_LINE_TYPE, DEFAULT_LINE_WIDTH);
+    public final static IResizableStroke DEFAULT_MARKER_STROKE = toStroke(LineType.SOLID, 1.0);
 }
