@@ -7,11 +7,9 @@ import java.util.concurrent.*;
  * <p> 类似 Executors 一样的类直接获取 IExecutorEX 线程池 </p>
  */
 public class ExecutorsEX {
-    
-    private abstract static class WrappedExecutorEX implements IExecutorEX {
+    protected abstract static class AbstractExecutorEX implements IExecutorEX {
         private final ThreadPoolExecutor mPool;
-        public WrappedExecutorEX(ThreadPoolExecutor aPool) {mPool = aPool;}
-        
+        protected AbstractExecutorEX(ThreadPoolExecutor aPool) {mPool = aPool;}
         
         @Override public void execute(Runnable aRun) {mPool.execute(aRun);}
         @Override public Future<?> submit(Runnable aRun) {return mPool.submit(aRun);}
@@ -27,12 +25,12 @@ public class ExecutorsEX {
     
     
     public static IExecutorEX newFixedThreadPool(final int nThreads) {
-        return new WrappedExecutorEX(new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>())) {
+        return new AbstractExecutorEX(new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>())) {
             @Override public int nThreads() {return nThreads;}
         };
     }
     public static IExecutorEX newSingleThreadExecutor() {
-        return new WrappedExecutorEX(new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>())) {
+        return new AbstractExecutorEX(new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>())) {
             @Override public int nThreads() {return 1;}
         };
     }

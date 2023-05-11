@@ -1,6 +1,6 @@
 package com.guan.atom;
 
-import com.guan.parallel.AbstractThreadPoolContainer;
+import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.ParforThreadPool;
 
 import static com.guan.code.CS.BOX_ONE;
@@ -15,7 +15,7 @@ import static com.guan.math.MathEX.*;
  * <p> 会存在一些重复的代码，为了可读性不进一步消去 </p>
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  */
-public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<ParforThreadPool> {
+public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforThreadPool> {
     private double[][] mAtomDataXYZ; // reference of mAtomDataXYZ in mNL
     private final double[] mBox;
     private final double[] mBoxLo; // 用来记录数据是否经过了 shift
@@ -74,7 +74,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      * @param aThreadNum 线程数目
      * @return 返回自身用于链式调用
      */
-    public MonatomicParameterCalculator setThreadNum(int aThreadNum)  {assert mPool!=null; if (aThreadNum != mPool.nThreads()) {mPool.shutdown(); mPool = new ParforThreadPool(aThreadNum);} return this;}
+    public MonatomicParameterCalculator setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     /**
      * 修改 LinkedCell 的步长，如果相同则不会进行任何操作
      * @param sCellStep 步长，默认为 2.0，需要大于 1.1，理论上越小速度会越快，同时会消耗更多的内存
@@ -95,14 +95,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      */
     public double[][] calRDF(int aN, final double aRMax) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         final double dr = aRMax/aN;
         final double[] r = Func.sequence(0.0, dr, aN);
-        final double[][] tdn = new double[mPool.nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tdn = new double[nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor_(mAtomNum, (i, threadID) -> {
             for (double[] tXYZ_Dis : mNL.get_IDX(i, aRMax - dr*0.5, true)) {
                 int tIdx = (int) Math.ceil((tXYZ_Dis[3] - dr*0.5) / dr);
                 if (tIdx > 0 && tIdx < aN) ++tdn[threadID][tIdx];
@@ -138,7 +137,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      */
     public double[][] calRDF_AB(double[][]                   aAtomDataXYZ, int aN, final double aRMax, boolean aShifted) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         // 处理数据平移的问题，如果未经过平移，则认为输入的数据需要经过同样的平移
         if (!aShifted) {
@@ -149,10 +147,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
         
         final double dr = aRMax/aN;
         final double[] r = Func.sequence(0.0, dr, aN);
-        final double[][] tdn = new double[mPool.nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tdn = new double[nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(fAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor_(fAtomDataXYZ.length, (i, threadID) -> {
             for (double[] tXYZ_Dis : mNL.get_XYZ(fAtomDataXYZ[i], aRMax - dr*0.5)) {
                 int tIdx = (int) Math.ceil((tXYZ_Dis[3] - dr*0.5) / dr);
                 if (tIdx > 0 && tIdx < aN) ++tdn[threadID][tIdx];
@@ -186,18 +184,17 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      */
     public double[][] calRDF_G(int aN, final double aRMax, int aSigmaMul) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         final int tRangN = aSigmaMul*G_RANG;
         final int tN = aN-tRangN;
         final double dr = aRMax/aN;
         final double[] r = Func.sequence(0.0, dr, tN);
-        final double[][] tdn = new double[mPool.nThreads()][tN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tdn = new double[nThreads()][tN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
-        final double[][] tArrayTemp = new double[mPool.nThreads()][2*tRangN+1]; // 事先创建的每个线程的临时数组变量，避免重复创建数组
+        final double[][] tArrayTemp = new double[nThreads()][2*tRangN+1]; // 事先创建的每个线程的临时数组变量，避免重复创建数组
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor_(mAtomNum, (i, threadID) -> {
             for (double[] tXYZ_Dis : mNL.get_IDX(i, aRMax - dr*0.5, true)) {
                 int tStartIdx = (int) Math.ceil((tXYZ_Dis[3] - dr*0.5) / dr) - tRangN;
                 double[] tDeltaG = Func.deltaG2Dest(dr*aSigmaMul, tXYZ_Dis[3], Func.sequence2Dest(tStartIdx*dr, dr, tArrayTemp[threadID]));
@@ -236,7 +233,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
     public double[][] calRDF_AB_G(double[][]                   aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {return calRDF_AB_G(aAtomDataXYZ, aN, aRMax, aSigmaMul, mBoxLo==null);} // 如果 mBoxLo==null 则创建 MPC 的数据是已经经过平移的，则认为输入的 aAtomDataXYZ 也是已经经过平移的
     public double[][] calRDF_AB_G(double[][]                   aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul, boolean aShifted) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         // 处理数据平移的问题，如果未经过平移，则认为输入的数据需要经过同样的平移
         if (!aShifted) {
@@ -249,12 +245,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
         final int tN = aN-tRangN;
         final double dr = aRMax/aN;
         final double[] r = Func.sequence(0.0, dr, tN);
-        final double[][] tdn = new double[mPool.nThreads()][tN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tdn = new double[nThreads()][tN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
-        final double[][] tArrayTemp = new double[mPool.nThreads()][2*tRangN+1]; // 事先创建的每个线程的临时数组变量，避免重复创建数组
+        final double[][] tArrayTemp = new double[nThreads()][2*tRangN+1]; // 事先创建的每个线程的临时数组变量，避免重复创建数组
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(fAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor_(fAtomDataXYZ.length, (i, threadID) -> {
             for (double[] tXYZ_Dis : mNL.get_XYZ(fAtomDataXYZ[i], aRMax - dr*0.5)) {
                 int tStartIdx = (int) Math.ceil((tXYZ_Dis[3] - dr*0.5) / dr) - tRangN;
                 double[] tDeltaG = Func.deltaG2Dest(dr*aSigmaMul, tXYZ_Dis[3], Func.sequence2Dest(tStartIdx*dr, dr, tArrayTemp[threadID]));
@@ -300,14 +296,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      */
     public double[][] calSF(double aQMax, int aN, final double aRMax, double aQMin) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         final double dq = (aQMax-aQMin)/aN;
         final double[] q = Func.sequence(aQMin+dq, dq, aN);
-        final double[][] tHq = new double[mPool.nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tHq = new double[nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor_(mAtomNum, (i, threadID) -> {
             double[] cXYZ = mAtomDataXYZ[i];
             for (double[] tXYZ : mNL.getMHT_IDX(i, aRMax * 0.9999, true)) {
                 final double tDis = XYZ.distance(tXYZ, cXYZ);
@@ -344,7 +339,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
      */
     public double[][] calSF_AB(double[][]                   aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin, boolean aShifted) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
-        assert mPool!=null;
         
         // 处理数据平移的问题，如果未经过平移，则认为输入的数据需要经过同样的平移
         if (!aShifted) {
@@ -355,10 +349,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPoolContainer<Pa
         
         final double dq = (aQMax-aQMin)/aN;
         final double[] q = Func.sequence(aQMin+dq, dq, aN);
-        final double[][] tHq = new double[mPool.nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final double[][] tHq = new double[nThreads()][aN]; // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         
         // 使用 mNL 的通用获取近邻的方法
-        mPool.parfor_(fAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor_(fAtomDataXYZ.length, (i, threadID) -> {
             double[] cXYZ = fAtomDataXYZ[i];
             for (double[] tXYZ : mNL.getMHT_XYZ(cXYZ, aRMax * 0.9999)) {
                 final double tDis = XYZ.distance(tXYZ, cXYZ);

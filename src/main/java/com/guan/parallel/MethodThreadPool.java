@@ -12,10 +12,10 @@ import java.util.concurrent.Future;
  * <p> 与一般的 java 线程池不同，为了方便外部调用，
  * 这里直接接受 String 的方法名称，使用反射来调用这个方法 </p>
  */
-public class MethodThreadPool extends AbstractThreadPoolContainer<IExecutorEX> {
-    public MethodThreadPool(int aThreadNum) {super(ExecutorsEX.newFixedThreadPool(Math.max(aThreadNum, 1)));}
+public class MethodThreadPool extends AbstractHasThreadPool<IExecutorEX> {
+    public MethodThreadPool(int aThreadNum) {super(newPool(aThreadNum));}
     
     // 提交任务
-    public Future<Object> submit(@NotNull Object aInstance, String aMethodName, Object... aArgs) {assert mPool!=null; return mPool.submit(UT.Hack.getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
-    public Future<Object> submitStatic(String aClassName, String aMethodName, Object... aArgs) {assert mPool!=null; return mPool.submit(UT.Hack.getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
+    public Future<Object> submit(@NotNull Object aInstance, String aMethodName, Object... aArgs) {return pool().submit(UT.Hack.getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+    public Future<Object> submitStatic(String aClassName, String aMethodName, Object... aArgs) {return pool().submit(UT.Hack.getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
 }

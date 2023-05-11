@@ -12,17 +12,17 @@ import static com.guan.code.CS.SEP;
 
 /**
  * @author liqa
- * <p> 一些预设的 lammps 输入文件，包含附加的额外输入文件以及输出文件 </p>
+ * <p> 一些预设的 lammps 输入文件格式，仅作为设置选项的作用来初始化 LmpIn，由于实例唯一不能包含任何可以修改的元素 </p>
  */
 @SuppressWarnings("SameParameterValue")
-public enum IN implements IHasIOFiles {
+public enum IN {
       INIT_MELT_NPT_Cu   ("init-melt-NPT-Cu"        , IOFiles.get("vInDataPath"    , "lmp/data/CuFCC108.lmpdat"            , SEP, "vOutRestartPath", "lmp/.temp/restart/melt-Cu108-init"))
     , RESTART_MELT_NPT_Cu("restart-melt-NPT-Cu"     , IOFiles.get("vInRestartPath" , "lmp/.temp/restart/melt-Cu108-init"   , SEP, "vOutRestartPath", "lmp/.temp/restart/melt-Cu108", 5))
     ;
     
     
-    private final @Nullable URL mLmpInFile;
-    private final IHasIOFiles mIOFiles;
+    final @Nullable URL mLmpInFile;
+    final IHasIOFiles mIOFiles;
     
     public @NotNull URL lmpInFile() {if (mLmpInFile == null) throw new RuntimeException(String.format("Lammps IN file of %s is missing", this.name())); return mLmpInFile;}
     
@@ -34,8 +34,4 @@ public enum IN implements IHasIOFiles {
         mLmpInFile = UT.IO.getResource("lmp/in/"+aLmpInFileName);
         mIOFiles = aIOFiles;
     }
-    @Override public Iterable<String> inputFiles(String aInFileKey) {return mIOFiles.inputFiles(aInFileKey);}
-    @Override public Iterable<String> outputFiles(String aOutFileKey) {return mIOFiles.outputFiles(aOutFileKey);}
-    @Override public Iterable<String> inputFiles() {return mIOFiles.inputFiles();}
-    @Override public Iterable<String> outputFiles() {return mIOFiles.outputFiles();}
 }

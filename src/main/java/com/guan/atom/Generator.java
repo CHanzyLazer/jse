@@ -4,7 +4,7 @@ import com.guan.math.MathEX;
 import com.guan.math.functional.IOperator1;
 import com.guan.math.functional.IOperator1Full;
 import com.guan.math.numerical.Func3;
-import com.guan.parallel.AbstractThreadPoolContainer;
+import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.ParforThreadPool;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import static com.guan.math.MathEX.*;
  * <p> 特定原子结构的生成器 </p>
  * <p> 此类线程不安全，但不同实例间线程安全 </p>
  */
-public class Generator extends AbstractThreadPoolContainer<ParforThreadPool> {
+public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
     private final static String[] ATOM_DATA_KEYS_XYZ = new String[] {"x", "y", "z"};
     
     /** IThreadPoolContainer stuffs */
@@ -40,7 +40,7 @@ public class Generator extends AbstractThreadPoolContainer<ParforThreadPool> {
     Generator(ParforThreadPool aPool, Random aRNG) {super(aPool); mRNG = aRNG;}
     
     /** 参数设置 */
-    public Generator setThreadNum(int aThreadNum)  {assert mPool!=null; if (aThreadNum != mPool.nThreads()) {mPool.shutdown(); mPool = new ParforThreadPool(aThreadNum);} return this;}
+    public Generator setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     
     
     /**
@@ -174,7 +174,6 @@ public class Generator extends AbstractThreadPoolContainer<ParforThreadPool> {
      */
     public Func3 porousCahnHilliard(IOperator1<Double> aDfu, double aTheta, final Func3 aInitU, double aDt, int aSteps) {
         if (mDead) throw new RuntimeException("This Generator is dead");
-        assert mPool!=null;
         
         final double tTheta2 = aTheta*aTheta;
         final int tBlockSize = aInitU.Nx()*aInitU.Ny();
@@ -186,10 +185,10 @@ public class Generator extends AbstractThreadPoolContainer<ParforThreadPool> {
         return aInitU.shell().setData(Func.odeLastEuler((uu, t) -> { // Euler 法求解 ode，并且只保留最后的值
             Func3 tFunc31 = aInitU.shell().setData(uu);
             Func3 tFunc32 = aInitU.shell().setData(tArrayTemp1);
-            Func.parlaplacian2Dest(mPool, tFunc31, tFunc32); // 计算 uu 的 laplacian，存储到 tFunc32 中
-            Vec.parebeDo2Dest(mPool, tBlockSize, tFunc32.data(), uu, (lapU, u) -> (aDfu.cal(u) - tTheta2*lapU)); // 计算 df/du - θ^2Δu，结果存储到 tFunc32
+            Func.parlaplacian2Dest(pool(), tFunc31, tFunc32); // 计算 uu 的 laplacian，存储到 tFunc32 中
+            Vec.parebeDo2Dest(pool(), tBlockSize, tFunc32.data(), uu, (lapU, u) -> (aDfu.cal(u) - tTheta2*lapU)); // 计算 df/du - θ^2Δu，结果存储到 tFunc32
             tFunc31.setData(tArrayTemp2);
-            return Func.parlaplacian2Dest(mPool, tFunc32, tFunc31).data(); // 最后结果再做一次 laplacian，存储到 tArrayTemp2（tFunc31） 并返回
+            return Func.parlaplacian2Dest(pool(), tFunc32, tFunc31).data(); // 最后结果再做一次 laplacian，存储到 tArrayTemp2（tFunc31） 并返回
         }, aInitU.data(), aDt, aSteps));
     }
     public Func3 porousCahnHilliard(double aTheta, Func3 aInitU, double aDt, int aSteps) {return porousCahnHilliard(u -> u*u*u-u, aTheta, aInitU, aDt, aSteps);}

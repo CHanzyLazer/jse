@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p> 注意：当线程数大于 1 时此类线程不安全，但不同实例间线程安全；
  * 当线程数为 1 时线程安全，包括多个线程同时访问同一个实例 </p>
  */
-public class ParforThreadPool extends AbstractThreadPoolContainer<IExecutorEX> {
+public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
     private final ThreadLocal<Integer> mThreadID = ThreadLocal.withInitial(()->null); // 使用 ThreadLocal 存储每个线程对应的 id，直接避免线程安全的问题
     private int mBatchSize;
     private final Lock @Nullable [] mLocks; // 用来在并行时给每个线程独立加锁，保证每个线程独立写入的操作的可见性
@@ -30,7 +30,7 @@ public class ParforThreadPool extends AbstractThreadPoolContainer<IExecutorEX> {
     
     public ParforThreadPool(int aThreadNum) {this(aThreadNum, 64);}
     public ParforThreadPool(int aThreadNum, int aBatchSize) {
-        super(aThreadNum<=1 ? null : ExecutorsEX.newFixedThreadPool(aThreadNum));
+        super(aThreadNum<=1 ? SERIAL_EXECUTOR : newPool(aThreadNum));
         int tThreadNum = Math.max(aThreadNum, 1);
         mBatchSize = Math.max(aBatchSize, 1);
         if (tThreadNum == 1) mLocks = null;
@@ -71,7 +71,7 @@ public class ParforThreadPool extends AbstractThreadPoolContainer<IExecutorEX> {
     public void parfor_(final int aStart, final int aStep, final int aEnd , final IParforTaskWithID aTaskWithID) {
         if (mDead) throw new RuntimeException("This ParforThreadPool is dead");
         // 串行的情况
-        if (mPool == null) {
+        if (nThreads() <= 1) {
             for (int i = aStart; i < aEnd; i += aStep) aTaskWithID.run(i, 0);
         }
         // 并行的情况，将任务分组，使用竞争获取任务的思路来获取任务，保证实际创建的线程在 parfor 任务中不会提前结束，并且可控
@@ -86,7 +86,7 @@ public class ParforThreadPool extends AbstractThreadPoolContainer<IExecutorEX> {
             final CountDownLatch tLatch = new CountDownLatch(tThreadNum);
             for (int id = 0; id < tThreadNum; ++id) {
                 final int fId = id;
-                mPool.execute(() -> {
+                pool().execute(() -> {
                     mThreadID.set(fId); // 注册 id
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
                     boolean tFirstRest = tRestBatchSize > 0; // 首先处理 rest 的情况，如果 tRestBatchSize 为零则是刚好整除分配完全

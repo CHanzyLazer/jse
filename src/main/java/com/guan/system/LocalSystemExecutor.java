@@ -2,8 +2,7 @@ package com.guan.system;
 
 
 import com.guan.code.UT;
-import com.guan.parallel.AbstractThreadPoolContainer;
-import com.guan.parallel.ExecutorsEX;
+import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.IExecutorEX;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,16 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.Future;
 
 /**
  * @author liqa
  * <p> SystemExecutor 的一般实现，直接在本地运行，默认输出在 System.out </p>
  */
-public class LocalSystemExecutor extends AbstractThreadPoolContainer<IExecutorEX> implements ISystemExecutor {
-    public LocalSystemExecutor(int aThreadNum) {super(ExecutorsEX.newFixedThreadPool(Math.max(aThreadNum, 1)));}
+public class LocalSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
+    public LocalSystemExecutor(int aThreadNum) {super(newPool(aThreadNum));}
     
     @Override public int system_NO(String aCommand) {return system(aCommand, (PrintStream)null);}
     @Override public int system(String aCommand) {return system(aCommand, System.out);}
@@ -59,8 +56,8 @@ public class LocalSystemExecutor extends AbstractThreadPoolContainer<IExecutorEX
         return tExitValue;
     }
     
-    @Override public Future<Integer> submitSystem_NO(String aCommand) {assert mPool!=null; return mPool.submit(() -> system_NO(aCommand));}
-    @Override public Future<Integer> submitSystem(String aCommand) {assert mPool!=null; return mPool.submit(() -> system(aCommand));}
-    @Override public Future<Integer> submitSystem(String aCommand, String aOutFilePath) {assert mPool!=null; return mPool.submit(() -> system(aCommand, aOutFilePath));}
-    @Override public Future<Integer> submitSystem(String aCommand, @Nullable PrintStream aOutPrintStream) {assert mPool!=null; return mPool.submit(() -> system(aCommand, aOutPrintStream));}
+    @Override public Future<Integer> submitSystem_NO(String aCommand) {return pool().submit(() -> system_NO(aCommand));}
+    @Override public Future<Integer> submitSystem(String aCommand) {return pool().submit(() -> system(aCommand));}
+    @Override public Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return pool().submit(() -> system(aCommand, aOutFilePath));}
+    @Override public Future<Integer> submitSystem(String aCommand, @Nullable PrintStream aOutPrintStream) {return pool().submit(() -> system(aCommand, aOutPrintStream));}
 }

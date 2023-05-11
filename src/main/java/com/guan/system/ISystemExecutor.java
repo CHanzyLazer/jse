@@ -1,7 +1,7 @@
 package com.guan.system;
 
 
-import com.guan.parallel.IThreadPoolContainer;
+import com.guan.parallel.IHasThreadPool;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
  * <p> 通用的系统指令执行器接口，实现类似 matlab 的 system 指令功能，
  * 在此基础上增加了类似 Executor 的功能，可以后台运行等 </p>
  */
-public interface ISystemExecutor extends IThreadPoolContainer {
+public interface ISystemExecutor extends IHasThreadPool {
     int system_NO(String aCommand); // No Output
     int system(String aCommand);
     int system(String aCommand, String aOutFilePath);

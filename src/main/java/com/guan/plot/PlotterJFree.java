@@ -39,6 +39,7 @@ public class PlotterJFree implements IPlotter {
         final String mName;
         final Iterable<Double> mX, mY;
         Paint mPaint;
+        Shape mLegendLine;
         
         LineJFree(int aID, Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
             mID = aID;
@@ -47,9 +48,9 @@ public class PlotterJFree implements IPlotter {
             mY = UT.Code.map(aY, Number::doubleValue);
             mPaint = COLOR_(aID);
             mLineRender.setSeriesPaint(mID, mPaint);
+            mLegendLine = new Line2D.Double(-super.mLineStroke.getSize()*LEGEND_SIZE, 0.0, super.mLineStroke.getSize()*LEGEND_SIZE, 0.0);
             
             // 设置默认的线型，为了避免一些问题不在构造函数中调用自己的一些多态的方法
-            mLineRender.setLegendLine(new Line2D.Double(-super.mLineStroke.getSize() * LEGEND_SIZE, 0.0, super.mLineStroke.getSize() * LEGEND_SIZE, 0.0));
             if (mLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
             else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
             if (mMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
@@ -69,7 +70,8 @@ public class PlotterJFree implements IPlotter {
         }
         @Override protected void onLineWidthChange(double aOldLineWidth, double aNewLineWidth) {
             // 线宽变化时需要同步调整 Legend 的长度
-            mLineRender.setLegendLine(new Line2D.Double(-aNewLineWidth*LEGEND_SIZE, 0.0, aNewLineWidth*LEGEND_SIZE, 0.0));
+            mLegendLine = new Line2D.Double(-aNewLineWidth*LEGEND_SIZE, 0.0, aNewLineWidth*LEGEND_SIZE, 0.0);
+            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
         }
         @Override protected void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize) {
             // Marker 大小变化时需要同步调整 Marker Stroke 的宽度
@@ -116,6 +118,7 @@ public class PlotterJFree implements IPlotter {
             @Override public LegendItem getLegendItem(int datasetIndex, int series) {
                 LegendItem tLegendItem = super.getLegendItem(datasetIndex, series);
                 tLegendItem.setLinePaint(mLines.get(series).mPaint);
+                tLegendItem.setLine(mLines.get(series).mLegendLine);
                 return tLegendItem;
             }
         };
