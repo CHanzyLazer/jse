@@ -14,10 +14,16 @@ public class CS {
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public static final Random RNGSUS = new Random(), RANDOM = RNGSUS;
     
-    public static final Object NULL = null, SEPARATOR = null, SEP = SEPARATOR;
+    public static final Object NULL = null;
     
     public static final double[] BOX_ONE  = new double[] {1.0, 1.0, 1.0};
     public static final double[] BOX_ZERO = new double[] {0.0, 0.0, 0.0};
+    
+    /** const arrays */
+    public final static Object[] ZL_OBJ = new Object[0];
+    public final static double[][] ZL_MAT = new double[0][];
+    public final static double[]   ZL_VEC = new double[0];
+    
     
     /** Relative atomic mass in this project */
     public static final @Unmodifiable Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())

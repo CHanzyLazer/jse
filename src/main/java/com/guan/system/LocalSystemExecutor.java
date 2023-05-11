@@ -1,33 +1,20 @@
 package com.guan.system;
 
 
+import com.guan.code.IHasIOFiles;
 import com.guan.code.UT;
-import com.guan.parallel.AbstractHasThreadPool;
-import com.guan.parallel.IExecutorEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.concurrent.Future;
 
 /**
  * @author liqa
  * <p> SystemExecutor 的一般实现，直接在本地运行，默认输出在 System.out </p>
  */
-public class LocalSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
-    public LocalSystemExecutor(int aThreadNum) {super(newPool(aThreadNum));}
+public class LocalSystemExecutor extends AbstractSystemExecutor {
+    public LocalSystemExecutor(int aThreadNum) {super(aThreadNum);}
     
-    @Override public int system_NO(String aCommand) {return system(aCommand, (PrintStream)null);}
-    @Override public int system(String aCommand) {return system(aCommand, System.out);}
-    @Override public int system(String aCommand, String aOutFilePath) {
-        PrintStream tFilePS;
-        try {tFilePS = UT.IO.toPrintStream(aOutFilePath);} catch (IOException e) {throw new RuntimeException(e);}
-        int tExitValue = system(aCommand, tFilePS);
-        tFilePS.close(); // 记得关闭输出文件
-        return tExitValue;
-    }
     @Override public int system(String aCommand, @Nullable PrintStream aOutPrintStream) {
         int tExitValue;
         Process tProcess = null;
@@ -37,13 +24,11 @@ public class LocalSystemExecutor extends AbstractHasThreadPool<IExecutorEX> impl
             // 执行指令
             tProcess = tRuntime.exec(aCommand);
             // 读取执行的输出
-            if (aOutPrintStream != null) {
-                BufferedReader tReader = new BufferedReader(new InputStreamReader(tProcess.getInputStream()));
+            if (aOutPrintStream != null) try (BufferedReader tReader = UT.IO.toReader(tProcess.getInputStream())) {
                 String tLine;
                 while ((tLine = tReader.readLine()) != null) {
                     aOutPrintStream.println(tLine);
                 }
-                tReader.close();
             }
             // 等待执行完成
             tExitValue = tProcess.waitFor();
@@ -56,8 +41,6 @@ public class LocalSystemExecutor extends AbstractHasThreadPool<IExecutorEX> impl
         return tExitValue;
     }
     
-    @Override public Future<Integer> submitSystem_NO(String aCommand) {return pool().submit(() -> system_NO(aCommand));}
-    @Override public Future<Integer> submitSystem(String aCommand) {return pool().submit(() -> system(aCommand));}
-    @Override public Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return pool().submit(() -> system(aCommand, aOutFilePath));}
-    @Override public Future<Integer> submitSystem(String aCommand, @Nullable PrintStream aOutPrintStream) {return pool().submit(() -> system(aCommand, aOutPrintStream));}
+    /** 对于本地的带有 IOFiles 的没有区别 */
+    @Override public int system(String aCommand, PrintStream aOutPrintStream, IHasIOFiles aIOFiles) {return system(aCommand, aOutPrintStream);}
 }

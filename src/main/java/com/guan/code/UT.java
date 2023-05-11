@@ -21,6 +21,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.guan.code.CS.ZL_OBJ;
+
 /**
  * @author liqa
  * <p> utils of this project </p>
@@ -29,6 +31,91 @@ public class UT {
     
     public static class Code {
         
+        /**
+         * merge two array into one List
+         * @author liqa
+         */
+        public static List<Object> merge(final Object[] aBefore, Object... aAfter) {
+            final Object[] fAfter = aAfter==null ? ZL_OBJ : aAfter;
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {return index<aBefore.length ? aBefore[index] : fAfter[index-aBefore.length];}
+                @Override public int size() {return aBefore.length+fAfter.length;}
+            };
+        }
+        public static List<Object> mergeBefore(final Object[] aAfter, Object... aBefore) {
+            final Object[] fBefore = aBefore==null ? ZL_OBJ : aBefore;
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {return index<fBefore.length ? fBefore[index] : aAfter[index-fBefore.length];}
+                @Override public int size() {return fBefore.length+aAfter.length;}
+            };
+        }
+        public static List<Object> merge(final Object aBefore0, final Object[] aAfter) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {return index<1 ? aBefore0 : aAfter[index-1];}
+                @Override public int size() {return aAfter.length+1;}
+            };
+        }
+        public static List<Object> merge(final Object aBefore0, final Object aBefore1, final Object[] aAfter) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {
+                    switch (index) {
+                    case 0: return aBefore0;
+                    case 1: return aBefore1;
+                    default: return aAfter[index-2];
+                    }
+                }
+                @Override public int size() {return aAfter.length+2;}
+            };
+        }
+        public static List<Object> merge(final Object aBefore0, final Object aBefore1, final Object aBefore2, final Object[] aAfter) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {
+                    switch (index) {
+                    case 0: return aBefore0;
+                    case 1: return aBefore1;
+                    case 2: return aBefore2;
+                    default: return aAfter[index-3];
+                    }
+                }
+                @Override public int size() {return aAfter.length+3;}
+            };
+        }
+        public static List<Object> merge(final Object[] aBefore, final Object aAfter0) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {
+                    int tRest = index-aBefore.length;
+                    return tRest==0 ? aAfter0 : aBefore[index];
+                }
+                @Override public int size() {return aBefore.length+1;}
+            };
+        }
+        public static List<Object> merge(final Object[] aBefore, final Object aAfter0, final Object aAfter1) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {
+                    int tRest = index-aBefore.length;
+                    switch (tRest) {
+                    case 0: return aAfter0;
+                    case 1: return aAfter1;
+                    default: return aBefore[index];
+                    }
+                }
+                @Override public int size() {return aBefore.length+2;}
+            };
+        }
+        public static List<Object> merge(final Object[] aBefore, final Object aAfter0, final Object aAfter1, final Object aAfter2) {
+            return new AbstractList<Object>() {
+                @Override public Object get(int index) {
+                    int tRest = index-aBefore.length;
+                    switch (tRest) {
+                    case 0: return aAfter0;
+                    case 1: return aAfter1;
+                    case 2: return aAfter2;
+                    default: return aBefore[index];
+                    }
+                }
+                @Override public int size() {return aBefore.length+3;}
+            };
+        }
         
         /**
          * map Iterable< T > to Iterable< R > like {@link Stream}.map
@@ -398,13 +485,16 @@ public class UT {
         /** output stuffs */
         public static PrintStream    toPrintStream (String aFilePath, OpenOption... aOptions) throws IOException {return new PrintStream(toOutputStream(aFilePath, aOptions));}
         public static OutputStream   toOutputStream(String aFilePath, OpenOption... aOptions) throws IOException {return Files.newOutputStream(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
-        public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions) throws IOException {return Files.newBufferedWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
+        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions) throws IOException {return Files.newBufferedWriter(aPath, aOptions);}
+        public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions) throws IOException {return toWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
         public static BufferedWriter toWriter      (OutputStream aOutputStream) {return new BufferedWriter(new OutputStreamWriter(aOutputStream));}
         
         /** input stuffs */
         public static InputStream    toInputStream(String aFilePath) throws IOException {return Files.newInputStream(UT.IO.toAbsolutePath_(aFilePath));}
-        public static BufferedReader toReader     (String aFilePath) throws IOException {return Files.newBufferedReader(UT.IO.toAbsolutePath_(aFilePath));}
+        public static BufferedReader toReader     (Path aPath) throws IOException {return Files.newBufferedReader(aPath);}
+        public static BufferedReader toReader     (String aFilePath) throws IOException {return toReader(UT.IO.toAbsolutePath_(aFilePath));}
         public static BufferedReader toReader     (InputStream aInputStream) {return new BufferedReader(new InputStreamReader(aInputStream));}
+        public static BufferedReader toReader     (URL aFileURL) throws IOException {return toReader(aFileURL.openStream());}
         
         /** misc stuffs */
         public static File toFile(String aFilePath) {return toAbsolutePath_(aFilePath).toFile();}

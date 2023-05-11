@@ -13,6 +13,9 @@ import net.jafama.FastMath;
 
 import java.util.Arrays;
 
+import static com.guan.code.CS.ZL_MAT;
+import static com.guan.code.CS.ZL_VEC;
+
 
 /**
  * @author liqa
@@ -562,8 +565,6 @@ public class MathEX {
             , NONE
         }
         public final static SliceType ALL = SliceType.ALL;
-        public final static double[][] ZL_MAT = new double[0][];
-        public final static double[]   ZL_VEC = new double[0];
         /**
          * @author liqa
          * <p> Vector Slice Similar to Matlab </p>
@@ -947,7 +948,7 @@ public class MathEX {
         public static double[][] interRayBox2D(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayX1, double aRayY1, double aRayX2, double aRayY2) {
             double tSizeX = aBoxXMax - aBoxXMin;
             double tSizeY = aBoxYMax - aBoxYMin;
-            if (tSizeX < 0 || tSizeY < 0) return Mat.ZL_MAT;
+            if (tSizeX < 0 || tSizeY < 0) return ZL_MAT;
             // 增加刚好在边界的处理，这里使用增加微扰的方法来简单处理，1 优先往盒内，2 优先往盒外
             if      (aRayX1 == aBoxXMin) aRayX1 += tSizeX*1.0e-12;
             else if (aRayX1 == aBoxXMax) aRayX1 -= tSizeX*1.0e-12;
@@ -966,7 +967,7 @@ public class MathEX {
             byte tPos2 = posBox2D(aRayX2, aRayY2, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
             // 获取交点可能的位置的情况
             byte tInterPos = PosBox2D.INTER_POS[tPos1][tPos2];
-            if (tInterPos == PosBox2D.N) return Mat.ZL_MAT;
+            if (tInterPos == PosBox2D.N) return ZL_MAT;
             if (tInterPos == PosBox2D.E) return null; // 非法情况，输出 null，注意刚好在边界的情况也会输出 null
             double[] tInterPoint = _interRayBox2D_(tInterPos, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayX1, aRayY1, aRayX2, aRayY2);
             // 获取另一个方向的结果
