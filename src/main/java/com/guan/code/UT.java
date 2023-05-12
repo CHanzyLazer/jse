@@ -135,6 +135,12 @@ public class UT {
                 }
             };
         }
+        public static <R, T> List<R> map(final T[] aArray, final IOperator1Full<? extends R, ? super T> aOpt) {
+            return new AbstractList<R>() {
+                @Override public R get(int index) {return aOpt.cal(aArray[index]);}
+                @Override public int size() {return aArray.length;}
+            };
+        }
         
         
         /**

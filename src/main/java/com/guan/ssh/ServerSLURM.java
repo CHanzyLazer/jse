@@ -1,6 +1,8 @@
 package com.guan.ssh;
 
 import com.guan.code.*;
+import com.guan.io.Decryptor;
+import com.guan.io.Encryptor;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import groovy.json.JsonBuilder;

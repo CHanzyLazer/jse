@@ -136,5 +136,7 @@ public class SP {
     private synchronized static void initClassLoader_() {
         // 重新指定 ClassLoader 为这个类的实际加载器
         CLASS_LOADER = new GroovyClassLoader(SP.class.getClassLoader());
+        // 指定默认的 Groovy 脚本的类路径
+        CLASS_LOADER.addClasspath(UT.IO.toAbsolutePath("script/groovy/"));
     }
 }

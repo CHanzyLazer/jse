@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class WSLSystemExecutor extends LocalSystemExecutor {
     public WSLSystemExecutor(int aThreadNum) {super(aThreadNum);}
+    public WSLSystemExecutor() {super();}
     
     @Override public int system(String aCommand, @Nullable IPrintln aPrintln) {
         return super.system("wsl " + aCommand, aPrintln);

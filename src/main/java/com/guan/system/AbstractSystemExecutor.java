@@ -1,6 +1,6 @@
 package com.guan.system;
 
-import com.guan.code.IHasIOFiles;
+import com.guan.io.IHasIOFiles;
 import com.guan.code.UT;
 import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.IExecutorEX;
@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 
 public abstract class AbstractSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
     protected AbstractSystemExecutor(int aThreadNum) {super(newPool(aThreadNum));}
+    protected AbstractSystemExecutor() {this(1);}
     
     
     @Override public int system_NO(String aCommand                                           ) {return system(aCommand, (IPrintln)null);} // No Output

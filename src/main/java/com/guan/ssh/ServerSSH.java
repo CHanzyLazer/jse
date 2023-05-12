@@ -1,7 +1,7 @@
 package com.guan.ssh;
 
-import com.guan.code.Decryptor;
-import com.guan.code.Encryptor;
+import com.guan.io.Decryptor;
+import com.guan.io.Encryptor;
 import com.guan.code.Task;
 import com.guan.code.UT;
 import com.jcraft.jsch.*;

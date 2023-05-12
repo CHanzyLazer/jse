@@ -1,7 +1,7 @@
 package com.guan.system;
 
 
-import com.guan.code.IHasIOFiles;
+import com.guan.io.IHasIOFiles;
 import com.guan.code.UT;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +13,7 @@ import java.io.BufferedReader;
  */
 public class LocalSystemExecutor extends AbstractSystemExecutor {
     public LocalSystemExecutor(int aThreadNum) {super(aThreadNum);}
+    public LocalSystemExecutor() {super();}
     
     @Override public int system(String aCommand, @Nullable IPrintln aPrintln) {
         int tExitValue;

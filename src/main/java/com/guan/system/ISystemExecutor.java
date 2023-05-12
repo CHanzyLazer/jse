@@ -1,7 +1,7 @@
 package com.guan.system;
 
 
-import com.guan.code.IHasIOFiles;
+import com.guan.io.IHasIOFiles;
 import com.guan.parallel.IHasThreadPool;
 
 import java.io.IOException;

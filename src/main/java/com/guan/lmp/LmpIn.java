@@ -1,6 +1,6 @@
 package com.guan.lmp;
 
-import com.guan.code.AbstractInFileLines;
+import com.guan.io.AbstractInFileLines;
 import com.guan.code.UT;
 
 import java.io.BufferedReader;

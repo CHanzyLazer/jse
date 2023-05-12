@@ -1,4 +1,4 @@
-package com.guan.code;
+package com.guan.io;
 
 public interface IHasIOFiles {
     /** 获取输入输出的文件路径 */
