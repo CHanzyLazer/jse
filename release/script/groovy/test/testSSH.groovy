@@ -32,4 +32,4 @@ ssh.save('.SECRET/ssh.json');
 
 
 /** 关闭 ssh */
-ssh.close();
+ssh.shutdown();

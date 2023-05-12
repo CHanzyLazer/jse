@@ -22,7 +22,6 @@ UT.Timer.toc("${nThreads} threads, RDF");
 
 // 计算完毕关闭 MPC
 mpc.shutdown();
-mpc.awaitTermination();
 
 // 保存之前先创建文件夹
 UT.IO.mkdir('lmp/.temp');

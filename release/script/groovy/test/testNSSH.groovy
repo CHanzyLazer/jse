@@ -28,18 +28,15 @@ ssh.system('ls');
 // 构造涉及的输入输出文件，包含计算 RDF 的脚本，输入的 data 文件和计算完成后输出的 csv 文件，key 可以随便取
 ioFiles = (new IOFiles()).i('<self>', 'script/groovy/test/testRDF.groovy', 'data', 'lmp/data/data-glass').o('csv', 'lmp/.temp/rdf.csv');
 // 提交指令
-ssh.system("./jTool -f ${ioFiles.i('<self>').get(0)}", ioFiles); // 通过 key 来获取注册的文件名
+ssh.system("./jTool -f ${ioFiles.i('<self>')}", ioFiles); // 通过 key 来获取注册的文件名
 
 // 关闭 ssh
 ssh.shutdown();
-ssh.awaitTermination();
 
 // 此时已经自动下载完成输出文件，直接读取即可
-gr = UT.IO.csv2data(ioFiles.o('csv').get(0));
+gr = UT.IO.csv2data(ioFiles.o('csv'));
 // 绘制 gr
 plt = Plotters.get();
 plt.plot(Mat.getColumn(gr, 1), Mat.getColumn(gr, 0), 'RDF');
 plt.show();
-
-
 

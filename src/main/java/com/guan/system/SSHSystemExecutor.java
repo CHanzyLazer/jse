@@ -8,7 +8,6 @@ import com.jcraft.jsch.JSchException;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
-import java.io.PrintStream;
 import java.util.Map;
 
 
@@ -123,6 +122,6 @@ public class SSHSystemExecutor extends AbstractSystemExecutor {
     }
     
     /** 需要重写 shutdown 方法将内部 ssh 的关闭包含进去 */
-    @Override public void shutdown() {mSSH.close(); super.shutdown();}
-    @Override public void shutdownNow() {mSSH.close(); super.shutdownNow();}
+    @Override public void shutdown() {mSSH.shutdown(); super.shutdown();}
+    @Override public void shutdownNow() {mSSH.shutdown(); super.shutdownNow();}
 }

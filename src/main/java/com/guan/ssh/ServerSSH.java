@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
  * <p> 不建议直接使用，现在对此基本停止维护，请改为使用更加成熟的 {@link SSHSystemExecutor} </p>
  */
 @SuppressWarnings({"UnusedReturnValue", "BusyWait"})
-public final class ServerSSH implements AutoCloseable {
+public final class ServerSSH {
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;
     private String mRemoteWorkingDir_;
@@ -255,7 +255,7 @@ public final class ServerSSH implements AutoCloseable {
         }
     }
     public void disconnect() {session().disconnect();}
-    @Override public void close() {
+    public void shutdown() {
         mDead = true;
         session().disconnect();
     }

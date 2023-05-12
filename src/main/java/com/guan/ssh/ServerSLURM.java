@@ -466,7 +466,7 @@ public final class ServerSLURM {
             }
         }
         // 最后关闭 SSH 通道
-        mSSH.close();
+        mSSH.shutdown();
     }
     
     // 从 aChannelExec 中获取任务号，返回小于零的值表示获取失败。会在内部开启通道来获得输出，因此获取完成后会直接关闭通道

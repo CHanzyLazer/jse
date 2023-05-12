@@ -56,4 +56,3 @@ println(terminal.echo_321);
 
 // 最后记得关闭
 wsl.shutdown();
-wsl.awaitTermination();

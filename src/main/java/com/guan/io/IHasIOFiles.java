@@ -4,6 +4,10 @@ import java.util.List;
 
 public interface IHasIOFiles {
     /** 获取输入输出的文件路径 */
+    default String getIFile(String aIFileKey) {return getIFiles(aIFileKey).get(0);}
+    default String getOFile(String aOFileKey) {return getOFiles(aOFileKey).get(0);}
+    default String getIFile(String aIFileKey, int aIndex) {return getIFiles(aIFileKey).get(aIndex);}
+    default String getOFile(String aOFileKey, int aIndex) {return getOFiles(aOFileKey).get(aIndex);}
     List<String> getIFiles(String aIFileKey);
     List<String> getOFiles(String aOFileKey);
     Iterable<String> getIFiles();
@@ -29,8 +33,10 @@ public interface IHasIOFiles {
     default IHasIOFiles setOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1) {return setOFiles(aOFileKey1, aOFilePath1, new Object[] {aStart1, aEnd1});}
     
     
-    @Deprecated default List<String> i(String aIFileKey) {return getIFiles(aIFileKey);}
-    @Deprecated default List<String> o(String aOFileKey) {return getOFiles(aOFileKey);}
+    @Deprecated default String i(String aIFileKey, int aIndex) {return getIFile(aIFileKey, aIndex);}
+    @Deprecated default String o(String aOFileKey, int aIndex) {return getOFile(aOFileKey, aIndex);}
+    @Deprecated default String i(String aIFileKey) {return getIFile(aIFileKey);}
+    @Deprecated default String o(String aOFileKey) {return getOFile(aOFileKey);}
     @Deprecated default Iterable<String> i() {return getIFiles();}
     @Deprecated default Iterable<String> o() {return getOFiles();}
     
