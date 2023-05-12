@@ -945,96 +945,96 @@ public class MathEX {
          * @author liqa
          * @return list x y of the point, empty for no point and null for invalid input
          */
-        public static double[][] interRayBox2D(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayX1, double aRayY1, double aRayX2, double aRayY2) {
+        public static double[][] interRayBox2D(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayXFrom, double aRayYFrom, double aRayXTo, double aRayYTo) {
             double tSizeX = aBoxXMax - aBoxXMin;
             double tSizeY = aBoxYMax - aBoxYMin;
             if (tSizeX < 0 || tSizeY < 0) return ZL_MAT;
-            // 增加刚好在边界的处理，这里使用增加微扰的方法来简单处理，1 优先往盒内，2 优先往盒外
-            if      (aRayX1 == aBoxXMin) aRayX1 += tSizeX*1.0e-12;
-            else if (aRayX1 == aBoxXMax) aRayX1 -= tSizeX*1.0e-12;
-            if      (aRayY1 == aBoxYMin) aRayY1 += tSizeY*1.0e-12;
-            else if (aRayY1 == aBoxYMax) aRayY1 -= tSizeY*1.0e-12;
-            if      (aRayX2 == aBoxXMin) aRayX2 -= tSizeX*1.0e-12;
-            else if (aRayX2 == aBoxXMax) aRayX2 += tSizeX*1.0e-12;
-            if      (aRayY2 == aBoxYMin) aRayY2 -= tSizeY*1.0e-12;
-            else if (aRayY2 == aBoxYMax) aRayY2 += tSizeY*1.0e-12;
+            // 增加刚好在边界的处理，这里使用增加微扰的方法来简单处理，from 优先往盒内，to 优先往盒外
+            if      (aRayXFrom == aBoxXMin) aRayXFrom += tSizeX*1.0e-12;
+            else if (aRayXFrom == aBoxXMax) aRayXFrom -= tSizeX*1.0e-12;
+            if      (aRayYFrom == aBoxYMin) aRayYFrom += tSizeY*1.0e-12;
+            else if (aRayYFrom == aBoxYMax) aRayYFrom -= tSizeY*1.0e-12;
+            if      (aRayXTo   == aBoxXMin) aRayXTo   -= tSizeX*1.0e-12;
+            else if (aRayXTo   == aBoxXMax) aRayXTo   += tSizeX*1.0e-12;
+            if      (aRayYTo   == aBoxYMin) aRayYTo   -= tSizeY*1.0e-12;
+            else if (aRayYTo   == aBoxYMax) aRayYTo   += tSizeY*1.0e-12;
             // 获取结果
-            return interRayBox2D_(aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayX1, aRayY1, aRayX2, aRayY2);
+            return interRayBox2D_(aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayXFrom, aRayYFrom, aRayXTo, aRayYTo);
         }
-        public static double[][] interRayBox2D_(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayX1, double aRayY1, double aRayX2, double aRayY2) {
+        public static double[][] interRayBox2D_(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayXFrom, double aRayYFrom, double aRayXTo, double aRayYTo) {
             // 获取射线的源和终点在箱中的位置
-            byte tPos1 = posBox2D(aRayX1, aRayY1, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
-            byte tPos2 = posBox2D(aRayX2, aRayY2, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
+            byte tPos1 = posBox2D(aRayXFrom, aRayYFrom, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
+            byte tPos2 = posBox2D(aRayXTo, aRayYTo, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
             // 获取交点可能的位置的情况
             byte tInterPos = PosBox2D.INTER_POS[tPos1][tPos2];
             if (tInterPos == PosBox2D.N) return ZL_MAT;
             if (tInterPos == PosBox2D.E) return null; // 非法情况，输出 null，注意刚好在边界的情况也会输出 null
-            double[] tInterPoint = _interRayBox2D_(tInterPos, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayX1, aRayY1, aRayX2, aRayY2);
+            double[] tInterPoint = _interRayBox2D_(tInterPos, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayXFrom, aRayYFrom, aRayXTo, aRayYTo);
             // 获取另一个方向的结果
             byte tInterPosR = PosBox2D.INTER_POS[tPos2][tPos1];
             if (tInterPos == tInterPosR) return new double[][] {tInterPoint};
-            double[] tInterPointR = _interRayBox2D_(tInterPosR, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayX1, aRayY1, aRayX2, aRayY2);
+            double[] tInterPointR = _interRayBox2D_(tInterPosR, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayXFrom, aRayYFrom, aRayXTo, aRayYTo);
             return new double[][] {tInterPoint, tInterPointR};
         }
-        private static double[] _interRayBox2D_(byte aInterPos, double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayX1, double aRayY1, double aRayX2, double aRayY2) {
+        private static double[] _interRayBox2D_(byte aInterPos, double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayXFrom, double aRayYFrom, double aRayXTo, double aRayYTo) {
             // 根据可能的位置来计算交点
             switch (aInterPos) {
             case PosBox2D.L: {
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, aBoxXMin);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, aBoxXMin);
                 if (tY > aBoxYMax || tY < aBoxYMin) return null;
                 return new double[] {aBoxXMin, tY};
             }
             case PosBox2D.R: {
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, aBoxXMax);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, aBoxXMax);
                 if (tY > aBoxYMax || tY < aBoxYMin) return null;
                 return new double[] {aBoxXMax, tY};
             }
             case PosBox2D.D: {
-                double tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, aBoxYMin);
+                double tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, aBoxYMin);
                 if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 return new double[] {tX, aBoxYMin};
             }
             case PosBox2D.U: {
-                double tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, aBoxYMax);
+                double tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, aBoxYMax);
                 if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 return new double[] {tX, aBoxYMax};
             }
             case PosBox2D.LD: {
                 double tX = aBoxXMin;
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, tX);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, tX);
                 if (tY > aBoxYMax || tY < aBoxYMin) {
                     tY = aBoxYMin;
-                    tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, tY);
+                    tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, tY);
                     if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 }
                 return new double[] {tX, tY};
             }
             case PosBox2D.LU: {
                 double tX = aBoxXMin;
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, tX);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, tX);
                 if (tY > aBoxYMax || tY < aBoxYMin) {
                     tY = aBoxYMax;
-                    tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, tY);
+                    tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, tY);
                     if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 }
                 return new double[] {tX, tY};
             }
             case PosBox2D.RD: {
                 double tX = aBoxXMax;
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, tX);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, tX);
                 if (tY > aBoxYMax || tY < aBoxYMin) {
                     tY = aBoxYMin;
-                    tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, tY);
+                    tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, tY);
                     if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 }
                 return new double[] {tX, tY};
             }
             case PosBox2D.RU: {
                 double tX = aBoxXMax;
-                double tY = Func.interp1(aRayX1, aRayX2, aRayY1, aRayY2, tX);
+                double tY = Func.interp1(aRayXFrom, aRayXTo, aRayYFrom, aRayYTo, tX);
                 if (tY > aBoxYMax || tY < aBoxYMin) {
                     tY = aBoxYMax;
-                    tX = Func.interp1(aRayY1, aRayY2, aRayX1, aRayX2, tY);
+                    tX = Func.interp1(aRayYFrom, aRayYTo, aRayXFrom, aRayXTo, tY);
                     if (tX > aBoxXMax || tX < aBoxXMin) return null;
                 }
                 return new double[] {tX, tY};
