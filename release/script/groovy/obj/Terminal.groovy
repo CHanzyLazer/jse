@@ -2,7 +2,7 @@ package obj
 
 import com.guan.code.UT
 import com.guan.system.ISystemExecutor
-import com.guan.system.LocalSystemExecutor
+import com.guan.system.Local
 
 /**
  * 用来实现在 Groovy 中像调用方法一样调用系统指令
@@ -11,7 +11,7 @@ import com.guan.system.LocalSystemExecutor
 class Terminal {
     ISystemExecutor exe;
     
-    Terminal() {this.exe = new LocalSystemExecutor();}
+    Terminal() {this.exe = new Local();}
     Terminal(ISystemExecutor exe) {this.exe = exe;}
     
     /** 调用方法则输出到控制台 */

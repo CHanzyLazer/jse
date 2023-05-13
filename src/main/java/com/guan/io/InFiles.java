@@ -20,16 +20,25 @@ import java.util.Set;
 public class InFiles {
     private static abstract class ImmutableInFile extends AbstractMap<String, Object> implements IInFile {
         private final static Map<String, Object> ZL_SETTING = ImmutableMap.of();
-        private final IHasIOFiles mIOFile;
-        public ImmutableInFile() {mIOFile = new IOFiles();}
+        private final IHasIOFiles mIOFiles;
+        public ImmutableInFile() {mIOFiles = new IOFiles();}
         
         /** IOFile stuffs */
-        @Override public final List<String> getIFiles(String aIFileKey) {return mIOFile.getIFiles(aIFileKey);}
-        @Override public final List<String> getOFiles(String aOFileKey) {return mIOFile.getOFiles(aOFileKey);}
-        @Override public final Iterable<String> getIFiles() {return mIOFile.getIFiles();}
-        @Override public final Iterable<String> getOFiles() {return mIOFile.getOFiles();}
-        @Override public final IHasIOFiles setIFiles(String aIFileKey1, String aIFilePath1, Object... aElse) {mIOFile.setIFiles(aIFileKey1, aIFilePath1, aElse); return this;}
-        @Override public final IHasIOFiles setOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {mIOFile.setOFiles(aOFileKey1, aOFilePath1, aElse); return this;}
+        @Override public final List<String> getIFiles(String aIFileKey) {return mIOFiles.getIFiles(aIFileKey);}
+        @Override public final List<String> getOFiles(String aOFileKey) {return mIOFiles.getOFiles(aOFileKey);}
+        @Override public final Iterable<String> getIFiles() {return mIOFiles.getIFiles();}
+        @Override public final Iterable<String> getOFiles() {return mIOFiles.getOFiles();}
+        @Override public final IHasIOFiles putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse) {mIOFiles.putIFiles(aIFileKey1, aIFilePath1, aElse); return this;}
+        @Override public final IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {mIOFiles.putOFiles(aOFileKey1, aOFilePath1, aElse); return this;}
+        
+        @Override public IHasIOFiles setIFile(String aIFileKey, String aIFilePath                      ) {mIOFiles.setIFile(aIFileKey, aIFilePath); return this;}
+        @Override public IHasIOFiles setIFile(String aIFileKey, String aIFilePath, int aStart, int aEnd) {mIOFiles.setIFile(aIFileKey, aIFilePath, aStart, aEnd); return this;}
+        @Override public IHasIOFiles setIFile(String aIFileKey,                    int aStart, int aEnd) {mIOFiles.setIFile(aIFileKey, aStart, aEnd); return this;}
+        @Override public IHasIOFiles setIFile(String aIFileKeySetToSinglePath                          ) {mIOFiles.setIFile(aIFileKeySetToSinglePath); return this;}
+        @Override public IHasIOFiles setOFile(String aOFileKey, String aOFilePath                      ) {mIOFiles.setOFile(aOFileKey, aOFilePath); return this;}
+        @Override public IHasIOFiles setOFile(String aOFileKey, String aOFilePath, int aStart, int aEnd) {mIOFiles.setOFile(aOFileKey, aOFilePath, aStart, aEnd); return this;}
+        @Override public IHasIOFiles setOFile(String aOFileKey,                    int aStart, int aEnd) {mIOFiles.setOFile(aOFileKey, aStart, aEnd); return this;}
+        @Override public IHasIOFiles setOFile(String aOFileKeySetToSinglePath                          ) {mIOFiles.setOFile(aOFileKeySetToSinglePath); return this;}
         
         /** Map stuffs */
         @NotNull @Override public final Set<Entry<String, Object>> entrySet() {return ZL_SETTING.entrySet();}
@@ -37,7 +46,7 @@ public class InFiles {
         /** IInFile stuffs */
         public final void write(String aPath) throws IOException {
             write_(aPath);
-            setIFiles("<self>", aPath);
+            putIFiles("<self>", aPath);
         }
         
         /** stuff to override */
