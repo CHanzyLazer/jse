@@ -18,22 +18,6 @@ public interface IHasIOFiles {
     
     
     /**
-     * 用于设置已有的 IO 文件的接口，为了方便调用逻辑为直接设置主要的属性，
-     * 不受 hook 的影响，因此主要是内部使用
-     * @author liqa
-     */
-    IHasIOFiles setIFilePath    (String aIFileKey, String aIFilePath);
-    IHasIOFiles setIFileSingle  (String aIFileKey                   );
-    IHasIOFiles setIFileStart   (String aIFileKey, int aStart       );
-    IHasIOFiles setIFileEnd     (String aIFileKey, int aEnd         );
-    IHasIOFiles setIFileMultiple(String aIFileKey, int aMultiple    );
-    IHasIOFiles setOFilePath    (String aOFileKey, String aOFilePath);
-    IHasIOFiles setOFileSingle  (String aOFileKey                   );
-    IHasIOFiles setOFileStart   (String aOFileKey, int aStart       );
-    IHasIOFiles setOFileEnd     (String aOFileKey, int aEnd         );
-    IHasIOFiles setOFileMultiple(String aOFileKey, int aMultiple    );
-    
-    /**
      * 添加输入输出的文件路径，返回自身方便链式调用，
      * 输入参数是序列化的，方便使用，格式为：
      * <p>

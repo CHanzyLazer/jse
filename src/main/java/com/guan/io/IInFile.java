@@ -23,17 +23,6 @@ public interface IInFile extends IHasIOFiles, Map<String, Object> {
     void write(String aPath) throws IOException;
     
     /** IOFile stuffs */
-    IInFile setIFilePath    (String aIFileKey, String aIFilePath);
-    IInFile setIFileSingle  (String aIFileKey                   );
-    IInFile setIFileStart   (String aIFileKey, int aStart       );
-    IInFile setIFileEnd     (String aIFileKey, int aEnd         );
-    IInFile setIFileMultiple(String aIFileKey, int aMultiple    );
-    IInFile setOFilePath    (String aOFileKey, String aOFilePath);
-    IInFile setOFileSingle  (String aOFileKey                   );
-    IInFile setOFileStart   (String aOFileKey, int aStart       );
-    IInFile setOFileEnd     (String aOFileKey, int aEnd         );
-    IInFile setOFileMultiple(String aOFileKey, int aMultiple    );
-    
     IInFile putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse       );
     IInFile putIFiles(String aIFileKey1, String aIFilePath1                        );
     IInFile putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        );

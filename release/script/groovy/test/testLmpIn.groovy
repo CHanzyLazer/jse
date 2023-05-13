@@ -61,3 +61,9 @@ println(lmpIn.o().asList());
 
 lmpIn.write('lmp/.temp/in-init-4');
 
+// 现在支持移除所有的附加设置
+lmpIn.clear();
+println('移除所有附加设置之后的输入输出文件');
+println(lmpIn.i().asList());
+println(lmpIn.o().asList());
+

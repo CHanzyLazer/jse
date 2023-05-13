@@ -14,46 +14,21 @@ import java.util.Map;
  */
 public class IOFiles implements IHasIOFiles {
     
-    @SuppressWarnings("UnusedReturnValue")
-    protected static class FileList extends AbstractList<String> {
-        protected int getStart() {return mStart;}
-        protected int getEnd() {return mEnd;}
-        protected String getFilePath() {return mFilePath;}
-        protected FileList setStart(int aStart) {mStart = aStart; return this;}
-        protected FileList setEnd(int aEnd) {mEnd = aEnd; return this;}
-        protected FileList setFilePath(String aFilePath) {mFilePath = aFilePath; return this;}
-        protected FileList setSingle() {mStart = 0; mEnd = -1; return this;}
-        protected FileList setMultiple(int aMultiple) {mStart = 0; mEnd = aMultiple; return this;}
-        
-        private int mStart, mEnd;
-        private String mFilePath;
-        
-        protected FileList(String aSinglePath) {
-            mFilePath = aSinglePath;
-            mStart = 0; mEnd = -1;
-        }
-        protected FileList(String aFilePath, int aMultiple) {
-            mFilePath = aFilePath;
-            mStart = 0; mEnd = aMultiple;
-        }
-        protected FileList(String aFilePath, int aStart, int aEnd) {
-            mFilePath = aFilePath;
-            mStart = aStart; mEnd = aEnd;
-        }
-        // 根据 end 来决定文件路径名称格式
-        protected boolean isSinglePath() {return mEnd < 0;}
-        protected boolean isMultiple() {return mEnd >= 0 && mStart == 0;}
-        protected boolean isStartEnd() {return mStart > 0 && mEnd > 0;}
-        
-        
-        /** List stuffs */
-        @Override public String get(int index) {return isSinglePath() ? mFilePath : mFilePath+"-"+(mStart+index);}
-        @Override public int size() {return isSinglePath() ? 1 : mEnd-mStart;}
+    /** 重写实现自定义的 AbstractFilePathList */
+    protected List<String> toFilePathList(final String aFileKey, final String aFilePath) {return toFilePathList(aFileKey, aFilePath, 0, -1);}
+    protected List<String> toFilePathList(final String aFileKey, final String aFilePath, final int aMultiple) {return toFilePathList(aFileKey, aFilePath, 0, aMultiple);}
+    protected List<String> toFilePathList(final String aFileKey, final String aFilePath, final int aStart, final int aEnd) {
+        return new AbstractFilePathList() {
+            @Override public int start() {return aStart;}
+            @Override public int end() {return aEnd;}
+            @Override public String filePath() {return aFilePath;}
+        };
     }
     
     
-    private final Map<String, FileList> mIFiles;
-    private final Map<String, FileList> mOFiles; // <FileKey, List<FilePath>>
+    
+    private final Map<String, List<String>> mIFiles;
+    private final Map<String, List<String>> mOFiles; // <FileKey, List<FilePath>>
     
     public IOFiles() {
         mIFiles = new HashMap<>();
@@ -65,24 +40,13 @@ public class IOFiles implements IHasIOFiles {
     @Override public final String getIFile(String aIFileKey, int aIndex) {return getIFiles(aIFileKey).get(aIndex);}
     @Override public final String getOFile(String aOFileKey, int aIndex) {return getOFiles(aOFileKey).get(aIndex);}
     
-    @Override public FileList getIFiles(String aIFileKey) {return mIFiles.get(aIFileKey);}
-    @Override public FileList getOFiles(String aOFileKey) {return mOFiles.get(aOFileKey);}
+    @Override public List<String> getIFiles(String aIFileKey) {return mIFiles.get(aIFileKey);}
+    @Override public List<String> getOFiles(String aOFileKey) {return mOFiles.get(aOFileKey);}
     @Override public Iterable<String> getIFiles() {return UT.Code.toIterable(mIFiles.values());}
     @Override public Iterable<String> getOFiles() {return UT.Code.toIterable(mOFiles.values());}
     @Override public Iterable<String> getIFileKeys() {return mIFiles.keySet();}
     @Override public Iterable<String> getOFileKeys() {return mOFiles.keySet();}
     
-    
-    @Override public IOFiles setIFilePath    (String aIFileKey, String aIFilePath) {if (mIFiles.containsKey(aIFileKey)) mIFiles.get(aIFileKey).setFilePath(aIFilePath); return this;}
-    @Override public IOFiles setIFileSingle  (String aIFileKey                   ) {if (mIFiles.containsKey(aIFileKey)) mIFiles.get(aIFileKey).setSingle(); return this;}
-    @Override public IOFiles setIFileStart   (String aIFileKey, int aStart       ) {if (mIFiles.containsKey(aIFileKey)) mIFiles.get(aIFileKey).setStart(aStart); return this;}
-    @Override public IOFiles setIFileEnd     (String aIFileKey, int aEnd         ) {if (mIFiles.containsKey(aIFileKey)) mIFiles.get(aIFileKey).setEnd(aEnd); return this;}
-    @Override public IOFiles setIFileMultiple(String aIFileKey, int aMultiple    ) {if (mIFiles.containsKey(aIFileKey)) mIFiles.get(aIFileKey).setMultiple(aMultiple); return this;}
-    @Override public IOFiles setOFilePath    (String aOFileKey, String aOFilePath) {if (mOFiles.containsKey(aOFileKey)) mOFiles.get(aOFileKey).setFilePath(aOFilePath); return this;}
-    @Override public IOFiles setOFileSingle  (String aOFileKey                   ) {if (mOFiles.containsKey(aOFileKey)) mOFiles.get(aOFileKey).setSingle(); return this;}
-    @Override public IOFiles setOFileStart   (String aOFileKey, int aStart       ) {if (mOFiles.containsKey(aOFileKey)) mOFiles.get(aOFileKey).setStart(aStart); return this;}
-    @Override public IOFiles setOFileEnd     (String aOFileKey, int aEnd         ) {if (mOFiles.containsKey(aOFileKey)) mOFiles.get(aOFileKey).setEnd(aEnd); return this;}
-    @Override public IOFiles setOFileMultiple(String aOFileKey, int aMultiple    ) {if (mOFiles.containsKey(aOFileKey)) mOFiles.get(aOFileKey).setMultiple(aMultiple); return this;}
     
     
     @Override public final IOFiles putIFiles(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[0]                );}
@@ -97,7 +61,7 @@ public class IOFiles implements IHasIOFiles {
     @Override public IOFiles putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {scanAndAddFiles2Dest(mOFiles, UT.Code.merge(aOFileKey1, aOFilePath1, aElse)); return this;}
     
     
-    private static void scanAndAddFiles2Dest(Map<String, FileList> rDest, List<Object> aFiles) {
+    private void scanAndAddFiles2Dest(Map<String, List<String>> rDest, List<Object> aFiles) {
         int idx = 0;
         int tSize = aFiles.size();
         while (idx < tSize) {
@@ -125,11 +89,11 @@ public class IOFiles implements IHasIOFiles {
             }
             // 不在这里判断 End 和类型的关系
             if (tEnd == null) {
-                rDest.put(tKey, new FileList(tPath));
+                rDest.put(tKey, toFilePathList(tKey, tPath));
             } else if (tStart == null) {
-                rDest.put(tKey, new FileList(tPath, tEnd));
+                rDest.put(tKey, toFilePathList(tKey, tPath, tEnd));
             } else {
-                rDest.put(tKey, new FileList(tPath, tStart, tEnd));
+                rDest.put(tKey, toFilePathList(tKey, tPath, tStart, tEnd));
             }
         }
     }
