@@ -9,8 +9,9 @@ import obj.GUT;
 import static com.guan.math.MathEX.Mat
 
 
-
 /** 测试新的更加易用的 SSH */
+// 创建输出目录
+UT.IO.mkdir('.temp');
 
 // 创建 ssh
 SSH_INFO = UT.IO.json2map('.SECRET/SSH_INFO.json');
@@ -20,6 +21,12 @@ ssh = new SSH(SSH_INFO.csrc as Map); // 新的可以直接通过 Map 来构建
 ssh.system('echo 1 > 1.txt');
 ssh.system('ls');
 
+// 指令结果存入文本
+ssh.system('ls', '.temp/ssh-ls');
+
+// 提交任务式，没有指定线程数默认依旧会默认串行执行
+ssh.submitSystem('echo "submitSystem begin"; sleep 1s; echo "submitSystem done"');
+println('MARK');
 
 // 复杂指令（在服务器上计算 gr，带有输入输出，后续会使用 ProgramExecutor 来实现，这里展示直接使用 SystemExecutor 来实现通用的）
 // 由于需要使用 jTool 本身来计算，如果没有初始化需要首先使用这个指令初始化一下 ssh 上的 jTool 环境

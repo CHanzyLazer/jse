@@ -1,10 +1,9 @@
 package com.guan.system;
 
 import com.guan.code.UT;
-import com.guan.io.IHasIOFiles;
 import com.guan.ssh.ServerSSH;
 import com.jcraft.jsch.ChannelExec;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.util.Map;
@@ -20,7 +19,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor {
     final ServerSSH mSSH;
     int mIOThreadNum;
     SSHSystemExecutor(int aThreadNum, int aIOThreadNum, ServerSSH aSSH) throws Exception {
-        super(aThreadNum);
+        super(aThreadNum>0 ? newPool(aThreadNum) : SERIAL_EXECUTOR);
         mIOThreadNum = aIOThreadNum; mSSH = aSSH;
         // 需要初始化一下远程的工作目录，只需要创建目录即可，因为原本 ssh 设计时不是这样初始化的
         // 注意初始化失败时需要抛出异常并且执行关闭操作
@@ -65,7 +64,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor {
      *   "RemoteWorkingDir" > "remoteworkingdir" > "rwd" > "wd"
      *   "BeforeCommand" > "beforecommand" > "bcommand" > "bc"
      * </pre>
-     * 参数 "ThreadNumber" 未选定时默认为 1，参数 "IOThreadNumber" 未选定时默认为 1，"Port" 未选定时默认为 22，
+     * 参数 "ThreadNumber" 未选定时不使用线程池，参数 "IOThreadNumber" 未选定时不开启并行传输，"Port" 未选定时默认为 22，
      * "Password" 未选定时使用 publicKey 密钥认证，"KeyPath" 未选定时使用默认路径的密钥，
      * "CompressLevel" 未选定时不开启压缩，"LocalWorkingDir" 未选定时使用程序运行路径，
      * "RemoteWorkingDir" 未选定时使用 ssh 登录所在的路径
@@ -83,23 +82,23 @@ public class SSHSystemExecutor extends RemoteSystemExecutor {
     
     public final static String[] THREAD_NUMBER_KEYS = {"ThreadNumber", "threadnumber", "ThreadNum", "threadnum", "nThreads", "nthreads", "n"};
     public final static String[] IO_THREAD_NUMBER_KEYS = {"IOThreadNumber", "iothreadnumber", "IOThreadNum", "iothreadnum", "ion"};
-    public static int getThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, 1, (Object[])THREAD_NUMBER_KEYS)).intValue();}
-    public static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, 1, (Object[])IO_THREAD_NUMBER_KEYS)).intValue();}
+    public static int getThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, (Object[])THREAD_NUMBER_KEYS)).intValue();}
+    public static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, (Object[])IO_THREAD_NUMBER_KEYS)).intValue();}
     
     
     
     /** 通过 ssh 直接执行命令 */
     @SuppressWarnings("BusyWait")
-    @Override public int system(String aCommand, @Nullable IPrintln aPrintln) {
+    @Override public int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
         int tExitValue = -1;
         ChannelExec tChannel = null;
-        try {
+        try (IPrintln tPrintln = aPrintln.get()) {
             tChannel = mSSH.systemChannel(aCommand);
-            if (aPrintln != null) {
+            if (tPrintln != null) {
                 try (BufferedReader tReader = UT.IO.toReader(tChannel.getInputStream())) {
                     tChannel.connect();
                     String tLine;
-                    while ((tLine = tReader.readLine()) != null) aPrintln.println(tLine);
+                    while ((tLine = tReader.readLine()) != null) tPrintln.println(tLine);
                 }
             } else {
                 tChannel.connect();
@@ -115,14 +114,11 @@ public class SSHSystemExecutor extends RemoteSystemExecutor {
         }
         return tExitValue;
     }
-    @Override public int system(String aCommand, @Nullable IPrintln aPrintln, IHasIOFiles aIOFiles) {
-        // 带有输入输出的需要先上传输入文件
-        try {if (mIOThreadNum>1) mSSH.putFiles(aIOFiles.getIFiles(), mIOThreadNum); else mSSH.putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return -1;}
-        // 然后执行命令
-        int tExitValue = system(aCommand, aPrintln);
-        // 带有输入输出的还需要在执行完成后下载文件
-        try {if (mIOThreadNum>1) mSSH.getFiles(aIOFiles.getOFiles(), mIOThreadNum); else mSSH.getFiles(aIOFiles.getOFiles());} catch (Exception e) {e.printStackTrace(); return tExitValue==0 ? -1 : tExitValue;}
-        return tExitValue;
+    @Override protected final void putFiles(Iterable<String> aFiles) throws Exception {
+        if (mIOThreadNum>0) mSSH.putFiles(aFiles, mIOThreadNum); else mSSH.putFiles(aFiles);
+    }
+    @Override protected final void getFiles(Iterable<String> aFiles) throws Exception {
+        if (mIOThreadNum>0) mSSH.getFiles(aFiles, mIOThreadNum); else mSSH.getFiles(aFiles);
     }
     
     

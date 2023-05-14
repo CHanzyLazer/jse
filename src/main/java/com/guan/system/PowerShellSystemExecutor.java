@@ -1,6 +1,6 @@
 package com.guan.system;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author liqa
@@ -10,7 +10,7 @@ public class PowerShellSystemExecutor extends LocalSystemExecutor {
     public PowerShellSystemExecutor(int aThreadNum) {super(aThreadNum);}
     public PowerShellSystemExecutor() {super();}
     
-    @Override public int system(String aCommand, @Nullable IPrintln aPrintln) {
-        return super.system("powershell " + aCommand, aPrintln);
+    @Override public int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
+        return super.system_("powershell " + aCommand, aPrintln);
     }
 }

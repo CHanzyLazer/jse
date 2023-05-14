@@ -37,6 +37,11 @@ wsl.system('ls', '.temp/ls.txt');
 wsl.submitSystem('ls; echo submit', '.temp/ls-submit.txt');
 
 
+println("submit 形式也支持获取 list 输出");
+task = wsl.submitSystem_str('sleep 1s; ls');
+println(task.get());
+
+
 // 支持使用 Terminal 这个类来直接像函数一样调用
 terminal = new Terminal(wsl);
 
