@@ -1,8 +1,9 @@
 package com.guan.lmp;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
-@Deprecated
+@VisibleForTesting
 public final class Data extends Lmpdat {
     public Data(int aAtomTypeNum, Box aBox, double @Nullable [] aMasses, double[][] aAtomData) {super(aAtomTypeNum, aBox, aMasses, aAtomData);}
     public Data(int aAtomTypeNum, Box aBox, double[][] aAtomData) {super(aAtomTypeNum, aBox, aAtomData);}

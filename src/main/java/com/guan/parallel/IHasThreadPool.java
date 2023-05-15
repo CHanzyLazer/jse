@@ -1,5 +1,7 @@
 package com.guan.parallel;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 /**
  * @author liqa
  * <p> 用来统一管理包含 ThreadPool 的类 </p>
@@ -15,8 +17,8 @@ public interface IHasThreadPool extends AutoCloseable {
     int nTasks();
     int nThreads();
     
-    @Deprecated default int getTaskNumber() {return nTasks();}
+    @VisibleForTesting default int getTaskNumber() {return nTasks();}
     
     /** AutoClosable stuffs */
-    @Deprecated default void close() {shutdown();}
+    @VisibleForTesting default void close() {shutdown();}
 }

@@ -7,6 +7,7 @@ import com.guan.parallel.IExecutorEX;
 import com.guan.system.SSHSystemExecutor;
 import com.jcraft.jsch.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.concurrent.Callable;
 @SuppressWarnings({"UnusedReturnValue", "BusyWait"})
 public final class ServerSSH implements AutoCloseable {
     /** AutoClosable stuffs */
-    @Deprecated public void close() {shutdown();}
+    @VisibleForTesting public void close() {shutdown();}
     
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;

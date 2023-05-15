@@ -2,6 +2,7 @@ package com.guan.plot;
 
 
 import com.guan.code.UT;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.awt.*;
 import java.util.Collection;
@@ -39,8 +40,8 @@ public interface IPlotter {
     IPlotter title(String aTitle);
     IPlotter xLabel(String aXLabel);
     IPlotter yLabel(String aYLabel);
-    @Deprecated default IPlotter xlabel(String aXLabel) {return xLabel(aXLabel);}
-    @Deprecated default IPlotter ylabel(String aYLabel) {return yLabel(aYLabel);}
+    @VisibleForTesting default IPlotter xlabel(String aXLabel) {return xLabel(aXLabel);}
+    @VisibleForTesting default IPlotter ylabel(String aYLabel) {return yLabel(aYLabel);}
     
     IPlotter fontTitle(Font aFont);
     IPlotter fontLabel(Font aFont);
@@ -52,7 +53,7 @@ public interface IPlotter {
     IPlotter yRange(double aMin, double aMax);
     default IPlotter axis(double aMin, double aMax) {return axis(aMin, aMax, aMin, aMax);}
     default IPlotter axis(double aXMin, double aXMax, double aYMin, double aYMax) {return xRange(aXMin, aXMax).yRange(aYMin, aYMax);}
-    @Deprecated default IPlotter axis(double[] aAxis) {return axis(aAxis[0], aAxis[1], aAxis[2], aAxis[3]);}
+    @VisibleForTesting default IPlotter axis(double[] aAxis) {return axis(aAxis[0], aAxis[1], aAxis[2], aAxis[3]);}
     
     /** 设置 tick 间隔 */
     IPlotter xTick(double aTick);

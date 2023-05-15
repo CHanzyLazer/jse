@@ -1,5 +1,7 @@
 package com.guan.io;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 import java.util.List;
 
 @SuppressWarnings("UnusedReturnValue")
@@ -41,19 +43,19 @@ public interface IHasIOFiles {
     IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
     
     
-    @Deprecated default String i(String aIFileKey, int aIndex) {return getIFile(aIFileKey, aIndex);}
-    @Deprecated default String o(String aOFileKey, int aIndex) {return getOFile(aOFileKey, aIndex);}
-    @Deprecated default String i(String aIFileKey) {return getIFile(aIFileKey);}
-    @Deprecated default String o(String aOFileKey) {return getOFile(aOFileKey);}
-    @Deprecated default Iterable<String> i() {return getIFiles();}
-    @Deprecated default Iterable<String> o() {return getOFiles();}
+    @VisibleForTesting default String i(String aIFileKey, int aIndex) {return getIFile(aIFileKey, aIndex);}
+    @VisibleForTesting default String o(String aOFileKey, int aIndex) {return getOFile(aOFileKey, aIndex);}
+    @VisibleForTesting default String i(String aIFileKey) {return getIFile(aIFileKey);}
+    @VisibleForTesting default String o(String aOFileKey) {return getOFile(aOFileKey);}
+    @VisibleForTesting default Iterable<String> i() {return getIFiles();}
+    @VisibleForTesting default Iterable<String> o() {return getOFiles();}
     
-    @Deprecated IHasIOFiles i(String aIFileKey1, String aIFilePath1, Object... aElse       );
-    @Deprecated IHasIOFiles i(String aIFileKey1, String aIFilePath1                        );
-    @Deprecated IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    @Deprecated IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    @Deprecated IHasIOFiles o(String aOFileKey1, String aOFilePath1, Object... aElse       );
-    @Deprecated IHasIOFiles o(String aOFileKey1, String aOFilePath1                        );
-    @Deprecated IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    @Deprecated IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, Object... aElse       );
+    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1                        );
+    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
+    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, Object... aElse       );
+    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1                        );
+    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
+    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
 }

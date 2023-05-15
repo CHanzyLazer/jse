@@ -2,6 +2,7 @@ package com.guan.atom;
 
 import com.guan.math.MathEX;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * @author liqa
@@ -107,8 +108,8 @@ public abstract class AbstractAtomData implements IHasAtomData {
     public MonatomicParameterCalculator getMonatomicParameterCalculator    (                         ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()                 );}
     public MonatomicParameterCalculator getMonatomicParameterCalculator    (           int aThreadNum) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()     , aThreadNum);}
     public MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ(aType)            );}
-    public MonatomicParameterCalculator getMPC                             (                         ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()                 );}
-    public MonatomicParameterCalculator getMPC                             (           int aThreadNum) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()     , aThreadNum);}
-    public MonatomicParameterCalculator getTypeMPC                         (int aType                ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ(aType)            );}
-    public MonatomicParameterCalculator getTypeMPC                         (int aType, int aThreadNum) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ(aType), aThreadNum);}
+    @VisibleForTesting public MonatomicParameterCalculator getMPC          (                         ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()                 );}
+    @VisibleForTesting public MonatomicParameterCalculator getMPC          (           int aThreadNum) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ()     , aThreadNum);}
+    @VisibleForTesting public MonatomicParameterCalculator getTypeMPC      (int aType                ) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ(aType)            );}
+    @VisibleForTesting public MonatomicParameterCalculator getTypeMPC      (int aType, int aThreadNum) {return new MonatomicParameterCalculator(getIHasOrthogonalXYZ(aType), aThreadNum);}
 }

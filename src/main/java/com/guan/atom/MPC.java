@@ -1,6 +1,8 @@
 package com.guan.atom;
 
-@Deprecated
+import org.jetbrains.annotations.VisibleForTesting;
+
+@VisibleForTesting
 public final class MPC extends MonatomicParameterCalculator {
     public MPC(IHasOrthogonalXYZ aHasOrthogonalXYZ) {super(aHasOrthogonalXYZ);}
     public MPC(IHasOrthogonalXYZ aHasOrthogonalXYZ, int aThreadNum) {super(aHasOrthogonalXYZ, aThreadNum);}

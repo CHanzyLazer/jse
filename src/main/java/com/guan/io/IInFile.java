@@ -1,5 +1,7 @@
 package com.guan.io;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -32,12 +34,12 @@ public interface IInFile extends IHasIOFiles, Map<String, Object> {
     IInFile putOFiles(String aOFileKey1, String aOFilePath1, int aMultiple1        );
     IInFile putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
     
-    @Deprecated IInFile i(String aIFileKey1, String aIFilePath1, Object... aElse       );
-    @Deprecated IInFile i(String aIFileKey1, String aIFilePath1                        );
-    @Deprecated IInFile i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    @Deprecated IInFile i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    @Deprecated IInFile o(String aOFileKey1, String aOFilePath1, Object... aElse       );
-    @Deprecated IInFile o(String aOFileKey1, String aOFilePath1                        );
-    @Deprecated IInFile o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    @Deprecated IInFile o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, Object... aElse       );
+    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1                        );
+    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
+    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, Object... aElse       );
+    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1                        );
+    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
+    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
 }

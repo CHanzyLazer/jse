@@ -1,5 +1,7 @@
 package com.guan.plot;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 import java.awt.*;
 
 import static com.guan.plot.Shapes.*;
@@ -19,12 +21,12 @@ public interface ILine {
     default ILine color(String aColor) {return color(toColor(aColor));}
     ILine color(Paint aPaint);
     
-    @Deprecated default ILine width(double aLineWidth) {return lineWidth(aLineWidth);}
-    @Deprecated default ILine lineSize(double aLineWidth) {return lineWidth(aLineWidth);}
+    @VisibleForTesting default ILine width(double aLineWidth) {return lineWidth(aLineWidth);}
+    @VisibleForTesting default ILine lineSize(double aLineWidth) {return lineWidth(aLineWidth);}
     ILine lineWidth(double aLineWidth);
     
-    @Deprecated default ILine type(LineType aLineType) {return lineType(aLineType);}
-    @Deprecated default ILine type(String aLineType) {return lineType(aLineType);}
+    @VisibleForTesting default ILine type(LineType aLineType) {return lineType(aLineType);}
+    @VisibleForTesting default ILine type(String aLineType) {return lineType(aLineType);}
     default ILine lineType(String aLineType) {return lineType(toLineType(aLineType));}
     ILine lineType(LineType aLineType);
     ILine lineStroke(Stroke aLineStroke);
@@ -35,11 +37,11 @@ public interface ILine {
     default ILine markerColor(String aColor) {return markerColor(toColor(aColor));}
     ILine markerColor(Paint aPaint);
     
-    @Deprecated default ILine size(double aSize) {return markerSize(aSize);}
+    @VisibleForTesting default ILine size(double aSize) {return markerSize(aSize);}
     ILine markerSize(double aSize);
     
-    @Deprecated default ILine marker(MarkerType aMarkerType) {return markerType(aMarkerType);}
-    @Deprecated default ILine marker(String aMarkerType) {return markerType(aMarkerType);}
+    @VisibleForTesting default ILine marker(MarkerType aMarkerType) {return markerType(aMarkerType);}
+    @VisibleForTesting default ILine marker(String aMarkerType) {return markerType(aMarkerType);}
     default ILine markerType(String aMarkerType) {return markerType(toMarkerType(aMarkerType));}
     ILine markerType(MarkerType aMarkerType);
     ILine markerShape(Shape aMarkerShape);

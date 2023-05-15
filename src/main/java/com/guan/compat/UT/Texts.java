@@ -1,6 +1,7 @@
 package com.guan.compat.UT;
 
 import com.guan.code.UT;
+import org.jetbrains.annotations.VisibleForTesting;
 
-@Deprecated
+@VisibleForTesting
 public final class Texts extends UT.Texts{}

@@ -2,6 +2,7 @@ package com.guan.lmp;
 
 import com.guan.io.AbstractInFileLines;
 import com.guan.code.UT;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -64,5 +65,5 @@ public class LmpIn extends AbstractInFileLines {
     public static LmpIn RESTART_MELT_NPT_Cu() {LmpIn tLmpIn = new LmpIn("restart-melt-NPT-Cu", true); tLmpIn.putIFiles("vInRestartPath" , "lmp/.temp/restart/melt-Cu108-init").putOFiles("vOutRestartPath", "lmp/.temp/restart/melt-Cu108", 5).setIOFilesStartKey("vBeginIdx", "vOutRestartPath").setIOFileEndKey("vEndIdx", "vOutRestartPath"); return tLmpIn;}
     
     /** 默认行为 */
-    @Deprecated public static LmpIn get(String aLmpInPath) {return custom(aLmpInPath);}
+    @VisibleForTesting public static LmpIn get(String aLmpInPath) {return custom(aLmpInPath);}
 }
