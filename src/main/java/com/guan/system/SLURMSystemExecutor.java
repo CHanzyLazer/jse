@@ -2,6 +2,7 @@ package com.guan.system;
 
 
 import com.guan.code.UT;
+import com.guan.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -143,7 +144,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
     }
     /** run 使用 srun 指令，submit 使用 sbatch 指令，内部提交一个运行 srun 的脚本 */
     @Override protected String getRunCommand(String aCommand, @Nullable String aOutFilePath) {
-        int tNodeNum = (int)Math.ceil(mTaskNum / (double) mMaxTaskNumPerNode);
+        int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装指令
         List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");
@@ -163,7 +164,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         return String.join(" ", rRunCommand);
     }
     @Override protected String getSubmitCommand(String aCommand, @Nullable String aOutFilePath) {
-        int tNodeNum = (int)Math.ceil(mTaskNum / (double) mMaxTaskNumPerNode);
+        int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装运行指令
         List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");
@@ -214,7 +215,10 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         }
         if (tValid) return rJobIDs;
         // 不合法时会输出不合法的结果，由于这个操作是长期的且是允许的，因此会输出到 out 并且可以通过 noConsoleOutput 抑制
-        if (!noConsoleOutput()) for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+        if (!noConsoleOutput()) {
+            System.err.println("WARNING: getRunningJobIDsFromSystem Fail, it is usually the network issue, the output from the remote server:");
+            for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+        }
         return null;
     }
     /** 取消指定任务 ID 的任务，返回是否取消成功（已经完成的也会返回 false）*/
@@ -232,7 +236,10 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         }
         if (tValid) return true; // 不一定真的成功取消了，但是这里还是返回 true
         // 失败时输出失败的结果，由于这个操作是允许的，因此会输出到 out 并且可以通过 noConsoleOutput 抑制
-        if (!noConsoleOutput()) for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+        if (!noConsoleOutput()) {
+            System.err.println("WARNING: cancelJobFromSystem Fail, the output from the remote server:");
+            for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+        }
         return false;
     }
     /** 取消这个对象提交的所有任务，子类重写来优化避免重复的提交指令 */

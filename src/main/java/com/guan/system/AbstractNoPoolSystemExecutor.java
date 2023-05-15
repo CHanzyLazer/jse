@@ -113,7 +113,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
                         // 进行移除
                         tIt.remove();
                         // 指定对应的 Future 已经完成
-                        tFutureJob.done(0); // 我也不知道退出码是多少，没有别的问题直接统一认为是 0
+                        tFutureJob.done(0); // 放弃获取具体的退出码，直接统一认为是 0
                     }
                 }
                 // 移除完成后检测并行数目是否合适，合适则继续添加任务
@@ -179,7 +179,11 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
                 if (!mSystemCommand.mNoOutput) for (String tLine : tOutList) System.out.println(tLine);
             } else {
                 // 提交不成功则输出到 err，并且不考虑 NoOutput
-                for (String tLine : tOutList) System.err.println(tLine);
+                System.err.println("ERROR: submitSystemCommand Fail, the submit command is:");
+                System.out.println(mSystemCommand.mSubmitCommand);
+                System.err.println("the remote server output is:");
+                for (String tLine : tOutList) System.out.println(tLine);
+                System.err.println("Will still try to get the output files, so you may also receive the IOException");
             }
             // 提交完成后设置 mSystemCommand 为 null，避免重复提交
             mSystemCommand = null;
