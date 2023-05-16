@@ -3,7 +3,6 @@ package com.guan.system;
 import com.guan.code.UT;
 import com.guan.ssh.ServerSSH;
 import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.JSchException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -117,14 +116,14 @@ public class SSHSystemExecutor extends RemoteSystemExecutor {
         ChannelExec tChannel = null;
         try (IPrintln tPrintln = aPrintln.get()) {
             tChannel = mSSH.systemChannel(aCommand);
-            if (tPrintln != null) {
+            if (noConsoleOutput()) {
+                tChannel.connect();
+            } else {
                 try (BufferedReader tReader = UT.IO.toReader(tChannel.getInputStream())) {
                     tChannel.connect();
                     String tLine;
                     while ((tLine = tReader.readLine()) != null) tPrintln.println(tLine);
                 }
-            } else {
-                tChannel.connect();
             }
             // 手动等待直到结束
             while (!tChannel.isEOF()) Thread.sleep(100);

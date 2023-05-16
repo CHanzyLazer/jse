@@ -25,21 +25,17 @@ public interface IInFile extends IHasIOFiles, Map<String, Object> {
     void write(String aPath) throws IOException;
     
     /** IOFile stuffs */
-    IInFile putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse       );
-    IInFile putIFiles(String aIFileKey1, String aIFilePath1                        );
-    IInFile putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    IInFile putIFiles(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    IInFile putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse       );
-    IInFile putOFiles(String aOFileKey1, String aOFilePath1                        );
-    IInFile putOFiles(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    IInFile putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    IInFile putIFiles(String aIFileKey, String aIFilePath                      );
+    IInFile putIFiles(String aIFileKey, String aIFilePath, int aMultiple       );
+    IInFile putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    IInFile putOFiles(String aOFileKey, String aOFilePath                      );
+    IInFile putOFiles(String aOFileKey, String aOFilePath, int aMultiple       );
+    IInFile putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd);
     
-    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, Object... aElse       );
-    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1                        );
-    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    @VisibleForTesting IInFile i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, Object... aElse       );
-    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1                        );
-    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    @VisibleForTesting IInFile o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IInFile i(String aIFileKey, String aIFilePath                      );
+    @VisibleForTesting IInFile i(String aIFileKey, String aIFilePath, int aMultiple       );
+    @VisibleForTesting IInFile i(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    @VisibleForTesting IInFile o(String aOFileKey, String aOFilePath                      );
+    @VisibleForTesting IInFile o(String aOFileKey, String aOFilePath, int aMultiple       );
+    @VisibleForTesting IInFile o(String aOFileKey, String aOFilePath, int aStart, int aEnd);
 }

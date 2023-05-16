@@ -50,7 +50,7 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
                 }
             }).start();
             // 读取执行的输出（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
-            if (tPrintln != null) try (BufferedReader tOutReader = UT.IO.toReader(fProcess.getInputStream())) {
+            if (!noConsoleOutput()) try (BufferedReader tOutReader = UT.IO.toReader(fProcess.getInputStream())) {
                 String tLine;
                 while ((tLine = tOutReader.readLine()) != null) tPrintln.println(tLine);
             }

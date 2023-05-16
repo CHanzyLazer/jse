@@ -4,6 +4,7 @@ package com.guan.kmc;
 import com.guan.code.UT;
 import com.guan.math.MathEX;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -86,13 +87,13 @@ public class BiTrapSimple {
     public double concentrationLow() {return mNlo/(double)numberTotal();}
     public double concentrationHigh() {return mNhi/(double)numberTotal();}
     
-    @Deprecated public double Etot() {return energyTotal();}
-    @Deprecated public double Epar() {return energyParticle();}
-    @Deprecated public double clo() {return concentrationLow();}
-    @Deprecated public double chi() {return concentrationHigh();}
-    @Deprecated public int Nlo() {return numberLow();}
-    @Deprecated public int Nhi() {return numberHigh();}
-    @Deprecated public int Ntot() {return numberTotal();}
+    @VisibleForTesting public double Etot() {return energyTotal();}
+    @VisibleForTesting public double Epar() {return energyParticle();}
+    @VisibleForTesting public double clo() {return concentrationLow();}
+    @VisibleForTesting public double chi() {return concentrationHigh();}
+    @VisibleForTesting public int Nlo() {return numberLow();}
+    @VisibleForTesting public int Nhi() {return numberHigh();}
+    @VisibleForTesting public int Ntot() {return numberTotal();}
     
     /// 进行模拟
     private boolean mEnd = false;

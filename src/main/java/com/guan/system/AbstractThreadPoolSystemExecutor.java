@@ -1,18 +1,17 @@
 package com.guan.system;
 
-import com.guan.io.IHasIOFiles;
 import com.guan.code.UT;
+import com.guan.io.IHasIOFiles;
 import com.guan.io.MergedIOFiles;
 import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 
@@ -23,23 +22,23 @@ import java.util.function.Supplier;
 public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
     protected AbstractThreadPoolSystemExecutor(IExecutorEX aPool) {super(aPool);}
     
+    private boolean mNoConsoleOutput = false;
+    @Override public final ISystemExecutor setNoConsoleOutput(boolean aNoConsoleOutput) {mNoConsoleOutput = aNoConsoleOutput; return this;}
+    @Override public final boolean noConsoleOutput() {return mNoConsoleOutput;}
     
-    @Override public final int system_NO(String aCommand                                                 ) {return system_(aCommand, () -> null);} // No Output
-    @Override public final int system   (String aCommand                                                 ) {return system_(aCommand, this::outPrintln);}
-    @Override public final int system   (String aCommand, final String aOutFilePath                      ) {return system_(aCommand, () -> filePrintln(aOutFilePath));}
-    @Override public final int system_NO(String aCommand                           , IHasIOFiles aIOFiles) {return system_(aCommand, () -> null, aIOFiles);} // No Output
-    @Override public final int system   (String aCommand                           , IHasIOFiles aIOFiles) {return system_(aCommand, this::outPrintln, aIOFiles);}
-    @Override public final int system   (String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return system_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
+    
+    @Override public final int system(String aCommand                                                 ) {return system_(aCommand, this::outPrintln);}
+    @Override public final int system(String aCommand, final String aOutFilePath                      ) {return system_(aCommand, () -> filePrintln(aOutFilePath));}
+    @Override public final int system(String aCommand                           , IHasIOFiles aIOFiles) {return system_(aCommand, this::outPrintln, aIOFiles);}
+    @Override public final int system(String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return system_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
     @Override public final List<String> system_str(String aCommand                      ) {final List<String> rList = new ArrayList<>(); system_(aCommand, () -> listPrintln(rList)          ); return rList;}
     @Override public final List<String> system_str(String aCommand, IHasIOFiles aIOFiles) {final List<String> rList = new ArrayList<>(); system_(aCommand, () -> listPrintln(rList), aIOFiles); return rList;}
     
     
-    @Override public final Future<Integer> submitSystem_NO(String aCommand                                                 ) {return submitSystem_(aCommand, () -> null);} // No Output
-    @Override public final Future<Integer> submitSystem   (String aCommand                                                 ) {return submitSystem_(aCommand, this::outPrintln);}
-    @Override public final Future<Integer> submitSystem   (String aCommand, final String aOutFilePath                      ) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath));}
-    @Override public final Future<Integer> submitSystem_NO(String aCommand                           , IHasIOFiles aIOFiles) {return submitSystem_(aCommand, () -> null, aIOFiles);} // No Output
-    @Override public final Future<Integer> submitSystem   (String aCommand                           , IHasIOFiles aIOFiles) {return submitSystem_(aCommand, this::outPrintln, aIOFiles);}
-    @Override public final Future<Integer> submitSystem   (String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
+    @Override public final Future<Integer> submitSystem(String aCommand                                                 ) {return submitSystem_(aCommand, this::outPrintln);}
+    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath                      ) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath));}
+    @Override public final Future<Integer> submitSystem(String aCommand                           , IHasIOFiles aIOFiles) {return submitSystem_(aCommand, this::outPrintln, aIOFiles);}
+    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
     
     @Override public final Future<List<String>> submitSystem_str(String aCommand) {
         final List<String> rList = new ArrayList<>();
@@ -78,7 +77,7 @@ public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThread
     /** only support println */
     protected interface IPrintln extends AutoCloseable {void println(String aLine); void close();}
     /** submit 相关需要使用 supplier，只在需要输入的时候进行创建 */
-    @FunctionalInterface protected interface IPrintlnSupplier extends Supplier<IPrintln> {@Nullable IPrintln get();}
+    @FunctionalInterface protected interface IPrintlnSupplier extends Supplier<IPrintln> {@NotNull IPrintln get();}
     /** 不使用静态方法方便子类重写 */
     protected IPrintln outPrintln() {
         return new IPrintln() {

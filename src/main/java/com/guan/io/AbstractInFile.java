@@ -76,8 +76,6 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     /** IOFile stuffs */
     @Override public final IHasIOFiles copy() {return mIOFiles.copy();}
     
-    @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse) {mIOFiles.putIFiles(aIFileKey1, aIFilePath1, aElse); return this;}
-    @Override public final AbstractInFile putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {mIOFiles.putOFiles(aOFileKey1, aOFilePath1, aElse); return this;}
     
     @Override public final Iterable<String> getIFiles(String aIFileKey) {return mIOFiles.getIFiles(aIFileKey);}
     @Override public final Iterable<String> getOFiles(String aOFileKey) {return mIOFiles.getOFiles(aOFileKey);}
@@ -86,21 +84,19 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     @Override public final Iterable<String> getIFileKeys() {return mIOFiles.getIFileKeys();}
     @Override public final Iterable<String> getOFileKeys() {return mIOFiles.getOFileKeys();}
     
-    @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[0]                );}
-    @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[] {aMultiple1    });}
-    @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1) {return putIFiles(aIFileKey1, aIFilePath1, new Object[] {aStart1, aEnd1});}
-    @Override public final AbstractInFile putOFiles(String aOFileKey1, String aOFilePath1                        ) {return putOFiles(aOFileKey1, aOFilePath1, new Object[0]                );}
-    @Override public final AbstractInFile putOFiles(String aOFileKey1, String aOFilePath1, int aMultiple1        ) {return putOFiles(aOFileKey1, aOFilePath1, new Object[] {aMultiple1    });}
-    @Override public final AbstractInFile putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1) {return putOFiles(aOFileKey1, aOFilePath1, new Object[] {aStart1, aEnd1});}
+    @Override public final AbstractInFile putIFiles(String aIFileKey, String aIFilePath                      ) {mIOFiles.putIFiles(aIFileKey, aIFilePath              ); return this;}
+    @Override public final AbstractInFile putIFiles(String aIFileKey, String aIFilePath, int aMultiple       ) {mIOFiles.putIFiles(aIFileKey, aIFilePath, aMultiple   ); return this;}
+    @Override public final AbstractInFile putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd) {mIOFiles.putIFiles(aIFileKey, aIFilePath, aStart, aEnd); return this;}
+    @Override public final AbstractInFile putOFiles(String aOFileKey, String aOFilePath                      ) {mIOFiles.putOFiles(aOFileKey, aOFilePath              ); return this;}
+    @Override public final AbstractInFile putOFiles(String aOFileKey, String aOFilePath, int aMultiple       ) {mIOFiles.putOFiles(aOFileKey, aOFilePath, aMultiple   ); return this;}
+    @Override public final AbstractInFile putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd) {mIOFiles.putOFiles(aOFileKey, aOFilePath, aStart, aEnd); return this;}
     
-    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey1, String aIFilePath1, Object... aElse       ) {return putIFiles(aIFileKey1, aIFilePath1, aElse);}
-    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1                );}
-    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey1, String aIFilePath1, int aMultiple1        ) {return putIFiles(aIFileKey1, aIFilePath1, aMultiple1    );}
-    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1) {return putIFiles(aIFileKey1, aIFilePath1, aStart1, aEnd1);}
-    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey1, String aOFilePath1, Object... aElse       ) {return putOFiles(aOFileKey1, aOFilePath1, aElse);}
-    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey1, String aOFilePath1                        ) {return putOFiles(aOFileKey1, aOFilePath1                );}
-    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey1, String aOFilePath1, int aMultiple1        ) {return putOFiles(aOFileKey1, aOFilePath1, aMultiple1    );}
-    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1) {return putOFiles(aOFileKey1, aOFilePath1, aStart1, aEnd1);}
+    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey, String aIFilePath                      ) {return putIFiles(aIFileKey, aIFilePath              );}
+    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey, String aIFilePath, int aMultiple       ) {return putIFiles(aIFileKey, aIFilePath, aMultiple   );}
+    @VisibleForTesting @Override public final AbstractInFile i(String aIFileKey, String aIFilePath, int aStart, int aEnd) {return putIFiles(aIFileKey, aIFilePath, aStart, aEnd);}
+    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey, String aOFilePath                      ) {return putOFiles(aOFileKey, aOFilePath              );}
+    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey, String aOFilePath, int aMultiple       ) {return putOFiles(aOFileKey, aOFilePath, aMultiple   );}
+    @VisibleForTesting @Override public final AbstractInFile o(String aOFileKey, String aOFilePath, int aStart, int aEnd) {return putOFiles(aOFileKey, aOFilePath, aStart, aEnd);}
     
     
     /** Map stuffs */

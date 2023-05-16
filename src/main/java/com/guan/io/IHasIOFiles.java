@@ -1,6 +1,5 @@
 package com.guan.io;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -42,25 +41,21 @@ public interface IHasIOFiles {
     Iterable<String> getOFileKeys();
     
     
-    // TODO 移除 aElse 的写法，实现需要大量额外代码，可读性和扩展性都不好
     /**
-     * 添加输入输出的文件路径，返回自身方便链式调用，
-     * 输入参数是序列化的，方便使用，格式为：
+     * 添加输入输出的文件路径，返回自身方便链式调用，输入参数格式为：
      * <p>
-     * FileKey1, FilePath1, [start1], [end1], FileKey2, FilePath2, [start2], [end2], ...
+     * FileKey, FilePath, [start], [end]
      * <p>
      * 提供 [start], [end] 则认为 FilePath 有多个，名称为 ${InFilePath}-${i}, i 会从 start 依次增加到 end。
      * 注意这里由于是 java，约定默认 start 为 0，且 end 是不包含的，和其他的使用到 start 和 end 的操作保持一致
      * @author liqa
      */
-    @ApiStatus.Obsolete IHasIOFiles putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse);
-    IHasIOFiles putIFiles(String aIFileKey1, String aIFilePath1                        );
-    IHasIOFiles putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    IHasIOFiles putIFiles(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    @ApiStatus.Obsolete IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse);
-    IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1                        );
-    IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    IHasIOFiles putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath                      );
+    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath, int aMultiple       );
+    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath                      );
+    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath, int aMultiple       );
+    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd);
     
     
     @VisibleForTesting default String i(String aIFileKey, int aIndex) {return getIFile(aIFileKey, aIndex);}
@@ -70,12 +65,10 @@ public interface IHasIOFiles {
     @VisibleForTesting default Iterable<String> i() {return getIFiles();}
     @VisibleForTesting default Iterable<String> o() {return getOFiles();}
     
-    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, Object... aElse       );
-    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1                        );
-    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aMultiple1        );
-    @VisibleForTesting IHasIOFiles i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1);
-    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, Object... aElse       );
-    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1                        );
-    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aMultiple1        );
-    @VisibleForTesting IHasIOFiles o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1);
+    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath                      );
+    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath, int aMultiple       );
+    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath                      );
+    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath, int aMultiple       );
+    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath, int aStart, int aEnd);
 }

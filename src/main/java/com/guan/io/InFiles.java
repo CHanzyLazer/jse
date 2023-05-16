@@ -4,6 +4,7 @@ package com.guan.io;
 import com.google.common.collect.ImmutableMap;
 import com.guan.code.UT;
 import com.guan.lmp.LmpIn;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -18,5 +19,5 @@ public class InFiles {
     public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {@Override public void write_(String aPath) throws IOException {UT.IO.copy(aInFilePath, aPath);}};}
     
     /** 默认行为 */
-    @Deprecated public static IInFile get(String aInFilePath) {return immutable(aInFilePath);}
+    @VisibleForTesting public static IInFile get(String aInFilePath) {return immutable(aInFilePath);}
 }

@@ -1,9 +1,12 @@
 package com.guan.io;
 
 
-import com.guan.code.UT;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static com.guan.code.CS.IFILE_KEY;
 import static com.guan.code.CS.OFILE_KEY;
@@ -46,61 +49,18 @@ public class MergedIOFiles implements IHasIOFiles {
     
     
     
-    @Override public final MergedIOFiles putIFiles(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[0]                );}
-    @Override public final MergedIOFiles putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[] {aMultiple1    });}
-    @Override public final MergedIOFiles putIFiles(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1) {return putIFiles(aIFileKey1, aIFilePath1, new Object[] {aStart1, aEnd1});}
-    @Override public final MergedIOFiles putOFiles(String aOFileKey1, String aOFilePath1                        ) {return putOFiles(aOFileKey1, aOFilePath1, new Object[0]                );}
-    @Override public final MergedIOFiles putOFiles(String aOFileKey1, String aOFilePath1, int aMultiple1        ) {return putOFiles(aOFileKey1, aOFilePath1, new Object[] {aMultiple1    });}
-    @Override public final MergedIOFiles putOFiles(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1) {return putOFiles(aOFileKey1, aOFilePath1, new Object[] {aStart1, aEnd1});}
+    @Override public final MergedIOFiles putIFiles(String aIFileKey, String aIFilePath                      ) {mIFiles.add(aIFilePath); return this;}
+    @Override public final MergedIOFiles putIFiles(String aIFileKey, String aIFilePath, int aMultiple       ) {for (int i = 0; i < aMultiple; ++i) mIFiles.add(aIFilePath+"-"+i); return this;}
+    @Override public final MergedIOFiles putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd) {for (int i = aStart; i < aEnd; ++i) mIFiles.add(aIFilePath+"-"+i); return this;}
+    @Override public final MergedIOFiles putOFiles(String aOFileKey, String aOFilePath                      ) {mOFiles.add(aOFilePath); return this;}
+    @Override public final MergedIOFiles putOFiles(String aOFileKey, String aOFilePath, int aMultiple       ) {for (int i = 0; i < aMultiple; ++i) mOFiles.add(aOFilePath+"-"+i); return this;}
+    @Override public final MergedIOFiles putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd) {for (int i = aStart; i < aEnd; ++i) mOFiles.add(aOFilePath+"-"+i); return this;}
     
     
-    @Override public MergedIOFiles putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse) {scanAndAddFiles2Dest(mIFiles, UT.Code.merge(aIFileKey1, aIFilePath1, aElse)); return this;}
-    @Override public MergedIOFiles putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {scanAndAddFiles2Dest(mOFiles, UT.Code.merge(aOFileKey1, aOFilePath1, aElse)); return this;}
-    
-    
-    private void scanAndAddFiles2Dest(Set<String> rDest, List<Object> aFiles) {
-        int idx = 0;
-        int tSize = aFiles.size();
-        while (idx < tSize) {
-            // 获取 key
-            Object
-            tNext = aFiles.get(idx); ++idx;
-            if (!(tNext instanceof String)) continue;
-            // 获取 path
-            tNext = idx<tSize ? aFiles.get(idx) : null; ++idx;
-            if (!(tNext instanceof String)) continue;
-            String tPath = (String)tNext;
-            // 通过检测后两个来获取可选的 start 和 end
-            Integer tStart = null, tEnd = null;
-            tNext = idx<tSize ? aFiles.get(idx) : null;
-            if (tNext instanceof Number) {
-                tEnd = ((Number)tNext).intValue();
-                ++idx;
-                tNext = idx<tSize ? aFiles.get(idx) : null;
-                if (tNext instanceof Number) {
-                    tStart = tEnd;
-                    tEnd = ((Number)tNext).intValue();
-                    ++idx;
-                }
-            }
-            // 这里直接添加即可
-            if (tEnd == null) {
-                rDest.add(tPath);
-            } else if (tStart == null) {
-                for (int i = 0; i < tEnd; ++i) rDest.add(tPath+"-"+i);
-            } else {
-                for (int i = tStart; i < tEnd; ++i) rDest.add(tPath+"-"+i);
-            }
-        }
-    }
-    
-    
-    @Deprecated @Override public final MergedIOFiles i(String aIFileKey1, String aIFilePath1, Object... aElse       ) {return putIFiles(aIFileKey1, aIFilePath1, aElse);}
-    @Deprecated @Override public final MergedIOFiles i(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1                );}
-    @Deprecated @Override public final MergedIOFiles i(String aIFileKey1, String aIFilePath1, int aMultiple1        ) {return putIFiles(aIFileKey1, aIFilePath1, aMultiple1    );}
-    @Deprecated @Override public final MergedIOFiles i(String aIFileKey1, String aIFilePath1, int aStart1, int aEnd1) {return putIFiles(aIFileKey1, aIFilePath1, aStart1, aEnd1);}
-    @Deprecated @Override public final MergedIOFiles o(String aOFileKey1, String aOFilePath1, Object... aElse       ) {return putOFiles(aOFileKey1, aOFilePath1, aElse);}
-    @Deprecated @Override public final MergedIOFiles o(String aOFileKey1, String aOFilePath1                        ) {return putOFiles(aOFileKey1, aOFilePath1                );}
-    @Deprecated @Override public final MergedIOFiles o(String aOFileKey1, String aOFilePath1, int aMultiple1        ) {return putOFiles(aOFileKey1, aOFilePath1, aMultiple1    );}
-    @Deprecated @Override public final MergedIOFiles o(String aOFileKey1, String aOFilePath1, int aStart1, int aEnd1) {return putOFiles(aOFileKey1, aOFilePath1, aStart1, aEnd1);}
+    @VisibleForTesting @Override public final MergedIOFiles i(String aIFileKey, String aIFilePath                      ) {return putIFiles(aIFileKey, aIFilePath              );}
+    @VisibleForTesting @Override public final MergedIOFiles i(String aIFileKey, String aIFilePath, int aMultiple       ) {return putIFiles(aIFileKey, aIFilePath, aMultiple   );}
+    @VisibleForTesting @Override public final MergedIOFiles i(String aIFileKey, String aIFilePath, int aStart, int aEnd) {return putIFiles(aIFileKey, aIFilePath, aStart, aEnd);}
+    @VisibleForTesting @Override public final MergedIOFiles o(String aOFileKey, String aOFilePath                      ) {return putOFiles(aOFileKey, aOFilePath              );}
+    @VisibleForTesting @Override public final MergedIOFiles o(String aOFileKey, String aOFilePath, int aMultiple       ) {return putOFiles(aOFileKey, aOFilePath, aMultiple   );}
+    @VisibleForTesting @Override public final MergedIOFiles o(String aOFileKey, String aOFilePath, int aStart, int aEnd) {return putOFiles(aOFileKey, aOFilePath, aStart, aEnd);}
 }

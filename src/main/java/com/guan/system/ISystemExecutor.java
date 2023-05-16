@@ -4,7 +4,6 @@ package com.guan.system;
 import com.guan.io.IHasIOFiles;
 import com.guan.parallel.IBatchSubmit;
 import com.guan.parallel.IBatchSubmit2;
-import com.guan.parallel.IBatchSubmit3;
 import com.guan.parallel.IHasThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -25,24 +24,22 @@ public interface ISystemExecutor extends IHasThreadPool, IBatchSubmit<Integer, S
     @ApiStatus.Internal boolean removeDir(String aDir);
     @VisibleForTesting @ApiStatus.Internal default boolean rmdir(String aDir) {return removeDir(aDir);}
     
-    // TODO 砍掉 _NO 的接口改为属性实现，有点混淆并且实现起来重复代码太多
+    /** 砍掉原本的 _NO 接口，改为直接设置是否输出到控制台 */
+    default ISystemExecutor setNoConsoleOutput() {return setNoConsoleOutput(true);}
+    ISystemExecutor setNoConsoleOutput(boolean aNoConsoleOutput);
+    boolean noConsoleOutput();
     
-    @ApiStatus.Obsolete int system_NO(String aCommand); // No Output
-    int system   (String aCommand                     );
-    int system   (String aCommand, String aOutFilePath);
-    
+    int system(String aCommand                     );
+    int system(String aCommand, String aOutFilePath);
     /** 在原本的 system 基础上，增加了附加更多输入输出文件的功能，使用 IHasIOFiles 来附加 */
-    @ApiStatus.Obsolete int system_NO(String aCommand                     , IHasIOFiles aIOFiles); // No Output
-    int system   (String aCommand                     , IHasIOFiles aIOFiles);
-    int system   (String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
+    int system(String aCommand                     , IHasIOFiles aIOFiles);
+    int system(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
     
     /** submit stuffs */
-    @ApiStatus.Obsolete Future<Integer> submitSystem_NO(String aCommand                                           ); // No Output
-    Future<Integer> submitSystem   (String aCommand                                           );
-    Future<Integer> submitSystem   (String aCommand, String aOutFilePath                      );
-    @ApiStatus.Obsolete Future<Integer> submitSystem_NO(String aCommand                     , IHasIOFiles aIOFiles); // No Output
-    Future<Integer> submitSystem   (String aCommand                     , IHasIOFiles aIOFiles);
-    Future<Integer> submitSystem   (String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
+    Future<Integer> submitSystem(String aCommand                                           );
+    Future<Integer> submitSystem(String aCommand, String aOutFilePath                      );
+    Future<Integer> submitSystem(String aCommand                     , IHasIOFiles aIOFiles);
+    Future<Integer> submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
     
     /** BatchSubmit stuffs，不获取输出，不保证 Future 获取到的退出码是正确的 */
     Future<Integer> getSubmit();

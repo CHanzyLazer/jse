@@ -9,6 +9,7 @@ import com.guan.io.MergedIOFiles;
 import com.guan.parallel.AbstractHasThreadPool;
 import com.guan.parallel.IExecutorEX;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -141,20 +142,12 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     }
     
     
-    /** 排队指令的一个结构体 */
-    private static class SystemCommand {
-        protected final String mSubmitCommand;
-        protected final boolean mNoOutput;
-        private SystemCommand(String aSubmitCommand, boolean aNoOutput) {
-            mSubmitCommand = aSubmitCommand; mNoOutput = aNoOutput;
-        }
-    }
     /** 需要专门自定义实现一个 Future，返回的是这个指令最终的退出代码，注意保持只有一个锁来防止死锁 */
     protected class FutureJob implements IFutureJob {
-        private SystemCommand mSystemCommand;
+        private String mSubmitCommand;
         private Iterable<String> mOFiles;
-        protected FutureJob(String aSubmitCommand, Iterable<String> aOFiles, boolean aNoOutput) {
-            mSystemCommand = new SystemCommand(aSubmitCommand, aNoOutput);
+        protected FutureJob(String aSubmitCommand, Iterable<String> aOFiles) {
+            mSubmitCommand = aSubmitCommand;
             mOFiles = aOFiles;
         }
         
@@ -174,23 +167,23 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         
         /** 尝试提交任务并且获取 ID */
         protected int submitSystemCommand() {synchronized (AbstractNoPoolSystemExecutor.this) {
-            if (mSystemCommand == null) return -1;
+            if (mSubmitCommand == null) return -1;
             // 获取提交任务的 ID，提交任务不需要附加 aIOFiles
-            List<String> tOutList = mEXE.system_str(mSystemCommand.mSubmitCommand);
+            List<String> tOutList = mEXE.system_str(mSubmitCommand);
             int tJobID = getJobIDFromSystem(tOutList);
             if (tJobID > 0) {
                 // 如果提交成功则输出到 out
-                if (!mSystemCommand.mNoOutput) for (String tLine : tOutList) System.out.println(tLine);
+                if (!mEXE.noConsoleOutput()) for (String tLine : tOutList) System.out.println(tLine);
             } else {
                 // 提交不成功则输出到 err，并且不考虑 NoOutput
                 System.err.println("ERROR: submitSystemCommand Fail, the submit command is:");
-                System.err.println(mSystemCommand.mSubmitCommand);
+                System.err.println(mSubmitCommand);
                 System.err.println("the remote server output is:");
                 for (String tLine : tOutList) System.err.println(tLine);
                 System.err.println("Will still try to get the output files, so you may also receive the IOException");
             }
             // 提交完成后设置 mSystemCommand 为 null，避免重复提交
-            mSystemCommand = null;
+            mSubmitCommand = null;
             return tJobID;
         }}
         
@@ -210,7 +203,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
                 try {getFiles(mOFiles);} catch (Exception e) {e.printStackTrace(); mExitValue = mExitValue==0 ? -1 : aExitValue;}
             }
             // 结束后将内部附加属性置空
-            mSystemCommand = null;
+            mSubmitCommand = null;
             mOFiles = null;
         }}
         
@@ -251,112 +244,64 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     /** ISystemExecutor stuffs */
+    @Override public final ISystemExecutor setNoConsoleOutput(boolean aNoConsoleOutput) {mEXE.setNoConsoleOutput(aNoConsoleOutput); return this;}
+    @Override public final boolean noConsoleOutput() {return mEXE.noConsoleOutput();}
+    
     @Override public final boolean makeDir(String aDir) {return mEXE.makeDir(aDir);}
     @Override public final boolean removeDir(String aDir) {return mEXE.removeDir(aDir);}
     
-    @Override public final int system_NO(String aCommand                                           ) {return system_(aCommand, null, EPT_IOF, true);}
-    @Override public final int system   (String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath), noConsoleOutput());}
-    @Override public final int system_NO(String aCommand                     , IHasIOFiles aIOFiles) {return system_(aCommand, null, aIOFiles, true);}
-    @Override public final int system   (String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath), noConsoleOutput());}
-    
-    @Override public final int system(String aCommand) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath == null) return system_(aCommand, null, EPT_IOF, noConsoleOutput());
-        tFilePath = toRealOutFilePath(tFilePath);
-        return system_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath), noConsoleOutput());
-    }
-    @Override public final int system(String aCommand, IHasIOFiles aIOFiles) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath == null) return system_(aCommand, null, aIOFiles, noConsoleOutput());
-        tFilePath = toRealOutFilePath(tFilePath);
-        return system_(aCommand, tFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath), noConsoleOutput());
-    }
+    @Override public final int system(String aCommand                                           ) {return system(aCommand, defaultOutFilePath());}
+    @Override public final int system(String aCommand,                      IHasIOFiles aIOFiles) {return system(aCommand, defaultOutFilePath(), aIOFiles);}
+    @Override public final int system(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final int system(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final List<String> system_str(String aCommand) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath==null) {
-            system_NO(aCommand);
+        String tFilePath = toRealOutFilePath(defaultOutFilePath());
+        system_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath));
+        try {
+            return UT.IO.readAllLines_(tFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
             return ImmutableList.of();
-        } else {
-            tFilePath = toRealOutFilePath(tFilePath);
-            system_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath), true);
-            try {
-                return UT.IO.readAllLines_(tFilePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return ImmutableList.of();
-            }
         }
     }
     @Override public final List<String> system_str(String aCommand, IHasIOFiles aIOFiles) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath==null) {
-            system_NO(aCommand, aIOFiles);
+        String tFilePath = toRealOutFilePath(defaultOutFilePath());
+        system_(aCommand, tFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
+        try {
+            return UT.IO.readAllLines_(tFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
             return ImmutableList.of();
-        } else {
-            tFilePath = toRealOutFilePath(tFilePath);
-            system_(aCommand, tFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath), true);
+        }
+    }
+    
+    @Override public final IFutureJob submitSystem(String aCommand                                           ) {return submitSystem(aCommand, defaultOutFilePath());}
+    @Override public final IFutureJob submitSystem(String aCommand,                      IHasIOFiles aIOFiles) {return submitSystem(aCommand, defaultOutFilePath(), aIOFiles);}
+    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final Future<List<String>> submitSystem_str(String aCommand) {
+        final String tFilePath = toRealOutFilePath(defaultOutFilePath());
+        final Future<Integer> tSystemTask = submitSystem_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath));
+        return UT.Code.map(tSystemTask, v -> {
             try {
                 return UT.IO.readAllLines_(tFilePath);
             } catch (IOException e) {
                 e.printStackTrace();
                 return ImmutableList.of();
             }
-        }
-    }
-    
-    
-    @Override public final IFutureJob submitSystem_NO(String aCommand                                           ) {return submitSystem_(aCommand, null, EPT_IOF, true);}
-    @Override public final IFutureJob submitSystem   (String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath), noConsoleOutput());}
-    @Override public final IFutureJob submitSystem_NO(String aCommand                     , IHasIOFiles aIOFiles) {return submitSystem_(aCommand, null, aIOFiles.copy(), true);}
-    @Override public final IFutureJob submitSystem   (String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath), noConsoleOutput());}
-    
-    @Override public final IFutureJob submitSystem(String aCommand) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath == null) return submitSystem_(aCommand, null, EPT_IOF, noConsoleOutput());
-        tFilePath = toRealOutFilePath(tFilePath);
-        return submitSystem_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath), noConsoleOutput());
-    }
-    @Override public final IFutureJob submitSystem(String aCommand, IHasIOFiles aIOFiles) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath == null) return submitSystem_(aCommand, null, aIOFiles.copy(), noConsoleOutput());
-        tFilePath = toRealOutFilePath(tFilePath);
-        return submitSystem_(aCommand, tFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath), noConsoleOutput());
-    }
-    @Override public final Future<List<String>> submitSystem_str(String aCommand) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath==null) {
-            final Future<Integer> tSystemTask = submitSystem_NO(aCommand);
-            return UT.Code.map(tSystemTask, v -> ImmutableList.of());
-        } else {
-            final String fFilePath = toRealOutFilePath(tFilePath);
-            final Future<Integer> tSystemTask = submitSystem_(aCommand, fFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, fFilePath), true);
-            return UT.Code.map(tSystemTask, v -> {
-                try {
-                    return UT.IO.readAllLines_(fFilePath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return ImmutableList.of();
-                }
-            });
-        }
+        });
     }
     @Override public final Future<List<String>> submitSystem_str(String aCommand, IHasIOFiles aIOFiles) {
-        String tFilePath = defaultOutFilePath();
-        if (tFilePath==null) {
-            final Future<Integer> tSystemTask = submitSystem_NO(aCommand, aIOFiles);
-            return UT.Code.map(tSystemTask, v -> ImmutableList.of());
-        } else {
-            final String fFilePath = toRealOutFilePath(tFilePath);
-            final Future<Integer> tSystemTask = submitSystem_(aCommand, fFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, fFilePath), true);
-            return UT.Code.map(tSystemTask, v -> {
-                try {
-                    return UT.IO.readAllLines_(fFilePath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return ImmutableList.of();
-                }
-            });
-        }
+        final String tFilePath = toRealOutFilePath(defaultOutFilePath());
+        final Future<Integer> tSystemTask = submitSystem_(aCommand, tFilePath, aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
+        return UT.Code.map(tSystemTask, v -> {
+            try {
+                return UT.IO.readAllLines_(tFilePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ImmutableList.of();
+            }
+        });
     }
     
     
@@ -388,7 +333,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         // 上传输入文件，上传文件部分是串行的
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
         // 获取 FutureJob
-        FutureJob tFutureJob = new FutureJob(tBatchedCommand, aIOFiles.getOFiles(), noConsoleOutput());
+        FutureJob tFutureJob = new FutureJob(tBatchedCommand, aIOFiles.getOFiles());
         // 为了逻辑上简单，这里统一先加入排队
         synchronized (this) {mQueuedJobList.addLast(tFutureJob);}
         return tFutureJob;
@@ -397,23 +342,23 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final int system_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles, boolean aNoOutput) {
+    protected final int system_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return -1;}
         // 由于已经上传，提交任务不需要附加 aIOFiles
-        int tExitValue = aNoOutput ? mEXE.system_NO(getRunCommand(aCommand, aOutFilePath)) : mEXE.system(getRunCommand(aCommand, aOutFilePath));
+        int tExitValue = mEXE.system(getRunCommand(aCommand, aOutFilePath));
         // 直接下载输入文件
         try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {e.printStackTrace(); return tExitValue == 0 ? -1 : tExitValue;}
         return tExitValue;
     }
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final IFutureJob submitSystem_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles, boolean aNoOutput) {
+    protected final IFutureJob submitSystem_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
         // 获取 FutureJob
-        FutureJob tFutureJob = new FutureJob(getSubmitCommand(aCommand, aOutFilePath), aIOFiles.getOFiles(), aNoOutput);
+        FutureJob tFutureJob = new FutureJob(getSubmitCommand(aCommand, aOutFilePath), aIOFiles.getOFiles());
         // 为了逻辑上简单，这里统一先加入排队
         synchronized (this) {mQueuedJobList.addLast(tFutureJob);}
         return tFutureJob;
@@ -422,8 +367,6 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     /// stuff to override
-    /** 用来控制一般的提交是否会在控制台输出提交的结果 */
-    protected boolean noConsoleOutput() {return false;}
     /** 用来控制检测频率，ms */
     protected long sleepTime() {return 500;}
     
@@ -431,9 +374,9 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     protected void putFiles(Iterable<String> aFiles) throws Exception {/**/}
     protected void getFiles(Iterable<String> aFiles) throws Exception {/**/}
     
-    /** 提供向系统提交任务所需要的指令, null 表示没有输出文件 */
-    protected abstract @Nullable String defaultOutFilePath();
-    protected abstract @Nullable String toRealOutFilePath(String aOutFilePath);
+    /** 提供向系统提交任务所需要的指令，为了简化代码不支持不进行输出的情况，除了默认的输出路径，还是使用 str 直接获取输出时使用的临时文件路径 */
+    protected abstract @NotNull String defaultOutFilePath();
+    protected abstract @NotNull String toRealOutFilePath(String aOutFilePath);
     protected abstract String getRunCommand(String aCommand, @Nullable String aOutFilePath);
     protected abstract String getSubmitCommand(String aCommand, @Nullable String aOutFilePath);
     protected abstract String getBatchSubmitCommand(Iterable<String> aCommands, IHasIOFiles aIOFiles);
