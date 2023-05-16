@@ -9,6 +9,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.*;
 
+import static com.guan.code.CS.INFILE_SELF_KEY;
+
 
 /**
  * @author liqa
@@ -77,17 +79,12 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1, Object... aElse) {mIOFiles.putIFiles(aIFileKey1, aIFilePath1, aElse); return this;}
     @Override public final AbstractInFile putOFiles(String aOFileKey1, String aOFilePath1, Object... aElse) {mIOFiles.putOFiles(aOFileKey1, aOFilePath1, aElse); return this;}
     
-    @Override public final List<String> getIFiles(String aIFileKey) {return mIOFiles.getIFiles(aIFileKey);}
-    @Override public final List<String> getOFiles(String aOFileKey) {return mIOFiles.getOFiles(aOFileKey);}
+    @Override public final Iterable<String> getIFiles(String aIFileKey) {return mIOFiles.getIFiles(aIFileKey);}
+    @Override public final Iterable<String> getOFiles(String aOFileKey) {return mIOFiles.getOFiles(aOFileKey);}
     @Override public final Iterable<String> getIFiles() {return mIOFiles.getIFiles();}
     @Override public final Iterable<String> getOFiles() {return mIOFiles.getOFiles();}
     @Override public final Iterable<String> getIFileKeys() {return mIOFiles.getIFileKeys();}
     @Override public final Iterable<String> getOFileKeys() {return mIOFiles.getOFileKeys();}
-    
-    @Override public final String getIFile(String aIFileKey) {return getIFiles(aIFileKey).get(0);}
-    @Override public final String getOFile(String aOFileKey) {return getOFiles(aOFileKey).get(0);}
-    @Override public final String getIFile(String aIFileKey, int aIndex) {return getIFiles(aIFileKey).get(aIndex);}
-    @Override public final String getOFile(String aOFileKey, int aIndex) {return getOFiles(aOFileKey).get(aIndex);}
     
     @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1                        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[0]                );}
     @Override public final AbstractInFile putIFiles(String aIFileKey1, String aIFilePath1, int aMultiple1        ) {return putIFiles(aIFileKey1, aIFilePath1, new Object[] {aMultiple1    });}
@@ -125,7 +122,7 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     
     @Override public final void write(String aPath) throws IOException {
         write_(aPath);
-        putIFiles("<self>", aPath);
+        putIFiles(INFILE_SELF_KEY, aPath);
     }
     
     /** stuff to override */

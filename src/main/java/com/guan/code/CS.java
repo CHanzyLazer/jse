@@ -1,9 +1,11 @@
 package com.guan.code;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.Unmodifiable;
+import com.guan.io.IHasIOFiles;
+import com.guan.io.IOFiles;
+import com.guan.system.CompletedFutureJob;
+import com.guan.system.IFutureJob;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -25,8 +27,16 @@ public class CS {
     public final static double[][] ZL_MAT = new double[0][];
     public final static double[]   ZL_VEC = new double[0];
     
+    /** IOFiles Keys */
+    public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
+    
+    /** SystemExecutor Stuffs */
+    public final static IHasIOFiles EPT_IOF = new IOFiles();
+    public final static IFutureJob ERR_FUTURE = new CompletedFutureJob(-1);
+    
+    
     /** Relative atomic mass in this project */
-    public static final @Unmodifiable Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())
+    public static final Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())
         .put("Cu", 63.546)
         .put("Zr", 91.224)
         .build();

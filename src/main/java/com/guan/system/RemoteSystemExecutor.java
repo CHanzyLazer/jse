@@ -5,13 +5,16 @@ import com.guan.io.IHasIOFiles;
 import com.guan.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import static com.guan.code.CS.ERR_FUTURE;
 
 /**
  * @author liqa
  * <p> SystemExecutor 的另一种抽象实现，在远程运行的情况 </p>
  */
-public abstract class RemoteSystemExecutor extends AbstractSystemExecutor {
+public abstract class RemoteSystemExecutor extends AbstractThreadPoolSystemExecutor {
     protected RemoteSystemExecutor(IExecutorEX aPool) {super(aPool);}
     
     
@@ -25,6 +28,17 @@ public abstract class RemoteSystemExecutor extends AbstractSystemExecutor {
         int tExitValue = system_(aCommand, aPrintln);
         try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {e.printStackTrace(); return tExitValue==0 ? -1 : tExitValue;}
         return tExitValue;
+    }
+    @Override protected Future<Integer> batchSubmit_(Iterable<String> aCommands, final IHasIOFiles aIOFiles) {
+        try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
+        Future<Integer> tFuture = batchSubmit(aCommands);
+        // 由于下载文件是必要的，因此使用这个方法来在 tFuture 完成时下载
+        return CompletableFuture.supplyAsync(() -> {
+            int tExitValue = -1;
+            try {tExitValue = tFuture.get();} catch (Exception e) {e.printStackTrace();}
+            try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {e.printStackTrace(); return tExitValue==0 ? -1 : tExitValue;}
+            return tExitValue;
+        });
     }
     
     /** 一般的远程 submitSystem 实现，直接借用 system 的相关实现 */

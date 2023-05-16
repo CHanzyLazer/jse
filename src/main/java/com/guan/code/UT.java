@@ -6,19 +6,26 @@ import com.guan.io.Decryptor;
 import com.guan.io.Encryptor;
 import com.guan.math.Table;
 import com.guan.math.functional.IOperator1Full;
+import com.guan.math.functional.IOperator2Full;
 import com.guan.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.guan.code.CS.RANDOM;
@@ -148,9 +155,42 @@ public class UT {
                 @Override public int size() {return aBefore.length+3;}
             };
         }
+        /**
+         * merge {@code Iterable<Future<T>> to single Future<R>} in All logic,
+         * aOpt: (R, T) -> R, will do stat calculation of the Futures, first R is null
+         * @author liqa
+         */
+        public static <R, T> Future<R> mergeAll(final Iterable<Future<T>> aFutures, final IOperator2Full<? extends R, ? super R, ? super T> aOpt) {
+            return new Future<R>() {
+                @Override public boolean cancel(boolean mayInterruptIfRunning) {
+                    for (Future<T> tFuture : aFutures) if (!tFuture.cancel(mayInterruptIfRunning)) return false;
+                    return true;
+                }
+                @Override public boolean isCancelled() {
+                    for (Future<T> tFuture : aFutures) if (!tFuture.isCancelled()) return false;
+                    return true;
+                }
+                @Override public boolean isDone() {
+                    for (Future<T> tFuture : aFutures) if (!tFuture.isDone()) return false;
+                    return true;
+                }
+                @Override public R get() throws InterruptedException, ExecutionException {
+                    R tOut = null;
+                    for (Future<T> tFuture : aFutures) tOut = aOpt.cal(tOut, tFuture.get());
+                    return tOut;
+                }
+                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    R tOut = null;
+                    for (Future<T> tFuture : aFutures) tOut = aOpt.cal(tOut, tFuture.get(timeout, unit));
+                    return tOut;
+                }
+            };
+        }
+        
+        
         
         /**
-         * map Iterable< T > to Iterable< R > like {@link Stream}.map
+         * map {@code Iterable<T> to Iterable<R>} like {@link Stream}.map
          * @author liqa
          */
         public static <R, T> Iterable<R> map(final Iterable<T> aIterable, final IOperator1Full<? extends R, ? super T> aOpt) {
@@ -173,6 +213,20 @@ public class UT {
                 @Override public int size() {return aArray.length;}
             };
         }
+        /**
+         * map {@code Future<T> to Future<R>} like {@link Stream}.map
+         * @author liqa
+         */
+        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1Full<? extends R, ? super T> aOpt) {
+            return new Future<R>() {
+                @Override public boolean cancel(boolean mayInterruptIfRunning) {return aFuture.cancel(mayInterruptIfRunning);}
+                @Override public boolean isCancelled() {return aFuture.isCancelled();}
+                @Override public boolean isDone() {return aFuture.isDone();}
+                @Override public R get() throws InterruptedException, ExecutionException {return aOpt.cal(aFuture.get());}
+                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {return aOpt.cal(aFuture.get(timeout, unit));}
+            };
+        }
+        
         
         
         /**
@@ -462,10 +516,10 @@ public class UT {
          * @param aLines Iterable String or String[]
          * @throws IOException when fail
          */
-        public static void write(String aFilePath, String[] aLines, OpenOption... aOptions) throws IOException {Files.write(toAbsolutePath_(aFilePath), Arrays.asList(aLines), aOptions);}
-        public static void write(String aFilePath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions) throws IOException {Files.write(toAbsolutePath_(aFilePath), aLines, aOptions);}
+        public static void write(String aFilePath, String[] aLines, OpenOption... aOptions) throws IOException {write(aFilePath, Arrays.asList(aLines), aOptions);}
+        public static void write(String aFilePath, String aText, OpenOption... aOptions) throws IOException {write(aFilePath, Collections.singletonList(aText), aOptions);}
         public static void write(String aFilePath, byte[] aData, OpenOption... aOptions) throws IOException {Files.write(toAbsolutePath_(aFilePath), aData, aOptions);}
-        public static void write(String aFilePath, String aText, OpenOption... aOptions) throws IOException {Files.write(toAbsolutePath_(aFilePath), Collections.singletonList(aText), aOptions);}
+        public static void write(String aFilePath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions) throws IOException {Files.write(toAbsolutePath_(aFilePath), aLines, aOptions);}
         /**
          * Wrapper of {@link Files}.readAllBytes
          * @author liqa
@@ -502,7 +556,7 @@ public class UT {
          * @author liqa
          * @param aDir the Directory will be removed
          */
-        public static void rmdir(String aDir) throws IOException {removeDir(aDir);}
+        @VisibleForTesting public static void rmdir(String aDir) throws IOException {removeDir(aDir);}
         public static void removeDir(String aDir) throws IOException {
             if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
             if (!exists(aDir)) return;
@@ -521,8 +575,8 @@ public class UT {
         }
         
         /** useful methods, wrapper of {@link Files} stuffs */
-        public static boolean mkdir(String aDir) {return makeDir(aDir);} // can mkdir nested
-        public static boolean makeDir(String aDir) {try {Files.createDirectories(toAbsolutePath_(aDir)); return true;} catch (IOException e) {return false;}} // can mkdir nested
+        @VisibleForTesting public static boolean mkdir(String aDir) {return makeDir(aDir);} // can mkdir nested
+        public static boolean makeDir(String aDir) {try {Files.createDirectories(toAbsolutePath_(aDir)); return true;} catch (IOException e) {e.printStackTrace(); return false;}} // can mkdir nested
         public static boolean isDir(String aDir) {return Files.isDirectory(toAbsolutePath_(aDir));}
         public static boolean isFile(String aFilePath) {return Files.isRegularFile(toAbsolutePath_(aFilePath));}
         public static boolean exists(String aPath) {return Files.exists(toAbsolutePath_(aPath));}
@@ -533,17 +587,19 @@ public class UT {
         
         /** output stuffs */
         public static PrintStream    toPrintStream (String aFilePath, OpenOption... aOptions) throws IOException {return new PrintStream(toOutputStream(aFilePath, aOptions));}
-        public static OutputStream   toOutputStream(String aFilePath, OpenOption... aOptions) throws IOException {return Files.newOutputStream(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
-        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions) throws IOException {return Files.newBufferedWriter(aPath, aOptions);}
+        public static OutputStream   toOutputStream(String aFilePath, OpenOption... aOptions) throws IOException {return toOutputStream(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
         public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions) throws IOException {return toWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
-        public static BufferedWriter toWriter      (OutputStream aOutputStream) {return new BufferedWriter(new OutputStreamWriter(aOutputStream));}
+        public static BufferedWriter toWriter      (OutputStream aOutputStream) {return new BufferedWriter(new OutputStreamWriter(aOutputStream, StandardCharsets.UTF_8));}
+        public static OutputStream   toOutputStream(Path aPath, OpenOption... aOptions) throws IOException {return Files.newOutputStream(aPath, aOptions);}
+        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions) throws IOException {return Files.newBufferedWriter(aPath, aOptions);}
         
         /** input stuffs */
-        public static InputStream    toInputStream(String aFilePath) throws IOException {return Files.newInputStream(UT.IO.toAbsolutePath_(aFilePath));}
-        public static BufferedReader toReader     (Path aPath) throws IOException {return Files.newBufferedReader(aPath);}
+        public static InputStream    toInputStream(String aFilePath) throws IOException {return toInputStream(UT.IO.toAbsolutePath_(aFilePath));}
         public static BufferedReader toReader     (String aFilePath) throws IOException {return toReader(UT.IO.toAbsolutePath_(aFilePath));}
-        public static BufferedReader toReader     (InputStream aInputStream) {return new BufferedReader(new InputStreamReader(aInputStream));}
+        public static BufferedReader toReader     (InputStream aInputStream) {return new BufferedReader(new InputStreamReader(aInputStream, StandardCharsets.UTF_8));}
         public static BufferedReader toReader     (URL aFileURL) throws IOException {return toReader(aFileURL.openStream());}
+        public static InputStream    toInputStream(Path aPath) throws IOException {return Files.newInputStream(aPath);}
+        public static BufferedReader toReader     (Path aPath) throws IOException {return Files.newBufferedReader(aPath);}
         
         /** misc stuffs */
         public static File toFile(String aFilePath) {return toAbsolutePath_(aFilePath).toFile();}
@@ -733,6 +789,9 @@ public class UT {
         public static void init() {
             if (INITIALIZED) return;
             INITIALIZED = true;
+            // 全局修改换行符为 LF
+            System.setProperty("line.separator", "\n");
+            // 全局修改工作目录为正确的目录
             String wd = pwd();
             System.setProperty("user.dir", wd);
             WORKING_PATH = Paths.get(wd);

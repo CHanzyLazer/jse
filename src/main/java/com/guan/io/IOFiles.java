@@ -14,10 +14,10 @@ public class IOFiles implements IHasIOFiles {
     @Override public final IOFiles copy() {
         IOFiles rIOFiles = new IOFiles();
         for (Map.Entry<String, List<String>> tEntry : mIFiles.entrySet()) {
-            List<String> tFileList = tEntry.getValue();
-            List<String> rFileList = new ArrayList<>(tFileList.size());
-            rFileList.addAll(tFileList);
-            rIOFiles.mIFiles.put(tEntry.getKey(), rFileList);
+            List<String> tFiles = tEntry.getValue();
+            List<String> rFiles = new ArrayList<>(tFiles.size());
+            rFiles.addAll(tFiles);
+            rIOFiles.mIFiles.put(tEntry.getKey(), rFiles);
         }
         for (Map.Entry<String, List<String>> tEntry : mOFiles.entrySet()) {
             List<String> tFileList = tEntry.getValue();
@@ -49,10 +49,6 @@ public class IOFiles implements IHasIOFiles {
         mOFiles = new HashMap<>();
     }
     
-    @Override public final String getIFile(String aIFileKey) {return getIFiles(aIFileKey).get(0);}
-    @Override public final String getOFile(String aOFileKey) {return getOFiles(aOFileKey).get(0);}
-    @Override public final String getIFile(String aIFileKey, int aIndex) {return getIFiles(aIFileKey).get(aIndex);}
-    @Override public final String getOFile(String aOFileKey, int aIndex) {return getOFiles(aOFileKey).get(aIndex);}
     
     @Override public List<String> getIFiles(String aIFileKey) {return mIFiles.get(aIFileKey);}
     @Override public List<String> getOFiles(String aOFileKey) {return mOFiles.get(aOFileKey);}

@@ -2,22 +2,35 @@ package com.guan.system;
 
 
 import com.guan.code.UT;
+import com.guan.io.IHasIOFiles;
+import com.guan.io.IOFiles;
 import com.guan.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
+
+import static com.guan.code.CS.IFILE_KEY;
 
 /**
  * @author liqa
  * <p> 一般的 SLURM 实现，基于 SSH 的远程 Executor，因此针对的是使用 SSH 连接的远程 SLURM 服务器 </p>
  */
 public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemExecutor> {
-    public final static String DEFAULT_OUTFILE_DIR = ".slurm/";
-    public final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%n-%i"; // %n: unique job name, %i: index of job
+    /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
+    public final static String WORKING_DIR = ".temp/%n/";
+    public final static String SPLIT_NODE_SCRIPT_PATH = WORKING_DIR+"splitNodeList.sh";
+    public final static String BATCHED_SCRIPT_DIR = WORKING_DIR+"batched/";
+    public final static String DEFAULT_OUTFILE_DIR = ".slurm/out/";
+    public final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"%i-%n";
     
     private int mCurrentJobIdx = 0;
     
     /// 构造函数部分
+    private final String mWorkingDir, mSplitNodeScriptPath, mBatchedScriptDir;
+    
     private final long mSleepTime;
     private final boolean mNoConsoleOutput;
     private final String mUniqueJobName; // 注意一定要是独立的，避免相互干扰或者影响其他用户的结果
@@ -35,13 +48,31 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         mMaxTaskNumPerNode = aMaxTaskNumPerNode;
         mSqueueName = aSqueueName==null? mEXE.mSSH.session().getUserName() : aSqueueName;
         // 需要初始化输出的文件夹
+        mWorkingDir = WORKING_DIR.replaceAll("%n", mUniqueJobName);
+        mSplitNodeScriptPath = SPLIT_NODE_SCRIPT_PATH.replaceAll("%n", mUniqueJobName);
+        mBatchedScriptDir = BATCHED_SCRIPT_DIR.replaceAll("%n", mUniqueJobName);
         // 注意初始化失败时需要抛出异常并且执行关闭操作
-        try {
-            mEXE.mSSH.makeDir(DEFAULT_OUTFILE_DIR);;
-        } catch (Exception e) {
+        if (!(this.makeDir(mWorkingDir) && this.makeDir(mBatchedScriptDir) && this.makeDir(DEFAULT_OUTFILE_DIR))) {
             this.shutdown(); // 构造函数中不调用多态方法
+            throw new IOException("Fail in Init makeDir");
+        }
+        // 从资源文件中创建已经准备好的 SplitNodeScript
+        try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("slurm/splitNodeList.sh")); PrintStream tPS = UT.IO.toPrintStream(mSplitNodeScriptPath)) {
+            String tLine;
+            while ((tLine = tReader.readLine()) != null) tPS.println(tLine);
+            // 上传脚本文件并设置权限
+            mEXE.system("chmod 777 "+mSplitNodeScriptPath, new IOFiles().putIFiles(IFILE_KEY, mSplitNodeScriptPath));
+        } catch (Exception e) {
+            // 出现任何错误直接抛出错误退出
+            this.shutdown();
             throw e;
         }
+    }
+    @Override protected void shutdown_() {
+        // 顺便删除自己的临时工作目录
+        this.removeDir(mWorkingDir);
+        // 需要在父类 shutdown 之前，因为之后 ssh 就关闭了
+        super.shutdown_();
     }
     
     
@@ -156,7 +187,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         if (aOutFilePath != null && !aOutFilePath.isEmpty()) {
         rRunCommand.add("--output");            rRunCommand.add(aOutFilePath);
         }
-        if (aOutFilePath != null && !aOutFilePath.isEmpty()) {
+        if (mPartition != null && !mPartition.isEmpty()) {
         rRunCommand.add("--partition");         rRunCommand.add(mPartition);
         }
         rRunCommand.add(aCommand);
@@ -182,7 +213,84 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         if (aOutFilePath != null && !aOutFilePath.isEmpty()) {
         rSubmitCommand.add("--output");             rSubmitCommand.add(aOutFilePath);
         }
-        if (aOutFilePath != null && !aOutFilePath.isEmpty()) {
+        if (mPartition != null && !mPartition.isEmpty()) {
+        rSubmitCommand.add("--partition");          rSubmitCommand.add(mPartition);
+        }
+        // 获得指令
+        return String.join(" ", rSubmitCommand);
+    }
+    @Override protected String getBatchSubmitCommand(Iterable<String> aCommands, IHasIOFiles aIOFiles) {
+        // 批量提交的指令，会将多个指令打包成一个单一的指令，用于突破服务器的用户任务数上限
+        // 原理为，使用 sbatch 提交一个 srun，sbatch 指定需要的节点数，srun 指定使用和节点数一样的核心，并指定每个节点一个核心，
+        // srun 执行打包的脚本，在脚本中根据具体的 SLURM_PROCID 来获取自己的分组，使用 srun 来执行子任务，
+        // 由于有些 slurm 会出现不同节点间相互抢资源的情况，还需要使用一个 mSplitNodeScriptPath 脚本来获取具体的实际节点列表，并手动指定使用的节点
+        // 这里简单起见，都认为所有任务都是只支持 mpi 模式运行的，不考虑可以串行执行的情况
+        
+        // 首先遍历一次将 Iterable 转为 List 方便使用
+        List<String> tCommands = new ArrayList<>();
+        for (String tCmd : aCommands) tCommands.add(tCmd);
+        // 计算需要的节点数目，需要预留一个核给 srun 本身
+        int tNcmdsPerNode = (mMaxTaskNumPerNode-1) / mTaskNum;
+        if (tNcmdsPerNode == 0) throw new RuntimeException(); // 理论不应该出现，因为会在父类打包的时候就避免这个问题
+        int tNodeNum = MathEX.Code.divup(tCommands.size(), tNcmdsPerNode);
+        tNcmdsPerNode = MathEX.Code.divup(tCommands.size(), tNodeNum);
+        // 获取每个节点具体分配的任务数，保证分配均匀
+        int[] tNcmdsPerNodeList = new int[tNodeNum];
+        Arrays.fill(tNcmdsPerNodeList, tNcmdsPerNode);
+        int tExceed = tNcmdsPerNode*tNodeNum - tCommands.size();
+        for (int i = 0; i < tExceed; ++i) --tNcmdsPerNodeList[i];
+        // 构建提交脚本文本
+        List<String> rScriptLines = new ArrayList<>();
+        rScriptLines.add("#!/bin/bash");
+        // 获取节点列表
+        rScriptLines.add(String.format("IFS=\" \" read -ra nodelist <<< \"$(./%s \"$SLURM_JOB_NODELIST\")\"", mSplitNodeScriptPath));
+        rScriptLines.add("");
+        // 不同节点分配不同任务
+        rScriptLines.add("nodeid=${SLURM_PROCID}");
+        rScriptLines.add("case \"${nodeid}\" in");
+        int idx = 0;
+        for (int tNodeID = 0; tNodeID < tNodeNum; ++tNodeID) {
+            rScriptLines.add(String.format("%d)", tNodeID));
+            for (int i = 0; i < tNcmdsPerNodeList[tNodeID]; ++i) {
+                // 使用 srun 而不是 yhrun 来让这个脚本兼容 SLURM 系统的超算
+                rScriptLines.add(String.format("  srun --nodelist \"${nodelist[%d]}\" --nodes 1 --ntasks %d --ntasks-per-node %d %s &", tNodeID, mTaskNum, mTaskNum, tCommands.get(idx)));
+                ++idx;
+            }
+            rScriptLines.add("  ;;");
+        }
+        rScriptLines.add("*)");
+        rScriptLines.add("  echo \"INVALID NODE ID: ${nodeid}\"");
+        rScriptLines.add("  ;;");
+        rScriptLines.add("esac");
+        rScriptLines.add("wait"); // 等待上面的任务执行完成
+        // 最后增加一个空行
+        rScriptLines.add("");
+        // 保存脚本，使用随机名称即可
+        String tBatchedScriptPath = mBatchedScriptDir+UT.Code.randID()+".sh";
+        try {
+            UT.IO.write(tBatchedScriptPath, rScriptLines);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        // 附加脚本文件到输入文件
+        aIOFiles.putIFiles(IFILE_KEY, tBatchedScriptPath);
+        // 组装提交的指令
+        List<String> rRunCommand = new ArrayList<>();
+        rRunCommand.add("srun");
+        rRunCommand.add("--ntasks");            rRunCommand.add(String.valueOf(tNodeNum)); // 任务数为节点数
+        rRunCommand.add("--ntasks-per-node");   rRunCommand.add("1"); // 每节点任务为 1
+        rRunCommand.add("--wait");              rRunCommand.add("1000000");
+        rRunCommand.add("bash");                rRunCommand.add(tBatchedScriptPath); // 使用 bash 指令来执行脚本，避免权限问题
+        // 组装提交指令
+        List<String> rSubmitCommand = new ArrayList<>();
+        rSubmitCommand.add(String.format("echo -e '#!/bin/bash\\n%s'", String.join(" ", rRunCommand)));
+        rSubmitCommand.add("|");
+        rSubmitCommand.add("sbatch");
+        rSubmitCommand.add("--nodes");              rSubmitCommand.add(String.valueOf(tNodeNum)); // 节点数依旧是节点数
+        rSubmitCommand.add("--job-name");           rSubmitCommand.add(mUniqueJobName);
+        rSubmitCommand.add("--output");             rSubmitCommand.add(toRealOutFilePath(DEFAULT_OUTFILE_PATH)); // 依旧设置输出文件，但是不再下载
+        if (mPartition != null && !mPartition.isEmpty()) {
         rSubmitCommand.add("--partition");          rSubmitCommand.add(mPartition);
         }
         // 获得指令
@@ -214,10 +322,10 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
             } catch (Exception ignored) {}
         }
         if (tValid) return rJobIDs;
-        // 不合法时会输出不合法的结果，由于这个操作是长期的且是允许的，因此会输出到 out 并且可以通过 noConsoleOutput 抑制
+        // 不合法时会输出不合法的结果，由于这个操作是长期的且是允许的，因此可以通过 noConsoleOutput 抑制
         if (!noConsoleOutput()) {
             System.err.println("WARNING: getRunningJobIDsFromSystem Fail, it is usually the network issue, the output from the remote server:");
-            for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+            for (String tLine : tLines) if (!tLine.equals("END")) System.err.println(tLine);
         }
         return null;
     }
@@ -235,10 +343,10 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
             if (tLine.startsWith("scancel: error:")) {break;}
         }
         if (tValid) return true; // 不一定真的成功取消了，但是这里还是返回 true
-        // 失败时输出失败的结果，由于这个操作是允许的，因此会输出到 out 并且可以通过 noConsoleOutput 抑制
+        // 失败时输出失败的结果，由于这个操作是允许的，因此可以通过 noConsoleOutput 抑制
         if (!noConsoleOutput()) {
             System.err.println("WARNING: cancelJobFromSystem Fail, the output from the remote server:");
-            for (String tLine : tLines) if (!tLine.equals("END")) System.out.println(tLine);
+            for (String tLine : tLines) if (!tLine.equals("END")) System.err.println(tLine);
         }
         return false;
     }
