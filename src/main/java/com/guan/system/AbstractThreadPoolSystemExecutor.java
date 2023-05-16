@@ -60,17 +60,17 @@ public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThread
         mBatchIOFiles = new MergedIOFiles();
         return tFuture;
     }
-    @Override public final Future<Integer> batchSubmit(Iterable<String> aCommands) {
-        List<Future<Integer>> rTasks = new ArrayList<>();
-        for (String tCommand : aCommands) rTasks.add(submitSystem(tCommand));
-        return UT.Code.mergeAll(rTasks, (r, v) -> ((r==null || r==0) ? v : r));
-    }
     @Override public final void putSubmit(String aCommand) {
         mBatchCommands.add(aCommand);
     }
     @Override public final void putSubmit(String aCommand, IHasIOFiles aIOFiles) {
         mBatchCommands.add(aCommand);
         mBatchIOFiles.merge(aIOFiles);
+    }
+    protected final Future<Integer> batchSubmit_(Iterable<String> aCommands) {
+        List<Future<Integer>> rFutures = new ArrayList<>();
+        for (String tCommand : aCommands) rFutures.add(submitSystem(tCommand));
+        return UT.Code.mergeAll(rFutures, (r, v) -> ((r==null || r==0) ? v : r));
     }
     
     

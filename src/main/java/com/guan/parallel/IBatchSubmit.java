@@ -11,6 +11,4 @@ public interface IBatchSubmit<R, T> {
     void putSubmit(T aTaskArg);
     /** 获取批量提交的组装 */
     Future<R> getSubmit();
-    /** 单参数的还支持直接提交 Iterable */
-    Future<R> batchSubmit(Iterable<T> aTaskArgs);
 }

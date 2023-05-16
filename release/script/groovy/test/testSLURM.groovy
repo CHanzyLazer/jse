@@ -35,17 +35,13 @@ println("exit value: ${exitValue}");
 // 打包提交任务
 for (int i = 0; i < 20; ++i) slurm.putSubmit("echo $i");
 task = slurm.getSubmit();
-// 获取任务状态和 id
-println("state: ${task.state().name()}, jobID: ${task.jobID()}");
+// 注意 getSubmit 只能获得纯 Future，无法得到其他信息
 sleep(1000);
-println("state: ${task.state().name()}, jobID: ${task.jobID()}");
-
 // 直接根据 slurm 的指令查看
 ssh.system("squeue -u ${SSH_INFO.csrc.username}");
 
 // 等待执行完成
 exitValue = task.get();
-println("state: ${task.state().name()}, jobID: ${task.jobID()}");
 println("exit value: ${exitValue}");
 
 

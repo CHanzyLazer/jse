@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -72,5 +74,5 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
     /** 对于本地的带有 IOFiles 的没有区别 */
     @Override public int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {return system_(aCommand, aPrintln);}
     @Override protected Future<Integer> submitSystem_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {return submitSystem_(aCommand, aPrintln);}
-    @Override public Future<Integer> batchSubmit_(Iterable<String> aCommands, IHasIOFiles aIOFiles) {return batchSubmit(aCommands);}
+    @Override public Future<Integer> batchSubmit_(Iterable<String> aCommands, IHasIOFiles aIOFiles) {return batchSubmit_(aCommands);}
 }

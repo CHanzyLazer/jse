@@ -160,7 +160,7 @@ public class UT {
          * aOpt: (R, T) -> R, will do stat calculation of the Futures, first R is null
          * @author liqa
          */
-        public static <R, T> Future<R> mergeAll(final Iterable<Future<T>> aFutures, final IOperator2Full<? extends R, ? super R, ? super T> aOpt) {
+        public static <R, T> Future<R> mergeAll(final Iterable<? extends Future<T>> aFutures, final IOperator2Full<? extends R, ? super R, ? super T> aOpt) {
             return new Future<R>() {
                 @Override public boolean cancel(boolean mayInterruptIfRunning) {
                     for (Future<T> tFuture : aFutures) if (!tFuture.cancel(mayInterruptIfRunning)) return false;

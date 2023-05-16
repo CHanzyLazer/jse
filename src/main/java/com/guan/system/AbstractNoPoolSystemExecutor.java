@@ -2,6 +2,7 @@ package com.guan.system;
 
 
 import com.google.common.collect.ImmutableList;
+import com.guan.code.Pair;
 import com.guan.code.UT;
 import com.guan.io.IHasIOFiles;
 import com.guan.io.IOFiles;
@@ -306,43 +307,48 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     
-    /** 批量任务直接遍历提交，使用 UT.Code.mergeAll 来管理 Future */
-    private List<String> mBatchCommands = new ArrayList<>();
-    private MergedIOFiles mBatchIOFiles = new MergedIOFiles();
-    @Override public final IFutureJob getSubmit() {
-        IFutureJob tFuture = batchSubmit_(mBatchCommands, mBatchIOFiles);
-        mBatchCommands = new ArrayList<>();
-        mBatchIOFiles = new MergedIOFiles();
-        return tFuture;
+    /** 批量任务直接遍历提交 */
+    
+    private final LinkedList<Pair<List<String>, MergedIOFiles>> mBatchCommandsIOFiles = new LinkedList<>();
+    @Override public final Future<Integer> getSubmit() {
+        if (mDead) throw new RuntimeException("Can NOT getSubmit from this Dead Executor.");
+        // 遍历提交
+        List<IFutureJob> rFutures = new ArrayList<>(mBatchCommandsIOFiles.size());
+        for (Pair<List<String>, MergedIOFiles> tPair : mBatchCommandsIOFiles) {
+            List<String> tCommands = tPair.first;
+            MergedIOFiles tIOFiles = tPair.second;
+            // 这里先获取打包后的指令，允许添加附加上传和下载文件（例如打包后的脚本），当大小为 1 时自动改为使用 Submit 来避免 BatchSubmit 不能处理的情况
+            String tBatchedCommand = tCommands.size()>1 ? getBatchSubmitCommand(tCommands, tIOFiles) : getSubmitCommand(tCommands.get(0), toRealOutFilePath(defaultOutFilePath()));
+            // 上传输入文件，上传文件部分是串行的
+            try {putFiles(tIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); rFutures.add(ERR_FUTURE); continue;}
+            // 获取 FutureJob
+            FutureJob tFutureJob = new FutureJob(tBatchedCommand, tIOFiles.getOFiles());
+            // 为了逻辑上简单，这里统一先加入排队
+            synchronized (this) {mQueuedJobList.addLast(tFutureJob);}
+            // 也加入 rFuture
+            rFutures.add(tFutureJob);
+        }
+        // 清空队列
+        mBatchCommandsIOFiles.clear();
+        // 使用 UT.Code.mergeAll 来管理 Future
+        return UT.Code.mergeAll(rFutures, (r, v) -> ((r==null || r==0) ? v : r));
     }
-    @Override public final IFutureJob batchSubmit(Iterable<String> aCommands) {
-        return batchSubmit_(aCommands, EPT_IOF);
-    }
-    @Override public final void putSubmit(String aCommand) {
-        mBatchCommands.add(aCommand);
-    }
+    @Override public final void putSubmit(String aCommand) {putSubmit(aCommand, EPT_IOF);}
     @Override public final void putSubmit(String aCommand, IHasIOFiles aIOFiles) {
-        mBatchCommands.add(aCommand);
-        mBatchIOFiles.merge(aIOFiles);
-    }
-    /** 为了实现起来简单，这里只支持将多个 aCommands 合并成单一的 aCommand，然后提交为单任务的方式来管理，也可以使用添加限制的方式在组装过程中自动分组 */
-    protected final IFutureJob batchSubmit_(Iterable<String> aCommands, IHasIOFiles aIOFiles) {
-        if (mDead) throw new RuntimeException("Can NOT batchSubmit from this Dead Executor.");
-        // 这里先获取打包后的指令，允许添加附加上传文件（打包脚本）
-        String tBatchedCommand = getBatchSubmitCommand(aCommands, aIOFiles);
-        // 上传输入文件，上传文件部分是串行的
-        try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
-        // 获取 FutureJob
-        FutureJob tFutureJob = new FutureJob(tBatchedCommand, aIOFiles.getOFiles());
-        // 为了逻辑上简单，这里统一先加入排队
-        synchronized (this) {mQueuedJobList.addLast(tFutureJob);}
-        return tFutureJob;
+        if (mDead) throw new RuntimeException("Can NOT putSubmit from this Dead Executor.");
+        Pair<List<String>, MergedIOFiles> tPair = mBatchCommandsIOFiles.peekLast();
+        if (tPair==null || tPair.first.size()>=maxBatchSize()) {
+            tPair = new Pair<>(new ArrayList<>(), new MergedIOFiles());
+            mBatchCommandsIOFiles.addLast(tPair);
+        }
+        tPair.first.add(aCommand);
+        tPair.second.merge(aIOFiles);
     }
     
     
     
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final int system_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles) {
+    protected final int system_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return -1;}
@@ -353,7 +359,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         return tExitValue;
     }
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final IFutureJob submitSystem_(String aCommand, @Nullable String aOutFilePath, IHasIOFiles aIOFiles) {
+    protected final IFutureJob submitSystem_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
@@ -367,6 +373,9 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     /// stuff to override
+    /** 控制可以将多个指令打包成单个指令的最大数目，超出的则会变成多个任务分开提交 */
+    protected abstract int maxBatchSize();
+    
     /** 用来控制检测频率，ms */
     protected long sleepTime() {return 500;}
     
@@ -377,9 +386,9 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     /** 提供向系统提交任务所需要的指令，为了简化代码不支持不进行输出的情况，除了默认的输出路径，还是使用 str 直接获取输出时使用的临时文件路径 */
     protected abstract @NotNull String defaultOutFilePath();
     protected abstract @NotNull String toRealOutFilePath(String aOutFilePath);
-    protected abstract String getRunCommand(String aCommand, @Nullable String aOutFilePath);
-    protected abstract String getSubmitCommand(String aCommand, @Nullable String aOutFilePath);
-    protected abstract String getBatchSubmitCommand(Iterable<String> aCommands, IHasIOFiles aIOFiles);
+    protected abstract String getRunCommand(String aCommand, @NotNull String aOutFilePath);
+    protected abstract String getSubmitCommand(String aCommand, @NotNull String aOutFilePath);
+    protected abstract @Nullable String getBatchSubmitCommand(List<String> aCommands, IHasIOFiles aIOFiles);
     
     /** 使用 submit 指令后系统会给出输出，需要使用这个输出来获取对应任务的 ID 用于监控任务是否完成，返回 <= 0 的值代表提交任务失败 */
     protected abstract int getJobIDFromSystem(List<String> aOutList);

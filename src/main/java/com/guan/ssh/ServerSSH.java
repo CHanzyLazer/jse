@@ -495,7 +495,7 @@ public final class ServerSSH implements AutoCloseable {
             // 获取文件传输通道
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
-            for (String tFilePath : aFilePaths) {
+            for (String tFilePath : aFilePaths) if (tFilePath!=null && !tFilePath.isEmpty()) {
                 // 检测文件路径是否合法
                 String tLocalFile = mLocalWorkingDir+tFilePath;
                 if (!UT.IO.isFile(tLocalFile)) throw new IOException("Invalid File Path: "+tFilePath);
@@ -522,7 +522,7 @@ public final class ServerSSH implements AutoCloseable {
             // 获取文件传输通道
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
-            for (String tFilePath : aFilePaths) {
+            for (String tFilePath : aFilePaths) if (tFilePath!=null && !tFilePath.isEmpty()) {
                 // 检测文件路径是否合法
                 String tRemoteDir = mRemoteWorkingDir + tFilePath;
                 if (!isFile_(tChannelSftp, tRemoteDir)) throw new IOException("Invalid File Path: " + tFilePath);
@@ -547,7 +547,7 @@ public final class ServerSSH implements AutoCloseable {
         try {
             // 创建并发线程池，会自动尝试重新连接
             tSftpPool = new SftpPool(this, aThreadNumber);
-            for (final String tFilePath : aFilePaths) {
+            for (final String tFilePath : aFilePaths) if (tFilePath!=null && !tFilePath.isEmpty()) {
                 tSftpPool.submit(aChannelSftp -> {
                     // 检测文件路径是否合法
                     String tLocalFile = mLocalWorkingDir+tFilePath;
@@ -576,8 +576,7 @@ public final class ServerSSH implements AutoCloseable {
         try {
             // 创建并发线程池，会自动尝试重新连接
             tSftpPool = new SftpPool(this, aThreadNumber);
-            
-            for (final String tFilePath : aFilePaths) {
+            for (final String tFilePath : aFilePaths) if (tFilePath!=null && !tFilePath.isEmpty()) {
                 tSftpPool.submit(aChannelSftp -> {
                     // 检测文件路径是否合法
                     String tRemoteDir = mRemoteWorkingDir + tFilePath;

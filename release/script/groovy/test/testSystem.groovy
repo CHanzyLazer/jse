@@ -14,7 +14,6 @@ wsl = new WSL(3);
 
 println("直接执行");
 wsl.system('ls');
-wsl.system('./jTool -t "com.guan.code.UT.IO.csv2data(\'123/123\')"');
 wsl.system('sleep 1s; echo 1');
 
 println("使用 submit 来提交并行执行，并行数为设置的 3");

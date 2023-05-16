@@ -31,7 +31,7 @@ public abstract class RemoteSystemExecutor extends AbstractThreadPoolSystemExecu
     }
     @Override protected Future<Integer> batchSubmit_(Iterable<String> aCommands, final IHasIOFiles aIOFiles) {
         try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
-        Future<Integer> tFuture = batchSubmit(aCommands);
+        Future<Integer> tFuture = batchSubmit_(aCommands);
         // 由于下载文件是必要的，因此使用这个方法来在 tFuture 完成时下载
         return CompletableFuture.supplyAsync(() -> {
             int tExitValue = -1;

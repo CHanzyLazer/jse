@@ -43,7 +43,6 @@ public interface ISystemExecutor extends IHasThreadPool, IBatchSubmit<Integer, S
     
     /** BatchSubmit stuffs，不获取输出，不保证 Future 获取到的退出码是正确的 */
     Future<Integer> getSubmit();
-    Future<Integer> batchSubmit(Iterable<String> aCommands);
     void putSubmit(String aCommand);
     void putSubmit(String aCommand, IHasIOFiles aIOFiles);
     
