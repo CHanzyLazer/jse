@@ -18,7 +18,7 @@ static IHasAtomData genAtomData(double cellSize=3.61, int replicate=20, double m
     // 生成初始 fcc 结构，每个方向重复 20 次（共 32000 个原子）
     var atomData = GEN.atomDataFCC(cellSize, replicate);
     // 根据 result 来过滤 tAtomData，只保留 result>0 处的粒子
-    atomData = GEN.filterThresholdFunc3AtomData(result, atomData);
+    atomData = GEN.filterThresholdFunc3AtomData(atomData, result);
     
     // 记得关闭生成器，释放资源
     GEN.shutdown();

@@ -84,11 +84,11 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * 根据通用的过滤器 aFilter 来过滤 aAtomData，修改粒子的种类。
      * 注意永远都会进行一次值拷贝，并且当没有 type 项时会在最前面增加一项 type
      * @author liqa
-     * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData typeFilterAtomData(IOperator1Full<Integer, IAtom> aFilter, final IHasAtomData aAtomData) {
+    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, IOperator1Full<Integer, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         // 先获取 type 列
@@ -161,7 +161,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         Collections.shuffle(tTypeList, mRNG);
         // 使用 typeFilter 获取种类修改后的 AtomData
         final AtomicInteger idx = new AtomicInteger();
-        return typeFilterAtomData(atom -> tTypeList.get(idx.getAndIncrement()), aAtomData);
+        return typeFilterAtomData(aAtomData, atom -> tTypeList.get(idx.getAndIncrement()));
     }
     
     
@@ -169,11 +169,11 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * 根据通用的过滤器 aFilter 来过滤 aAtomData，移除不满足 Filter 的粒子。
      * 注意返回的内容都是 aAtomData 的引用，因此如果需要修改还需要手动进行值拷贝
      * @author liqa
-     * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterAtomData(IOperator1Full<Boolean, IAtom> aFilter, final IHasAtomData aAtomData) {
+    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IOperator1Full<Boolean, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         double[][] oAtomData = aAtomData.atomData();
@@ -195,12 +195,12 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * 根据 aFunc3 原子位置对应的值来过滤 aAtomData。
      * 注意返回的内容都是 aAtomData 的引用，因此如果需要修改还需要手动进行值拷贝
      * @author liqa
-     * @param aFilter 自定义的过滤器，输入 double 为 aFunc3 的值，返回是否保留
-     * @param aFunc3 过滤指定的三维函数
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFunc3 过滤指定的三维函数
+     * @param aFilter 自定义的过滤器，输入 double 为 aFunc3 的值，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterFunc3AtomData(final IOperator1Full<Boolean, Double> aFilter, final Func3 aFunc3, final IHasAtomData aAtomData) {
+    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IOperator1Full<Boolean, Double> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         // 获取边界，会进行缩放将 aAtomData 的边界和 Func3 的边界对上
@@ -208,40 +208,40 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         final double tX0 = aFunc3.x0()                , tY0 = aFunc3.y0()                , tZ0 = aFunc3.z0()                ;
         final double tXe = tX0+aFunc3.dx()*aFunc3.Nx(), tYe = tY0+aFunc3.dy()*aFunc3.Ny(), tZe = tZ0+aFunc3.dz()*aFunc3.Nz();
         // 需要使用考虑了 pbc 的 subs，因为正边界处的插值需要考虑 pbc
-        return filterAtomData(atom -> aFilter.cal(aFunc3.subsPBC(
+        return filterAtomData(aAtomData, atom -> aFilter.cal(aFunc3.subsPBC(
             (atom.x()-tBoxLo[0])/(tBoxHi[0]-tBoxLo[0])*(tXe-tX0) + tX0,
             (atom.y()-tBoxLo[1])/(tBoxHi[1]-tBoxLo[1])*(tYe-tY0) + tY0,
-            (atom.z()-tBoxLo[2])/(tBoxHi[2]-tBoxLo[2])*(tZe-tZ0) + tZ0)), aAtomData);
+            (atom.z()-tBoxLo[2])/(tBoxHi[2]-tBoxLo[2])*(tZe-tZ0) + tZ0)));
     }
     /**
      * 预设的一种阈值的 filter，只有当对应的 Func3 大于阈值 aThreshold 才会保留
      * @author liqa
-     * @param aThreshold 设置的阈值，默认为 0
-     * @param aFunc3 指定的 func3
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFunc3 指定的 func3
+     * @param aThreshold 设置的阈值，默认为 0
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterThresholdFunc3AtomData(final double aThreshold, Func3 aFunc3, IHasAtomData aAtomData) {return filterFunc3AtomData(u -> (u > aThreshold), aFunc3, aAtomData);}
-    public IHasAtomData filterThresholdFunc3AtomData(Func3 aFunc3, IHasAtomData aAtomData) {return filterThresholdFunc3AtomData(0.0, aFunc3, aAtomData);}
+    public IHasAtomData filterThresholdFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final double aThreshold) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (u > aThreshold));}
+    public IHasAtomData filterThresholdFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterThresholdFunc3AtomData(aAtomData, aFunc3, 0.0);}
     
     /**
      * 预设的一种按照概率保留的 filter，将 Func3 使用通用的 aToProb 转换成概率，并按照概率保留
      * @author liqa
-     * @param aToProb 通用的转换成概率的函数，输出 0-1 的浮点数，不指定则直接使用 aFunc3
-     * @param aFunc3 指定的 func3
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFunc3 指定的 func3
+     * @param aToProb 通用的转换成概率的函数，输出 0-1 的浮点数，不指定则直接使用 aFunc3
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterProbFunc3AtomData(final IOperator1<Double> aToProb, Func3 aFunc3, IHasAtomData aAtomData) {return filterFunc3AtomData(u -> (mRNG.nextDouble() < aToProb.cal(u)), aFunc3, aAtomData);}
-    public IHasAtomData filterProbFunc3AtomData(Func3 aFunc3, IHasAtomData aAtomData) {return filterProbFunc3AtomData(u -> u, aFunc3, aAtomData);}
+    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final IOperator1<Double> aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
+    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> u);}
     /**
      * 对于 aFunc3 = u, u = c1 - c0, c1 + c0 = 1，选取 c1 的特殊情况
      * @author liqa
-     * @param aFunc3 指定的 func3 = u
      * @param aAtomData 需要过滤的 aAtomData
+     * @param aFunc3 指定的 func3 = u
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterProbUFunc3AtomData(Func3 aFunc3, IHasAtomData aAtomData) {return filterProbFunc3AtomData(u -> 0.5*(u+1.0), aFunc3, aAtomData);}
+    public IHasAtomData filterProbUFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> 0.5*(u+1.0));}
     
     
     /**
