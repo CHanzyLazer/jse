@@ -25,7 +25,6 @@ public class Atom implements IAtom {
     }
     
     
-    @Override public boolean hasXYZ() {return mXYZ != null && mXYZ.length >= 3;}
     @Override public boolean hasType() {return mType > 0;}
     @Override public boolean hasID() {return mID > 0;}
 }

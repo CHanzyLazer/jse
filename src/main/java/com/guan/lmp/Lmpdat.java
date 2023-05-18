@@ -267,7 +267,7 @@ public class Lmpdat extends AbstractAtomData {
         lines.add("Masses");
         lines.add("");
         for (int i = 0; i < mAtomTypeNum; ++i)
-        lines.add(String.format("%6d %10.5g", i, mMasses[i]));
+        lines.add(String.format("%6d %10.5g", i+1, mMasses[i]));
         }
         lines.add("");
         lines.add("Atoms");

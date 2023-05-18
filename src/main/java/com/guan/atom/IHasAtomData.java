@@ -19,7 +19,6 @@ public interface IHasAtomData extends IHasOrthogonalXYZ, IHasOrthogonalXYZID {
                     @Override public int type() {return (int)atomData()[index][typeCol()];}
                     @Override public int id() {return (int)atomData()[index][idCol()];}
                     
-                    @Override public boolean hasXYZ() {return xCol()>=0 && yCol()>=0 && zCol()>=0;}
                     @Override public boolean hasType() {return typeCol()>=0;}
                     @Override public boolean hasID() {return idCol()>=0;}
                 };

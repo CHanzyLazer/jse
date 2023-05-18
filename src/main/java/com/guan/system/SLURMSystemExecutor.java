@@ -21,7 +21,6 @@ import static com.guan.code.CS.*;
  */
 public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemExecutor> {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
-    public final static String WORKING_DIR = ".temp/%n/";
     public final static String SPLIT_NODE_SCRIPT_PATH = WORKING_DIR+"splitNodeList.sh";
     public final static String BATCHED_SCRIPT_DIR = WORKING_DIR+"batched/";
     public final static String DEFAULT_OUTFILE_DIR = ".temp/slurm/";
@@ -129,7 +128,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
      * 参数 "ParallelNumber" 未选定时默认为 1，参数 "IOThreadNumber" 未选定时不开启并行传输，
      * "SleepTime" 未选定时默认为 500（ms），"NoConsoleOutput" 未选定时默认为 false（即开启输出信息到控制台）
      * <p>
-     * "JobName" 未选定时会是格式 "jTool@${RandomString}"，"Partition" 未选定时会使用 slurm 服务器上默认的分区，
+     * "JobName" 未选定时会是格式 "SLURM@${RandomString}"，"Partition" 未选定时会使用 slurm 服务器上默认的分区，
      * "TaskNumber" 未选定时默认为 1，"MaxTaskNumberPerNode" 未选定时默认为 20，"SqueueName" 未选定时默认为登录使用的用户名
      * <p>
      * "Port" 未选定时默认为 22，"Password" 未选定时使用 publicKey 密钥认证，"KeyPath" 未选定时使用默认路径的密钥，
@@ -148,7 +147,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
     
     public static int       getParallelNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelmumber", "ParallelNum", "parallelnum", "pn")).intValue();}
     public static long      getSleepTime            (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 500, "SleepTime", "sleeptime", "stime", "st")).longValue();}
-    public static String    getJobName              (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "jTool@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
+    public static String    getJobName              (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
     public static @Nullable String getPartition     (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p");}
     public static int       getTaskNumber           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}
     public static int       getMaxTaskNumPerNode    (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 20, "MaxTaskNumberPerNode", "maxtasknumberpernode", "MaxTaskNumPerNode", "maxtasknumpernode", "CoresPerNode", "corespernode", "ntaskspernode", "ntasks-per-node")).intValue();}

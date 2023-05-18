@@ -5,7 +5,6 @@ public interface IAtom extends IHasXYZ {
     int type();
     int id();
     
-    boolean hasXYZ();
     boolean hasType();
     boolean hasID();
 }

@@ -24,6 +24,8 @@ public class CS {
     public static final double[] BOX_ONE  = new double[] {1.0, 1.0, 1.0};
     public static final double[] BOX_ZERO = new double[] {0.0, 0.0, 0.0};
     
+    public final static String WORKING_DIR = ".temp/%n/";
+    
     /** AtomData stuffs */
     public final static String[] ATOM_DATA_KEYS_XYZ = new String[] {"x", "y", "z"};
     public final static String[] ATOM_DATA_KEYS_ID_TYPE_XYZ = new String[] {"id", "type", "x", "y", "z"};
@@ -37,6 +39,7 @@ public class CS {
     
     /** IOFiles Keys */
     public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
+    
     
     /** SystemExecutor Stuffs */
     public final static IHasIOFiles EPT_IOF = new IOFiles();
