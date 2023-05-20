@@ -54,16 +54,16 @@ public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThread
     /** 批量任务直接遍历提交，使用 UT.Code.mergeAll 来管理 Future */
     private List<String> mBatchCommands = new ArrayList<>();
     private MergedIOFiles mBatchIOFiles = new MergedIOFiles();
-    @Override public final Future<List<Integer>> getSubmit() {
+    @Override public final Future<List<Integer>> submitBatchSystem() {
         Future<List<Integer>> tFuture = batchSubmit_(mBatchCommands, mBatchIOFiles);
         mBatchCommands = new ArrayList<>();
         mBatchIOFiles = new MergedIOFiles();
         return tFuture;
     }
-    @Override public final void putSubmit(String aCommand) {
+    @Override public final void putBatchSystem(String aCommand) {
         mBatchCommands.add(aCommand);
     }
-    @Override public final void putSubmit(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final void putBatchSystem(String aCommand, IHasIOFiles aIOFiles) {
         mBatchCommands.add(aCommand);
         mBatchIOFiles.merge(aIOFiles);
     }

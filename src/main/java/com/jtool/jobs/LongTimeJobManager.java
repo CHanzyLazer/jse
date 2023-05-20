@@ -141,9 +141,6 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
                 ++idx;
             }
         }
-        
-        public InitJobPool then() {return then(()->{});}
-        public void finish() throws Exception {finish(()->{});}
     }
     
     /** 开始组装 */
@@ -151,7 +148,6 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
         mConnectorList.add(aInitDo);
         return INIT_JOB_POOL;
     }
-    public InitJobPool init() {return init(()->{});}
     
     
     /** 外部用来手动关闭这个 Manager 的接口 */

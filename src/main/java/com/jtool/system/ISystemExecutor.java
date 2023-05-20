@@ -40,9 +40,13 @@ public interface ISystemExecutor extends IHasThreadPool {
     Future<Integer> submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
     
     /** BatchSubmit stuffs，不获取输出，Future 获取到的退出码数组大小不一定是 put 的总数（可能会发生合并）*/
-    Future<List<Integer>> getSubmit();
-    void putSubmit(String aCommand);
-    void putSubmit(String aCommand, IHasIOFiles aIOFiles);
+    Future<List<Integer>> submitBatchSystem();
+    void putBatchSystem(String aCommand);
+    void putBatchSystem(String aCommand, IHasIOFiles aIOFiles);
+    
+    @Deprecated default Future<List<Integer>> getSubmit() {return submitBatchSystem();}
+    @Deprecated default void putSubmit(String aCommand) {putBatchSystem(aCommand);}
+    @Deprecated default void putSubmit(String aCommand, IHasIOFiles aIOFiles) {putBatchSystem(aCommand, aIOFiles);}
     
     
     /** 获取字符串输出而不是退出代码 */

@@ -386,7 +386,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     /** 批量任务直接遍历提交 */
     private final LinkedList<Pair<List<String>, MergedIOFiles>> mBatchCommandsIOFiles = new LinkedList<>();
-    @Override public final ListFutureJob getSubmit() {
+    @Override public final ListFutureJob submitBatchSystem() {
         if (mDead) throw new RuntimeException("Can NOT getSubmit from this Dead Executor.");
         // 遍历提交
         List<IFutureJob> rFutures = new ArrayList<>(mBatchCommandsIOFiles.size());
@@ -411,8 +411,8 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         // 使用专门的 ListFutureJob 来管理 Future，可以保留更多的信息
         return new ListFutureJob(rFutures);
     }
-    @Override public final void putSubmit(String aCommand) {putSubmit(aCommand, EPT_IOF);}
-    @Override public final void putSubmit(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final void putBatchSystem(String aCommand) {putBatchSystem(aCommand, EPT_IOF);}
+    @Override public final void putBatchSystem(String aCommand, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT putSubmit from this Dead Executor.");
         Pair<List<String>, MergedIOFiles> tPair = mBatchCommandsIOFiles.peekLast();
         if (tPair==null || tPair.first.size()>=maxBatchSize()) {

@@ -67,9 +67,6 @@ public class StepJobManager {
                 UT.IO.write(mStepFile, String.valueOf(tStep));
             }
         }
-        
-        public StepJob then() {return then(()->{});}
-        public void finish() throws Exception {finish(()->{});}
     }
     
     /** 开始组装 */
@@ -77,6 +74,4 @@ public class StepJobManager {
         mConnectorList.add(aInitDo);
         return STEP_JOB;
     }
-    public StepJob init() {return init(()->{});}
-    
 }
