@@ -1,117 +1,136 @@
 package com.jtool.math.matrix;
 
-import com.jtool.math.IDataGenerator2;
-import com.jtool.math.IDataSlicer2;
+import com.jtool.code.UT;
 import com.jtool.math.operator.IOperator2Full;
+import com.jtool.math.vector.AbstractVector;
+import com.jtool.math.vector.IVector;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.ArrayList;
+import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
-
 
 /**
+ * 一般矩阵的接口的默认实现，用来方便返回抽象的矩阵
  * @author liqa
- * <p> 通用的矩阵类，由于默认实现比较复杂，并且涉及到重写 Object 的成员，因此部分方法放入抽象类中 </p>
  */
-public abstract class AbstractMatrix<T extends Number, M extends IMatrixFull<T, M>> implements IMatrixFull<T, M> {
+public abstract class AbstractMatrix<T extends Number> implements IMatrix<T> {
     /** print */
-    @Override public String toString() {return IMatrix.Util.toString_(this, this::toString_);}
-    
-    /** 矩阵生成器的一般实现，主要实现一些重复的接口 */
-    protected abstract class AbstractGenerator implements IDataGenerator2<M> {
-        @Override public M ones() {return ones(rowNumber(), columnNumber());}
-        @Override public M zeros() {return zeros(rowNumber(), columnNumber());}
-        @Override public M from(Callable<? extends Number> aCall) {return from(rowNumber(), columnNumber(), aCall);}
-        @Override public M from(IOperator2Full<? extends Number, Integer, Integer> aOpt) {return from(rowNumber(), columnNumber(), aOpt);}
-    }
-    
-    /** 切片操作，默认返回新的矩阵，refSlicer 则会返回引用的切片结果 */
-    @Override public IDataSlicer2<M> slicer() {
-        return new IDataSlicer2<M>() {
-            private final IDataGenerator2<M> mGen = generator();
-            @Override public M getII(final List<Integer> aSelectedRows, final List<Integer> aSelectedCols) {
-                return mGen.from(aSelectedRows.size(), aSelectedCols.size(), (row, col) -> AbstractMatrix.this.get(aSelectedRows.get(row), aSelectedCols.get(col)));
-            }
-            @Override public M getIB(List<Integer> aSelectedRows, List<Boolean> aSelectedCols) {return getII(aSelectedRows, B2I(aSelectedCols));}
-            @Override public M getBI(List<Boolean> aSelectedRows, List<Integer> aSelectedCols) {return getII(B2I(aSelectedRows), aSelectedCols);}
-            @Override public M getBB(List<Boolean> aSelectedRows, List<Boolean> aSelectedCols) {return getII(B2I(aSelectedRows), B2I(aSelectedCols));}
-            
-            @Override public M getAI(final List<Integer> aSelectedCols) {
-                return mGen.from(rowNumber(), aSelectedCols.size(), (row, col) -> AbstractMatrix.this.get(row, aSelectedCols.get(col)));
-            }
-            @Override public M getAB(List<Boolean> aSelectedCols) {return getAI(B2I(aSelectedCols));}
-            @Override public M getIA(List<Integer> aSelectedRows) {
-                return mGen.from(aSelectedRows.size(), columnNumber(), (row, col) -> AbstractMatrix.this.get(aSelectedRows.get(row), col));
-            }
-            @Override public M getBA(List<Boolean> aSelectedRows) {return getIA(B2I(aSelectedRows));}
-            @Override public M getAA() {return mGen.same();}
-        };
-    }
-    @Override public IDataSlicer2<IMatrix<T>> refSlicer() {
-        return new IDataSlicer2<IMatrix<T>>() {
-            @Override public IMatrix<T> getII(final List<Integer> aSelectedRows, final List<Integer> aSelectedCols) {
-                return new IMatrix<T>() {
-                    /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public T get_(int aRow, int aCol) {return AbstractMatrix.this.get(aSelectedRows.get(aRow), aSelectedCols.get(aCol));}
-                    @Override public void set_(int aRow, int aCol, Number aValue) {AbstractMatrix.this.set(aSelectedRows.get(aRow), aSelectedCols.get(aCol), aValue);}
-                    @Override public T getAndSet_(int aRow, int aCol, Number aValue) {return AbstractMatrix.this.getAndSet(aSelectedRows.get(aRow), aSelectedCols.get(aCol), aValue);}
-                    @Override public int rowNumber() {return aSelectedRows.size();}
-                    @Override public int columnNumber() {return aSelectedCols.size();}
-                };
-            }
-            @Override public IMatrix<T> getIB(List<Integer> aSelectedRows, List<Boolean> aSelectedCols) {return getII(aSelectedRows, B2I(aSelectedCols));}
-            @Override public IMatrix<T> getBI(List<Boolean> aSelectedRows, List<Integer> aSelectedCols) {return getII(B2I(aSelectedRows), aSelectedCols);}
-            @Override public IMatrix<T> getBB(List<Boolean> aSelectedRows, List<Boolean> aSelectedCols) {return getII(B2I(aSelectedRows), B2I(aSelectedCols));}
-            
-            @Override public IMatrix<T> getAI(final List<Integer> aSelectedCols) {
-                return new IMatrix<T>() {
-                    /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public T get_(int aRow, int aCol) {return AbstractMatrix.this.get(aRow, aSelectedCols.get(aCol));}
-                    @Override public void set_(int aRow, int aCol, Number aValue) {AbstractMatrix.this.set(aRow, aSelectedCols.get(aCol), aValue);}
-                    @Override public T getAndSet_(int aRow, int aCol, Number aValue) {return AbstractMatrix.this.getAndSet(aRow, aSelectedCols.get(aCol), aValue);}
-                    @Override public int rowNumber() {return AbstractMatrix.this.rowNumber();}
-                    @Override public int columnNumber() {return aSelectedCols.size();}
-                };
-            }
-            @Override public IMatrix<T> getAB(List<Boolean> aSelectedCols) {return getAI(B2I(aSelectedCols));}
-            @Override public IMatrix<T> getIA(final List<Integer> aSelectedRows) {
-                return new IMatrix<T>() {
-                    /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public T get_(int aRow, int aCol) {return AbstractMatrix.this.get(aSelectedRows.get(aRow), aCol);}
-                    @Override public void set_(int aRow, int aCol, Number aValue) {AbstractMatrix.this.set(aSelectedRows.get(aRow), aCol, aValue);}
-                    @Override public T getAndSet_(int aRow, int aCol, Number aValue) {return AbstractMatrix.this.getAndSet(aSelectedRows.get(aRow), aCol, aValue);}
-                    @Override public int rowNumber() {return aSelectedRows.size();}
-                    @Override public int columnNumber() {return AbstractMatrix.this.columnNumber();}
-                };
-            }
-            @Override public IMatrix<T> getBA(List<Boolean> aSelectedRows) {return getIA(B2I(aSelectedRows));}
-            @Override public IMatrix<T> getAA() {return AbstractMatrix.this;}
-        };
-    }
-    
-    /**
-     * 将 {@code List<Boolean>} 值拷贝转为 {@code List<Integer>} 方便使用；
-     * 为了代码简洁并且保证可读性，统一都使用 B2I 来处理 Boolean 的输入，对于超大的矩阵切片可能会有一定的性能影响
-     */
-    private static List<Integer> B2I(List<Boolean> aSelectedB) {
-        List<Integer> rSelectedI = new ArrayList<>();
-        int tCol = 0;
-        for (boolean select : aSelectedB) {
-            if (select) rSelectedI.add(tCol);
-            ++tCol;
+    @Override public String toString() {
+        StringBuilder rStr  = new StringBuilder();
+        Iterable<? extends Iterable<T>> tRows = rows();
+        boolean tFirst = true;
+        for (Iterable<T> tRow : tRows) {
+            if (!tFirst) rStr.append("\n");
+            for (T tValue : tRow) rStr.append(toString_(tValue));
+            tFirst = false;
         }
-        return rSelectedI;
+        return rStr.toString();
+    }
+    
+    /** 转为兼容性更好的 double[][]，默认直接使用 rows 转为 double[][] */
+    @Override public double[][] mat() {return UT.Code.toMat(rows());}
+    
+    /** 批量修改的接口 */
+    @Override public void fill(Number aValue) {
+        int tRowNum = rowNumber();
+        int tColNum = columnNumber();
+        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aValue);
+    }
+    @Override public void fillWith(Iterable<? extends Iterable<? extends Number>> aRows) {
+        int tRowNum = rowNumber();
+        int tColNum = columnNumber();
+        Iterator<? extends Iterable<? extends Number>> tRowIt = aRows.iterator();
+        int row = 0;
+        while (row < tRowNum && tRowIt.hasNext()) {
+            Iterable<? extends Number> tRow = tRowIt.next();
+            Iterator<? extends Number> tIt = tRow.iterator();
+            int col = 0;
+            while (col < tColNum && tIt.hasNext()) {
+                set_(row, col, tIt.next());
+                ++col;
+            }
+            ++row;
+        }
+    }
+    @Override public void fillWith(IMatrix<? extends Number> aMatrix) {fillWith(aMatrix::get);}
+    @Override public void fillWith(IOperator2Full<? extends Number, Integer, Integer> aOpt) {
+        int tRowNum = rowNumber();
+        int tColNum = columnNumber();
+        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aOpt.cal(row, col));
+    }
+    
+    @Override public T get(int aRow, int aCol) {
+        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
+        return get_(aRow, aCol);
+    }
+    @Override public T getAndSet(int aRow, int aCol, Number aValue) {
+        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
+        return getAndSet_(aRow, aCol, aValue);
+    }
+    @Override public void set(int aRow, int aCol, Number aValue) {
+        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
+        set_(aRow, aCol, aValue);
+    }
+    @Override public ISize size() {
+        return new ISize() {
+            @Override public int row() {return rowNumber();}
+            @Override public int col() {return columnNumber();}
+        };
+    }
+    
+    
+    @Override public List<IVector<T>> rows() {
+        return new AbstractList<IVector<T>>() {
+            @Override public int size() {return rowNumber();}
+            @Override public IVector<T> get(int aRow) {return row(aRow);}
+        };
+    }
+    @Override public IVector<T> row(final int aRow) {
+        if (aRow<0 || aRow>=rowNumber()) throw new IndexOutOfBoundsException("Row: "+aRow);
+        return new AbstractVector<T>() {
+            @Override public T get_(int aIdx) {return AbstractMatrix.this.get_(aRow, aIdx);}
+            @Override public void set_(int aIdx, Number aValue) {AbstractMatrix.this.set_(aRow, aIdx, aValue);}
+            @Override public T getAndSet_(int aIdx, Number aValue) {return AbstractMatrix.this.getAndSet_(aRow, aIdx, aValue);}
+            @Override public int size() {return columnNumber();}
+        };
+    }
+    @Override public List<IVector<T>> cols() {
+        return new AbstractList<IVector<T>>() {
+            @Override public int size() {return columnNumber();}
+            @Override public IVector<T> get(int aCol) {return col(aCol);}
+        };
+    }
+    @Override public IVector<T> col(final int aCol) {
+        if (aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException("Col: "+aCol);
+        return new AbstractVector<T>() {
+            @Override public T get_(int aIdx) {return AbstractMatrix.this.get_(aIdx, aCol);}
+            @Override public void set_(int aIdx, Number aValue) {AbstractMatrix.this.set_(aIdx, aCol, aValue);}
+            @Override public T getAndSet_(int aIdx, Number aValue) {return AbstractMatrix.this.getAndSet_(aIdx, aCol, aValue);}
+            @Override public int size() {return rowNumber();}
+        };
+    }
+    
+    
+    /** Groovy 的部分，重载一些运算符方便操作 */
+    @VisibleForTesting @Override public T call(int aRow, int aCol) {return get(aRow, aCol);}
+    @VisibleForTesting @Override public IMatrixRow_<T> getAt(int aRow) {return new MatrixRow_(aRow);}
+    
+    protected class MatrixRow_ implements IMatrixRow_<T> {
+        protected final int mRow;
+        protected MatrixRow_(int aRow) {mRow = aRow;}
+        
+        @Override public T getAt(int aCol) {return get(mRow, aCol);}
+        @Override public void putAt(int aCol, Number aValue) {set(mRow, aCol, aValue);}
     }
     
     
     /** stuff to override */
     public abstract T get_(int aRow, int aCol);
     public abstract void set_(int aRow, int aCol, Number aValue);
-    public abstract T getAndSet_(int aRow, int aCol, Number aValue);
+    public abstract T getAndSet_(int aRow, int aCol, Number aValue); // 返回修改前的值
     public abstract int rowNumber();
     public abstract int columnNumber();
-    
-    public abstract IDataGenerator2<M> generator();
     
     protected String toString_(T aValue) {return String.format(" %8.4g", aValue.doubleValue());}
 }

@@ -1,51 +1,59 @@
 package com.jtool.math.matrix;
 
+import com.jtool.math.IDataGenerator1;
 import com.jtool.math.IDataGenerator2;
 import com.jtool.math.operator.IOperator2Full;
+import com.jtool.math.vector.AbstractVector;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.RealVector;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 
 
 /**
  * @author liqa
  * <p> 矩阵一般实现，按照列排序 </p>
  */
-public class RealColumnMatrix extends AbstractMatrix<Double, RealColumnMatrix> {
+public class RealColumnMatrix extends AbstractMatrixFull<Double, RealColumnMatrix, RealVector> {
     /** 提供默认的创建 */
     public static RealColumnMatrix ones(int aSize) {return ones(aSize, aSize);}
     public static RealColumnMatrix ones(int aRowNum, int aColNum) {
         double[] tData = new double[aRowNum*aColNum];
         Arrays.fill(tData, 1.0);
-        return new RealColumnMatrix(aRowNum, tData);
+        return new RealColumnMatrix(aRowNum, aColNum, tData);
     }
     public static RealColumnMatrix zeros(int aSize) {return zeros(aSize, aSize);}
-    public static RealColumnMatrix zeros(int aRowNum, int aColNum) {return new RealColumnMatrix(aRowNum, new double[aRowNum*aColNum]);}
+    public static RealColumnMatrix zeros(int aRowNum, int aColNum) {return new RealColumnMatrix(aRowNum, aColNum, new double[aRowNum*aColNum]);}
     
     
     private final double[] mData;
     private final int mRowNum;
+    private final int mColNum;
     
-    public RealColumnMatrix(int aRowNum, double[] aData) {
+    public RealColumnMatrix(int aRowNum, int aColNum, double[] aData) {
         mRowNum = aRowNum;
         mData = aData;
+        mColNum = aColNum;
     }
-    public RealColumnMatrix(double[][] aMatrix) {
-        mRowNum = aMatrix.length;
-        int tColNum = aMatrix[0].length;
-        mData = new double[mRowNum*tColNum];
+    
+    public RealColumnMatrix(int aRowNum, double[] aData) {this(aRowNum, aData.length/aRowNum, aData);}
+    public RealColumnMatrix(double[][] aMat) {
+        mRowNum = aMat.length;
+        mColNum = aMat[0].length;
+        mData = new double[mRowNum*mColNum];
         for (int row = 0; row < mRowNum; ++row) {
-            double[] tRow = aMatrix[row];
-            for (int col = 0; col < tColNum; ++col) {
+            double[] tRow = aMat[row];
+            for (int col = 0; col < mColNum; ++col) {
                 mData[row + col*mRowNum] = tRow[col];
             }
         }
     }
-    public RealColumnMatrix(Collection<? extends Collection<? extends Number>> aMatrix) {
-        mRowNum = aMatrix.size();
-        Iterator<? extends Collection<? extends Number>> tIt = aMatrix.iterator();
+    public RealColumnMatrix(Collection<? extends Collection<? extends Number>> aRows) {
+        mRowNum = aRows.size();
+        Iterator<? extends Collection<? extends Number>> tIt = aRows.iterator();
         Collection<? extends Number> tRow = tIt.next();
-        mData = new double[mRowNum*tRow.size()];
+        mColNum = tRow.size();
+        mData = new double[mRowNum*mColNum];
         int row = 0;
         while (true) {
             int col = 0;
@@ -70,55 +78,57 @@ public class RealColumnMatrix extends AbstractMatrix<Double, RealColumnMatrix> {
         return oValue;
     }
     @Override public int rowNumber() {return mRowNum;}
-    @Override public int columnNumber() {return mData.length/mRowNum;}
+    @Override public int columnNumber() {return mColNum;}
     
     /** 重写这个提高列向的索引速度 */
-    @Override public List<Double> col(final int aCol) {
+    @Override public IVector<Double> col(final int aCol) {
         if (aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException("Col: "+aCol);
-        return new AbstractList<Double>() {
+        return new AbstractVector<Double>() {
             private final int mShift = aCol*mRowNum;
-            @Override public int size() {return mRowNum;}
-            @Override public Double get(int aRow) {
-                if (aRow<0 || aRow>=mRowNum) throw new IndexOutOfBoundsException("Row: "+aRow);
-                return mData[aRow + mShift];
-            }
-            @Override public Double set(int aRow, Double aValue) {
-                if (aRow<0 || aRow>=mRowNum) throw new IndexOutOfBoundsException("Row: "+aRow);
-                int tIdx = aRow + mShift;
+            @Override public Double get_(int aIdx) {return mData[aIdx + mShift];}
+            @Override public void set_(int aIdx, Number aValue) {mData[aIdx + mShift] = aValue.doubleValue();}
+            @Override public Double getAndSet_(int aIdx, Number aValue) {
+                int tIdx = aIdx + mShift;
                 Double oValue = mData[tIdx];
-                mData[tIdx] = aValue;
+                mData[tIdx] = aValue.doubleValue();
                 return oValue;
             }
+            @Override public int size() {return mRowNum;}
         };
     }
     
     
-    /** IGenerator stuffs */
-    @Override public IDataGenerator2<RealColumnMatrix> generator() {
-        return new AbstractGenerator() {
+    /** 重写这些接口来加速批量填充过程 */
+    @Override public void fill(Number aValue) {Arrays.fill(mData, aValue.doubleValue());}
+    @Override public void fillWith(IOperator2Full<? extends Number, Integer, Integer> aOpt) {
+        int tRowNum = rowNumber();
+        int tColNum = columnNumber();
+        int i = 0;
+        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+            mData[i] = aOpt.cal(row, col).doubleValue();
+            ++i;
+        }
+    }
+    
+    
+    /** IGenerator stuffs，重写 same 接口专门优化 */
+    @Override protected RealColumnMatrix newZeros(int aRowNum, int aColNum) {return RealColumnMatrix.zeros(aRowNum, aColNum);}
+    @Override protected RealVector newZeros(int aSize) {return RealVector.zeros(aSize);}
+    @Override public IDataGenerator2<RealColumnMatrix> generatorMat() {
+        return new MatrixGenerator() {
             @Override public RealColumnMatrix same() {
                 double[] rData = new double[mData.length];
                 System.arraycopy(mData, 0, rData, 0, mData.length);
-                return new RealColumnMatrix(mRowNum, rData);
+                return new RealColumnMatrix(mRowNum, mColNum, rData);
             }
-            @Override public RealColumnMatrix ones(int aRowNum, int aColNum) {return RealColumnMatrix.ones(aRowNum, aColNum);}
-            @Override public RealColumnMatrix zeros(int aRowNum, int aColNum) {return RealColumnMatrix.zeros(aRowNum, aColNum);}
-            @Override public RealColumnMatrix from(int aRowNum, int aColNum, Callable<? extends Number> aCall) {
-                double[] rData = new double[aRowNum*aColNum];
-                for (int i = 0; i < rData.length; ++i) {
-                    try {rData[i] = aCall.call().doubleValue();}
-                    catch (Exception e) {throw new RuntimeException(e);}
-                }
-                return new RealColumnMatrix(aRowNum, rData);
-            }
-            @Override public RealColumnMatrix from(int aRowNum, int aColNum, IOperator2Full<? extends Number, Integer, Integer> aOpt) {
-                double[] rData = new double[aRowNum*aColNum];
-                int i = 0;
-                for (int col = 0; col < aColNum; ++col) for (int row = 0; row < aRowNum; ++row) {
-                    rData[i] = aOpt.cal(row, col).doubleValue();
-                    ++i;
-                }
-                return new RealColumnMatrix(aRowNum, rData);
+        };
+    }
+    @Override public IDataGenerator1<RealVector> generatorVec() {
+        return new VectorGenerator() {
+            @Override public RealVector same() {
+                double[] rData = new double[mData.length];
+                System.arraycopy(mData, 0, rData, 0, mData.length);
+                return new RealVector(rData);
             }
         };
     }
