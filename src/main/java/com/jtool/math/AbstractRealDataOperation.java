@@ -5,7 +5,7 @@ import com.jtool.math.operator.IOperator1;
 import com.jtool.math.operator.IOperator2;
 
 /**
- * 对于实数（Double）相关运算的一般实现，为了扩展性不做过多优化
+ * 对于实数（Double）相关运算的一般实现，默认实现没有做优化
  * @author liqa
  */
 public abstract class AbstractRealDataOperation<R extends T, T> implements IDataOperation<R, T, Double, Number> {
@@ -16,14 +16,14 @@ public abstract class AbstractRealDataOperation<R extends T, T> implements IData
     @Override public R ebeDivide    (T aLHS, T aRHS) {return ebeDo(aLHS, aRHS, (lhs, rhs) -> (lhs / rhs));}
     @Override public R ebeMod       (T aLHS, T aRHS) {return ebeDo(aLHS, aRHS, (lhs, rhs) -> (lhs % rhs));}
     
-    @Override public R mapAdd       (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (lhs + aRHS.doubleValue()));}
-    @Override public R mapMinus     (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (lhs - aRHS.doubleValue()));}
-    @Override public R mapLMinus    (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (aRHS.doubleValue()) - lhs);}
-    @Override public R mapMultiply  (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (lhs * aRHS.doubleValue()));}
-    @Override public R mapDivide    (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (lhs / aRHS.doubleValue()));}
-    @Override public R mapLDivide   (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (aRHS.doubleValue() / lhs));}
-    @Override public R mapMod       (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (lhs % aRHS.doubleValue()));}
-    @Override public R mapLMod      (T aLHS, final Number aRHS) {return mapDo(aLHS, lhs -> (aRHS.doubleValue() % lhs));}
+    @Override public R mapAdd       (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (lhs + rhs));}
+    @Override public R mapMinus     (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (lhs - rhs));}
+    @Override public R mapLMinus    (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (rhs - lhs));}
+    @Override public R mapMultiply  (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (lhs * rhs));}
+    @Override public R mapDivide    (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (lhs / rhs));}
+    @Override public R mapLDivide   (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (rhs / lhs));}
+    @Override public R mapMod       (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (lhs % rhs));}
+    @Override public R mapLMod      (T aLHS, Number aRHS) {final double rhs = aRHS.doubleValue(); return mapDo(aLHS, lhs -> (rhs % lhs));}
     
     @SuppressWarnings("Convert2MethodRef")
     @Override public void ebeAdd2this       (T aRHS) {ebeDo2this(aRHS, (lhs, rhs) -> (lhs + rhs));}
@@ -35,14 +35,14 @@ public abstract class AbstractRealDataOperation<R extends T, T> implements IData
     @Override public void ebeMod2this       (T aRHS) {ebeDo2this(aRHS, (lhs, rhs) -> (lhs % rhs));}
     @Override public void ebeLMod2this      (T aRHS) {ebeDo2this(aRHS, (lhs, rhs) -> (rhs % lhs));}
     
-    @Override public void mapAdd2this       (final Number aRHS) {mapDo2this(lhs -> (lhs + aRHS.doubleValue()));}
-    @Override public void mapMinus2this     (final Number aRHS) {mapDo2this(lhs -> (lhs - aRHS.doubleValue()));}
-    @Override public void mapLMinus2this    (final Number aRHS) {mapDo2this(lhs -> (aRHS.doubleValue()) - lhs);}
-    @Override public void mapMultiply2this  (final Number aRHS) {mapDo2this(lhs -> (lhs * aRHS.doubleValue()));}
-    @Override public void mapDivide2this    (final Number aRHS) {mapDo2this(lhs -> (lhs / aRHS.doubleValue()));}
-    @Override public void mapLDivide2this   (final Number aRHS) {mapDo2this(lhs -> (aRHS.doubleValue() / lhs));}
-    @Override public void mapMod2this       (final Number aRHS) {mapDo2this(lhs -> (lhs % aRHS.doubleValue()));}
-    @Override public void mapLMod2this      (final Number aRHS) {mapDo2this(lhs -> (aRHS.doubleValue() % lhs));}
+    @Override public void mapAdd2this       (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (lhs + rhs));}
+    @Override public void mapMinus2this     (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (lhs - rhs));}
+    @Override public void mapLMinus2this    (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (rhs - lhs));}
+    @Override public void mapMultiply2this  (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (lhs * rhs));}
+    @Override public void mapDivide2this    (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (lhs / rhs));}
+    @Override public void mapLDivide2this   (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (rhs / lhs));}
+    @Override public void mapMod2this       (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (lhs % rhs));}
+    @Override public void mapLMod2this      (Number aRHS) {final double rhs = aRHS.doubleValue(); mapDo2this(lhs -> (rhs % lhs));}
     
     
     /** stuff to override */

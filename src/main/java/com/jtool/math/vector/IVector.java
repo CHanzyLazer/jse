@@ -1,8 +1,6 @@
 package com.jtool.math.vector;
 
 
-import com.jtool.math.operator.IOperator1Full;
-
 import java.util.List;
 
 /**
@@ -16,6 +14,7 @@ public interface IVector<T extends Number> extends List<T>, IVectorGetter<T> {
     
     /** 批量修改的接口 */
     void fill(Number aValue);
+    void fillWith(double[] aVec);
     void fillWith(Iterable<? extends Number> aList);
     void fillWith(IVectorGetter<? extends Number> aVectorGetter);
     

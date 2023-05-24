@@ -21,6 +21,7 @@ public interface IMatrix<T extends Number> extends IMatrixGetter<T> {
     
     /** 批量修改的接口 */
     void fill(Number aValue);
+    void fillWith(double[][] aMat);
     void fillWith(Iterable<? extends Iterable<? extends Number>> aRows);
     void fillWith(IMatrixGetter<? extends Number> aMatrixGetter);
     

@@ -36,6 +36,7 @@ public abstract class AbstractMatrix<T extends Number> implements IMatrix<T> {
         int tColNum = columnNumber();
         for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aValue);
     }
+    @Override public void fillWith(final double[][] aMat) {fillWith((row, col) -> aMat[row][col]);}
     @Override public void fillWith(Iterable<? extends Iterable<? extends Number>> aRows) {
         int tRowNum = rowNumber();
         int tColNum = columnNumber();
@@ -57,7 +58,6 @@ public abstract class AbstractMatrix<T extends Number> implements IMatrix<T> {
         int tColNum = columnNumber();
         for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aMatrixGetter.get(row, col));
     }
-    
     @Override public T get(int aRow, int aCol) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return get_(aRow, aCol);

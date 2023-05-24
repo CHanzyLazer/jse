@@ -19,6 +19,7 @@ public abstract class AbstractVector<T extends Number> extends AbstractList<T> i
         int tSize = size();
         for (int i = 0; i < tSize; ++i) set_(i, aValue);
     }
+    @Override public void fillWith(double[] aVec) {fillWith(i -> aVec[i]);}
     @Override public void fillWith(Iterable<? extends Number> aList) {
         int tSize = size();
         Iterator<? extends Number> tIt = aList.iterator();

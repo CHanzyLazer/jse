@@ -1,13 +1,13 @@
 package com.jtool.math.matrix;
 
-import com.jtool.math.vector.IVectorGenerator;
+import com.jtool.math.operator.IOperator1;
+import com.jtool.math.operator.IOperator2;
 import com.jtool.math.vector.AbstractVector;
 import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.IVectorGenerator;
 import com.jtool.math.vector.RealVector;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
 
 
 /**
@@ -35,37 +35,7 @@ public class RealColumnMatrix extends AbstractRealMatrix<RealColumnMatrix, RealV
         mData = aData;
         mColNum = aColNum;
     }
-    
     public RealColumnMatrix(int aRowNum, double[] aData) {this(aRowNum, aData.length/aRowNum, aData);}
-    public RealColumnMatrix(double[][] aMat) {
-        mRowNum = aMat.length;
-        mColNum = aMat[0].length;
-        mData = new double[mRowNum*mColNum];
-        for (int row = 0; row < mRowNum; ++row) {
-            double[] tRow = aMat[row];
-            for (int col = 0; col < mColNum; ++col) {
-                mData[row + col*mRowNum] = tRow[col];
-            }
-        }
-    }
-    public RealColumnMatrix(Collection<? extends Collection<? extends Number>> aRows) {
-        mRowNum = aRows.size();
-        Iterator<? extends Collection<? extends Number>> tIt = aRows.iterator();
-        Collection<? extends Number> tRow = tIt.next();
-        mColNum = tRow.size();
-        mData = new double[mRowNum*mColNum];
-        int row = 0;
-        while (true) {
-            int col = 0;
-            for (Number tValue : tRow) {
-                mData[row + col*mRowNum] = tValue.doubleValue();
-                ++col;
-            }
-            if (!tIt.hasNext()) break;
-            tRow = tIt.next();
-            ++row;
-        }
-    }
     
     
     /** IMatrix stuffs */
@@ -111,6 +81,345 @@ public class RealColumnMatrix extends AbstractRealMatrix<RealColumnMatrix, RealV
             mData[i] = aMatrixGetter.get(row, col).doubleValue();
             ++i;
         }
+    }
+    
+    /** Optimize stuffs，重写这些接口来加速运算的填充到自身的过程 */
+    @Override protected void ebeDo2this_(final IMatrixGetter<? extends Number> aRHS, final IOperator2<Double> aOpt) {
+        if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+            double[] tData = ((RealColumnMatrix)aRHS).mData;
+            for (int i = 0; i < mData.length; ++i) mData[i] = aOpt.cal(mData[i], tData[i]);
+        } else {
+            int tRowNum = rowNumber();
+            int tColNum = columnNumber();
+            int i = 0;
+            for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                mData[i] = aOpt.cal(mData[i], aRHS.get(row, col).doubleValue());
+                ++i;
+            }
+        }
+    }
+    @Override protected void mapDo2this_(final IOperator1<Double> aOpt) {
+        for (int i = 0; i < mData.length; ++i) mData[i] = aOpt.cal(mData[i]);
+    }
+    
+    /** Optimize stuffs，重写简单运算从而可以让编译器更好做 SIMD 相关的优化 */
+    @Override public IMatrixOperation<RealColumnMatrix, Double> operation() {
+        return new RealMatrixOperation() {
+            @Override public RealColumnMatrix ebeAdd(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS) {
+                if (aLHS instanceof RealColumnMatrix && aRHS instanceof RealColumnMatrix && ((RealColumnMatrix) aLHS).mRowNum == mRowNum && ((RealColumnMatrix) aRHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix) aLHS).mData;
+                    double[] tData2 = ((RealColumnMatrix) aRHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData1[i] + tData2[i];
+                    return rMatrix;
+                }
+                return super.ebeAdd(aLHS, aRHS);
+            }
+            @Override public RealColumnMatrix ebeMinus(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS) {
+                if (aLHS instanceof RealColumnMatrix && aRHS instanceof RealColumnMatrix && ((RealColumnMatrix) aLHS).mRowNum == mRowNum && ((RealColumnMatrix) aRHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix) aLHS).mData;
+                    double[] tData2 = ((RealColumnMatrix) aRHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData1[i] - tData2[i];
+                    return rMatrix;
+                }
+                return super.ebeMinus(aLHS, aRHS);
+            }
+            @Override public RealColumnMatrix ebeMultiply(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS) {
+                if (aLHS instanceof RealColumnMatrix && aRHS instanceof RealColumnMatrix && ((RealColumnMatrix) aLHS).mRowNum == mRowNum && ((RealColumnMatrix) aRHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix) aLHS).mData;
+                    double[] tData2 = ((RealColumnMatrix) aRHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData1[i] * tData2[i];
+                    return rMatrix;
+                }
+                return super.ebeMultiply(aLHS, aRHS);
+            }
+            @Override public RealColumnMatrix ebeDivide(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS) {
+                if (aLHS instanceof RealColumnMatrix && aRHS instanceof RealColumnMatrix && ((RealColumnMatrix) aLHS).mRowNum == mRowNum && ((RealColumnMatrix) aRHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix) aLHS).mData;
+                    double[] tData2 = ((RealColumnMatrix) aRHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData1[i] / tData2[i];
+                    return rMatrix;
+                }
+                return super.ebeDivide(aLHS, aRHS);
+            }
+            @Override public RealColumnMatrix ebeMod(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS) {
+                if (aLHS instanceof RealColumnMatrix && aRHS instanceof RealColumnMatrix && ((RealColumnMatrix) aLHS).mRowNum == mRowNum && ((RealColumnMatrix) aRHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix) aLHS).mData;
+                    double[] tData2 = ((RealColumnMatrix) aRHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData1[i] % tData2[i];
+                    return rMatrix;
+                }
+                return super.ebeMod(aLHS, aRHS);
+            }
+            
+            @Override public RealColumnMatrix mapAdd(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData[i] + rhs;
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (lhs + rhs));
+            }
+            @Override public RealColumnMatrix mapMinus(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData[i] - rhs;
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (lhs - rhs));
+            }
+            @Override public RealColumnMatrix mapLMinus(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = rhs - tData[i];
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (rhs - lhs));
+            }
+            @Override public RealColumnMatrix mapMultiply(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData[i] * rhs;
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (lhs * rhs));
+            }
+            @Override public RealColumnMatrix mapDivide(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData[i] / rhs;
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (lhs / rhs));
+            }
+            @Override public RealColumnMatrix mapLDivide(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = rhs / tData[i];
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (rhs / lhs));
+            }
+            @Override public RealColumnMatrix mapMod(IMatrixGetter<? extends Number> aLHS, Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = tData[i] % rhs;
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (lhs % rhs));
+            }
+            @Override public RealColumnMatrix mapLMod(IMatrixGetter<? extends Number> aLHS, final Number aRHS) {
+                final double rhs = aRHS.doubleValue();
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = rhs % tData[i];
+                    return rMatrix;
+                }
+                return mapDo(aLHS, lhs -> (rhs % lhs));
+            }
+            
+            // TODO else 由于已经不能做 SIMD，为了减少重复代码应该直接用 super，需要测试一下性能损失
+            @Override public void ebeAdd2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] += tData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] += aRHS.get(row, col).doubleValue();
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeMinus2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] -= tData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] -= aRHS.get(row, col).doubleValue();
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeLMinus2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] = tData[i] - mData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] = aRHS.get(row, col).doubleValue() - mData[i];
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeMultiply2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] *= tData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] *= aRHS.get(row, col).doubleValue();
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeDivide2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] /= tData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] /= aRHS.get(row, col).doubleValue();
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeLDivide2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] = tData[i] / mData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] = aRHS.get(row, col).doubleValue() / mData[i];
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeMod2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] %= tData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] %= aRHS.get(row, col).doubleValue();
+                        ++i;
+                    }
+                }
+            }
+            @Override public void ebeLMod2this(IMatrixGetter<? extends Number> aRHS) {
+                if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aRHS).mData;
+                    for (int i = 0; i < mData.length; ++i) mData[i] = tData[i] % mData[i];
+                } else {
+                    int tRowNum = rowNumber();
+                    int tColNum = columnNumber();
+                    int i = 0;
+                    for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                        mData[i] = aRHS.get(row, col).doubleValue() % mData[i];
+                        ++i;
+                    }
+                }
+            }
+            
+            @Override public void mapAdd2this       (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] += rhs;}
+            @Override public void mapMinus2this     (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] -= rhs;}
+            @Override public void mapLMinus2this    (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] = rhs - mData[i];}
+            @Override public void mapMultiply2this  (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] *= rhs;}
+            @Override public void mapDivide2this    (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] /= rhs;}
+            @Override public void mapLDivide2this   (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] = rhs / mData[i];}
+            @Override public void mapMod2this       (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] %= rhs;}
+            @Override public void mapLMod2this      (Number aRHS) {final double rhs = aRHS.doubleValue(); for (int i = 0; i < mData.length; ++i) mData[i] = rhs % mData[i];}
+            
+            @Override public RealColumnMatrix ebeDo(IMatrixGetter<? extends Number> aLHS, IMatrixGetter<? extends Number> aRHS, IOperator2<Double> aOpt) {
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData1 = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                        double[] tData2 = ((RealColumnMatrix)aRHS).mData;
+                        int tLen = rMatrix.mData.length;
+                        for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = aOpt.cal(tData1[i], tData2[i]);
+                    } else {
+                        int tRowNum = rowNumber();
+                        int tColNum = columnNumber();
+                        int i = 0;
+                        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                            rMatrix.mData[i] = aOpt.cal(tData1[i], aRHS.get(row, col).doubleValue());
+                            ++i;
+                        }
+                    }
+                    return rMatrix;
+                } else {
+                    if (aRHS instanceof RealColumnMatrix && ((RealColumnMatrix)aRHS).mRowNum == mRowNum) {
+                        double[] tData2 = ((RealColumnMatrix)aRHS).mData;
+                        RealColumnMatrix rMatrix = generatorMat().zeros();
+                        int tRowNum = rowNumber();
+                        int tColNum = columnNumber();
+                        int i = 0;
+                        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {
+                            rMatrix.mData[i] = aOpt.cal(aLHS.get(row, col).doubleValue(), tData2[i]);
+                            ++i;
+                        }
+                        return rMatrix;
+                    } else {
+                        return super.ebeDo(aLHS, aRHS, aOpt);
+                    }
+                }
+            }
+            @Override public RealColumnMatrix mapDo(IMatrixGetter<? extends Number> aLHS, IOperator1<Double> aOpt) {
+                if (aLHS instanceof RealColumnMatrix && ((RealColumnMatrix)aLHS).mRowNum == mRowNum) {
+                    double[] tData = ((RealColumnMatrix)aLHS).mData;
+                    RealColumnMatrix rMatrix = generatorMat().zeros();
+                    int tLen = rMatrix.mData.length;
+                    for (int i = 0; i < tLen; ++i) rMatrix.mData[i] = aOpt.cal(tData[i]);
+                    return rMatrix;
+                } else {
+                    return super.mapDo(aLHS, aOpt);
+                }
+            }
+        };
     }
     
     
