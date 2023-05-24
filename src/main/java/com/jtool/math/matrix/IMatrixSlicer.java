@@ -2,6 +2,7 @@ package com.jtool.math.matrix;
 
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.UT;
+import com.jtool.math.vector.IVectorGetter;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
  * @param <M> 被切片的矩阵类型
  * @param <V> 切片成一维的返回向量类型
  */
-public interface IMatrixSlicer<M, V> {
+public interface IMatrixSlicer<M extends IMatrixGetter<? extends Number>, V extends IVectorGetter<? extends Number>> {
     /**
      * 为了代码简洁（因为 List 的内容被擦除不能重载），因此只支持 Integer 来切片，
      * 并且实际切片过程也会将 Boolean 转成 Integer。
@@ -34,7 +35,7 @@ public interface IMatrixSlicer<M, V> {
     default V get(List<Integer> aSelectedRows, int           aSelectedCol ) {return getLI(aSelectedRows, aSelectedCol);}
     default V get(SliceType     aSelectedRows, int           aSelectedCol ) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAI(aSelectedCol);}
     
-    
+    // TODO 支持过滤器输入，代替没有 List<Boolean> 的缺陷
     
     String COL_MSG = "SelectedCols Must be int[] or List<Integer> or ALL";
     String ROL_MSG = "SelectedRows Must be int[] or List<Integer> or ALL";

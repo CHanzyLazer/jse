@@ -8,7 +8,6 @@ import com.jtool.math.vector.IVectorGetter;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 
 /**
@@ -20,7 +19,6 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
     protected class MatrixGenerator implements IMatrixGenerator<M> {
         @Override public M ones() {return ones(rowNumber(), columnNumber());}
         @Override public M zeros() {return zeros(rowNumber(), columnNumber());}
-        @Override public M from(Callable<? extends Number> aCall) {return from(rowNumber(), columnNumber(), aCall);}
         @Override public M from(IMatrixGetter<? extends Number> aMatrixGetter) {return from(rowNumber(), columnNumber(), aMatrixGetter);}
         
         @Override public M same() {return from(AbstractMatrixFull.this::get_);}
@@ -32,9 +30,6 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
         @Override public M zeros(int aRowNum, int aColNum) {
             return newZeros(aRowNum, aColNum);
         }
-        @Override public M from(int aRowNum, int aColNum, Callable<? extends Number> aCall) {
-            return from(aRowNum, aColNum, (row, col) -> {try {return aCall.call();} catch (Exception e) {throw new RuntimeException(e);}});
-        }
         @Override public M from(int aRowNum, int aColNum, IMatrixGetter<? extends Number> aMatrixGetter) {
             M rMatrix = newZeros(aRowNum, aColNum);
             rMatrix.fillWith(aMatrixGetter);
@@ -44,7 +39,6 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
     protected class VectorGenerator implements IVectorGenerator<V> {
         @Override public V ones() {return ones(rowNumber()*columnNumber());}
         @Override public V zeros() {return zeros(rowNumber()*columnNumber());}
-        @Override public V from(Callable<? extends Number> aCall) {return from(rowNumber()*columnNumber(), aCall);}
         @Override public V from(IVectorGetter<? extends Number> aVectorGetter) {return from(rowNumber()*columnNumber(), aVectorGetter);}
         /** 转为 Vector 需要按照列排列 */
         @Override public V same() {int tRowNum = rowNumber(); return from(i -> get_(i%tRowNum, i/tRowNum));}
@@ -56,9 +50,6 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
         }
         @Override public V zeros(int aSize) {
             return newZeros(aSize);
-        }
-        @Override public V from(int aSize, Callable<? extends Number> aCall) {
-            return from(aSize, i -> {try {return aCall.call();} catch (Exception e) {throw new RuntimeException(e);}});
         }
         @Override public V from(int aSize, IVectorGetter<? extends Number> aVectorGetter) {
             V rVector = newZeros(aSize);
@@ -167,7 +158,7 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
     @VisibleForTesting @Override public V call(int           aSelectedRow , List<Integer> aSelectedCols) {return slicer().get(aSelectedRow , aSelectedCols);}
     @VisibleForTesting @Override public V call(int           aSelectedRow , SliceType     aSelectedCols) {return slicer().get(aSelectedRow , aSelectedCols);}
     @VisibleForTesting @Override public V call(List<Integer> aSelectedRows, int           aSelectedCol ) {return slicer().get(aSelectedRows, aSelectedCol );}
-    @VisibleForTesting @Override public V call(SliceType     aSelectedRows, int           aSelectedCol ) {return slicer().get(aSelectedRows, aSelectedCol);}
+    @VisibleForTesting @Override public V call(SliceType     aSelectedRows, int           aSelectedCol ) {return slicer().get(aSelectedRows, aSelectedCol );}
     
     @VisibleForTesting @Override public IMatrixRowFull_<T, V> getAt(int aRow) {return new MatrixRowFull_(aRow);}
     @VisibleForTesting @Override public IMatrixRows_<T, V, M> getAt(SliceType aSelectedRows) {return new MatrixRowsA_(aSelectedRows);}
@@ -220,12 +211,12 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
     }
     
     
+    /** refOperation stuffs */
+    protected abstract class MatrixGetterFull implements IMatrixGetterFull<M, T> {@Override public M get() {return generatorMat().from(this);}}
+    
     /** stuff to override */
-    public abstract T get_(int aRow, int aCol);
-    public abstract void set_(int aRow, int aCol, Number aValue);
-    public abstract T getAndSet_(int aRow, int aCol, Number aValue);
-    public abstract int rowNumber();
-    public abstract int columnNumber();
+    public abstract IMatrixOperation<M, T> operation();
+    public abstract IMatrixOperation<IMatrixGetterFull<M, T>, T> refOperation();
     
     protected abstract M newZeros(int aRowNum, int aColNum);
     protected abstract V newZeros(int aSize);

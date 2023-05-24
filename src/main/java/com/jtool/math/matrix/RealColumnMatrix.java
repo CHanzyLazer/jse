@@ -14,7 +14,7 @@ import java.util.Iterator;
  * @author liqa
  * <p> 矩阵一般实现，按照列排序 </p>
  */
-public class RealColumnMatrix extends AbstractMatrixFull<Double, RealColumnMatrix, RealVector> {
+public class RealColumnMatrix extends AbstractRealMatrix<RealColumnMatrix, RealVector> {
     /** 提供默认的创建 */
     public static RealColumnMatrix ones(int aSize) {return ones(aSize, aSize);}
     public static RealColumnMatrix ones(int aRowNum, int aColNum) {
@@ -80,7 +80,11 @@ public class RealColumnMatrix extends AbstractMatrixFull<Double, RealColumnMatri
     @Override public int rowNumber() {return mRowNum;}
     @Override public int columnNumber() {return mColNum;}
     
-    /** 重写这个提高列向的索引速度 */
+    @Override protected RealColumnMatrix newZeros(int aRowNum, int aColNum) {return RealColumnMatrix.zeros(aRowNum, aColNum);}
+    @Override protected RealVector newZeros(int aSize) {return RealVector.zeros(aSize);}
+    
+    
+    /** Optimize stuffs，重写这个提高列向的索引速度 */
     @Override public IVector<Double> col(final int aCol) {
         if (aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException("Col: "+aCol);
         return new AbstractVector<Double>() {
@@ -97,8 +101,7 @@ public class RealColumnMatrix extends AbstractMatrixFull<Double, RealColumnMatri
         };
     }
     
-    
-    /** 重写这些接口来加速批量填充过程 */
+    /** Optimize stuffs，重写这些接口来加速批量填充过程 */
     @Override public void fill(Number aValue) {Arrays.fill(mData, aValue.doubleValue());}
     @Override public void fillWith(IMatrixGetter<? extends Number> aMatrixGetter) {
         int tRowNum = rowNumber();
@@ -111,9 +114,7 @@ public class RealColumnMatrix extends AbstractMatrixFull<Double, RealColumnMatri
     }
     
     
-    /** IGenerator stuffs，重写 same 接口专门优化 */
-    @Override protected RealColumnMatrix newZeros(int aRowNum, int aColNum) {return RealColumnMatrix.zeros(aRowNum, aColNum);}
-    @Override protected RealVector newZeros(int aSize) {return RealVector.zeros(aSize);}
+    /** Optimize stuffs，重写 same 接口专门优化拷贝部分 */
     @Override public IMatrixGenerator<RealColumnMatrix> generatorMat() {
         return new MatrixGenerator() {
             @Override public RealColumnMatrix same() {

@@ -16,15 +16,23 @@ public interface IMatrixFull<T extends Number, M extends IMatrix<T>, V extends I
     
     /** 获得基于自身的向量生成器，生成按列排布的向量 */
     IVectorGenerator<V> generatorVec();
+    @VisibleForTesting default IVectorGenerator<V> genVec() {return generatorVec();}
     
     /** 获得基于自身的矩阵生成器，方便构造相同大小的同样的矩阵 */
     IMatrixGenerator<M> generatorMat();
     @VisibleForTesting default IMatrixGenerator<M> gen() {return generatorMat();}
-    @VisibleForTesting default IVectorGenerator<V> genVec() {return generatorVec();}
     
     /** 切片操作，默认返回新的矩阵，refSlicer 则会返回引用的切片结果 */
     IMatrixSlicer<M, V> slicer();
     IMatrixSlicer<IMatrix<T>, IVector<T>> refSlicer();
+    
+    /** 矩阵的运算操作，默认返回新的矩阵，refOperation 则会返回引用计算结果 */
+    IMatrixOperation<M, T> operation();
+    IMatrixOperation<IMatrixGetterFull<M, T>, T> refOperation();
+    @VisibleForTesting default IMatrixOperation<M, T> opt() {return operation();}
+    
+    interface IMatrixGetterFull<M extends IMatrix<T>, T extends Number> extends IMatrixGetter<T> {M get();}
+    
     
     /** Groovy 的部分，增加矩阵切片操作 */
     @VisibleForTesting M call(List<Integer> aSelectedRows, List<Integer> aSelectedCols);

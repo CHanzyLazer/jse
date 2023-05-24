@@ -1,6 +1,5 @@
 package com.jtool.math.matrix;
 
-import com.jtool.math.operator.IOperator2Full;
 import com.jtool.math.vector.IVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -11,7 +10,7 @@ import java.util.List;
  * @author liqa
  * <p> 通用的矩阵接口，使用泛型来方便实现任意数据类型的矩阵 </p>
  */
-public interface IMatrix<T extends Number> extends IMatrixGetter<T>, IMatrixSetter {
+public interface IMatrix<T extends Number> extends IMatrixGetter<T> {
     interface ISize {
         int row();
         int col();
