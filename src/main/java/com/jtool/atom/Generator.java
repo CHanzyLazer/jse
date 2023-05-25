@@ -1,8 +1,8 @@
 package com.jtool.atom;
 
 import com.jtool.math.MathEX;
-import com.jtool.math.operator.IOperator1;
-import com.jtool.math.operator.IOperator1Full;
+import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IOperator1Full;
 import com.jtool.math.function.Func3;
 import com.jtool.parallel.AbstractHasThreadPool;
 import com.jtool.parallel.ParforThreadPool;

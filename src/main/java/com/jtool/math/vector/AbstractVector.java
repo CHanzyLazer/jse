@@ -1,15 +1,39 @@
 package com.jtool.math.vector;
 
+import com.jtool.code.ISetIterator;
 import com.jtool.code.UT;
 
 import java.util.AbstractList;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * 一般向量的接口的默认实现，用来方便返回抽象的向量
  * @author liqa
  */
 public abstract class AbstractVector<T extends Number> extends AbstractList<T> implements IVector<T> {
+    /** Iterator stuffs */
+    @Override public ISetIterator<T, Number> setIterator() {
+        return new ISetIterator<T, Number>() {
+            private final int mSize = size();
+            private int mIdx = 0, oIdx = -1;
+            @Override public boolean hasNext() {return mIdx < mSize;}
+            @Override public void set(Number e) {
+                if (oIdx < 0) throw new IllegalStateException();
+                set_(oIdx, e);
+            }
+            @Override public T next() {
+                if (hasNext()) {
+                    oIdx = mIdx;
+                    ++mIdx;
+                    return get_(oIdx);
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    
+    
     /** 转为兼容性更好的 double[] */
     @Override public double[] vec() {return UT.Code.toData(this);}
     

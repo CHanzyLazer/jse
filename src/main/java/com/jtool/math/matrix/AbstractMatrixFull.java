@@ -210,13 +210,8 @@ public abstract class AbstractMatrixFull<T extends Number, M extends IMatrix<T>,
         @Override public void putAt(List<Integer> aSelectedCols, IMatrix<? extends Number> aMatrix) {refSlicer().get(mSelectedRows, aSelectedCols).fillWith(aMatrix);}
     }
     
-    
-    /** refOperation stuffs */
-    protected abstract class MatrixGetterFull implements IMatrixGetterFull<M, T> {@Override public M get() {return generatorMat().from(this);}}
-    
     /** stuff to override */
     public abstract IMatrixOperation<M, T> operation();
-    public abstract IMatrixOperation<IMatrixGetterFull<M, T>, T> refOperation();
     
     protected abstract M newZeros(int aRowNum, int aColNum);
     protected abstract V newZeros(int aSize);

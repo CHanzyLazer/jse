@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.jtool.io.Decryptor;
 import com.jtool.io.Encryptor;
 import com.jtool.math.Table;
-import com.jtool.math.operator.IOperator1Full;
+import com.jtool.code.operator.IOperator1Full;
 import com.jtool.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
@@ -232,10 +232,10 @@ public class UT {
          * Convert nested Iterable to a single one
          * @author liqa
          */
-        public static <T> Iterable<T> toIterable(final Iterable<? extends Iterable<T>> aNestIterable) {
+        public static <T> Iterable<T> toIterable(final Iterable<? extends Iterable<? extends T>> aNestIterable) {
             return () -> new Iterator<T>() {
-                private final Iterator<? extends Iterable<T>> mParentIt = aNestIterable.iterator();
-                private Iterator<T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
+                private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
+                private Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
                 private T mNext = null;
                 
                 @Override public boolean hasNext() {

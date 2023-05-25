@@ -1,5 +1,6 @@
 package com.jtool.math.matrix;
 
+import com.jtool.code.ISetIterator;
 import com.jtool.code.UT;
 import com.jtool.math.vector.AbstractVector;
 import com.jtool.math.vector.IVector;
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * 一般矩阵的接口的默认实现，用来方便返回抽象的矩阵
@@ -27,36 +29,179 @@ public abstract class AbstractMatrix<T extends Number> implements IMatrix<T> {
         return rStr.toString();
     }
     
+    /** Iterator stuffs */
+    @Override public Iterator<T> colIterator() {
+        return new Iterator<T>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0;
+            private int mRow = 0;
+            @Override public boolean hasNext() {return mCol < mColNum;}
+            @Override public T next() {
+                if (hasNext()) {
+                    T tNext = get_(mCol, mRow);
+                    ++mRow;
+                    if (mRow == mRowNum) {
+                        mRow = 0;
+                        ++mCol;
+                    }
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public Iterator<T> rowIterator() {
+        return new Iterator<T>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0;
+            private int mRow = 0;
+            @Override public boolean hasNext() {return mRow < mRowNum;}
+            @Override public T next() {
+                if (hasNext()) {
+                    T tNext = get_(mCol, mRow);
+                    ++mCol;
+                    if (mCol == mColNum) {
+                        mCol = 0;
+                        ++mRow;
+                    }
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public ISetIterator<T, Number> colSetIterator() {
+        return new ISetIterator<T, Number>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0, oCol = -1;
+            private int mRow = 0, oRow = -1;
+            @Override public boolean hasNext() {return mCol < mColNum;}
+            @Override public void set(Number e) {
+                if (oRow < 0) throw new IllegalStateException();
+                set_(oCol, oRow, e);
+            }
+            @Override public T next() {
+                if (hasNext()) {
+                    oCol = mCol;
+                    oRow = mRow;
+                    ++mRow;
+                    if (mRow == mRowNum) {
+                        mRow = 0;
+                        ++mCol;
+                    }
+                    return get_(oCol, oRow);
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public ISetIterator<T, Number> rowSetIterator() {
+        return new ISetIterator<T, Number>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0, oCol = -1;
+            private int mRow = 0, oRow = -1;
+            @Override public boolean hasNext() {return mRow < mRowNum;}
+            @Override public void set(Number e) {
+                if (oCol < 0) throw new IllegalStateException();
+                set_(oCol, oRow, e);
+            }
+            @Override public T next() {
+                if (hasNext()) {
+                    oCol = mCol;
+                    oRow = mRow;
+                    ++mCol;
+                    if (mCol == mColNum) {
+                        mCol = 0;
+                        ++mRow;
+                    }
+                    return get_(oCol, oRow);
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public Iterator<? extends Number> colIterator(final IMatrixGetter<? extends Number> aContainer) {
+        if (aContainer instanceof IMatrix) return ((IMatrix<?>)aContainer).colIterator();
+        return new Iterator<Number>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0;
+            private int mRow = 0;
+            @Override public boolean hasNext() {return mCol < mColNum;}
+            @Override public Number next() {
+                if (hasNext()) {
+                    Number tNext = aContainer.get(mCol, mRow);
+                    ++mRow;
+                    if (mRow == mRowNum) {
+                        mRow = 0;
+                        ++mCol;
+                    }
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public Iterator<? extends Number> rowIterator(final IMatrixGetter<? extends Number> aContainer) {
+        if (aContainer instanceof IMatrix) return ((IMatrix<?>)aContainer).rowIterator();
+        return new Iterator<Number>() {
+            private final int mColNum = columnNumber();
+            private final int mRowNum = rowNumber();
+            private int mCol = 0;
+            private int mRow = 0;
+            @Override public boolean hasNext() {return mRow < mRowNum;}
+            @Override public Number next() {
+                if (hasNext()) {
+                    Number tNext = aContainer.get(mCol, mRow);
+                    ++mCol;
+                    if (mCol == mColNum) {
+                        mCol = 0;
+                        ++mRow;
+                    }
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    
+    
     /** 转为兼容性更好的 double[][]，默认直接使用 rows 转为 double[][] */
     @Override public double[][] mat() {return UT.Code.toMat(rows());}
     
-    /** 批量修改的接口 */
+    /** 批量修改的接口，现在统一使用迭代器来填充 */
     @Override public void fill(Number aValue) {
-        int tRowNum = rowNumber();
-        int tColNum = columnNumber();
-        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aValue);
+        final ISetIterator<T, Number> si = setIterator();
+        while (si.hasNext()) {
+            si.next();
+            si.set(aValue);
+        }
     }
     @Override public void fillWith(final double[][] aMat) {fillWith((row, col) -> aMat[row][col]);}
     @Override public void fillWith(Iterable<? extends Iterable<? extends Number>> aRows) {
-        int tRowNum = rowNumber();
-        int tColNum = columnNumber();
         Iterator<? extends Iterable<? extends Number>> tRowIt = aRows.iterator();
-        int row = 0;
-        while (row < tRowNum && tRowIt.hasNext()) {
+        List<IVector<T>> rRows = rows();
+        for (IVector<T> rRow : rRows) {
             Iterable<? extends Number> tRow = tRowIt.next();
             Iterator<? extends Number> tIt = tRow.iterator();
-            int col = 0;
-            while (col < tColNum && tIt.hasNext()) {
-                set_(row, col, tIt.next());
-                ++col;
+            ISetIterator<T, Number> si = rRow.setIterator();
+            while (si.hasNext()) {
+                si.next();
+                si.set(tIt.next());
             }
-            ++row;
         }
     }
     @Override public void fillWith(IMatrixGetter<? extends Number> aMatrixGetter) {
-        int tRowNum = rowNumber();
-        int tColNum = columnNumber();
-        for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) set_(row, col, aMatrixGetter.get(row, col));
+        final ISetIterator<T, Number> si = setIterator();
+        final Iterator<? extends Number> it = iterator(aMatrixGetter);
+        while (si.hasNext()) {
+            si.next();
+            si.set(it.next());
+        }
     }
     @Override public T get(int aRow, int aCol) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));

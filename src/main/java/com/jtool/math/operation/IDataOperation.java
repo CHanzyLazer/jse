@@ -1,18 +1,18 @@
-package com.jtool.math;
+package com.jtool.math.operation;
 
 
-import com.jtool.math.operator.IOperator1;
-import com.jtool.math.operator.IOperator2;
+import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IOperator2;
 
 /**
  * 任意的通用的数据运算操作，不会特地和 groovy 的重载运算符选择相同的名称，也不特地避开，也不特地考虑英文语法
  * @author liqa
- * @param <R> 返回数据类型，一般有 R extends T
+ * @param <R> 返回数据类型，一般有 R extends T（不强制）
  * @param <T> 输入的数据类型
- * @param <E> 数据中单个数据的类型，一般有 E extends N
+ * @param <E> 数据中单个数据的类型，一般有 E extends N（不强制）
  * @param <N> 输入的单个数据的类型
  */
-public interface IDataOperation<R extends T, T, E extends N, N> {
+public interface IDataOperation<R, T, E, N> {
     R ebeAdd        (T aLHS, T aRHS);
     R ebeMinus      (T aLHS, T aRHS);
     R ebeMultiply   (T aLHS, T aRHS);

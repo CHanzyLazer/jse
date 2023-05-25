@@ -28,10 +28,8 @@ public interface IMatrixFull<T extends Number, M extends IMatrix<T>, V extends I
     
     /** 矩阵的运算操作，默认返回新的矩阵，refOperation 则会返回引用计算结果 */
     IMatrixOperation<M, T> operation();
-    IMatrixOperation<IMatrixGetterFull<M, T>, T> refOperation();
     @VisibleForTesting default IMatrixOperation<M, T> opt() {return operation();}
-    
-    interface IMatrixGetterFull<M extends IMatrix<T>, T extends Number> extends IMatrixGetter<T> {M get();}
+//    IMatrixOperation<IMatrixGetterFull<M, T>, T> refOperation(); // 由于代码量的问题，暂时不去实现这个功能，等到实现到并行的时候有这个需求再考虑
     
     
     /** Groovy 的部分，增加矩阵切片操作 */

@@ -1,16 +1,31 @@
 package com.jtool.math.matrix;
 
+import com.jtool.code.IFatIterable;
+import com.jtool.code.ISetIterator;
 import com.jtool.math.vector.IVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author liqa
  * <p> 通用的矩阵接口，使用泛型来方便实现任意数据类型的矩阵 </p>
  */
-public interface IMatrix<T extends Number> extends IMatrixGetter<T> {
+public interface IMatrix<T extends Number> extends IMatrixGetter<T>, IFatIterable<IMatrixGetter<? extends Number>, Number, T, Number> {
+    /** Iterable stuffs，指定直接遍历按照列方向，暂时不提供 fastIter 相关操作，需要效率可以使用 fillWith，内部对专门的类重写遍历顺序 */
+    default Iterator<T> iterator() {return colIterator();}
+    Iterator<T> colIterator();
+    Iterator<T> rowIterator();
+    default ISetIterator<T, Number> setIterator() {return colSetIterator();}
+    ISetIterator<T, Number> colSetIterator();
+    ISetIterator<T, Number> rowSetIterator();
+    default Iterator<? extends Number> iterator(IMatrixGetter<? extends Number> aContainer) {return colIterator(aContainer);}
+    Iterator<? extends Number> colIterator(IMatrixGetter<? extends Number> aContainer);
+    Iterator<? extends Number> rowIterator(IMatrixGetter<? extends Number> aContainer);
+    
+    
     interface ISize {
         int row();
         int col();

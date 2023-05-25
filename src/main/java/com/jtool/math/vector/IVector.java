@@ -1,6 +1,9 @@
 package com.jtool.math.vector;
 
 
+import com.jtool.code.ISetIterator;
+
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -9,6 +12,11 @@ import java.util.List;
  * <p> 直接继承 List 方便使用 </p>
  */
 public interface IVector<T extends Number> extends List<T>, IVectorGetter<T> {
+    /** Iterable stuffs */
+    Iterator<T> iterator();
+    ISetIterator<T, Number> setIterator();
+    
+    
     /** 转为兼容性更好的 double[] */
     double[] vec();
     

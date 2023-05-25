@@ -2,9 +2,9 @@ package com.jtool.math;
 
 import com.jtool.atom.MonatomicParameterCalculator;
 import com.jtool.code.Pair;
-import com.jtool.math.operator.IOperator1;
-import com.jtool.math.operator.IOperator2;
-import com.jtool.math.operator.IOperator2Full;
+import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IOperator2;
+import com.jtool.code.operator.IOperator2Full;
 import com.jtool.math.function.Func1;
 import com.jtool.math.function.Func2;
 import com.jtool.math.function.Func3;

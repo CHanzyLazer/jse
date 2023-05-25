@@ -1,7 +1,7 @@
 package com.jtool.math.matrix;
 
 
-import com.jtool.math.IDataOperation;
+import com.jtool.math.operation.IDataOperation;
 
 /**
  * 任意的矩阵的运算
