@@ -4,8 +4,12 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.jtool.io.Decryptor;
 import com.jtool.io.Encryptor;
-import com.jtool.math.Table;
+import com.jtool.math.table.Table;
 import com.jtool.code.operator.IOperator1Full;
+import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.Matrices;
+import com.jtool.math.matrix.RealColumnMatrix;
+import com.jtool.math.vector.IVector;
 import com.jtool.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
@@ -727,31 +731,31 @@ public class UT {
                 for (double[] subData : aData) tPrinter.println(String.join(",", data2str(subData)));
             }
         }
+        public static void data2csv(IMatrix<Double> aData, String aFilePath, String... aHeads) throws IOException {
+            try (PrintStream tPrinter = toPrintStream(aFilePath)) {
+                if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
+                for (List<Double> subData : aData.rows()) tPrinter.println(String.join(",", Code.map(subData, Object::toString)));
+            }
+        }
+        public static void data2csv(IVector<Double> aData, String aFilePath) throws IOException {
+            try (PrintStream tPrinter = toPrintStream(aFilePath)) {
+                for (Double subData : aData) tPrinter.println(subData);
+            }
+        }
+        public static void data2csv(IVector<Double> aData, String aFilePath, String aHead) throws IOException {
+            try (PrintStream tPrinter = toPrintStream(aFilePath)) {
+                tPrinter.println(aHead);
+                for (Double subData : aData) tPrinter.println(subData);
+            }
+        }
+        
         /**
          * read matrix data from csv file
          * @author liqa
          * @param aFilePath csv file path to read
-         * @return matrix data
+         * @return a matrix
          */
-        public static double[][] csv2data(String aFilePath) throws IOException {
-            try (BufferedReader tReader = toReader(aFilePath)) {
-                List<double[]> tData = new ArrayList<>();
-                boolean tIsHead = true;
-                String tLine;
-                while ((tLine = tReader.readLine()) != null) {
-                    String[] tTokens = Texts.splitComma(tLine);
-                    if (tIsHead) {
-                        double[] tFirstData = null;
-                        try {tFirstData = str2data(tTokens);} catch (Exception ignored) {} // 直接看能否成功粘贴
-                        if (tFirstData != null) tData.add(tFirstData);
-                        tIsHead = false;
-                    } else {
-                        tData.add(str2data(tTokens));
-                    }
-                }
-                return tData.toArray(new double[0][]);
-            }
-        }
+        public static RealColumnMatrix csv2data(String aFilePath) throws IOException {return Matrices.from(csv2table(aFilePath));}
         
         
         /**
@@ -762,7 +766,7 @@ public class UT {
          */
         public static void table2csv(Table aTable, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
-                if (!aTable.noHand()) tPrinter.println(String.join(",", aTable.keySet()));
+                if (!aTable.noHand()) tPrinter.println(String.join(",", aTable.hands()));
                 for (List<Double> subData : aTable.rows()) tPrinter.println(String.join(",", Code.map(subData, Object::toString)));
             }
         }

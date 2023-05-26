@@ -10,6 +10,7 @@ import com.jtool.math.function.Func2;
 import com.jtool.math.function.Func3;
 import com.jtool.parallel.ParforThreadPool;
 import net.jafama.FastMath;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Arrays;
 
@@ -27,6 +28,7 @@ public class MathEX {
     
     public static final double PI = Math.PI;
     
+    @ApiStatus.Obsolete
     @SuppressWarnings("UnusedReturnValue")
     public static class Vec {
         /// Vector Merge
@@ -511,6 +513,7 @@ public class MathEX {
     }
     
     
+    @ApiStatus.Obsolete
     public static class Mat {
         /// Matrix operations
         public static double sum(double[][] aMatrix) {

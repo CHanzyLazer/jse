@@ -232,7 +232,7 @@ public class Lmpdat extends AbstractAtomData {
         aAtomData = new double[tAtomNum][ATOM_DATA_KEYS.length];
         for (int i = 0; i < tAtomNum; ++i) {
             tTokens = UT.Texts.splitBlank(aLines[idx]);
-            for(int j = 0; j < ATOM_DATA_KEYS.length; ++j) aAtomData[i][j] = Double.parseDouble(tTokens[j]);
+            aAtomData[i] = UT.IO.str2data(tTokens);
             ++idx;
         }
         

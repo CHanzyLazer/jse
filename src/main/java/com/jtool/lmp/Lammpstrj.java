@@ -361,7 +361,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             aAtomData = new double[tAtomNum][aAtomDataKeys.length];
             for (int i = 0; i < tAtomNum; ++i) {
                 tTokens = UT.Texts.splitBlank(aLines[idx]);
-                for(int j = 0; j < aAtomDataKeys.length; ++j) aAtomData[i][j] = Double.parseDouble(tTokens[j]);
+                aAtomData[i] = UT.IO.str2data(tTokens);
                 ++idx;
             }
             
