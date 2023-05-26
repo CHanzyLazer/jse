@@ -378,8 +378,8 @@ public abstract class DoubleArrayOperation<R extends IFatIterable<? super T, Num
             int rShift = rThis.shiftSize();
             int rEnd = rThis.dataSize() + rShift;
             int tShift = IDataShell.shiftSize(aRHS);
-            if (rShift == tShift) for (int i = rShift; i < rEnd; ++i) rData[i] += aOpt.cal(rData[i], tData[i]);
-            else for (int i = rShift, j = tShift; i < rEnd; ++i, ++j) rData[i] += aOpt.cal(rData[i], tData[j]);
+            if (rShift == tShift) for (int i = rShift; i < rEnd; ++i) rData[i] = aOpt.cal(rData[i], tData[i]);
+            else for (int i = rShift, j = tShift; i < rEnd; ++i, ++j) rData[i] = aOpt.cal(rData[i], tData[j]);
         } else {
             super.ebeDo2this_(rThis, aRHS, aOpt);
         }
@@ -388,6 +388,6 @@ public abstract class DoubleArrayOperation<R extends IFatIterable<? super T, Num
         double[] rData = rThis.getData();
         int rShift = rThis.shiftSize();
         int rEnd = rThis.dataSize() + rShift;
-        for (int i = rShift; i < rEnd; ++i) rData[i] += aOpt.cal(rData[i]);
+        for (int i = rShift; i < rEnd; ++i) rData[i] = aOpt.cal(rData[i]);
     }
 }
