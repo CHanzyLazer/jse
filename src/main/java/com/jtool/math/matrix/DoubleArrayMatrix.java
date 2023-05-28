@@ -22,8 +22,8 @@ public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V ext
     @Override public int dataSize() {return columnNumber()*rowNumber();}
     
     
-    protected class DoubleArrayMatrixOperation extends DoubleArrayOperation<DoubleArrayMatrix<?, ?>, M, DoubleArrayMatrix<?, ?>, IMatrixGetter> implements IMatrixOperation<M, V> {
-        @Override protected DoubleArrayMatrix<?, ?> thisInstance_() {return DoubleArrayMatrix.this;}
+    protected class DoubleArrayMatrixOperation extends DoubleArrayOperation<DoubleArrayMatrix<?, ?>, M, DoubleArrayMatrix<?, V>, IMatrixGetter> implements IDefaultMatrixOperation<M, DoubleArrayMatrix<?, V>, V> {
+        @Override public DoubleArrayMatrix<?, V> thisInstance_() {return DoubleArrayMatrix.this;}
         /** 通过输入来获取需要的大小 */
         @Override protected M newInstance_(IMatrixGetter aData) {
             if (aData instanceof IMatrixFull) {
@@ -42,40 +42,6 @@ public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V ext
                 return newZeros_(tMatrix.rowNumber(), tMatrix.columnNumber());
             }
             return newZeros_(rowNumber(), columnNumber());
-        }
-        
-        /** 矩阵的一些额外运算的实现 */
-        @Override public V sumOfCols() {
-            int tColNum = columnNumber();
-            V rVector = newZeros_(tColNum);
-            for (int col = 0; col < tColNum; ++col) {
-                rVector.set_(col, col(col).operation().sum());
-            }
-            return rVector;
-        }
-        @Override public V sumOfRows() {
-            int tRowNum = rowNumber();
-            V rVector = newZeros_(tRowNum);
-            for (int row = 0; row < tRowNum; ++row) {
-                rVector.set_(row, row(row).operation().sum());
-            }
-            return rVector;
-        }
-        @Override public V meanOfCols() {
-            int tColNum = columnNumber();
-            V rVector = newZeros_(tColNum);
-            for (int col = 0; col < tColNum; ++col) {
-                rVector.set_(col, col(col).operation().mean());
-            }
-            return rVector;
-        }
-        @Override public V meanOfRows() {
-            int tRowNum = rowNumber();
-            V rVector = newZeros_(tRowNum);
-            for (int row = 0; row < tRowNum; ++row) {
-                rVector.set_(row, row(row).operation().mean());
-            }
-            return rVector;
         }
     }
     

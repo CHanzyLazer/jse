@@ -9,7 +9,7 @@ import com.jtool.math.vector.Vector;
 public abstract class AbstractMatrix extends AbstractMatrixFull<ColumnMatrix, Vector> implements IMatrix {
     @Override public final IMatrixOperation<ColumnMatrix, Vector> operation() {
         return new AbstractMatrixOperation<ColumnMatrix, AbstractMatrix, Vector>() {
-            @Override protected AbstractMatrix thisInstance_() {return AbstractMatrix.this;}
+            @Override public AbstractMatrix thisInstance_() {return AbstractMatrix.this;}
             /** 通过输入来获取需要的大小 */
             @Override protected ColumnMatrix newInstance_(IMatrixGetter aData) {
                 if (aData instanceof IMatrixFull) {
