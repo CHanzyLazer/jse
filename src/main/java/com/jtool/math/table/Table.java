@@ -3,7 +3,7 @@ package com.jtool.math.table;
 
 import com.jtool.math.matrix.AbstractMatrix;
 import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.RealVector;
+import com.jtool.math.vector.Vector;
 
 import java.util.*;
 
@@ -11,7 +11,7 @@ import java.util.*;
  * 方便直接使用 csv 读取结果的数据格式
  * @author liqa
  */
-public final class Table extends AbstractMatrix<Double> implements IMatrixTable {
+public final class Table extends AbstractMatrix implements IMatrixTable {
     private final String[] mHands;
     private final List<double[]> mData;
     private final Map<String, Integer> mHand2Idx;
@@ -38,7 +38,7 @@ public final class Table extends AbstractMatrix<Double> implements IMatrixTable 
     /** ITable stuffs */
     @Override public boolean noHand() {return mNoHand;}
     @Override public List<String> hands() {return Arrays.asList(mHands);}
-    @Override public List<Double> get(String aHand) {return col(mHand2Idx.get(aHand));}
+    @Override public IVector get(String aHand) {return col(mHand2Idx.get(aHand));}
     @Override public boolean containsHand(String aHand) {return mHand2Idx.containsKey(aHand);}
     @Override public boolean setHand(String aOldHand, String aNewHand) {
         if (mHand2Idx.containsKey(aOldHand) && !mHand2Idx.containsKey(aNewHand)) {
@@ -51,20 +51,20 @@ public final class Table extends AbstractMatrix<Double> implements IMatrixTable 
     }
     
     /** AbstractMatrix stuffs */
-    @Override public Double get_(int aRow, int aCol) {return mData.get(aRow)[aCol];}
-    @Override public void set_(int aRow, int aCol, Number aValue) {mData.get(aRow)[aCol] = aValue.doubleValue();}
-    @Override public Double getAndSet_(int aRow, int aCol, Number aValue) {
+    @Override public double get_(int aRow, int aCol) {return mData.get(aRow)[aCol];}
+    @Override public void set_(int aRow, int aCol, double aValue) {mData.get(aRow)[aCol] = aValue;}
+    @Override public double getAndSet_(int aRow, int aCol, double aValue) {
         double[] tRow = mData.get(aRow);
         double oValue = tRow[aCol];
-        tRow[aCol] = aValue.doubleValue();
+        tRow[aCol] = aValue;
         return oValue;
     }
     @Override public int rowNumber() {return mData.size();}
     @Override public int columnNumber() {return mHands.length;}
     
     /** Optimize stuffs，重写这个提高行向的索引速度 */
-    @Override public IVector<Double> row(final int aRow) {
+    @Override public IVector row(final int aRow) {
         if (aRow<0 || aRow>=rowNumber()) throw new IndexOutOfBoundsException("Row: "+aRow);
-        return new RealVector(mHands.length, mData.get(aRow));
+        return new Vector(mHands.length, mData.get(aRow));
     }
 }

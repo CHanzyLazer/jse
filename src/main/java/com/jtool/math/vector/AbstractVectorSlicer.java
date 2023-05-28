@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public abstract class AbstractVectorSlicer<V extends IVectorGetter<? extends Number>> implements IVectorSlicer<V> {
+public abstract class AbstractVectorSlicer<V extends IVectorGetter> implements IVectorSlicer<V> {
     @Override public final V get(int[]         aIndices) {return getL(UT.Code.asList(aIndices));}
     @Override public final V get(List<Integer> aIndices) {return getL(aIndices);}
     @Override public final V get(SliceType     aIndices) {if (aIndices != SliceType.ALL) throw new IllegalArgumentException(MSG); return getA();}
@@ -20,7 +20,7 @@ public abstract class AbstractVectorSlicer<V extends IVectorGetter<? extends Num
     
     List<Integer> F2L(IFilter aIndices) {
         List<Integer> rIndices = new ArrayList<>();
-        Iterator<? extends Number> it = thisIterator_();
+        Iterator<Double> it = thisIterator_();
         int idx = 0;
         while (it.hasNext()) {
             if (aIndices.accept(it.next())) rIndices.add(idx);
@@ -30,7 +30,7 @@ public abstract class AbstractVectorSlicer<V extends IVectorGetter<? extends Num
     }
     List<Integer> F2L(IFilterWithIndex aIndices) {
         List<Integer> rIndices = new ArrayList<>();
-        Iterator<? extends Number> it = thisIterator_();
+        Iterator<Double> it = thisIterator_();
         int idx = 0;
         while (it.hasNext()) {
             if (aIndices.accept(it.next(), idx)) rIndices.add(idx);
@@ -44,5 +44,5 @@ public abstract class AbstractVectorSlicer<V extends IVectorGetter<? extends Num
     protected abstract V getL(List<Integer> aIndices);
     protected abstract V getA();
     
-    protected abstract Iterator<? extends Number> thisIterator_();
+    protected abstract Iterator<Double> thisIterator_();
 }

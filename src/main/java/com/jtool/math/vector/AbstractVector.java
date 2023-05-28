@@ -1,128 +1,31 @@
 package com.jtool.math.vector;
 
-import com.jtool.code.ISetIterator;
-import com.jtool.code.UT;
-import org.jetbrains.annotations.VisibleForTesting;
-
-import java.util.AbstractList;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 /**
- * 一般向量的接口的默认实现，用来方便返回抽象的向量
+ * 一般向量的接口的默认实现，实际返回向量类型为 {@link Vector}，用来方便实现抽象的向量
  * @author liqa
  */
-public abstract class AbstractVector<T extends Number> extends AbstractList<T> implements IVector<T> {
-    /** Iterator stuffs */
-    @Override public Iterator<T> iterator() {
-        return new Iterator<T>() {
-            private final int mSize = size();
-            private int mIdx = 0;
-            @Override public boolean hasNext() {return mIdx < mSize;}
-            @Override public T next() {
-                if (hasNext()) {
-                    T tNext = get_(mIdx);
-                    ++mIdx;
-                    return tNext;
-                }
-                throw new NoSuchElementException();
+public abstract class AbstractVector extends AbstractVectorFull<Vector> implements IVector {
+    @Override public final IVectorOperation<Vector> operation() {
+        return new AbstractVectorOperation<Vector, AbstractVector>() {
+            @Override protected AbstractVector thisInstance_() {return AbstractVector.this;}
+            /** 通过输入来获取需要的大小 */
+            @Override protected Vector newInstance_(IVectorGetter aData) {
+                if (aData instanceof IVectorFull) return Vector.zeros(((IVectorFull<?>)aData).size());
+                return Vector.zeros(size());
             }
-        };
-    }
-    @Override public ISetIterator<T, Number> setIterator() {
-        return new ISetIterator<T, Number>() {
-            private final int mSize = size();
-            private int mIdx = 0, oIdx = -1;
-            @Override public boolean hasNext() {return mIdx < mSize;}
-            @Override public void set(Number e) {
-                if (oIdx < 0) throw new IllegalStateException();
-                set_(oIdx, e);
-            }
-            @Override public T next() {
-                if (hasNext()) {
-                    oIdx = mIdx;
-                    ++mIdx;
-                    return get_(oIdx);
-                }
-                throw new NoSuchElementException();
-            }
-        };
-    }
-    @Override public Iterator<? extends Number> iteratorOf(final IVectorGetter<? extends Number> aContainer) {
-        if (aContainer instanceof IVector) return ((IVector<?>)aContainer).iterator();
-        return new Iterator<Number>() {
-            private final int mSize = size();
-            private int mIdx = 0;
-            @Override public boolean hasNext() {return mIdx < mSize;}
-            @Override public Number next() {
-                if (hasNext()) {
-                    Number tNext = aContainer.get(mIdx);
-                    ++mIdx;
-                    return tNext;
-                }
-                throw new NoSuchElementException();
+            @Override protected Vector newInstance_(IVectorGetter aData1, IVectorGetter aData2) {
+                if (aData1 instanceof IVectorFull) return Vector.zeros(((IVectorFull<?>)aData1).size());
+                if (aData2 instanceof IVectorFull) return Vector.zeros(((IVectorFull<?>)aData2).size());
+                return Vector.zeros(size());
             }
         };
     }
     
-    
-    /** 转为兼容性更好的 double[] */
-    @Override public double[] vec() {return UT.Code.toData(this);}
-    
-    
-    /** 批量修改的接口 */
-    @Override public void fill(Number aValue) {
-        final ISetIterator<T, Number> si = setIterator();
-        while (si.hasNext()) {
-            si.next();
-            si.set(aValue);
-        }
-    }
-    @Override public void fill(double[] aVec) {fillWith(i -> aVec[i]);}
-    @Override public void fill(Iterable<? extends Number> aList) {
-        final ISetIterator<T, Number> si = setIterator();
-        final Iterator<? extends Number> it = aList.iterator();
-        while (si.hasNext()) {
-            si.next();
-            si.set(it.next());
-        }
-    }
-    @Override public void fillWith(IVectorGetter<? extends Number> aVectorGetter) {
-        final ISetIterator<T, Number> si = setIterator();
-        final Iterator<? extends Number> it = iteratorOf(aVectorGetter);
-        while (si.hasNext()) {
-            si.next();
-            si.set(it.next());
-        }
-    }
-    
-    @Override public T get(int aIdx) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return get_(aIdx);
-    }
-    @Override public T getAndSet(int aIdx, Number aValue) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return getAndSet_(aIdx, aValue);
-    }
-    /** List 的 set 在这里是 getAndSet 的逻辑 */
-    @Override public T set(int aIdx, Number aValue) {return getAndSet(aIdx, aValue);}
-    /** 专门提供一个仅 set 的接口 */
-    @Override public void setOnly(int aIdx, Number aValue) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        set(aIdx, aValue);
-    }
-    
-    
-    /** Groovy 的部分，重载一些运算符方便操作 */
-    @VisibleForTesting @Override public T call(int aIdx) {return get(aIdx);}
-    @VisibleForTesting @Override public T getAt(int aIdx) {return get(aIdx);}
-    @VisibleForTesting @Override public void putAt(int aIdx, Number aValue) {setOnly(aIdx, aValue);}
-    
-    
+    @Override protected final Vector newZeros(int aSize) {return Vector.zeros(aSize);}
     
     /** stuff to override */
-    public abstract T get_(int aIdx);
-    public abstract void set_(int aIdx, Number aValue);
-    public abstract T getAndSet_(int aIdx, Number aValue);
+    public abstract double get_(int aIdx);
+    public abstract void set_(int aIdx, double aValue);
+    public abstract double getAndSet_(int aIdx, double aValue);
     public abstract int size();
 }

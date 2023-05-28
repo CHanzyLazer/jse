@@ -1,8 +1,9 @@
 package com.jtool.math.table;
 
+import com.jtool.math.vector.IVector;
+
 import java.util.AbstractList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author liqa
@@ -13,7 +14,7 @@ public abstract class AbstractMultiFrameTable<T extends ITable> extends Abstract
     /** ITable stuffs */
     @Override public boolean noHand() {return defaultFrame().noHand();}
     @Override public Collection<String> hands() {return defaultFrame().hands();}
-    @Override public List<Double> get(String aHand) {return defaultFrame().get(aHand);}
+    @Override public IVector get(String aHand) {return defaultFrame().get(aHand);}
     @Override public boolean containsHand(String aHand) {return defaultFrame().containsHand(aHand);}
     @Override public boolean setHand(String aOldHand, String aNewHand) {return defaultFrame().setHand(aOldHand, aNewHand);}
     

@@ -8,10 +8,10 @@ import com.jtool.math.IDataGenerator;
  * @author liqa
  * @param <V> 生成的向量类型
  */
-public interface IVectorGenerator<V extends IVectorGetter<? extends Number>> extends IDataGenerator<V> {
-    V from(IVectorGetter<? extends Number> aVectorGetter);
+public interface IVectorGenerator<V extends IVectorGetter> extends IDataGenerator<V> {
+    V from(IVectorGetter aVectorGetter);
     
     V ones(int aSize);
     V zeros(int aSize);
-    V from(int aSize, IVectorGetter<? extends Number> aVectorGetter);
+    V from(int aSize, IVectorGetter aVectorGetter);
 }

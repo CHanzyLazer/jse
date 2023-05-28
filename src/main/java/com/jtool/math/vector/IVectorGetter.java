@@ -1,6 +1,6 @@
 package com.jtool.math.vector;
 
 @FunctionalInterface
-public interface IVectorGetter<T extends Number> {
-    T get(int aIdx);
+public interface IVectorGetter {
+    double get(int aIdx);
 }

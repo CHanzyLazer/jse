@@ -79,6 +79,7 @@ public class Thermo extends AbstractMultiFrameTable<Table> {
             // 获取种类的 key
             tTokens = UT.Texts.splitBlank(aLines[idx]);
             String[] aHands = tTokens;
+            ++idx;
             // 获取结束的位置
             endIdx = UT.Texts.findLineContaining(aLines, idx, "Loop time of");
             if (endIdx >= aLines.length) break;

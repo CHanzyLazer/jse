@@ -2,14 +2,15 @@ package com.jtool.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.jtool.code.operator.IOperator1Full;
 import com.jtool.io.Decryptor;
 import com.jtool.io.Encryptor;
-import com.jtool.math.table.Table;
-import com.jtool.code.operator.IOperator1Full;
 import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.IMatrixFull;
 import com.jtool.math.matrix.Matrices;
-import com.jtool.math.matrix.RealColumnMatrix;
+import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.IVectorFull;
 import com.jtool.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
@@ -23,7 +24,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -731,21 +735,21 @@ public class UT {
                 for (double[] subData : aData) tPrinter.println(String.join(",", data2str(subData)));
             }
         }
-        public static void data2csv(IMatrix<Double> aData, String aFilePath, String... aHeads) throws IOException {
+        public static void data2csv(IMatrixFull<?,?> aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
-                for (List<Double> subData : aData.rows()) tPrinter.println(String.join(",", Code.map(subData, Object::toString)));
+                for (IVector subData : aData.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), Object::toString)));
             }
         }
-        public static void data2csv(IVector<Double> aData, String aFilePath) throws IOException {
+        public static void data2csv(IVectorFull<?> aData, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
-                for (Double subData : aData) tPrinter.println(subData);
+                for (Double subData : aData.iterable()) tPrinter.println(subData);
             }
         }
-        public static void data2csv(IVector<Double> aData, String aFilePath, String aHead) throws IOException {
+        public static void data2csv(IVectorFull<?> aData, String aFilePath, String aHead) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 tPrinter.println(aHead);
-                for (Double subData : aData) tPrinter.println(subData);
+                for (Double subData : aData.iterable()) tPrinter.println(subData);
             }
         }
         
@@ -755,7 +759,7 @@ public class UT {
          * @param aFilePath csv file path to read
          * @return a matrix
          */
-        public static RealColumnMatrix csv2data(String aFilePath) throws IOException {return Matrices.from(csv2table(aFilePath));}
+        public static IMatrix csv2data(String aFilePath) throws IOException {return Matrices.from(csv2table(aFilePath));}
         
         
         /**
@@ -767,7 +771,7 @@ public class UT {
         public static void table2csv(Table aTable, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (!aTable.noHand()) tPrinter.println(String.join(",", aTable.hands()));
-                for (List<Double> subData : aTable.rows()) tPrinter.println(String.join(",", Code.map(subData, Object::toString)));
+                for (IVector subData : aTable.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), Object::toString)));
             }
         }
         /**
@@ -794,7 +798,7 @@ public class UT {
                         tData.add(str2data(tTokens));
                     }
                 }
-                return new Table(tHand, tData);
+                return tHand != null ? new Table(tHand, tData) : new Table(tData);
             }
         }
         

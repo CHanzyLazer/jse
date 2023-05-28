@@ -9,9 +9,8 @@ import java.util.Arrays;
 /**
  * @author liqa
  * <p> 内部存储 double[] 的向量，会加速相关的运算 </p>
- * <p> 由于没有需要的实现，暂时略去中间的 RealVector 这一层 </p>
  */
-public abstract class DoubleArrayVector<V extends DoubleArrayVector<?>> extends AbstractVectorFull<Double, V> implements IDataShell<V, double[]> {
+public abstract class DoubleArrayVector<V extends DoubleArrayVector<?>> extends AbstractVectorFull<V> implements IDataShell<double[]> {
     protected double[] mData;
     protected DoubleArrayVector(double[] aData) {mData = aData;}
     
@@ -21,16 +20,26 @@ public abstract class DoubleArrayVector<V extends DoubleArrayVector<?>> extends 
     @Override public int dataSize() {return size();}
     
     
-    protected class DoubleArrayVectorOperation extends DoubleArrayOperation<V, IVectorGetter<? extends Number>> implements IVectorOperation<V, Double> {
-        @Override protected V thisInstance_() {return this_();}
-        @Override protected V newInstance_() {return generator().zeros();}
+    protected class DoubleArrayVectorOperation extends DoubleArrayOperation<DoubleArrayVector<?>, V, DoubleArrayVector<?>, IVectorGetter> implements IVectorOperation<V> {
+        @Override protected DoubleArrayVector<?> thisInstance_() {return DoubleArrayVector.this;}
+        /** 通过输入来获取需要的大小 */
+        @Override protected V newInstance_(IVectorGetter aData) {
+            if (aData instanceof IVectorFull) return newZeros(((IVectorFull<?>)aData).size());
+            return newZeros(size());
+        }
+        @Override protected V newInstance_(IVectorGetter aData1, IVectorGetter aData2) {
+            if (aData1 instanceof IVectorFull) return newZeros(((IVectorFull<?>)aData1).size());
+            if (aData2 instanceof IVectorFull) return newZeros(((IVectorFull<?>)aData2).size());
+            return newZeros(size());
+        }
     }
     
     /** 向量运算实现 */
-    @Override public IVectorOperation<V, Double> operation() {return new DoubleArrayVectorOperation();}
+    @Override public IVectorOperation<V> operation() {return new DoubleArrayVectorOperation();}
     
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
-    @Override public void fill(Number aValue) {Arrays.fill(mData, aValue.doubleValue());}
+    @Override public void fill(double aValue) {Arrays.fill(mData, aValue);}
+    @Override public void fill(double[] aVec) {System.arraycopy(aVec, 0, getData(), shiftSize(), dataSize());}
     
     /** Optimize stuffs，重写 same 接口专门优化拷贝部分 */
     @Override public IVectorGenerator<V> generator() {
@@ -41,7 +50,7 @@ public abstract class DoubleArrayVector<V extends DoubleArrayVector<?>> extends 
                 if (rData != null) {
                     System.arraycopy(getData(), shiftSize(), rData, rVector.shiftSize(), rVector.dataSize());
                 } else {
-                    rVector.fillWith(DoubleArrayVector.this);
+                    rVector.fill(DoubleArrayVector.this);
                 }
                 return rVector;
             }
@@ -49,7 +58,6 @@ public abstract class DoubleArrayVector<V extends DoubleArrayVector<?>> extends 
     }
     
     /** stuff to override */
-    protected abstract V this_();
-    public abstract V newShell();
+    public abstract DoubleArrayVector<V> newShell();
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

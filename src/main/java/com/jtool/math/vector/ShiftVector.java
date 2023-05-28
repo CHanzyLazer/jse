@@ -3,38 +3,37 @@ package com.jtool.math.vector;
 import com.jtool.code.ISetIterator;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * @author liqa
- * <p> 支持将内部的 double[] 进行平移访问的 Vector，理论拥有和 {@link RealVector} 几乎一样的性能 </p>
+ * <p> 支持将内部的 double[] 进行平移访问的 Vector，理论拥有和 {@link Vector} 几乎一样的性能 </p>
+ * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link Vector} </p>
  */
-public final class ShiftRealVector extends DoubleArrayVector<ShiftRealVector> {
+public final class ShiftVector extends DoubleArrayVector<Vector> implements IVector {
     private final int mSize;
     private final int mShift;
-    public ShiftRealVector(int aSize, int aShift, double[] aData) {super(aData); mSize = aSize; mShift = aShift;}
-    public ShiftRealVector(int aShift, double[] aData) {this(aData.length-aShift, aShift, aData);}
+    public ShiftVector(int aSize, int aShift, double[] aData) {super(aData); mSize = aSize; mShift = aShift;}
+    public ShiftVector(int aShift, double[] aData) {this(aData.length-aShift, aShift, aData);}
     
     /** IVector stuffs */
-    @Override public Double get_(int aIdx) {return mData[aIdx + mShift];}
-    @Override public void set_(int aIdx, Number aValue) {mData[aIdx + mShift] = aValue.doubleValue();}
-    @Override public Double getAndSet_(int aIdx, Number aValue) {
+    @Override public double get_(int aIdx) {return mData[aIdx + mShift];}
+    @Override public void set_(int aIdx, double aValue) {mData[aIdx + mShift] = aValue;}
+    @Override public double getAndSet_(int aIdx, double aValue) {
         aIdx += mShift;
-        Double oValue = mData[aIdx];
-        mData[aIdx] = aValue.doubleValue();
+        double oValue = mData[aIdx];
+        mData[aIdx] = aValue;
         return oValue;
     }
     @Override public int size() {return mSize;}
     
-    @Override protected ShiftRealVector newZeros(int aSize) {return new ShiftRealVector(aSize, 0, new double[aSize]);}
+    @Override protected Vector newZeros(int aSize) {return Vector.zeros(aSize);}
     
-    @Override protected ShiftRealVector this_() {return this;}
-    @Override public ShiftRealVector newShell() {return new ShiftRealVector(mSize, mShift, null);}
+    @Override public ShiftVector newShell() {return new ShiftVector(mSize, mShift, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
-        if (aObj instanceof RealVector) return ((RealVector)aObj).mData;
-        if (aObj instanceof ShiftRealVector) return ((ShiftRealVector)aObj).mData;
+        if (aObj instanceof Vector) return ((Vector)aObj).mData;
+        if (aObj instanceof ShiftVector) return ((ShiftVector)aObj).mData;
         if (aObj instanceof double[]) return (double[])aObj;
         return null;
     }
@@ -58,14 +57,14 @@ public final class ShiftRealVector extends DoubleArrayVector<ShiftRealVector> {
             }
         };
     }
-    @Override public ISetIterator<Double, Number> setIterator() {
-        return new ISetIterator<Double, Number>() {
+    @Override public ISetIterator<Double> setIterator() {
+        return new ISetIterator<Double>() {
             private final int mEnd = mSize + mShift;
             private int mIdx = mShift, oIdx = -1;
             @Override public boolean hasNext() {return mIdx < mEnd;}
-            @Override public void set(Number e) {
+            @Override public void set(Double e) {
                 if (oIdx < 0) throw new IllegalStateException();
-                mData[oIdx] = e.doubleValue();
+                mData[oIdx] = e;
             }
             @Override public Double next() {
                 if (hasNext()) {

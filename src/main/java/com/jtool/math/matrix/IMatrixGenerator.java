@@ -8,10 +8,10 @@ import com.jtool.math.IDataGenerator;
  * @author liqa
  * @param <M> 生成的矩阵类型
  */
-public interface IMatrixGenerator<M extends IMatrixGetter<? extends Number>> extends IDataGenerator<M> {
-    M from(IMatrixGetter<? extends Number> aMatrixGetter);
+public interface IMatrixGenerator<M extends IMatrixGetter> extends IDataGenerator<M> {
+    M from(IMatrixGetter aMatrixGetter);
     
     M ones(int aRowNum, int aColNum);
     M zeros(int aRowNum, int aColNum);
-    M from(int aRowNum, int aColNum, IMatrixGetter<? extends Number> aMatrixGetter);
+    M from(int aRowNum, int aColNum, IMatrixGetter aMatrixGetter);
 }

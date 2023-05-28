@@ -2,9 +2,7 @@ package com.jtool.math.matrix;
 
 import com.jtool.math.IDataShell;
 import com.jtool.math.operation.DoubleArrayOperation;
-import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.IVectorGetter;
-import com.jtool.math.vector.IVectorOperation;
+import com.jtool.math.vector.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -14,7 +12,7 @@ import java.util.Arrays;
  * <p> 内部存储 double[] 的矩阵，会加速相关的运算 </p>
  * <p> 由于没有需要的实现，暂时略去中间的 RealMatrix 这一层 </p>
  */
-public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V extends IVector<Double> & IDataShell<V, double[]>> extends AbstractMatrixFull<Double, M, V> implements IDataShell<M, double[]> {
+public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V extends IVectorFull<?>> extends AbstractMatrixFull<M, V> implements IDataShell<double[]> {
     protected double[] mData;
     protected DoubleArrayMatrix(double[] aData) {mData = aData;}
     
@@ -24,32 +22,79 @@ public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V ext
     @Override public int dataSize() {return columnNumber()*rowNumber();}
     
     
-    protected class DoubleArrayMatrixOperation extends DoubleArrayOperation<M, IMatrixGetter<? extends Number>> implements IMatrixOperation<M, Double> {
-        @Override protected M thisInstance_() {return this_();}
-        @Override protected M newInstance_() {return DoubleArrayMatrix.this.generator().zeros();}
-    }
-    protected class DoubleArrayVectorOperation extends DoubleArrayOperation<V, IVectorGetter<? extends Number>> implements IVectorOperation<V, Double> {
-        @Override protected V thisInstance_() {throw new RuntimeException("Can NOT put Vector into Matrix");} // 对于这种 this 调用直接报错即可
-        @Override protected V newInstance_() {return generatorVec().zeros();}
+    protected class DoubleArrayMatrixOperation extends DoubleArrayOperation<DoubleArrayMatrix<?, ?>, M, DoubleArrayMatrix<?, ?>, IMatrixGetter> implements IMatrixOperation<M, V> {
+        @Override protected DoubleArrayMatrix<?, ?> thisInstance_() {return DoubleArrayMatrix.this;}
+        /** 通过输入来获取需要的大小 */
+        @Override protected M newInstance_(IMatrixGetter aData) {
+            if (aData instanceof IMatrixFull) {
+                IMatrixFull<?, ?> tMatrix = (IMatrixFull<?, ?>)aData;
+                return newZeros_(tMatrix.rowNumber(), tMatrix.columnNumber());
+            }
+            return newZeros_(rowNumber(), columnNumber());
+        }
+        @Override protected M newInstance_(IMatrixGetter aData1, IMatrixGetter aData2) {
+            if (aData1 instanceof IMatrixFull) {
+                IMatrixFull<?, ?> tMatrix = (IMatrixFull<?, ?>)aData1;
+                return newZeros_(tMatrix.rowNumber(), tMatrix.columnNumber());
+            }
+            if (aData2 instanceof IMatrixFull) {
+                IMatrixFull<?, ?> tMatrix = (IMatrixFull<?, ?>)aData2;
+                return newZeros_(tMatrix.rowNumber(), tMatrix.columnNumber());
+            }
+            return newZeros_(rowNumber(), columnNumber());
+        }
+        
+        /** 矩阵的一些额外运算的实现 */
+        @Override public V sumOfCols() {
+            int tColNum = columnNumber();
+            V rVector = newZeros_(tColNum);
+            for (int col = 0; col < tColNum; ++col) {
+                rVector.set_(col, col(col).operation().sum());
+            }
+            return rVector;
+        }
+        @Override public V sumOfRows() {
+            int tRowNum = rowNumber();
+            V rVector = newZeros_(tRowNum);
+            for (int row = 0; row < tRowNum; ++row) {
+                rVector.set_(row, row(row).operation().sum());
+            }
+            return rVector;
+        }
+        @Override public V meanOfCols() {
+            int tColNum = columnNumber();
+            V rVector = newZeros_(tColNum);
+            for (int col = 0; col < tColNum; ++col) {
+                rVector.set_(col, col(col).operation().mean());
+            }
+            return rVector;
+        }
+        @Override public V meanOfRows() {
+            int tRowNum = rowNumber();
+            V rVector = newZeros_(tRowNum);
+            for (int row = 0; row < tRowNum; ++row) {
+                rVector.set_(row, row(row).operation().mean());
+            }
+            return rVector;
+        }
     }
     
     /** 矩阵运算实现 */
-    @Override public IMatrixOperation<M, Double> operation() {return new DoubleArrayMatrixOperation();}
-    @Override public IVectorOperation<V, Double> operationVec() {return new DoubleArrayVectorOperation();}
+    @Override public DoubleArrayMatrixOperation operation() {return new DoubleArrayMatrixOperation();}
     
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
-    @Override public void fill(Number aValue) {Arrays.fill(mData, aValue.doubleValue());}
+    @Override public void fill(double aValue) {Arrays.fill(mData, aValue);}
     
     /** Optimize stuffs，重写 same 接口专门优化拷贝部分 */
     @Override public IMatrixGenerator<M> generator() {
         return new MatrixGenerator() {
                 @Override public M same() {
                 M rMatrix = zeros();
-                double[] rData = getIfHasSameOrderData(rMatrix);
+                final double[] rData = getIfHasSameOrderData(rMatrix);
                 if (rData != null) {
                     System.arraycopy(getData(), shiftSize(), rData, rMatrix.shiftSize(), rMatrix.dataSize());
                 } else {
-                    rMatrix.fillWith(DoubleArrayMatrix.this);
+                    rMatrix.fill(DoubleArrayMatrix.this);
                 }
                 return rMatrix;
             }
@@ -57,7 +102,6 @@ public abstract class DoubleArrayMatrix<M extends DoubleArrayMatrix<?, ?>, V ext
     }
     
     /** stuff to override */
-    protected abstract M this_();
-    public abstract M newShell();
+    public abstract DoubleArrayMatrix<M, V> newShell();
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

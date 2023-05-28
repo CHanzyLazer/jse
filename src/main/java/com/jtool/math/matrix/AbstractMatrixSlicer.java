@@ -7,7 +7,7 @@ import com.jtool.math.vector.IVectorGetter;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Number>, V extends IVectorGetter<? extends Number>> implements IMatrixSlicer<M, V> {
+public abstract class AbstractMatrixSlicer<M extends IMatrixGetter, V extends IVectorGetter> implements IMatrixSlicer<M, V> {
     @Override public final M get(int[]         aSelectedRows, int[]         aSelectedCols) {return getLL(UT.Code.asList(aSelectedRows), UT.Code.asList(aSelectedCols));}
     @Override public final M get(List<Integer> aSelectedRows, int[]         aSelectedCols) {return getLL(aSelectedRows, UT.Code.asList(aSelectedCols));}
     @Override public final M get(int[]         aSelectedRows, List<Integer> aSelectedCols) {return getLL(UT.Code.asList(aSelectedRows), aSelectedCols);}
@@ -50,9 +50,9 @@ public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Num
     
     List<Integer> F2L(IRowFilter aSelectedRows) {
         List<Integer> rSelectedRows = new ArrayList<>();
-        List<? extends IVectorGetter<? extends Number>> tRows = thisRows_();
+        List<? extends IVectorGetter> tRows = thisRows_();
         int row = 0;
-        for (IVectorGetter<? extends Number> tRow : tRows) {
+        for (IVectorGetter tRow : tRows) {
             if (aSelectedRows.accept(tRow)) rSelectedRows.add(row);
             ++row;
         }
@@ -60,9 +60,9 @@ public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Num
     }
     List<Integer> F2L(IColFilter aSelectedCols) {
         List<Integer> rSelectedCols = new ArrayList<>();
-        List<? extends IVectorGetter<? extends Number>> tCols = thisCols_();
+        List<? extends IVectorGetter> tCols = thisCols_();
         int col = 0;
-        for (IVectorGetter<? extends Number> tCol : tCols) {
+        for (IVectorGetter tCol : tCols) {
             if (aSelectedCols.accept(tCol)) rSelectedCols.add(col);
             ++col;
         }
@@ -70,9 +70,9 @@ public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Num
     }
     List<Integer> F2L(IRowFilterWithIndex aSelectedRows) {
         List<Integer> rSelectedRows = new ArrayList<>();
-        List<? extends IVectorGetter<? extends Number>> tRows = thisRows_();
+        List<? extends IVectorGetter> tRows = thisRows_();
         int row = 0;
-        for (IVectorGetter<? extends Number> tRow : tRows) {
+        for (IVectorGetter tRow : tRows) {
             if (aSelectedRows.accept(tRow, row)) rSelectedRows.add(row);
             ++row;
         }
@@ -80,9 +80,9 @@ public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Num
     }
     List<Integer> F2L(IColFilterWithIndex aSelectedCols) {
         List<Integer> rSelectedCols = new ArrayList<>();
-        List<? extends IVectorGetter<? extends Number>> tCols = thisCols_();
+        List<? extends IVectorGetter> tCols = thisCols_();
         int col = 0;
-        for (IVectorGetter<? extends Number> tCol : tCols) {
+        for (IVectorGetter tCol : tCols) {
             if (aSelectedCols.accept(tCol, col)) rSelectedCols.add(col);
             ++col;
         }
@@ -99,6 +99,6 @@ public abstract class AbstractMatrixSlicer<M extends IMatrixGetter<? extends Num
     protected abstract M getAL(List<Integer> aSelectedCols);
     protected abstract M getAA();
     
-    protected abstract List<? extends IVectorGetter<? extends Number>> thisRows_();
-    protected abstract List<? extends IVectorGetter<? extends Number>> thisCols_();
+    protected abstract List<? extends IVectorGetter> thisRows_();
+    protected abstract List<? extends IVectorGetter> thisCols_();
 }

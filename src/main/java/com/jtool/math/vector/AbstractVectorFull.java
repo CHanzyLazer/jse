@@ -1,20 +1,127 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.CS.SliceType;
+import com.jtool.code.ISetIterator;
+import com.jtool.code.UT;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * @author liqa
  * <p> 通用的向量类，由于默认实现比较复杂，并且涉及到重写 Object 的成员，因此部分方法放入抽象类中 </p>
  */
-public abstract class AbstractVectorFull<T extends Number, V extends IVector<T>> extends AbstractVector<T> implements IVectorFull<T, V> {
+public abstract class AbstractVectorFull<V extends IVectorFull<?>> implements IVectorFull<V> {
+    /** print */
+    @Override public String toString() {
+        StringBuilder rStr  = new StringBuilder();
+        final Iterator<Double> it = iterator();
+        while (it.hasNext()) rStr.append(toString_(it.next()));
+        return rStr.toString();
+    }
+    
+    /** Iterator stuffs */
+    @Override public Iterator<Double> iterator() {
+        return new Iterator<Double>() {
+            private final int mSize = size();
+            private int mIdx = 0;
+            @Override public boolean hasNext() {return mIdx < mSize;}
+            @Override public Double next() {
+                if (hasNext()) {
+                    double tNext = get_(mIdx);
+                    ++mIdx;
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public ISetIterator<Double> setIterator() {
+        return new ISetIterator<Double>() {
+            private final int mSize = size();
+            private int mIdx = 0, oIdx = -1;
+            @Override public boolean hasNext() {return mIdx < mSize;}
+            @Override public void set(Double e) {
+                if (oIdx < 0) throw new IllegalStateException();
+                set_(oIdx, e);
+            }
+            @Override public Double next() {
+                if (hasNext()) {
+                    oIdx = mIdx;
+                    ++mIdx;
+                    return get_(oIdx);
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    @Override public Iterator<Double> iteratorOf(final IVectorGetter aContainer) {
+        if (aContainer instanceof IVectorFull) return ((IVectorFull<?>)aContainer).iterator();
+        return new Iterator<Double>() {
+            private final int mSize = size();
+            private int mIdx = 0;
+            @Override public boolean hasNext() {return mIdx < mSize;}
+            @Override public Double next() {
+                if (hasNext()) {
+                    double tNext = aContainer.get(mIdx);
+                    ++mIdx;
+                    return tNext;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+    
+    
+    /** 转为兼容性更好的 double[] */
+    @Override public double[] vec() {return UT.Code.toData(asList());}
+    
+    
+    /** 批量修改的接口 */
+    @Override public void fill(double aValue) {
+        final ISetIterator<Double> si = setIterator();
+        while (si.hasNext()) {
+            si.next();
+            si.set(aValue);
+        }
+    }
+    @Override public void fill(double[] aVec) {fill(i -> aVec[i]);}
+    @Override public void fill(Iterable<? extends Number> aList) {
+        final ISetIterator<Double> si = setIterator();
+        final Iterator<? extends Number> it = aList.iterator();
+        while (si.hasNext()) {
+            si.next();
+            si.set(it.next().doubleValue());
+        }
+    }
+    @Override public void fill(IVectorGetter aVectorGetter) {
+        final ISetIterator<Double> si = setIterator();
+        final Iterator<Double> it = iteratorOf(aVectorGetter);
+        while (si.hasNext()) {
+            si.next();
+            si.set(it.next());
+        }
+    }
+    
+    @Override public double get(int aIdx) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        return get_(aIdx);
+    }
+    @Override public double getAndSet(int aIdx, double aValue) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        return getAndSet_(aIdx, aValue);
+    }
+    @Override public void set(int aIdx, double aValue) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        set_(aIdx, aValue);
+    }
+    
     
     /** 向量生成器部分 */
-    protected class VectorGenerator extends AbstractVectorGenerator<T, V> {
-        @Override protected Iterator<T> thisIterator_() {return iterator();}
+    protected class VectorGenerator extends AbstractVectorGenerator<V> {
+        @Override protected Iterator<Double> thisIterator_() {return iterator();}
         @Override protected int thisSize_() {return size();}
         @Override public V zeros(int aSize) {return newZeros(aSize);}
     }
@@ -22,59 +129,80 @@ public abstract class AbstractVectorFull<T extends Number, V extends IVector<T>>
     @Override public IVectorGenerator<V> generator() {return new VectorGenerator();}
     
     
-    /** 切片操作，默认返回新的矩阵，refSlicer 则会返回引用的切片结果 */
+    /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     @Override public IVectorSlicer<V> slicer() {
         return new AbstractVectorSlicer<V>() {
             @Override protected V getL(final List<Integer> aIndices) {return generator().from(aIndices.size(), i -> AbstractVectorFull.this.get(aIndices.get(i)));}
             @Override protected V getA() {return generator().same();}
             
-            @Override protected Iterator<? extends Number> thisIterator_() {return iterator();}
+            @Override protected Iterator<Double> thisIterator_() {return iterator();}
         };
     }
-    @Override public IVectorSlicer<IVector<T>> refSlicer() {
-        return new AbstractVectorSlicer<IVector<T>>() {
-            @Override protected IVector<T> getL(final List<Integer> aIndices) {
-                return new AbstractVector<T>() {
+    @Override public IVectorSlicer<IVector> refSlicer() {
+        return new AbstractVectorSlicer<IVector>() {
+            @Override protected IVector getL(final List<Integer> aIndices) {
+                return new AbstractVector() {
                     /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public T get_(int aIdx) {return AbstractVectorFull.this.get(aIndices.get(aIdx));}
-                    @Override public void set_(int aIdx, Number aValue) {AbstractVectorFull.this.setOnly(aIndices.get(aIdx), aValue);}
-                    @Override public T getAndSet_(int aIdx, Number aValue) {return AbstractVectorFull.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override public double get_(int aIdx) {return AbstractVectorFull.this.get(aIndices.get(aIdx));}
+                    @Override public void set_(int aIdx, double aValue) {AbstractVectorFull.this.set(aIndices.get(aIdx), aValue);}
+                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVectorFull.this.getAndSet(aIndices.get(aIdx), aValue);}
                     @Override public int size() {return aIndices.size();}
                 };
             }
-            @Override protected IVector<T> getA() {return AbstractVectorFull.this;}
+            @Override protected IVector getA() {
+                return new AbstractVector() {
+                    /** 对于全部切片，则不再需要二次边界检查 */
+                    @Override public double get_(int aIdx) {return AbstractVectorFull.this.get_(aIdx);}
+                    @Override public void set_(int aIdx, double aValue) {AbstractVectorFull.this.set_(aIdx, aValue);}
+                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVectorFull.this.getAndSet_(aIdx, aValue);}
+                    @Override public int size() {return AbstractVectorFull.this.size();}
+                };
+            }
             
-            @Override protected Iterator<? extends Number> thisIterator_() {return iterator();}
+            @Override protected Iterator<Double> thisIterator_() {return iterator();}
         };
     }
     
     
     /** Groovy 的部分，增加向量基本的运算操作，由于不能重载 += 之类的变成向自身操作，因此会充斥着值拷贝，因此不推荐重性能的场景使用 */
-    @VisibleForTesting @Override public V plus      (Number aRHS) {return operation().mapAdd        (this, aRHS);}
-    @VisibleForTesting @Override public V minus     (Number aRHS) {return operation().mapMinus      (this, aRHS);}
-    @VisibleForTesting @Override public V multiply  (Number aRHS) {return operation().mapMultiply   (this, aRHS);}
-    @VisibleForTesting @Override public V div       (Number aRHS) {return operation().mapDivide     (this, aRHS);}
-    @VisibleForTesting @Override public V mod       (Number aRHS) {return operation().mapMod        (this, aRHS);}
+    @VisibleForTesting @Override public V plus      (double aRHS) {return operation().mapAdd        (this, aRHS);}
+    @VisibleForTesting @Override public V minus     (double aRHS) {return operation().mapMinus      (this, aRHS);}
+    @VisibleForTesting @Override public V multiply  (double aRHS) {return operation().mapMultiply   (this, aRHS);}
+    @VisibleForTesting @Override public V div       (double aRHS) {return operation().mapDivide     (this, aRHS);}
+    @VisibleForTesting @Override public V mod       (double aRHS) {return operation().mapMod        (this, aRHS);}
     
-    @VisibleForTesting @Override public V plus      (IVectorGetter<? extends Number> aRHS) {return operation().ebeAdd       (this, aRHS);}
-    @VisibleForTesting @Override public V minus     (IVectorGetter<? extends Number> aRHS) {return operation().ebeMinus     (this, aRHS);}
-    @VisibleForTesting @Override public V multiply  (IVectorGetter<? extends Number> aRHS) {return operation().ebeMultiply  (this, aRHS);}
-    @VisibleForTesting @Override public V div       (IVectorGetter<? extends Number> aRHS) {return operation().ebeDivide    (this, aRHS);}
-    @VisibleForTesting @Override public V mod       (IVectorGetter<? extends Number> aRHS) {return operation().ebeMod       (this, aRHS);}
+    @VisibleForTesting @Override public V plus      (IVectorGetter aRHS) {return operation().ebeAdd       (this, aRHS);}
+    @VisibleForTesting @Override public V minus     (IVectorGetter aRHS) {return operation().ebeMinus     (this, aRHS);}
+    @VisibleForTesting @Override public V multiply  (IVectorGetter aRHS) {return operation().ebeMultiply  (this, aRHS);}
+    @VisibleForTesting @Override public V div       (IVectorGetter aRHS) {return operation().ebeDivide    (this, aRHS);}
+    @VisibleForTesting @Override public V mod       (IVectorGetter aRHS) {return operation().ebeMod       (this, aRHS);}
     
     /** Groovy 的部分，增加矩阵切片操作 */
+    @VisibleForTesting @Override public double call(int aIdx) {return get(aIdx);}
     @VisibleForTesting @Override public V call(List<Integer> aIndices) {return slicer().get(aIndices);}
     @VisibleForTesting @Override public V call(SliceType     aIndices) {return slicer().get(aIndices);}
     
+    @VisibleForTesting @Override public double getAt(int aIdx) {return get(aIdx);}
     @VisibleForTesting @Override public V getAt(List<Integer> aIndices) {return slicer().get(aIndices);}
     @VisibleForTesting @Override public V getAt(SliceType     aIndices) {return slicer().get(aIndices);}
-    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, Number aValue) {refSlicer().get(aIndices).fill(aValue);}
-    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, Iterable<? extends Number> aVec) {refSlicer().get(aIndices).fill(aVec);}
-    @VisibleForTesting @Override public void putAt(SliceType     aIndices, Number aValue) {refSlicer().get(aIndices).fill(aValue);}
-    @VisibleForTesting @Override public void putAt(SliceType     aIndices, Iterable<? extends Number> aVec) {refSlicer().get(aIndices).fill(aVec);}
+    
+    @VisibleForTesting @Override public void putAt(int aIdx, double aValue) {set(aIdx, aValue);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, double aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, IVectorGetter aVector) {refSlicer().get(aIndices).fill(aVector);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, double aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, IVectorGetter aVector) {refSlicer().get(aIndices).fill(aVector);}
     
     
     /** stuff to override */
-    public abstract IVectorOperation<V, T> operation();
+    public abstract double get_(int aIdx);
+    public abstract void set_(int aIdx, double aValue);
+    public abstract double getAndSet_(int aIdx, double aValue);
+    public abstract int size();
+    
+    public abstract IVectorOperation<V> operation();
     protected abstract V newZeros(int aSize);
+    
+    protected String toString_(double aValue) {return String.format(" %8.4g", aValue);}
 }

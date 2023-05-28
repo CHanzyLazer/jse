@@ -3,14 +3,16 @@ package com.jtool.math;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Array;
+
 /**
  * 任意的通用的数据和外壳的转换，用来方便进行不同数据类型的转换而不发生值拷贝，
  * 也用于运算来直接操作底层数据从而进行优化
  * @author liqa
  */
-public interface IDataShell<T, D> {
+public interface IDataShell<D> {
     void setData2this(D aData);
-    T newShell();
+    IDataShell<D> newShell();
     D getData();
     @Nullable D getIfHasSameOrderData(Object aObj);
     /** 返回需要使用的 data 长度，因为可能会通过 setData 导致 data 过长 */
@@ -19,7 +21,12 @@ public interface IDataShell<T, D> {
     default int shiftSize() {return 0;}
     
     static int shiftSize(Object aObj) {
-        if (aObj instanceof IDataShell) return ((IDataShell<?, ?>)aObj).shiftSize();
+        if (aObj instanceof IDataShell) return ((IDataShell<?>)aObj).shiftSize();
+        return 0;
+    }
+    static int dataSize(Object aObj) {
+        if (aObj instanceof IDataShell) return ((IDataShell<?>)aObj).dataSize();
+        else if (aObj.getClass().isArray()) return Array.getLength(aObj);
         return 0;
     }
 }

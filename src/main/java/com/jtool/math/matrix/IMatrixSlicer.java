@@ -11,7 +11,7 @@ import java.util.List;
  * @param <M> 切片获取到的矩阵类型，注意可以不是自身的类型
  * @param <V> 切片成一维的返回向量类型
  */
-public interface IMatrixSlicer<M extends IMatrixGetter<? extends Number>, V extends IVectorGetter<? extends Number>> {
+public interface IMatrixSlicer<M extends IMatrixGetter, V extends IVectorGetter> {
     /**
      * 为了代码简洁（因为 List 的内容被擦除不能重载），因此只支持 Integer 来切片，
      * 并且实际切片过程也会将 Boolean 转成 Integer。
@@ -34,10 +34,10 @@ public interface IMatrixSlicer<M extends IMatrixGetter<? extends Number>, V exte
     V get(SliceType     aSelectedRows, int           aSelectedCol );
     
     /** 支持过滤器输入，代替没有 {@code List<Boolean>} 的缺陷 */
-    @FunctionalInterface interface IRowFilter          {boolean accept(IVectorGetter<? extends Number> aRow);}
-    @FunctionalInterface interface IRowFilterWithIndex {boolean accept(IVectorGetter<? extends Number> aRow, int aIndex);}
-    @FunctionalInterface interface IColFilter          {boolean accept(IVectorGetter<? extends Number> aCol);}
-    @FunctionalInterface interface IColFilterWithIndex {boolean accept(IVectorGetter<? extends Number> aCol, int aIndex);}
+    @FunctionalInterface interface IRowFilter          {boolean accept(IVectorGetter aRow);}
+    @FunctionalInterface interface IRowFilterWithIndex {boolean accept(IVectorGetter aRow, int aIndex);}
+    @FunctionalInterface interface IColFilter          {boolean accept(IVectorGetter aCol);}
+    @FunctionalInterface interface IColFilterWithIndex {boolean accept(IVectorGetter aCol, int aIndex);}
     
     M get(IRowFilter    aSelectedRows, int[]         aSelectedCols);
     M get(IRowFilter    aSelectedRows, List<Integer> aSelectedCols);

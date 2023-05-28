@@ -11,37 +11,36 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 向量的一般实现 </p>
  */
-public final class RealVector extends DoubleArrayVector<RealVector> {
+public final class Vector extends DoubleArrayVector<Vector> implements IVector {
     /** 提供默认的创建 */
-    public static RealVector ones(int aSize) {
+    public static Vector ones(int aSize) {
         double[] tData = new double[aSize];
         Arrays.fill(tData, 1.0);
-        return new RealVector(tData);
+        return new Vector(tData);
     }
-    public static RealVector zeros(int aSize) {return new RealVector(new double[aSize]);}
+    public static Vector zeros(int aSize) {return new Vector(new double[aSize]);}
     
     
     private final int mSize;
-    public RealVector(int aSize, double[] aData) {super(aData); mSize = aSize;}
-    public RealVector(double[] aData) {this(aData.length, aData);}
+    public Vector(int aSize, double[] aData) {super(aData); mSize = aSize;}
+    public Vector(double[] aData) {this(aData.length, aData);}
     
     /** IVector stuffs */
-    @Override public Double get_(int aIdx) {return mData[aIdx];}
-    @Override public void set_(int aIdx, Number aValue) {mData[aIdx] = aValue.doubleValue();}
-    @Override public Double getAndSet_(int aIdx, Number aValue) {
-        Double oValue = mData[aIdx];
-        mData[aIdx] = aValue.doubleValue();
+    @Override public double get_(int aIdx) {return mData[aIdx];}
+    @Override public void set_(int aIdx, double aValue) {mData[aIdx] = aValue;}
+    @Override public double getAndSet_(int aIdx, double aValue) {
+        double oValue = mData[aIdx];
+        mData[aIdx] = aValue;
         return oValue;
     }
     @Override public int size() {return mSize;}
     
-    @Override protected RealVector newZeros(int aSize) {return RealVector.zeros(aSize);}
+    @Override protected Vector newZeros(int aSize) {return Vector.zeros(aSize);}
     
-    @Override protected RealVector this_() {return this;}
-    @Override public RealVector newShell() {return new RealVector(mSize, null);}
+    @Override public Vector newShell() {return new Vector(mSize, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
-        if (aObj instanceof RealVector) return ((RealVector)aObj).mData;
-        if (aObj instanceof ShiftRealVector) return ((ShiftRealVector)aObj).mData;
+        if (aObj instanceof Vector) return ((Vector)aObj).mData;
+        if (aObj instanceof ShiftVector) return ((ShiftVector)aObj).mData;
         if (aObj instanceof double[]) return (double[])aObj;
         return null;
     }
@@ -62,13 +61,13 @@ public final class RealVector extends DoubleArrayVector<RealVector> {
             }
         };
     }
-    @Override public ISetIterator<Double, Number> setIterator() {
-        return new ISetIterator<Double, Number>() {
+    @Override public ISetIterator<Double> setIterator() {
+        return new ISetIterator<Double>() {
             private int mIdx = 0, oIdx = -1;
             @Override public boolean hasNext() {return mIdx < mSize;}
-            @Override public void set(Number e) {
+            @Override public void set(Double e) {
                 if (oIdx < 0) throw new IllegalStateException();
-                mData[oIdx] = e.doubleValue();
+                mData[oIdx] = e;
             }
             @Override public Double next() {
                 if (hasNext()) {
