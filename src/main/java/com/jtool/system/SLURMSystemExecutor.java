@@ -37,8 +37,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
     private final int mTaskNum; // 目前一个 Executor 固定一个 taskNumber，用不到变化的，打包起来也会更加方便
     private final int mMaxTaskNumPerNode;
     private final int mMaxNodeNum;
-    private final String mSqueueName;
-    SLURMSystemExecutor(SSHSystemExecutor aSystemExecutor, int aParallelNum, long aSleepTime, String aUniqueJobName, @Nullable String aPartition, int aTaskNum, int aMaxTaskNumPerNode, int aMaxNodeNum, @Nullable String aSqueueName) throws Exception {
+    SLURMSystemExecutor(SSHSystemExecutor aSystemExecutor, int aParallelNum, long aSleepTime, String aUniqueJobName, @Nullable String aPartition, int aTaskNum, int aMaxTaskNumPerNode, int aMaxNodeNum) throws Exception {
         super(aSystemExecutor, aParallelNum);
         // 其余的初始化
         mSleepTime = aSleepTime;
@@ -47,7 +46,6 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         mTaskNum = aTaskNum;
         mMaxTaskNumPerNode = aMaxTaskNumPerNode;
         mMaxNodeNum = aMaxNodeNum;
-        mSqueueName = aSqueueName==null? mEXE.mSSH.session().getUserName() : aSqueueName;
         // 需要初始化输出的文件夹
         mWorkingDir = WORKING_DIR.replaceAll("%n", mUniqueJobName);
         mSplitNodeScriptPath = SPLIT_NODE_SCRIPT_PATH.replaceAll("%n", mUniqueJobName);
@@ -94,8 +92,6 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         rSaveTo.put("TaskNumber", mTaskNum);
         rSaveTo.put("MaxTaskNumberPerNode", mMaxTaskNumPerNode);
         rSaveTo.put("MaxNodeNumber", mMaxNodeNum);
-        if (!mSqueueName.equals(mEXE.mSSH.session().getUserName()))
-        rSaveTo.put("SqueueName", mSqueueName);
         rSaveTo.put("JobNumber", jobNumber());
         // 保存 mQueuedJobList 和 mJobList
         saveQueuedJobList(rSaveTo);
@@ -134,7 +130,6 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
      *   "TaskNumber": ${integerNumberOfTaskNumberForJob},
      *   "MaxTaskNumberPerNode": ${integerNumberOfMaxTaskNumberPerNodeOfThisSlurmServer},
      *   "MaxNodeNumber": ${integerNumberOfMaxNodeNumberOfSingleJob},
-     *   "SqueueName": "${usernameForSqueueUse}",
      *
      *   "Username": "${yourUserName}",
      *   "Hostname": "${ipOfHost}",
@@ -158,7 +153,6 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
      * "TaskNumber" > "tasknumber" > "TaskNum" > "tasknum" > "nTasks" > "ntasks" > "n"
      * "MaxTaskNumberPerNode" > "maxtasknumberpernode" > "MaxTaskNumPerNode" > "maxtasknumpernode" > "CoresPerNode" > "corespernode" > "ntaskspernode" > "ntasks-per-node"
      * "MaxNodeNumber" > "maxnodenumber" > "MaxNodeNum" > "maxnodenum" > "nodes" > "N"
-     * "SqueueName" > "squeuename" > "squeue" > "s"
      *
      * "Username" > "username" > "user" > "u"
      * "Hostname" > "hostname" > "host" > "h"
@@ -174,20 +168,20 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
      * "SleepTime" 未选定时默认为 500（ms），"NoConsoleOutput" 未选定时默认为 false（即开启输出信息到控制台）
      * <p>
      * "JobName" 未选定时会是格式 "SLURM@${RandomString}"，"Partition" 未选定时会使用 slurm 服务器上默认的分区，
-     * "TaskNumber" 未选定时默认为 1，"MaxTaskNumberPerNode" 未选定时默认为 20，"SqueueName" 未选定时默认为登录使用的用户名
+     * "TaskNumber" 未选定时默认为 1，"MaxTaskNumberPerNode" 未选定时默认为 20
      * <p>
      * "Port" 未选定时默认为 22，"Password" 未选定时使用 publicKey 密钥认证，"KeyPath" 未选定时使用默认路径的密钥，
      * "CompressLevel" 未选定时不开启压缩，"LocalWorkingDir" 未选定时使用程序运行路径，
      * "RemoteWorkingDir" 未选定时使用 ssh 登录所在的路径
      * @author liqa
      */
-    public SLURMSystemExecutor(                                                                                             Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum,                                                                            Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum,                                                          Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition,                                       Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(                                    String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs), getSqueueName(aArgs));}
-    public SLURMSystemExecutor(                                    String aPartition                                      , Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs), getSqueueName(aArgs));}
+    public SLURMSystemExecutor(                                                                                             Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(int aParallelNum,                                                                            Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum,                                                          Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition,                                       Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1, aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(                                    String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(                                    String aPartition                                      , Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,               aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
     
     
     public static int       getParallelNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelnumber", "ParallelNum", "parallelnum", "pn")).intValue();}
@@ -197,7 +191,6 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
     public static int       getTaskNumber           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}
     public static int       getMaxTaskNumPerNode    (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 20, "MaxTaskNumberPerNode", "maxtasknumberpernode", "MaxTaskNumPerNode", "maxtasknumpernode", "CoresPerNode", "corespernode", "ntaskspernode", "ntasks-per-node")).intValue();}
     public static int       getMaxNodeNum           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 10, "MaxNodeNumber", "maxnodenumber", "MaxNodeNum", "maxnodenum", "nodes", "N")).intValue();}
-    public static @Nullable String getSqueueName    (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "SqueueName", "squeuename", "squeue", "s");}
     
     
     
@@ -360,7 +353,7 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
     /** 获取这个对象提交的任务中，正在执行的任务 id 列表，用来监控任务是否完成 */
     @Override protected @Nullable Set<Integer> getRunningJobIDsFromSystem() {
         // 组装指令，增加一个 echo 来标识指令执行成功
-        String tCommand = String.format("squeue --noheader --user %s --format %%i; echo 'END'", mSqueueName);
+        String tCommand = String.format("squeue --noheader --name %s --format %%i; echo 'END'", mUniqueJobName);
         // 直接获取输出
         List<String> tLines = mEXE.system_str(tCommand);
         // 获取输出得到任务 ID
