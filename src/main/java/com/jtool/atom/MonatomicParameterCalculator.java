@@ -130,7 +130,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     /**
      * 计算 RDF (radial distribution function，即 g(r))，只计算一个固定结构的值，因此不包含温度信息
      * @author liqa
-     * @param aN 指定分划的份数（默认为 100）
+     * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @return gr 函数
      */
@@ -143,7 +143,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         for (int i = 0; i < tdn.length; ++i) tdn[i] = Vectors.zeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighborDis(i, aRMax - dr*0.5, true, dis -> {
                 int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
                 if (tIdx > 0 && tIdx < aN) tdn[threadID].increment_(tIdx);
@@ -162,7 +162,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         // 输出
         return gr;
     }
-    public IFunc1 calRDF(                          ) {return calRDF(100);}
+    public IFunc1 calRDF(                          ) {return calRDF(160);}
     public IFunc1 calRDF(int aN                    ) {return calRDF(aN, mUnitLen*6);}
     
     
@@ -170,7 +170,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * 计算自身与输入的 aAtomDataXYZ 之间的 RDF，只计算一个固定结构的值，因此不包含温度信息
      * @author liqa
      * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的矩阵，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
-     * @param aN 指定分划的份数（默认为 100）
+     * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @return gr 以及对应横坐标 r 构成的矩阵，排成两列，gr 在前 r 在后
      */
@@ -183,7 +183,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         for (int i = 0; i < tdn.length; ++i) tdn[i] = Vectors.zeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor_(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             mNL.forEachNeighborDis(aAtomDataXYZ[i], aRMax - dr*0.5, dis -> {
                 int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
                 if (tIdx > 0 && tIdx < aN) tdn[threadID].increment_(tIdx);
@@ -203,10 +203,10 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         // 输出
         return gr;
     }
-    public IFunc1 calRDF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ                            ) {return calRDF_AB(aAtomDataXYZ, 100);}
+    public IFunc1 calRDF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ                            ) {return calRDF_AB(aAtomDataXYZ, 160);}
     public IFunc1 calRDF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, int aN                    ) {return calRDF_AB(aAtomDataXYZ, aN, mUnitLen*6);}
     public IFunc1 calRDF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, int aN, final double aRMax) {return calRDF_AB(toValidAtomDataXYZ_(aAtomDataXYZ), aN, aRMax);}
-    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC                                    ) {return calRDF_AB(aMPC, 100);}
+    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC                                    ) {return calRDF_AB(aMPC, 160);}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN                    ) {return calRDF_AB(aMPC, aN, mUnitLen*6);}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN, final double aRMax) {return calRDF_AB(aMPC.mAtomDataXYZ, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
     
@@ -235,7 +235,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighborDis(i, aRMax+tRShift, true, dis -> {
                 tDeltaG[threadID].setX0(dis);
                 tdn[threadID].operation().plus2this(tDeltaG[threadID]);
@@ -274,7 +274,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor_(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             mNL.forEachNeighborDis(aAtomDataXYZ[i], aRMax+tRShift, dis -> {
                 tDeltaG[threadID].setX0(dis);
                 tdn[threadID].operation().plus2this(tDeltaG[threadID]);
@@ -308,7 +308,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * 计算 SF（structural factor，即 S(q)），结构参数，只计算一个固定结构的值，因此不包含温度信息
      * @author liqa
      * @param aQMax 额外指定最大计算的 q 的位置（默认为 6 倍单位长度）
-     * @param aN 指定分划的份数（默认为 100）
+     * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aQMin 可以手动指定最小的截断的 q（由于 pbc 的原因，过小的结果发散）
      * @return Sq 以及对应横坐标 q 构成的矩阵，排成两列，Sq 在前 q 在后
@@ -323,7 +323,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
         // 并且由于从 RDF 转换的方式效果更好，这种方法效果一般，因此不专门提供方法
-        pool().parfor_(mAtomNum, (i, threadID) -> {
+        pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighbor(i, aRMax, true, (x, y, z) -> {
                 XYZ cXYZ = mAtomDataXYZ[i];
                 if (cXYZ.distanceMHT(x, y, z) < aRMax) {
@@ -350,7 +350,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     }
     public IFunc1 calSF(double aQMax, int aN, final double aRMax) {return calSF(aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
     public IFunc1 calSF(double aQMax, int aN                    ) {return calSF(aQMax, aN, mUnitLen*6);}
-    public IFunc1 calSF(double aQMax                            ) {return calSF(aQMax, 100);}
+    public IFunc1 calSF(double aQMax                            ) {return calSF(aQMax, 160);}
     public IFunc1 calSF(                                        ) {return calSF(2.0*PI/mUnitLen * 6.0);}
     
     
@@ -358,7 +358,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * 计算自身与输入的 aAtomDataXYZ 之间的 SF，只计算一个固定结构的值，因此不包含温度信息
      * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的矩阵，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
      * @param aQMax 额外指定最大计算的 q 的位置
-     * @param aN 指定分划的份数（默认为 100）
+     * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aQMin 手动指定最小的截断的 q
      * @return Sq 以及对应横坐标 q 构成的矩阵，排成两列，Sq 在前 q 在后
@@ -374,7 +374,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
         // 并且由于从 RDF 转换的方式效果更好，这种方法效果一般，因此不专门提供方法
-        pool().parfor_(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             final XYZ cXYZ = aAtomDataXYZ[i];
             mNL.forEachNeighbor(cXYZ, aRMax, (x, y, z) -> {
                 if (cXYZ.distanceMHT(x, y, z) < aRMax) {
@@ -400,12 +400,12 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         return Sq;
     }
     public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ                                                        ) {return calSF_AB(aAtomDataXYZ, 2.0*PI/mUnitLen * 6.0);}
-    public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, double aQMax                                          ) {return calSF_AB(aAtomDataXYZ, aQMax, 100);}
+    public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, double aQMax                                          ) {return calSF_AB(aAtomDataXYZ, aQMax, 160);}
     public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, double aQMax, int aN                                  ) {return calSF_AB(aAtomDataXYZ, aQMax, aN, mUnitLen*6);}
     public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax              ) {return calSF_AB(aAtomDataXYZ, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(Iterable<? extends IHasXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(toValidAtomDataXYZ_(aAtomDataXYZ), aQMax, aN, aRMax, aQMin);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                                                ) {return calSF_AB(aMPC, 2.0*PI/mUnitLen * 6.0);}
-    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax                                          ) {return calSF_AB(aMPC, aQMax, 100);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax                                          ) {return calSF_AB(aMPC, aQMax, 160);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN                                  ) {return calSF_AB(aMPC, aQMax, aN, mUnitLen*6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax              ) {return calSF_AB(aMPC, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(aMPC.mAtomDataXYZ, aQMax, aN, aRMax, aQMin);}
@@ -418,7 +418,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * @author liqa
      * @param aGr the matrix form of g(r)
      * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
-     * @param aN the split number of output（默认为 100）
+     * @param aN the split number of output（默认为 160）
      * @param aQMax the max q of output S(q)（默认为 6 倍单位距离）
      * @param aQMin the min q of output S(q)（默认为 0.4 倍单位距离）
      * @return the structural factor, S(q)
@@ -438,7 +438,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     }
     public IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/mUnitLen * 0.4);}
     public IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/mUnitLen * 6.0, 2.0*PI/mUnitLen * 0.4);}
-    public IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 100);}
+    public IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
     public IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
     
     
@@ -447,7 +447,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * @author liqa
      * @param aSq the matrix form of S(q)
      * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
-     * @param aN the split number of output（默认为 100）
+     * @param aN the split number of output（默认为 160）
      * @param aRMax the max r of output g(r)（默认为 6 倍单位距离）
      * @param aRMin the min r of output g(r)（默认为 0.4 倍单位距离）
      * @return the radial distribution function, g(r)
@@ -467,7 +467,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     }
     public IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, mUnitLen * 0.4);}
     public IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, mUnitLen * 6.0, mUnitLen * 0.4);}
-    public IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 100);}
+    public IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
     public IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
     
 }

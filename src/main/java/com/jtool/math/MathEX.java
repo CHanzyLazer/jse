@@ -116,7 +116,7 @@ public class MathEX {
             
             int tN = aData.length/aBlockSize;
             boolean[] tOut = new boolean[aData.length];
-            aPool.parfor_(tN, i -> {
+            aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
                 for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.cal(aData[j]);
             });
@@ -129,7 +129,7 @@ public class MathEX {
             if (aPool.nThreads()==1) return mapDo2Dest(rDest, aOpt);
             
             int tN = rDest.length/aBlockSize;
-            aPool.parfor_(tN, i -> {
+            aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
                 for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.cal(rDest[j]);
             });
@@ -144,7 +144,7 @@ public class MathEX {
             
             int tN = aData1.length/aBlockSize;
             final double[] tOut = new double[aData1.length];
-            aPool.parfor_(tN, i -> {
+            aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
                 for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.cal(aData1[j], aData2[j]);
             });
@@ -158,7 +158,7 @@ public class MathEX {
             assert rDest.length == aData.length;
             
             int tN = aData.length/aBlockSize;
-            aPool.parfor_(tN, i -> {
+            aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
                 for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.cal(rDest[j], aData[j]);
             });
@@ -773,7 +773,7 @@ public class MathEX {
             final double tDx2 = aFunc3.dx()*aFunc3.dx();
             final double tDy2 = aFunc3.dy()*aFunc3.dy();
             final double tDz2 = aFunc3.dz()*aFunc3.dz();
-            aPool.parfor_(tNz, k -> {
+            aPool.parfor(tNz, k -> {
                 int kmm = k-1; if (kmm <  0  ) kmm += tNz;
                 int kpp = k+1; if (kpp >= tNz) kpp -= tNz;
                 

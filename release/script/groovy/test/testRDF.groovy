@@ -8,7 +8,7 @@ import com.jtool.plot.Plotters
 /** 测试计算 RDF */
 
 // 设置线程数
-nThreads = 4;
+nThreads = 2;
 
 // 首先导入 Lmpdat
 data = Lmpdat.read('lmp/data/data-glass');
