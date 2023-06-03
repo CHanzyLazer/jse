@@ -2,7 +2,6 @@ package com.jtool.math.table;
 
 import com.jtool.code.UT;
 import com.jtool.math.matrix.IMatrix;
-import com.jtool.math.matrix.IMatrixAny;
 import com.jtool.math.matrix.IMatrixGetter;
 import com.jtool.math.vector.IVector;
 
@@ -18,7 +17,6 @@ public class Tables {
     private Tables() {}
     
     
-    
     public static Table from(int aSize, IMatrixGetter aMatrixGetter, String... aHeads) {return from(aSize, aSize, aMatrixGetter, aHeads);}
     public static Table from(int aRowNum, int aColNum, IMatrixGetter aMatrixGetter, String... aHeads) {
         List<double[]> rData = new ArrayList<>(aRowNum);
@@ -31,7 +29,7 @@ public class Tables {
         }
         return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aColNum, rData);
     }
-    public static Table from(IMatrixAny<?, ?> aMatrix, String... aHeads) {
+    public static Table from(IMatrix aMatrix, String... aHeads) {
         List<double[]> rData = new ArrayList<>(aMatrix.rowNumber());
         for (IVector tRow : aMatrix.rows()) rData.add(tRow.data());
         return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aMatrix.columnNumber(), rData);

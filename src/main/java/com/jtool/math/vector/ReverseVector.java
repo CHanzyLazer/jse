@@ -1,8 +1,6 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.ISetIterator;
-import com.jtool.math.matrix.ColumnMatrix;
-import com.jtool.math.matrix.DoubleArrayMatrix;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -14,7 +12,7 @@ import java.util.NoSuchElementException;
  * <p> 反向检索数组的向量，注意没有经过 shift，因此检索的数组区间依旧是 0 ~ size()-1 </p>
  * <p> 由于是反向检索的，由于优化内部实际许多操作会是反向进行的 </p>
  */
-public final class ReverseVector extends DoubleArrayVector<ReverseVector> {
+public final class ReverseVector extends DoubleArrayVector {
     /** 提供默认的创建 */
     public static ReverseVector ones(int aSize) {
         double[] tData = new double[aSize];
@@ -40,7 +38,7 @@ public final class ReverseVector extends DoubleArrayVector<ReverseVector> {
     }
     @Override public int size() {return mSize;}
     
-    @Override protected ReverseVector newZeros(int aSize) {return ReverseVector.zeros(aSize);}
+    @Override protected ReverseVector newZeros_(int aSize) {return ReverseVector.zeros(aSize);}
     
     @Override public ReverseVector newShell() {return new ReverseVector(mSize, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
@@ -51,8 +49,8 @@ public final class ReverseVector extends DoubleArrayVector<ReverseVector> {
     
     
     /** Optimize stuffs，引用反转直接返回 {@link Vector} */
-    @Override public DoubleArrayVectorOperation operation() {
-        return new DoubleArrayVectorOperation() {
+    @Override public IVectorOperation operation() {
+        return new DoubleArrayVectorOperation_() {
             @Override public Vector refReverse() {
                 return new Vector(mSize, mData);
             }

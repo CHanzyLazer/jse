@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
  * <p> 支持将内部的 double[] 进行平移访问的 Vector，理论拥有和 {@link Vector} 几乎一样的性能 </p>
  * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link Vector} </p>
  */
-public final class ShiftVector extends DoubleArrayVector<Vector> implements IVector {
+public final class ShiftVector extends DoubleArrayVector {
     private final int mSize;
     private final int mShift;
     public ShiftVector(int aSize, int aShift, double[] aData) {super(aData); mSize = aSize; mShift = aShift;}
@@ -28,7 +28,7 @@ public final class ShiftVector extends DoubleArrayVector<Vector> implements IVec
     }
     @Override public int size() {return mSize;}
     
-    @Override protected Vector newZeros(int aSize) {return Vector.zeros(aSize);}
+    @Override protected Vector newZeros_(int aSize) {return Vector.zeros(aSize);}
     
     @Override public ShiftVector newShell() {return new ShiftVector(mSize, mShift, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
@@ -42,8 +42,8 @@ public final class ShiftVector extends DoubleArrayVector<Vector> implements IVec
     
     
     /** Optimize stuffs，引用反转直接返回 {@link ShiftReverseVector} */
-    @Override public DoubleArrayVectorOperation operation() {
-        return new DoubleArrayVectorOperation() {
+    @Override public IVectorOperation operation() {
+        return new DoubleArrayVectorOperation_() {
             @Override public ShiftReverseVector refReverse() {
                 return new ShiftReverseVector(mSize, mShift, mData);
             }

@@ -1,11 +1,5 @@
 package com.jtool.math.function;
 
-
-import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.IVectorAny;
-import com.jtool.math.vector.IVectorGetter;
-import com.jtool.math.vector.Vector;
-
 import java.util.Collection;
 
 /**

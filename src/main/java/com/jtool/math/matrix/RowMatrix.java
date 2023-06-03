@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 按照行排序的矩阵，{@link ColumnMatrix} 的对称实现 </p>
  */
-public final class RowMatrix extends DoubleArrayMatrix<RowMatrix, Vector> {
+public final class RowMatrix extends DoubleArrayMatrix {
     /** 提供默认的创建 */
     public static RowMatrix ones(int aSize) {return ones(aSize, aSize);}
     public static RowMatrix ones(int aRowNum, int aColNum) {
@@ -68,8 +68,8 @@ public final class RowMatrix extends DoubleArrayMatrix<RowMatrix, Vector> {
     }
     
     /** Optimize stuffs，引用转置直接返回 {@link ColumnMatrix} */
-    @Override public DoubleArrayMatrixOperation operation() {
-        return new DoubleArrayMatrixOperation() {
+    @Override public IMatrixOperation operation() {
+        return new DoubleArrayMatrixOperation_() {
             @Override public ColumnMatrix refTranspose() {
                 return new ColumnMatrix(mRowNum, mColNum, mData);
             }

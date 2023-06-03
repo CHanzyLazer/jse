@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 矩阵一般实现，按照列排序 </p>
  */
-public final class ColumnMatrix extends DoubleArrayMatrix<ColumnMatrix, Vector> implements IMatrix {
+public final class ColumnMatrix extends DoubleArrayMatrix {
     /** 提供默认的创建 */
     public static ColumnMatrix ones(int aSize) {return ones(aSize, aSize);}
     public static ColumnMatrix ones(int aRowNum, int aColNum) {
@@ -66,8 +66,8 @@ public final class ColumnMatrix extends DoubleArrayMatrix<ColumnMatrix, Vector> 
     }
     
     /** Optimize stuffs，引用转置直接返回 {@link RowMatrix} */
-    @Override public DoubleArrayMatrixOperation operation() {
-        return new DoubleArrayMatrixOperation() {
+    @Override public IMatrixOperation operation() {
+        return new DoubleArrayMatrixOperation_() {
             @Override public RowMatrix refTranspose() {
                 return new RowMatrix(mRowNum, mColNum, mData);
             }
@@ -75,10 +75,10 @@ public final class ColumnMatrix extends DoubleArrayMatrix<ColumnMatrix, Vector> 
     }
     
     /** Optimize stuffs，重写 Vector 的 same 接口专门优化拷贝部分 */
-    @Override public IVectorGenerator<Vector> generatorVec() {
+    @Override public IVectorGenerator generatorVec() {
         return new VectorGenerator() {
-                @Override public Vector same() {
-                Vector rVector = zeros();
+            @Override public IVector same() {
+                Vector rVector = newZeros_(mRowNum*mColNum);
                 System.arraycopy(mData, 0, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
                 return rVector;
             }

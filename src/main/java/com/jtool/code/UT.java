@@ -7,11 +7,9 @@ import com.jtool.io.Decryptor;
 import com.jtool.io.Encryptor;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
-import com.jtool.math.matrix.IMatrixAny;
 import com.jtool.math.matrix.Matrices;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.IVectorAny;
 import com.jtool.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
@@ -788,18 +786,18 @@ public class UT {
                 for (double[] subData : aData) tPrinter.println(String.join(",", data2str(subData)));
             }
         }
-        public static void data2csv(IMatrixAny<?,?> aData, String aFilePath, String... aHeads) throws IOException {
+        public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
                 for (IVector subData : aData.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), String::valueOf)));
             }
         }
-        public static void data2csv(IVectorAny<?> aData, String aFilePath) throws IOException {
+        public static void data2csv(IVector aData, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 for (Double subData : aData.iterable()) tPrinter.println(subData);
             }
         }
-        public static void data2csv(IVectorAny<?> aData, String aFilePath, String aHead) throws IOException {
+        public static void data2csv(IVector aData, String aFilePath, String aHead) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 tPrinter.println(aHead);
                 for (Double subData : aData.iterable()) tPrinter.println(subData);

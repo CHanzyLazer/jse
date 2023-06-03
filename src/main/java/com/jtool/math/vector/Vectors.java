@@ -21,9 +21,9 @@ public class Vectors {
         rVector.fill(aVectorGetter);
         return rVector;
     }
-    public static IVector from(IVectorAny<?> aVector) {
+    public static IVector from(IVector aVector) {
         if (aVector instanceof Vector) {
-            return ((Vector)aVector).generator().same();
+            return aVector.generator().same();
         } else {
             IVector rVector = zeros(aVector.size());
             rVector.fill(aVector);

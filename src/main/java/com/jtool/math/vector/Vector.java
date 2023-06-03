@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 向量的一般实现 </p>
  */
-public final class Vector extends DoubleArrayVector<Vector> implements IVector {
+public final class Vector extends DoubleArrayVector {
     /** 提供默认的创建 */
     public static Vector ones(int aSize) {
         double[] tData = new double[aSize];
@@ -35,7 +35,7 @@ public final class Vector extends DoubleArrayVector<Vector> implements IVector {
     }
     @Override public int size() {return mSize;}
     
-    @Override protected Vector newZeros(int aSize) {return Vector.zeros(aSize);}
+    @Override protected Vector newZeros_(int aSize) {return Vector.zeros(aSize);}
     
     @Override public Vector newShell() {return new Vector(mSize, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
@@ -47,8 +47,8 @@ public final class Vector extends DoubleArrayVector<Vector> implements IVector {
     
     
     /** Optimize stuffs，引用反转直接返回 {@link ReverseVector} */
-    @Override public DoubleArrayVectorOperation operation() {
-        return new DoubleArrayVectorOperation() {
+    @Override public IVectorOperation operation() {
+        return new DoubleArrayVectorOperation_() {
             @Override public ReverseVector refReverse() {
                 return new ReverseVector(mSize, mData);
             }

@@ -3,7 +3,7 @@ package com.jtool.math.function;
 
 import com.jtool.math.IDataShell;
 import com.jtool.math.MathEX;
-import com.jtool.math.vector.AbstractVector;
+import com.jtool.math.vector.RefVector;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +60,7 @@ public abstract class DoubleArrayFunc1 implements IFunc1, IDataShell<double[]> {
     
     /** IFunc1 stuffs */
     @Override public final IVector x() {
-        return new AbstractVector() {
+        return new RefVector() {
             @Override public double get_(int aIdx) {return getX(aIdx);}
             @Override public int size() {return Nx();}
         };

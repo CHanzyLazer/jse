@@ -3,7 +3,6 @@ package com.jtool.math.vector;
 import com.jtool.code.ISetIterator;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -13,7 +12,7 @@ import java.util.NoSuchElementException;
  * <p> 由于是反向检索的，由于优化内部实际许多操作会是反向进行的 </p>
  * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link ReverseVector} </p>
  */
-public final class ShiftReverseVector extends DoubleArrayVector<ReverseVector> {
+public final class ShiftReverseVector extends DoubleArrayVector {
     private final int mSize;
     private final int mShift;
     private final int totShift;
@@ -31,7 +30,7 @@ public final class ShiftReverseVector extends DoubleArrayVector<ReverseVector> {
     }
     @Override public int size() {return mSize;}
     
-    @Override protected ReverseVector newZeros(int aSize) {return ReverseVector.zeros(aSize);}
+    @Override protected ReverseVector newZeros_(int aSize) {return ReverseVector.zeros(aSize);}
     
     @Override public ShiftReverseVector newShell() {return new ShiftReverseVector(mSize, mShift, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
@@ -42,8 +41,8 @@ public final class ShiftReverseVector extends DoubleArrayVector<ReverseVector> {
     
     
     /** Optimize stuffs，引用反转直接返回 {@link ShiftVector} */
-    @Override public DoubleArrayVectorOperation operation() {
-        return new DoubleArrayVectorOperation() {
+    @Override public IVectorOperation operation() {
+        return new DoubleArrayVectorOperation_() {
             @Override public ShiftVector refReverse() {
                 return new ShiftVector(mSize, mShift, mData);
             }

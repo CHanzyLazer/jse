@@ -1,7 +1,7 @@
 package com.jtool.math.table;
 
 
-import com.jtool.math.matrix.AbstractMatrix;
+import com.jtool.math.matrix.RefMatrix;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
@@ -28,7 +28,7 @@ public final class Table extends AbstractTable {
     }
     
     private static IMatrix genMatrix_(final int aColNum, final List<double[]> aData) {
-        return new AbstractMatrix() {
+        return new RefMatrix() {
             @Override public double get_(int aRow, int aCol) {return aData.get(aRow)[aCol];}
             @Override public void set_(int aRow, int aCol, double aValue) {aData.get(aRow)[aCol] = aValue;}
             @Override public double getAndSet_(int aRow, int aCol, double aValue) {
