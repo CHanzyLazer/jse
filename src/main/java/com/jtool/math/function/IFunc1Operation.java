@@ -7,7 +7,8 @@ package com.jtool.math.function;
  */
 public interface IFunc1Operation {
     /** 通用的运算 */
-    void plus2this(IFunc1Subs aRHS);
+    void mapPlus2this(double aRHS);
+    void ebePlus2this(IFunc1Subs aRHS);
     
     void mapFill2this(double aRHS);
     void ebeFill2this(IFunc1Subs aRHS);
@@ -15,6 +16,7 @@ public interface IFunc1Operation {
     
     /** 函数特有的运算 */
     IFunc1Subs laplacian();
+    void laplacian2Dest(IFunc1 rDest);
     
     /**
      * 卷积运算，通过输入的卷积核来对自身函数进行卷积运算，输出得到的结果

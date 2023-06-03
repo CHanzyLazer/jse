@@ -238,7 +238,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighborDis(i, aRMax+tRShift, true, dis -> {
                 tDeltaG[threadID].setX0(dis);
-                tdn[threadID].operation().plus2this(tDeltaG[threadID]);
+                tdn[threadID].operation().ebePlus2this(tDeltaG[threadID]);
             });
         });
         
@@ -277,7 +277,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             mNL.forEachNeighborDis(aAtomDataXYZ[i], aRMax+tRShift, dis -> {
                 tDeltaG[threadID].setX0(dis);
-                tdn[threadID].operation().plus2this(tDeltaG[threadID]);
+                tdn[threadID].operation().ebePlus2this(tDeltaG[threadID]);
             });
         });
         
