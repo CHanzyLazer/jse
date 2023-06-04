@@ -103,6 +103,12 @@ public class DATA {
         }
         return rSum / tNum;
     }
+    public static <RS extends IHasIterator<Double>> double productOfThis_(RS tThis) {
+        double rProduct = 1.0;
+        final Iterator<Double> it = tThis.iterator();
+        while (it.hasNext()) rProduct *= it.next();
+        return rProduct;
+    }
     public static <RS extends IHasIterator<Double>> double maxOfThis_(RS tThis) {
         double rMax = Double.NEGATIVE_INFINITY;
         final Iterator<Double> it = tThis.iterator();

@@ -3,6 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.code.operator.IOperator2;
 import com.jtool.math.operation.ARRAY;
+import com.jtool.math.operation.DATA;
 
 /**
  * 对于内部含有 double[] 的向量的运算使用专门优化后的函数
@@ -50,10 +51,11 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public void mapFill2this      (double aRHS) {ARRAY.mapFill2this_(thisVector_(), aRHS);}
     @Override public void ebeFill2this      (IVectorGetter aRHS) {ARRAY.ebeFill2this_(thisVector_(), aRHS);}
     
-    @Override public double sum () {return ARRAY.sumOfThis_ (thisVector_());}
-    @Override public double mean() {return ARRAY.meanOfThis_(thisVector_());}
-    @Override public double max () {return ARRAY.maxOfThis_ (thisVector_());}
-    @Override public double min () {return ARRAY.minOfThis_ (thisVector_());}
+    @Override public double sum    () {return ARRAY.sumOfThis_    (thisVector_());}
+    @Override public double mean   () {return ARRAY.meanOfThis_   (thisVector_());}
+    @Override public double product() {return ARRAY.productOfThis_(thisVector_());}
+    @Override public double max    () {return ARRAY.maxOfThis_    (thisVector_());}
+    @Override public double min    () {return ARRAY.minOfThis_    (thisVector_());}
     
     
     /** stuff to override */

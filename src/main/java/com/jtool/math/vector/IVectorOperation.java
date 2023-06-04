@@ -52,6 +52,7 @@ public interface IVectorOperation {
     
     double sum();
     double mean();
+    double product();
     double max();
     double min();
     

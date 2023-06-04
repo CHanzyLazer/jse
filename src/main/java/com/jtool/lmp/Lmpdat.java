@@ -9,6 +9,7 @@ import com.jtool.math.MathEX;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.IVectorOperation;
 import com.jtool.math.vector.Vectors;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,17 +92,16 @@ public class Lmpdat extends AbstractAtomData {
         
         // 从逻辑上考虑，这里不对原本数据做值拷贝
         double tXlo = mBox.xlo(), tYlo = mBox.ylo(), tZlo = mBox.zlo();
-        // TODO 等移除复杂的泛型后临时变量改为 operation
-        IVector
-        tCol = mAtomData.col(STD_X_COL);
-        tCol.operation().mapMinus2this(tXlo);
-        tCol.operation().mapMultiply2this(tScale);
-        tCol = mAtomData.col(STD_Y_COL);
-        tCol.operation().mapMinus2this(tYlo);
-        tCol.operation().mapMultiply2this(tScale);
-        tCol = mAtomData.col(STD_Z_COL);
-        tCol.operation().mapMinus2this(tZlo);
-        tCol.operation().mapMultiply2this(tScale);
+        IVectorOperation
+        tOpt = mAtomData.col(STD_X_COL).operation();
+        tOpt.mapMinus2this(tXlo);
+        tOpt.mapMultiply2this(tScale);
+        tOpt = mAtomData.col(STD_Y_COL).operation();
+        tOpt.mapMinus2this(tYlo);
+        tOpt.mapMultiply2this(tScale);
+        tOpt = mAtomData.col(STD_Z_COL).operation();
+        tOpt.mapMinus2this(tZlo);
+        tOpt.mapMultiply2this(tScale);
         
         // box 还是会重新创建，因为 box 的值这里约定是严格的常量，可以避免一些问题
         mBox = new Box(oShiftedBox.multiply(tScale));

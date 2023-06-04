@@ -50,10 +50,11 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void mapFill2this      (double aRHS) {DATA.mapFill2this_(thisVector_(), aRHS);}
     @Override public void ebeFill2this      (IVectorGetter aRHS) {DATA.ebeFill2this_(thisVector_(), aRHS);}
     
-    @Override public double sum () {return DATA.sumOfThis_ (thisVector_());}
-    @Override public double mean() {return DATA.meanOfThis_(thisVector_());}
-    @Override public double max () {return DATA.maxOfThis_ (thisVector_());}
-    @Override public double min () {return DATA.minOfThis_ (thisVector_());}
+    @Override public double sum ()    {return DATA.sumOfThis_    (thisVector_());}
+    @Override public double mean()    {return DATA.meanOfThis_   (thisVector_());}
+    @Override public double product() {return DATA.productOfThis_(thisVector_());}
+    @Override public double max ()    {return DATA.maxOfThis_    (thisVector_());}
+    @Override public double min ()    {return DATA.minOfThis_    (thisVector_());}
     
     
     /** 向量的一些额外的运算 */

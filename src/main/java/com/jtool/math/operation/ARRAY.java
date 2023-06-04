@@ -1,9 +1,12 @@
 package com.jtool.math.operation;
 
+import com.jtool.code.IHasIterator;
 import com.jtool.code.IHasLotIterator;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.code.operator.IOperator2;
 import com.jtool.math.IDataShell;
+
+import java.util.Iterator;
 
 
 /**
@@ -418,7 +421,7 @@ public class ARRAY {
         final int tEnd = tThis.dataSize() + tShift;
         
         double rSum = 0.0;
-        for (int i = tShift; i < tEnd; ++i) rSum = tData[i];
+        for (int i = tShift; i < tEnd; ++i) rSum += tData[i];
         return rSum;
     }
     public static <RS extends IDataShell<double[]>> double meanOfThis_(RS tThis) {
@@ -428,8 +431,17 @@ public class ARRAY {
         final int tEnd = tSize + tShift;
         
         double rSum = 0.0;
-        for (int i = tShift; i < tEnd; ++i) rSum = tData[i];
+        for (int i = tShift; i < tEnd; ++i) rSum += tData[i];
         return rSum / (double)tSize;
+    }
+    public static <RS extends IDataShell<double[]>> double productOfThis_(RS tThis) {
+        final double[] tData = tThis.getData();
+        final int tShift = tThis.shiftSize();
+        final int tEnd = tThis.dataSize() + tShift;
+        
+        double rProduct = 1.0;
+        for (int i = tShift; i < tEnd; ++i) rProduct *= tData[i];
+        return rProduct;
     }
     public static <RS extends IDataShell<double[]>> double maxOfThis_(RS tThis) {
         final double[] tData = tThis.getData();
