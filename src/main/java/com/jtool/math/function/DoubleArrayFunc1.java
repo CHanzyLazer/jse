@@ -6,6 +6,7 @@ import com.jtool.math.MathEX;
 import com.jtool.math.vector.RefVector;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -37,7 +38,6 @@ public abstract class DoubleArrayFunc1 implements IFunc1, IDataShell<double[]> {
     }
     protected DoubleArrayFunc1(double aX0, double aDx, int aNx, IFunc1Subs aFunc) {
         this(aX0, aDx, new double[aNx]);
-        
         for (int i = 0; i < aNx; ++i) mData[i] = aFunc.subs(mX0 + i*mDx);
     }
     

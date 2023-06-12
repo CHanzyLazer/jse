@@ -45,9 +45,31 @@ public interface IFunc1 extends IFunc1Subs, IVectorGetter, IVectorSetter {
     @VisibleForTesting default IFunc1Operation opt() {return operation();}
     
     
+    /** Groovy 的部分，增加向量基本的运算操作，现在也归入内部使用 */
+    default IFunc1 plus     (double aRHS) {return operation().mapPlus       (this, aRHS);}
+    default IFunc1 minus    (double aRHS) {return operation().mapMinus      (this, aRHS);}
+    default IFunc1 multiply (double aRHS) {return operation().mapMultiply   (this, aRHS);}
+    default IFunc1 div      (double aRHS) {return operation().mapDiv        (this, aRHS);}
+    default IFunc1 mod      (double aRHS) {return operation().mapMod        (this, aRHS);}
+    
+    default IFunc1 plus     (IFunc1Subs aRHS) {return operation().ebePlus       (this, aRHS);}
+    default IFunc1 minus    (IFunc1Subs aRHS) {return operation().ebeMinus      (this, aRHS);}
+    default IFunc1 multiply (IFunc1Subs aRHS) {return operation().ebeMultiply   (this, aRHS);}
+    default IFunc1 div      (IFunc1Subs aRHS) {return operation().ebeDiv        (this, aRHS);}
+    default IFunc1 mod      (IFunc1Subs aRHS) {return operation().ebeMod        (this, aRHS);}
+    
     /** 注意这些 2this 操作并没有重载 groovy 中的 += 之类的运算符 */
-    default void plus2this      (double aRHS)     {operation().mapPlus2this     (aRHS);}
+    default void plus2this      (double aRHS) {operation().mapPlus2this     (aRHS);}
+    default void minus2this     (double aRHS) {operation().mapMinus2this    (aRHS);}
+    default void multiply2this  (double aRHS) {operation().mapMultiply2this (aRHS);}
+    default void div2this       (double aRHS) {operation().mapDiv2this      (aRHS);}
+    default void mod2this       (double aRHS) {operation().mapMod2this      (aRHS);}
+    
     default void plus2this      (IFunc1Subs aRHS) {operation().ebePlus2this     (aRHS);}
+    default void minus2this     (IFunc1Subs aRHS) {operation().ebeMinus2this    (aRHS);}
+    default void multiply2this  (IFunc1Subs aRHS) {operation().ebeMultiply2this (aRHS);}
+    default void div2this       (IFunc1Subs aRHS) {operation().ebeDiv2this      (aRHS);}
+    default void mod2this       (IFunc1Subs aRHS) {operation().ebeMod2this      (aRHS);}
     
     /** Groovy 的部分，重载一些运算符方便操作；圆括号为 x 值查找，方括号为索引查找 */
     @VisibleForTesting default double call(double aX) {return subs(aX);}

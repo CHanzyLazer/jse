@@ -1,7 +1,6 @@
 package com.jtool.atom;
 
 import com.jtool.math.function.FixBoundFunc1;
-import com.jtool.math.function.Func1;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
@@ -139,23 +138,22 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         final double dr = aRMax/aN;
         // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
-        final IVector[] tdn = new IVector[nThreads()];
-        for (int i = 0; i < tdn.length; ++i) tdn[i] = Vectors.zeros(aN);
+        final IVector[] dn = new IVector[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighborDis(i, aRMax - dr*0.5, true, dis -> {
                 int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
-                if (tIdx > 0 && tIdx < aN) tdn[threadID].increment_(tIdx);
+                if (tIdx > 0 && tIdx < aN) dn[threadID].increment_(tIdx);
             });
         });
         
         // 获取结果
-        IVector dn = tdn[0];
-        for (int i = 1; i < tdn.length; ++i) dn.plus2this(tdn[i]);
+        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
+        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        IFunc1 gr = new FixBoundFunc1(0, dr, aN, r -> r*r*4.0*PI*rou).setBound(0.0, 1.0);
-        gr.f().operation().ebeLDiv2this(dn);
+        gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -179,24 +177,23 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         final double dr = aRMax/aN;
         // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
-        final IVector[] tdn = new IVector[nThreads()];
-        for (int i = 0; i < tdn.length; ++i) tdn[i] = Vectors.zeros(aN);
+        final IVector[] dn = new IVector[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             mNL.forEachNeighborDis(aAtomDataXYZ[i], aRMax - dr*0.5, dis -> {
                 int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
-                if (tIdx > 0 && tIdx < aN) tdn[threadID].increment_(tIdx);
+                if (tIdx > 0 && tIdx < aN) dn[threadID].increment_(tIdx);
             });
         });
         
         
         // 获取结果
-        IVector dn = tdn[0];
-        for (int i = 1; i < tdn.length; ++i) dn.plus2this(tdn[i]);
+        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
+        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * aAtomDataXYZ.length * mRou; // aAtomDataXYZ.length 为对所有原子求和需要进行的平均
-        IFunc1 gr = new FixBoundFunc1(0, dr, aN, r -> r*r*4.0*PI*rou).setBound(0.0, 1.0);
-        gr.f().operation().ebeLDiv2this(dn);
+        gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -227,8 +224,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         // 需要增加一个额外的偏移保证外部边界的统计正确性
         final double tRShift = dr * aSigmaMul * Func.G_RANG;
         // 这里需要使用 IFunc 来进行函数的相关运算操作
-        final IFunc1[] tdn = new IFunc1[nThreads()];
-        for (int i = 0; i < tdn.length; ++i) tdn[i] = Func1.zeros(0.0, dr, aN);
+        final IFunc1[] dn = new IFunc1[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
         
         // 并行需要线程数个独立的 DeltaG
         final IFunc1[] tDeltaG = new IFunc1[nThreads()];
@@ -238,16 +235,15 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighborDis(i, aRMax+tRShift, true, dis -> {
                 tDeltaG[threadID].setX0(dis);
-                tdn[threadID].plus2this(tDeltaG[threadID]);
+                dn[threadID].plus2this(tDeltaG[threadID]);
             });
         });
         
         // 获取结果
-        IVector dn = tdn[0].f();
-        for (int i = 1; i < tdn.length; ++i) dn.plus2this(tdn[i].f());
+        IFunc1 gr = dn[0];
+        for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        IFunc1 gr = new FixBoundFunc1(0.0, dr, aN, r -> r*r*4.0*PI*rou).setBound(0.0, 1.0);
-        gr.f().operation().ebeLDiv2this(dn);
+        gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -266,8 +262,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         // 需要增加一个额外的偏移保证外部边界的统计正确性
         final double tRShift = dr * aSigmaMul * Func.G_RANG;
         // 这里需要使用 IFunc 来进行函数的相关运算操作
-        final IFunc1[] tdn = new IFunc1[nThreads()];
-        for (int i = 0; i < tdn.length; ++i) tdn[i] = Func1.zeros(0.0, dr, aN);
+        final IFunc1[] dn = new IFunc1[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
         
         // 并行需要线程数个独立的 DeltaG
         final IFunc1[] tDeltaG = new IFunc1[nThreads()];
@@ -277,16 +273,15 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
             mNL.forEachNeighborDis(aAtomDataXYZ[i], aRMax+tRShift, dis -> {
                 tDeltaG[threadID].setX0(dis);
-                tdn[threadID].plus2this(tDeltaG[threadID]);
+                dn[threadID].plus2this(tDeltaG[threadID]);
             });
         });
         
         // 获取结果
-        IVector dn = tdn[0].f();
-        for (int i = 1; i < tdn.length; ++i) dn.plus2this(tdn[i].f());
+        IFunc1 gr = dn[0];
+        for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = aAtomDataXYZ.length * mRou; // aAtomDataXYZ.length 为对所有原子求和需要进行的平均
-        IFunc1 gr = new FixBoundFunc1(0.0, dr, aN, r -> r*r*4.0*PI*rou).setBound(0.0, 1.0);
-        gr.f().operation().ebeLDiv2this(dn);
+        gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -428,8 +423,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Fast.sin(q*r) / q)));
-        Sq.f().multiply2this(4.0*PI*aRou);
-        Sq.f().plus2this(1.0);
+        Sq.multiply2this(4.0*PI*aRou);
+        Sq.plus2this(1.0);
         
         Sq.set_(0, 0.0);
         return Sq;
@@ -455,8 +450,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN+1).setBound(0.0, 1.0);
         gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Fast.sin(q*r) / r)));
-        gr.f().multiply2this(1.0/(2.0*PI*PI*aRou));
-        gr.f().plus2this(1.0);
+        gr.multiply2this(1.0/(2.0*PI*PI*aRou));
+        gr.plus2this(1.0);
         
         gr.set_(0, 0.0);
         return gr;
