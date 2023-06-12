@@ -14,8 +14,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p> 自动识别单线程的情况来直接进行串行 </p>
  * <p> 当然还是需要自己注意内部的线程安全问题 </p>
  * <p> 支持每个线程写入到独立的内存而不需要额外加锁 </p>
- * <p> 注意：当线程数大于 1 时此类线程不安全，但不同实例间线程安全；
- * 当线程数为 1 时线程安全，包括多个线程同时访问同一个实例 </p>
+ * <p> 注意：此类线程安全（包括不同实例间以及多个线程同时访问同一个实例）。
+ * 当线程数大于 1 时同一个实例的操作加锁保证线程安全；
+ * 当线程数为 1 时同一个实例的操作不会加锁 </p>
  */
 public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
     private final ThreadLocal<Integer> mThreadID = ThreadLocal.withInitial(()->null); // 使用 ThreadLocal 存储每个线程对应的 id，直接避免线程安全的问题
@@ -56,7 +57,7 @@ public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
             for (int i = 0; i < aSize; ++i) aTaskWithID.run(i, 0);
         }
         // 并行的情况，现在默认不进行分组，使用竞争获取任务的思路来获取任务，保证实际创建的线程在 parfor 任务中不会提前结束，并且可控
-        else {
+        else synchronized (this) {
             assert mLocks != null;
             int tThreadNum = nThreads();
             // 竞争获取任务
@@ -69,7 +70,7 @@ public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
                     while (true) {
                         int i;
-                        synchronized (this) {
+                        synchronized (currentIdx) {
                             i = currentIdx[0];
                             ++currentIdx[0];
                         }
@@ -93,7 +94,7 @@ public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
             for (int i = 0; i < aSize; ++i) aTaskWithID.run(i, 0);
         }
         // 并行的情况，按照 aBatchSize 进行分组，使用竞争获取任务的思路来获取任务，保证实际创建的线程在 parfor 任务中不会提前结束，并且可控
-        else {
+        else synchronized (this) {
             assert mLocks != null;
             int tThreadNum = nThreads();
             // 竞争获取任务
@@ -107,7 +108,7 @@ public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
                     while (true) {
                         int tStart, tEnd;
                         // 按照 aBatchSize 分组执行，现在不能除尽的部分会直接串行执行而不会继续分组
-                        synchronized (this) {
+                        synchronized (currentIdx) {
                             tStart = currentIdx[0];
                             currentIdx[0] += aBatchSize;
                             tEnd = Math.min(currentIdx[0], aSize);
