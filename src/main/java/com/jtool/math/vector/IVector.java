@@ -3,7 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.IHasLotIterator;
 import com.jtool.code.ISetIterator;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IDoubleOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.AbstractList;
@@ -71,9 +71,9 @@ public interface IVector extends IVectorGetter, IVectorSetter, IHasLotIterator<I
     void add_(int aIdx, double aDelta);
     double getAndAdd_(int aIdx, double aDelta);
     double addAndGet_(int aIdx, double aDelta);
-    void update_(int aIdx, IOperator1<Double> aOpt);
-    double getAndUpdate_(int aIdx, IOperator1<Double> aOpt);
-    double updateAndGet_(int aIdx, IOperator1<Double> aOpt);
+    void update_(int aIdx, IDoubleOperator1 aOpt);
+    double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt);
+    double updateAndGet_(int aIdx, IDoubleOperator1 aOpt);
     
     void increment(int aIdx);
     double getAndIncrement(int aIdx);
@@ -84,9 +84,9 @@ public interface IVector extends IVectorGetter, IVectorSetter, IHasLotIterator<I
     void add(int aIdx, double aDelta);
     double getAndAdd(int aIdx, double aDelta);
     double addAndGet(int aIdx, double aDelta);
-    void update(int aIdx, IOperator1<Double> aOpt);
-    double getAndUpdate(int aIdx, IOperator1<Double> aOpt);
-    double updateAndGet(int aIdx, IOperator1<Double> aOpt);
+    void update(int aIdx, IDoubleOperator1 aOpt);
+    double getAndUpdate(int aIdx, IDoubleOperator1 aOpt);
+    double updateAndGet(int aIdx, IDoubleOperator1 aOpt);
     
     
     /** 现在不再提供生成器，只提供直接创建相同类型的全零的向量的接口，特殊矩阵的创建请使用 {@link Vectors} */

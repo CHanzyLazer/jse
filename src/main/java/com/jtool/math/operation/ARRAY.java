@@ -1,12 +1,9 @@
 package com.jtool.math.operation;
 
-import com.jtool.code.IHasIterator;
 import com.jtool.code.IHasLotIterator;
-import com.jtool.code.operator.IOperator1;
-import com.jtool.code.operator.IOperator2;
+import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.operator.IDoubleOperator2;
 import com.jtool.math.IDataShell;
-
-import java.util.Iterator;
 
 
 /**
@@ -343,7 +340,7 @@ public class ARRAY {
     
     
     /** do stuff */
-    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void ebeDo2Dest_(T aLHS, T aRHS, RS rDest, IOperator2<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void ebeDo2Dest_(T aLHS, T aRHS, RS rDest, IDoubleOperator2 aOpt) {
         final double[] tData1 = rDest.getIfHasSameOrderData(aLHS);
         final double[] tData2 = rDest.getIfHasSameOrderData(aRHS);
         if (tData1 != null && tData2 != null) {
@@ -363,7 +360,7 @@ public class ARRAY {
             DATA .ebeDo2Dest_(aLHS, aRHS, rDest, aOpt);
         }
     }
-    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void mapDo2Dest_(T aLHS, RS rDest, IOperator1<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void mapDo2Dest_(T aLHS, RS rDest, IDoubleOperator1 aOpt) {
         final double[] tData = rDest.getIfHasSameOrderData(aLHS);
         if (tData != null) {
             final double[] rData = rDest.getData();
@@ -376,7 +373,7 @@ public class ARRAY {
             DATA.mapDo2Dest_(aLHS, rDest, aOpt);
         }
     }
-    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void ebeDo2this_(RS rThis, T aRHS, IOperator2<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double> & IDataShell<double[]>> void ebeDo2this_(RS rThis, T aRHS, IDoubleOperator2 aOpt) {
         final double[] tData = rThis.getIfHasSameOrderData(aRHS);
         if (tData != null) {
             final double[] rData = rThis.getData();
@@ -389,7 +386,7 @@ public class ARRAY {
             DATA.ebeDo2this_(rThis, aRHS, aOpt);
         }
     }
-    public static <RS extends IDataShell<double[]>> void mapDo2this_(RS rThis, IOperator1<Double> aOpt) {
+    public static <RS extends IDataShell<double[]>> void mapDo2this_(RS rThis, IDoubleOperator1 aOpt) {
         final double[] rData = rThis.getData();
         final int rShift = rThis.shiftSize();
         final int rEnd = rThis.dataSize() + rShift;

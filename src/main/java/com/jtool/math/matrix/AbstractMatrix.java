@@ -3,7 +3,7 @@ package com.jtool.math.matrix;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.ISetIterator;
 import com.jtool.code.UT;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.math.vector.*;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -378,17 +378,17 @@ public abstract class AbstractMatrix implements IMatrix {
         set_(aRow, aCol, tValue);
         return tValue;
     }
-    @Override public void update_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         tValue = aOpt.cal(tValue);
         set_(aRow, aCol, tValue);
     }
-    @Override public double getAndUpdate_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         set_(aRow, aCol, aOpt.cal(tValue));
         return tValue;
     }
-    @Override public double updateAndGet_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         tValue = aOpt.cal(tValue);
         set_(aRow, aCol, tValue);
@@ -431,15 +431,15 @@ public abstract class AbstractMatrix implements IMatrix {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return addAndGet_(aRow, aCol, aDelta);
     }
-    @Override public void update(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public void update(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         update_(aRow, aCol, aOpt);
     }
-    @Override public double getAndUpdate(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndUpdate_(aRow, aCol, aOpt);
     }
-    @Override public double updateAndGet(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return updateAndGet_(aRow, aCol, aOpt);
     }

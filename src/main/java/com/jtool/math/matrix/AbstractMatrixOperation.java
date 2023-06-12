@@ -1,8 +1,7 @@
 package com.jtool.math.matrix;
 
-import com.jtool.code.operator.IOperator1;
-import com.jtool.code.operator.IOperator2;
-import com.jtool.math.MathEX;
+import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.operator.IDoubleOperator2;
 import com.jtool.math.operation.DATA;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.RefVector;
@@ -19,7 +18,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public IMatrix ebeMultiply    (IMatrixGetter aLHS, IMatrixGetter aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS, aRHS)); DATA.ebeMultiply2Dest_  (aLHS, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix ebeDiv         (IMatrixGetter aLHS, IMatrixGetter aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS, aRHS)); DATA.ebeDiv2Dest_       (aLHS, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix ebeMod         (IMatrixGetter aLHS, IMatrixGetter aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS, aRHS)); DATA.ebeMod2Dest_       (aLHS, aRHS, rMatrix); return rMatrix;}
-    @Override public IMatrix ebeDo          (IMatrixGetter aLHS, IMatrixGetter aRHS, IOperator2<Double> aOpt) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS, aRHS)); DATA.ebeDo2Dest_(aLHS, aRHS, rMatrix, aOpt); return rMatrix;}
+    @Override public IMatrix ebeDo          (IMatrixGetter aLHS, IMatrixGetter aRHS, IDoubleOperator2 aOpt) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS, aRHS)); DATA.ebeDo2Dest_(aLHS, aRHS, rMatrix, aOpt); return rMatrix;}
     
     @Override public IMatrix mapPlus        (IMatrixGetter aLHS, double aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapPlus2Dest_       (aLHS, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix mapMinus       (IMatrixGetter aLHS, double aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapMinus2Dest_      (aLHS, aRHS, rMatrix); return rMatrix;}
@@ -29,7 +28,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public IMatrix mapLDiv        (IMatrixGetter aLHS, double aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapLDiv2Dest_       (aLHS, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix mapMod         (IMatrixGetter aLHS, double aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapMod2Dest_        (aLHS, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix mapLMod        (IMatrixGetter aLHS, double aRHS) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapLMod2Dest_       (aLHS, aRHS, rMatrix); return rMatrix;}
-    @Override public IMatrix mapDo          (IMatrixGetter aLHS, IOperator1<Double> aOpt) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapDo2Dest_(aLHS, rMatrix, aOpt); return rMatrix;}
+    @Override public IMatrix mapDo          (IMatrixGetter aLHS, IDoubleOperator1 aOpt) {IMatrix rMatrix = newMatrix_(newMatrixSize_(aLHS)); DATA.mapDo2Dest_(aLHS, rMatrix, aOpt); return rMatrix;}
     
     @Override public void ebePlus2this      (IMatrixGetter aRHS) {DATA.ebePlus2this_    (thisMatrix_(), aRHS);}
     @Override public void ebeMinus2this     (IMatrixGetter aRHS) {DATA.ebeMinus2this_   (thisMatrix_(), aRHS);}
@@ -39,7 +38,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void ebeLDiv2this      (IMatrixGetter aRHS) {DATA.ebeLDiv2this_    (thisMatrix_(), aRHS);}
     @Override public void ebeMod2this       (IMatrixGetter aRHS) {DATA.ebeMod2this_     (thisMatrix_(), aRHS);}
     @Override public void ebeLMod2this      (IMatrixGetter aRHS) {DATA.ebeLMod2this_    (thisMatrix_(), aRHS);}
-    @Override public void ebeDo2this        (IMatrixGetter aRHS, IOperator2<Double> aOpt) {DATA.ebeDo2this_(thisMatrix_(), aRHS, aOpt);}
+    @Override public void ebeDo2this        (IMatrixGetter aRHS, IDoubleOperator2 aOpt) {DATA.ebeDo2this_(thisMatrix_(), aRHS, aOpt);}
     
     @Override public void mapPlus2this      (double aRHS) {DATA.mapPlus2this_       (thisMatrix_(), aRHS);}
     @Override public void mapMinus2this     (double aRHS) {DATA.mapMinus2this_      (thisMatrix_(), aRHS);}
@@ -49,7 +48,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void mapLDiv2this      (double aRHS) {DATA.mapLDiv2this_       (thisMatrix_(), aRHS);}
     @Override public void mapMod2this       (double aRHS) {DATA.mapMod2this_        (thisMatrix_(), aRHS);}
     @Override public void mapLMod2this      (double aRHS) {DATA.mapLMod2this_       (thisMatrix_(), aRHS);}
-    @Override public void mapDo2this        (IOperator1<Double> aOpt) {DATA.mapDo2this_(thisMatrix_(), aOpt);}
+    @Override public void mapDo2this        (IDoubleOperator1 aOpt) {DATA.mapDo2this_(thisMatrix_(), aOpt);}
     
     @Override public void mapFill2this      (double aRHS) {DATA.mapFill2this_(thisMatrix_(), aRHS);}
     @Override public void ebeFill2this      (IMatrixGetter aRHS) {DATA.ebeFill2this_(thisMatrix_(), aRHS);}

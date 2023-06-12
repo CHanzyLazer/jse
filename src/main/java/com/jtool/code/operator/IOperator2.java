@@ -1,4 +1,6 @@
 package com.jtool.code.operator;
 
 @FunctionalInterface
-public interface IOperator2<R> extends IOperator2Full<R, R, R> {}
+public interface IOperator2<R, TL, TR> {
+    R cal(TL aLHS, TR aRHS);
+}

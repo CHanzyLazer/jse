@@ -2,7 +2,7 @@ package com.jtool.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
-import com.jtool.code.operator.IOperator1Full;
+import com.jtool.code.operator.IOperator1;
 import com.jtool.io.Decryptor;
 import com.jtool.io.Encryptor;
 import com.jtool.math.function.IFunc1;
@@ -198,7 +198,7 @@ public class UT {
          * filter the input Iterable
          * @author liqa
          */
-        public static <T> Iterable<T> filter(final Iterable<? extends T> aIterable, final IOperator1Full<Boolean, ? super T> aFilter) {
+        public static <T> Iterable<T> filter(final Iterable<? extends T> aIterable, final IOperator1<Boolean, ? super T> aFilter) {
             return () -> new Iterator<T>() {
                 private final Iterator<? extends T> mIt = aIterable.iterator();
                 private T mNext = null;
@@ -230,7 +230,7 @@ public class UT {
          * map {@code Iterable<T> to Iterable<R>} like {@link Stream}.map
          * @author liqa
          */
-        public static <R, T> Iterable<R> map(final Iterable<T> aIterable, final IOperator1Full<? extends R, ? super T> aOpt) {
+        public static <R, T> Iterable<R> map(final Iterable<T> aIterable, final IOperator1<? extends R, ? super T> aOpt) {
             return () -> new Iterator<R>() {
                 final Iterator<T> mIt = aIterable.iterator();
                 @Override public boolean hasNext() {
@@ -245,7 +245,7 @@ public class UT {
                 }
             };
         }
-        public static <R, T> List<R> map(final T[] aArray, final IOperator1Full<? extends R, ? super T> aOpt) {
+        public static <R, T> List<R> map(final T[] aArray, final IOperator1<? extends R, ? super T> aOpt) {
             return new AbstractList<R>() {
                 @Override public R get(int index) {return aOpt.cal(aArray[index]);}
                 @Override public int size() {return aArray.length;}
@@ -255,7 +255,7 @@ public class UT {
          * map {@code Future<T> to Future<R>} like {@link Stream}.map
          * @author liqa
          */
-        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1Full<? extends R, ? super T> aOpt) {
+        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1<? extends R, ? super T> aOpt) {
             return new Future<R>() {
                 @Override public boolean cancel(boolean mayInterruptIfRunning) {return aFuture.cancel(mayInterruptIfRunning);}
                 @Override public boolean isCancelled() {return aFuture.isCancelled();}

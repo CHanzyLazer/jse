@@ -1,8 +1,8 @@
 package com.jtool.math.operation;
 
 import com.jtool.code.*;
-import com.jtool.code.operator.IOperator1;
-import com.jtool.code.operator.IOperator2;
+import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.operator.IDoubleOperator2;
 
 import java.util.Iterator;
 
@@ -54,23 +54,23 @@ public class DATA {
     
     
     /** do stuff */
-    public static <T, RS extends IHasLotIterator<? super T, Double>> void ebeDo2Dest_(T aLHS, T aRHS, RS rDest, IOperator2<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double>> void ebeDo2Dest_(T aLHS, T aRHS, RS rDest, IDoubleOperator2 aOpt) {
         final ISetIterator<Double> si = rDest.setIterator();
         final Iterator<Double> li = rDest.iteratorOf(aLHS);
         final Iterator<Double> ri = rDest.iteratorOf(aRHS);
         while (si.hasNext()) si.nextAndSet(aOpt.cal(li.next(), ri.next()));
     }
-    public static <T, RS extends IHasLotIterator<? super T, Double>> void mapDo2Dest_(T aLHS, RS rDest, IOperator1<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double>> void mapDo2Dest_(T aLHS, RS rDest, IDoubleOperator1 aOpt) {
         final ISetIterator<Double> si = rDest.setIterator();
         final Iterator<Double> li = rDest.iteratorOf(aLHS);
         while (si.hasNext()) si.nextAndSet(aOpt.cal(li.next()));
     }
-    public static <T, RS extends IHasLotIterator<? super T, Double>> void ebeDo2this_(RS rThis, T aRHS, IOperator2<Double> aOpt) {
+    public static <T, RS extends IHasLotIterator<? super T, Double>> void ebeDo2this_(RS rThis, T aRHS, IDoubleOperator2 aOpt) {
         final ISetIterator<Double> si = rThis.setIterator();
         final Iterator<Double> ri = rThis.iteratorOf(aRHS);
         while (si.hasNext()) si.set(aOpt.cal(si.next(), ri.next()));
     }
-    public static <RS extends IHasSetIterator<Double>> void mapDo2this_(RS rThis, IOperator1<Double> aOpt) {
+    public static <RS extends IHasSetIterator<Double>> void mapDo2this_(RS rThis, IDoubleOperator1 aOpt) {
         final ISetIterator<Double> si = rThis.setIterator();
         while (si.hasNext()) si.set(aOpt.cal(si.next()));
     }

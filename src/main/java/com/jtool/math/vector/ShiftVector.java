@@ -1,7 +1,7 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.ISetIterator;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IDoubleOperator1;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -73,17 +73,17 @@ public final class ShiftVector extends DoubleArrayVector {
         mData[aIdx] = tValue;
         return tValue;
     }
-    @Override public void update_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
         aIdx += mShift;
         mData[aIdx] = aOpt.cal(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
         aIdx += mShift;
         double tValue = mData[aIdx];
         mData[aIdx] = aOpt.cal(tValue);
         return tValue;
     }
-    @Override public double updateAndGet_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet_(int aIdx, IDoubleOperator1 aOpt) {
         aIdx += mShift;
         double tValue = mData[aIdx];
         tValue = aOpt.cal(tValue);

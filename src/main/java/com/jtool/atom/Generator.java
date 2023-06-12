@@ -1,7 +1,7 @@
 package com.jtool.atom;
 
+import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IOperator1;
-import com.jtool.code.operator.IOperator1Full;
 import com.jtool.math.MathEX;
 import com.jtool.math.function.Func3;
 import com.jtool.math.vector.IVector;
@@ -91,7 +91,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, int aMinTypeNum, IOperator1Full<Integer, IAtom> aFilter) {
+    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final List<IAtom> rAtoms = new ArrayList<>(aAtomData.atomNum());
@@ -116,7 +116,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
             @Override public int atomTypeNum() {return fAtomTypeNum;}
         };
     }
-    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, IOperator1Full<Integer, IAtom> aFilter) {return typeFilterAtomData(aAtomData, 1, aFilter);}
+    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, IOperator1<Integer, IAtom> aFilter) {return typeFilterAtomData(aAtomData, 1, aFilter);}
     
     /**
      * 根据给定的权重来随机修改原子种类，主要用于创建合金的初始结构
@@ -158,7 +158,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IOperator1Full<Boolean, IAtom> aFilter) {
+    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IOperator1<Boolean, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final List<IAtom> rAtoms = new ArrayList<>();
@@ -185,7 +185,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 double 为 aFunc3 的值，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IOperator1Full<Boolean, Double> aFilter) {
+    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IOperator1<Boolean, Double> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         // 获取边界，会进行缩放将 aAtomData 的边界和 Func3 的边界对上
@@ -217,7 +217,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aToProb 通用的转换成概率的函数，输出 0-1 的浮点数，不指定则直接使用 aFunc3
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final IOperator1<Double> aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
+    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final IDoubleOperator1 aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
     public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> u);}
     /**
      * 对于 aFunc3 = u, u = c1 - c0, c1 + c0 = 1，选取 c1 的特殊情况
@@ -243,7 +243,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aSteps 迭代的步数
      * @return 返回最终得到的 u
      */
-    public Func3 porousCahnHilliard(IOperator1<Double> aDfu, double aTheta, final Func3 aInitU, double aDt, int aSteps) {
+    public Func3 porousCahnHilliard(IDoubleOperator1 aDfu, double aTheta, final Func3 aInitU, double aDt, int aSteps) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final double tTheta2 = aTheta*aTheta;

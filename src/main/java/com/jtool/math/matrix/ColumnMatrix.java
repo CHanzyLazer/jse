@@ -1,8 +1,10 @@
 package com.jtool.math.matrix;
 
 import com.jtool.code.ISetIterator;
-import com.jtool.code.operator.IOperator1;
-import com.jtool.math.vector.*;
+import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.ShiftVector;
+import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -97,17 +99,17 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
         mData[tIdx] = tValue;
         return tValue;
     }
-    @Override public void update_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         int tIdx = aRow + aCol*mRowNum;
         mData[tIdx] = aOpt.cal(mData[tIdx]);
     }
-    @Override public double getAndUpdate_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         int tIdx = aRow + aCol*mRowNum;
         double tValue = mData[tIdx];
         mData[tIdx] = aOpt.cal(tValue);
         return tValue;
     }
-    @Override public double updateAndGet_(int aRow, int aCol, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         int tIdx = aRow + aCol*mRowNum;
         double tValue = mData[tIdx];
         tValue = aOpt.cal(tValue);

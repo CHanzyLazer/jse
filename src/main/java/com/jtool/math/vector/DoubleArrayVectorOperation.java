@@ -1,9 +1,8 @@
 package com.jtool.math.vector;
 
-import com.jtool.code.operator.IOperator1;
-import com.jtool.code.operator.IOperator2;
+import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.operator.IDoubleOperator2;
 import com.jtool.math.operation.ARRAY;
-import com.jtool.math.operation.DATA;
 
 /**
  * 对于内部含有 double[] 的向量的运算使用专门优化后的函数
@@ -16,7 +15,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public IVector ebeMultiply    (IVectorGetter aLHS, IVectorGetter aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS, aRHS)); ARRAY.ebeMultiply2Dest_   (aLHS, aRHS, rVector); return rVector;}
     @Override public IVector ebeDiv         (IVectorGetter aLHS, IVectorGetter aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS, aRHS)); ARRAY.ebeDiv2Dest_        (aLHS, aRHS, rVector); return rVector;}
     @Override public IVector ebeMod         (IVectorGetter aLHS, IVectorGetter aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS, aRHS)); ARRAY.ebeMod2Dest_        (aLHS, aRHS, rVector); return rVector;}
-    @Override public IVector ebeDo          (IVectorGetter aLHS, IVectorGetter aRHS, IOperator2<Double> aOpt) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS, aRHS)); ARRAY.ebeDo2Dest_(aLHS, aRHS, rVector, aOpt); return rVector;}
+    @Override public IVector ebeDo          (IVectorGetter aLHS, IVectorGetter aRHS, IDoubleOperator2 aOpt) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS, aRHS)); ARRAY.ebeDo2Dest_(aLHS, aRHS, rVector, aOpt); return rVector;}
     
     @Override public IVector mapPlus        (IVectorGetter aLHS, double aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapPlus2Dest_        (aLHS, aRHS, rVector); return rVector;}
     @Override public IVector mapMinus       (IVectorGetter aLHS, double aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapMinus2Dest_       (aLHS, aRHS, rVector); return rVector;}
@@ -26,7 +25,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public IVector mapLDiv        (IVectorGetter aLHS, double aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapLDiv2Dest_        (aLHS, aRHS, rVector); return rVector;}
     @Override public IVector mapMod         (IVectorGetter aLHS, double aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapMod2Dest_         (aLHS, aRHS, rVector); return rVector;}
     @Override public IVector mapLMod        (IVectorGetter aLHS, double aRHS) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapLMod2Dest_        (aLHS, aRHS, rVector); return rVector;}
-    @Override public IVector mapDo          (IVectorGetter aLHS, IOperator1<Double> aOpt) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapDo2Dest_(aLHS, rVector, aOpt); return rVector;}
+    @Override public IVector mapDo          (IVectorGetter aLHS, IDoubleOperator1 aOpt) {DoubleArrayVector rVector = newVector_(newVectorSize_(aLHS)); ARRAY.mapDo2Dest_(aLHS, rVector, aOpt); return rVector;}
     
     @Override public void ebePlus2this      (IVectorGetter aRHS) {ARRAY.ebePlus2this_       (thisVector_(), aRHS);}
     @Override public void ebeMinus2this     (IVectorGetter aRHS) {ARRAY.ebeMinus2this_      (thisVector_(), aRHS);}
@@ -36,7 +35,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public void ebeLDiv2this      (IVectorGetter aRHS) {ARRAY.ebeLDiv2this_       (thisVector_(), aRHS);}
     @Override public void ebeMod2this       (IVectorGetter aRHS) {ARRAY.ebeMod2this_        (thisVector_(), aRHS);}
     @Override public void ebeLMod2this      (IVectorGetter aRHS) {ARRAY.ebeLMod2this_       (thisVector_(), aRHS);}
-    @Override public void ebeDo2this        (IVectorGetter aRHS, IOperator2<Double> aOpt) {ARRAY.ebeDo2this_(thisVector_(), aRHS, aOpt);}
+    @Override public void ebeDo2this        (IVectorGetter aRHS, IDoubleOperator2 aOpt) {ARRAY.ebeDo2this_(thisVector_(), aRHS, aOpt);}
     
     @Override public void mapPlus2this      (double aRHS) {ARRAY.mapPlus2this_      (thisVector_(), aRHS);}
     @Override public void mapMinus2this     (double aRHS) {ARRAY.mapMinus2this_     (thisVector_(), aRHS);}
@@ -46,7 +45,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public void mapLDiv2this      (double aRHS) {ARRAY.mapLDiv2this_      (thisVector_(), aRHS);}
     @Override public void mapMod2this       (double aRHS) {ARRAY.mapMod2this_       (thisVector_(), aRHS);}
     @Override public void mapLMod2this      (double aRHS) {ARRAY.mapLMod2this_      (thisVector_(), aRHS);}
-    @Override public void mapDo2this        (IOperator1<Double> aOpt) {ARRAY.mapDo2this_(thisVector_(), aOpt);}
+    @Override public void mapDo2this        (IDoubleOperator1 aOpt) {ARRAY.mapDo2this_(thisVector_(), aOpt);}
     
     @Override public void mapFill2this      (double aRHS) {ARRAY.mapFill2this_(thisVector_(), aRHS);}
     @Override public void ebeFill2this      (IVectorGetter aRHS) {ARRAY.ebeFill2this_(thisVector_(), aRHS);}

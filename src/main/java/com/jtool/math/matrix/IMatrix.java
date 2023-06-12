@@ -3,7 +3,7 @@ package com.jtool.math.matrix;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.IHasLotIterator;
 import com.jtool.code.ISetIterator;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
 import com.jtool.math.vector.RefVector;
@@ -96,9 +96,9 @@ public interface IMatrix extends IMatrixGetter, IMatrixSetter, IHasLotIterator<I
     void add_(int aRow, int aCol, double aDelta);
     double getAndAdd_(int aRow, int aCol, double aDelta);
     double addAndGet_(int aRow, int aCol, double aDelta);
-    void update_(int aRow, int aCol, IOperator1<Double> aOpt);
-    double getAndUpdate_(int aRow, int aCol, IOperator1<Double> aOpt);
-    double updateAndGet_(int aRow, int aCol, IOperator1<Double> aOpt);
+    void update_(int aRow, int aCol, IDoubleOperator1 aOpt);
+    double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt);
+    double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt);
     
     void increment(int aRow, int aCol);
     double getAndIncrement(int aRow, int aCol);
@@ -109,9 +109,9 @@ public interface IMatrix extends IMatrixGetter, IMatrixSetter, IHasLotIterator<I
     void add(int aRow, int aCol, double aDelta);
     double getAndAdd(int aRow, int aCol, double aDelta);
     double addAndGet(int aRow, int aCol, double aDelta);
-    void update(int aRow, int aCol, IOperator1<Double> aOpt);
-    double getAndUpdate(int aRow, int aCol, IOperator1<Double> aOpt);
-    double updateAndGet(int aRow, int aCol, IOperator1<Double> aOpt);
+    void update(int aRow, int aCol, IDoubleOperator1 aOpt);
+    double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt);
+    double updateAndGet(int aRow, int aCol, IDoubleOperator1 aOpt);
     
     
     List<IVector> rows();

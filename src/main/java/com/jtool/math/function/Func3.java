@@ -1,7 +1,7 @@
 package com.jtool.math.function;
 
+import com.jtool.code.operator.IDoubleOperator3;
 import com.jtool.math.MathEX;
-import com.jtool.code.operator.IOperator3;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -95,7 +95,7 @@ public class Func3 {
             }
         }
     }
-    public Func3(IOperator3<Double> aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy, double aZ0, double aDz, int aNz) {
+    public Func3(IDoubleOperator3 aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy, double aZ0, double aDz, int aNz) {
         mX0 = aX0; mDx = aDx;
         mY0 = aY0; mDy = aDy;
         mZ0 = aZ0; mDz = aDz;

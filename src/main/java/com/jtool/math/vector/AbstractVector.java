@@ -3,7 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.ISetIterator;
 import com.jtool.code.UT;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.operator.IDoubleOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
@@ -183,17 +183,17 @@ public abstract class AbstractVector implements IVector {
         set_(aIdx, tValue);
         return tValue;
     }
-    @Override public void update_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
         double tValue = get_(aIdx);
         tValue = aOpt.cal(tValue);
         set_(aIdx, tValue);
     }
-    @Override public double getAndUpdate_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
         double tValue = get_(aIdx);
         set_(aIdx, aOpt.cal(tValue));
         return tValue;
     }
-    @Override public double updateAndGet_(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet_(int aIdx, IDoubleOperator1 aOpt) {
         double tValue = get_(aIdx);
         tValue = aOpt.cal(tValue);
         set_(aIdx, tValue);
@@ -236,15 +236,15 @@ public abstract class AbstractVector implements IVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return addAndGet_(aIdx, aDelta);
     }
-    @Override public void update(int aIdx, IOperator1<Double> aOpt) {
+    @Override public void update(int aIdx, IDoubleOperator1 aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
     }
-    @Override public double getAndUpdate(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double getAndUpdate(int aIdx, IDoubleOperator1 aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
     }
-    @Override public double updateAndGet(int aIdx, IOperator1<Double> aOpt) {
+    @Override public double updateAndGet(int aIdx, IDoubleOperator1 aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return updateAndGet_(aIdx, aOpt);
     }
