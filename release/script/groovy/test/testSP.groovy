@@ -30,19 +30,20 @@ import com.jtool.math.vector.Vectors
 //SP.Python.installAse();
 SP.Python.runText('from ase import Atoms');
 double a = 3.55;
-def atoms = SP.Python.newInstance('Atoms',
-                                  'Ni4',
-                                  [cell: [MathEX.Fast.sqrt(2.0) * a, MathEX.Fast.sqrt(2.0) * a, 1.0, 90, 90, 120] as double[],
-                                   pbc: [1, 1, 0] as double[],
-                                   scaled_positions: [[0, 0, 0],
-                                                      [0.5, 0, 0],
-                                                      [0, 0.5, 0],
-                                                      [0.5, 0.5, 0]] as double[][]
-                                  ]);
+def Atoms = SP.Python.gateway('Atoms');
+def atoms = Atoms('Ni4',
+                  [cell: [MathEX.Fast.sqrt(2.0) * a, MathEX.Fast.sqrt(2.0) * a, 1.0, 90, 90, 120] as double[],
+                   pbc: [1, 1, 0] as double[],
+                   scaled_positions: [[0, 0, 0],
+                                      [0.5, 0, 0],
+                                      [0, 0.5, 0],
+                                      [0.5, 0.5, 0]] as double[][]
+                  ]);
 atoms.center(vacuum: 5.0, axis: 2)
 
 println(atoms.cell);
 println(atoms.positions);
+println(atoms[0]);
 SP.Python.setValue('atoms', atoms.unwrap());
 SP.Python.runText('print(atoms.positions)');
 

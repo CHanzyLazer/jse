@@ -1,4 +1,4 @@
-package com.jtool.io;
+package com.jtool.iofile;
 
 
 import com.google.common.collect.ImmutableMap;
@@ -19,5 +19,5 @@ public class InFiles {
     public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {@Override public void write_(String aPath) throws IOException {UT.IO.copy(aInFilePath, aPath);}};}
     
     /** 默认行为 */
-    @VisibleForTesting public static IInFile get(String aInFilePath) {return immutable(aInFilePath);}
+    @VisibleForTesting public static IInFile of(String aInFilePath) {return immutable(aInFilePath);}
 }

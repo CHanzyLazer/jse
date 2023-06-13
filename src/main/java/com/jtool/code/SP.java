@@ -1,10 +1,13 @@
 package com.jtool.code;
 
+import com.jtool.code.script.ScriptObjectGroovy;
+import com.jtool.code.script.ScriptObjectPython;
 import com.jtool.system.ISystemExecutor;
 import com.jtool.system.LocalSystemExecutor;
 import com.jtool.system.PowerShellSystemExecutor;
 import groovy.lang.*;
 import jep.*;
+import jep.python.PyCallable;
 import jep.python.PyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -42,7 +45,7 @@ public class SP {
         /** 调用指定脚本中的方法，会进行缓存 */
         public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {return getTaskOfScriptMethod(aScriptPath, aMethodName, aArgs).call();}
         /** 创建脚本类的实例 */
-        public synchronized static IScriptObject newInstance(String aScriptPath, Object... aArgs) throws Exception {
+        public synchronized static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类，底层自动进行了缓存，并且在文件修改时会自动更新
             Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
             // 获取 ScriptClass 的实例
@@ -79,12 +82,12 @@ public class SP {
         
         
         /** 内部使用的方法，用于减少重复代码 */
-        public synchronized static ScriptObjectGroovy newInstance_(Class<?> aScriptClass, Object... aArgs) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+        public synchronized static Object newInstance_(Class<?> aScriptClass, Object... aArgs) throws InvocationTargetException, InstantiationException, IllegalAccessException {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             // 获取兼容输入参数的构造函数来创建实例
             Constructor<?> tConstructor = UT.Hack.findConstructor_(aScriptClass, fArgs);
             if (tConstructor == null) throw new GroovyRuntimeException("Cannot find constructor with compatible args: " + aScriptClass.getName());
-            return new ScriptObjectGroovy((GroovyObject)tConstructor.newInstance(aArgs));
+            return ScriptObjectGroovy.of(tConstructor.newInstance(aArgs));
         }
         public synchronized static TaskCall<?> getTaskOfScript_(final Class<?> aScriptClass, String... aArgs) {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
@@ -96,8 +99,8 @@ public class SP {
                 // treat it just like a script if it is one
                 try {
                     @SuppressWarnings("unchecked")
-                    Script tScript = InvokerHelper.newScript((Class<? extends Script>) aScriptClass, tContext);
-                    return new TaskCall<>(tScript::run);
+                    final Script tScript = InvokerHelper.newScript((Class<? extends Script>) aScriptClass, tContext);
+                    return new TaskCall<>(() -> ScriptObjectGroovy.of(tScript.run()));
                 } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                     // ignore instantiation errors, try to do main
                 }
@@ -113,7 +116,7 @@ public class SP {
                 throw new GroovyRuntimeException(tMsg);
             }
             // if that main method exist, invoke it
-            return new TaskCall<>(() -> InvokerHelper.invokeMethod(aScriptClass, MAIN_METHOD_NAME, new Object[]{fArgs}));
+            return new TaskCall<>(() -> ScriptObjectGroovy.of(InvokerHelper.invokeMethod(aScriptClass, MAIN_METHOD_NAME, new Object[]{fArgs})));
         }
         public synchronized static TaskCall<?> getTaskOfScriptMethod_(final Class<?> aScriptClass, final String aMethodName, Object... aArgs) {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
@@ -123,7 +126,7 @@ public class SP {
                 try {
                     @SuppressWarnings("unchecked")
                     final Script tScript = InvokerHelper.newScript((Class<? extends Script>) aScriptClass, new Binding()); // 这样保证 tContext 是干净的
-                    return new TaskCall<>(() -> tScript.invokeMethod(aMethodName, fArgs)); // 脚本的方法原则上不需要考虑类型兼容的问题
+                    return new TaskCall<>(() -> ScriptObjectGroovy.of(tScript.invokeMethod(aMethodName, fArgs))); // 脚本的方法原则上不需要考虑类型兼容的问题
                 } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                     // ignore instantiation errors, try to run the static method in class
                 }
@@ -134,7 +137,7 @@ public class SP {
             if (m == null) throw new GroovyRuntimeException("Cannot find method with compatible args: " + aMethodName);
             UT.Hack.convertArgs_(fArgs, m.getParameterTypes());
             // 注意使用 Groovy 的 InvokerHelper 来调用，避免意外的问题
-            return new TaskCall<>(() -> InvokerHelper.invokeMethod(aScriptClass, aMethodName, fArgs));
+            return new TaskCall<>(() -> ScriptObjectGroovy.of(InvokerHelper.invokeMethod(aScriptClass, aMethodName, fArgs)));
         }
         
         static {
@@ -171,7 +174,7 @@ public class SP {
         /** 直接运行文本的脚本 */
         public synchronized static void runText(String aText) throws JepException {JEP_INTERP.exec(aText);}
         /** Python 还可以使用 getValue 来获取变量以及 setValue 设置变量 */
-        public synchronized static Object getValue(String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName);}
+        public synchronized static Object getValue(String aValueName) throws JepException {return ScriptObjectPython.of(JEP_INTERP.getValue(aValueName));}
         public synchronized static void setValue(String aValueName, Object aValue) throws JepException {JEP_INTERP.set(aValueName, aValue);}
         public synchronized static Object get(String aValueName) throws JepException {return getValue(aValueName);}
         public synchronized static void set(String aValueName, Object aValue) throws JepException {setValue(aValueName, aValue);}
@@ -181,18 +184,33 @@ public class SP {
         /** 调用方法，python 中需要结合 import 使用 */
         @SuppressWarnings("unchecked")
         public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {
-            if (aArgs == null || aArgs.length == 0) return JEP_INTERP.invoke(aMethodName);
-            if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return JEP_INTERP.invoke(aMethodName, (Map<String, Object>)aArgs[0]);
+            if (aArgs == null || aArgs.length == 0) return ScriptObjectPython.of(JEP_INTERP.invoke(aMethodName));
+            if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return ScriptObjectPython.of(JEP_INTERP.invoke(aMethodName, (Map<String, Object>)aArgs[0]));
             if (aArgs.length > 1 && (aArgs[aArgs.length-1] instanceof Map)) {
                 Object[] tArgs = new Object[aArgs.length-1];
                 System.arraycopy(aArgs, 0, tArgs, 0, aArgs.length-1);
-                return JEP_INTERP.invoke(aMethodName, tArgs, (Map<String, Object>)aArgs[aArgs.length-1]);
+                return ScriptObjectPython.of(JEP_INTERP.invoke(aMethodName, tArgs, (Map<String, Object>)aArgs[aArgs.length-1]));
             }
-            return JEP_INTERP.invoke(aMethodName, aArgs);
+            return ScriptObjectPython.of(JEP_INTERP.invoke(aMethodName, aArgs));
         }
-        public synchronized static void importModule(String aPyModuleName) throws JepException {JEP_INTERP.exec("import "+aPyModuleName);}
-        /** 创建 Python 实例，这里同样外套一层 */
-        public synchronized static IScriptObject newInstance(String aClassName, Object... aArgs) throws JepException {return new ScriptObjectPython((PyObject)invoke(aClassName, aArgs));}
+        public synchronized static void importModule(String aModuleName) throws JepException {JEP_INTERP.exec("import "+aModuleName);}
+        /** 创建 Python 实例，这里可以直接将类名当作函数调用即可 */
+        public synchronized static Object newInstance(String aClassName, Object... aArgs) throws JepException {return invoke(aClassName, aArgs);}
+        /** 提供一个方便访问静态方法的 gateway，由于 jep 没有提供相关接口这里直接使用字符串的形式来实现 */
+        public synchronized static Object gateway(final String aClassName) throws JepException {
+            return new GroovyObject() {
+                @Override public Object invokeMethod(String name, Object args) throws JepException {return invoke(aClassName+"."+name, (Object[])args);}
+                @Override public Object getProperty(String propertyName) throws JepException {return getValue(aClassName+"."+propertyName);}
+                @Override public void setProperty(String propertyName, Object newValue) throws JepException {setValue(aClassName+"."+propertyName, newValue);}
+                
+                private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass());
+                @Override public MetaClass getMetaClass() {return mDelegate;}
+                @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
+                
+                /** 对于一般的类，call 直接调用构造函数而不是重载运算符 */
+                public Object call(Object... aArgs) throws JepException {return newInstance(aClassName, aArgs);}
+            };
+        }
         
         /** 提供一个手动关闭 JEP_INTERP 的接口 */
         public synchronized static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null;}}

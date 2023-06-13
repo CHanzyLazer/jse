@@ -1,8 +1,8 @@
 package com.jtool.system;
 
 import com.jtool.code.UT;
-import com.jtool.io.IHasIOFiles;
-import com.jtool.io.MergedIOFiles;
+import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.MergedIOFiles;
 import com.jtool.parallel.AbstractHasThreadPool;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;

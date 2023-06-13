@@ -1,7 +1,7 @@
 package com.jtool.system;
 
 import com.jtool.code.UT;
-import com.jtool.io.ISavable;
+import com.jtool.iofile.ISavable;
 import com.jtool.ssh.ServerSSH;
 import com.jcraft.jsch.ChannelExec;
 import org.jetbrains.annotations.ApiStatus;

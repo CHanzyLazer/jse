@@ -1,7 +1,7 @@
 package com.jtool.system;
 
 
-import com.jtool.io.IHasIOFiles;
+import com.jtool.iofile.IHasIOFiles;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
 
