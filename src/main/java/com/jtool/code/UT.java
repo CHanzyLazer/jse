@@ -33,9 +33,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import static com.jtool.code.CS.RANDOM;
-import static com.jtool.code.CS.ZL_OBJ;
+import static com.jtool.code.CS.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -700,22 +701,27 @@ public class UT {
         
         /** useful methods, wrapper of {@link Files} stuffs */
         @VisibleForTesting public static boolean mkdir(String aDir) {return makeDir(aDir);} // can mkdir nested
-        public static boolean makeDir(String aDir) {try {Files.createDirectories(toAbsolutePath_(aDir)); return true;} catch (IOException e) {e.printStackTrace(); return false;}} // can mkdir nested
+        public static boolean makeDir(String aDir) {return makeDir(toAbsolutePath_(aDir));} // can mkdir nested
         public static boolean isDir(String aDir) {return Files.isDirectory(toAbsolutePath_(aDir));}
         public static boolean isFile(String aFilePath) {return Files.isRegularFile(toAbsolutePath_(aFilePath));}
         public static boolean exists(String aPath) {return Files.exists(toAbsolutePath_(aPath));}
         public static void delete(String aPath) throws IOException {Files.deleteIfExists(toAbsolutePath_(aPath));} // can delete not exist path
-        public static void copy(String aSourcePath, String aTargetPath) throws IOException {Files.copy(toAbsolutePath_(aSourcePath), toAbsolutePath_(aTargetPath), REPLACE_EXISTING);}
-        public static void move(String aSourcePath, String aTargetPath) throws IOException {Files.move(toAbsolutePath_(aSourcePath), toAbsolutePath_(aTargetPath), REPLACE_EXISTING);}
+        public static void copy(String aSourcePath, String aTargetPath) throws IOException {copy(toAbsolutePath_(aSourcePath), toAbsolutePath_(aTargetPath));}
+        public static void copy(InputStream aSourceStream, String aTargetPath) throws IOException {copy(aSourceStream, toAbsolutePath_(aTargetPath));}
+        public static void move(String aSourcePath, String aTargetPath) throws IOException {move(toAbsolutePath_(aSourcePath), toAbsolutePath_(aTargetPath));}
         public static String[] list(String aDir) {return toFile(aDir).list();} // use the File.list not Files.list to get the simple result
+        public static boolean makeDir(Path aDir) {try {Files.createDirectories(aDir); return true;} catch (IOException e) {e.printStackTrace(); return false;}} // can mkdir nested
+        public static void copy(Path aSourcePath, Path aTargetPath) throws IOException {validPath(aTargetPath); Files.copy(aSourcePath, aTargetPath, REPLACE_EXISTING);}
+        public static void copy(InputStream aSourceStream, Path aTargetPath) throws IOException {validPath(aTargetPath); Files.copy(aSourceStream, aTargetPath, REPLACE_EXISTING);}
+        public static void move(Path aSourcePath, Path aTargetPath) throws IOException {validPath(aTargetPath); Files.move(aSourcePath, aTargetPath, REPLACE_EXISTING);}
         
         /** output stuffs */
         public static PrintStream    toPrintStream (String aFilePath, OpenOption... aOptions) throws IOException {return new PrintStream(toOutputStream(aFilePath, aOptions));}
         public static OutputStream   toOutputStream(String aFilePath, OpenOption... aOptions) throws IOException {return toOutputStream(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
         public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions) throws IOException {return toWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
         public static BufferedWriter toWriter      (OutputStream aOutputStream) {return new BufferedWriter(new OutputStreamWriter(aOutputStream, StandardCharsets.UTF_8));}
-        public static OutputStream   toOutputStream(Path aPath, OpenOption... aOptions) throws IOException {return Files.newOutputStream(aPath, aOptions);}
-        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions) throws IOException {return Files.newBufferedWriter(aPath, aOptions);}
+        public static OutputStream   toOutputStream(Path aPath, OpenOption... aOptions) throws IOException {validPath(aPath); return Files.newOutputStream(aPath, aOptions);}
+        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions) throws IOException {validPath(aPath); return Files.newBufferedWriter(aPath, aOptions);}
         
         /** input stuffs */
         public static InputStream    toInputStream(String aFilePath) throws IOException {return toInputStream(UT.IO.toAbsolutePath_(aFilePath));}
@@ -727,6 +733,35 @@ public class UT {
         
         /** misc stuffs */
         public static File toFile(String aFilePath) {return toAbsolutePath_(aFilePath).toFile();}
+        public static void validPath(String aPath) {if (aPath.endsWith("/") || aPath.endsWith("\\")) UT.IO.makeDir(aPath); else validPath(toAbsolutePath_(aPath));}
+        public static void validPath(Path aPath) {Path tParent = aPath.getParent(); if (tParent != null) UT.IO.makeDir(tParent);}
+        
+        /**
+         * extract zip file to directory
+         * @author liqa
+         */
+        public static void zip2dir(String aZipFilePath, String aDir) throws IOException {
+            if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
+            makeDir(aDir);
+            byte[] tBuffer = new byte[1024];
+            try (ZipInputStream tZipInputStream = new ZipInputStream(toInputStream(aZipFilePath))) {
+                ZipEntry tZipEntry = tZipInputStream.getNextEntry();
+                while (tZipEntry != null) {
+                    String tEntryPath = aDir + tZipEntry.getName();
+                    if (tZipEntry.isDirectory()) {
+                        makeDir(tEntryPath);
+                    } else {
+                        try (OutputStream tOutputStream = toOutputStream(tEntryPath)) {
+                            int length;
+                            while ((length = tZipInputStream.read(tBuffer)) > 0) {
+                                tOutputStream.write(tBuffer, 0, length);
+                            }
+                        }
+                    }
+                    tZipEntry = tZipInputStream.getNextEntry();
+                }
+            }
+        }
         
         
         /**
@@ -889,7 +924,7 @@ public class UT {
         public static String pwd() {
             Process tProcess;
             try {
-                tProcess = Runtime.getRuntime().exec(System.getProperty("os.name").toLowerCase().contains("windows") ? "cmd /c cd" : "pwd");
+                tProcess = Runtime.getRuntime().exec(IS_WINDOWS ? "cmd /c cd" : "pwd");
             } catch (IOException e) {
                 return System.getProperty("user.home");
             }
@@ -898,7 +933,7 @@ public class UT {
             try (BufferedReader tReader = new BufferedReader(new InputStreamReader(tProcess.getInputStream()))) {
                 tProcess.waitFor();
                 wd = tReader.readLine().trim();
-            } catch (IOException | InterruptedException e) {
+            } catch (Exception e) {
                 wd = System.getProperty("user.home");
             }
             return wd;

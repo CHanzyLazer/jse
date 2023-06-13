@@ -61,6 +61,7 @@ shadowJar {
     relocate('org.yaml.snakeyaml', 'shade.org.yaml.snakeyaml')
 //  relocate('org.json.simple', 'shade.org.json.simple')
     // 不重命名 groovy 相关名称，避免 asm 错误，也方便 groovy 脚本直接使用 groovy 相关部分
+    // 不重命名 jep 相关名称，避免 python 中回调 java 出现问题
     
     // 修改目标文件夹，打包后添加到子项目中
     destinationDirectory = file('./release/lib')
@@ -69,27 +70,5 @@ shadowJar {
 build {
     dependsOn shadowJar
     jar.enabled = false
-}
-
-
-
-import java.nio.file.Files
-tasks.register('downloadJepSrc', Copy) {
-    // 配置 Copy 任务，下载源码 zip 然后解压到指定位置
-    from {
-        def url = new URL('https://github.com/ninia/jep/archive/v4.1.1.zip')
-        def zipFile = file('./release/.temp/jep-4.1.1.zip')
-        // 如果不存在则需要下载，否则不用重新下载
-        if (!zipFile.isFile()) {
-            Files.createDirectories(file('./release/.temp').toPath())
-            Files.copy(url.openStream(), zipFile.toPath())
-        }
-        zipTree(zipFile)
-    }
-    into {
-        file('./release/.src')
-    }
-    // 设置任务的描述信息
-    description('Download Jep source code from GitHub')
 }
 

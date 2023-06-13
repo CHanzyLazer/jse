@@ -9,11 +9,16 @@ import jep.python.PyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import static com.jtool.code.CS.IS_WINDOWS;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -157,6 +162,11 @@ public class SP {
     public static class Python {
         /** 一样这里统一使用全局的一个解释器 */
         private static Interpreter JEP_INTERP = null;
+        /** python 离线包的路径以及 python 库的路径 */
+        private final static String PYPKG_DIR = ".pypkg/";
+        private final static String PYLIB_DIR = "lib/";
+        private final static String JEPLIB_DIR = PYLIB_DIR+"jep/";
+        private final static String JEPLIB_PATH = JEPLIB_DIR + (IS_WINDOWS ? "jep.dll" : "jep.so");
         
         /** 直接运行文本的脚本 */
         public synchronized static void runText(String aText) throws JepException {JEP_INTERP.exec(aText);}
@@ -169,14 +179,20 @@ public class SP {
         public synchronized static void run(String aScriptPath) throws JepException {runScript(aScriptPath);}
         public synchronized static void runScript(String aScriptPath) throws JepException {JEP_INTERP.runScript(aScriptPath);}
         /** 调用方法，python 中需要结合 import 使用 */
-        public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {return JEP_INTERP.invoke(aMethodName, aArgs);}
-        public synchronized static Object invoke(String aMethodName, Map<String, Object> aMapArgs) throws JepException {return JEP_INTERP.invoke(aMethodName, aMapArgs);}
-        public synchronized static Object invoke(String aMethodName, Object[] aArgs, Map<String, Object> aMapArgs) throws JepException {return JEP_INTERP.invoke(aMethodName, aArgs, aMapArgs);}
+        @SuppressWarnings("unchecked")
+        public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {
+            if (aArgs == null || aArgs.length == 0) return JEP_INTERP.invoke(aMethodName);
+            if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return JEP_INTERP.invoke(aMethodName, (Map<String, Object>)aArgs[0]);
+            if (aArgs.length > 1 && (aArgs[aArgs.length-1] instanceof Map)) {
+                Object[] tArgs = new Object[aArgs.length-1];
+                System.arraycopy(aArgs, 0, tArgs, 0, aArgs.length-1);
+                return JEP_INTERP.invoke(aMethodName, tArgs, (Map<String, Object>)aArgs[aArgs.length-1]);
+            }
+            return JEP_INTERP.invoke(aMethodName, aArgs);
+        }
         public synchronized static void importModule(String aPyModuleName) throws JepException {JEP_INTERP.exec("import "+aPyModuleName);}
         /** 创建 Python 实例，这里同样外套一层 */
-        public synchronized static IScriptObject newInstance(String aClassName, Object... aArgs) throws JepException {return new ScriptObjectPython((PyObject)JEP_INTERP.invoke(aClassName, aArgs));}
-        public synchronized static IScriptObject newInstance(String aClassName, Map<String, Object> aMapArgs) throws JepException {return new ScriptObjectPython((PyObject)JEP_INTERP.invoke(aClassName, aMapArgs));}
-        public synchronized static IScriptObject newInstance(String aClassName, Object[] aArgs, Map<String, Object> aMapArgs) throws JepException {return new ScriptObjectPython((PyObject)JEP_INTERP.invoke(aClassName, aArgs, aMapArgs));}
+        public synchronized static IScriptObject newInstance(String aClassName, Object... aArgs) throws JepException {return new ScriptObjectPython((PyObject)invoke(aClassName, aArgs));}
         
         /** 提供一个手动关闭 JEP_INTERP 的接口 */
         public synchronized static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null;}}
@@ -191,11 +207,11 @@ public class SP {
             // 手动加载 UT，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
             UT.IO.init();
             // 设置 Jep 非 java 库的路径，考虑到 WSL，windows 和 linux 使用不同的名称
-            initJepLib_(System.getProperty("os.name").toLowerCase().contains("windows"));
+            initJepLib_();
             // 配置 Jep，这里只能配置一次
             SharedInterpreter.setConfig(new JepConfig()
                 .addIncludePaths(UT.IO.toAbsolutePath("script/python/"))
-                .addIncludePaths(UT.IO.toAbsolutePath("lib/"))
+                .addIncludePaths(UT.IO.toAbsolutePath(PYLIB_DIR))
                 .setClassLoader(SP.class.getClassLoader())
                 .redirectStdout(System.out)
                 .redirectStdErr(System.err));
@@ -209,55 +225,166 @@ public class SP {
         /** 初始化内部的 JEP_INTERP，主要用于减少重复代码 */
         private synchronized static void initInterpreter_() {JEP_INTERP = new SharedInterpreter();}
         /** 初始化 JEP 需要使用的外部库，需要平台至少拥有 python3 环境 */
-        private synchronized static void initJepLib_(boolean aIsWindows) {
-            // 考虑到 WSL，windows 和 linux 使用不同的名称
-            String tLibPath = aIsWindows ? "lib/jep.dll" : "lib/jep.so";
+        private synchronized static void initJepLib_() {
             // 如果不存在则需要重新通过源码编译
-            if (!UT.IO.isFile(tLibPath)) {
-                System.out.println("JEP INIT INFO: Jep libraries not found. Compiling from source code...");
-                // 首先获取源码路径，这里只检测 jep 开头的文件夹
-                String[] tList = UT.IO.list(".src/");
-                String tJepDirName = null;
-                for (String tName : tList) if (tName.contains("jep")) {
-                    tJepDirName = tName;
+            if (!UT.IO.isFile(JEPLIB_PATH)) {
+                System.out.println("JEP INIT INFO: jep libraries not found. Reinstalling...");
+                installJep_();
+            }
+            // 设置库路径
+            MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(JEPLIB_PATH));
+        }
+        
+        
+        /** 基于 pip 的 python 包管理，下载指定包到 .pypkg */
+        public synchronized static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion) {
+            // 组装指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("pip"); rCommand.add("download");
+            // 是否顺便下载依赖的库，这里默认不会下载依赖库，因为问题会很多
+            if (!aIncludeDep) rCommand.add("--no-deps");
+            // 是否指定特定平台和 python 版本，如果同时开启了 aIncludeDep 则会强制开启 --only-binary :all:
+            boolean tOnlyBinary = false;
+            if (aPlatform != null && !aPlatform.isEmpty()) {
+                if (aIncludeDep) {
+                    rCommand.add("--only-binary"); rCommand.add(":all:");
+                    tOnlyBinary = true;
                 }
-                if (tJepDirName == null) throw new RuntimeException("JEP INIT ERROR: No Jep source code in .src");
-                // 直接通过系统指令来编译 Jep 的库，windows 下使用 powershell 统一指令
-                try (ISystemExecutor tEXE = aIsWindows ? new PowerShellSystemExecutor() : new LocalSystemExecutor()) {
-                    tEXE.setNoSTDOutput().setNoERROutput();
-                    tEXE.system(String.format("cd .src/%s; python setup.py clean", tJepDirName)); // 编译之前先移除旧的结果
-                    tEXE.system(String.format("cd .src/%s; python setup.py build", tJepDirName));
+                rCommand.add("--platform"); rCommand.add(aPlatform);
+            }
+            if (aPythonVersion != null && !aPythonVersion.isEmpty()) {
+                if (aIncludeDep && !tOnlyBinary) {
+                    rCommand.add("--only-binary"); rCommand.add(":all:");
                 }
-                // 获取 build 目录下的 lib 文件夹
-                tList = UT.IO.list(String.format(".src/%s/build", tJepDirName));
-                String tJepLibDirName = null;
-                for (String tName : tList) if (tName.contains("lib")) {
-                    tJepLibDirName = tName;
-                }
-                if (tJepLibDirName == null) throw new RuntimeException(String.format("JEP BUILD ERROR: No Jep lib in .src/%s/build", tJepDirName));
-                // 获取 lib 文件夹下的 lib 名称
-                tList = UT.IO.list(String.format(".src/%s/build/%s/jep", tJepDirName, tJepLibDirName));
-                String tJepLibName = null;
-                for (String tName : tList) if (tName.contains("jep") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib"))) {
-                    tJepLibName = tName;
-                }
-                if (tJepLibName == null) throw new RuntimeException(String.format("JEP BUILD ERROR: No Jep lib in .src/%s/build/%s/jep", tJepDirName, tJepLibDirName));
-                try {
-                    // 将 build 的输出拷贝到 lib 目录下
-                    UT.IO.copy(String.format(".src/%s/build/%s/jep/%s", tJepDirName, tJepLibDirName, tJepLibName), tLibPath);
-                    // 顺便拷贝生成的 python 源码
-                    UT.IO.makeDir("lib/jep");
-                    tList = UT.IO.list(String.format(".src/%s/build/%s/jep", tJepDirName, tJepLibDirName));
-                    for (String tName : tList) if (tName.endsWith(".py")) {
-                        UT.IO.copy(String.format(".src/%s/build/%s/jep/%s", tJepDirName, tJepLibDirName, tName), String.format("lib/jep/%s", tName));
-                    }
+                rCommand.add("--python-version"); rCommand.add(aPythonVersion);
+            }
+            // 不提供强制仅下载源码的选项，因为很多下载的源码都不能编译成功
+            // 设置目标路径
+            UT.IO.makeDir(PYPKG_DIR);
+            rCommand.add("--dest"); rCommand.add(String.format("\"%s\"", PYPKG_DIR));
+            // 设置需要的包名
+            rCommand.add(String.format("\"%s\"", aRequirement));
+            
+            // 直接通过系统指令执行 pip 来下载，windows 下使用 powershell 统一指令
+            try (ISystemExecutor tEXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor()) {
+                tEXE.system(String.join(" ", rCommand));
+            }
+        }
+        public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion) {downloadPackage(aRequirement, false, aPlatform, aPythonVersion);}
+        public static void downloadPackage(String aRequirement, String aPlatform) {downloadPackage(aRequirement, aPlatform, null);}
+        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform) {downloadPackage(aRequirement, aIncludeDep, aPlatform, null);}
+        public static void downloadPackage(String aRequirement, boolean aIncludeDep) {downloadPackage(aRequirement, aIncludeDep, null);}
+        public static void downloadPackage(String aRequirement) {downloadPackage(aRequirement, false);}
+        
+        /** 基于 pip 的 python 包管理，直接安装指定包到 lib */
+        public synchronized static void installPackage(String aRequirement, boolean aIncludeDep, boolean aIncludeIndex) {
+            // 组装指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("pip"); rCommand.add("install");
+            // 是否顺便下载依赖的库，这里默认不会下载依赖库，因为问题会很多
+            if (!aIncludeDep) rCommand.add("--no-deps");
+            // 是否开启联网，这里默认不开启联网，因为标准下会使用 downloadPackage 来下载包
+            if (!aIncludeIndex) rCommand.add("--no-index");
+            // 添加 .pypkg 到搜索路径
+            rCommand.add("--find-links"); rCommand.add(String.format("\"file:%s\"", PYPKG_DIR));
+            // 设置目标路径
+            rCommand.add("--target"); rCommand.add(String.format("\"%s\"", PYLIB_DIR));
+            // 强制开启更新，替换已有的包
+            rCommand.add("--upgrade");
+            // 设置需要的包名
+            rCommand.add(String.format("\"%s\"", aRequirement));
+            
+            // 直接通过系统指令执行 pip 来下载，windows 下使用 powershell 统一指令
+            try (ISystemExecutor tEXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor()) {
+                tEXE.system(String.join(" ", rCommand));
+            }
+        }
+        public static void installPackage(String aRequirement, boolean aIncludeDep) {installPackage(aRequirement, aIncludeDep, false);}
+        public static void installPackage(String aRequirement) {installPackage(aRequirement, false);}
+        
+        
+        /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
+        private synchronized static void installJep_() {
+            // 首先获取源码路径，这里直接检测是否有 jep-4.1.1.zip
+            String tJepZipPath = PYPKG_DIR+"jep-4.1.1.zip";
+            // 如果没有 jep 包则直接下载，直接从 github 上下载保证结果稳定
+            if (!UT.IO.isFile(tJepZipPath)) {
+                System.out.printf("JEP INIT INFO: No jep source code in %s, downloading...\n", PYPKG_DIR);
+                try (InputStream tURLStream = new URL("https://github.com/ninia/jep/archive/v4.1.1.zip").openStream()) {
+                    UT.IO.copy(tURLStream, tJepZipPath);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                System.out.println("JEP INIT INFO: Jep libraries successfully installed.");
+                System.out.println("JEP INIT INFO: jep source code downloading finished");
             }
-            // 设置路径
-            MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(tLibPath));
+            // 解压 jep 包到临时目录，如果已经存在则直接情况此目录
+            try {
+                UT.IO.removeDir(".temp/jep-src/");
+                UT.IO.zip2dir(tJepZipPath, ".temp/jep-src/");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // 安装 jep 包，这里直接通过 setup.py 来安装
+            System.out.println("JEP INIT INFO: Installing jep from source code...");
+            // 首先获取源码路径，这里直接检测 jep 开头的文件夹
+            String[] tList = UT.IO.list(".temp/jep-src/");
+            String tJepDirName = null;
+            for (String tName : tList) if (tName.contains("jep")) {
+                tJepDirName = tName;
+            }
+            if (tJepDirName == null) throw new RuntimeException("JEP INIT ERROR: No Jep source code in .temp/jep-src/");
+            // 直接通过系统指令来编译 Jep 的库，windows 下使用 powershell 统一指令
+            try (ISystemExecutor tEXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor()) {
+                tEXE.setNoSTDOutput().setNoERROutput();
+                tEXE.system(String.format("cd .temp/jep-src/%s; python setup.py build", tJepDirName));
+            }
+            // 获取 build 目录下的 lib 文件夹
+            tList = UT.IO.list(String.format(".temp/jep-src/%s/build/", tJepDirName));
+            String tJepLibDirName = null;
+            for (String tName : tList) if (tName.contains("lib")) {
+                tJepLibDirName = tName;
+            }
+            if (tJepLibDirName == null) throw new RuntimeException(String.format("JEP BUILD ERROR: No Jep lib in .temp/jep-src/%s/build/", tJepDirName));
+            // 获取 lib 文件夹下的 lib 名称
+            tList = UT.IO.list(String.format(".temp/jep-src/%s/build/%s/jep/", tJepDirName, tJepLibDirName));
+            String tJepLibName = null;
+            for (String tName : tList) if (tName.contains("jep") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib"))) {
+                tJepLibName = tName;
+            }
+            if (tJepLibName == null) throw new RuntimeException(String.format("JEP BUILD ERROR: No Jep lib in .temp/jep-src/%s/build/%s/jep/", tJepDirName, tJepLibDirName));
+            try {
+                // 将 build 的输出拷贝到 lib 目录下
+                UT.IO.copy(String.format(".temp/jep-src/%s/build/%s/jep/%s", tJepDirName, tJepLibDirName, tJepLibName), JEPLIB_PATH);
+                // 顺便拷贝生成的 python 脚本
+                tList = UT.IO.list(String.format(".temp/jep-src/%s/build/%s/jep/", tJepDirName, tJepLibDirName));
+                for (String tName : tList) if (tName.endsWith(".py")) {
+                    UT.IO.copy(String.format(".temp/jep-src/%s/build/%s/jep/%s", tJepDirName, tJepLibDirName, tName), JEPLIB_DIR+tName);
+                }
+                // 完事后移除临时解压得到的源码
+                UT.IO.removeDir(".temp/jep-src/");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("JEP INIT INFO: jep successfully installed.");
+        }
+        
+        /** 一些内置的 python 库安装，主要用于内部使用 */
+        public synchronized static void installAse() {
+            // 首先获取源码路径，这里直接检测是否是 ase-3.22.1 开头
+            String[] tList = UT.IO.list(PYPKG_DIR);
+            boolean tHasAsePkg = false;
+            for (String tName : tList) if (tName.startsWith("ase-3.22.1")) {
+                tHasAsePkg = true; break;
+            }
+            // 如果没有 ase 包则直接下载，指定版本 3.22.1 避免因为更新造成的问题
+            if (!tHasAsePkg) {
+                System.out.printf("ASE INIT INFO: No ase package in %s, downloading...\n", PYPKG_DIR);
+                downloadPackage("ase==3.22.1");
+                System.out.println("ASE INIT INFO: ase package downloading finished");
+            }
+            // 安装 ase 包
+            System.out.println("ASE INIT INFO: Installing ase from package...");
+            installPackage("ase==3.22.1");
         }
     }
 }

@@ -33,6 +33,8 @@ public class CS {
     
     public final static String WORKING_DIR = ".temp/%n/";
     
+    public final static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+    
     
     /** MathEX stuffs */
     public enum SliceType {ALL}

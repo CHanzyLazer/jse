@@ -11,6 +11,7 @@ import groovy.lang.MetaClass;
 public class ScriptObjectGroovy implements IScriptObject {
     private final GroovyObject mObj;
     public ScriptObjectGroovy(GroovyObject aObj) {mObj = aObj;}
+    @Override public Object unwrap() {return mObj;}
     
     @Override public Object invokeMethod(String name, Object args) {return mObj.invokeMethod(name, args);}
     @Override public Object getProperty(String propertyName) {return mObj.getProperty(propertyName);}
