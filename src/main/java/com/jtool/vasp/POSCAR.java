@@ -100,7 +100,7 @@ public class POSCAR extends AbstractAtomData {
     }
     @Override public XYZ boxHi() {
         if (!mIsDiagBox) throw new RuntimeException("boxHi is temporarily support Diagonal Box only");
-        XYZ tBoxHi = new XYZ(mBox.operation().refDiag());
+        XYZ tBoxHi = new XYZ(mBox.refSlicer().diag());
         tBoxHi.multiply2this(mBoxScale);
         return tBoxHi;
     }
@@ -109,7 +109,7 @@ public class POSCAR extends AbstractAtomData {
     @Override public double volume() {
         // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
         if (!mIsDiagBox) throw new RuntimeException("Volume is temporarily support Diagonal Box only");
-        return mBox.operation().refDiag().operation().product();
+        return mBox.refSlicer().diag().operation().product();
     }
     
     

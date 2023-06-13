@@ -52,6 +52,8 @@ public abstract class AbstractMatrixSlicer implements IMatrixSlicer {
     @Override public final IMatrix get(IRowFilter          aSelectedRows, IColFilterWithIndex aSelectedCols) {return get(F2L(aSelectedRows), F2L(aSelectedCols));}
     @Override public final IMatrix get(IRowFilterWithIndex aSelectedRows, IColFilterWithIndex aSelectedCols) {return get(F2L(aSelectedRows), F2L(aSelectedCols));}
     
+    @Override public final IVector diag() {return diag(0);}
+    
     List<Integer> F2L(IRowFilter aSelectedRows) {
         List<Integer> rSelectedRows = new ArrayList<>();
         List<? extends IVectorGetter> tRows = thisRows_();
@@ -102,6 +104,7 @@ public abstract class AbstractMatrixSlicer implements IMatrixSlicer {
     protected abstract IMatrix getLA(List<Integer> aSelectedRows);
     protected abstract IMatrix getAL(List<Integer> aSelectedCols);
     protected abstract IMatrix getAA();
+    public abstract IVector diag(int aShift);
     
     protected abstract List<? extends IVectorGetter> thisRows_();
     protected abstract List<? extends IVectorGetter> thisCols_();

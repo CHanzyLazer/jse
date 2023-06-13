@@ -60,4 +60,8 @@ public interface IMatrixSlicer {
     IMatrix get(IRowFilterWithIndex aSelectedRows, IColFilter          aSelectedCols);
     IMatrix get(IRowFilter          aSelectedRows, IColFilterWithIndex aSelectedCols);
     IMatrix get(IRowFilterWithIndex aSelectedRows, IColFilterWithIndex aSelectedCols);
+    
+    /** 现在获取对角放在切片操作中 */
+    IVector diag();
+    IVector diag(int aShift);
 }

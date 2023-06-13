@@ -579,6 +579,22 @@ public abstract class AbstractMatrix implements IMatrix {
             @Override protected IMatrix getAL(final List<Integer> aSelectedCols) {IMatrix rMatrix = newZeros(rowNumber()         , aSelectedCols.size()); rMatrix.fill((row, col) -> AbstractMatrix.this.get(row, aSelectedCols.get(col))); return rMatrix;}
             @Override protected IMatrix getAA() {return copy();}
             
+            @Override public IVector diag(final int aShift) {
+                IVector rVector;
+                if (aShift > 0) {
+                    rVector = newZerosVec(Math.min(rowNumber(), columnNumber()-aShift));
+                    rVector.fill(i -> AbstractMatrix.this.get_(i, i+aShift));
+                } else
+                if (aShift < 0) {
+                    rVector = newZerosVec(Math.min(rowNumber()+aShift, columnNumber()));
+                    rVector.fill(i -> AbstractMatrix.this.get_(i-aShift, i));
+                } else {
+                    rVector = newZerosVec(Math.min(rowNumber(), columnNumber()));
+                    rVector.fill(i -> AbstractMatrix.this.get_(i, i));
+                }
+                return rVector;
+            }
+            
             @Override protected List<IVector> thisRows_() {return rows();}
             @Override protected List<IVector> thisCols_() {return cols();}
         };
@@ -647,6 +663,32 @@ public abstract class AbstractMatrix implements IMatrix {
                     @Override public int rowNumber() {return AbstractMatrix.this.rowNumber();}
                     @Override public int columnNumber() {return AbstractMatrix.this.columnNumber();}
                 };
+            }
+            
+            @Override public IVector diag(final int aShift) {
+                if (aShift > 0) {
+                    return new RefVector() {
+                        @Override public double get_(int aIdx) {return AbstractMatrix.this.get_(aIdx, aIdx+aShift);}
+                        @Override public void set_(int aIdx, double aValue)  {AbstractMatrix.this.set_(aIdx, aIdx+aShift, aValue);}
+                        @Override public double getAndSet_(int aIdx, double aValue) {return AbstractMatrix.this.getAndSet_(aIdx, aIdx+aShift, aValue);}
+                        @Override public int size() {return Math.min(rowNumber(), columnNumber()-aShift);}
+                    };
+                } else
+                if (aShift < 0) {
+                    return new RefVector() {
+                        @Override public double get_(int aIdx) {return AbstractMatrix.this.get_(aIdx, aIdx-aShift);}
+                        @Override public void set_(int aIdx, double aValue)  {AbstractMatrix.this.set_(aIdx, aIdx-aShift, aValue);}
+                        @Override public double getAndSet_(int aIdx, double aValue) {return AbstractMatrix.this.getAndSet_(aIdx, aIdx-aShift, aValue);}
+                        @Override public int size() {return Math.min(rowNumber(), columnNumber()+aShift);}
+                    };
+                } else {
+                    return new RefVector() {
+                        @Override public double get_(int aIdx) {return AbstractMatrix.this.get_(aIdx, aIdx);}
+                        @Override public void set_(int aIdx, double aValue)  {AbstractMatrix.this.set_(aIdx, aIdx, aValue);}
+                        @Override public double getAndSet_(int aIdx, double aValue) {return AbstractMatrix.this.getAndSet_(aIdx, aIdx, aValue);}
+                        @Override public int size() {return Math.min(rowNumber(), columnNumber());}
+                    };
+                }
             }
             
             @Override protected List<IVector> thisRows_() {return rows();}

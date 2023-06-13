@@ -71,18 +71,18 @@ public class Matrices {
     public static IMatrix diag(IVector aVector) {return diag(aVector.size(), aVector);}
     public static IMatrix diag(int aSize, IVectorGetter aVector) {
         IMatrix rMatrix = zeros(aSize, aSize);
-        rMatrix.operation().refDiag().fill(aVector);
+        rMatrix.refSlicer().diag().fill(aVector);
         return rMatrix;
     }
     public static IMatrix diag(Collection<? extends Number> aList) {return diag(aList.size(), aList);}
     public static IMatrix diag(int aSize, Iterable<? extends Number> aList) {
         IMatrix rMatrix = zeros(aSize, aSize);
-        rMatrix.operation().refDiag().fill(aList);
+        rMatrix.refSlicer().diag().fill(aList);
         return rMatrix;
     }
     public static IMatrix diag(double... aDiags) {
         IMatrix rMatrix = zeros(aDiags.length, aDiags.length);
-        rMatrix.operation().refDiag().fill(aDiags);
+        rMatrix.refSlicer().diag().fill(aDiags);
         return rMatrix;
     }
 }

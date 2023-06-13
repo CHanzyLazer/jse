@@ -5,7 +5,6 @@ import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IDoubleOperator2;
 import com.jtool.math.operation.DATA;
 import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.RefVector;
 
 /**
  * 一般的实矩阵运算的实现，默认没有做任何优化
@@ -145,22 +144,6 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
             if (col != row) if (tValue != 0.0) return false;
         }
         return true;
-    }
-    
-    @Override public IVector diag() {
-        IVector tVector = refDiag();
-        IVector rVector = thisMatrix_().newZerosVec(tVector.size());
-        rVector.fill(tVector);
-        return rVector;
-    }
-    @Override public IVector refDiag() {
-        return new RefVector() {
-            private final IMatrix mThis = thisMatrix_();
-            @Override public double get_(int aIdx) {return mThis.get_(aIdx, aIdx);}
-            @Override public void set_(int aIdx, double aValue)  {mThis.set_(aIdx, aIdx, aValue);}
-            @Override public double getAndSet_(int aIdx, double aValue) {return mThis.getAndSet_(aIdx, aIdx, aValue);}
-            @Override public int size() {return Math.min(mThis.columnNumber(), mThis.rowNumber());}
-        };
     }
     
     
