@@ -3,7 +3,6 @@ package com.jtool.code.task;
 import com.jtool.code.collection.Pair;
 import com.jtool.ssh.ServerSLURM;
 import com.jtool.ssh.ServerSSH;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,23 +16,6 @@ import java.util.concurrent.Callable;
 @SuppressWarnings("DeprecatedIsStillUsed")
 public class SerializableTask extends Task {
     public SerializableTask(Callable<Boolean> aCall) {super(aCall);}
-    
-    /**
-     * Merge two tasks into one task
-     * @author liqa
-     * @param aTask1 the first Task will call
-     * @param aTask2 the second Task will call
-     * @return the Merged (Serializable) Task
-     */
-    public static Task mergeTask(final @Nullable Task aTask1, final @Nullable Task aTask2) {
-        if (aTask1 != null) {
-            if (aTask2 == null) return aTask1;
-            return new SerializableTask(() -> aTask1.call() && aTask2.call()) {
-                @Override public String toString() {return String.format("%s{%s:%s}", Type.MERGE.name(), (aTask1 instanceof SerializableTask) ? aTask1 : Type.NULL.name(), (aTask2 instanceof SerializableTask) ? aTask2 : Type.NULL.name());}
-            };
-        }
-        return aTask2;
-    }
     
     
     /** override to get serialized string */

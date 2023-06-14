@@ -601,7 +601,7 @@ public final class ServerSLURM {
         if (mDead) throw new RuntimeException("Can NOT submitSbatch from a Dead SLURM.");
         aNodeNumber = Math.max(1, aNodeNumber);
         // 需要创建输出目录的文件夹
-        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
+        aBeforeSystem = Task.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
         // 组装指令
         aCommand = String.format("echo -e '#!/bin/bash\\n%s' | sbatch --nodes %d --output %s --job-name %s", aCommand, aNodeNumber, aOutputPath, mJobName);
         if (aPartition != null && !aPartition.isEmpty()) aCommand += String.format(" --partition %s", aPartition);
@@ -665,9 +665,9 @@ public final class ServerSLURM {
     public synchronized void submitBash(Task aBeforeSystem, Task aAfterSystem, String aBashPath, String aPartition, int aNodeNumber, String aOutputPath) {
         if (mDead) throw new RuntimeException("Can NOT submitBash from a Dead SLURM.");
         // 需要创建输出目录的文件夹
-        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
+        aBeforeSystem = Task.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
         // 并且需要上传脚本
-        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
+        aBeforeSystem = Task.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
         // 组装指令
         String tCommand = String.format("sbatch --output %s --job-name %s", aOutputPath, mJobName);
         if (aPartition != null && !aPartition.isEmpty()) tCommand += String.format(" --partition %s", aPartition);
@@ -814,7 +814,7 @@ public final class ServerSLURM {
     public void submitSrunBash(Task aBeforeSystem, Task aAfterSystem, String aBashPath, String aPartition, int aTaskNumber, int aMaxTaskNumberPerNode, String aOutputPath) {
         if (mDead) throw new RuntimeException("Can NOT submitSrunBash from a Dead SLURM.");
         // 需要上传脚本
-        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
+        aBeforeSystem = Task.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
         // 提交命令
         submitSrun(aBeforeSystem, aAfterSystem, String.format("bash %s", aBashPath), aPartition, aTaskNumber, aMaxTaskNumberPerNode, aOutputPath);
     }

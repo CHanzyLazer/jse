@@ -442,73 +442,25 @@ public class UT {
         }
     }
     
-    public static class Tasks {
-        
-        /**
-         * Merge two tasks into one task
-         * @author liqa
-         * @param aTask1 the first Task will call
-         * @param aTask2 the second Task will call
-         * @return the Merged Task
-         */
-        public static Task mergeTask(final @Nullable Task aTask1, final @Nullable Task aTask2) {
-            if (aTask1 != null) {
-                if (aTask2 == null) return aTask1;
-                return new Task(() -> aTask1.call() && aTask2.call());
-            }
-            return aTask2;
-        }
-        
-        /**
-         * Try to call a task
-         * @author liqa
-         * @param aTask the Task to call
-         * @return true if it runs successfully, false otherwise
-         */
-        public static boolean tryTask(Task aTask) {
-            if (aTask == null) return false;
-            boolean tSuc;
-            try {tSuc = aTask.call();} catch (Exception e) {return false;}
-            return tSuc;
-        }
-        
-        /**
-         * Try to run a task with tolerant
-         * @author liqa
-         * @param aTask the Task to call
-         * @param aTolerant tolerant number
-         * @return true if it runs successfully, false otherwise
-         */
-        public static boolean tryTask(Task aTask, int aTolerant) {
-            if (aTask == null) return false;
-            boolean tSuc = false;
-            for (int i = 0; i < aTolerant; ++i) {
-                try {tSuc = aTask.call();} catch (Exception e) {continue;}
-                if (tSuc) break;
-            }
-            return tSuc;
-        }
-    }
-    
     public static class Hack {
         
-        public static TaskCall<Object> getTaskCallOfMethod_(Class<?> aClazz, final @Nullable Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {
+        public static TaskCall<Object> getCallableOfMethod_(Class<?> aClazz, final @Nullable Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             final Method m = findMethod_(aClazz, aMethodName, fArgs);
             if (m == null) throw new NoSuchMethodException("No such method: " + aMethodName);
             convertArgs_(fArgs, m.getParameterTypes());
             return new TaskCall<>(() -> m.invoke(aInstance, fArgs));
         }
-        public static TaskCall<Object> getTaskCallOfStaticMethod(String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {
+        public static TaskCall<Object> getCallableOfStaticMethod(String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {
             Class<?> tClass;
             tClass = Class.forName(aClassName);
-            return getTaskCallOfMethod_(tClass, null, aMethodName, aArgs);
+            return getCallableOfMethod_(tClass, null, aMethodName, aArgs);
         }
-        public static TaskRun          getTaskRunOfStaticMethod (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return TaskRun.of(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
-        public static Task             getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return Task   .of(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
-        public static TaskCall<Object> getTaskCallOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return getTaskCallOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
-        public static TaskRun          getTaskRunOfMethod       (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return TaskRun.of(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
-        public static Task             getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return Task   .of(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+        public static TaskRun          getRunnableOfStaticMethod(              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return TaskRun.of(getCallableOfStaticMethod(aClassName, aMethodName, aArgs));}
+        public static TaskCall<Object> getCallableOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return getCallableOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
+        public static TaskRun          getRunnableOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return TaskRun.of(getCallableOfMethod(aInstance, aMethodName, aArgs));}
+        @Deprecated public static Task getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return Task.of(getCallableOfStaticMethod(aClassName, aMethodName, aArgs));}
+        @Deprecated public static Task getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return Task.of(getCallableOfMethod(aInstance, aMethodName, aArgs));}
         
         public static Method findMethod_(Class<?> aClazz, String aMethodName, Object @NotNull... aArgs) {
             Method[] tAllMethods = aClazz.getMethods();

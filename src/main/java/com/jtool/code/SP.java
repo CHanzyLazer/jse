@@ -38,12 +38,12 @@ public class SP {
         private static GroovyClassLoader CLASS_LOADER = null;
         
         /** 直接运行文本的脚本，底层不会进行缓存 */
-        public synchronized static Object runText(String aText, String... aArgs) throws Exception {return getTaskOfText(aText, aArgs).call();}
+        public synchronized static Object runText(String aText, String... aArgs) throws Exception {return getCallableOfText(aText, aArgs).call();}
         /** 运行脚本文件，底层会自动进行缓存 */
         public synchronized static Object run(String aScriptPath, String... aArgs) throws Exception {return runScript(aScriptPath, aArgs);}
-        public synchronized static Object runScript(String aScriptPath, String... aArgs) throws Exception {return getTaskOfScript(aScriptPath, aArgs).call();}
+        public synchronized static Object runScript(String aScriptPath, String... aArgs) throws Exception {return getCallableOfScript(aScriptPath, aArgs).call();}
         /** 调用指定脚本中的方法，会进行缓存 */
-        public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {return getTaskOfScriptMethod(aScriptPath, aMethodName, aArgs).call();}
+        public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {return getCallableOfScriptMethod(aScriptPath, aMethodName, aArgs).call();}
         /** 创建脚本类的实例 */
         public synchronized static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类，底层自动进行了缓存，并且在文件修改时会自动更新
@@ -60,24 +60,24 @@ public class SP {
         
         
         /** 获取脚本相关的 task，对于脚本的内容请使用这里的接口而不是 {@link UT.Hack}.getTaskOfStaticMethod */
-        public synchronized static TaskCall<?> getTaskOfText(String aText, String... aArgs) {
+        public synchronized static TaskCall<?> getCallableOfText(String aText, String... aArgs) {
             // 获取文本脚本的类，由于是文本底层自动不进行缓存
             Class<?> tScriptClass = CLASS_LOADER.parseClass(aText);
             // 获取 ScriptClass 的执行 Task
-            return getTaskOfScript_(tScriptClass, aArgs);
+            return getCallableOfScript_(tScriptClass, aArgs);
         }
-        public synchronized static TaskCall<?> getTaskOfScript(String aScriptPath, String... aArgs) throws IOException {
+        public synchronized static TaskCall<?> getCallableOfScript(String aScriptPath, String... aArgs) throws IOException {
             // 获取脚本的类，底层自动进行了缓存
             Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
             // 获取 ScriptClass 的执行 Task
-            return getTaskOfScript_(tScriptClass, aArgs);
+            return getCallableOfScript_(tScriptClass, aArgs);
         }
         /** 注意是脚本中的方法或者是类中静态方法，成员方法可以获取对象后直接用 {@link UT.Hack}.getTaskOfMethod */
-        public synchronized static TaskCall<?> getTaskOfScriptMethod(String aScriptPath, final String aMethodName, Object... aArgs) throws IOException {
+        public synchronized static TaskCall<?> getCallableOfScriptMethod(String aScriptPath, final String aMethodName, Object... aArgs) throws IOException {
             // 获取脚本的类，底层自动进行了缓存
             Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
             // 获取 ScriptClass 中具体方法的 Task
-            return getTaskOfScriptMethod_(tScriptClass, aMethodName, aArgs);
+            return getCallableOfScriptMethod_(tScriptClass, aMethodName, aArgs);
         }
         
         
@@ -89,7 +89,7 @@ public class SP {
             if (tConstructor == null) throw new GroovyRuntimeException("Cannot find constructor with compatible args: " + aScriptClass.getName());
             return ScriptObjectGroovy.of(tConstructor.newInstance(aArgs));
         }
-        public synchronized static TaskCall<?> getTaskOfScript_(final Class<?> aScriptClass, String... aArgs) {
+        public synchronized static TaskCall<?> getCallableOfScript_(final Class<?> aScriptClass, String... aArgs) {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             // 和 runScriptOrMainOrTestOrRunnable 保持一样的逻辑，不过现在是线程安全的了，不考虑 Test 和 Runnable 的情况
             if (Script.class.isAssignableFrom(aScriptClass)) {
@@ -118,7 +118,7 @@ public class SP {
             // if that main method exist, invoke it
             return new TaskCall<>(() -> ScriptObjectGroovy.of(InvokerHelper.invokeMethod(aScriptClass, MAIN_METHOD_NAME, new Object[]{fArgs})));
         }
-        public synchronized static TaskCall<?> getTaskOfScriptMethod_(final Class<?> aScriptClass, final String aMethodName, Object... aArgs) {
+        public synchronized static TaskCall<?> getCallableOfScriptMethod_(final Class<?> aScriptClass, final String aMethodName, Object... aArgs) {
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             // 如果是脚本则使用脚本的调用方法的方式
             if (Script.class.isAssignableFrom(aScriptClass)) {
