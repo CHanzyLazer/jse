@@ -2,7 +2,7 @@ package com.jtool.system;
 
 
 import com.google.common.collect.ImmutableList;
-import com.jtool.code.Pair;
+import com.jtool.code.collection.Pair;
 import com.jtool.code.UT;
 import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.IOFiles;

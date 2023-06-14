@@ -1,6 +1,6 @@
 package com.jtool.math;
 
-import com.jtool.code.Pair;
+import com.jtool.code.collection.Pair;
 import com.jtool.code.operator.*;
 import com.jtool.math.function.Func2;
 import com.jtool.math.function.Func3;

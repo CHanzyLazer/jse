@@ -1,8 +1,9 @@
-package com.jtool.ssh;
+package com.jtool.code.task;
 
-import com.jtool.code.Pair;
-import com.jtool.code.Task;
-import com.jtool.code.UT;
+import com.jtool.code.collection.Pair;
+import com.jtool.ssh.ServerSLURM;
+import com.jtool.ssh.ServerSSH;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +13,29 @@ import java.util.concurrent.Callable;
  * @author liqa
  * <p> 可以序列化的 Task，目前仅用于 ssh 端的一些 task 的读写上 </p>
  */
-@SuppressWarnings("DeprecatedIsStillUsed")
 @Deprecated
+@SuppressWarnings("DeprecatedIsStillUsed")
 public class SerializableTask extends Task {
     public SerializableTask(Callable<Boolean> aCall) {super(aCall);}
+    
+    /**
+     * Merge two tasks into one task
+     * @author liqa
+     * @param aTask1 the first Task will call
+     * @param aTask2 the second Task will call
+     * @return the Merged (Serializable) Task
+     */
+    public static Task mergeTask(final @Nullable Task aTask1, final @Nullable Task aTask2) {
+        if (aTask1 != null) {
+            if (aTask2 == null) return aTask1;
+            return new SerializableTask(() -> aTask1.call() && aTask2.call()) {
+                @Override public String toString() {return String.format("%s{%s:%s}", Type.MERGE.name(), (aTask1 instanceof SerializableTask) ? aTask1 : Type.NULL.name(), (aTask2 instanceof SerializableTask) ? aTask2 : Type.NULL.name());}
+            };
+        }
+        return aTask2;
+    }
+    
+    
     /** override to get serialized string */
     @Override public String toString() {return Type.NULL.name();}
     
@@ -59,7 +79,7 @@ public class SerializableTask extends Task {
         String[] tValue = tPair.second.toArray(new String[0]);
         switch (tKey) {
         case MERGE:
-            return UT.Tasks.mergeTask(fromString(aTaskCreator, tValue[0]), fromString(aTaskCreator, tValue[1]));
+            return mergeTask(fromString(aTaskCreator, tValue[0]), fromString(aTaskCreator, tValue[1]));
         case SLURM_CANCEL_ALL: case CANCEL_ALL:
         case SLURM_CANCEL_THIS: case CANCEL_THIS:
         case SLURM_SUBMIT_SYSTEM: case SLURM_SUBMIT_BASH: case SLURM_SUBMIT_SRUN: case SLURM_SUBMIT_SRUN_BASH:

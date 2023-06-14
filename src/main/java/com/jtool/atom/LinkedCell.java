@@ -1,6 +1,6 @@
 package com.jtool.atom;
 
-import com.jtool.code.Pair;
+import com.jtool.code.collection.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 

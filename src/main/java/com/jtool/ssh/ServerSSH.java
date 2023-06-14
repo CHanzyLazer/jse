@@ -1,11 +1,16 @@
 package com.jtool.ssh;
 
-import com.jtool.code.Task;
+import com.jtool.code.task.SerializableTask;
+import com.jtool.code.task.Task;
 import com.jtool.code.UT;
+import com.jtool.iofile.Decryptor;
+import com.jtool.iofile.Encryptor;
 import com.jtool.parallel.ExecutorsEX;
 import com.jtool.parallel.IExecutorEX;
 import com.jtool.system.SSHSystemExecutor;
 import com.jcraft.jsch.*;
+import groovy.json.JsonBuilder;
+import groovy.json.JsonSlurper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -70,11 +75,13 @@ public final class ServerSSH implements AutoCloseable {
     public void save(String aFilePath, String aKey) throws Exception {
         Map rJson = new LinkedHashMap();
         save(rJson);
-        UT.IO.map2json(rJson, aFilePath, aKey);
+        Encryptor tEncryptor = new Encryptor(aKey);
+        UT.IO.write(aFilePath, tEncryptor.getData((new JsonBuilder(rJson)).toString()));
     }
     @SuppressWarnings("rawtypes")
     public static ServerSSH load(String aFilePath, String aKey) throws Exception {
-        Map tJson = UT.IO.json2map(aFilePath, aKey);
+        Decryptor tDecryptor = new Decryptor(aKey);
+        Map tJson = (Map) (new JsonSlurper()).parseText(tDecryptor.get(UT.IO.readAllBytes(aFilePath)));
         return load(tJson);
     }
     // 偏向于内部使用的保存到 json 和从 json 读取

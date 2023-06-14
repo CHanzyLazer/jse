@@ -1,4 +1,4 @@
-package com.jtool.code;
+package com.jtool.code.task;
 
 import java.util.concurrent.Callable;
 
@@ -12,5 +12,5 @@ public class TaskRun implements Runnable {
     
     @Override public void run() {mRun.run();}
     
-    public static TaskRun get(final Callable<?> aCall) {return new TaskRun(() -> {try {aCall.call();} catch (Exception e) {e.printStackTrace();}});}
+    public static TaskRun of(final Callable<?> aCall) {return new TaskRun(() -> {try {aCall.call();} catch (Exception e) {e.printStackTrace();}});}
 }

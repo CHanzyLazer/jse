@@ -3,14 +3,14 @@ package com.jtool.code;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.jtool.code.operator.IOperator1;
-import com.jtool.iofile.Decryptor;
-import com.jtool.iofile.Encryptor;
+import com.jtool.code.task.Task;
+import com.jtool.code.task.TaskCall;
+import com.jtool.code.task.TaskRun;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.Matrices;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
-import com.jtool.ssh.SerializableTask;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import org.jetbrains.annotations.NotNull;
@@ -443,20 +443,18 @@ public class UT {
     }
     
     public static class Tasks {
+        
         /**
          * Merge two tasks into one task
          * @author liqa
          * @param aTask1 the first Task will call
          * @param aTask2 the second Task will call
-         * @return the Merged (serializable) Task
+         * @return the Merged Task
          */
-        @SuppressWarnings("deprecation")
         public static Task mergeTask(final @Nullable Task aTask1, final @Nullable Task aTask2) {
             if (aTask1 != null) {
                 if (aTask2 == null) return aTask1;
-                return new SerializableTask(() -> aTask1.call() && aTask2.call()) {
-                    @Override public String toString() {return String.format("%s{%s:%s}", Type.MERGE.name(), (aTask1 instanceof SerializableTask) ? aTask1 : Type.NULL.name(), (aTask2 instanceof SerializableTask) ? aTask2 : Type.NULL.name());}
-                };
+                return new Task(() -> aTask1.call() && aTask2.call());
             }
             return aTask2;
         }
@@ -506,11 +504,11 @@ public class UT {
             tClass = Class.forName(aClassName);
             return getTaskCallOfMethod_(tClass, null, aMethodName, aArgs);
         }
-        public static TaskRun          getTaskRunOfStaticMethod (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return TaskRun.get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
-        public static Task             getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return Task   .get(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
+        public static TaskRun          getTaskRunOfStaticMethod (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return TaskRun.of(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
+        public static Task             getTaskOfStaticMethod    (              String aClassName, String aMethodName, Object... aArgs) throws NoSuchMethodException, ClassNotFoundException {return Task   .of(getTaskCallOfStaticMethod(aClassName, aMethodName, aArgs));}
         public static TaskCall<Object> getTaskCallOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return getTaskCallOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
-        public static TaskRun          getTaskRunOfMethod       (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return TaskRun.get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
-        public static Task             getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return Task   .get(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+        public static TaskRun          getTaskRunOfMethod       (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return TaskRun.of(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
+        public static Task             getTaskOfMethod          (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return Task   .of(getTaskCallOfMethod(aInstance, aMethodName, aArgs));}
         
         public static Method findMethod_(Class<?> aClazz, String aMethodName, Object @NotNull... aArgs) {
             Method[] tAllMethods = aClazz.getMethods();
@@ -782,17 +780,6 @@ public class UT {
                 (new JsonBuilder(aMap)).writeTo(tWriter);
             }
         }
-        @SuppressWarnings("deprecation")
-        public static Map<?, ?> json2map(String aFilePath, String aKey) throws Exception {
-            Decryptor tDecryptor = new Decryptor(aKey);
-            return (Map<?, ?>) (new JsonSlurper()).parseText(tDecryptor.get(UT.IO.readAllBytes(aFilePath)));
-        }
-        @SuppressWarnings("deprecation")
-        public static void map2json(Map<?, ?> aMap, String aFilePath, String aKey) throws Exception {
-            Encryptor tEncryptor = new Encryptor(aKey);
-            UT.IO.write(aFilePath, tEncryptor.getData((new JsonBuilder(aMap)).toString()));
-        }
-        
         
         
         /**

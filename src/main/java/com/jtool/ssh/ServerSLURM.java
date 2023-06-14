@@ -2,9 +2,14 @@ package com.jtool.ssh;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
-import com.jtool.code.Pair;
-import com.jtool.code.Task;
+import com.jtool.code.collection.Pair;
+import com.jtool.code.task.SerializableTask;
+import com.jtool.code.task.Task;
 import com.jtool.code.UT;
+import com.jtool.iofile.Decryptor;
+import com.jtool.iofile.Encryptor;
+import groovy.json.JsonBuilder;
+import groovy.json.JsonSlurper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -73,7 +78,8 @@ public final class ServerSLURM {
         if (UT.IO.isFile(aFilePath)) UT.IO.copy(aFilePath, aFilePath+".bak");
         // 开始写入
         if (aKey != null && !aKey.isEmpty()) {
-            UT.IO.map2json(rJson, aFilePath, aKey);
+            Encryptor tEncryptor = new Encryptor(aKey);
+            UT.IO.write(aFilePath, tEncryptor.getData((new JsonBuilder(rJson)).toString()));
         } else {
             UT.IO.map2json(rJson, aFilePath);
         }
@@ -82,7 +88,8 @@ public final class ServerSLURM {
     }
     @SuppressWarnings("rawtypes")
     public static ServerSLURM load(String aFilePath, String aKey) throws Exception {
-        Map tJson = UT.IO.json2map(aFilePath, aKey);
+        Decryptor tDecryptor = new Decryptor(aKey);
+        Map tJson = (Map) (new JsonSlurper()).parseText(tDecryptor.get(UT.IO.readAllBytes(aFilePath)));
         return load(tJson);
     }
     // 偏向于内部使用的保存到 json 和从 json 读取
@@ -594,7 +601,7 @@ public final class ServerSLURM {
         if (mDead) throw new RuntimeException("Can NOT submitSbatch from a Dead SLURM.");
         aNodeNumber = Math.max(1, aNodeNumber);
         // 需要创建输出目录的文件夹
-        aBeforeSystem = UT.Tasks.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
+        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
         // 组装指令
         aCommand = String.format("echo -e '#!/bin/bash\\n%s' | sbatch --nodes %d --output %s --job-name %s", aCommand, aNodeNumber, aOutputPath, mJobName);
         if (aPartition != null && !aPartition.isEmpty()) aCommand += String.format(" --partition %s", aPartition);
@@ -658,9 +665,9 @@ public final class ServerSLURM {
     public synchronized void submitBash(Task aBeforeSystem, Task aAfterSystem, String aBashPath, String aPartition, int aNodeNumber, String aOutputPath) {
         if (mDead) throw new RuntimeException("Can NOT submitBash from a Dead SLURM.");
         // 需要创建输出目录的文件夹
-        aBeforeSystem = UT.Tasks.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
+        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, task_validPath_(aOutputPath));
         // 并且需要上传脚本
-        aBeforeSystem = UT.Tasks.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
+        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
         // 组装指令
         String tCommand = String.format("sbatch --output %s --job-name %s", aOutputPath, mJobName);
         if (aPartition != null && !aPartition.isEmpty()) tCommand += String.format(" --partition %s", aPartition);
@@ -807,7 +814,7 @@ public final class ServerSLURM {
     public void submitSrunBash(Task aBeforeSystem, Task aAfterSystem, String aBashPath, String aPartition, int aTaskNumber, int aMaxTaskNumberPerNode, String aOutputPath) {
         if (mDead) throw new RuntimeException("Can NOT submitSrunBash from a Dead SLURM.");
         // 需要上传脚本
-        aBeforeSystem = UT.Tasks.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
+        aBeforeSystem = SerializableTask.mergeTask(aBeforeSystem, mSSH.task_putFile(aBashPath));
         // 提交命令
         submitSrun(aBeforeSystem, aAfterSystem, String.format("bash %s", aBashPath), aPartition, aTaskNumber, aMaxTaskNumberPerNode, aOutputPath);
     }
