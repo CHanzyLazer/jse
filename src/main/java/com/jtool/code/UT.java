@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -585,6 +587,41 @@ public class UT {
             return aStr.replaceAll("\\s+","").split(",");
         }
         
+        
+        /**
+         * Java version of splitNodeList
+         * @author liqa
+         * @param aRawNodeList input raw node list from $SLURM_JOB_NODELIST
+         * @return split node list
+         */
+        public static List<String> splitNodeList(String aRawNodeList) {
+            List<String> rOutput = new ArrayList<>();
+            
+            // Remove the "cn", "[" and "]" characters
+            String tTrimmedStr = aRawNodeList.replace("cn", "").replace("[", "").replace("]", "");
+            
+            // Split the string by comma
+            String[] tArray = tTrimmedStr.split(",");
+            
+            // Range of numbers
+            Pattern tPattern = Pattern.compile("([0-9]+)-([0-9]+)");
+            // Loop through each range and generate the numbers
+            for (String tRange : tArray) {
+                Matcher tMatcher = tPattern.matcher(tRange);
+                if (tMatcher.find()) {
+                    int tStart = Integer.parseInt(tMatcher.group(1));
+                    int tEnd = Integer.parseInt(tMatcher.group(2));
+                    for (int i = tStart; i <= tEnd; i++) {
+                        rOutput.add("cn" + i);
+                    }
+                } else {
+                    // Single number
+                    rOutput.add("cn" + tRange);
+                }
+            }
+            
+            return rOutput;
+        }
     }
     
     public static class IO {

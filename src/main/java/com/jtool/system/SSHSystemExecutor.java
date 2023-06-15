@@ -145,7 +145,6 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     }
     
     
-    /** 需要重写 shutdown 方法将内部 ssh 的关闭包含进去 */
-    @Override public void shutdown() {mSSH.shutdown(); super.shutdown();}
-    @Override public void shutdownNow() {mSSH.shutdown(); super.shutdownNow();}
+    /** 需要重写 shutdownFinal 方法将内部 ssh 的关闭包含进去 */
+    @Override protected void shutdownFinal() {mSSH.shutdown();}
 }

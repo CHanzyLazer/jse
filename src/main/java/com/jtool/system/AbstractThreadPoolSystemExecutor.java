@@ -6,11 +6,13 @@ import com.jtool.iofile.MergedIOFiles;
 import com.jtool.parallel.AbstractHasThreadPool;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
@@ -110,8 +112,42 @@ public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThread
         };
     }
     
+    /** 增加一个可以在完全关闭线程池后再执行一些操作的接口 */
+    private @Nullable Future<Void> mShutdownFinalTask = null;
+    @Override public final void shutdown() {
+        super.shutdown();
+        // 如果没有后续任务则直接执行，否则添加到异步的计划任务
+        if (nJobs() == 0) {
+            shutdownFinal();
+        } else {
+            mShutdownFinalTask = CompletableFuture.runAsync(() -> {
+                try {super.awaitTermination();} catch (Exception e) {return;}
+                shutdownFinal();
+            });
+        }
+    }
+    @Override public final void shutdownNow() {
+        super.shutdownNow();
+        // 如果没有后续任务则直接执行，否则添加到异步的计划任务
+        if (nJobs() == 0) {
+            shutdownFinal();
+        } else {
+            mShutdownFinalTask = CompletableFuture.runAsync(() -> {
+                try {super.awaitTermination();} catch (Exception e) {return;}
+                shutdownFinal();
+            });
+        }
+    }
+    @Override public final boolean isTerminated() {return super.isTerminated() && (mShutdownFinalTask==null || mShutdownFinalTask.isDone());}
+    @Override public final void awaitTermination() throws InterruptedException {
+        super.awaitTermination();
+        // 还需要等待 final 任务的完成
+        if (mShutdownFinalTask != null) {try {mShutdownFinalTask.get();} catch (Exception ignored) {}}
+    }
+    
     
     /** stuff to override */
+    protected void shutdownFinal() {/**/}
     protected abstract int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln);
     protected abstract int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles);
     protected abstract Future<Integer> submitSystem_(String aCommand, @NotNull IPrintlnSupplier aPrintln);

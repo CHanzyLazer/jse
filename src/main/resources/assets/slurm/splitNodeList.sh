@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 输入字符串
+# Input String
 input="$1"
 output=()
 

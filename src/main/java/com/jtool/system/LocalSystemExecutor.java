@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
@@ -37,7 +38,7 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
             tProcess = mRuntime.exec(aCommand);
             // 设置错误输出流，直接另开一个线程管理
             final Process fProcess = tProcess;
-            new Thread(() -> {
+            Future<Void> tTask = CompletableFuture.runAsync(() -> {
                 try (BufferedReader tErrReader = UT.IO.toReader(fProcess.getErrorStream())) {
                     boolean tERROutPut = !noERROutput();
                     // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
@@ -48,7 +49,7 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }).start();
+            });
             // 读取执行的输出（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
             try (BufferedReader tOutReader = UT.IO.toReader(fProcess.getInputStream())) {
                 boolean tSTDOutPut = !noSTDOutput();
@@ -60,6 +61,7 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
             }
             // 等待执行完成
             tExitValue = fProcess.waitFor();
+            tTask.get();
         } catch (Exception e) {
             tExitValue = -1;
             e.printStackTrace();
