@@ -2,7 +2,6 @@ package com.jtool.math.matrix;
 
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
-import com.jtool.code.iterator.ISetIterator;
 import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.ShiftVector;
@@ -10,7 +9,6 @@ import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 
@@ -85,23 +83,14 @@ public final class RowMatrix extends DoubleArrayMatrix {
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void increment_(int aRow, int aCol) {++mData[aCol + aRow*mColNum];}
     @Override public double getAndIncrement_(int aRow, int aCol) {return mData[aCol + aRow*mColNum]++;}
-    @Override public double incrementAndGet_(int aRow, int aCol) {return ++mData[aCol + aRow*mColNum];}
     @Override public void decrement_(int aRow, int aCol) {--mData[aCol + aRow*mColNum];}
     @Override public double getAndDecrement_(int aRow, int aCol) {return mData[aCol + aRow*mColNum]--;}
-    @Override public double decrementAndGet_(int aRow, int aCol) {return --mData[aCol + aRow*mColNum];}
     
     @Override public void add_(int aRow, int aCol, double aDelta) {mData[aCol + aRow*mColNum] += aDelta;}
     @Override public double getAndAdd_(int aRow, int aCol, double aDelta) {
         int tIdx = aCol + aRow*mColNum;
         double tValue = mData[tIdx];
         mData[tIdx] += aDelta;
-        return tValue;
-    }
-    @Override public double addAndGet_(int aRow, int aCol, double aDelta) {
-        int tIdx = aCol + aRow*mColNum;
-        double tValue = mData[tIdx];
-        tValue += aDelta;
-        mData[tIdx] = tValue;
         return tValue;
     }
     @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
@@ -112,13 +101,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
         int tIdx = aCol + aRow*mColNum;
         double tValue = mData[tIdx];
         mData[tIdx] = aOpt.cal(tValue);
-        return tValue;
-    }
-    @Override public double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt) {
-        int tIdx = aCol + aRow*mColNum;
-        double tValue = mData[tIdx];
-        tValue = aOpt.cal(tValue);
-        mData[tIdx] = tValue;
         return tValue;
     }
     
@@ -229,17 +211,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; mIdx += mColNum;
-                    if (mIdx >= mSize) {++mCol; mIdx = mCol;}
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator() {
@@ -271,16 +242,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
                 if (hasNext()) {
                     oIdx = mIdx; ++mIdx;
                     mData[oIdx] = aValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; ++mIdx;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }
@@ -321,16 +282,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; mIdx += mColNum;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator(final int aRow) {
@@ -363,16 +314,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
                 if (hasNext()) {
                     oIdx = mIdx; ++mIdx;
                     mData[oIdx] = aValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; ++mIdx;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }

@@ -7,11 +7,11 @@ package com.jtool.code.iterator;
 public interface IDoubleSetOnlyIterator {
     boolean hasNext();
     void nextOnly();
-    void set(double e);
+    void set(double aValue);
     /** 高性能接口，一次完成下一步和设置过程 */
-    default void nextAndSet(double e) {
+    default void nextAndSet(double aValue) {
         nextOnly();
-        set(e);
+        set(aValue);
     }
     
     /** convert to Double */

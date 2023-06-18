@@ -1,5 +1,7 @@
 package com.jtool.atom;
 
+import com.jtool.code.filter.IDoubleFilter;
+import com.jtool.code.filter.IFilter;
 import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.math.MathEX;
@@ -158,12 +160,12 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IOperator1<Boolean, IAtom> aFilter) {
+    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IFilter<IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final List<IAtom> rAtoms = new ArrayList<>();
         
-        for (IAtom tAtom : aAtomData.atoms()) if (aFilter.cal(tAtom)) {
+        for (IAtom tAtom : aAtomData.atoms()) if (aFilter.accept(tAtom)) {
             rAtoms.add(tAtom);
         }
         
@@ -185,7 +187,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 double 为 aFunc3 的值，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IOperator1<Boolean, Double> aFilter) {
+    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IDoubleFilter aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         // 获取边界，会进行缩放将 aAtomData 的边界和 Func3 的边界对上
@@ -193,7 +195,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         final double tX0 = aFunc3.x0()                , tY0 = aFunc3.y0()                , tZ0 = aFunc3.z0()                ;
         final double tXe = tX0+aFunc3.dx()*aFunc3.Nx(), tYe = tY0+aFunc3.dy()*aFunc3.Ny(), tZe = tZ0+aFunc3.dz()*aFunc3.Nz();
         // 需要使用考虑了 pbc 的 subs，因为正边界处的插值需要考虑 pbc
-        return filterAtomData(aAtomData, atom -> aFilter.cal(aFunc3.subsPBC(
+        return filterAtomData(aAtomData, atom -> aFilter.accept(aFunc3.subsPBC(
             (atom.x()-tBoxLo.x())/(tBoxHi.x()-tBoxLo.x())*(tXe-tX0) + tX0,
             (atom.y()-tBoxLo.y())/(tBoxHi.y()-tBoxLo.y())*(tYe-tY0) + tY0,
             (atom.z()-tBoxLo.z())/(tBoxHi.z()-tBoxLo.z())*(tZe-tZ0) + tZ0)));

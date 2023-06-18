@@ -56,32 +56,24 @@ public interface IVector extends IVectorGetter, IVectorSetter {
         else return get(0);
     }
     
-    /** 附加一些额外的单元素操作，放在这里而不是 operation 因为这些方法理论和 set，get 之类的处于同样地位 */
+    /** 附加一些额外的单元素操作，放在这里而不是 operation 因为这些方法理论和 set，get 之类的处于同样地位；砍掉了一些应用较少的接口保证简洁 */
     void increment_(int aIdx);
     double getAndIncrement_(int aIdx);
-    double incrementAndGet_(int aIdx);
     void decrement_(int aIdx);
     double getAndDecrement_(int aIdx);
-    double decrementAndGet_(int aIdx);
     void add_(int aIdx, double aDelta);
     double getAndAdd_(int aIdx, double aDelta);
-    double addAndGet_(int aIdx, double aDelta);
     void update_(int aIdx, IDoubleOperator1 aOpt);
     double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt);
-    double updateAndGet_(int aIdx, IDoubleOperator1 aOpt);
     
     void increment(int aIdx);
     double getAndIncrement(int aIdx);
-    double incrementAndGet(int aIdx);
     void decrement(int aIdx);
     double getAndDecrement(int aIdx);
-    double decrementAndGet(int aIdx);
     void add(int aIdx, double aDelta);
     double getAndAdd(int aIdx, double aDelta);
-    double addAndGet(int aIdx, double aDelta);
     void update(int aIdx, IDoubleOperator1 aOpt);
     double getAndUpdate(int aIdx, IDoubleOperator1 aOpt);
-    double updateAndGet(int aIdx, IDoubleOperator1 aOpt);
     
     
     /** 现在不再提供生成器，只提供直接创建相同类型的全零的向量的接口，特殊矩阵的创建请使用 {@link Vectors} */

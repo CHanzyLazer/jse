@@ -147,18 +147,6 @@ public abstract class AbstractMatrix implements IMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oCol = mCol; oRow = mRow;
-                    ++mRow;
-                    if (mRow == mRowNum) {mRow = 0; ++mCol;}
-                    double oValue = get_(oRow, oCol);
-                    set_(oRow, oCol, aValue);
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator() {
@@ -202,18 +190,6 @@ public abstract class AbstractMatrix implements IMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oCol = mCol; oRow = mRow;
-                    ++mCol;
-                    if (mCol == mColNum) {mCol = 0; ++mRow;}
-                    double oValue = get_(oRow, oCol);
-                    set_(oRow, oCol, aValue);
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator colSetIterator(final int aCol) {
@@ -250,16 +226,6 @@ public abstract class AbstractMatrix implements IMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oRow = mRow; ++mRow;
-                    double oValue = get_(oRow, aCol);
-                    set_(oRow, aCol, aValue);
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator(final int aRow) {
@@ -292,16 +258,6 @@ public abstract class AbstractMatrix implements IMatrix {
                 if (hasNext()) {
                     oCol = mCol; ++mCol;
                     set_(aRow, oCol, aValue);
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oCol = mCol; ++mCol;
-                    double oValue = get_(aRow, oCol);
-                    set_(aRow, oCol, aValue);
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }
@@ -638,12 +594,6 @@ public abstract class AbstractMatrix implements IMatrix {
         set_(aRow, aCol, tValue+1);
         return tValue;
     }
-    @Override public double incrementAndGet_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        ++tValue;
-        set_(aRow, aCol, tValue);
-        return tValue;
-    }
     @Override public void decrement_(int aRow, int aCol) {
         double tValue = get_(aRow, aCol);
         --tValue;
@@ -652,12 +602,6 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public double getAndDecrement_(int aRow, int aCol) {
         double tValue = get_(aRow, aCol);
         set_(aRow, aCol, tValue-1);
-        return tValue;
-    }
-    @Override public double decrementAndGet_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        --tValue;
-        set_(aRow, aCol, tValue);
         return tValue;
     }
     @Override public void add_(int aRow, int aCol, double aDelta) {
@@ -670,12 +614,6 @@ public abstract class AbstractMatrix implements IMatrix {
         set_(aRow, aCol, tValue+aDelta);
         return tValue;
     }
-    @Override public double addAndGet_(int aRow, int aCol, double aDelta) {
-        double tValue = get_(aRow, aCol);
-        tValue += aDelta;
-        set_(aRow, aCol, tValue);
-        return tValue;
-    }
     @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         tValue = aOpt.cal(tValue);
@@ -684,12 +622,6 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         set_(aRow, aCol, aOpt.cal(tValue));
-        return tValue;
-    }
-    @Override public double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt) {
-        double tValue = get_(aRow, aCol);
-        tValue = aOpt.cal(tValue);
-        set_(aRow, aCol, tValue);
         return tValue;
     }
     
@@ -701,10 +633,6 @@ public abstract class AbstractMatrix implements IMatrix {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndIncrement_(aRow, aCol);
     }
-    @Override public double incrementAndGet(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return incrementAndGet_(aRow, aCol);
-    }
     @Override public void decrement(int aRow, int aCol) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         decrement_(aRow, aCol);
@@ -712,10 +640,6 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public double getAndDecrement(int aRow, int aCol) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndDecrement_(aRow, aCol);
-    }
-    @Override public double decrementAndGet(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return decrementAndGet_(aRow, aCol);
     }
     @Override public void add(int aRow, int aCol, double aDelta) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
@@ -725,10 +649,6 @@ public abstract class AbstractMatrix implements IMatrix {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndAdd_(aRow, aCol, aDelta);
     }
-    @Override public double addAndGet(int aRow, int aCol, double aDelta) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return addAndGet_(aRow, aCol, aDelta);
-    }
     @Override public void update(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         update_(aRow, aCol, aOpt);
@@ -736,10 +656,6 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndUpdate_(aRow, aCol, aOpt);
-    }
-    @Override public double updateAndGet(int aRow, int aCol, IDoubleOperator1 aOpt) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return updateAndGet_(aRow, aCol, aOpt);
     }
     
     

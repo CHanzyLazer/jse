@@ -83,23 +83,14 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void increment_(int aRow, int aCol) {++mData[aRow + aCol*mRowNum];}
     @Override public double getAndIncrement_(int aRow, int aCol) {return mData[aRow + aCol*mRowNum]++;}
-    @Override public double incrementAndGet_(int aRow, int aCol) {return ++mData[aRow + aCol*mRowNum];}
     @Override public void decrement_(int aRow, int aCol) {--mData[aRow + aCol*mRowNum];}
     @Override public double getAndDecrement_(int aRow, int aCol) {return mData[aRow + aCol*mRowNum]--;}
-    @Override public double decrementAndGet_(int aRow, int aCol) {return --mData[aRow + aCol*mRowNum];}
     
     @Override public void add_(int aRow, int aCol, double aDelta) {mData[aRow + aCol*mRowNum] += aDelta;}
     @Override public double getAndAdd_(int aRow, int aCol, double aDelta) {
         int tIdx = aRow + aCol*mRowNum;
         double tValue = mData[tIdx];
         mData[tIdx] += aDelta;
-        return tValue;
-    }
-    @Override public double addAndGet_(int aRow, int aCol, double aDelta) {
-        int tIdx = aRow + aCol*mRowNum;
-        double tValue = mData[tIdx];
-        tValue += aDelta;
-        mData[tIdx] = tValue;
         return tValue;
     }
     @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
@@ -112,13 +103,7 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
         mData[tIdx] = aOpt.cal(tValue);
         return tValue;
     }
-    @Override public double updateAndGet_(int aRow, int aCol, IDoubleOperator1 aOpt) {
-        int tIdx = aRow + aCol*mRowNum;
-        double tValue = mData[tIdx];
-        tValue = aOpt.cal(tValue);
-        mData[tIdx] = tValue;
-        return tValue;
-    }
+    
     
     /** Optimize stuffs，重写迭代器来提高遍历速度 */
     @Override public IDoubleIterator colIterator() {
@@ -222,16 +207,6 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; ++mIdx;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator() {
@@ -267,17 +242,6 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
                     oIdx = mIdx; mIdx += mRowNum;
                     if (mIdx >= mSize) {++mRow; mIdx = mRow;}
                     mData[oIdx] = aValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; mIdx += mRowNum;
-                    if (mIdx >= mSize) {++mRow; mIdx = mRow;}
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }
@@ -318,16 +282,6 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; ++mIdx;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleSetIterator rowSetIterator(final int aRow) {
@@ -360,16 +314,6 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
                 if (hasNext()) {
                     oIdx = mIdx; mIdx += mRowNum;
                     mData[oIdx] = aValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx; mIdx += mRowNum;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }

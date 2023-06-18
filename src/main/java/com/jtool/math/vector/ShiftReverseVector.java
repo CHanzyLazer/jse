@@ -53,23 +53,14 @@ public final class ShiftReverseVector extends DoubleArrayVector {
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void increment_(int aIdx) {++mData[totShift-aIdx];}
     @Override public double getAndIncrement_(int aIdx) {return mData[totShift-aIdx]++;}
-    @Override public double incrementAndGet_(int aIdx) {return ++mData[totShift-aIdx];}
     @Override public void decrement_(int aIdx) {--mData[totShift-aIdx];}
     @Override public double getAndDecrement_(int aIdx) {return mData[totShift-aIdx]--;}
-    @Override public double decrementAndGet_(int aIdx) {return --mData[totShift-aIdx];}
     
     @Override public void add_(int aIdx, double aDelta) {mData[totShift-aIdx] += aDelta;}
     @Override public double getAndAdd_(int aIdx, double aDelta) {
         aIdx = totShift-aIdx;
         double tValue = mData[aIdx];
         mData[aIdx] += aDelta;
-        return tValue;
-    }
-    @Override public double addAndGet_(int aIdx, double aDelta) {
-        aIdx = totShift-aIdx;
-        double tValue = mData[aIdx];
-        tValue += aDelta;
-        mData[aIdx] = tValue;
         return tValue;
     }
     @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
@@ -80,13 +71,6 @@ public final class ShiftReverseVector extends DoubleArrayVector {
         aIdx = totShift-aIdx;
         double tValue = mData[aIdx];
         mData[aIdx] = aOpt.cal(tValue);
-        return tValue;
-    }
-    @Override public double updateAndGet_(int aIdx, IDoubleOperator1 aOpt) {
-        aIdx = totShift-aIdx;
-        double tValue = mData[aIdx];
-        tValue = aOpt.cal(tValue);
-        mData[aIdx] = tValue;
         return tValue;
     }
     
@@ -137,17 +121,6 @@ public final class ShiftReverseVector extends DoubleArrayVector {
                     oIdx = mIdx;
                     --mIdx;
                     mData[oIdx] = aValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx;
-                    --mIdx;
-                    double oValue = mData[oIdx];
-                    mData[oIdx] = aValue;
-                    return oValue;
                 } else {
                     throw new NoSuchElementException();
                 }

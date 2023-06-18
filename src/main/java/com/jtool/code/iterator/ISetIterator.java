@@ -9,10 +9,4 @@ import java.util.Iterator;
  */
 public interface ISetIterator<E> extends Iterator<E>, ISetOnlyIterator<E> {
     default void nextOnly() {next();}
-    /** 高性能接口，一次完成下一步和设置过程，并且会返回旧的值 */
-    default E getNextAndSet(E e) {
-        E oValue = next();
-        set(e);
-        return oValue;
-    }
 }

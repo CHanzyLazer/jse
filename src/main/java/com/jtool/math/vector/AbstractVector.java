@@ -82,17 +82,6 @@ public abstract class AbstractVector implements IVector {
                     throw new NoSuchElementException();
                 }
             }
-            @Override public double getNextAndSet(double aValue) {
-                if (hasNext()) {
-                    oIdx = mIdx;
-                    ++mIdx;
-                    double oValue = get_(oIdx);
-                    set_(oIdx, aValue);
-                    return oValue;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
         };
     }
     @Override public IDoubleIterator iteratorOf(final IVectorGetter aContainer) {
@@ -198,12 +187,6 @@ public abstract class AbstractVector implements IVector {
         set_(aIdx, tValue+1);
         return tValue;
     }
-    @Override public double incrementAndGet_(int aIdx) {
-        double tValue = get_(aIdx);
-        ++tValue;
-        set_(aIdx, tValue);
-        return tValue;
-    }
     @Override public void decrement_(int aIdx) {
         double tValue = get_(aIdx);
         --tValue;
@@ -212,12 +195,6 @@ public abstract class AbstractVector implements IVector {
     @Override public double getAndDecrement_(int aIdx) {
         double tValue = get_(aIdx);
         set_(aIdx, tValue-1);
-        return tValue;
-    }
-    @Override public double decrementAndGet_(int aIdx) {
-        double tValue = get_(aIdx);
-        --tValue;
-        set_(aIdx, tValue);
         return tValue;
     }
     @Override public void add_(int aIdx, double aDelta) {
@@ -230,12 +207,6 @@ public abstract class AbstractVector implements IVector {
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public double addAndGet_(int aIdx, double aDelta) {
-        double tValue = get_(aIdx);
-        tValue += aDelta;
-        set_(aIdx, tValue);
-        return tValue;
-    }
     @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
         double tValue = get_(aIdx);
         tValue = aOpt.cal(tValue);
@@ -244,12 +215,6 @@ public abstract class AbstractVector implements IVector {
     @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
         double tValue = get_(aIdx);
         set_(aIdx, aOpt.cal(tValue));
-        return tValue;
-    }
-    @Override public double updateAndGet_(int aIdx, IDoubleOperator1 aOpt) {
-        double tValue = get_(aIdx);
-        tValue = aOpt.cal(tValue);
-        set_(aIdx, tValue);
         return tValue;
     }
     
@@ -261,10 +226,6 @@ public abstract class AbstractVector implements IVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndIncrement_(aIdx);
     }
-    @Override public double incrementAndGet(int aIdx) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return incrementAndGet_(aIdx);
-    }
     @Override public void decrement(int aIdx) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         decrement_(aIdx);
@@ -272,10 +233,6 @@ public abstract class AbstractVector implements IVector {
     @Override public double getAndDecrement(int aIdx) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndDecrement_(aIdx);
-    }
-    @Override public double decrementAndGet(int aIdx) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return decrementAndGet_(aIdx);
     }
     @Override public void add(int aIdx, double aDelta) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -285,10 +242,6 @@ public abstract class AbstractVector implements IVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndAdd_(aIdx, aDelta);
     }
-    @Override public double addAndGet(int aIdx, double aDelta) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return addAndGet_(aIdx, aDelta);
-    }
     @Override public void update(int aIdx, IDoubleOperator1 aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
@@ -296,10 +249,6 @@ public abstract class AbstractVector implements IVector {
     @Override public double getAndUpdate(int aIdx, IDoubleOperator1 aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
-    }
-    @Override public double updateAndGet(int aIdx, IDoubleOperator1 aOpt) {
-        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
-        return updateAndGet_(aIdx, aOpt);
     }
     
     
