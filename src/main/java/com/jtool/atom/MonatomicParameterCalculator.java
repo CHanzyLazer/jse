@@ -1,5 +1,7 @@
 package com.jtool.atom;
 
+import com.jtool.code.collection.Pair;
+import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.math.ComplexDouble;
 import com.jtool.math.function.FixBoundFunc1;
 import com.jtool.math.function.Func1;
@@ -453,21 +455,19 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     public IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
     
     
+    
+    @FunctionalInterface public interface INeighborListGetter {List<Integer> get(int aIdx);}
     /**
-     * 计算所有粒子的 AOOP（Averaged local bond Orientational Order Parameters），
-     * 输出结果为按照输入原子顺序排列的向量；
+     * 计算所有粒子的近邻球谐函数的平均，即 qlm，并返回计算中顺便获取的近邻列表；
+     * 返回一个复数矩阵，行为原子，列为 m
      * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * 主要用于内部使用
      * @author liqa
      * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
-     * @return ql 组成的向量
+     * @return qlm 组成的矩阵，以及近邻列表
      */
-    public IVector calAOOP(final int aL, final double aRNearest) {
-        if (mDead) throw new RuntimeException("This Calculator is dead");
-        
-        // 先遍历一次计算所有的 qlm（复数）以及记录对应的近邻列表
+    public Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> calYlmMeanAndGetNeighborList(final int aL, final double aRNearest) {
         // 由于目前还没有实现复数运算，再搭一套复数库工作量较大，这里暂时使用两个实向量来存储
         final IMatrix qlmReal = Matrices.zeros(mAtomNum, aL+aL+1);
         final IMatrix qlmImag = Matrices.zeros(mAtomNum, aL+aL+1);
@@ -478,7 +478,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(mAtomNum, (i, threadID) -> {
             final XYZ cXYZ = mAtomDataXYZ[i];
             final List<Integer> rNNList = new ArrayList<>();
-            // 注意这里所有近邻都进行一次统计，暂不考虑一半的优化
+            // 注意这里所有近邻都进行一次统计，不考虑一半的优化
             mNL.forEachNeighbor(i, aRNearest, false, (x, y, z, idx, dis) -> {
                 // 计算角度
                 double dx = x - cXYZ.mX;
@@ -506,32 +506,162 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
             tNNListAll[i] = rNNList;
         });
         
+        return new Pair<>(new Pair<>(qlmReal, qlmImag), i -> tNNListAll[i]);
+    }
+    public Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> calYlmMeanAndGetNeighborList(int aL) {return calYlmMeanAndGetNeighborList(aL, mUnitLen*1.423);}
+    /** 只返回近邻球谐函数平均版本 */
+    public Pair<IMatrix, IMatrix> calYlmMean(int aL, double aRNearest) {return calYlmMeanAndGetNeighborList(aL, aRNearest).first;}
+    public Pair<IMatrix, IMatrix> calYlmMean(int aL) {return calYlmMeanAndGetNeighborList(aL).first;}
+    
+    
+    /**
+     * 计算所有粒子的原始的 OOP（local bond Orientational Order Parameters），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * @author liqa
+     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @return Ql 组成的向量
+     */
+    public IVector calOOP(int aL, double aRNearest) {return calOOP(calYlmMean(aL, aRNearest));}
+    public IVector calOOP(int aL) {return calOOP(calYlmMean(aL));}
+    /** 直接使用近邻球谐函数平均来计算的版本，一般是内部使用 */
+    public IVector calOOP(Pair<IMatrix, IMatrix> aYlmMean) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        int l = (aYlmMean.first.columnNumber()-1) / 2;
+        
+        // 直接求和
+        IVector Ql = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 这里直接迭代器遍历即可
+            IDoubleIterator itReal = aYlmMean.first.rowIterator(i);
+            IDoubleIterator itImag = aYlmMean.second.rowIterator(i);
+            // 对于每个 m 分别累加模量
+            double rSum = 0.0;
+            while (itReal.hasNext()) {
+                double qlmiReal = itReal.next();
+                double qlmiImag = itImag.next();
+                rSum += qlmiReal*qlmiReal + qlmiImag*qlmiImag;
+            }
+            // 使用这个公式设置 Ql
+            Ql.set_(i, Fast.sqrt(4.0*PI*rSum/(double)(l+l+1)));
+        }
+        
+        // 返回最终计算结果
+        return Ql;
+    }
+    
+    
+    /**
+     * 计算所有粒子的 AOOP（Averaged local bond Orientational Order Parameters），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * @author liqa
+     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @return ql 组成的向量
+     */
+    public IVector calAOOP(int aL, double aRNearest) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(aL, aRNearest); return calAOOP(tPair.first, tPair.second);}
+    public IVector calAOOP(int aL) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(aL); return calAOOP(tPair.first, tPair.second);}
+    /** 直接使用近邻球谐函数平均和近邻列表来计算的版本，一般是内部使用 */
+    public IVector calAOOP(Pair<IMatrix, IMatrix> aYlmMean, INeighborListGetter aNeighborListGetter) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final IMatrix qlmReal = aYlmMean.first;
+        final IMatrix qlmImag = aYlmMean.second;
+        int l = (qlmReal.columnNumber()-1) / 2;
+        
         // 在近邻的基础上再进行一次平均
         IVector ql = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            double rSum = 0.0;
+            // 获取近邻列表
+            List<Integer> tNeighborList = aNeighborListGetter.get(i);
             // 对于每个 m 分别累加
-            for (int tM = -aL; tM <= aL; ++tM) {
-                int tCol = tM+aL;
+            double rSum = 0.0;
+            for (int m = -l; m <= l; ++m) {
+                int tCol = m+l;
                 // 先累加自身
-                double qlReal = qlmReal.get_(i, tCol);
-                double qlImag = qlmImag.get_(i, tCol);
+                double qlmiMeanReal = qlmReal.get_(i, tCol);
+                double qlmiMeanImag = qlmImag.get_(i, tCol);
                 // 再累加近邻
-                qlReal += qlmReal.refSlicer().get(tNNListAll[i], tCol).operation().sum();
-                qlImag += qlmImag.refSlicer().get(tNNListAll[i], tCol).operation().sum();
+                qlmiMeanReal += qlmReal.refSlicer().get(tNeighborList, tCol).operation().sum();
+                qlmiMeanImag += qlmImag.refSlicer().get(tNeighborList, tCol).operation().sum();
                 // 求“平均”
-                double tNN = tNNListAll[i].size();
-                qlReal /= tNN;
-                qlImag /= tNN;
+                double tNN = tNeighborList.size();
+                qlmiMeanReal /= tNN;
+                qlmiMeanImag /= tNN;
                 // 最后求模量添加到 rSum
-                rSum += qlReal*qlReal + qlImag*qlImag;
+                rSum += qlmiMeanReal*qlmiMeanReal + qlmiMeanImag*qlmiMeanImag;
             }
             // 使用这个公式设置 ql
-            ql.set_(i, Fast.sqrt(4.0*PI*rSum/(double)(aL+aL+1)));
+            ql.set_(i, Fast.sqrt(4.0*PI*rSum/(double)(l+l+1)));
         }
         
         // 返回最终计算结果
         return ql;
     }
-    public IVector calAOOP(int aL) {return calAOOP(aL, mUnitLen*1.423);}
+    
+    
+    
+    /**
+     * 通过 bond order parameter（Q6）来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * <p>
+     * 效果不理想，不知是什么原因，暂时不使用
+     * @author liqa
+     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数超过此值则认为是固体的阈值，默认为 7
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     */
+    public IVector checkSolidQ6(double aRNearest, double aConnectThreshold, int aSolidThreshold) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 先计算所有的 q6m（复数）以及记录对应的近邻列表
+        Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(6, aRNearest);
+        IMatrix q6mReal = tPair.first.first;
+        IMatrix q6mImag = tPair.first.second;
+        INeighborListGetter tNeighborListGetter = tPair.second;
+        
+        // 计算近邻上 q6m 的标量积，根据标量积来判断是否是固体
+        IVector isSolid = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 获取近邻列表
+            List<Integer> tNeighborList = tNeighborListGetter.get(i);
+            // 遍历近邻计算连接数
+            int tConnectCount = 0;
+            for (int j : tNeighborList) {
+                // 计算标量积，计算后只考虑模量
+                double SijReal = 0.0;
+                double SijImag = 0.0;
+                for (int tM = -6; tM <= 6; ++tM) {
+                    int tCol = tM+6;
+                    
+                    double q6miReal = q6mReal.get_(i, tCol);
+                    double q6miImag = q6mImag.get_(i, tCol);
+                    double q6mjReal = q6mReal.get_(j, tCol);
+                    double q6mjImag = q6mImag.get_(j, tCol);
+                    
+                    SijReal += q6miReal*q6mjReal + q6miImag*q6mjImag;
+                    SijImag += q6miImag*q6mjReal - q6miReal*q6mjImag;
+                }
+                double Sij = Fast.sqrt(SijReal*SijReal + SijImag*SijImag);
+                // 根据输入的参数判断是否连接
+                if (Sij > aConnectThreshold) ++tConnectCount;
+            }
+            // 根据连接数判断是否是类固体
+            if (tConnectCount > aSolidThreshold) isSolid.set_(i, 1);
+        }
+        
+        // 返回最终计算结果
+        return isSolid;
+    }
+    public IVector checkSolidQ6(final double aRNearest, double aConnectThreshold) {return checkSolidQ6(aRNearest, aConnectThreshold, 7);}
+    public IVector checkSolidQ6(final double aRNearest                          ) {return checkSolidQ6(aRNearest, 0.5);}
+    public IVector checkSolidQ6(                                                ) {return checkSolidQ6(mUnitLen*1.423);}
 }

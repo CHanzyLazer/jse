@@ -4,6 +4,7 @@ package com.jtool.rareevent;
 import com.jtool.atom.IHasAtomData;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -18,7 +19,7 @@ public class ForwardFluxSampling<T> implements Runnable {
     final IFullPathGenerator<T> mFullPathGenerator;
     final IParameterCalculator<? super T> mParameterCalculator;
     /** 需要有一个分割相空间的分界面，有 λ0 < λ1 < λ2 < ... < λn == B */
-    final NavigableSet<Double> mSurfaces;
+    final IVector mSurfaces;
     /** 对于 A 有一个专门的分界面，因为需要频繁使用因此专门拿出来，要求 A <= λ0 */
     final double mSurfaceA;
     /** 每个界面的统计数目 */
@@ -29,10 +30,18 @@ public class ForwardFluxSampling<T> implements Runnable {
     public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Iterable<? extends Number> aSurfaces, int aN0) {
         mFullPathGenerator = aFullPathGenerator; mParameterCalculator = aParameterCalculator;
         mSurfaceA = aSurfaceA;
-        mSurfaces = new TreeSet<>();
-        for (Number tLambda : aSurfaces) mSurfaces.add(tLambda.doubleValue());
-        if (mSurfaces.size() < 1) throw new IllegalArgumentException("Surfaces Must at least have one element");
-        if (mSurfaces.first() < mSurfaceA) throw new IllegalArgumentException("SurfaceA Must be the Lowest");
+        LinkedList<Double> tSurface = new LinkedList<>();
+        for (Number tLambda : aSurfaces) {
+            double tValue = tLambda.doubleValue();
+            if (tSurface.isEmpty()) {
+                if (tValue < mSurfaceA) throw new IllegalArgumentException("SurfaceA Must be the Lowest");
+            } else {
+                if (tValue <= tSurface.getLast()) throw new IllegalArgumentException("Surfaces Must be increasing");
+            }
+            tSurface.add(tValue);
+        }
+        if (tSurface.size() < 1) throw new IllegalArgumentException("Surfaces Must at least have one element");
+        mSurfaces = Vectors.from(tSurface);
         mN0 = aN0;
     }
     
@@ -40,10 +49,18 @@ public class ForwardFluxSampling<T> implements Runnable {
         this(new BufferedFullPathGenerator<>(aPathGenerator), aParameterCalculator, aSurfaceA, aSurfaces, aN0);
     }
     
+    /** 记录父节点的点，可以用来方便获取演化路径 */
+    private class Point {
+        /** 方便起见这里不用 OOP 结构，仅内部使用 */
+        final @Nullable Point parent;
+        final T value;
+        Point(@Nullable Point parent, T value) {this.parent = parent; this.value = value;}
+        Point(T aValue) {this(null, aValue);}
+    }
     
     /** 统计信息 */
     private double mTotTime0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
-    private List<T> mPointsOnLambda; // 第一次从 A 到达 λi 的那些点
+    private List<Point> mPointsOnLambda; // 第一次从 A 到达 λi 的那些点
     
     private double mK0; // A 到 λ0 的轨迹通量，速率单位但是注意不是 A 到 λ0 的速率
     private IVector mPi; // i 到 i+1 而不是返回 A 的概率
@@ -62,12 +79,17 @@ public class ForwardFluxSampling<T> implements Runnable {
         // 不再需要检测 hasNext，内部保证永远都有 next
         while (mPointsOnLambda.size() < mN0) {
             // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
+            Point tRoot;
             while (true) {
                 tPoint = tPathInit.next();
                 ++tStep1PointNum;
                 // 检测是否到达 A
                 tLambda = mParameterCalculator.lambdaOf(tPoint);
-                if (tLambda <= mSurfaceA) break;
+                if (tLambda <= mSurfaceA) {
+                    // 记录根节点
+                    tRoot = new Point(tPoint);
+                    break;
+                }
                 // 如果到达 B 则重新回到 A，这里使用重新获取 PathInit 来实现，这样保证永远都会回到 A
                 if (tLambda >= mSurfaces.last()) {
                     // 重设路径之前记得先保存旧的时间
@@ -75,7 +97,7 @@ public class ForwardFluxSampling<T> implements Runnable {
                     tPathInit = mFullPathGenerator.fullPathInit();
                 }
             }
-            // 找到起始点后开始记录穿过 λ0 的点，简单起见目前暂不保留路径本身
+            // 找到起始点后开始记录穿过 λ0 的点
             while (true) {
                 tPoint = tPathInit.next();
                 ++tStep1PointNum;
@@ -83,7 +105,7 @@ public class ForwardFluxSampling<T> implements Runnable {
                 tLambda = mParameterCalculator.lambdaOf(tPoint);
                 if (tLambda >= mSurfaces.first()) {
                     // 如果有穿过 λ0 则需要记录这些点
-                    mPointsOnLambda.add(tPoint);
+                    mPointsOnLambda.add(new Point(tRoot, tPoint));
                     break;
                 }
             }
@@ -95,10 +117,10 @@ public class ForwardFluxSampling<T> implements Runnable {
     }
     
     /** 统计一个路径所有的从 λi 第一次到达 λi+1 的点 */
-    private int statLambda2Next_(T aStart, double aLambdaNext) {
+    private int statLambda2Next_(Point aStart, double aLambdaNext) {
         int tStep2PointNum = 0;
         // 获取从 aStart 开始的路径的迭代器
-        Iterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(aStart);
+        Iterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(aStart.value);
         
         T tPoint;
         double tLambda;
@@ -110,7 +132,7 @@ public class ForwardFluxSampling<T> implements Runnable {
             // 判断是否穿过了 λi+1
             if (tLambda >= aLambdaNext) {
                 // 如果有穿过 λi+1 则需要记录这些点
-                mPointsOnLambda.add(tPoint);
+                mPointsOnLambda.add(new Point(aStart, tPoint));
                 break;
             }
             // 判断是否穿过了 A
@@ -142,24 +164,21 @@ public class ForwardFluxSampling<T> implements Runnable {
         // 获取边界面的信息
         int n = mSurfaces.size() - 1;
         // 同样，在这里设置统计量的初始，保证独立性
-        List<T> oPointsOnLambda = new ArrayList<>();
+        List<Point> oPointsOnLambda = new ArrayList<>();
         mStep2PointNum = Vectors.zeros(n);
         mPi = Vectors.zeros(n);
-        // 由于是 Set 存储的，需要使用迭代器获取 λ 数值
-        Iterator<Double> tLambdaIt = mSurfaces.iterator();
-        tLambdaIt.next(); // λ0
         for (int i = 0; i < n; ++i) {
             // 先将上一步得到的 λi 交换到 oPointsOnLambda 作为初始
-            List<T> tPointsOnLambda = oPointsOnLambda;
+            List<Point> tPointsOnLambda = oPointsOnLambda;
             oPointsOnLambda = mPointsOnLambda;
             mPointsOnLambda = tPointsOnLambda; mPointsOnLambda.clear();
             // 获取 λi+1
-            double tLambda = tLambdaIt.next();
+            double tLambda = mSurfaces.get_(i+1);
             // 获取 Mi
             int tMi = 0;
             while (mPointsOnLambda.size() < mN0) {
                 // 随机选取一个初始点获取之后的路径，并统计结果
-                T tPointI = oPointsOnLambda.get(mRNG.nextInt(oPointsOnLambda.size()));
+                Point tPointI = oPointsOnLambda.get(mRNG.nextInt(oPointsOnLambda.size()));
                 mStep2PointNum.add_(i, statLambda2Next_(tPointI, tLambda));
                 ++tMi;
             }
@@ -176,4 +195,16 @@ public class ForwardFluxSampling<T> implements Runnable {
     public int step1PointNum() {return mStep1PointNum;}
     public int step2PointNum(int aIdx) {return (int)mStep2PointNum.get(aIdx);}
     public int totalPointNum() {return mStep1PointNum + (int)mStep2PointNum.operation().sum();}
+    
+    /** 利用保存的 parent 获取演化路径 */
+    public LinkedList<T> pickPath() {return pickPath(mRNG.nextInt(mPointsOnLambda.size()));}
+    public LinkedList<T> pickPath(int aIdx) {
+        LinkedList<T> rPath = new LinkedList<>();
+        Point tPoint = mPointsOnLambda.get(aIdx);
+        do {
+            rPath.addFirst(tPoint.value);
+            tPoint = tPoint.parent;
+        } while (tPoint != null);
+        return rPath;
+    }
 }

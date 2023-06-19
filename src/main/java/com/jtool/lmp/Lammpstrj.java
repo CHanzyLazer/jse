@@ -37,6 +37,9 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     public String[] boxBounds() {return defaultFrame().boxBounds();}
     public Box box() {return defaultFrame().box();}
     
+    /** 提供直接转为表格的接口 */
+    public ITable asTable() {return defaultFrame().asTable();}
+    
     /** 每个帧的子 Lammpstrj */
     public static class SubLammpstrj extends AbstractAtomData {
         private final long mTimeStep;
@@ -50,6 +53,8 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
         private int mXCol = -1, mYCol = -1, mZCol = -1;
         private final XYZType mXType, mYType, mZType;
         
+        /** 提供直接转为表格的接口 */
+        public ITable asTable() {return mAtomData;}
         
         public SubLammpstrj(long aTimeStep, String[] aBoxBounds, Box aBox, ITable aAtomData) {
             mTimeStep = aTimeStep;
