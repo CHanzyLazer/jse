@@ -96,7 +96,7 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj>, AutoClos
             // 设置输入 data 路径和输出 dump 路径，考虑要线程安全这里要串行设置并且设置完成后拷贝结果
             IHasIOFiles tIOFiles;
             synchronized (this) {
-                mGenDumpIn.put("vSeed", mRNG.nextInt(2147483647)); // 需要有不同的初始速度
+                mGenDumpIn.put("vSeed", mRNG.nextInt(MAX_SEED)); // 需要有不同的初始速度
                 mGenDumpIn.put("vInDataPath", tLmpDataPath);
                 mGenDumpIn.put("vDumpPath", tLmpDumpPath);
                 mGenDumpIn.write(tLmpInPath);

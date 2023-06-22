@@ -22,21 +22,21 @@ UT.Timer.tic();
 while (!FFS.finished()) FFS.run();
 UT.Timer.toc("0, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
 
-FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [4, 8], N0);
+FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [4, 8], N0, 0.0001);
 
 UT.Timer.tic();
 while (!FFS.finished()) FFS.run();
 UT.Timer.toc("1, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
 
 
-FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [2, 4, 6, 8], N0);
+FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [2, 4, 6, 8], N0, 0.0001);
 
 UT.Timer.tic();
 while (!FFS.finished()) FFS.run();
 UT.Timer.toc("3, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
 
 
-FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [3, 5, 6, 7, 8], N0);
+FFS = new ForwardFluxSampling(biPathGen, biCal, 0, [3, 5, 6, 7, 8], N0, 0.0001);
 
 UT.Timer.tic();
 while (!FFS.finished()) FFS.run();

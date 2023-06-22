@@ -628,6 +628,25 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         IMatrix q6mImag = tPair.first.second;
         INeighborListGetter tNeighborListGetter = tPair.second;
         
+        // 注意需要先对 q6m 归一化
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 这里直接迭代器遍历即可
+            IDoubleIterator itReal = q6mReal.rowIterator(i);
+            IDoubleIterator itImag = q6mImag.rowIterator(i);
+            // 对于每个 m 分别累加模量
+            double rMod = 0.0;
+            while (itReal.hasNext()) {
+                double qlmiReal = itReal.next();
+                double qlmiImag = itImag.next();
+                rMod += qlmiReal*qlmiReal + qlmiImag*qlmiImag;
+            }
+            // 计算模量
+            rMod = Fast.sqrt(rMod);
+            // 实部虚部都除以此值来归一化
+            q6mReal.row(i).div2this(rMod);
+            q6mImag.row(i).div2this(rMod);
+        }
+        
         // 计算近邻上 q6m 的标量积，根据标量积来判断是否是固体
         IVector isSolid = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {

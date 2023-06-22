@@ -19,12 +19,13 @@ import java.util.concurrent.Future;
  */
 public class CS {
     /** a Random generator so I don't need to instantiate a new one all the time. */
-    public static final Random RNGSUS = new Random(), RANDOM = RNGSUS;
+    public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
+    public final static int MAX_SEED = 2147483647;
     
-    public static final Object NULL = null;
+    public final static Object NULL = null;
     
-    public static final XYZ BOX_ONE  = new XYZ(1.0, 1.0, 1.0);
-    public static final XYZ BOX_ZERO = new XYZ(0.0, 0.0, 0.0);
+    public final static XYZ BOX_ONE  = new XYZ(1.0, 1.0, 1.0);
+    public final static XYZ BOX_ZERO = new XYZ(0.0, 0.0, 0.0);
     public static XYZ TO_BOX(IHasXYZ aXYZ) {
         if (aXYZ == BOX_ONE) return BOX_ONE;
         if (aXYZ == BOX_ZERO) return BOX_ZERO;
@@ -72,7 +73,7 @@ public class CS {
     public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(ImmutableList.of());
     
     /** Relative atomic mass in this project */
-    public static final Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())
+    public final static Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())
         .put("Cu", 63.546)
         .put("Zr", 91.224)
         .build();

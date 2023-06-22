@@ -50,6 +50,12 @@ public class UT {
     public static class Code {
         
         /**
+         * Get the random seed for lammps usage
+         * @author liqa
+         */
+        public static int randSeed() {return RANDOM.nextInt(MAX_SEED);}
+        
+        /**
          * Get the random id in URL and Filename safe Base64, 8 length
          * @author liqa
          */
