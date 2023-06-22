@@ -1,6 +1,7 @@
 package com.jtool.math.function;
 
 
+import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.math.IDataShell;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.RefVector;
@@ -112,6 +113,25 @@ public abstract class DoubleArrayFunc1 implements IFunc1, IDataShell<double[]> {
     @Override public final double dx() {return mDx;}
     @Override public final double getX(int aI) {return mX0 + aI*mDx;}
     @Override public final void setX0(double aNewX0) {mX0 = aNewX0;}
+    
+    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
+    @Override public final void update_(int aI, IDoubleOperator1 aOpt) {
+        mData[aI] = aOpt.cal(mData[aI]);
+    }
+    @Override public final double getAndUpdate_(int aI, IDoubleOperator1 aOpt) {
+        double tV = mData[aI];
+        mData[aI] = aOpt.cal(tV);
+        return tV;
+    }
+    @Override public final void update(int aI, IDoubleOperator1 aOpt) {
+        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
+        update_(aI, aOpt);
+    }
+    @Override public final double getAndUpdate(int aI, IDoubleOperator1 aOpt) {
+        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
+        return getAndUpdate_(aI, aOpt);
+    }
+    
     
     @Override public final DoubleArrayFunc1 copy() {
         double[] rData = new double[Nx()];

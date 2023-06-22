@@ -3,6 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.math.MathEX;
 import com.jtool.math.operation.DATA;
 
 /**
@@ -59,6 +60,25 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public double stat   (IDoubleOperator2 aOpt) {return DATA.statOfThis_   (thisVector_().iterator(), aOpt);}
     
     /** 向量的一些额外的运算 */
+    @Override public double dot(IVectorGetter aRHS) {
+        final IVector tThis = thisVector_();
+        final IDoubleIterator il = tThis.iterator();
+        final IDoubleIterator ir = tThis.iteratorOf(aRHS);
+        double rDot = 0.0;
+        while (il.hasNext()) rDot += il.next()*ir.next();
+        return rDot;
+    }
+    @Override public double dot2this() {
+        final IDoubleIterator it = thisVector_().iterator();
+        double rDot = 0.0;
+        while (it.hasNext()) {
+            double tValue = it.next();
+            rDot += tValue*tValue;
+        }
+        return rDot;
+    }
+    @Override public double norm() {return MathEX.Fast.sqrt(dot2this());}
+    
     @Override public IVector reverse() {
         IVector tVector = refReverse();
         IVector rVector = thisVector_().newZeros(tVector.size());

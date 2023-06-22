@@ -130,7 +130,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         return typeFilterWeightAtomData(aAtomData, Vectors.from(aTypeWeights));
     }
     public IHasAtomData typeFilterWeightAtomData(final IHasAtomData aAtomData, IVector aTypeWeights) {
-        double tTotWeight = aTypeWeights.operation().sum();
+        double tTotWeight = aTypeWeights.sum();
         if (tTotWeight <= 0.0) return aAtomData;
         
         int tAtomNum = aAtomData.atomNum();

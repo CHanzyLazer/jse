@@ -331,6 +331,15 @@ public abstract class AbstractVector implements IVector {
     @Override public final void div2this        (IVectorGetter aRHS) {operation().ebeDiv2this       (aRHS);}
     @Override public final void mod2this        (IVectorGetter aRHS) {operation().ebeMod2this       (aRHS);}
     
+    @Override public final double sum       ()                   {return operation().sum      ()    ;}
+    @Override public final double mean      ()                   {return operation().mean     ()    ;}
+    @Override public final double product   ()                   {return operation().product  ()    ;}
+    @Override public final double max       ()                   {return operation().max      ()    ;}
+    @Override public final double min       ()                   {return operation().min      ()    ;}
+    @Override public final double norm      ()                   {return operation().norm     ()    ;}
+    @Override public final double dot       (IVectorGetter aRHS) {return operation().dot      (aRHS);}
+    @Override public final double dot       ()                   {return operation().dot2this ()    ;}
+    
     /** Groovy 的部分，增加矩阵切片操作 */
     @VisibleForTesting @Override public double call(int aIdx) {return get(aIdx);}
     @VisibleForTesting @Override public IVector call(List<Integer> aIndices) {return slicer().get(aIndices);}

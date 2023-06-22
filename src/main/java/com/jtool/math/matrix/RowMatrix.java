@@ -81,18 +81,6 @@ public final class RowMatrix extends DoubleArrayMatrix {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override public void increment_(int aRow, int aCol) {++mData[aCol + aRow*mColNum];}
-    @Override public double getAndIncrement_(int aRow, int aCol) {return mData[aCol + aRow*mColNum]++;}
-    @Override public void decrement_(int aRow, int aCol) {--mData[aCol + aRow*mColNum];}
-    @Override public double getAndDecrement_(int aRow, int aCol) {return mData[aCol + aRow*mColNum]--;}
-    
-    @Override public void add_(int aRow, int aCol, double aDelta) {mData[aCol + aRow*mColNum] += aDelta;}
-    @Override public double getAndAdd_(int aRow, int aCol, double aDelta) {
-        int tIdx = aCol + aRow*mColNum;
-        double tValue = mData[tIdx];
-        mData[tIdx] += aDelta;
-        return tValue;
-    }
     @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         int tIdx = aCol + aRow*mColNum;
         mData[tIdx] = aOpt.cal(mData[tIdx]);

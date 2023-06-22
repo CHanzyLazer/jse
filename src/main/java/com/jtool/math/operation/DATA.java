@@ -98,24 +98,24 @@ public class DATA {
         return rProduct;
     }
     @ApiStatus.Internal public static double maxOfThis_(IDoubleIterator tThis) {
-        double rMax = Double.NEGATIVE_INFINITY;
+        double rMax = Double.NaN;
         while (tThis.hasNext()) {
             double tValue = tThis.next();
-            if (tValue > rMax) rMax = tValue;
+            if (Double.isNaN(rMax) || tValue > rMax) rMax = tValue;
         }
         return rMax;
     }
     @ApiStatus.Internal public static double minOfThis_(IDoubleIterator tThis) {
-        double rMin = Double.POSITIVE_INFINITY;
+        double rMin = Double.NaN;
         while (tThis.hasNext()) {
             double tValue = tThis.next();
-            if (tValue < rMin) rMin = tValue;
+            if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
         }
         return rMin;
     }
     @ApiStatus.Internal public static double statOfThis_(IDoubleIterator tThis, IDoubleOperator2 aOpt) {
-        double tOut = Double.NaN;
-        while (tThis.hasNext()) tOut = aOpt.cal(tOut, tThis.next());
-        return tOut;
+        double rOut = Double.NaN;
+        while (tThis.hasNext()) rOut = aOpt.cal(rOut, tThis.next());
+        return rOut;
     }
 }

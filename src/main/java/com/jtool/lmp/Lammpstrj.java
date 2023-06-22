@@ -99,7 +99,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             // 对于 dump，mAtomTypeNum 只能手动遍历统计
             int tAtomTypeNum = 1;
             if (mTypeCol >= 0) {
-                tAtomTypeNum = (int)mAtomData.col(mTypeCol).operation().max();
+                tAtomTypeNum = (int)mAtomData.col(mTypeCol).max();
             }
             mAtomTypeNum = tAtomTypeNum;
         }

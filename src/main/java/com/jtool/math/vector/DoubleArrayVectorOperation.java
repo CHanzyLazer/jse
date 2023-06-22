@@ -206,6 +206,38 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public double stat   (IDoubleOperator2 aOpt) {DoubleArrayVector rVector = thisVector_(); return ARRAY.statOfThis_      (rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);}
     
     
+    /** 向量的一些额外的运算 */
+    @Override public double dot(IVectorGetter aRHS) {
+        final DoubleArrayVector tThis = thisVector_();
+        final double[] tDataR = tThis.getIfHasSameOrderData(aRHS);
+        if (tDataR != null) {
+            final double[] tDataL = tThis.getData();
+            final int tShiftL = tThis.shiftSize();
+            final int tEndL = tThis.dataSize() + tShiftL;
+            final int tShiftR = IDataShell.shiftSize(aRHS);
+            
+            double rDot = 0.0;
+            if (tShiftL == tShiftR) for (int i = tShiftL; i < tEndL; ++i) rDot += tDataL[i]*tDataR[i];
+            else for (int i = tShiftL, j = tShiftR; i < tEndL; ++i, ++j) rDot += tDataL[i]*tDataR[j];
+            return rDot;
+        } else {
+            return super.dot(aRHS);
+        }
+    }
+    @Override public double dot2this() {
+        final DoubleArrayVector tThis = thisVector_();
+        final double[] tData = tThis.getData();
+        final int tShift = tThis.shiftSize();
+        final int tEnd = tThis.dataSize() + tShift;
+        
+        double rDot = 0.0;
+        for (int i = tShift; i < tEnd; ++i) {
+            double tValue = tData[i];
+            rDot += tValue*tValue;
+        }
+        return rDot;
+    }
+    
     /** stuff to override */
     @Override protected abstract DoubleArrayVector thisVector_();
     @Override protected abstract DoubleArrayVector newVector_(int aSize);

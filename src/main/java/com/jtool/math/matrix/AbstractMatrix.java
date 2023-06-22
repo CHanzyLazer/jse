@@ -584,36 +584,6 @@ public abstract class AbstractMatrix implements IMatrix {
         };
     }
     
-    @Override public void increment_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        ++tValue;
-        set_(aRow, aCol, tValue);
-    }
-    @Override public double getAndIncrement_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        set_(aRow, aCol, tValue+1);
-        return tValue;
-    }
-    @Override public void decrement_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        --tValue;
-        set_(aRow, aCol, tValue);
-    }
-    @Override public double getAndDecrement_(int aRow, int aCol) {
-        double tValue = get_(aRow, aCol);
-        set_(aRow, aCol, tValue-1);
-        return tValue;
-    }
-    @Override public void add_(int aRow, int aCol, double aDelta) {
-        double tValue = get_(aRow, aCol);
-        tValue += aDelta;
-        set_(aRow, aCol, tValue);
-    }
-    @Override public double getAndAdd_(int aRow, int aCol, double aDelta) {
-        double tValue = get_(aRow, aCol);
-        set_(aRow, aCol, tValue+aDelta);
-        return tValue;
-    }
     @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
         double tValue = get_(aRow, aCol);
         tValue = aOpt.cal(tValue);
@@ -623,31 +593,6 @@ public abstract class AbstractMatrix implements IMatrix {
         double tValue = get_(aRow, aCol);
         set_(aRow, aCol, aOpt.cal(tValue));
         return tValue;
-    }
-    
-    @Override public void increment(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        increment_(aRow, aCol);
-    }
-    @Override public double getAndIncrement(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return getAndIncrement_(aRow, aCol);
-    }
-    @Override public void decrement(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        decrement_(aRow, aCol);
-    }
-    @Override public double getAndDecrement(int aRow, int aCol) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return getAndDecrement_(aRow, aCol);
-    }
-    @Override public void add(int aRow, int aCol, double aDelta) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        add_(aRow, aCol, aDelta);
-    }
-    @Override public double getAndAdd(int aRow, int aCol, double aDelta) {
-        if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
-        return getAndAdd_(aRow, aCol, aDelta);
     }
     @Override public void update(int aRow, int aCol, IDoubleOperator1 aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));

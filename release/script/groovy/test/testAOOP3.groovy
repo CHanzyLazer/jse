@@ -30,6 +30,6 @@ mpc.shutdown();
 
 
 // 直接输出平均值检验正确性
-println(q6.opt().mean());
-println(q4.opt().mean());
+println(q6.mean());
+println(q4.mean());
 

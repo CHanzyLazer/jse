@@ -1,5 +1,6 @@
 package com.jtool.math.function;
 
+import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
 import com.jtool.math.vector.IVectorSetter;
@@ -39,6 +40,12 @@ public interface IFunc1 extends IFunc1Subs, IVectorGetter, IVectorSetter {
     double dx();
     double getX(int aI);
     void setX0(double aNewX0);
+    
+    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
+    void update_(int aI, IDoubleOperator1 aOpt);
+    double getAndUpdate_(int aI, IDoubleOperator1 aOpt);
+    void update(int aI, IDoubleOperator1 aOpt);
+    double getAndUpdate(int aI, IDoubleOperator1 aOpt);
     
     /** 还提供一个给函数专用的运算 */
     IFunc1Operation operation();

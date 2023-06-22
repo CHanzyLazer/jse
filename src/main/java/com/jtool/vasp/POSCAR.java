@@ -109,7 +109,7 @@ public class POSCAR extends AbstractAtomData {
     @Override public double volume() {
         // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
         if (!mIsDiagBox) throw new RuntimeException("Volume is temporarily support Diagonal Box only");
-        return mBox.refSlicer().diag().operation().product();
+        return mBox.refSlicer().diag().product();
     }
     
     
@@ -192,7 +192,7 @@ public class POSCAR extends AbstractAtomData {
         if (!aLines.get(idx).equals("Direct")) throw new RuntimeException("Can ONLY read Direct POSCAR temporarily");
         // 读取原子数据
         ++idx; if (idx >= aLines.size()) return null;
-        int tAtomNum = (int)aAtomNumbers.operation().sum();
+        int tAtomNum = (int)aAtomNumbers.sum();
         if (idx+tAtomNum > aLines.size()) return null;
         aDirect = Matrices.zeros(tAtomNum, 3);
         for (int i = 0; i < tAtomNum; ++i) {

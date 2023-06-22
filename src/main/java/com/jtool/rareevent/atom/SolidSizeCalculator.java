@@ -16,6 +16,6 @@ public class SolidSizeCalculator implements IParameterCalculator<IHasAtomData> {
         IVector tIsSolid;
         try (MonatomicParameterCalculator tMPC = aPoint.getMPC()) {tIsSolid = tMPC.checkSolidQ6();}
         // 统计 lambda
-        return tIsSolid.operation().sum();
+        return tIsSolid.sum();
     }
 }

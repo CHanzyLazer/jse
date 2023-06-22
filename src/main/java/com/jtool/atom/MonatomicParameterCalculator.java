@@ -1,7 +1,6 @@
 package com.jtool.atom;
 
 import com.jtool.code.collection.Pair;
-import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.math.ComplexDouble;
 import com.jtool.math.function.FixBoundFunc1;
 import com.jtool.math.function.Func1;
@@ -478,6 +477,9 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         pool().parfor(mAtomNum, (i, threadID) -> {
             final XYZ cXYZ = mAtomDataXYZ[i];
             final List<Integer> rNNList = new ArrayList<>();
+            // 一次计算一行
+            final IVector qlmiReal = qlmReal.row(i);
+            final IVector qlmiImag = qlmImag.row(i);
             // 注意这里所有近邻都进行一次统计，不考虑一半的优化
             mNL.forEachNeighbor(i, aRNearest, false, (x, y, z, idx, dis) -> {
                 // 计算角度
@@ -492,16 +494,16 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
                 // 计算 Y 并累加
                 for (int tM = -aL; tM <= aL; ++tM) {
                     ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
-                    qlmReal.add_(i, tM+aL, tY.real);
-                    qlmImag.add_(i, tM+aL, tY.imag);
+                    qlmiReal.add_(tM+aL, tY.real);
+                    qlmiImag.add_(tM+aL, tY.imag);
                 }
                 
                 // 顺便统计近邻列表
                 rNNList.add(idx);
             });
             // 根据近邻数平均得到 qlm
-            qlmReal.row(i).div2this(rNNList.size());
-            qlmImag.row(i).div2this(rNNList.size());
+            qlmiReal.div2this(rNNList.size());
+            qlmiImag.div2this(rNNList.size());
             // 汇总近邻列表
             tNNListAll[i] = rNNList;
         });
@@ -535,18 +537,10 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         // 直接求和
         IVector Ql = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            // 这里直接迭代器遍历即可
-            IDoubleIterator itReal = qlmReal.rowIterator(i);
-            IDoubleIterator itImag = qlmImag.rowIterator(i);
-            // 对于每个 m 分别累加模量
-            double rSum = 0.0;
-            while (itReal.hasNext()) {
-                double qlmiReal = itReal.next();
-                double qlmiImag = itImag.next();
-                rSum += qlmiReal*qlmiReal + qlmiImag*qlmiImag;
-            }
+            // 计算复向量的点乘，等于实部虚部分别点乘
+            double tDot = qlmReal.row(i).dot() + qlmImag.row(i).dot();
             // 使用这个公式设置 Ql
-            Ql.set_(i, Fast.sqrt(4.0*PI*rSum/(double)(l+l+1)));
+            Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(l+l+1)));
         }
         
         // 返回最终计算结果
@@ -588,8 +582,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
                 double qlmiMeanReal = qlmReal.get_(i, tCol);
                 double qlmiMeanImag = qlmImag.get_(i, tCol);
                 // 再累加近邻
-                qlmiMeanReal += qlmReal.refSlicer().get(tNeighborList, tCol).operation().sum();
-                qlmiMeanImag += qlmImag.refSlicer().get(tNeighborList, tCol).operation().sum();
+                qlmiMeanReal += qlmReal.refSlicer().get(tNeighborList, tCol).sum();
+                qlmiMeanImag += qlmImag.refSlicer().get(tNeighborList, tCol).sum();
                 // 求“平均”
                 double tNN = tNeighborList.size();
                 qlmiMeanReal /= tNN;
@@ -633,48 +627,32 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         // 注意需要先对 qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
-            // 这里直接迭代器遍历即可
-            IDoubleIterator itReal = qlmReal.rowIterator(i);
-            IDoubleIterator itImag = qlmImag.rowIterator(i);
-            // 对于每个 m 分别累加模量
-            double rMod = 0.0;
-            while (itReal.hasNext()) {
-                double qlmiReal = itReal.next();
-                double qlmiImag = itImag.next();
-                rMod += qlmiReal*qlmiReal + qlmiImag*qlmiImag;
-            }
-            // 计算模量
-            rMod = Fast.sqrt(rMod);
+            // 计算复向量的模量，等于实部虚部分别点乘相加后开方
+            double tMod = qlmReal.row(i).dot() + qlmImag.row(i).dot();
+            tMod = Fast.sqrt(tMod);
             // 实部虚部都除以此值来归一化
-            qlmReal.row(i).div2this(rMod);
-            qlmImag.row(i).div2this(rMod);
+            qlmReal.row(i).div2this(tMod);
+            qlmImag.row(i).div2this(tMod);
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来判断是否是固体
         IVector rIsSolid = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
+            // 统一获取行向量
+            IVector qlmiReal = qlmReal.row(i);
+            IVector qlmiImag = qlmImag.row(i);
             // 获取近邻列表
             List<Integer> tNeighborList = aNeighborListGetter.get(i);
             // 遍历近邻计算连接数
             int tConnectCount = 0;
             for (int j : tNeighborList) {
-                // 同样可以用迭代器遍历
-                IDoubleIterator itiReal = qlmReal.rowIterator(i);
-                IDoubleIterator itiImag = qlmImag.rowIterator(i);
-                IDoubleIterator itjReal = qlmReal.rowIterator(j);
-                IDoubleIterator itjImag = qlmImag.rowIterator(j);
-                // 计算标量积，计算后只考虑模量
-                double SijReal = 0.0;
-                double SijImag = 0.0;
-                while (itiReal.hasNext()) {
-                    double qlmiReal = itiReal.next();
-                    double qlmiImag = itiImag.next();
-                    double qlmjReal = itjReal.next();
-                    double qlmjImag = itjImag.next();
-                    
-                    SijReal += qlmiReal*qlmjReal + qlmiImag*qlmjImag;
-                    SijImag += qlmiImag*qlmjReal - qlmiReal*qlmjImag;
-                }
+                // 统一获取行向量
+                IVector qlmjReal = qlmReal.row(j);
+                IVector qlmjImag = qlmImag.row(j);
+                // 计算复向量的点乘
+                double SijReal = qlmiReal.dot(qlmjReal) + qlmiImag.dot(qlmjImag);
+                double SijImag = qlmiImag.dot(qlmjReal) - qlmiReal.dot(qlmjImag);
+                // 取模量来判断
                 double Sij = Fast.sqrt(SijReal*SijReal + SijImag*SijImag);
                 // 根据输入的参数判断是否连接
                 if (Sij > aConnectThreshold) ++tConnectCount;

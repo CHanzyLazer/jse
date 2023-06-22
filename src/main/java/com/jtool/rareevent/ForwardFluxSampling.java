@@ -215,11 +215,11 @@ public class ForwardFluxSampling<T> implements Runnable {
     /** 获取结果的接口 */
     public double getProb(int aIdx) {return mPi.get(aIdx);}
     public double getK0() {return mK0;}
-    public double getK() {return mK0 * mPi.operation().product();}
+    public double getK() {return mK0 * mPi.product();}
     
     public int step1PointNum() {return mStep1PointNum;}
     public int step2PointNum(int aIdx) {return (int)mStep2PointNum.get(aIdx);}
-    public int totalPointNum() {return mStep1PointNum + (int)mStep2PointNum.operation().sum();}
+    public int totalPointNum() {return mStep1PointNum + (int)mStep2PointNum.sum();}
     
     /** 利用保存的 parent 获取演化路径 */
     public LinkedList<T> pickPath() {return pickPath(mRNG.nextInt(mPointsOnLambda.size()));}

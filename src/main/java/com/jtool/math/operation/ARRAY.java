@@ -221,28 +221,28 @@ public class ARRAY {
     public static double maxOfThis_(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
-        double rMax = Double.NEGATIVE_INFINITY;
+        double rMax = Double.NaN;
         for (int i = aShift; i < tEnd; ++i) {
             double tValue = aThis[i];
-            if (tValue > rMax) rMax = tValue;
+            if (Double.isNaN(rMax) || tValue > rMax) rMax = tValue;
         }
         return rMax;
     }
     public static double minOfThis_(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
-        double rMin = Double.POSITIVE_INFINITY;
+        double rMin = Double.NaN;
         for (int i = aShift; i < tEnd; ++i) {
             double tValue = aThis[i];
-            if (tValue < rMin) rMin = tValue;
+            if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
         }
         return rMin;
     }
     public static double statOfThis_(double[] aThis, int aShift, int aLength, IDoubleOperator2 aOpt) {
         final int tEnd = aLength + aShift;
         
-        double tOut = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) tOut = aOpt.cal(tOut, aThis[i]);
-        return tOut;
+        double rOut = Double.NaN;
+        for (int i = aShift; i < tEnd; ++i) rOut = aOpt.cal(rOut, aThis[i]);
+        return rOut;
     }
 }

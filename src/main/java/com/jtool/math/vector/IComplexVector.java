@@ -75,7 +75,7 @@ public interface IComplexVector extends IComplexVectorGetter, IComplexVectorSett
         else return get(0);
     }
     
-    /** 附加一些额外的单元素操作，这里只需要提供一个 update 的接口即可 */
+    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
     void update_(int aIdx, IComplexDoubleOperator1 aOpt);
     double getAndUpdate_(int aIdx, IComplexDoubleOperator1 aOpt);
     void update(int aIdx, IComplexDoubleOperator1 aOpt);

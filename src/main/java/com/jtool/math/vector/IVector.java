@@ -56,7 +56,7 @@ public interface IVector extends IVectorGetter, IVectorSetter {
         else return get(0);
     }
     
-    /** 附加一些额外的单元素操作，放在这里而不是 operation 因为这些方法理论和 set，get 之类的处于同样地位；砍掉了一些应用较少的接口保证简洁 */
+    /** 附加一些额外的单元素操作，对于 Vector 由于适用范围更广，提供更多的接口 */
     void increment_(int aIdx);
     double getAndIncrement_(int aIdx);
     void decrement_(int aIdx);
@@ -116,6 +116,16 @@ public interface IVector extends IVectorGetter, IVectorSetter {
     void multiply2this  (IVectorGetter aRHS);
     void div2this       (IVectorGetter aRHS);
     void mod2this       (IVectorGetter aRHS);
+    
+    /** 对于 Vector 将这些统计接口也直接放在这里方便使用 */
+    double sum      ();
+    double mean     ();
+    double product  ();
+    double max      ();
+    double min      ();
+    double norm     ();
+    double dot      (IVectorGetter aRHS);
+    double dot      ();
     
     /** Groovy 的部分，增加向量切片操作 */
     @VisibleForTesting double call(int aIdx);

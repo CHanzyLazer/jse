@@ -57,8 +57,11 @@ public interface IVectorOperation {
     double min();
     double stat(IDoubleOperator2 aOpt);
     
-    
     /** 向量的一些额外的运算 */
+    double dot(IVectorGetter aRHS);
+    double dot2this();
+    double norm();
+    
     IVector reverse();
     IVector refReverse();
 }

@@ -76,22 +76,9 @@ public interface IMatrix extends IMatrixGetter, IMatrixSetter {
     default @VisibleForTesting int nrows() {return rowNumber();}
     default @VisibleForTesting int ncols() {return columnNumber();}
     
-    /** 附加一些额外的单元素操作，放在这里而不是 operation 因为这些方法理论和 set，get 之类的处于同样地位；砍掉了一些应用较少的接口保证简洁 */
-    void increment_(int aRow, int aCol);
-    double getAndIncrement_(int aRow, int aCol);
-    void decrement_(int aRow, int aCol);
-    double getAndDecrement_(int aRow, int aCol);
-    void add_(int aRow, int aCol, double aDelta);
-    double getAndAdd_(int aRow, int aCol, double aDelta);
+    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
     void update_(int aRow, int aCol, IDoubleOperator1 aOpt);
     double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt);
-    
-    void increment(int aRow, int aCol);
-    double getAndIncrement(int aRow, int aCol);
-    void decrement(int aRow, int aCol);
-    double getAndDecrement(int aRow, int aCol);
-    void add(int aRow, int aCol, double aDelta);
-    double getAndAdd(int aRow, int aCol, double aDelta);
     void update(int aRow, int aCol, IDoubleOperator1 aOpt);
     double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt);
     
@@ -100,7 +87,6 @@ public interface IMatrix extends IMatrixGetter, IMatrixSetter {
     IVector row(int aRow);
     List<IVector> cols();
     IVector col(int aCol);
-    
     
     
     /** 现在不再提供生成器，只提供直接创建相同类型的全零的矩阵的接口，特殊矩阵的创建请使用 {@link Matrices} */

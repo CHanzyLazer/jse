@@ -64,7 +64,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tColNum = tThis.columnNumber();
         IVector rVector = tThis.newZerosVec(tColNum);
         for (int col = 0; col < tColNum; ++col) {
-            rVector.set_(col, tThis.col(col).operation().sum());
+            rVector.set_(col, tThis.col(col).sum());
         }
         return rVector;
     }
@@ -74,7 +74,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tRowNum = tThis.rowNumber();
         IVector rVector = tThis.newZerosVec(tRowNum);
         for (int row = 0; row < tRowNum; ++row) {
-            rVector.set_(row, tThis.row(row).operation().sum());
+            rVector.set_(row, tThis.row(row).sum());
         }
         return rVector;
     }
@@ -85,7 +85,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tColNum = tThis.columnNumber();
         IVector rVector = tThis.newZerosVec(tColNum);
         for (int col = 0; col < tColNum; ++col) {
-            rVector.set_(col, tThis.col(col).operation().mean());
+            rVector.set_(col, tThis.col(col).mean());
         }
         return rVector;
     }
@@ -95,7 +95,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tRowNum = tThis.rowNumber();
         IVector rVector = tThis.newZerosVec(tRowNum);
         for (int row = 0; row < tRowNum; ++row) {
-            rVector.set_(row, tThis.row(row).operation().mean());
+            rVector.set_(row, tThis.row(row).mean());
         }
         return rVector;
     }
