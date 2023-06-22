@@ -15,38 +15,57 @@ import java.util.*;
  * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
  */
 public class ForwardFluxSampling<T> implements Runnable {
-    /** 需要有一个路径生成器以及对于路径上一个点的 λ 的计算器 */
     final IFullPathGenerator<T> mFullPathGenerator;
     final IParameterCalculator<? super T> mParameterCalculator;
-    /** 需要有一个分割相空间的分界面，有 λ0 < λ1 < λ2 < ... < λn == B */
-    final IVector mSurfaces;
-    /** 对于 A 有一个专门的分界面，因为需要频繁使用因此专门拿出来，要求 A <= λ0 */
-    final double mSurfaceA;
-    /** 每个界面的统计数目 */
-    final int mN0;
-    /** 独立的随机数生成器 */
-    private final Random mRNG = new Random();
     
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Iterable<? extends Number> aSurfaces, int aN0) {
+    final IVector mSurfaces;
+    final double mSurfaceA;
+    final int mN0;
+    
+    final int mN; // 界面数目 - 1，即 n
+    private final Random mRNG = new Random(); // 独立的随机数生成器
+    
+    private final double mMinProb;
+    
+    /**
+     * 创建一个通用的 FFS 运算器
+     * @author liqa
+     * @param aFullPathGenerator 任意的路径生成器
+     * @param aParameterCalculator 对于路径上一个点的 λ 的计算器
+     * @param aSurfaceA 对于 A 有一个专门的分界面，因为需要频繁使用因此专门拿出来，要求 A <= λ0
+     * @param aSurfaces 分割相空间的分界面，有 λ0 < λ1 < λ2 < ... < λn == B
+     * @param aN0 每个界面的统计数目
+     * @param aMinProb 用来限制统计时间，第二个过程每步的最低概率，默认为 max(0.05, 1/N0)，无论如何不会低于 1/N0
+     */
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0, double aMinProb) {
         mFullPathGenerator = aFullPathGenerator; mParameterCalculator = aParameterCalculator;
         mSurfaceA = aSurfaceA;
-        LinkedList<Double> tSurface = new LinkedList<>();
+        // 检查界面输入是否合法
+        if (aSurfaces.isEmpty()) throw new IllegalArgumentException("Surfaces Must at least have one element");
+        double oValue = Double.NaN;
         for (Number tLambda : aSurfaces) {
             double tValue = tLambda.doubleValue();
-            if (tSurface.isEmpty()) {
+            if (Double.isNaN(oValue)) {
                 if (tValue < mSurfaceA) throw new IllegalArgumentException("SurfaceA Must be the Lowest");
             } else {
-                if (tValue <= tSurface.getLast()) throw new IllegalArgumentException("Surfaces Must be increasing");
+                if (tValue <= oValue) throw new IllegalArgumentException("Surfaces Must be increasing");
             }
-            tSurface.add(tValue);
+            oValue = tValue;
         }
-        if (tSurface.size() < 1) throw new IllegalArgumentException("Surfaces Must at least have one element");
-        mSurfaces = Vectors.from(tSurface);
+        mSurfaces = Vectors.from(aSurfaces);
         mN0 = aN0;
+        mMinProb = Math.max(aMinProb, 1.0/(double)mN0);
+        
+        // 计算过程需要的量的初始化
+        mN = mSurfaces.size() - 1;
+        mStep2PointNum = Vectors.zeros(mN);
+        mPi = Vectors.zeros(mN);
     }
-    
-    public ForwardFluxSampling(IPathGenerator<T> aPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Iterable<? extends Number> aSurfaces, int aN0) {
-        this(new BufferedFullPathGenerator<>(aPathGenerator), aParameterCalculator, aSurfaceA, aSurfaces, aN0);
+    public ForwardFluxSampling(IPathGenerator<T> aPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0, double aMinProb) {
+        this(new BufferedFullPathGenerator<>(aPathGenerator), aParameterCalculator, aSurfaceA, aSurfaces, aN0, aMinProb);
+    }
+    public ForwardFluxSampling(IPathGenerator<T> aPathGenerator, IParameterCalculator<? super T> aParameterCalculator, double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0) {
+        this(new BufferedFullPathGenerator<>(aPathGenerator), aParameterCalculator, aSurfaceA, aSurfaces, aN0, 0.05);
     }
     
     /** 记录父节点的点，可以用来方便获取演化路径 */
@@ -59,15 +78,15 @@ public class ForwardFluxSampling<T> implements Runnable {
     }
     
     /** 统计信息 */
-    private double mTotTime0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
-    private List<Point> mPointsOnLambda; // 第一次从 A 到达 λi 的那些点
+    private double mTotTime0 = 0.0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
+    private List<Point> mPointsOnLambda = new ArrayList<>(), oPointsOnLambda = new ArrayList<>(); // 第一次从 A 到达 λi 的那些点
     
-    private double mK0; // A 到 λ0 的轨迹通量，速率单位但是注意不是 A 到 λ0 的速率
-    private IVector mPi; // i 到 i+1 而不是返回 A 的概率
+    private double mK0 = Double.NaN; // A 到 λ0 的轨迹通量，速率单位但是注意不是 A 到 λ0 的速率
+    private final IVector mPi; // i 到 i+1 而不是返回 A 的概率
     
     /** 记录一下每个过程使用的点的数目 */
-    private int mStep1PointNum;
-    private IVector mStep2PointNum;
+    private int mStep1PointNum = 0;
+    private final IVector mStep2PointNum;
     
     /** 统计一个路径所有的从 A 第一次到达 λ0 的点以及这个过程总共花费的时间 */
     private int statA2Lambda0_() {
@@ -148,44 +167,50 @@ public class ForwardFluxSampling<T> implements Runnable {
     
     
     /** 一个简单的实现，目前暂时不考虑并行的情况 */
+    private int mStep = -1; // 记录运行的步骤，i
+    private boolean mFinished = false;
     public void run() {
+        if (mFinished) return;
         // 实际分为两个过程，第一个过程首先统计轨迹通量（flux of trajectories）
-        // 统计从 A 到达 λ0，运行直到达到次数超过 mN0
-        // 在这里设置统计量的初始，保证独立性
-        mStep1PointNum = 0;
-        mTotTime0 = 0.0;
-        mPointsOnLambda = new ArrayList<>();
-        mStep1PointNum += statA2Lambda0_();
-        // 获取第一个过程的统计结果
-        mK0 = mPointsOnLambda.size() / mTotTime0;
-        
-        
+        if (mStep < 0) {
+            // 统计从 A 到达 λ0，运行直到达到次数超过 mN0
+            mStep1PointNum += statA2Lambda0_();
+            // 获取第一个过程的统计结果
+            mK0 = mPointsOnLambda.size() / mTotTime0;
+            // 第一个过程完成
+            mStep = 0;
+        } else
         // 第二个过程会从 λi 上的点随机选取运行直到到达 λi+1 或者返回 A，注意依旧需要将耗时增加到 mTotTime 中
-        // 获取边界面的信息
-        int n = mSurfaces.size() - 1;
-        // 同样，在这里设置统计量的初始，保证独立性
-        List<Point> oPointsOnLambda = new ArrayList<>();
-        mStep2PointNum = Vectors.zeros(n);
-        mPi = Vectors.zeros(n);
-        for (int i = 0; i < n; ++i) {
+        if (mStep < mN) {
             // 先将上一步得到的 λi 交换到 oPointsOnLambda 作为初始
             List<Point> tPointsOnLambda = oPointsOnLambda;
             oPointsOnLambda = mPointsOnLambda;
             mPointsOnLambda = tPointsOnLambda; mPointsOnLambda.clear();
-            // 获取 λi+1
-            double tLambda = mSurfaces.get_(i+1);
             // 获取 Mi
             int tMi = 0;
             while (mPointsOnLambda.size() < mN0) {
                 // 随机选取一个初始点获取之后的路径，并统计结果
                 Point tPointI = oPointsOnLambda.get(mRNG.nextInt(oPointsOnLambda.size()));
-                mStep2PointNum.add_(i, statLambda2Next_(tPointI, tLambda));
+                mStep2PointNum.add_(mStep, statLambda2Next_(tPointI, mSurfaces.get_(mStep+1)));
                 ++tMi;
+                // 如果统计得到的概率小于预定值，那么下一步的结果多样性会大大降低，并且统计效率也非常低，这里直接跳出
+                if (tMi > mN0/mMinProb) {
+                    System.err.println("ERROR: P(λi+1|λi) will less than MinProb(= max(0.05, 1/N0) in default) anyway,");
+                    System.err.println("which will seriously reduce the accuracy or efficiency, so the FFS is stopped.");
+                    System.err.println("Try larger N0 or smaller surface distance.");
+                    mFinished = true;
+                    break;
+                }
             }
             // 获取概率统计结果
-            mPi.set_(i, mPointsOnLambda.size() / (double)tMi);
+            mPi.set_(mStep, mPointsOnLambda.size() / (double)tMi);
+            // 第二个过程这一步完成
+            ++mStep;
+        } else {
+            mFinished = true;
         }
     }
+    public boolean finished() {return mFinished;}
     
     /** 获取结果的接口 */
     public double getProb(int aIdx) {return mPi.get(aIdx);}

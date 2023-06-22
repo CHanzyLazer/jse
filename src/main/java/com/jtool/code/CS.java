@@ -34,7 +34,9 @@ public class CS {
     public final static String WORKING_DIR = ".temp/%n/";
     
     public final static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
-    public final static String NO_LOG = IS_WINDOWS ? "NUL" : "/dev/null";
+    public final static String NO_LOG_LINUX = "/dev/null";
+    public final static String NO_LOG_WIN = "NUL";
+    public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
     
     
     /** MathEX stuffs */
@@ -59,7 +61,7 @@ public class CS {
     public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
     
     /** 认为 q6 小于此值的结果都认为不是固体为不对结果提供贡献 */
-    public final static double Q6_SOLID_MIN = 0.30;
+    public final static double Q6_SOLID_MIN = 0.26;
     /** 认为 q6 大于此值一定是固体，对结果的贡献为 1 */
     public final static double Q6_SOLID_MAX = 0.36;
     

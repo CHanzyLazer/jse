@@ -27,11 +27,9 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
     private final Map<String, Integer> mJobsPerNode;
     
     /** 线程数现在由每个任务的并行数，申请到的节点数，以及每节点的核心数来确定 */
-    public InternalSLURMSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, false);}
-    public InternalSLURMSystemExecutor(int aTaskNum, boolean aNoThreadPool) throws Exception {
+    public InternalSLURMSystemExecutor(int aTaskNum, boolean aInternalThreadPool) throws Exception {
         // 先随便设置一下线程池，因为要先构造父类
         super();
-        mTaskNum = aTaskNum;
         try {
             // 直接根据环境变量获取每节点的核心数
             @Nullable String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
@@ -46,6 +44,7 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
                 tCoresPerNode = (tCoresPerNode < 0) ? tResult : Math.min(tCoresPerNode, tResult);
             }
             if (tCoresPerNode < 0) throw new Exception("Parse SLURM_JOB_CPUS_PER_NODE Fail");
+            mTaskNum = aTaskNum <= 0 ? tCoresPerNode : aTaskNum;
             
             // 直接根据环境变量获取节点列表
             @Nullable String tRawNodeList = System.getenv("SLURM_NODELIST");
@@ -60,8 +59,8 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
             // 根据结果设置线程池
             mNcmdsPerNode = tCoresPerNode / mTaskNum;
             if (mNcmdsPerNode == 0) throw new Exception("Task Number MUST be Less or Equal to Cores-Per-Node here"); // 这里不支持跨节点任务管理
-            if (aNoThreadPool) setPool(SERIAL_EXECUTOR);
-            else setPool(newPool(tNodeList.size() * mNcmdsPerNode));
+            if (aInternalThreadPool) setPool(newPool(tNodeList.size() * mNcmdsPerNode));
+            else setPool(SERIAL_EXECUTOR);
             
             // 最后设置一下工作目录
             mWorkingDir = WORKING_DIR.replaceAll("%n", "INTERNAL_SLURM@"+UT.Code.randID());
@@ -72,6 +71,8 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
             throw e;
         }
     }
+    public InternalSLURMSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, false);}
+    public InternalSLURMSystemExecutor() throws Exception {this(-1);}
     
     /** 内部使用的向任务分配节点的方法 */
     private synchronized @Nullable String assignNode() {
@@ -96,7 +97,7 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
         // 先尝试获取节点
         String tNode = assignNode();
         if (tNode == null) {
-            System.err.println("Can NOT to assign node for this job temporarily, this job blocks until there are any free node.");
+            System.err.println("WARNING: Can NOT to assign node for this job temporarily, this job blocks until there are any free node.");
             System.err.println("It may be caused by too large number of parallels.");
         }
         while (tNode == null) {

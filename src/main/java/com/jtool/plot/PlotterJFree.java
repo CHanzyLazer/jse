@@ -57,7 +57,7 @@ public class PlotterJFree implements IPlotter {
             else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesOutlineStroke(mID, DEFAULT_MARKER_STROKE); mLineRender.setSeriesShapesVisible(mID, true);}
         }
         
-        @Override public ILine color(Paint aPaint) {mPaint = aPaint; mLineRender.notifyListeners(new RendererChangeEvent(mLineRender)); return this;}
+        @Override public ILine color(Paint aPaint) {mPaint = aPaint; mLineRender.setSeriesPaint(mID, aPaint); return this;} // 会覆盖掉 markerColor 的颜色设置
         @Override public ILine markerColor(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); return this;}
         
         @Override protected void onLineTypeChange(LineType aOldLineType, LineType aNewLineType) {

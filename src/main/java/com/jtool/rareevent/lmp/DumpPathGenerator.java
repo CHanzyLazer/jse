@@ -7,12 +7,16 @@ import com.jtool.lmp.Lammpstrj;
 import com.jtool.lmp.Lammpstrj.SubLammpstrj;
 import com.jtool.lmp.LmpIn;
 import com.jtool.lmp.Lmpdat;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.Vectors;
 import com.jtool.rareevent.IPathGenerator;
 import com.jtool.system.ISystemExecutor;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import static com.jtool.code.CS.*;
 
@@ -23,34 +27,58 @@ import static com.jtool.code.CS.*;
  * @author liqa
  */
 public class DumpPathGenerator implements IPathGenerator<SubLammpstrj>, AutoCloseable {
-    // 暂时直接硬编码这些参数，同样避免滥用的同时简化使用
-    private final static String PAIR_STYLE = "eam/alloy";
-    private final static String PAIR_COEFF = "* * lmp/potential/ZrCu.lammps.eam Cu Zr";
-    private final static String LMP_EXE = "lmp_ann";
-    private final static double[] MASSES = new double[] {MASS.get("Cu"), MASS.get("Zr")};
-    
     private final String mWorkingDir;
     
-    private final ISystemExecutor mEXE; // 执行 lammps 的运行器
-    private final SubLammpstrj mInitPoint; // 用于初始的原子数据
-    private final LmpIn mGenDumpIn; // 创建 dump 文件的 lammps 输入文件
-    private final double mTimestep; // 每步的实际时间步长，影响输入文件和统计使用的时间，最终时间单位和输入文件的 unit 一致
-    public DumpPathGenerator(ISystemExecutor aEXE, IHasAtomData aInitAtomData, double aTimestep, int aDumpStep, int aPathLength) {
-        mEXE = aEXE;
+    private final Random mRNG = new Random();
+    private final ISystemExecutor mEXE;
+    private final String mLmpExe;
+    private final SubLammpstrj mInitPoint;
+    private final LmpIn mGenDumpIn;
+    private final double mTimestep;
+    private final IVector mMesses;
+    
+    /**
+     * 创建一个输出 dump 路径的生成器
+     * @author liqa
+     * @param aEXE 执行 lammps 的运行器
+     * @param aLmpExe 执行 lammps 的指令
+     * @param aInitAtomData  用于初始的原子数据
+     * @param aMesses 每个种类的原子对应的摩尔质量，用于创建 data 文件，且长度指定原子种类数目
+     * @param aTemperature 创建 dump 路径的温度
+     * @param aPairStyle lammps 输入文件使用的势场类型
+     * @param aPairCoeff lammps 输入文件使用的势场参数
+     * @param aTimestep 每步的实际时间步长，影响输入文件和统计使用的时间，最终时间单位和输入文件的 unit 一致，默认为 0.002
+     * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 4
+     * @param aPathLength 一次创建的路径的长度，默认为 20
+     */
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {
+        mEXE = aEXE.setNoSTDOutput(); // 不需要输出
+        mLmpExe = aLmpExe;
         mInitPoint = Lammpstrj.fromAtomData(aInitAtomData).get(0);
         mTimestep = aTimestep;
+        mMesses = Vectors.from(aMesses);
         
         // 统一设置输入文件，这里直接使用内置的输入文件，避免滥用的同时可以简化使用
         mGenDumpIn = LmpIn.DUMP_MELT_NPT_Cu();
+        mGenDumpIn.put("vT", aTemperature);
         mGenDumpIn.put("vTimestep", mTimestep);
         mGenDumpIn.put("vDumpStep", aDumpStep);
         mGenDumpIn.put("vRunStep", aPathLength*aDumpStep);
-        // 暂时直接硬编码势场
-        mGenDumpIn.put("pair_style", PAIR_STYLE);
-        mGenDumpIn.put("pair_coeff", PAIR_COEFF);
+        // 还需设置势场
+        mGenDumpIn.put("pair_style", aPairStyle);
+        mGenDumpIn.put("pair_coeff", aPairCoeff);
         
         // 最后设置一下工作目录
         mWorkingDir = WORKING_DIR.replaceAll("%n", "DUMP_GEN@"+UT.Code.randID());
+    }
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) {
+        this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);
+    }
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep) {
+        this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 4);
+    }
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff) {
+        this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);
     }
     
     /** IPathGenerator stuff */
@@ -64,10 +92,11 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj>, AutoClos
             String tLmpDataPath = tLmpDir+"data";
             String tLmpDumpPath = tLmpDir+"dump";
             // 先根据输入创建 Lmpdat 并写入，注意需要再设置一下种类数，因为 dump 不会保留种类数，对于恰好缺少种类的情况会出错
-            Lmpdat.fromAtomData(aStart, MASSES).setAtomTypeNum(MASSES.length).write(tLmpDataPath);
+            Lmpdat.fromAtomData(aStart, mMesses).setAtomTypeNum(mMesses.size()).write(tLmpDataPath);
             // 设置输入 data 路径和输出 dump 路径，考虑要线程安全这里要串行设置并且设置完成后拷贝结果
             IHasIOFiles tIOFiles;
             synchronized (this) {
+                mGenDumpIn.put("vSeed", mRNG.nextInt(2147483647)); // 需要有不同的初始速度
                 mGenDumpIn.put("vInDataPath", tLmpDataPath);
                 mGenDumpIn.put("vDumpPath", tLmpDumpPath);
                 mGenDumpIn.write(tLmpInPath);
@@ -75,9 +104,8 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj>, AutoClos
             }
             // 组装指令
             List<String> rCommand = new ArrayList<>();
-            rCommand.add(LMP_EXE);
+            rCommand.add(mLmpExe);
             rCommand.add("-in"); rCommand.add(tLmpInPath);
-            rCommand.add(">");   rCommand.add(NO_LOG); // 不需要 log
             // 执行指令
             mEXE.system(String.join(" ", rCommand), tIOFiles);
             // 理论现在已经获取到了 dump 文件，读取

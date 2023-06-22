@@ -19,6 +19,7 @@ import static com.jtool.code.CS.*;
 /**
  * @author liqa
  * <p> 一般的 SLURM 实现，基于 SSH 的远程 Executor，因此针对的是使用 SSH 连接的远程 SLURM 服务器 </p>
+ * <p> 为了代码简洁，禁止输出依旧会创建文件 </p>
  */
 public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemExecutor> implements ILongTimeJobPool {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
@@ -225,14 +226,37 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         
         int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装指令
-        List<String> rRunCommand = new ArrayList<>();
+        LinkedList<String> rRunCommand = new LinkedList<>();
         rRunCommand.add("srun");
         rRunCommand.add("--nodes");             rRunCommand.add(String.valueOf(tNodeNum));
         rRunCommand.add("--job-name");          rRunCommand.add(mUniqueJobName);
         rRunCommand.add("--ntasks");            rRunCommand.add(String.valueOf(mTaskNum));
         rRunCommand.add("--ntasks-per-node");   rRunCommand.add(String.valueOf(mMaxTaskNumPerNode));
 //      rRunCommand.add("--wait");              rRunCommand.add("1000000"); // 正常提交任务不需要修改 wait，可以防止任务报错后一直卡住
-        rRunCommand.add("--output");            rRunCommand.add(aOutFilePath);
+        if (mEXE.noSTDOutput()) {
+            if (mEXE.noERROutput()) {
+                // 所有输出都关闭，依旧需要创建文件
+                rRunCommand.addFirst(";");
+                rRunCommand.addFirst(aOutFilePath);
+                rRunCommand.addFirst(">");
+                rRunCommand.addFirst(":");
+                // 关闭输出
+                rRunCommand.add("--output");            rRunCommand.add(NO_LOG_LINUX);
+            } else {
+                // 只关闭标准输出
+                rRunCommand.add("--output");            rRunCommand.add(NO_LOG_LINUX);
+                rRunCommand.add("--error");             rRunCommand.add(aOutFilePath);
+            }
+        } else {
+            if (mEXE.noERROutput()) {
+                // 只关闭错误输出
+                rRunCommand.add("--output");            rRunCommand.add(aOutFilePath);
+                rRunCommand.add("--error");             rRunCommand.add(NO_LOG_LINUX);
+            } else {
+                // 默认情况
+                rRunCommand.add("--output");            rRunCommand.add(aOutFilePath);
+            }
+        }
         if (mPartition != null && !mPartition.isEmpty()) {
         rRunCommand.add("--partition");         rRunCommand.add(mPartition);
         }
@@ -253,13 +277,36 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
 //      rRunCommand.add("--wait");              rRunCommand.add("1000000"); // 正常提交任务不需要修改 wait，可以防止任务报错后一直卡住
         rRunCommand.add(aCommand);
         // 组装提交指令
-        List<String> rSubmitCommand = new ArrayList<>();
+        LinkedList<String> rSubmitCommand = new LinkedList<>();
         rSubmitCommand.add(String.format("echo -e '#!/bin/bash\\n%s'", String.join(" ", rRunCommand)));
         rSubmitCommand.add("|");
         rSubmitCommand.add("sbatch");
         rSubmitCommand.add("--nodes");              rSubmitCommand.add(String.valueOf(tNodeNum));
         rSubmitCommand.add("--job-name");           rSubmitCommand.add(mUniqueJobName);
-        rSubmitCommand.add("--output");             rSubmitCommand.add(aOutFilePath);
+        if (mEXE.noSTDOutput()) {
+            if (mEXE.noERROutput()) {
+                // 所有输出都关闭，依旧需要创建文件
+                rSubmitCommand.addFirst(";");
+                rSubmitCommand.addFirst(aOutFilePath);
+                rSubmitCommand.addFirst(">");
+                rSubmitCommand.addFirst(":");
+                // 关闭输出
+                rSubmitCommand.add("--output");         rSubmitCommand.add(NO_LOG_LINUX);
+            } else {
+                // 只关闭标准输出
+                rSubmitCommand.add("--output");         rSubmitCommand.add(NO_LOG_LINUX);
+                rSubmitCommand.add("--error");          rSubmitCommand.add(aOutFilePath);
+            }
+        } else {
+            if (mEXE.noERROutput()) {
+                // 只关闭错误输出
+                rSubmitCommand.add("--output");         rSubmitCommand.add(aOutFilePath);
+                rSubmitCommand.add("--error");          rSubmitCommand.add(NO_LOG_LINUX);
+            } else {
+                // 默认情况
+                rSubmitCommand.add("--output");         rSubmitCommand.add(aOutFilePath);
+            }
+        }
         if (mPartition != null && !mPartition.isEmpty()) {
         rSubmitCommand.add("--partition");          rSubmitCommand.add(mPartition);
         }
@@ -321,9 +368,8 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         }
         // 附加脚本文件到输入文件
         aIOFiles.putIFiles(IFILE_KEY, tBatchedScriptPath);
-        // 依旧设置输出文件为默认文件，在这里附加下载
+        // 依旧设置输出文件为默认文件
         String tOutFilePath = toRealOutFilePath(defaultOutFilePath());
-        aIOFiles.putOFiles(OUTPUT_FILE_KEY, tOutFilePath);
         // 组装提交的指令
         List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");
@@ -338,7 +384,31 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
         rSubmitCommand.add("sbatch");
         rSubmitCommand.add("--nodes");              rSubmitCommand.add(String.valueOf(tNodeNum)); // 节点数依旧是节点数
         rSubmitCommand.add("--job-name");           rSubmitCommand.add(mUniqueJobName);
-        rSubmitCommand.add("--output");             rSubmitCommand.add(tOutFilePath);
+        if (mEXE.noSTDOutput()) {
+            if (mEXE.noERROutput()) {
+                // 关闭输出，由于此时下载可控，则不需要创建文件
+                rSubmitCommand.add("--output");         rSubmitCommand.add(NO_LOG_LINUX);
+            } else {
+                // 只关闭标准输出
+                rSubmitCommand.add("--output");         rSubmitCommand.add(NO_LOG_LINUX);
+                rSubmitCommand.add("--error");          rSubmitCommand.add(tOutFilePath);
+                // 在这里附加下载
+                aIOFiles.putOFiles(OUTPUT_FILE_KEY, tOutFilePath);
+            }
+        } else {
+            if (mEXE.noERROutput()) {
+                // 只关闭错误输出
+                rSubmitCommand.add("--output");         rSubmitCommand.add(tOutFilePath);
+                rSubmitCommand.add("--error");          rSubmitCommand.add(NO_LOG_LINUX);
+                // 在这里附加下载
+                aIOFiles.putOFiles(OUTPUT_FILE_KEY, tOutFilePath);
+            } else {
+                // 默认情况
+                rSubmitCommand.add("--output");         rSubmitCommand.add(tOutFilePath);
+                // 在这里附加下载
+                aIOFiles.putOFiles(OUTPUT_FILE_KEY, tOutFilePath);
+            }
+        }
         if (mPartition != null && !mPartition.isEmpty()) {
         rSubmitCommand.add("--partition");          rSubmitCommand.add(mPartition);
         }
