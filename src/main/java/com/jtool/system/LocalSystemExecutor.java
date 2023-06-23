@@ -37,21 +37,18 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
             synchronized (this) {tProcess = Runtime.getRuntime().exec(aCommand);}
             // 设置错误输出流，直接另开一个线程管理
             final Process fProcess = tProcess;
-            Future<Void> tTask;
-            synchronized (this) {
-                tTask = CompletableFuture.runAsync(() -> {
-                    try (BufferedReader tErrReader = UT.IO.toReader(fProcess.getErrorStream())) {
-                        boolean tERROutPut = !noERROutput();
-                        // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
-                        String tLine;
-                        while ((tLine = tErrReader.readLine()) != null) {
-                            if (tERROutPut) System.err.println(tLine);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            Future<Void> tTask = CompletableFuture.runAsync(() -> {
+                try (BufferedReader tErrReader = UT.IO.toReader(fProcess.getErrorStream())) {
+                    boolean tERROutPut = !noERROutput();
+                    // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
+                    String tLine;
+                    while ((tLine = tErrReader.readLine()) != null) {
+                        if (tERROutPut) System.err.println(tLine);
                     }
-                });
-            }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
             // 读取执行的输出（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
             try (BufferedReader tOutReader = UT.IO.toReader(fProcess.getInputStream())) {
                 boolean tSTDOutPut = !noSTDOutput();

@@ -2,7 +2,6 @@ package com.jtool.lmp;
 
 import com.jtool.atom.IHasXYZ;
 import com.jtool.atom.XYZ;
-import com.jtool.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 
 import static com.jtool.code.CS.*;

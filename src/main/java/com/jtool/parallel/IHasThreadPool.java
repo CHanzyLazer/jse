@@ -6,7 +6,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * @author liqa
  * <p> 用来统一管理包含 ThreadPool 的类 </p>
  */
-public interface IHasThreadPool extends AutoCloseable {
+public interface IHasThreadPool extends IAutoShutdown {
     void shutdown();
     void shutdownNow();
     boolean isShutdown();
@@ -18,7 +18,4 @@ public interface IHasThreadPool extends AutoCloseable {
     int nThreads();
     
     @VisibleForTesting default int getTaskNumber() {return nJobs();}
-    
-    /** AutoClosable stuffs */
-    @VisibleForTesting default void close() {shutdown();}
 }

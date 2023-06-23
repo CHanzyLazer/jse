@@ -3,8 +3,8 @@ package com.jtool.ssh;
 import com.jcraft.jsch.*;
 import com.jtool.code.UT;
 import com.jtool.parallel.ExecutorsEX;
+import com.jtool.parallel.IAutoShutdown;
 import com.jtool.parallel.IExecutorEX;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -23,10 +23,7 @@ import java.util.Vector;
  * <p> 更加简洁的实现，现在只保留需要的一些功能 </p>
  */
 @SuppressWarnings("UnusedReturnValue")
-public final class SSHCore implements AutoCloseable {
-    /** AutoClosable stuffs */
-    @VisibleForTesting public void close() {shutdown();}
-    
+public final class SSHCore implements IAutoShutdown {
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;
     private String mRemoteWorkingDir_;
@@ -198,7 +195,7 @@ public final class SSHCore implements AutoCloseable {
         }
     }
     public void disconnect() {session().disconnect();}
-    public void shutdown() {
+    @Override public void shutdown() {
         mDead = true;
         session().disconnect();
     }

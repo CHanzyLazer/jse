@@ -137,8 +137,12 @@ public class Lmpdat extends AbstractAtomData {
     public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.copy());}
     
     /** 从 IHasAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData) {return fromAtomData(aHasAtomData, (IVector)null);}
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, IVector aMasses) {
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData) {return fromAtomData_(aHasAtomData, null);}
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, IVector aMasses) {return fromAtomData_(aHasAtomData, Vectors.from(aMasses));}
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, Collection<? extends Number> aMasses) {return fromAtomData_(aHasAtomData, Vectors.from(aMasses));}
+    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, double[] aMasses) {return fromAtomData_(aHasAtomData, Vectors.from(aMasses));}
+    
+    public static Lmpdat fromAtomData_(IHasAtomData aHasAtomData, IVector aMasses) {
         // 根据输入的 aHasAtomData 类型来具体判断需要如何获取 rAtomData
         if (aHasAtomData instanceof Lmpdat) {
             // Lmpdat 则直接获取即可（专门优化，保留完整模拟盒信息）
@@ -149,10 +153,6 @@ public class Lmpdat extends AbstractAtomData {
             return new Lmpdat(aHasAtomData.atomTypeNum(), new Box(aHasAtomData.boxLo(), aHasAtomData.boxHi()), aMasses, aHasAtomData.dataSTD());
         }
     }
-    /** 兼容 Groovy 的乱七八糟的数字数组 */
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, Collection<? extends Number> aMasses) {return fromAtomData(aHasAtomData, Vectors.from(aMasses));}
-    public static Lmpdat fromAtomData(IHasAtomData aHasAtomData, double[] aMasses) {return fromAtomData(aHasAtomData, Vectors.from(aMasses));}
-    
     
     /// 文件读写
     /**

@@ -5,7 +5,6 @@ import jep.JepException;
 import jep.python.PyCallable;
 import jep.python.PyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Map;
 

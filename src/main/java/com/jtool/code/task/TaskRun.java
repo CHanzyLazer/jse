@@ -1,7 +1,5 @@
 package com.jtool.code.task;
 
-import java.util.concurrent.Callable;
-
 /**
  * @author liqa
  * <p> Runnable task for matlab usage </p>

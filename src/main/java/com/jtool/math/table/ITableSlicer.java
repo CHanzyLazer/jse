@@ -3,7 +3,6 @@ package com.jtool.math.table;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.filter.IIndexFilter;
-import com.jtool.math.vector.IVectorGetter;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
 package com.jtool.ssh;
 
+import com.jtool.parallel.IAutoShutdown;
 import com.jtool.code.UT;
 import com.jtool.parallel.ExecutorsEX;
 import com.jtool.parallel.IExecutorEX;
@@ -7,7 +8,6 @@ import com.jtool.system.SSHSystemExecutor;
 import com.jcraft.jsch.*;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,10 +28,7 @@ import java.util.concurrent.Callable;
  */
 @Deprecated
 @SuppressWarnings({"UnusedReturnValue", "BusyWait"})
-public final class ServerSSH implements AutoCloseable {
-    /** AutoClosable stuffs */
-    @VisibleForTesting public void close() {shutdown();}
-    
+public final class ServerSSH implements IAutoShutdown {
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;
     private String mRemoteWorkingDir_;
@@ -269,7 +266,7 @@ public final class ServerSSH implements AutoCloseable {
         }
     }
     public void disconnect() {session().disconnect();}
-    public void shutdown() {
+    @Override public void shutdown() {
         mDead = true;
         session().disconnect();
     }

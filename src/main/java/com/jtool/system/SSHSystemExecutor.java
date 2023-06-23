@@ -17,7 +17,7 @@ import java.util.Map;
  */
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
     final SSHCore mSSH;
-    int mIOThreadNum;
+    private final int mIOThreadNum;
     SSHSystemExecutor(int aThreadNum, int aIOThreadNum, SSHCore aSSH) throws Exception {
         super(aThreadNum>0 ? newPool(aThreadNum) : SERIAL_EXECUTOR);
         mIOThreadNum = aIOThreadNum; mSSH = aSSH;

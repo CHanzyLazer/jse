@@ -2,6 +2,7 @@ package com.jtool.rareevent;
 
 
 import com.jtool.atom.IHasAtomData;
+import com.jtool.parallel.IAutoShutdown;
 
 /**
  * 各种稀有事件采样方法内部使用的类，需要能够从给定的输出点随机生成一个完整路径，
@@ -12,8 +13,8 @@ import com.jtool.atom.IHasAtomData;
  * @author liqa
  * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
  */
-public interface IFullPathGenerator<T> {
+public interface IFullPathGenerator<T> extends IAutoShutdown {
     /** 由于路径具有随机性，不能返回可以重复访问的 Iterable */
-    ITimeIterator<T> fullPathInit();
-    ITimeIterator<T> fullPathFrom(T aStart);
+    ITimeAndParameterIterator<T> fullPathInit();
+    ITimeAndParameterIterator<T> fullPathFrom(T aStart);
 }

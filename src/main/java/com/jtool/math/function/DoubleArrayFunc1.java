@@ -7,7 +7,6 @@ import com.jtool.math.MathEX;
 import com.jtool.math.vector.RefVector;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
