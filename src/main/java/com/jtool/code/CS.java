@@ -8,10 +8,14 @@ import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.parallel.CompletedFuture;
 import com.jtool.system.*;
-import org.zeromq.ZContext;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author liqa
@@ -73,14 +77,52 @@ public class CS {
     public final static IFutureJob ERR_FUTURE = new CompletedFutureJob(-1);
     public final static Future<List<Integer>> ERR_FUTURES = new CompletedFuture<>(Collections.singletonList(-1));
     public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(ImmutableList.of());
-    public final static ISystemExecutor EXE;
-    static {
-        // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
-        UT.IO.init();
-        // 创建默认 EXE，无内部线程池，windows 下使用 powershell 统一指令，且默认不进行输出
-        EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor();
-        EXE.setNoSTDOutput().setNoERROutput();
-        // 在 JVM 关闭时关闭 EXE
-        Runtime.getRuntime().addShutdownHook(new Thread(EXE::shutdown));
+    public final static PrintStream NUL_PRINT_STREAM = new PrintStream(new OutputStream() {public void write(int b) {/**/}});
+    
+    /** 内部运行相关，使用子类分割避免冗余初始化 */
+    public static class Exec {
+        public final static ISystemExecutor EXE;
+        public final static String JAR_PATH;
+        static {
+            // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
+            UT.IO.init();
+            // 获取此 jar 的路径
+            JAR_PATH = System.getProperty("java.class.path");
+            // 创建默认 EXE，无内部线程池，windows 下使用 powershell 统一指令
+            EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor();
+            // 在 JVM 关闭时关闭 EXE
+            Runtime.getRuntime().addShutdownHook(new Thread(EXE::shutdown));
+        }
+    }
+    
+    /** SLURM 相关，使用子类分割避免冗余初始化 */
+    public static class Slurm {
+        public static int CORES_PER_NODE;
+        public static List<String> NODE_LIST;
+        public static void refresh() throws Exception {
+            // 直接根据环境变量获取每节点的核心数
+            @Nullable String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
+            // 尝试读取结果，如果失败则抛出错误
+            if (tRawCoresPerNode == null) throw new Exception("Load SLURM_JOB_CPUS_PER_NODE Fail, this class MUST init in SLURM environment");
+            // 目前仅支持单一的 CoresPerNode，对于有多个的情况会选取最小值
+            Pattern tPattern = Pattern.compile("(\\d+)(\\([^)]+\\))?"); // 匹配整数部分和可选的括号部分
+            Matcher tMatcher = tPattern.matcher(tRawCoresPerNode);
+            int tCoresPerNode = -1;
+            while (tMatcher.find()) {
+                int tResult = Integer.parseInt(tMatcher.group(1));
+                tCoresPerNode = (tCoresPerNode < 0) ? tResult : Math.min(tCoresPerNode, tResult);
+            }
+            if (tCoresPerNode < 0) throw new Exception("Parse SLURM_JOB_CPUS_PER_NODE Fail");
+            CORES_PER_NODE = tCoresPerNode;
+            
+            // 直接根据环境变量获取节点列表
+            @Nullable String tRawNodeList = System.getenv("SLURM_NODELIST");
+            // 尝试读取结果，如果失败则抛出错误
+            if (tRawNodeList == null) throw new Exception("Load SLURM_NODELIST Fail, this class MUST init in SLURM environment");
+            List<String> tNodeList = UT.Texts.splitNodeList(tRawNodeList);
+            if (tNodeList.isEmpty()) throw new Exception("Parse SLURM_NODELIST Fail");
+            NODE_LIST = tNodeList;
+        }
+        static {try {refresh();} catch (Exception ignored) {}}
     }
 }

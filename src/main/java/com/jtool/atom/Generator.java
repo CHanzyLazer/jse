@@ -267,13 +267,14 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
     public Func3 porousCahnHilliard(double aTheta, Func3 aInitU, double aDt, int aSteps) {return porousCahnHilliard(u -> u*u*u-u, aTheta, aInitU, aDt, aSteps);}
     public Func3 porousCahnHilliard(Func3 aInitU, double aDt, int aSteps) {return porousCahnHilliard(0.1, aInitU, aDt, aSteps);}
     public Func3 porousCahnHilliard(Func3 aInitU, int aSteps) {return porousCahnHilliard(aInitU, 0.0001, aSteps);}
-    public Func3 porousCahnHilliard(int aN, double aMeshSize, double aDt, int aSteps) {
+    public Func3 porousCahnHilliard(int aN, double aMeshSize, final double aC, double aDt, int aSteps) {
         double[] tData = new double[aN*aN*aN];
-        Vec.mapDo2Dest(tData, v -> (mRNG.nextDouble()*0.001-0.0005));
+        Vec.mapDo2Dest(tData, v -> aC+(mRNG.nextDouble()*0.001-0.0005));
         Func3 tInitU = new Func3(0.0, aMeshSize, aN, 0.0, aMeshSize, aN, 0.0, aMeshSize, tData);
         
         return porousCahnHilliard(tInitU, aDt, aSteps);
     }
-    public Func3 porousCahnHilliard(int aN, double aMeshSize, int aSteps) {return porousCahnHilliard(aN, aMeshSize, 0.0001, aSteps);}
+    public Func3 porousCahnHilliard(int aN, double aMeshSize, double aC, int aSteps) {return porousCahnHilliard(aN, aMeshSize, aC, 0.0001, aSteps);}
+    public Func3 porousCahnHilliard(int aN, double aMeshSize, int aSteps) {return porousCahnHilliard(aN, aMeshSize, 0.0, aSteps);}
     public Func3 porousCahnHilliard(int aSteps) {return porousCahnHilliard(50, 0.1, aSteps);}
 }

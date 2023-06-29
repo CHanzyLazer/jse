@@ -10,10 +10,9 @@ import org.zeromq.ZMQ;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
-import static com.jtool.code.CS.EXE;
-import static com.jtool.code.CS.ZL_BYTE;
+import static com.jtool.code.CS.*;
+import static com.jtool.code.CS.Exec.JAR_PATH;
 
 
 /**
@@ -32,8 +31,12 @@ public class MPI {
      */
     @ApiStatus.Internal
     public static void abstractWorkerInit(String aAddress, IOperator1<byte[], byte[]> aOpt) {
+        // 子程序禁止标准输出和标准错误输出，防止因为任何意外导致的流死锁
+        System.setErr(NUL_PRINT_STREAM);
+        System.setOut(NUL_PRINT_STREAM);
         // 根据输入的地址创建一个回复消息的子服务器
         ZMQ.Socket tSocket = CONTEXT.createSocket(SocketType.REP);
+        tSocket.setSendTimeOut(SEND_TIMEOUT);
         // 连接到分配的地址
         tSocket.connect(aAddress);
         // 挂起等待输入
@@ -41,8 +44,9 @@ public class MPI {
             byte[] tReceived = tSocket.recv();
             // 约定，接受到的数据为 null 或为空则关闭子程序（关闭信号）
             if (tReceived==null || tReceived.length==0) break;
-            // 将计算结果返回
-            tSocket.send(aOpt.cal(tReceived));
+            // 将计算结果返回，返回失败（主进程失效）则直接结束即可
+            boolean tSuc = tSocket.send(aOpt.cal(tReceived));
+            if (!tSuc) break;
         }
     }
     
@@ -52,14 +56,17 @@ public class MPI {
      */
     public static final class Worker implements IAutoShutdown {
         private final ZMQ.Socket mSocket;
+        private boolean mDead = false;
         
         private Worker(ZMQ.Socket aSocket) {mSocket = aSocket;}
         
         /** 执行工作 */
         public byte[] doWork(byte @NotNull[] aInput) {
             if (aInput.length == 0) throw new RuntimeException("Zero Length input is invalid due to it means shutdown");
-            mSocket.send(aInput);
-            return mSocket.recv();
+            boolean tSuc = mSocket.send(aInput);
+            byte[] tBytes = null;
+            if (tSuc) tBytes = mSocket.recv();
+            return tBytes;
         }
         
         /** 关闭此工作器，发送终止信号后注销 mSocket */
@@ -68,24 +75,32 @@ public class MPI {
             ALL_WORKER.remove(this);
         }
         private void shutdown_() {
+            if (mDead) return;
             mSocket.send(ZL_BYTE);
             mSocket.close();
+            mDead = true;
         }
     }
     
     /** 获取一个特定工作的工作器 */
-    public static Worker getWorkerOf(String aWorkerInitMethodName) {
+    public static Worker getWorkerOf(Class<?> aClazz, String aWorkerInitMethodName) throws NoSuchMethodException {
         // 先创建连接此工作器的连接
         ZMQ.Socket tSocket = CONTEXT.createSocket(SocketType.REQ);
+        tSocket.setSendTimeOut(SEND_TIMEOUT);
         // 为了兼容性统一采用 tcp 连接
         int tPort = tSocket.bindToRandomPort("tcp://*");
-        // 通过执行指令创建子进程，指定连接到此地址，使用 CompletableFuture 内部的线程池来方便管理
-        CompletableFuture.runAsync(() -> EXE.system(String.format("./jTool -invoke %s tcp://*:%d", aWorkerInitMethodName, tPort)));
+        // 检测方法调用是否合法，为了效率不会检测后续子程序的输出
+        String aAddress = "tcp://*:"+tPort;
+        if (UT.Hack.findMethod_(aClazz, aWorkerInitMethodName, aAddress) == null) throw new NoSuchMethodException("No such method: " + aWorkerInitMethodName);
+        // 通过执行指令创建子进程，指定连接到此地址；直接使用 Runtime 创建后台程序，减少资源占用，可以开启更多的进程；为了避免创建过多线程这里不去捕获输入输出流
+        try {Runtime.getRuntime().exec(String.format("java -jar %s -invoke %s.%s %s", JAR_PATH, aClazz.getName(), aWorkerInitMethodName, aAddress));}
+        catch (Exception e) {e.printStackTrace();}
         // 返回 worker
         Worker tWorker = new Worker(tSocket);
         ALL_WORKER.add(tWorker);
         return tWorker;
     }
+    
     
     private static void close() {
         for (Worker tWorker : ALL_WORKER) tWorker.shutdown_();
@@ -93,6 +108,8 @@ public class MPI {
         CONTEXT.close();
     }
     
+    private final static int SUBPROCESS_ERR_TIME = 5000; // ms
+    private final static int SEND_TIMEOUT = 30000; // ms
     private final static ZContext CONTEXT;
     private final static Set<Worker> ALL_WORKER = new HashSet<>();
     static {

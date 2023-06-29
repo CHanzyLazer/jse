@@ -3,7 +3,6 @@ package com.jtool.code;
 import com.jtool.code.script.ScriptObjectGroovy;
 import com.jtool.code.script.ScriptObjectPython;
 import com.jtool.code.task.TaskCall;
-import com.jtool.system.ISystemExecutor;
 import groovy.lang.*;
 import jep.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jtool.code.CS.*;
+import static com.jtool.code.CS.Exec.EXE;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -345,8 +345,10 @@ public class SP {
             }
             if (tJepDir == null) throw new RuntimeException("JEP INIT ERROR: No Jep source code in "+tWorkingDir);
             tJepDir = tWorkingDir+tJepDir+"/";
-            // 直接通过系统指令来编译 Jep 的库
+            // 直接通过系统指令来编译 Jep 的库，关闭输出
+            EXE.setNoSTDOutput().setNoERROutput();
             EXE.system(String.format("cd %s; python setup.py build", tJepDir));
+            EXE.setNoSTDOutput(false).setNoERROutput(false);
             // 获取 build 目录下的 lib 文件夹
             String tJepBuildDir = tJepDir+"build/";
             tList = UT.IO.list(tJepBuildDir);

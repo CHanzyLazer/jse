@@ -31,7 +31,7 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj> {
     private final Random mRNG = new Random();
     private final ISystemExecutor mEXE;
     private final String mLmpExe;
-    private final SubLammpstrj mInitPoint;
+    private final Lammpstrj mInitPoints;
     private final LmpIn mGenDumpIn;
     private final double mTimestep;
     private final IVector mMesses;
@@ -41,7 +41,7 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj> {
      * @author liqa
      * @param aEXE 执行 lammps 的运行器
      * @param aLmpExe 执行 lammps 的指令
-     * @param aInitAtomData  用于初始的原子数据
+     * @param aInitAtomDataList  用于初始的原子数据
      * @param aMesses 每个种类的原子对应的摩尔质量，用于创建 data 文件，且长度指定原子种类数目
      * @param aTemperature 创建 dump 路径的温度
      * @param aPairStyle lammps 输入文件使用的势场类型
@@ -50,23 +50,23 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj> {
      * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 10
      * @param aPathLength 一次创建的路径的长度，默认为 20
      */
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomData, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomData, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomData, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomData, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aEXE, aLmpExe, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aEXE, aLmpExe, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
     
-    DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, IHasAtomData aInitAtomData, IVector aMesses, LmpIn aGenDumpIn, double aTimestep) {
+    DumpPathGenerator(ISystemExecutor aEXE, String aLmpExe, Iterable<? extends IHasAtomData> aInitAtomDataList, IVector aMesses, LmpIn aGenDumpIn, double aTimestep) {
         mEXE = aEXE.setNoSTDOutput(); // 不需要输出
         mLmpExe = aLmpExe;
-        mInitPoint = Lammpstrj.fromAtomData(aInitAtomData).get(0);
+        mInitPoints = Lammpstrj.fromAtomData(aInitAtomDataList);
         mTimestep = aTimestep;
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;
@@ -88,7 +88,8 @@ public class DumpPathGenerator implements IPathGenerator<SubLammpstrj> {
     
     
     /** IPathGenerator stuff */
-    @Override public SubLammpstrj initPoint() {return mInitPoint;}
+    private int mIdx = 0;
+    @Override public synchronized SubLammpstrj initPoint() {return mInitPoints.get(mIdx++);}
     @Override public List<SubLammpstrj> pathFrom(SubLammpstrj aStart) {
         try {
             // 由于存在并行，需要在工作目录中创建临时的路径生成的目录

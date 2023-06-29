@@ -21,7 +21,12 @@ public class ClusterSizeCalculatorMPI implements IParameterCalculator<IHasAtomDa
     private final Map<MPI.Worker, Boolean> mWorkers = new HashMap<>();
     /** 构造函数，指定进程数 */
     public ClusterSizeCalculatorMPI(int aProcessNum) {
-        for (int i = 0; i < aProcessNum; ++i) mWorkers.put(MPI.getWorkerOf(ClusterSizeCalculatorMPI.class.getName()+".workerInit"), false);
+        try {
+            for (int i = 0; i < aProcessNum; ++i) mWorkers.put(MPI.getWorkerOf(ClusterSizeCalculatorMPI.class, "workerInit"), false);
+        } catch (Exception e) {
+            this.shutdown();
+            throw new RuntimeException(e);
+        }
     }
     
     

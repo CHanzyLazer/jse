@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static com.jtool.code.CS.Slurm.CORES_PER_NODE;
+import static com.jtool.code.CS.Slurm.NODE_LIST;
 import static com.jtool.code.CS.WORKING_DIR;
 
 /**
@@ -31,35 +31,15 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
         // 先随便设置一下线程池，因为要先构造父类
         super();
         try {
-            // 直接根据环境变量获取每节点的核心数
-            @Nullable String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
-            // 尝试读取结果，如果失败则抛出错误
-            if (tRawCoresPerNode == null) throw new Exception("Load SLURM_JOB_CPUS_PER_NODE Fail, this class MUST init in SLURM environment");
-            // 目前仅支持单一的 CoresPerNode，对于有多个的情况会选取最小值
-            Pattern tPattern = Pattern.compile("(\\d+)(\\([^)]+\\))?"); // 匹配整数部分和可选的括号部分
-            Matcher tMatcher = tPattern.matcher(tRawCoresPerNode);
-            int tCoresPerNode = -1;
-            while (tMatcher.find()) {
-                int tResult = Integer.parseInt(tMatcher.group(1));
-                tCoresPerNode = (tCoresPerNode < 0) ? tResult : Math.min(tCoresPerNode, tResult);
-            }
-            if (tCoresPerNode < 0) throw new Exception("Parse SLURM_JOB_CPUS_PER_NODE Fail");
-            mTaskNum = aTaskNum <= 0 ? tCoresPerNode : aTaskNum;
-            
-            // 直接根据环境变量获取节点列表
-            @Nullable String tRawNodeList = System.getenv("SLURM_NODELIST");
-            // 尝试读取结果，如果失败则抛出错误
-            if (tRawNodeList == null) throw new Exception("Load SLURM_NODELIST Fail, this class MUST init in SLURM environment");
-            List<String> tNodeList = UT.Texts.splitNodeList(tRawNodeList);
-            if (tNodeList.isEmpty()) throw new Exception("Parse SLURM_NODELIST Fail");
-            // 据此设置每个节点的任务数
+            // 根据环境变量设置参数
+            mTaskNum = aTaskNum;
             mJobsPerNode = new HashMap<>();
-            for (String tNode : tNodeList) mJobsPerNode.put(tNode, 0);
+            for (String tNode : NODE_LIST) mJobsPerNode.put(tNode, 0);
             
-            // 根据结果设置线程池
-            mNcmdsPerNode = tCoresPerNode / mTaskNum;
-            if (mNcmdsPerNode == 0) throw new Exception("Task Number MUST be Less or Equal to Cores-Per-Node here"); // 这里不支持跨节点任务管理
-            if (aInternalThreadPool) setPool(newPool(tNodeList.size() * mNcmdsPerNode));
+            // 根据结果设置线程池，同样需要预留一个核给 srun 本身
+            mNcmdsPerNode = (CORES_PER_NODE-1) / mTaskNum;
+            if (mNcmdsPerNode == 0) throw new Exception("Task Number MUST be Less or Equal to Cores-Per-Node - 1 here"); // 这里不支持跨节点任务管理
+            if (aInternalThreadPool) setPool(newPool(NODE_LIST.size() * mNcmdsPerNode));
             else setPool(SERIAL_EXECUTOR);
             
             // 最后设置一下工作目录
@@ -72,7 +52,6 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
         }
     }
     public InternalSLURMSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, false);}
-    public InternalSLURMSystemExecutor() throws Exception {this(-1);}
     
     /** 内部使用的向任务分配节点的方法 */
     private synchronized @Nullable String assignNode() {
@@ -104,9 +83,10 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
             try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace(); return -1;}
             tNode = assignNode();
         }
-        // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行
+        // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行（srun 特有的问题）
         String tTempScriptPath = mWorkingDir+UT.Code.randID()+".sh";
-        try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);} catch (Exception e) {e.printStackTrace(); return -1;}
+        try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
+        catch (Exception e) {e.printStackTrace(); return -1;}
         // 组装指令
         List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");

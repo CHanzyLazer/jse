@@ -55,9 +55,9 @@ public class Vectors {
     /** Vector 特有的构造 */
     public static IVector sequence(double aStart, double aStep, double aEnd) {
         int tSize = (int)Math.floor((aEnd-aStart)/aStep) + 1;
-        return sequenceByStep(aStart, aStep, tSize);
+        return linspace(aStart, aStep, tSize);
     }
-    public static IVector sequenceByStep(double aStart, double aStep, int aN) {
+    public static IVector linspace(double aStart, double aStep, int aN) {
         final IVector rVector = zeros(aN);
         final IDoubleSetIterator si = rVector.setIterator();
         double tValue = aStart;

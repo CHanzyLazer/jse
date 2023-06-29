@@ -34,7 +34,7 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
         Process tProcess = null;
         try (IPrintln tPrintln = aPrintln.get()) {
             // 执行指令
-            synchronized (this) {tProcess = Runtime.getRuntime().exec(aCommand);}
+            tProcess = Runtime.getRuntime().exec(aCommand);
             // 设置错误输出流，直接另开一个线程管理
             final Process fProcess = tProcess;
             Future<Void> tTask = CompletableFuture.runAsync(() -> {

@@ -9,7 +9,7 @@ import com.jtool.plot.Plotters
 
 
 // 首先导入 Lmpdat
-def data = Lmpdat.read('lmp/data/data-crystal');
+def data = Lmpdat.read('lmp/data/data-glass');
 
 
 new StepJobManager('testAOOP4')

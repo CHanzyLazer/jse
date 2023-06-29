@@ -21,7 +21,7 @@ UT.Timer.toc('read dump');
 UT.Timer.tic();
 
 // 设置并行数
-int processNum = 6;
+int processNum = 8;
 // 计算结果
 def crystalSize = Vectors.zeros(dump.size());
 
@@ -37,8 +37,12 @@ try (def cal = new ClusterSizeCalculatorMPI(processNum); def pool = new ParforTh
 UT.Timer.toc("$processNum process cal");
 
 
+// 保存结果
+//UT.IO.data2csv(crystalSize, 'lmp/.temp/crystal-size.csv');
+
 // 绘制结果
 def plt = Plotters.get();
 plt.plot(crystalSize, 'crystal size');
 plt.xlabel('frame').ylabel('value');
 plt.show();
+

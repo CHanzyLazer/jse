@@ -25,6 +25,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
     private final IVector mSurfaces;
     private final double mSurfaceA;
     private final int mN0;
+    private int mStep1Mul; // 过程 1 需要的点的数目的倍数，更高的值可以保证结果有更好的统计性能
     
     private final int mN; // 界面数目-1，即 n
     private final Random mRNG = new Random(); // 独立的随机数生成器
@@ -66,6 +67,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         }
         mSurfaces = aSurfaces;
         mN0 = aN0;
+        mStep1Mul = 1;
         mMinProb = Math.max(DEFAULT_MIN_PROB, 1.0/(double)mN0);
         
         // 计算过程需要的量的初始化
@@ -76,6 +78,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
     
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
+    public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(aStep1Mul, 1); return this;}
     public ForwardFluxSampling<T> setMinProb(double aMinProb) {mMinProb = Math.max(aMinProb, 1.0/(double)mN0); return this;}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
     public ForwardFluxSampling<T> setDoNotClose(boolean aDoNotClose) {mFullPathGenerator.setDoNotClose(aDoNotClose); return this;}
@@ -86,6 +89,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         for (T tPoint : aPointsOnLambda) mPointsOnLambda.add(new Point(tPoint));
         return this;
     }
+    
     
     /** 记录父节点的点，可以用来方便获取演化路径 */
     private class Point {
@@ -116,7 +120,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
             double tLambda;
             // 不再需要检测 hasNext，内部保证永远都有 next
             while (true) {
-                synchronized (this) {if (mPointsOnLambda.size() >= mN0) break;}
+                synchronized (this) {if (mPointsOnLambda.size() >= mN0*mStep1Mul) break;}
                 // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
                 Point tRoot;
                 while (true) {
@@ -194,8 +198,8 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         if (mFinished) return;
         // 实际分为两个过程，第一个过程首先统计轨迹通量（flux of trajectories）
         if (mStep < 0) {
-            // 统计从 A 到达 λ0，运行直到达到次数超过 mN0
-            pool().parwhile(() -> mPointsOnLambda.size()<mN0, () -> {
+            // 统计从 A 到达 λ0，运行直到达到次数超过 mN0*mStep1Mul
+            pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, () -> {
                 int tStep1PointNum = statA2Lambda0_();
                 synchronized (this) {mStep1PointNum += tStep1PointNum;}
             });
