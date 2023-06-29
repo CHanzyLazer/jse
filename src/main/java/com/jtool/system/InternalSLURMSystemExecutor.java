@@ -1,6 +1,7 @@
 package com.jtool.system;
 
 import com.jtool.code.UT;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,8 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.jtool.code.CS.Slurm.CORES_PER_NODE;
-import static com.jtool.code.CS.Slurm.NODE_LIST;
+import static com.jtool.code.CS.Slurm.*;
 import static com.jtool.code.CS.WORKING_DIR;
 
 /**
@@ -19,6 +19,7 @@ import static com.jtool.code.CS.WORKING_DIR;
  * 在提交的 jTool 任务中提交子任务；因此认为此时已经有了 SLURM 的任务环境 </p>
  * <p> 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务 </p>
  */
+@ApiStatus.Obsolete
 public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
     private final String mWorkingDir;
     
@@ -30,26 +31,28 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
     public InternalSLURMSystemExecutor(int aTaskNum, boolean aInternalThreadPool) throws Exception {
         // 先随便设置一下线程池，因为要先构造父类
         super();
-        try {
-            // 根据环境变量设置参数
-            mTaskNum = aTaskNum;
-            mJobsPerNode = new HashMap<>();
-            for (String tNode : NODE_LIST) mJobsPerNode.put(tNode, 0);
-            
-            // 根据结果设置线程池，同样需要预留一个核给 srun 本身
-            mNcmdsPerNode = (CORES_PER_NODE-1) / mTaskNum;
-            if (mNcmdsPerNode == 0) throw new Exception("Task Number MUST be Less or Equal to Cores-Per-Node - 1 here"); // 这里不支持跨节点任务管理
-            if (aInternalThreadPool) setPool(newPool(NODE_LIST.size() * mNcmdsPerNode));
-            else setPool(SERIAL_EXECUTOR);
-            
-            // 最后设置一下工作目录
-            mWorkingDir = WORKING_DIR.replaceAll("%n", "INTERNAL_SLURM@"+UT.Code.randID());
-            // 由于是本地的，这里不需要创建文件夹
-        } catch (Exception e) {
-            // 如果失败则需要关闭自身，虽然实际上可能并不需要
+        // 设置一下工作目录
+        mWorkingDir = WORKING_DIR.replaceAll("%n", "INTERNAL_SLURM@"+UT.Code.randID());
+        // 由于是本地的，这里不需要创建文件夹
+        // 仅 slurm 可用
+        if (!IS_SLURM) {
             this.shutdown();
-            throw e;
+            throw new Exception("InternalSLURM can Only be used in SLURM");
         }
+        // 根据环境变量设置参数
+        mTaskNum = aTaskNum;
+        mJobsPerNode = new HashMap<>();
+        for (String tNode : NODE_LIST) mJobsPerNode.put(tNode, 0);
+        
+        // 根据结果设置线程池，同样需要预留一个核给 srun 本身
+        mNcmdsPerNode = (CORES_PER_NODE-1) / mTaskNum;
+        // 这里不支持跨节点任务管理
+        if (mNcmdsPerNode == 0) {
+            this.shutdown();
+            throw new Exception("Task Number MUST be Less or Equal to Cores-Per-Node - 1 here");
+        }
+        if (aInternalThreadPool) setPool(newPool(NODE_LIST.size() * mNcmdsPerNode));
+        else setPool(SERIAL_EXECUTOR);
     }
     public InternalSLURMSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, false);}
     
@@ -104,6 +107,6 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
     
     /** 程序结束时删除自己的临时工作目录 */
     @Override protected void shutdownFinal() {
-        try {removeDir(mWorkingDir);} catch (Exception ignored) {}
+        if (mWorkingDir != null) try {removeDir(mWorkingDir);} catch (Exception ignored) {}
     }
 }

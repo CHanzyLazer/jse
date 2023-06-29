@@ -8,7 +8,6 @@ import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.parallel.CompletedFuture;
 import com.jtool.system.*;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -97,32 +96,42 @@ public class CS {
     
     /** SLURM 相关，使用子类分割避免冗余初始化 */
     public static class Slurm {
-        public static int CORES_PER_NODE;
-        public static List<String> NODE_LIST;
-        public static void refresh() throws Exception {
-            // 直接根据环境变量获取每节点的核心数
-            @Nullable String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
-            // 尝试读取结果，如果失败则抛出错误
-            if (tRawCoresPerNode == null) throw new Exception("Load SLURM_JOB_CPUS_PER_NODE Fail, this class MUST init in SLURM environment");
-            // 目前仅支持单一的 CoresPerNode，对于有多个的情况会选取最小值
-            Pattern tPattern = Pattern.compile("(\\d+)(\\([^)]+\\))?"); // 匹配整数部分和可选的括号部分
-            Matcher tMatcher = tPattern.matcher(tRawCoresPerNode);
-            int tCoresPerNode = -1;
-            while (tMatcher.find()) {
-                int tResult = Integer.parseInt(tMatcher.group(1));
-                tCoresPerNode = (tCoresPerNode < 0) ? tResult : Math.min(tCoresPerNode, tResult);
+        public static final boolean IS_SLURM;
+        public static final int PROCID;
+        public static final int NTASKS;
+        public static final int CORES_PER_NODE;
+        public static final List<String> NODE_LIST;
+        
+        static {
+            // 获取 ID，如果失败则不是 slurm
+            int tId = -1;
+            try {tId = Integer.parseInt(System.getenv("SLURM_PROCID"));} catch (Exception ignored) {}
+            PROCID = tId;
+            IS_SLURM = PROCID >= 0;
+            // 是 slurm 则从环境变量中读取后续参数，否则使用默认非法值
+            if (IS_SLURM) {
+                // 获取任务总数
+                NTASKS = Integer.parseInt(System.getenv("SLURM_NTASKS"));
+                
+                // 获取每节点的核心数
+                String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
+                // 目前仅支持单一的 CoresPerNode，对于有多个的情况会选取最小值
+                Pattern tPattern = Pattern.compile("(\\d+)(\\([^)]+\\))?"); // 匹配整数部分和可选的括号部分
+                Matcher tMatcher = tPattern.matcher(tRawCoresPerNode);
+                int tCoresPerNode = -1;
+                while (tMatcher.find()) {
+                    int tResult = Integer.parseInt(tMatcher.group(1));
+                    tCoresPerNode = (tCoresPerNode < 0) ? tResult : Math.min(tCoresPerNode, tResult);
+                }
+                CORES_PER_NODE = tCoresPerNode;
+                
+                // 获取节点列表
+                NODE_LIST = ImmutableList.copyOf(UT.Texts.splitNodeList(System.getenv("SLURM_NODELIST")));
+            } else {
+                NTASKS = -1;
+                CORES_PER_NODE = -1;
+                NODE_LIST = null;
             }
-            if (tCoresPerNode < 0) throw new Exception("Parse SLURM_JOB_CPUS_PER_NODE Fail");
-            CORES_PER_NODE = tCoresPerNode;
-            
-            // 直接根据环境变量获取节点列表
-            @Nullable String tRawNodeList = System.getenv("SLURM_NODELIST");
-            // 尝试读取结果，如果失败则抛出错误
-            if (tRawNodeList == null) throw new Exception("Load SLURM_NODELIST Fail, this class MUST init in SLURM environment");
-            List<String> tNodeList = UT.Texts.splitNodeList(tRawNodeList);
-            if (tNodeList.isEmpty()) throw new Exception("Parse SLURM_NODELIST Fail");
-            NODE_LIST = tNodeList;
         }
-        static {try {refresh();} catch (Exception ignored) {}}
     }
 }

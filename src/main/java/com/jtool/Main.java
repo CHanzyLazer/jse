@@ -55,7 +55,7 @@ public class Main {
     private static void printHelp() {
         System.out.println("Usage:   jTool [-option] value [args...]");
         System.out.println("Such as: jTool path/to/script.groovy [argsOfGroovyScript...]");
-        System.out.println("Or:      jTool -t \"print('hello world')\"");
+        System.out.println("Or:      jTool -t \"println('hello world')\"");
         System.out.println();
         System.out.println("The options can be:");
         System.out.println("    -t -text    Run the groovy text script");

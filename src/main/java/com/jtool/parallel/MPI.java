@@ -11,8 +11,9 @@ import org.zeromq.ZMQ;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.jtool.code.CS.*;
 import static com.jtool.code.CS.Exec.JAR_PATH;
+import static com.jtool.code.CS.NUL_PRINT_STREAM;
+import static com.jtool.code.CS.ZL_BYTE;
 
 
 /**
@@ -29,8 +30,7 @@ public class MPI {
      * @param aAddress 主程序为此工作器分配的地址
      * @param aOpt 此工作器需要执行的操作
      */
-    @ApiStatus.Internal
-    public static void abstractWorkerInit(String aAddress, IOperator1<byte[], byte[]> aOpt) {
+    @ApiStatus.Internal public static void abstractWorkerInit(String aAddress, IOperator1<byte[], byte[]> aOpt) {
         // 子程序禁止标准输出和标准错误输出，防止因为任何意外导致的流死锁
         System.setErr(NUL_PRINT_STREAM);
         System.setOut(NUL_PRINT_STREAM);
@@ -54,10 +54,17 @@ public class MPI {
      * 子程序工作器抽象后的对象，
      * 用于方便主程序管理和关闭子程序
      */
-    public static final class Worker implements IAutoShutdown {
+    private abstract static class AbstractWorker implements IAutoShutdown {
+        /** 关闭此工作器 */
+        @Override public final void shutdown() {
+            shutdown_();
+            ALL_WORKER.remove(this);
+        }
+        protected abstract void shutdown_();
+    }
+    public static final class Worker extends AbstractWorker {
         private final ZMQ.Socket mSocket;
         private boolean mDead = false;
-        
         private Worker(ZMQ.Socket aSocket) {mSocket = aSocket;}
         
         /** 执行工作 */
@@ -68,13 +75,8 @@ public class MPI {
             if (tSuc) tBytes = mSocket.recv();
             return tBytes;
         }
-        
         /** 关闭此工作器，发送终止信号后注销 mSocket */
-        @Override public void shutdown() {
-            shutdown_();
-            ALL_WORKER.remove(this);
-        }
-        private void shutdown_() {
+        @Override protected void shutdown_() {
             if (mDead) return;
             mSocket.send(ZL_BYTE);
             mSocket.close();
@@ -103,15 +105,14 @@ public class MPI {
     
     
     private static void close() {
-        for (Worker tWorker : ALL_WORKER) tWorker.shutdown_();
+        for (AbstractWorker tWorker : ALL_WORKER) tWorker.shutdown_();
         ALL_WORKER.clear();
         CONTEXT.close();
     }
     
-    private final static int SUBPROCESS_ERR_TIME = 5000; // ms
     private final static int SEND_TIMEOUT = 30000; // ms
     private final static ZContext CONTEXT;
-    private final static Set<Worker> ALL_WORKER = new HashSet<>();
+    private final static Set<AbstractWorker> ALL_WORKER = new HashSet<>();
     static {
         // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
         UT.IO.init();

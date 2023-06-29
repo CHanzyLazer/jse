@@ -1,10 +1,12 @@
 package com.jtool.system;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Map;
 
 @VisibleForTesting
+@ApiStatus.Obsolete
 public final class SLURM extends SLURMSystemExecutor {
     public SLURM(Map<?, ?> aArgs) throws Exception {super(aArgs);}
     public SLURM(int aParallelNum, Map<?, ?> aArgs) throws Exception {super(aParallelNum, aArgs);}

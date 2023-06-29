@@ -556,6 +556,23 @@ public class UT {
     /** 序列化和反序列化的一些方法 */
     public static class Serial {
         public final static int LONG_LEN = 8, DOUBLE_LEN = LONG_LEN;
+        public final static int INT_LEN = 4;
+        
+        
+        public static void int2bytes(int aI, byte[] rBytes, final int aPos) {
+            for (int i = aPos; i < aPos+4; ++i) {
+                rBytes[i] = (byte)(aI & 0xff);
+                aI >>= 8;
+            }
+        }
+        public static int bytes2int(byte[] aBytes, final int aPos) {
+            int rI = 0;
+            for (int i = aPos+3; i >= aPos; --i) {
+                rI <<= 8;
+                rI |= (aBytes[i] & 0xff);
+            }
+            return rI;
+        }
         
         public static void long2bytes(long aL, byte[] rBytes, final int aPos) {
             for (int i = aPos; i < aPos+8; ++i) {
@@ -578,15 +595,24 @@ public class UT {
         public static byte[] str2bytes(String aStr) {return aStr.getBytes(StandardCharsets.UTF_8);}
         public static String bytes2str(byte[] aBytes) {return new String(aBytes, StandardCharsets.UTF_8);}
         
+        
+        public static byte[] int2bytes(int aI) {
+            byte[] rBytes = new byte[INT_LEN];
+            int2bytes(aI, rBytes, 0);
+            return rBytes;
+        }
+        public static int bytes2int(byte[] aBytes) {
+            return bytes2int(aBytes, 0);
+        }
+        
         public static byte[] long2bytes(long aL) {
-            byte[] rBytes = new byte[DOUBLE_LEN];
+            byte[] rBytes = new byte[LONG_LEN];
             long2bytes(aL, rBytes, 0);
             return rBytes;
         }
         public static long bytes2long(byte[] aBytes) {
             return bytes2long(aBytes, 0);
         }
-        
         public static byte[] double2bytes(double aD) {return long2bytes(Double.doubleToRawLongBits(aD));}
         public static double bytes2double(byte[] aBytes) {return Double.longBitsToDouble(bytes2long(aBytes));}
         

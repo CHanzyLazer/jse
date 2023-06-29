@@ -1,19 +1,19 @@
 package run
 
 import com.jtool.code.UT
-import com.jtool.system.InternalSLURM
+import com.jtool.system.SRUN
 
 
 /** SLURM 在 node 中的任务再次创建任务的实例 */
-def exe = new InternalSLURM(4);
+def exe = new SRUN(18);
 
-// 高压测试，直接跑大量的 sleepEcho
-UT.IO.write('sleepEchoIn.sh', '#!/bin/bash\nsleep 5s\necho "${1}"');
-exe.system("chmod 777 sleepEchoIn.sh");
-
-for (i in 0..<100) {
-    exe.submitSystem("./sleepEchoIn.sh $i");
-}
+/** 跑几轮 lammps */
+UT.Timer.tic();
+exe.system('lmp_ann -in lmp/.temp/CuZr-dump/Cu60Zr40/melt-fast/in > lmp/.temp/CuZr-dump/Cu60Zr40/melt-fast/thermo');
+UT.Timer.toc('lmp run 1');
+UT.Timer.tic();
+exe.system('lmp_ann -in lmp/.temp/CuZr-dump/Cu60Zr40/melt-fast/in > lmp/.temp/CuZr-dump/Cu60Zr40/melt-fast/thermo');
+UT.Timer.toc('lmp run 2');
 
 exe.shutdown();
 exe.awaitTermination();

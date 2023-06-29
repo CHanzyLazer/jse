@@ -21,6 +21,7 @@ import static com.jtool.code.CS.*;
  * <p> 一般的 SLURM 实现，基于 SSH 的远程 Executor，因此针对的是使用 SSH 连接的远程 SLURM 服务器 </p>
  * <p> 为了代码简洁，禁止输出依旧会创建文件 </p>
  */
+@ApiStatus.Obsolete
 public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemExecutor> implements ILongTimeJobPool {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
     public final static String SPLIT_NODE_SCRIPT_PATH = WORKING_DIR+"splitNodeList.sh";

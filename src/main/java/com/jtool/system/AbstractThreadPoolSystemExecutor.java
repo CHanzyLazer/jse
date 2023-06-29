@@ -5,6 +5,7 @@ import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.MergedIOFiles;
 import com.jtool.parallel.AbstractHasThreadPool;
 import com.jtool.parallel.IExecutorEX;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ import java.util.function.Supplier;
  * @author liqa
  * <p> 将一般实现放入抽象类中，因为 submit 一定需要在 pool 中使用，如果直接嵌套文件的输入流会在写入前就关闭，默认输出在 System.out </p>
  */
+@ApiStatus.Obsolete
 public abstract class AbstractThreadPoolSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
     protected AbstractThreadPoolSystemExecutor(IExecutorEX aPool) {super(aPool);}
     
