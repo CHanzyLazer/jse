@@ -14,7 +14,7 @@ import java.util.List;
  * <p> 目前认为所有边界都是周期边界条件，并且只考虑最近邻的 cell </p>
  * <p> 此类线程安全，包括多个线程同时访问同一个实例 </p>
  */
-class LinkedCell<A extends IHasXYZ> {
+final class LinkedCell<A extends IHasXYZ> {
     final @Unmodifiable List<List<A>> mCells;
     final int mSizeX, mSizeY, mSizeZ;
     final XYZ mCellBox;

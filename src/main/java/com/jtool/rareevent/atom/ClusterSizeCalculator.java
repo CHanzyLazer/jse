@@ -34,7 +34,7 @@ public class ClusterSizeCalculator implements IParameterCalculator<IHasAtomData>
             // 如果没有需要考虑的则结果为 0.0
             if (rSolidList.isEmpty()) return 0.0;
             // 使用 getClustersBFS 获取所有的团簇
-            List<List<Integer>> tClusters = MathEX.Adv.getClustersBFS(rSolidList, i -> UT.Code.filter(tMPC.getNearestNeighborList(i), j -> tIsSolid.get_(j)==1));
+            List<List<Integer>> tClusters = MathEX.Adv.getClustersBFS(rSolidList, i -> UT.Code.filter(tMPC.getNeighborList(i), j -> tIsSolid.get_(j)==1));
             // 遍历团簇统计 lambda
             double rLambda = 0.0;
             for (List<Integer> subCluster : tClusters) {
