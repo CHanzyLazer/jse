@@ -455,9 +455,21 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     
     
     
-    @FunctionalInterface public interface INeighborListGetter {List<Integer> get(int aIdx);}
     /**
-     * 计算所有粒子的近邻球谐函数的平均，即 qlm，并返回计算中顺便获取的近邻列表；
+     * 直接获取近邻列表的 api，不包括自身
+     * @author liqa
+     */
+    public List<Integer> getNeighborList(int aIdx, double aRMax) {
+        final List<Integer> rNeighborList = new ArrayList<>();
+        mNL.forEachNeighbor(aIdx, aRMax, false, (x, y, z, idx, dis) -> rNeighborList.add(idx));
+        return rNeighborList;
+    }
+    public List<Integer> getNearestNeighborList(int aIdx) {return getNeighborList(aIdx, mUnitLen*1.423);}
+    
+    @FunctionalInterface public interface INeighborListGetter {List<Integer> get(int aIdx);}
+    
+    /**
+     * 计算所有粒子的近邻球谐函数的平均，即 qlm；
      * 返回一个复数矩阵，行为原子，列为 m
      * <p>
      * 主要用于内部使用
@@ -466,20 +478,18 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
      * @return qlm 组成的矩阵，以及近邻列表
      */
-    public Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> calYlmMeanAndGetNeighborList(final int aL, final double aRNearest) {
+    public Pair<IMatrix, IMatrix> calYlmMean(final int aL, final double aRNearest) {
         // 由于目前还没有实现复数运算，再搭一套复数库工作量较大，这里暂时使用两个实向量来存储
         final IMatrix qlmReal = RowMatrix.zeros(mAtomNum, aL+aL+1);
         final IMatrix qlmImag = RowMatrix.zeros(mAtomNum, aL+aL+1);
-        @SuppressWarnings("unchecked")
-        final List<Integer>[] tNNListAll = new List[mAtomNum]; // 注意不能使用 List<xxx> 然后在 parfor 中 add，因为线程不安全
         
         // 遍历计算 qlm
         pool().parfor(mAtomNum, (i, threadID) -> {
             final XYZ cXYZ = mAtomDataXYZ[i];
-            final List<Integer> rNNList = new ArrayList<>();
             // 一次计算一行
             final IVector qlmiReal = qlmReal.row(i);
             final IVector qlmiImag = qlmImag.row(i);
+            final int[] tNN = {0};
             // 注意这里所有近邻都进行一次统计，不考虑一半的优化
             mNL.forEachNeighbor(i, aRNearest, false, (x, y, z, idx, dis) -> {
                 // 计算角度
@@ -498,22 +508,16 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
                     qlmiImag.add_(tM+aL, tY.imag);
                 }
                 
-                // 顺便统计近邻列表
-                rNNList.add(idx);
+                ++tNN[0];
             });
             // 根据近邻数平均得到 qlm
-            qlmiReal.div2this(rNNList.size());
-            qlmiImag.div2this(rNNList.size());
-            // 汇总近邻列表
-            tNNListAll[i] = rNNList;
+            qlmiReal.div2this(tNN[0]);
+            qlmiImag.div2this(tNN[0]);
         });
         
-        return new Pair<>(new Pair<>(qlmReal, qlmImag), i -> tNNListAll[i]);
+        return new Pair<>(qlmReal, qlmImag);
     }
-    public Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> calYlmMeanAndGetNeighborList(int aL) {return calYlmMeanAndGetNeighborList(aL, mUnitLen*1.423);}
-    /** 只返回近邻球谐函数平均版本 */
-    public Pair<IMatrix, IMatrix> calYlmMean(int aL, double aRNearest) {return calYlmMeanAndGetNeighborList(aL, aRNearest).first;}
-    public Pair<IMatrix, IMatrix> calYlmMean(int aL) {return calYlmMeanAndGetNeighborList(aL).first;}
+    public Pair<IMatrix, IMatrix> calYlmMean(int aL) {return calYlmMean(aL, mUnitLen*1.423);}
     
     
     /**
@@ -559,8 +563,8 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
      * @return ql 组成的向量
      */
-    public IVector calAOOP(int aL, double aRNearest) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(aL, aRNearest); return calAOOP(tPair.first, tPair.second);}
-    public IVector calAOOP(int aL                  ) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(aL); return calAOOP(tPair.first, tPair.second);}
+    public IVector calAOOP(int aL, final double aRNearest) {return calAOOP(calYlmMean(aL, aRNearest), idx -> getNeighborList(idx, aRNearest));}
+    public IVector calAOOP(int aL                        ) {return calAOOP(calYlmMean(aL), this::getNearestNeighborList);}
     /** 直接使用近邻球谐函数平均和近邻列表来计算的版本，一般是内部使用 */
     public IVector calAOOP(Pair<IMatrix, IMatrix> aYlmMean, INeighborListGetter aNeighborListGetter) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -615,9 +619,9 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
      * @param aSolidThreshold 用来根据最近邻原子中，连接数超过此值则认为是固体的阈值，默认为 7
      * @return 最后判断得到是否是固体组成的逻辑向量
      */
-    public IVector checkSolidQ6(double aRNearest, double aConnectThreshold, int aSolidThreshold) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(6, aRNearest); return checkSolidYlmMean(tPair.first, tPair.second, aConnectThreshold, aSolidThreshold);}
-    public IVector checkSolidQ6(double aRNearest                                               ) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(6, aRNearest); return checkSolidYlmMean(tPair.first, tPair.second);}
-    public IVector checkSolidQ6(                                                               ) {Pair<Pair<IMatrix, IMatrix>, INeighborListGetter> tPair = calYlmMeanAndGetNeighborList(6); return checkSolidYlmMean(tPair.first, tPair.second);}
+    public IVector checkSolidQ6(double aRNearest, double aConnectThreshold, int aSolidThreshold) {return checkSolidYlmMean(calYlmMean(6, aRNearest), idx -> getNeighborList(idx, aRNearest), aConnectThreshold, aSolidThreshold);}
+    public IVector checkSolidQ6(double aRNearest                                               ) {return checkSolidYlmMean(calYlmMean(6, aRNearest), idx -> getNeighborList(idx, aRNearest));}
+    public IVector checkSolidQ6(                                                               ) {return checkSolidYlmMean(calYlmMean(6), this::getNearestNeighborList);}
     /** 直接使用近邻球谐函数平均和近邻列表来计算的版本，一般是内部使用 */
     public IVector checkSolidYlmMean(Pair<IMatrix, IMatrix> aYlmMean, INeighborListGetter aNeighborListGetter, double aConnectThreshold, int aSolidThreshold) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
