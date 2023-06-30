@@ -9,6 +9,7 @@ import com.jtool.code.task.TaskRun;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.Matrices;
+import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
 import groovy.json.JsonBuilder;
@@ -982,7 +983,7 @@ public class UT {
          * @param aTable the Table to be saved
          * @param aFilePath csv file path to be saved
          */
-        public static void table2csv(Table aTable, String aFilePath) throws IOException {
+        public static void table2csv(ITable aTable, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (!aTable.noHead()) tPrinter.println(String.join(",", aTable.heads()));
                 for (IVector subData : aTable.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), String::valueOf)));
@@ -994,7 +995,7 @@ public class UT {
          * @param aFilePath csv file path to read
          * @return table with hand
          */
-        public static Table csv2table(String aFilePath) throws IOException {
+        public static ITable csv2table(String aFilePath) throws IOException {
             try (BufferedReader tReader = toReader(aFilePath)) {
                 List<double[]> tData = new ArrayList<>();
                 String[] tHand = null;

@@ -36,10 +36,9 @@ public abstract class AbstractMultiFrameTable<T extends ITable> extends Abstract
     @Override public ITableSlicer slicer() {return defaultFrame().slicer();}
     @Override public ITableSlicer refSlicer() {return defaultFrame().refSlicer();}
     
-    @Override public ITable copy() {return defaultFrame().copy();} // TODO 需要改成返回 AbstractMultiFrameTable
-    
     /** stuff to override */
     public T defaultFrame() {return get(0);}
+    public abstract AbstractMultiFrameTable<T> copy();
     
     /** AbstractList stuffs */
     public abstract T get(int index);

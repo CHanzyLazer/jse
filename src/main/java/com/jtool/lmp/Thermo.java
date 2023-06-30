@@ -2,6 +2,7 @@ package com.jtool.lmp;
 
 import com.jtool.code.UT;
 import com.jtool.math.table.AbstractMultiFrameTable;
+import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 
 import java.io.IOException;
@@ -16,14 +17,21 @@ import java.util.List;
  * <p> 包含读取写出的文本文件的格式 </p>
  * <p> 本身是一个列表的 Table 方便外部使用 </p>
  */
-public class Thermo extends AbstractMultiFrameTable<Table> {
-    private final Table[] mTables;
+public class Thermo extends AbstractMultiFrameTable<ITable> {
+    private final ITable[] mTables;
     
-    public Thermo(Table... aTables) {mTables = aTables==null ? new Table[0] : aTables;}
-    public Thermo(Collection<Table> aTables) {mTables = aTables.toArray(new Table[0]);}
+    public Thermo(ITable... aTables) {mTables = aTables==null ? new ITable[0] : aTables;}
+    public Thermo(Collection<? extends ITable> aTables) {mTables = aTables.toArray(new ITable[0]);}
+    
+    /** AbstractMultiFrameTable stuffs */
+    @Override public Thermo copy() {
+        List<ITable> rThermo = new ArrayList<>();
+        for (ITable tTable : mTables) rThermo.add(tTable.copy());
+        return new Thermo(rThermo);
+    }
     
     /** AbstractList stuffs */
-    @Override public Table get(int index) {return mTables[index];}
+    @Override public ITable get(int index) {return mTables[index];}
     @Override public int size() {return mTables.length;}
     
     
@@ -42,7 +50,7 @@ public class Thermo extends AbstractMultiFrameTable<Table> {
             String[] tFiles = UT.IO.list(aPath);
             if (tFiles == null) return null;
             
-            List<Table> rThermo = new ArrayList<>();
+            List<ITable> rThermo = new ArrayList<>();
             for (String tName : tFiles) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
                 String tFileOrDir = aPath+tName;
@@ -67,7 +75,7 @@ public class Thermo extends AbstractMultiFrameTable<Table> {
      */
     public static Thermo read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
     public static Thermo read_(List<String> aLines) {
-        List<Table> rThermo = new ArrayList<>();
+        List<ITable> rThermo = new ArrayList<>();
         
         int idx = 0, endIdx;
         String[] tTokens;
