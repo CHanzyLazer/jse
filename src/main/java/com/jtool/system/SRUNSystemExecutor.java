@@ -21,12 +21,12 @@ import static com.jtool.code.CS.WORKING_DIR;
  * <p> 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务 </p>
  * <p> TODO 同样需要将这个分配逻辑包装一下 </p>
  */
-public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
+public class SRUNSystemExecutor extends LocalSystemExecutor {
     private final String mWorkingDir;
     private final Map<Resource, Boolean> mAssignedResources;
     
     /** 线程数现在由每个任务的并行数，申请到的节点数，以及每节点的核心数来确定 */
-    public InternalSLURMSystemExecutor(int aTaskNum, int aParallelNum) throws Exception {
+    public SRUNSystemExecutor(int aTaskNum, int aParallelNum) throws Exception {
         // 未来不会限制并行数，因此这里不再提供并行的设置
         super(SERIAL_EXECUTOR);
         
@@ -49,7 +49,7 @@ public class InternalSLURMSystemExecutor extends LocalSystemExecutor {
             mAssignedResources.put(tResource, false);
         }
     }
-    public InternalSLURMSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, 1);}
+    public SRUNSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, 1);}
     
     /** 内部使用的向任务分配节点的方法 */
     private synchronized @Nullable Resource assignResource() {
