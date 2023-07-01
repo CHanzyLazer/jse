@@ -68,6 +68,10 @@ public class CS {
     /** IOFiles Keys */
     public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
     
+    /** Patterns */
+    public final static Pattern BLANKS = Pattern.compile("\\s+");
+    public final static Pattern COMMA = Pattern.compile(",");
+    
     /** Relative atomic mass in this project */
     public final static Map<String, Double> MASS = (new ImmutableMap.Builder<String, Double>())
         .put("Cu", 63.546)

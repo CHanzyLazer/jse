@@ -343,8 +343,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             if (idx+tAtomNum > aLines.size()) break;
             aAtomData = new ArrayList<>(tAtomNum);
             for (int i = 0; i < tAtomNum; ++i) {
-                tTokens = UT.Texts.splitBlank(aLines.get(idx));
-                aAtomData.add(UT.IO.str2data(tTokens));
+                aAtomData.add(UT.IO.blankStr2data(aLines.get(idx)));
                 ++idx;
             }
             

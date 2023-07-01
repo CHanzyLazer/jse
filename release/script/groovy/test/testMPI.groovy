@@ -21,7 +21,7 @@ UT.Timer.toc('read dump');
 UT.Timer.tic();
 
 // 设置并行数
-int processNum = 8;
+int processNum = 4;
 // 计算结果
 def crystalSize = Vectors.zeros(dump.size());
 

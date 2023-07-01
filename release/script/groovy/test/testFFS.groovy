@@ -37,4 +37,10 @@ while (!FFS.finished()) FFS.run();
 UT.Timer.toc("3, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
 
 FFS.shutdown();
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, [2, 2.2, 2.3, 2.4, 2.5, 2.7, 2.8, 4, 6, 8, 10], N0).setMinProb(0.0001);
 
+UT.Timer.tic();
+while (!FFS.finished()) FFS.run();
+UT.Timer.toc("4, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
+
+FFS.shutdown();

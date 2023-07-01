@@ -208,7 +208,9 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
             mK0 = mPointsOnLambda.size() / mTotTime0;
             // 第一个过程完成
             mStep = 0;
-        } else
+            if (mStep >= mN) mFinished = true;
+            return;
+        }
         // 第二个过程会从 λi 上的点随机选取运行直到到达 λi+1 或者返回 A，注意依旧需要将耗时增加到 mTotTime 中
         if (mStep < mN) {
             // 先将上一步得到的 λi 交换到 oPointsOnLambda 作为初始
@@ -237,8 +239,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
             mPi.set_(mStep, mPointsOnLambda.size() / (double)tMi[0]);
             // 第二个过程这一步完成
             ++mStep;
-        } else {
-            mFinished = true;
+            if (mStep >= mN) mFinished = true;
         }
     }
     public boolean finished() {return mFinished;}

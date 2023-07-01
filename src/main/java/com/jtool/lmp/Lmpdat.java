@@ -219,8 +219,7 @@ public class Lmpdat extends AbstractAtomData {
         if (idx+tAtomNum > aLines.size()) return null;
         aAtomData = new ArrayList<>(tAtomNum);
         for (int i = 0; i < tAtomNum; ++i) {
-            tTokens = UT.Texts.splitBlank(aLines.get(idx));
-            aAtomData.add(UT.IO.str2data(tTokens));
+            aAtomData.add(UT.IO.blankStr2data(aLines.get(idx)));
             ++idx;
         }
         

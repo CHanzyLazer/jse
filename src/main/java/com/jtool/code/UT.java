@@ -6,6 +6,7 @@ import com.jtool.atom.*;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.code.task.TaskCall;
 import com.jtool.code.task.TaskRun;
+import com.jtool.math.MathEX;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.Matrices;
@@ -14,6 +15,7 @@ import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
+import org.apache.groovy.json.internal.CharScanner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -35,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -700,7 +701,7 @@ public class UT {
          * @return the split sting in array
          */
         public static String[] splitBlank(String aStr) {
-            return aStr.trim().split("\\s+");
+            return BLANKS.split(aStr.trim());
         }
         
         
@@ -712,7 +713,7 @@ public class UT {
          * @return the split sting in array
          */
         public static String[] splitComma(String aStr) {
-            return aStr.replaceAll("\\s+","").split(",");
+            return COMMA.split(BLANKS.matcher(aStr).replaceAll(""));
         }
         
         
@@ -776,27 +777,22 @@ public class UT {
         public static byte[] readAllBytes(String aFilePath) throws IOException {return Files.readAllBytes(toAbsolutePath_(aFilePath));}
         /**
          * read all lines of the File
-         * <p>
-         * Optimized for large file reads
          * @author liqa
          * @param aFilePath File to read
          * @return lines of String
          * @throws IOException when fail
          */
-        public static List<String> readAllLines(String aFilePath) throws IOException {
-            try (Stream<String> tLines = Files.lines(toAbsolutePath_(aFilePath))) {
-                return tLines.parallel().collect(Collectors.toList());
-            }
-        }
+        public static List<String> readAllLines(String aFilePath) throws IOException {return Files.readAllLines(toAbsolutePath_(aFilePath));}
         /**
          * read all lines of the InputStream
-         * <p>
-         * Optimized for large file reads
          * @author liqa
          */
-        public static List<String> readAllLines(InputStream aInputStream) {
-            try (Stream<String> tLines = toReader(aInputStream).lines()) {
-                return tLines.parallel().collect(Collectors.toList());
+        public static List<String> readAllLines(InputStream aInputStream) throws IOException {
+            try (BufferedReader tReader = toReader(aInputStream)) {
+                List<String> rLines = new ArrayList<>();
+                String tLine;
+                while ((tLine = tReader.readLine()) != null) rLines.add(tLine);
+                return rLines;
             }
         }
         
@@ -920,7 +916,37 @@ public class UT {
          */
         public static double[] str2data(String[] aStr) {
             double[] tData = new double[aStr.length];
-            for (int i = 0; i < aStr.length; ++i) tData[i] = Double.parseDouble(aStr[i]);
+            for (int i = 0; i < aStr.length; ++i) tData[i] = MathEX.Fast.parseDouble(aStr[i]);
+            return tData;
+        }
+        /**
+         * convert String with blank to double[] for lmp usage, much faster
+         * @author liqa
+         */
+        public static double[] blankStr2data(String aBlankStr) {
+            // 先直接转 char[]，适配 groovy-json 的 CharScanner
+            char[] tChar = aBlankStr.toCharArray();
+            // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
+            List<Double> rData = new ArrayList<>();
+            int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
+            for (int i = tFrom; i < tChar.length; ++i) {
+                int tCharCode = tChar[i];
+                if (tFrom < 0) {
+                    if (tCharCode > 32) {
+                        tFrom = i;
+                    }
+                } else {
+                    if (tCharCode <= 32) {
+                        rData.add(CharScanner.parseDouble(tChar, tFrom, i));
+                        tFrom = -1;
+                    }
+                }
+            }
+            // 最后一个数据
+            if (tFrom >= 0 && tFrom < tChar.length) rData.add(CharScanner.parseDouble(tChar, tFrom, tChar.length));
+            // 转为 double[]
+            double[] tData = new double[rData.size()];
+            for (int i = 0; i < tData.length; ++i) tData[i] = rData.get(i);
             return tData;
         }
         

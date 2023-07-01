@@ -94,8 +94,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             List<double[]> aData = new ArrayList<>(endIdx - idx);
             // 读取数据
             for (; idx < endIdx; ++idx) {
-                tTokens = UT.Texts.splitBlank(aLines.get(idx));
-                aData.add(UT.IO.str2data(tTokens));
+                aData.add(UT.IO.blankStr2data(aLines.get(idx)));
             }
             // 创建 Table 并附加到 rThermo 中
             rThermo.add(new Table(aHands, aData));

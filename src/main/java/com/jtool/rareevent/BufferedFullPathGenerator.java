@@ -30,6 +30,8 @@ public class BufferedFullPathGenerator<T> implements IFullPathGenerator<T> {
     @Override public ITimeAndParameterIterator<T> fullPathInit() {return fullPathFrom(mPathGenerator.initPoint());}
     
     private class BufferedIterator implements ITimeAndParameterIterator<T> {
+        /** 专门优化第一次调用，不去创建路径，因为可能直接满足条件 */
+        private boolean mIsFirst = true;
         /** 路径部分 */
         private Iterator<T> mPathIt = null;
         private T mNext;
@@ -59,13 +61,13 @@ public class BufferedFullPathGenerator<T> implements IFullPathGenerator<T> {
         }
         
         @Override public T next() {
-            // 第一次调用则合法化后直接返回，保留第一个值
-            if (mPathIt == null) {
-                validNextBuffer_();
+            // 第一次调用特殊优化，直接返回
+            if (mIsFirst) {
+                mIsFirst = false;
                 return mNext;
             }
             // 一般操作直接合法化后 next
-            if (!mPathIt.hasNext()) {
+            if (mPathIt==null || !mPathIt.hasNext()) {
                 validNextBuffer_();
             }
             mNext = mPathIt.next();
@@ -74,13 +76,14 @@ public class BufferedFullPathGenerator<T> implements IFullPathGenerator<T> {
         
         /** 获取当前位置点从初始开始消耗的时间，如果没有调用过 next 则会抛出错误 */
         @Override public double timeConsumed() {
-            if (Double.isNaN(mStartTime)) throw new IllegalStateException();
+            if (mIsFirst) throw new IllegalStateException();
+            if (Double.isNaN(mStartTime)) return 0.0;
             return mTimeConsumed + (mPathGenerator.timeOf(mNext) - mStartTime);
         }
         
         /** 获取当前位置点的参数 λ */
         @Override public double lambda() {
-            if (mPathIt == null) throw new IllegalStateException();
+            if (mIsFirst) throw new IllegalStateException();
             return mParameterCalculator.lambdaOf(mNext);
         }
         
