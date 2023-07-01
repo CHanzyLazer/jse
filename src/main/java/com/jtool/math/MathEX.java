@@ -1006,11 +1006,6 @@ public class MathEX {
         public static double atan(double aValue) {return FastMath.atan(aValue);}
         
         public static double pow(double aValue, double aPower) {return FastMath.pow(aValue, aPower);}
-        
-        /** 使用 Groovy-json 中现有的方法实现快速字符串转数值，比较野的方案因此只在性能瓶颈的情况使用 */
-        public static double parseDouble(String aStr) {return CharScanner.parseDouble(aStr.toCharArray(), 0, aStr.length());}
-        public static int parseInt(String aStr) {return CharScanner.parseInt(aStr.toCharArray());}
-        public static long parseLong(String aStr) {return CharScanner.parseLong(aStr.toCharArray());}
     }
     
     

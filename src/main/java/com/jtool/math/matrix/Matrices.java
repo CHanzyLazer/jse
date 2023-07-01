@@ -50,11 +50,7 @@ public class Matrices {
         return rMatrix;
     }
     public static IMatrix fromRows(Collection<? extends Collection<? extends Number>> aRows) {
-        int tRowNum = aRows.size();
-        int tColNum = aRows.iterator().next().size();
-        IMatrix rMatrix = zeros(tRowNum, tColNum);
-        rMatrix.fillWithRows(aRows);
-        return rMatrix;
+        return fromRows(aRows.size(), aRows.iterator().next().size(), aRows);
     }
     
     public static IMatrix fromCols(int aSize, Iterable<? extends Iterable<? extends Number>> aCols) {return fromCols(aSize, aSize, aCols);}
@@ -64,11 +60,7 @@ public class Matrices {
         return rMatrix;
     }
     public static IMatrix fromCols(Collection<? extends Collection<? extends Number>> aCols) {
-        int tRowNum = aCols.iterator().next().size();
-        int tColNum = aCols.size();
-        IMatrix rMatrix = zeros(tRowNum, tColNum);
-        rMatrix.fillWithCols(aCols);
-        return rMatrix;
+        return fromCols(aCols.iterator().next().size(), aCols.size(), aCols);
     }
     
     

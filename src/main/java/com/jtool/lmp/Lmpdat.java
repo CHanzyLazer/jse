@@ -6,6 +6,8 @@ import com.jtool.atom.IHasAtomData;
 import com.jtool.atom.XYZ;
 import com.jtool.code.UT;
 import com.jtool.math.MathEX;
+import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
@@ -168,7 +170,7 @@ public class Lmpdat extends AbstractAtomData {
         int aAtomTypeNum;
         Box aBox;
         IVector aMasses;
-        List<double[]> aAtomData;
+        IMatrix aAtomData;
         
         int idx = 0;
         int tIdx; String[] tTokens;
@@ -217,9 +219,9 @@ public class Lmpdat extends AbstractAtomData {
         idx = UT.Texts.findLineContaining(aLines, idx, "Atoms"); ++idx;
         ++idx; // 中间有一个空行
         if (idx+tAtomNum > aLines.size()) return null;
-        aAtomData = new ArrayList<>(tAtomNum);
-        for (int i = 0; i < tAtomNum; ++i) {
-            aAtomData.add(UT.IO.blankStr2data(aLines.get(idx)));
+        aAtomData = RowMatrix.zeros(tAtomNum, STD_ATOM_DATA_KEYS.length);
+        for (IVector tRow : aAtomData.rows()) {
+            tRow.fill(UT.Texts.str2data(aLines.get(idx)));
             ++idx;
         }
         

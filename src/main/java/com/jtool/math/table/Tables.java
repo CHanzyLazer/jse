@@ -1,13 +1,10 @@
 package com.jtool.math.table;
 
-import com.jtool.code.UT;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.IMatrixGetter;
-import com.jtool.math.vector.IVector;
+import com.jtool.math.matrix.Matrices;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author liqa
@@ -19,20 +16,12 @@ public class Tables {
     
     public static ITable from(int aSize, IMatrixGetter aMatrixGetter, String... aHeads) {return from(aSize, aSize, aMatrixGetter, aHeads);}
     public static ITable from(int aRowNum, int aColNum, IMatrixGetter aMatrixGetter, String... aHeads) {
-        List<double[]> rData = new ArrayList<>(aRowNum);
-        for (int row = 0; row < aRowNum; ++row) {
-            double[] subData = new double[aColNum];
-            for (int col = 0; col < aColNum; ++col) {
-                subData[col] = aMatrixGetter.get(row, col);
-            }
-            rData.add(subData);
-        }
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aColNum, rData);
+        IMatrix tData = Matrices.from(aRowNum, aColNum, aMatrixGetter);
+        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aColNum, tData);
     }
     public static ITable from(IMatrix aMatrix, String... aHeads) {
-        List<double[]> rData = new ArrayList<>(aMatrix.rowNumber());
-        for (IVector tRow : aMatrix.rows()) rData.add(tRow.data());
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aMatrix.columnNumber(), rData);
+        IMatrix tData = Matrices.from(aMatrix);
+        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aMatrix.columnNumber(), tData);
     }
     
     public static ITable from(int aSize, Iterable<? extends Iterable<? extends Number>> aRows, String... aHeads) {return fromRows(aSize, aRows, aHeads);}
@@ -41,30 +30,17 @@ public class Tables {
     
     public static ITable fromRows(int aSize, Iterable<? extends Iterable<? extends Number>> aRows, String... aHeads) {return fromRows(aSize, aSize, aRows, aHeads);}
     public static ITable fromRows(int aRowNum, int aColNum, Iterable<? extends Iterable<? extends Number>> aRows, String... aHeads) {
-        List<double[]> rData = new ArrayList<>(aRowNum);
-        for (Iterable<? extends Number> tRow : aRows) rData.add(UT.Code.toData(aColNum, tRow));
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aColNum, rData);
+        IMatrix tData = Matrices.fromRows(aRowNum, aColNum, aRows);
+        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aColNum, tData);
     }
     public static ITable fromRows(Collection<? extends Collection<? extends Number>> aRows, String... aHeads) {
-        List<double[]> rData = new ArrayList<>(aRows.size());
-        for (Collection<? extends Number> tRow : aRows) rData.add(UT.Code.toData(tRow));
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(rData);
+        return fromRows(aRows.size(), aRows.iterator().next().size(), aRows, aHeads);
     }
     
     public static ITable fromCols(int aSize, Iterable<? extends Iterable<? extends Number>> aCols, String... aHeads) {return fromCols(aSize, aSize, aCols, aHeads);}
     public static ITable fromCols(int aRowNum, int aColNum, Iterable<? extends Iterable<? extends Number>> aCols, String... aHeads) {
-        List<double[]> rData = new ArrayList<>(aRowNum);
-        for (int row = 0; row < aRowNum; ++row) rData.add(new double[aColNum]);
-        int col = 0;
-        for (Iterable<? extends Number> tCol : aCols) {
-            int row = 0;
-            for (Number tValue : tCol) {
-                rData.get(row)[col] = tValue.doubleValue();
-                ++row;
-            }
-            ++col;
-        }
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, rData) : new Table(aColNum, rData);
+        IMatrix tData = Matrices.fromCols(aRowNum, aColNum, aCols);
+        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aColNum, tData);
     }
     public static ITable fromCols(Collection<? extends Collection<? extends Number>> aCols, String... aHeads) {
         return fromCols(aCols.iterator().next().size(), aCols.size(), aCols, aHeads);

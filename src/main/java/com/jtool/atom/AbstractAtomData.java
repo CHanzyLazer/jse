@@ -1,8 +1,11 @@
 package com.jtool.atom;
 
 import com.jtool.code.UT;
+import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
+import com.jtool.math.table.Tables;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -30,33 +33,75 @@ public abstract class AbstractAtomData implements IHasAtomData {
     
     /** 会利用 atomNum() 来得到初始的容量 */
     @Override public ITable dataXYZ() {
-        List<double[]> rData = new ArrayList<>(atomNum());
-        for (IAtom tAtom : atoms()) rData.add(new double[] {tAtom.x(), tAtom.y(), tAtom.z()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 3);
+        int row = 0;
+        for (IAtom tAtom : atoms()) {
+            rData.set_(row, 0, tAtom.x());
+            rData.set_(row, 1, tAtom.y());
+            rData.set_(row, 2, tAtom.z());
+            ++row;
+        }
         return new Table(ATOM_DATA_KEYS_XYZ, rData);
     }
     @Override public ITable dataXYZ(int aType) {
-        List<double[]> rData = new ArrayList<>();
-        for (IAtom tAtom : atoms(aType)) rData.add(new double[] {tAtom.x(), tAtom.y(), tAtom.z()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 3);
+        int row = 0;
+        for (IAtom tAtom : atoms(aType)) {
+            rData.set_(row, 0, tAtom.x());
+            rData.set_(row, 1, tAtom.y());
+            rData.set_(row, 2, tAtom.z());
+            ++row;
+        }
         return new Table(ATOM_DATA_KEYS_XYZ, rData);
     }
     @Override public ITable dataXYZID() {
-        List<double[]> rData = new ArrayList<>(atomNum());
-        for (IAtom tAtom : atoms()) rData.add(new double[] {tAtom.x(), tAtom.y(), tAtom.z(), tAtom.id()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 4);
+        int row = 0;
+        for (IAtom tAtom : atoms()) {
+            rData.set_(row, 0, tAtom.x());
+            rData.set_(row, 1, tAtom.y());
+            rData.set_(row, 2, tAtom.z());
+            rData.set_(row, 3, tAtom.id());
+            ++row;
+        }
         return new Table(ATOM_DATA_KEYS_XYZID, rData);
     }
     @Override public ITable dataXYZID(int aType) {
-        List<double[]> rData = new ArrayList<>();
-        for (IAtom tAtom : atoms(aType)) rData.add(new double[] {tAtom.x(), tAtom.y(), tAtom.z(), tAtom.id()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 4);
+        int row = 0;
+        for (IAtom tAtom : atoms(aType)) {
+            rData.set_(row, 0, tAtom.x());
+            rData.set_(row, 1, tAtom.y());
+            rData.set_(row, 2, tAtom.z());
+            rData.set_(row, 3, tAtom.id());
+            ++row;
+        }
         return new Table(ATOM_DATA_KEYS_XYZID, rData);
     }
     @Override public ITable dataSTD() {
-        List<double[]> rData = new ArrayList<>(atomNum());
-        for (IAtom tAtom : atoms()) rData.add(new double[] {tAtom.id(), tAtom.type(), tAtom.x(), tAtom.y(), tAtom.z()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 5);
+        int row = 0;
+        for (IAtom tAtom : atoms()) {
+            rData.set_(row, 0, tAtom.id());
+            rData.set_(row, 1, tAtom.type());
+            rData.set_(row, 2, tAtom.x());
+            rData.set_(row, 3, tAtom.y());
+            rData.set_(row, 4, tAtom.z());
+            ++row;
+        }
         return new Table(STD_ATOM_DATA_KEYS, rData);
     }
     @Override public ITable dataSTD(int aType) {
-        List<double[]> rData = new ArrayList<>();
-        for (IAtom tAtom : atoms(aType)) rData.add(new double[] {tAtom.id(), tAtom.type(), tAtom.x(), tAtom.y(), tAtom.z()});
+        IMatrix rData = RowMatrix.zeros(atomNum(), 5);
+        int row = 0;
+        for (IAtom tAtom : atoms(aType)) {
+            rData.set_(row, 0, tAtom.id());
+            rData.set_(row, 1, tAtom.type());
+            rData.set_(row, 2, tAtom.x());
+            rData.set_(row, 3, tAtom.y());
+            rData.set_(row, 4, tAtom.z());
+            ++row;
+        }
         return new Table(STD_ATOM_DATA_KEYS, rData);
     }
     

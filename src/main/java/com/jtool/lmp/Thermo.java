@@ -1,9 +1,12 @@
 package com.jtool.lmp;
 
 import com.jtool.code.UT;
+import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.AbstractMultiFrameTable;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
+import com.jtool.math.vector.IVector;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -91,10 +94,11 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             // 获取结束的位置
             endIdx = UT.Texts.findLineContaining(aLines, idx, "Loop time of");
             if (endIdx >= aLines.size()) break;
-            List<double[]> aData = new ArrayList<>(endIdx - idx);
+            IMatrix aData = RowMatrix.zeros(endIdx-idx, aHands.length);
             // 读取数据
-            for (; idx < endIdx; ++idx) {
-                aData.add(UT.IO.blankStr2data(aLines.get(idx)));
+            for (IVector tRow : aData.rows()) {
+                tRow.fill(UT.Texts.str2data(aLines.get(idx)));
+                ++idx;
             }
             // 创建 Table 并附加到 rThermo 中
             rThermo.add(new Table(aHands, aData));

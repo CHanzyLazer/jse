@@ -2,6 +2,8 @@ package com.jtool.lmp;
 
 import com.jtool.atom.*;
 import com.jtool.code.UT;
+import com.jtool.math.matrix.IMatrix;
+import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
@@ -307,7 +309,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             String[] aBoxBounds;
             Box aBox;
             String[] aAtomDataKeys;
-            List<double[]> aAtomData;
+            IMatrix aAtomData;
             
             // 读取时间步数
             idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: TIMESTEP"); ++idx;
@@ -341,9 +343,9 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             System.arraycopy(tTokens, 2, aAtomDataKeys, 0, aAtomDataKeys.length);
             ++idx;
             if (idx+tAtomNum > aLines.size()) break;
-            aAtomData = new ArrayList<>(tAtomNum);
-            for (int i = 0; i < tAtomNum; ++i) {
-                aAtomData.add(UT.IO.blankStr2data(aLines.get(idx)));
+            aAtomData = RowMatrix.zeros(tAtomNum, aAtomDataKeys.length);
+            for (IVector tRow : aAtomData.rows()) {
+                tRow.fill(UT.Texts.str2data(aLines.get(idx)));
                 ++idx;
             }
             

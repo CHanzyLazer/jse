@@ -6,13 +6,13 @@ import com.jtool.atom.*;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.code.task.TaskCall;
 import com.jtool.code.task.TaskRun;
-import com.jtool.math.MathEX;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
-import com.jtool.math.matrix.Matrices;
+import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.Vectors;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.json.internal.CharScanner;
@@ -677,6 +677,36 @@ public class UT {
     
     public static class Texts {
         /**
+         * 针对 lammps 等软件输出文件中存在的使用空格分割的数据专门优化的读取操作，
+         * 使用 groovy-json 中现成的 parseDouble 等方法，总体比直接 split 并用 java 的 parseDouble 快一倍以上
+         * @author liqa
+         */
+        public static List<Double> str2data(String aStr) {
+            // 先直接转 char[]，适配 groovy-json 的 CharScanner
+            char[] tChar = aStr.toCharArray();
+            // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
+            List<Double> rData = new ArrayList<>();
+            int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
+            for (int i = tFrom; i < tChar.length; ++i) {
+                int tCharCode = tChar[i];
+                if (tFrom < 0) {
+                    if (tCharCode > 32) {
+                        tFrom = i;
+                    }
+                } else {
+                    if (tCharCode <= 32) {
+                        rData.add(CharScanner.parseDouble(tChar, tFrom, i));
+                        tFrom = -1;
+                    }
+                }
+            }
+            // 最后一个数据
+            if (tFrom >= 0 && tFrom < tChar.length) rData.add(CharScanner.parseDouble(tChar, tFrom, tChar.length));
+            return rData;
+        }
+        
+        
+        /**
          * Start from aStartIdx to find the first index containing aContainStr
          * @author liqa
          * @param aLines where to find the aContainStr
@@ -902,55 +932,6 @@ public class UT {
         
         
         /**
-         * convert double[] to String[] for printRecord usage
-         * @author liqa
-         */
-        public static String[] data2str(double[] aData) {
-            String[] tStr = new String[aData.length];
-            for (int i = 0; i < aData.length; ++i) tStr[i] = String.valueOf(aData[i]);
-            return tStr;
-        }
-        /**
-         * convert String[] to double[] for csv2data usage
-         * @author liqa
-         */
-        public static double[] str2data(String[] aStr) {
-            double[] tData = new double[aStr.length];
-            for (int i = 0; i < aStr.length; ++i) tData[i] = MathEX.Fast.parseDouble(aStr[i]);
-            return tData;
-        }
-        /**
-         * convert String with blank to double[] for lmp usage, much faster
-         * @author liqa
-         */
-        public static double[] blankStr2data(String aBlankStr) {
-            // 先直接转 char[]，适配 groovy-json 的 CharScanner
-            char[] tChar = aBlankStr.toCharArray();
-            // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
-            List<Double> rData = new ArrayList<>();
-            int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
-            for (int i = tFrom; i < tChar.length; ++i) {
-                int tCharCode = tChar[i];
-                if (tFrom < 0) {
-                    if (tCharCode > 32) {
-                        tFrom = i;
-                    }
-                } else {
-                    if (tCharCode <= 32) {
-                        rData.add(CharScanner.parseDouble(tChar, tFrom, i));
-                        tFrom = -1;
-                    }
-                }
-            }
-            // 最后一个数据
-            if (tFrom >= 0 && tFrom < tChar.length) rData.add(CharScanner.parseDouble(tChar, tFrom, tChar.length));
-            // 转为 double[]
-            double[] tData = new double[rData.size()];
-            for (int i = 0; i < tData.length; ++i) tData[i] = rData.get(i);
-            return tData;
-        }
-        
-        /**
          * save matrix data to csv file
          * @author liqa
          * @param aData the matrix form data to be saved
@@ -960,7 +941,7 @@ public class UT {
         public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
-                for (double[] subData : aData) tPrinter.println(String.join(",", data2str(subData)));
+                for (double[] subData : aData) tPrinter.println(String.join(",", Code.map(Code.asList(subData), String::valueOf)));
             }
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
@@ -1000,7 +981,7 @@ public class UT {
          * @param aFilePath csv file path to read
          * @return a matrix
          */
-        public static IMatrix csv2data(String aFilePath) throws IOException {return Matrices.from(csv2table(aFilePath).matrix());}
+        public static IMatrix csv2data(String aFilePath) throws IOException {return csv2table(aFilePath).matrix();}
         
         
         /**
@@ -1022,25 +1003,37 @@ public class UT {
          * @return table with hand
          */
         public static ITable csv2table(String aFilePath) throws IOException {
-            try (BufferedReader tReader = toReader(aFilePath)) {
-                List<double[]> tData = new ArrayList<>();
-                String[] tHand = null;
-                boolean tIsHead = true;
-                String tLine;
-                while ((tLine = tReader.readLine()) != null) {
-                    String[] tTokens = Texts.splitComma(tLine);
-                    if (tIsHead) {
-                        double[] tFirstData = null;
-                        try {tFirstData = str2data(tTokens);} catch (Exception ignored) {} // 直接看能否成功粘贴
-                        if (tFirstData != null) tData.add(tFirstData);
-                        else tHand = tTokens;
-                        tIsHead = false;
-                    } else {
-                        tData.add(str2data(tTokens));
-                    }
-                }
-                return tHand != null ? new Table(tHand, tData) : new Table(tData);
+            // 现在直接全部读取
+            List<String> tLines = readAllLines(aFilePath);
+            // 获取行数，末尾空行忽略
+            int tLineNum = tLines.size();
+            for (int i = tLines.size()-1; i >= 0; --i) {
+                if (tLines.get(i).trim().isEmpty()) --tLineNum;
+                else break;
             }
+            // 需要的参数
+            String[] tHand;
+            IMatrix tData;
+            String[] tTokens;
+            // 读取第一行检测是否有头，直接看能否成功粘贴
+            tTokens = Texts.splitComma(tLines.get(0));
+            IVector tFirstData = null;
+            try {tFirstData = Vectors.from(Code.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
+            if (tFirstData != null) {
+                tHand = null;
+                tData = RowMatrix.zeros(tLineNum, tFirstData.size());
+                tData.row(0).fill(tFirstData);
+            } else {
+                tHand = tTokens;
+                tData = RowMatrix.zeros(tLineNum-1, tHand.length);
+            }
+            // 遍历读取后续数据
+            for (int i = 1; i < tLineNum; ++i) {
+                tTokens = Texts.splitComma(tLines.get(i));
+                tData.row(tHand==null ? i : i-1).fill(Code.map(tTokens, Double::parseDouble));
+            }
+            // 返回结果
+            return tHand != null ? new Table(tHand, tData) : new Table(tData);
         }
         
         
