@@ -2,7 +2,6 @@ package com.jtool.code;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.jtool.atom.IHasXYZ;
 import com.jtool.atom.XYZ;
 import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.IOFiles;

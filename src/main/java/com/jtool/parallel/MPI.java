@@ -116,6 +116,7 @@ public class MPI {
             rCommand.add("--nodes");            rCommand.add(String.valueOf(tResource.nodes));
             rCommand.add("--ntasks");           rCommand.add(String.valueOf(tResource.ntasks));
             rCommand.add("--ntasks-per-node");  rCommand.add(String.valueOf(tResource.ntasksPerNode));
+            rCommand.add("--cpus-per-task");    rCommand.add(String.valueOf(1));
             rCommand.add(tCommand);
             tCommand = String.join(" ", rCommand);
         }

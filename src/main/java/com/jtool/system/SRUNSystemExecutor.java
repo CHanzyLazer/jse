@@ -84,15 +84,16 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
         catch (Exception e) {e.printStackTrace(); return -1;}
         // 组装指令
-        List<String> rRunCommand = new ArrayList<>();
-        rRunCommand.add("srun");
-        rRunCommand.add("--nodelist");          rRunCommand.add(String.join(",", tResource.nodelist));
-        rRunCommand.add("--nodes");             rRunCommand.add(String.valueOf(tResource.nodes));
-        rRunCommand.add("--ntasks");            rRunCommand.add(String.valueOf(tResource.ntasks));
-        rRunCommand.add("--ntasks-per-node");   rRunCommand.add(String.valueOf(tResource.ntasksPerNode));
-        rRunCommand.add("bash");                rRunCommand.add(tTempScriptPath); // 使用 bash 执行不需要考虑权限的问题
+        List<String> rCommand = new ArrayList<>();
+        rCommand.add("srun");
+        rCommand.add("--nodelist");         rCommand.add(String.join(",", tResource.nodelist));
+        rCommand.add("--nodes");            rCommand.add(String.valueOf(tResource.nodes));
+        rCommand.add("--ntasks");           rCommand.add(String.valueOf(tResource.ntasks));
+        rCommand.add("--ntasks-per-node");  rCommand.add(String.valueOf(tResource.ntasksPerNode));
+        rCommand.add("--cpus-per-task");    rCommand.add(String.valueOf(1));
+        rCommand.add("bash");               rCommand.add(tTempScriptPath); // 使用 bash 执行不需要考虑权限的问题
         // 执行
-        int tOut = super.system_(String.join(" ", rRunCommand), aPrintln);
+        int tOut = super.system_(String.join(" ", rCommand), aPrintln);
         // 任务完成后需要归还任务
         returnResource(tResource);
         return tOut;
