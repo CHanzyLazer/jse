@@ -21,7 +21,7 @@ public abstract class AbstractAtomData implements IHasAtomData {
     public abstract int atomNum();
     public abstract int atomTypeNum();
     
-    @Override public double volume() {return boxHi().minus(boxLo()).product();}
+    @Override public double volume() {return boxHi().minus(boxLo()).prod();}
     
     
     /** 直接使用过滤器过滤掉不符合的种类 */

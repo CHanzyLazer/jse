@@ -52,12 +52,19 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void mapFill2this      (double aRHS) {DATA.mapFill2this_(thisVector_().setIterator(), aRHS);}
     @Override public void ebeFill2this      (IVectorGetter aRHS) {IVector rVector = thisVector_(); DATA.ebeFill2this_(rVector.setIterator(), rVector.iteratorOf(aRHS));}
     
-    @Override public double sum    ()                      {return DATA.sumOfThis_    (thisVector_().iterator()      );}
-    @Override public double mean   ()                      {return DATA.meanOfThis_   (thisVector_().iterator()      );}
-    @Override public double product()                      {return DATA.productOfThis_(thisVector_().iterator()      );}
-    @Override public double max    ()                      {return DATA.maxOfThis_    (thisVector_().iterator()      );}
-    @Override public double min    ()                      {return DATA.minOfThis_    (thisVector_().iterator()      );}
-    @Override public double stat   (IDoubleOperator2 aOpt) {return DATA.statOfThis_   (thisVector_().iterator(), aOpt);}
+    @Override public double sum ()                      {return DATA.sumOfThis_ (thisVector_().iterator()      );}
+    @Override public double mean()                      {return DATA.meanOfThis_(thisVector_().iterator()      );}
+    @Override public double prod()                      {return DATA.prodOfThis_(thisVector_().iterator()      );}
+    @Override public double max ()                      {return DATA.maxOfThis_ (thisVector_().iterator()      );}
+    @Override public double min ()                      {return DATA.minOfThis_ (thisVector_().iterator()      );}
+    @Override public double stat(IDoubleOperator2 aOpt) {return DATA.statOfThis_(thisVector_().iterator(), aOpt);}
+    
+    @Override public IVector cumsum ()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cumsum2Dest_ (tThis.iterator(), rVector.setIterator()      ); return rVector;}
+    @Override public IVector cummean()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cummean2Dest_(tThis.iterator(), rVector.setIterator()      ); return rVector;}
+    @Override public IVector cumprod()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cumprod2Dest_(tThis.iterator(), rVector.setIterator()      ); return rVector;}
+    @Override public IVector cummax ()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cummax2Dest_ (tThis.iterator(), rVector.setIterator()      ); return rVector;}
+    @Override public IVector cummin ()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cummin2Dest_ (tThis.iterator(), rVector.setIterator()      ); return rVector;}
+    @Override public IVector cumstat(IDoubleOperator2 aOpt) {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cumstat2Dest_(tThis.iterator(), rVector.setIterator(), aOpt); return rVector;}
     
     /** 向量的一些额外的运算 */
     @Override public double dot(IVectorGetter aRHS) {

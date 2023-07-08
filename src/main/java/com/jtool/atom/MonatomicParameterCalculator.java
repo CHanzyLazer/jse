@@ -70,7 +70,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
         
         // 计算单位长度供内部使用
         mAtomNum = mAtomDataXYZ.length;
-        mRou = mAtomNum / mBox.product();
+        mRou = mAtomNum / mBox.prod();
         mUnitLen = Fast.cbrt(1.0/mRou);
         
         mNL = new NeighborListGetter(mAtomDataXYZ, mBox, aCellStep);

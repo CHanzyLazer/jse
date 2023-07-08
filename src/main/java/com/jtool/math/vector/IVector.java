@@ -118,14 +118,21 @@ public interface IVector extends IVectorGetter, IVectorSetter {
     void mod2this       (IVectorGetter aRHS);
     
     /** 对于 Vector 将这些统计接口也直接放在这里方便使用 */
-    double sum      ();
-    double mean     ();
-    double product  ();
-    double max      ();
-    double min      ();
-    double norm     ();
-    double dot      (IVectorGetter aRHS);
-    double dot      ();
+    double sum  ();
+    double mean ();
+    double prod ();
+    double max  ();
+    double min  ();
+    
+    IVector cumsum  ();
+    IVector cummean ();
+    IVector cumprod ();
+    IVector cummax  ();
+    IVector cummin  ();
+    
+    double norm ();
+    double dot  (IVectorGetter aRHS);
+    double dot  ();
     
     /** Groovy 的部分，增加向量切片操作 */
     @VisibleForTesting double call(int aIdx);

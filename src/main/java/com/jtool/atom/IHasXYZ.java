@@ -41,7 +41,7 @@ public interface IHasXYZ {
         };
     }
     
-    default double product() {return x() * y() * z();}
+    default double prod() {return x() * y() * z();}
     default double min() {return Math.min(Math.min(x(), y()), z());}
     default double max() {return Math.max(Math.max(x(), y()), z());}
     

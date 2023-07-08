@@ -247,7 +247,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
     /** 获取结果的接口 */
     public double getProb(int aIdx) {return mPi.get(aIdx);}
     public double getK0() {return mK0;}
-    public double getK() {return mK0 * mPi.product();}
+    public double getK() {return mK0 * mPi.prod();}
     
     public int step1PointNum() {return mStep1PointNum;}
     public int step2PointNum(int aIdx) {return (int)mStep2PointNum.get(aIdx);}

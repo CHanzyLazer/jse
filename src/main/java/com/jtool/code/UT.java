@@ -76,8 +76,8 @@ public class UT {
          * parfor for groovy usage
          * @author liqa
          */
-        public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, DEFAULT_THREAD_NUM, aGroovyTask);}
-        public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
+        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
                 switch (tN) {
@@ -92,8 +92,8 @@ public class UT {
          * parwhile for groovy usage
          * @author liqa
          */
-        public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, DEFAULT_THREAD_NUM, aGroovyTask);}
-        public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
                 switch (tN) {

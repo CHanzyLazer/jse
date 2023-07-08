@@ -211,12 +211,12 @@ public class ARRAY {
         for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
         return rSum / (double)aLength;
     }
-    public static double productOfThis_(double[] aThis, int aShift, int aLength) {
+    public static double prodOfThis_(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
-        double rProduct = 1.0;
-        for (int i = aShift; i < tEnd; ++i) rProduct *= aThis[i];
-        return rProduct;
+        double rProd = 1.0;
+        for (int i = aShift; i < tEnd; ++i) rProd *= aThis[i];
+        return rProd;
     }
     public static double maxOfThis_(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
@@ -241,8 +241,52 @@ public class ARRAY {
     public static double statOfThis_(double[] aThis, int aShift, int aLength, IDoubleOperator2 aOpt) {
         final int tEnd = aLength + aShift;
         
-        double rOut = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) rOut = aOpt.cal(rOut, aThis[i]);
-        return rOut;
+        double rStat = Double.NaN;
+        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.cal(rStat, aThis[i]);
+        return rStat;
+    }
+    
+    public static void cumsum2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        
+        double rSum = 0.0;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rSum += aThis[i]; rDest[i] = rSum;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rSum += aThis[j]; rDest[i] = rSum;}}
+    }
+    public static void cummean2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        
+        double rSum = 0.0;
+        double tNum = 0.0;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rSum += aThis[i]; ++tNum; rDest[i] = rSum/tNum;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rSum += aThis[j]; ++tNum; rDest[i] = rSum/tNum;}}
+    }
+    public static void cumprod2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        
+        double rProd= 1.0;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rProd *= aThis[i]; rDest[i] = rProd;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rProd *= aThis[j]; rDest[i] = rProd;}}
+    }
+    public static void cummax2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        
+        double rMax = Double.NaN;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {double tValue = aThis[i]; if (Double.isNaN(rMax) || tValue>rMax) rMax = tValue; rDest[i] = rMax;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {double tValue = aThis[j]; if (Double.isNaN(rMax) || tValue>rMax) rMax = tValue; rDest[i] = rMax;}}
+    }
+    public static void cummin2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        
+        double rMin = Double.NaN;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {double tValue = aThis[i]; if (Double.isNaN(rMin) || tValue<rMin) rMin = tValue; rDest[i] = rMin;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {double tValue = aThis[j]; if (Double.isNaN(rMin) || tValue<rMin) rMin = tValue; rDest[i] = rMin;}}
+    }
+    public static void cumstat2Dest_(double[] aThis, int aShift, double[] rDest, int rShift, int aLength, IDoubleOperator2 aOpt) {
+        final int rEnd = aLength + rShift;
+        
+        double rStat = Double.NaN;
+        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rStat = aOpt.cal(rStat, aThis[i]); rDest[i] = rStat;}}
+        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rStat = aOpt.cal(rStat, aThis[j]); rDest[i] = rStat;}}
     }
 }

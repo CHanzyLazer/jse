@@ -52,10 +52,17 @@ public interface IVectorOperation {
     
     double sum();
     double mean();
-    double product();
+    double prod();
     double max();
     double min();
     double stat(IDoubleOperator2 aOpt);
+    
+    IVector cumsum();
+    IVector cummean();
+    IVector cumprod();
+    IVector cummax();
+    IVector cummin();
+    IVector cumstat(IDoubleOperator2 aOpt);
     
     /** 向量的一些额外的运算 */
     double dot(IVectorGetter aRHS);

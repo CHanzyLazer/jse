@@ -27,7 +27,7 @@ public final class XYZ implements IHasXYZ {
     @Override public double z() {return mZ;}
     
     /** 重写这些运算来优化多态调用的损失 */
-    @Override public double product() {return mX * mY * mZ;}
+    @Override public double prod() {return mX * mY * mZ;}
     @Override public double min() {return Math.min(Math.min(mX, mY), mZ);}
     @Override public double max() {return Math.max(Math.max(mX, mY), mZ);}
     

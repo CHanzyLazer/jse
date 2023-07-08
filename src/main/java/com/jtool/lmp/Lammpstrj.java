@@ -234,7 +234,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
         @Override public int atomNum() {return mAtomData.rowNumber();}
         @Override public int atomTypeNum() {return mAtomTypeNum;}
         
-        @Override public double volume() {return mBox.shiftedBox().product();}
+        @Override public double volume() {return mBox.shiftedBox().prod();}
     }
     
     

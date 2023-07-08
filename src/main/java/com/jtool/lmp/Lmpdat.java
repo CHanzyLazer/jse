@@ -88,7 +88,7 @@ public class Lmpdat extends AbstractAtomData {
         if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("setDenseNormalized is temporarily support NORMAL Box only");
         
         XYZ oShiftedBox = mBox.shiftedBox();
-        double tScale = MathEX.Fast.cbrt(oShiftedBox.product() / atomNum());
+        double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / atomNum());
         tScale = 1.0 / tScale;
         
         // 从逻辑上考虑，这里不对原本数据做值拷贝
@@ -130,7 +130,7 @@ public class Lmpdat extends AbstractAtomData {
     @Override public double volume() {
         // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
         if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("Volume is temporarily support NORMAL Box only");
-        return mBox.shiftedBox().product();
+        return mBox.shiftedBox().prod();
     }
     
     

@@ -198,12 +198,62 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         else DATA.ebeFill2this_(rVector.setIterator(), rVector.iteratorOf(aRHS));
     }
     
-    @Override public double sum    ()                      {DoubleArrayVector rVector = thisVector_(); return ARRAY.sumOfThis_       (rVector.getData(), rVector.shiftSize(), rVector.dataSize()      );}
-    @Override public double mean   ()                      {DoubleArrayVector rVector = thisVector_(); return ARRAY.meanOfThis_      (rVector.getData(), rVector.shiftSize(), rVector.dataSize()      );}
-    @Override public double product()                      {DoubleArrayVector rVector = thisVector_(); return ARRAY.productOfThis_   (rVector.getData(), rVector.shiftSize(), rVector.dataSize()      );}
-    @Override public double max    ()                      {DoubleArrayVector rVector = thisVector_(); return ARRAY.maxOfThis_       (rVector.getData(), rVector.shiftSize(), rVector.dataSize()      );}
-    @Override public double min    ()                      {DoubleArrayVector rVector = thisVector_(); return ARRAY.minOfThis_       (rVector.getData(), rVector.shiftSize(), rVector.dataSize()      );}
-    @Override public double stat   (IDoubleOperator2 aOpt) {DoubleArrayVector rVector = thisVector_(); return ARRAY.statOfThis_      (rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);}
+    @Override public double sum ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.sumOfThis_ (tThis.getData(), tThis.shiftSize(), tThis.dataSize()      );}
+    @Override public double mean()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.meanOfThis_(tThis.getData(), tThis.shiftSize(), tThis.dataSize()      );}
+    @Override public double prod()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.prodOfThis_(tThis.getData(), tThis.shiftSize(), tThis.dataSize()      );}
+    @Override public double max ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.maxOfThis_ (tThis.getData(), tThis.shiftSize(), tThis.dataSize()      );}
+    @Override public double min ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.minOfThis_ (tThis.getData(), tThis.shiftSize(), tThis.dataSize()      );}
+    @Override public double stat(IDoubleOperator2 aOpt) {DoubleArrayVector tThis = thisVector_(); return ARRAY.statOfThis_(tThis.getData(), tThis.shiftSize(), tThis.dataSize(), aOpt);}
+    
+    
+    @Override public IVector cumsum() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cumsum2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
+        else DATA.cumsum2Dest_(tThis.iterator(), rVector.setIterator());
+        return rVector;
+    }
+    @Override public IVector cummean() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cummean2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
+        else DATA.cummean2Dest_(tThis.iterator(), rVector.setIterator());
+        return rVector;
+    }
+    @Override public IVector cumprod() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cumprod2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
+        else DATA.cumprod2Dest_(tThis.iterator(), rVector.setIterator());
+        return rVector;
+    }
+    @Override public IVector cummax() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cummax2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
+        else DATA.cummax2Dest_(tThis.iterator(), rVector.setIterator());
+        return rVector;
+    }
+    @Override public IVector cummin() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cummin2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
+        else DATA.cummin2Dest_(tThis.iterator(), rVector.setIterator());
+        return rVector;
+    }
+    @Override public IVector cumstat(IDoubleOperator2 aOpt) {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_(tThis.size());
+        double[] rDest = tThis.getIfHasSameOrderData(rVector);
+        if (rDest != null) ARRAY.cumstat2Dest_(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize(), aOpt);
+        else DATA.cumstat2Dest_(tThis.iterator(), rVector.setIterator(), aOpt);
+        return rVector;
+    }
     
     
     /** 向量的一些额外的运算 */
