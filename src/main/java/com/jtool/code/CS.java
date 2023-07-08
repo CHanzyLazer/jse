@@ -121,7 +121,7 @@ public class CS {
                 // 移除自身消耗的作业步，预留 100 步给外部使用
                 mRestStepCount = MAX_STEP_COUNT - 100;
             }
-            /** 根据需要的核心数来分配核心，返回节点和对应的可用核心数 */
+            /** 根据需要的核心数来分配资源，返回节点和对应的可用核心数 */
             public synchronized @Nullable Resource assignResource(final int aTaskNum) {
                 // 计算至少需要的节点数目
                 int tMinNodes = MathEX.Code.divup(aTaskNum, CORES_PER_NODE);
@@ -173,12 +173,34 @@ public class CS {
                 return null;
             }
             
+            /** 不指定时会分配目前最大核数的节点，保持不跨节点 */
+            public synchronized @Nullable Resource assignResource() {
+                int tNTasks = 0;
+                String tNode = null;
+                for (Map.Entry<String, Integer> tEntry : mAllResources.entrySet()) {
+                    int tRestCores = tEntry.getValue();
+                    if (tRestCores > tNTasks) {
+                        tNTasks = tRestCores;
+                        tNode = tEntry.getKey();
+                        if (tNTasks == CORES_PER_NODE) break;
+                    }
+                }
+                // 成功分配则减去资源，输出结果
+                if (tNTasks > 0) {
+                    mAllResources.put(tNode, 0);
+                    return new Resource(Collections.singletonList(tNode), 1, tNTasks, tNTasks, new int[] {tNTasks});
+                }
+                // 分配失败，返回 null
+                return null;
+            }
+            
             /** 返回分配的资源 */
             public synchronized void returnResource(Resource aResource) {
                 int tIdx = 0;
                 for (String tNode : aResource.nodelist) {
                     final int tThisNodeNTasks = aResource.ntasksPerNodeList[tIdx];
                     mAllResources.computeIfPresent(tNode, (node, cores) -> cores+tThisNodeNTasks);
+                    ++tIdx;
                 }
             }
             

@@ -1,13 +1,11 @@
 package com.jtool.system;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author liqa
  * <p> 执行 mpi 并行程序的执行器，会使用 mpiexec 来执行程序，并且强制设置资源分配器为 user 来绕开 slurm 的资源分配 </p>
  */
-@ApiStatus.Obsolete
 public class MPISystemExecutor extends LocalSystemExecutor {
     private final int mProcessNum;
     public MPISystemExecutor(int aProcessNum) {
@@ -20,6 +18,6 @@ public class MPISystemExecutor extends LocalSystemExecutor {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return -1;
         
-        return super.system_("mpiexec -rmk user -np " + mProcessNum + " " + aCommand, aPrintln);
+        return super.system_("mpiexec -np " + mProcessNum + " " + aCommand, aPrintln);
     }
 }

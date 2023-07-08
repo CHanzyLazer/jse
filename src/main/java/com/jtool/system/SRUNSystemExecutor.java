@@ -5,9 +5,7 @@ import com.jtool.code.UT;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.jtool.code.CS.Slurm.IS_SLURM;
@@ -39,7 +37,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             throw new Exception("SRUN can Only be used in SLURM");
         }
         for (int i = 0; i < aParallelNum; ++i) {
-            Resource tResource = RESOURCES_MANAGER.assignResource(aTaskNum);
+            Resource tResource = aTaskNum>0 ? RESOURCES_MANAGER.assignResource(aTaskNum) : RESOURCES_MANAGER.assignResource();
             // 分配失败直接抛出错误
             if (tResource == null) {
                 this.shutdown();
@@ -49,6 +47,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         }
     }
     public SRUNSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, 1);}
+    public SRUNSystemExecutor() throws Exception {this(-1, 1);}
     
     /** 内部使用的向任务分配节点的方法 */
     private synchronized @Nullable Resource assignResource() {
