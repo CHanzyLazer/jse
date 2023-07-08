@@ -10,8 +10,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.PrintStream;
 import java.util.*;
 
 import static com.jtool.code.CS.*;
@@ -61,15 +59,19 @@ public class SLURMSystemExecutor extends AbstractNoPoolSystemExecutor<SSHSystemE
             throw e;
         }
         // 从资源文件中创建已经准备好的 SplitNodeScript
-        try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("slurm/splitNodeList.sh")); PrintStream tPS = UT.IO.toPrintStream(mSplitNodeScriptPath)) {
-            String tLine;
-            while ((tLine = tReader.readLine()) != null) tPS.println(tLine);
-            // 上传脚本文件并设置权限
-            mEXE.system("chmod 777 "+mSplitNodeScriptPath, new IOFiles().putIFiles(IFILE_KEY, mSplitNodeScriptPath));
+        try {
+            UT.IO.copy(UT.IO.getResource("slurm/splitNodeList.sh"), mSplitNodeScriptPath);
         } catch (Exception e) {
             // 出现任何错误直接抛出错误退出
             this.shutdown();
             throw e;
+        }
+        // 上传脚本文件并设置权限
+        int tExitValue = mEXE.system("chmod 777 "+mSplitNodeScriptPath, new IOFiles().putIFiles(IFILE_KEY, mSplitNodeScriptPath));
+        if (tExitValue != 0) {
+            // 出现任何错误直接抛出错误退出
+            this.shutdown();
+            throw new RuntimeException("Upload splitNodeList.sh Failed, Exit Value: "+tExitValue);
         }
     }
     @Override protected void shutdownFinal() {

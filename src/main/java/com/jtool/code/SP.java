@@ -320,8 +320,8 @@ public class SP {
             // 如果没有 jep 包则直接下载，直接从 github 上下载保证结果稳定
             if (!UT.IO.isFile(tJepZipPath)) {
                 System.out.printf("JEP INIT INFO: No jep source code in %s, downloading...\n", PYPKG_DIR);
-                try (InputStream tURLStream = new URL("https://github.com/ninia/jep/archive/v4.1.1.zip").openStream()) {
-                    UT.IO.copy(tURLStream, tJepZipPath);
+                try {
+                    UT.IO.copy(new URL("https://github.com/ninia/jep/archive/v4.1.1.zip"), tJepZipPath);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
