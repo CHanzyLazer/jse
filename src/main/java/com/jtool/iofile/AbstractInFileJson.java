@@ -9,6 +9,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 
+import static com.jtool.code.CS.REMOVE;
+
 
 /**
  * @author liqa
@@ -22,7 +24,8 @@ public abstract class AbstractInFileJson extends AbstractInFile {
             rJson = (Map) (new JsonSlurper()).parse(tInFile);
             // 直接遍历修改
             for (Map.Entry<String, Object> subSetting : entrySet()) if (rJson.containsKey(subSetting.getKey())) {
-                rJson.put(subSetting.getKey(), subSetting.getValue());
+                if (subSetting.getValue() == REMOVE) rJson.remove(subSetting.getKey());
+                else rJson.put(subSetting.getKey(), subSetting.getValue());
             }
         }
         try (Writer tWriter = UT.IO.toWriter(aPath)) {

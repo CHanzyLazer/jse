@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jtool.code.CS.REMOVE;
+
 
 /**
  * @author liqa
@@ -19,8 +21,15 @@ public abstract class AbstractInFileLines extends AbstractInFile {
             String tLine;
             while ((tLine = tInFile.readLine()) != null) {
                 String tKey = getKeyOfLine(tLine);
-                if (tKey!=null && containsKey(tKey)) tLine = setValueOfLine(tLine, get(tKey));
-                rLines.add(tLine);
+                if (tKey!=null && containsKey(tKey)) {
+                    Object tValue = get(tKey);
+                    if (tValue != REMOVE) {
+                        tLine = setValueOfLine(tLine, tValue);
+                        rLines.add(tLine);
+                    }
+                } else {
+                    rLines.add(tLine);
+                }
             }
         }
         UT.IO.write(aPath, rLines);

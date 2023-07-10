@@ -69,6 +69,8 @@ public class CS {
     
     /** IOFiles Keys */
     public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
+    public enum SettingType {REMOVE}
+    public final static SettingType REMOVE = SettingType.REMOVE;
     
     /** Patterns */
     public final static Pattern BLANKS = Pattern.compile("\\s+");
