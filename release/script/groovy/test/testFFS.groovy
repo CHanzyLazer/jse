@@ -2,7 +2,6 @@ package test
 
 import com.jtool.code.UT
 import com.jtool.rareevent.ForwardFluxSampling
-import rareevent.AsymmetryWalk
 import rareevent.RandomWalk
 
 
@@ -13,7 +12,7 @@ import rareevent.RandomWalk
 int N0 = 10000;
 
 
-def biPathGen = new RandomWalk.PathGenerator(10, 1);
+def biPathGen = new RandomWalk.PathGenerator(10);
 def biCal = new RandomWalk.ParameterCalculator();
 
 //def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, [10], N0).setMinProb(0.0001);

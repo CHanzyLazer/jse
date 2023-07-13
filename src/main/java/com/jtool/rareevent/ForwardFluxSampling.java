@@ -76,6 +76,10 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         mN = mSurfaces.size() - 1;
         mStep2PointNum = Vectors.zeros(mN);
         mPi = Vectors.NaN(mN);
+        
+        mPointsOnLambda = new ArrayList<>(mN0);
+        oPointsOnLambda = new ArrayList<>(mN0);
+        mMovedPoints = new boolean[mN0];
     }
     
     
@@ -103,23 +107,40 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         final @Nullable Point parent;
         final T value;
         final double lambda;
-        Point(@Nullable Point parent, T value, double lambda) {this.parent = parent; this.value = value; this.lambda = lambda;}
-        Point(T aValue, double lambda) {this(null, aValue, lambda);}
+        /** 由于存在阶乘关系，需要使用 double 避免溢出 */
+        double parentsMul;
+        double multiple;
+        
+        Point(@Nullable Point parent, T value, double lambda) {
+            this.parent = parent;
+            this.value = value;
+            this.lambda = lambda;
+            parentsMul = parent==null ? 1 : parent.multiple;
+            multiple = parentsMul;
+        }
+        Point(T aValue, double lambda) {
+            this(null, aValue, lambda);
+        }
     }
     
     /** 统计信息 */
     private double mTotTime0 = 0.0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
-    private List<Point> mPointsOnLambda = new ArrayList<>(), oPointsOnLambda = new ArrayList<>(); // 第一次从 A 到达 λi 的那些点
+    private List<Point> mPointsOnLambda, oPointsOnLambda; // 第一次从 A 到达 λi 的那些点
+    private final boolean[] mMovedPoints;
     
     private double mK0 = Double.NaN; // A 到 λ0 的轨迹通量，速率单位但是注意不是 A 到 λ0 的速率
     private final IVector mPi; // i 到 i+1 而不是返回 A 的概率
+    
+    private double mMi = 0;
+    private double mNipp = 0; // N_{i+1}
+    private int mStep2PathNum = 0;
     
     /** 记录一下每个过程使用的点的数目 */
     private int mStep1PointNum = 0;
     private final IVector mStep2PointNum;
     
     /** 统计一个路径所有的从 A 第一次到达 λ0 的点以及这个过程总共花费的时间 */
-    private int statA2Lambda0_() {
+    private void statA2Lambda0_() {
         int tStep1PointNum = 0;
         // 获取初始路径的迭代器
         try (ITimeAndParameterIterator<T> tPathInit = mFullPathGenerator.fullPathInit()) {
@@ -143,8 +164,11 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
                     // 如果到达 B 则重新回到 A，这里直接 return 来实现
                     if (tLambda >= mSurfaces.last()) {
                         // 重设路径之前记得先保存旧的时间
-                        synchronized (this) {mTotTime0 += tPathInit.timeConsumed();}
-                        return tStep1PointNum;
+                        synchronized (this) {
+                            mTotTime0 += tPathInit.timeConsumed();
+                            mStep1PointNum += tStep1PointNum;
+                        }
+                        return;
                     }
                 }
                 // 找到起始点后开始记录穿过 λ0 的点
@@ -159,8 +183,11 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
                         // 如果到达 B 则重新回到 A，这里直接 return 来实现（对于只有一个界面的情况）
                         if (tLambda >= mSurfaces.last()) {
                             // 重设路径之前记得先保存旧的时间
-                            synchronized (this) {mTotTime0 += tPathInit.timeConsumed();}
-                            return tStep1PointNum;
+                            synchronized (this) {
+                                mTotTime0 += tPathInit.timeConsumed();
+                                mStep1PointNum += tStep1PointNum;
+                            }
+                            return;
                         }
                         break;
                     }
@@ -168,34 +195,41 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
                 // 跳出后回到最初，需要一直查找下次重新到达 A 才开始统计
             }
             // 最后统计所有的耗时
-            synchronized (this) {mTotTime0 += tPathInit.timeConsumed();}
-            return tStep1PointNum;
+            synchronized (this) {
+                mTotTime0 += tPathInit.timeConsumed();
+                mStep1PointNum += tStep1PointNum;
+            }
         }
     }
     
     /** 统计一个路径所有的从 λi 第一次到达 λi+1 的点 */
-    private int statLambda2Next_(double aLambdaNext) {
+    private void statLambda2Next_(double aLambdaNext) {
         int tStep2PointNum = 0;
         // 统一获取开始点，并且串行处理第一个点的特殊情况，避免并行造成的问题
         Point tStart;
         synchronized (this) {
-            // 并行特有的二次检测，极少有的此时 oPointsOnLambda 全空的情况，直接返回
-            if (oPointsOnLambda.isEmpty()) return tStep2PointNum;
-            // 随机获取一个点开始
-            int tIndex = mRNG.nextInt(oPointsOnLambda.size());
+            // 为了保证跨越多个界面的情况的正确处理，这里按照顺序遍历而不是随机选取
+            int tIndex = mStep2PathNum % oPointsOnLambda.size();
             tStart = oPointsOnLambda.get(tIndex);
-            // 第一个点特殊处理，如果第一个点就已经穿过了 λi+1，则需要记录这个点，并且在原本的面上移除这个点
+            ++mStep2PathNum;
+            // 第一个点特殊处理，如果第一个点就已经穿过了 λi+1，则需要记录这个点，并且要保证这个点只会在下一个面上出现一次
+            // 为了修正误差，会增加其倍数 multiple 来增加其统计时的权重
             ++tStep2PointNum;
             if (tStart.lambda >= aLambdaNext) {
-                mPointsOnLambda.add(tStart);
-                // 使用和最末尾的点交换的方法来实现移除
-                int tLastIdx = oPointsOnLambda.size()-1;
-                oPointsOnLambda.set(tIndex, oPointsOnLambda.get(tLastIdx));
-                oPointsOnLambda.remove(tLastIdx); // 底层实现保证这样操作是 O(1) 的
-                return tStep2PointNum;
+                // 对于相同的点则通过增加 multiple 的方式增加其统计权重，同时保证样本多样性
+                if (mMovedPoints[tIndex]) {
+                    tStart.multiple += tStart.parentsMul;
+                } else {
+                    tStart.parentsMul = tStart.multiple;
+                    mPointsOnLambda.add(tStart);
+                    mMovedPoints[tIndex] = true;
+                }
+                mMi += tStart.parentsMul;
+                mNipp += tStart.parentsMul;
+                return;
             }
         }
-        // 获取从 aStart 开始的路径的迭代器
+        // 获取从 tStart 开始的路径的迭代器
         try (ITimeAndParameterIterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(tStart.value)) {
             // 为了不改变约定，这里直接跳过上面已经经过特殊考虑的第一个相同的点
             tPathFrom.next();
@@ -210,18 +244,25 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
                 // 判断是否穿过了 λi+1
                 if (tLambda >= aLambdaNext) {
                     // 如果有穿过 λi+1 则需要记录这些点
-                    synchronized (this) {mPointsOnLambda.add(new Point(tStart, tPoint, tLambda));}
+                    synchronized (this) {
+                        mPointsOnLambda.add(new Point(tStart, tPoint, tLambda));
+                        mMi += tStart.multiple;
+                        mNipp += tStart.multiple;
+                    }
                     break;
                 }
                 // 判断是否穿过了 A
                 if (tLambda <= mSurfaceA) {
                     // 穿过 A 直接跳过结束这个路径即可
+                    synchronized (this) {
+                        mMi += tStart.multiple;
+                    }
                     break;
                 }
             }
             // 此时如果路径没有结束，还可以继续统计，即一个路径可以包含多个从 A 到 λi+1，或者包含之后的 λi+1 到 λi+2 等信息
             // 对于 FFS 的采样方式，考虑到存储这些路径需要的空间，这里不去做这些操作
-            return tStep2PointNum;
+            synchronized (this) {mStep2PointNum.add_(mStep, tStep2PointNum);}
         }
     }
     
@@ -234,10 +275,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
         // 实际分为两个过程，第一个过程首先统计轨迹通量（flux of trajectories）
         if (mStep < 0) {
             // 统计从 A 到达 λ0，运行直到达到次数超过 mN0*mStep1Mul
-            pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, () -> {
-                int tStep1PointNum = statA2Lambda0_();
-                synchronized (this) {mStep1PointNum += tStep1PointNum;}
-            });
+            pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, this::statA2Lambda0_);
             // 获取第一个过程的统计结果
             mK0 = mPointsOnLambda.size() / mTotTime0;
             // 第一个过程完成
@@ -251,16 +289,16 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
             List<Point> tPointsOnLambda = oPointsOnLambda;
             oPointsOnLambda = mPointsOnLambda;
             mPointsOnLambda = tPointsOnLambda; mPointsOnLambda.clear();
-            // 获取 Mi
-            final int[] tMi = {0};
+            // 初始化统计量
+            Arrays.fill(mMovedPoints, false);
+            mMi = 0; mNipp = 0; mStep2PathNum = 0;
+            // 获取 M_i, N_{i+1}
             pool().parwhile(() -> (mPointsOnLambda.size()<mN0 && !mFinished), () -> {
-                // 随机选取一个初始点获取之后的路径，并统计结果
-                int tStep2PointNum = statLambda2Next_(mSurfaces.get_(mStep+1));
+                // 选取一个初始点获取之后的路径，并统计结果
+                statLambda2Next_(mSurfaces.get_(mStep+1));
                 synchronized (this) {
-                    mStep2PointNum.add_(mStep, tStep2PointNum);
-                    ++tMi[0];
                     // 如果统计得到的概率小于预定值，那么下一步的结果多样性会大大降低，并且统计效率也非常低，这里直接跳出
-                    if (tMi[0] > mN0/mMinProb && !mFinished) {
+                    if (mStep2PathNum > mN0/mMinProb && !mFinished) {
                         System.err.println("ERROR: P(λi+1|λi) will less than MinProb(= max(0.05, 1/N0) in default) anyway,");
                         System.err.println("which will seriously reduce the accuracy or efficiency, so the FFS is stopped.");
                         System.err.println("Try larger N0 or smaller surface distance.");
@@ -269,7 +307,7 @@ public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPo
                 }
             });
             // 获取概率统计结果
-            mPi.set_(mStep, mPointsOnLambda.size() / (double)tMi[0]);
+            mPi.set_(mStep, mNipp / mMi);
             // 第二个过程这一步完成
             ++mStep;
             if (mStep >= mN) mFinished = true;

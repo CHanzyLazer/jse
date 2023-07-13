@@ -12,7 +12,7 @@ import rareevent.AsymmetryWalk
 int N0 = 1000;
 
 
-def biPathGen = new AsymmetryWalk.PathGenerator(10, 2);
+def biPathGen = new AsymmetryWalk.PathGenerator(10);
 def biCal = new AsymmetryWalk.ParameterCalculator();
 
 def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, [8], N0).setMinProb(0.0001);

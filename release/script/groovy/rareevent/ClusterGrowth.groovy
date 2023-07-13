@@ -1,14 +1,14 @@
 package rareevent
 
+import com.jtool.math.MathEX
 import com.jtool.rareevent.IParameterCalculator
 import com.jtool.rareevent.IPathGenerator
 
 
 /**
- * 用来测试 FFS 准确性的另一种实例，更加倾向于回到 0，
- * 计算最终结果到达某个数字的概率
+ * 用来测试 FFS 准确性的实例
  */
-class AsymmetryWalk {
+class ClusterGrowth {
     static class Point {
         final int value;
         Point(int value) {this.value = value;}
@@ -23,22 +23,29 @@ class AsymmetryWalk {
     
     static class PathGenerator implements IPathGenerator<PointWithTime> {
         private final int pathLen;
+        private final double smallProb, largeProb;
         private final def RNG = new Random();
-        PathGenerator(int pathLen) {this.pathLen = pathLen;}
+        PathGenerator(int pathLen, double smallProb, double largeProb) {
+            this.pathLen = pathLen;
+            this.smallProb = smallProb;
+            this.largeProb = largeProb;
+        }
         
         @Override PointWithTime initPoint() {return new PointWithTime(0, 0);}
         @Override List<PointWithTime> pathFrom(PointWithTime point) {
             def path = new ArrayList<PointWithTime>(pathLen);
             path.add(point);
             for (_ in 1..<pathLen) {
-                double increaseProb = 1.0 / (1.0+point.value);
-                if (RNG.nextDouble() < increaseProb) {
+                def rand = RNG.nextDouble();
+                double scale = MathEX.Fast.pow(point.value+1, -0.2);
+                if (rand < largeProb*scale) {
+                    point = new PointWithTime(point.value+5, point.time+1);
+                } else
+                if (rand < (largeProb+smallProb)*scale) {
                     point = new PointWithTime(point.value+1, point.time+1);
                 } else
                 if (point.value > 0) {
                     point = new PointWithTime(point.value-1, point.time+1);
-                } else {
-                    point = new PointWithTime(point.value, point.time+1);
                 }
                 path.add(point);
             }
@@ -52,4 +59,5 @@ class AsymmetryWalk {
             return point.value;
         }
     }
+    
 }
