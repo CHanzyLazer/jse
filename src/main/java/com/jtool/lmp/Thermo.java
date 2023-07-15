@@ -97,7 +97,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             IMatrix aData = RowMatrix.zeros(endIdx-idx, aHands.length);
             // 读取数据
             for (IVector tRow : aData.rows()) {
-                tRow.fill(UT.Texts.str2data(aLines.get(idx)));
+                tRow.fill(UT.Texts.str2data(aLines.get(idx), aHands.length));
                 ++idx;
             }
             // 创建 Table 并附加到 rThermo 中

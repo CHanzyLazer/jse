@@ -359,7 +359,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             if (idx+tAtomNum > aLines.size()) break;
             aAtomData = RowMatrix.zeros(tAtomNum, aAtomDataKeys.length);
             for (IVector tRow : aAtomData.rows()) {
-                tRow.fill(UT.Texts.str2data(aLines.get(idx)));
+                tRow.fill(UT.Texts.str2data(aLines.get(idx), aAtomDataKeys.length));
                 ++idx;
             }
             

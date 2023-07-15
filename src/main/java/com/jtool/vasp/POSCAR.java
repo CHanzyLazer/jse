@@ -175,11 +175,11 @@ public class POSCAR extends AbstractAtomData {
         aBoxScale = Double.parseDouble(tTokens[0]);
         aBox = Matrices.zeros(3);
         ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(0).fill(UT.Texts.str2data(aLines.get(idx)));
+        aBox.row(0).fill(UT.Texts.str2data(aLines.get(idx), 3));
         ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(1).fill(UT.Texts.str2data(aLines.get(idx)));
+        aBox.row(1).fill(UT.Texts.str2data(aLines.get(idx), 3));
         ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(2).fill(UT.Texts.str2data(aLines.get(idx)));
+        aBox.row(2).fill(UT.Texts.str2data(aLines.get(idx), 3));
         // 读取原子种类和对应数目的信息
         ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Texts.splitBlank(aLines.get(idx));
         aAtomTypes = tTokens;
@@ -198,7 +198,7 @@ public class POSCAR extends AbstractAtomData {
         if (idx+tAtomNum > aLines.size()) return null;
         aDirect = RowMatrix.zeros(tAtomNum, 3);
         for (IVector tRow : aDirect.rows()) {
-            tRow.fill(UT.Texts.str2data(aLines.get(idx)));
+            tRow.fill(UT.Texts.str2data(aLines.get(idx), 3));
             ++idx;
         }
         

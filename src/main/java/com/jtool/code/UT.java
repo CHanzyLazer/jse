@@ -763,12 +763,13 @@ public class UT {
          * 使用 groovy-json 中现成的 parseDouble 等方法，总体比直接 split 并用 java 的 parseDouble 快一倍以上
          * @author liqa
          */
-        public static List<Double> str2data(String aStr) {
+        public static double[] str2data(String aStr, int aLength) {
             // 先直接转 char[]，适配 groovy-json 的 CharScanner
             char[] tChar = aStr.toCharArray();
             // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
-            List<Double> rData = new ArrayList<>();
+            double[] rData = new double[aLength];
             int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
+            int tIdx = 0;
             for (int i = tFrom; i < tChar.length; ++i) {
                 int tCharCode = tChar[i];
                 if (tFrom < 0) {
@@ -777,13 +778,15 @@ public class UT {
                     }
                 } else {
                     if (tCharCode <= 32) {
-                        rData.add(CharScanner.parseDouble(tChar, tFrom, i));
+                        rData[tIdx] = CharScanner.parseDouble(tChar, tFrom, i);
                         tFrom = -1;
+                        ++tIdx;
+                        if (tIdx == rData.length) return rData;
                     }
                 }
             }
             // 最后一个数据
-            if (tFrom >= 0 && tFrom < tChar.length) rData.add(CharScanner.parseDouble(tChar, tFrom, tChar.length));
+            if (tFrom >= 0 && tFrom < tChar.length) rData[tIdx] = CharScanner.parseDouble(tChar, tFrom, tChar.length);
             return rData;
         }
         

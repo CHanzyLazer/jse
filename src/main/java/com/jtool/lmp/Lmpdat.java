@@ -26,6 +26,7 @@ import static com.jtool.code.CS.*;
  * <p> 直接获取到的所有数据都是引用，因此外部可以直接进行修改 </p>
  */
 public class Lmpdat extends AbstractAtomData {
+    public final static int LMPDAT_VELOCITY_LENGTH = 4;
     public final static int LMPDAT_ID_COL = 0, LMPDAT_VX_COL = 1, LMPDAT_VY_COL = 2, LMPDAT_VZ_COL = 3;
     
     private int mAtomTypeNum;
@@ -248,7 +249,7 @@ public class Lmpdat extends AbstractAtomData {
         if (end > aLines.size()) return null;
         aAtomData = RowMatrix.zeros(tAtomNum, STD_ATOM_DATA_KEYS.length);
         for (IVector tRow : aAtomData.rows()) {
-            tRow.fill(UT.Texts.str2data(aLines.get(idx)));
+            tRow.fill(UT.Texts.str2data(aLines.get(idx), STD_ATOM_DATA_KEYS.length));
             ++idx;
         }
         
@@ -266,11 +267,11 @@ public class Lmpdat extends AbstractAtomData {
             aVelocities = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length);
             // 和坐标排序一致的顺序来存储
             for (; idx < end; ++idx) {
-                List<Double> tVelocity = UT.Texts.str2data(aLines.get(idx));
-                int tRow = tId2Row.get(tVelocity.get(LMPDAT_ID_COL).intValue());
-                aVelocities.set(tRow, STD_VX_COL, tVelocity.get(LMPDAT_VX_COL));
-                aVelocities.set(tRow, STD_VY_COL, tVelocity.get(LMPDAT_VY_COL));
-                aVelocities.set(tRow, STD_VZ_COL, tVelocity.get(LMPDAT_VZ_COL));
+                double[] tVelocity = UT.Texts.str2data(aLines.get(idx), LMPDAT_VELOCITY_LENGTH);
+                int tRow = tId2Row.get((int)tVelocity[LMPDAT_ID_COL]);
+                aVelocities.set(tRow, STD_VX_COL, tVelocity[LMPDAT_VX_COL]);
+                aVelocities.set(tRow, STD_VY_COL, tVelocity[LMPDAT_VY_COL]);
+                aVelocities.set(tRow, STD_VZ_COL, tVelocity[LMPDAT_VZ_COL]);
             }
         } else {
             aVelocities = null;
