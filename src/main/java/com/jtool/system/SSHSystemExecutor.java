@@ -6,9 +6,11 @@ import com.jtool.iofile.ISavable;
 import com.jtool.ssh.SSHCore;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.util.Map;
+import java.util.concurrent.*;
 
 
 /**
@@ -18,8 +20,8 @@ import java.util.Map;
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
     final SSHCore mSSH;
     private final int mIOThreadNum;
-    SSHSystemExecutor(int aThreadNum, int aIOThreadNum, SSHCore aSSH) throws Exception {
-        super(aThreadNum>0 ? newPool(aThreadNum) : SERIAL_EXECUTOR);
+    SSHSystemExecutor(int aIOThreadNum, SSHCore aSSH) throws Exception {
+        super();
         mIOThreadNum = aIOThreadNum; mSSH = aSSH;
         // 需要初始化一下远程的工作目录，只需要创建目录即可，因为原本 ssh 设计时不是这样初始化的
         // 注意初始化失败时需要抛出异常并且执行关闭操作
@@ -40,7 +42,6 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         mSSH.save(rSaveTo);
         // 注意如果是默认值则不要保存
         if (mIOThreadNum > 0) rSaveTo.put("IOThreadNumber", mIOThreadNum);
-        if (pool() != SERIAL_EXECUTOR) rSaveTo.put("ThreadNumber", nThreads());
     }
     
     
@@ -50,7 +51,6 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
      * 格式为：
      * <pre><code>
      * {
-     *   "ThreadNumber": ${integerNumberOfThreadNumberForSubmitSystemUse},
      *   "IOThreadNumber": ${integerNumberOfThreadNumberForPutAndGetFilesUse},
      *
      *   "Username": "${yourUserName}",
@@ -66,7 +66,6 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
      * </code></pre>
      * 其中名称大小写敏感（因为实现起来比较麻烦），但是存在简写，简写优先级为：
      * <pre>
-     *   "ThreadNumber" > "threadnumber" > "ThreadNum" > "threadnum" > "nThreads" > "nthreads" > "n"
      *   "IOThreadNumber" > "iothreadnumber" > "IOThreadNum" > "iothreadnum" > "ion"
      *
      *   "Username" > "username" > "user" > "u"
@@ -85,11 +84,9 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
      * "RemoteWorkingDir" 未选定时使用 ssh 登录所在的路径
      * @author liqa
      */
-    public SSHSystemExecutor(                                  Map<?, ?> aArgs) throws Exception {this(getThreadNum(aArgs), getIOThreadNum(aArgs), SSHCore.load(aArgs));}
-    public SSHSystemExecutor(int aThreadNum,                   Map<?, ?> aArgs) throws Exception {this(aThreadNum, getIOThreadNum(aArgs), SSHCore.load(aArgs));}
-    public SSHSystemExecutor(int aThreadNum, int aIOThreadNum, Map<?, ?> aArgs) throws Exception {this(aThreadNum, aIOThreadNum, SSHCore.load(aArgs));}
+    public SSHSystemExecutor(                  Map<?, ?> aArgs) throws Exception {this(getIOThreadNum(aArgs), SSHCore.load(aArgs));}
+    public SSHSystemExecutor(int aIOThreadNum, Map<?, ?> aArgs) throws Exception {this(aIOThreadNum, SSHCore.load(aArgs));}
     
-    public static int getThreadNum  (Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, "ThreadNumber", "threadnumber", "ThreadNum", "threadnum", "nThreads", "nthreads", "n")).intValue();}
     public static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, "IOThreadNumber", "iothreadnumber", "IOThreadNum", "iothreadnum", "ion")).intValue();}
     
     
@@ -104,45 +101,112 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     }
     
     /** 通过 ssh 直接执行命令 */
-    @SuppressWarnings("BusyWait")
-    @Override protected int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
-        if (isShutdown()) throw new RuntimeException("Can NOT do system from this Dead Executor.");
-        // 对于空指令专门优化，不执行操作
-        if (aCommand == null || aCommand.isEmpty()) return -1;
-        
-        int tExitValue = -1;
-        ChannelExec tChannel = null;
-        try (IPrintln tPrintln = aPrintln.get()) {
-            tChannel = mSSH.systemChannel(aCommand, noERROutput());
-            if (noSTDOutput()) {
-                tChannel.connect();
-            } else {
-                // 由于 jsch 的输入流是临时创建的，因此可以不去获取输入流来避免流死锁
-                try (BufferedReader tReader = UT.IO.toReader(tChannel.getInputStream())) {
-                    tChannel.connect();
-                    String tLine;
-                    while ((tLine = tReader.readLine()) != null) tPrintln.println(tLine);
-                }
-            }
-            // 手动等待直到结束
-            while (!tChannel.isEOF()) Thread.sleep(100);
-            // 获取退出代码
-            tExitValue = tChannel.getExitStatus();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (tChannel != null) tChannel.disconnect();
-        }
-        return tExitValue;
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
+        final SSHSystemFuture tFuture = new SSHSystemFuture(aCommand, aPrintln);
+        // 增加结束时都断开连接的任务
+        return toSystemFuture(tFuture, () -> {if (tFuture.mChannelExec != null) tFuture.mChannelExec.disconnect();});
     }
+    @Override protected long sleepTime() {return 100;}
+    
+    private final class SSHSystemFuture implements Future<Integer> {
+        private final static int SLEEP_TIME = 100;
+        
+        private final @Nullable ChannelExec mChannelExec;
+        private volatile boolean mCancelled = false;
+        private final Future<Void> mOutTask;
+        private SSHSystemFuture(String aCommand, final @NotNull IPrintlnSupplier aPrintln) {
+            // 执行指令
+            ChannelExec tChannelExec;
+            try {tChannelExec = mSSH.systemChannel(aCommand, noERROutput());}
+            catch (Exception e) {e.printStackTrace(); tChannelExec = null;}
+            mChannelExec = tChannelExec;
+            if (mChannelExec == null) {
+                mOutTask = null;
+                return;
+            }
+            
+            // 由于 jsch 的输入流是临时创建的，因此可以不去获取输入流来避免流死锁
+            if (noSTDOutput()) {
+                try {
+                    mChannelExec.connect();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // 发生错误则断开连接
+                    if (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
+                        try {mChannelExec.sendSignal("2");} catch (Exception ignored) {}
+                    }
+                    mChannelExec.disconnect();
+                }
+                mOutTask = null;
+            } else {
+                mOutTask = UT.Par.runAsync(() -> {
+                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream()); IPrintln tPrintln = aPrintln.get()) {
+                        mChannelExec.connect();
+                        String tLine;
+                        while ((tLine = tReader.readLine()) != null) tPrintln.println(tLine);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // 发生错误则断开连接
+                        if (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
+                            try {mChannelExec.sendSignal("2");} catch (Exception ignored) {}
+                        }
+                        mChannelExec.disconnect();
+                    }
+                });
+            }
+        }
+        
+        @Override public boolean cancel(boolean mayInterruptIfRunning) {
+            if (mChannelExec == null) return false;
+            if (mayInterruptIfRunning && mChannelExec.isConnected()) {
+                if (!mChannelExec.isClosed() && !mChannelExec.isEOF()) {
+                    try {mChannelExec.sendSignal("2");} catch (Exception ignored) {}
+                }
+                mChannelExec.disconnect();
+                mCancelled = true;
+                return true;
+            }
+            return false;
+        }
+        @Override public boolean isCancelled() {return mCancelled;}
+        @Override public boolean isDone() {return mChannelExec==null || mChannelExec.isEOF() || mChannelExec.isClosed() || !mChannelExec.isConnected();}
+        @SuppressWarnings("BusyWait")
+        @Override public Integer get() throws InterruptedException, ExecutionException {
+            if (mChannelExec == null) return -1;
+            while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) Thread.sleep(SLEEP_TIME);
+            mOutTask.get();
+            if (mCancelled) throw new CancellationException();
+            int tExitValue = mChannelExec.getExitStatus();
+            mChannelExec.disconnect();
+            return tExitValue;
+        }
+        @SuppressWarnings("BusyWait")
+        @Override public Integer get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            if (mChannelExec == null) return -1;
+            long tic = System.nanoTime();
+            long tRestTime = unit.toNanos(timeout);
+            while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
+                Thread.sleep(SLEEP_TIME);
+                long toc = System.nanoTime();
+                tRestTime -= toc - tic;
+                tic = toc;
+                if (tRestTime <= 0) throw new TimeoutException();
+            }
+            mOutTask.get(tRestTime, TimeUnit.NANOSECONDS);
+            if (mCancelled) throw new CancellationException();
+            int tExitValue = mChannelExec.getExitStatus();
+            mChannelExec.disconnect();
+            return tExitValue;
+        }
+    }
+    
+    
     @Override protected final void putFiles(Iterable<String> aFiles) throws Exception {
         if (mIOThreadNum>0) mSSH.putFiles(aFiles, mIOThreadNum); else mSSH.putFiles(aFiles);
     }
     @Override protected final void getFiles(Iterable<String> aFiles) throws Exception {
         if (mIOThreadNum>0) mSSH.getFiles(aFiles, mIOThreadNum); else mSSH.getFiles(aFiles);
     }
-    
-    
     /** 需要重写 shutdownFinal 方法将内部 ssh 的关闭包含进去 */
     @Override protected void shutdownFinal() {mSSH.shutdown();}
 }

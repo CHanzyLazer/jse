@@ -10,13 +10,13 @@ import com.jtool.system.WSL
 UT.IO.mkdir('.temp');
 
 // 获取执行器，可能对 wsl 中的 linux 相关指令会比较熟悉
-wsl = new WSL(3);
+wsl = new WSL();
 
 println("直接执行");
 wsl.system('ls');
 wsl.system('sleep 1s; echo 1');
 
-println("使用 submit 来提交并行执行，并行数为设置的 3");
+println("使用 submit 来提交并行执行");
 wsl.submitSystem('sleep 1s; echo 1');
 wsl.submitSystem('sleep 1s; echo 2');
 wsl.submitSystem('sleep 1s; echo 3');

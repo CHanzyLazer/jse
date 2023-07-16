@@ -24,9 +24,7 @@ public interface IFutureJob extends Future<Integer> {
     
     
     @ApiStatus.Internal int getExitValue_();
-    
-    boolean cancel();
-    @Override default boolean cancel(boolean thisParameterIsNoUseHere) {return cancel();}
+    boolean cancel(boolean mayInterruptIfRunning);
     
     /** 简单实现，直接暴力 while 等待，注意不能在等待过程中加锁，会造成死锁 */
     @Override default Integer get() throws InterruptedException {

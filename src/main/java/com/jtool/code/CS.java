@@ -84,6 +84,7 @@ public class CS {
     
     /** SystemExecutor Stuffs */
     public final static IHasIOFiles EPT_IOF = new IOFiles();
+    public final static IFutureJob SUC_FUTURE = new CompletedFutureJob(0);
     public final static IFutureJob ERR_FUTURE = new CompletedFutureJob(-1);
     public final static Future<List<Integer>> ERR_FUTURES = new CompletedFuture<>(Collections.singletonList(-1));
     public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(ImmutableList.of());

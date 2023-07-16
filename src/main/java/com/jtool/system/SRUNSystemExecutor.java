@@ -7,10 +7,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
+import static com.jtool.code.CS.*;
 import static com.jtool.code.CS.Slurm.IS_SLURM;
 import static com.jtool.code.CS.Slurm.RESOURCES_MANAGER;
-import static com.jtool.code.CS.WORKING_DIR;
 
 /**
  * @author liqa
@@ -23,9 +24,8 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
     private final Map<Resource, Boolean> mAssignedResources;
     
     /** 线程数现在由每个任务的并行数，申请到的节点数，以及每节点的核心数来确定 */
-    public SRUNSystemExecutor(int aTaskNum, int aParallelNum) throws Exception {
-        // 未来不会限制并行数，因此这里不再提供并行的设置
-        super(SERIAL_EXECUTOR);
+    public SRUNSystemExecutor(int aTaskNum, int aMaxParallelNum) throws Exception {
+        super();
         
         mAssignedResources = new HashMap<>();
         // 设置一下工作目录
@@ -36,7 +36,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             this.shutdown();
             throw new Exception("SRUN can Only be used in SLURM");
         }
-        for (int i = 0; i < aParallelNum; ++i) {
+        for (int i = 0; i < aMaxParallelNum; ++i) {
             Resource tResource = aTaskNum>0 ? RESOURCES_MANAGER.assignResource(aTaskNum) : RESOURCES_MANAGER.assignResource();
             // 分配失败直接抛出错误
             if (tResource == null) {
@@ -65,9 +65,9 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         mAssignedResources.put(aResource, false);
     }
     
-    @Override protected int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
         // 对于空指令专门优化，不执行操作
-        if (aCommand == null || aCommand.isEmpty()) return -1;
+        if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         // 先尝试获取节点
         Resource tResource = assignResource();
         if (tResource == null) {
@@ -75,22 +75,23 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             System.err.println("It may be caused by too large number of parallels.");
         }
         while (tResource == null) {
-            try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace(); return -1;}
+            // 这个错误是由于手动中断抛出的，因此要立刻抛出 RuntimeException 终止，由外部的 try-with-resources 实现资源回收
+            try {Thread.sleep(100);} catch (InterruptedException e) {throw new RuntimeException(e);}
             tResource = assignResource();
         }
         // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行（srun 特有的问题）
         String tTempScriptPath = mWorkingDir+UT.Code.randID()+".sh";
         try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
-        catch (Exception e) {e.printStackTrace(); return -1;}
+        catch (Exception e) {e.printStackTrace(); return ERR_FUTURE;}
         // 获取提交指令
         String tCommand = RESOURCES_MANAGER.creatJobStep(tResource, "bash "+tTempScriptPath); // 使用 bash 执行不需要考虑权限的问题
         // 获取指令失败直接输出错误
-        int tOut;
-        if (tCommand == null) {System.err.println("ERROR: Create SLURM job step Failed"); tOut = -1;}
-        else {tOut = super.system_(tCommand, aPrintln);}
+        Future<Integer> tOut;
+        if (tCommand == null) {System.err.println("ERROR: Create SLURM job step Failed"); tOut = ERR_FUTURE;}
+        else {tOut = super.submitSystem__(tCommand, aPrintln);}
         // 任务完成后需要归还任务
-        returnResource(tResource);
-        return tOut;
+        final Resource fResource = tResource;
+        return toSystemFuture(tOut, () -> returnResource(fResource));
     }
     
     /** 程序结束时删除自己的临时工作目录，并归还资源 */

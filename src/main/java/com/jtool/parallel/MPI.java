@@ -8,15 +8,15 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
+import static com.jtool.code.CS.Exec.EXE;
 import static com.jtool.code.CS.Exec.JAR_PATH;
-import static com.jtool.code.CS.*;
+import static com.jtool.code.CS.Slurm;
 import static com.jtool.code.CS.Slurm.IS_SLURM;
 import static com.jtool.code.CS.Slurm.RESOURCES_MANAGER;
+import static com.jtool.code.CS.ZL_BYTE;
 
 
 /**
@@ -34,9 +34,6 @@ public class MPI {
      * @param aOpt 此工作器需要执行的操作
      */
     @ApiStatus.Internal public static void abstractWorkerInit(String aAddress, IOperator1<byte[], byte[]> aOpt) {
-        // 子程序禁止标准输出和标准错误输出，防止因为任何意外导致的流死锁
-        System.setErr(NUL_PRINT_STREAM);
-        System.setOut(NUL_PRINT_STREAM);
         // 根据输入的地址创建一个回复消息的子服务器
         ZMQ.Socket tSocket = CONTEXT.createSocket(SocketType.REP);
         tSocket.setSendTimeOut(SEND_TIMEOUT);
@@ -115,9 +112,8 @@ public class MPI {
             // 获取指令失败直接抛出错误
             if (tCommand == null) throw new Exception("Create SLURM job step Failed");
         }
-        // 通过执行指令创建子进程，指定连接到此地址；直接使用 Runtime 创建后台程序，减少资源占用，可以开启更多的进程；为了避免创建过多线程这里不去捕获输入输出流
-        try {Runtime.getRuntime().exec(tCommand);}
-        catch (Exception e) {e.printStackTrace();}
+        // 通过执行指令创建子进程，指定连接到此地址
+        EXE.submitSystem(tCommand);
         // 返回 worker
         Worker tWorker = new Worker(tSocket);
         ALL_WORKER.add(tWorker);

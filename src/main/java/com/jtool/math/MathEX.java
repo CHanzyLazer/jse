@@ -510,6 +510,7 @@ public class MathEX {
     
     
     /// a Parfor ThreadPool for MathEX usage
+    @ApiStatus.Obsolete
     public static class Par {
         private static ParforThreadPool POOL = new ParforThreadPool(1);
         public static void setThreadNum(int aThreadNum) {POOL.shutdown(); POOL = new ParforThreadPool(aThreadNum);}

@@ -2,43 +2,48 @@ package com.jtool.system;
 
 
 import com.jtool.code.UT;
-import com.jtool.iofile.IHasIOFiles;
-import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * @author liqa
  * <p> SystemExecutor 的一般实现，直接在本地运行 </p>
  */
-public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
-    public LocalSystemExecutor(int aThreadNum) {this(newPool(aThreadNum));}
-    public LocalSystemExecutor() {this(SERIAL_EXECUTOR);}
-    
-    protected LocalSystemExecutor(IExecutorEX aPool) {super(aPool);}
+public class LocalSystemExecutor extends AbstractSystemExecutor {
+    public LocalSystemExecutor() {super();}
     
     /** 本地则在本地创建目录即可 */
     @Override public final void makeDir(String aDir) throws IOException {UT.IO.makeDir(aDir);}
     @Override public final void removeDir(String aDir) throws IOException {UT.IO.removeDir(aDir);}
     
-    @Override protected int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
-        // 对于空指令专门优化，不执行操作
-        if (aCommand == null || aCommand.isEmpty()) return -1;
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
+        return new LocalSystemFuture(aCommand, aPrintln);
+    }
+    
+    private final class LocalSystemFuture implements Future<Integer> {
+        private final static int SLEEP_TIME = 10, TRY_TIMES = 100;
         
-        int tExitValue;
-        Process tProcess = null;
-        try (IPrintln tPrintln = aPrintln.get()) {
+        private final @Nullable Process mProcess;
+        private final Future<Void> mErrTask, mOutTask;
+        private volatile boolean mCancelled = false;
+        private LocalSystemFuture(String aCommand, final @NotNull IPrintlnSupplier aPrintln) {
             // 执行指令
-            tProcess = Runtime.getRuntime().exec(aCommand);
-            // 设置错误输出流，直接另开一个线程管理
-            final Process fProcess = tProcess;
-            Future<Void> tTask = CompletableFuture.runAsync(() -> {
-                try (BufferedReader tErrReader = UT.IO.toReader(fProcess.getErrorStream())) {
+            Process tProcess;
+            try {tProcess = Runtime.getRuntime().exec(aCommand);}
+            catch (Exception e) {e.printStackTrace(); tProcess = null;}
+            mProcess = tProcess;
+            if (mProcess == null) {
+                mErrTask = null;
+                mOutTask = null;
+                return;
+            }
+            // 使用另外两个线程读取错误流和输出流（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
+            mErrTask = UT.Par.runAsync(() -> {
+                try (BufferedReader tErrReader = UT.IO.toReader(mProcess.getErrorStream())) {
                     boolean tERROutPut = !noERROutput();
                     // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
                     String tLine;
@@ -49,33 +54,69 @@ public class LocalSystemExecutor extends AbstractThreadPoolSystemExecutor {
                     e.printStackTrace();
                 }
             });
-            // 读取执行的输出（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
-            try (BufferedReader tOutReader = UT.IO.toReader(fProcess.getInputStream())) {
-                boolean tSTDOutPut = !noSTDOutput();
-                // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
-                String tLine;
-                while ((tLine = tOutReader.readLine()) != null) {
-                    if (tSTDOutPut) tPrintln.println(tLine);
+            // 读取执行的输出
+            mOutTask = UT.Par.runAsync(() -> {
+                try (BufferedReader tOutReader = UT.IO.toReader(mProcess.getInputStream()); IPrintln tPrintln = aPrintln.get()) {
+                    boolean tSTDOutPut = !noSTDOutput();
+                    // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
+                    String tLine;
+                    while ((tLine = tOutReader.readLine()) != null) {
+                        if (tSTDOutPut) tPrintln.println(tLine);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        
+        @Override public boolean cancel(boolean mayInterruptIfRunning) {
+            if (mProcess == null) return false;
+            if (mayInterruptIfRunning && mProcess.isAlive()) {
+                mProcess.destroyForcibly();
+                for (int i = 0; i < TRY_TIMES; ++i) {
+                    if (!mProcess.isAlive()) {mCancelled = true; return true;}
+                    try {Thread.sleep(SLEEP_TIME);}
+                    catch (InterruptedException e) {throw new RuntimeException(e);}
                 }
             }
-            // 等待执行完成
-            tExitValue = fProcess.waitFor();
-            tTask.get();
-        } catch (Exception e) {
-            tExitValue = -1;
-            e.printStackTrace();
-        } finally {
-            // 无论程序如何结束都停止进程
-            if (tProcess != null) tProcess.destroyForcibly();
+            return false;
         }
-        return tExitValue;
+        @Override public boolean isCancelled() {return mCancelled;}
+        @Override public boolean isDone() {return mProcess==null || !mProcess.isAlive();}
+        @Override public Integer get() throws InterruptedException, ExecutionException {
+            if (mProcess == null) return -1;
+            int tExitValue = mProcess.waitFor();
+            mErrTask.get();
+            mOutTask.get();
+            if (mCancelled) throw new CancellationException();
+            return tExitValue;
+        }
+        @Override public Integer get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            if (mProcess == null) return -1;
+            int tExitValue;
+            long tic = System.nanoTime();
+            long tRestTime = unit.toNanos(timeout);
+            if (mProcess.waitFor(tRestTime, TimeUnit.NANOSECONDS)) {
+                tExitValue = mProcess.exitValue();
+                long toc = System.nanoTime();
+                tRestTime -= toc - tic;
+                tic = toc;
+            } else {
+                throw new TimeoutException();
+            }
+            if (tRestTime <= 0) throw new TimeoutException();
+            mErrTask.get(tRestTime, TimeUnit.NANOSECONDS);
+            tRestTime -= System.nanoTime() - tic;
+            if (tRestTime <= 0) throw new TimeoutException();
+            mOutTask.get(tRestTime, TimeUnit.NANOSECONDS);
+            if (mCancelled) throw new CancellationException();
+            return tExitValue;
+        }
     }
-    /** 这样保证只会在执行的时候获取 println */
-    @Override protected Future<Integer> submitSystem_(final String aCommand, final @NotNull IPrintlnSupplier aPrintln) {return pool().submit(() -> system_(aCommand, aPrintln));}
     
     
-    /** 对于本地的带有 IOFiles 的没有区别 */
-    @Override public int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {return system_(aCommand, aPrintln);}
-    @Override protected Future<Integer> submitSystem_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {return submitSystem_(aCommand, aPrintln);}
-    @Override public Future<List<Integer>> batchSubmit_(Iterable<String> aCommands, IHasIOFiles aIOFiles) {return batchSubmit_(aCommands);}
+    /** 对于本地的不需要同步输入输出文件 */
+    protected final void putFiles(Iterable<String> aFiles) {/**/}
+    protected final void getFiles(Iterable<String> aFiles) {/**/}
+    protected final boolean needSyncIOFiles() {return false;}
 }

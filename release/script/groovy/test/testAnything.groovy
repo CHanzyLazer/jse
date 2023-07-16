@@ -9,10 +9,18 @@ import com.jtool.lmp.Lmpdat
 import com.jtool.math.MathEX
 import com.jtool.plot.Plotters
 import com.jtool.system.SSH
+import com.jtool.system.WSL
 import com.jtool.vasp.POSCAR
 
-// 测试脚本调用中参数
-SP.Groovy.run('script/groovy/run/runScript.groovy', '123', '456');
+
+try (def ssh = new SSH(UT.IO.json2map('.SECRET/SSH_INFO.json'))) {
+    def task = ssh.submitSystem('sleep 10s; echo 1');
+    task.cancel(true);
+    ssh.waitUntilDone();
+}
+
+//// 测试脚本调用中参数
+//SP.Groovy.run('script/groovy/run/runScript.groovy', '123', '456');
 
 
 //// 尝试使用 lammps 计算

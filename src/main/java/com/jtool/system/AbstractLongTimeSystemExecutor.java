@@ -8,6 +8,7 @@ import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.iofile.ISavable;
 import com.jtool.iofile.MergedIOFiles;
+import com.jtool.jobs.ILongTimeJobPool;
 import com.jtool.parallel.AbstractHasThreadPool;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.ApiStatus;
@@ -22,19 +23,19 @@ import static com.jtool.code.CS.*;
 
 /**
  * @author liqa
- * <p> 不使用 java 线程池管理并行任务的 SystemExecutor，即需要使用所在系统自带的任务提交系统 </p>
+ * <p> 用于管理长时任务的 SystemExecutor，即需要使用所在系统自带的任务提交系统，并且可以中断和重新加载 </p>
  * <p> 实际为了监控任务完成情况，依旧会使用一个单线程的线程池 </p>
  * <p> 与一般的实现不同的是，指令输出只会输出到文件中，而输出到 List 的会从这个文件中来读取，
  * 输出文件的 key 为 {@code "<out>"}（不会让外部获取到修改后的 IOFiles，因此只是用于内部使用）</p>
  */
-public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
+public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor, ILongTimeJobPool {
     /** 包装一个任意的 mSystemExecutor 来执行指令，注意只会使用其中的最简单的 system 相关操作，因此不需要包含线程池 */
     protected final T mEXE;
     protected final int mParallelNum;
     protected final LinkedList<FutureJob> mQueuedJobList;
     protected final Map<FutureJob, Integer> mJobList;
     
-    protected AbstractNoPoolSystemExecutor(T aSystemExecutor, int aParallelNum) {
+    protected AbstractLongTimeSystemExecutor(T aSystemExecutor, int aParallelNum) {
         super(newSingle());
         mEXE = aSystemExecutor;
         mParallelNum = aParallelNum;
@@ -57,6 +58,8 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     @Override public final synchronized int nJobs() {return mQueuedJobList.size() + mJobList.size();}
     @Override public final int nThreads() {return mParallelNum;}
+    @SuppressWarnings("BusyWait")
+    @Override public void waitUntilDone() throws InterruptedException {while (nJobs() > 0) Thread.sleep(100);}
     
     protected void shutdown_() {
         mDead = true;
@@ -74,8 +77,33 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     
     
     /** ILongTimeJobPool stuffs，这样方便子类实现 */
+    @ApiStatus.Internal
     @SuppressWarnings({"rawtypes", "unchecked"})
-    protected synchronized void saveQueuedJobList(Map rSaveTo) {
+    @Override public final void save(Map rSaveTo) {
+        // 保存前先暂停
+        pause();
+        // 先保存子类
+        save_(rSaveTo);
+        // 保存自身数据
+        rSaveTo.put("JobNumber", jobNumber());
+        // 保存 mQueuedJobList 和 mJobList
+        saveQueuedJobList(rSaveTo);
+        saveJobList(rSaveTo);
+        // 保存完毕不自动解除暂停，保证文件一致性
+    }
+    @SuppressWarnings({"rawtypes"})
+    protected void save_(Map rSaveTo) {/**/}
+    /** 内部使用的完整 load 的方法，用于子类创建后加载父类的其余数据 */
+    protected final void loadRestData(Map<?, ?> aLoadFrom) {
+        // 加载这些属性
+        loadQueuedJobList(aLoadFrom);
+        loadJobList(aLoadFrom);
+        // 需要最后重新设置 jobNumber，因为创建任务列表时会顺便修改内部的 jobNumber
+        setJobNumber(((Number)aLoadFrom.get("JobNumber")).intValue());
+    }
+    
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private synchronized void saveQueuedJobList(Map rSaveTo) {
         if (!mQueuedJobList.isEmpty()) {
             List<Map> rList = new ArrayList<>();
             for (FutureJob tFutureJob : mQueuedJobList) {
@@ -87,7 +115,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         }
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
-    protected synchronized void saveJobList(Map rSaveTo) {
+    private synchronized void saveJobList(Map rSaveTo) {
         if (!mJobList.isEmpty()) {
             List<Map> rList = new ArrayList<>();
             for (Map.Entry<FutureJob, Integer> tEntry : mJobList.entrySet()) {
@@ -99,13 +127,13 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
             rSaveTo.put("JobList", rList);
         }
     }
-    protected synchronized void loadQueuedJobList(Map<?, ?> aLoadFrom) {
+    private synchronized void loadQueuedJobList(Map<?, ?> aLoadFrom) {
         if (aLoadFrom.containsKey("QueuedJobList")) {
             List<?> tList = (List<?>) aLoadFrom.get("QueuedJobList");
             for (Object tObj : tList) mQueuedJobList.add(loadFutureJob((Map<?, ?>) tObj));
         }
     }
-    protected synchronized void loadJobList(Map<?, ?> aLoadFrom) {
+    private synchronized void loadJobList(Map<?, ?> aLoadFrom) {
         if (aLoadFrom.containsKey("JobList")) {
             List<?> tList = (List<?>) aLoadFrom.get("JobList");
             for (Object tObj : tList) {
@@ -121,10 +149,10 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         if (tList != null) for (Object tObj : tList) aOFiles.add((String)tObj);
         return new FutureJob(aSubmitCommand, aOFiles);
     }
-    protected synchronized void setJobNumber(int aJobNumber) {mJobNumber = aJobNumber;}
+    private synchronized void setJobNumber(int aJobNumber) {mJobNumber = aJobNumber;}
     @ApiStatus.Internal
     @SuppressWarnings("RedundantIfStatement")
-    public synchronized boolean killRecommended() {
+    @Override public synchronized boolean killRecommended() {
         // 如果还没检测任务队列则还不能 kill
         if (!mChecked) return false;
         // 正在执行的任务数达到最大并行数或者没有排队的任务时建议 kill
@@ -139,7 +167,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     public final void unpause() {mPause = false;}
     /** 直接杀死这个对象，类似于系统层面的杀死进程，会直接关闭提交任务并且放弃监管远程服务器的任务而不是取消这些任务，从而使得 mirror 的内容冻结 */
     @ApiStatus.Internal
-    public final void kill() {
+    @Override public final void kill() {
         if (mKilled) return;
         // 会先暂停保证正在进行的任务已经完成提交，保证镜像文件不会被这个对象再次修改
         pause();
@@ -153,64 +181,69 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     /** 还是采用一样的写法，提价一个长期任务不断手动监控任务完成情况 */
     @SuppressWarnings("BusyWait")
     private void keepSubmitFromList_() {
-        while (true) {
-            // 如果被杀死则直接结束（优先级最高）
-            if (mKilled) break;
-            try {Thread.sleep(sleepTime());} catch (InterruptedException e) {e.printStackTrace(); break;}
-            // 如果已经暂停则直接跳过
-            if (mPause) continue;
-            // 开始检测任务完成情况，这一段直接全部加锁
-            synchronized(this) {
-                // 如果已经暂停则直接跳过，并行特有的两次检测
+        try {
+            while (true) {
+                // 如果被杀死则直接结束（优先级最高）
+                if (mKilled) break;
+                Thread.sleep(sleepTime());
+                // 如果已经暂停则直接跳过
                 if (mPause) continue;
-                // 如果没有指令需要提交，并且没有正在执行的任务则需要考虑关闭线程
-                if (mQueuedJobList.isEmpty() && mJobList.isEmpty()) {if (mDead) break; else continue;}
-                // 获取实际还在运行的任务
-                Set<Integer> tJobIDs = getRunningJobIDsFromSystem();
-                // 因为各种原因获取不到 JobIDs，直接跳过
-                if (tJobIDs == null) continue;
-                // 遍历自身移除所有不在 JobIDs 中的任务
-                final Iterator<Map.Entry<FutureJob, Integer>> tIt = mJobList.entrySet().iterator();
-                while (tIt.hasNext()) {
-                    Map.Entry<FutureJob, Integer> tEntry = tIt.next();
-                    Integer tJobID = tEntry.getValue();
-                    FutureJob tFutureJob = tEntry.getKey();
-                    // 判断是否已经完成从而需要移除
-                    if (!tJobIDs.contains(tJobID)) {
-                        // 进行移除
-                        tIt.remove();
-                        // 指定对应的 Future 已经完成
-                        tFutureJob.done(0); // 放弃获取具体的退出码，直接统一认为是 0
+                // 开始检测任务完成情况，这一段直接全部加锁
+                synchronized(this) {
+                    // 如果已经暂停则直接跳过，并行特有的两次检测
+                    if (mPause) continue;
+                    // 如果没有指令需要提交，并且没有正在执行的任务则需要考虑关闭线程
+                    if (mQueuedJobList.isEmpty() && mJobList.isEmpty()) {if (mDead) break; else continue;}
+                    // 获取实际还在运行的任务
+                    Set<Integer> tJobIDs = getRunningJobIDsFromSystem();
+                    // 因为各种原因获取不到 JobIDs，直接跳过
+                    if (tJobIDs == null) continue;
+                    // 遍历自身移除所有不在 JobIDs 中的任务
+                    final Iterator<Map.Entry<FutureJob, Integer>> tIt = mJobList.entrySet().iterator();
+                    while (tIt.hasNext()) {
+                        Map.Entry<FutureJob, Integer> tEntry = tIt.next();
+                        Integer tJobID = tEntry.getValue();
+                        FutureJob tFutureJob = tEntry.getKey();
+                        // 判断是否已经完成从而需要移除
+                        if (!tJobIDs.contains(tJobID)) {
+                            // 进行移除
+                            tIt.remove();
+                            // 指定对应的 Future 已经完成
+                            tFutureJob.done(0); // 放弃获取具体的退出码，直接统一认为是 0
+                        }
                     }
-                }
-                // 移除完成后检测并行数目是否合适，合适则继续添加任务
-                while (!mQueuedJobList.isEmpty() && mJobList.size() < mParallelNum) {
-                    // 获取第一个元素
-                    FutureJob tFutureJob = mQueuedJobList.pollFirst();
-                    // 尝试提交任务获取 JobID，这里都放在 FutureJob 内部执行
-                    int tJobID = tFutureJob.submitSystemCommand();
-                    if (tJobID > 0) {
-                        // 如果提交成功则注册任务
-                        mJobList.put(tFutureJob, tJobID);
-                    } else {
-                        // 否则直接设置任务完成
-                        tFutureJob.done(-1); // 此时依旧会尝试下载输出文件
+                    // 移除完成后检测并行数目是否合适，合适则继续添加任务
+                    while (!mQueuedJobList.isEmpty() && mJobList.size() < mParallelNum) {
+                        // 获取第一个元素
+                        FutureJob tFutureJob = mQueuedJobList.pollFirst();
+                        // 尝试提交任务获取 JobID，这里都放在 FutureJob 内部执行
+                        int tJobID = tFutureJob.submitSystemCommand();
+                        if (tJobID > 0) {
+                            // 如果提交成功则注册任务
+                            mJobList.put(tFutureJob, tJobID);
+                        } else {
+                            // 否则直接设置任务完成
+                            tFutureJob.done(-1); // 此时依旧会尝试下载输出文件
+                        }
                     }
+                    mChecked = true; // 标记已经经过了检测
                 }
-                mChecked = true; // 标记已经经过了检测
             }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            // 在这里执行最后的关闭，例如关闭内部的 EXE 等
+            if (mKilled) killFinal();
+            else shutdownFinal();
+            mEXE.shutdown();
         }
-        // 在这里执行最后的关闭，例如关闭内部的 EXE 等
-        if (mKilled) killFinal();
-        else shutdownFinal();
-        mEXE.shutdown();
     }
     
     
     
     private int mJobNumber = 0;
     protected synchronized int jobNumber() {return mJobNumber;}
-    protected synchronized void increaseJobNumber() {++mJobNumber;}
+    private synchronized void increaseJobNumber() {++mJobNumber;}
     /** 需要专门自定义实现一个 Future，返回的是这个指令最终的退出代码，注意保持只有一个锁来防止死锁 */
     protected class FutureJob implements IFutureJob, ISavable {
         private String mSubmitCommand;
@@ -231,21 +264,21 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         }
         
         /** 获取这个任务的状态 */
-        @Override public StateType state() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @Override public StateType state() {synchronized (AbstractLongTimeSystemExecutor.this) {
             if (isDone()) return StateType.DONE;
             if (mQueuedJobList.contains(this)) return StateType.QUEUING;
             if (mJobList.containsKey(this)) return StateType.RUNNING;
             return StateType.ELSE;
         }}
         /** 获取 jobID */
-        @Override public int jobID() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @Override public int jobID() {synchronized (AbstractLongTimeSystemExecutor.this) {
             if (mJobList.containsKey(this)) return mJobList.get(this);
             return -1;
         }}
         
         
         /** 尝试提交任务并且获取 ID */
-        protected int submitSystemCommand() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        protected int submitSystemCommand() {synchronized (AbstractLongTimeSystemExecutor.this) {
             if (mSubmitCommand == null || mSubmitCommand.isEmpty()) return -1;
             // 获取提交任务的 ID，提交任务不需要附加 aIOFiles
             List<String> tOutList = mEXE.system_str(mSubmitCommand);
@@ -267,14 +300,14 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         }}
         
         private boolean mIsCancelled = false;
-        private void setCancelled_() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        private void setCancelled_() {synchronized (AbstractLongTimeSystemExecutor.this) {
             mIsCancelled = true; done(130);
         }}
         
         private boolean mIsDone = false;
         private int mExitValue = -1;
         /** 设置完成后会自动执行下载任务，注意如果退出码是 130（手动取消）则不会下载 */
-        protected void done(int aExitValue) {synchronized (AbstractNoPoolSystemExecutor.this) {
+        protected void done(int aExitValue) {synchronized (AbstractLongTimeSystemExecutor.this) {
             if (isDone()) return;
             mIsDone = true;
             mExitValue = aExitValue;
@@ -287,7 +320,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         }}
         
         /** 尝试取消这个任务 */
-        @Override public boolean cancel() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @Override public boolean cancel(boolean mayInterruptIfRunning) {synchronized (AbstractLongTimeSystemExecutor.this) {
             if (isCancelled()) return false;
             // 先检测是否在排队，如果还在排队则直接取消
             if (mQueuedJobList.remove(this)) {
@@ -295,7 +328,8 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
                 return true;
             }
             // 如果已经在 JobList 中，则需要通过远程指令来取消
-            if (mJobList.containsKey(this)) {
+            // 此时需要检测 mayInterruptIfRunning，如果开启了才会真的取消
+            if (mayInterruptIfRunning && mJobList.containsKey(this)) {
                 int tJobID = mJobList.get(this);
                 // 尝试取消这个任务
                 boolean tOut = cancelJobFromSystem(tJobID);
@@ -309,13 +343,13 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
             // 没有这个任务，取消失败
             return false;
         }}
-        @Override public boolean isCancelled() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @Override public boolean isCancelled() {synchronized (AbstractLongTimeSystemExecutor.this) {
             return mIsCancelled;
         }}
-        @Override public boolean isDone() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @Override public boolean isDone() {synchronized (AbstractLongTimeSystemExecutor.this) {
             return mIsDone;
         }}
-        @ApiStatus.Internal @Override public int getExitValue_() {synchronized (AbstractNoPoolSystemExecutor.this) {
+        @ApiStatus.Internal @Override public int getExitValue_() {synchronized (AbstractLongTimeSystemExecutor.this) {
             return mExitValue;
         }}
     }
@@ -336,6 +370,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     @Override public final int system(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final int system(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final List<String> system_str(String aCommand) {
+        if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
         String tFilePath = toRealOutFilePath(defaultOutFilePath());
         system_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath));
@@ -347,6 +382,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         }
     }
     @Override public final List<String> system_str(String aCommand, IHasIOFiles aIOFiles) {
+        if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         String tFilePath = toRealOutFilePath(defaultOutFilePath());
         system_(aCommand, tFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy() : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
         if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
@@ -363,10 +399,11 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy(): aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final Future<List<String>> submitSystem_str(String aCommand) {
+        if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return EPT_STR_FUTURE;
         final String tFilePath = toRealOutFilePath(defaultOutFilePath());
         final Future<Integer> tSystemTask = submitSystem_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath));
-        return UT.Code.map(tSystemTask, v -> {
+        return UT.Par.map(tSystemTask, v -> {
             try {
                 return UT.IO.readAllLines(tFilePath);
             } catch (IOException e) {
@@ -376,10 +413,11 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
         });
     }
     @Override public final Future<List<String>> submitSystem_str(String aCommand, IHasIOFiles aIOFiles) {
+        if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         final String tFilePath = toRealOutFilePath(defaultOutFilePath());
         final Future<Integer> tSystemTask = submitSystem_(aCommand, tFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy() : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
         if (aCommand==null || aCommand.isEmpty()) return EPT_STR_FUTURE;
-        return UT.Code.map(tSystemTask, v -> {
+        return UT.Par.map(tSystemTask, v -> {
             try {
                 return UT.IO.readAllLines(tFilePath);
             } catch (IOException e) {
@@ -478,7 +516,7 @@ public abstract class AbstractNoPoolSystemExecutor<T extends ISystemExecutor> ex
     protected abstract @NotNull String toRealOutFilePath(String aOutFilePath);
     protected abstract @Nullable String getRunCommand(String aCommand, @NotNull String aOutFilePath);
     protected abstract @Nullable String getSubmitCommand(String aCommand, @NotNull String aOutFilePath);
-    protected abstract @Nullable String getBatchSubmitCommand(List<String> aCommands, IHasIOFiles aIOFiles);
+    protected abstract @Nullable String getBatchSubmitCommand(List<String> aCommands, IHasIOFiles rIOFiles);
     
     /** 使用 submit 指令后系统会给出输出，需要使用这个输出来获取对应任务的 ID 用于监控任务是否完成，返回 <= 0 的值代表提交任务失败 */
     protected abstract int getJobIDFromSystem(List<String> aOutList);

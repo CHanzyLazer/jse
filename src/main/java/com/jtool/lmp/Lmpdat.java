@@ -267,11 +267,11 @@ public class Lmpdat extends AbstractAtomData {
             aVelocities = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length);
             // 和坐标排序一致的顺序来存储
             for (; idx < end; ++idx) {
-                double[] tVelocity = UT.Texts.str2data(aLines.get(idx), LMPDAT_VELOCITY_LENGTH);
-                int tRow = tId2Row.get((int)tVelocity[LMPDAT_ID_COL]);
-                aVelocities.set(tRow, STD_VX_COL, tVelocity[LMPDAT_VX_COL]);
-                aVelocities.set(tRow, STD_VY_COL, tVelocity[LMPDAT_VY_COL]);
-                aVelocities.set(tRow, STD_VZ_COL, tVelocity[LMPDAT_VZ_COL]);
+                IVector tVelocity = UT.Texts.str2data(aLines.get(idx), LMPDAT_VELOCITY_LENGTH);
+                int tRow = tId2Row.get((int)tVelocity.get(LMPDAT_ID_COL));
+                aVelocities.set(tRow, STD_VX_COL, tVelocity.get(LMPDAT_VX_COL));
+                aVelocities.set(tRow, STD_VY_COL, tVelocity.get(LMPDAT_VY_COL));
+                aVelocities.set(tRow, STD_VZ_COL, tVelocity.get(LMPDAT_VZ_COL));
             }
         } else {
             aVelocities = null;

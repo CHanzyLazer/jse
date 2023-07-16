@@ -11,5 +11,5 @@ public class CompletedFutureJob implements IFutureJob {
     @Override public StateType state() {return StateType.DONE;}
     @ApiStatus.Internal @Override public int getExitValue_() {return mExitValue;}
     @Override public int jobID() {return mExitValue;}
-    @Override public boolean cancel() {return false;}
+    @Override public boolean cancel(boolean mayInterruptIfRunning) {return false;}
 }

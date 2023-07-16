@@ -15,6 +15,7 @@ import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
+import com.jtool.parallel.MergedFuture;
 import com.jtool.parallel.ParforThreadPool;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
@@ -35,10 +36,8 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -70,39 +69,6 @@ public class UT {
             byte[] rBytes = new byte[6];
             RANDOM.nextBytes(rBytes);
             return Base64.getUrlEncoder().withoutPadding().encodeToString(rBytes);
-        }
-        
-        
-        /**
-         * parfor for groovy usage
-         * @author liqa
-         */
-        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, DEFAULT_THREAD_NUM, aGroovyTask);}
-        @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
-            try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
-                int tN = aGroovyTask.getMaximumNumberOfParameters();
-                switch (tN) {
-                case 0: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call()); return;}
-                case 1: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call(i)); return;}
-                case 2: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call(i, threadID)); return;}
-                default: throw new IllegalArgumentException("Parameters Number of parfor Task Must be 0, 1 or 2");
-                }
-            }
-        }
-        /**
-         * parwhile for groovy usage
-         * @author liqa
-         */
-        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, DEFAULT_THREAD_NUM, aGroovyTask);}
-        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
-            try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
-                int tN = aGroovyTask.getMaximumNumberOfParameters();
-                switch (tN) {
-                case 0: {tPool.parwhile(aChecker, (threadID) -> aGroovyTask.call()); return;}
-                case 1: {tPool.parwhile(aChecker, (threadID) -> aGroovyTask.call(threadID)); return;}
-                default: throw new IllegalArgumentException("Parameters Number of parwhile Task Must be 0 or 1");
-                }
-            }
         }
         
         
@@ -211,36 +177,6 @@ public class UT {
                 @Override public int size() {return aBefore.length+3;}
             };
         }
-        /**
-         * merge {@code Iterable<Future<T>> to single Future<List<T>>} in All logic
-         * @author liqa
-         */
-        public static <T> Future<List<T>> mergeAll(final Iterable<? extends Future<T>> aFutures) {
-            return new Future<List<T>>() {
-                @Override public boolean cancel(boolean mayInterruptIfRunning) {
-                    for (Future<T> tFuture : aFutures) if (!tFuture.cancel(mayInterruptIfRunning)) return false;
-                    return true;
-                }
-                @Override public boolean isCancelled() {
-                    for (Future<T> tFuture : aFutures) if (!tFuture.isCancelled()) return false;
-                    return true;
-                }
-                @Override public boolean isDone() {
-                    for (Future<T> tFuture : aFutures) if (!tFuture.isDone()) return false;
-                    return true;
-                }
-                @Override public List<T> get() throws InterruptedException, ExecutionException {
-                    List<T> tOut = new ArrayList<>();
-                    for (Future<T> tFuture : aFutures) tOut.add(tFuture.get());
-                    return tOut;
-                }
-                @Override public List<T> get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                    List<T> tOut = new ArrayList<>();
-                    for (Future<T> tFuture : aFutures) tOut.add(tFuture.get(timeout, unit));
-                    return tOut;
-                }
-            };
-        }
         
         
         /**
@@ -314,19 +250,6 @@ public class UT {
             return new AbstractRandomAccessList<R>() {
                 @Override public R get(int index) {return aOpt.cal(aArray[index]);}
                 @Override public int size() {return aArray.length;}
-            };
-        }
-        /**
-         * map {@code Future<T> to Future<R>} like {@link Stream}.map
-         * @author liqa
-         */
-        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1<? extends R, ? super T> aOpt) {
-            return new Future<R>() {
-                @Override public boolean cancel(boolean mayInterruptIfRunning) {return aFuture.cancel(mayInterruptIfRunning);}
-                @Override public boolean isCancelled() {return aFuture.isCancelled();}
-                @Override public boolean isDone() {return aFuture.isDone();}
-                @Override public R get() throws InterruptedException, ExecutionException {return aOpt.cal(aFuture.get());}
-                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {return aOpt.cal(aFuture.get(timeout, unit));}
             };
         }
         
@@ -542,6 +465,131 @@ public class UT {
             aStep = Math.max(aStep, 1);
             aStop = Math.max(aStop, aStart);
             return range_(aStart, aStop, aStep);
+        }
+    }
+    
+    public static class Par {
+        /**
+         * parfor for groovy usage
+         * @author liqa
+         */
+        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
+            try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
+                int tN = aGroovyTask.getMaximumNumberOfParameters();
+                switch (tN) {
+                case 0: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call()); return;}
+                case 1: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call(i)); return;}
+                case 2: {tPool.parfor(aSize, (i, threadID) -> aGroovyTask.call(i, threadID)); return;}
+                default: throw new IllegalArgumentException("Parameters Number of parfor Task Must be 0, 1 or 2");
+                }
+            }
+        }
+        /**
+         * parwhile for groovy usage
+         * @author liqa
+         */
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
+            try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
+                int tN = aGroovyTask.getMaximumNumberOfParameters();
+                switch (tN) {
+                case 0: {tPool.parwhile(aChecker, (threadID) -> aGroovyTask.call()); return;}
+                case 1: {tPool.parwhile(aChecker, (threadID) -> aGroovyTask.call(threadID)); return;}
+                default: throw new IllegalArgumentException("Parameters Number of parwhile Task Must be 0 or 1");
+                }
+            }
+        }
+        
+        /**
+         * merge {@code Iterable<Future<T>> to single Future<List<T>>} in All logic
+         * @author liqa
+         */
+        public static <T> Future<List<T>> mergeAll(Iterable<? extends Future<? extends T>> aFutures) {return new MergedFuture<>(aFutures);}
+        
+        /**
+         * map {@code Future<T> to Future<R>} like {@link Stream}.map
+         * @author liqa
+         */
+        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1<? extends R, ? super T> aOpt) {
+            return new Future<R>() {
+                @Override public boolean cancel(boolean mayInterruptIfRunning) {return aFuture.cancel(mayInterruptIfRunning);}
+                @Override public boolean isCancelled() {return aFuture.isCancelled();}
+                @Override public boolean isDone() {return aFuture.isDone();}
+                @Override public R get() throws InterruptedException, ExecutionException {return aOpt.cal(aFuture.get());}
+                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {return aOpt.cal(aFuture.get(timeout, unit));}
+            };
+        }
+        
+        /**
+         * 获取一个 Future 使用携程执行 aSupplier 获取结果；
+         * 其中使用新建一个 Thread 而不是 {@link CompletableFuture} 中使用的 {@link ForkJoinPool}；
+         * 这样可以避免线程数上限，主要用于执行需要长期监控但是不消耗资源的情况
+         * @param aSupplier 计算返回值的函数
+         * @param <U> 函数的返回类型
+         * @return 新的 Future
+         */
+        public static <U> Future<U> supplyAsync(Supplier<U> aSupplier) {return new ThreadFuture<>(aSupplier);}
+        /**
+         * 获取一个 Future 使用携程执行 aRunnable；
+         * 其中使用新建一个 Thread 而不是 {@link CompletableFuture} 中使用的 {@link ForkJoinPool}；
+         * 这样可以避免线程数上限，主要用于执行需要长期监控但是不消耗资源的情况
+         * @param aRunnable 需要运行的 Runnable
+         * @return 新的 Future
+         */
+        public static Future<Void> runAsync(Runnable aRunnable) {return new ThreadFuture<>(aRunnable);}
+        
+        private final static class ThreadFuture<T> implements Future<T> {
+            private final static int SLEEP_TIME = 10, TRY_TIMES = 100;
+            
+            /** 使用 volatile 或 final 保证不同线程的可见性 */
+            private volatile T mResult = null;
+            private volatile boolean mFinished = false, mCancelled = false;
+            private final Thread mThread;
+            private ThreadFuture(final Supplier<T> aSupplier) {
+                mThread = new Thread(() -> {
+                    mResult = aSupplier.get();
+                    mFinished = true;
+                });
+                mThread.start();
+            }
+            private ThreadFuture(final Runnable aRunnable) {
+                mThread = new Thread(() -> {
+                    aRunnable.run();
+                    mFinished = true;
+                });
+                mThread.start();
+            }
+            
+            @Override public boolean cancel(boolean mayInterruptIfRunning) {
+                if (mayInterruptIfRunning && mThread.isAlive()) {
+                    mThread.interrupt();
+                    for (int i = 0; i < TRY_TIMES; ++i) {
+                        if (!mThread.isAlive()) {mCancelled = true; mFinished = true; return true;}
+                        try {Thread.sleep(SLEEP_TIME);}
+                        catch (InterruptedException e) {throw new RuntimeException(e);}
+                    }
+                }
+                return false;
+            }
+            @Override public boolean isCancelled() {return mCancelled;}
+            @Override public boolean isDone() {return mFinished;}
+            @SuppressWarnings("BusyWait")
+            @Override public T get() throws InterruptedException {
+                while (!mFinished) Thread.sleep(1);
+                if (mCancelled) throw new CancellationException();
+                return mResult;
+            }
+            @SuppressWarnings("BusyWait")
+            @Override public T get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, TimeoutException {
+                long tic = System.nanoTime();
+                while (!mFinished) {
+                    Thread.sleep(1);
+                    if (System.nanoTime()-tic >= unit.toNanos(timeout)) throw new TimeoutException();
+                }
+                if (mCancelled) throw new CancellationException();
+                return mResult;
+            }
         }
     }
     
@@ -763,11 +811,11 @@ public class UT {
          * 使用 groovy-json 中现成的 parseDouble 等方法，总体比直接 split 并用 java 的 parseDouble 快一倍以上
          * @author liqa
          */
-        public static double[] str2data(String aStr, int aLength) {
+        public static IVector str2data(String aStr, int aLength) {
             // 先直接转 char[]，适配 groovy-json 的 CharScanner
             char[] tChar = aStr.toCharArray();
             // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
-            double[] rData = new double[aLength];
+            IVector rData = Vectors.zeros(aLength);
             int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
             int tIdx = 0;
             for (int i = tFrom; i < tChar.length; ++i) {
@@ -778,15 +826,15 @@ public class UT {
                     }
                 } else {
                     if (tCharCode <= 32) {
-                        rData[tIdx] = CharScanner.parseDouble(tChar, tFrom, i);
+                        rData.set_(tIdx, CharScanner.parseDouble(tChar, tFrom, i));
                         tFrom = -1;
                         ++tIdx;
-                        if (tIdx == rData.length) return rData;
+                        if (tIdx == aLength) return rData;
                     }
                 }
             }
             // 最后一个数据
-            if (tFrom >= 0 && tFrom < tChar.length) rData[tIdx] = CharScanner.parseDouble(tChar, tFrom, tChar.length);
+            if (tFrom >= 0 && tFrom < tChar.length) rData.set_(tIdx, CharScanner.parseDouble(tChar, tFrom, tChar.length));
             return rData;
         }
         

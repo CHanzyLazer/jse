@@ -36,7 +36,7 @@ task = slurm.submitSystem("lmp_ann -in ${inPath}", logPath, lmpIn);
 task.get();
 
 // 读取输出并输出到控制台
-lines = UT.IO.readAllLines_(logPath);
+lines = UT.IO.readAllLines(logPath);
 for (def line : lines) println(line);
 
 
