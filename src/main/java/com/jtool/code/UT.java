@@ -96,29 +96,21 @@ public class UT {
          * merge two array into one List
          * @author liqa
          */
-        public static List<Object> merge(final Object[] aBefore, Object... aAfter) {
-            final Object[] fAfter = aAfter==null ? ZL_OBJ : aAfter;
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {return index<aBefore.length ? aBefore[index] : fAfter[index-aBefore.length];}
-                @Override public int size() {return aBefore.length+fAfter.length;}
+        public static <T> List<T> merge(final T[] aBefore, final T[] aAfter) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {return index<aBefore.length ? aBefore[index] : aAfter[index-aBefore.length];}
+                @Override public int size() {return aBefore.length+aAfter.length;}
             };
         }
-        public static List<Object> mergeBefore(final Object[] aAfter, Object... aBefore) {
-            final Object[] fBefore = aBefore==null ? ZL_OBJ : aBefore;
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {return index<fBefore.length ? fBefore[index] : aAfter[index-fBefore.length];}
-                @Override public int size() {return fBefore.length+aAfter.length;}
-            };
-        }
-        public static List<Object> merge(final Object aBefore0, final Object[] aAfter) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {return index<1 ? aBefore0 : aAfter[index-1];}
+        public static <T> List<T> merge(final T aBefore0, final T[] aAfter) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {return index<1 ? aBefore0 : aAfter[index-1];}
                 @Override public int size() {return aAfter.length+1;}
             };
         }
-        public static List<Object> merge(final Object aBefore0, final Object aBefore1, final Object[] aAfter) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {
+        public static <T> List<T> merge(final T aBefore0, final T aBefore1, final T[] aAfter) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {
                     switch (index) {
                     case 0: return aBefore0;
                     case 1: return aBefore1;
@@ -128,9 +120,9 @@ public class UT {
                 @Override public int size() {return aAfter.length+2;}
             };
         }
-        public static List<Object> merge(final Object aBefore0, final Object aBefore1, final Object aBefore2, final Object[] aAfter) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {
+        public static <T> List<T> merge(final T aBefore0, final T aBefore1, final T aBefore2, final T[] aAfter) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {
                     switch (index) {
                     case 0: return aBefore0;
                     case 1: return aBefore1;
@@ -141,18 +133,18 @@ public class UT {
                 @Override public int size() {return aAfter.length+3;}
             };
         }
-        public static List<Object> merge(final Object[] aBefore, final Object aAfter0) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {
+        public static <T> List<T> merge(final T[] aBefore, final T aAfter0) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {
                     int tRest = index-aBefore.length;
                     return tRest==0 ? aAfter0 : aBefore[index];
                 }
                 @Override public int size() {return aBefore.length+1;}
             };
         }
-        public static List<Object> merge(final Object[] aBefore, final Object aAfter0, final Object aAfter1) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {
+        public static <T> List<T> merge(final T[] aBefore, final T aAfter0, final T aAfter1) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {
                     int tRest = index-aBefore.length;
                     switch (tRest) {
                     case 0: return aAfter0;
@@ -163,9 +155,9 @@ public class UT {
                 @Override public int size() {return aBefore.length+2;}
             };
         }
-        public static List<Object> merge(final Object[] aBefore, final Object aAfter0, final Object aAfter1, final Object aAfter2) {
-            return new AbstractRandomAccessList<Object>() {
-                @Override public Object get(int index) {
+        public static <T> List<T> merge(final T[] aBefore, final T aAfter0, final T aAfter1, final T aAfter2) {
+            return new AbstractRandomAccessList<T>() {
+                @Override public T get(int index) {
                     int tRest = index-aBefore.length;
                     switch (tRest) {
                     case 0: return aAfter0;
@@ -177,13 +169,27 @@ public class UT {
                 @Override public int size() {return aBefore.length+3;}
             };
         }
+        public static <T> Iterable<T> merge(final Iterable<? extends T> aBefore, final Iterable<? extends T> aAfter) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mItB = aBefore.iterator();
+                private final Iterator<? extends T> mItA = aAfter.iterator();
+                
+                @Override public boolean hasNext() {
+                    return mItB.hasNext() || mItA.hasNext();
+                }
+                @Override public T next() {
+                    return mItB.hasNext() ? mItB.next() : mItA.next();
+                }
+            };
+        }
         public static <T> Iterable<T> merge(final T aBefore0, final Iterable<? extends T> aAfter) {
             return () -> new Iterator<T>() {
                 private final Iterator<? extends T> mIt = aAfter.iterator();
                 private boolean mFirst = true;
+                
                 @Override public boolean hasNext() {
                     if (mFirst) return true;
-                    return mIt.hasNext();
+                    else return mIt.hasNext();
                 }
                 @Override public T next() {
                     if (mFirst) {
@@ -195,6 +201,156 @@ public class UT {
                 }
             };
         }
+        public static <T> Iterable<T> merge(final T aBefore0, final T aBefore1, final Iterable<? extends T> aAfter) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mIt = aAfter.iterator();
+                private int mIndex = -1;
+                
+                @Override public boolean hasNext() {
+                    if (mIndex < 1) return true;
+                    else return mIt.hasNext();
+                }
+                @Override public T next() {
+                    if (mIndex < 1) {
+                        ++mIndex;
+                        switch (mIndex) {
+                        case 0: return aBefore0;
+                        case 1: return aBefore1;
+                        default: throw new RuntimeException();
+                        }
+                    } else {
+                        return mIt.next();
+                    }
+                }
+            };
+        }
+        public static <T> Iterable<T> merge(final T aBefore0, final T aBefore1, final T aBefore2, final Iterable<? extends T> aAfter) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mIt = aAfter.iterator();
+                private int mIndex = -1;
+                
+                @Override public boolean hasNext() {
+                    if (mIndex < 2) return true;
+                    return mIt.hasNext();
+                }
+                @Override public T next() {
+                    if (mIndex < 2) {
+                        ++mIndex;
+                        switch (mIndex) {
+                        case 0: return aBefore0;
+                        case 1: return aBefore1;
+                        case 2: return aBefore2;
+                        default: throw new RuntimeException();
+                        }
+                    } else {
+                        return mIt.next();
+                    }
+                }
+            };
+        }
+        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mIt = aBefore.iterator();
+                private boolean mLast = false;
+                @Override public boolean hasNext() {
+                    return !mLast;
+                }
+                @Override public T next() {
+                    if (mLast) throw new NoSuchElementException();
+                    if (mIt.hasNext()) {
+                        return mIt.next();
+                    } else {
+                        mLast = true;
+                        return aAfter0;
+                    }
+                }
+            };
+        }
+        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0, final T aAfter1) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mIt = aBefore.iterator();
+                private int mIndex = -1;
+                
+                @Override public boolean hasNext() {
+                    return mIndex < 1;
+                }
+                @Override public T next() {
+                    if (mIndex == 1) throw new NoSuchElementException();
+                    if (mIt.hasNext()) {
+                        return mIt.next();
+                    } else {
+                        ++mIndex;
+                        switch (mIndex) {
+                        case 0: return aAfter0;
+                        case 1: return aAfter1;
+                        default: throw new RuntimeException();
+                        }
+                    }
+                }
+            };
+        }
+        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0, final T aAfter1, final T aAfter2) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends T> mIt = aBefore.iterator();
+                private int mIndex = -1;
+                
+                @Override public boolean hasNext() {
+                    return mIndex < 2;
+                }
+                @Override public T next() {
+                    if (mIndex == 2) throw new NoSuchElementException();
+                    if (mIt.hasNext()) {
+                        return mIt.next();
+                    } else {
+                        ++mIndex;
+                        switch (mIndex) {
+                        case 0: return aAfter0;
+                        case 1: return aAfter1;
+                        case 2: return aAfter2;
+                        default: throw new RuntimeException();
+                        }
+                    }
+                }
+            };
+        }
+        /**
+         * Convert nested Iterable to a single one
+         * @author liqa
+         */
+        public static <T> Iterable<T> merge(final Iterable<? extends Iterable<? extends T>> aNestIterable) {
+            return () -> new Iterator<T>() {
+                private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
+                private Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
+                private T mNext = null;
+                
+                @Override public boolean hasNext() {
+                    if (mIt == null) return false;
+                    while (true) {
+                        if (mNext != null) return true;
+                        if (mIt.hasNext()) {
+                            mNext = mIt.next();
+                            continue;
+                        }
+                        if (mParentIt.hasNext()) {
+                            mIt = mParentIt.next().iterator();
+                            mNext = null;
+                            continue;
+                        }
+                        return false;
+                    }
+                }
+                @Override public T next() {
+                    if (hasNext()) {
+                        T tNext = mNext;
+                        mNext = null; // 设置 mNext 非法表示此时不再有 Next
+                        return tNext;
+                    } else {
+                        throw new NoSuchElementException();
+                    }
+                }
+            };
+        }
+        
         
         
         /**
@@ -272,45 +428,6 @@ public class UT {
         }
         
         
-        
-        /**
-         * Convert nested Iterable to a single one
-         * @author liqa
-         */
-        public static <T> Iterable<T> toIterable(final Iterable<? extends Iterable<? extends T>> aNestIterable) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
-                private Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
-                private T mNext = null;
-                
-                @Override public boolean hasNext() {
-                    if (mIt == null) return false;
-                    while (true) {
-                        if (mNext != null) return true;
-                        if (mIt.hasNext()) {
-                            mNext = mIt.next();
-                            continue;
-                        }
-                        if (mParentIt.hasNext()) {
-                            mIt = mParentIt.next().iterator();
-                            mNext = null;
-                            continue;
-                        }
-                        return false;
-                    }
-                }
-                @Override public T next() {
-                    if (hasNext()) {
-                        T tNext = mNext;
-                        mNext = null; // 设置 mNext 非法表示此时不再有 Next
-                        return tNext;
-                    } else {
-                        throw new NoSuchElementException();
-                    }
-                }
-            };
-        }
-        
         /**
          * Convert Iterable to a Collection to use size()
          * @author liqa
@@ -320,6 +437,13 @@ public class UT {
             List<T> rList = new ArrayList<>();
             for (T tEntry : aIterable) rList.add(tEntry);
             return rList;
+        }
+        public static <T> Collection<T> toCollection(final int aSize, final Iterable<T> aIterable) {
+            if (aIterable instanceof Collection && ((Collection<T>)aIterable).size() == aSize) return (Collection<T>)aIterable;
+            return new AbstractCollection<T>() {
+                @Override public Iterator<T> iterator() {return aIterable.iterator();}
+                @Override public int size() {return aSize;}
+            };
         }
         /**
          * Convert Iterable to a List to use size() and get(i)

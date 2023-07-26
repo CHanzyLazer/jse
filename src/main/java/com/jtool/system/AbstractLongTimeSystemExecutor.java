@@ -301,7 +301,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         
         private boolean mIsCancelled = false;
         private void setCancelled_() {synchronized (AbstractLongTimeSystemExecutor.this) {
-            mIsCancelled = true; done(130);
+            mIsCancelled = true; done(-1);
         }}
         
         private boolean mIsDone = false;
@@ -311,7 +311,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
             if (isDone()) return;
             mIsDone = true;
             mExitValue = aExitValue;
-            if (aExitValue != 130 && mOFiles != null) {
+            if (needSyncIOFiles() && !mIsCancelled && mOFiles != null) {
                 try {getFiles(mOFiles);} catch (Exception e) {printStackTrace(e); mExitValue = mExitValue==0 ? -1 : aExitValue;}
             }
             // 结束后将内部附加属性置空
@@ -483,18 +483,24 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     protected final int system_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
-        try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return -1;}
+        if (needSyncIOFiles()) synchronized (this) {
+            try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return -1;}
+        }
         // 由于已经上传，提交任务不需要附加 aIOFiles
         int tExitValue = mEXE.system(getRunCommand(aCommand, aOutFilePath));
         // 直接下载输入文件
-        try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {printStackTrace(e); return tExitValue == 0 ? -1 : tExitValue;}
+        if (needSyncIOFiles()) synchronized (this) {
+            try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {printStackTrace(e); return tExitValue == 0 ? -1 : tExitValue;}
+        }
         return tExitValue;
     }
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
     protected final IFutureJob submitSystem_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
-        try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return ERR_FUTURE;}
+        if (needSyncIOFiles()) synchronized (this) {
+            try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return ERR_FUTURE;}
+        }
         // 获取 FutureJob
         FutureJob tFutureJob = new FutureJob(getSubmitCommand(aCommand, aOutFilePath), aIOFiles.getOFiles());
         // 为了逻辑上简单，这里统一先加入排队

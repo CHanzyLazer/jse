@@ -83,7 +83,7 @@ public class MonatomicParameterCalculator extends AbstractHasThreadPool<ParforTh
     
     public MonatomicParameterCalculator(IHasAtomData aAtomData                                  ) {this(aAtomData, 1);}
     public MonatomicParameterCalculator(IHasAtomData aAtomData, int aThreadNum                  ) {this(aAtomData, aThreadNum, 2.0);}
-    public MonatomicParameterCalculator(IHasAtomData aAtomData, int aThreadNum, double aCellStep) {this(aAtomData.atoms(), aAtomData.boxLo(), aAtomData.boxHi(), aThreadNum, aCellStep);}
+    public MonatomicParameterCalculator(IHasAtomData aAtomData, int aThreadNum, double aCellStep) {this(UT.Code.toCollection(aAtomData.atomNum(), aAtomData.atoms()), aAtomData.boxLo(), aAtomData.boxHi(), aThreadNum, aCellStep);}
     
     
     

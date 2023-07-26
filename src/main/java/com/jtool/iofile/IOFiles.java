@@ -52,8 +52,8 @@ public class IOFiles implements IHasIOFiles {
     
     @Override public List<String> getIFiles(String aIFileKey) {return mIFiles.get(aIFileKey);}
     @Override public List<String> getOFiles(String aOFileKey) {return mOFiles.get(aOFileKey);}
-    @Override public Iterable<String> getIFiles() {return UT.Code.toIterable(mIFiles.values());}
-    @Override public Iterable<String> getOFiles() {return UT.Code.toIterable(mOFiles.values());}
+    @Override public Iterable<String> getIFiles() {return UT.Code.merge(mIFiles.values());}
+    @Override public Iterable<String> getOFiles() {return UT.Code.merge(mOFiles.values());}
     @Override public Iterable<String> getIFileKeys() {return mIFiles.keySet();}
     @Override public Iterable<String> getOFileKeys() {return mOFiles.keySet();}
     
