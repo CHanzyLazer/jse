@@ -12,6 +12,8 @@ import java.io.BufferedReader;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static com.jtool.code.CS.SSH_SLEEP_TIME;
+
 
 /**
  * @author liqa
@@ -113,11 +115,9 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         // 增加结束时都断开连接的任务
         return toSystemFuture(tFuture, () -> {if (tFuture.mChannelExec != null) tFuture.mChannelExec.disconnect();});
     }
-    @Override protected long sleepTime() {return 100;}
+    @Override protected long sleepTime() {return SSH_SLEEP_TIME;}
     
     private final class SSHSystemFuture implements Future<Integer> {
-        private final static int SLEEP_TIME = 100;
-        
         private final @Nullable ChannelExec mChannelExec;
         private volatile boolean mCancelled = false;
         private final Future<Void> mOutTask;
@@ -180,7 +180,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         @SuppressWarnings("BusyWait")
         @Override public Integer get() throws InterruptedException, ExecutionException {
             if (mChannelExec == null) return -1;
-            while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) Thread.sleep(SLEEP_TIME);
+            while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) Thread.sleep(SSH_SLEEP_TIME);
             mOutTask.get();
             if (mCancelled) throw new CancellationException();
             int tExitValue = mChannelExec.getExitStatus();
@@ -193,7 +193,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
             long tic = System.nanoTime();
             long tRestTime = unit.toNanos(timeout);
             while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
-                Thread.sleep(SLEEP_TIME);
+                Thread.sleep(SSH_SLEEP_TIME);
                 long toc = System.nanoTime();
                 tRestTime -= toc - tic;
                 tic = toc;

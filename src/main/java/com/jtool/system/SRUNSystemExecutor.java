@@ -75,8 +75,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             System.err.println("It may be caused by too large number of parallels.");
         }
         while (tResource == null) {
-            // 这个错误是由于手动中断抛出的，因此要立刻抛出 RuntimeException 终止，由外部的 try-with-resources 实现资源回收
-            try {Thread.sleep(100);}
+            try {Thread.sleep(FILE_SYSTEM_SLEEP_TIME);}
             catch (InterruptedException e) {printStackTrace(e); return ERR_FUTURE;}
             tResource = assignResource();
         }

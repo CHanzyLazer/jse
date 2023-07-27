@@ -59,7 +59,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     @Override public final synchronized int nJobs() {return mQueuedJobList.size() + mJobList.size();}
     @Override public final int nThreads() {return mParallelNum;}
     @SuppressWarnings("BusyWait")
-    @Override public void waitUntilDone() throws InterruptedException {while (nJobs() > 0) Thread.sleep(100);}
+    @Override public void waitUntilDone() throws InterruptedException {while (nJobs() > 0) Thread.sleep(SYNC_SLEEP_TIME_2);}
     
     protected void shutdown_() {
         mDead = true;
@@ -517,7 +517,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     protected abstract int maxBatchSize();
     
     /** 用来控制检测频率，ms */
-    protected long sleepTime() {return 500;}
+    protected long sleepTime() {return SSH_SLEEP_TIME;}
     
     @Override public final void putFiles(Iterable<String> aFiles) throws Exception {mEXE.putFiles(aFiles);}
     @Override public final void getFiles(Iterable<String> aFiles) throws Exception {mEXE.getFiles(aFiles);}

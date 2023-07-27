@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 import static com.jtool.code.CS.Exec.EXE;
+import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
 import static com.jtool.code.CS.WORKING_DIR;
 
 /**
@@ -28,12 +29,14 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
     
     private boolean mDoNotClose;
     private long mFileSystemWaitTime;
+    private long mSleepTime;
     
     public LongTimeLmpExecutor(ISystemExecutor aEXE, boolean aDoNotClose, String aLmpExe, @Nullable String aLogPath, int aMaxParallelNum) throws Exception {
         mEXE = aEXE;
         mDoNotClose = aDoNotClose;
         mLongTimeLmps = new HashMap<>();
         mFileSystemWaitTime = DEFAULT_FILE_SYSTEM_WAIT_TIME;
+        mSleepTime = FILE_SYSTEM_SLEEP_TIME;
         // 设置一下工作目录
         mWorkingDir = WORKING_DIR.replaceAll("%n", "LTLMP@"+UT.Code.randID());
         // 提交长时的 lammps 任务
@@ -75,6 +78,7 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
     /** 是否在关闭此实例时顺便关闭内部 exe */
     public LongTimeLmpExecutor setDoNotClose(boolean aDoNotClose) {mDoNotClose = aDoNotClose; return this;}
     public LongTimeLmpExecutor setFileSystemWaitTime(long aFileSystemWaitTime) {mFileSystemWaitTime = aFileSystemWaitTime; return this;}
+    public LongTimeLmpExecutor setSleepTime(long aSleepTime) {mSleepTime = aSleepTime; return this;}
     
     @Override public ISystemExecutor exec() {return mEXE;}
     private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) aThrowable.printStackTrace();}
@@ -103,7 +107,7 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
             System.err.println("It may be caused by too large number of parallels.");
         }
         while (tLmp == null) {
-            Thread.sleep(100);
+            Thread.sleep(FILE_SYSTEM_SLEEP_TIME);
             tLmp = assignLmp_();
         }
         return tLmp;
@@ -146,7 +150,11 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
     private int run_(Pair<String, Future<Integer>> aLmp, IHasIOFiles aIOFiles) {
         // 检测 lammps 程序是否存活，如果不在了则直接报错
         if (aLmp.second.isDone()) {
-            if (!mEXE.noERROutput()) System.err.println("ERROR: Long-Time Lammps Dead Unexpectedly, dir: "+aLmp.first);
+            if (!mEXE.noERROutput()) {
+                int tExitValue;
+                try {tExitValue = aLmp.second.get();} catch (Exception e) {tExitValue = -1;}
+                System.err.println("ERROR: Long-Time Lammps in '"+aLmp.first+"' Dead Unexpectedly, exit value: "+tExitValue);
+            }
             returnLmp(aLmp);
             return -1;
         }
@@ -164,7 +172,7 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
             if (mEXE.needSyncIOFiles()) mEXE.putFiles(UT.Code.merge(tLmpInPath, aIOFiles.getIFiles()));
             // 等待执行完成，注意对于特殊系统，需要设置等待时间等待文件系统同步
             if (mFileSystemWaitTime > 0) Thread.sleep(mFileSystemWaitTime);
-            while (mEXE.isFile(tLmpInPath)) Thread.sleep(100);
+            while (mEXE.isFile(tLmpInPath)) Thread.sleep(mSleepTime);
             if (mFileSystemWaitTime > 0) Thread.sleep(mFileSystemWaitTime);
             // 执行完成后下载输出文件
             if (mEXE.needSyncIOFiles()) mEXE.getFiles(aIOFiles.getOFiles());

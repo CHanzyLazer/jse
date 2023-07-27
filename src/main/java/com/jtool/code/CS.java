@@ -46,6 +46,17 @@ public class CS {
     public enum SliceType {ALL}
     public final static SliceType ALL = SliceType.ALL;
     
+    /** Sleep time stuff, ms */
+    public final static long
+          INTERNAL_SLEEP_TIME = 1
+        , SYNC_SLEEP_TIME = 10
+        , SYNC_SLEEP_TIME_2 = 20
+        , FILE_SYSTEM_SLEEP_TIME = 100
+        , FILE_SYSTEM_SLEEP_TIME_2 = 200
+        , SSH_SLEEP_TIME = 500
+        , SSH_SLEEP_TIME_2 = 1000
+        ;
+    
     
     /** AtomData stuffs */
     public final static String[] ATOM_DATA_KEYS_VELOCITY = {"vx", "vy", "vz"};

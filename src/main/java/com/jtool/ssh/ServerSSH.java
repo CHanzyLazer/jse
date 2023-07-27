@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
+
 
 /**
  * @author liqa
@@ -905,7 +907,7 @@ public final class ServerSSH implements IAutoShutdown {
                                 } else {
                                     if (mDead) break;
                                     // 否则继续等待任务输入
-                                    Thread.sleep(50);
+                                    Thread.sleep(FILE_SYSTEM_SLEEP_TIME);
                                 }
                             }
                         } catch (Exception e) {

@@ -11,6 +11,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Vector;
 
+import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
+
 
 /**
  * @author liqa
@@ -537,7 +539,7 @@ public final class SSHCore implements IAutoShutdown {
                                 } else {
                                     if (mDead) break;
                                     // 否则继续等待任务输入
-                                    Thread.sleep(50);
+                                    Thread.sleep(FILE_SYSTEM_SLEEP_TIME);
                                 }
                             }
                         } catch (Exception e) {

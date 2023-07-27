@@ -222,7 +222,7 @@ public abstract class AbstractSystemExecutor extends AbstractHasThreadPool<IExec
     }
     
     
-    protected long sleepTime() {return 20;}
+    protected long sleepTime() {return SYNC_SLEEP_TIME_2;}
     @SuppressWarnings("BusyWait")
     private void keepCheckingSystemList_() {
         try {
@@ -268,7 +268,7 @@ public abstract class AbstractSystemExecutor extends AbstractHasThreadPool<IExec
     @Override public final synchronized int nJobs() {return mRunningSystem.size();}
     @Override public final int nThreads() {return 1;}
     @SuppressWarnings("BusyWait")
-    @Override public void waitUntilDone() throws InterruptedException {while (nJobs() > 0) Thread.sleep(20);}
+    @Override public void waitUntilDone() throws InterruptedException {while (nJobs() > 0) Thread.sleep(SYNC_SLEEP_TIME_2);}
     
     
     /** 保证提交的指令都在内部有记录 */

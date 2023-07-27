@@ -682,7 +682,7 @@ public class UT {
         public static Future<Void> runAsync(Runnable aRunnable) {return new ThreadFuture<>(aRunnable);}
         
         private final static class ThreadFuture<T> implements Future<T> {
-            private final static int SLEEP_TIME = 10, TRY_TIMES = 100;
+            private final static int TRY_TIMES = 100;
             
             /** 使用 volatile 或 final 保证不同线程的可见性 */
             private volatile T mResult = null;
@@ -708,7 +708,7 @@ public class UT {
                     mThread.interrupt();
                     for (int i = 0; i < TRY_TIMES; ++i) {
                         if (!mThread.isAlive()) {mCancelled = true; mFinished = true; return true;}
-                        try {Thread.sleep(SLEEP_TIME);}
+                        try {Thread.sleep(SYNC_SLEEP_TIME);}
                         catch (InterruptedException e) {return false;}
                     }
                 }
@@ -718,7 +718,7 @@ public class UT {
             @Override public boolean isDone() {return mFinished;}
             @SuppressWarnings("BusyWait")
             @Override public T get() throws InterruptedException {
-                while (!mFinished) Thread.sleep(1);
+                while (!mFinished) Thread.sleep(INTERNAL_SLEEP_TIME);
                 if (mCancelled) throw new CancellationException();
                 return mResult;
             }
@@ -726,7 +726,7 @@ public class UT {
             @Override public T get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, TimeoutException {
                 long tic = System.nanoTime();
                 while (!mFinished) {
-                    Thread.sleep(1);
+                    Thread.sleep(INTERNAL_SLEEP_TIME);
                     if (System.nanoTime()-tic >= unit.toNanos(timeout)) throw new TimeoutException();
                 }
                 if (mCancelled) throw new CancellationException();

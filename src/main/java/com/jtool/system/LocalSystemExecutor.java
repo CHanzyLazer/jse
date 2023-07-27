@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.concurrent.*;
 
+import static com.jtool.code.CS.SYNC_SLEEP_TIME;
+
 /**
  * @author liqa
  * <p> SystemExecutor 的一般实现，直接在本地运行 </p>
@@ -27,7 +29,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     }
     
     private final class LocalSystemFuture implements Future<Integer> {
-        private final static int SLEEP_TIME = 10, TRY_TIMES = 100;
+        private final static int TRY_TIMES = 100;
         
         private final @Nullable Process mProcess;
         private final Future<Void> mErrTask, mOutTask;
@@ -77,7 +79,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
                 mProcess.destroyForcibly();
                 for (int i = 0; i < TRY_TIMES; ++i) {
                     if (!mProcess.isAlive()) {mCancelled = true; return true;}
-                    try {Thread.sleep(SLEEP_TIME);}
+                    try {Thread.sleep(SYNC_SLEEP_TIME);}
                     catch (InterruptedException e) {return false;}
                 }
             }

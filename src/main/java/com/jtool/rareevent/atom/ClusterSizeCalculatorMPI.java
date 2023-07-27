@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
+
 
 /**
  * MPI 版本的参数计算机，计算体系中的最大的固体团簇的尺寸；
@@ -57,7 +59,7 @@ public class ClusterSizeCalculatorMPI implements IParameterCalculator<IHasAtomDa
             System.err.println("It may be caused by too large number of parallels.");
         }
         while (tWorker == null) {
-            try {Thread.sleep(20);} catch (InterruptedException e) {throw new RuntimeException(e);}
+            try {Thread.sleep(FILE_SYSTEM_SLEEP_TIME);} catch (InterruptedException e) {throw new RuntimeException(e);}
             tWorker = assignWorker();
         }
         // 获取结果

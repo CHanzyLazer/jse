@@ -182,7 +182,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     
     
     public static int       getParallelNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelnumber", "ParallelNum", "parallelnum", "pn")).intValue();}
-    public static long      getSleepTime            (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 500, "SleepTime", "sleeptime", "stime", "st")).longValue();}
+    public static long      getSleepTime            (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, SSH_SLEEP_TIME, "SleepTime", "sleeptime", "stime", "st")).longValue();}
     public static String    getJobName              (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
     public static @Nullable String getPartition     (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p");}
     public static int       getTaskNumber           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}

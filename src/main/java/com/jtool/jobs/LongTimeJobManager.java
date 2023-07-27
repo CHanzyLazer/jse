@@ -6,6 +6,7 @@ import com.jtool.iofile.ILoader;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
 import static com.jtool.code.CS.WORKING_DIR;
 
 /**
@@ -140,7 +141,7 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
                         }
                     }
                 }
-                Thread.sleep(100);
+                Thread.sleep(FILE_SYSTEM_SLEEP_TIME);
                 ++idx;
             }
         }

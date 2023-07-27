@@ -2,6 +2,8 @@ package com.jtool.parallel;
 
 import java.util.concurrent.*;
 
+import static com.jtool.code.CS.SYNC_SLEEP_TIME;
+
 /**
  * @author liqa
  * <p> 类似 Executors 一样的类直接获取 IExecutorEX 线程池 </p>
@@ -19,7 +21,7 @@ public class ExecutorsEX {
         @Override public boolean isShutdown() {return mPool.isShutdown();}
         @Override public boolean isTerminated() {return mPool.isTerminated();}
         @SuppressWarnings("ResultOfMethodCallIgnored") @Override public void awaitTermination() throws InterruptedException {mPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);}
-        @SuppressWarnings("BusyWait") @Override public void waitUntilDone() throws InterruptedException {while (mPool.getActiveCount() > 0 || mPool.getQueue().size() > 0) Thread.sleep(10);}
+        @SuppressWarnings("BusyWait") @Override public void waitUntilDone() throws InterruptedException {while (mPool.getActiveCount() > 0 || mPool.getQueue().size() > 0) Thread.sleep(SYNC_SLEEP_TIME);}
         @Override public int nJobs() {return mPool.getActiveCount() + mPool.getQueue().size();}
     }
     
