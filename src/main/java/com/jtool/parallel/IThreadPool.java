@@ -6,7 +6,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * @author liqa
  * <p> 用来统一管理包含 ThreadPool 的类 </p>
  */
-public interface IHasThreadPool extends IAutoShutdown {
+public interface IThreadPool extends IAutoShutdown {
     void shutdown();
     void shutdownNow();
     boolean isShutdown();

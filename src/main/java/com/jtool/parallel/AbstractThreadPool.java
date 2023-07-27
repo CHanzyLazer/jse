@@ -6,7 +6,7 @@ import java.util.concurrent.*;
  * @author liqa
  * <p> 一般的默认实现，这里仅支持 IExecutorEX，统一其他类的使用 </p>
  */
-public abstract class AbstractHasThreadPool<TP extends IHasThreadPool> implements IHasThreadPool {
+public abstract class AbstractThreadPool<TP extends IThreadPool> implements IThreadPool {
     /** 提供一个可选的线程池供子类选择 */
     protected static IExecutorEX newPool(int nThreads) {return ExecutorsEX.newFixedThreadPool(Math.max(nThreads, 1));}
     protected static IExecutorEX newSingle() {return ExecutorsEX.newSingleThreadExecutor();}
@@ -36,7 +36,7 @@ public abstract class AbstractHasThreadPool<TP extends IHasThreadPool> implement
     
     /** 子类通过 super 指定需要的线程池 */
     private TP mPool;
-    protected AbstractHasThreadPool(TP aPool) {mPool = aPool;}
+    protected AbstractThreadPool(TP aPool) {mPool = aPool;}
     protected void setPool(TP aPool) {mPool.shutdown(); mPool = aPool;}
     protected TP pool() {return mPool;}
     

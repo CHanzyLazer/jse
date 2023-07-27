@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.jtool.code.CS.*;
-
 /**
  * @author liqa
  * <p> lammps 使用 dump 输出的数据格式 </p>
@@ -243,8 +241,8 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
                 @Override public int size() {return mAtomData.rowNumber();}
             };
         }
-        @Override public IHasXYZ boxLo() {return mBox.boxLo();}
-        @Override public IHasXYZ boxHi() {return mBox.boxHi();}
+        @Override public IXYZ boxLo() {return mBox.boxLo();}
+        @Override public IXYZ boxHi() {return mBox.boxHi();}
         @Override public int atomNum() {return mAtomData.rowNumber();}
         @Override public int atomTypeNum() {return mAtomTypeNum;}
         
@@ -254,29 +252,29 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     
     /// 创建 Lammpstrj
     /** 从 IHasAtomData 来创建，对于 Lammpstrj 可以支持容器的 aHasAtomData */
-    public static Lammpstrj fromAtomData(IHasAtomData... aHasAtomDataArray) {
+    public static Lammpstrj fromAtomData(IAtomData... aHasAtomDataArray) {
         if (aHasAtomDataArray == null || aHasAtomDataArray.length == 0) return new Lammpstrj();
         
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         int tTimeStep = 0;
-        for (IHasAtomData subHasAtomData : aHasAtomDataArray) {
+        for (IAtomData subHasAtomData : aHasAtomDataArray) {
             rLammpstrj.add(fromAtomData_(subHasAtomData, tTimeStep));
             ++tTimeStep;
         }
         return new Lammpstrj(rLammpstrj);
     }
-    public static Lammpstrj fromAtomData(Iterable<? extends IHasAtomData> aHasAtomDataList) {
+    public static Lammpstrj fromAtomData(Iterable<? extends IAtomData> aHasAtomDataList) {
         if (aHasAtomDataList == null) return new Lammpstrj();
         
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         int tTimeStep = 0;
-        for (IHasAtomData subHasAtomData : aHasAtomDataList) {
+        for (IAtomData subHasAtomData : aHasAtomDataList) {
             rLammpstrj.add(fromAtomData_(subHasAtomData, tTimeStep));
             ++tTimeStep;
         }
         return new Lammpstrj(rLammpstrj);
     }
-    static SubLammpstrj fromAtomData_(IHasAtomData aHasAtomData, long aTimeStep) {
+    static SubLammpstrj fromAtomData_(IAtomData aHasAtomData, long aTimeStep) {
         // 根据输入的 aHasAtomData 类型来具体判断需要如何获取 rAtomData
         if (aHasAtomData instanceof Lammpstrj) {
             return fromAtomData_(((Lammpstrj)aHasAtomData).defaultFrame(), aTimeStep);
@@ -296,8 +294,8 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
         
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         int tTimeStep = 0;
-        for (Object subHasAtomData : aHasAtomDataArray) if (subHasAtomData instanceof IHasAtomData) {
-            rLammpstrj.add(fromAtomData_((IHasAtomData)subHasAtomData, tTimeStep));
+        for (Object subHasAtomData : aHasAtomDataArray) if (subHasAtomData instanceof IAtomData) {
+            rLammpstrj.add(fromAtomData_((IAtomData)subHasAtomData, tTimeStep));
             ++tTimeStep;
         }
         return new Lammpstrj(rLammpstrj);

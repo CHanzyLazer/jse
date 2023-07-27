@@ -1,7 +1,7 @@
 package com.jtool.atom;
 
 /** 现在认为原子无论怎样都会拥有这些属性 */
-public interface IAtom extends IHasXYZID {
+public interface IAtom extends IXYZID {
     double x();
     double y();
     double z();

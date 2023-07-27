@@ -23,7 +23,7 @@ public class Atoms {
      * @param aReplicateZ Z 方向的重复次数
      * @return 返回由此创建的 atomData
      */
-    public static IHasAtomData FCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
+    public static IAtomData FCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
         final XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
         final List<IAtom> rAtoms = new ArrayList<>(4*aReplicateX*aReplicateY*aReplicateZ);
         
@@ -39,11 +39,11 @@ public class Atoms {
         
         return new AbstractAtomData() {
             @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IHasXYZ boxLo() {return BOX_ZERO;}
-            @Override public IHasXYZ boxHi() {return tBoxHi;}
+            @Override public IXYZ boxLo() {return BOX_ZERO;}
+            @Override public IXYZ boxHi() {return tBoxHi;}
             @Override public int atomNum() {return rAtoms.size();}
             @Override public int atomTypeNum() {return 1;}
         };
     }
-    public static IHasAtomData FCC(double aCellSize, int aReplicate) {return FCC(aCellSize, aReplicate, aReplicate, aReplicate);}
+    public static IAtomData FCC(double aCellSize, int aReplicate) {return FCC(aCellSize, aReplicate, aReplicate, aReplicate);}
 }

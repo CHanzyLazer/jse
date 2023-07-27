@@ -14,7 +14,7 @@ import java.util.List;
  * <p> 目前认为所有边界都是周期边界条件，并且只考虑最近邻的 cell </p>
  * <p> 此类线程安全，包括多个线程同时访问同一个实例 </p>
  */
-final class LinkedCell<A extends IHasXYZ> {
+final class LinkedCell<A extends IXYZ> {
     final @Unmodifiable List<List<A>> mCells;
     final int mSizeX, mSizeY, mSizeZ;
     final XYZ mCellBox;
@@ -64,11 +64,11 @@ final class LinkedCell<A extends IHasXYZ> {
     
     // 获取的接口
     public @Unmodifiable List<A> cell(int i, int j, int k) {return mCells.get(idx(i, j, k));}
-    public @Unmodifiable List<A> cell(IHasXYZ aXYZ) {return cell((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
+    public @Unmodifiable List<A> cell(IXYZ aXYZ) {return cell((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
     
     // links 缓存
     private final ThreadLocal<Pair<Integer, List<Link<A>>>> mLinksTemp = ThreadLocal.withInitial(() -> new Pair<>(-1, null));
-    public @Unmodifiable List<Link<A>> links(IHasXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
+    public @Unmodifiable List<Link<A>> links(IXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
     public @Unmodifiable List<Link<A>> links(int i, int j, int k) {
         int tIdx = idx(i, j, k);
         Pair<Integer, List<Link<A>>> tLinksTemp = mLinksTemp.get();
@@ -108,7 +108,7 @@ final class LinkedCell<A extends IHasXYZ> {
     
     
     // Link 类，多存储一个 mDirection 来标记镜像偏移，避免重复创建对象
-    public static final class Link<A extends IHasXYZ>  {
+    public static final class Link<A extends IXYZ>  {
         private final @Unmodifiable List<A> mCell;
         private final @Nullable XYZ mDirection;
         private Link(List<A> aSubCell) {this(aSubCell, null);}
@@ -121,11 +121,11 @@ final class LinkedCell<A extends IHasXYZ> {
     }
     
     @FunctionalInterface
-    public interface ILinkedCellDo<A extends IHasXYZ> {
+    public interface ILinkedCellDo<A extends IXYZ> {
         void run(A aAtom, Link<A> aLink);
     }
     /** 现在改为 for-each 的形式来避免单一返回值的问题 */
-    public void forEachNeighbor(IHasXYZ aXYZ, ILinkedCellDo<A> aLinkedCellDo) {
+    public void forEachNeighbor(IXYZ aXYZ, ILinkedCellDo<A> aLinkedCellDo) {
         for (Link<A> tLink : links(aXYZ)) for (A tAtom : tLink.mCell) aLinkedCellDo.run(tAtom, tLink);
     }
 }

@@ -461,14 +461,14 @@ public class UT {
          * Convert IHasXYZ to XYZ to optimise
          * @author liqa
          */
-        public static XYZ toXYZ(IHasXYZ aXYZ) {
+        public static XYZ toXYZ(IXYZ aXYZ) {
             return (aXYZ instanceof XYZ) ? (XYZ)aXYZ : new XYZ(aXYZ);
         }
         /**
          * Convert IHasXYZ to XYZ for box usage
          * @author liqa
          */
-        public static XYZ toBOX(IHasXYZ aXYZ) {
+        public static XYZ toBOX(IXYZ aXYZ) {
             if (aXYZ == BOX_ONE) return BOX_ONE;
             if (aXYZ == BOX_ZERO) return BOX_ZERO;
             return toXYZ(aXYZ);
@@ -894,16 +894,16 @@ public class UT {
         public static byte[] double2bytes(double aD) {return long2bytes(Double.doubleToRawLongBits(aD));}
         public static double bytes2double(byte[] aBytes) {return Double.longBitsToDouble(bytes2long(aBytes));}
         
-        /** {@link IHasAtomData} 的序列化和反序列化 */
-        public static byte[] atomDataXYZ2bytes(IHasAtomData aAtomData) {
+        /** {@link IAtomData} 的序列化和反序列化 */
+        public static byte[] atomDataXYZ2bytes(IAtomData aAtomData) {
             byte[] rBytes = new byte[DOUBLE_LEN*3*2 + DOUBLE_LEN*3*aAtomData.atomNum()];
             int tIdx = 0;
             // 模拟盒数据
-            IHasXYZ tBoxLo = aAtomData.boxLo();
+            IXYZ tBoxLo = aAtomData.boxLo();
             double2bytes(tBoxLo.x(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             double2bytes(tBoxLo.y(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             double2bytes(tBoxLo.z(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
-            IHasXYZ tBoxHi = aAtomData.boxHi();
+            IXYZ tBoxHi = aAtomData.boxHi();
             double2bytes(tBoxHi.x(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             double2bytes(tBoxHi.y(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             double2bytes(tBoxHi.z(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
@@ -915,7 +915,7 @@ public class UT {
             }
             return rBytes;
         }
-        public static IHasAtomData bytes2atomDataXYZ(byte[] aBytes) {
+        public static IAtomData bytes2atomDataXYZ(byte[] aBytes) {
             double tX, tY, tZ;
             int tIdx = 0;
             // 获取模拟盒数据
@@ -939,8 +939,8 @@ public class UT {
             // 返回结果
             return new AbstractAtomData() {
                 @Override public List<IAtom> atoms() {return rAtoms;}
-                @Override public IHasXYZ boxLo() {return tBoxLo;}
-                @Override public IHasXYZ boxHi() {return tBoxHi;}
+                @Override public IXYZ boxLo() {return tBoxLo;}
+                @Override public IXYZ boxHi() {return tBoxHi;}
                 @Override public int atomNum() {return tAtomNum;}
                 @Override public int atomTypeNum() {return 1;}
             };

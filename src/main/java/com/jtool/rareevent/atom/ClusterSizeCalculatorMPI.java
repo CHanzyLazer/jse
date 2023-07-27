@@ -1,6 +1,6 @@
 package com.jtool.rareevent.atom;
 
-import com.jtool.atom.IHasAtomData;
+import com.jtool.atom.IAtomData;
 import com.jtool.code.UT;
 import com.jtool.parallel.MPI;
 import com.jtool.rareevent.IParameterCalculator;
@@ -21,7 +21,7 @@ import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
  * @author liqa
  */
 @Deprecated
-public class ClusterSizeCalculatorMPI implements IParameterCalculator<IHasAtomData> {
+public class ClusterSizeCalculatorMPI implements IParameterCalculator<IAtomData> {
     /** 所有的 Worker，第二个值记录是否正在工作 */
     private final Map<MPI.Worker, Boolean> mWorkers = new HashMap<>();
     /** 构造函数，指定进程数 */
@@ -51,7 +51,7 @@ public class ClusterSizeCalculatorMPI implements IParameterCalculator<IHasAtomDa
         mWorkers.put(aWorker, false);
     }
     
-    @Override public double lambdaOf(IHasAtomData aPoint) {
+    @Override public double lambdaOf(IAtomData aPoint) {
         // 先尝试获取工作器
         MPI.Worker tWorker = assignWorker();
         if (tWorker == null) {

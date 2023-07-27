@@ -1,6 +1,6 @@
 package com.jtool.lmp;
 
-import com.jtool.atom.IHasXYZ;
+import com.jtool.atom.IXYZ;
 import com.jtool.atom.XYZ;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,8 +18,8 @@ public class Box {
     public Box(double aSize) {this(aSize, aSize, aSize);}
     public Box(double aX, double aY, double aZ) {this(BOX_ZERO, new XYZ(aX, aY, aZ));}
     public Box(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi) {this(new XYZ(aXlo, aYlo, aZlo), new XYZ(aXhi, aYhi, aZhi));}
-    public Box(@NotNull IHasXYZ aBox) {this(BOX_ZERO, aBox);}
-    public Box(@NotNull IHasXYZ aBoxLo, @NotNull IHasXYZ aBoxHi) {this(toBOX(aBoxLo), toBOX(aBoxHi));}
+    public Box(@NotNull IXYZ aBox) {this(BOX_ZERO, aBox);}
+    public Box(@NotNull IXYZ aBoxLo, @NotNull IXYZ aBoxHi) {this(toBOX(aBoxLo), toBOX(aBoxHi));}
     public Box(@NotNull XYZ aBoxLo, @NotNull XYZ aBoxHi) {mBoxLo = aBoxLo; mBoxHi = aBoxHi;}
     public Box(Box aBox) {this(toBOX(aBox.mBoxLo), toBOX(aBox.mBoxHi));}
     

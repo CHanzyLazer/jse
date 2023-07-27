@@ -14,18 +14,18 @@ import static com.jtool.code.CS.*;
  * @author liqa
  * <p> 抽象的拥有原子数据的类，方便子类实现接口 </p>
  */
-public abstract class AbstractAtomData implements IHasAtomData {
+public abstract class AbstractAtomData implements IAtomData {
     /** stuff to override */
     public abstract Iterable<IAtom> atoms();
-    public abstract IHasXYZ boxLo();
-    public abstract IHasXYZ boxHi();
+    public abstract IXYZ boxLo();
+    public abstract IXYZ boxHi();
     public abstract int atomNum();
     public abstract int atomTypeNum();
     
     @Override public double volume() {return boxHi().minus(boxLo()).prod();}
     
     @Override public final IAtomDataFilter filter() {return new AbstractAtomDataFilter() {
-        @Override protected IHasAtomData thisAtomData_() {return AbstractAtomData.this;}
+        @Override protected IAtomData thisAtomData_() {return AbstractAtomData.this;}
     };}
     
     /** 直接使用过滤器过滤掉不符合的种类 */

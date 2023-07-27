@@ -8,7 +8,7 @@ import com.jtool.math.MathEX;
 import com.jtool.math.function.Func3;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
-import com.jtool.parallel.AbstractHasThreadPool;
+import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -28,7 +28,7 @@ import static com.jtool.math.MathEX.Vec;
  * <p> 此类线程不安全，但不同实例间线程安全 </p>
  */
 @ApiStatus.Obsolete
-public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
+public class Generator extends AbstractThreadPool<ParforThreadPool> {
     /** IThreadPoolContainer stuffs */
     private volatile boolean mDead = false;
     @Override public void shutdown() {mDead = true; super.shutdown();}
@@ -59,7 +59,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aReplicateZ Z 方向的重复次数
      * @return 返回由此创建的 atomData
      */
-    public IHasAtomData atomDataFCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
+    public IAtomData atomDataFCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
@@ -77,13 +77,13 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         
         return new AbstractAtomData() {
             @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IHasXYZ boxLo() {return BOX_ZERO;}
-            @Override public IHasXYZ boxHi() {return tBoxHi;}
+            @Override public IXYZ boxLo() {return BOX_ZERO;}
+            @Override public IXYZ boxHi() {return tBoxHi;}
             @Override public int atomNum() {return rAtoms.size();}
             @Override public int atomTypeNum() {return 1;}
         };
     }
-    public IHasAtomData atomDataFCC(double aCellSize, int aReplicate) {return atomDataFCC(aCellSize, aReplicate, aReplicate, aReplicate);}
+    public IAtomData atomDataFCC(double aCellSize, int aReplicate) {return atomDataFCC(aCellSize, aReplicate, aReplicate, aReplicate);}
     
     
     
@@ -95,7 +95,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
+    public IAtomData typeFilterAtomData(final IAtomData aAtomData, int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final List<IAtom> rAtoms = new ArrayList<>(aAtomData.atomNum());
@@ -114,24 +114,24 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         
         return new AbstractAtomData() {
             @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IHasXYZ boxLo() {return aAtomData.boxLo();}
-            @Override public IHasXYZ boxHi() {return aAtomData.boxHi();}
+            @Override public IXYZ boxLo() {return aAtomData.boxLo();}
+            @Override public IXYZ boxHi() {return aAtomData.boxHi();}
             @Override public int atomNum() {return rAtoms.size();}
             @Override public int atomTypeNum() {return fAtomTypeNum;}
         };
     }
-    public IHasAtomData typeFilterAtomData(final IHasAtomData aAtomData, IOperator1<Integer, IAtom> aFilter) {return typeFilterAtomData(aAtomData, 1, aFilter);}
+    public IAtomData typeFilterAtomData(final IAtomData aAtomData, IOperator1<Integer, IAtom> aFilter) {return typeFilterAtomData(aAtomData, 1, aFilter);}
     
     /**
      * 根据给定的权重来随机修改原子种类，主要用于创建合金的初始结构
      * @author liqa
      */
-    public IHasAtomData typeFilterWeightAtomData(IHasAtomData aAtomData, double... aTypeWeights) {
+    public IAtomData typeFilterWeightAtomData(IAtomData aAtomData, double... aTypeWeights) {
         // 特殊输入直接输出
         if (aTypeWeights == null || aTypeWeights.length == 0) return aAtomData;
         return typeFilterWeightAtomData(aAtomData, Vectors.from(aTypeWeights));
     }
-    public IHasAtomData typeFilterWeightAtomData(final IHasAtomData aAtomData, IVector aTypeWeights) {
+    public IAtomData typeFilterWeightAtomData(final IAtomData aAtomData, IVector aTypeWeights) {
         double tTotWeight = aTypeWeights.sum();
         if (tTotWeight <= 0.0) return aAtomData;
         
@@ -162,7 +162,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterAtomData(final IHasAtomData aAtomData, IFilter<IAtom> aFilter) {
+    public IAtomData filterAtomData(final IAtomData aAtomData, IFilter<IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final List<IAtom> rAtoms = new ArrayList<>();
@@ -173,8 +173,8 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
         
         return new AbstractAtomData() {
             @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IHasXYZ boxLo() {return aAtomData.boxLo();}
-            @Override public IHasXYZ boxHi() {return aAtomData.boxHi();}
+            @Override public IXYZ boxLo() {return aAtomData.boxLo();}
+            @Override public IXYZ boxHi() {return aAtomData.boxHi();}
             @Override public int atomNum() {return rAtoms.size();}
             @Override public int atomTypeNum() {return aAtomData.atomTypeNum();}
         };
@@ -189,11 +189,11 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 double 为 aFunc3 的值，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterFunc3AtomData(final IHasAtomData aAtomData, final Func3 aFunc3, final IDoubleFilter aFilter) {
+    public IAtomData filterFunc3AtomData(final IAtomData aAtomData, final Func3 aFunc3, final IDoubleFilter aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         // 获取边界，会进行缩放将 aAtomData 的边界和 Func3 的边界对上
-        final IHasXYZ tBoxLo = aAtomData.boxLo(), tBoxHi = aAtomData.boxHi();
+        final IXYZ tBoxLo = aAtomData.boxLo(), tBoxHi = aAtomData.boxHi();
         final double tX0 = aFunc3.x0()                , tY0 = aFunc3.y0()                , tZ0 = aFunc3.z0()                ;
         final double tXe = tX0+aFunc3.dx()*aFunc3.Nx(), tYe = tY0+aFunc3.dy()*aFunc3.Ny(), tZe = tZ0+aFunc3.dz()*aFunc3.Nz();
         // 需要使用考虑了 pbc 的 subs，因为正边界处的插值需要考虑 pbc
@@ -210,8 +210,8 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aThreshold 设置的阈值，默认为 0
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterThresholdFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final double aThreshold) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (u > aThreshold));}
-    public IHasAtomData filterThresholdFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterThresholdFunc3AtomData(aAtomData, aFunc3, 0.0);}
+    public IAtomData filterThresholdFunc3AtomData(IAtomData aAtomData, Func3 aFunc3, final double aThreshold) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (u > aThreshold));}
+    public IAtomData filterThresholdFunc3AtomData(IAtomData aAtomData, Func3 aFunc3) {return filterThresholdFunc3AtomData(aAtomData, aFunc3, 0.0);}
     
     /**
      * 预设的一种按照概率保留的 filter，将 Func3 使用通用的 aToProb 转换成概率，并按照概率保留
@@ -221,8 +221,8 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aToProb 通用的转换成概率的函数，输出 0-1 的浮点数，不指定则直接使用 aFunc3
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3, final IDoubleOperator1 aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
-    public IHasAtomData filterProbFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> u);}
+    public IAtomData filterProbFunc3AtomData(IAtomData aAtomData, Func3 aFunc3, final IDoubleOperator1 aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
+    public IAtomData filterProbFunc3AtomData(IAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> u);}
     /**
      * 对于 aFunc3 = u, u = c1 - c0, c1 + c0 = 1，选取 c1 的特殊情况
      * @author liqa
@@ -230,7 +230,7 @@ public class Generator extends AbstractHasThreadPool<ParforThreadPool> {
      * @param aFunc3 指定的 func3 = u
      * @return 过滤后的 AtomData
      */
-    public IHasAtomData filterProbUFunc3AtomData(IHasAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> 0.5*(u+1.0));}
+    public IAtomData filterProbUFunc3AtomData(IAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> 0.5*(u+1.0));}
     
     
     /**

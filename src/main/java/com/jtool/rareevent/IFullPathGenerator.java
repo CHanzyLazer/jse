@@ -1,7 +1,7 @@
 package com.jtool.rareevent;
 
 
-import com.jtool.atom.IHasAtomData;
+import com.jtool.atom.IAtomData;
 import com.jtool.parallel.IAutoShutdown;
 
 /**
@@ -11,7 +11,7 @@ import com.jtool.parallel.IAutoShutdown;
  * 要求这些方法是线程安全的，可以同一个实例并行运行同一个方法，注意获取到的容器一般是线程不安全的（不同实例间线程安全）；
  * 内部会利用 {@link BufferedFullPathGenerator} 将 {@link IPathGenerator} 转换成这个类型，方便快速遍历；
  * @author liqa
- * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
+ * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
 public interface IFullPathGenerator<T> extends IAutoShutdown {
     /** 由于路径具有随机性，不能返回可以重复访问的 Iterable */

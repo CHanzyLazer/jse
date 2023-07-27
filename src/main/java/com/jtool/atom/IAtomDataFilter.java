@@ -16,19 +16,19 @@ public interface IAtomDataFilter {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @return 过滤后的 AtomData
      */
-    IHasAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter);
-    default IHasAtomData type(IOperator1<Integer, IAtom> aFilter) {return type(1, aFilter);}
+    IAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter);
+    default IAtomData type(IOperator1<Integer, IAtom> aFilter) {return type(1, aFilter);}
     
     /**
      * 根据给定的权重来随机修改原子种类，主要用于创建合金的初始结构
      * @author liqa
      */
-    IHasAtomData typeWeight(Random aRandom, IVector aTypeWeights);
-    default IHasAtomData typeWeight(IVector aTypeWeights) {return typeWeight(RANDOM, aTypeWeights);}
-    default IHasAtomData typeWeight(Random aRandom, double... aTypeWeights) {
+    IAtomData typeWeight(Random aRandom, IVector aTypeWeights);
+    default IAtomData typeWeight(IVector aTypeWeights) {return typeWeight(RANDOM, aTypeWeights);}
+    default IAtomData typeWeight(Random aRandom, double... aTypeWeights) {
         // 特殊输入直接抛出错误
         if (aTypeWeights == null || aTypeWeights.length == 0) throw new RuntimeException("TypeWeights Must be not empty");
         return typeWeight(aRandom, Vectors.from(aTypeWeights));
     }
-    default IHasAtomData typeWeight(double... aTypeWeights) {return typeWeight(RANDOM, aTypeWeights);}
+    default IAtomData typeWeight(double... aTypeWeights) {return typeWeight(RANDOM, aTypeWeights);}
 }

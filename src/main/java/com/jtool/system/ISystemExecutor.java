@@ -2,7 +2,7 @@ package com.jtool.system;
 
 
 import com.jtool.iofile.IHasIOFiles;
-import com.jtool.parallel.IHasThreadPool;
+import com.jtool.parallel.IThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.Future;
  * 要求这些方法是线程安全的，可以同一个实例并行运行同一个方法
  */
 @SuppressWarnings("UnusedReturnValue")
-public interface ISystemExecutor extends IHasThreadPool {
+public interface ISystemExecutor extends IThreadPool {
     /** 用来处理各种程序因为输出的目录不存在而报错的情况，方便在任何位置直接创建目录或者移除目录 */
     void makeDir(String aDir) throws Exception;
     @VisibleForTesting default void mkdir(String aDir) throws Exception {makeDir(aDir);}

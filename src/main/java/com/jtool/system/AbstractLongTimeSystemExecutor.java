@@ -9,7 +9,7 @@ import com.jtool.iofile.IOFiles;
 import com.jtool.iofile.ISavable;
 import com.jtool.iofile.MergedIOFiles;
 import com.jtool.jobs.ILongTimeJobPool;
-import com.jtool.parallel.AbstractHasThreadPool;
+import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ import static com.jtool.code.CS.*;
  * <p> 与一般的实现不同的是，指令输出只会输出到文件中，而输出到 List 的会从这个文件中来读取，
  * 输出文件的 key 为 {@code "<out>"}（不会让外部获取到修改后的 IOFiles，因此只是用于内部使用）</p>
  */
-public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor, ILongTimeJobPool {
+public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> extends AbstractThreadPool<IExecutorEX> implements ISystemExecutor, ILongTimeJobPool {
     /** 包装一个任意的 mSystemExecutor 来执行指令，注意只会使用其中的最简单的 system 相关操作，因此不需要包含线程池 */
     protected final T mEXE;
     protected final int mParallelNum;

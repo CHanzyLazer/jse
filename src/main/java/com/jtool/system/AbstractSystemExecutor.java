@@ -5,7 +5,7 @@ import com.jtool.code.UT;
 import com.jtool.code.operator.IOperator1;
 import com.jtool.iofile.IHasIOFiles;
 import com.jtool.iofile.MergedIOFiles;
-import com.jtool.parallel.AbstractHasThreadPool;
+import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IExecutorEX;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,7 +26,7 @@ import static com.jtool.code.CS.*;
  * @author liqa
  * <p> 将一般实现放入抽象类中，因为 submit 一定需要在 pool 中使用，如果直接嵌套文件的输入流会在写入前就关闭，默认输出在 System.out </p>
  */
-public abstract class AbstractSystemExecutor extends AbstractHasThreadPool<IExecutorEX> implements ISystemExecutor {
+public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecutorEX> implements ISystemExecutor {
     /** 增加 hook，保证 jvm 结束时将所有提交的程序都主动结束 */
     protected AbstractSystemExecutor() {
         super(newSingle());

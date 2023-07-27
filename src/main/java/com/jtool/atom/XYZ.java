@@ -4,15 +4,15 @@ import com.jtool.math.MathEX;
 import com.jtool.math.vector.IVector;
 
 /**
- * {@link IHasXYZ} 的一般实现，考虑到效率这里可以直接访问内部成员，从而避免多态函数调用的损失
+ * {@link IXYZ} 的一般实现，考虑到效率这里可以直接访问内部成员，从而避免多态函数调用的损失
  * @author liqa
  */
-public final class XYZ implements IHasXYZ {
+public final class XYZ implements IXYZ {
     public double mX, mY, mZ;
     public XYZ(double aX, double aY, double aZ) {
         mX = aX; mY = aY; mZ = aZ;
     }
-    public XYZ(IHasXYZ aXYZ) {
+    public XYZ(IXYZ aXYZ) {
         mX = aXYZ.x(); mY = aXYZ.y(); mZ = aXYZ.z();
     }
     public XYZ(XYZ aXYZ) {
@@ -31,7 +31,7 @@ public final class XYZ implements IHasXYZ {
     @Override public double min() {return Math.min(Math.min(mX, mY), mZ);}
     @Override public double max() {return Math.max(Math.max(mX, mY), mZ);}
     
-    @Override public XYZ plus(IHasXYZ aRHS) {return new XYZ(mX+aRHS.x(), mY+aRHS.y(), mZ+aRHS.z());}
+    @Override public XYZ plus(IXYZ aRHS) {return new XYZ(mX+aRHS.x(), mY+aRHS.y(), mZ+aRHS.z());}
     @Override public XYZ plus(double aX, double aY, double aZ) {return new XYZ(mX+aX, mY+aY, mZ+aZ);}
     @Override public XYZ plus(double aRHS) {return new XYZ(mX+aRHS, mY+aRHS, mZ+aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
@@ -39,7 +39,7 @@ public final class XYZ implements IHasXYZ {
     public void plus2this(XYZ aRHS) {mX += aRHS.mX; mY += aRHS.mY; mZ += aRHS.mZ;}
     public void plus2this(double aRHS) {mX += aRHS; mY += aRHS; mZ += aRHS;}
     
-    @Override public XYZ minus(IHasXYZ aRHS) {return new XYZ(mX-aRHS.x(), mY-aRHS.y(), mZ-aRHS.z());}
+    @Override public XYZ minus(IXYZ aRHS) {return new XYZ(mX-aRHS.x(), mY-aRHS.y(), mZ-aRHS.z());}
     @Override public XYZ minus(double aX, double aY, double aZ) {return new XYZ(mX-aX, mY-aY, mZ-aZ);}
     @Override public XYZ minus(double aRHS) {return new XYZ(mX-aRHS, mY-aRHS, mZ-aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
@@ -47,7 +47,7 @@ public final class XYZ implements IHasXYZ {
     public void minus2this(XYZ aRHS) {mX -= aRHS.mX; mY -= aRHS.mY; mZ -= aRHS.mZ;}
     public void minus2this(double aRHS) {mX -= aRHS; mY -= aRHS; mZ -= aRHS;}
     
-    @Override public XYZ multiply(IHasXYZ aRHS) {return new XYZ(mX*aRHS.x(), mY*aRHS.y(), mZ*aRHS.z());}
+    @Override public XYZ multiply(IXYZ aRHS) {return new XYZ(mX*aRHS.x(), mY*aRHS.y(), mZ*aRHS.z());}
     @Override public XYZ multiply(double aX, double aY, double aZ) {return new XYZ(mX*aX, mY*aY, mZ*aZ);}
     @Override public XYZ multiply(double aRHS) {return new XYZ(mX*aRHS, mY*aRHS, mZ*aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
@@ -55,7 +55,7 @@ public final class XYZ implements IHasXYZ {
     public void multiply2this(XYZ aRHS) {mX *= aRHS.mX; mY *= aRHS.mY; mZ *= aRHS.mZ;}
     public void multiply2this(double aRHS) {mX *= aRHS; mY *= aRHS; mZ *= aRHS;}
     
-    @Override public XYZ div(IHasXYZ aRHS) {return new XYZ(mX/aRHS.x(), mY/aRHS.y(), mZ/aRHS.z());}
+    @Override public XYZ div(IXYZ aRHS) {return new XYZ(mX/aRHS.x(), mY/aRHS.y(), mZ/aRHS.z());}
     @Override public XYZ div(double aX, double aY, double aZ) {return new XYZ(mX/aX, mY/aY, mZ/aZ);}
     @Override public XYZ div(double aRHS) {return new XYZ(mX/aRHS, mY/aRHS, mZ/aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
@@ -64,7 +64,7 @@ public final class XYZ implements IHasXYZ {
     public void divide2this(double aRHS) {mX /= aRHS; mY /= aRHS; mZ /= aRHS;}
     
     
-    @Override public double distance(IHasXYZ aRHS) {
+    @Override public double distance(IXYZ aRHS) {
         double tX = mX - aRHS.x();
         double tY = mY - aRHS.y();
         double tZ = mZ - aRHS.z();
@@ -84,7 +84,7 @@ public final class XYZ implements IHasXYZ {
         return MathEX.Fast.sqrt(tX*tX + tY*tY + tZ*tZ);
     }
     
-    @Override public double distanceMHT(IHasXYZ aRHS) {
+    @Override public double distanceMHT(IXYZ aRHS) {
         return Math.abs(mX - aRHS.x()) + Math.abs(mY - aRHS.y()) + Math.abs(mZ - aRHS.z());
     }
     @Override public double distanceMHT(double aX, double aY, double aZ) {

@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author liqa
  */
 public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
-    @Override public IHasAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
-        IHasAtomData tThis = thisAtomData_();
+    @Override public IAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
+        IAtomData tThis = thisAtomData_();
         final List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
         
         int tAtomTypeNum = Math.max(aMinTypeNum, tThis.atomTypeNum());
@@ -33,15 +33,15 @@ public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
         
         return new AbstractAtomData() {
             @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IHasXYZ boxLo() {return tThis.boxLo();}
-            @Override public IHasXYZ boxHi() {return tThis.boxHi();}
+            @Override public IXYZ boxLo() {return tThis.boxLo();}
+            @Override public IXYZ boxHi() {return tThis.boxHi();}
             @Override public int atomNum() {return rAtoms.size();}
             @Override public int atomTypeNum() {return fAtomTypeNum;}
         };
     }
     
     
-    @Override public IHasAtomData typeWeight(Random aRandom, IVector aTypeWeights) {
+    @Override public IAtomData typeWeight(Random aRandom, IVector aTypeWeights) {
         double tTotWeight = aTypeWeights.sum();
         if (tTotWeight <= 0.0) throw new RuntimeException("TypeWeights Must be Positive");
         
@@ -64,5 +64,5 @@ public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
     }
     
     /** stuff to override */
-    protected abstract IHasAtomData thisAtomData_();
+    protected abstract IAtomData thisAtomData_();
 }

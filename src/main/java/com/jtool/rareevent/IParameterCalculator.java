@@ -1,7 +1,7 @@
 package com.jtool.rareevent;
 
 
-import com.jtool.atom.IHasAtomData;
+import com.jtool.atom.IAtomData;
 import com.jtool.parallel.IAutoShutdown;
 
 /**
@@ -10,7 +10,7 @@ import com.jtool.parallel.IAutoShutdown;
  * <p>
  * 要求这些方法是线程安全的，可以同一个实例并行运行同一个方法
  * @author liqa
- * @param <T> 点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
+ * @param <T> 点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
 public interface IParameterCalculator<T> extends IAutoShutdown {
     double lambdaOf(T aPoint);

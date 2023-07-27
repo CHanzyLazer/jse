@@ -1,9 +1,9 @@
 package com.jtool.rareevent;
 
 
-import com.jtool.atom.IHasAtomData;
+import com.jtool.atom.IAtomData;
 import com.jtool.code.UT;
-import com.jtool.parallel.AbstractHasThreadPool;
+import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IAutoShutdown;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
@@ -16,9 +16,9 @@ import java.util.*;
  * 使用向前通量采样法（Forward Flux Sampling，FFS）来对稀有事件的概率进行采样；
  * 只用于技术上的简单实现，如果需要保留演化的路径信息请使用 BG
  * @author liqa
- * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
+ * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
-public class ForwardFluxSampling<T> extends AbstractHasThreadPool<ParforThreadPool> implements Runnable, IAutoShutdown {
+public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool> implements Runnable, IAutoShutdown {
     private final static double DEFAULT_MIN_PROB = 0.01;
     private final static double DEFAULT_CUTOFF = 0.01;
     private final static int DEFAULT_MAX_STAT_TIMES = 10;

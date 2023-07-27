@@ -1,6 +1,6 @@
 package com.jtool.rareevent;
 
-import com.jtool.atom.IHasAtomData;
+import com.jtool.atom.IAtomData;
 
 import java.util.Iterator;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
  * <p>
  * 对于相同的实例线程安全，获取到的不同路径实例之间线程安全，获取的相同路径实例线程不安全
  * @author liqa
- * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IHasAtomData}
+ * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
 public class BufferedFullPathGenerator<T> implements IFullPathGenerator<T> {
     private final IPathGenerator<T> mPathGenerator;

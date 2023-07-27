@@ -22,7 +22,7 @@ import static com.jtool.code.UT.Code.toXYZ;
  */
 public class NeighborListGetter implements IAutoShutdown {
     // 用于 LinkedCell 使用
-    private static class XYZ_IDX implements IHasXYZ {
+    private static class XYZ_IDX implements IXYZ {
         final int mIDX;
         final XYZ mXYZ;
         public XYZ_IDX(XYZ aXYZ, int aIDX) {mXYZ = aXYZ; mIDX = aIDX;}
@@ -239,7 +239,7 @@ public class NeighborListGetter implements IAutoShutdown {
             }
         });
     }
-    public void forEachNeighbor(IHasXYZ aXYZ, final double aRMax, final IXYZIdxDisDo aXYZIdxDisDo) {
+    public void forEachNeighbor(IXYZ aXYZ, final double aRMax, final IXYZIdxDisDo aXYZIdxDisDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         final XYZ cXYZ = toXYZ(aXYZ);
@@ -317,7 +317,7 @@ public class NeighborListGetter implements IAutoShutdown {
             }
         });
     }
-    public void forEachNeighborMHT(final IHasXYZ aXYZ, final double aRMaxMHT, final IXYZIdxDisDo aXYZIdxDisDo) {
+    public void forEachNeighborMHT(final IXYZ aXYZ, final double aRMaxMHT, final IXYZIdxDisDo aXYZIdxDisDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         final XYZ cXYZ = toXYZ(aXYZ);

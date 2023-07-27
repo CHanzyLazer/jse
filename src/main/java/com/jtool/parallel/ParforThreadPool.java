@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 当线程数大于 1 时同一个实例的操作加锁保证线程安全；
  * 当线程数为 1 时同一个实例的操作不会加锁 </p>
  */
-public class ParforThreadPool extends AbstractHasThreadPool<IExecutorEX> {
+public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
     private final ThreadLocal<Integer> mThreadID = ThreadLocal.withInitial(()->null); // 使用 ThreadLocal 存储每个线程对应的 id，直接避免线程安全的问题
     private final Lock @Nullable[] mLocks; // 用来在并行时给每个线程独立加锁，保证每个线程独立写入的操作的可见性
     

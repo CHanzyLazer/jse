@@ -2,8 +2,8 @@ package com.jtool.rareevent.lmp;
 
 import com.jtool.atom.AbstractAtomData;
 import com.jtool.atom.IAtom;
-import com.jtool.atom.IHasAtomData;
-import com.jtool.atom.IHasXYZ;
+import com.jtool.atom.IAtomData;
+import com.jtool.atom.IXYZ;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.iofile.IHasIOFiles;
@@ -29,7 +29,7 @@ import static com.jtool.code.CS.*;
  * 特别注意方法的线程安全要求
  * @author liqa
  */
-public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
+public class DumpPathGenerator implements IPathGenerator<IAtomData> {
     private final static int TOLERANT = 3;
     
     private final String mWorkingDir;
@@ -57,20 +57,20 @@ public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
      * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 10
      * @param aPathLength 一次创建的路径的长度，默认为 20
      */
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                 ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                  ) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {this(aLMP, aInitAtomDataList, Vectors.from(aMesses), getGenDumpIn(aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aPathLength), aTimestep);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, 20);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff) {this(aLMP, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
     
-    DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IHasAtomData> aInitAtomDataList, IVector aMesses, IInFile aGenDumpIn, double aTimestep) {
+    DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, IInFile aGenDumpIn, double aTimestep) {
         mLMP = aLMP;
         // 初始点也需要移除速度，保证会从不同路径开始
         mInitPoints = Lammpstrj.fromAtomData(UT.Code.map(aInitAtomDataList, this::reducedPoint));
@@ -105,7 +105,7 @@ public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
         if (mIdx == mInitPoints.size()) mIdx = 0;
         return tPoint;
     }
-    @Override public List<? extends IHasAtomData> pathFrom(IHasAtomData aStart) {
+    @Override public List<? extends IAtomData> pathFrom(IAtomData aStart) {
         // 由于存在并行，需要在工作目录中创建临时的路径生成的目录
         String tLmpDir = mWorkingDir+"LMP@"+UT.Code.randID()+"/";
         try {
@@ -151,9 +151,9 @@ public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
         }
     }
     
-    @Override public double timeOf(IHasAtomData aPoint) {return (aPoint instanceof SubLammpstrj) ? ((SubLammpstrj)aPoint).timeStep()*mTimestep : 0.0;}
+    @Override public double timeOf(IAtomData aPoint) {return (aPoint instanceof SubLammpstrj) ? ((SubLammpstrj)aPoint).timeStep()*mTimestep : 0.0;}
     
-    @Override public IHasAtomData reducedPoint(final IHasAtomData aPoint) {
+    @Override public IAtomData reducedPoint(final IAtomData aPoint) {
         // 如果本来就没有速率则不需要执行此操作
         if (!aPoint.hasVelocities()) return aPoint;
         // 遍历拷贝数据，只需要坐标和种类数据
@@ -181,8 +181,8 @@ public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
                     @Override public int size() {return aPoint.atomNum();}
                 };
             }
-            @Override public IHasXYZ boxLo() {return aPoint.boxLo();}
-            @Override public IHasXYZ boxHi() {return aPoint.boxHi();}
+            @Override public IXYZ boxLo() {return aPoint.boxLo();}
+            @Override public IXYZ boxHi() {return aPoint.boxHi();}
             @Override public int atomNum() {return aPoint.atomNum();}
             @Override public int atomTypeNum() {return aPoint.atomTypeNum();}
         };

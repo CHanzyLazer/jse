@@ -8,7 +8,7 @@ import com.jtool.math.table.ITable;
  * @author liqa
  * <p> 抽象的拥有多个帧的原子数据的类，方便子类实现接口 </p>
  */
-public abstract class AbstractMultiFrameAtomData<T extends IHasAtomData> extends AbstractRandomAccessList<T> implements IHasAtomData {
+public abstract class AbstractMultiFrameAtomData<T extends IAtomData> extends AbstractRandomAccessList<T> implements IAtomData {
     /** AbstractList stuffs */
     @Override public abstract int size();
     @Override public abstract T get(int index);
@@ -30,8 +30,8 @@ public abstract class AbstractMultiFrameAtomData<T extends IHasAtomData> extends
     @Override public final Iterable<IAtom>  atoms           (int aType) {return defaultFrame().atoms(aType);}
     @Override public final int              atomNum         ()          {return defaultFrame().atomNum();}
     @Override public final int              atomTypeNum     ()          {return defaultFrame().atomTypeNum();}
-    @Override public final IHasXYZ          boxLo           ()          {return defaultFrame().boxLo();}
-    @Override public final IHasXYZ          boxHi           ()          {return defaultFrame().boxHi();}
+    @Override public final IXYZ boxLo()          {return defaultFrame().boxLo();}
+    @Override public final IXYZ boxHi()          {return defaultFrame().boxHi();}
     @Override public final double           volume          ()          {return defaultFrame().volume();}
     @Override public final IAtomDataFilter  filter          ()          {return defaultFrame().filter();}
 }

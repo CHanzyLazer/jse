@@ -8,7 +8,7 @@ import java.util.concurrent.Future;
  * @author liqa
  * <p> Extended ExecutorService for more flexible usage </p>
  */
-public interface IExecutorEX extends IHasThreadPool {
+public interface IExecutorEX extends IThreadPool {
     /** ExecutorService stuffs */
     void execute(Runnable aRun);
     Future<?> submit(Runnable aRun);

@@ -117,8 +117,8 @@ public class POSCAR extends AbstractAtomData {
     
     
     /** 从 IHasAtomData 来创建，POSCAR 需要额外的原子种类字符串以及额外的是否开启 SelectiveDynamics */
-    public static POSCAR fromAtomData(IHasAtomData aHasAtomData, String... aAtomTypes) {return fromAtomData(aHasAtomData, false, aAtomTypes);}
-    public static POSCAR fromAtomData(IHasAtomData aHasAtomData, boolean aSelectiveDynamics, String... aAtomTypes) {
+    public static POSCAR fromAtomData(IAtomData aHasAtomData, String... aAtomTypes) {return fromAtomData(aHasAtomData, false, aAtomTypes);}
+    public static POSCAR fromAtomData(IAtomData aHasAtomData, boolean aSelectiveDynamics, String... aAtomTypes) {
         // 根据输入的 aHasAtomData 类型来具体判断需要如何获取 rAtomData
         if (aHasAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
@@ -126,8 +126,8 @@ public class POSCAR extends AbstractAtomData {
             return new POSCAR(tPOSCAR.mDataName, Matrices.diag(aHasAtomData.boxHi().minus(aHasAtomData.boxLo()).data()), 1.0, aAtomTypes, tPOSCAR.mAtomNumbers, aSelectiveDynamics, tPOSCAR.mDirect);
         } else {
             // 一般的情况，这里直接遍历 atoms 来创建，这里需要按照 type 来排序
-            IHasXYZ tBoxLo = aHasAtomData.boxLo();
-            IHasXYZ tBox = aHasAtomData.boxHi().minus(tBoxLo);
+            IXYZ tBoxLo = aHasAtomData.boxLo();
+            IXYZ tBox = aHasAtomData.boxHi().minus(tBoxLo);
             
             int tAtomTypeNum = aHasAtomData.atomTypeNum();
             IVector rAtomNumbers = Vectors.zeros(tAtomTypeNum);
