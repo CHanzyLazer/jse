@@ -98,7 +98,7 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
     private @NotNull Pair<String, Future<Integer>> assignLmp() throws InterruptedException {
         // 先尝试获取资源
         Pair<String, Future<Integer>> tLmp = assignLmp_();
-        if (tLmp == null) {
+        if (tLmp == null && !mEXE.noERROutput()) {
             System.err.println("WARNING: Can NOT to assign resource for this Long-Time Lammps Executor temporarily, this exec blocks until there are any free resource.");
             System.err.println("It may be caused by too large number of parallels.");
         }
@@ -146,7 +146,7 @@ public final class LongTimeLmpExecutor implements ILmpExecutor {
     private int run_(Pair<String, Future<Integer>> aLmp, IHasIOFiles aIOFiles) {
         // 检测 lammps 程序是否存活，如果不在了则直接报错
         if (aLmp.second.isDone()) {
-            System.err.println("ERROR: Long-Time Lammps Dead Unexpectedly, dir: "+aLmp.first);
+            if (!mEXE.noERROutput()) System.err.println("ERROR: Long-Time Lammps Dead Unexpectedly, dir: "+aLmp.first);
             returnLmp(aLmp);
             return -1;
         }

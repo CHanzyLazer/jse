@@ -222,8 +222,8 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         rRunCommand.add("--ntasks");            rRunCommand.add(String.valueOf(mTaskNum));
         rRunCommand.add("--ntasks-per-node");   rRunCommand.add(String.valueOf(mMaxTaskNumPerNode));
 //      rRunCommand.add("--wait");              rRunCommand.add("1000000"); // 正常提交任务不需要修改 wait，可以防止任务报错后一直卡住
-        if (mEXE.noSTDOutput()) {
-            if (mEXE.noERROutput()) {
+        if (noSTDOutput()) {
+            if (noERROutput()) {
                 // 所有输出都关闭，依旧需要创建文件
                 rRunCommand.addFirst(";");
                 rRunCommand.addFirst(aOutFilePath);
@@ -237,7 +237,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
                 rRunCommand.add("--error");             rRunCommand.add(aOutFilePath);
             }
         } else {
-            if (mEXE.noERROutput()) {
+            if (noERROutput()) {
                 // 只关闭错误输出
                 rRunCommand.add("--output");            rRunCommand.add(aOutFilePath);
                 rRunCommand.add("--error");             rRunCommand.add(NO_LOG_LINUX);
@@ -272,8 +272,8 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         rSubmitCommand.add("sbatch");
         rSubmitCommand.add("--nodes");              rSubmitCommand.add(String.valueOf(tNodeNum));
         rSubmitCommand.add("--job-name");           rSubmitCommand.add(mUniqueJobName);
-        if (mEXE.noSTDOutput()) {
-            if (mEXE.noERROutput()) {
+        if (noSTDOutput()) {
+            if (noERROutput()) {
                 // 所有输出都关闭，依旧需要创建文件
                 rSubmitCommand.addFirst(";");
                 rSubmitCommand.addFirst(aOutFilePath);
@@ -287,7 +287,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
                 rSubmitCommand.add("--error");          rSubmitCommand.add(aOutFilePath);
             }
         } else {
-            if (mEXE.noERROutput()) {
+            if (noERROutput()) {
                 // 只关闭错误输出
                 rSubmitCommand.add("--output");         rSubmitCommand.add(aOutFilePath);
                 rSubmitCommand.add("--error");          rSubmitCommand.add(NO_LOG_LINUX);
@@ -373,8 +373,8 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         rSubmitCommand.add("sbatch");
         rSubmitCommand.add("--nodes");              rSubmitCommand.add(String.valueOf(tNodeNum)); // 节点数依旧是节点数
         rSubmitCommand.add("--job-name");           rSubmitCommand.add(mUniqueJobName);
-        if (mEXE.noSTDOutput()) {
-            if (mEXE.noERROutput()) {
+        if (noSTDOutput()) {
+            if (noERROutput()) {
                 // 关闭输出，由于此时下载可控，则不需要创建文件
                 rSubmitCommand.add("--output");         rSubmitCommand.add(NO_LOG_LINUX);
             } else {
@@ -385,7 +385,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
                 rIOFiles.putOFiles(OUTPUT_FILE_KEY, tOutFilePath);
             }
         } else {
-            if (mEXE.noERROutput()) {
+            if (noERROutput()) {
                 // 只关闭错误输出
                 rSubmitCommand.add("--output");         rSubmitCommand.add(tOutFilePath);
                 rSubmitCommand.add("--error");          rSubmitCommand.add(NO_LOG_LINUX);
@@ -431,7 +431,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         }
         if (tValid) return rJobIDs;
         // 不合法时会输出不合法的结果，由于这个操作是长期的且是允许的，因此可以通过 noConsoleOutput 抑制
-        if (!noSTDOutput()) {
+        if (!noERROutput()) {
             System.err.println("WARNING: getRunningJobIDsFromSystem Fail, it is usually the network issue, the output from the remote server:");
             for (String tLine : tLines) if (!tLine.equals("END")) System.err.println(tLine);
         }
@@ -452,7 +452,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         }
         if (tValid) return true; // 不一定真的成功取消了，但是这里还是返回 true
         // 失败时输出失败的结果，由于这个操作是允许的，因此可以通过 noConsoleOutput 抑制
-        if (!noSTDOutput()) {
+        if (!noERROutput()) {
             System.err.println("WARNING: cancelJobFromSystem Fail, the output from the remote server:");
             for (String tLine : tLines) if (!tLine.equals("END")) System.err.println(tLine);
         }

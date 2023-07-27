@@ -285,14 +285,16 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
             int tJobID = getJobIDFromSystem(tOutList);
             if (tJobID > 0) {
                 // 如果提交成功则输出到 out
-                if (!mEXE.noSTDOutput()) for (String tLine : tOutList) System.out.println(tLine);
+                if (!noSTDOutput()) for (String tLine : tOutList) System.out.println(tLine);
             } else {
-                // 提交不成功则输出到 err，并且不考虑 NoOutput
-                System.err.println("ERROR: submitSystemCommand Fail, the submit command is:");
-                System.err.println(mSubmitCommand);
-                System.err.println("the remote server output is:");
-                for (String tLine : tOutList) System.err.println(tLine);
-                System.err.println("Will still try to get the output files, so you may also receive the IOException");
+                // 提交不成功则输出到 err
+                if (!noERROutput()) {
+                    System.err.println("ERROR: submitSystemCommand Fail, the submit command is:");
+                    System.err.println(mSubmitCommand);
+                    System.err.println("the remote server output is:");
+                    for (String tLine : tOutList) System.err.println(tLine);
+                    System.err.println("Will still try to get the output files, so you may also receive the IOException");
+                }
             }
             // 提交完成后设置 mSystemCommand 为 null，避免重复提交
             mSubmitCommand = null;
@@ -446,7 +448,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
             String tBatchedCommand;
             if (tCommands.size() > 1) {
                 tBatchedCommand = getBatchSubmitCommand(tCommands, tIOFiles);
-                if (tBatchedCommand == null) System.err.println("ERROR: Fail in GetBatchedCommand, still try to get the output files, so you may also receive the IOException");
+                if (tBatchedCommand == null && !noERROutput()) System.err.println("ERROR: Fail in GetBatchedCommand, still try to get the output files, so you may also receive the IOException");
             } else {
                 tBatchedCommand = getSubmitCommand(tCommands.get(0), toRealOutFilePath(defaultOutFilePath()));
             }

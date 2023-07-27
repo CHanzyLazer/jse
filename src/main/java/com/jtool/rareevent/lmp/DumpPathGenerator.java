@@ -30,7 +30,7 @@ import static com.jtool.code.CS.*;
  * @author liqa
  */
 public class DumpPathGenerator implements IPathGenerator<IHasAtomData> {
-    private final static int TOLERANT = 10;
+    private final static int TOLERANT = 3;
     
     private final String mWorkingDir;
     
