@@ -6,7 +6,7 @@ import com.jtool.atom.IAtomData;
 import com.jtool.atom.IXYZ;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractRandomAccessList;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IInFile;
 import com.jtool.lmp.ILmpExecutor;
 import com.jtool.lmp.Lammpstrj;
@@ -116,7 +116,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
             // 先根据输入创建 Lmpdat 并写入，注意需要再设置一下种类数，因为 dump 不会保留种类数，对于恰好缺少种类的情况会出错
             Lmpdat.fromAtomData_(aStart, mMesses).setAtomTypeNum(mMesses.size()).write(tLmpDataPath);
             // 设置输入 data 路径和输出 dump 路径，考虑要线程安全这里要串行设置并且设置完成后拷贝结果
-            IHasIOFiles tIOFiles;
+            IIOFiles tIOFiles;
             synchronized (this) {
                 // 如果此点不带有速度则需要有不同的随机初始速度，否则不需要分配速度
                 if (aStart.hasVelocities()) mGenDumpIn.put("velocity", REMOVE);

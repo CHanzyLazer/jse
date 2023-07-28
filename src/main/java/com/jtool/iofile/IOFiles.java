@@ -8,9 +8,9 @@ import java.util.*;
 
 /**
  * @author liqa
- * <p> IHasIOFiles 的默认实现 </p>
+ * <p> IIOFiles 的默认实现 </p>
  */
-public class IOFiles implements IHasIOFiles {
+public class IOFiles implements IIOFiles {
     /** 全部遍历一次保证一定会值拷贝，String 也不会被修改因此不用考虑进一步值拷贝 */
     @Override public final IOFiles copy() {
         IOFiles rIOFiles = new IOFiles();

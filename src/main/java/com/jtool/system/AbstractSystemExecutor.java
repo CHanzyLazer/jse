@@ -3,7 +3,7 @@ package com.jtool.system;
 import com.google.common.collect.ImmutableList;
 import com.jtool.code.UT;
 import com.jtool.code.operator.IOperator1;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.MergedIOFiles;
 import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IExecutorEX;
@@ -43,10 +43,10 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     protected final void printStackTrace(Throwable aThrowable) {if (!mNoERROutput) aThrowable.printStackTrace();}
     
     
-    @Override public final int system(String aCommand                                                 ) {return system_(aCommand, this::outPrintln);}
-    @Override public final int system(String aCommand, final String aOutFilePath                      ) {return system_(aCommand, () -> filePrintln(aOutFilePath));}
-    @Override public final int system(String aCommand                           , IHasIOFiles aIOFiles) {return system_(aCommand, this::outPrintln, aIOFiles);}
-    @Override public final int system(String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return system_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
+    @Override public final int system(String aCommand                                              ) {return system_(aCommand, this::outPrintln);}
+    @Override public final int system(String aCommand, final String aOutFilePath                   ) {return system_(aCommand, () -> filePrintln(aOutFilePath));}
+    @Override public final int system(String aCommand                           , IIOFiles aIOFiles) {return system_(aCommand, this::outPrintln, aIOFiles);}
+    @Override public final int system(String aCommand, final String aOutFilePath, IIOFiles aIOFiles) {return system_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
     
     @Override public final List<String> system_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
@@ -55,7 +55,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         system_(aCommand, () -> listPrintln(rList));
         return rList;
     }
-    @Override public final List<String> system_str(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final List<String> system_str(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) {
             if (needSyncIOFiles()) synchronized (this) {
@@ -69,10 +69,10 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         return rList;
     }
     
-    @Override public final Future<Integer> submitSystem(String aCommand                                                 ) {return submitSystem_(aCommand, this::outPrintln);}
-    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath                      ) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath));}
-    @Override public final Future<Integer> submitSystem(String aCommand                           , IHasIOFiles aIOFiles) {return submitSystem_(aCommand, this::outPrintln, aIOFiles);}
-    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath, IHasIOFiles aIOFiles) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
+    @Override public final Future<Integer> submitSystem(String aCommand                                              ) {return submitSystem_(aCommand, this::outPrintln);}
+    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath                   ) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath));}
+    @Override public final Future<Integer> submitSystem(String aCommand                           , IIOFiles aIOFiles) {return submitSystem_(aCommand, this::outPrintln, aIOFiles);}
+    @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath, IIOFiles aIOFiles) {return submitSystem_(aCommand, () -> filePrintln(aOutFilePath), aIOFiles);}
     
     @Override public final Future<List<String>> submitSystem_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
@@ -81,7 +81,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         final Future<Integer> tSystemTask = submitSystem_(aCommand, () -> listPrintln(rList));
         return UT.Par.map(tSystemTask, v -> rList);
     }
-    @Override public final Future<List<String>> submitSystem_str(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final Future<List<String>> submitSystem_str(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) {
             if (needSyncIOFiles()) synchronized (this) {
@@ -127,7 +127,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         // 对于空指令专门优化，不添加到队列
         if (aCommand != null && !aCommand.isEmpty()) mBatchCommands.add(aCommand);
     }
-    @Override public final synchronized void putBatchSystem(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final synchronized void putBatchSystem(String aCommand, IIOFiles aIOFiles) {
         // 对于空指令专门优化，不添加到队列
         if (aCommand != null && !aCommand.isEmpty()) mBatchCommands.add(aCommand);
         mBatchIOFiles.merge(aIOFiles);
@@ -287,7 +287,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         }
         return tExitValue;
     }
-    private int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {
+    private int system_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) {
             if (needSyncIOFiles()) synchronized (this) {
@@ -314,7 +314,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         synchronized (this) {mRunningSystem.add(tSystem);}
         return tSystem;
     }
-    private Future<Integer> submitSystem_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IHasIOFiles aIOFiles) {
+    private Future<Integer> submitSystem_(String aCommand, @NotNull IPrintlnSupplier aPrintln, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) {
             if (needSyncIOFiles()) synchronized (this) {

@@ -2,7 +2,7 @@ package com.jtool.system;
 
 
 import com.jtool.code.UT;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
@@ -284,7 +284,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         // 获得指令
         return String.join(" ", rSubmitCommand);
     }
-    @Override protected @Nullable String getBatchSubmitCommand(List<String> aCommands, IHasIOFiles rIOFiles) {
+    @Override protected @Nullable String getBatchSubmitCommand(List<String> aCommands, IIOFiles rIOFiles) {
         // 由于空指令不会加入 List，因此不需要进行判断
         
         // 批量提交的指令，会将多个指令打包成一个单一的指令，用于突破服务器的用户任务数上限

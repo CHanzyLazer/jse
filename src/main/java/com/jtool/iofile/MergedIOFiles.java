@@ -13,11 +13,11 @@ import static com.jtool.code.CS.OFILE_KEY;
 
 /**
  * @author liqa
- * <p> 已经合并的 IHasIOFiles 的实现，只有两个 key: {@code "<o>", "<i>"}，排除相同的文件 </p>
+ * <p> 已经合并的 IIOFiles 的实现，只有两个 key: {@code "<o>", "<i>"}，排除相同的文件 </p>
  */
-public class MergedIOFiles implements IHasIOFiles {
+public class MergedIOFiles implements IIOFiles {
     /** 提供额外的合并 IOFiles 的接口 */
-    public void merge(IHasIOFiles aIOFiles) {
+    public void merge(IIOFiles aIOFiles) {
         for (String tIFile : aIOFiles.getIFiles()) mIFiles.add(tIFile);
         for (String tOFile : aIOFiles.getOFiles()) mOFiles.add(tOFile);
     }

@@ -4,7 +4,7 @@ package com.jtool.system;
 import com.google.common.collect.ImmutableList;
 import com.jtool.code.collection.Pair;
 import com.jtool.code.UT;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.iofile.ISavable;
 import com.jtool.iofile.MergedIOFiles;
@@ -372,10 +372,10 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     @Override public final boolean isFile(String aFilePath) throws Exception {return mEXE.isFile(aFilePath);}
     @Override public final boolean isDir(String aDir) throws Exception {return mEXE.isDir(aDir);}
     
-    @Override public final int system(String aCommand                                           ) {return system(aCommand, defaultOutFilePath());}
-    @Override public final int system(String aCommand,                      IHasIOFiles aIOFiles) {return system(aCommand, defaultOutFilePath(), aIOFiles);}
-    @Override public final int system(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
-    @Override public final int system(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final int system(String aCommand                                        ) {return system(aCommand, defaultOutFilePath());}
+    @Override public final int system(String aCommand,                      IIOFiles aIOFiles) {return system(aCommand, defaultOutFilePath(), aIOFiles);}
+    @Override public final int system(String aCommand, String aOutFilePath                   ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final int system(String aCommand, String aOutFilePath, IIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final List<String> system_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
@@ -388,7 +388,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
             return ImmutableList.of();
         }
     }
-    @Override public final List<String> system_str(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final List<String> system_str(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         String tFilePath = toRealOutFilePath(defaultOutFilePath());
         system_(aCommand, tFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy() : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
@@ -401,10 +401,10 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         }
     }
     
-    @Override public final IFutureJob submitSystem(String aCommand                                           ) {return submitSystem(aCommand, defaultOutFilePath());}
-    @Override public final IFutureJob submitSystem(String aCommand,                      IHasIOFiles aIOFiles) {return submitSystem(aCommand, defaultOutFilePath(), aIOFiles);}
-    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath                      ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
-    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy(): aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final IFutureJob submitSystem(String aCommand                                        ) {return submitSystem(aCommand, defaultOutFilePath());}
+    @Override public final IFutureJob submitSystem(String aCommand,                      IIOFiles aIOFiles) {return submitSystem(aCommand, defaultOutFilePath(), aIOFiles);}
+    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath                   ) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? EPT_IOF : new IOFiles().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
+    @Override public final IFutureJob submitSystem(String aCommand, String aOutFilePath, IIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return submitSystem_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy(): aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final Future<List<String>> submitSystem_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return EPT_STR_FUTURE;
@@ -419,7 +419,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
             }
         });
     }
-    @Override public final Future<List<String>> submitSystem_str(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final Future<List<String>> submitSystem_str(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         final String tFilePath = toRealOutFilePath(defaultOutFilePath());
         final Future<Integer> tSystemTask = submitSystem_(aCommand, tFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy() : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
@@ -468,7 +468,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         return new ListFutureJob(rFutures);
     }
     @Override public final synchronized void putBatchSystem(String aCommand) {putBatchSystem(aCommand, EPT_IOF);}
-    @Override public final synchronized void putBatchSystem(String aCommand, IHasIOFiles aIOFiles) {
+    @Override public final synchronized void putBatchSystem(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT putSubmit from this Dead Executor.");
         Pair<List<String>, MergedIOFiles> tPair = mBatchCommandsIOFiles.peekLast();
         if (tPair==null || tPair.first.size()>=maxBatchSize()) {
@@ -483,7 +483,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     
     
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final int system_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
+    protected final int system_(String aCommand, @NotNull String aOutFilePath, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         if (needSyncIOFiles()) synchronized (this) {
@@ -498,7 +498,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         return tExitValue;
     }
     /** 用于减少重复代码，这里 aIOFiles 包含了指令本身输出的文件，并且认为已经考虑了 aIOFiles 易失的问题，aNoOutput 指定是否会将提交结果信息输出到控制台 */
-    protected final IFutureJob submitSystem_(String aCommand, @NotNull String aOutFilePath, IHasIOFiles aIOFiles) {
+    protected final IFutureJob submitSystem_(String aCommand, @NotNull String aOutFilePath, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         // 先上传输入文件，上传文件部分是串行的
         if (needSyncIOFiles()) synchronized (this) {
@@ -529,7 +529,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     protected abstract @NotNull String toRealOutFilePath(String aOutFilePath);
     protected abstract @Nullable String getRunCommand(String aCommand, @NotNull String aOutFilePath);
     protected abstract @Nullable String getSubmitCommand(String aCommand, @NotNull String aOutFilePath);
-    protected abstract @Nullable String getBatchSubmitCommand(List<String> aCommands, IHasIOFiles rIOFiles);
+    protected abstract @Nullable String getBatchSubmitCommand(List<String> aCommands, IIOFiles rIOFiles);
     
     /** 使用 submit 指令后系统会给出输出，需要使用这个输出来获取对应任务的 ID 用于监控任务是否完成，返回 <= 0 的值代表提交任务失败 */
     protected abstract int getJobIDFromSystem(List<String> aOutList);

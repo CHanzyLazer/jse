@@ -3,7 +3,7 @@ package com.jtool.code;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.jtool.atom.XYZ;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.math.MathEX;
 import com.jtool.parallel.CompletedFuture;
@@ -101,7 +101,7 @@ public class CS {
         .build();
     
     /** SystemExecutor Stuffs */
-    public final static IHasIOFiles EPT_IOF = new IOFiles();
+    public final static IIOFiles EPT_IOF = new IOFiles();
     public final static IFutureJob SUC_FUTURE = new CompletedFutureJob(0);
     public final static IFutureJob ERR_FUTURE = new CompletedFutureJob(-1);
     public final static Future<List<Integer>> ERR_FUTURES = new CompletedFuture<>(Collections.singletonList(-1));

@@ -1,7 +1,7 @@
 package com.jtool.system;
 
 
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.parallel.IThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -42,29 +42,29 @@ public interface ISystemExecutor extends IThreadPool {
     
     int system(String aCommand                     );
     int system(String aCommand, String aOutFilePath);
-    /** 在原本的 system 基础上，增加了附加更多输入输出文件的功能，使用 IHasIOFiles 来附加 */
-    int system(String aCommand                     , IHasIOFiles aIOFiles);
-    int system(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
+    /** 在原本的 system 基础上，增加了附加更多输入输出文件的功能，使用 IIOFiles 来附加 */
+    int system(String aCommand                     , IIOFiles aIOFiles);
+    int system(String aCommand, String aOutFilePath, IIOFiles aIOFiles);
     
     /** submit stuffs */
-    Future<Integer> submitSystem(String aCommand                                           );
-    Future<Integer> submitSystem(String aCommand, String aOutFilePath                      );
-    Future<Integer> submitSystem(String aCommand                     , IHasIOFiles aIOFiles);
-    Future<Integer> submitSystem(String aCommand, String aOutFilePath, IHasIOFiles aIOFiles);
+    Future<Integer> submitSystem(String aCommand                                        );
+    Future<Integer> submitSystem(String aCommand, String aOutFilePath                   );
+    Future<Integer> submitSystem(String aCommand                     , IIOFiles aIOFiles);
+    Future<Integer> submitSystem(String aCommand, String aOutFilePath, IIOFiles aIOFiles);
     
     /** BatchSubmit stuffs，不获取输出，Future 获取到的退出码数组大小不一定是 put 的总数（可能会发生合并）*/
     Future<List<Integer>> submitBatchSystem();
     void putBatchSystem(String aCommand);
-    void putBatchSystem(String aCommand, IHasIOFiles aIOFiles);
+    void putBatchSystem(String aCommand, IIOFiles aIOFiles);
     
     @Deprecated default Future<List<Integer>> getSubmit() {return submitBatchSystem();}
     @Deprecated default void putSubmit(String aCommand) {putBatchSystem(aCommand);}
-    @Deprecated default void putSubmit(String aCommand, IHasIOFiles aIOFiles) {putBatchSystem(aCommand, aIOFiles);}
+    @Deprecated default void putSubmit(String aCommand, IIOFiles aIOFiles) {putBatchSystem(aCommand, aIOFiles);}
     
     
     /** 获取字符串输出而不是退出代码 */
     List<String> system_str(String aCommand);
-    List<String> system_str(String aCommand, IHasIOFiles aIOFiles);
+    List<String> system_str(String aCommand, IIOFiles aIOFiles);
     Future<List<String>> submitSystem_str(String aCommand);
-    Future<List<String>> submitSystem_str(String aCommand, IHasIOFiles aIOFiles);
+    Future<List<String>> submitSystem_str(String aCommand, IIOFiles aIOFiles);
 }

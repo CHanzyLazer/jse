@@ -1,6 +1,6 @@
 package com.jtool.lmp;
 
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IInFile;
 import com.jtool.parallel.IHasAutoShutdown;
 import com.jtool.system.ISystemExecutor;
@@ -12,5 +12,5 @@ import com.jtool.system.ISystemExecutor;
 public interface ILmpExecutor extends IHasAutoShutdown {
     ISystemExecutor exec();
     int run(IInFile aInFile);
-    int run(String aInFile, IHasIOFiles aIOFiles);
+    int run(String aInFile, IIOFiles aIOFiles);
 }

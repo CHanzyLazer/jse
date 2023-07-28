@@ -2,7 +2,7 @@ package com.jtool.lmp;
 
 import com.jtool.code.UT;
 import com.jtool.code.collection.Pair;
-import com.jtool.iofile.IHasIOFiles;
+import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IInFile;
 import com.jtool.parallel.AbstractHasAutoShutdown;
 import com.jtool.system.ISystemExecutor;
@@ -134,7 +134,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     
     
     /** 运行则直接通过将输入文件放入指定目录来实现 */
-    @Override public int run(String aInFile, IHasIOFiles aIOFiles) {
+    @Override public int run(String aInFile, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT run from this Dead LmpExecutor.");
         // 先尝试获取资源
         Pair<String, Future<Integer>> tLmp;
@@ -168,7 +168,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         return run_(tLmp, aInFile);
     }
     @SuppressWarnings("BusyWait")
-    private int run_(Pair<String, Future<Integer>> aLmp, IHasIOFiles aIOFiles) {
+    private int run_(Pair<String, Future<Integer>> aLmp, IIOFiles aIOFiles) {
         try {
             // 注意到 lammps 本身输出时不能自动创建文件夹，因此需要手动先合法化输出文件夹
             Set<String> rODirs = new HashSet<>();

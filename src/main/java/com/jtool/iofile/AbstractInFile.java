@@ -19,7 +19,7 @@ import static com.jtool.code.CS.INFILE_SELF_KEY;
  */
 public abstract class AbstractInFile extends AbstractMap<String, Object> implements IInFile {
     /** Wrapper of IOFile and Map */
-    private final IHasIOFiles mIOFiles;
+    private final IIOFiles mIOFiles;
     private final Map<String, Object> mSettings;
     /** Hooks, {FileKey, SettingKey} */
     private final BiMap<String, String> mIOFileMultipleKeys;
@@ -74,7 +74,7 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     
     
     /** IOFile stuffs */
-    @Override public final IHasIOFiles copy() {return mIOFiles.copy();}
+    @Override public final IIOFiles copy() {return mIOFiles.copy();}
     
     
     @Override public final Iterable<String> getIFiles(String aIFileKey) {return mIOFiles.getIFiles(aIFileKey);}

@@ -5,9 +5,9 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.List;
 
 @SuppressWarnings("UnusedReturnValue")
-public interface IHasIOFiles {
+public interface IIOFiles {
     /** 提供一个拷贝方法解决引用返回值的问题 */
-    IHasIOFiles copy();
+    IIOFiles copy();
     
     
     /** 获取输入输出的文件路径 */
@@ -50,12 +50,12 @@ public interface IHasIOFiles {
      * 注意这里由于是 java，约定默认 start 为 0，且 end 是不包含的，和其他的使用到 start 和 end 的操作保持一致
      * @author liqa
      */
-    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath                      );
-    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath, int aMultiple       );
-    IHasIOFiles putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd);
-    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath                      );
-    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath, int aMultiple       );
-    IHasIOFiles putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd);
+    IIOFiles putIFiles(String aIFileKey, String aIFilePath                      );
+    IIOFiles putIFiles(String aIFileKey, String aIFilePath, int aMultiple       );
+    IIOFiles putIFiles(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    IIOFiles putOFiles(String aOFileKey, String aOFilePath                      );
+    IIOFiles putOFiles(String aOFileKey, String aOFilePath, int aMultiple       );
+    IIOFiles putOFiles(String aOFileKey, String aOFilePath, int aStart, int aEnd);
     
     
     @VisibleForTesting default String i(String aIFileKey, int aIndex) {return getIFile(aIFileKey, aIndex);}
@@ -65,10 +65,10 @@ public interface IHasIOFiles {
     @VisibleForTesting default Iterable<String> i() {return getIFiles();}
     @VisibleForTesting default Iterable<String> o() {return getOFiles();}
     
-    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath                      );
-    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath, int aMultiple       );
-    @VisibleForTesting IHasIOFiles i(String aIFileKey, String aIFilePath, int aStart, int aEnd);
-    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath                      );
-    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath, int aMultiple       );
-    @VisibleForTesting IHasIOFiles o(String aOFileKey, String aOFilePath, int aStart, int aEnd);
+    @VisibleForTesting IIOFiles i(String aIFileKey, String aIFilePath                      );
+    @VisibleForTesting IIOFiles i(String aIFileKey, String aIFilePath, int aMultiple       );
+    @VisibleForTesting IIOFiles i(String aIFileKey, String aIFilePath, int aStart, int aEnd);
+    @VisibleForTesting IIOFiles o(String aOFileKey, String aOFilePath                      );
+    @VisibleForTesting IIOFiles o(String aOFileKey, String aOFilePath, int aMultiple       );
+    @VisibleForTesting IIOFiles o(String aOFileKey, String aOFilePath, int aStart, int aEnd);
 }
