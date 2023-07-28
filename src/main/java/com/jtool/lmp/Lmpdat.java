@@ -296,31 +296,31 @@ public class Lmpdat extends AbstractAtomData {
         lines.add("");
         lines.add(String.format("%6d atom types", mAtomTypeNum));
         lines.add("");
-        lines.add(String.format("%10.5g %10.5g xlo xhi", mBox.xlo(), mBox.xhi()));
-        lines.add(String.format("%10.5g %10.5g ylo yhi", mBox.ylo(), mBox.yhi()));
-        lines.add(String.format("%10.5g %10.5g zlo zhi", mBox.zlo(), mBox.zhi()));
+        lines.add(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
+        lines.add(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
+        lines.add(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
         if (mBox instanceof BoxPrism) {
         BoxPrism tBox = (BoxPrism)mBox;
-        lines.add(String.format("%10.5g %10.5g %10.5g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
+        lines.add(String.format("%15.10g %15.10g %15.10g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
         }
         if (mMasses != null) {
         lines.add("");
         lines.add("Masses");
         lines.add("");
         for (int i = 0; i < mAtomTypeNum; ++i)
-        lines.add(String.format("%6d %10.5g", i+1, mMasses.get(i)));
+        lines.add(String.format("%6d %15.10g", i+1, mMasses.get(i)));
         }
         lines.add("");
         lines.add("Atoms");
         lines.add("");
         for (IVector subAtomData : mAtomData.rows())
-        lines.add(String.format("%6d %6d %10.5g %10.5g %10.5g", (int)subAtomData.get(STD_ID_COL), (int)subAtomData.get(STD_TYPE_COL), subAtomData.get(STD_X_COL), subAtomData.get(STD_Y_COL), subAtomData.get(STD_Z_COL)));
+        lines.add(String.format("%6d %6d %15.10g %15.10g %15.10g", (int)subAtomData.get(STD_ID_COL), (int)subAtomData.get(STD_TYPE_COL), subAtomData.get(STD_X_COL), subAtomData.get(STD_Y_COL), subAtomData.get(STD_Z_COL)));
         if (mVelocities != null) {
         lines.add("");
         lines.add("Velocities");
         lines.add("");
         for (int i = 0; i < atomNum(); ++i)
-        lines.add(String.format("%6d %10.5g %10.5g %10.5g", (int)mAtomData.get(i,STD_ID_COL), mVelocities.get(i,STD_VX_COL), mVelocities.get(i,STD_VY_COL), mVelocities.get(i,STD_VZ_COL)));
+        lines.add(String.format("%6d %15.10g %15.10g %15.10g", (int)mAtomData.get(i,STD_ID_COL), mVelocities.get(i,STD_VX_COL), mVelocities.get(i,STD_VY_COL), mVelocities.get(i,STD_VZ_COL)));
         }
         
         UT.IO.write(aFilePath, lines);

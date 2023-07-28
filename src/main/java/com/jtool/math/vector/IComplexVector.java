@@ -40,10 +40,11 @@ public interface IComplexVector extends IComplexVectorGetter, IComplexVectorSett
     void fill(double aReal);
     void fill(double aReal, double aImag);
     void fill(IComplexVectorGetter aVectorGetter);
-    void fill(IVectorGetter aRealGetter);
+    void fill(IVectorGetter aVectorGetter);
     void fill(IVectorGetter aRealGetter, IVectorGetter aImagGetter);
-    void fill(double[][] aData);
-    void fill(Iterable<? extends Number> aRealList);
+    void fill(double[] aData);
+    void fill(double[] aRealData, double[] aImagData);
+    void fill(Iterable<? extends Number> aList);
     void fill(Iterable<? extends Number> aRealList, Iterable<? extends Number> aImagList);
     
     /** 访问和修改部分，自带的接口 */
@@ -60,8 +61,10 @@ public interface IComplexVector extends IComplexVectorGetter, IComplexVectorSett
     double getReal(int aIdx);
     double getImag(int aIdx);
     void set(int aIdx, ComplexDouble aValue);
+    void set(int aIdx, double aValue);
     void set(int aIdx, double aReal, double aImag);
     ComplexDouble getAndSet(int aIdx, ComplexDouble aValue);
+    ComplexDouble getAndSet(int aIdx, double aValue);
     ComplexDouble getAndSet(int aIdx, double aReal, double aImag);
     
     /** 用于方便访问 */

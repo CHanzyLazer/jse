@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
 
 /**
  * @author liqa
- * <p> 简单起见默认都是实向量，返回类型 double，而如果涉及复向量则会提供额外的接口获取复数部分 </p>
+ * <p> 简单起见默认都是实向量，返回类型 double </p>
  */
 public interface IVector extends IVectorGetter, IVectorSetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */

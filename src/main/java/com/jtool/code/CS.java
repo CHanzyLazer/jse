@@ -81,7 +81,12 @@ public class CS {
     public final static byte[] ZL_BYTE = new byte[0];
     
     /** IOFiles Keys */
-    public final static String OUTPUT_FILE_KEY = "<out>", INFILE_SELF_KEY = "<self>", OFILE_KEY = "<o>", IFILE_KEY = "<i>", LMP_LOG_KEY = "<lmp>";
+    public final static String
+          OUTPUT_FILE_KEY = "<out>"
+        , INFILE_SELF_KEY = "<self>"
+        , OFILE_KEY = "<o>"
+        , IFILE_KEY = "<i>"
+        ;
     public enum SettingType {REMOVE}
     public final static SettingType REMOVE = SettingType.REMOVE;
     
