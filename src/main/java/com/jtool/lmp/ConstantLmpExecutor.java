@@ -9,6 +9,7 @@ import com.jtool.system.ISystemExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Future;
 
@@ -29,9 +30,13 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     
     private final String mWorkingDir;
     
-    private final Map<Pair<String, Future<Integer>>, Boolean> mLongTimeLmps;
+    private final Map<Pair<String, Future<Integer>>, Boolean> mConstantLmpProcess;
     private final ISystemExecutor mEXE;
-    private final String mLmpExe; // 仅用于重启长时 lammps
+    
+    /** 这些仅用于重启长时 lammps */
+    private final String mLmpExe;
+    private final String mLogPath;
+    private int mLmpIndex = -1;
     
     private long mFileSystemWaitTime;
     private long mSleepTime;
@@ -40,32 +45,23 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         mEXE = aEXE;
         setDoNotShutdown_(aDoNotShutdown);
         mLmpExe = aLmpExe;
-        mLongTimeLmps = new HashMap<>();
+        mConstantLmpProcess = new HashMap<>();
         mFileSystemWaitTime = DEFAULT_FILE_SYSTEM_WAIT_TIME;
         mSleepTime = FILE_SYSTEM_SLEEP_TIME;
         // 设置一下工作目录
-        String tUniqueJobName = "LTLMP@"+UT.Code.randID();
+        String tUniqueJobName = "CLMP@"+UT.Code.randID();
         mWorkingDir = WORKING_DIR.replaceAll("%n", tUniqueJobName);
-        aLogPath = aLogPath.replaceAll("%n", tUniqueJobName);
+        mLogPath = aLogPath.replaceAll("%n", tUniqueJobName);
         // 提交长时的 lammps 任务
-        IInFile tLongTimeInFile = LmpIn.CONSTANT();
+        IInFile tConstantInFile = LmpIn.CONSTANT();
         try {
             for (int i = 0; i < aMaxParallelNum; ++i) {
-                // 获取长时任务的 lammps 输入文件
-                String tLongTimeLmpDir = mWorkingDir+"LMP@"+UT.Code.randID()+"/";
-                String tLongTimeInPath = tLongTimeLmpDir+"main";
-                // 设置目录
-                tLongTimeInFile.put("vBufferPath", tLongTimeLmpDir+"buffer");
-                tLongTimeInFile.put("vInPath", tLongTimeLmpDir+"in");
-                tLongTimeInFile.put("vShutdownPath", tLongTimeLmpDir+"shutdown");
-                // 输出为 in 文件
-                tLongTimeInFile.write(tLongTimeInPath);
-                // 组装指令
-                String tCommand = mLmpExe + " -in " + tLongTimeInPath;
-                // 运行，内部保证会考虑到 tLongTimeInFile 易失的问题；对于 longtime 的，默认情况同 slurm 会输出到文件而不是控制台
-                Future<Integer> tLongTimeLmpTask = mEXE.submitSystem(tCommand, aLogPath.replaceAll("%i", String.valueOf(i)), tLongTimeInFile);
+                // 获取长时任务的 lammps 目录
+                String tConstantLmpDir = mWorkingDir+"LMP@"+UT.Code.randID()+"/";
+                // 运行
+                Future<Integer> tConstantLmpTask = submitConstantLmp(tConstantInFile, tConstantLmpDir);
                 // 设置资源
-                mLongTimeLmps.put(new Pair<>(tLongTimeLmpDir, tLongTimeLmpTask), false);
+                mConstantLmpProcess.put(new Pair<>(tConstantLmpDir, tConstantLmpTask), false);
             }
         } catch (Exception e) {
             // 虽然这样后续即使设置了不要关闭也会关闭，但也不很好处理因此不考虑
@@ -91,9 +87,24 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     @Override public ISystemExecutor exec() {return mEXE;}
     private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) aThrowable.printStackTrace();}
     
+    private synchronized Future<Integer> submitConstantLmp(IInFile aConstantInFile, String aConstantLmpDir) throws IOException {
+        ++mLmpIndex;
+        // 一些通用的输入文件的设置
+        String tConstantInPath = aConstantLmpDir+"main";
+        aConstantInFile.put("vBufferPath", aConstantLmpDir+"buffer");
+        aConstantInFile.put("vInPath", aConstantLmpDir+"in");
+        aConstantInFile.put("vShutdownPath", aConstantLmpDir+"shutdown");
+        aConstantInFile.write(tConstantInPath);
+        // 组装指令
+        String tCommand = mLmpExe + " -in " + tConstantInPath;
+        // 提交运行，内部保证会考虑到 tConstantInFile 易失的问题；对于 constant 的，默认情况同 slurm 会输出到文件而不是控制台
+        return mEXE.submitSystem(tCommand, mLogPath.replaceAll("%i", String.valueOf(mLmpIndex)), aConstantInFile);
+    }
+    
+    
     /** 内部使用的向任务分配资源的方法 */
     private synchronized @Nullable Pair<String, Future<Integer>> assignLmp_() {
-        for (Map.Entry<Pair<String, Future<Integer>>, Boolean> tEntry : mLongTimeLmps.entrySet()) {
+        for (Map.Entry<Pair<String, Future<Integer>>, Boolean> tEntry : mConstantLmpProcess.entrySet()) {
             if (!tEntry.getValue()) {
                 tEntry.setValue(true);
                 return tEntry.getKey();
@@ -104,7 +115,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     }
     /** 内部使用的任务完成归还资源的方法 */
     private synchronized void returnLmp(Pair<String, Future<Integer>> aLmp) {
-        mLongTimeLmps.put(aLmp, false);
+        mConstantLmpProcess.put(aLmp, false);
     }
     
     private @NotNull Pair<String, Future<Integer>> assignLmp() throws InterruptedException {
@@ -181,7 +192,6 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
                         int tExitValue;
                         try {tExitValue = aLmp.second.get();} catch (Exception e) {tExitValue = -1;}
                         System.err.println("WARNING: Long-Time Lammps in '"+aLmp.first+"' Dead Unexpectedly, exit value: "+tExitValue+", try to run again...");
-                        System.err.println("WARNING: Note that rerunning Lammps will NOT have log file.");
                         if (tTolerant < 0) System.err.println("ERROR: Long-Time Lammps in '"+aLmp.first+"' Dead Unexpectedly more than "+TOLERANT+" times");
                     }
                     if (tTolerant < 0) {
@@ -196,15 +206,8 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
                         } else if (mEXE.isDir(tLmpShutdownPath)) {
                             mEXE.removeDir(tLmpShutdownPath);
                         }
-                        IInFile tLongTimeInFile = LmpIn.CONSTANT();
-                        String tLmpMainPath = aLmp.first+"main";
-                        tLongTimeInFile.put("vBufferPath", aLmp.first+"buffer");
-                        tLongTimeInFile.put("vInPath", tLmpInPath);
-                        tLongTimeInFile.put("vShutdownPath", tLmpShutdownPath);
-                        tLongTimeInFile.write(tLmpMainPath);
-                        String tCommand = mLmpExe + " -in " + tLmpMainPath;
-                        // 重新指定程序 future，方便起见重新开始的程序不再记录 log，因为目前 api 下会直接覆盖掉原本 log
-                        aLmp.second = mEXE.submitSystem(tCommand, tLongTimeInFile);
+                        // 重新指定程序 future
+                        aLmp.second = submitConstantLmp(LmpIn.CONSTANT(), aLmp.first);
                     }
                 }
                 Thread.sleep(mSleepTime);
@@ -229,7 +232,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     private volatile boolean mDead = false;
     @Override protected void shutdown_() {
         mDead = true;
-        for (Pair<String, Future<Integer>> tPair : mLongTimeLmps.keySet()) {
+        for (Pair<String, Future<Integer>> tPair : mConstantLmpProcess.keySet()) {
             String tShutdownPath = tPair.first+"shutdown";
             try {
                 UT.IO.write(tShutdownPath, "");
