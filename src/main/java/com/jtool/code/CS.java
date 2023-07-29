@@ -87,8 +87,11 @@ public class CS {
         , OFILE_KEY = "<o>"
         , IFILE_KEY = "<i>"
         ;
-    public enum SettingType {REMOVE}
-    public final static SettingType REMOVE = SettingType.REMOVE;
+    public enum SettingType {REMOVE, KEEP}
+    public final static SettingType
+          REMOVE = SettingType.REMOVE
+        , KEEP = SettingType.KEEP
+        ;
     
     /** Patterns */
     public final static Pattern BLANKS = Pattern.compile("\\s+");

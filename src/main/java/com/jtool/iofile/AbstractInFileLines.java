@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jtool.code.CS.KEEP;
 import static com.jtool.code.CS.REMOVE;
 
 
@@ -24,7 +25,7 @@ public abstract class AbstractInFileLines extends AbstractInFile {
                 if (tKey!=null && containsKey(tKey)) {
                     Object tValue = get(tKey);
                     if (tValue != REMOVE) {
-                        tLine = setValueOfLine(tLine, tValue);
+                        if (tValue != KEEP) tLine = setValueOfLine(tLine, tValue);
                         rLines.add(tLine);
                     }
                 } else {

@@ -9,6 +9,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 
+import static com.jtool.code.CS.KEEP;
 import static com.jtool.code.CS.REMOVE;
 
 
@@ -23,7 +24,7 @@ public abstract class AbstractInFileJson extends AbstractInFile {
         try (Reader tInFile = getInFileReader()) {
             rJson = (Map) (new JsonSlurper()).parse(tInFile);
             // 直接遍历修改
-            for (Map.Entry<String, Object> subSetting : entrySet()) if (rJson.containsKey(subSetting.getKey())) {
+            for (Map.Entry<String, Object> subSetting : entrySet()) if (subSetting.getValue()!=KEEP && rJson.containsKey(subSetting.getKey())) {
                 if (subSetting.getValue() == REMOVE) rJson.remove(subSetting.getKey());
                 else rJson.put(subSetting.getKey(), subSetting.getValue());
             }
