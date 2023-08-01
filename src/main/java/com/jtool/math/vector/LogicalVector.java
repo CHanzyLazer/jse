@@ -21,6 +21,34 @@ public final class LogicalVector extends BooleanArrayVector {
     }
     public static LogicalVector zeros(int aSize) {return new LogicalVector(new boolean[aSize]);}
     
+    /** 提供 builder 方式的构建 */
+    public static Builder builder() {return new Builder();}
+    public static class Builder {
+        private final static int INIT_SIZE = 8;
+        private boolean[] mData = new boolean[INIT_SIZE];
+        private int mSize = 0;
+        private Builder() {}
+        
+        public void add(boolean aValue) {
+            if (mData.length <= mSize) {
+                boolean[] oData = mData;
+                mData = new boolean[oData.length * 2];
+                System.arraycopy(oData, 0, mData, 0, oData.length);
+            }
+            mData[mSize] = aValue;
+            ++mSize;
+        }
+        public LogicalVector build() {
+            return new LogicalVector(mSize, mData);
+        }
+        public void shrinkToFit() {
+            if (mData.length != mSize) {
+                boolean[] oData = mData;
+                mData = new boolean[mSize];
+                System.arraycopy(oData, 0, mData, 0, mSize);
+            }
+        }
+    }
     
     private final int mSize;
     public LogicalVector(int aSize, boolean[] aData) {super(aData); mSize = aSize;}

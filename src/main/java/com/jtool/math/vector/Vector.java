@@ -21,6 +21,35 @@ public final class Vector extends DoubleArrayVector {
     }
     public static Vector zeros(int aSize) {return new Vector(new double[aSize]);}
     
+    /** 提供 builder 方式的构建 */
+    public static Builder builder() {return new Builder();}
+    public static class Builder {
+        private final static int INIT_SIZE = 8;
+        private double[] mData = new double[INIT_SIZE];
+        private int mSize = 0;
+        private Builder() {}
+        
+        public void add(double aValue) {
+            if (mData.length <= mSize) {
+                double[] oData = mData;
+                mData = new double[oData.length * 2];
+                System.arraycopy(oData, 0, mData, 0, oData.length);
+            }
+            mData[mSize] = aValue;
+            ++mSize;
+        }
+        public Vector build() {
+            return new Vector(mSize, mData);
+        }
+        public void shrinkToFit() {
+            if (mData.length != mSize) {
+                double[] oData = mData;
+                mData = new double[mSize];
+                System.arraycopy(oData, 0, mData, 0, mSize);
+            }
+        }
+    }
+    
     
     private final int mSize;
     public Vector(int aSize, double[] aData) {super(aData); mSize = aSize;}

@@ -3,6 +3,8 @@ package com.jtool.rareevent;
 
 import com.jtool.atom.IAtomData;
 import com.jtool.code.UT;
+import com.jtool.math.vector.ILogicalVector;
+import com.jtool.math.vector.LogicalVector;
 import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
@@ -85,7 +87,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         
         mPointsOnLambda = new ArrayList<>(mN0);
         oPointsOnLambda = new ArrayList<>(mN0);
-        mMovedPoints = new boolean[mN0];
+        mMovedPoints = LogicalVector.zeros(mN0);
     }
     
     
@@ -144,7 +146,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     /** 统计信息 */
     private double mTotTime0 = 0.0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
     private final List<Point> mPointsOnLambda, oPointsOnLambda; // 第一次从 A 到达 λi 的那些点
-    private boolean[] mMovedPoints;
+    private ILogicalVector mMovedPoints;
     
     private double mK0 = Double.NaN; // A 到 λ0 的轨迹通量，速率单位但是注意不是 A 到 λ0 的速率
     private final IVector mPi; // i 到 i+1 而不是返回 A 的概率
@@ -239,7 +241,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             ++tStep2PointNum;
             if (tStart.lambda >= aLambdaNext) {
                 // 对于相同的点则通过增加 multiple 的方式增加其统计权重，同时保证样本多样性
-                if (mMovedPoints[tIndex]) {
+                if (mMovedPoints.get(tIndex)) {
                     assert tStart.parent != null;
                     tStart.multiple += tStart.parent.multiple;
                 } else {
@@ -247,7 +249,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     assert tStart.parent != null;
                     mPointsOnLambda.add(tStart);
                     oPointsOnLambda.set(tIndex, tStart);
-                    mMovedPoints[tIndex] = true;
+                    mMovedPoints.set(tIndex, true);
                 }
                 mMi += tStart.parent.multiple;
                 mNipp += tStart.parent.multiple;
@@ -336,16 +338,16 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             }
             // 遍历两次将需要留下的设置到 oPointsOnLambda
             oPointsOnLambda.clear();
-            if (mPointsOnLambda.size() > mMovedPoints.length) {
+            if (mPointsOnLambda.size() > mMovedPoints.size()) {
                 // 这里保证 mMovedPoints 长度永远合法
-                mMovedPoints = new boolean[mPointsOnLambda.size()+nThreads()];
+                mMovedPoints = LogicalVector.zeros(mPointsOnLambda.size()+nThreads());
             }
-            Arrays.fill(mMovedPoints, true);
-            for (int index : rCutoffIndex.values()) mMovedPoints[index] = false;
+            mMovedPoints.fill(true);
+            for (int index : rCutoffIndex.values()) mMovedPoints.set(index, false);
             for (int i = 0; i < mPointsOnLambda.size(); ++i) {
-                if (mMovedPoints[i]) oPointsOnLambda.add(mPointsOnLambda.get(i));
+                if (mMovedPoints.get(i)) oPointsOnLambda.add(mPointsOnLambda.get(i));
             }
-            Arrays.fill(mMovedPoints, false);
+            mMovedPoints.fill(false);
             mPointsOnLambda.clear();
             // 打乱顺序
             Collections.shuffle(oPointsOnLambda, mRNG);

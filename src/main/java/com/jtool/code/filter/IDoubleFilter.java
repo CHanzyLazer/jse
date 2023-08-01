@@ -1,10 +1,7 @@
 package com.jtool.code.filter;
 
 import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.Vectors;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.jtool.math.vector.Vector;
 
 @FunctionalInterface
 public interface IDoubleFilter {
@@ -18,8 +15,9 @@ public interface IDoubleFilter {
         return IFilter.filter(aList, v -> aFilter.accept(v.doubleValue()));
     }
     static IVector fixedFilter(IVector aVector, IDoubleFilter aFilter) {
-        List<Double> rList = new ArrayList<>();
-        for (double tValue : aVector.iterable()) if (aFilter.accept(tValue)) rList.add(tValue);
-        return Vectors.from(rList);
+        Vector.Builder rBuilder = Vector.builder();
+        for (double tValue : aVector.iterable()) if (aFilter.accept(tValue)) rBuilder.add(tValue);
+        rBuilder.shrinkToFit();
+        return rBuilder.build();
     }
 }
