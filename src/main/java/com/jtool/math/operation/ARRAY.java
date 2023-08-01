@@ -138,7 +138,7 @@ public class ARRAY {
     public static void cumcount2Dest_(boolean[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
         final int rEnd = aLength + rShift;
         
-        int rCount = 0;
+        double rCount = 0.0;
         if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {if (aThis[i]) ++rCount; rDest[i] = rCount;}}
         else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {if (aThis[j]) ++rCount; rDest[i] = rCount;}}
     }

@@ -1,6 +1,8 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.iterator.IDoubleIterator;
+import com.jtool.code.operator.ICheckOperator;
+import com.jtool.code.operator.ICompareOperator;
 import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IDoubleOperator2;
 import com.jtool.math.MathEX;
@@ -66,6 +68,22 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public IVector cummin ()                      {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cummin2Dest_ (tThis.iterator(), rVector.setIterator()      ); return rVector;}
     @Override public IVector cumstat(IDoubleOperator2 aOpt) {IVector tThis = thisVector_(); IVector rVector = newVector_(tThis.size()); DATA.cumstat2Dest_(tThis.iterator(), rVector.setIterator(), aOpt); return rVector;}
     
+    /** 获取逻辑结果的运算 */
+    @Override public ILogicalVector ebeEqual            (IVectorGetter aLHS, IVectorGetter aRHS) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS, aRHS)); DATA.ebeEqual2Dest_            (tThis.iteratorOf(aLHS), tThis.iteratorOf(aRHS), rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector ebeGreater          (IVectorGetter aLHS, IVectorGetter aRHS) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS, aRHS)); DATA.ebeGreater2Dest_          (tThis.iteratorOf(aLHS), tThis.iteratorOf(aRHS), rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector ebeGreaterOrEqual   (IVectorGetter aLHS, IVectorGetter aRHS) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS, aRHS)); DATA.ebeGreaterOrEqual2Dest_   (tThis.iteratorOf(aLHS), tThis.iteratorOf(aRHS), rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector ebeLess             (IVectorGetter aLHS, IVectorGetter aRHS) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS, aRHS)); DATA.ebeLess2Dest_             (tThis.iteratorOf(aLHS), tThis.iteratorOf(aRHS), rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector ebeLessOrEqual      (IVectorGetter aLHS, IVectorGetter aRHS) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS, aRHS)); DATA.ebeLessOrEqual2Dest_      (tThis.iteratorOf(aLHS), tThis.iteratorOf(aRHS), rVector.setIterator()); return rVector;}
+    
+    @Override public ILogicalVector mapEqual            (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapEqual2Dest_            (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector mapGreater          (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapGreater2Dest_          (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector mapGreaterOrEqual   (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapGreaterOrEqual2Dest_   (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector mapLess             (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapLess2Dest_             (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
+    @Override public ILogicalVector mapLessOrEqual      (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapLessOrEqual2Dest_      (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
+    
+    @Override public ILogicalVector compare(IVectorGetter aRHS, ICompareOperator aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aRHS)); DATA.ebeCompare2Dest_(tThis.iterator(), tThis.iteratorOf(aRHS), rVector.setIterator(), aOpt); return rVector;}
+    @Override public ILogicalVector check  (ICheckOperator aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(tThis.size()); DATA.mapCheck2Dest_(tThis.iterator(), rVector.setIterator(), aOpt); return rVector;}
+    
     /** 向量的一些额外的运算 */
     @Override public double dot(IVectorGetter aRHS) {
         final IVector tThis = thisVector_();
@@ -117,4 +135,5 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     /** stuff to override */
     protected abstract IVector thisVector_();
     protected abstract IVector newVector_(int aSize);
+    protected ILogicalVector newLogicalVector_(int aSize) {return LogicalVector.zeros(aSize);}
 }

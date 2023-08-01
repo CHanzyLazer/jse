@@ -134,6 +134,19 @@ public interface IVector extends IVectorGetter, IVectorSetter {
     double dot  (IVectorGetter aRHS);
     double dot  ();
     
+    /** 比较运算，注意特地避开 equals */
+    ILogicalVector equal            (IVectorGetter aRHS);
+    ILogicalVector greater          (IVectorGetter aRHS);
+    ILogicalVector greaterOrEqual   (IVectorGetter aRHS);
+    ILogicalVector less             (IVectorGetter aRHS);
+    ILogicalVector lessOrEqual      (IVectorGetter aRHS);
+    
+    ILogicalVector equal            (double aRHS);
+    ILogicalVector greater          (double aRHS);
+    ILogicalVector greaterOrEqual   (double aRHS);
+    ILogicalVector less             (double aRHS);
+    ILogicalVector lessOrEqual      (double aRHS);
+    
     /** Groovy 的部分，增加向量切片操作 */
     @VisibleForTesting double call(int aIdx);
     @VisibleForTesting double getAt(int aIdx);

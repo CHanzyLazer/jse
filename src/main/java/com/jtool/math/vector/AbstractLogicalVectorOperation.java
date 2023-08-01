@@ -42,7 +42,7 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
     
     @Override public ILogicalVector cumall  () {ILogicalVector tThis = thisVector_(); ILogicalVector rVector = newVector_(tThis.size()); DATA.cumall2Dest_  (tThis.iterator(), rVector.setIterator()); return rVector;}
     @Override public ILogicalVector cumany  () {ILogicalVector tThis = thisVector_(); ILogicalVector rVector = newVector_(tThis.size()); DATA.cumany2Dest_  (tThis.iterator(), rVector.setIterator()); return rVector;}
-    @Override public IVector        cumcount() {ILogicalVector tThis = thisVector_(); IVector     rVector = Vectors.zeros(tThis.size()); DATA.cumcount2Dest_(tThis.iterator(), rVector.setIterator()); return rVector;}
+    @Override public IVector        cumcount() {ILogicalVector tThis = thisVector_(); IVector    rVector = newRealVector_(tThis.size()); DATA.cumcount2Dest_(tThis.iterator(), rVector.setIterator()); return rVector;}
     
     
     @Override public ILogicalVector reverse() {
@@ -76,4 +76,5 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
     /** stuff to override */
     protected abstract ILogicalVector thisVector_();
     protected abstract ILogicalVector newVector_(int aSize);
+    protected IVector newRealVector_(int aSize) {return Vectors.zeros(aSize);}
 }

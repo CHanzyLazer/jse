@@ -1,6 +1,8 @@
 package test
 
 import com.jtool.math.matrix.Matrices
+import static com.jtool.code.CS.*
+
 
 def mat = Matrices.from(5, 3, {row, col -> (row*10 + col) as double;});
 
@@ -15,3 +17,6 @@ while (si.hasNext()) {
 }
 
 println(mat);
+
+println(mat[ALL][1]);
+println(mat[ALL][1].greaterOrEqual(11));

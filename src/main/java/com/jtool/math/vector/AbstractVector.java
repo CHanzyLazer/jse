@@ -350,6 +350,18 @@ public abstract class AbstractVector implements IVector {
     @Override public final double dot   (IVectorGetter aRHS) {return operation().dot        (aRHS);}
     @Override public final double dot   ()                   {return operation().dot2this   ()    ;}
     
+    @Override public final ILogicalVector equal            (IVectorGetter aRHS) {return operation().ebeEqual         (this, aRHS);}
+    @Override public final ILogicalVector greater          (IVectorGetter aRHS) {return operation().ebeGreater       (this, aRHS);}
+    @Override public final ILogicalVector greaterOrEqual   (IVectorGetter aRHS) {return operation().ebeGreaterOrEqual(this, aRHS);}
+    @Override public final ILogicalVector less             (IVectorGetter aRHS) {return operation().ebeLess          (this, aRHS);}
+    @Override public final ILogicalVector lessOrEqual      (IVectorGetter aRHS) {return operation().ebeLessOrEqual   (this, aRHS);}
+    
+    @Override public final ILogicalVector equal            (double aRHS) {return operation().mapEqual         (this, aRHS);}
+    @Override public final ILogicalVector greater          (double aRHS) {return operation().mapGreater       (this, aRHS);}
+    @Override public final ILogicalVector greaterOrEqual   (double aRHS) {return operation().mapGreaterOrEqual(this, aRHS);}
+    @Override public final ILogicalVector less             (double aRHS) {return operation().mapLess          (this, aRHS);}
+    @Override public final ILogicalVector lessOrEqual      (double aRHS) {return operation().mapLessOrEqual   (this, aRHS);}
+    
     /** Groovy 的部分，增加矩阵切片操作 */
     @VisibleForTesting @Override public double call(int aIdx) {return get(aIdx);}
     @VisibleForTesting @Override public IVector call(List<Integer> aIndices) {return slicer().get(aIndices);}

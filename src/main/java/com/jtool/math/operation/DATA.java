@@ -1,10 +1,7 @@
 package com.jtool.math.operation;
 
 import com.jtool.code.iterator.*;
-import com.jtool.code.operator.IBooleanOperator1;
-import com.jtool.code.operator.IBooleanOperator2;
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.code.operator.*;
 
 /**
  * 对于运算操作的一般实现，主要用于减少重复代码；
@@ -74,13 +71,28 @@ public class DATA {
         }
     }
     public static void cumcount2Dest_(IBooleanIterator aThis, IDoubleSetOnlyIterator rDest) {
-        int rCount = 0;
+        double rCount = 0.0;
         while (aThis.hasNext()) {
             boolean tValue = aThis.next();
             if (tValue) ++rCount;
             rDest.nextAndSet(rCount);
         }
     }
+    
+    public static void ebeEqual2Dest_           (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs == rhs));}
+    public static void ebeGreater2Dest_         (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs >  rhs));}
+    public static void ebeGreaterOrEqual2Dest_  (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs >= rhs));}
+    public static void ebeLess2Dest_            (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs <  rhs));}
+    public static void ebeLessOrEqual2Dest_     (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs <= rhs));}
+    public static void ebeCompare2Dest_         (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest, ICompareOperator aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aLHS.next(), aRHS.next()));}
+    
+    public static void mapEqual2Dest_           (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs == aRHS));}
+    public static void mapGreater2Dest_         (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs >  aRHS));}
+    public static void mapGreaterOrEqual2Dest_  (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs >= aRHS));}
+    public static void mapLess2Dest_            (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs <  aRHS));}
+    public static void mapLessOrEqual2Dest_     (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs <= aRHS));}
+    public static void mapCheck2Dest_           (IDoubleIterator aData, IBooleanSetOnlyIterator rDest, ICheckOperator aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aData.next()));}
+    
     
     /** add, minus, multiply, divide stuffs */
     @SuppressWarnings("Convert2MethodRef")

@@ -1,6 +1,8 @@
 package com.jtool.math.vector;
 
 
+import com.jtool.code.operator.ICheckOperator;
+import com.jtool.code.operator.ICompareOperator;
 import com.jtool.code.operator.IDoubleOperator1;
 import com.jtool.code.operator.IDoubleOperator2;
 
@@ -63,6 +65,22 @@ public interface IVectorOperation {
     IVector cummax();
     IVector cummin();
     IVector cumstat(IDoubleOperator2 aOpt);
+    
+    /** 获取逻辑结果的运算 */
+    ILogicalVector ebeEqual         (IVectorGetter aLHS, IVectorGetter aRHS);
+    ILogicalVector ebeGreater       (IVectorGetter aLHS, IVectorGetter aRHS);
+    ILogicalVector ebeGreaterOrEqual(IVectorGetter aLHS, IVectorGetter aRHS);
+    ILogicalVector ebeLess          (IVectorGetter aLHS, IVectorGetter aRHS);
+    ILogicalVector ebeLessOrEqual   (IVectorGetter aLHS, IVectorGetter aRHS);
+    
+    ILogicalVector mapEqual         (IVectorGetter aLHS, double aRHS);
+    ILogicalVector mapGreater       (IVectorGetter aLHS, double aRHS);
+    ILogicalVector mapGreaterOrEqual(IVectorGetter aLHS, double aRHS);
+    ILogicalVector mapLess          (IVectorGetter aLHS, double aRHS);
+    ILogicalVector mapLessOrEqual   (IVectorGetter aLHS, double aRHS);
+    
+    ILogicalVector compare(IVectorGetter aRHS, ICompareOperator aOpt);
+    ILogicalVector check  (ICheckOperator aOpt);
     
     /** 向量的一些额外的运算 */
     double dot(IVectorGetter aRHS);

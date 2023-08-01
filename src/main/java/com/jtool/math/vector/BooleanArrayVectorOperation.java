@@ -141,12 +141,6 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         else DATA.cumany2Dest_(tThis.iterator(), rVector.setIterator());
         return rVector;
     }
-    @Override public IVector cumcount() {
-        BooleanArrayVector tThis = thisVector_();
-        double[] rDest = new double[tThis.size()];
-        ARRAY.cumcount2Dest_(tThis.getData(), tThis.shiftSize(), rDest, 0, tThis.dataSize());
-        return new Vector(rDest);
-    }
     
     
     /** stuff to override */

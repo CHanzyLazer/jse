@@ -9,6 +9,7 @@ import com.jtool.math.function.IFunc1;
 import com.jtool.math.function.IZeroBoundFunc1;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
+import com.jtool.math.vector.ILogicalVector;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
 import com.jtool.parallel.AbstractThreadPool;
@@ -642,7 +643,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aSolidThreshold 用来根据最近邻原子中，连接数超过此值则认为是固体的阈值，默认为 7
      * @return 最后判断得到是否是固体组成的逻辑向量
      */
-    public IVector checkSolidQ6(double aRNearest, double aConnectThreshold, int aSolidThreshold) {
+    public ILogicalVector checkSolidQ6(double aRNearest, double aConnectThreshold, int aSolidThreshold) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(6, aRNearest);
@@ -685,15 +686,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             });
         }
         
-        // 根据连接数判断是否是类固体
-        IVector rIsSolid = Vectors.zeros(mAtomNum);
-        for (int i = 0; i < mAtomNum; ++i) {
-            if (tConnectCount.get_(i) > aSolidThreshold) rIsSolid.set_(i, 1);
-        }
-        
-        // 返回最终计算结果
-        return rIsSolid;
+        // 根据连接数判断是否是类固体，返回最终计算结果
+        return tConnectCount.greater(aSolidThreshold);
     }
-    public IVector checkSolidQ6(double aRNearest) {return checkSolidQ6(aRNearest, 0.5, 7);}
-    public IVector checkSolidQ6() {return checkSolidQ6(mUnitLen*1.423);}
+    public ILogicalVector checkSolidQ6(double aRNearest) {return checkSolidQ6(aRNearest, 0.5, 7);}
+    public ILogicalVector checkSolidQ6() {return checkSolidQ6(mUnitLen*1.423);}
 }
