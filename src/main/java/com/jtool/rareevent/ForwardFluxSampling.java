@@ -39,6 +39,9 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private double mCutoff; // 用来将过低权重的点截断，将更多的资源用于统计高权重的点
     private int mMaxStatTimes; // 用于限制对高权重的点多次统计的次数，避免统计点过多
     
+    private double mPruningProb; // 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径
+    private int mPruningThreshold; // 开始进行裁剪的阈值，用来消除噪声的影响，默认为 1（即不添加阈值）
+    
     /**
      * 创建一个通用的 FFS 运算器
      * @author liqa
@@ -78,6 +81,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         mMaxPathNum = DEFAULT_MAX_PATH_MUL * mN0;
         mCutoff = DEFAULT_CUTOFF;
         mMaxStatTimes = DEFAULT_MAX_STAT_TIMES;
+        mPruningProb = 0.0;
+        mPruningThreshold = 1;
         
         // 计算过程需要的量的初始化
         mN = mSurfaces.size() - 1;
@@ -93,9 +98,11 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
     public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(aStep1Mul, 1); return this;}
-    public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = aMaxPathNum; return this;}
+    public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = Math.max(aMaxPathNum, mN0); return this;}
     public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = Math.min(aCutoff, 0.5); return this;}
-    public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = aMaxStatTimes; return this;}
+    public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = Math.max(aMaxStatTimes, 1); return this;}
+    public ForwardFluxSampling<T> setPruningProb(double aPruningProb) {mPruningProb = Math.max(aPruningProb, 0.0); return this;}
+    public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(aPruningThreshold, 1); return this;}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
     public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mFullPathGenerator.setDoNotShutdown(aDoNotShutdown); return this;}
     /** 可以从中间开始，此时则会直接跳过第一步（对于合法输入）*/
@@ -227,7 +234,9 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     }
     
     /** 统计一个路径所有的从 λi 第一次到达 λi+1 的点 */
-    private void statLambda2Next_(double aLambdaNext) {
+    private void statLambda2Next_() {
+        double tLambdaNext = mSurfaces.get_(mStep+1);
+        
         long tStep2PointNum = 0;
         // 统一获取开始点，并且串行处理第一个点的特殊情况，避免并行造成的问题
         Point tStart;
@@ -239,7 +248,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             // 第一个点特殊处理，如果第一个点就已经穿过了 λi+1，则需要记录这个点，并且要保证这个点只会在下一个面上出现一次
             // 为了修正误差，会增加其倍数 multiple 来增加其统计时的权重
             ++tStep2PointNum;
-            if (tStart.lambda >= aLambdaNext) {
+            if (tStart.lambda >= tLambdaNext) {
                 // 对于相同的点则通过增加 multiple 的方式增加其统计权重，同时保证样本多样性
                 if (mMovedPoints.get(tIndex)) {
                     assert tStart.parent != null;
@@ -263,8 +272,12 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         // 从 tStart 开始统计到达下一个界面的概率，更高权重的进行更多的统计次数保证结果准确性
         int tStatTimes = tStart.multiple>2.0 ? (int)Math.min(Math.floor(tStart.multiple), mMaxStatTimes) : 1;
         double subMul = tStart.multiple / (double)tStatTimes;
-        // 获取从 tStart 开始的路径的迭代器
         for (int i = 0; i < tStatTimes; ++i) {
+            // Pruning 相关量需要每次循环重新设置
+            int tPruningIndex = mStep-mPruningThreshold;
+            double tPruningMul = 1.0;
+            
+            // 获取从 tStart 开始的路径的迭代器
             ITimeAndParameterIterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(tStart.value);
             // 为了不改变约定，这里直接跳过上面已经经过特殊考虑的第一个相同的点
             tPathFrom.next();
@@ -277,12 +290,12 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 ++tStep2PointNum;
                 tLambda = tPathFrom.lambda();
                 // 判断是否穿过了 λi+1
-                if (tLambda >= aLambdaNext) {
+                if (tLambda >= tLambdaNext) {
                     // 如果有穿过 λi+1 则需要记录这些点
                     synchronized (this) {
                         mPointsOnLambda.add(new Point(tStart, tRawPoint, tLambda, subMul));
                         mMi += subMul;
-                        mNipp += subMul;
+                        mNipp += subMul*tPruningMul;
                     }
                     break;
                 }
@@ -293,6 +306,21 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                         mMi += subMul;
                     }
                     break;
+                }
+                // 修剪，如果向前则有概率直接中断
+                if (mPruningProb > 0.0 && tPruningIndex >= 0 && tLambda <= mSurfaces.get_(tPruningIndex)) {
+                    // 无论如何先减少 tPruningIndex
+                    --tPruningIndex;
+                    if (mRNG.nextDouble() < mPruningProb) {
+                        // 有 mPruningProb 中断
+                        synchronized (this) {
+                            mMi += subMul;
+                        }
+                        break;
+                    } else {
+                        // 否则需要增加权重
+                        tPruningMul /= (1.0 - mPruningProb);
+                    }
                 }
             }
             // 此时如果路径没有结束，还可以继续统计，即一个路径可以包含多个从 A 到 λi+1，或者包含之后的 λi+1 到 λi+2 等信息
@@ -357,7 +385,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             // 获取 M_i, N_{i+1}
             pool().parwhile(() -> (mPointsOnLambda.size()<mN0 && !mFinished), () -> {
                 // 选取一个初始点获取之后的路径，并统计结果
-                statLambda2Next_(mSurfaces.get_(mStep+1));
+                statLambda2Next_();
                 synchronized (this) {
                     // 如果使用的路径数超过设定则直接退出
                     if (mPathNum > mMaxPathNum && !mFinished) {

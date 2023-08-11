@@ -30,7 +30,7 @@ def biCal = new ClusterGrowth.ParameterCalculator();
 //plt.plot(sizes);
 //plt.show();
 
-def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(10), N0).setMinProb(0.0001);
+def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(10), N0).setPruningProb(0.5);
 
 UT.Timer.tic();
 FFS.run();
@@ -43,7 +43,7 @@ while (!FFS.finished()) {
 UT.Timer.toc("1, k = ${FFS.getK()}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 
 FFS.shutdown();
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(5), N0).setMinProb(0.0001);
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(5), N0).setPruningProb(0.5).setPruningThreshold(2);
 
 UT.Timer.tic();
 FFS.run();
@@ -56,7 +56,7 @@ while (!FFS.finished()) {
 UT.Timer.toc("2, k = ${FFS.getK()}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 
 FFS.shutdown();
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(2), N0).setMinProb(0.0001);
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(2), N0).setPruningProb(0.5).setPruningThreshold(5);
 
 UT.Timer.tic();
 FFS.run();
@@ -69,7 +69,7 @@ while (!FFS.finished()) {
 UT.Timer.toc("2, k = ${FFS.getK()}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 
 FFS.shutdown();
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, 10..100, N0).setMinProb(0.0001);
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, 10..100, N0).setPruningProb(0.5).setPruningThreshold(10);
 
 UT.Timer.tic();
 FFS.run();

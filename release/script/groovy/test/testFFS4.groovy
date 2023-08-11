@@ -20,7 +20,7 @@ def biCal = new ClusterGrowth.ParameterCalculator();
 
 
 
-def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(2), N0).setMinProb(0.0001);
+def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..100).step(2), N0);
 
 UT.Timer.tic();
 FFS.run();
@@ -35,7 +35,7 @@ UT.Timer.toc("all, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, to
 FFS.shutdown();
 
 
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..50).step(2), N0).setMinProb(0.0001);
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (10..50).step(2), N0);
 
 UT.Timer.tic();
 FFS.run();
@@ -54,7 +54,7 @@ UT.IO.map2json(FFS.restData(), '.temp/FFS-restdata');
 FFS.shutdown();
 
 def pointsValue = UT.IO.csv2data('.temp/FFS-points');
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (50..100).step(2), N0).setMinProb(0.0001).setStep(0, UT.Code.map(pointsValue.col(0).asList(), value -> new ClusterGrowth.Point(value as int, 0)), UT.IO.json2map('.temp/FFS-restdata'));
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, (50..100).step(2), N0).setStep(0, UT.Code.map(pointsValue.col(0).asList(), value -> new ClusterGrowth.Point(value as int, 0)), UT.IO.json2map('.temp/FFS-restdata'));
 
 UT.Timer.tic();
 FFS.run();

@@ -36,7 +36,7 @@ def biCal = new RandomWalk.ParameterCalculator();
 //UT.Timer.toc("3, k = ${FFS.getK()}, step1PointNum = ${FFS.step1PointNum()}, totPointNum = ${FFS.totalPointNum()},");
 //
 //FFS.shutdown();
-FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, 1..10, N0).setMinProb(0.0001);
+FFS = new ForwardFluxSampling<>(biPathGen, biCal, 0, 1..10, N0);
 
 UT.Timer.tic();
 FFS.run();
