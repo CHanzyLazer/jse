@@ -5,6 +5,7 @@ import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.iterator.IDoubleSetOnlyIterator;
+import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.code.operator.IDoubleOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -15,14 +16,13 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 简单起见默认都是实向量，返回类型 double </p>
  */
-public interface IVector extends IVectorGetter, IVectorSetter {
+public interface IVector extends IHasDoubleIterator, IVectorGetter, IVectorSetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
     IDoubleIterator iterator();
     IDoubleSetIterator setIterator();
     IDoubleIterator iteratorOf(IVectorGetter aContainer);
     IDoubleSetOnlyIterator setIteratorOf(IVectorSetter aContainer);
     
-    default Iterable<Double> iterable() {return () -> iterator().toIterator();}
     List<Double> asList();
     
     

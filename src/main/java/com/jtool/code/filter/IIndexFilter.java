@@ -9,6 +9,11 @@ import java.util.NoSuchElementException;
 public interface IIndexFilter {
     boolean accept(int aIdx);
     
+    default Iterable<Integer> filter(Iterable<Integer> aIndices) {return filter(aIndices, this);}
+    default Iterable<Integer> filter(int aSize) {return filter(aSize, this);}
+    default List<Integer> fixedFilter(Iterable<Integer> aIndices) {return fixedFilter(aIndices, this);}
+    default List<Integer> fixedFilter(int aSize) {return fixedFilter(aSize, this);}
+    
     /**
      * 提供通用的执行过滤的接口
      * @author liqa
@@ -25,7 +30,7 @@ public interface IIndexFilter {
                     if (mNext >= 0) return true;
                     if (mIdx < aSize) {
                         // 过滤器通过设置 mNext 合法
-                        if (!aFilter.accept(mIdx)) mNext = mIdx;
+                        if (aFilter.accept(mIdx)) mNext = mIdx;
                         ++mIdx;
                     } else {
                         return false;
@@ -42,6 +47,11 @@ public interface IIndexFilter {
                 }
             }
         };
+    }
+    static List<Integer> fixedFilter(Iterable<Integer> aIndices, IIndexFilter aFilter) {
+        List<Integer> rIndices = new ArrayList<>();
+        for (int i : aIndices) if (aFilter.accept(i)) rIndices.add(i);
+        return rIndices;
     }
     static List<Integer> fixedFilter(int aSize, IIndexFilter aFilter) {
         List<Integer> rIndices = new ArrayList<>();

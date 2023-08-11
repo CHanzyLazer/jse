@@ -21,7 +21,7 @@ import java.util.*;
  * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
 public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool> implements Runnable, IHasAutoShutdown {
-    private final static double DEFAULT_MIN_PROB = 0.01;
+    private final static int DEFAULT_MAX_PATH_MUL = 100;
     private final static double DEFAULT_CUTOFF = 0.01;
     private final static int DEFAULT_MAX_STAT_TIMES = 10;
     
@@ -35,7 +35,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private final int mN; // 界面数目-1，即 n
     private final Random mRNG = new Random(); // 独立的随机数生成器
     
-    private double mMinProb; // 用来限制统计时间，第二个过程每步的最低概率，默认为 max(0.05, 1/N0)，无论如何不会低于 1/N0
+    private int mMaxPathNum; // 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0
     private double mCutoff; // 用来将过低权重的点截断，将更多的资源用于统计高权重的点
     private int mMaxStatTimes; // 用于限制对高权重的点多次统计的次数，避免统计点过多
     
@@ -75,7 +75,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         mSurfaces = aSurfaces;
         mN0 = aN0;
         mStep1Mul = 1;
-        mMinProb = Math.max(DEFAULT_MIN_PROB, 1.0/(double)mN0);
+        mMaxPathNum = DEFAULT_MAX_PATH_MUL * mN0;
         mCutoff = DEFAULT_CUTOFF;
         mMaxStatTimes = DEFAULT_MAX_STAT_TIMES;
         
@@ -93,7 +93,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
     public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(aStep1Mul, 1); return this;}
-    public ForwardFluxSampling<T> setMinProb(double aMinProb) {mMinProb = Math.max(aMinProb, 1.0/(double)mN0); return this;}
+    public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = aMaxPathNum; return this;}
     public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = Math.min(aCutoff, 0.5); return this;}
     public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = aMaxStatTimes; return this;}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
@@ -359,10 +359,9 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 // 选取一个初始点获取之后的路径，并统计结果
                 statLambda2Next_(mSurfaces.get_(mStep+1));
                 synchronized (this) {
-                    // 如果统计得到的概率小于预定值，那么下一步的结果多样性会大大降低，并且统计效率也非常低，这里直接跳出
-                    if (mPathNum > mN0/mMinProb && !mFinished) {
-                        System.err.println("ERROR: P(λi+1|λi) will less than MinProb(= max(0.01, 1/N0) in default) anyway,");
-                        System.err.println("which will seriously reduce the accuracy or efficiency, so the FFS is stopped.");
+                    // 如果使用的路径数超过设定则直接退出
+                    if (mPathNum > mMaxPathNum && !mFinished) {
+                        System.err.println("ERROR: MaxPathNum("+mMaxPathNum+") reached, so the FFS is stopped.");
                         System.err.println("Try larger N0 or smaller surface distance.");
                         mFinished = true;
                     }

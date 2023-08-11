@@ -14,7 +14,7 @@ public abstract class AbstractLogicalVectorSlicer implements ILogicalVectorSlice
     final static String MSG = "Slice Indices Must be a Filter or int[] or List<Integer> or ALL";
     
     /** 支持过滤器输入，代替没有 {@code List<Boolean>} 的缺陷 */
-    @Override public final ILogicalVector get(IIndexFilter aIndices) {return get(IIndexFilter.fixedFilter(thisSize_(), aIndices));}
+    @Override public final ILogicalVector get(IIndexFilter aIndices) {return get(aIndices.fixedFilter(thisSize_()));}
     
     
     /** stuff to override */

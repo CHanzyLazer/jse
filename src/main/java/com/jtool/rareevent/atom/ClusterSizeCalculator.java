@@ -2,13 +2,13 @@ package com.jtool.rareevent.atom;
 
 import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
-import com.jtool.code.filter.IFilter;
-import com.jtool.code.filter.IIndexFilter;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.ILogicalVector;
 import com.jtool.rareevent.IParameterCalculator;
 
 import java.util.List;
+
+import static com.jtool.code.CS.R_NEAREST_MUL;
 
 
 /**
@@ -16,14 +16,17 @@ import java.util.List;
  * @author liqa
  */
 public class ClusterSizeCalculator implements IParameterCalculator<IAtomData> {
-    public ClusterSizeCalculator() {}
+    private final double mRNearest;
+    public ClusterSizeCalculator(double aRNearest) {mRNearest = aRNearest;}
+    public ClusterSizeCalculator() {this(-1);}
     
     @Override public double lambdaOf(IAtomData aPoint) {
         // 进行类固体判断
         try (final MonatomicParameterCalculator tMPC = aPoint.getMPC()) {
-            final ILogicalVector tIsSolid = tMPC.checkSolidQ6();
+            final double tRNearest = mRNearest<=0.0 ? tMPC.unitLen()*R_NEAREST_MUL : mRNearest;
+            final ILogicalVector tIsSolid = tMPC.checkSolidQ6(tRNearest);
             // 使用 getClustersBFS 获取所有的团簇
-            List<List<Integer>> tClusters = MathEX.Adv.getClustersBFS(IIndexFilter.filter(tIsSolid.size(), tIsSolid), i -> IFilter.filter(tMPC.getNeighborList(i), tIsSolid::get_));
+            List<List<Integer>> tClusters = MathEX.Adv.getClustersBFS(tIsSolid.filter(tIsSolid.size()),i -> tIsSolid.filter(tMPC.getNeighborList(i, tRNearest)));
             // 遍历团簇统计 lambda
             double rLambda = 0.0;
             for (List<Integer> subCluster : tClusters) {

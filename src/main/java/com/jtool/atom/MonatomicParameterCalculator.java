@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.jtool.code.CS.BOX_ONE;
-import static com.jtool.code.CS.BOX_ZERO;
+import static com.jtool.code.CS.*;
 import static com.jtool.code.UT.Code.toBOX;
 import static com.jtool.math.MathEX.*;
 
@@ -471,7 +470,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mNL.forEachNeighbor(aIdx, aRMax, false, (x, y, z, idx, dis) -> rNeighborList.add(idx));
         return rNeighborList;
     }
-    public List<Integer> getNeighborList(int aIdx) {return getNeighborList(aIdx, mUnitLen*1.423);}
+    public List<Integer> getNeighborList(int aIdx) {return getNeighborList(aIdx, mUnitLen*R_NEAREST_MUL);}
     
     @FunctionalInterface public interface INeighborListGetter {List<Integer> get(int aIdx);}
     
@@ -482,7 +481,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 主要用于内部使用
      * @author liqa
      * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度（此定义下默认和参考文献一致）
      * @return qlm 组成的矩阵，以及近邻列表
      */
     public Pair<IMatrix, IMatrix> calYlmMean(final int aL, final double aRNearest) {
@@ -544,7 +543,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         return new Pair<>(qlmReal, qlmImag);
     }
-    public Pair<IMatrix, IMatrix> calYlmMean(int aL) {return calYlmMean(aL, mUnitLen*1.423);}
+    public Pair<IMatrix, IMatrix> calYlmMean(int aL) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /**
@@ -552,7 +551,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 输出结果为按照输入原子顺序排列的向量；
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度（此定义下默认和参考文献一致）
      * @return Ql 组成的向量
      */
     public IVector calOOP(int aL, double aRNearest) {
@@ -574,7 +573,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return Ql;
     }
-    public IVector calOOP(int aL) {return calOOP(aL, mUnitLen*1.423);}
+    public IVector calOOP(int aL) {return calOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /**
@@ -585,7 +584,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      * @author liqa
      * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度（此定义下默认和参考文献一致）
      * @return ql 组成的向量
      */
     
@@ -625,7 +624,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return ql;
     }
-    public IVector calAOOP(int aL) {return calAOOP(aL, mUnitLen*1.423);}
+    public IVector calAOOP(int aL) {return calAOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     
@@ -638,7 +637,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 效果不理想，不知是什么原因，暂时不使用
      * @author liqa
-     * @param aRNearest 用来搜索的最近邻半径。默认为 1.423 倍单位长度（此定义下默认和参考文献一致）
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度（此定义下默认和参考文献一致）
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
      * @param aSolidThreshold 用来根据最近邻原子中，连接数超过此值则认为是固体的阈值，默认为 7
      * @return 最后判断得到是否是固体组成的逻辑向量
@@ -690,5 +689,5 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         return tConnectCount.greater(aSolidThreshold);
     }
     public ILogicalVector checkSolidQ6(double aRNearest) {return checkSolidQ6(aRNearest, 0.5, 7);}
-    public ILogicalVector checkSolidQ6() {return checkSolidQ6(mUnitLen*1.423);}
+    public ILogicalVector checkSolidQ6() {return checkSolidQ6(mUnitLen*R_NEAREST_MUL);}
 }

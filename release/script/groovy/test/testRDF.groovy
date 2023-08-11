@@ -8,7 +8,7 @@ import com.jtool.plot.Plotters
 /** 测试计算 RDF */
 
 // 设置线程数
-nThreads = 2;
+nThreads = 4;
 
 // 首先导入 Lmpdat
 data = Lmpdat.read('lmp/data/data-glass');
@@ -17,7 +17,10 @@ mpc = data.getMPC(nThreads);
 
 // 计算 RDF
 UT.Timer.tic();
-gr = mpc.calRDF();
+gr = mpc.calRDF(1000, 50);
+UT.Timer.toc("${nThreads} threads, RDF");
+UT.Timer.tic();
+gr = mpc.calRDF(1000, 50);
 UT.Timer.toc("${nThreads} threads, RDF");
 
 // 计算 SF
