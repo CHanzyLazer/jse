@@ -319,19 +319,21 @@ public class UT {
             return () -> new Iterator<T>() {
                 private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
                 private Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
+                private boolean mNextValid = false;
                 private T mNext = null;
                 
                 @Override public boolean hasNext() {
                     if (mIt == null) return false;
                     while (true) {
-                        if (mNext != null) return true;
+                        if (mNextValid) return true;
                         if (mIt.hasNext()) {
                             mNext = mIt.next();
+                            mNextValid = true;
                             continue;
                         }
                         if (mParentIt.hasNext()) {
                             mIt = mParentIt.next().iterator();
-                            mNext = null;
+                            mNextValid = false;
                             continue;
                         }
                         return false;
@@ -339,9 +341,8 @@ public class UT {
                 }
                 @Override public T next() {
                     if (hasNext()) {
-                        T tNext = mNext;
-                        mNext = null; // 设置 mNext 非法表示此时不再有 Next
-                        return tNext;
+                        mNextValid = false; // 设置非法表示此时不再有 Next
+                        return mNext;
                     } else {
                         throw new NoSuchElementException();
                     }
