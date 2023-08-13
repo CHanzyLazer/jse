@@ -137,7 +137,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 } else {
                     // 此界面被省略，累计概率到 k0
                     if (MathEX.Code.numericLess(tSurface, tLambda0) && pi.hasNext()) {
-                        tP0 *= ((Number)pi.next()).doubleValue();
+                        Number tProb = (Number)pi.next();
+                        tP0 *= (tProb==null ? Double.NaN : tProb.doubleValue());
                     } else {
                         System.err.println("WARNING: surfaces from restData is NOT compatible with the surfaces from this instance!!!");
                         tSurfaceCompat = false;
@@ -147,7 +148,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             }
             // 设置 k0
             if (tSurfaceCompat && aRestData.containsKey("k0")) {
-                mK0 = ((Number)aRestData.get("k0")).doubleValue() * tP0;
+                Number tK0 = (Number)aRestData.get("k0");
+                mK0 = (tK0==null ? Double.NaN : tK0.doubleValue()) * tP0;
             }
             // 设置概率
             if (tSurfaceCompat) {
@@ -522,8 +524,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         Map rSaveTo = new HashMap();
         rSaveTo.put("lambdas", UT.Code.map(mPointsOnLambda, point -> point.lambda));
         rSaveTo.put("multiples", UT.Code.map(mPointsOnLambda, point -> point.multiple));
-        rSaveTo.put("k0", mK0);
-        rSaveTo.put("prob", mPi.asList());
+        rSaveTo.put("k0", Double.isNaN(mK0) ? null : mK0);
+        rSaveTo.put("prob", UT.Code.map(mPi.asList(), prob -> (Double.isNaN(prob) ? null : prob)));
         rSaveTo.put("surfaceA", mSurfaceA);
         rSaveTo.put("surfaces", mSurfaces.asList());
         return rSaveTo;
