@@ -261,7 +261,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     /** IHasThreadPool stuffs */
     private final List<SystemFuture<?>> mRunningSystem = new ArrayList<>();
     private volatile boolean mDead = false;
-    @Override public final void shutdown() {if (!isShutdown()) {mDead = true; pool().shutdown();}}
+    @Override public final void shutdown() {if (!isShutdown()) {mDead = true; super.shutdown();}}
     @Override public final void shutdownNow() {
         // 会直接强制取消所有任务，然后回到一般 shutdown
         synchronized (this) {for (Future<?> tSystem : mRunningSystem) tSystem.cancel(true);}

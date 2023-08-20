@@ -1,5 +1,6 @@
 package com.jtool.code;
 
+import com.jtool.Main;
 import com.jtool.code.script.ScriptObjectGroovy;
 import com.jtool.code.script.ScriptObjectPython;
 import com.jtool.code.task.TaskCall;
@@ -141,10 +142,8 @@ public class SP {
             UT.IO.init();
             // 初始化 CLASS_LOADER
             initClassLoader_();
-            // 在 JVM 关闭时关闭 CLASS_LOADER
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {close();} catch (Exception ignored) {}
-            }));
+            // 在程序结束时关闭 CLASS_LOADER
+            Main.addGlobalAutoCloseable(Groovy::close);
         }
         /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
         private synchronized static void initClassLoader_() {
@@ -232,9 +231,7 @@ public class SP {
             // 初始化 JEP_INTERP
             initInterpreter_();
             // 在 JVM 关闭时关闭 JEP_INTERP
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {close();} catch (Exception ignored) {}
-            }));
+            Main.addGlobalAutoCloseable(Python::close);
         }
         /** 初始化内部的 JEP_INTERP，主要用于减少重复代码 */
         private synchronized static void initInterpreter_() {JEP_INTERP = new SharedInterpreter();}

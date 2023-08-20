@@ -57,7 +57,6 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
         }
         // 并行的情况，现在默认不进行分组，使用竞争获取任务的思路来获取任务，保证实际创建的线程在 parfor 任务中不会提前结束，并且可控
         else synchronized (this) {
-            assert mLocks != null;
             int tThreadNum = nThreads();
             // 获取错误，保留执行中的错误，并在任意一个线程发生错误时中断
             final AtomicReference<Throwable> tThrowable = new AtomicReference<>(null);
@@ -67,6 +66,7 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
             for (int id = 0; id < tThreadNum; ++id) {
                 final int fId = id;
                 pool().execute(() -> {
+                    assert mLocks != null;
                     mThreadID.set(fId); // 注册 id
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
                     while (true) {
@@ -108,7 +108,6 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
         }
         // 并行的情况，现在默认不进行分组，使用竞争获取任务的思路来获取任务，保证实际创建的线程在 parwhile 任务中不会提前结束，并且可控
         else synchronized (this) {
-            assert mLocks != null;
             int tThreadNum = nThreads();
             // 获取错误，保留执行中的错误，并在任意一个线程发生错误时中断
             final AtomicReference<Throwable> tThrowable = new AtomicReference<>(null);
@@ -116,6 +115,7 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
             for (int id = 0; id < tThreadNum; ++id) {
                 final int fId = id;
                 pool().execute(() -> {
+                    assert mLocks != null;
                     mThreadID.set(fId); // 注册 id
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
                     while (true) {

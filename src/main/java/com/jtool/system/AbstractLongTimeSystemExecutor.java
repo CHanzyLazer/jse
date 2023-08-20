@@ -63,7 +63,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     
     protected void shutdown_() {
         mDead = true;
-        pool().shutdown();
+        super.shutdown();
     }
     protected final synchronized void cancelThis() {
         mQueuedJobList.clear();
@@ -173,7 +173,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         pause();
         mKilled = true;
         mDead = true;
-        pool().shutdown();
+        super.shutdown();
     }
     
     

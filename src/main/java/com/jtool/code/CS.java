@@ -2,6 +2,7 @@ package com.jtool.code;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.jtool.Main;
 import com.jtool.atom.XYZ;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
@@ -125,8 +126,8 @@ public class CS {
             JAR_PATH = System.getProperty("java.class.path");
             // 创建默认 EXE，无内部线程池，windows 下使用 powershell 统一指令
             EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor();
-            // 在 JVM 关闭时关闭 EXE
-            Runtime.getRuntime().addShutdownHook(new Thread(EXE::shutdown));
+            // 在程序结束时关闭 EXE
+            Main.addGlobalAutoCloseable(EXE);
         }
     }
     

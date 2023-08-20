@@ -1,5 +1,6 @@
 package com.jtool.parallel;
 
+import com.jtool.Main;
 import com.jtool.code.UT;
 import com.jtool.code.operator.IOperator1;
 import org.jetbrains.annotations.ApiStatus;
@@ -135,9 +136,7 @@ public class MPI {
         UT.IO.init();
         // 认为创建时不会出现异常
         CONTEXT = new ZContext();
-        // 在 JVM 关闭时关闭 CONTEXT 以及所有的 Worker 避免遗留程序
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {close();} catch (Exception ignored) {}
-        }));
+        // 在程序结束时关闭 CONTEXT 以及所有的 Worker 避免遗留程序
+        Main.addGlobalAutoCloseable(MPI::close);
     }
 }

@@ -2,7 +2,6 @@ package com.jtool.rareevent;
 
 
 import com.jtool.atom.IAtomData;
-import com.jtool.parallel.IAutoShutdown;
 
 /**
  * 基于参数分割的稀有事件采样方法所采样的对象，需要能够从给定的点计算出对应的参数 λ，

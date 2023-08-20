@@ -13,9 +13,16 @@ import com.jtool.system.WSL
 import com.jtool.vasp.POSCAR
 
 
-try (def wsl = new WSL()) {
-    wsl.system('java');
-}
+// 全局任务提交器
+import static com.jtool.code.CS.Exec.EXE;
+
+// 使用 system() 指令来执行系统指令，返回指令的退出值
+def exitValue = EXE.system('echo 123456');
+
+// 程序正常退出会返回 0
+println("exitValue: $exitValue");
+
+
 
 //// 测试脚本调用中参数
 //SP.Groovy.run('script/groovy/run/runScript.groovy', '123', '456');

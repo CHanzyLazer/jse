@@ -1,7 +1,6 @@
 package com.jtool.rareevent;
 
 import com.jtool.atom.IAtomData;
-import com.jtool.parallel.IAutoShutdown;
 
 import java.util.List;
 

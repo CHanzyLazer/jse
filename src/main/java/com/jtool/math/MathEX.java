@@ -1,5 +1,6 @@
 package com.jtool.math;
 
+import com.jtool.Main;
 import com.jtool.code.collection.Pair;
 import com.jtool.code.operator.*;
 import com.jtool.math.function.Func2;
@@ -514,8 +515,8 @@ public class MathEX {
         private static ParforThreadPool POOL = new ParforThreadPool(1);
         public static void setThreadNum(int aThreadNum) {POOL.shutdown(); POOL = new ParforThreadPool(aThreadNum);}
         public static void closeThreadPool() {if (POOL.nThreads() > 1) setThreadNum(1);}
-        // 在 JVM 关闭时时关闭 POOL
-        static {Runtime.getRuntime().addShutdownHook(new Thread(() -> POOL.shutdown()));}
+        // 在程序结束时关闭 POOL
+        static {Main.addGlobalAutoCloseable(Par::closeThreadPool);}
     }
     
     

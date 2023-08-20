@@ -1,7 +1,7 @@
 package com.jtool.atom;
 
 import com.jtool.math.MathEX;
-import com.jtool.parallel.IAutoShutdown;
+import com.jtool.parallel.IShutdownable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -20,7 +20,7 @@ import static com.jtool.code.UT.Code.toXYZ;
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  * <p> 此类线程安全，包括多个线程同时访问同一个实例 </p>
  */
-public class NeighborListGetter implements IAutoShutdown {
+public class NeighborListGetter implements IShutdownable {
     // 用于 LinkedCell 使用
     private static class XYZ_IDX implements IXYZ {
         final int mIDX;

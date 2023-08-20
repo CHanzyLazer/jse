@@ -37,8 +37,8 @@ public abstract class AbstractThreadPool<TP extends IThreadPool> implements IThr
     /** 子类通过 super 指定需要的线程池 */
     private TP mPool;
     protected AbstractThreadPool(TP aPool) {mPool = aPool;}
-    protected void setPool(TP aPool) {mPool.shutdown(); mPool = aPool;}
-    protected TP pool() {return mPool;}
+    protected final void setPool(TP aPool) {mPool.shutdown(); mPool = aPool;}
+    protected final TP pool() {return mPool;}
     
     @Override public void shutdown() {mPool.shutdown();}
     @Override public void shutdownNow() {mPool.shutdownNow();}

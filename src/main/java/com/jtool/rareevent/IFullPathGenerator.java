@@ -2,7 +2,6 @@ package com.jtool.rareevent;
 
 
 import com.jtool.atom.IAtomData;
-import com.jtool.parallel.IAutoShutdown;
 
 /**
  * 各种稀有事件采样方法内部使用的类，需要能够从给定的输出点随机生成一个完整路径，

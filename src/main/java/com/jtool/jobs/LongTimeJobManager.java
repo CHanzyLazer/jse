@@ -2,6 +2,7 @@ package com.jtool.jobs;
 
 import com.jtool.code.UT;
 import com.jtool.iofile.ILoader;
+import com.jtool.parallel.IShutdownable;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -13,7 +14,7 @@ import static com.jtool.code.CS.WORKING_DIR;
  * @author liqa
  * <p> 长时任务的管理器，可以规范化超长时间的，可以中断的，任务的写法 </p>
  */
-public class LongTimeJobManager<T extends ILongTimeJobPool> {
+public class LongTimeJobManager<T extends ILongTimeJobPool> implements IShutdownable {
     private final String mStepFile;
     private final String mJobPoolFile;
     private final String mShutdownFile;
@@ -25,8 +26,6 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
     private final ILoader<T> mLongTimeJobPoolLoader;
     private final int mForceStep;
     private final boolean mWaitUntilDone;
-    
-    private final Thread mHook; // ShutdownHook
     
     /** 需要给定一个加载 TimeJobSupplier 的反序列化器 */
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader) {this(aUniqueName, aLongTimeJobPoolLoader, false);}
@@ -44,10 +43,6 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
         mLongTimeJobPoolLoader = aLongTimeJobPoolLoader;
         mForceStep = aForceStep;
         mWaitUntilDone = aWaitUntilDone;
-        
-        // 在 JVM 意外关闭时手动执行杀死 kill
-        mHook = new Thread(this::shutdown_);
-        Runtime.getRuntime().addShutdownHook(mHook);
     }
     
     @FunctionalInterface public interface IInputTask<V> {void run(V in);}
@@ -157,10 +152,8 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> {
     /** 外部用来手动关闭这个 Manager 的接口 */
     private volatile boolean mDead = false;
     public boolean isShutdown() {return mDead;}
-    public void shutdown() {
+    @Override public void shutdown() {
         if (isShutdown()) return;
-        shutdown_();
-        Runtime.getRuntime().removeShutdownHook(mHook);
+        mDead = true;
     }
-    protected void shutdown_() {mDead = true;}
 }
