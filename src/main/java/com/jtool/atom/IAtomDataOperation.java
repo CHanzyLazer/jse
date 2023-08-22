@@ -1,7 +1,6 @@
 package com.jtool.atom;
 
 
-import com.jtool.code.operator.IOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
 
@@ -15,15 +14,25 @@ import static com.jtool.code.CS.RANDOM;
  * @author liqa
  */
 public interface IAtomDataOperation {
+    
+    interface IAtomSetter {
+        IAtomSetter setX(double aX);
+        IAtomSetter setY(double aY);
+        IAtomSetter setZ(double aZ);
+        IAtomSetter setID(int aID);
+        IAtomSetter setType(int aType);
+    }
+    @FunctionalInterface
+    interface IAtomUpdater {void update(IAtom aAtom, IAtomSetter aAtomSetter);}
     /**
-     * 根据通用的返回种类的操作 aTypeOperator 来遍历修改粒子的种类
+     * 根据通用的原子更新器 aUpdater 来遍历修改粒子
      * @author liqa
      * @param aMinTypeNum 建议最小的种类数目
-     * @param aTypeOperator 自定义的种类过滤器，输入 {@link IAtom}，返回过滤后的 type
-     * @return 过滤后的 AtomData
+     * @param aUpdater 自定义的原子过滤器，输入 {@link IAtom} 以及用来设置修改的 {@link IAtomSetter}
+     * @return 更新后的 AtomData
      */
-    IAtomData mapUpdateType(int aMinTypeNum, IOperator1<Integer, IAtom> aTypeOperator);
-    default IAtomData mapUpdateType(IOperator1<Integer, IAtom> aTypeOperator) {return mapUpdateType(1, aTypeOperator);}
+    IAtomData mapUpdate(int aMinTypeNum, IAtomUpdater aUpdater);
+    default IAtomData mapUpdate(IAtomUpdater aUpdater) {return mapUpdate(1, aUpdater);}
     
     
     /**
@@ -31,7 +40,7 @@ public interface IAtomDataOperation {
      * @author liqa
      * @param aRandom 可选自定义的随机数生成器
      * @param aTypeWeights 每个种类的权重
-     * @return 过滤后的 AtomData
+     * @return 更新后的 AtomData
      */
     IAtomData randomUpdateTypeByWeight(Random aRandom, IVector aTypeWeights);
     default IAtomData randomUpdateTypeByWeight(IVector aTypeWeights) {return randomUpdateTypeByWeight(RANDOM, aTypeWeights);}

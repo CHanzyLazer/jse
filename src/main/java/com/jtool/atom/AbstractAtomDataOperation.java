@@ -1,13 +1,11 @@
 package com.jtool.atom;
 
-import com.jtool.code.operator.IOperator1;
 import com.jtool.math.vector.IVector;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -15,17 +13,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author liqa
  */
 public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
-    @Override public IAtomData mapUpdateType(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
+    
+    protected final static class AtomSetter implements IAtomSetter {
+        private final Atom mAtom;
+        public AtomSetter(Atom rAtom) {mAtom = rAtom;}
+        @Override public IAtomSetter setX(double aX) {mAtom.mX = aX; return this;}
+        @Override public IAtomSetter setY(double aY) {mAtom.mY = aY; return this;}
+        @Override public IAtomSetter setZ(double aZ) {mAtom.mZ = aZ; return this;}
+        @Override public IAtomSetter setID(int aID) {mAtom.mID = aID; return this;}
+        @Override public IAtomSetter setType(int aType) {mAtom.mType = aType; return this;}
+    }
+    
+    @Override public IAtomData mapUpdate(int aMinTypeNum, IAtomUpdater aUpdater) {
         IAtomData tThis = thisAtomData_();
         List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
         
         int tAtomTypeNum = Math.max(aMinTypeNum, tThis.atomTypeNum());
         for (IAtom oAtom : tThis.atoms()) {
             Atom tAtom = new Atom(oAtom);
-            // 更新粒子种类数目
-            int tType = aFilter.cal(oAtom);
-            if (tType > tAtomTypeNum) tAtomTypeNum = tType;
-            tAtom.mType = tType;
+            // 传入 AtomSetter 来更新粒子
+            aUpdater.update(oAtom, new AtomSetter(tAtom));
+            // 更新种类数
+            if (tAtom.mType > tAtomTypeNum) tAtomTypeNum = tAtom.mType;
             // 保存修改后的原子
             rAtoms.add(tAtom);
         }
@@ -51,9 +60,8 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         while (tTypeList.size() < tAtomNum) tTypeList.add(tMaxType);
         // 随机打乱这些种类标记
         Collections.shuffle(tTypeList, aRandom);
-        // 使用 typeFilter 获取种类修改后的 AtomData
-        final AtomicInteger idx = new AtomicInteger();
-        return mapUpdateType(tMaxType, atom -> tTypeList.get(idx.getAndIncrement()));
+        // 使用 mapUpdate 获取种类修改后的 AtomData
+        return mapUpdate(tMaxType, (atom, setter) -> setter.setType(tTypeList.remove(tTypeList.size()-1)));
     }
     
     /** stuff to override */
