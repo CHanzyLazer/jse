@@ -41,9 +41,9 @@ public interface IAtomData {
     /** 统一提供拷贝接口 */
     IAtomData copy();
     
-    /** 返回原子数据过滤器，现在不再使用专门的 Generator */
-    IAtomDataFilter filter();
-    
+    /** 返回原子数据计算器，现在不再使用专门的 Generator */
+    IAtomDataOperation operation();
+    @VisibleForTesting default IAtomDataOperation opt() {return operation();}
     
     /// 实用功能，这里依旧保留这种写法
     /**

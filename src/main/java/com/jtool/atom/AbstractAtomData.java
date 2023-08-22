@@ -27,7 +27,7 @@ public abstract class AbstractAtomData implements IAtomData {
     
     @Override public double volume() {return boxHi().minus(boxLo()).prod();}
     
-    @Override public final IAtomDataFilter filter() {return new AbstractAtomDataFilter() {
+    @Override public final IAtomDataOperation operation() {return new AbstractAtomDataOperation() {
         @Override protected IAtomData thisAtomData_() {return AbstractAtomData.this;}
     };}
     

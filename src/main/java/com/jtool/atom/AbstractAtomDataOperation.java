@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * 一般的过滤器的实现，值拷贝一次并使用 {@code List<IAtom>} 来存储，尽管这会占据更多的内存
+ * 一般的运算器的实现，值拷贝一次并使用 {@code List<IAtom>} 来存储，尽管这会占据更多的内存
  * @author liqa
  */
-public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
-    @Override public IAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
+public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
+    @Override public IAtomData mapUpdateType(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
         IAtomData tThis = thisAtomData_();
         List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
         
@@ -34,7 +34,7 @@ public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
     }
     
     
-    @Override public IAtomData typeWeight(Random aRandom, IVector aTypeWeights) {
+    @Override public IAtomData randomUpdateTypeByWeight(Random aRandom, IVector aTypeWeights) {
         double tTotWeight = aTypeWeights.sum();
         if (tTotWeight <= 0.0) throw new RuntimeException("TypeWeights Must be Positive");
         
@@ -53,7 +53,7 @@ public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
         Collections.shuffle(tTypeList, aRandom);
         // 使用 typeFilter 获取种类修改后的 AtomData
         final AtomicInteger idx = new AtomicInteger();
-        return type(tMaxType, atom -> tTypeList.get(idx.getAndIncrement()));
+        return mapUpdateType(tMaxType, atom -> tTypeList.get(idx.getAndIncrement()));
     }
     
     /** stuff to override */
