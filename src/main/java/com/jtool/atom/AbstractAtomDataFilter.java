@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
     @Override public IAtomData type(int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
         IAtomData tThis = thisAtomData_();
-        final List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
+        List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
         
         int tAtomTypeNum = Math.max(aMinTypeNum, tThis.atomTypeNum());
         for (IAtom oAtom : tThis.atoms()) {
@@ -29,15 +29,8 @@ public abstract class AbstractAtomDataFilter implements IAtomDataFilter {
             // 保存修改后的原子
             rAtoms.add(tAtom);
         }
-        final int fAtomTypeNum = tAtomTypeNum;
         
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IXYZ boxLo() {return tThis.boxLo();}
-            @Override public IXYZ boxHi() {return tThis.boxHi();}
-            @Override public int atomNum() {return rAtoms.size();}
-            @Override public int atomTypeNum() {return fAtomTypeNum;}
-        };
+        return new AtomData(rAtoms, tAtomTypeNum, tThis.boxLo(), tThis.boxHi());
     }
     
     

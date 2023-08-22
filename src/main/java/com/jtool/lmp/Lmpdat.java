@@ -1,9 +1,6 @@
 package com.jtool.lmp;
 
-import com.jtool.atom.AbstractAtomData;
-import com.jtool.atom.IAtom;
-import com.jtool.atom.IAtomData;
-import com.jtool.atom.XYZ;
+import com.jtool.atom.*;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.math.MathEX;
@@ -17,6 +14,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.jtool.code.CS.*;
+import static com.jtool.code.UT.Code.toXYZ;
 
 /**
  * @author liqa
@@ -89,7 +87,7 @@ public class Lmpdat extends AbstractAtomData {
     public Lmpdat setDenseNormalized() {
         if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("setDenseNormalized is temporarily support NORMAL Box only");
         
-        XYZ oShiftedBox = mBox.shiftedBox();
+        XYZ oShiftedBox = toXYZ(mBox.shiftedBox());
         double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / atomNum());
         tScale = 1.0 / tScale;
         
@@ -149,8 +147,8 @@ public class Lmpdat extends AbstractAtomData {
             @Override public int size() {return mAtomData.rowNumber();}
         };
     }
-    @Override public XYZ boxLo() {return mBox.boxLo();}
-    @Override public XYZ boxHi() {return mBox.boxHi();}
+    @Override public IXYZ boxLo() {return mBox.boxLo();}
+    @Override public IXYZ boxHi() {return mBox.boxHi();}
     @Override public int atomNum() {return mAtomData.rowNumber();}
     @Override public int atomTypeNum() {return mAtomTypeNum;}
     @Override public double volume() {
@@ -162,7 +160,7 @@ public class Lmpdat extends AbstractAtomData {
     
     /// 创建 Lmpdat
     /** 拷贝一份 Lmpdat，为了简洁还是只保留 copy 一种方法 */
-    public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.copy(), mVelocities==null?null:mVelocities.copy());}
+    @Override public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.copy(), mVelocities==null?null:mVelocities.copy());}
     
     /** 从 IAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
     public static Lmpdat fromAtomData(IAtomData aAtomData) {return fromAtomData_(aAtomData, null);}

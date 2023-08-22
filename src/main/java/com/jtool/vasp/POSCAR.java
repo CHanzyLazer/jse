@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.jtool.code.CS.BOX_ZERO;
+import static com.jtool.code.UT.Code.toXYZ;
 
 /**
  * @author liqa
@@ -96,11 +97,11 @@ public class POSCAR extends AbstractAtomData {
             @Override public int size() {return mDirect.rowNumber();}
         };
     }
-    @Override public XYZ boxLo() {
+    @Override public IXYZ boxLo() {
         if (!mIsDiagBox) throw new RuntimeException("boxLo is temporarily support Diagonal Box only");
         return BOX_ZERO;
     }
-    @Override public XYZ boxHi() {
+    @Override public IXYZ boxHi() {
         if (!mIsDiagBox) throw new RuntimeException("boxHi is temporarily support Diagonal Box only");
         XYZ tBoxHi = new XYZ(mBox.refSlicer().diag());
         tBoxHi.multiply2this(mBoxScale);
@@ -115,6 +116,9 @@ public class POSCAR extends AbstractAtomData {
     }
     
     
+    /** 拷贝一份 POSCAR */
+    @Override public POSCAR copy() {return new POSCAR(mDataName, mBox.copy(), mBoxScale, Arrays.copyOf(mAtomTypes, mAtomTypes.length), mAtomNumbers, mSelectiveDynamics, mDirect.copy());}
+    
     
     /** 从 IAtomData 来创建，POSCAR 需要额外的原子种类字符串以及额外的是否开启 SelectiveDynamics */
     public static POSCAR fromAtomData(IAtomData aAtomData, String... aAtomTypes) {return fromAtomData(aAtomData, false, aAtomTypes);}
@@ -123,11 +127,11 @@ public class POSCAR extends AbstractAtomData {
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
             POSCAR tPOSCAR = (POSCAR)aAtomData;
-            return new POSCAR(tPOSCAR.mDataName, Matrices.diag(aAtomData.boxHi().minus(aAtomData.boxLo()).data()), 1.0, aAtomTypes, tPOSCAR.mAtomNumbers, aSelectiveDynamics, tPOSCAR.mDirect);
+            return new POSCAR(tPOSCAR.mDataName, tPOSCAR.mBox.copy(), tPOSCAR.mBoxScale, aAtomTypes, tPOSCAR.mAtomNumbers, aSelectiveDynamics, tPOSCAR.mDirect.copy());
         } else {
             // 一般的情况，这里直接遍历 atoms 来创建，这里需要按照 type 来排序
-            IXYZ tBoxLo = aAtomData.boxLo();
-            IXYZ tBox = aAtomData.boxHi().minus(tBoxLo);
+            XYZ tBoxLo = toXYZ(aAtomData.boxLo());
+            XYZ tBox = toXYZ(aAtomData.boxHi().minus(tBoxLo));
             
             int tAtomTypeNum = aAtomData.atomTypeNum();
             IVector rAtomNumbers = Vectors.zeros(tAtomTypeNum);
@@ -136,9 +140,9 @@ public class POSCAR extends AbstractAtomData {
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
                 for (IAtom tAtom : aAtomData.atoms(tTypeMM+1)) {
                     rAtomNumbers.increment_(tTypeMM);
-                    rDirect.set(tIdx, 0, (tAtom.x()-tBoxLo.x())/tBox.x());
-                    rDirect.set(tIdx, 1, (tAtom.y()-tBoxLo.y())/tBox.y());
-                    rDirect.set(tIdx, 2, (tAtom.z()-tBoxLo.z())/tBox.z());
+                    rDirect.set(tIdx, 0, (tAtom.x()-tBoxLo.mX)/tBox.mX);
+                    rDirect.set(tIdx, 1, (tAtom.y()-tBoxLo.mY)/tBox.mY);
+                    rDirect.set(tIdx, 2, (tAtom.z()-tBoxLo.mZ)/tBox.mZ);
                     ++tIdx;
                 }
             }

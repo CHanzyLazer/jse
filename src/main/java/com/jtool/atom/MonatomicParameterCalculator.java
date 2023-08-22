@@ -20,7 +20,8 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.jtool.code.CS.*;
-import static com.jtool.code.UT.Code.toBOX;
+import static com.jtool.code.UT.Code.newBox;
+import static com.jtool.code.UT.Code.toXYZ;
 import static com.jtool.math.MathEX.*;
 
 /**
@@ -58,12 +59,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aThreadNum MPC 进行计算会使用的线程数
      * @param aCellStep 内部用于加速近邻搜索的 LinkedCell 不同 Cell 大小的步长
      */
-    public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, XYZ aBoxLo, XYZ aBoxHi, int aThreadNum, double aCellStep) {
+    public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, IXYZ aBoxLo, IXYZ aBoxHi, int aThreadNum, double aCellStep) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
-        mBoxLo = aBoxLo;
-        mBox = aBoxLo==BOX_ZERO ? aBoxHi : aBoxHi.minus(aBoxLo);
+        mBoxLo = toXYZ(newBox(aBoxLo));
+        mBox   = toXYZ((aBoxLo==BOX_ZERO) ? newBox(aBoxHi) : aBoxHi.minus(aBoxLo));
         
         // 获取合适的 XYZ[] 数据
         mAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ);
@@ -79,7 +80,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, BOX_ZERO, aBox);}
     public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, IXYZ aBoxLo, IXYZ aBoxHi) {this(aAtomDataXYZ, aBoxLo, aBoxHi, 1);}
     public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, IXYZ aBoxLo, IXYZ aBoxHi, int aThreadNum) {this(aAtomDataXYZ, aBoxLo, aBoxHi, aThreadNum, 2.0);}
-    public MonatomicParameterCalculator(Iterable<? extends IXYZ> aAtomDataXYZ, IXYZ aBoxLo, IXYZ aBoxHi, int aThreadNum, double aCellStep) {this(aAtomDataXYZ, toBOX(aBoxLo), toBOX(aBoxHi), aThreadNum, aCellStep);}
     
     public MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
     public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum) {this(aAtomData, aThreadNum, 2.0);}

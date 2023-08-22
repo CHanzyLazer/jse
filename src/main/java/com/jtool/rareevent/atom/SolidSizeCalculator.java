@@ -17,7 +17,7 @@ public class SolidSizeCalculator implements IParameterCalculator<IAtomData> {
     public SolidSizeCalculator() {this(R_NEAREST_MUL);}
     
     @Override public double lambdaOf(IAtomData aPoint) {
-        try (MonatomicParameterCalculator tMPC = aPoint.getMPC()) {
+        try (MonatomicParameterCalculator tMPC = aPoint.getMonatomicParameterCalculator()) {
             return tMPC.checkSolidQ6(tMPC.unitLen()*mRNearestMul).count();
         }
     }

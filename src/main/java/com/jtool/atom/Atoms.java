@@ -24,8 +24,8 @@ public class Atoms {
      * @return 返回由此创建的 atomData
      */
     public static IAtomData FCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
-        final XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
-        final List<IAtom> rAtoms = new ArrayList<>(4*aReplicateX*aReplicateY*aReplicateZ);
+        XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
+        List<IAtom> rAtoms = new ArrayList<>(4*aReplicateX*aReplicateY*aReplicateZ);
         
         int tID = 1;
         for (int i = 0; i < aReplicateX; ++i) for (int j = 0; j < aReplicateY; ++j) for (int k = 0; k < aReplicateZ; ++k) {
@@ -37,13 +37,7 @@ public class Atoms {
             rAtoms.add(new Atom(tX   , tY+tS, tZ+tS, tID)); ++tID;
         }
         
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IXYZ boxLo() {return BOX_ZERO;}
-            @Override public IXYZ boxHi() {return tBoxHi;}
-            @Override public int atomNum() {return rAtoms.size();}
-            @Override public int atomTypeNum() {return 1;}
-        };
+        return new AtomData(rAtoms, tBoxHi);
     }
     public static IAtomData FCC(double aCellSize, int aReplicate) {return FCC(aCellSize, aReplicate, aReplicate, aReplicate);}
 }

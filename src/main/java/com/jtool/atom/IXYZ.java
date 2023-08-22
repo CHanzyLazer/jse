@@ -7,6 +7,10 @@ import com.jtool.math.vector.RefVector;
 
 import java.util.List;
 
+/**
+ * 通用的 XYZ 坐标接口，使用此接口还有一重含义时此 XYZ 是不建议修改的
+ * @author liqa
+ */
 public interface IXYZ {
     double x();
     double y();

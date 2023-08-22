@@ -38,6 +38,9 @@ public interface IAtomData {
     IXYZ boxHi();
     double volume();
     
+    /** 统一提供拷贝接口 */
+    IAtomData copy();
+    
     /** 返回原子数据过滤器，现在不再使用专门的 Generator */
     IAtomDataFilter filter();
     

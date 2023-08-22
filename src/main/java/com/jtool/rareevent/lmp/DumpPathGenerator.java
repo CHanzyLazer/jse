@@ -1,9 +1,6 @@
 package com.jtool.rareevent.lmp;
 
-import com.jtool.atom.AbstractAtomData;
-import com.jtool.atom.IAtom;
-import com.jtool.atom.IAtomData;
-import com.jtool.atom.IXYZ;
+import com.jtool.atom.*;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.iofile.IIOFiles;
@@ -73,7 +70,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, IInFile aGenDumpIn, double aTimestep) {
         mLMP = aLMP;
         // 初始点也需要移除速度，保证会从不同路径开始
-        mInitPoints = Lammpstrj.fromAtomData(UT.Code.map(aInitAtomDataList, this::reducedPoint));
+        mInitPoints = Lammpstrj.fromAtomDataList(UT.Code.map(aInitAtomDataList, this::reducedPoint));
         mTimestep = aTimestep;
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;
@@ -157,11 +154,12 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     
     @Override public double timeOf(IAtomData aPoint) {return (aPoint instanceof SubLammpstrj) ? ((SubLammpstrj)aPoint).timeStep()*mTimestep : 0.0;}
     
-    @Override public IAtomData reducedPoint(final IAtomData aPoint) {
+    @Override public IAtomData reducedPoint(IAtomData aPoint) {
         // 如果本来就没有速率则不需要执行此操作
         if (!aPoint.hasVelocities()) return aPoint;
         // 遍历拷贝数据，只需要坐标和种类数据
-        final IMatrix rData = Matrices.zeros(aPoint.atomNum(), ATOM_DATA_KEYS_TYPE_XYZ.length);
+        final int tAtomNum = aPoint.atomNum();
+        final IMatrix rData = Matrices.zeros(tAtomNum, ATOM_DATA_KEYS_TYPE_XYZ.length);
         int row = 0;
         for (IAtom tAtom : aPoint.atoms()) {
             rData.set_(row, TYPE_XYZ_TYPE_COL, tAtom.type());
@@ -170,26 +168,18 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
             rData.set_(row, TYPE_XYZ_Z_COL, tAtom.z());
             ++row;
         }
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {
-                return new AbstractRandomAccessList<IAtom>() {
-                    @Override public IAtom get(int index) {
-                        return new IAtom() {
-                            @Override public double x() {return rData.get(index, TYPE_XYZ_X_COL);}
-                            @Override public double y() {return rData.get(index, TYPE_XYZ_Y_COL);}
-                            @Override public double z() {return rData.get(index, TYPE_XYZ_Z_COL);}
-                            @Override public int id() {return index+1;}
-                            @Override public int type() {return (int)rData.get(index, TYPE_XYZ_TYPE_COL);}
-                        };
-                    }
-                    @Override public int size() {return aPoint.atomNum();}
+        return new AtomData(new AbstractRandomAccessList<IAtom>() {
+            @Override public IAtom get(int index) {
+                return new IAtom() {
+                    @Override public double x() {return rData.get(index, TYPE_XYZ_X_COL);}
+                    @Override public double y() {return rData.get(index, TYPE_XYZ_Y_COL);}
+                    @Override public double z() {return rData.get(index, TYPE_XYZ_Z_COL);}
+                    @Override public int id() {return index+1;}
+                    @Override public int type() {return (int)rData.get(index, TYPE_XYZ_TYPE_COL);}
                 };
             }
-            @Override public IXYZ boxLo() {return aPoint.boxLo();}
-            @Override public IXYZ boxHi() {return aPoint.boxHi();}
-            @Override public int atomNum() {return aPoint.atomNum();}
-            @Override public int atomTypeNum() {return aPoint.atomTypeNum();}
-        };
+            @Override public int size() {return tAtomNum;}
+        }, aPoint.atomTypeNum(), aPoint.boxLo(), aPoint.boxHi());
     }
     
     

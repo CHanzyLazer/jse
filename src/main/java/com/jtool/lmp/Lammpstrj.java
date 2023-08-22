@@ -11,6 +11,7 @@ import com.jtool.math.vector.IVector;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -249,30 +250,41 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
         @Override public int atomTypeNum() {return mAtomTypeNum;}
         
         @Override public double volume() {return mBox.shiftedBox().prod();}
+        
+        @Override public SubLammpstrj copy() {return new SubLammpstrj(mTimeStep, Arrays.copyOf(mBoxBounds, mBoxBounds.length), mBox.copy(), mAtomData.copy());}
     }
     
+    
+    /** 拷贝一份 Lammpstrj */
+    @Override public Lammpstrj copy() {
+        SubLammpstrj[] rData = new SubLammpstrj[mData.length];
+        for (int i = 0; i < mData.length; ++i) {
+            rData[i] = mData[i].copy();
+        }
+        return new Lammpstrj(rData);
+    }
     
     /// 创建 Lammpstrj
     /** 从 IAtomData 来创建，对于 Lammpstrj 可以支持容器的 aAtomData */
     public static Lammpstrj fromAtomData(IAtomData aAtomData) {
-        return new Lammpstrj(fromAtomData_(aAtomData, 0));
+        return new Lammpstrj(fromAtomData_(aAtomData, getTimeStep(aAtomData, 0)));
     }
     public static Lammpstrj fromAtomData(IAtomData... aAtomDataArray) {
         if (aAtomDataArray == null || aAtomDataArray.length == 0) return new Lammpstrj();
         
         SubLammpstrj[] rData = new SubLammpstrj[aAtomDataArray.length];
         for (int i = 0; i < aAtomDataArray.length; ++i) {
-            rData[i] = fromAtomData_(aAtomDataArray[i], i);
+            rData[i] = fromAtomData_(aAtomDataArray[i], getTimeStep(aAtomDataArray[i], i));
         }
         return new Lammpstrj(rData);
     }
-    public static Lammpstrj fromAtomData(Iterable<? extends IAtomData> aAtomDataList) {
+    public static Lammpstrj fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList) {
         if (aAtomDataList == null) return new Lammpstrj();
         
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         int i = 0;
         for (IAtomData subAtomData : aAtomDataList) {
-            rLammpstrj.add(fromAtomData_(subAtomData, i));
+            rLammpstrj.add(fromAtomData_(subAtomData, getTimeStep(subAtomData, i)));
             ++i;
         }
         return new Lammpstrj(rLammpstrj);
@@ -283,13 +295,18 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             return fromAtomData_(((Lammpstrj)aAtomData).defaultFrame(), aTimeStep);
         } else
         if (aAtomData instanceof SubLammpstrj) {
-            // SubLammpstrj 则直接获取即可（专门优化，保留排序，具体坐标的形式，对应的标签等，注意时间步会抹除）
+            // SubLammpstrj 则直接获取即可（专门优化，保留排序，具体坐标的形式，对应的标签等）
             SubLammpstrj tSubLammpstrj = (SubLammpstrj)aAtomData;
-            return new SubLammpstrj(aTimeStep, BOX_BOUND, tSubLammpstrj.mBox.copy(), tSubLammpstrj.mAtomData);
+            return new SubLammpstrj(aTimeStep, Arrays.copyOf(tSubLammpstrj.mBoxBounds, tSubLammpstrj.mBoxBounds.length), tSubLammpstrj.mBox.copy(), tSubLammpstrj.mAtomData.copy());
         } else {
             // 一般的情况，通过 dataXXX 来创建，注意这里认为获取时已经经过了值拷贝，因此不再需要 copy
             return new SubLammpstrj(aTimeStep, BOX_BOUND, new Box(aAtomData.boxLo(), aAtomData.boxHi()), aAtomData.hasVelocities()?aAtomData.dataAll():aAtomData.dataSTD());
         }
+    }
+    private static long getTimeStep(IAtomData aAtomData, long aDefault) {
+        if (aAtomData instanceof Lammpstrj) return ((Lammpstrj)aAtomData).defaultFrame().mTimeStep;
+        if (aAtomData instanceof SubLammpstrj) return ((SubLammpstrj)aAtomData).mTimeStep;
+        return aDefault;
     }
     /** 对于 matlab 调用的兼容 */
     public static Lammpstrj fromAtomData_compat(Object... aAtomDataArray) {
@@ -298,7 +315,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         int i = 0;
         for (Object subAtomData : aAtomDataArray) if (subAtomData instanceof IAtomData) {
-            rLammpstrj.add(fromAtomData_((IAtomData)subAtomData, i));
+            rLammpstrj.add(fromAtomData_((IAtomData)subAtomData, getTimeStep((IAtomData)subAtomData, i)));
             ++i;
         }
         return new Lammpstrj(rLammpstrj);

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.jtool.code.CS.BOX_ZERO;
 import static com.jtool.math.MathEX.Func;
 import static com.jtool.math.MathEX.Vec;
 
@@ -62,8 +61,8 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
     public IAtomData atomDataFCC(double aCellSize, int aReplicateX, int aReplicateY, int aReplicateZ) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
-        final XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
-        final List<IAtom> rAtoms = new ArrayList<>(4*aReplicateX*aReplicateY*aReplicateZ);
+        XYZ tBoxHi = new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ);
+        List<IAtom> rAtoms = new ArrayList<>(4*aReplicateX*aReplicateY*aReplicateZ);
         
         int tID = 1;
         for (int i = 0; i < aReplicateX; ++i) for (int j = 0; j < aReplicateY; ++j) for (int k = 0; k < aReplicateZ; ++k) {
@@ -75,13 +74,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
             rAtoms.add(new Atom(tX   , tY+tS, tZ+tS, tID)); ++tID;
         }
         
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IXYZ boxLo() {return BOX_ZERO;}
-            @Override public IXYZ boxHi() {return tBoxHi;}
-            @Override public int atomNum() {return rAtoms.size();}
-            @Override public int atomTypeNum() {return 1;}
-        };
+        return new AtomData(rAtoms, tBoxHi);
     }
     public IAtomData atomDataFCC(double aCellSize, int aReplicate) {return atomDataFCC(aCellSize, aReplicate, aReplicate, aReplicate);}
     
@@ -95,10 +88,10 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回过滤后的 type
      * @return 过滤后的 AtomData
      */
-    public IAtomData typeFilterAtomData(final IAtomData aAtomData, int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
+    public IAtomData typeFilterAtomData(IAtomData aAtomData, int aMinTypeNum, IOperator1<Integer, IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
-        final List<IAtom> rAtoms = new ArrayList<>(aAtomData.atomNum());
+        List<IAtom> rAtoms = new ArrayList<>(aAtomData.atomNum());
         
         int tAtomTypeNum = Math.max(aMinTypeNum, aAtomData.atomTypeNum());
         for (IAtom oAtom : aAtomData.atoms()) {
@@ -110,15 +103,8 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
             // 保存修改后的原子
             rAtoms.add(tAtom);
         }
-        final int fAtomTypeNum = tAtomTypeNum;
         
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IXYZ boxLo() {return aAtomData.boxLo();}
-            @Override public IXYZ boxHi() {return aAtomData.boxHi();}
-            @Override public int atomNum() {return rAtoms.size();}
-            @Override public int atomTypeNum() {return fAtomTypeNum;}
-        };
+        return new AtomData(rAtoms, tAtomTypeNum, aAtomData.boxLo(), aAtomData.boxHi());
     }
     public IAtomData typeFilterAtomData(final IAtomData aAtomData, IOperator1<Integer, IAtom> aFilter) {return typeFilterAtomData(aAtomData, 1, aFilter);}
     
@@ -162,21 +148,18 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
      * @param aFilter 自定义的过滤器，输入 {@link IAtom}，返回是否保留
      * @return 过滤后的 AtomData
      */
-    public IAtomData filterAtomData(final IAtomData aAtomData, IFilter<IAtom> aFilter) {
+    public IAtomData filterAtomData(IAtomData aAtomData, IFilter<IAtom> aFilter) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
-        final List<IAtom> rAtoms = new ArrayList<>();
+        List<IAtom> rAtoms = new ArrayList<>();
         
         for (IAtom tAtom : aAtomData.atoms()) if (aFilter.accept(tAtom)) {
             rAtoms.add(tAtom);
         }
         
-        return new AbstractAtomData() {
-            @Override public List<IAtom> atoms() {return rAtoms;}
-            @Override public IXYZ boxLo() {return aAtomData.boxLo();}
-            @Override public IXYZ boxHi() {return aAtomData.boxHi();}
-            @Override public int atomNum() {return rAtoms.size();}
-            @Override public int atomTypeNum() {return aAtomData.atomTypeNum();}
+        final boolean tHasVelocities = aAtomData.hasVelocities();
+        return new AtomData(rAtoms, aAtomData.atomTypeNum(), aAtomData.boxLo(), aAtomData.boxHi()) {
+            @Override public boolean hasVelocities() {return tHasVelocities;}
         };
     }
     

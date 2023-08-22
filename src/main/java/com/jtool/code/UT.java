@@ -432,20 +432,20 @@ public class UT {
         }
         
         /**
-         * Convert IHasXYZ to XYZ to optimise
+         * Convert IXYZ to XYZ to optimise, result should be read only!
          * @author liqa
          */
         public static XYZ toXYZ(IXYZ aXYZ) {
             return (aXYZ instanceof XYZ) ? (XYZ)aXYZ : new XYZ(aXYZ);
         }
         /**
-         * Convert IHasXYZ to XYZ for box usage
+         * Return new IXYZ for Box usage, consider the constant
          * @author liqa
          */
-        public static XYZ toBOX(IXYZ aXYZ) {
+        public static IXYZ newBox(IXYZ aXYZ) {
             if (aXYZ == BOX_ONE) return BOX_ONE;
             if (aXYZ == BOX_ZERO) return BOX_ZERO;
-            return toXYZ(aXYZ);
+            return new XYZ(aXYZ);
         }
         
         
@@ -851,14 +851,14 @@ public class UT {
             tX = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
             tY = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
             tZ = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
-            final XYZ tBoxLo = new XYZ(tX, tY, tZ);
+            XYZ tBoxLo = new XYZ(tX, tY, tZ);
             tX = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
             tY = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
             tZ = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
-            final XYZ tBoxHi = new XYZ(tX, tY, tZ);
+            XYZ tBoxHi = new XYZ(tX, tY, tZ);
             // 获取原子数据，这里只有 XYZ 数据
-            final int tAtomNum = aBytes.length/(DOUBLE_LEN*3) - 2;
-            final List<IAtom> rAtoms = new ArrayList<>(tAtomNum);
+            int tAtomNum = aBytes.length/(DOUBLE_LEN*3) - 2;
+            List<IAtom> rAtoms = new ArrayList<>(tAtomNum);
             for (int tID = 1; tID <= tAtomNum; ++tID) {
                 tX = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
                 tY = bytes2double(aBytes, tIdx); tIdx+=DOUBLE_LEN;
@@ -866,13 +866,7 @@ public class UT {
                 rAtoms.add(new Atom(tX, tY, tZ, tID));
             }
             // 返回结果
-            return new AbstractAtomData() {
-                @Override public List<IAtom> atoms() {return rAtoms;}
-                @Override public IXYZ boxLo() {return tBoxLo;}
-                @Override public IXYZ boxHi() {return tBoxHi;}
-                @Override public int atomNum() {return tAtomNum;}
-                @Override public int atomTypeNum() {return 1;}
-            };
+            return new AtomData(rAtoms, tBoxLo, tBoxHi);
         }
     }
     

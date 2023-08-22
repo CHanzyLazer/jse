@@ -6,9 +6,12 @@ import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.jtool.code.CS.*;
+import static com.jtool.code.UT.Code.newBox;
 
 /**
  * @author liqa
@@ -160,4 +163,11 @@ public abstract class AbstractAtomData implements IAtomData {
     }
     /** 默认没有速度信息，这样不会在输出时进行输出 */
     @Override public boolean hasVelocities() {return false;}
+    
+    /**  默认拷贝会直接使用 {@code List<IAtom>} 来存储，尽管这会占据更多的内存并且会抹除速度信息 */
+    @Override public AbstractAtomData copy() {
+        List<IAtom> rAtoms = new ArrayList<>(atomNum());
+        for (IAtom tAtom : atoms()) rAtoms.add(new Atom(tAtom));
+        return new AtomData(rAtoms, atomTypeNum(), newBox(boxLo()), newBox(boxHi()));
+    }
 }

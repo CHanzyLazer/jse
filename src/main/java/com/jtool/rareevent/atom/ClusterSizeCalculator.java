@@ -22,7 +22,7 @@ public class ClusterSizeCalculator implements IParameterCalculator<IAtomData> {
     
     @Override public double lambdaOf(IAtomData aPoint) {
         // 进行类固体判断
-        try (final MonatomicParameterCalculator tMPC = aPoint.getMPC()) {
+        try (final MonatomicParameterCalculator tMPC = aPoint.getMonatomicParameterCalculator()) {
             final double tRNearest = tMPC.unitLen()*mRNearestMul;
             final ILogicalVector tIsSolid = tMPC.checkSolidQ6(tRNearest);
             // 使用 getClustersBFS 获取所有的团簇

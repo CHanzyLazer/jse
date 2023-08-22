@@ -30,8 +30,11 @@ public abstract class AbstractMultiFrameAtomData<T extends IAtomData> extends Ab
     @Override public final Iterable<IAtom>  atoms           (int aType) {return defaultFrame().atoms(aType);}
     @Override public final int              atomNum         ()          {return defaultFrame().atomNum();}
     @Override public final int              atomTypeNum     ()          {return defaultFrame().atomTypeNum();}
-    @Override public final IXYZ boxLo()          {return defaultFrame().boxLo();}
-    @Override public final IXYZ boxHi()          {return defaultFrame().boxHi();}
+    @Override public final IXYZ             boxLo           ()          {return defaultFrame().boxLo();}
+    @Override public final IXYZ             boxHi           ()          {return defaultFrame().boxHi();}
     @Override public final double           volume          ()          {return defaultFrame().volume();}
     @Override public final IAtomDataFilter  filter          ()          {return defaultFrame().filter();}
+    
+    /** stuff to override */
+    @Override public IAtomData copy() {return defaultFrame().copy();}
 }
