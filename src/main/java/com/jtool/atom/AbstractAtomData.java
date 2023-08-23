@@ -19,7 +19,7 @@ import static com.jtool.code.UT.Code.newBox;
  */
 public abstract class AbstractAtomData implements IAtomData {
     /** stuff to override */
-    public abstract Iterable<IAtom> atoms();
+    public abstract List<IAtom> atoms();
     public abstract IXYZ boxLo();
     public abstract IXYZ boxHi();
     public abstract int atomNum();

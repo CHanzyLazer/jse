@@ -3,6 +3,8 @@ package com.jtool.atom;
 import com.jtool.math.table.ITable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.util.List;
+
 /**
  * @author liqa
  * <p> 通用的拥有原子数据的类使用的接口，主要用于相互转换 </p>
@@ -25,7 +27,7 @@ public interface IAtomData {
     
     
     /** 改为直接获取 {@link IAtom} 的容器 */
-    Iterable<IAtom> atoms();
+    List<IAtom> atoms();
     Iterable<IAtom> atoms(int aType);
     
     /** 保留获取原子总数的接口，但是特定种类的原子数目现在不能直接获取 */

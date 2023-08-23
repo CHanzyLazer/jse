@@ -65,4 +65,38 @@ public class AbstractAtoms {
         }, new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ));
     }
     public static IAtomData BCC(double aCellSize, int aReplicate) {return BCC(aCellSize, aReplicate, aReplicate, aReplicate);}
+    
+    
+    /**
+     * 根据给定数据创建输入晶胞的 atomData
+     * @author liqa
+     * @param aLattice 输入的晶胞数据
+     * @param aReplicateX x 方向的重复次数
+     * @param aReplicateY Y 方向的重复次数
+     * @param aReplicateZ Z 方向的重复次数
+     * @return 返回由此创建的 atomData
+     */
+    public static IAtomData from(final IAtomData aLattice, final int aReplicateX, final int aReplicateY, final int aReplicateZ) {
+        return new AtomData(new AbstractRandomAccessList<IAtom>() {
+            @Override public IAtom get(final int index) {
+                final int tLatticeNum = aLattice.atomNum();
+                final IAtom tAtom = aLattice.atoms().get(index%tLatticeNum);
+                return new IAtom() {
+                    @Override public double x() {int i = index/tLatticeNum/aReplicateZ/aReplicateY; double tX = (aLattice.boxHi().x()-aLattice.boxLo().x()) * i; return tX + tAtom.x() - aLattice.boxLo().x();}
+                    @Override public double y() {int j = index/tLatticeNum/aReplicateZ%aReplicateY; double tY = (aLattice.boxHi().y()-aLattice.boxLo().y()) * j; return tY + tAtom.y() - aLattice.boxLo().y();}
+                    @Override public double z() {int k = index/tLatticeNum%aReplicateZ            ; double tZ = (aLattice.boxHi().z()-aLattice.boxLo().z()) * k; return tZ + tAtom.z() - aLattice.boxLo().z();}
+                    @Override public int id() {return index+1;} // 为了避免一些奇怪的问题，不保留原本的 id
+                    @Override public int type() {return tAtom.type();}
+                };
+            }
+            @Override public int size() {
+                return aLattice.atomNum()*aReplicateX*aReplicateY*aReplicateZ;
+            }
+        }, aLattice.atomTypeNum(), new IXYZ() {
+            @Override public double x() {return (aLattice.boxHi().x()-aLattice.boxLo().x()) * aReplicateX;}
+            @Override public double y() {return (aLattice.boxHi().y()-aLattice.boxLo().y()) * aReplicateY;}
+            @Override public double z() {return (aLattice.boxHi().z()-aLattice.boxLo().z()) * aReplicateZ;}
+        });
+    }
+    public static IAtomData from(IAtomData aLattice, int aReplicate) {return from(aLattice, aReplicate, aReplicate, aReplicate);}
 }

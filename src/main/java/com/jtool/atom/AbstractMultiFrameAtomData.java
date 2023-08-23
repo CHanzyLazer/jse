@@ -3,6 +3,8 @@ package com.jtool.atom;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.math.table.ITable;
 
+import java.util.List;
+
 
 /**
  * @author liqa
@@ -26,7 +28,7 @@ public abstract class AbstractMultiFrameAtomData<T extends IAtomData> extends Ab
     @Override public final ITable               dataVelocities  ()          {return defaultFrame().dataVelocities();}
     @Override public final ITable               dataVelocities  (int aType) {return defaultFrame().dataVelocities(aType);}
     @Override public final boolean              hasVelocities   ()          {return defaultFrame().hasVelocities();}
-    @Override public final Iterable<IAtom>      atoms           ()          {return defaultFrame().atoms();}
+    @Override public final List<IAtom>          atoms           ()          {return defaultFrame().atoms();}
     @Override public final Iterable<IAtom>      atoms           (int aType) {return defaultFrame().atoms(aType);}
     @Override public final int                  atomNum         ()          {return defaultFrame().atomNum();}
     @Override public final int                  atomTypeNum     ()          {return defaultFrame().atomTypeNum();}

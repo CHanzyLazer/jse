@@ -191,11 +191,11 @@ public class POSCAR extends AbstractAtomData {
         aAtomNumbers = Vectors.from(UT.Code.map(tTokens, Integer::parseInt));
         // 可选的注释行
         ++idx; if (idx >= aLines.size()) return null;
-        if (aLines.get(idx).equals("Selective dynamics")) {
+        if (aLines.get(idx).equalsIgnoreCase("Selective dynamics")) {
         aSelectiveDynamics = true; ++idx; if (idx >= aLines.size()) return null;
         }
         // 目前只支持 Direct
-        if (!aLines.get(idx).equals("Direct")) throw new RuntimeException("Can ONLY read Direct POSCAR temporarily");
+        if (!aLines.get(idx).equalsIgnoreCase("Direct")) throw new RuntimeException("Can ONLY read Direct POSCAR temporarily");
         // 读取原子数据
         ++idx; if (idx >= aLines.size()) return null;
         int tAtomNum = (int)aAtomNumbers.sum();

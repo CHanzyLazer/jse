@@ -344,17 +344,17 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             IMatrix aAtomData;
             
             // 读取时间步数
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: TIMESTEP"); ++idx;
+            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: TIMESTEP", true); ++idx;
             if (idx >= aLines.size()) break;
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
             aTimeStep = Long.parseLong(tTokens[0]);
             // 读取原子总数
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: NUMBER OF ATOMS"); ++idx;
+            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: NUMBER OF ATOMS", true); ++idx;
             if (idx >= aLines.size()) break;
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
             tAtomNum = Integer.parseInt(tTokens[0]);
             // 读取模拟盒信息
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: BOX BOUNDS");
+            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: BOX BOUNDS", true);
             if (idx >= aLines.size()) break;
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
             aBoxBounds = new String[] {tTokens[3], tTokens[4], tTokens[5]};
@@ -368,7 +368,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             aBox = new Box(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
             
             // 读取原子信息
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: ATOMS");
+            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: ATOMS", true);
             if (idx >= aLines.size()) break;
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
             aAtomDataKeys = new String[tTokens.length-2];

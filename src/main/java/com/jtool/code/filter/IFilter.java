@@ -1,5 +1,7 @@
 package com.jtool.code.filter;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +22,7 @@ public interface IFilter<T> {
         return () -> new Iterator<T>() {
             private final Iterator<T> mIt = aIterable.iterator();
             private boolean mNextValid = false;
-            private T mNext = null;
+            private @Nullable T mNext = null;
             
             @Override public boolean hasNext() {
                 while (true) {
@@ -39,8 +41,10 @@ public interface IFilter<T> {
             }
             @Override public T next() {
                 if (hasNext()) {
+                    T tNext = mNext;
+                    mNext = null;
                     mNextValid = false; // 设置非法表示此时不再有 Next
-                    return mNext;
+                    return tNext;
                 } else {
                     throw new NoSuchElementException();
                 }

@@ -22,6 +22,7 @@ import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
 import org.apache.groovy.json.internal.CharScanner;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
@@ -318,9 +319,9 @@ public class UT {
         public static <T> Iterable<T> merge(final Iterable<? extends Iterable<? extends T>> aNestIterable) {
             return () -> new Iterator<T>() {
                 private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
-                private Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
+                private @Nullable Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
                 private boolean mNextValid = false;
-                private T mNext = null;
+                private @Nullable T mNext = null;
                 
                 @Override public boolean hasNext() {
                     if (mIt == null) return false;
@@ -329,20 +330,24 @@ public class UT {
                         if (mIt.hasNext()) {
                             mNext = mIt.next();
                             mNextValid = true;
-                            continue;
-                        }
+                            return true;
+                        } else
                         if (mParentIt.hasNext()) {
                             mIt = mParentIt.next().iterator();
+                            mNext = null;
                             mNextValid = false;
-                            continue;
+                        } else {
+                            mIt = null;
+                            return false;
                         }
-                        return false;
                     }
                 }
                 @Override public T next() {
                     if (hasNext()) {
+                        T tNext = mNext;
+                        mNext = null;
                         mNextValid = false; // 设置非法表示此时不再有 Next
-                        return mNext;
+                        return tNext;
                     } else {
                         throw new NoSuchElementException();
                     }
@@ -910,16 +915,22 @@ public class UT {
          * @param aLines where to find the aContainStr
          * @param aStartIdx the start position, include
          * @param aContainStr a string to find in aLines
+         * @param aIgnoreCase if true, ignore case when comparing characters
          * @return the idx of aLines which contains aContainStr, or aLines.length if not find
          */
-        public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr) {
+        public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr, boolean aIgnoreCase) {
             int tIdx = aStartIdx;
             while (tIdx < aLines.size()) {
-                if (aLines.get(tIdx).contains(aContainStr)) break;
+                if (aIgnoreCase) {
+                    if (StringGroovyMethods.containsIgnoreCase(aLines.get(tIdx), aContainStr)) break;
+                } else {
+                    if (aLines.get(tIdx).contains(aContainStr)) break;
+                }
                 ++tIdx;
             }
             return tIdx;
         }
+        public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr) {return findLineContaining(aLines, aStartIdx, aContainStr, false);}
         
         /**
          * Splits a string separated by blank characters into multiple strings

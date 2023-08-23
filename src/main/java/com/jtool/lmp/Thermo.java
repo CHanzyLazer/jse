@@ -85,7 +85,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         while (idx < aLines.size()) {
             // 跳转到 "Per MPI rank memory allocation" 后面的 "Step" 行，也就是需要 thermo 中包含 step 项
             idx = UT.Texts.findLineContaining(aLines, idx, "Per MPI rank memory allocation");
-            idx = UT.Texts.findLineContaining(aLines, idx, "Step");
+            idx = UT.Texts.findLineContaining(aLines, idx, "Step", true);
             if (idx >= aLines.size()) break;
             // 获取种类的 key
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
