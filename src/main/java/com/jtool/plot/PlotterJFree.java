@@ -10,6 +10,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.event.RendererChangeEvent;
+import org.jfree.chart.plot.SeriesRenderingOrder;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.TextTitle;
@@ -124,6 +125,7 @@ public class PlotterJFree implements IPlotter {
         };
         mLineRender.setDrawSeriesLineAsPath(true); // 指定按照路径的方式绘制
         mPlot.setRenderer(mLineRender); // 指定修改后的 renderer
+        mPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD); // 修改绘制顺序为常见的顺序
         // x，y 轴
         mXAxis = mPlot.getDomainAxis();
         mYAxis = mPlot.getRangeAxis();
