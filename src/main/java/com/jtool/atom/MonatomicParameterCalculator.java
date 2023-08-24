@@ -34,8 +34,8 @@ import static com.jtool.math.MathEX.*;
  */
 public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
     private final XYZ[] mAtomDataXYZ;
-    private final XYZ mBox;
-    private final XYZ mBoxLo; // 用来记录数据是否经过了 shift
+    private final IXYZ mBox;
+    private final IXYZ mBoxLo; // 用来记录数据是否经过了 shift
     
     private final int mAtomNum;
     private final double mRou; // 粒子数密度
@@ -63,8 +63,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
-        mBoxLo = toXYZ(newBox(aBoxLo));
-        mBox   = toXYZ((aBoxLo==BOX_ZERO) ? newBox(aBoxHi) : aBoxHi.minus(aBoxLo));
+        mBoxLo = newBox(aBoxLo);
+        mBox   = (aBoxLo==BOX_ZERO) ? newBox(aBoxHi) : aBoxHi.minus(aBoxLo);
         
         // 获取合适的 XYZ[] 数据
         mAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ);
@@ -99,16 +99,20 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // mBoxLo 不为零则需要将数据 shift
-        if (mBoxLo != BOX_ZERO) for (XYZ tXYZ : tXYZArray) tXYZ.minus2this(mBoxLo);
+        if (mBoxLo != BOX_ZERO) {
+            XYZ tBoxLo = toXYZ(mBoxLo);
+            for (XYZ tXYZ : tXYZArray) tXYZ.minus2this(tBoxLo);
+        }
         
         // 由于 lammps 精度的问题，需要将超出边界的进行平移
+        XYZ tBox = toXYZ(mBox);
         for (XYZ tXYZ : tXYZArray) {
-            if      (tXYZ.mX <  0.0    ) tXYZ.mX += mBox.mX;
-            else if (tXYZ.mX >= mBox.mX) tXYZ.mX -= mBox.mX;
-            if      (tXYZ.mY <  0.0    ) tXYZ.mY += mBox.mY;
-            else if (tXYZ.mY >= mBox.mY) tXYZ.mY -= mBox.mY;
-            if      (tXYZ.mZ <  0.0    ) tXYZ.mZ += mBox.mZ;
-            else if (tXYZ.mZ >= mBox.mZ) tXYZ.mZ -= mBox.mZ;
+            if      (tXYZ.mX <  0.0    ) tXYZ.mX += tBox.mX;
+            else if (tXYZ.mX >= tBox.mX) tXYZ.mX -= tBox.mX;
+            if      (tXYZ.mY <  0.0    ) tXYZ.mY += tBox.mY;
+            else if (tXYZ.mY >= tBox.mY) tXYZ.mY -= tBox.mY;
+            if      (tXYZ.mZ <  0.0    ) tXYZ.mZ += tBox.mZ;
+            else if (tXYZ.mZ >= tBox.mZ) tXYZ.mZ -= tBox.mZ;
         }
         
         return tXYZArray;

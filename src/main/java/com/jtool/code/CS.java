@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.jtool.Main;
 import com.jtool.atom.IXYZ;
-import com.jtool.atom.XYZ;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.math.MathEX;
@@ -31,8 +30,16 @@ public class CS {
     
     public final static Object NULL = null;
     
-    public final static IXYZ BOX_ONE  = new XYZ(1.0, 1.0, 1.0);
-    public final static IXYZ BOX_ZERO = new XYZ(0.0, 0.0, 0.0);
+    public final static IXYZ BOX_ONE  = new IXYZ() {
+        @Override public double x() {return 1.0;}
+        @Override public double y() {return 1.0;}
+        @Override public double z() {return 1.0;}
+    };
+    public final static IXYZ BOX_ZERO = new IXYZ() {
+        @Override public double x() {return 0.0;}
+        @Override public double y() {return 0.0;}
+        @Override public double z() {return 0.0;}
+    };
     
     public final static String WORKING_DIR = ".temp/%n/";
     

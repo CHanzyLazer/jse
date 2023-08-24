@@ -52,11 +52,11 @@ public class NeighborListGetter implements IShutdownable {
     private final Lock mWL = mRWL.writeLock();
     
     // NL 只支持已经经过平移的数据
-    public NeighborListGetter(XYZ[] aAtomDataXYZ, XYZ aBox) {this(aAtomDataXYZ, aBox, 2.0);}
-    public NeighborListGetter(XYZ[] aAtomDataXYZ, XYZ aBox, double aCellStep) {
+    public NeighborListGetter(XYZ[] aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 2.0);}
+    public NeighborListGetter(XYZ[] aAtomDataXYZ, IXYZ aBox, double aCellStep) {
         mAtomNum = aAtomDataXYZ.length;
         mAtomDataXYZ = aAtomDataXYZ;
-        mBox = aBox;
+        mBox = toXYZ(aBox); // 仅用于计算，直接转为 XYZ 即可
         mMinBox = mBox.min();
         mCellStep = Math.max(aCellStep, 1.1);
     }
