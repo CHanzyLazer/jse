@@ -476,17 +476,17 @@ public class MathEX {
         }
         public static Pair<Double, Integer> minWithIdx(double[] aData) {
             Pair<Double, Integer> tOut = new Pair<>(Double.POSITIVE_INFINITY, -1);
-            for (int i = 0; i < aData.length; ++i) if (aData[i] < tOut.first) {
-                tOut.first = aData[i];
-                tOut.second = i;
+            for (int i = 0; i < aData.length; ++i) if (aData[i] < tOut.mFirst) {
+                tOut.mFirst = aData[i];
+                tOut.mSecond = i;
             }
             return tOut;
         }
         public static Pair<Double, Integer> maxWithIdx(double[] aData) {
             Pair<Double, Integer> tOut = new Pair<>(Double.NEGATIVE_INFINITY, -1);
-            for (int i = 0; i < aData.length; ++i) if (aData[i] > tOut.first) {
-                tOut.first = aData[i];
-                tOut.second = i;
+            for (int i = 0; i < aData.length; ++i) if (aData[i] > tOut.mFirst) {
+                tOut.mFirst = aData[i];
+                tOut.mSecond = i;
             }
             return tOut;
         }

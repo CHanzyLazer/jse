@@ -6,6 +6,7 @@ import com.jtool.Main;
 import com.jtool.atom.IXYZ;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
+import com.jtool.math.IComplexDouble;
 import com.jtool.math.MathEX;
 import com.jtool.parallel.CompletedFuture;
 import com.jtool.system.*;
@@ -34,11 +35,21 @@ public class CS {
         @Override public double x() {return 1.0;}
         @Override public double y() {return 1.0;}
         @Override public double z() {return 1.0;}
+        /** print */
+        @Override public String toString() {return "(1.0, 1.0, 1.0)";}
     };
     public final static IXYZ BOX_ZERO = new IXYZ() {
         @Override public double x() {return 0.0;}
         @Override public double y() {return 0.0;}
         @Override public double z() {return 0.0;}
+        /** print */
+        @Override public String toString() {return "(0.0, 0.0, 0.0)";}
+    };
+    public final static IComplexDouble I = new IComplexDouble() {
+        @Override public double real() {return 0.0;}
+        @Override public double imag() {return 1.0;}
+        /** print */
+        @Override public String toString() {return "i";}
     };
     
     public final static String WORKING_DIR = ".temp/%n/";

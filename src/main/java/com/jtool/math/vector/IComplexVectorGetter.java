@@ -1,8 +1,8 @@
 package com.jtool.math.vector;
 
-import com.jtool.math.ComplexDouble;
+import com.jtool.math.IComplexDouble;
 
 @FunctionalInterface
 public interface IComplexVectorGetter {
-    ComplexDouble get(int aIdx);
+    IComplexDouble get(int aIdx);
 }

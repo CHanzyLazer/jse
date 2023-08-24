@@ -54,8 +54,8 @@ public class SerializableTask extends Task {
     }
     public static Task fromString(final Object aTaskCreator, String aStr) {
         Pair<String, List<String>> tPair = getKeyValue_(aStr);
-        Type tKey = Type.valueOf(tPair.first);
-        String[] tValue = tPair.second.toArray(new String[0]);
+        Type tKey = Type.valueOf(tPair.mFirst);
+        String[] tValue = tPair.mSecond.toArray(new String[0]);
         switch (tKey) {
         case MERGE:
             return mergeTask(fromString(aTaskCreator, tValue[0]), fromString(aTaskCreator, tValue[1]));

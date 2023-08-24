@@ -443,8 +443,8 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         // 遍历提交
         List<IFutureJob> rFutures = new ArrayList<>(mBatchCommandsIOFiles.size());
         for (Pair<List<String>, MergedIOFiles> tPair : mBatchCommandsIOFiles) {
-            List<String> tCommands = tPair.first;
-            MergedIOFiles tIOFiles = tPair.second;
+            List<String> tCommands = tPair.mFirst;
+            MergedIOFiles tIOFiles = tPair.mSecond;
             // 这里先获取打包后的指令，允许添加附加上传和下载文件（例如打包后的脚本），当大小为 1 时自动改为使用 Submit 来避免 BatchSubmit 不能处理的情况
             String tBatchedCommand;
             if (tCommands.size() > 1) {
@@ -471,13 +471,13 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     @Override public final synchronized void putBatchSystem(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT putSubmit from this Dead Executor.");
         Pair<List<String>, MergedIOFiles> tPair = mBatchCommandsIOFiles.peekLast();
-        if (tPair==null || tPair.first.size()>=maxBatchSize()) {
+        if (tPair==null || tPair.mFirst.size()>=maxBatchSize()) {
             tPair = new Pair<>(new ArrayList<>(), new MergedIOFiles());
             mBatchCommandsIOFiles.addLast(tPair);
         }
         // 对于空指令专门优化，不添加到队列
-        if (aCommand != null && !aCommand.isEmpty()) tPair.first.add(aCommand);
-        tPair.second.merge(aIOFiles);
+        if (aCommand != null && !aCommand.isEmpty()) tPair.mFirst.add(aCommand);
+        tPair.mSecond.merge(aIOFiles);
     }
     
     

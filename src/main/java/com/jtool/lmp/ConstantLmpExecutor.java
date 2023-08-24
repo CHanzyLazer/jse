@@ -141,7 +141,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         try {tLmp = assignLmp();}
         catch (InterruptedException e) {printStackTrace(e); return -1;}
         // 拷贝到需要的 in 文件位置
-        try {UT.IO.copy(aInFile, tLmp.first+"in");}
+        try {UT.IO.copy(aInFile, tLmp.mFirst+"in");}
         catch (Exception e) {
             printStackTrace(e);
             // 出错则归还资源
@@ -157,7 +157,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         try {tLmp = assignLmp();}
         catch (InterruptedException e) {printStackTrace(e); return -1;}
         // 输入文件初始化
-        try {aInFile.write(tLmp.first+"in");}
+        try {aInFile.write(tLmp.mFirst+"in");}
         catch (Exception e) {
             printStackTrace(e);
             // 出错则归还资源
@@ -178,7 +178,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
             }
             for (String aODir : rODirs) mEXE.makeDir(aODir);
             
-            String tLmpInPath = aLmp.first+"in";
+            String tLmpInPath = aLmp.mFirst+"in";
             // 向目录放入 in 文件，需要这样操作
             if (mEXE.needSyncIOFiles()) mEXE.putFiles(UT.Code.merge(tLmpInPath, aIOFiles.getIFiles()));
             // 等待执行完成，注意对于特殊系统，需要设置等待时间等待文件系统同步
@@ -186,13 +186,13 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
             int tTolerant = TOLERANT;
             while (mEXE.isFile(tLmpInPath)) {
                 // 每次都检查一下 lammps 进程是否存活，如果挂了则需要重启（带有容忍度）
-                if (aLmp.second.isDone()) {
+                if (aLmp.mSecond.isDone()) {
                     --tTolerant;
                     if (!mEXE.noERROutput()) {
                         int tExitValue;
-                        try {tExitValue = aLmp.second.get();} catch (Exception e) {tExitValue = -1;}
-                        System.err.println("WARNING: Long-Time Lammps in '"+aLmp.first+"' Dead Unexpectedly, exit value: "+tExitValue+", try to run again...");
-                        if (tTolerant < 0) System.err.println("ERROR: Long-Time Lammps in '"+aLmp.first+"' Dead Unexpectedly more than "+TOLERANT+" times");
+                        try {tExitValue = aLmp.mSecond.get();} catch (Exception e) {tExitValue = -1;}
+                        System.err.println("WARNING: Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly, exit value: "+tExitValue+", try to run again...");
+                        if (tTolerant < 0) System.err.println("ERROR: Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly more than "+TOLERANT+" times");
                     }
                     if (tTolerant < 0) {
                         // 无法重启的 lammps 依旧直接归还，下次运行依旧会再次尝试重启，只是这个运行会失败
@@ -200,14 +200,14 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
                         return -1;
                     } else {
                         // 尝试重启，移除 shutdown 文件（如果存在），并重新拷贝输入文件（可能被意外删除）
-                        String tLmpShutdownPath = aLmp.first+"shutdown";
+                        String tLmpShutdownPath = aLmp.mFirst+"shutdown";
                         if (mEXE.isFile(tLmpShutdownPath)) {
                             mEXE.delete(tLmpShutdownPath);
                         } else if (mEXE.isDir(tLmpShutdownPath)) {
                             mEXE.removeDir(tLmpShutdownPath);
                         }
                         // 重新指定程序 future
-                        aLmp.second = submitConstantLmp(LmpIn.CONSTANT(), aLmp.first);
+                        aLmp.mSecond = submitConstantLmp(LmpIn.CONSTANT(), aLmp.mFirst);
                     }
                 }
                 Thread.sleep(mSleepTime);
@@ -233,7 +233,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     @Override protected void shutdown_() {
         mDead = true;
         for (Pair<String, Future<Integer>> tLMP : mConstantLmpProcess.keySet()) {
-            String tShutdownPath = tLMP.first+"shutdown";
+            String tShutdownPath = tLMP.mFirst+"shutdown";
             try {
                 UT.IO.write(tShutdownPath, "");
                 if (mEXE.needSyncIOFiles()) mEXE.putFiles(Collections.singleton(tShutdownPath));
@@ -241,8 +241,8 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         }
         // 注意需要等待程序结束后再删除文件夹，如果没有结束则手动强制结束
         for (Pair<String, Future<Integer>> tLMP : mConstantLmpProcess.keySet()) {
-            try {tLMP.second.get(FILE_SYSTEM_TIMEOUT, TimeUnit.MILLISECONDS);}
-            catch (Exception e) {tLMP.second.cancel(true);}
+            try {tLMP.mSecond.get(FILE_SYSTEM_TIMEOUT, TimeUnit.MILLISECONDS);}
+            catch (Exception e) {tLMP.mSecond.cancel(true);}
         }
         try {
             UT.IO.removeDir(mWorkingDir);

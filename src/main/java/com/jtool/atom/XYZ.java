@@ -22,6 +22,10 @@ public final class XYZ implements IXYZ {
         mX = aXYZ.get(0); mY = aXYZ.get(1); mZ = aXYZ.get(2);
     }
     
+    /** print */
+    @Override public String toString() {return String.format("(%8.4g, %8.4g, %8.4g)", mX, mY, mZ);}
+    
+    
     @Override public double x() {return mX;}
     @Override public double y() {return mY;}
     @Override public double z() {return mZ;}

@@ -74,10 +74,10 @@ final class LinkedCell<A extends IXYZ> {
     public @Unmodifiable List<Link<A>> links(int i, int j, int k) {
         int tIdx = idx(i, j, k);
         Pair<Integer, List<Link<A>>> tLinksTemp = mLinksTemp.get();
-        if (tLinksTemp.first == tIdx) return tLinksTemp.second;
-        tLinksTemp.first = tIdx;
+        if (tLinksTemp.mFirst == tIdx) return tLinksTemp.mSecond;
+        tLinksTemp.mFirst = tIdx;
         List<Link<A>> rLinkList = new ArrayList<>(27);
-        tLinksTemp.second = rLinkList;
+        tLinksTemp.mSecond = rLinkList;
         rLinkList.add(link(i  , j  , k  ));
         rLinkList.add(link(i+1, j  , k  ));
         rLinkList.add(link(i-1, j  , k  ));

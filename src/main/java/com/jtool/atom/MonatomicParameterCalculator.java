@@ -527,20 +527,20 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 for (int tM = 0; tM <= aL; ++tM) {
                     int tCol = tM+aL;
                     ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
-                    qlmiReal.add_(tCol, tY.real);
-                    qlmiImag.add_(tCol, tY.imag);
+                    qlmiReal.add_(tCol, tY.mReal);
+                    qlmiImag.add_(tCol, tY.mImag);
                     // 对称的对面的粒子也要增加这个统计
                     IVector qlmjReal = qlmReal.row(idx);
                     IVector qlmjImag = qlmImag.row(idx);
-                    qlmjReal.add_(tCol, tY.real);
-                    qlmjImag.add_(tCol, tY.imag);
+                    qlmjReal.add_(tCol, tY.mReal);
+                    qlmjImag.add_(tCol, tY.mImag);
                     // m < 0 的部分直接利用对称性求
                     if (tM != 0) {
                         tCol = -tM+aL;
-                        qlmiReal.add_(tCol,  tY.real);
-                        qlmiImag.add_(tCol, -tY.imag);
-                        qlmjReal.add_(tCol,  tY.real);
-                        qlmjImag.add_(tCol, -tY.imag);
+                        qlmiReal.add_(tCol,  tY.mReal);
+                        qlmiImag.add_(tCol, -tY.mImag);
+                        qlmjReal.add_(tCol,  tY.mReal);
+                        qlmjImag.add_(tCol, -tY.mImag);
                     }
                 }
                 
@@ -576,8 +576,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix qlmReal = tYlmMean.first;
-        IMatrix qlmImag = tYlmMean.second;
+        IMatrix qlmReal = tYlmMean.mFirst;
+        IMatrix qlmImag = tYlmMean.mSecond;
         
         // 直接求和
         IVector Ql = Vectors.zeros(mAtomNum);
@@ -610,8 +610,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix qlmReal = tYlmMean.first;
-        IMatrix qlmImag = tYlmMean.second;
+        IMatrix qlmReal = tYlmMean.mFirst;
+        IMatrix qlmImag = tYlmMean.mSecond;
         
         IVector Wl = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
@@ -630,7 +630,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     subMul.multiply2this(qlmReal.get_(i, tM3+aL), qlmImag.get_(i, tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
-                    rMul += subMul.real;
+                    rMul += subMul.mReal;
                 }
             }
             // 最后求模量设置结果
@@ -662,8 +662,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix qlmReal = tYlmMean.first;
-        IMatrix qlmImag = tYlmMean.second;
+        IMatrix qlmReal = tYlmMean.mFirst;
+        IMatrix qlmImag = tYlmMean.mSecond;
         
         // 在近邻的基础上再进行一次平均
         IVector ql = Vectors.zeros(mAtomNum);
@@ -712,8 +712,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix qlmReal = tYlmMean.first;
-        IMatrix qlmImag = tYlmMean.second;
+        IMatrix qlmReal = tYlmMean.mFirst;
+        IMatrix qlmImag = tYlmMean.mSecond;
         
         // 这里不能再作上面的优化，直接先全部平均一遍
         IMatrix qlmMeanReal = RowMatrix.zeros(mAtomNum, aL+aL+1);
@@ -731,8 +731,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 求“平均”
                 qlmiMean.div2this(tNeighborList.size());
                 // 记录结果
-                qlmMeanReal.set_(i, tCol, qlmiMean.real);
-                qlmMeanImag.set_(i, tCol, qlmiMean.imag);
+                qlmMeanReal.set_(i, tCol, qlmiMean.mReal);
+                qlmMeanImag.set_(i, tCol, qlmiMean.mImag);
             }
         }
         
@@ -754,7 +754,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     subMul.multiply2this(qlmMeanReal.get_(i, tM3+aL), qlmMeanImag.get_(i, tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
-                    rMul += subMul.real;
+                    rMul += subMul.mReal;
                 }
             }
             // 最后求模量设置结果
@@ -789,8 +789,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(6, aRNearest, aNnn);
-        IMatrix qlmReal = tYlmMean.first;
-        IMatrix qlmImag = tYlmMean.second;
+        IMatrix qlmReal = tYlmMean.mFirst;
+        IMatrix qlmImag = tYlmMean.mSecond;
         // 统计连接数用于判断
         final IVector tConnectCount = Vectors.zeros(mAtomNum);
         
@@ -816,7 +816,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 IVector qlmjReal = qlmReal.row(idx);
                 IVector qlmjImag = qlmImag.row(idx);
                 // 计算复向量的点乘
-                ComplexDouble Sij = new ComplexDouble(qlmiReal.dot(qlmjReal)+qlmiImag.dot(qlmjImag), qlmiImag.dot(qlmjReal)-qlmiReal.dot(qlmjImag));
+                ComplexDouble Sij = new ComplexDouble(qlmiReal.dot(qlmjReal) + qlmiImag.dot(qlmjImag), qlmiImag.dot(qlmjReal) - qlmiReal.dot(qlmjImag));
                 // 取模量来判断是否连接
                 if (Sij.abs() > aConnectThreshold) {
                     tConnectCount.increment_(fI);
