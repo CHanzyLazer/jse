@@ -7,20 +7,21 @@ import com.jtool.plot.Plotters
 import com.jtool.vasp.POSCAR
 
 
-/** 测试计算 AOOP，使用 AOOP 判断结晶并绘制结果 */
+/** 测试计算 BOOP，使用 ABOOP 判断结晶并绘制结果 */
 
 
 // 首先导入 Lmpdat
 def data = Lmpdat.read('lmp/data/data-crystal');
-//def data = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 3).opt().perturbG(0.15);
+//def data = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'), 4).opt().perturbG(0.15);
 
-new StepJobManager('testAOOP4', 1)
+
+new StepJobManager('testBOOP4', 1)
 .init {println("0. 使用 q6 判断");}
 .doJob {
     // 计算固体判断
     def isSolid;
     try (def mpc = data.getMPC()) {
-        isSolid = mpc.calAOOP(6).greater(0.30);
+        isSolid = mpc.calABOOP(6).greater(0.30);
     }
     println("solid number: ${isSolid.count()}");
     

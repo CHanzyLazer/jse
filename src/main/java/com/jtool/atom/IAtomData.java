@@ -13,22 +13,15 @@ import java.util.List;
 public interface IAtomData {
     /** 获取所有的数据组成的 {@link ITable}，约定数据按行排列，每行一个原子，会在通用抽象类中自动生成不需要子类手动实现 */
     ITable dataXYZ();
-    ITable dataXYZ(int aType);
     ITable dataXYZID();
-    ITable dataXYZID(int aType);
     ITable dataSTD();
-    ITable dataSTD(int aType);
     ITable dataAll();
-    ITable dataAll(int aType);
     /** 获取速度数据, vx, vy, vz */
     ITable dataVelocities();
-    ITable dataVelocities(int aType);
     boolean hasVelocities();
-    
     
     /** 改为直接获取 {@link IAtom} 的容器 */
     List<IAtom> atoms();
-    Iterable<IAtom> atoms(int aType);
     
     /** 保留获取原子总数的接口，但是特定种类的原子数目现在不能直接获取 */
     int atomNum();
@@ -54,12 +47,12 @@ public interface IAtomData {
      * @param aThreadNum 执行 MPC 的线程数目
      * @return 获取到的 MPC
      */
-    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, int aThreadNum) {return new MonatomicParameterCalculator(atoms(aType), boxLo(), boxHi(), aThreadNum);}
-    default MonatomicParameterCalculator getMonatomicParameterCalculator    (                         ) {return new MonatomicParameterCalculator(atoms()     , boxLo(), boxHi()            );}
-    default MonatomicParameterCalculator getMonatomicParameterCalculator    (           int aThreadNum) {return new MonatomicParameterCalculator(atoms()     , boxLo(), boxHi(), aThreadNum);}
-    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                ) {return new MonatomicParameterCalculator(atoms(aType), boxLo(), boxHi()            );}
-    @VisibleForTesting default MonatomicParameterCalculator getMPC          (                         ) {return new MonatomicParameterCalculator(atoms()     , boxLo(), boxHi()            );}
-    @VisibleForTesting default MonatomicParameterCalculator getMPC          (           int aThreadNum) {return new MonatomicParameterCalculator(atoms()     , boxLo(), boxHi(), aThreadNum);}
-    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType                ) {return new MonatomicParameterCalculator(atoms(aType), boxLo(), boxHi()            );}
-    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType, int aThreadNum) {return new MonatomicParameterCalculator(atoms(aType), boxLo(), boxHi(), aThreadNum);}
+    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
+    default MonatomicParameterCalculator getMonatomicParameterCalculator    (                         ) {return new MonatomicParameterCalculator(this                                     );}
+    default MonatomicParameterCalculator getMonatomicParameterCalculator    (           int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
+    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
+    @VisibleForTesting default MonatomicParameterCalculator getMPC          (                         ) {return new MonatomicParameterCalculator(this                                     );}
+    @VisibleForTesting default MonatomicParameterCalculator getMPC          (           int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
+    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType                ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
+    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType, int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
 }

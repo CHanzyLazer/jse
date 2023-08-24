@@ -550,7 +550,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     
     /**
-     * 计算所有粒子的原始的 OOP（local bond Orientational Order Parameters），
+     * 计算所有粒子的原始的 BOOP（local Bond Orientational Order Parameters），
      * 输出结果为按照输入原子顺序排列的向量；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -560,7 +560,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Ql 组成的向量
      */
-    public IVector calOOP(int aL, double aRNearest, int aNnn) {
+    public IVector calBOOP(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
@@ -579,12 +579,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return Ql;
     }
-    public IVector calOOP(int aL, double aRNearest) {return calOOP(aL, aRNearest, -1);}
-    public IVector calOOP(int aL                  ) {return calOOP(aL, mUnitLen*R_NEAREST_MUL);}
-    
+    public IVector calBOOP(int aL, double aRNearest) {return calBOOP(aL, aRNearest, -1);}
+    public IVector calBOOP(int aL                  ) {return calBOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     /**
-     * 计算所有粒子的 AOOP（Averaged local bond Orientational Order Parameters），
+     * 计算所有粒子的 ABOOP（Averaged local Bond Orientational Order Parameters），
      * 输出结果为按照输入原子顺序排列的向量；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -598,7 +597,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @return ql 组成的向量
      */
     
-    public IVector calAOOP(int aL, double aRNearest, int aNnn) {
+    public IVector calABOOP(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
@@ -634,8 +633,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return ql;
     }
-    public IVector calAOOP(int aL, double aRNearest) {return calAOOP(aL, aRNearest, -1);}
-    public IVector calAOOP(int aL                  ) {return calAOOP(aL, mUnitLen*R_NEAREST_MUL);}
+    public IVector calABOOP(int aL, double aRNearest) {return calABOOP(aL, aRNearest, -1);}
+    public IVector calABOOP(int aL                  ) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     

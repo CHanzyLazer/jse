@@ -1,5 +1,7 @@
 package com.jtool.atom;
 
+import com.jtool.code.filter.IFilter;
+import com.jtool.code.operator.IOperator1;
 import com.jtool.math.vector.IVector;
 
 import java.util.ArrayList;
@@ -11,37 +13,51 @@ import static com.jtool.code.UT.Code.toXYZ;
 
 
 /**
- * 一般的运算器的实现，值拷贝一次并使用 {@code List<IAtom>} 来存储，尽管这会占据更多的内存
+ * 一般的运算器的实现，值拷贝一次并使用 {@code ArrayList<IAtom>} 来存储，尽管这会占据更多的内存
  * @author liqa
  */
 public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     
-    protected final static class AtomSetter implements IAtomSetter {
-        private final Atom mAtom;
-        public AtomSetter(Atom rAtom) {mAtom = rAtom;}
-        @Override public IAtomSetter setX(double aX) {mAtom.mX = aX; return this;}
-        @Override public IAtomSetter setY(double aY) {mAtom.mY = aY; return this;}
-        @Override public IAtomSetter setZ(double aZ) {mAtom.mZ = aZ; return this;}
-        @Override public IAtomSetter setID(int aID) {mAtom.mID = aID; return this;}
-        @Override public IAtomSetter setType(int aType) {mAtom.mType = aType; return this;}
+    @Override public IAtomData filter(IFilter<IAtom> aFilter) {
+        IAtomData tThis = thisAtomData_();
+        List<IAtom> rAtoms = new ArrayList<>();
+        for (IAtom tAtom : tThis.atoms()) if (aFilter.accept(tAtom)) {
+            rAtoms.add(tAtom);
+        }
+        return new AtomData(rAtoms, tThis.atomTypeNum(), tThis.boxLo(), tThis.boxHi(), tThis.hasVelocities());
     }
+    @Override public IAtomData filterType(final int aType) {return filter(atom -> atom.type()==aType);}
     
-    @Override public IAtomData mapUpdate(int aMinTypeNum, IAtomUpdater aUpdater) {
+    
+    @Override public IAtomData collect(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {
         IAtomData tThis = thisAtomData_();
         List<IAtom> rAtoms = new ArrayList<>(tThis.atomNum());
-        
         int tAtomTypeNum = Math.max(aMinTypeNum, tThis.atomTypeNum());
         for (IAtom oAtom : tThis.atoms()) {
-            Atom tAtom = new Atom(oAtom);
-            // 传入 AtomSetter 来更新粒子
-            aUpdater.update(oAtom, new AtomSetter(tAtom));
+            IAtom tAtom = aOperator.cal(oAtom);
             // 更新种类数
-            if (tAtom.mType > tAtomTypeNum) tAtomTypeNum = tAtom.mType;
+            int tType = tAtom.type();
+            if (tType > tAtomTypeNum) tAtomTypeNum = tType;
             // 保存修改后的原子
             rAtoms.add(tAtom);
         }
+        return new AtomData(rAtoms, tAtomTypeNum, tThis.boxLo(), tThis.boxHi(), tThis.hasVelocities());
+    }
+    
+    /** 减少重复代码，用于内部修改原子个别属性 */
+    protected static class WrapperAtom implements IAtom {
+        protected final IAtom mAtom;
+        protected WrapperAtom(IAtom aAtom) {mAtom = aAtom;}
         
-        return new AtomData(rAtoms, tAtomTypeNum, tThis.boxLo(), tThis.boxHi());
+        @Override public double x() {return mAtom.x();}
+        @Override public double y() {return mAtom.y();}
+        @Override public double z() {return mAtom.z();}
+        @Override public int id() {return mAtom.id();}
+        @Override public int type() {return mAtom.type();}
+        
+        @Override public double vx() {return mAtom.vx();}
+        @Override public double vy() {return mAtom.vy();}
+        @Override public double vz() {return mAtom.vz();}
     }
     
     
@@ -51,8 +67,8 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         final XYZ tBoxLo = toXYZ(tThis.boxLo());
         final XYZ tBoxHi = toXYZ(tThis.boxHi());
         final XYZ tBox = tBoxHi.minus(tBoxLo);
-        // 使用 mapUpdate 获取种类修改后的 AtomData，注意周期边界条件
-        return mapUpdate((atom, setter) -> {
+        // 使用 collect 获取种类修改后的 AtomData，注意周期边界条件
+        return collect(atom -> {
             double tX = atom.x() + aRandom.nextGaussian()*aSigma;
             double tY = atom.y() + aRandom.nextGaussian()*aSigma;
             double tZ = atom.z() + aRandom.nextGaussian()*aSigma;
@@ -62,13 +78,17 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
             else if (tY >= tBoxHi.mY) {tY -= tBox.mY; while (tY >= tBoxHi.mY) tY -= tBox.mY;}
             if      (tZ <  tBoxLo.mZ) {tZ += tBox.mZ; while (tZ <  tBoxLo.mZ) tZ += tBox.mZ;}
             else if (tZ >= tBoxHi.mZ) {tZ -= tBox.mZ; while (tZ >= tBoxHi.mZ) tZ -= tBox.mZ;}
-            setter.setX(tX);
-            setter.setY(tY);
-            setter.setZ(tZ);
+            
+            final double fX = tX, fY = tY, fZ = tZ;
+            return new WrapperAtom(atom) {
+                @Override public double x() {return fX;}
+                @Override public double y() {return fY;}
+                @Override public double z() {return fZ;}
+            };
         });
     }
     
-    @Override public IAtomData randomUpdateTypeByWeight(Random aRandom, IVector aTypeWeights) {
+    @Override public IAtomData randomAssignTypeByWeight(Random aRandom, IVector aTypeWeights) {
         double tTotWeight = aTypeWeights.sum();
         if (tTotWeight <= 0.0) throw new RuntimeException("TypeWeights Must be Positive");
         
@@ -86,7 +106,10 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         // 随机打乱这些种类标记
         Collections.shuffle(tTypeList, aRandom);
         // 使用 mapUpdate 获取种类修改后的 AtomData
-        return mapUpdate(tMaxType, (atom, setter) -> setter.setType(tTypeList.remove(tTypeList.size()-1)));
+        return collect(tMaxType, atom -> {
+            final int tType = tTypeList.remove(tTypeList.size()-1);
+            return new WrapperAtom(atom) {@Override public int type() {return tType;}};
+        });
     }
     
     /** stuff to override */

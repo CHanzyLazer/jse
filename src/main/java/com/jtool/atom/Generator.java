@@ -26,7 +26,7 @@ import static com.jtool.math.MathEX.Vec;
  * <p> 特定原子结构的生成器 </p>
  * <p> 此类线程不安全，但不同实例间线程安全 </p>
  */
-@ApiStatus.Obsolete
+@Deprecated
 public class Generator extends AbstractThreadPool<ParforThreadPool> {
     /** IThreadPoolContainer stuffs */
     private volatile boolean mDead = false;
@@ -157,10 +157,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
             rAtoms.add(tAtom);
         }
         
-        final boolean tHasVelocities = aAtomData.hasVelocities();
-        return new AtomData(rAtoms, aAtomData.atomTypeNum(), aAtomData.boxLo(), aAtomData.boxHi()) {
-            @Override public boolean hasVelocities() {return tHasVelocities;}
-        };
+        return new AtomData(rAtoms, aAtomData.atomTypeNum(), aAtomData.boxLo(), aAtomData.boxHi(), aAtomData.hasVelocities());
     }
     
     /**

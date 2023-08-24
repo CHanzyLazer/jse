@@ -20,12 +20,12 @@ println("glass, u: ${mpc_G.unitLen()}");
 
 // 计算 q6
 UT.Timer.tic();
-q6_G = mpc_G.calAOOP(6, mpc_G.unitLen()*cutoffMul, 12);
+q6_G = mpc_G.calABOOP(6, mpc_G.unitLen()*cutoffMul, 12);
 UT.Timer.toc("glass, q6");
 
 // 计算 q4
 UT.Timer.tic();
-q4_G = mpc_G.calAOOP(4, mpc_G.unitLen()*cutoffMul, 12);
+q4_G = mpc_G.calABOOP(4, mpc_G.unitLen()*cutoffMul, 12);
 UT.Timer.toc("glass, q4");
 
 // 计算完毕关闭 MPC
@@ -40,12 +40,12 @@ println("crystal, u: ${mpc_C.unitLen()}");
 
 // 计算 q6
 UT.Timer.tic();
-q6_C = mpc_C.calAOOP(6, mpc_C.unitLen()*cutoffMul, 12);
+q6_C = mpc_C.calABOOP(6, mpc_C.unitLen()*cutoffMul, 12);
 UT.Timer.toc("crystal, q6");
 
 // 计算 q4
 UT.Timer.tic();
-q4_C = mpc_C.calAOOP(4, mpc_C.unitLen()*cutoffMul, 12);
+q4_C = mpc_C.calABOOP(4, mpc_C.unitLen()*cutoffMul, 12);
 UT.Timer.toc("crystal, q4");
 
 // 计算完毕关闭 MPC
@@ -62,10 +62,10 @@ data_FCC = Structures.FCC(4.0, 10).opt().perturbG(0.25);
 mpc_FCC = data_FCC.getMPC();
 println("FCC, u: ${mpc_FCC.unitLen()}");
 UT.Timer.tic();
-q6_FCC = mpc_FCC.calAOOP(6, mpc_FCC.unitLen()*cutoffMul, 12);
+q6_FCC = mpc_FCC.calABOOP(6, mpc_FCC.unitLen()*cutoffMul, 12);
 UT.Timer.toc("FCC, q6");
 UT.Timer.tic();
-q4_FCC = mpc_FCC.calAOOP(4, mpc_FCC.unitLen()*cutoffMul, 12);
+q4_FCC = mpc_FCC.calABOOP(4, mpc_FCC.unitLen()*cutoffMul, 12);
 UT.Timer.toc("FCC, q4");
 mpc_FCC.shutdown();
 
@@ -73,10 +73,10 @@ data_BCC = Structures.BCC(4.0, 15).opt().perturbG(0.32);
 mpc_BCC = data_BCC.getMPC();
 println("BCC, u: ${mpc_BCC.unitLen()}");
 UT.Timer.tic();
-q6_BCC = mpc_BCC.calAOOP(6, mpc_BCC.unitLen()*cutoffMul, 12);
+q6_BCC = mpc_BCC.calABOOP(6, mpc_BCC.unitLen()*cutoffMul, 12);
 UT.Timer.toc("BCC, q6");
 UT.Timer.tic();
-q4_BCC = mpc_BCC.calAOOP(4, mpc_BCC.unitLen()*cutoffMul, 12);
+q4_BCC = mpc_BCC.calABOOP(4, mpc_BCC.unitLen()*cutoffMul, 12);
 UT.Timer.toc("BCC, q4");
 mpc_BCC.shutdown();
 
@@ -84,10 +84,10 @@ data_Zr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 5).opt().
 mpc_Zr7Cu10 = data_Zr7Cu10.getMPC();
 println("Zr7Cu10, u: ${mpc_Zr7Cu10.unitLen()}");
 UT.Timer.tic();
-q6_Zr7Cu10 = mpc_Zr7Cu10.calAOOP(6, mpc_Zr7Cu10.unitLen()*cutoffMul, 12);
+q6_Zr7Cu10 = mpc_Zr7Cu10.calABOOP(6, mpc_Zr7Cu10.unitLen()*cutoffMul, 12);
 UT.Timer.toc("Zr7Cu10, q6");
 UT.Timer.tic();
-q4_Zr7Cu10 = mpc_Zr7Cu10.calAOOP(4, mpc_Zr7Cu10.unitLen()*cutoffMul, 12);
+q4_Zr7Cu10 = mpc_Zr7Cu10.calABOOP(4, mpc_Zr7Cu10.unitLen()*cutoffMul, 12);
 UT.Timer.toc("Zr7Cu10, q4");
 mpc_Zr7Cu10.shutdown();
 

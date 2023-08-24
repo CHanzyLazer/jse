@@ -138,7 +138,7 @@ public class POSCAR extends AbstractAtomData {
             IMatrix rDirect = Matrices.zeros(aAtomData.atomNum(), 3);
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
-                for (IAtom tAtom : aAtomData.atoms(tTypeMM+1)) {
+                for (IAtom tAtom : aAtomData.atoms()) if (tAtom.type() == tTypeMM+1) {
                     rAtomNumbers.increment_(tTypeMM);
                     rDirect.set(tIdx, 0, (tAtom.x()-tBoxLo.mX)/tBox.mX);
                     rDirect.set(tIdx, 1, (tAtom.y()-tBoxLo.mY)/tBox.mY);

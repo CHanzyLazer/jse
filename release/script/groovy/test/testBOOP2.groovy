@@ -18,20 +18,20 @@ mpc = data.getMPC(nThreads);
 // 使用 Plotter 绘图
 plt = Plotters.get();
 
-q6 = mpc.calAOOP(6, mpc.unitLen()*1.2);
-q4 = mpc.calAOOP(4, mpc.unitLen()*1.2);
+q6 = mpc.calABOOP(6, mpc.unitLen()*1.2);
+q4 = mpc.calABOOP(4, mpc.unitLen()*1.2);
 plt.plot(q4, q6, '1.2 U').lineType('none').markerType('o').markerSize(4);
 
-q6 = mpc.calAOOP(6, mpc.unitLen()*1.4);
-q4 = mpc.calAOOP(4, mpc.unitLen()*1.4);
+q6 = mpc.calABOOP(6, mpc.unitLen()*1.4);
+q4 = mpc.calABOOP(4, mpc.unitLen()*1.4);
 plt.plot(q4, q6, '1.4 U').lineType('none').markerType('o').markerSize(4);
 
-q6 = mpc.calAOOP(6, mpc.unitLen()*1.6);
-q4 = mpc.calAOOP(4, mpc.unitLen()*1.6);
+q6 = mpc.calABOOP(6, mpc.unitLen()*1.6);
+q4 = mpc.calABOOP(4, mpc.unitLen()*1.6);
 plt.plot(q4, q6, '1.6 U').lineType('none').markerType('o').markerSize(4);
 
-q6 = mpc.calAOOP(6, mpc.unitLen()*2.0);
-q4 = mpc.calAOOP(4, mpc.unitLen()*2.0);
+q6 = mpc.calABOOP(6, mpc.unitLen()*2.0);
+q4 = mpc.calABOOP(4, mpc.unitLen()*2.0);
 plt.plot(q4, q6, '2.0 U').lineType('none').markerType('o').markerSize(4);
 
 // 计算完毕关闭 MPC
