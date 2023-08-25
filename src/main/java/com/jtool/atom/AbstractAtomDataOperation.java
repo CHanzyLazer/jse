@@ -1,7 +1,7 @@
 package com.jtool.atom;
 
 import com.jtool.code.filter.IFilter;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.functional.IOperator1;
 import com.jtool.math.vector.IVector;
 
 import java.util.ArrayList;

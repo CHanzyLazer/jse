@@ -1,6 +1,6 @@
 package com.jtool.math.function;
 
-import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
 import com.jtool.math.vector.IVectorSetter;

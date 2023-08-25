@@ -504,6 +504,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IMatrix qlmImag = RowMatrix.zeros(mAtomNum, aL+aL+1);
         // 统计近邻数用于求平均
         final IVector tNN = Vectors.zeros(mAtomNum);
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnn<=0;
         
         // 遍历计算 qlm，由于并行存在难以避免的线程安全问题（性能受影响/内存占用过多），并且考虑到这种并行存在边际效应，因此不去实现
         for (int i = 0; i < mAtomNum; ++i) {
@@ -513,7 +515,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IVector qlmiImag = qlmImag.row(i);
             // 同样采用一半的优化
             final int fI = i;
-            mNL.forEachNeighbor(fI, aRNearest, aNnn, true, (x, y, z, idx, dis) -> {
+            mNL.forEachNeighbor(fI, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
                 // 计算角度
                 double dx = x - cXYZ.mX;
                 double dy = y - cXYZ.mY;
@@ -529,18 +531,24 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
                     qlmiReal.add_(tCol, tY.mReal);
                     qlmiImag.add_(tCol, tY.mImag);
-                    // 对称的对面的粒子也要增加这个统计
-                    IVector qlmjReal = qlmReal.row(idx);
-                    IVector qlmjImag = qlmImag.row(idx);
-                    qlmjReal.add_(tCol, tY.mReal);
-                    qlmjImag.add_(tCol, tY.mImag);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    IVector qlmjReal = null, qlmjImag = null;
+                    if (aHalf) {
+                        qlmjReal = qlmReal.row(idx);
+                        qlmjImag = qlmImag.row(idx);
+                        qlmjReal.add_(tCol, tY.mReal);
+                        qlmjImag.add_(tCol, tY.mImag);
+                    }
                     // m < 0 的部分直接利用对称性求
                     if (tM != 0) {
                         tCol = -tM+aL;
                         qlmiReal.add_(tCol,  tY.mReal);
                         qlmiImag.add_(tCol, -tY.mImag);
-                        qlmjReal.add_(tCol,  tY.mReal);
-                        qlmjImag.add_(tCol, -tY.mImag);
+                        // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                        if (aHalf) {
+                            qlmjReal.add_(tCol,  tY.mReal);
+                            qlmjImag.add_(tCol, -tY.mImag);
+                        }
                     }
                 }
                 
@@ -769,30 +777,37 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     
     /**
-     * 通过 bond order parameter（Q6）来检测结构中类似固体的部分，
-     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * 通过 bond order parameter（Ql）来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * Reference:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
      * <p>
-     * 效果不理想，不知是什么原因，暂时不使用
+     * 为了保证重载的方法格式一致，这里不为这个方法提供重载
      * @author liqa
+     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
-     * @param aSolidThreshold 用来根据最近邻原子中，连接数超过此值则认为是固体的阈值，默认为 7
-     * @return 最后判断得到是否是固体组成的逻辑向量
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @return 最后得到的连接数目组成的逻辑向量
      */
-    public ILogicalVector checkSolidQ6(double aRNearest, int aNnn, double aConnectThreshold, int aSolidThreshold) {
+    public IVector calConnectCountQl(int aL, double aRNearest, int aNnn, double aConnectThreshold) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(6, aRNearest, aNnn);
+        Pair<IMatrix, IMatrix> tYlmMean = calYlmMean(aL, aRNearest, aNnn);
         IMatrix qlmReal = tYlmMean.mFirst;
         IMatrix qlmImag = tYlmMean.mSecond;
         // 统计连接数用于判断
         final IVector tConnectCount = Vectors.zeros(mAtomNum);
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnn<=0;
         
         // 注意需要先对 qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
@@ -811,7 +826,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IVector qlmiImag = qlmImag.row(i);
             // 遍历近邻计算连接数，同样采用一半的优化
             final int fI = i;
-            mNL.forEachNeighbor(fI, aRNearest, aNnn, true, (x, y, z, idx, dis) -> {
+            mNL.forEachNeighbor(fI, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
                 // 统一获取行向量
                 IVector qlmjReal = qlmReal.row(idx);
                 IVector qlmjImag = qlmImag.row(idx);
@@ -820,16 +835,57 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 取模量来判断是否连接
                 if (Sij.abs() > aConnectThreshold) {
                     tConnectCount.increment_(fI);
-                    tConnectCount.increment_(idx);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) tConnectCount.increment_(idx);
                 }
             });
         }
         
-        // 根据连接数判断是否是类固体，返回最终计算结果
-        return tConnectCount.greater(aSolidThreshold);
+        // 返回最终计算结果
+        return tConnectCount;
     }
+    
+    /**
+     * 具体通过 Q6 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * @author liqa
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 7
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     */
+    public ILogicalVector checkSolidQ6(double aRNearest, int aNnn, double aConnectThreshold, int aSolidThreshold) {return calConnectCountQl(6, aRNearest, aNnn, aConnectThreshold).greaterOrEqual(aSolidThreshold);}
     public ILogicalVector checkSolidQ6(double aRNearest,           double aConnectThreshold, int aSolidThreshold) {return checkSolidQ6(aRNearest, -1, aConnectThreshold, aSolidThreshold);}
     public ILogicalVector checkSolidQ6(double aRNearest, int aNnn                                               ) {return checkSolidQ6(aRNearest, aNnn, 0.5, 7);}
     public ILogicalVector checkSolidQ6(double aRNearest                                                         ) {return checkSolidQ6(aRNearest, 0.5, 7);}
     public ILogicalVector checkSolidQ6(                                                                         ) {return checkSolidQ6(mUnitLen*R_NEAREST_MUL);}
+    
+    /**
+     * 具体通过 Q4 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     * @author liqa
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     */
+    public ILogicalVector checkSolidQ4(double aRNearest, int aNnn, double aConnectThreshold, int aSolidThreshold) {return calConnectCountQl(4, aRNearest, aNnn, aConnectThreshold).greaterOrEqual(aSolidThreshold);}
+    public ILogicalVector checkSolidQ4(double aRNearest,           double aConnectThreshold, int aSolidThreshold) {return checkSolidQ4(aRNearest, -1, aConnectThreshold, aSolidThreshold);}
+    public ILogicalVector checkSolidQ4(double aRNearest, int aNnn                                               ) {return checkSolidQ4(aRNearest, aNnn, 0.35, 6);}
+    public ILogicalVector checkSolidQ4(double aRNearest                                                         ) {return checkSolidQ4(aRNearest, 0.35, 6);}
+    public ILogicalVector checkSolidQ4(                                                                         ) {return checkSolidQ4(mUnitLen*R_NEAREST_MUL);}
 }

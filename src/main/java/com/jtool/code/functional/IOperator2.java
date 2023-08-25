@@ -1,4 +1,4 @@
-package com.jtool.code.operator;
+package com.jtool.code.functional;
 
 @FunctionalInterface
 public interface IOperator2<R, TL, TR> {

@@ -1,6 +1,6 @@
 package com.jtool.math.function;
 
-import com.jtool.code.operator.IDoubleOperator3;
+import com.jtool.code.functional.IDoubleOperator3;
 import com.jtool.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
 

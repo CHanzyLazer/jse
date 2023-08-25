@@ -2,7 +2,7 @@ package com.jtool.math;
 
 import com.jtool.Main;
 import com.jtool.code.collection.Pair;
-import com.jtool.code.operator.*;
+import com.jtool.code.functional.*;
 import com.jtool.math.function.Func2;
 import com.jtool.math.function.Func3;
 import com.jtool.parallel.ParforThreadPool;

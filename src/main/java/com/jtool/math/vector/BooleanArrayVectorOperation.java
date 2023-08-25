@@ -1,7 +1,7 @@
 package com.jtool.math.vector;
 
-import com.jtool.code.operator.IBooleanOperator1;
-import com.jtool.code.operator.IBooleanOperator2;
+import com.jtool.code.functional.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator2;
 import com.jtool.math.IDataShell;
 import com.jtool.math.operation.ARRAY;
 import com.jtool.math.operation.DATA;

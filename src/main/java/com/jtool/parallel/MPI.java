@@ -2,7 +2,7 @@ package com.jtool.parallel;
 
 import com.jtool.Main;
 import com.jtool.code.UT;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.functional.IOperator1;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.zeromq.SocketType;

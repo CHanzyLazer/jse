@@ -1,4 +1,4 @@
-package com.jtool.code.operator;
+package com.jtool.code.functional;
 
 @FunctionalInterface
 public interface IDoubleOperator2 {

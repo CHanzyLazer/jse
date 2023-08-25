@@ -1,9 +1,9 @@
 package com.jtool.math.operation;
 
-import com.jtool.code.operator.IBooleanOperator1;
-import com.jtool.code.operator.IBooleanOperator2;
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.code.functional.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator2;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator2;
 
 
 /**

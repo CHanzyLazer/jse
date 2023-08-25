@@ -21,7 +21,6 @@ final class LinkedCell<A extends IXYZ> {
     private final XYZ mBox;
     
     private final double mMaxDis; // 此 cell 能使用的最大的近邻距离
-    
     public double maxDis() {return mMaxDis;}
     
     // 指定三维的分划份数来初始化
@@ -63,12 +62,11 @@ final class LinkedCell<A extends IXYZ> {
         
         return tIsMirror ? new Link<>(cell(i, j, k), new XYZ(tDirX, tDirY, tDirZ)) : new Link<>(cell(i, j, k));
     }
+    private @Unmodifiable List<A> cell(int i, int j, int k) {return mCells.get(idx(i, j, k));}
+    private @Unmodifiable List<A> cell(IXYZ aXYZ) {return cell((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
+    
     
     // 获取的接口
-    public @Unmodifiable List<A> cell(int i, int j, int k) {return mCells.get(idx(i, j, k));}
-    public @Unmodifiable List<A> cell(IXYZ aXYZ) {return cell((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
-    
-    // links 缓存
     private final ThreadLocal<Pair<Integer, List<Link<A>>>> mLinksTemp = ThreadLocal.withInitial(() -> new Pair<>(-1, null));
     public @Unmodifiable List<Link<A>> links(IXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
     public @Unmodifiable List<Link<A>> links(int i, int j, int k) {

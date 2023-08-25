@@ -335,14 +335,19 @@ public class NeighborListGetter implements IShutdownable {
      * @param aIDX 中心粒子的 index
      * @param aRMax 最大的近邻半径
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）
-     * @param aHalf 是否考虑 index 对易后一致的情况，只遍历一半的原子
+     * @param aHalf 是否考虑 index 对易后一致的情况，只遍历一半的原子（当设置了最大近邻后建议关闭，否则会爆出警告）
      * @param aMHT 是否采用曼哈顿距离（MHT: ManHaTtan distance）来作为距离的判据
      */
     void forEachNeighbor_(final int aIDX, final double aRMax, int aNnn, boolean aHalf, final boolean aMHT, IXYZIdxDisDo aXYZIdxDisDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         // 特殊输入处理，直接回到没有限制的情况
-        if (aNnn <= 0) forEachNeighbor_(aIDX, aRMax, aHalf, aMHT, aXYZIdxDisDo);
+        if (aNnn <= 0) {
+            forEachNeighbor_(aIDX, aRMax, aHalf, aMHT, aXYZIdxDisDo);
+            return;
+        }
+        // 如果有限制 aNnn 则 aHalf 会有意外的结果，因此会警告建议关闭
+        if (aHalf) System.err.println("WARNING: Half will cause Unexpected Results when Nnn>0, although it remains open here to avoid excessive deviation in the results");
         
         // 先遍历所有经历统计出最近的列表
         final NearestNeighborList rNN = new NearestNeighborList(aNnn);
@@ -382,7 +387,10 @@ public class NeighborListGetter implements IShutdownable {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         // 特殊输入处理，直接回到没有限制的情况
-        if (aNnn <= 0) forEachNeighbor_(aXYZ, aRMax, aMHT, aXYZIdxDisDo);
+        if (aNnn <= 0) {
+            forEachNeighbor_(aXYZ, aRMax, aMHT, aXYZIdxDisDo);
+            return;
+        }
         
         // 先遍历所有经历统计出最近的列表
         final NearestNeighborList rNN = new NearestNeighborList(aNnn);

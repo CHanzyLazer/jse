@@ -1,9 +1,9 @@
 package com.jtool.math.function;
 
 
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
-import com.jtool.code.operator.IDoubleOperator3;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator2;
+import com.jtool.code.functional.IDoubleOperator3;
 import com.jtool.math.IDataShell;
 import com.jtool.math.operation.ARRAY;
 import com.jtool.math.vector.IVectorSetter;

@@ -5,7 +5,7 @@ import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.iterator.IComplexDoubleIterator;
 import com.jtool.code.iterator.IComplexDoubleSetIterator;
 import com.jtool.code.iterator.IComplexDoubleSetOnlyIterator;
-import com.jtool.code.operator.IComplexDoubleOperator1;
+import com.jtool.code.functional.IComplexDoubleOperator1;
 import com.jtool.math.IComplexDouble;
 import org.jetbrains.annotations.VisibleForTesting;
 

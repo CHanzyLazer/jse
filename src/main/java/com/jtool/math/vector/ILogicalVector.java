@@ -3,7 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.iterator.*;
-import com.jtool.code.operator.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
  * @author liqa
  * <p> 专用的逻辑值向量 </p>
  */
-public interface ILogicalVector extends ILogicalVectorGetter, ILogicalVectorSetter {
+public interface ILogicalVector extends IHasBooleanIterator, ILogicalVectorGetter, ILogicalVectorSetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
     IBooleanIterator iterator();
     IBooleanSetIterator setIterator();

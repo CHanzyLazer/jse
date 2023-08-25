@@ -1,10 +1,10 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.iterator.IDoubleIterator;
-import com.jtool.code.operator.ICheckOperator;
-import com.jtool.code.operator.ICompareOperator;
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.code.functional.IChecker;
+import com.jtool.code.functional.IComparator;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator2;
 import com.jtool.math.MathEX;
 import com.jtool.math.operation.DATA;
 
@@ -81,8 +81,8 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public ILogicalVector mapLess             (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapLess2Dest_             (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
     @Override public ILogicalVector mapLessOrEqual      (IVectorGetter aLHS, double aRHS) {ILogicalVector rVector = newLogicalVector_(newVectorSize_(aLHS)); DATA.mapLessOrEqual2Dest_      (thisVector_().iteratorOf(aLHS), aRHS, rVector.setIterator()); return rVector;}
     
-    @Override public ILogicalVector compare(IVectorGetter aRHS, ICompareOperator aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aRHS)); DATA.ebeCompare2Dest_(tThis.iterator(), tThis.iteratorOf(aRHS), rVector.setIterator(), aOpt); return rVector;}
-    @Override public ILogicalVector check  (ICheckOperator aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(tThis.size()); DATA.mapCheck2Dest_(tThis.iterator(), rVector.setIterator(), aOpt); return rVector;}
+    @Override public ILogicalVector compare(IVectorGetter aRHS, IComparator aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(newVectorSize_(aRHS)); DATA.ebeCompare2Dest_(tThis.iterator(), tThis.iteratorOf(aRHS), rVector.setIterator(), aOpt); return rVector;}
+    @Override public ILogicalVector check  (IChecker aOpt) {IVector tThis = thisVector_(); ILogicalVector rVector = newLogicalVector_(tThis.size()); DATA.mapCheck2Dest_(tThis.iterator(), rVector.setIterator(), aOpt); return rVector;}
     
     /** 向量的一些额外的运算 */
     @Override public double dot(IVectorGetter aRHS) {

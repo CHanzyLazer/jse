@@ -2,7 +2,7 @@ package com.jtool.math.vector;
 
 import com.jtool.code.iterator.IBooleanIterator;
 import com.jtool.code.iterator.IBooleanSetIterator;
-import com.jtool.code.operator.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator1;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;

@@ -4,7 +4,7 @@ import com.jtool.code.CS.SliceType;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.iterator.*;
-import com.jtool.code.operator.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;

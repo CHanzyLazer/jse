@@ -6,7 +6,7 @@ import com.jtool.atom.*;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.iterator.IDoubleIterator;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.functional.IOperator1;
 import com.jtool.code.task.TaskCall;
 import com.jtool.code.task.TaskRun;
 import com.jtool.math.function.IFunc1;

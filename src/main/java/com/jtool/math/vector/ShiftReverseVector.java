@@ -2,7 +2,7 @@ package com.jtool.math.vector;
 
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
-import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;

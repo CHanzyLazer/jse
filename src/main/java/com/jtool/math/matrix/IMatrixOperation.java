@@ -1,8 +1,8 @@
 package com.jtool.math.matrix;
 
 
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator2;
 import com.jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 

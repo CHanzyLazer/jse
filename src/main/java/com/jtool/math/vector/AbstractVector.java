@@ -6,7 +6,7 @@ import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.iterator.IDoubleSetOnlyIterator;
-import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;

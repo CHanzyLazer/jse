@@ -22,6 +22,5 @@ public interface IComplexDouble {
     default IComplexDouble div(double aReal              ) {return new ComplexDouble(real()/aReal, imag()/aReal);}
     
     default double abs() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
-    default double norm() {return abs();}
     default double dot() {return real()*real() + imag()*imag();}
 }

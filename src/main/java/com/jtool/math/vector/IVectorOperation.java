@@ -1,10 +1,10 @@
 package com.jtool.math.vector;
 
 
-import com.jtool.code.operator.ICheckOperator;
-import com.jtool.code.operator.ICompareOperator;
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IDoubleOperator2;
+import com.jtool.code.functional.IChecker;
+import com.jtool.code.functional.IComparator;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator2;
 
 /**
  * 任意的实向量的运算
@@ -79,8 +79,8 @@ public interface IVectorOperation {
     ILogicalVector mapLess          (IVectorGetter aLHS, double aRHS);
     ILogicalVector mapLessOrEqual   (IVectorGetter aLHS, double aRHS);
     
-    ILogicalVector compare(IVectorGetter aRHS, ICompareOperator aOpt);
-    ILogicalVector check  (ICheckOperator aOpt);
+    ILogicalVector compare(IVectorGetter aRHS, IComparator aOpt);
+    ILogicalVector check  (IChecker aOpt);
     
     /** 向量的一些额外的运算 */
     double dot(IVectorGetter aRHS);

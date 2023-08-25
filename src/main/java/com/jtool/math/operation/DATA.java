@@ -1,7 +1,7 @@
 package com.jtool.math.operation;
 
 import com.jtool.code.iterator.*;
-import com.jtool.code.operator.*;
+import com.jtool.code.functional.*;
 
 /**
  * 对于运算操作的一般实现，主要用于减少重复代码；
@@ -84,14 +84,14 @@ public class DATA {
     public static void ebeGreaterOrEqual2Dest_  (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs >= rhs));}
     public static void ebeLess2Dest_            (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs <  rhs));}
     public static void ebeLessOrEqual2Dest_     (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest) {ebeCompare2Dest_(aLHS, aRHS, rDest, (lhs, rhs) -> (lhs <= rhs));}
-    public static void ebeCompare2Dest_         (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest, ICompareOperator aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aLHS.next(), aRHS.next()));}
+    public static void ebeCompare2Dest_         (IDoubleIterator aLHS, IDoubleIterator aRHS, IBooleanSetOnlyIterator rDest, IComparator aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aLHS.next(), aRHS.next()));}
     
     public static void mapEqual2Dest_           (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs == aRHS));}
     public static void mapGreater2Dest_         (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs >  aRHS));}
     public static void mapGreaterOrEqual2Dest_  (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs >= aRHS));}
     public static void mapLess2Dest_            (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs <  aRHS));}
     public static void mapLessOrEqual2Dest_     (IDoubleIterator aLHS, final double aRHS, IBooleanSetOnlyIterator rDest) {mapCheck2Dest_(aLHS, rDest, lhs -> (lhs <= aRHS));}
-    public static void mapCheck2Dest_           (IDoubleIterator aData, IBooleanSetOnlyIterator rDest, ICheckOperator aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aData.next()));}
+    public static void mapCheck2Dest_           (IDoubleIterator aData, IBooleanSetOnlyIterator rDest, IChecker aOpt) {while (rDest.hasNext()) rDest.nextAndSet(aOpt.cal(aData.next()));}
     
     
     /** add, minus, multiply, divide stuffs */

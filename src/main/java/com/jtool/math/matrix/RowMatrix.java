@@ -2,7 +2,7 @@ package com.jtool.math.matrix;
 
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
-import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.ShiftVector;
 import com.jtool.math.vector.Vector;

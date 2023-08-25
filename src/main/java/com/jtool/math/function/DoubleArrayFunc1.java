@@ -1,7 +1,7 @@
 package com.jtool.math.function;
 
 
-import com.jtool.code.operator.IDoubleOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.math.IDataShell;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.RefVector;

@@ -1,8 +1,8 @@
 package com.jtool.math.vector;
 
 
-import com.jtool.code.operator.IBooleanOperator1;
-import com.jtool.code.operator.IBooleanOperator2;
+import com.jtool.code.functional.IBooleanOperator1;
+import com.jtool.code.functional.IBooleanOperator2;
 
 /**
  * 任意的逻辑向量的运算

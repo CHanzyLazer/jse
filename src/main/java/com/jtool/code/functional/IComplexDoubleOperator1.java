@@ -1,4 +1,4 @@
-package com.jtool.code.operator;
+package com.jtool.code.functional;
 
 import com.jtool.math.IComplexDouble;
 

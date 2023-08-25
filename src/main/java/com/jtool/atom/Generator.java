@@ -2,15 +2,14 @@ package com.jtool.atom;
 
 import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.filter.IFilter;
-import com.jtool.code.operator.IDoubleOperator1;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.functional.IOperator1;
 import com.jtool.math.MathEX;
 import com.jtool.math.function.Func3;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
 import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.ParforThreadPool;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;

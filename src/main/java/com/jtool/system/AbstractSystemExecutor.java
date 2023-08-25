@@ -2,7 +2,7 @@ package com.jtool.system;
 
 import com.google.common.collect.ImmutableList;
 import com.jtool.code.UT;
-import com.jtool.code.operator.IOperator1;
+import com.jtool.code.functional.IOperator1;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.MergedIOFiles;
 import com.jtool.parallel.AbstractThreadPool;
