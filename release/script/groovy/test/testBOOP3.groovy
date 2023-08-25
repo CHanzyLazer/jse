@@ -4,7 +4,7 @@ import com.jtool.code.UT
 import com.jtool.lmp.Lmpdat
 
 
-/** 测试计算 AOOP */
+/** 测试计算 BOOP */
 
 // 设置线程数
 nThreads = 1;

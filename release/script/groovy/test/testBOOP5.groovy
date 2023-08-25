@@ -1,8 +1,10 @@
 package test
 
+import com.jtool.atom.Structures
 import com.jtool.lmp.Lmpdat
 import com.jtool.math.vector.Vectors
 import com.jtool.plot.Plotters
+import com.jtool.vasp.POSCAR
 
 
 /** 测试计算 BOOP，测试固液判断的阈值选择 */
@@ -10,15 +12,15 @@ import com.jtool.plot.Plotters
 
 // 首先导入 Lmpdat
 def dataG = Lmpdat.read('lmp/data/data-glass');
-def dataC = Lmpdat.read('lmp/data/data-crystal');
+def dataC = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 4).opt().filterType(1).opt().perturbG(0.25);
 
 // 计算连接数向量
 def connectCountG, connectCountC;
 try (def mpc = dataG.getMPC()) {
-    connectCountG = mpc.calConnectCountQl(4, mpc.unitLen()*2.0, 12, 0.35);
+    connectCountG = mpc.calConnectCountABOOP(6, mpc.unitLen()*2.0, 12, 0.80);
 }
 try (def mpc = dataC.getMPC()) {
-    connectCountC = mpc.calConnectCountQl(4, mpc.unitLen()*2.0, 12, 0.35);
+    connectCountC = mpc.calConnectCountABOOP(6, mpc.unitLen()*2.0, 12, 0.80);
 }
 
 // 统计结果
