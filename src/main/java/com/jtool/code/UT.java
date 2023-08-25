@@ -1174,15 +1174,13 @@ public class UT {
         }
         public static void data2csv(IVector aData, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
-                IDoubleIterator it = aData.iterator();
-                while (it.hasNext()) tPrinter.println(it.next());
+                aData.forEach(tPrinter::println);
             }
         }
         public static void data2csv(IVector aData, String aFilePath, String aHead) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 tPrinter.println(aHead);
-                IDoubleIterator it = aData.iterator();
-                while (it.hasNext()) tPrinter.println(it.next());
+                aData.forEach(tPrinter::println);
             }
         }
         public static void data2csv(IFunc1 aFunc, String aFilePath, String... aHeads) throws IOException {

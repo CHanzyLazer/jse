@@ -21,8 +21,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         StringBuilder rStr  = new StringBuilder();
         rStr.append(String.format("%d-length Logical Vector:", size()));
         rStr.append("\n");
-        final IBooleanIterator it = iterator();
-        while (it.hasNext()) rStr.append(toString_(it.next()));
+        forEach(v -> rStr.append(toString_(v)));
         return rStr.toString();
     }
     

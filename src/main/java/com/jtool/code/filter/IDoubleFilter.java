@@ -59,13 +59,11 @@ public interface IDoubleFilter {
     static <N extends Number> List<N> fixedFilter(Iterable<N> aIterable, final IDoubleFilter aFilter) {
         return IFilter.fixedFilter(aIterable, v -> aFilter.accept(v.doubleValue()));
     }
-    static IVector fixedFilter(IHasDoubleIterator aIterable, IDoubleFilter aFilter) {
-        Vector.Builder rBuilder = Vector.builder();
-        final IDoubleIterator it = aIterable.iterator();
-        while (it.hasNext()) {
-            double tValue = it.next();
-            if (aFilter.accept(tValue)) rBuilder.add(tValue);
-        }
+    static IVector fixedFilter(IHasDoubleIterator aIterable, final IDoubleFilter aFilter) {
+        final Vector.Builder rBuilder = Vector.builder();
+        aIterable.forEach(v -> {
+            if (aFilter.accept(v)) rBuilder.add(v);
+        });
         rBuilder.shrinkToFit();
         return rBuilder.build();
     }

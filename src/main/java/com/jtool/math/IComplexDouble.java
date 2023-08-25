@@ -22,5 +22,9 @@ public interface IComplexDouble {
     default IComplexDouble div(double aReal              ) {return new ComplexDouble(real()/aReal, imag()/aReal);}
     
     default double abs() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
+    
+    /** 这里定义 a.dot(b) = a × b* */
+    default IComplexDouble dot(IComplexDouble aComplex   ) {return new ComplexDouble(real()*aComplex.real() + imag()*aComplex.imag(), imag()*aComplex.real() - real()*aComplex.imag());}
+    default IComplexDouble dot(double aReal, double aImag) {return new ComplexDouble(real()*aReal           + imag()*aImag          , imag()*aReal           - real()*aImag          );}
     default double dot() {return real()*real() + imag()*imag();}
 }

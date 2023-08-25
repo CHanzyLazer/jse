@@ -86,5 +86,22 @@ public final class ComplexDouble implements IComplexDouble {
     }
     
     @Override public double abs() {return MathEX.Fast.sqrt(mReal*mReal + mImag*mImag);}
+    
+    @Override public ComplexDouble dot(IComplexDouble aComplex   ) {return new ComplexDouble(mReal*aComplex.real() + mImag*aComplex.imag(), mImag*aComplex.real() - mReal*aComplex.imag());}
+    @Override public ComplexDouble dot(double aReal, double aImag) {return new ComplexDouble(mReal*aReal           + mImag*aImag          , mImag*aReal           - mReal*aImag          );}
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    public ComplexDouble dot(ComplexDouble aComplex) {return new ComplexDouble(mReal*aComplex.mReal + mImag*aComplex.mImag, mImag*aComplex.mReal - mReal*aComplex.mImag);}
+    public void dot2this(ComplexDouble aComplex) {
+        double tReal = mReal*aComplex.mReal + mImag*aComplex.mImag;
+        double tImag = mImag*aComplex.mReal - mReal*aComplex.mImag;
+        mReal = tReal;
+        mImag = tImag;
+    }
+    public void dot2this(double aReal, double aImag) {
+        double tReal = mReal*aReal + mImag*aImag;
+        double tImag = mImag*aReal - mReal*aImag;
+        mReal = tReal;
+        mImag = tImag;
+    }
     @Override public double dot() {return mReal*mReal + mImag*mImag;}
 }

@@ -20,11 +20,10 @@ import java.util.NoSuchElementException;
 public abstract class AbstractVector implements IVector {
     /** print */
     @Override public String toString() {
-        StringBuilder rStr  = new StringBuilder();
+        final StringBuilder rStr  = new StringBuilder();
         rStr.append(String.format("%d-length Vector:", size()));
         rStr.append("\n");
-        final IDoubleIterator it = iterator();
-        while (it.hasNext()) rStr.append(toString_(it.next()));
+        forEach(v -> rStr.append(toString_(v)));
         return rStr.toString();
     }
     
