@@ -207,7 +207,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         
         int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装指令
-        LinkedList<String> rRunCommand = new LinkedList<>();
+        List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");
         rRunCommand.add("--nodes");             rRunCommand.add(String.valueOf(tNodeNum));
         rRunCommand.add("--job-name");          rRunCommand.add(mUniqueJobName);
@@ -253,7 +253,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
 //      rRunCommand.add("--wait");              rRunCommand.add("1000000"); // 正常提交任务不需要修改 wait，可以防止任务报错后一直卡住
         rRunCommand.add(aCommand);
         // 组装提交指令
-        LinkedList<String> rSubmitCommand = new LinkedList<>();
+        List<String> rSubmitCommand = new ArrayList<>();
         rSubmitCommand.add(String.format("echo -e '#!/bin/bash\\n%s'", String.join(" ", rRunCommand)));
         rSubmitCommand.add("|");
         rSubmitCommand.add("sbatch");

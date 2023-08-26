@@ -7,10 +7,7 @@ import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.functional.IOperator1;
 import com.jtool.math.vector.IVector;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static com.jtool.code.UT.Code.toXYZ;
 
@@ -119,9 +116,10 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         while (tTypeList.size() < tAtomNum) tTypeList.add(tMaxType);
         // 随机打乱这些种类标记
         Collections.shuffle(tTypeList, aRandom);
+        final Iterator<Integer> it = tTypeList.iterator();
         // 使用 mapUpdate 获取种类修改后的 AtomData
         return collect(tMaxType, atom -> {
-            final int tType = tTypeList.remove(tTypeList.size()-1);
+            final int tType = it.next();
             return new WrapperAtom(atom) {@Override public int type() {return tType;}};
         });
     }

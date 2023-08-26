@@ -32,7 +32,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     /** 包装一个任意的 mSystemExecutor 来执行指令，注意只会使用其中的最简单的 system 相关操作，因此不需要包含线程池 */
     protected final T mEXE;
     protected final int mParallelNum;
-    protected final LinkedList<FutureJob> mQueuedJobList;
+    protected final Deque<FutureJob> mQueuedJobList;
     protected final Map<FutureJob, Integer> mJobList;
     
     protected AbstractLongTimeSystemExecutor(T aSystemExecutor, int aParallelNum) {
@@ -40,7 +40,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         mEXE = aSystemExecutor;
         mParallelNum = aParallelNum;
         mJobList = new LinkedHashMap<>();
-        mQueuedJobList = new LinkedList<>();
+        mQueuedJobList = new ArrayDeque<>();
         
         // 提交长期任务
         pool().execute(this::keepSubmitFromList_);
@@ -437,7 +437,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     
     
     /** 批量任务直接遍历提交 */
-    private final LinkedList<Pair<List<String>, MergedIOFiles>> mBatchCommandsIOFiles = new LinkedList<>();
+    private final Deque<Pair<List<String>, MergedIOFiles>> mBatchCommandsIOFiles = new ArrayDeque<>();
     @Override public final synchronized ListFutureJob submitBatchSystem() {
         if (mDead) throw new RuntimeException("Can NOT getSubmit from this Dead Executor.");
         // 遍历提交

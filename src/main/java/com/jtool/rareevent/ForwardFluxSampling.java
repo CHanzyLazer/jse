@@ -98,12 +98,12 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
-    public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(aStep1Mul, 1); return this;}
-    public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = Math.max(aMaxPathNum, mN0); return this;}
-    public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = Math.min(aCutoff, 0.5); return this;}
-    public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = Math.max(aMaxStatTimes, 1); return this;}
-    public ForwardFluxSampling<T> setPruningProb(double aPruningProb) {mPruningProb = Math.max(aPruningProb, 0.0); return this;}
-    public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(aPruningThreshold, 1); return this;}
+    public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(1, aStep1Mul); return this;}
+    public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = Math.max(mN0, aMaxPathNum); return this;}
+    public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = MathEX.Code.toRange(0.0, 0.5, aCutoff); return this;}
+    public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = Math.max(1, aMaxStatTimes); return this;}
+    public ForwardFluxSampling<T> setPruningProb(double aPruningProb) {mPruningProb = MathEX.Code.toRange(0.0, 1.0, aPruningProb); return this;}
+    public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(1, aPruningThreshold); return this;}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
     public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mFullPathGenerator.setDoNotShutdown(aDoNotShutdown); return this;}
     /** 可以从中间开始，此时则会直接跳过第一步（对于合法输入）*/
@@ -491,7 +491,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public long totalPathNum() {return mStep1PathNum + (long)mStep2PathNum.sum();}
     
     /** 利用保存的 parent 获取演化路径 */
-    public LinkedList<T> pickPath() {
+    public Deque<T> pickPath() {
         // 根据 multiple 为概率选择路径
         double tTotalMul = 0.0;
         for (Point tPoint : mPointsOnLambda) tTotalMul += tPoint.multiple;
@@ -504,8 +504,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         }
         return pickPath(idx);
     }
-    public LinkedList<T> pickPath(int aIdx) {
-        LinkedList<T> rPath = new LinkedList<>();
+    public Deque<T> pickPath(int aIdx) {
+        Deque<T> rPath = new ArrayDeque<>();
         Point tPoint = mPointsOnLambda.get(aIdx);
         do {
             if (tPoint.value != rPath.peekFirst()) {

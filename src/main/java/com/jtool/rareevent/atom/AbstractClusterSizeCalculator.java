@@ -20,9 +20,9 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
         // 还是使用 MPC 内部的方法来判断
         try (final MonatomicParameterCalculator tMPC = aPoint.getMonatomicParameterCalculator()) {
             final ILogicalVector tIsSolid = getIsSolid_(tMPC, aPoint);
-            // 使用 getClustersBFS 获取所有的团簇
-            final double tRCluster = tMPC.unitLen()*getRClusterMul_();
-            List<List<Integer>> tClusters = MathEX.Adv.getClustersBFS(tIsSolid.filter(tIsSolid.size()), i -> tIsSolid.filter(tMPC.getNeighborList(i, tRCluster)));
+            // 使用 getClustersDFS 获取所有的团簇（一般来说会比 BFS 更快，当然这个部分不是瓶颈）
+            final double tRCluster = getRCluster_(tMPC);
+            List<List<Integer>> tClusters = MathEX.Adv.getClustersDFS(tIsSolid.filter(tIsSolid.size()), i -> tIsSolid.filter(tMPC.getNeighborList(i, tRCluster)));
             // 遍历团簇统计 lambda
             double rLambda = 0.0;
             for (List<Integer> subCluster : tClusters) {
@@ -33,6 +33,6 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
     }
     
     /** stuff to override */
-    protected double getRClusterMul_() {return R_NEAREST_MUL;}
+    protected double getRCluster_(MonatomicParameterCalculator aMPC) {return aMPC.unitLen()*R_NEAREST_MUL;}
     protected abstract ILogicalVector getIsSolid_(MonatomicParameterCalculator aMPC, IAtomData aPoint);
 }

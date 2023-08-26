@@ -13,8 +13,13 @@ final double cutoffMul = 2.0;
 final int nnn = 12;
 final double perturbMul = 1.0;
 
+final boolean onlyCu = false;
+final boolean onlyZr = false;
+
 // 先计算玻璃态
 data_G = Lmpdat.read('lmp/data/data-glass');
+if (onlyCu) data_G = data_G.opt().filterType(1);
+if (onlyZr) data_G = data_G.opt().filterType(2);
 mpc_G = data_G.getMPC();
 println("glass, u: ${mpc_G.unitLen()}");
 UT.Timer.tic();
@@ -62,6 +67,8 @@ mpc_HCP.shutdown();
 
 
 data_MgCu2 = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'), 4).opt().perturbG(0.25*perturbMul);
+if (onlyCu) data_MgCu2 = data_MgCu2.opt().filterType(2);
+if (onlyZr) data_MgCu2 = data_MgCu2.opt().filterType(1);
 mpc_MgCu2 = data_MgCu2.getMPC();
 println("MgCu2, u: ${mpc_MgCu2.unitLen()}");
 UT.Timer.tic();
@@ -73,6 +80,8 @@ UT.Timer.toc("MgCu2, w4");
 mpc_MgCu2.shutdown();
 
 data_Zr3Cu8 = Structures.from(POSCAR.read('lmp/data/Zr3Cu8.poscar'), 3).opt().perturbG(0.25*perturbMul);
+if (onlyCu) data_Zr3Cu8 = data_Zr3Cu8.opt().filterType(2);
+if (onlyZr) data_Zr3Cu8 = data_Zr3Cu8.opt().filterType(1);
 mpc_Zr3Cu8 = data_Zr3Cu8.getMPC();
 println("Zr3Cu8, u: ${mpc_Zr3Cu8.unitLen()}");
 UT.Timer.tic();
@@ -84,6 +93,8 @@ UT.Timer.toc("Zr3Cu8, w4");
 mpc_Zr3Cu8.shutdown();
 
 data_Zr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 3).opt().perturbG(0.25*perturbMul);
+if (onlyCu) data_Zr7Cu10 = data_Zr7Cu10.opt().filterType(2);
+if (onlyZr) data_Zr7Cu10 = data_Zr7Cu10.opt().filterType(1);
 mpc_Zr7Cu10 = data_Zr7Cu10.getMPC();
 println("Zr7Cu10, u: ${mpc_Zr7Cu10.unitLen()}");
 UT.Timer.tic();
@@ -95,6 +106,8 @@ UT.Timer.toc("Zr7Cu10, w4");
 mpc_Zr7Cu10.shutdown();
 
 data_ZrCu2 = Structures.from(POSCAR.read('lmp/data/ZrCu2.poscar'), 5).opt().perturbG(0.25*perturbMul);
+if (onlyCu) data_ZrCu2 = data_ZrCu2.opt().filterType(2);
+if (onlyZr) data_ZrCu2 = data_ZrCu2.opt().filterType(1);
 mpc_ZrCu2 = data_ZrCu2.getMPC();
 println("ZrCu2, u: ${mpc_ZrCu2.unitLen()}");
 UT.Timer.tic();

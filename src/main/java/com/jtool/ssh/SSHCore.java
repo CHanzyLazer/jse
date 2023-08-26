@@ -6,9 +6,7 @@ import com.jtool.parallel.ExecutorsEX;
 import com.jtool.parallel.IAutoShutdown;
 import com.jtool.parallel.IExecutorEX;
 
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 
 import static com.jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
 
@@ -517,7 +515,7 @@ public final class SSHCore implements IAutoShutdown {
     /** 类似线程池的 Sftp 通道，可以重写实现提交任务并且并发的上传和下载 */
     private static class SftpPool {
         interface ISftpTask {void doTask(ChannelSftp aChannelSftp) throws Exception;}
-        private final LinkedList<ISftpTask> mTaskList = new LinkedList<>();
+        private final Deque<ISftpTask> mTaskQueue = new ArrayDeque<>();
         private volatile boolean mDead = false;
         private final IExecutorEX mPool;
         
@@ -536,7 +534,7 @@ public final class SSHCore implements IAutoShutdown {
                             // 每个 Sftp 都从 mTaskList 中竞争获取 task 并执行
                             while (true) {
                                 ISftpTask tTask;
-                                synchronized (mTaskList) {tTask = mTaskList.pollFirst();}
+                                synchronized (mTaskQueue) {tTask = mTaskQueue.pollFirst();}
                                 if (tTask != null) {
                                     tTask.doTask(tChannelSftp);
                                 } else {
@@ -564,7 +562,7 @@ public final class SSHCore implements IAutoShutdown {
         
         private void submit(ISftpTask aSftpTask) {
             if (mDead) throw new RuntimeException("Can NOT submit tasks to a Dead SftpPool.");
-            synchronized (mTaskList) {mTaskList.addLast(aSftpTask);}
+            synchronized (mTaskQueue) {mTaskQueue.addLast(aSftpTask);}
         }
     }
     

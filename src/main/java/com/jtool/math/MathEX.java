@@ -1103,7 +1103,7 @@ public class MathEX {
             List<List<T>> rClusters = new ArrayList<>();
             Set<T> tVisited = new HashSet<>();
             
-            Queue<T> tQueue = new LinkedList<>();
+            Queue<T> tQueue = new ArrayDeque<>();
             for (T tPoint : aPoints) if (!tVisited.contains(tPoint)) {
                 List<T> subCluster = new ArrayList<>();
 //              tQueue.clear(); // 由于后面会遍历移除，因此此时 tQueue 永远为空
@@ -1124,11 +1124,54 @@ public class MathEX {
             }
             return rClusters;
         }
+        
+        /**
+         * General method to get clusters by using Depth-First Search
+         * @author liqa
+         * @param aPoints all points should be considered
+         * @param aNeighborListGetter get the neighbor list of the giving point
+         * @return list of cluster
+         * @param <T> type of the point
+         */
+        public static <T> List<List<T>> getClustersDFS(Iterable<? extends T> aPoints, IOperator1<? extends Iterable<? extends T>, ? super T> aNeighborListGetter) {
+            List<List<T>> rClusters = new ArrayList<>();
+            Set<T> tVisited = new HashSet<>();
+            
+            Deque<T> tStack = new ArrayDeque<>();
+            for (T tPoint : aPoints) {
+                if (!tVisited.contains(tPoint)) {
+                    List<T> subCluster = new ArrayList<>();
+//                  tStack.clear(); // 由于后面会遍历移除，因此此时 tStack 永远为空
+                    
+                    tStack.push(tPoint);
+                    tVisited.add(tPoint);
+                    
+                    while (!tStack.isEmpty()) {
+                        T currentPoint = tStack.pop();
+                        subCluster.add(currentPoint);
+                        
+                        for (T tNeighbor : aNeighborListGetter.cal(currentPoint)) {
+                            if (!tVisited.contains(tNeighbor)) {
+                                tStack.push(tNeighbor);
+                                tVisited.add(tNeighbor);
+                            }
+                        }
+                    }
+                    rClusters.add(subCluster);
+                }
+            }
+            return rClusters;
+        }
     }
     
     
     /// utils operations
     public static class Code {
+        
+        public static double toRange(double aMin, double aMax, double aValue) {return FastMath.toRange(aMin, aMax, aValue);}
+        public static int toRange(int aMin, int aMax, int aValue) {return FastMath.toRange(aMin, aMax, aValue);}
+        public static long toRange(long aMin, long aMax, long aValue) {return FastMath.toRange(aMin, aMax, aValue);}
+        
         /** double compare */
         public static boolean numericEqual(double aLHS, double aRHS) {
             double tNorm = Math.abs(aLHS) + Math.abs(aRHS);

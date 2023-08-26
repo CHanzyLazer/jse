@@ -16,8 +16,8 @@ import static com.jtool.code.CS.R_NEAREST_MUL;
  * @author liqa
  */
 public final class ClusterSizeCalculator extends AbstractClusterSizeCalculator {
-    private final double mQ6CutoffMul, mRClusterMul;
-    private final int mNnn;
+    private double mQ6CutoffMul, mRClusterMul;
+    private int mNnn;
     
     /**
      * 构造一个团簇大小计算器，使用
@@ -32,6 +32,10 @@ public final class ClusterSizeCalculator extends AbstractClusterSizeCalculator {
     public ClusterSizeCalculator(double aRNearestMul) {this(aRNearestMul, -1, aRNearestMul);}
     public ClusterSizeCalculator() {this(R_NEAREST_MUL);}
     
-    @Override protected double getRClusterMul_() {return mRClusterMul;}
+    public ClusterSizeCalculator setQ6CutoffMul(double aQ6CutoffMul) {mQ6CutoffMul = Math.max(0.1, aQ6CutoffMul); return this;}
+    public ClusterSizeCalculator setRClusterMul(double aRClusterMul) {mRClusterMul = Math.max(0.1, aRClusterMul); return this;}
+    public ClusterSizeCalculator setNnn(int aNnn) {mNnn = aNnn; return this;}
+    
+    @Override protected double getRCluster_(MonatomicParameterCalculator aMPC) {return aMPC.unitLen()*mRClusterMul;}
     @Override protected ILogicalVector getIsSolid_(MonatomicParameterCalculator aMPC, IAtomData aPoint) {return aMPC.checkSolidQ6(aMPC.unitLen()*mQ6CutoffMul, mNnn);}
 }
