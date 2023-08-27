@@ -235,31 +235,32 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         T tRawPoint;
         double tLambda;
         // 不再需要检测 hasNext，内部保证永远都有 next
+        // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定；这时需要特殊处理，不记录这段时间
+        Point tRoot;
         while (true) {
-            synchronized (this) {if (mPointsOnLambda.size() >= mN0*mStep1Mul) break;}
-            // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
-            Point tRoot;
-            while (true) {
-                tRawPoint = tPathInit.next();
-                ++tStep1PointNum;
-                // 检测是否到达 A
-                tLambda = tPathInit.lambda();
-                if (tLambda <= mSurfaceA) {
-                    // 记录根节点
-                    tRoot = new Point(tRawPoint, tLambda);
-                    break;
-                }
-                // 如果到达 B 则重新回到 A，这里直接 return 来实现
-                if (tLambda >= mSurfaces.last()) {
-                    // 重设路径之前记得先保存旧的时间
-                    synchronized (this) {
-                        mTotTime0 += tPathInit.timeConsumed();
-                        mStep1PointNum += tStep1PointNum;
-                        ++mStep1PathNum;
-                    }
-                    return;
-                }
+            tRawPoint = tPathInit.next();
+            ++tStep1PointNum;
+            // 检测是否到达 A
+            tLambda = tPathInit.lambda();
+            if (tLambda <= mSurfaceA) {
+                // 记录根节点
+                tRoot = new Point(tRawPoint, tLambda);
+                break;
             }
+            // 如果到达 B 则重新回到 A，这里直接 return 来实现
+            if (tLambda >= mSurfaces.last()) {
+                // 这里不保留消耗时间直接返回
+                synchronized (this) {
+                    mStep1PointNum += tStep1PointNum;
+                    ++mStep1PathNum;
+                }
+                return;
+            }
+        }
+        // 成功回到 A 则需要减去这一过程消耗的时间
+        synchronized (this) {mTotTime0 -= tPathInit.timeConsumed();}
+        // 开始一般情况处理
+        while (true) {
             // 找到起始点后开始记录穿过 λ0 的点
             while (true) {
                 tRawPoint = tPathInit.next();
@@ -282,7 +283,30 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     break;
                 }
             }
-            // 跳出后回到最初，需要一直查找下次重新到达 A 才开始统计
+            // 每记录一个点查看总数是否达标
+            synchronized (this) {if (mPointsOnLambda.size() >= mN0*mStep1Mul) break;}
+            // 再一直查找下次重新到达 A
+            while (true) {
+                tRawPoint = tPathInit.next();
+                ++tStep1PointNum;
+                // 检测是否到达 A
+                tLambda = tPathInit.lambda();
+                if (tLambda <= mSurfaceA) {
+                    // 记录根节点
+                    tRoot = new Point(tRawPoint, tLambda);
+                    break;
+                }
+                // 如果到达 B 则重新回到 A，这里直接 return 来实现
+                if (tLambda >= mSurfaces.last()) {
+                    // 重设路径之前记得先保存旧的时间
+                    synchronized (this) {
+                        mTotTime0 += tPathInit.timeConsumed();
+                        mStep1PointNum += tStep1PointNum;
+                        ++mStep1PathNum;
+                    }
+                    return;
+                }
+            }
         }
         // 最后统计所有的耗时
         synchronized (this) {
