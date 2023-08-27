@@ -264,5 +264,27 @@ try (def exe = new PS()) {
 
 此时即使 `try` 语句中抛出了错误，也会正常关闭这个任务提交器。
 
+在 groovy 中，还可以使用这种更加紧凑的写法：
+```groovy
+import com.jtool.system.PS;
+
+def exitValue = new PS().withCloseable {def exe -> exe.system('echo 123456')}
+println("exitValue: $exitValue");
+```
+
+以及可以省略掉变量 `exe` 的创建：
+```groovy
+import com.jtool.system.PS;
+
+def exitValue = new PS().withCloseable {it.system('echo 123456')}
+println("exitValue: $exitValue");
+```
+
+> 输出为：
+> ```
+> 123456
+> exitValue: 0
+> ```
+> 
 > **注意**：由于全局的任务提交器 `com.jtool.code.CS.Exec.EXE` 在程序中其他地方也有使用，因此**不能**手动关闭。
 

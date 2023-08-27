@@ -14,15 +14,10 @@ import com.jtool.vasp.POSCAR
 import shade.com.google.common.collect.TreeMultimap
 
 
-// 全局任务提交器
-import static com.jtool.code.CS.Exec.EXE;
+import com.jtool.system.PS;
 
-// 使用 system() 指令来执行系统指令，返回指令的退出值
-def exitValue = EXE.system('echo 123456');
-
-// 程序正常退出会返回 0
+def exitValue = new PS().withCloseable {it.system('echo 123456')}
 println("exitValue: $exitValue");
-
 
 
 //// 测试脚本调用中参数
