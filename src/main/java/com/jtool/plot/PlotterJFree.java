@@ -2,10 +2,7 @@ package com.jtool.plot;
 
 import com.jtool.code.UT;
 import com.jtool.math.MathEX;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartFrame;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.LegendItem;
+import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.ValueAxis;
@@ -14,9 +11,11 @@ import org.jfree.chart.plot.SeriesRenderingOrder;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.TextTitle;
+import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
@@ -131,6 +130,7 @@ public class PlotterJFree implements IPlotter {
         mPlot.setBackgroundPaint(WHITE); // 调整背景颜色
         mPlot.setDomainGridlinePaint(GRAY); // 调整刻度线颜色
         mPlot.setRangeGridlinePaint(GRAY); // 调整刻度线颜色
+        mPlot.setInsets(new RectangleInsets(10.0, 20.0, 10.0, 40.0)); // 增大默认边框
         // x，y 轴
         mXAxis = mPlot.getDomainAxis();
         mYAxis = mPlot.getRangeAxis();
@@ -257,6 +257,14 @@ public class PlotterJFree implements IPlotter {
     @Override public IPlotter xTick(double aTick) {((NumberAxis)mXAxis).setTickUnit(new NumberTickUnit(aTick)); return this;}
     @Override public IPlotter yTick(double aTick) {((NumberAxis)mYAxis).setTickUnit(new NumberTickUnit(aTick)); return this;}
     
+    /** 设置绘图的边距 */
+    @Override public IPlotter insets(double aTop, double aLeft, double aBottom, double aRight) {mPlot.setInsets(new RectangleInsets(aTop, aLeft, aBottom, aRight)); return this;}
+    @Override public IPlotter insetsTop(int aTop) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(aTop, oInsets.getLeft(), oInsets.getBottom(), oInsets.getRight())); return this;}
+    @Override public IPlotter insetsLeft(int aLeft) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), aLeft, oInsets.getBottom(), oInsets.getRight())); return this;}
+    @Override public IPlotter insetsBottom(int aBottom) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), aBottom, oInsets.getRight())); return this;}
+    @Override public IPlotter insetsRight(int aRight) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight)); return this;}
+    
+    
     /** 添加绘制数据 */
     @Override
     public ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
@@ -278,7 +286,14 @@ public class PlotterJFree implements IPlotter {
     @Override
     public IFigure show(String aName) {
         // 显示图像
-        final ChartFrame tFrame = new ChartFrame(aName, mChart);
+        final JFrame tFrame = new JFrame(aName);
+        tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        final Insets tInset = new Insets(20, 20, 20, 20);
+        JPanel tPanel = new ChartPanel(mChart) {
+            @Override public Insets getInsets() {return tInset;}
+        };
+        tPanel.setBackground(WHITE);
+        tFrame.setContentPane(tPanel);
         tFrame.pack();
         tFrame.setVisible(true);
         
@@ -287,6 +302,17 @@ public class PlotterJFree implements IPlotter {
             @Override public IFigure name(String aName) {tFrame.setName(aName); return this;}
             @Override public IFigure size(int aWidth, int aHeight) {tFrame.setSize(aWidth, aHeight); return this;}
             @Override public IFigure location(int aX, int aY) {tFrame.setLocation(aX, aY); return this;}
+            @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
+                tInset.top = (int)Math.round(aTop);
+                tInset.left = (int)Math.round(aLeft);
+                tInset.bottom = (int)Math.round(aBottom);
+                tInset.right = (int)Math.round(aRight);
+                return this;
+            }
+            @Override public IFigure insetsTop(double aTop) {tInset.top = (int)Math.round(aTop); return this;}
+            @Override public IFigure insetsLeft(double aLeft) {tInset.left = (int)Math.round(aLeft); return this;}
+            @Override public IFigure insetsBottom(double aBottom) {tInset.bottom = (int)Math.round(aBottom); return this;}
+            @Override public IFigure insetsRight(double aRight) {tInset.right = (int)Math.round(aRight); return this;}
         };
     }
 }

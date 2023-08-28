@@ -82,4 +82,11 @@ public interface IPlotter {
     IPlotter yTick(double aTick);
     default IPlotter tick(double aTick) {return tick(aTick, aTick);}
     default IPlotter tick(double aXTick, double aYTick) {return xTick(aXTick).yTick(aYTick);}
+    
+    /** 设置绘图的边距 */
+    IPlotter insets(double aTop, double aLeft, double aBottom, double aRight);
+    IPlotter insetsTop(int aTop);
+    IPlotter insetsLeft(int aLeft);
+    IPlotter insetsBottom(int aBottom);
+    IPlotter insetsRight(int aRight);
 }
