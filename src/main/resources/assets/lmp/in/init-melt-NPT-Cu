@@ -3,7 +3,7 @@ log             none
 variable        vT              equal   2000
 variable        vP              equal   0.0
 variable        vTimestep       equal   0.002
-variable        vCooldownTdamp  equal   0.2
+variable        vTdamp          equal   0.2
 variable        vRunStep        equal   200000
 variable        vThermoStep     equal   10000
 variable        vSeed           equal   4587281
@@ -26,7 +26,7 @@ thermo          ${vThermoStep}
 thermo_style    custom step temp press vol pe ke etotal enthalpy
 thermo_modify   flush yes
 
-fix             1 all npt temp ${vT} ${vT} ${vCooldownTdamp} iso ${vP} ${vP} 2
+fix             1 all npt temp ${vT} ${vT} ${vTdamp} iso ${vP} ${vP} 2
 run             ${vRunStep}
 
 write_restart   ${vOutRestartPath}

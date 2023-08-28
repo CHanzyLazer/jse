@@ -9,6 +9,7 @@ import com.jtool.vasp.POSCAR
 
 /** 测试计算 BOOP，测试固液判断的阈值选择 */
 
+final int l = 6;
 final double cutoffMul = 2.20;
 final int nnn = -1;
 final double connectThreshold = 0.88;
@@ -41,14 +42,14 @@ if (onlyCu) dataZrCu2 = dataZrCu2.opt().filterType(2);
 if (onlyZr) dataZrCu2 = dataZrCu2.opt().filterType(1);
 
 // 计算连接数向量
-def connectCountG       = dataG      .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountFCC     = dataFCC    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountBCC     = dataBCC    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountHCP     = dataHCP    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountMgCu2   = dataMgCu2  .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountZr3Cu8  = dataZr3Cu8 .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountZr7Cu10 = dataZr7Cu10.getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
-def connectCountZrCu2   = dataZrCu2  .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountG       = dataG      .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountFCC     = dataFCC    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountBCC     = dataBCC    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountHCP     = dataHCP    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountMgCu2   = dataMgCu2  .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountZr3Cu8  = dataZr3Cu8 .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountZr7Cu10 = dataZr7Cu10.getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
+def connectCountZrCu2   = dataZrCu2  .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(l, mpc.unitLen()*cutoffMul, nnn, connectThreshold)}
 
 // 统计结果
 def distributionG       = Vectors.zeros(maxConnect+1);

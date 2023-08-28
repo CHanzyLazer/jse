@@ -3,7 +3,7 @@ log             none
 variable        vT              equal   2000
 variable        vP              equal   0.0
 variable        vTimestep       equal   0.002
-variable        vCooldownTdamp  equal   0.2
+variable        vTdamp          equal   0.2
 variable        vRunStep        equal   200000
 variable        vThermoStep     equal   10000
 variable        vDumpStep       equal   10000
@@ -29,5 +29,5 @@ thermo_modify   flush yes
 
 dump            1 all custom ${vDumpStep} ${vDumpPath} id type x y z vx vy vz
 
-fix             1 all npt temp ${vT} ${vT} ${vCooldownTdamp} iso ${vP} ${vP} 2
+fix             1 all npt temp ${vT} ${vT} ${vTdamp} iso ${vP} ${vP} 2
 run             ${vRunStep}

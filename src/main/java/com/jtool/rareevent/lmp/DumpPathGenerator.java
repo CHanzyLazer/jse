@@ -82,6 +82,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         LmpIn rGenDumpIn = LmpIn.DUMP_MELT_NPT_Cu();
         rGenDumpIn.put("vT", aTemperature);
         rGenDumpIn.put("vTimestep", aTimestep);
+        rGenDumpIn.put("vTdamp", aTimestep*50); // 增大控温的频率，因为都是短时的运行
         rGenDumpIn.put("vDumpStep", aDumpStep);
         rGenDumpIn.put("vRunStep", aPathLength*aDumpStep);
         // 还需设置势场
