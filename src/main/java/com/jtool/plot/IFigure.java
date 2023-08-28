@@ -1,5 +1,7 @@
 package com.jtool.plot;
 
+import java.io.IOException;
+
 /**
  * @author liqa
  * <p> {@link IPlotter#show()} 得到的图像的对象 </p>
@@ -15,4 +17,7 @@ public interface IFigure {
     IFigure insetsLeft(double aLeft);
     IFigure insetsBottom(double aBottom);
     IFigure insetsRight(double aRight);
+    
+    void save(String aPath) throws IOException;
+    default void save() throws IOException {save("");}
 }

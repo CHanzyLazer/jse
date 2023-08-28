@@ -18,6 +18,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Line2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -259,11 +260,18 @@ public class PlotterJFree implements IPlotter {
     
     /** 设置绘图的边距 */
     @Override public IPlotter insets(double aTop, double aLeft, double aBottom, double aRight) {mPlot.setInsets(new RectangleInsets(aTop, aLeft, aBottom, aRight)); return this;}
-    @Override public IPlotter insetsTop(int aTop) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(aTop, oInsets.getLeft(), oInsets.getBottom(), oInsets.getRight())); return this;}
-    @Override public IPlotter insetsLeft(int aLeft) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), aLeft, oInsets.getBottom(), oInsets.getRight())); return this;}
-    @Override public IPlotter insetsBottom(int aBottom) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), aBottom, oInsets.getRight())); return this;}
-    @Override public IPlotter insetsRight(int aRight) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight)); return this;}
+    @Override public IPlotter insetsTop(double aTop) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(aTop, oInsets.getLeft(), oInsets.getBottom(), oInsets.getRight())); return this;}
+    @Override public IPlotter insetsLeft(double aLeft) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), aLeft, oInsets.getBottom(), oInsets.getRight())); return this;}
+    @Override public IPlotter insetsBottom(double aBottom) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), aBottom, oInsets.getRight())); return this;}
+    @Override public IPlotter insetsRight(double aRight) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight)); return this;}
     
+    /** 直接保存结果 */
+    @Override public void save(String aPath, int aWidth, int aHeight) throws IOException {
+        if (aPath == null) aPath = "";
+        if (aPath.isEmpty() || aPath.endsWith("/") || aPath.endsWith("\\")) aPath += IPlotter.DEFAULT_FIGURE_NAME;
+        if (!aPath.endsWith(".png")) aPath += ".png";
+        ChartUtils.saveChartAsPNG(UT.IO.toFile(aPath), mChart, aWidth, aHeight);
+    }
     
     /** 添加绘制数据 */
     @Override
@@ -289,7 +297,7 @@ public class PlotterJFree implements IPlotter {
         final JFrame tFrame = new JFrame(aName);
         tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         final Insets tInset = new Insets(20, 20, 20, 20);
-        JPanel tPanel = new ChartPanel(mChart) {
+        final JPanel tPanel = new ChartPanel(mChart) {
             @Override public Insets getInsets() {return tInset;}
         };
         tPanel.setBackground(WHITE);
@@ -299,7 +307,7 @@ public class PlotterJFree implements IPlotter {
         
         // 返回 IFigure
         return new IFigure() {
-            @Override public IFigure name(String aName) {tFrame.setName(aName); return this;}
+            @Override public IFigure name(String aName) {tFrame.setTitle(aName); return this;}
             @Override public IFigure size(int aWidth, int aHeight) {tFrame.setSize(aWidth, aHeight); return this;}
             @Override public IFigure location(int aX, int aY) {tFrame.setLocation(aX, aY); return this;}
             @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
@@ -313,6 +321,15 @@ public class PlotterJFree implements IPlotter {
             @Override public IFigure insetsLeft(double aLeft) {tInset.left = (int)Math.round(aLeft); return this;}
             @Override public IFigure insetsBottom(double aBottom) {tInset.bottom = (int)Math.round(aBottom); return this;}
             @Override public IFigure insetsRight(double aRight) {tInset.right = (int)Math.round(aRight); return this;}
+            
+            @Override public void save(String aPath) throws IOException {
+                synchronized (tFrame.getTreeLock()) {
+                    if (aPath == null) aPath = "";
+                    if (aPath.isEmpty() || aPath.endsWith("/") || aPath.endsWith("\\")) aPath += tFrame.getTitle();
+                    if (!aPath.endsWith(".png")) aPath += ".png";
+                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aPath), mChart, tPanel.getWidth()-tInset.left-tInset.right, tPanel.getHeight()-tInset.top-tInset.bottom);
+                }
+            }
         };
     }
 }

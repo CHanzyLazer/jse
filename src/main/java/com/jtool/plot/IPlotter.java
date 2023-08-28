@@ -7,6 +7,7 @@ import com.jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -54,8 +55,9 @@ public interface IPlotter {
             ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName);
     
     
+    String DEFAULT_FIGURE_NAME = "figure";
     /** 显示结果 */
-    default IFigure show() {return show("figure");}
+    default IFigure show() {return show(DEFAULT_FIGURE_NAME);}
     IFigure show(String aName);
     
     /** 设置标题等 */
@@ -85,8 +87,13 @@ public interface IPlotter {
     
     /** 设置绘图的边距 */
     IPlotter insets(double aTop, double aLeft, double aBottom, double aRight);
-    IPlotter insetsTop(int aTop);
-    IPlotter insetsLeft(int aLeft);
-    IPlotter insetsBottom(int aBottom);
-    IPlotter insetsRight(int aRight);
+    IPlotter insetsTop(double aTop);
+    IPlotter insetsLeft(double aLeft);
+    IPlotter insetsBottom(double aBottom);
+    IPlotter insetsRight(double aRight);
+    
+    /** 直接保存结果 */
+    void save(String aPath, int aWidth, int aHeight) throws IOException;
+    default void save(String aPath) throws IOException {save(aPath, 1024, 768);}
+    default void save() throws IOException {save("");}
 }
