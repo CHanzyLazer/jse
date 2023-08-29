@@ -1,11 +1,13 @@
 package com.jtool.math.vector;
 
+import com.jtool.code.functional.IDoubleConsumer1;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * @author liqa
@@ -41,6 +43,13 @@ public final class ShiftVector extends DoubleArrayVector {
     /** 需要指定平移的距离保证优化运算的正确性 */
     @Override public int shiftSize() {return mShift;}
     
+    
+    /** Optimize stuffs，重写加速 for-each 遍历 */
+    @Override public void forEach(IDoubleConsumer1 aCon) {
+        Objects.requireNonNull(aCon);
+        final int tEnd = mSize + mShift;
+        for (int i = mShift; i < tEnd; ++i) aCon.run(mData[i]);
+    }
     
     /** Optimize stuffs，引用反转直接返回 {@link ShiftReverseVector} */
     @Override public IVectorOperation operation() {

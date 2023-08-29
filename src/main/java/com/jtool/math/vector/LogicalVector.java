@@ -1,5 +1,6 @@
 package com.jtool.math.vector;
 
+import com.jtool.code.functional.IBooleanConsumer1;
 import com.jtool.code.iterator.IBooleanIterator;
 import com.jtool.code.iterator.IBooleanSetIterator;
 import com.jtool.code.functional.IBooleanOperator1;
@@ -7,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * @author liqa
@@ -73,6 +75,12 @@ public final class LogicalVector extends BooleanArrayVector {
         return null;
     }
     
+    
+    /** Optimize stuffs，重写加速 for-each 遍历 */
+    @Override public void forEach(IBooleanConsumer1 aCon) {
+        Objects.requireNonNull(aCon);
+        for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+    }
     
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void flip_(int aIdx) {

@@ -1,6 +1,7 @@
 package com.jtool.math.vector;
 
 
+import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 
 import java.util.Collection;
@@ -48,6 +49,17 @@ public class Vectors {
     public static IVector from(double[] aData) {
         IVector rVector = zeros(aData.length);
         rVector.fill(aData);
+        return rVector;
+    }
+    
+    public static IVector merge(IVector aBefore, IVector aAfter) {
+        IVector rVector = zeros(aBefore.size()+aAfter.size());
+        // 原则上使用优化后的 refSlicer 会更快，但是优化需要的代码量较大，这里直接使用迭代器遍历，一个适中的优化效果
+        final IDoubleSetIterator si = rVector.setIterator();
+        final IDoubleIterator itB = aBefore.iterator();
+        final IDoubleIterator itA = aAfter.iterator();
+        while (itB.hasNext()) si.nextAndSet(itB.next());
+        while (itA.hasNext()) si.nextAndSet(itA.next());
         return rVector;
     }
     
