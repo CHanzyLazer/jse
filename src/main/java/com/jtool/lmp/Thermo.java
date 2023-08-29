@@ -1,5 +1,6 @@
 package com.jtool.lmp;
 
+import com.google.common.collect.Lists;
 import com.jtool.code.UT;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
@@ -10,7 +11,6 @@ import com.jtool.math.vector.IVector;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 
@@ -21,23 +21,36 @@ import java.util.List;
  * <p> 本身是一个列表的 Table 方便外部使用 </p>
  */
 public class Thermo extends AbstractMultiFrameTable<ITable> {
-    private final ITable[] mTables;
+    private final List<ITable> mTableList;
     
-    public Thermo(ITable... aTables) {mTables = aTables==null ? new ITable[0] : aTables;}
-    public Thermo(Collection<? extends ITable> aTables) {mTables = aTables.toArray(new ITable[0]);}
+    public Thermo(ITable... aTableList) {mTableList = Lists.newArrayList(aTableList);}
+    public Thermo(List<ITable> aTableList) {mTableList = aTableList;}
     
     /** AbstractMultiFrameTable stuffs */
     @Override public Thermo copy() {
         List<ITable> rThermo = new ArrayList<>();
-        for (ITable tTable : mTables) rThermo.add(tTable.copy());
+        for (ITable tTable : mTableList) rThermo.add(tTable.copy());
         return new Thermo(rThermo);
     }
     
     /** AbstractList stuffs */
-    @Override public ITable get(int index) {return mTables[index];}
-    @Override public int size() {return mTables.length;}
-    
-    
+    @Override public ITable get(int index) {return mTableList.get(index);}
+    @Override public int size() {return mTableList.size();}
+    @Override public boolean add(ITable aTable) {return mTableList.add(aTable);}
+    @Override public ITable remove(int aIndex) {return mTableList.remove(aIndex);}
+    /** 提供更加易用的添加方法，返回自身支持链式调用 */
+    public Thermo append(ITable aTable) {
+        mTableList.add(aTable);
+        return this;
+    }
+    public Thermo appendList(Iterable<ITable> aTableList) {
+        for (ITable tTable : aTableList) mTableList.add(tTable);
+        return this;
+    }
+    public Thermo appendFile(String aFilePath) throws IOException {
+        mTableList.addAll(read(aFilePath).mTableList);
+        return this;
+    }
     
     /**
      * 从 csv 文件中读取 Thermo，自动根据输入路径选择，如果是文件夹则会读取多个 Thermo
@@ -115,15 +128,15 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
     public void write(String aFilePath) throws IOException {write(aFilePath, false);}
     public void write(String aFilePath, boolean aNoOutput) throws IOException {
         // 超过一个则写入文件夹，会自动分析路径名称创建合适的文件夹名称
-        if (mTables.length > 1) {
+        if (mTableList.size() > 1) {
             if (aFilePath.endsWith(".csv")) aFilePath = aFilePath.substring(0, aFilePath.length()-4);
-            for (int i = 0; i < mTables.length; ++i) {
-                UT.IO.table2csv(mTables[i], aFilePath+"/thermo-"+i+".csv");
+            for (int i = 0; i < mTableList.size(); ++i) {
+                UT.IO.table2csv(mTableList.get(i), aFilePath+"/thermo-"+i+".csv");
             }
             if (!aNoOutput) System.out.println("Thermos have been saved to the directory: "+aFilePath);
         } else
-        if (mTables.length > 0) {
-            UT.IO.table2csv(mTables[0], aFilePath);
+        if (mTableList.size() > 0) {
+            UT.IO.table2csv(mTableList.get(0), aFilePath);
         }
     }
 }

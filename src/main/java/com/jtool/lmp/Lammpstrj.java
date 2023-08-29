@@ -1,5 +1,6 @@
 package com.jtool.lmp;
 
+import com.google.common.collect.Lists;
 import com.jtool.atom.*;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractRandomAccessList;
@@ -12,7 +13,6 @@ import com.jtool.math.vector.IVector;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -25,17 +25,34 @@ import java.util.List;
  */
 public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj> {
     private final static String[] BOX_BOUND = {"pp", "pp", "pp"};
-    private final static SubLammpstrj[] ZL_DATA = new SubLammpstrj[0];
     
-    private final SubLammpstrj[] mData;
+    private final List<SubLammpstrj> mData;
     
-    public Lammpstrj() {mData = ZL_DATA;}
-    public Lammpstrj(SubLammpstrj... aData) {mData = aData==null ? ZL_DATA : aData;}
-    public Lammpstrj(Collection<SubLammpstrj> aData) {mData = aData.toArray(new SubLammpstrj[0]);}
+    public Lammpstrj(SubLammpstrj... aData) {mData = Lists.newArrayList(aData);}
+    public Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
     
     /** AbstractList stuffs */
-    @Override public int size() {return mData.length;}
-    @Override public SubLammpstrj get(int index) {return mData[index];}
+    @Override public int size() {return mData.size();}
+    @Override public SubLammpstrj get(int index) {return mData.get(index);}
+    @Override public boolean add(SubLammpstrj aSubLammpstrj) {return mData.add(aSubLammpstrj);}
+    @Override public SubLammpstrj remove(int aIndex) {return mData.remove(aIndex);}
+    /** 提供更加易用的添加方法，返回自身支持链式调用 */
+    public Lammpstrj append(IAtomData aAtomData, long aTimeStep) {
+        mData.add(fromAtomData_(aAtomData, aTimeStep));
+        return this;
+    }
+    public Lammpstrj append(IAtomData aAtomData) {
+        mData.add(fromAtomData_(aAtomData, getTimeStep(aAtomData, mData.size())));
+        return this;
+    }
+    public Lammpstrj appendList(Iterable<IAtomData> aAtomDataList) {
+        for (IAtomData tAtomData : aAtomDataList) mData.add(fromAtomData_(tAtomData, getTimeStep(tAtomData, mData.size())));
+        return this;
+    }
+    public Lammpstrj appendFile(String aFilePath) throws IOException {
+        mData.addAll(read(aFilePath).mData);
+        return this;
+    }
     
     // dump 额外的属性
     public long timeStep() {return defaultFrame().timeStep();}
@@ -257,26 +274,18 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     
     /** 拷贝一份 Lammpstrj */
     @Override public Lammpstrj copy() {
-        SubLammpstrj[] rData = new SubLammpstrj[mData.length];
-        for (int i = 0; i < mData.length; ++i) {
-            rData[i] = mData[i].copy();
-        }
+        List<SubLammpstrj> rData = new ArrayList<>(mData.size());
+        for (SubLammpstrj subData : mData) rData.add(subData.copy());
         return new Lammpstrj(rData);
     }
     
     /// 创建 Lammpstrj
     /** 从 IAtomData 来创建，对于 Lammpstrj 可以支持容器的 aAtomData */
+    public static Lammpstrj fromAtomData(IAtomData aAtomData, long aTimeStep) {
+        return new Lammpstrj(fromAtomData_(aAtomData, aTimeStep));
+    }
     public static Lammpstrj fromAtomData(IAtomData aAtomData) {
         return new Lammpstrj(fromAtomData_(aAtomData, getTimeStep(aAtomData, 0)));
-    }
-    public static Lammpstrj fromAtomData(IAtomData... aAtomDataArray) {
-        if (aAtomDataArray == null || aAtomDataArray.length == 0) return new Lammpstrj();
-        
-        SubLammpstrj[] rData = new SubLammpstrj[aAtomDataArray.length];
-        for (int i = 0; i < aAtomDataArray.length; ++i) {
-            rData[i] = fromAtomData_(aAtomDataArray[i], getTimeStep(aAtomDataArray[i], i));
-        }
-        return new Lammpstrj(rData);
     }
     public static Lammpstrj fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList) {
         if (aAtomDataList == null) return new Lammpstrj();
