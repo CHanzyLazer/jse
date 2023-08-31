@@ -5,8 +5,9 @@ import com.jtool.code.UT
 import com.jtool.lmp.Dump
 import com.jtool.lmp.Lmpdat
 import com.jtool.plot.Plotters
+import com.jtool.rareevent.atom.ABOOPSolidChecker
 import com.jtool.rareevent.atom.ClusterSizeCalculator
-import com.jtool.rareevent.atom.MultiTypeClusterSizeCalculator
+import com.jtool.rareevent.atom.MainTypeClusterSizeCalculator
 import com.jtool.vasp.POSCAR
 
 
@@ -16,18 +17,18 @@ import com.jtool.vasp.POSCAR
 // 首先导入 Lmpdat
 def dataG = Lmpdat.read('lmp/data/data-glass');
 def dataC = Lmpdat.read('lmp/data/data-crystal');
-def dataFFS = Dump.read('lmp/data/dump-ffs');
-def dataMgCu2 = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'), 5).opt().perturbG(0.25);
-def dataZr3Cu8 = Structures.from(POSCAR.read('lmp/data/Zr3Cu8.poscar'), 3).opt().perturbG(0.25);
-def dataZr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 3).opt().perturbG(0.25);
-def dataZrCu2 = Structures.from(POSCAR.read('lmp/data/ZrCu2.poscar'), 5).opt().perturbG(0.25);
+def dataFFS = Dump.read('lmp/data/dump-ffs').last();
+def dataMgCu2   = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'   ).opt().assignType {3-it.type()}, 5).opt().perturbG(0.25);
+def dataZr3Cu8  = Structures.from(POSCAR.read('lmp/data/Zr3Cu8.poscar'  ).opt().assignType {3-it.type()}, 3).opt().perturbG(0.25);
+def dataZr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar' ).opt().assignType {3-it.type()}, 3).opt().perturbG(0.25);
+def dataZrCu2   = Structures.from(POSCAR.read('lmp/data/ZrCu2.poscar'   ).opt().assignType {3-it.type()}, 5).opt().perturbG(0.25);
 
 // 默认的团簇计算器
 UT.Timer.tic();
 def cal = new ClusterSizeCalculator();
 println("default glass: ${cal.lambdaOf(dataG)}, total: ${dataG.atomNum()}");
 println("default crystal: ${cal.lambdaOf(dataC)}, total: ${dataC.atomNum()}");
-println("default ffs: ${cal.lambdaOf(dataFFS.last())}, total: ${dataFFS.atomNum()}");
+println("default ffs: ${cal.lambdaOf(dataFFS)}, total: ${dataFFS.atomNum()}");
 println("default MgCu2: ${cal.lambdaOf(dataMgCu2)}, total: ${dataMgCu2.atomNum()}");
 println("default Zr3Cu8: ${cal.lambdaOf(dataZr3Cu8)}, total: ${dataZr3Cu8.atomNum()}");
 println("default Zr7Cu10: ${cal.lambdaOf(dataZr7Cu10)}, total: ${dataZr7Cu10.atomNum()}");
@@ -36,10 +37,14 @@ UT.Timer.toc();
 
 // 用于计算合金的团簇计算器
 UT.Timer.tic();
-def calMulti = new MultiTypeClusterSizeCalculator().setQ6CutoffMul(2.2).setConnectThreshold(0.88).setSolidThreshold(13);
+def calMulti = new MainTypeClusterSizeCalculator(
+    new ABOOPSolidChecker().setRNearestMul(2.2).setConnectThreshold(0.83).setSolidThreshold(25),
+    new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7),
+    2, 1.3
+);
 println("multi glass: ${calMulti.lambdaOf(dataG)}, total: ${dataG.atomNum()}");
 println("multi crystal: ${calMulti.lambdaOf(dataC)}, total: ${dataC.atomNum()}");
-println("multi ffs: ${calMulti.lambdaOf(dataFFS.last())}, total: ${dataFFS.atomNum()}");
+println("multi ffs: ${calMulti.lambdaOf(dataFFS)}, total: ${dataFFS.atomNum()}");
 println("multi MgCu2: ${calMulti.lambdaOf(dataMgCu2)}, total: ${dataMgCu2.atomNum()}");
 println("multi Zr3Cu8: ${calMulti.lambdaOf(dataZr3Cu8)}, total: ${dataZr3Cu8.atomNum()}");
 println("multi Zr7Cu10: ${calMulti.lambdaOf(dataZr7Cu10)}, total: ${dataZr7Cu10.atomNum()}");

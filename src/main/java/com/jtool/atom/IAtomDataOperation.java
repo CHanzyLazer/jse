@@ -71,6 +71,17 @@ public interface IAtomDataOperation {
     }
     
     /**
+     * 根据特殊的原子种类映射 aOperator 来遍历分配原子种类
+     * @author liqa
+     * @param aMinTypeNum 建议最小的种类数目
+     * @param aOperator 自定义的原子映射运算，输入 {@link IAtom} 输出应该分配的种类
+     * @return 更新后的 AtomData
+     */
+    IAtomData assignType(int aMinTypeNum, IOperator1<Integer, ? super IAtom> aOperator);
+    default IAtomData assignType(IOperator1<Integer, ? super IAtom> aOperator) {return assignType(1, aOperator);}
+    
+    
+    /**
      * 根据给定的权重来随机分配原子种类，主要用于创建合金的初始结构
      * @author liqa
      * @param aRandom 可选自定义的随机数生成器

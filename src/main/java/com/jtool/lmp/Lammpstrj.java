@@ -28,8 +28,8 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     
     private final List<SubLammpstrj> mData;
     
-    public Lammpstrj(SubLammpstrj... aData) {mData = Lists.newArrayList(aData);}
-    public Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
+    Lammpstrj(SubLammpstrj... aData) {mData = Lists.newArrayList(aData);}
+    Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
     
     /** AbstractList stuffs */
     @Override public int size() {return mData.size();}

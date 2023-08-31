@@ -9,11 +9,13 @@ import com.jtool.math.matrix.Matrices;
 import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
 
 import static com.jtool.code.CS.BOX_ZERO;
+import static com.jtool.code.CS.ZL_STR;
 import static com.jtool.code.UT.Code.toXYZ;
 
 /**
@@ -29,7 +31,7 @@ public class POSCAR extends AbstractAtomData {
     private final IMatrix mDirect;
     /** POSCAR 特有的属性，系统名称以及每个种类的原子名称 */
     private final String mDataName;
-    private final String[] mAtomTypes;
+    private final String @NotNull[] mAtomTypes;
     private final IVector mAtomNumbers;
     /** POSCAR 使用晶格矢量组成的矩阵以及对应的晶格常数来作为边界 */
     private final IMatrix mBox;
@@ -44,7 +46,7 @@ public class POSCAR extends AbstractAtomData {
     /** 用于通过字符获取每个种类的粒子数 */
     private final Map<String, Integer> mKey2Type;
     
-    public POSCAR(String aDataName, IMatrix aBox, double aBoxScale, String[] aAtomTypes, IVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect) {
+    POSCAR(String aDataName, IMatrix aBox, double aBoxScale, String @NotNull[] aAtomTypes, IVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect) {
         mDirect = aDirect;
         mDataName = aDataName;
         mAtomTypes = aAtomTypes;
@@ -121,8 +123,10 @@ public class POSCAR extends AbstractAtomData {
     
     
     /** 从 IAtomData 来创建，POSCAR 需要额外的原子种类字符串以及额外的是否开启 SelectiveDynamics */
+    public static POSCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, ZL_STR);}
     public static POSCAR fromAtomData(IAtomData aAtomData, String... aAtomTypes) {return fromAtomData(aAtomData, false, aAtomTypes);}
     public static POSCAR fromAtomData(IAtomData aAtomData, boolean aSelectiveDynamics, String... aAtomTypes) {
+        if (aAtomTypes == null) aAtomTypes = ZL_STR;
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
@@ -184,18 +188,26 @@ public class POSCAR extends AbstractAtomData {
         aBox.row(1).fill(UT.Texts.str2data(aLines.get(idx), 3));
         ++idx; if (idx >= aLines.size()) return null;
         aBox.row(2).fill(UT.Texts.str2data(aLines.get(idx), 3));
-        // 读取原子种类和对应数目的信息
+        // 读取原子种类（可选）和对应数目的信息
         ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Texts.splitBlank(aLines.get(idx));
         aAtomTypes = tTokens;
         ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Texts.splitBlank(aLines.get(idx));
+        try {
         aAtomNumbers = Vectors.from(UT.Code.map(tTokens, Integer::parseInt));
+        } catch (Exception e) {
+        --idx;
+        aAtomNumbers = Vectors.from(UT.Code.map(aAtomTypes, Integer::parseInt));
+        aAtomTypes = ZL_STR;
+        }
         // 可选的注释行
         ++idx; if (idx >= aLines.size()) return null;
         if (aLines.get(idx).equalsIgnoreCase("Selective dynamics")) {
         aSelectiveDynamics = true; ++idx; if (idx >= aLines.size()) return null;
         }
         // 目前只支持 Direct
-        if (!aLines.get(idx).equalsIgnoreCase("Direct")) throw new RuntimeException("Can ONLY read Direct POSCAR temporarily");
+        if (!aLines.get(idx).equalsIgnoreCase("Direct")) {
+        throw new RuntimeException("Can ONLY read Direct POSCAR temporarily");
+        }
         // 读取原子数据
         ++idx; if (idx >= aLines.size()) return null;
         int tAtomNum = (int)aAtomNumbers.sum();
@@ -224,6 +236,7 @@ public class POSCAR extends AbstractAtomData {
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
+        if (mAtomTypes.length!=0)
         lines.add(String.join(" ", UT.Code.map(mAtomTypes, type -> String.format("%6s", type))));
         lines.add(String.join(" ", UT.Code.map(mAtomNumbers.iterable(), number -> String.format("%6d", number.intValue()))));
         if (mSelectiveDynamics)

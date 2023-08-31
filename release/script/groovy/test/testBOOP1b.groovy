@@ -2,14 +2,16 @@ package test
 
 import com.jtool.atom.Structures
 import com.jtool.code.UT
+import com.jtool.lmp.Dump
 import com.jtool.lmp.Lmpdat
 import com.jtool.plot.Plotters
+import com.jtool.rareevent.atom.ABOOPSolidChecker
 import com.jtool.vasp.POSCAR
 
 
 /** 测试计算 BOOP */
 
-final double cutoffMul = 2.20;
+final double cutoffMul = 2.2;
 final int nnn = -1;
 final double perturbMul = 1.0;
 
@@ -32,7 +34,7 @@ mpc_G.shutdown();
 
 
 // 再计算生成的结果
-def data_FFS   = Lmpdat.read('lmp/.ffs-in/data-out-9');
+def data_FFS   = Lmpdat.read('lmp/.stableglass-in/data-last');
 if (onlyCu) data_FFS = data_FFS.opt().filterType(1);
 if (onlyZr) data_FFS = data_FFS.opt().filterType(2);
 mpc_FFS = data_FFS.getMPC();
@@ -44,6 +46,7 @@ UT.Timer.tic();
 q6_FFS = mpc_FFS.calABOOP(6, mpc_FFS.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("FFS, q6");
 mpc_FFS.shutdown();
+def isSolid = data_FFS.getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, 0.85, mpc.unitLen()*2.20, -1).greaterOrEqual(25)}
 
 
 data_MgCu2 = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'), 4).opt().perturbG(0.25*perturbMul);
@@ -59,43 +62,30 @@ q6_MgCu2 = mpc_MgCu2.calABOOP(6, mpc_MgCu2.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("MgCu2, q6");
 mpc_MgCu2.shutdown();
 
-data_Zr3Cu8 = Structures.from(POSCAR.read('lmp/data/Zr3Cu8.poscar'), 3).opt().perturbG(0.25*perturbMul);
-if (onlyCu) data_Zr3Cu8 = data_Zr3Cu8.opt().filterType(2);
-if (onlyZr) data_Zr3Cu8 = data_Zr3Cu8.opt().filterType(1);
-mpc_Zr3Cu8 = data_Zr3Cu8.getMPC();
-println("Zr3Cu8, u: ${mpc_Zr3Cu8.unitLen()}");
+data_ZrCu2 = Structures.from(POSCAR.read('lmp/data/ZrCu2.poscar'), 5).opt().perturbG(0.25*perturbMul);
+if (onlyCu) data_ZrCu2 = data_ZrCu2.opt().filterType(2);
+if (onlyZr) data_ZrCu2 = data_ZrCu2.opt().filterType(1);
+mpc_ZrCu2 = data_ZrCu2.getMPC();
+println("ZrCu2, u: ${mpc_ZrCu2.unitLen()}");
 UT.Timer.tic();
-q4_Zr3Cu8 = mpc_Zr3Cu8.calABOOP(4, mpc_Zr3Cu8.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("Zr3Cu8, q4");
+q4_ZrCu2 = mpc_ZrCu2.calABOOP(4, mpc_ZrCu2.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu2, q4");
 UT.Timer.tic();
-q6_Zr3Cu8 = mpc_Zr3Cu8.calABOOP(6, mpc_Zr3Cu8.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("Zr3Cu8, q6");
-mpc_Zr3Cu8.shutdown();
-
-data_Zr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 3).opt().perturbG(0.25*perturbMul);
-if (onlyCu) data_Zr7Cu10 = data_Zr7Cu10.opt().filterType(2);
-if (onlyZr) data_Zr7Cu10 = data_Zr7Cu10.opt().filterType(1);
-mpc_Zr7Cu10 = data_Zr7Cu10.getMPC();
-println("Zr7Cu10, u: ${mpc_Zr7Cu10.unitLen()}");
-UT.Timer.tic();
-q4_Zr7Cu10 = mpc_Zr7Cu10.calABOOP(4, mpc_Zr7Cu10.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("Zr7Cu10, q4");
-UT.Timer.tic();
-q6_Zr7Cu10 = mpc_Zr7Cu10.calABOOP(6, mpc_Zr7Cu10.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("Zr7Cu10, q6");
-mpc_Zr7Cu10.shutdown();
+q6_ZrCu2 = mpc_ZrCu2.calABOOP(6, mpc_ZrCu2.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu2, q6");
+mpc_ZrCu2.shutdown();
 
 
 // 使用 Plotter 绘图
 plt = Plotters.get();
 
-plt.plot(q4_G      , q6_G      , 'glass'  ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_MgCu2  , q6_MgCu2  , 'MgCu2'  ).lineType('none').markerType('s').markerSize(4);
-//plt.plot(q4_Zr3Cu8 , q6_Zr3Cu8 , 'Zr3Cu8' ).lineType('none').markerType('^').markerSize(4);
-//plt.plot(q4_Zr7Cu10, q6_Zr7Cu10, 'Zr7Cu10').lineType('none').markerType('^').markerSize(4);
-plt.plot(q4_FFS    , q6_FFS    , 'FFS'    ).lineType('none').markerType('o').markerSize(6);
+plt.plot(q4_G      , q6_G      , 'glass'   ).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_MgCu2  , q6_MgCu2  , 'MgCu2'   ).lineType('none').markerType('s').markerSize(4);
+plt.plot(q4_ZrCu2  , q6_ZrCu2  , 'ZrCu2'   ).lineType('none').markerType('s').markerSize(4);
+plt.plot(q4_FFS    , q6_FFS    , 'FFS'     ).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_FFS[isSolid], q6_FFS[isSolid], 'FFS_isSolid').lineType('none').markerType('x').markerSize(10);
 
 plt.xlabel('q4').ylabel('q6');
-plt.xTick(0.02).yTick(0.05);
+plt.xTick(0.02).yTick(0.02);
 plt.show();
 

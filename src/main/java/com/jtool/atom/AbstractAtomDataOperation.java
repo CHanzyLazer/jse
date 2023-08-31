@@ -71,6 +71,12 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         @Override public double vz() {return mAtom.vz();}
     }
     
+    @Override public IAtomData assignType(int aMinTypeNum, final IOperator1<Integer, ? super IAtom> aOperator) {
+        return collect(aMinTypeNum, atom -> {
+            final int tType = aOperator.cal(atom);
+            return new WrapperAtom(atom) {@Override public int type() {return tType;}};
+        });
+    }
     
     @Override public IAtomData randomPerturbXYZByGaussian(final Random aRandom, final double aSigma) {
         // 先获取 box
@@ -118,10 +124,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         Collections.shuffle(tTypeList, aRandom);
         final Iterator<Integer> it = tTypeList.iterator();
         // 使用 mapUpdate 获取种类修改后的 AtomData
-        return collect(tMaxType, atom -> {
-            final int tType = it.next();
-            return new WrapperAtom(atom) {@Override public int type() {return tType;}};
-        });
+        return assignType(tMaxType, atom -> it.next());
     }
     
     /** stuff to override */

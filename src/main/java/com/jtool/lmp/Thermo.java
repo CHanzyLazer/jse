@@ -23,8 +23,8 @@ import java.util.List;
 public class Thermo extends AbstractMultiFrameTable<ITable> {
     private final List<ITable> mTableList;
     
-    public Thermo(ITable... aTableList) {mTableList = Lists.newArrayList(aTableList);}
-    public Thermo(List<ITable> aTableList) {mTableList = aTableList;}
+    Thermo(ITable... aTableList) {mTableList = Lists.newArrayList(aTableList);}
+    Thermo(List<ITable> aTableList) {mTableList = aTableList;}
     
     /** AbstractMultiFrameTable stuffs */
     @Override public Thermo copy() {
