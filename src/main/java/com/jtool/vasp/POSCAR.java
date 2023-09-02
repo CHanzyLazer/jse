@@ -3,6 +3,7 @@ package com.jtool.vasp;
 
 import com.jtool.atom.*;
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.Matrices;
@@ -193,10 +194,10 @@ public class POSCAR extends AbstractAtomData {
         aAtomTypes = tTokens;
         ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Texts.splitBlank(aLines.get(idx));
         try {
-        aAtomNumbers = Vectors.from(UT.Code.map(tTokens, Integer::parseInt));
+        aAtomNumbers = Vectors.from(AbstractCollections.map(tTokens, Integer::parseInt));
         } catch (Exception e) {
         --idx;
-        aAtomNumbers = Vectors.from(UT.Code.map(aAtomTypes, Integer::parseInt));
+        aAtomNumbers = Vectors.from(AbstractCollections.map(aAtomTypes, Integer::parseInt));
         aAtomTypes = ZL_STR;
         }
         // 可选的注释行
@@ -237,8 +238,8 @@ public class POSCAR extends AbstractAtomData {
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
         if (mAtomTypes.length!=0)
-        lines.add(String.join(" ", UT.Code.map(mAtomTypes, type -> String.format("%6s", type))));
-        lines.add(String.join(" ", UT.Code.map(mAtomNumbers.iterable(), number -> String.format("%6d", number.intValue()))));
+        lines.add(String.join(" ", AbstractCollections.map(mAtomTypes, type -> String.format("%6s", type))));
+        lines.add(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number.intValue()))));
         if (mSelectiveDynamics)
         lines.add("Selective dynamics");
         lines.add("Direct");

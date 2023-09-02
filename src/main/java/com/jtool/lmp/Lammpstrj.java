@@ -3,6 +3,7 @@ package com.jtool.lmp;
 import com.google.common.collect.Lists;
 import com.jtool.atom.*;
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
@@ -416,7 +417,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             lines.add(String.format("%f %f", tSubLammpstrj.box().zlo(), tSubLammpstrj.box().zhi()));
             lines.add(String.format("ITEM: ATOMS %s", String.join(" ", tSubLammpstrj.mAtomData.heads())));
             for (IVector subAtomData : tSubLammpstrj.mAtomData.rows())
-            lines.add(String.join(" ", UT.Code.map(subAtomData.iterable(), Object::toString)));
+            lines.add(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString)));
         }
         
         UT.IO.write(aFilePath, lines);

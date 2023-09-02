@@ -21,9 +21,9 @@ import java.util.stream.Collectors
 //    int i = 0;
 //    Lmpdat.fromAtomData(data.opt().collect {IAtom atom -> isSolid[i++] ? new Atom(atom).setType(atom.type()+ 3) : atom}).write(filterDir+ 'filter-'+ fileName);
 //}
-final def filterDir = 'lmp/.stableglass-out/';
+final def filterDir = 'lmp/.ffs-out/';
 
-final def dump = Dump.read('lmp/.stableglass-in/dump');
+final def dump = Dump.read('lmp/.ffs-in/dump-0');
 final def calculator = new MainTypeClusterSizeCalculator(
     new ABOOPSolidChecker().setRNearestMul(2.2).setConnectThreshold(0.83).setSolidThreshold(25),
     new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7),
@@ -36,5 +36,5 @@ def filterDump = dump.parallelStream().map {subDump ->
     subDump.opt().mapType {def atom -> isSolid[j++] ? atom.type()+2 : atom.type()};
 }.collect(Collectors.toList());
 
-Dump.fromAtomDataList(filterDump).write(filterDir+'filter-dump');
+Dump.fromAtomDataList(filterDump).write(filterDir+'filter-dump-0');
 

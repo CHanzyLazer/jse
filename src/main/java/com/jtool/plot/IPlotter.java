@@ -1,6 +1,6 @@
 package com.jtool.plot;
 
-import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.function.IFunc1Subs;
 import com.jtool.math.vector.IVector;
@@ -37,20 +37,20 @@ public interface IPlotter {
     default ILine plot(                  double[] aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
     default ILine plot(                   IVector aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
     default ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
-    default ILine plot(                                                   double[] aY, String aName) {return plot(UT.Code.range_(aY.length), aY, aName);}
-    default ILine plot(                  double[] aX,                     double[] aY, String aName) {return plot(UT.Code.asList(aX), UT.Code.asList(aY), aName);}
-    default ILine plot(                   IVector aX,                     double[] aY, String aName) {return plot(aX.iterable(), UT.Code.asList(aY), aName);}
-    default ILine plot(Iterable<? extends Number> aX,                     double[] aY, String aName) {return plot(aX, UT.Code.asList(aY), aName);}
-    default ILine plot(                                                    IVector aY, String aName) {return plot(UT.Code.range_(aY.size()), aY, aName);}
-    default ILine plot(                  double[] aX,                      IVector aY, String aName) {return plot(UT.Code.asList(aX), aY.iterable(), aName);}
+    default ILine plot(                                                   double[] aY, String aName) {return plot(AbstractCollections.range_(aY.length), aY, aName);}
+    default ILine plot(                  double[] aX,                     double[] aY, String aName) {return plot(AbstractCollections.asList(aX), AbstractCollections.asList(aY), aName);}
+    default ILine plot(                   IVector aX,                     double[] aY, String aName) {return plot(aX.iterable(), AbstractCollections.asList(aY), aName);}
+    default ILine plot(Iterable<? extends Number> aX,                     double[] aY, String aName) {return plot(aX, AbstractCollections.asList(aY), aName);}
+    default ILine plot(                                                    IVector aY, String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
+    default ILine plot(                  double[] aX,                      IVector aY, String aName) {return plot(AbstractCollections.asList(aX), aY.iterable(), aName);}
     default ILine plot(                   IVector aX,                      IVector aY, String aName) {return plot(aX.iterable(), aY.iterable(), aName);}
     default ILine plot(Iterable<? extends Number> aX,                      IVector aY, String aName) {return plot(aX, aY.iterable(), aName);}
     default ILine plot(                                                     IFunc1 aY, String aName) {return plot(aY.x(), aY.f(), aName);}
-    default ILine plot(                  double[] aX,                   IFunc1Subs aY, String aName) {return plot(UT.Code.asList(aX), aY, aName);}
+    default ILine plot(                  double[] aX,                   IFunc1Subs aY, String aName) {return plot(AbstractCollections.asList(aX), aY, aName);}
     default ILine plot(                   IVector aX,                   IFunc1Subs aY, String aName) {return plot(aX.iterable(), aY, aName);}
-    default ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return plot(aX, UT.Code.map(aX, x -> aY.subs(x.doubleValue())), aName);}
-    default ILine plot(                               Collection<? extends Number> aY, String aName) {return plot(UT.Code.range_(aY.size()), aY, aName);}
-    default ILine plot(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return plot(UT.Code.asList(aX), aY, aName);}
+    default ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return plot(aX, AbstractCollections.map(aX, x -> aY.subs(x.doubleValue())), aName);}
+    default ILine plot(                               Collection<? extends Number> aY, String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
+    default ILine plot(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return plot(AbstractCollections.asList(aX), aY, aName);}
     default ILine plot(                   IVector aX, Iterable  <? extends Number> aY, String aName) {return plot(aX.iterable(), aY, aName);}
             ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName);
     

@@ -1,7 +1,7 @@
 package com.jtool.iofile;
 
 
-import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
@@ -52,8 +52,8 @@ public class IOFiles implements IIOFiles {
     
     @Override public List<String> getIFiles(String aIFileKey) {return mIFiles.get(aIFileKey);}
     @Override public List<String> getOFiles(String aOFileKey) {return mOFiles.get(aOFileKey);}
-    @Override public Iterable<String> getIFiles() {return UT.Code.merge(mIFiles.values());}
-    @Override public Iterable<String> getOFiles() {return UT.Code.merge(mOFiles.values());}
+    @Override public Iterable<String> getIFiles() {return AbstractCollections.merge(mIFiles.values());}
+    @Override public Iterable<String> getOFiles() {return AbstractCollections.merge(mOFiles.values());}
     @Override public Iterable<String> getIFileKeys() {return mIFiles.keySet();}
     @Override public Iterable<String> getOFileKeys() {return mOFiles.keySet();}
     

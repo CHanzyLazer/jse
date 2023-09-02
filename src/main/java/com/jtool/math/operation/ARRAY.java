@@ -1,10 +1,6 @@
 package com.jtool.math.operation;
 
 import com.jtool.code.functional.*;
-import com.jtool.code.iterator.IDoubleIterator;
-import com.jtool.code.iterator.IDoubleSetOnlyIterator;
-import com.jtool.code.iterator.IHasDoubleIterator;
-import com.jtool.code.iterator.IHasDoubleSetOnlyIterator;
 
 
 /**

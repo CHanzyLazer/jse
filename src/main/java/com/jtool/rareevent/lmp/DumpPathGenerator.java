@@ -2,6 +2,7 @@ package com.jtool.rareevent.lmp;
 
 import com.jtool.atom.*;
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IInFile;
@@ -70,7 +71,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     DumpPathGenerator(ILmpExecutor aLMP, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, IInFile aGenDumpIn, double aTimestep) {
         mLMP = aLMP;
         // 初始点也需要移除速度，保证会从不同路径开始
-        mInitPoints = Lammpstrj.fromAtomDataList(UT.Code.map(aInitAtomDataList, this::reducedPoint));
+        mInitPoints = Lammpstrj.fromAtomDataList(AbstractCollections.map(aInitAtomDataList, this::reducedPoint));
         mTimestep = aTimestep;
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;

@@ -1,7 +1,8 @@
 package com.jtool.atom;
 
-import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
+import com.jtool.code.collection.FixedCollections;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.functional.IOperator1;
@@ -36,8 +37,8 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
             @Override public int size() {return aIndices.size();}
         }, tThis.atomTypeNum(), tThis.boxLo(), tThis.boxHi(), tThis.hasVelocities());
     }
-    @Override public IAtomData filterIndices(int[] aIndices) {return filterIndices(UT.Code.asList(aIndices));}
-    @Override public IAtomData filterIndices(IIndexFilter aIndices) {return filterIndices(aIndices.fixedFilter(thisAtomData_().atomNum()));}
+    @Override public IAtomData filterIndices(int[] aIndices) {return filterIndices(AbstractCollections.asList(aIndices));}
+    @Override public IAtomData filterIndices(IIndexFilter aIndices) {return filterIndices(FixedCollections.filterIndex(thisAtomData_().atomNum(), aIndices));}
     
     
     @Override public IAtomData map(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {

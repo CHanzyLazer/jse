@@ -5,7 +5,6 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
-import com.jtool.math.operation.ARRAY;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;

@@ -2,6 +2,7 @@ package com.jtool.rareevent.atom;
 
 import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.ILogicalVector;
 import com.jtool.rareevent.IParameterCalculator;
@@ -22,7 +23,7 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
             final ILogicalVector tIsSolid = getIsSolid_(tMPC, aPoint);
             // 使用 getClustersDFS 获取所有的团簇（一般来说会比 BFS 更快，当然这个部分不是瓶颈）
             final double tRCluster = getRCluster_(tMPC);
-            List<List<Integer>> tClusters = MathEX.Adv.getClustersDFS(tIsSolid.filter(tIsSolid.size()), i -> tIsSolid.filter(tMPC.getNeighborList(i, tRCluster)));
+            List<List<Integer>> tClusters = MathEX.Adv.getClustersDFS(AbstractCollections.filterIndex(tIsSolid.size(), tIsSolid), i -> AbstractCollections.filterIndex(tMPC.getNeighborList(i, tRCluster), tIsSolid));
             // 遍历团簇统计 lambda
             double rLambda = 0.0;
             for (List<Integer> subCluster : tClusters) {

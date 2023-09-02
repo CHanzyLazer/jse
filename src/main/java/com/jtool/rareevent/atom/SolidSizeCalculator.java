@@ -4,8 +4,6 @@ import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
 import com.jtool.rareevent.IParameterCalculator;
 
-import static com.jtool.code.CS.R_NEAREST_MUL;
-
 
 /**
  * 一种参数计算器，计算体系中的固体部分的尺寸

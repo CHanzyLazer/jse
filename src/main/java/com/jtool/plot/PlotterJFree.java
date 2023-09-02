@@ -1,6 +1,7 @@
 package com.jtool.plot;
 
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.MathEX;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
@@ -46,8 +47,8 @@ public class PlotterJFree implements IPlotter {
         LineJFree(int aID, Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
             mID = aID;
             mName = aName;
-            mX = UT.Code.map(aX, Number::doubleValue);
-            mY = UT.Code.map(aY, Number::doubleValue);
+            mX = AbstractCollections.map(aX, Number::doubleValue);
+            mY = AbstractCollections.map(aY, Number::doubleValue);
             mPaint = COLOR_(aID);
             mLineRender.setSeriesPaint(mID, mPaint);
             mLegendLine = new Line2D.Double(-super.mLineStroke.getSize()*LEGEND_SIZE, 0.0, super.mLineStroke.getSize()*LEGEND_SIZE, 0.0);

@@ -3,7 +3,7 @@ package com.jtool.rareevent.atom;
 import com.jtool.atom.IAtom;
 import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
-import com.jtool.code.filter.IIndexFilter;
+import com.jtool.code.collection.FixedCollections;
 import com.jtool.math.vector.ILogicalVector;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public final class MainTypeClusterSizeCalculator extends AbstractClusterSizeCalc
         ILogicalVector rIsSolid = mAllSolidChecker.checkSolid(aMPC);
         // 手动遍历过滤
         final List<IAtom> tAtoms = aPoint.atoms();
-        List<Integer> tTypeIndices = IIndexFilter.fixedFilter(aPoint.atomNum(), idx -> tAtoms.get(idx).type()==mMainType);
+        List<Integer> tTypeIndices = FixedCollections.filterIndex(aPoint.atomNum(), idx -> tAtoms.get(idx).type()==mMainType);
         // 过滤得到只有这种元素的 MPC 然后进行计算
         try (MonatomicParameterCalculator tMPC = aPoint.operation().filterIndices(tTypeIndices).getMonatomicParameterCalculator()) {
             ILogicalVector tTypeIsSolid = mMainTypeSolidChecker.checkSolid(tMPC);

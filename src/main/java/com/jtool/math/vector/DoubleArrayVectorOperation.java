@@ -1,9 +1,7 @@
 package com.jtool.math.vector;
 
-import com.jtool.code.functional.IDoubleConsumer1;
 import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.code.functional.IDoubleOperator2;
-import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.math.IDataShell;
 import com.jtool.math.operation.ARRAY;
 import com.jtool.math.operation.DATA;

@@ -2,7 +2,7 @@ package com.jtool.rareevent;
 
 
 import com.jtool.atom.IAtomData;
-import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.ILogicalVector;
 import com.jtool.math.vector.LogicalVector;
@@ -540,16 +540,16 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         return rPath;
     }
     public List<T> pointsOnLambda() {
-        return UT.Code.map(mPointsOnLambda, point -> point.value);
+        return AbstractCollections.map(mPointsOnLambda, point -> point.value);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Map restData() {
         Map rSaveTo = new HashMap();
-        rSaveTo.put("lambdas", UT.Code.map(mPointsOnLambda, point -> point.lambda));
-        rSaveTo.put("multiples", UT.Code.map(mPointsOnLambda, point -> point.multiple));
+        rSaveTo.put("lambdas", AbstractCollections.map(mPointsOnLambda, point -> point.lambda));
+        rSaveTo.put("multiples", AbstractCollections.map(mPointsOnLambda, point -> point.multiple));
         rSaveTo.put("k0", Double.isNaN(mK0) ? null : mK0);
-        rSaveTo.put("prob", UT.Code.map(mPi.asList(), prob -> (Double.isNaN(prob) ? null : prob)));
+        rSaveTo.put("prob", AbstractCollections.map(mPi.asList(), prob -> (Double.isNaN(prob) ? null : prob)));
         rSaveTo.put("surfaceA", mSurfaceA);
         rSaveTo.put("surfaces", mSurfaces.asList());
         return rSaveTo;

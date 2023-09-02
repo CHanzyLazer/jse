@@ -1,13 +1,13 @@
 package com.jtool.math.matrix;
 
 import com.jtool.code.CS.SliceType;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.functional.IDoubleConsumer1;
 import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
-import com.jtool.code.UT;
 import com.jtool.code.iterator.IDoubleSetOnlyIterator;
 import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.math.vector.*;
@@ -466,8 +466,8 @@ public abstract class AbstractMatrix implements IMatrix {
     }
     
     /** 转换为其他类型 */
-    @Override public List<List<Double>> asListCols() {return UT.Code.map(cols(), IVector::asList);}
-    @Override public List<List<Double>> asListRows() {return UT.Code.map(rows(), IVector::asList);}
+    @Override public List<List<Double>> asListCols() {return AbstractCollections.map(cols(), IVector::asList);}
+    @Override public List<List<Double>> asListRows() {return AbstractCollections.map(rows(), IVector::asList);}
     @Override public IVector asVecCol() {
         return new RefVector() {
             private final int mRowNum = rowNumber(), mColNum = columnNumber();

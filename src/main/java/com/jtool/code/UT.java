@@ -3,9 +3,12 @@ package com.jtool.code;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.jtool.atom.*;
-import com.jtool.code.collection.AbstractRandomAccessList;
+import com.jtool.code.collection.AbstractCollections;
+import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.filter.IFilter;
+import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.functional.IOperator1;
+import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.code.task.TaskCall;
 import com.jtool.code.task.TaskRun;
 import com.jtool.math.function.IFunc1;
@@ -90,320 +93,43 @@ public class UT {
         }
         
         
-        /**
-         * merge two array into one List
-         * @author liqa
-         */
-        public static <T> List<T> merge(final T[] aBefore, final T[] aAfter) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {return index<aBefore.length ? aBefore[index] : aAfter[index-aBefore.length];}
-                @Override public int size() {return aBefore.length+aAfter.length;}
-            };
-        }
-        public static <T> List<T> merge(final T aBefore0, final T[] aAfter) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {return index<1 ? aBefore0 : aAfter[index-1];}
-                @Override public int size() {return aAfter.length+1;}
-            };
-        }
-        public static <T> List<T> merge(final T aBefore0, final T aBefore1, final T[] aAfter) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {
-                    switch (index) {
-                    case 0: return aBefore0;
-                    case 1: return aBefore1;
-                    default: return aAfter[index-2];
-                    }
-                }
-                @Override public int size() {return aAfter.length+2;}
-            };
-        }
-        public static <T> List<T> merge(final T aBefore0, final T aBefore1, final T aBefore2, final T[] aAfter) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {
-                    switch (index) {
-                    case 0: return aBefore0;
-                    case 1: return aBefore1;
-                    case 2: return aBefore2;
-                    default: return aAfter[index-3];
-                    }
-                }
-                @Override public int size() {return aAfter.length+3;}
-            };
-        }
-        public static <T> List<T> merge(final T[] aBefore, final T aAfter0) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {
-                    int tRest = index-aBefore.length;
-                    return tRest==0 ? aAfter0 : aBefore[index];
-                }
-                @Override public int size() {return aBefore.length+1;}
-            };
-        }
-        public static <T> List<T> merge(final T[] aBefore, final T aAfter0, final T aAfter1) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {
-                    int tRest = index-aBefore.length;
-                    switch (tRest) {
-                    case 0: return aAfter0;
-                    case 1: return aAfter1;
-                    default: return aBefore[index];
-                    }
-                }
-                @Override public int size() {return aBefore.length+2;}
-            };
-        }
-        public static <T> List<T> merge(final T[] aBefore, final T aAfter0, final T aAfter1, final T aAfter2) {
-            return new AbstractRandomAccessList<T>() {
-                @Override public T get(int index) {
-                    int tRest = index-aBefore.length;
-                    switch (tRest) {
-                    case 0: return aAfter0;
-                    case 1: return aAfter1;
-                    case 2: return aAfter2;
-                    default: return aBefore[index];
-                    }
-                }
-                @Override public int size() {return aBefore.length+3;}
-            };
-        }
-        public static <T> Iterable<T> merge(final Iterable<? extends T> aBefore, final Iterable<? extends T> aAfter) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mItB = aBefore.iterator();
-                private final Iterator<? extends T> mItA = aAfter.iterator();
-                
-                @Override public boolean hasNext() {
-                    return mItB.hasNext() || mItA.hasNext();
-                }
-                @Override public T next() {
-                    return mItB.hasNext() ? mItB.next() : mItA.next();
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final T aBefore0, final Iterable<? extends T> aAfter) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aAfter.iterator();
-                private boolean mFirst = true;
-                
-                @Override public boolean hasNext() {
-                    if (mFirst) return true;
-                    else return mIt.hasNext();
-                }
-                @Override public T next() {
-                    if (mFirst) {
-                        mFirst = false;
-                        return aBefore0;
-                    } else {
-                        return mIt.next();
-                    }
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final T aBefore0, final T aBefore1, final Iterable<? extends T> aAfter) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aAfter.iterator();
-                private int mIndex = -1;
-                
-                @Override public boolean hasNext() {
-                    if (mIndex < 1) return true;
-                    else return mIt.hasNext();
-                }
-                @Override public T next() {
-                    if (mIndex < 1) {
-                        ++mIndex;
-                        switch (mIndex) {
-                        case 0: return aBefore0;
-                        case 1: return aBefore1;
-                        default: throw new RuntimeException();
-                        }
-                    } else {
-                        return mIt.next();
-                    }
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final T aBefore0, final T aBefore1, final T aBefore2, final Iterable<? extends T> aAfter) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aAfter.iterator();
-                private int mIndex = -1;
-                
-                @Override public boolean hasNext() {
-                    if (mIndex < 2) return true;
-                    return mIt.hasNext();
-                }
-                @Override public T next() {
-                    if (mIndex < 2) {
-                        ++mIndex;
-                        switch (mIndex) {
-                        case 0: return aBefore0;
-                        case 1: return aBefore1;
-                        case 2: return aBefore2;
-                        default: throw new RuntimeException();
-                        }
-                    } else {
-                        return mIt.next();
-                    }
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aBefore.iterator();
-                private boolean mLast = false;
-                @Override public boolean hasNext() {
-                    return !mLast;
-                }
-                @Override public T next() {
-                    if (mLast) throw new NoSuchElementException();
-                    if (mIt.hasNext()) {
-                        return mIt.next();
-                    } else {
-                        mLast = true;
-                        return aAfter0;
-                    }
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0, final T aAfter1) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aBefore.iterator();
-                private int mIndex = -1;
-                
-                @Override public boolean hasNext() {
-                    return mIndex < 1;
-                }
-                @Override public T next() {
-                    if (mIndex == 1) throw new NoSuchElementException();
-                    if (mIt.hasNext()) {
-                        return mIt.next();
-                    } else {
-                        ++mIndex;
-                        switch (mIndex) {
-                        case 0: return aAfter0;
-                        case 1: return aAfter1;
-                        default: throw new RuntimeException();
-                        }
-                    }
-                }
-            };
-        }
-        public static <T> Iterable<T> merge(final Iterable<? extends T>  aBefore, final T aAfter0, final T aAfter1, final T aAfter2) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends T> mIt = aBefore.iterator();
-                private int mIndex = -1;
-                
-                @Override public boolean hasNext() {
-                    return mIndex < 2;
-                }
-                @Override public T next() {
-                    if (mIndex == 2) throw new NoSuchElementException();
-                    if (mIt.hasNext()) {
-                        return mIt.next();
-                    } else {
-                        ++mIndex;
-                        switch (mIndex) {
-                        case 0: return aAfter0;
-                        case 1: return aAfter1;
-                        case 2: return aAfter2;
-                        default: throw new RuntimeException();
-                        }
-                    }
-                }
-            };
-        }
-        /**
-         * Convert nested Iterable to a single one
-         * @author liqa
-         */
-        public static <T> Iterable<T> merge(final Iterable<? extends Iterable<? extends T>> aNestIterable) {
-            return () -> new Iterator<T>() {
-                private final Iterator<? extends Iterable<? extends T>> mParentIt = aNestIterable.iterator();
-                private @Nullable Iterator<? extends T> mIt = mParentIt.hasNext() ? mParentIt.next().iterator() : null;
-                private boolean mNextValid = false;
-                private @Nullable T mNext = null;
-                
-                @Override public boolean hasNext() {
-                    if (mIt == null) return false;
-                    while (true) {
-                        if (mNextValid) return true;
-                        if (mIt.hasNext()) {
-                            mNext = mIt.next();
-                            mNextValid = true;
-                            return true;
-                        } else
-                        if (mParentIt.hasNext()) {
-                            mIt = mParentIt.next().iterator();
-                            mNext = null;
-                            mNextValid = false;
-                        } else {
-                            mIt = null;
-                            return false;
-                        }
-                    }
-                }
-                @Override public T next() {
-                    if (hasNext()) {
-                        T tNext = mNext;
-                        mNext = null;
-                        mNextValid = false; // 设置非法表示此时不再有 Next
-                        return tNext;
-                    } else {
-                        throw new NoSuchElementException();
-                    }
-                }
-            };
-        }
+        /** 保留这些接口方便外部调用使用 */
+        @VisibleForTesting public static <T> List<T> merge(T[] aBefore, T[] aAfter) {return AbstractCollections.merge(aBefore, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0,                         T[] aAfter) {return AbstractCollections.merge(aBefore0, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0, T aBefore1,             T[] aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, T[] aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aBefore2, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T[] aBefore, T aAfter0                      ) {return AbstractCollections.merge(aBefore, aAfter0);}
+        @VisibleForTesting public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1           ) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1);}
+        @VisibleForTesting public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1, T aAfter2) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1, aAfter2);}
+        @VisibleForTesting public static <T> List<T> merge(List<? extends T> aBefore, List<? extends T> aAfter) {return AbstractCollections.merge(aBefore, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0,                         List<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0, T aBefore1,             List<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, List<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aBefore2, aAfter);}
+        @VisibleForTesting public static <T> List<T> merge(List<? extends T> aBefore, T aAfter0                      ) {return AbstractCollections.merge(aBefore, aAfter0);}
+        @VisibleForTesting public static <T> List<T> merge(List<? extends T> aBefore, T aAfter0, T aAfter1           ) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1);}
+        @VisibleForTesting public static <T> List<T> merge(List<? extends T> aBefore, T aAfter0, T aAfter1, T aAfter2) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1, aAfter2);}
+        @VisibleForTesting public static <T> Iterable<T> merge(Iterable<? extends T> aBefore, Iterable<? extends T> aAfter) {return AbstractCollections.merge(aBefore, aAfter);}
+        @VisibleForTesting public static <T> Iterable<T> merge(T aBefore0,                         Iterable<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aAfter);}
+        @VisibleForTesting public static <T> Iterable<T> merge(T aBefore0, T aBefore1,             Iterable<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aAfter);}
+        @VisibleForTesting public static <T> Iterable<T> merge(T aBefore0, T aBefore1, T aBefore2, Iterable<? extends T> aAfter) {return AbstractCollections.merge(aBefore0, aBefore1, aBefore2, aAfter);}
+        @VisibleForTesting public static <T> Iterable<T> merge(Iterable<? extends T> aBefore, T aAfter0                      ) {return AbstractCollections.merge(aBefore, aAfter0);}
+        @VisibleForTesting public static <T> Iterable<T> merge(Iterable<? extends T> aBefore, T aAfter0, T aAfter1           ) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1);}
+        @VisibleForTesting public static <T> Iterable<T> merge(Iterable<? extends T> aBefore, T aAfter0, T aAfter1, T aAfter2) {return AbstractCollections.merge(aBefore, aAfter0, aAfter1, aAfter2);}
+        @VisibleForTesting public static <T> Iterable<T> merge(Iterable<? extends Iterable<? extends T>> aNestIterable) {return AbstractCollections.merge(aNestIterable);}
         
+        /** 保留这些接口方便外部调用使用 */
+        @VisibleForTesting public static <T> Iterable<T> filter(Iterable<? extends T> aIterable, IFilter<? super T> aFilter) {return AbstractCollections.filter(aIterable, aFilter);}
+        @VisibleForTesting public static Iterable<Integer> filterIndex(Iterable<Integer> aIndices, IIndexFilter aFilter) {return AbstractCollections.filterIndex(aIndices, aFilter);}
+        @VisibleForTesting public static Iterable<Integer> filterIndex(int aSize, IIndexFilter aFilter) {return AbstractCollections.filterIndex(aSize, aFilter);}
+        @VisibleForTesting public static Iterable<? extends Number> filterDouble(Iterable<? extends Number> aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
+        @VisibleForTesting public static IHasDoubleIterator filterDouble(final IHasDoubleIterator aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
         
-        
-        /**
-         * filter the input Iterable
-         * @author liqa
-         */
-        @Deprecated
-        public static <T> Iterable<T> filter(final Iterable<T> aIterable, final IFilter<? super T> aFilter) {return IFilter.filter(aIterable, aFilter);}
-        
-        /**
-         * map {@code Iterable<T> to Iterable<R>} like {@link Stream}.map
-         * @author liqa
-         */
-        public static <R, T> Iterable<R> map(final Iterable<T> aIterable, final IOperator1<? extends R, ? super T> aOpt) {
-            return () -> map(aIterable.iterator(), aOpt);
-        }
-        public static <R, T> Iterator<R> map(final Iterator<T> aIterator, final IOperator1<? extends R, ? super T> aOpt) {
-            return new Iterator<R>() {
-                final Iterator<T> mIt = aIterator;
-                @Override public boolean hasNext() {
-                    return mIt.hasNext();
-                }
-                @Override public R next() {
-                    if (hasNext()) {
-                        return aOpt.cal(mIt.next());
-                    } else {
-                        throw new NoSuchElementException();
-                    }
-                }
-            };
-        }
-        public static <R, T> Collection<R> map(final Collection<T> aCollection, final IOperator1<? extends R, ? super T> aOpt) {
-            return new AbstractCollection<R>() {
-                @Override public Iterator<R> iterator() {return map(aCollection.iterator(), aOpt);}
-                @Override public int size() {return aCollection.size();}
-            };
-        }
-        public static <R, T> List<R> map(final List<T> aList, final IOperator1<? extends R, ? super T> aOpt) {
-            return new AbstractRandomAccessList<R>() {
-                @Override public R get(int index) {return aOpt.cal(aList.get(index));}
-                @Override public int size() {return aList.size();}
-                @Override public Iterator<R> iterator() {return map(aList.iterator(), aOpt);}
-            };
-        }
-        public static <R, T> List<R> map(final T[] aArray, final IOperator1<? extends R, ? super T> aOpt) {
-            return new AbstractRandomAccessList<R>() {
-                @Override public R get(int index) {return aOpt.cal(aArray[index]);}
-                @Override public int size() {return aArray.length;}
-            };
-        }
+        /** 保留这些接口方便外部调用使用 */
+        @VisibleForTesting public static <R, T> Iterable<R>   map(Iterable<T> aIterable,     IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterable, aOpt);}
+        @VisibleForTesting public static <R, T> Iterator<R>   map(Iterator<T> aIterator,     IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterator, aOpt);}
+        @VisibleForTesting public static <R, T> Collection<R> map(Collection<T> aCollection, IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aCollection, aOpt);}
+        @VisibleForTesting public static <R, T> List<R>       map(List<T> aList,             IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aList, aOpt);}
+        @VisibleForTesting public static <R, T> List<R>       map(T[] aArray,                IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aArray, aOpt);}
         
         
         /**
@@ -452,95 +178,18 @@ public class UT {
             return new XYZ(aXYZ);
         }
         
+        /** 保留这些接口方便外部调用使用 */
+        @VisibleForTesting public static List<Double> asList(final double[] aData) {return AbstractCollections.asList(aData);}
+        @VisibleForTesting public static List<Integer> asList(final int[] aData) {return AbstractCollections.asList(aData);}
+        @VisibleForTesting public static List<Boolean> asList(final boolean[] aData) {return AbstractCollections.asList(aData);}
         
-        /**
-         * {@link Arrays}.asList for double[]
-         * @author liqa
-         * @param aData the input double[]
-         * @return the list format of double[]
-         */
-        public static List<Double> asList(final double[] aData) {
-            return new AbstractRandomAccessList<Double>() {
-                @Override public Double get(int index) {return aData[index];}
-                @Override public Double set(int index, Double element) {
-                    double oValue = aData[index];
-                    aData[index] = element;
-                    return oValue;
-                }
-                @Override public int size() {return aData.length;}
-            };
-        }
-        /**
-         * {@link Arrays}.asList for int[]
-         * @author liqa
-         * @param aData the input int[]
-         * @return the list format of int[]
-         */
-        public static List<Integer> asList(final int[] aData) {
-            return new AbstractRandomAccessList<Integer>() {
-                @Override public Integer get(int index) {return aData[index];}
-                @Override public Integer set(int index, Integer element) {
-                    int oValue = aData[index];
-                    aData[index] = element;
-                    return oValue;
-                }
-                @Override public int size() {return aData.length;}
-            };
-        }
-        /**
-         * {@link Arrays}.asList for boolean[]
-         * @author liqa
-         * @param aData the input boolean[]
-         * @return the list format of boolean[]
-         */
-        public static List<Boolean> asList(final boolean[] aData) {
-            return new AbstractRandomAccessList<Boolean>() {
-                @Override public Boolean get(int index) {return aData[index];}
-                @Override public Boolean set(int index, Boolean element) {
-                    boolean oValue = aData[index];
-                    aData[index] = element;
-                    return oValue;
-                }
-                @Override public int size() {return aData.length;}
-            };
-        }
-        
-        
-        /**
-         * the range function similar to python
-         * <p> only support in aStep > 0 for now </p>
-         * @author liqa
-         * @param aStart the start value, include
-         * @param aStop the stop position, exclude
-         * @param aStep the step of Iteration
-         * @return A iterable container
-         */
-        public static Iterable<Integer> range_(final int aStart, final int aStop, final int aStep) {
-            return () -> new Iterator<Integer>() {
-                int mIdx = aStart;
-                @Override public boolean hasNext() {
-                    return mIdx < aStop;
-                }
-                @Override public Integer next() {
-                    if (hasNext()) {
-                        int tIdx = mIdx;
-                        mIdx += aStep;
-                        return tIdx;
-                    } else {
-                        throw new NoSuchElementException();
-                    }
-                }
-            };
-        }
-        public static Iterable<Integer> range_(            int aSize           ) {return range_(0, aSize);}
-        public static Iterable<Integer> range_(int aStart, int aStop           ) {return range_(aStart, aStop, 1);}
-        public static Iterable<Integer> range (            int aSize           ) {return range(0, aSize);}
-        public static Iterable<Integer> range (int aStart, int aStop           ) {return range(aStart, aStop, 1);}
-        public static Iterable<Integer> range (int aStart, int aStop, int aStep) {
-            aStep = Math.max(aStep, 1);
-            aStop = Math.max(aStop, aStart);
-            return range_(aStart, aStop, aStep);
-        }
+        /** 保留这些接口方便外部调用使用 */
+        @VisibleForTesting public static List<Integer> range_(            int aSize           ) {return AbstractCollections.range_(aSize);}
+        @VisibleForTesting public static List<Integer> range_(int aStart, int aStop           ) {return AbstractCollections.range_(aStart, aStop);}
+        @VisibleForTesting public static List<Integer> range_(int aStart, int aStop, int aStep) {return AbstractCollections.range_(aStart, aStop, aStep);}
+        @VisibleForTesting public static List<Integer> range (            int aSize           ) {return AbstractCollections.range (aSize);}
+        @VisibleForTesting public static List<Integer> range (int aStart, int aStop           ) {return AbstractCollections.range (aStart, aStop);}
+        @VisibleForTesting public static List<Integer> range (int aStart, int aStop, int aStep) {return AbstractCollections.range (aStart, aStop, aStep);}
     }
     
     public static class Par {
@@ -1151,13 +800,13 @@ public class UT {
         public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
-                for (double[] subData : aData) tPrinter.println(String.join(",", Code.map(Code.asList(subData), String::valueOf)));
+                for (double[] subData : aData) tPrinter.println(String.join(",", AbstractCollections.map(AbstractCollections.asList(subData), String::valueOf)));
             }
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
-                for (IVector subData : aData.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), String::valueOf)));
+                for (IVector subData : aData.rows()) tPrinter.println(String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
             }
         }
         public static void data2csv(Iterable<? extends Number> aData, String aFilePath) throws IOException {
@@ -1214,7 +863,7 @@ public class UT {
         public static void table2csv(ITable aTable, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (!aTable.noHead()) tPrinter.println(String.join(",", aTable.heads()));
-                for (IVector subData : aTable.rows()) tPrinter.println(String.join(",", Code.map(subData.iterable(), String::valueOf)));
+                for (IVector subData : aTable.rows()) tPrinter.println(String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
             }
         }
         /**
@@ -1239,7 +888,7 @@ public class UT {
             // 读取第一行检测是否有头，直接看能否成功粘贴
             tTokens = Texts.splitComma(tLines.get(0));
             IVector tFirstData = null;
-            try {tFirstData = Vectors.from(Code.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
+            try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
             if (tFirstData != null) {
                 tHand = null;
                 tData = RowMatrix.zeros(tLineNum, tFirstData.size());
@@ -1251,7 +900,7 @@ public class UT {
             // 遍历读取后续数据
             for (int i = 1; i < tLineNum; ++i) {
                 tTokens = Texts.splitComma(tLines.get(i));
-                tData.row(tHand==null ? i : i-1).fill(Code.map(tTokens, Double::parseDouble));
+                tData.row(tHand==null ? i : i-1).fill(AbstractCollections.map(tTokens, Double::parseDouble));
             }
             // 返回结果
             return tHand != null ? new Table(tHand, tData) : new Table(tData);

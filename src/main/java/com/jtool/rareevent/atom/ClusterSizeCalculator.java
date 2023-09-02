@@ -2,13 +2,7 @@ package com.jtool.rareevent.atom;
 
 import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
-import com.jtool.math.MathEX;
 import com.jtool.math.vector.ILogicalVector;
-import com.jtool.rareevent.IParameterCalculator;
-
-import java.util.List;
-
-import static com.jtool.code.CS.R_NEAREST_MUL;
 
 
 /**

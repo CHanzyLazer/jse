@@ -1,6 +1,7 @@
 package com.jtool.lmp;
 
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.Pair;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IInFile;
@@ -180,7 +181,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
             
             String tLmpInPath = aLmp.mFirst+"in";
             // 向目录放入 in 文件，需要这样操作
-            if (mEXE.needSyncIOFiles()) mEXE.putFiles(UT.Code.merge(tLmpInPath, aIOFiles.getIFiles()));
+            if (mEXE.needSyncIOFiles()) mEXE.putFiles(AbstractCollections.merge(tLmpInPath, aIOFiles.getIFiles()));
             // 等待执行完成，注意对于特殊系统，需要设置等待时间等待文件系统同步
             if (mFileSystemWaitTime > 0) Thread.sleep(mFileSystemWaitTime);
             int tTolerant = TOLERANT;

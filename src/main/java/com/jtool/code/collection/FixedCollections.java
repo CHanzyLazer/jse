@@ -1,0 +1,253 @@
+package com.jtool.code.collection;
+
+import com.jtool.code.filter.IDoubleFilter;
+import com.jtool.code.filter.IFilter;
+import com.jtool.code.filter.IIndexFilter;
+import com.jtool.code.functional.IOperator1;
+import com.jtool.code.iterator.IHasDoubleIterator;
+import com.jtool.math.MathEX;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.Vector;
+
+import java.util.*;
+
+/**
+ * 获取固定容器的类，这里获取的结果统一都进行了一次值拷贝
+ * @author liqa
+ */
+@SuppressWarnings({"UseBulkOperation", "ManualArrayToCollectionCopy"})
+public class FixedCollections {
+    protected FixedCollections() {}
+    
+    /**
+     * the range function similar to python
+     * <p> only support in aStep > 0 for now </p>
+     * @author liqa
+     * @param aStart the start value, include
+     * @param aStop the stop position, exclude
+     * @param aStep the step of Iteration
+     * @return A iterable container
+     */
+    public static List<Integer> range_(int aStart, int aStop, int aStep) {
+       List<Integer> rRange = new ArrayList<>(MathEX.Code.divup(aStop-aStart, aStep));
+       for (int i = aStart; i < aStop; i += aStep) rRange.add(i);
+       return rRange;
+    }
+    public static List<Integer> range_(            int aSize           ) {return range_(0, aSize);}
+    public static List<Integer> range_(int aStart, int aStop           ) {return range_(aStart, aStop, 1);}
+    public static List<Integer> range (            int aSize           ) {return range(0, aSize);}
+    public static List<Integer> range (int aStart, int aStop           ) {return range(aStart, aStop, 1);}
+    public static List<Integer> range (int aStart, int aStop, int aStep) {
+        aStep = Math.max(aStep, 1);
+        aStop = Math.max(aStop, aStart);
+        return range_(aStart, aStop, aStep);
+    }
+    
+    /**
+     * map {@code Iterable<T> to List<R>}
+     * @author liqa
+     */
+    public static <R, T> List<R> map(final Iterable<T> aIterable, final IOperator1<? extends R, ? super T> aOpt) {
+        List<R> rOut = new ArrayList<>();
+        for (T tValue : aIterable) rOut.add(aOpt.cal(tValue));
+        return rOut;
+    }
+    public static <R, T> List<R> map(final Collection<T> aCollection, final IOperator1<? extends R, ? super T> aOpt) {
+        List<R> rOut = new ArrayList<>(aCollection.size());
+        for (T tValue : aCollection) rOut.add(aOpt.cal(tValue));
+        return rOut;
+    }
+    public static <R, T> List<R> map(final T[] aArray, final IOperator1<? extends R, ? super T> aOpt) {
+        List<R> rOut = new ArrayList<>(aArray.length);
+        for (T tValue : aArray) rOut.add(aOpt.cal(tValue));
+        return rOut;
+    }
+    
+    
+    /**
+     * 提供通用的执行过滤的接口
+     * @author liqa
+     */
+    public static <T> List<T> filter(Iterable<? extends T> aIterable, IFilter<? super T> aFilter) {
+        List<T> rList = new ArrayList<>();
+        for (T tValue : aIterable) if (aFilter.accept(tValue)) rList.add(tValue);
+        return rList;
+    }
+    public static List<Integer> filterIndex(Iterable<Integer> aIndices, final IIndexFilter aFilter) {
+        return filter(aIndices, aFilter::accept);
+    }
+    public static List<Integer> filterIndex(int aSize, IIndexFilter aFilter) {
+        List<Integer> rIndices = new ArrayList<>();
+        for (int i = 0; i < aSize; ++i) if (aFilter.accept(i)) rIndices.add(i);
+        return rIndices;
+    }
+    public static List<? extends Number> filterDouble(Iterable<? extends Number> aIterable, final IDoubleFilter aFilter) {
+        return filter(aIterable, v -> aFilter.accept(v.doubleValue()));
+    }
+    public static IVector filterDouble(IHasDoubleIterator aIterable, IDoubleFilter aFilter) {
+        final Vector.Builder rBuilder = Vector.builder();
+        aIterable.forEach(v -> {
+            if (aFilter.accept(v)) rBuilder.add(v);
+        });
+        rBuilder.shrinkToFit();
+        return rBuilder.build();
+    }
+    
+    /**
+     * merge two array into one List
+     * @author liqa
+     */
+    public static <T> List<T> merge(T[] aBefore, T[] aAfter) {
+        List<T> rOut = new ArrayList<>(aBefore.length+aAfter.length);
+        for (T tValue : aBefore) rOut.add(tValue);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T[] aAfter) {
+        List<T> rOut = new ArrayList<>(1+aAfter.length);
+        rOut.add(aBefore0);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, T[] aAfter) {
+        List<T> rOut = new ArrayList<>(2+aAfter.length);
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, T[] aAfter) {
+        List<T> rOut = new ArrayList<>(3+aAfter.length);
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        rOut.add(aBefore2);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T[] aBefore, T aAfter0) {
+        List<T> rOut = new ArrayList<>(aBefore.length+1);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        return rOut;
+    }
+    public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1) {
+        List<T> rOut = new ArrayList<>(aBefore.length+2);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        return rOut;
+    }
+    public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1, T aAfter2) {
+        List<T> rOut = new ArrayList<>(aBefore.length+3);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        rOut.add(aAfter2);
+        return rOut;
+    }
+    public static <T> List<T> merge(Collection<? extends T> aBefore, Collection<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>(aBefore.size()+aAfter.size());
+        for (T tValue : aBefore) rOut.add(tValue);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, Collection<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>(1+aAfter.size());
+        rOut.add(aBefore0);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, Collection<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>(2+aAfter.size());
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, Collection<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>(3+aAfter.size());
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        rOut.add(aBefore2);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(Collection<? extends T> aBefore, T aAfter0) {
+        List<T> rOut = new ArrayList<>(aBefore.size()+1);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        return rOut;
+    }
+    public static <T> List<T> merge(Collection<? extends T> aBefore, T aAfter0, T aAfter1) {
+        List<T> rOut = new ArrayList<>(aBefore.size()+2);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        return rOut;
+    }
+    public static <T> List<T> merge(Collection<? extends T> aBefore, T aAfter0, T aAfter1, T aAfter2) {
+        List<T> rOut = new ArrayList<>(aBefore.size()+3);
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        rOut.add(aAfter2);
+        return rOut;
+    }
+    public static <T> List<T> merge(Iterable<? extends T> aBefore, Iterable<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>();
+        for (T tValue : aBefore) rOut.add(tValue);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, Iterable<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>();
+        rOut.add(aBefore0);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, Iterable<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>();
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, Iterable<? extends T> aAfter) {
+        List<T> rOut = new ArrayList<>();
+        rOut.add(aBefore0);
+        rOut.add(aBefore1);
+        rOut.add(aBefore2);
+        for (T tValue : aAfter) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> merge(Iterable<? extends T> aBefore, T aAfter0) {
+        List<T> rOut = new ArrayList<>();
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        return rOut;
+    }
+    public static <T> List<T> merge(Iterable<? extends T> aBefore, T aAfter0, T aAfter1) {
+        List<T> rOut = new ArrayList<>();
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        return rOut;
+    }
+    public static <T> List<T> merge(Iterable<? extends T> aBefore, T aAfter0, T aAfter1, T aAfter2) {
+        List<T> rOut = new ArrayList<>();
+        for (T tValue : aBefore) rOut.add(tValue);
+        rOut.add(aAfter0);
+        rOut.add(aAfter1);
+        rOut.add(aAfter2);
+        return rOut;
+    }
+    /**
+     * Convert nested Iterable to a single one
+     * @author liqa
+     */
+    public static <T> Iterable<T> merge(Iterable<? extends Iterable<? extends T>> aNestIterable) {
+        List<T> rOut = new ArrayList<>();
+        for (Iterable<? extends T> tIterable : aNestIterable) for (T tValue : tIterable) rOut.add(tValue);
+        return rOut;
+    }
+}

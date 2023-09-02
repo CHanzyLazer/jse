@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.jtool.code.CS.*;
 import static com.jtool.code.UT.Code.newBox;
-import static com.jtool.code.UT.Code.toXYZ;
 
 /**
  * lammps 格式的模拟盒信息
