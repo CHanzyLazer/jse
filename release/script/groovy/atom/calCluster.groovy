@@ -1,10 +1,12 @@
 package atom
 
+import com.jtool.atom.IAtomData
+import com.jtool.code.collection.ArrayLists
 import com.jtool.lmp.Dump
 import com.jtool.rareevent.atom.ABOOPSolidChecker
 import com.jtool.rareevent.atom.MainTypeClusterSizeCalculator
 
-import java.util.stream.Collectors
+import static com.jtool.code.UT.Par.*
 
 
 
@@ -30,11 +32,13 @@ final def calculator = new MainTypeClusterSizeCalculator(
     2
 );
 
-def filterDump = dump.parallelStream().map {subDump ->
+List<IAtomData> filterDump = ArrayLists.nulls(dump.size());
+parfor(dump.size()) {int i ->
+    def subDump = dump[i];
     def isSolid = subDump.getMPC().withCloseable {calculator.getIsSolid_(it, subDump)}
     int j = 0;
-    subDump.opt().mapType {def atom -> isSolid[j++] ? atom.type()+2 : atom.type()};
-}.collect(Collectors.toList());
+    filterDump[i] = subDump.opt().mapType {def atom -> isSolid[j++] ? atom.type()+2 : atom.type()};
+}
 
 Dump.fromAtomDataList(filterDump).write(filterDir+'filter-dump-0');
 

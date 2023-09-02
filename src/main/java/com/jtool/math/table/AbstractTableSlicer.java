@@ -1,6 +1,5 @@
 package com.jtool.math.table;
 
-import com.google.common.collect.ImmutableList;
 import com.jtool.code.CS.SliceType;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.FixedCollections;
@@ -64,7 +63,7 @@ public abstract class AbstractTableSlicer implements ITableSlicer {
     }
     private List<Integer> S2L(String aSelectedCol) {
         int tCol = head2col_(aSelectedCol);
-        return tCol >= 0 ? Collections.singletonList(tCol) : ImmutableList.of();
+        return tCol >= 0 ? Collections.singletonList(tCol) : FixedCollections.zl();
     }
     
     /** stuff to override */

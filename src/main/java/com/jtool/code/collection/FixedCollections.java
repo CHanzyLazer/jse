@@ -1,5 +1,6 @@
 package com.jtool.code.collection;
 
+import com.google.common.collect.ImmutableList;
 import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.filter.IIndexFilter;
@@ -18,6 +19,17 @@ import java.util.*;
 @SuppressWarnings({"UseBulkOperation", "ManualArrayToCollectionCopy"})
 public class FixedCollections {
     protected FixedCollections() {}
+    
+    /**
+     * 提供一些常用的 List 初始化
+     * @author liqa
+     */
+    public static <T> List<T> nulls(int aSize) {
+        List<T> rOut = new ArrayList<>(aSize);
+        for (int i = 0; i < aSize; ++i) rOut.add(null);
+        return rOut;
+    }
+    public static <T> List<T> zl() {return ImmutableList.of();}
     
     /**
      * the range function similar to python

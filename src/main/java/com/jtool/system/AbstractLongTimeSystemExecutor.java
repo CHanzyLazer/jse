@@ -1,7 +1,6 @@
 package com.jtool.system;
 
-
-import com.google.common.collect.ImmutableList;
+import com.jtool.code.collection.FixedCollections;
 import com.jtool.code.collection.Pair;
 import com.jtool.code.UT;
 import com.jtool.iofile.IIOFiles;
@@ -378,26 +377,26 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     @Override public final int system(String aCommand, String aOutFilePath, IIOFiles aIOFiles) {aOutFilePath = toRealOutFilePath(aOutFilePath); return system_(aCommand, aOutFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, aOutFilePath));}
     @Override public final List<String> system_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
-        if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
+        if (aCommand==null || aCommand.isEmpty()) return FixedCollections.zl();
         String tFilePath = toRealOutFilePath(defaultOutFilePath());
         system_(aCommand, tFilePath, new IOFiles().putOFiles(OUTPUT_FILE_KEY, tFilePath));
         try {
             return UT.IO.readAllLines(tFilePath);
         } catch (IOException e) {
             printStackTrace(e);
-            return ImmutableList.of();
+            return FixedCollections.zl();
         }
     }
     @Override public final List<String> system_str(String aCommand, IIOFiles aIOFiles) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         String tFilePath = toRealOutFilePath(defaultOutFilePath());
         system_(aCommand, tFilePath, (aCommand==null || aCommand.isEmpty()) ? aIOFiles.copy() : aIOFiles.copy().putOFiles(OUTPUT_FILE_KEY, tFilePath));
-        if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
+        if (aCommand==null || aCommand.isEmpty()) return FixedCollections.zl();
         try {
             return UT.IO.readAllLines(tFilePath);
         } catch (IOException e) {
             printStackTrace(e);
-            return ImmutableList.of();
+            return FixedCollections.zl();
         }
     }
     
@@ -415,7 +414,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
                 return UT.IO.readAllLines(tFilePath);
             } catch (IOException e) {
                 printStackTrace(e);
-                return ImmutableList.of();
+                return FixedCollections.zl();
             }
         });
     }
@@ -429,7 +428,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
                 return UT.IO.readAllLines(tFilePath);
             } catch (IOException e) {
                 printStackTrace(e);
-                return ImmutableList.of();
+                return FixedCollections.zl();
             }
         });
     }

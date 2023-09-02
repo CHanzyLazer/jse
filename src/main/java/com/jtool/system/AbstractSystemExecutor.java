@@ -1,7 +1,7 @@
 package com.jtool.system;
 
-import com.google.common.collect.ImmutableList;
 import com.jtool.code.UT;
+import com.jtool.code.collection.FixedCollections;
 import com.jtool.code.functional.IOperator1;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.MergedIOFiles;
@@ -50,7 +50,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     
     @Override public final List<String> system_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
-        if (aCommand==null || aCommand.isEmpty()) return ImmutableList.of();
+        if (aCommand==null || aCommand.isEmpty()) return FixedCollections.zl();
         final List<String> rList = new ArrayList<>();
         system_(aCommand, () -> listPrintln(rList));
         return rList;
@@ -59,10 +59,10 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) {
             if (needSyncIOFiles()) synchronized (this) {
-                try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return ImmutableList.of();}
-                try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {printStackTrace(e); return ImmutableList.of();}
+                try {putFiles(aIOFiles.getIFiles());} catch (Exception e) {printStackTrace(e); return FixedCollections.zl();}
+                try {getFiles(aIOFiles.getOFiles());} catch (Exception e) {printStackTrace(e); return FixedCollections.zl();}
             }
-            return ImmutableList.of();
+            return FixedCollections.zl();
         }
         final List<String> rList = new ArrayList<>();
         system_(aCommand, () -> listPrintln(rList), aIOFiles);
