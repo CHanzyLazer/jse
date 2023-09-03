@@ -1,6 +1,5 @@
 package com.jtool.code.collection;
 
-import com.google.common.collect.ImmutableList;
 import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.filter.IIndexFilter;
@@ -9,6 +8,7 @@ import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
+import org.jetbrains.annotations.Contract;
 
 import java.util.*;
 
@@ -29,7 +29,8 @@ public class FixedCollections {
         for (int i = 0; i < aSize; ++i) rOut.add(null);
         return rOut;
     }
-    public static <T> List<T> zl() {return ImmutableList.of();}
+    /** 为了统一格式同样提供一个 zl 方法，但是目前不强制要求使用（目前依旧倾向于直接用 new 创建而不是外套一个专门的静态函数） */
+    @Contract(value = " -> new") public static <T> List<T> zl() {return new ArrayList<>();}
     
     /**
      * the range function similar to python

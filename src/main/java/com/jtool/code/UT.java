@@ -179,9 +179,9 @@ public class UT {
         }
         
         /** 保留这些接口方便外部调用使用 */
-        @VisibleForTesting public static List<Double> asList(final double[] aData) {return AbstractCollections.asList(aData);}
-        @VisibleForTesting public static List<Integer> asList(final int[] aData) {return AbstractCollections.asList(aData);}
-        @VisibleForTesting public static List<Boolean> asList(final boolean[] aData) {return AbstractCollections.asList(aData);}
+        @VisibleForTesting public static List<Double> asList(final double[] aData) {return AbstractCollections.from(aData);}
+        @VisibleForTesting public static List<Integer> asList(final int[] aData) {return AbstractCollections.from(aData);}
+        @VisibleForTesting public static List<Boolean> asList(final boolean[] aData) {return AbstractCollections.from(aData);}
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static List<Integer> range_(            int aSize           ) {return AbstractCollections.range_(aSize);}
@@ -800,7 +800,7 @@ public class UT {
         public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
-                for (double[] subData : aData) tPrinter.println(String.join(",", AbstractCollections.map(AbstractCollections.asList(subData), String::valueOf)));
+                for (double[] subData : aData) tPrinter.println(String.join(",", AbstractCollections.map(AbstractCollections.from(subData), String::valueOf)));
             }
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {

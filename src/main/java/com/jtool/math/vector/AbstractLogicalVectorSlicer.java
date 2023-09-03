@@ -8,7 +8,7 @@ import com.jtool.code.filter.IIndexFilter;
 import java.util.List;
 
 public abstract class AbstractLogicalVectorSlicer implements ILogicalVectorSlicer {
-    @Override public final ILogicalVector get(int[]         aIndices) {return getL(AbstractCollections.asList(aIndices));}
+    @Override public final ILogicalVector get(int[]         aIndices) {return getL(AbstractCollections.from(aIndices));}
     @Override public final ILogicalVector get(List<Integer> aIndices) {return getL(aIndices);}
     @Override public final ILogicalVector get(SliceType     aIndices) {if (aIndices != SliceType.ALL) throw new IllegalArgumentException(MSG); return getA();}
     

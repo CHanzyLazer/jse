@@ -1,5 +1,6 @@
 package com.jtool.code.collection;
 
+import com.google.common.collect.ImmutableList;
 import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.filter.IFilter;
 import com.jtool.code.filter.IIndexFilter;
@@ -11,6 +12,7 @@ import com.jtool.math.vector.*;
 import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -22,13 +24,15 @@ import java.util.stream.Stream;
 public class AbstractCollections {
     protected AbstractCollections() {}
     
+    public static <T> @Unmodifiable List<T> zl() {return ImmutableList.of();}
+    
     /**
-     * {@link Arrays}.asList for double[]
+     * {@link Arrays#asList} for double[]
      * @author liqa
      * @param aData the input double[]
      * @return the list format of double[]
      */
-    public static List<Double> asList(final double[] aData) {
+    public static List<Double> from(final double[] aData) {
         return new AbstractRandomAccessList<Double>() {
             @Override public Double get(int index) {return aData[index];}
             @Override public Double set(int index, Double element) {
@@ -40,12 +44,12 @@ public class AbstractCollections {
         };
     }
     /**
-     * {@link Arrays}.asList for int[]
+     * {@link Arrays#asList} for int[]
      * @author liqa
      * @param aData the input int[]
      * @return the list format of int[]
      */
-    public static List<Integer> asList(final int[] aData) {
+    public static List<Integer> from(final int[] aData) {
         return new AbstractRandomAccessList<Integer>() {
             @Override public Integer get(int index) {return aData[index];}
             @Override public Integer set(int index, Integer element) {
@@ -57,12 +61,12 @@ public class AbstractCollections {
         };
     }
     /**
-     * {@link Arrays}.asList for boolean[]
+     * {@link Arrays#asList} for boolean[]
      * @author liqa
      * @param aData the input boolean[]
      * @return the list format of boolean[]
      */
-    public static List<Boolean> asList(final boolean[] aData) {
+    public static List<Boolean> from(final boolean[] aData) {
         return new AbstractRandomAccessList<Boolean>() {
             @Override public Boolean get(int index) {return aData[index];}
             @Override public Boolean set(int index, Boolean element) {
@@ -73,8 +77,6 @@ public class AbstractCollections {
             @Override public int size() {return aData.length;}
         };
     }
-    public static IVector asVec(double[] aData) {return new Vector(aData);}
-    public static ILogicalVector asVec(boolean[] aData) {return new LogicalVector(aData);}
     
     /**
      * the range function similar to python

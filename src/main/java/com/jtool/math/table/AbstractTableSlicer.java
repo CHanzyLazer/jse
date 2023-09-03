@@ -12,19 +12,19 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractTableSlicer implements ITableSlicer {
-    @Override public final ITable get(int[]         aSelectedRows, int[]         aSelectedCols) {return getLL(AbstractCollections.asList(aSelectedRows), AbstractCollections.asList(aSelectedCols));}
-    @Override public final ITable get(List<Integer> aSelectedRows, int[]         aSelectedCols) {return getLL(aSelectedRows, AbstractCollections.asList(aSelectedCols));}
-    @Override public final ITable get(int[]         aSelectedRows, List<Integer> aSelectedCols) {return getLL(AbstractCollections.asList(aSelectedRows), aSelectedCols);}
+    @Override public final ITable get(int[]         aSelectedRows, int[]         aSelectedCols) {return getLL(AbstractCollections.from(aSelectedRows), AbstractCollections.from(aSelectedCols));}
+    @Override public final ITable get(List<Integer> aSelectedRows, int[]         aSelectedCols) {return getLL(aSelectedRows, AbstractCollections.from(aSelectedCols));}
+    @Override public final ITable get(int[]         aSelectedRows, List<Integer> aSelectedCols) {return getLL(AbstractCollections.from(aSelectedRows), aSelectedCols);}
     @Override public final ITable get(List<Integer> aSelectedRows, List<Integer> aSelectedCols) {return getLL(aSelectedRows, aSelectedCols);}
-    @Override public final ITable get(SliceType     aSelectedRows, int[]         aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(AbstractCollections.asList(aSelectedCols));}
+    @Override public final ITable get(SliceType     aSelectedRows, int[]         aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(AbstractCollections.from(aSelectedCols));}
     @Override public final ITable get(SliceType     aSelectedRows, List<Integer> aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(aSelectedCols);}
-    @Override public final ITable get(int[]         aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(AbstractCollections.asList(aSelectedRows));}
+    @Override public final ITable get(int[]         aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(AbstractCollections.from(aSelectedRows));}
     @Override public final ITable get(List<Integer> aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(aSelectedRows);}
     @Override public final ITable get(SliceType     aSelectedRows, SliceType     aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getAA();}
-    @Override public final ITable get(int           aSelectedRow , int[]         aSelectedCols) {return getLL(Collections.singletonList(aSelectedRow), AbstractCollections.asList(aSelectedCols));}
+    @Override public final ITable get(int           aSelectedRow , int[]         aSelectedCols) {return getLL(Collections.singletonList(aSelectedRow), AbstractCollections.from(aSelectedCols));}
     @Override public final ITable get(int           aSelectedRow , List<Integer> aSelectedCols) {return getLL(Collections.singletonList(aSelectedRow), aSelectedCols);}
     @Override public final ITable get(int           aSelectedRow , SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(Collections.singletonList(aSelectedRow));}
-    @Override public final ITable get(int[]         aSelectedRows, int           aSelectedCol ) {return getLL(AbstractCollections.asList(aSelectedRows), Collections.singletonList(aSelectedCol));}
+    @Override public final ITable get(int[]         aSelectedRows, int           aSelectedCol ) {return getLL(AbstractCollections.from(aSelectedRows), Collections.singletonList(aSelectedCol));}
     @Override public final ITable get(List<Integer> aSelectedRows, int           aSelectedCol ) {return getLL(aSelectedRows, Collections.singletonList(aSelectedCol));}
     @Override public final ITable get(SliceType     aSelectedRows, int           aSelectedCol ) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(Collections.singletonList(aSelectedCol));}
     @Override public final ITable get(int           aSelectedRow , int           aSelectedCol ) {return getLL(Collections.singletonList(aSelectedRow), Collections.singletonList(aSelectedCol));}
@@ -63,7 +63,7 @@ public abstract class AbstractTableSlicer implements ITableSlicer {
     }
     private List<Integer> S2L(String aSelectedCol) {
         int tCol = head2col_(aSelectedCol);
-        return tCol >= 0 ? Collections.singletonList(tCol) : FixedCollections.zl();
+        return tCol >= 0 ? Collections.singletonList(tCol) : AbstractCollections.zl();
     }
     
     /** stuff to override */

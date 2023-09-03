@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.jtool.Main;
 import com.jtool.atom.IXYZ;
-import com.jtool.code.collection.FixedCollections;
+import com.jtool.code.collection.AbstractCollections;
 import com.jtool.iofile.IIOFiles;
 import com.jtool.iofile.IOFiles;
 import com.jtool.math.IComplexDouble;
@@ -132,7 +132,7 @@ public class CS {
     public final static IFutureJob SUC_FUTURE = new CompletedFutureJob(0);
     public final static IFutureJob ERR_FUTURE = new CompletedFutureJob(-1);
     public final static Future<List<Integer>> ERR_FUTURES = new CompletedFuture<>(Collections.singletonList(-1));
-    public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(FixedCollections.zl());
+    public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(AbstractCollections.zl());
     public final static PrintStream NUL_PRINT_STREAM = new PrintStream(new OutputStream() {public void write(int b) {/**/}});
     
     /** 内部运行相关，使用子类分割避免冗余初始化 */

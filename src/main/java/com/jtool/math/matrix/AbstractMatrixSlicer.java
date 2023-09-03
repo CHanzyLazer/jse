@@ -9,19 +9,19 @@ import com.jtool.math.vector.IVector;
 import java.util.List;
 
 public abstract class AbstractMatrixSlicer implements IMatrixSlicer {
-    @Override public final IMatrix get(int[]         aSelectedRows, int[]         aSelectedCols) {return getLL(AbstractCollections.asList(aSelectedRows), AbstractCollections.asList(aSelectedCols));}
-    @Override public final IMatrix get(List<Integer> aSelectedRows, int[]         aSelectedCols) {return getLL(aSelectedRows, AbstractCollections.asList(aSelectedCols));}
-    @Override public final IMatrix get(int[]         aSelectedRows, List<Integer> aSelectedCols) {return getLL(AbstractCollections.asList(aSelectedRows), aSelectedCols);}
+    @Override public final IMatrix get(int[]         aSelectedRows, int[]         aSelectedCols) {return getLL(AbstractCollections.from(aSelectedRows), AbstractCollections.from(aSelectedCols));}
+    @Override public final IMatrix get(List<Integer> aSelectedRows, int[]         aSelectedCols) {return getLL(aSelectedRows, AbstractCollections.from(aSelectedCols));}
+    @Override public final IMatrix get(int[]         aSelectedRows, List<Integer> aSelectedCols) {return getLL(AbstractCollections.from(aSelectedRows), aSelectedCols);}
     @Override public final IMatrix get(List<Integer> aSelectedRows, List<Integer> aSelectedCols) {return getLL(aSelectedRows, aSelectedCols);}
-    @Override public final IMatrix get(SliceType     aSelectedRows, int[]         aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(AbstractCollections.asList(aSelectedCols));}
+    @Override public final IMatrix get(SliceType     aSelectedRows, int[]         aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(AbstractCollections.from(aSelectedCols));}
     @Override public final IMatrix get(SliceType     aSelectedRows, List<Integer> aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAL(aSelectedCols);}
-    @Override public final IMatrix get(int[]         aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(AbstractCollections.asList(aSelectedRows));}
+    @Override public final IMatrix get(int[]         aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(AbstractCollections.from(aSelectedRows));}
     @Override public final IMatrix get(List<Integer> aSelectedRows, SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getLA(aSelectedRows);}
     @Override public final IMatrix get(SliceType     aSelectedRows, SliceType     aSelectedCols) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getAA();}
-    @Override public final IVector get(int           aSelectedRow , int[]         aSelectedCols) {return getIL(aSelectedRow, AbstractCollections.asList(aSelectedCols));}
+    @Override public final IVector get(int           aSelectedRow , int[]         aSelectedCols) {return getIL(aSelectedRow, AbstractCollections.from(aSelectedCols));}
     @Override public final IVector get(int           aSelectedRow , List<Integer> aSelectedCols) {return getIL(aSelectedRow, aSelectedCols);}
     @Override public final IVector get(int           aSelectedRow , SliceType     aSelectedCols) {if (aSelectedCols != SliceType.ALL) throw new IllegalArgumentException(COL_MSG); return getIA(aSelectedRow);}
-    @Override public final IVector get(int[]         aSelectedRows, int           aSelectedCol ) {return getLI(AbstractCollections.asList(aSelectedRows), aSelectedCol);}
+    @Override public final IVector get(int[]         aSelectedRows, int           aSelectedCol ) {return getLI(AbstractCollections.from(aSelectedRows), aSelectedCol);}
     @Override public final IVector get(List<Integer> aSelectedRows, int           aSelectedCol ) {return getLI(aSelectedRows, aSelectedCol);}
     @Override public final IVector get(SliceType     aSelectedRows, int           aSelectedCol ) {if (aSelectedRows != SliceType.ALL) throw new IllegalArgumentException(ROL_MSG); return getAI(aSelectedCol);}
     

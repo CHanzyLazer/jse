@@ -37,7 +37,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
             @Override public int size() {return aIndices.size();}
         }, tThis.atomTypeNum(), tThis.boxLo(), tThis.boxHi(), tThis.hasVelocities());
     }
-    @Override public IAtomData filterIndices(int[] aIndices) {return filterIndices(AbstractCollections.asList(aIndices));}
+    @Override public IAtomData filterIndices(int[] aIndices) {return filterIndices(AbstractCollections.from(aIndices));}
     @Override public IAtomData filterIndices(IIndexFilter aIndices) {return filterIndices(FixedCollections.filterIndex(thisAtomData_().atomNum(), aIndices));}
     
     
