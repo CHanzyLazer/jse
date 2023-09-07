@@ -8,8 +8,6 @@ import com.jtool.code.functional.IOperator1;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.math.MathEX;
-import com.jtool.math.vector.*;
-import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;

@@ -36,10 +36,11 @@ public class Vectors {
         }
     }
     
-    public static IVector from(int aSize, Iterable<? extends Number> aList) {
-        IVector rVector = zeros(aSize);
-        rVector.fill(aList);
-        return rVector;
+    public static IVector from(Iterable<? extends Number> aIterable) {
+        final Vector.Builder rBuilder = Vector.builder();
+        for (Number tValue : aIterable) rBuilder.add(tValue.doubleValue());
+        rBuilder.shrinkToFit();
+        return rBuilder.build();
     }
     public static IVector from(Collection<? extends Number> aList) {
         IVector rVector = zeros(aList.size());

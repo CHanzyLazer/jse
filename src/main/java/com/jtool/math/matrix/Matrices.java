@@ -39,30 +39,18 @@ public class Matrices {
         }
     }
     
-    public static IMatrix from(int aSize, Iterable<? extends Iterable<? extends Number>> aRows) {return fromRows(aSize, aRows);}
-    public static IMatrix from(int aRowNum, int aColNum, Iterable<? extends Iterable<? extends Number>> aRows) {return fromRows(aRowNum, aColNum, aRows);}
+    /** Matrix 暂时没有相关 Builder，因此不支持 Iterable 构造 */
     public static IMatrix from(Collection<? extends Collection<? extends Number>> aRows) {return fromRows(aRows);}
-    
-    public static IMatrix fromRows(int aSize, Iterable<? extends Iterable<? extends Number>> aRows) {return fromRows(aSize, aSize, aRows);}
-    public static IMatrix fromRows(int aRowNum, int aColNum, Iterable<? extends Iterable<? extends Number>> aRows) {
-        IMatrix rMatrix = zeros(aRowNum, aColNum);
+    public static IMatrix fromRows(Collection<? extends Collection<? extends Number>> aRows) {
+        IMatrix rMatrix = zeros(aRows.size(), aRows.iterator().next().size());
         rMatrix.fillWithRows(aRows);
         return rMatrix;
     }
-    public static IMatrix fromRows(Collection<? extends Collection<? extends Number>> aRows) {
-        return fromRows(aRows.size(), aRows.iterator().next().size(), aRows);
-    }
-    
-    public static IMatrix fromCols(int aSize, Iterable<? extends Iterable<? extends Number>> aCols) {return fromCols(aSize, aSize, aCols);}
-    public static IMatrix fromCols(int aRowNum, int aColNum, Iterable<? extends Iterable<? extends Number>> aCols) {
-        IMatrix rMatrix = zeros(aRowNum, aColNum);
+    public static IMatrix fromCols(Collection<? extends Collection<? extends Number>> aCols) {
+        IMatrix rMatrix = zeros(aCols.iterator().next().size(), aCols.size());
         rMatrix.fillWithCols(aCols);
         return rMatrix;
     }
-    public static IMatrix fromCols(Collection<? extends Collection<? extends Number>> aCols) {
-        return fromCols(aCols.iterator().next().size(), aCols.size(), aCols);
-    }
-    
     
     /** Matrix 特有的构造 */
     public static IMatrix diag(IVector aVector) {return diag(aVector.size(), aVector);}

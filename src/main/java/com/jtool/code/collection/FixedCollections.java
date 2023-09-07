@@ -22,11 +22,44 @@ public class FixedCollections {
     
     /**
      * 提供一些常用的 List 初始化
+     * <p>
+     * 同样这里可能会存在一些 lambda 表达式的重载，
+     * 使用 Groovy 调用遇到问题时再考虑提供专门的方法即可
      * @author liqa
      */
     public static <T> List<T> nulls(int aSize) {
         List<T> rOut = new ArrayList<>(aSize);
         for (int i = 0; i < aSize; ++i) rOut.add(null);
+        return rOut;
+    }
+    public static <T> List<T> from(int aSize, IOperator1<? extends T, Integer> aListGetter) {
+        List<T> rOut = new ArrayList<>(aSize);
+        for (int i = 0; i < aSize; ++i) rOut.add(aListGetter.cal(i));
+        return rOut;
+    }
+    public static <T> List<T> from(Iterable<? extends T> aIterable) {
+        List<T> rOut = new ArrayList<>();
+        for (T tValue : aIterable) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> from(Collection<? extends T> aList) {
+        List<T> rOut = new ArrayList<>(aList.size());
+        for (T tValue : aList) rOut.add(tValue);
+        return rOut;
+    }
+    public static List<Double> from(double[] aData) {
+        List<Double> rOut = new ArrayList<>(aData.length);
+        for (double tValue : aData) rOut.add(tValue);
+        return rOut;
+    }
+    public static List<Integer> from(int[] aData) {
+        List<Integer> rOut = new ArrayList<>(aData.length);
+        for (int tValue : aData) rOut.add(tValue);
+        return rOut;
+    }
+    public static List<Boolean> from(boolean[] aData) {
+        List<Boolean> rOut = new ArrayList<>(aData.length);
+        for (boolean tValue : aData) rOut.add(tValue);
         return rOut;
     }
     /** 为了统一格式同样提供一个 zl 方法，但是目前不强制要求使用（目前依旧倾向于直接用 new 创建而不是外套一个专门的静态函数） */
