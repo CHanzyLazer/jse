@@ -11,7 +11,7 @@ import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -335,17 +335,19 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     /// 文件读写
     /**
      * 从文件 lammps 输出的 dump 文件中读取来实现初始化
+     * @author liqa
      * @param aFilePath lammps 输出的 dump 文件路径
      * @return 读取得到的 Lammpstrj 对象，如果文件不完整的帧会跳过
      * @throws IOException 如果读取失败
      */
-    public static Lammpstrj read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
-    public static Lammpstrj read_(List<String> aLines) {
+    public static Lammpstrj read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
+    public static Lammpstrj read_(BufferedReader aReader) throws IOException {
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
         
-        int idx = 0;
+        String tLine;
         String[] tTokens;
-        while (idx < aLines.size()) {
+        while (true) {
             long aTimeStep;
             int tAtomNum;
             String[] aBoxBounds;
@@ -354,42 +356,43 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
             IMatrix aAtomData;
             
             // 读取时间步数
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: TIMESTEP", true); ++idx;
-            if (idx >= aLines.size()) break;
-            tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            UT.Texts.findLineContaining(aReader, "ITEM: TIMESTEP", true); tLine=aReader.readLine();
+            if (tLine == null) break;
+            tTokens = UT.Texts.splitBlank(tLine);
             aTimeStep = Long.parseLong(tTokens[0]);
             // 读取原子总数
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: NUMBER OF ATOMS", true); ++idx;
-            if (idx >= aLines.size()) break;
-            tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            UT.Texts.findLineContaining(aReader, "ITEM: NUMBER OF ATOMS", true); tLine=aReader.readLine();
+            if (tLine == null) break;
+            tTokens = UT.Texts.splitBlank(tLine);
             tAtomNum = Integer.parseInt(tTokens[0]);
             // 读取模拟盒信息
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: BOX BOUNDS", true);
-            if (idx >= aLines.size()) break;
-            tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            tLine = UT.Texts.findLineContaining(aReader, "ITEM: BOX BOUNDS", true);
+            if (tLine == null) break;
+            tTokens = UT.Texts.splitBlank(tLine);
             aBoxBounds = new String[] {tTokens[3], tTokens[4], tTokens[5]};
-            ++idx; tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            tLine=aReader.readLine(); tTokens = UT.Texts.splitBlank(tLine);
             double aXlo = Double.parseDouble(tTokens[0]); double aXhi = Double.parseDouble(tTokens[1]);
-            ++idx; tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            tLine=aReader.readLine(); tTokens = UT.Texts.splitBlank(tLine);
             double aYlo = Double.parseDouble(tTokens[0]); double aYhi = Double.parseDouble(tTokens[1]);
-            ++idx; tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            tLine=aReader.readLine(); tTokens = UT.Texts.splitBlank(tLine);
             double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]);
             // 这里暂不考虑斜方模拟盒
             aBox = new Box(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
             
             // 读取原子信息
-            idx = UT.Texts.findLineContaining(aLines, idx, "ITEM: ATOMS", true);
-            if (idx >= aLines.size()) break;
-            tTokens = UT.Texts.splitBlank(aLines.get(idx));
+            tLine = UT.Texts.findLineContaining(aReader, "ITEM: ATOMS", true);
+            if (tLine == null) break;
+            tTokens = UT.Texts.splitBlank(tLine);
             aAtomDataKeys = new String[tTokens.length-2];
             System.arraycopy(tTokens, 2, aAtomDataKeys, 0, aAtomDataKeys.length);
-            ++idx;
-            if (idx+tAtomNum > aLines.size()) break;
+            boolean tAtomDataReadFull = true;
             aAtomData = RowMatrix.zeros(tAtomNum, aAtomDataKeys.length);
             for (IVector tRow : aAtomData.rows()) {
-                tRow.fill(UT.Texts.str2data(aLines.get(idx), aAtomDataKeys.length));
-                ++idx;
+                tLine = aReader.readLine();
+                if (tLine == null) {tAtomDataReadFull = false; break;}
+                tRow.fill(UT.Texts.str2data(tLine, aAtomDataKeys.length));
             }
+            if (!tAtomDataReadFull) break;
             
             // 创建 SubLammpstrj 并附加到 rLammpstrj 中
             rLammpstrj.add(new SubLammpstrj(aTimeStep, aBoxBounds, aBox, new Table(aAtomDataKeys, aAtomData)));
@@ -399,27 +402,29 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     
     /**
      * 输出成 lammps 格式的 dump 文件，可以供 OVITO 等软件读取
+     * <p>
+     * 改为 {@link PrintStream} 而不是 {@code List<String>} 来避免过多内存占用
+     * @author liqa
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
     @SuppressWarnings("SuspiciousIndentAfterControlStatement")
     public void write(String aFilePath) throws IOException {
-        List<String> lines = new ArrayList<>();
-        
-        for (SubLammpstrj tSubLammpstrj : this) {
-            lines.add("ITEM: TIMESTEP");
-            lines.add(String.format("%d", tSubLammpstrj.timeStep()));
-            lines.add("ITEM: NUMBER OF ATOMS");
-            lines.add(String.format("%d", tSubLammpstrj.atomNum()));
-            lines.add(String.format("ITEM: BOX BOUNDS %s", String.join(" ", tSubLammpstrj.boxBounds())));
-            lines.add(String.format("%f %f", tSubLammpstrj.box().xlo(), tSubLammpstrj.box().xhi()));
-            lines.add(String.format("%f %f", tSubLammpstrj.box().ylo(), tSubLammpstrj.box().yhi()));
-            lines.add(String.format("%f %f", tSubLammpstrj.box().zlo(), tSubLammpstrj.box().zhi()));
-            lines.add(String.format("ITEM: ATOMS %s", String.join(" ", tSubLammpstrj.mAtomData.heads())));
-            for (IVector subAtomData : tSubLammpstrj.mAtomData.rows())
-            lines.add(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString)));
+        try (PrintStream tPrinter = UT.IO.toPrintStream(aFilePath)) {
+            for (SubLammpstrj tSubLammpstrj : this) {
+                tPrinter.println("ITEM: TIMESTEP");
+                tPrinter.printf("%d\n", tSubLammpstrj.timeStep());
+                tPrinter.println("ITEM: NUMBER OF ATOMS");
+                tPrinter.printf("%d\n", tSubLammpstrj.atomNum());
+                tPrinter.printf("ITEM: BOX BOUNDS %s\n", String.join(" ", tSubLammpstrj.boxBounds()));
+                tPrinter.printf("%f %f\n", tSubLammpstrj.box().xlo(), tSubLammpstrj.box().xhi());
+                tPrinter.printf("%f %f\n", tSubLammpstrj.box().ylo(), tSubLammpstrj.box().yhi());
+                tPrinter.printf("%f %f\n", tSubLammpstrj.box().zlo(), tSubLammpstrj.box().zhi());
+                tPrinter.printf("ITEM: ATOMS %s\n", String.join(" ", tSubLammpstrj.mAtomData.heads()));
+                for (IVector subAtomData : tSubLammpstrj.mAtomData.rows())
+                tPrinter.println(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString)));
+            }
+            if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing Lammpstrj");
         }
-        
-        UT.IO.write(aFilePath, lines);
     }
 }

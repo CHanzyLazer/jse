@@ -551,6 +551,19 @@ public class UT {
         }
         public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr) {return findLineContaining(aLines, aStartIdx, aContainStr, false);}
         
+        public static String findLineContaining(BufferedReader aReader, String aContainStr, boolean aIgnoreCase) throws IOException {
+            String tLine;
+            while ((tLine = aReader.readLine()) != null) {
+                if (aIgnoreCase) {
+                    if (StringGroovyMethods.containsIgnoreCase(tLine, aContainStr)) return tLine;
+                } else {
+                    if (tLine.contains(aContainStr)) return tLine;
+                }
+            }
+            return null;
+        }
+        public static String findLineContaining(BufferedReader aReader, String aContainStr) throws IOException {return findLineContaining(aReader, aContainStr, false);}
+        
         /**
          * Splits a string separated by blank characters into multiple strings
          * <p> will automatically ignores multiple spaces and the beginning and end spaces </p>
@@ -642,16 +655,27 @@ public class UT {
          */
         public static List<String> readAllLines(String aFilePath) throws IOException {return Files.readAllLines(toAbsolutePath_(aFilePath));}
         /**
-         * read all lines of the InputStream
+         * read all lines from the BufferedReader
          * @author liqa
          */
-        public static List<String> readAllLines(InputStream aInputStream) throws IOException {
-            try (BufferedReader tReader = toReader(aInputStream)) {
-                List<String> rLines = new ArrayList<>();
-                String tLine;
-                while ((tLine = tReader.readLine()) != null) rLines.add(tLine);
-                return rLines;
+        public static List<String> readAllLines(BufferedReader aReader) throws IOException {
+            List<String> rLines = new ArrayList<>();
+            String tLine;
+            while ((tLine = aReader.readLine()) != null) rLines.add(tLine);
+            return rLines;
+        }
+        /**
+         * read the specified number of lines from the BufferedReader
+         * @author liqa
+         */
+        public static List<String> readLines(BufferedReader aReader, int aNumber) throws IOException {
+            List<String> rLines = new ArrayList<>();
+            for (int i = 0; i < aNumber; ++i) {
+                String tLine = aReader.readLine();
+                if (tLine == null) break;
+                rLines.add(tLine);
             }
+            return rLines;
         }
         
         /**
@@ -772,34 +796,40 @@ public class UT {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
                 for (double[] subData : aData) tPrinter.println(String.join(",", AbstractCollections.map(AbstractCollections.from(subData), String::valueOf)));
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (aHeads!=null && aHeads.length>0) tPrinter.println(String.join(",", aHeads));
                 for (IVector subData : aData.rows()) tPrinter.println(String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(Iterable<? extends Number> aData, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 for (Number subData : aData) tPrinter.println(subData);
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(Iterable<? extends Number> aData, String aFilePath, String aHead) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 tPrinter.println(aHead);
                 for (Number subData : aData) tPrinter.println(subData);
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(IVector aData, String aFilePath) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 aData.forEach(tPrinter::println);
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(IVector aData, String aFilePath, String aHead) throws IOException {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 tPrinter.println(aHead);
                 aData.forEach(tPrinter::println);
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         public static void data2csv(IFunc1 aFunc, String aFilePath, String... aHeads) throws IOException {
@@ -813,6 +843,7 @@ public class UT {
                 for (int i = 0; i < tN; ++i) {
                     tPrinter.println(String.join(",", String.valueOf(tY.get_(i)), String.valueOf(tX.get_(i))));
                 }
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         
@@ -835,6 +866,7 @@ public class UT {
             try (PrintStream tPrinter = toPrintStream(aFilePath)) {
                 if (!aTable.noHead()) tPrinter.println(String.join(",", aTable.heads()));
                 for (IVector subData : aTable.rows()) tPrinter.println(String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
+                if (tPrinter.checkError()) System.err.println("ERROR: Some errors occurred when writing csv");
             }
         }
         /**

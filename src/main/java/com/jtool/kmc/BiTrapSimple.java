@@ -148,9 +148,9 @@ public class BiTrapSimple {
     public void run(int aStep, int aOutStep,                   boolean aAppend) {run(aStep, aOutStep, System.out, aAppend);}
     public void run(int aStep, int aOutStep, String aFilePath                 ) throws IOException {run(aStep, aOutStep, aFilePath, false);}
     public void run(int aStep, int aOutStep, String aFilePath, boolean aAppend) throws IOException {
-        PrintStream tFilePS = UT.IO.toPrintStream(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING);
-        run(aStep, aOutStep, tFilePS, aAppend);
-        tFilePS.close();
+        try (PrintStream tFilePS = UT.IO.toPrintStream(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING)) {
+            run(aStep, aOutStep, tFilePS, aAppend);
+        }
     }
     public void run(int aStep, int aOutStep, @Nullable PrintStream aOut                 ) {run(aStep, aOutStep, aOut, false);}
     public void run(int aStep, int aOutStep, @Nullable PrintStream aOut, boolean aAppend) {
