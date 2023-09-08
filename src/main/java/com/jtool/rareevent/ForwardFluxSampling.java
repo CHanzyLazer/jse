@@ -210,6 +210,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     }
     
     /** 统计信息 */
+    private double mN0Eff = 0; // N_{0}^{eff}, 第一个过程等价采样到的 N0 数目，这是考虑了 Pruning 的结果
     private double mTotTime0 = 0.0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
     private final List<Point> mPointsOnLambda, oPointsOnLambda; // 第一次从 A 到达 λi 的那些点
     private ILogicalVector mMovedPoints;
@@ -218,7 +219,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private final IVector mPi; // i 到 i+1 而不是返回 A 的概率
     
     private double mMi = 0;
-    private double mNipp = 0; // N_{i+1}
+    private double mNippEff = 0; // N_{i+1}^{eff}, 第一个过程等价采样到的 N_{i+1} 数目，这是考虑了 Pruning 的结果
     private int mPathNum = 0;
     
     /** 记录一下每个过程使用的点的数目 */
@@ -237,6 +238,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         // 不再需要检测 hasNext，内部保证永远都有 next
         // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定；这时需要特殊处理，不记录这段时间
         Point tRoot;
+        // 这个过程也需要 Pruning，但是不考虑时间因此这里不需要记录倍率
+        int tPruningIndex = mPruningThreshold;
         while (true) {
             tRawPoint = tPathInit.next();
             ++tStep1PointNum;
@@ -256,10 +259,28 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 }
                 return;
             }
+            // 修剪，如果向前则有概率直接中断
+            if (mPruningProb > 0.0 && tPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(tPruningIndex)) {
+                // 无论如何先增加 tPruningIndex
+                ++tPruningIndex;
+                if (mRNG.nextDouble() < mPruningProb) {
+                    // 有 mPruningProb 中断，不保留消耗时间直接返回
+                    synchronized (this) {
+                        mStep1PointNum += tStep1PointNum;
+                        ++mStep1PathNum;
+                    }
+                    return;
+                }
+                // 这里不需要记录权重
+            }
         }
-        // 成功回到 A 则需要减去这一过程消耗的时间
-        synchronized (this) {mTotTime0 -= tPathInit.timeConsumed();}
+        
         // 开始一般情况处理
+        // 这个过程也增加 Pruning
+        tPruningIndex = mPruningThreshold;
+        double tPruningMul = 1.0;
+        // 先记录目前为止消耗的时间，不包含到统计中
+        double oTimeConsumed = tPathInit.timeConsumed();
         while (true) {
             // 找到起始点后开始记录穿过 λ0 的点
             while (true) {
@@ -269,12 +290,15 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 tLambda = tPathInit.lambda();
                 if (tLambda >= mSurfaces.first()) {
                     // 如果有穿过 λ0 则需要记录这些点
-                    synchronized (this) {mPointsOnLambda.add(new Point(tRoot, tRawPoint, tLambda));}
+                    synchronized (this) {
+                        mPointsOnLambda.add(new Point(tRoot, tRawPoint, tLambda));
+                        mN0Eff += tPruningMul;
+                    }
                     // 如果到达 B 则重新回到 A，这里直接 return 来实现（对于只有一个界面的情况）
                     if (tLambda >= mSurfaces.last()) {
                         // 重设路径之前记得先保存旧的时间
                         synchronized (this) {
-                            mTotTime0 += tPathInit.timeConsumed();
+                            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
                             mStep1PointNum += tStep1PointNum;
                             ++mStep1PathNum;
                         }
@@ -300,17 +324,38 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 if (tLambda >= mSurfaces.last()) {
                     // 重设路径之前记得先保存旧的时间
                     synchronized (this) {
-                        mTotTime0 += tPathInit.timeConsumed();
+                        mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
                         mStep1PointNum += tStep1PointNum;
                         ++mStep1PathNum;
                     }
                     return;
                 }
+                // 修剪，如果向前则有概率直接中断
+                if (mPruningProb > 0.0 && tPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(tPruningIndex)) {
+                    // 无论如何先增加 tPruningIndex
+                    ++tPruningIndex;
+                    if (mRNG.nextDouble() < mPruningProb) {
+                        // 有 mPruningProb 中断，记得先保存旧的时间
+                        synchronized (this) {
+                            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
+                            mStep1PointNum += tStep1PointNum;
+                            ++mStep1PathNum;
+                        }
+                        return;
+                    } else {
+                        // 否则需要增加权重，在此之前先记录已经消耗的时间
+                        double tTimeConsumed = tPathInit.timeConsumed();
+                        synchronized (this) {mTotTime0 += (tTimeConsumed-oTimeConsumed)*tPruningMul;}
+                        oTimeConsumed = tTimeConsumed;
+                        // 增加权重，此段之后的时间消耗会增加权重
+                        tPruningMul /= (1.0 - mPruningProb);
+                    }
+                }
             }
         }
         // 最后统计所有的耗时
         synchronized (this) {
-            mTotTime0 += tPathInit.timeConsumed();
+            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
             mStep1PointNum += tStep1PointNum;
             ++mStep1PathNum;
         }
@@ -344,7 +389,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     mMovedPoints.set(tIndex, true);
                 }
                 mMi += tStart.parent.multiple;
-                mNipp += tStart.parent.multiple;
+                mNippEff += tStart.parent.multiple;
                 synchronized (this) {
                     mStep2PointNum.add_(mStep, tStep2PointNum);
                     mStep2PathNum.set_(mStep, mPathNum);
@@ -378,7 +423,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     synchronized (this) {
                         mPointsOnLambda.add(new Point(tStart, tRawPoint, tLambda, subMul));
                         mMi += subMul;
-                        mNipp += subMul*tPruningMul;
+                        mNippEff += subMul*tPruningMul;
                     }
                     break;
                 }
@@ -425,10 +470,12 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         // 实际分为两个过程，第一个过程首先统计轨迹通量（flux of trajectories）
         if (mStep < 0) {
             mStepFinished = false;
+            // 初始化统计量
+            mN0Eff = 0; mTotTime0 = 0.0;
             // 统计从 A 到达 λ0，运行直到达到次数超过 mN0*mStep1Mul
             pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, this::statA2Lambda0_);
             // 获取第一个过程的统计结果
-            mK0 = mPointsOnLambda.size() / mTotTime0;
+            mK0 = mN0Eff / mTotTime0;
             // 第一个过程完成（前提没有在运行过程中中断）
             if (!mFinished) {
                 mStepFinished = true;
@@ -470,7 +517,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             Collections.shuffle(oPointsOnLambda, mRNG);
             
             // 初始化统计量
-            mMi = 0; mNipp = 0; mPathNum = 0;
+            mMi = 0; mNippEff = 0; mPathNum = 0;
             // 获取 M_i, N_{i+1}
             pool().parwhile(() -> (mPointsOnLambda.size()<mN0 && !mFinished), () -> {
                 // 选取一个初始点获取之后的路径，并统计结果
@@ -490,7 +537,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             rMean /= mPointsOnLambda.size();
             for (Point tPoint : mPointsOnLambda) tPoint.multiple /= rMean;
             // 获取概率统计结果
-            mPi.set_(mStep, mNipp / mMi);
+            mPi.set_(mStep, mNippEff / mMi);
             // 第二个过程这一步完成（前提没有在运行过程中中断）
             if (!mFinished) {
                 mStepFinished = true;
