@@ -309,19 +309,21 @@ public class PlotterJFree implements IPlotter {
         // 返回 IFigure
         return new IFigure() {
             @Override public IFigure name(String aName) {tFrame.setTitle(aName); return this;}
-            @Override public IFigure size(int aWidth, int aHeight) {tFrame.setSize(aWidth, aHeight); return this;}
+            @Override public IFigure size(int aWidth, int aHeight) {synchronized (tFrame.getTreeLock()) {tPanel.setSize(aWidth-tInset.left-tInset.right, aHeight-tInset.top-tInset.bottom); tFrame.setSize(aWidth, aHeight);} return this;}
             @Override public IFigure location(int aX, int aY) {tFrame.setLocation(aX, aY); return this;}
             @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
-                tInset.top = (int)Math.round(aTop);
-                tInset.left = (int)Math.round(aLeft);
-                tInset.bottom = (int)Math.round(aBottom);
-                tInset.right = (int)Math.round(aRight);
+                synchronized (tFrame.getTreeLock()) {
+                    tInset.top = (int) Math.round(aTop);
+                    tInset.left = (int) Math.round(aLeft);
+                    tInset.bottom = (int) Math.round(aBottom);
+                    tInset.right = (int) Math.round(aRight);
+                }
                 return this;
             }
-            @Override public IFigure insetsTop(double aTop) {tInset.top = (int)Math.round(aTop); return this;}
-            @Override public IFigure insetsLeft(double aLeft) {tInset.left = (int)Math.round(aLeft); return this;}
-            @Override public IFigure insetsBottom(double aBottom) {tInset.bottom = (int)Math.round(aBottom); return this;}
-            @Override public IFigure insetsRight(double aRight) {tInset.right = (int)Math.round(aRight); return this;}
+            @Override public IFigure insetsTop(double aTop) {synchronized (tFrame.getTreeLock()) {tInset.top = (int)Math.round(aTop);} return this;}
+            @Override public IFigure insetsLeft(double aLeft) {synchronized (tFrame.getTreeLock()) {tInset.left = (int)Math.round(aLeft);} return this;}
+            @Override public IFigure insetsBottom(double aBottom) {synchronized (tFrame.getTreeLock()) {tInset.bottom = (int)Math.round(aBottom);} return this;}
+            @Override public IFigure insetsRight(double aRight) {synchronized (tFrame.getTreeLock()) {tInset.right = (int)Math.round(aRight);} return this;}
             
             @Override public void save(@Nullable String aFilePath) throws IOException {
                 synchronized (tFrame.getTreeLock()) {
