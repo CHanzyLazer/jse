@@ -2,15 +2,19 @@ package com.jtool.lmp;
 
 import com.google.common.collect.Lists;
 import com.jtool.code.UT;
+import com.jtool.code.collection.AbstractCollections;
+import com.jtool.code.collection.FixedCollections;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.AbstractMultiFrameTable;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
+import com.jtool.math.table.Tables;
 import com.jtool.math.vector.IVector;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -21,7 +25,7 @@ import java.util.List;
  * <p> 本身是一个列表的 Table 方便外部使用 </p>
  */
 public class Thermo extends AbstractMultiFrameTable<ITable> {
-    private final List<ITable> mTableList;
+    private List<ITable> mTableList;
     
     Thermo(ITable... aTableList) {mTableList = Lists.newArrayList(aTableList);}
     Thermo(List<ITable> aTableList) {mTableList = aTableList;}
@@ -51,6 +55,59 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         mTableList.addAll(read(aFilePath).mTableList);
         return this;
     }
+    public Thermo appendCSV(String aPath) throws IOException {
+        if (UT.IO.isDir(aPath)) {
+            if (aPath.equals(".")) aPath = "";
+            if (!aPath.isEmpty() && !aPath.endsWith("/") && !aPath.endsWith("\\")) aPath += "/";
+            String[] tFiles = UT.IO.list(aPath);
+            if (tFiles == null) return this;
+            for (String tName : tFiles) {
+                if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
+                String tFileOrDir = aPath+tName;
+                if (UT.IO.isFile(tFileOrDir)) {
+                    mTableList.add(UT.IO.csv2table(tFileOrDir));
+                }
+            }
+        } else {
+            mTableList.add(UT.IO.csv2table(aPath));
+        }
+        return this;
+    }
+    
+    /** 合并内部的多个表格，不做返回表明这个方法直接修改自身而不是创建新对象 */
+    public void merge() {
+        List<ITable> oTableList = mTableList;
+        mTableList = new ArrayList<>();
+        List<String> rHeads = null;
+        List<IVector> rTable = null;
+        for (ITable tTable : oTableList) {
+            if (rHeads == null) {
+                rHeads = tTable.heads();
+                rTable = new ArrayList<>(tTable.rows());
+            } else {
+                // 直接遍历比较是否相同，目前必须顺序完全相同才可以（后排可以更宽但是多余数据会抹除）
+                final Iterator<String> li = rHeads.iterator();
+                final Iterator<String> ri = tTable.heads().iterator();
+                boolean rEqual = true;
+                while (li.hasNext() && ri.hasNext()) {
+                    if (!li.next().equals(ri.next())) {rEqual = false; break;}
+                }
+                if (rEqual) {
+                    rTable.addAll(tTable.rows());
+                } else {
+                    // 否则则保存合并的结果，并开始下一步
+                    mTableList.add(Tables.fromRows(AbstractCollections.map(rTable, IVector::asList), rHeads.toArray(new String[0])));
+                    rHeads = tTable.heads();
+                    rTable = new ArrayList<>(tTable.rows());
+                }
+            }
+        }
+        // 最后保存最后一步的结果
+        if (rHeads != null) {
+            mTableList.add(Tables.fromRows(AbstractCollections.map(rTable, IVector::asList), rHeads.toArray(new String[0])));
+        }
+    }
+    
     
     /**
      * 从 csv 文件中读取 Thermo，自动根据输入路径选择，如果是文件夹则会读取多个 Thermo
@@ -78,6 +135,17 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         } else {
             return new Thermo(UT.IO.csv2table(aPath));
         }
+    }
+    
+    /**
+     * 直接从 {@link ITable} 来创建
+     * @author liqa
+     */
+    public static Thermo fromTable(ITable aTable) {
+        return new Thermo(aTable);
+    }
+    public static Thermo fromTableList(Iterable<? extends ITable> aTableList) {
+        return new Thermo(FixedCollections.from(aTableList));
     }
     
     

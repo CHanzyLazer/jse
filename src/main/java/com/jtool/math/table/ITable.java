@@ -17,7 +17,7 @@ public interface ITable {
     double[][] data();
     
     boolean noHead();
-    Collection<String> heads();
+    List<String> heads();
     String getHead(int aCol);
     int getColumn(String aHead);
     

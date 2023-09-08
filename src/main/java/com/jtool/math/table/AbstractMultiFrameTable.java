@@ -16,7 +16,7 @@ public abstract class AbstractMultiFrameTable<T extends ITable> extends Abstract
     /** ITable stuffs */
     @Override public double[][] data() {return defaultFrame().data();}
     @Override public boolean noHead() {return defaultFrame().noHead();}
-    @Override public Collection<String> heads() {return defaultFrame().heads();}
+    @Override public List<String> heads() {return defaultFrame().heads();}
     @Override public String getHead(int aCol) {return defaultFrame().getHead(aCol);}
     @Override public int getColumn(String aHead) {return defaultFrame().getColumn(aHead);}
     

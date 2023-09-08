@@ -4,6 +4,7 @@ import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.function.IFunc1Subs;
 import com.jtool.math.vector.IVector;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.awt.*;
@@ -93,7 +94,7 @@ public interface IPlotter {
     IPlotter insetsRight(double aRight);
     
     /** 直接保存结果 */
-    void save(String aPath, int aWidth, int aHeight) throws IOException;
-    default void save(String aPath) throws IOException {save(aPath, 1024, 768);}
-    default void save() throws IOException {save("");}
+    void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException;
+    default void save(@Nullable String aFilePath) throws IOException {save(aFilePath, 1024, 768);}
+    default void save() throws IOException {save(null);}
 }

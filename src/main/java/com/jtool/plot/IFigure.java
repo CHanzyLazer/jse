@@ -1,5 +1,7 @@
 package com.jtool.plot;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 
 /**
@@ -18,6 +20,6 @@ public interface IFigure {
     IFigure insetsBottom(double aBottom);
     IFigure insetsRight(double aRight);
     
-    void save(String aPath) throws IOException;
-    default void save() throws IOException {save("");}
+    void save(@Nullable String aPath) throws IOException;
+    default void save() throws IOException {save(null);}
 }

@@ -3,6 +3,7 @@ package com.jtool.plot;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.math.MathEX;
+import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
@@ -267,11 +268,10 @@ public class PlotterJFree implements IPlotter {
     @Override public IPlotter insetsRight(double aRight) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight)); return this;}
     
     /** 直接保存结果 */
-    @Override public void save(String aPath, int aWidth, int aHeight) throws IOException {
-        if (aPath == null) aPath = "";
-        if (aPath.isEmpty() || aPath.endsWith("/") || aPath.endsWith("\\")) aPath += IPlotter.DEFAULT_FIGURE_NAME;
-        if (!aPath.endsWith(".png")) aPath += ".png";
-        ChartUtils.saveChartAsPNG(UT.IO.toFile(aPath), mChart, aWidth, aHeight);
+    @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
+        if (aFilePath==null || aFilePath.isEmpty()) aFilePath = IPlotter.DEFAULT_FIGURE_NAME;
+        if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
+        ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
     }
     
     /** 添加绘制数据 */
@@ -323,12 +323,11 @@ public class PlotterJFree implements IPlotter {
             @Override public IFigure insetsBottom(double aBottom) {tInset.bottom = (int)Math.round(aBottom); return this;}
             @Override public IFigure insetsRight(double aRight) {tInset.right = (int)Math.round(aRight); return this;}
             
-            @Override public void save(String aPath) throws IOException {
+            @Override public void save(@Nullable String aFilePath) throws IOException {
                 synchronized (tFrame.getTreeLock()) {
-                    if (aPath == null) aPath = "";
-                    if (aPath.isEmpty() || aPath.endsWith("/") || aPath.endsWith("\\")) aPath += tFrame.getTitle();
-                    if (!aPath.endsWith(".png")) aPath += ".png";
-                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aPath), mChart, tPanel.getWidth()-tInset.left-tInset.right, tPanel.getHeight()-tInset.top-tInset.bottom);
+                    if (aFilePath==null || aFilePath.isEmpty()) aFilePath = tFrame.getTitle();
+                    if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
+                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, tPanel.getWidth()-tInset.left-tInset.right, tPanel.getHeight()-tInset.top-tInset.bottom);
                 }
             }
         };

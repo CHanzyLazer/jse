@@ -32,7 +32,7 @@ public final class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCal
      * @param aAllSolidChecker 适用于所有原子的 Checker，传入的 MPC 为所有原子的体系
      * @param aTypeSolidCheckers 适用于某个种类的 Checker，传入的 MPC 为选定的种类的原子的体系；对给定种类位置设为 null 则不会考虑这种原子，直接传入 null 则统一采用 aAllSolidChecker 计算
      */
-    public MultiTypeClusterSizeCalculator(ISolidChecker aAllSolidChecker, ISolidChecker[] aTypeSolidCheckers) {
+    public MultiTypeClusterSizeCalculator(ISolidChecker aAllSolidChecker, ISolidChecker @Nullable[] aTypeSolidCheckers) {
         mAllSolidChecker = aAllSolidChecker;
         mTypeSolidCheckers = aTypeSolidCheckers==null || aTypeSolidCheckers.length==0 ? null : aTypeSolidCheckers;
         mTypeCalThreshold = DEFAULT_TYPE_CAL_THRESHOLD;
