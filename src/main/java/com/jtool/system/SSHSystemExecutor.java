@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -21,7 +22,7 @@ import static com.jtool.code.CS.SSH_SLEEP_TIME;
  */
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
     final SSHCore mSSH;
-    private final int mIOThreadNum;
+    private int mIOThreadNum;
     SSHSystemExecutor(int aIOThreadNum, SSHCore aSSH) throws Exception {
         super();
         mIOThreadNum = aIOThreadNum; mSSH = aSSH;
@@ -34,6 +35,9 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
             throw e;
         }
     }
+    
+    /** 用来设置额外参数的接口，避免构造函数过于复杂 */
+    public SSHSystemExecutor setIOThreadNum(int aIOThreadNum) {mIOThreadNum = aIOThreadNum; return this;}
     
     
     /** 保存参数部分，和输入格式完全一直 */
@@ -80,19 +84,18 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
      *   "RemoteWorkingDir" > "remoteworkingdir" > "rwd" > "wd"
      *   "BeforeCommand" > "beforecommand" > "bcommand" > "bc"
      * </pre>
-     * 参数 "ThreadNumber" 未选定时不使用线程池，参数 "IOThreadNumber" 未选定时不开启并行传输，"Port" 未选定时默认为 22，
+     * 参数 "IOThreadNumber" 未选定时不开启并行传输，"Port" 未选定时默认为 22，
      * "Password" 未选定时使用 publicKey 密钥认证，"KeyPath" 未选定时使用默认路径的密钥，
      * "CompressLevel" 未选定时不开启压缩，"LocalWorkingDir" 未选定时使用程序运行路径，
      * "RemoteWorkingDir" 未选定时使用 ssh 登录所在的路径
      * @author liqa
      */
-    public SSHSystemExecutor(                  Map<?, ?> aArgs) throws Exception {this(getIOThreadNum(aArgs), SSHCore.load(aArgs));}
-    public SSHSystemExecutor(int aIOThreadNum, Map<?, ?> aArgs) throws Exception {this(aIOThreadNum, SSHCore.load(aArgs));}
+    public SSHSystemExecutor(Map<?, ?> aArgs) throws Exception {this(getIOThreadNum(aArgs), SSHCore.load(aArgs));}
     
-    public static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, "IOThreadNumber", "iothreadnumber", "IOThreadNum", "iothreadnum", "ion")).intValue();}
-    
+    private static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, "IOThreadNumber", "iothreadnumber", "IOThreadNum", "iothreadnum", "ion")).intValue();}
     
     /** SSH 需要使用 ssh 来创建，现在不会本地同步创建 */
+    @Override public final void validPath(String aPath) throws Exception {mSSH.validPath(aPath);}
     @Override public final void makeDir(String aDir) throws Exception {mSSH.makeDir(aDir);}
     @Override public final void removeDir(String aDir) throws Exception {mSSH.removeDir(aDir);}
     @Override public final void delete(String aPath) throws Exception {mSSH.delete(aPath);}

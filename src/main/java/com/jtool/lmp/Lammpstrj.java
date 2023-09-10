@@ -1,10 +1,10 @@
 package com.jtool.lmp;
 
-import com.google.common.collect.Lists;
 import com.jtool.atom.*;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
+import com.jtool.code.collection.NewCollections;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.ITable;
@@ -29,7 +29,7 @@ public class Lammpstrj extends AbstractMultiFrameAtomData<Lammpstrj.SubLammpstrj
     
     private final List<SubLammpstrj> mData;
     
-    Lammpstrj(SubLammpstrj... aData) {mData = Lists.newArrayList(aData);}
+    Lammpstrj(SubLammpstrj... aData) {mData = NewCollections.from(aData);}
     Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
     
     /** AbstractList stuffs */

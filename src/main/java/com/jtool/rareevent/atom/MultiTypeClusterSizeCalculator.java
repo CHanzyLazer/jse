@@ -3,7 +3,7 @@ package com.jtool.rareevent.atom;
 import com.jtool.atom.IAtom;
 import com.jtool.atom.IAtomData;
 import com.jtool.atom.MonatomicParameterCalculator;
-import com.jtool.code.collection.FixedCollections;
+import com.jtool.code.collection.NewCollections;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.ILogicalVector;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +52,7 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
         // 先判断所有的
         ILogicalVector rIsSolid = mAllSolidChecker.checkSolid(aMPC);
         // 手动遍历过滤
-        List<List<Integer>> tTypeIndices = FixedCollections.from(tTypeNum, i -> new ArrayList<>());
+        List<List<Integer>> tTypeIndices = NewCollections.from(tTypeNum, i -> new ArrayList<>());
         for (int idx = 0; idx < tAtomNum; ++idx) {
             tTypeIndices.get(tAtoms.get(idx).type()-1).add(idx);
         }

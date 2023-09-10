@@ -19,9 +19,10 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     public LocalSystemExecutor() {super();}
     
     /** 本地则在本地创建目录即可 */
+    @Override public final void validPath(String aPath) throws IOException {UT.IO.validPath(aPath);}
     @Override public final void makeDir(String aDir) throws IOException {UT.IO.makeDir(aDir);}
     @Override public final void removeDir(String aDir) throws IOException {UT.IO.removeDir(aDir);}
-    @Override public final void delete(String aPath) throws Exception {UT.IO.delete(aPath);}
+    @Override public final void delete(String aPath) throws IOException {UT.IO.delete(aPath);}
     @Override public final boolean isFile(String aFilePath) {return UT.IO.isFile(aFilePath);}
     @Override public final boolean isDir(String aDir) {return UT.IO.isDir(aDir);}
     

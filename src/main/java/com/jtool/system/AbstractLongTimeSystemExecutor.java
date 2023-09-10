@@ -30,7 +30,7 @@ import static com.jtool.code.CS.*;
 public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> extends AbstractThreadPool<IExecutorEX> implements ISystemExecutor, ILongTimeJobPool {
     /** 包装一个任意的 mSystemExecutor 来执行指令，注意只会使用其中的最简单的 system 相关操作，因此不需要包含线程池 */
     protected final T mEXE;
-    protected final int mParallelNum;
+    protected volatile int mParallelNum;
     protected final Deque<FutureJob> mQueuedJobList;
     protected final Map<FutureJob, Integer> mJobList;
     
@@ -365,6 +365,7 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
     
     protected final void printStackTrace(Throwable aThrowable) {if (!noERROutput()) aThrowable.printStackTrace();}
     
+    @Override public final void validPath(String aPath) throws Exception {mEXE.validPath(aPath);}
     @Override public final void makeDir(String aDir) throws Exception {mEXE.makeDir(aDir);}
     @Override public final void removeDir(String aDir) throws Exception {mEXE.removeDir(aDir);}
     @Override public final void delete(String aPath) throws Exception {mEXE.delete(aPath);}

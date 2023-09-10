@@ -19,6 +19,7 @@ import java.util.concurrent.Future;
 @SuppressWarnings("UnusedReturnValue")
 public interface ISystemExecutor extends IThreadPool {
     /** 用来处理各种程序因为输出的目录不存在而报错的情况，方便在任何位置直接创建目录或者移除目录 */
+    void validPath(String aPath) throws Exception;
     void makeDir(String aDir) throws Exception;
     @VisibleForTesting default void mkdir(String aDir) throws Exception {makeDir(aDir);}
     @ApiStatus.Internal void removeDir(String aDir) throws Exception;

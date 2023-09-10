@@ -8,7 +8,6 @@ import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.math.MathEX;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
-import org.jetbrains.annotations.Contract;
 
 import java.util.*;
 
@@ -17,11 +16,11 @@ import java.util.*;
  * @author liqa
  */
 @SuppressWarnings({"UseBulkOperation", "ManualArrayToCollectionCopy"})
-public class FixedCollections {
-    protected FixedCollections() {}
+public class NewCollections {
+    protected NewCollections() {}
     
     /** 为了统一格式同样提供一个 zl 方法，但是目前不强制要求使用（目前依旧倾向于直接用 new 创建而不是外套一个专门的静态函数） */
-    @Contract(value = " -> new") public static <T> List<T> zl() {return new ArrayList<>();}
+    public static <T> List<T> zl() {return new ArrayList<>();}
     
     /**
      * 提供一些常用的 List 初始化
@@ -48,6 +47,11 @@ public class FixedCollections {
     public static <T> List<T> from(Collection<? extends T> aList) {
         List<T> rOut = new ArrayList<>(aList.size());
         for (T tValue : aList) rOut.add(tValue);
+        return rOut;
+    }
+    public static <T> List<T> from(T[] aData) {
+        List<T> rOut = new ArrayList<>(aData.length);
+        for (T tValue : aData) rOut.add(tValue);
         return rOut;
     }
     public static List<Double> from(double[] aData) {

@@ -1,9 +1,8 @@
 package com.jtool.lmp;
 
-import com.google.common.collect.Lists;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractCollections;
-import com.jtool.code.collection.FixedCollections;
+import com.jtool.code.collection.NewCollections;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.AbstractMultiFrameTable;
@@ -27,7 +26,7 @@ import java.util.List;
 public class Thermo extends AbstractMultiFrameTable<ITable> {
     private List<ITable> mTableList;
     
-    Thermo(ITable... aTableList) {mTableList = Lists.newArrayList(aTableList);}
+    Thermo(ITable... aTableList) {mTableList = NewCollections.from(aTableList);}
     Thermo(List<ITable> aTableList) {mTableList = aTableList;}
     
     /** AbstractMultiFrameTable stuffs */
@@ -145,7 +144,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         return new Thermo(aTable);
     }
     public static Thermo fromTableList(Iterable<? extends ITable> aTableList) {
-        return new Thermo(FixedCollections.from(aTableList));
+        return new Thermo(NewCollections.from(aTableList));
     }
     
     

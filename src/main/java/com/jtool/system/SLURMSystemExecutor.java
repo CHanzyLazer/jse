@@ -30,9 +30,9 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     
     private final long mSleepTime;
     private final String mUniqueJobName; // 注意一定要是独立的，避免相互干扰或者影响其他用户的结果
-    private final @Nullable String mPartition;
-    private final int mTaskNum; // 目前一个 Executor 固定一个 taskNumber，用不到变化的，打包起来也会更加方便
-    private final int mMaxTaskNumPerNode;
+    private @Nullable String mPartition;
+    private int mTaskNum; // 目前一个 Executor 固定一个 taskNumber，用不到变化的，打包起来也会更加方便
+    private int mMaxTaskNumPerNode;
     private final int mMaxNodeNum;
     SLURMSystemExecutor(SSHSystemExecutor aSystemExecutor, int aParallelNum, long aSleepTime, String aUniqueJobName, @Nullable String aPartition, int aTaskNum, int aMaxTaskNumPerNode, int aMaxNodeNum) throws Exception {
         super(aSystemExecutor, aParallelNum);
@@ -70,6 +70,13 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
             if (needSyncIOFiles()) removeDir(mWorkingDir);
         } catch (Exception ignored) {}
     }
+    
+    /** 用来设置额外参数的接口，避免构造函数过于复杂 */
+    public SLURMSystemExecutor setParallelNum(int aParallelNum) {mParallelNum = Math.max(1, aParallelNum); return this;}
+    public SLURMSystemExecutor setIOThreadNum(int aIOThreadNum) {mEXE.setIOThreadNum(aIOThreadNum); return this;}
+    public SLURMSystemExecutor setPartition(String aPartition) {mPartition = aPartition; return this;}
+    public SLURMSystemExecutor setTaskNum(int aTaskNum) {mTaskNum = Math.max(1, aTaskNum); return this;}
+    public SLURMSystemExecutor setMaxTaskNumPerNode(int aMaxTaskNumPerNode) {mMaxTaskNumPerNode = Math.max(1, aMaxTaskNumPerNode); return this;}
     
     
     /** 保存参数部分，和输入格式完全一直，需要增加 mQueuedJobList 和 mJobList 的保存 */
@@ -165,22 +172,15 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
      * "RemoteWorkingDir" 未选定时使用 ssh 登录所在的路径
      * @author liqa
      */
-    public SLURMSystemExecutor(                                                                                             Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,           aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum,                                                                            Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,           aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum,                                                          Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition,                                       Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(int aParallelNum, int aIOThreadNum, String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(aIOThreadNum, aArgs), aParallelNum         , getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(                                    String aPartition, int aTaskNum, int aMaxTaskNumPerNode, Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,           aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , aTaskNum            , aMaxTaskNumPerNode         , getMaxNodeNum(aArgs));}
-    public SLURMSystemExecutor(                                    String aPartition                                      , Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(-1,           aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), aPartition         , getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
+    public SLURMSystemExecutor(Map<?, ?> aArgs) throws Exception {this(new SSHSystemExecutor(aArgs), getParallelNum(aArgs), getSleepTime(aArgs), getJobName(aArgs), getPartition(aArgs), getTaskNumber(aArgs), getMaxTaskNumPerNode(aArgs), getMaxNodeNum(aArgs));}
     
-    
-    public static int       getParallelNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelnumber", "ParallelNum", "parallelnum", "pn")).intValue();}
-    public static long      getSleepTime            (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, SSH_SLEEP_TIME, "SleepTime", "sleeptime", "stime", "st")).longValue();}
-    public static String    getJobName              (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
-    public static @Nullable String getPartition     (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p");}
-    public static int       getTaskNumber           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}
-    public static int       getMaxTaskNumPerNode    (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 20, "MaxTaskNumberPerNode", "maxtasknumberpernode", "MaxTaskNumPerNode", "maxtasknumpernode", "CoresPerNode", "corespernode", "ntaskspernode", "ntasks-per-node")).intValue();}
-    public static int       getMaxNodeNum           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 10, "MaxNodeNumber", "maxnodenumber", "MaxNodeNum", "maxnodenum", "nodes", "N")).intValue();}
+    private static int       getParallelNum         (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelnumber", "ParallelNum", "parallelnum", "pn")).intValue();}
+    private static long      getSleepTime           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, SSH_SLEEP_TIME, "SleepTime", "sleeptime", "stime", "st")).longValue();}
+    private static String    getJobName             (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
+    private static @Nullable String getPartition    (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p");}
+    private static int       getTaskNumber          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}
+    private static int       getMaxTaskNumPerNode   (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 20, "MaxTaskNumberPerNode", "maxtasknumberpernode", "MaxTaskNumPerNode", "maxtasknumpernode", "CoresPerNode", "corespernode", "ntaskspernode", "ntasks-per-node")).intValue();}
+    private static int       getMaxNodeNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 10, "MaxNodeNumber", "maxnodenumber", "MaxNodeNum", "maxnodenum", "nodes", "N")).intValue();}
     
     
     
@@ -204,6 +204,11 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     @Override protected @Nullable String getRunCommand(String aCommand, @NotNull String aOutFilePath) {
         // 对于空指令专门优化，不执行组装
         if (aCommand == null || aCommand.isEmpty()) return null;
+        // 注意此时需要手动合法化输出文件路径
+        if (!noSTDOutput() || !noERROutput()) {
+            try {mEXE.validPath(aOutFilePath);}
+            catch (Exception e) {printStackTrace(e); return null;}
+        }
         
         int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装指令
@@ -243,6 +248,11 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     @Override protected @Nullable String getSubmitCommand(String aCommand, @NotNull String aOutFilePath) {
         // 对于空指令专门优化，不执行组装
         if (aCommand == null || aCommand.isEmpty()) return null;
+        // 注意此时需要手动合法化输出文件路径
+        if (!noSTDOutput() || !noERROutput()) {
+            try {mEXE.validPath(aOutFilePath);}
+            catch (Exception e) {printStackTrace(e); return null;}
+        }
         
         int tNodeNum = MathEX.Code.divup(mTaskNum, mMaxTaskNumPerNode);
         // 组装运行指令
@@ -341,6 +351,11 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         rIOFiles.putIFiles(IFILE_KEY, tBatchedScriptPath);
         // 依旧设置输出文件为默认文件
         String tOutFilePath = toRealOutFilePath(defaultOutFilePath());
+        // 注意此时需要手动合法化输出文件路径
+        if (!noSTDOutput() || !noERROutput()) {
+            try {mEXE.validPath(tOutFilePath);}
+            catch (Exception e) {printStackTrace(e); return null;}
+        }
         // 组装提交的指令
         List<String> rRunCommand = new ArrayList<>();
         rRunCommand.add("srun");

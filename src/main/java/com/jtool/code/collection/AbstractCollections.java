@@ -37,6 +37,14 @@ public class AbstractCollections {
             @Override public int size() {return aSize;}
         };
     }
+    
+    /**
+     * {@link Arrays#asList}
+     * @author liqa
+     * @param aData the input T[]
+     * @return the list format of T[]
+     */
+    public static <T> List<T> from(T[] aData) {return Arrays.asList(aData);}
     /**
      * {@link Arrays#asList} for double[]
      * @author liqa
