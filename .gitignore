@@ -5,3 +5,4 @@ __*
 /release/lib
 
 !/.gitignore
+!/.gitattributes
