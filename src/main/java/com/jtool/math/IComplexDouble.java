@@ -11,26 +11,71 @@ public interface IComplexDouble {
     double imag();
     
     /** 提供一些常见的复数运算 */
-    default ComplexDouble plus(IComplexDouble aComplex   ) {return new ComplexDouble(real() + aComplex.real(), imag() + aComplex.imag());}
-    default ComplexDouble plus(double aReal, double aImag) {return new ComplexDouble(real() + aReal          , imag() + aImag          );}
-    default ComplexDouble plus(double aReal              ) {return new ComplexDouble(real() + aReal          , imag()                  );}
+    default ComplexDouble plus(IComplexDouble aComplex) {return new ComplexDouble(real() + aComplex.real(), imag() + aComplex.imag());}
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble plus(ComplexDouble aComplex ) {return new ComplexDouble(real() + aComplex.mReal , real() + aComplex.mImag );}
+    default ComplexDouble plus(double aReal           ) {return new ComplexDouble(real() + aReal          , imag()                  );}
     
-    default ComplexDouble minus(IComplexDouble aComplex   ) {return new ComplexDouble(real() - aComplex.real(), imag() - aComplex.imag());}
-    default ComplexDouble minus(double aReal, double aImag) {return new ComplexDouble(real() - aReal          , imag() - aImag          );}
-    default ComplexDouble minus(double aReal              ) {return new ComplexDouble(real() - aReal          , imag()                  );}
+    default ComplexDouble minus(IComplexDouble aComplex) {return new ComplexDouble(real() - aComplex.real(), imag() - aComplex.imag());}
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble minus(ComplexDouble aComplex ) {return new ComplexDouble(real() - aComplex.mReal , real() - aComplex.mImag );}
+    default ComplexDouble minus(double aReal           ) {return new ComplexDouble(real() - aReal          , imag()                  );}
     
-    default ComplexDouble multiply(IComplexDouble aComplex   ) {return new ComplexDouble(real()*aComplex.real() - imag()*aComplex.imag(), imag()*aComplex.real() + real()*aComplex.imag());}
-    default ComplexDouble multiply(double aReal, double aImag) {return new ComplexDouble(real()*aReal           - imag()*aImag          , imag()*aReal           + real()*aImag          );}
-    default ComplexDouble multiply(double aReal              ) {return new ComplexDouble(real()*aReal                                   , imag()*aReal                                   );}
+    default ComplexDouble lminus(IComplexDouble aComplex) {return new ComplexDouble(aComplex.real() - real(), aComplex.imag() - imag());}
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble lminus(ComplexDouble aComplex ) {return new ComplexDouble(aComplex.mReal  - real(), aComplex.mImag  - real());}
+    default ComplexDouble lminus(double aReal           ) {return new ComplexDouble(aReal - real()          , -imag()                 );}
     
-    default ComplexDouble div(IComplexDouble aComplex   ) {double tDiv = aComplex.dot()           ; return new ComplexDouble((real()*aComplex.real() + imag()*aComplex.imag())/tDiv, (imag()*aComplex.real() - real()*aComplex.imag())/tDiv);}
-    default ComplexDouble div(double aReal, double aImag) {double tDiv = aReal*aReal + aImag*aImag; return new ComplexDouble((real()*aReal           + imag()*aImag          )/tDiv, (imag()*aReal           - real()*aImag          )/tDiv);}
-    default ComplexDouble div(double aReal              ) {return new ComplexDouble(real()/aReal, imag()/aReal);}
+    default ComplexDouble multiply(IComplexDouble aComplex) {
+        final double lReal = real(),          lImag = imag();
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        return new ComplexDouble(lReal*rReal - lImag*rImag, lImag*rReal + lReal*rImag);
+    }
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble multiply(ComplexDouble aComplex) {
+        final double lReal = real(),         lImag = imag();
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        return new ComplexDouble(lReal*rReal - lImag*rImag, lImag*rReal + lReal*rImag);
+    }
+    default ComplexDouble multiply(double aReal           ) {
+        return new ComplexDouble(real()*aReal, imag()*aReal);
+    }
+    
+    default ComplexDouble div(IComplexDouble aComplex) {
+        final double lReal = real(),          lImag = imag();
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = rReal*rReal + rImag*rImag;
+        return new ComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
+    }
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble div(ComplexDouble aComplex) {
+        final double lReal = real(),         lImag = imag();
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = rReal*rReal + rImag*rImag;
+        return new ComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
+    }
+    default ComplexDouble div(double aReal          ) {
+        return new ComplexDouble(real()/aReal, imag()/aReal);
+    }
+    
+    default ComplexDouble ldiv(IComplexDouble aComplex) {
+        final double lReal = real(),          lImag = imag();
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
+    }
+    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
+    default ComplexDouble ldiv(ComplexDouble aComplex) {
+        final double lReal = real(),         lImag = imag();
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
+    }
+    default ComplexDouble ldiv(double aReal          ) {
+        final double lReal = real(), lImag = imag();
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((aReal*lReal)/div, (-aReal*lImag)/div);
+    }
     
     default double abs() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
-    
-    /** 这里定义 a.dot(b) = a * b' */
-    default ComplexDouble dot(IComplexDouble aComplex   ) {return new ComplexDouble(real()*aComplex.real() + imag()*aComplex.imag(), imag()*aComplex.real() - real()*aComplex.imag());}
-    default ComplexDouble dot(double aReal, double aImag) {return new ComplexDouble(real()*aReal           + imag()*aImag          , imag()*aReal           - real()*aImag          );}
-    default double dot() {return real()*real() + imag()*imag();}
 }

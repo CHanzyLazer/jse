@@ -2,7 +2,7 @@ package com.jtool.math.vector;
 
 import com.jtool.code.functional.*;
 import com.jtool.code.iterator.IDoubleIterator;
-import com.jtool.code.iterator.IDoubleSetIterator;
+import com.jtool.code.iterator.IDoubleSetOnlyIterator;
 import com.jtool.math.MathEX;
 import com.jtool.math.operation.DATA;
 
@@ -58,7 +58,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void forEach       (IDoubleConsumer1 aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill          (IVectorGetter aRHS) {
         final IVector tThis = thisVector_();
-        final IDoubleSetIterator si = tThis.setIterator();
+        final IDoubleSetOnlyIterator si = tThis.setIterator();
         final int tSize = tThis.size();
         for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
     }
@@ -96,10 +96,10 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     /** 向量的一些额外的运算 */
     @Override public double dot(IVector aRHS) {
         final IVector tThis = thisVector_();
-        final IDoubleIterator il = tThis.iterator();
-        final IDoubleIterator ir = aRHS.iterator();
+        final IDoubleIterator li = tThis.iterator();
+        final IDoubleIterator ri = aRHS.iterator();
         double rDot = 0.0;
-        while (il.hasNext()) rDot += il.next()*ir.next();
+        while (li.hasNext()) rDot += li.next()*ri.next();
         return rDot;
     }
     @Override public double dot() {

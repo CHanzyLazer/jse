@@ -5,7 +5,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.functional.IDoubleOperator1;
 import com.jtool.code.functional.IDoubleOperator2;
-import com.jtool.code.iterator.IDoubleSetIterator;
+import com.jtool.code.iterator.IDoubleSetOnlyIterator;
 import com.jtool.math.operation.DATA;
 import com.jtool.math.vector.IVector;
 
@@ -62,7 +62,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void forEachRow    (IDoubleConsumer1 aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorRow, aCon);}
     @Override public void fill          (IMatrixGetter aRHS) {
         final IMatrix tThis = thisMatrix_();
-        final IDoubleSetIterator si = tThis.setIteratorCol();
+        final IDoubleSetOnlyIterator si = tThis.setIteratorCol();
         final int tColNum = tThis.columnNumber();
         final int tRowNum = tThis.rowNumber();
         for (int col = 0; col < tColNum; ++col) for (int row = 0; row < tRowNum; ++row) {

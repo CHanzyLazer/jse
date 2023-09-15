@@ -3,6 +3,8 @@ package com.jtool.code.iterator;
 import com.jtool.atom.IAtom;
 import com.jtool.atom.IXYZ;
 import com.jtool.math.ComplexDouble;
+import com.jtool.math.IComplexDouble;
+import com.jtool.math.ISettableComplexDouble;
 
 import java.util.function.Consumer;
 
@@ -12,9 +14,11 @@ import java.util.function.Consumer;
  * <p>
  * 和 {@link IXYZ} 或者 {@link IAtom} 部分的用法思路不同，
  * 这里直接返回 {@link ComplexDouble} 让其和基本类型一样的使用，不会有引用的属性在里面
+ * <p>
+ * 继承 {@link ISettableComplexDouble} 来方便直接使用复数运算而无需创建对象
  * @author liqa
  */
-public interface IComplexDoubleSetIterator extends IComplexDoubleIterator, IComplexDoubleSetOnlyIterator {
+public interface IComplexDoubleSetIterator extends IComplexDoubleIterator, IComplexDoubleSetOnlyIterator, ISettableComplexDouble {
     void nextOnly();
     
     /** 同样采用 toSetIterator() 的方法转为 {@link ISetIterator} 而不是继承 */

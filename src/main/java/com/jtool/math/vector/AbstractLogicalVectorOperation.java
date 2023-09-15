@@ -1,8 +1,7 @@
 package com.jtool.math.vector;
 
 import com.jtool.code.functional.*;
-import com.jtool.code.iterator.IBooleanSetIterator;
-import com.jtool.code.iterator.IDoubleSetIterator;
+import com.jtool.code.iterator.IBooleanSetOnlyIterator;
 import com.jtool.math.operation.DATA;
 
 /**
@@ -40,7 +39,7 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
     @Override public void forEach           (IBooleanConsumer1  aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill              (ILogicalVectorGetter aRHS) {
         final ILogicalVector tThis = thisVector_();
-        final IBooleanSetIterator si = tThis.setIterator();
+        final IBooleanSetOnlyIterator si = tThis.setIterator();
         final int tSize = tThis.size();
         for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
     }

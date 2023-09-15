@@ -6,7 +6,7 @@ package com.jtool.math;
  * 为了使用方便这里不使用常规结构使用的命名规范
  * @author liqa
  */
-public final class ComplexDouble implements IComplexDouble {
+public final class ComplexDouble implements ISettableComplexDouble {
     public double mReal;
     public double mImag;
     public ComplexDouble(double aReal, double aImag) {mReal = aReal; mImag = aImag;}
@@ -16,93 +16,132 @@ public final class ComplexDouble implements IComplexDouble {
     
     @Override public double real() {return mReal;}
     @Override public double imag() {return mImag;}
+    @Override public void setReal(double aReal) {mReal = aReal;}
+    @Override public void setImag(double aImag) {mImag = aImag;}
     
     /** print */
     @Override public String toString() {return String.format("%8.4g + %8.4gi", mReal, mImag);}
     
     
     /** 提供一些常见的复数运算 */
-    @Override public ComplexDouble plus(IComplexDouble aComplex   ) {return new ComplexDouble(mReal + aComplex.real(), mImag + aComplex.imag());}
-    @Override public ComplexDouble plus(double aReal, double aImag) {return new ComplexDouble(mReal + aReal          , mImag + aImag          );}
-    @Override public ComplexDouble plus(double aReal              ) {return new ComplexDouble(mReal + aReal          , mImag                  );}
-    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public ComplexDouble plus(ComplexDouble aComplex    ) {return new ComplexDouble(mReal + aComplex.mReal, mImag + aComplex.mImag);}
-    public void     plus2this(ComplexDouble aComplex    ) {mReal += aComplex.mReal; mImag += aComplex.mImag;}
-    public void     plus2this(double aReal, double aImag) {mReal += aReal         ; mImag += aImag         ;}
-    public void     plus2this(double aReal              ) {mReal += aReal         ;                         }
+    @Override public ComplexDouble plus(IComplexDouble aComplex) {return new ComplexDouble(mReal + aComplex.real(), mImag + aComplex.imag());}
+    @Override public ComplexDouble plus(ComplexDouble aComplex ) {return new ComplexDouble(mReal + aComplex.mReal , mImag + aComplex.mImag );}
+    @Override public ComplexDouble plus(double aReal           ) {return new ComplexDouble(mReal + aReal          , mImag                  );}
+    @Override public void plus2this(IComplexDouble aComplex) {mReal += aComplex.real(); mImag += aComplex.imag();}
+    @Override public void plus2this(ComplexDouble aComplex ) {mReal += aComplex.mReal ; mImag += aComplex.mImag ;}
+    @Override public void plus2this(double aReal           ) {mReal += aReal          ;                          }
     
-    @Override public ComplexDouble minus(IComplexDouble aComplex   ) {return new ComplexDouble(mReal - aComplex.real(), mImag - aComplex.imag());}
-    @Override public ComplexDouble minus(double aReal, double aImag) {return new ComplexDouble(mReal - aReal          , mImag - aImag          );}
-    @Override public ComplexDouble minus(double aReal              ) {return new ComplexDouble(mReal - aReal          , mImag                  );}
-    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public ComplexDouble minus(ComplexDouble aComplex    ) {return new ComplexDouble(mReal - aComplex.mReal, mImag - aComplex.mImag);}
-    public void     minus2this(ComplexDouble aComplex    ) {mReal -= aComplex.mReal; mImag -= aComplex.mImag;}
-    public void     minus2this(double aReal, double aImag) {mReal -= aReal         ; mImag -= aImag         ;}
-    public void     minus2this(double aReal              ) {mReal -= aReal         ;                         }
+    @Override public ComplexDouble minus(IComplexDouble aComplex) {return new ComplexDouble(mReal - aComplex.real(), mImag - aComplex.imag());}
+    @Override public ComplexDouble minus(ComplexDouble aComplex ) {return new ComplexDouble(mReal - aComplex.mReal , mImag - aComplex.mImag );}
+    @Override public ComplexDouble minus(double aReal           ) {return new ComplexDouble(mReal - aReal          , mImag                  );}
+    @Override public void minus2this(IComplexDouble aComplex) {mReal -= aComplex.real(); mImag -= aComplex.imag();}
+    @Override public void minus2this(ComplexDouble aComplex ) {mReal -= aComplex.mReal ; mImag -= aComplex.mImag ;}
+    @Override public void minus2this(double aReal           ) {mReal -= aReal          ;                          }
     
-    @Override public ComplexDouble multiply(IComplexDouble aComplex   ) {return new ComplexDouble(mReal*aComplex.real() - mImag*aComplex.imag(), mImag*aComplex.real() + mReal*aComplex.imag());}
-    @Override public ComplexDouble multiply(double aReal, double aImag) {return new ComplexDouble(mReal*aReal           - mImag*aImag          , mImag*aReal           + mReal*aImag          );}
-    @Override public ComplexDouble multiply(double aReal              ) {return new ComplexDouble(mReal*aReal                                  , mImag*aReal                                  );}
-    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public ComplexDouble multiply(ComplexDouble aComplex) {return new ComplexDouble(mReal*aComplex.mReal - mImag*aComplex.mImag, mImag*aComplex.mReal + mReal*aComplex.mImag);}
-    public void multiply2this(ComplexDouble aComplex) {
-        double tReal = mReal*aComplex.mReal - mImag*aComplex.mImag;
-        double tImag = mImag*aComplex.mReal + mReal*aComplex.mImag;
-        mReal = tReal;
-        mImag = tImag;
+    @Override public ComplexDouble lminus(IComplexDouble aComplex) {return new ComplexDouble(aComplex.real() - mReal, aComplex.imag() - mImag);}
+    @Override public ComplexDouble lminus(ComplexDouble aComplex ) {return new ComplexDouble(aComplex.mReal  - mReal, aComplex.mImag  - mImag);}
+    @Override public ComplexDouble lminus(double aReal           ) {return new ComplexDouble(aReal           - mReal,                 - mImag);}
+    @Override public void lminus2this(IComplexDouble aComplex) {mReal = aComplex.real() - mReal; mImag = aComplex.imag() - mImag;}
+    @Override public void lminus2this(ComplexDouble aComplex ) {mReal = aComplex.mReal  - mReal; mImag = aComplex.mImag  - mImag;}
+    @Override public void lminus2this(double aReal           ) {mReal = aReal           - mReal; mImag =                 - mImag;}
+    
+    @Override public ComplexDouble multiply(IComplexDouble aComplex) {
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        return new ComplexDouble(mReal*rReal - mImag*rImag, mImag*rReal + mReal*rImag);
     }
-    public void multiply2this(double aReal, double aImag) {
-        double tReal = mReal*aReal - mImag*aImag;
-        double tImag = mImag*aReal + mReal*aImag;
-        mReal = tReal;
-        mImag = tImag;
+    @Override public ComplexDouble multiply(ComplexDouble aComplex ) {
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        return new ComplexDouble(mReal*rReal - mImag*rImag, mImag*rReal + mReal*rImag);
     }
-    public void multiply2this(double aReal) {
-        mReal *= aReal;
-        mImag *= aReal;
+    @Override public ComplexDouble multiply(double aReal           ) {
+        return new ComplexDouble(mReal*aReal, mImag*aReal);
+    }
+    @Override public void multiply2this(IComplexDouble aComplex) {
+        final double lReal = mReal,           lImag = mImag;
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        mReal = lReal*rReal - lImag*rImag;
+        mImag = lImag*rReal + lReal*rImag;
+    }
+    @Override public void multiply2this(ComplexDouble aComplex) {
+        final double lReal = mReal,          lImag = mImag;
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        mReal = lReal*rReal - lImag*rImag;
+        mImag = lImag*rReal + lReal*rImag;
+    }
+    @Override public void multiply2this(double aReal) {
+        mReal *= aReal; mImag *= aReal;
     }
     
-    @Override public ComplexDouble div(IComplexDouble aComplex   ) {double tDiv = aComplex.dot()           ; return new ComplexDouble((mReal*aComplex.real() + mImag*aComplex.imag())/tDiv, (mImag*aComplex.real() - mReal*aComplex.imag())/tDiv);}
-    @Override public ComplexDouble div(double aReal, double aImag) {double tDiv = aReal*aReal + aImag*aImag; return new ComplexDouble((mReal*aReal           + mImag*aImag          )/tDiv, (mImag*aReal           - mReal*aImag          )/tDiv);}
-    @Override public ComplexDouble div(double aReal              ) {return new ComplexDouble(mReal/aReal, mImag/aReal);}
-    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public ComplexDouble div(ComplexDouble aComplex) {double tDiv = aComplex.dot(); return new ComplexDouble((mReal*aComplex.mReal + mImag*aComplex.mImag)/tDiv, (mImag*aComplex.mReal - mReal*aComplex.mImag)/tDiv);}
-    public void div2this(ComplexDouble aComplex) {
-        double tDiv = aComplex.dot();
-        double tReal = (mReal*aComplex.mReal + mImag*aComplex.mImag)/tDiv;
-        double tImag = (mImag*aComplex.mReal - mReal*aComplex.mImag)/tDiv;
-        mReal = tReal;
-        mImag = tImag;
+    @Override public ComplexDouble div(IComplexDouble aComplex) {
+        final double lReal = mReal,           lImag = mImag;
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = rReal*rReal + rImag*rImag;
+        return new ComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
     }
-    public void div2this(double aReal, double aImag) {
-        double tDiv = aReal*aReal + aImag*aImag;
-        double tReal = (mReal*aReal + mImag*aImag)/tDiv;
-        double tImag = (mImag*aReal - mReal*aImag)/tDiv;
-        mReal = tReal;
-        mImag = tImag;
+    @Override public ComplexDouble div(ComplexDouble aComplex ) {
+        final double lReal = mReal,          lImag = mImag;
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = rReal*rReal + rImag*rImag;
+        return new ComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
     }
-    public void div2this(double aReal) {
-        mReal /= aReal;
-        mImag /= aReal;
+    @Override public ComplexDouble div(double aReal           ) {
+        return new ComplexDouble(mReal/aReal, mImag/aReal);
+    }
+    @Override public void div2this(IComplexDouble aComplex) {
+        final double lReal = mReal,           lImag = mImag;
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = rReal*rReal + rImag*rImag;
+        mReal = (lReal*rReal + lImag*rImag)/div;
+        mImag = (lImag*rReal - lReal*rImag)/div;
+    }
+    @Override public void div2this(ComplexDouble aComplex ) {
+        final double lReal = mReal,          lImag = mImag;
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = rReal*rReal + rImag*rImag;
+        mReal = (lReal*rReal + lImag*rImag)/div;
+        mImag = (lImag*rReal - lReal*rImag)/div;
+    }
+    @Override public void div2this(double aReal           ) {
+        mReal /= aReal; mImag /= aReal;
+    }
+    
+    @Override public ComplexDouble ldiv(IComplexDouble aComplex) {
+        final double lReal = mReal,           lImag = mImag;
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
+    }
+    @Override public ComplexDouble ldiv(ComplexDouble aComplex ) {
+        final double lReal = mReal,          lImag = mImag;
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
+    }
+    @Override public ComplexDouble ldiv(double aReal           ) {
+        final double lReal = mReal, lImag = mImag;
+        final double div = lReal*lReal + lImag*lImag;
+        return new ComplexDouble((aReal*lReal)/div, (-aReal*lImag)/div);
+    }
+    @Override public void ldiv2this(IComplexDouble aComplex) {
+        final double lReal = mReal,           lImag = mImag;
+        final double rReal = aComplex.real(), rImag = aComplex.imag();
+        final double div = lReal*lReal + lImag*lImag;
+        mReal = (rReal*lReal + rImag*lImag)/div;
+        mImag = (rImag*lReal - rReal*lImag)/div;
+    }
+    @Override public void ldiv2this(ComplexDouble aComplex ) {
+        final double lReal = mReal,          lImag = mImag;
+        final double rReal = aComplex.mReal, rImag = aComplex.mImag;
+        final double div = lReal*lReal + lImag*lImag;
+        mReal = (rReal*lReal + rImag*lImag)/div;
+        mImag = (rImag*lReal - rReal*lImag)/div;
+    }
+    @Override public void ldiv2this(double aReal           ) {
+        final double lReal = mReal, lImag = mImag;
+        final double div = lReal*lReal + lImag*lImag;
+        mReal = (aReal*lReal)/div;
+        mImag = (-aReal*lImag)/div;
     }
     
     @Override public double abs() {return MathEX.Fast.sqrt(mReal*mReal + mImag*mImag);}
-    
-    @Override public ComplexDouble dot(IComplexDouble aComplex   ) {return new ComplexDouble(mReal*aComplex.real() + mImag*aComplex.imag(), mImag*aComplex.real() - mReal*aComplex.imag());}
-    @Override public ComplexDouble dot(double aReal, double aImag) {return new ComplexDouble(mReal*aReal           + mImag*aImag          , mImag*aReal           - mReal*aImag          );}
-    /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public ComplexDouble dot(ComplexDouble aComplex) {return new ComplexDouble(mReal*aComplex.mReal + mImag*aComplex.mImag, mImag*aComplex.mReal - mReal*aComplex.mImag);}
-    public void dot2this(ComplexDouble aComplex) {
-        double tReal = mReal*aComplex.mReal + mImag*aComplex.mImag;
-        double tImag = mImag*aComplex.mReal - mReal*aComplex.mImag;
-        mReal = tReal;
-        mImag = tImag;
-    }
-    public void dot2this(double aReal, double aImag) {
-        double tReal = mReal*aReal + mImag*aImag;
-        double tImag = mImag*aReal - mReal*aImag;
-        mReal = tReal;
-        mImag = tImag;
-    }
-    @Override public double dot() {return mReal*mReal + mImag*mImag;}
 }
