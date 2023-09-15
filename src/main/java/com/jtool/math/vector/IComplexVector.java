@@ -106,13 +106,20 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
         else return get(0);
     }
     
-    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
+    /** 附加一些额外的单元素操作，对于 ComplexVector 也提供略多的接口 */
+    void add_(int aIdx, IComplexDouble aDelta);
+    void add_(int aIdx, double aDelta);
+    void addImag_(int aIdx, double aImag);
     void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
     void updateReal_(int aIdx, IDoubleOperator1 aRealOpt);
     void updateImag_(int aIdx, IDoubleOperator1 aImagOpt);
     ComplexDouble getAndUpdate_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
     double getAndUpdateReal_(int aIdx, IDoubleOperator1 aRealOpt);
     double getAndUpdateImag_(int aIdx, IDoubleOperator1 aImagOpt);
+    
+    void add(int aIdx, IComplexDouble aDelta);
+    void add(int aIdx, double aDelta);
+    void addImag(int aIdx, double aImag);
     void update(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
     void updateReal(int aIdx, IDoubleOperator1 aRealOpt);
     void updateImag(int aIdx, IDoubleOperator1 aImagOpt);

@@ -13,6 +13,7 @@ public final class ComplexDouble implements ISettableComplexDouble {
     public ComplexDouble(double aReal              ) {this(aReal, 0.0);}
     public ComplexDouble(                          ) {this(0.0, 0.0);}
     public ComplexDouble(IComplexDouble aValue     ) {this(aValue.real(), aValue.imag());}
+    public ComplexDouble(ComplexDouble aValue      ) {this(aValue.mReal, aValue.mImag);}
     
     @Override public double real() {return mReal;}
     @Override public double imag() {return mImag;}
@@ -144,4 +145,5 @@ public final class ComplexDouble implements ISettableComplexDouble {
     }
     
     @Override public double abs() {return MathEX.Fast.sqrt(mReal*mReal + mImag*mImag);}
+    @Override public ComplexDouble conj() {return new ComplexDouble(mReal, -mImag);}
 }

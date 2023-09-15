@@ -78,4 +78,7 @@ public interface IComplexDouble {
     }
     
     default double abs() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
+    
+    /** 获取复数的共轭值，conjugate */
+    default ComplexDouble conj() {return new ComplexDouble(real(), -imag());}
 }

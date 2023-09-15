@@ -223,13 +223,28 @@ public abstract class AbstractComplexVector implements IComplexVector {
         return getAndSetImag_(aIdx, aImag);
     }
     
+    @Override public void add_(int aIdx, IComplexDouble aDelta) {
+        ComplexDouble tValue = get_(aIdx);
+        tValue.plus2this(aDelta);
+        set_(aIdx, tValue);
+    }
+    @Override public void add_(int aIdx, double aDelta) {
+        double tReal = getReal_(aIdx);
+        tReal += aDelta;
+        setReal_(aIdx, tReal);
+    }
+    @Override public void addImag_(int aIdx, double aImag) {
+        double tImag = getImag_(aIdx);
+        tImag += aImag;
+        setImag_(aIdx, tImag);
+    }
     @Override public void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {set_(aIdx, aOpt.cal(get_(aIdx)));}
     @Override public void updateReal_(int aIdx, IDoubleOperator1 aRealOpt) {setReal_(aIdx, aRealOpt.cal(getReal_(aIdx)));}
     @Override public void updateImag_(int aIdx, IDoubleOperator1 aImagOpt) {setImag_(aIdx, aImagOpt.cal(getImag_(aIdx)));}
     @Override public ComplexDouble getAndUpdate_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
-        ComplexDouble tValue = get_(aIdx);
-        set_(aIdx, aOpt.cal(tValue));
-        return tValue;
+        ComplexDouble oValue = get_(aIdx);
+        set_(aIdx, aOpt.cal(new ComplexDouble(oValue))); // 用来防止意外的修改
+        return oValue;
     }
     @Override public double getAndUpdateReal_(int aIdx, IDoubleOperator1 aRealOpt) {
         double tReal = getReal_(aIdx);
@@ -242,6 +257,18 @@ public abstract class AbstractComplexVector implements IComplexVector {
         return tImag;
     }
     
+    @Override public void add(int aIdx, IComplexDouble aDelta) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        add_(aIdx, aDelta);
+    }
+    @Override public void add(int aIdx, double aDelta) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        add_(aIdx, aDelta);
+    }
+    @Override public void addImag(int aIdx, double aImag) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        addImag_(aIdx, aImag);
+    }
     @Override public void update(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
@@ -277,30 +304,36 @@ public abstract class AbstractComplexVector implements IComplexVector {
     
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     @Override public IComplexVectorSlicer slicer() {
-        return new AbstractVectorSlicer() {
-            @Override protected IVector getL(final List<Integer> aIndices) {IVector rVector = newZeros(aIndices.size()); rVector.fill(i -> AbstractComplexVector.this.get(aIndices.get(i))); return rVector;}
-            @Override protected IVector getA() {return copy();}
+        return new AbstractComplexVectorSlicer() {
+            @Override protected IComplexVector getL(final List<Integer> aIndices) {IComplexVector rVector = newZeros(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
+            @Override protected IComplexVector getA() {return copy();}
             
             @Override protected int thisSize_() {return size();}
         };
     }
     @Override public IComplexVectorSlicer refSlicer() {
-        return new AbstractVectorSlicer() {
-            @Override protected IVector getL(final List<Integer> aIndices) {
-                return new RefVector() {
+        return new AbstractComplexVectorSlicer() {
+            @Override protected IComplexVector getL(final List<Integer> aIndices) {
+                return new RefComplexVector() {
                     /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public double get_(int aIdx) {return AbstractComplexVector.this.get(aIndices.get(aIdx));}
-                    @Override public void set_(int aIdx, double aValue) {AbstractComplexVector.this.set(aIndices.get(aIdx), aValue);}
-                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractComplexVector.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override public double getReal_(int aIdx) {return AbstractComplexVector.this.getReal(aIndices.get(aIdx));}
+                    @Override public double getImag_(int aIdx) {return AbstractComplexVector.this.getImag(aIndices.get(aIdx));}
+                    @Override public void setReal_(int aIdx, double aReal) {AbstractComplexVector.this.setReal(aIndices.get(aIdx), aReal);}
+                    @Override public void setImag_(int aIdx, double aImag) {AbstractComplexVector.this.setImag(aIndices.get(aIdx), aImag);}
+                    @Override public double getAndSetReal_(int aIdx, double aReal) {return AbstractComplexVector.this.getAndSetReal(aIndices.get(aIdx), aReal);}
+                    @Override public double getAndSetImag_(int aIdx, double aImag) {return AbstractComplexVector.this.getAndSetImag(aIndices.get(aIdx), aImag);}
                     @Override public int size() {return aIndices.size();}
                 };
             }
-            @Override protected IVector getA() {
-                return new RefVector() {
+            @Override protected IComplexVector getA() {
+                return new RefComplexVector() {
                     /** 对于全部切片，则不再需要二次边界检查 */
-                    @Override public double get_(int aIdx) {return AbstractComplexVector.this.get_(aIdx);}
-                    @Override public void set_(int aIdx, double aValue) {AbstractComplexVector.this.set_(aIdx, aValue);}
-                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractComplexVector.this.getAndSet_(aIdx, aValue);}
+                    @Override public double getReal_(int aIdx) {return AbstractComplexVector.this.getReal_(aIdx);}
+                    @Override public double getImag_(int aIdx) {return AbstractComplexVector.this.getImag_(aIdx);}
+                    @Override public void setReal_(int aIdx, double aReal) {AbstractComplexVector.this.setReal_(aIdx, aReal);}
+                    @Override public void setImag_(int aIdx, double aImag) {AbstractComplexVector.this.setImag_(aIdx, aImag);}
+                    @Override public double getAndSetReal_(int aIdx, double aReal) {return AbstractComplexVector.this.getAndSetReal_(aIdx, aReal);}
+                    @Override public double getAndSetImag_(int aIdx, double aImag) {return AbstractComplexVector.this.getAndSetImag_(aIdx, aImag);}
                     @Override public int size() {return AbstractComplexVector.this.size();}
                 };
             }
@@ -312,9 +345,9 @@ public abstract class AbstractComplexVector implements IComplexVector {
     
     /** 向量的运算器 */
     @Override public IComplexVectorOperation operation() {
-        return new AbstractVectorOperation() {
-            @Override protected IVector thisVector_() {return AbstractComplexVector.this;}
-            @Override protected IVector newVector_(int aSize) {return newZeros(aSize);}
+        return new AbstractComplexVectorOperation() {
+            @Override protected IComplexVector thisVector_() {return AbstractComplexVector.this;}
+            @Override protected IComplexVector newVector_(int aSize) {return newZeros(aSize);}
         };
     }
     

@@ -1,5 +1,6 @@
 package com.jtool.atom;
 
+import com.jtool.code.collection.NewCollections;
 import com.jtool.code.collection.Pair;
 import com.jtool.math.ComplexDouble;
 import com.jtool.math.function.FixBoundFunc1;
@@ -8,9 +9,7 @@ import com.jtool.math.function.IFunc1;
 import com.jtool.math.function.IZeroBoundFunc1;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
-import com.jtool.math.vector.ILogicalVector;
-import com.jtool.math.vector.IVector;
-import com.jtool.math.vector.Vectors;
+import com.jtool.math.vector.*;
 import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.ParforThreadPool;
 
@@ -517,13 +516,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Qlm 组成的矩阵，以及近邻列表
      */
-    public Pair<IMatrix, IMatrix> calYlmMean(final int aL, double aRNearest, int aNnn) {
+    public IComplexVector[] calYlmMean(final int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         
-        // 由于目前还没有实现复数运算，再搭一套复数库工作量较大，这里暂时使用两个实向量来存储，TODO 后续直接用复向量来存储
-        IMatrix QlmReal = RowMatrix.zeros(mAtomNum, aL+aL+1);
-        IMatrix QlmImag = RowMatrix.zeros(mAtomNum, aL+aL+1);
+        // 直接用复向量来存储
+        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
         // 统计近邻数用于求平均
         final IVector tNN = Vectors.zeros(mAtomNum);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
@@ -533,8 +532,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         for (int i = 0; i < mAtomNum; ++i) {
             final XYZ cXYZ = mAtomDataXYZ[i];
             // 一次计算一行
-            final IVector QlmiReal = QlmReal.row(i);
-            final IVector QlmiImag = QlmImag.row(i);
+            final IComplexVector Qlmi = Qlm[i];
             
             // 遍历近邻计算 Ylm
             final int fI = i;
@@ -548,31 +546,27 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0*PI - Fast.acos(dx / disXY));
                 
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                IVector QlmjReal = null, QlmjImag = null;
+                IComplexVector Qlmj = null;
                 if (aHalf) {
-                    QlmjReal = QlmReal.row(idx);
-                    QlmjImag = QlmImag.row(idx);
+                    Qlmj = Qlm[idx];
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
                 for (int tM = 0; tM <= aL; ++tM) {
                     int tCol = tM+aL;
                     ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
-                    QlmiReal.add_(tCol, tY.mReal);
-                    QlmiImag.add_(tCol, tY.mImag);
+                    Qlmi.add_(tCol, tY);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {
-                        QlmjReal.add_(tCol, tY.mReal);
-                        QlmjImag.add_(tCol, tY.mImag);
+                        Qlmj.add_(tCol, tY);
                     }
                     // m < 0 的部分直接利用对称性求
                     if (tM != 0) {
                         tCol = -tM+aL;
-                        QlmiReal.add_(tCol,  tY.mReal);
-                        QlmiImag.add_(tCol, -tY.mImag);
+                        tY = tY.conj();
+                        Qlmi.add_(tCol,  tY);
                         // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                         if (aHalf) {
-                            QlmjReal.add_(tCol,  tY.mReal);
-                            QlmjImag.add_(tCol, -tY.mImag);
+                            Qlmj.add_(tCol,  tY);
                         }
                     }
                 }
@@ -586,15 +580,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             });
         }
         // 根据近邻数平均得到 Qlm
-        for (int i = 0; i < mAtomNum; ++i) {
-            QlmReal.row(i).div2this(tNN.get_(i));
-            QlmImag.row(i).div2this(tNN.get_(i));
-        }
+        for (int i = 0; i < mAtomNum; ++i) Qlm[i].div2this(tNN.get_(i));
         
-        return new Pair<>(QlmReal, QlmImag);
+        return Qlm;
     }
-    public Pair<IMatrix, IMatrix> calYlmMean(int aL, double aRNearest) {return calYlmMean(aL, aRNearest, -1);}
-    public Pair<IMatrix, IMatrix> calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
+    public IComplexVector[] calYlmMean(int aL, double aRNearest) {return calYlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     /**
      * 在 Qlm 基础上再次对所有近邻做一次平均，即 qlm；
@@ -614,41 +605,34 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
      * @return qlm 组成的矩阵，以及近邻列表
      */
-    public Pair<IMatrix, IMatrix> calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+    public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         
-        Pair<IMatrix, IMatrix> Qlm = calYlmMean(aL, aRNearestY, aNnnY);
-        IMatrix QlmReal = Qlm.mFirst;
-        IMatrix QlmImag = Qlm.mSecond;
+        final IComplexVector[] Qlm = calYlmMean(aL, aRNearestY, aNnnY);
         // 统计近邻数用于求平均（增加一个自身）
         final IVector tNN = Vectors.ones(mAtomNum);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnQ<=0;
         
         // 直接全部平均一遍分两步算
-        IMatrix qlmReal = RowMatrix.zeros(mAtomNum, aL+aL+1);
-        IMatrix qlmImag = RowMatrix.zeros(mAtomNum, aL+aL+1);
+        final IComplexVector[] qlm = new IComplexVector[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
         for (int i = 0; i < mAtomNum; ++i) {
             // 一次计算一行
-            final IVector qlmiReal = qlmReal.row(i);
-            final IVector qlmiImag = qlmImag.row(i);
-            final IVector QlmiReal = QlmReal.row(i);
-            final IVector QlmiImag = QlmImag.row(i);
+            final IComplexVector qlmi = qlm[i];
+            final IComplexVector Qlmi = Qlm[i];
             
             // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
-            qlmiReal.fill(QlmiReal);
-            qlmiImag.fill(QlmiImag);
+            qlmi.fill(Qlmi);
             // 再累加近邻
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis) -> {
                 // 直接按行累加即可
-                qlmiReal.plus2this(QlmReal.row(idx));
-                qlmiImag.plus2this(QlmImag.row(idx));
+                qlmi.plus2this(Qlm[idx]);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
                 if (aHalf) {
-                    qlmReal.row(idx).plus2this(QlmiReal);
-                    qlmImag.row(idx).plus2this(QlmiImag);
+                    qlm[idx].plus2this(Qlmi);
                 }
                 
                 // 统计近邻数
@@ -660,16 +644,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             });
         }
         // 根据近邻数平均得到 qlm
-        for (int i = 0; i < mAtomNum; ++i) {
-            qlmReal.row(i).div2this(tNN.get_(i));
-            qlmImag.row(i).div2this(tNN.get_(i));
-        }
+        for (int i = 0; i < mAtomNum; ++i) qlm[i].div2this(tNN.get_(i));
         
-        return new Pair<>(qlmReal, qlmImag);
+        return qlm;
     }
-    public Pair<IMatrix, IMatrix> calQlmMean(int aL, double aRNearest, int aNnn) {return calQlmMean(aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public Pair<IMatrix, IMatrix> calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
-    public Pair<IMatrix, IMatrix> calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
+    public IComplexVector[] calQlmMean(int aL, double aRNearest, int aNnn) {return calQlmMean(aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /**
@@ -686,15 +667,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calBOOP(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> Qlm = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix QlmReal = Qlm.mFirst;
-        IMatrix QlmImag = Qlm.mSecond;
+        IComplexVector[] Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         // 直接求和
         IVector Ql = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            // 直接计算复向量的点乘，等于实部虚部分别点乘
-            double tDot = QlmReal.row(i).operation().dot() + QlmImag.row(i).operation().dot();
+            // 直接计算复向量的点乘
+            double tDot = Qlm[i].operation().dot();
             // 使用这个公式设置 Ql
             Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
@@ -720,14 +699,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calBOOP3(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> Qlm = calYlmMean(aL, aRNearest, aNnn);
-        IMatrix QlmReal = Qlm.mFirst;
-        IMatrix QlmImag = Qlm.mSecond;
+        IComplexVector[] Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         IVector Wl = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            // 分母为复向量的点乘，等于实部虚部分别点乘
-            double rDiv = QlmReal.row(i).operation().dot() + QlmImag.row(i).operation().dot();
+            IComplexVector Qlmi = Qlm[i];
+            // 分母为复向量的点乘
+            double rDiv = Qlmi.operation().dot();
             rDiv = Fast.sqrt(rDiv);
             rDiv = Fast.pow3(rDiv);
             // 分子需要这样计算，这里只保留实数（虚数部分为 0）
@@ -736,9 +714,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tM3 = -tM1-tM2;
                 if (tM3<=aL && tM3>=-aL) {
                     // 计算乘积，注意使用复数乘法
-                    ComplexDouble subMul = new ComplexDouble(QlmReal.get_(i, tM1+aL), QlmImag.get_(i, tM1+aL));
-                    subMul.multiply2this(QlmReal.get_(i, tM2+aL), QlmImag.get_(i, tM2+aL));
-                    subMul.multiply2this(QlmReal.get_(i, tM3+aL), QlmImag.get_(i, tM3+aL));
+                    ComplexDouble subMul = Qlmi.get_(tM1+aL);
+                    subMul.multiply2this(Qlmi.get_(tM2+aL));
+                    subMul.multiply2this(Qlmi.get_(tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
                     rMul += subMul.mReal;
@@ -774,15 +752,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
-        IMatrix qlmReal = qlm.mFirst;
-        IMatrix qlmImag = qlm.mSecond;
+        IComplexVector[] qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         
         // 直接求和
         IVector ql = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            // 直接计算复向量的点乘，等于实部虚部分别点乘
-            double tDot = qlmReal.row(i).operation().dot() + qlmImag.row(i).operation().dot();
+            // 直接计算复向量的点乘
+            double tDot = qlm[i].operation().dot();
             // 使用这个公式设置 ql
             ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
@@ -814,15 +790,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP3(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
-        IMatrix qlmReal = qlm.mFirst;
-        IMatrix qlmImag = qlm.mSecond;
+        IComplexVector[] qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         
         // 计算 wl，这里同样不去考虑减少重复代码
         IVector wl = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
+            IComplexVector qlmi = qlm[i];
             // 分母为复向量的点乘，等于实部虚部分别点乘
-            double rDiv = qlmReal.row(i).operation().dot() + qlmImag.row(i).operation().dot();
+            double rDiv = qlmi.operation().dot();
             rDiv = Fast.sqrt(rDiv);
             rDiv = Fast.pow3(rDiv);
             // 分子需要这样计算，这里只保留实数（虚数部分为 0）
@@ -831,9 +806,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tM3 = -tM1-tM2;
                 if (tM3<=aL && tM3>=-aL) {
                     // 计算乘积，注意使用复数乘法
-                    ComplexDouble subMul = new ComplexDouble(qlmReal.get_(i, tM1+aL), qlmImag.get_(i, tM1+aL));
-                    subMul.multiply2this(qlmReal.get_(i, tM2+aL), qlmImag.get_(i, tM2+aL));
-                    subMul.multiply2this(qlmReal.get_(i, tM3+aL), qlmImag.get_(i, tM3+aL));
+                    ComplexDouble subMul = qlmi.get_(tM1+aL);
+                    subMul.multiply2this(qlmi.get_(tM2+aL));
+                    subMul.multiply2this(qlmi.get_(tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
                     rMul += subMul.mReal;
@@ -876,9 +851,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> Qlm = calYlmMean(aL, aRNearestY, aNnnY);
-        IMatrix QlmReal = Qlm.mFirst;
-        IMatrix QlmImag = Qlm.mSecond;
+        final IComplexVector[] Qlm = calYlmMean(aL, aRNearestY, aNnnY);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
         
@@ -887,27 +860,20 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         // 注意需要先对 Qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
-            // 计算复向量的模量，等于实部虚部分别点乘相加后开方
-            double tMod = QlmReal.row(i).operation().dot() + QlmImag.row(i).operation().dot();
-            tMod = Fast.sqrt(tMod);
-            // 实部虚部都除以此值来归一化
-            QlmReal.row(i).div2this(tMod);
-            QlmImag.row(i).div2this(tMod);
+            Qlm[i].div2this(Qlm[i].operation().norm());
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
         for (int i = 0; i < mAtomNum; ++i) {
             // 统一获取行向量
-            final IVector QlmiReal = QlmReal.row(i);
-            final IVector QlmiImag = QlmImag.row(i);
+            final IComplexVector Qlmi = Qlm[i];
             // 遍历近邻计算连接数
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
                 // 统一获取行向量
-                IVector QlmjReal = QlmReal.row(idx);
-                IVector QlmjImag = QlmImag.row(idx);
+                IComplexVector Qlmj = Qlm[idx];
                 // 计算复向量的点乘
-                ComplexDouble Sij = new ComplexDouble(QlmiReal.operation().dot(QlmjReal) + QlmiImag.operation().dot(QlmjImag), QlmiImag.operation().dot(QlmjReal) - QlmiReal.operation().dot(QlmjImag));
+                ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                 // 取模量来判断是否连接
                 if (Sij.abs() > aConnectThreshold) {
                     tConnectCount.increment_(fI);
@@ -949,9 +915,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        Pair<IMatrix, IMatrix> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
-        IMatrix qlmReal = qlm.mFirst;
-        IMatrix qlmImag = qlm.mSecond;
+        final IComplexVector[] qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
         
@@ -960,27 +924,20 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         // 注意需要先对 qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
-            // 计算复向量的模量，等于实部虚部分别点乘相加后开方
-            double tMod = qlmReal.row(i).operation().dot() + qlmImag.row(i).operation().dot();
-            tMod = Fast.sqrt(tMod);
-            // 实部虚部都除以此值来归一化
-            qlmReal.row(i).div2this(tMod);
-            qlmImag.row(i).div2this(tMod);
+            qlm[i].div2this(qlm[i].operation().norm());
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
         for (int i = 0; i < mAtomNum; ++i) {
             // 统一获取行向量
-            final IVector qlmiReal = qlmReal.row(i);
-            final IVector qlmiImag = qlmImag.row(i);
+            final IComplexVector qlmi = qlm[i];
             // 遍历近邻计算连接数
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
                 // 统一获取行向量
-                IVector qlmjReal = qlmReal.row(idx);
-                IVector qlmjImag = qlmImag.row(idx);
+                IComplexVector qlmj = qlm[idx];
                 // 计算复向量的点乘
-                ComplexDouble Sij = new ComplexDouble(qlmiReal.operation().dot(qlmjReal) + qlmiImag.operation().dot(qlmjImag), qlmiImag.operation().dot(qlmjReal) - qlmiReal.operation().dot(qlmjImag));
+                ComplexDouble Sij = qlmi.operation().dot(qlmj);
                 // 取模量来判断是否连接
                 if (Sij.abs() > aConnectThreshold) {
                     tConnectCount.increment_(fI);

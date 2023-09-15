@@ -98,7 +98,7 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
     }
     /** Groovy stuffs */
     @Override public void assign        (Closure<?> aGroovyTask) {
-        if (aGroovyTask.getMaximumNumberOfParameters() != 0) throw new IllegalArgumentException("Parameters Number of assign in IHasComplexDoubleSetOnlyIterator Must be 0");
+        if (aGroovyTask.getMaximumNumberOfParameters() != 0) throw new IllegalArgumentException("Parameters Number of assign in ComplexVector Must be 0");
         final IComplexDoubleSetOnlyIterator si = thisVector_().setIterator();
         while (si.hasNext()) {
             // 直接先执行然后检测类型决定如何设置
@@ -112,7 +112,7 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
         switch (tN) {
         case 1: forEach(value -> aGroovyTask.call(value));
         case 2: forEach((real, imag) -> aGroovyTask.call(real, imag));
-        default: throw new IllegalArgumentException("Parameters Number of forEach in IHasComplexDoubleIterator Must be 1 or 2");
+        default: throw new IllegalArgumentException("Parameters Number of forEach in ComplexVector Must be 1 or 2");
         }
     }
     
@@ -188,9 +188,12 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
     @Override public IComplexVector refReverse() {
         return new RefComplexVector() {
             private final IComplexVector mThis = thisVector_();
-            @Override public double get_(int aIdx) {return mThis.get_(mThis.size()-1-aIdx);}
-            @Override public void set_(int aIdx, double aValue) {mThis.set_(mThis.size()-1-aIdx, aValue);}
-            @Override public double getAndSet_(int aIdx, double aValue) {return mThis.getAndSet_(mThis.size()-1-aIdx, aValue);}
+            @Override public double getReal_(int aIdx) {return mThis.getReal_(mThis.size()-1-aIdx);}
+            @Override public double getImag_(int aIdx) {return mThis.getImag_(mThis.size()-1-aIdx);}
+            @Override public void setReal_(int aIdx, double aReal) {mThis.setReal_(mThis.size()-1-aIdx, aReal);}
+            @Override public void setImag_(int aIdx, double aImag) {mThis.setImag_(mThis.size()-1-aIdx, aImag);}
+            @Override public double getAndSetReal_(int aIdx, double aReal) {return mThis.getAndSetReal_(mThis.size()-1-aIdx, aReal);}
+            @Override public double getAndSetImag_(int aIdx, double aImag) {return mThis.getAndSetImag_(mThis.size()-1-aIdx, aImag);}
             @Override public int size() {return mThis.size();}
         };
     }
