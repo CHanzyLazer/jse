@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 /**
  * @author liqa
- * <p> 向量的一般实现 </p>
+ * <p> 复向量的一般实现 </p>
  */
 public final class ComplexVector extends BiDoubleArrayVector {
     /** 提供默认的创建 */
@@ -90,94 +90,94 @@ public final class ComplexVector extends BiDoubleArrayVector {
     @Override public IVector imag() {return new Vector(mSize, mData[1]);}
     
     
-//    /** Optimize stuffs，重写加速遍历 */
-//    @Override public IComplexVectorOperation operation() {
-//        return new BiDoubleArrayVectorOperation_() {
-//            @Override public void fill(IComplexVectorGetter aRHS) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    IComplexDouble tValue = aRHS.get(i);
-//                    tRealData[i] = tValue.real();
-//                    tImagData[i] = tValue.imag();
-//                }
-//            }
-//            @Override public void fill(IVectorGetter aRHS) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    tRealData[i] = aRHS.get(i);
-//                    tImagData[i] = 0.0;
-//                }
-//            }
-//            @Override public void assign(Supplier<? extends IComplexDouble> aSup) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    IComplexDouble tValue = aSup.get();
-//                    tRealData[i] = tValue.real();
-//                    tImagData[i] = tValue.imag();
-//                }
-//            }
-//            @Override public void assign(IDoubleSupplier aSup) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    tRealData[i] = aSup.get();
-//                    tImagData[i] = 0.0;
-//                }
-//            }
-//            @Override public void forEach(IConsumer1<? super ComplexDouble> aCon) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    aCon.run(new ComplexDouble(tRealData[i], tImagData[i]));
-//                }
-//            }
-//            @Override public void forEach(IDoubleConsumer2 aCon) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    aCon.run(tRealData[i], tImagData[i]);
-//                }
-//            }
-//            /** Groovy stuffs */
-//            @Override public void fill(Closure<?> aGroovyTask) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    // 直接先执行然后检测类型决定如何设置
-//                    Object tObj = aGroovyTask.call(i);
-//                    if (tObj instanceof IComplexDouble) {
-//                        IComplexDouble tValue = (IComplexDouble)tObj;
-//                        tRealData[i] = tValue.real();
-//                        tImagData[i] = tValue.imag();
-//                    } else
-//                    if (tObj instanceof Number) {
-//                        tRealData[i] = ((Number)tObj).doubleValue();
-//                        tImagData[i] = 0.0;
-//                    }
-//                }
-//            }
-//            @Override public void assign(Closure<?> aGroovyTask) {
-//                final double[] tRealData = mData[0];
-//                final double[] tImagData = mData[1];
-//                for (int i = 0; i < mSize; ++i) {
-//                    // 直接先执行然后检测类型决定如何设置
-//                    Object tObj = aGroovyTask.call();
-//                    if (tObj instanceof IComplexDouble) {
-//                        IComplexDouble tValue = (IComplexDouble)tObj;
-//                        tRealData[i] = tValue.real();
-//                        tImagData[i] = tValue.imag();
-//                    } else
-//                    if (tObj instanceof Number) {
-//                        tRealData[i] = ((Number)tObj).doubleValue();
-//                        tImagData[i] = 0.0;
-//                    }
-//                }
-//            }
-//        };
-//    }
+    /** Optimize stuffs，重写加速遍历 */
+    @Override public IComplexVectorOperation operation() {
+        return new BiDoubleArrayVectorOperation_() {
+            @Override public void fill(IComplexVectorGetter aRHS) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    IComplexDouble tValue = aRHS.get(i);
+                    tRealData[i] = tValue.real();
+                    tImagData[i] = tValue.imag();
+                }
+            }
+            @Override public void fill(IVectorGetter aRHS) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    tRealData[i] = aRHS.get(i);
+                    tImagData[i] = 0.0;
+                }
+            }
+            @Override public void assign(Supplier<? extends IComplexDouble> aSup) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    IComplexDouble tValue = aSup.get();
+                    tRealData[i] = tValue.real();
+                    tImagData[i] = tValue.imag();
+                }
+            }
+            @Override public void assign(IDoubleSupplier aSup) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    tRealData[i] = aSup.get();
+                    tImagData[i] = 0.0;
+                }
+            }
+            @Override public void forEach(IConsumer1<? super ComplexDouble> aCon) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    aCon.run(new ComplexDouble(tRealData[i], tImagData[i]));
+                }
+            }
+            @Override public void forEach(IDoubleConsumer2 aCon) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    aCon.run(tRealData[i], tImagData[i]);
+                }
+            }
+            /** Groovy stuffs */
+            @Override public void fill(Closure<?> aGroovyTask) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    // 直接先执行然后检测类型决定如何设置
+                    Object tObj = aGroovyTask.call(i);
+                    if (tObj instanceof IComplexDouble) {
+                        IComplexDouble tValue = (IComplexDouble)tObj;
+                        tRealData[i] = tValue.real();
+                        tImagData[i] = tValue.imag();
+                    } else
+                    if (tObj instanceof Number) {
+                        tRealData[i] = ((Number)tObj).doubleValue();
+                        tImagData[i] = 0.0;
+                    }
+                }
+            }
+            @Override public void assign(Closure<?> aGroovyTask) {
+                final double[] tRealData = mData[0];
+                final double[] tImagData = mData[1];
+                for (int i = 0; i < mSize; ++i) {
+                    // 直接先执行然后检测类型决定如何设置
+                    Object tObj = aGroovyTask.call();
+                    if (tObj instanceof IComplexDouble) {
+                        IComplexDouble tValue = (IComplexDouble)tObj;
+                        tRealData[i] = tValue.real();
+                        tImagData[i] = tValue.imag();
+                    } else
+                    if (tObj instanceof Number) {
+                        tRealData[i] = ((Number)tObj).doubleValue();
+                        tImagData[i] = 0.0;
+                    }
+                }
+            }
+        };
+    }
     
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void add_(int aIdx, IComplexDouble aDelta) {

@@ -1,6 +1,10 @@
 package com.jtool.math.operation;
 
 import com.jtool.code.functional.*;
+import com.jtool.math.ComplexDouble;
+import com.jtool.math.IComplexDouble;
+
+import static com.jtool.code.UT.Code.toComplexDouble;
 
 
 /**
@@ -116,28 +120,6 @@ public class ARRAY {
             if (aThis[i]) ++rCount;
         }
         return rCount;
-    }
-    
-    public static void cumall2Dest(boolean[] aThis, int aShift, boolean[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        boolean rAll = true;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rAll &= aThis[i]; rDest[i] = rAll;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rAll &= aThis[j]; rDest[i] = rAll;}}
-    }
-    public static void cumany2Dest(boolean[] aThis, int aShift, boolean[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        boolean rAny = false;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rAny |= aThis[i]; rDest[i] = rAny;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rAny |= aThis[j]; rDest[i] = rAny;}}
-    }
-    public static void cumcount2Dest(boolean[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        double rCount = 0.0;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {if (aThis[i]) ++rCount; rDest[i] = rCount;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {if (aThis[j]) ++rCount; rDest[i] = rCount;}}
     }
     
     
@@ -288,9 +270,428 @@ public class ARRAY {
     public static void mapMod2This      (double[] rThis, int rShift, double aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] %= aRHS          ;}
     public static void mapLMod2This     (double[] rThis, int rShift, double aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS % rThis[i];}
     
+    public static void negative2Dest(double[] aData, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShift) for (int i = rShift; i < rEnd; ++i) rDest[i] = -aData[i];
+        else for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) rDest[i] = -aData[j];
+    }
+    public static void negative2This(double[] rThis, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = -rThis[i];
+    }
+    
+    
+    /** complex double stuffs */
+    public static void ebePlus2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength) {
+        ebePlus2Dest(aDataL[0], aShiftL, aDataR[0], aShiftR, rDest[0], rShift, aLength);
+        ebePlus2Dest(aDataL[1], aShiftL, aDataR[1], aShiftR, rDest[1], rShift, aLength);
+    }
+    public static void ebeMinus2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength) {
+        ebeMinus2Dest(aDataL[0], aShiftL, aDataR[0], aShiftR, rDest[0], rShift, aLength);
+        ebeMinus2Dest(aDataL[1], aShiftL, aDataR[1], aShiftR, rDest[1], rShift, aLength);
+    }
+    public static void ebeMultiply2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) {
+                for (int i = rShift; i < rEnd; ++i) {
+                    final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                    final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                    rRealDest[i] = lReal*rReal - lImag*rImag;
+                    rImagDest[i] = lImag*rReal + lReal*rImag;
+                }
+            } else {
+                for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
+                    final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                    final double rReal = tRealDataR[k], rImag = tImagDataR[k];
+                    rRealDest[i] = lReal*rReal - lImag*rImag;
+                    rImagDest[i] = lImag*rReal + lReal*rImag;
+                }
+            }
+        } else {
+            if (rShift == aShiftR) {
+                for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                    final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                    final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                    rRealDest[i] = lReal*rReal - lImag*rImag;
+                    rImagDest[i] = lImag*rReal + lReal*rImag;
+                }
+            } else {
+                for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
+                    final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                    final double rReal = tRealDataR[k], rImag = tImagDataR[k];
+                    rRealDest[i] = lReal*rReal - lImag*rImag;
+                    rImagDest[i] = lImag*rReal + lReal*rImag;
+                }
+            }
+        }
+    }
+    public static void ebeDiv2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) {
+                for (int i = rShift; i < rEnd; ++i) {
+                    final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                    final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                    final double div = rReal*rReal + rImag*rImag;
+                    rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                    rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+                }
+            } else {
+                for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
+                    final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                    final double rReal = tRealDataR[k], rImag = tImagDataR[k];
+                    final double div = rReal*rReal + rImag*rImag;
+                    rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                    rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+                }
+            }
+        } else {
+            if (rShift == aShiftR) {
+                for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                    final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                    final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                    final double div = rReal*rReal + rImag*rImag;
+                    rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                    rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+                }
+            } else {
+                for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
+                    final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                    final double rReal = tRealDataR[k], rImag = tImagDataR[k];
+                    final double div = rReal*rReal + rImag*rImag;
+                    rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                    rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+                }
+            }
+        }
+    }
+    
+    
+    public static void mapPlus2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        mapPlus2Dest(aDataL[0], aShiftL, aRHS.real(), rDest[0], rShift, aLength);
+        mapPlus2Dest(aDataL[1], aShiftL, aRHS.imag(), rDest[1], rShift, aLength);
+    }
+    public static void mapMinus2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        mapMinus2Dest(aDataL[0], aShiftL, aRHS.real(), rDest[0], rShift, aLength);
+        mapMinus2Dest(aDataL[1], aShiftL, aRHS.imag(), rDest[1], rShift, aLength);
+    }
+    public static void mapLMinus2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        mapLMinus2Dest(aDataL[0], aShiftL, aRHS.real(), rDest[0], rShift, aLength);
+        mapLMinus2Dest(aDataL[1], aShiftL, aRHS.imag(), rDest[1], rShift, aLength);
+    }
+    public static void mapMultiply2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double   rReal =    aRHS.real(), rImag    = aRHS.imag();
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                rRealDest[i] = lReal*rReal - lImag*rImag;
+                rImagDest[i] = lImag*rReal + lReal*rImag;
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                rRealDest[i] = lReal*rReal - lImag*rImag;
+                rImagDest[i] = lImag*rReal + lReal*rImag;
+            }
+        }
+    }
+    public static void mapDiv2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double   rReal =    aRHS.real(), rImag    = aRHS.imag();
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final double div = rReal*rReal + rImag*rImag;
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                rRealDest[i] = (lReal*rReal + lImag*rImag)/div;
+                rImagDest[i] = (lImag*rReal - lReal*rImag)/div;
+            }
+        }
+    }
+    public static void mapLDiv2Dest(double[][] aDataL, int aShiftL, IComplexDouble aRHS, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double   rReal =    aRHS.real(), rImag    = aRHS.imag();
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealDest[i] = (rReal*lReal + rImag*lImag)/div;
+                rImagDest[i] = (rImag*lReal - rReal*lImag)/div;
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealDest[i] = (rReal*lReal + rImag*lImag)/div;
+                rImagDest[i] = (rImag*lReal - rReal*lImag)/div;
+            }
+        }
+    }
+    public static void mapPlus2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        mapPlus2Dest(aDataL[0], aShiftL, aRHS, rDest[0], rShift, aLength);
+        ebeFill2This(rDest[1], rShift, aDataL[1], aShiftL, aLength);
+    }
+    public static void mapMinus2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        mapMinus2Dest(aDataL[0], aShiftL, aRHS, rDest[0], rShift, aLength);
+        ebeFill2This(rDest[1], rShift, aDataL[1], aShiftL, aLength);
+    }
+    public static void mapLMinus2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        mapLMinus2Dest(aDataL[0], aShiftL, aRHS, rDest[0], rShift, aLength);
+        negative2Dest(aDataL[1], aShiftL, rDest[0], rShift, aLength);
+    }
+    public static void mapMultiply2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        mapMultiply2Dest(aDataL[0], aShiftL, aRHS, rDest[0], rShift, aLength);
+        mapMultiply2Dest(aDataL[1], aShiftL, aRHS, rDest[1], rShift, aLength);
+    }
+    public static void mapDiv2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        mapDiv2Dest(aDataL[0], aShiftL, aRHS, rDest[0], rShift, aLength);
+        mapDiv2Dest(aDataL[1], aShiftL, aRHS, rDest[1], rShift, aLength);
+    }
+    public static void mapLDiv2Dest(double[][] aDataL, int aShiftL, double aRHS, double[][] rDest, int rShift, int aLength) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = tRealDataL[i], lImag = tImagDataL[i];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealDest[i] = (aRHS*lReal)/div;
+                rImagDest[i] = (-aRHS*lImag)/div;
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                final double lReal = tRealDataL[j], lImag = tImagDataL[j];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealDest[i] = (aRHS*lReal)/div;
+                rImagDest[i] = (-aRHS*lImag)/div;
+            }
+        }
+    }
+    
+    
+    public static void ebePlus2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        ebePlus2This(rThis[0], rShift, aDataR[0], aShiftR, aLength);
+        ebePlus2This(rThis[1], rShift, aDataR[1], aShiftR, aLength);
+    }
+    public static void ebeMinus2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        ebeMinus2This(rThis[0], rShift, aDataR[0], aShiftR, aLength);
+        ebeMinus2This(rThis[1], rShift, aDataR[1], aShiftR, aLength);
+    }
+    public static void ebeLMinus2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        ebeLMinus2This(rThis[0], rShift, aDataR[0], aShiftR, aLength);
+        ebeLMinus2This(rThis[1], rShift, aDataR[1], aShiftR, aLength);
+    }
+    public static void ebeMultiply2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                rRealThis[i] = lReal*rReal - lImag*rImag;
+                rImagThis[i] = lImag*rReal + lReal*rImag;
+            }
+        } else {
+            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[j], rImag = tImagDataR[j];
+                rRealThis[i] = lReal*rReal - lImag*rImag;
+                rImagThis[i] = lImag*rReal + lReal*rImag;
+            }
+        }
+    }
+    public static void ebeDiv2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                final double div = rReal*rReal + rImag*rImag;
+                rRealThis[i] = (lReal*rReal + lImag*rImag)/div;
+                rImagThis[i] = (lImag*rReal - lReal*rImag)/div;
+            }
+        } else {
+            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[j], rImag = tImagDataR[j];
+                final double div = rReal*rReal + rImag*rImag;
+                rRealThis[i] = (lReal*rReal + lImag*rImag)/div;
+                rImagThis[i] = (lImag*rReal - lReal*rImag)/div;
+            }
+        }
+    }
+    public static void ebeLDiv2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) {
+            for (int i = rShift; i < rEnd; ++i) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[i], rImag = tImagDataR[i];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealThis[i] = (rReal*lReal + rImag*lImag)/div;
+                rImagThis[i] = (rImag*lReal - rReal*lImag)/div;
+            }
+        } else {
+            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
+                final double lReal = rRealThis [i], lImag = rImagThis [i];
+                final double rReal = tRealDataR[j], rImag = tImagDataR[j];
+                final double div = lReal*lReal + lImag*lImag;
+                rRealThis[i] = (rReal*lReal + rImag*lImag)/div;
+                rImagThis[i] = (rImag*lReal - rReal*lImag)/div;
+            }
+        }
+    }
+    
+    
+    public static void mapPlus2This     (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {mapPlus2This    (rThis[0], rShift, aRHS.real(), aLength); mapPlus2This    (rThis[1], rShift, aRHS.imag(), aLength);}
+    public static void mapMinus2This    (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {mapMinus2This   (rThis[0], rShift, aRHS.real(), aLength); mapMinus2This   (rThis[1], rShift, aRHS.imag(), aLength);}
+    public static void mapLMinus2This   (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {mapLMinus2This  (rThis[0], rShift, aRHS.real(), aLength); mapLMinus2This  (rThis[1], rShift, aRHS.imag(), aLength);}
+    public static void mapMultiply2This (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final double   rReal  = aRHS.real(), rImag  = aRHS.imag();
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            final double lReal = rRealThis[i], lImag = rImagThis[i];
+            rRealThis[i] = lReal*rReal - lImag*rImag;
+            rImagThis[i] = lImag*rReal + lReal*rImag;
+        }
+    }
+    public static void mapDiv2This      (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final double   rReal  = aRHS.real(), rImag  = aRHS.imag();
+        final double div = rReal*rReal + rImag*rImag;
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            final double lReal = rRealThis[i], lImag = rImagThis[i];
+            rRealThis[i] = (lReal*rReal + lImag*rImag)/div;
+            rImagThis[i] = (lImag*rReal - lReal*rImag)/div;
+        }
+    }
+    public static void mapLDiv2This     (double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final double   rReal  = aRHS.real(), rImag  = aRHS.imag();
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            final double lReal = rRealThis[i], lImag = rImagThis[i];
+            final double div = lReal*lReal + lImag*lImag;
+            rRealThis[i] = (rReal*lReal + rImag*lImag)/div;
+            rImagThis[i] = (rImag*lReal - rReal*lImag)/div;
+        }
+    }
+    public static void mapPlus2This     (double[][] rThis, int rShift, double aRHS, int aLength) {mapPlus2This    (rThis[0], rShift, aRHS, aLength);}
+    public static void mapMinus2This    (double[][] rThis, int rShift, double aRHS, int aLength) {mapMinus2This   (rThis[0], rShift, aRHS, aLength);}
+    public static void mapLMinus2This   (double[][] rThis, int rShift, double aRHS, int aLength) {mapLMinus2This  (rThis[0], rShift, aRHS, aLength); negative2This   (rThis[1], rShift,       aLength);}
+    public static void mapMultiply2This (double[][] rThis, int rShift, double aRHS, int aLength) {mapMultiply2This(rThis[0], rShift, aRHS, aLength); mapMultiply2This(rThis[1], rShift, aRHS, aLength);}
+    public static void mapDiv2This      (double[][] rThis, int rShift, double aRHS, int aLength) {mapDiv2This     (rThis[0], rShift, aRHS, aLength); mapDiv2This     (rThis[1], rShift, aRHS, aLength);}
+    public static void mapLDiv2This     (double[][] rThis, int rShift, double aRHS, int aLength) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            final double lReal = rRealThis[i], lImag = rImagThis[i];
+            final double div = lReal*lReal + lImag*lImag;
+            rRealThis[i] = (aRHS*lReal)/div;
+            rImagThis[i] = (-aRHS*lImag)/div;
+        }
+    }
+    
     
     
     /** do stuff */
+    public static void ebeDo2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) {
+                for (int i = rShift; i < rEnd; ++i) {
+                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            } else {
+                for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
+                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            }
+        } else {
+            if (rShift == aShiftR) {
+                for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            } else {
+                for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
+                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            }
+        }
+    }
+    public static void mapDo2Dest(double[][] aDataL, int aShiftL, double[][] rDest, int rShift, int aLength, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]));
+                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]));
+                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+            }
+        }
+    }
+    public static void ebeDo2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) {
+            for (int i = rShift; i < rEnd; ++i) {
+                IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+            }
+        } else {
+            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
+                IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[j], tImagDataR[j]));
+                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+            }
+        }
+    }
+    public static void mapDo2This(double[][] rThis, int rShift, int aLength, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]));
+            rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+        }
+    }
+    
     public static void ebeDo2Dest(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, double[] rDest, int rShift, int aLength, IDoubleOperator2 aOpt) {
         final int rEnd = aLength + rShift;
         if (rShift == aShiftL) {
@@ -342,6 +743,19 @@ public class ARRAY {
     }
     
     
+    public static void mapFill2This(double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {
+        mapFill2This(rThis[0], rShift, aRHS.real(), aLength);
+        mapFill2This(rThis[1], rShift, aRHS.imag(), aLength);
+    }
+    public static void mapFill2This(double[][] rThis, int rShift, double aRHS, int aLength) {
+        mapFill2This(rThis[0], rShift, aRHS, aLength);
+        mapFill2This(rThis[1], rShift, 0.0, aLength);
+    }
+    public static void ebeFill2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength) {
+        ebeFill2This(rThis[0], rShift, aDataR[0], aShiftR, aLength);
+        ebeFill2This(rThis[1], rShift, aDataR[1], aShiftR, aLength);
+    }
+    
     public static void mapFill2This(double[] rThis, int rShift, double aRHS, int aLength) {
         final int rEnd = aLength + rShift;
         for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS; // 注意在指定区域外不能填充，因此不能使用 Arrays.fill
@@ -367,6 +781,17 @@ public class ARRAY {
         for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
         return rSum;
     }
+    public static ComplexDouble sumOfThis(double[][] aThis, int aShift, int aLength) {
+        final double[] tRealThis = aThis[0], tImagThis = aThis[1];
+        final int tEnd = aLength + aShift;
+        
+        ComplexDouble rSum = new ComplexDouble();
+        for (int i = aShift; i < tEnd; ++i) {
+            rSum.mReal += tRealThis[i];
+            rSum.mImag += tImagThis[i];
+        }
+        return rSum;
+    }
     public static double meanOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
@@ -374,11 +799,36 @@ public class ARRAY {
         for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
         return rSum / (double)aLength;
     }
+    public static ComplexDouble meanOfThis(double[][] aThis, int aShift, int aLength) {
+        final double[] tRealThis = aThis[0], tImagThis = aThis[1];
+        final int tEnd = aLength + aShift;
+        
+        ComplexDouble rMean = new ComplexDouble();
+        for (int i = aShift; i < tEnd; ++i) {
+            rMean.mReal += tRealThis[i];
+            rMean.mImag += tImagThis[i];
+        }
+        rMean.div2this(aLength);
+        return rMean;
+    }
     public static double prodOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
         double rProd = 1.0;
         for (int i = aShift; i < tEnd; ++i) rProd *= aThis[i];
+        return rProd;
+    }
+    public static ComplexDouble prodOfThis(double[][] aThis, int aShift, int aLength) {
+        final double[] tRealThis = aThis[0], tImagThis = aThis[1];
+        final int tEnd = aLength + aShift;
+        
+        ComplexDouble rProd = new ComplexDouble(1.0);
+        for (int i = aShift; i < tEnd; ++i) {
+            final double lReal = rProd.mReal,  lImag = rProd.mImag;
+            final double rReal = tRealThis[i], rImag = tImagThis[i];
+            rProd.mReal = lReal*rReal - lImag*rImag;
+            rProd.mImag = lImag*rReal + lReal*rImag;
+        }
         return rProd;
     }
     public static double maxOfThis(double[] aThis, int aShift, int aLength) {
@@ -408,48 +858,12 @@ public class ARRAY {
         for (int i = aShift; i < tEnd; ++i) rStat = aOpt.cal(rStat, aThis[i]);
         return rStat;
     }
-    
-    public static void cumsum2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
+    public static ComplexDouble statOfThis(double[][] aThis, int aShift, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] tRealThis = aThis[0], tImagThis = aThis[1];
+        final int tEnd = aLength + aShift;
         
-        double rSum = 0.0;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rSum += aThis[i]; rDest[i] = rSum;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rSum += aThis[j]; rDest[i] = rSum;}}
-    }
-    public static void cummean2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        double rSum = 0.0;
-        double tNum = 0.0;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rSum += aThis[i]; ++tNum; rDest[i] = rSum/tNum;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rSum += aThis[j]; ++tNum; rDest[i] = rSum/tNum;}}
-    }
-    public static void cumprod2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        double rProd= 1.0;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rProd *= aThis[i]; rDest[i] = rProd;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rProd *= aThis[j]; rDest[i] = rProd;}}
-    }
-    public static void cummax2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        double rMax = Double.NaN;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {double tValue = aThis[i]; if (Double.isNaN(rMax) || tValue>rMax) rMax = tValue; rDest[i] = rMax;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {double tValue = aThis[j]; if (Double.isNaN(rMax) || tValue>rMax) rMax = tValue; rDest[i] = rMax;}}
-    }
-    public static void cummin2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength) {
-        final int rEnd = aLength + rShift;
-        
-        double rMin = Double.NaN;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {double tValue = aThis[i]; if (Double.isNaN(rMin) || tValue<rMin) rMin = tValue; rDest[i] = rMin;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {double tValue = aThis[j]; if (Double.isNaN(rMin) || tValue<rMin) rMin = tValue; rDest[i] = rMin;}}
-    }
-    public static void cumstat2Dest(double[] aThis, int aShift, double[] rDest, int rShift, int aLength, IDoubleOperator2 aOpt) {
-        final int rEnd = aLength + rShift;
-        
-        double rStat = Double.NaN;
-        if (rShift == aShift) {for (int i = rShift; i < rEnd; ++i) {rStat = aOpt.cal(rStat, aThis[i]); rDest[i] = rStat;}}
-        else {for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) {rStat = aOpt.cal(rStat, aThis[j]); rDest[i] = rStat;}}
+        ComplexDouble rStat = null;
+        for (int i = aShift; i < tEnd; ++i) rStat = toComplexDouble(aOpt.cal(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
+        return rStat;
     }
 }

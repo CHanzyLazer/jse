@@ -134,23 +134,6 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     @Override public boolean        any     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.anyOfThis  (tThis.getData(), tThis.shiftSize(), tThis.dataSize());}
     @Override public int            count   () {BooleanArrayVector tThis = thisVector_(); return ARRAY.countOfThis(tThis.getData(), tThis.shiftSize(), tThis.dataSize());}
     
-    @Override public ILogicalVector cumall() {
-        BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
-        boolean[] rDest = tThis.getIfHasSameOrderData(rVector);
-        if (rDest != null) ARRAY.cumall2Dest(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
-        else DATA.cumall2Dest(tThis, rVector);
-        return rVector;
-    }
-    @Override public ILogicalVector cumany() {
-        BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
-        boolean[] rDest = tThis.getIfHasSameOrderData(rVector);
-        if (rDest != null) ARRAY.cumany2Dest(tThis.getData(), tThis.shiftSize(), rDest, rVector.shiftSize(), tThis.dataSize());
-        else DATA.cumany2Dest(tThis, rVector);
-        return rVector;
-    }
-    
     
     /** stuff to override */
     @Override protected abstract BooleanArrayVector thisVector_();

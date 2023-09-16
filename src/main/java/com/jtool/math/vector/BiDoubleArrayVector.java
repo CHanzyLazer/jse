@@ -17,13 +17,13 @@ public abstract class BiDoubleArrayVector extends AbstractComplexVector implemen
     @Override public int dataSize() {return size();}
     
     
-//    protected class BiDoubleArrayVectorOperation_ extends BiDoubleArrayVectorOperation {
-//        @Override protected BiDoubleArrayVector thisVector_() {return BiDoubleArrayVector.this;}
-//        @Override protected BiDoubleArrayVector newVector_(int aSize) {return newZeros(aSize);}
-//    }
-//
-//    /** 向量运算实现 */
-//    @Override public IVectorOperation operation() {return new DoubleArrayVectorOperation_();}
+    protected class BiDoubleArrayVectorOperation_ extends BiDoubleArrayVectorOperation {
+        @Override protected BiDoubleArrayVector thisVector_() {return BiDoubleArrayVector.this;}
+        @Override protected BiDoubleArrayVector newVector_(int aSize) {return newZeros(aSize);}
+    }
+
+    /** 向量运算实现 */
+    @Override public IComplexVectorOperation operation() {return new BiDoubleArrayVectorOperation_();}
     
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
     @Override public void fill(double[] aData) {
