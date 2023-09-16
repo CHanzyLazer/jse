@@ -65,10 +65,17 @@ public final class ComplexVector extends BiDoubleArrayVector {
     public ComplexVector(double[][] aData) {this(aData[0].length, aData);}
     
     /** IComplexVector stuffs */
+    @Override public ComplexDouble get_(int aIdx) {return new ComplexDouble(mData[0][aIdx], mData[1][aIdx]);}
     @Override public double getReal_(int aIdx) {return mData[0][aIdx];}
     @Override public double getImag_(int aIdx) {return mData[1][aIdx];}
+    @Override public void set_(int aIdx, IComplexDouble aValue) {mData[0][aIdx] = aValue.real(); mData[1][aIdx] = aValue.imag();}
+    @Override public void set_(int aIdx, ComplexDouble aValue) {mData[0][aIdx] = aValue.mReal; mData[1][aIdx] = aValue.mImag;}
+    @Override public void set_(int aIdx, double aValue) {mData[0][aIdx] = aValue; mData[1][aIdx] = 0.0;}
     @Override public void setReal_(int aIdx, double aReal) {mData[0][aIdx] = aReal;}
     @Override public void setImag_(int aIdx, double aImag) {mData[1][aIdx] = aImag;}
+    public ComplexDouble getAndSet_(int aIdx, IComplexDouble aValue) {ComplexDouble oValue = new ComplexDouble(mData[0][aIdx], mData[1][aIdx]); mData[0][aIdx] = aValue.real(); mData[1][aIdx] = aValue.imag(); return oValue;}
+    public ComplexDouble getAndSet_(int aIdx, ComplexDouble aValue) {ComplexDouble oValue = new ComplexDouble(mData[0][aIdx], mData[1][aIdx]); mData[0][aIdx] = aValue.mReal; mData[1][aIdx] = aValue.mImag; return oValue;}
+    public ComplexDouble getAndSet_(int aIdx, double aValue) {ComplexDouble oValue = new ComplexDouble(mData[0][aIdx], mData[1][aIdx]); mData[0][aIdx] = aValue; mData[1][aIdx] = 0.0; return oValue;}
     @Override public double getAndSetReal_(int aIdx, double aReal) {double oReal = mData[0][aIdx]; mData[0][aIdx] = aReal; return oReal;}
     @Override public double getAndSetImag_(int aIdx, double aImag) {double oImag = mData[1][aIdx]; mData[1][aIdx] = aImag; return oImag;}
     @Override public int size() {return mSize;}
@@ -184,6 +191,10 @@ public final class ComplexVector extends BiDoubleArrayVector {
         mData[0][aIdx] += aDelta.real();
         mData[1][aIdx] += aDelta.imag();
     }
+    @Override public void add_(int aIdx, ComplexDouble aDelta) {
+        mData[0][aIdx] += aDelta.mReal;
+        mData[1][aIdx] += aDelta.mImag;
+    }
     @Override public void add_(int aIdx, double aDelta) {mData[0][aIdx] += aDelta;}
     @Override public void addImag_(int aIdx, double aImag) {mData[1][aIdx] += aImag;}
     @Override public void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
@@ -285,6 +296,11 @@ public final class ComplexVector extends BiDoubleArrayVector {
                 mData[0][oIdx] = aValue.real();
                 mData[1][oIdx] = aValue.imag();
             }
+            @Override public void set(ComplexDouble aValue) {
+                if (oIdx < 0) throw new IllegalStateException();
+                mData[0][oIdx] = aValue.mReal;
+                mData[1][oIdx] = aValue.mImag;
+            }
             @Override public void set(double aValue) {
                 if (oIdx < 0) throw new IllegalStateException();
                 mData[0][oIdx] = aValue;
@@ -298,6 +314,16 @@ public final class ComplexVector extends BiDoubleArrayVector {
                     ++mIdx;
                     mData[0][oIdx] = aValue.real();
                     mData[1][oIdx] = aValue.imag();
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+            @Override public void nextAndSet(ComplexDouble aValue) {
+                if (hasNext()) {
+                    oIdx = mIdx;
+                    ++mIdx;
+                    mData[0][oIdx] = aValue.mReal;
+                    mData[1][oIdx] = aValue.mImag;
                 } else {
                     throw new NoSuchElementException();
                 }

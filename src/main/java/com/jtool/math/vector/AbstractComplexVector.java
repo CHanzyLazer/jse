@@ -8,6 +8,7 @@ import com.jtool.code.iterator.*;
 import com.jtool.math.ComplexDouble;
 import com.jtool.math.IComplexDouble;
 import groovy.lang.Closure;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
@@ -92,6 +93,10 @@ public abstract class AbstractComplexVector implements IComplexVector {
                 if (oIdx < 0) throw new IllegalStateException();
                 set_(oIdx, aValue);
             }
+            @Override public void set(ComplexDouble aValue) {
+                if (oIdx < 0) throw new IllegalStateException();
+                set_(oIdx, aValue);
+            }
             @Override public void set(double aValue) {
                 if (oIdx < 0) throw new IllegalStateException();
                 set_(oIdx, aValue);
@@ -106,7 +111,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
             @Override public ComplexDouble get(int index) {return AbstractComplexVector.this.get(index);}
             @Override public ComplexDouble set(int index, ComplexDouble element) {return getAndSet(index, element);}
             @Override public int size() {return AbstractComplexVector.this.size();}
-            @Override public Iterator<ComplexDouble> iterator() {return AbstractComplexVector.this.iterator().toIterator();}
+            @Override public @NotNull Iterator<ComplexDouble> iterator() {return AbstractComplexVector.this.iterator().toIterator();}
         };
     }
     
@@ -209,6 +214,10 @@ public abstract class AbstractComplexVector implements IComplexVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         set_(aIdx, aValue);
     }
+    @Override public void set(int aIdx, ComplexDouble aValue) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        set_(aIdx, aValue);
+    }
     @Override public void set(int aIdx, double aValue) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         set_(aIdx, aValue);
@@ -222,6 +231,10 @@ public abstract class AbstractComplexVector implements IComplexVector {
         setImag_(aIdx, aImag);
     }
     @Override public ComplexDouble getAndSet(int aIdx, IComplexDouble aValue) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        return getAndSet_(aIdx, aValue);
+    }
+    @Override public ComplexDouble getAndSet(int aIdx, ComplexDouble aValue) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndSet_(aIdx, aValue);
     }
@@ -239,6 +252,11 @@ public abstract class AbstractComplexVector implements IComplexVector {
     }
     
     @Override public void add_(int aIdx, IComplexDouble aDelta) {
+        ComplexDouble tValue = get_(aIdx);
+        tValue.plus2this(aDelta);
+        set_(aIdx, tValue);
+    }
+    @Override public void add_(int aIdx, ComplexDouble aDelta) {
         ComplexDouble tValue = get_(aIdx);
         tValue.plus2this(aDelta);
         set_(aIdx, tValue);
@@ -273,6 +291,10 @@ public abstract class AbstractComplexVector implements IComplexVector {
     }
     
     @Override public void add(int aIdx, IComplexDouble aDelta) {
+        if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+        add_(aIdx, aDelta);
+    }
+    @Override public void add(int aIdx, ComplexDouble aDelta) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         add_(aIdx, aDelta);
     }
@@ -417,16 +439,19 @@ public abstract class AbstractComplexVector implements IComplexVector {
     @VisibleForTesting @Override public IComplexVector getAt(IIndexFilter  aIndices) {return slicer().get(aIndices);}
     
     @VisibleForTesting @Override public void putAt(List<Integer> aIndices, IComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, ComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(List<Integer> aIndices, double aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(List<Integer> aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
     @VisibleForTesting @Override public void putAt(List<Integer> aIndices, IComplexVector aVector) {refSlicer().get(aIndices).fill(aVector);}
     @VisibleForTesting @Override public void putAt(List<Integer> aIndices, IVector aVector) {refSlicer().get(aIndices).fill(aVector);}
     @VisibleForTesting @Override public void putAt(SliceType     aIndices, IComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, ComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(SliceType     aIndices, double aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(SliceType     aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
     @VisibleForTesting @Override public void putAt(SliceType     aIndices, IComplexVector aVector) {refSlicer().get(aIndices).fill(aVector);}
     @VisibleForTesting @Override public void putAt(SliceType     aIndices, IVector aVector) {refSlicer().get(aIndices).fill(aVector);}
     @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, IComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, ComplexDouble aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, double aValue) {refSlicer().get(aIndices).fill(aValue);}
     @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
     @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, IComplexVector aVector) {refSlicer().get(aIndices).fill(aVector);}
@@ -435,6 +460,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
     /** 对于 groovy 的单个数的方括号索引（python like），提供负数索引支持，注意对于数组索引不提供这个支持 */
     @VisibleForTesting @Override public ComplexDouble getAt(int aIdx) {return get((aIdx < 0) ? (size()+aIdx) : aIdx);}
     @VisibleForTesting @Override public void putAt(int aIdx, IComplexDouble aValue) {set((aIdx < 0) ? (size()+aIdx) : aIdx, aValue);}
+    @VisibleForTesting @Override public void putAt(int aIdx, ComplexDouble aValue) {set((aIdx < 0) ? (size()+aIdx) : aIdx, aValue);}
     @VisibleForTesting @Override public void putAt(int aIdx, double aValue) {set((aIdx < 0) ? (size()+aIdx) : aIdx, aValue);}
     
     
@@ -443,10 +469,12 @@ public abstract class AbstractComplexVector implements IComplexVector {
     public abstract double getReal_(int aIdx);
     public abstract double getImag_(int aIdx);
     public void set_(int aIdx, IComplexDouble aValue) {setReal_(aIdx, aValue.real()); setImag_(aIdx, aValue.imag());}
+    public void set_(int aIdx, ComplexDouble aValue) {setReal_(aIdx, aValue.mReal); setImag_(aIdx, aValue.mImag);}
     public void set_(int aIdx, double aValue) {setReal_(aIdx, aValue); setImag_(aIdx, 0.0);}
     public abstract void setReal_(int aIdx, double aReal);
     public abstract void setImag_(int aIdx, double aImag);
     public ComplexDouble getAndSet_(int aIdx, IComplexDouble aValue) {return new ComplexDouble(getAndSetReal_(aIdx, aValue.real()), getAndSetImag_(aIdx, aValue.imag()));}
+    public ComplexDouble getAndSet_(int aIdx, ComplexDouble aValue) {return new ComplexDouble(getAndSetReal_(aIdx, aValue.mReal), getAndSetImag_(aIdx, aValue.mImag));}
     public ComplexDouble getAndSet_(int aIdx, double aValue) {return new ComplexDouble(getAndSetReal_(aIdx, aValue), getAndSetImag_(aIdx, 0.0));}
     public abstract double getAndSetReal_(int aIdx, double aReal);
     public abstract double getAndSetImag_(int aIdx, double aImag);

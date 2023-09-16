@@ -5,6 +5,7 @@ import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.code.filter.IIndexFilter;
 import com.jtool.code.functional.*;
 import com.jtool.code.iterator.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
@@ -77,7 +78,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
             @Override public Boolean get(int index) {return AbstractLogicalVector.this.get(index);}
             @Override public Boolean set(int index, Boolean element) {return getAndSet(index, element);}
             @Override public int size() {return AbstractLogicalVector.this.size();}
-            @Override public Iterator<Boolean> iterator() {return AbstractLogicalVector.this.iterator().toIterator();}
+            @Override public @NotNull Iterator<Boolean> iterator() {return AbstractLogicalVector.this.iterator().toIterator();}
         };
     }
     

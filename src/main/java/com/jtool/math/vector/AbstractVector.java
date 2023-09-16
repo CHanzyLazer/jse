@@ -8,6 +8,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
@@ -80,7 +81,7 @@ public abstract class AbstractVector implements IVector {
             @Override public Double get(int index) {return AbstractVector.this.get(index);}
             @Override public Double set(int index, Double element) {return getAndSet(index, element);}
             @Override public int size() {return AbstractVector.this.size();}
-            @Override public Iterator<Double> iterator() {return AbstractVector.this.iterator().toIterator();}
+            @Override public @NotNull Iterator<Double> iterator() {return AbstractVector.this.iterator().toIterator();}
         };
     }
     

@@ -33,10 +33,19 @@ public interface IComplexDoubleSetOnlyIterator {
         setReal(aValue.real());
         setImag(aValue.imag());
     }
+    default void set(ComplexDouble aValue) {
+        setReal(aValue.mReal);
+        setImag(aValue.mImag);
+    }
     default void nextAndSet(IComplexDouble aValue) {
         nextOnly();
         setReal(aValue.real());
         setImag(aValue.imag());
+    }
+    default void nextAndSet(ComplexDouble aValue) {
+        nextOnly();
+        setReal(aValue.mReal);
+        setImag(aValue.mImag);
     }
     /** IDoubleSetOnlyIterator like stuffs */
     default void set(double aValue) {

@@ -77,10 +77,12 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     double getReal_(int aIdx);
     double getImag_(int aIdx);
     void set_(int aIdx, IComplexDouble aValue);
+    void set_(int aIdx, ComplexDouble aValue);
     void set_(int aIdx, double aValue);
     void setReal_(int aIdx, double aReal);
     void setImag_(int aIdx, double aImag);
     ComplexDouble getAndSet_(int aIdx, IComplexDouble aValue); // 返回修改前的值
+    ComplexDouble getAndSet_(int aIdx, ComplexDouble aValue);
     ComplexDouble getAndSet_(int aIdx, double aValue);
     double getAndSetReal_(int aIdx, double aReal);
     double getAndSetImag_(int aIdx, double aImag);
@@ -90,10 +92,12 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     double getReal(int aIdx);
     double getImag(int aIdx);
     void set(int aIdx, IComplexDouble aValue);
+    void set(int aIdx, ComplexDouble aValue);
     void set(int aIdx, double aValue);
     void setReal(int aIdx, double aReal);
     void setImag(int aIdx, double aImag);
     ComplexDouble getAndSet(int aIdx, IComplexDouble aValue);
+    ComplexDouble getAndSet(int aIdx, ComplexDouble aValue);
     ComplexDouble getAndSet(int aIdx, double aValue);
     double getAndSetReal(int aIdx, double aReal);
     double getAndSetImag(int aIdx, double aImag);
@@ -111,6 +115,7 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     
     /** 附加一些额外的单元素操作，对于 ComplexVector 也提供略多的接口 */
     void add_(int aIdx, IComplexDouble aDelta);
+    void add_(int aIdx, ComplexDouble aDelta);
     void add_(int aIdx, double aDelta);
     void addImag_(int aIdx, double aImag);
     void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
@@ -121,6 +126,7 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     double getAndUpdateImag_(int aIdx, IDoubleOperator1 aImagOpt);
     
     void add(int aIdx, IComplexDouble aDelta);
+    void add(int aIdx, ComplexDouble aDelta);
     void add(int aIdx, double aDelta);
     void addImag(int aIdx, double aImag);
     void update(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
@@ -191,6 +197,7 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     @VisibleForTesting ComplexDouble call(int aIdx);
     @VisibleForTesting ComplexDouble getAt(int aIdx);
     @VisibleForTesting void putAt(int aIdx, IComplexDouble aValue);
+    @VisibleForTesting void putAt(int aIdx, ComplexDouble aValue);
     @VisibleForTesting void putAt(int aIdx, double aValue);
     
     @VisibleForTesting IComplexVector call(List<Integer> aIndices);
@@ -200,16 +207,19 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     @VisibleForTesting IComplexVector getAt(SliceType     aIndices);
     @VisibleForTesting IComplexVector getAt(IIndexFilter  aIndices);
     @VisibleForTesting void putAt(List<Integer> aIndices, IComplexDouble aValue);
+    @VisibleForTesting void putAt(List<Integer> aIndices, ComplexDouble aValue);
     @VisibleForTesting void putAt(List<Integer> aIndices, double aValue);
     @VisibleForTesting void putAt(List<Integer> aIndices, Iterable<? extends Number> aList);
     @VisibleForTesting void putAt(List<Integer> aIndices, IVector aVector);
     @VisibleForTesting void putAt(List<Integer> aIndices, IComplexVector aVector);
     @VisibleForTesting void putAt(SliceType     aIndices, IComplexDouble aValue);
+    @VisibleForTesting void putAt(SliceType     aIndices, ComplexDouble aValue);
     @VisibleForTesting void putAt(SliceType     aIndices, double aValue);
     @VisibleForTesting void putAt(SliceType     aIndices, Iterable<? extends Number> aList);
     @VisibleForTesting void putAt(SliceType     aIndices, IVector aVector);
     @VisibleForTesting void putAt(SliceType     aIndices, IComplexVector aVector);
     @VisibleForTesting void putAt(IIndexFilter  aIndices, IComplexDouble aValue);
+    @VisibleForTesting void putAt(IIndexFilter  aIndices, ComplexDouble aValue);
     @VisibleForTesting void putAt(IIndexFilter  aIndices, double aValue);
     @VisibleForTesting void putAt(IIndexFilter  aIndices, Iterable<? extends Number> aList);
     @VisibleForTesting void putAt(IIndexFilter  aIndices, IVector aVector);
