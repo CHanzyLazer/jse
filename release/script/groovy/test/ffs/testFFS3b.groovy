@@ -59,4 +59,5 @@ while (!FFS.finished()) {
 }
 UT.Timer.toc("2, k = ${FFS.getK()}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 
+FFS.shutdown();
 
