@@ -68,8 +68,8 @@ final class LinkedCell<A extends IXYZ> {
     
     // 获取的接口
     private final ThreadLocal<Pair<Integer, List<Link<A>>>> mLinksTemp = ThreadLocal.withInitial(() -> new Pair<>(-1, null));
-    public @Unmodifiable List<Link<A>> links(IXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
-    public @Unmodifiable List<Link<A>> links(int i, int j, int k) {
+    private @Unmodifiable List<Link<A>> links(IXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
+    private @Unmodifiable List<Link<A>> links(int i, int j, int k) {
         int tIdx = idx(i, j, k);
         Pair<Integer, List<Link<A>>> tLinksTemp = mLinksTemp.get();
         if (tLinksTemp.mFirst == tIdx) return tLinksTemp.mSecond;
