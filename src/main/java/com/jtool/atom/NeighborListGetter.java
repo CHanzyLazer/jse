@@ -34,7 +34,7 @@ public class NeighborListGetter implements IShutdownable {
     }
     
     
-    private final XYZ[] mAtomDataXYZ;
+    private XYZ[] mAtomDataXYZ;
     private final XYZ mBox;
     private final int mAtomNum;
     private final double mMinBox;
@@ -44,7 +44,7 @@ public class NeighborListGetter implements IShutdownable {
     
     // 提供一个手动关闭的方法
     private volatile boolean mDead = false;
-    @Override public void shutdown() {mDead = true; mLinkedCells.clear();}
+    @Override public void shutdown() {mDead = true; mLinkedCells.clear(); mAtomDataXYZ = null;}
     
     public double getCellStep() {return mCellStep;}
     

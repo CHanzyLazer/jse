@@ -13,10 +13,10 @@ import rareevent.NoiseClusterGrowth
  * 用来测试 FFS 准确性
  */
 
-int N0 = 1000;
+int N0 = 100;
 
 
-def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 1000);
+def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 5000);
 def biCal = new NoiseClusterGrowth.ParameterCalculator();
 
 //def fullPath = new BufferedFullPathGenerator<>(biPathGen, biCal);

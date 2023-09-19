@@ -22,6 +22,20 @@ public final class XYZ implements IXYZ {
         mX = aXYZ.get(0); mY = aXYZ.get(1); mZ = aXYZ.get(2);
     }
     
+    /** 批量设置的接口，返回自身方便链式调用 */
+    public XYZ setXYZ(double aX, double aY, double aZ) {
+        mX = aX; mY = aY; mZ = aZ;
+        return this;
+    }
+    public XYZ setXYZ(IXYZ aXYZ) {
+        mX = aXYZ.x(); mY = aXYZ.y(); mZ = aXYZ.z();
+        return this;
+    }
+    public XYZ setXYZ(XYZ aXYZ) {
+        mX = aXYZ.mX; mY = aXYZ.mY; mZ = aXYZ.mZ;
+        return this;
+    }
+    
     /** print */
     @Override public String toString() {return String.format("(%.4g, %.4g, %.4g)", mX, mY, mZ);}
     

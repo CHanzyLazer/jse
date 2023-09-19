@@ -8,13 +8,13 @@ import com.jtool.plot.Plotters
 
 /** 测试计算 BOOP，测试固液判断的阈值选择 */
 
-final double cutoffMul = 1.5;
+final double cutoffMul = 1.8;
 final int nnn = -1;
 final double connectThreshold = 0.84;
 final int maxConnect = 32;
-final int solidThreshold = 7;
+final int solidThreshold = 13;
 
-final boolean onlyCu = false;
+final boolean onlyCu = true;
 final boolean onlyZr = false;
 
 
@@ -22,7 +22,7 @@ final boolean onlyZr = false;
 def dataG   = Lmpdat.read('lmp/data/data-glass');
 if (onlyCu) dataG = dataG.opt().filterType(1);
 if (onlyZr) dataG = dataG.opt().filterType(2);
-def dataFFS = Dump.read('lmp/.ffs-in/dump-fs1').last();
+def dataFFS = Dump.read('lmp/.ffs-in/dump-fs1-1').last();
 if (onlyCu) dataFFS = dataFFS.opt().filterType(1);
 if (onlyZr) dataFFS = dataFFS.opt().filterType(2);
 def dataMelt   = Lmpdat.read('lmp/.stableglass-in/data-last');

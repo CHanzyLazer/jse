@@ -1,5 +1,6 @@
 package com.jtool.atom;
 
+import com.jtool.code.collection.NewCollections;
 import com.jtool.code.collection.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -31,8 +32,7 @@ final class LinkedCell<A extends IXYZ> {
         mMaxDis = mCellBox.min();
         // 初始化 cell
         int tSize = aSizeX * aSizeY * aSizeZ;
-        mCells = new ArrayList<>(tSize);
-        for (int i = 0; i < tSize; ++i) mCells.add(new ArrayList<>());
+        mCells = NewCollections.from(tSize, i -> new ArrayList<>());
         // 遍历添加 Atom
         for (A tAtom : aAtoms) {
             int i = (int) Math.floor(tAtom.x() / mCellBox.mX); if (i >= mSizeX) continue;
@@ -67,15 +67,18 @@ final class LinkedCell<A extends IXYZ> {
     
     
     // 获取的接口
-    private final ThreadLocal<Pair<Integer, List<Link<A>>>> mLinksTemp = ThreadLocal.withInitial(() -> new Pair<>(-1, null));
-    private @Unmodifiable List<Link<A>> links(IXYZ aXYZ) {return links((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
-    private @Unmodifiable List<Link<A>> links(int i, int j, int k) {
+    private final ThreadLocal<Pair<Integer, @Unmodifiable List<Link<A>>>> mLinksTemp = new ThreadLocal<>();
+    private Pair<Integer, @Unmodifiable List<Link<A>>> links_(IXYZ aXYZ) {return links_((int) Math.floor(aXYZ.x() / mCellBox.mX), (int) Math.floor(aXYZ.y() / mCellBox.mY), (int) Math.floor(aXYZ.z() / mCellBox.mZ));}
+    private Pair<Integer, @Unmodifiable List<Link<A>>> links_(int i, int j, int k) {
         int tIdx = idx(i, j, k);
         Pair<Integer, List<Link<A>>> tLinksTemp = mLinksTemp.get();
-        if (tLinksTemp.mFirst == tIdx) return tLinksTemp.mSecond;
-        tLinksTemp.mFirst = tIdx;
+        if (tLinksTemp!=null && tLinksTemp.mFirst==tIdx) {
+            // 缓存满足条件直接返回，在此之前先将缓存置空避免再次获取到
+            mLinksTemp.remove();
+            return tLinksTemp;
+        }
         List<Link<A>> rLinkList = new ArrayList<>(27);
-        tLinksTemp.mSecond = rLinkList;
+        tLinksTemp = new Pair<>(tIdx, rLinkList);
         rLinkList.add(link(i  , j  , k  ));
         rLinkList.add(link(i+1, j  , k  ));
         rLinkList.add(link(i-1, j  , k  ));
@@ -103,7 +106,7 @@ final class LinkedCell<A extends IXYZ> {
         rLinkList.add(link(i-1, j+1, k-1));
         rLinkList.add(link(i-1, j-1, k+1));
         rLinkList.add(link(i-1, j-1, k-1));
-        return rLinkList;
+        return tLinksTemp;
     }
     
     
@@ -126,6 +129,11 @@ final class LinkedCell<A extends IXYZ> {
     }
     /** 现在改为 for-each 的形式来避免单一返回值的问题 */
     public void forEachNeighbor(IXYZ aXYZ, ILinkedCellDo<A> aLinkedCellDo) {
-        for (Link<A> tLink : links(aXYZ)) for (A tAtom : tLink.mCell) aLinkedCellDo.run(tAtom, tLink);
+        // 获取links
+        Pair<Integer, @Unmodifiable List<Link<A>>> tLinks = links_(aXYZ);
+        // 遍历使用
+        for (Link<A> tLink : tLinks.mSecond) for (A tAtom : tLink.mCell) aLinkedCellDo.run(tAtom, tLink);
+        // 使用完成后再归还到缓存，可以完全避免污染数据
+        mLinksTemp.set(tLinks);
     }
 }
