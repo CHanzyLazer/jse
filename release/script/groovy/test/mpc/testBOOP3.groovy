@@ -7,7 +7,7 @@ import com.jtool.lmp.Lmpdat
 /** 测试计算 BOOP */
 
 // 设置线程数
-nThreads = 1;
+nThreads = 4;
 
 
 // 首先导入 Lmpdat

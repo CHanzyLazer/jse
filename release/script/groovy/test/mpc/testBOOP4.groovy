@@ -9,6 +9,8 @@ import com.jtool.vasp.POSCAR
 
 /** 测试计算 BOOP，使用 ABOOP 判断结晶并绘制结果 */
 
+// 设置线程数
+final int nThreads = 4;
 
 // 首先导入 Lmpdat
 def data = Lmpdat.read('lmp/data/data-glass');
@@ -20,7 +22,7 @@ new StepJobManager('testBOOP4', 1)
 .doJob {
     // 计算固体判断
     def isSolid;
-    try (def mpc = data.getMPC()) {
+    try (def mpc = data.getMPC(nThreads)) {
         isSolid = mpc.calABOOP(6).greater(0.30);
     }
     println("solid number: ${isSolid.count()}");
@@ -41,7 +43,7 @@ new StepJobManager('testBOOP4', 1)
 .doJob {
     // 计算固体判断
     def isSolid;
-    try (def mpc = data.getMPC()) {
+    try (def mpc = data.getMPC(nThreads)) {
         isSolid = mpc.checkSolidQ6();
     }
     println("solid number: ${isSolid.count()}");

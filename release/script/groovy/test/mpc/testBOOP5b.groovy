@@ -8,6 +8,9 @@ import com.jtool.plot.Plotters
 
 /** 测试计算 BOOP，测试固液判断的阈值选择 */
 
+// 设置线程数
+final int nThreads = 4;
+
 final double cutoffMul = 1.8;
 final int nnn = -1;
 final double connectThreshold = 0.84;
@@ -30,9 +33,9 @@ if (onlyCu) dataMelt = dataMelt.opt().filterType(1);
 if (onlyZr) dataMelt = dataMelt.opt().filterType(2);
 
 // 计算连接数向量
-def connectCountG       = dataG      .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
-def connectCountFFS     = dataFFS    .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
-def connectCountMelt    = dataMelt   .getMPC().withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
+def connectCountG       = dataG      .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
+def connectCountFFS     = dataFFS    .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
+def connectCountMelt    = dataMelt   .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(6, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
 
 // 统计结果
 def distributionG       = Vectors.zeros(maxConnect+1);

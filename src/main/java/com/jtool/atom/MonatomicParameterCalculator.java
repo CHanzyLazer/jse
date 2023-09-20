@@ -578,23 +578,30 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
     public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
-    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, final IComplexVector[] rDest) {
+    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, IComplexVector[] rDest) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
         if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
         
-        // 统计近邻数用于求平均
-        final IVector tNN = Vectors.zeros(mAtomNum);
+        // 构造用于并行的暂存数组
+        final IComplexVector[][] rDestPar = new IComplexVector[nThreads()][];
+        rDestPar[0] = rDest;
+        for (int i = 1; i < rDestPar.length; ++i) rDestPar[i] = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 统计近邻数用于求平均，同样也需要为并行使用数组
+        final IVector[] tNNPar = new IVector[nThreads()];
+        for (int i = 0; i < tNNPar.length; ++i) tNNPar[i] = Vectors.zeros(mAtomNum);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnn<=0;
         
-        // 遍历计算 Qlm，由于并行时不好兼顾一半遍历的优化和消除锁，这里暂时不考虑并行（TODO 目前决定直接使用数组来存并行的结果）
-        for (int i = 0; i < mAtomNum; ++i) {
-            final XYZ cXYZ = mAtomDataXYZ[i];
+        // 遍历计算 Qlm，只对这个最耗时的部分进行并行优化
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            // 先获取这个线程的 Qlm, tNN
+            final IComplexVector[] Qlm = rDestPar[threadID];
+            final IVector tNN = tNNPar[threadID];
             // 一次计算一行
-            final IComplexVector Qlmi = rDest[i];
-            
+            final IComplexVector Qlmi = Qlm[i];
+            final XYZ cXYZ = mAtomDataXYZ[i];
             // 遍历近邻计算 Ylm
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
@@ -609,7 +616,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 IComplexVector Qlmj = null;
                 if (aHalf) {
-                    Qlmj = rDest[idx];
+                    Qlmj = Qlm[idx];
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
                 for (int tM = 0; tM <= aL; ++tM) {
@@ -639,6 +646,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     tNN.increment_(idx);
                 }
             });
+        });
+        
+        // 获取结果
+        IVector tNN = tNNPar[0];
+        for (int i = 1; i < tNNPar.length; ++i) tNN.plus2this(tNNPar[i]);
+        for (int i = 1; i < rDestPar.length; ++i) {
+            IComplexVector[] subQlm = rDestPar[i];
+            for (int j = 0; j < mAtomNum; ++j) rDest[j].plus2this(subQlm[j]);
         }
         // 根据近邻数平均得到 Qlm
         for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));

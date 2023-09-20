@@ -24,7 +24,7 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
         final boolean tCountAll = countAll();
         final int tMinClusterSize = minClusterSize();
         // 还是使用 MPC 内部的方法来判断
-        try (final MonatomicParameterCalculator tMPC = aPoint.getMonatomicParameterCalculator()) {
+        try (final MonatomicParameterCalculator tMPC = aPoint.getMonatomicParameterCalculator(nThreads())) {
             final ILogicalVector tIsSolid = getIsSolid_(tMPC, aPoint);
             if (tCountAll && tMinClusterSize<=1) {
                 // 如果全部统计且最小团簇大小为 0 则直接求和统计数目即可
@@ -49,6 +49,7 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
     }
     
     /** stuff to override */
+    protected int nThreads() {return 1;}
     protected boolean countAll() {return false;}
     protected int minClusterSize() {return 5;}
     protected double getRCluster_(MonatomicParameterCalculator aMPC) {return aMPC.unitLen()*R_NEAREST_MUL;}

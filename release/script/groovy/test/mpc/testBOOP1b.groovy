@@ -10,6 +10,9 @@ import com.jtool.vasp.POSCAR
 
 /** 测试计算 BOOP */
 
+// 设置线程数
+final int nThreads = 1;
+
 final double cutoffMul = 2.2;
 final int nnn = -1;
 final double perturbMul = 1.0;
@@ -21,7 +24,7 @@ final boolean onlyZr = false;
 dataMgCu2 = Structures.from(POSCAR.read('lmp/data/MgCu2.poscar'), 4).opt().perturbXYZ(0.25*perturbMul);
 if (onlyCu) dataMgCu2 = dataMgCu2.opt().filterType(2);
 if (onlyZr) dataMgCu2 = dataMgCu2.opt().filterType(1);
-mpcMgCu2 = dataMgCu2.getMPC();
+mpcMgCu2 = dataMgCu2.getMPC(nThreads);
 println("MgCu2, u: ${mpcMgCu2.unitLen()}");
 UT.Timer.tic();
 q4MgCu2 = mpcMgCu2.calABOOP(4, mpcMgCu2.unitLen()*cutoffMul, nnn);
@@ -34,7 +37,7 @@ mpcMgCu2.shutdown();
 dataZrCu2 = Structures.from(POSCAR.read('lmp/data/ZrCu2.poscar'), 5).opt().perturbXYZ(0.25*perturbMul);
 if (onlyCu) dataZrCu2 = dataZrCu2.opt().filterType(2);
 if (onlyZr) dataZrCu2 = dataZrCu2.opt().filterType(1);
-mpcZrCu2 = dataZrCu2.getMPC();
+mpcZrCu2 = dataZrCu2.getMPC(nThreads);
 println("ZrCu2, u: ${mpcZrCu2.unitLen()}");
 UT.Timer.tic();
 q4ZrCu2 = mpcZrCu2.calABOOP(4, mpcZrCu2.unitLen()*cutoffMul, nnn);
@@ -47,7 +50,7 @@ mpcZrCu2.shutdown();
 dataB2 = Structures.from(POSCAR.read('lmp/data/ZrCu-B2.poscar'), 8).opt().perturbXYZ(0.25*perturbMul);
 if (onlyCu) dataB2 = dataB2.opt().filterType(2);
 if (onlyZr) dataB2 = dataB2.opt().filterType(1);
-mpcB2 = dataB2.getMPC();
+mpcB2 = dataB2.getMPC(nThreads);
 println("B2, u: ${mpcB2.unitLen()}");
 UT.Timer.tic();
 q4B2 = mpcB2.calABOOP(4, mpcB2.unitLen()*cutoffMul, nnn);
@@ -62,7 +65,7 @@ mpcB2.shutdown();
 def dataFFS1   = Dump.read('lmp/.ffs-in/dump-fs1').last();
 if (onlyCu) dataFFS1 = dataFFS1.opt().filterType(1);
 if (onlyZr) dataFFS1 = dataFFS1.opt().filterType(2);
-mpcFFS1 = dataFFS1.getMPC();
+mpcFFS1 = dataFFS1.getMPC(nThreads);
 println("FFS1, u: ${mpcFFS1.unitLen()}");
 UT.Timer.tic();
 q4FFS1 = mpcFFS1.calABOOP(4, mpcFFS1.unitLen()*cutoffMul, nnn);
@@ -75,7 +78,7 @@ mpcFFS1.shutdown();
 def dataFFS2   = Dump.read('lmp/.ffs-in/dump-fs2').last();
 if (onlyCu) dataFFS2 = dataFFS2.opt().filterType(1);
 if (onlyZr) dataFFS2 = dataFFS2.opt().filterType(2);
-mpcFFS2 = dataFFS2.getMPC();
+mpcFFS2 = dataFFS2.getMPC(nThreads);
 println("FFS2, u: ${mpcFFS2.unitLen()}");
 UT.Timer.tic();
 q4FFS2 = mpcFFS2.calABOOP(4, mpcFFS2.unitLen()*cutoffMul, nnn);
@@ -88,7 +91,7 @@ mpcFFS2.shutdown();
 def dataMelt   = Lmpdat.read('lmp/.stableglass-in/data-last');
 if (onlyCu) dataMelt = dataMelt.opt().filterType(1);
 if (onlyZr) dataMelt = dataMelt.opt().filterType(2);
-mpcMelt = dataMelt.getMPC();
+mpcMelt = dataMelt.getMPC(nThreads);
 println("melt, u: ${mpcMelt.unitLen()}");
 UT.Timer.tic();
 q4Melt = mpcMelt.calABOOP(4, mpcMelt.unitLen()*cutoffMul, nnn);
