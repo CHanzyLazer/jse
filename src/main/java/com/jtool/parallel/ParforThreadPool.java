@@ -67,8 +67,8 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
                 final int fId = id;
                 pool().execute(() -> {
                     assert mLocks != null;
-                    mThreadID.set(fId); // 注册 id
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
+                    mThreadID.set(fId); // 注册 id
                     while (true) {
                         if (tThrowable.get() != null) break;
                         int i;
@@ -80,6 +80,8 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
                         try {aTaskWithID.run(i, fId);}
                         catch (Throwable e) {tThrowable.set(e); break;}
                     }
+                    mThreadID.remove(); // 结束后注销 id
+                    // 认为不会在其他地方抛出错误，因此不做额外的 try-finally 操作
                     mLocks[fId].unlock();
                     tLatch.countDown();
                 });
@@ -116,14 +118,19 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
                 final int fId = id;
                 pool().execute(() -> {
                     assert mLocks != null;
-                    mThreadID.set(fId); // 注册 id
                     mLocks[fId].lock(); // 加锁在结束后进行数据同步
+                    mThreadID.set(fId); // 注册 id
                     while (true) {
                         if (tThrowable.get() != null) break;
-                        synchronized (aChecker) {if (!aChecker.noBreak()) break;}
-                        try {aTaskWithID.run(fId);}
-                        catch (Throwable e) {tThrowable.set(e); break;}
+                        try {
+                            synchronized (aChecker) {if (!aChecker.noBreak()) break;}
+                            aTaskWithID.run(fId);
+                        } catch (Throwable e) {
+                            tThrowable.set(e); break;
+                        }
                     }
+                    mThreadID.remove(); // 结束后注销 id
+                    // 认为不会在其他地方抛出错误，因此不做额外的 try-finally 操作
                     mLocks[fId].unlock();
                     tLatch.countDown();
                 });

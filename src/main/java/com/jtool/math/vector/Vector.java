@@ -5,6 +5,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -53,9 +54,13 @@ public final class Vector extends DoubleArrayVector {
     }
     
     
-    private final int mSize;
+    private int mSize;
     public Vector(int aSize, double[] aData) {super(aData); mSize = aSize;}
     public Vector(double[] aData) {this(aData.length, aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public Vector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
     @Override public double get_(int aIdx) {return mData[aIdx];}

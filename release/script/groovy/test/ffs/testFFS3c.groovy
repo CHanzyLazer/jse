@@ -35,7 +35,7 @@ def biCal = new NoiseClusterGrowth.ParameterCalculator();
 //plt.axis(0, sizes.size(), 0, 60);
 //plt.show();
 
-def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, (20..200).step(5), N0).setPruningProb(0.5).setPruningThreshold(3);
+def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, (20..200).step(5), N0).setPruningProb(0.5).setPruningThreshold(3).setMaxPathNum(N0*1000);
 
 UT.Timer.tic();
 FFS.run();

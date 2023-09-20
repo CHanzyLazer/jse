@@ -5,6 +5,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -16,11 +17,16 @@ import java.util.NoSuchElementException;
  * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link ReverseVector} </p>
  */
 public final class ShiftReverseVector extends DoubleArrayVector {
-    private final int mSize;
-    private final int mShift;
-    private final int totShift;
+    private int mSize;
+    private int mShift;
+    private int totShift;
     public ShiftReverseVector(int aSize, int aShift, double[] aData) {super(aData); mSize = aSize; mShift = aShift; totShift = mSize-1+mShift;}
     public ShiftReverseVector(int aShift, double[] aData) {this(aData.length-aShift, aShift, aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public ShiftReverseVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); totShift = mSize-1+mShift; return this;}
+    public ShiftReverseVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); totShift = mSize-1+mShift; return this;}
+    public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
     @Override public double get_(int aIdx) {return mData[totShift-aIdx];}

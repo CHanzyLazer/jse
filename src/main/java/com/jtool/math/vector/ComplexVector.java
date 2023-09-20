@@ -4,6 +4,7 @@ import com.jtool.code.functional.*;
 import com.jtool.code.iterator.*;
 import com.jtool.math.ComplexDouble;
 import com.jtool.math.IComplexDouble;
+import com.jtool.math.MathEX;
 import groovy.lang.Closure;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,9 +61,13 @@ public final class ComplexVector extends BiDoubleArrayVector {
     }
     
     
-    private final int mSize;
+    private int mSize;
     public ComplexVector(int aSize, double[][] aData) {super(aData); mSize = aSize;}
-    public ComplexVector(double[][] aData) {this(aData[0].length, aData);}
+    public ComplexVector(double[][] aData) {this(Math.min(aData[0].length, aData[1].length), aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public ComplexVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, dataLength(), aSize); return this;}
+    public int dataLength() {return Math.min(mData[0].length, mData[1].length);}
     
     /** IComplexVector stuffs */
     @Override public ComplexDouble get_(int aIdx) {return new ComplexDouble(mData[0][aIdx], mData[1][aIdx]);}

@@ -3,6 +3,7 @@ package com.jtool.math.vector;
 import com.jtool.code.functional.*;
 import com.jtool.code.iterator.IBooleanIterator;
 import com.jtool.code.iterator.IBooleanSetIterator;
+import com.jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -50,9 +51,13 @@ public final class LogicalVector extends BooleanArrayVector {
         }
     }
     
-    private final int mSize;
+    private int mSize;
     public LogicalVector(int aSize, boolean[] aData) {super(aData); mSize = aSize;}
     public LogicalVector(boolean[] aData) {this(aData.length, aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public LogicalVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */
     @Override public boolean get_(int aIdx) {return mData[aIdx];}

@@ -5,6 +5,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -25,10 +26,14 @@ public final class ReverseVector extends DoubleArrayVector {
     public static ReverseVector zeros(int aSize) {return new ReverseVector(new double[aSize]);}
     
     
-    private final int mSize;
-    private final int mSizeMM;
+    private int mSize;
+    private int mSizeMM;
     public ReverseVector(int aSize, double[] aData) {super(aData); mSize = aSize; mSizeMM = mSize-1;}
     public ReverseVector(double[] aData) {this(aData.length, aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public ReverseVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); mSizeMM = mSize-1; return this;}
+    public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
     @Override public double get_(int aIdx) {return mData[mSizeMM-aIdx];}

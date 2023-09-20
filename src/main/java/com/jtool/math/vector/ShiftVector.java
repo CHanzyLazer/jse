@@ -5,6 +5,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -15,10 +16,15 @@ import java.util.NoSuchElementException;
  * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link Vector} </p>
  */
 public final class ShiftVector extends DoubleArrayVector {
-    private final int mSize;
-    private final int mShift;
+    private int mSize;
+    private int mShift;
     public ShiftVector(int aSize, int aShift, double[] aData) {super(aData); mSize = aSize; mShift = aShift;}
     public ShiftVector(int aShift, double[] aData) {this(aData.length-aShift, aShift, aData);}
+    
+    /** 提供额外的接口来直接设置底层参数 */
+    public ShiftVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); return this;}
+    public ShiftVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); return this;}
+    public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
     @Override public double get_(int aIdx) {return mData[aIdx + mShift];}

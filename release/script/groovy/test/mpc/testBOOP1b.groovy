@@ -59,7 +59,7 @@ mpcB2.shutdown();
 
 
 // 再计算生成的结果
-def dataFFS1   = Dump.read('lmp/.ffs-in/dump-fs1-1').last();
+def dataFFS1   = Dump.read('lmp/.ffs-in/dump-fs1').last();
 if (onlyCu) dataFFS1 = dataFFS1.opt().filterType(1);
 if (onlyZr) dataFFS1 = dataFFS1.opt().filterType(2);
 mpcFFS1 = dataFFS1.getMPC();
@@ -72,7 +72,7 @@ q6FFS1 = mpcFFS1.calABOOP(6, mpcFFS1.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("FFS1, q6");
 mpcFFS1.shutdown();
 
-def dataFFS2   = Dump.read('lmp/.ffs-in/dump-fs1-2').last();
+def dataFFS2   = Dump.read('lmp/.ffs-in/dump-fs2').last();
 if (onlyCu) dataFFS2 = dataFFS2.opt().filterType(1);
 if (onlyZr) dataFFS2 = dataFFS2.opt().filterType(2);
 mpcFFS2 = dataFFS2.getMPC();

@@ -7,6 +7,8 @@ import com.jtool.math.function.IFunc1;
 import com.jtool.math.function.IZeroBoundFunc1;
 import com.jtool.math.vector.*;
 import com.jtool.parallel.AbstractThreadPool;
+import com.jtool.parallel.IObjectPool;
+import com.jtool.parallel.ObjectCachePool;
 import com.jtool.parallel.ParforThreadPool;
 
 import java.util.ArrayList;
@@ -28,7 +30,7 @@ import static com.jtool.math.MathEX.*;
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  */
 public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
-    private XYZ[] mAtomDataXYZ;
+    private XYZ[] mAtomDataXYZ; // 注意 mAtomDataXYZ.length != mAtomNum
     private final IXYZ mBox;
     private final IXYZ mBoxLo; // 用来记录数据是否经过了 shift
     
@@ -46,7 +48,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 此时 MPC 关闭，归还 mAtomDataXYZ，这种写法保证永远能获取到 mAtomDataXYZ 时都是合法的
         XYZ[] oAtomDataXYZ = mAtomDataXYZ;
         mAtomDataXYZ = null;
-        sXYZArrayTemp.set(oAtomDataXYZ);
+        returnXYZArray_(oAtomDataXYZ, true);
     }
     @Override public void shutdownNow() {shutdown();}
     @Override public boolean isShutdown() {return mDead;}
@@ -69,14 +71,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mBox   = (aBoxLo==BOX_ZERO) ? newBox(aBoxHi) : aBoxHi.minus(aBoxLo);
         
         // 获取合适的 XYZ[] 数据
-        mAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ, true);
+        mAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ, true);
+        mAtomNum = aAtomDataXYZ.size();
         
         // 计算单位长度供内部使用
-        mAtomNum = mAtomDataXYZ.length;
         mRou = mAtomNum / mBox.prod();
         mUnitLen = Fast.cbrt(1.0/mRou);
         
-        mNL = new NeighborListGetter(mAtomDataXYZ, mBox, aCellStep);
+        mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox, aCellStep);
     }
     public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ) {this(aAtomDataXYZ, BOX_ONE);}
     public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, BOX_ZERO, aBox);}
@@ -88,16 +90,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum, double aCellStep) {this(aAtomData.atoms(), aAtomData.boxLo(), aAtomData.boxHi(), aThreadNum, aCellStep);}
     
     
-    /** 直接使用 ThreadLocal 避免重复创建临时变量 */
-    private final static ThreadLocal<XYZ[]> sXYZArrayTemp = new ThreadLocal<>(), sXYZArrayTemp2 = new ThreadLocal<>();
+    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
+    private final static IObjectPool<XYZ[]> sXYZArrayCache = new ObjectCachePool<>(), sXYZArrayCache2 = new ObjectCachePool<>();
     
     /** 内部使用方法，用来将 aAtomDataXYZ 转换成内部存储的格式，并且处理精度问题造成的超出边界问题 */
-    private XYZ[] toValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ) {return toValidAtomDataXYZ_(aAtomDataXYZ, false);}
-    private XYZ[] toValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ, boolean aInternal) {
+    private XYZ[] getValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ) {return getValidAtomDataXYZ_(aAtomDataXYZ, false);}
+    private XYZ[] getValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ, boolean aInternal) {
         int tSize = aAtomDataXYZ.size();
         // 尝试先获取缓存的临时变量
-        XYZ[] tXYZArray = (aInternal ? sXYZArrayTemp : sXYZArrayTemp2).get();
-        if (tXYZArray==null || tXYZArray.length!=tSize) {
+        XYZ[] tXYZArray = (aInternal ? sXYZArrayCache : sXYZArrayCache2).getObject();
+        if (tXYZArray==null || tXYZArray.length<tSize) {
             tXYZArray = new XYZ[tSize];
             int tIdx = 0;
             for (IXYZ tXYZ : aAtomDataXYZ) {
@@ -105,8 +107,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 ++tIdx;
             }
         } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            (aInternal ? sXYZArrayTemp : sXYZArrayTemp2).remove();
             // 直接遍历修改而不用创建新对象
             int tIdx = 0;
             for (IXYZ tXYZ : aAtomDataXYZ) {
@@ -118,12 +118,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // mBoxLo 不为零则需要将数据 shift
         if (mBoxLo != BOX_ZERO) {
             XYZ tBoxLo = toXYZ(mBoxLo);
-            for (XYZ tXYZ : tXYZArray) tXYZ.minus2this(tBoxLo);
+            for (int i = 0; i < tSize; ++i) tXYZArray[i].minus2this(tBoxLo);
         }
         
         // 由于 lammps 精度的问题，需要将超出边界的进行平移
         XYZ tBox = toXYZ(mBox);
-        for (XYZ tXYZ : tXYZArray) {
+        for (int i = 0; i < tSize; ++i) {
+            XYZ tXYZ = tXYZArray[i];
             if      (tXYZ.mX <  0.0    ) tXYZ.mX += tBox.mX;
             else if (tXYZ.mX >= tBox.mX) tXYZ.mX -= tBox.mX;
             if      (tXYZ.mY <  0.0    ) tXYZ.mY += tBox.mY;
@@ -134,6 +135,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         return tXYZArray;
     }
+    private static void returnXYZArray_(XYZ[] aXYZArray) {returnXYZArray_(aXYZArray, false);}
+    private static void returnXYZArray_(XYZ[] aXYZArray, boolean aInternal) {(aInternal ? sXYZArrayCache : sXYZArrayCache2).returnObject(aXYZArray);}
     
     
     /// 参数设置
@@ -148,7 +151,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param sCellStep 步长，默认为 2.0，需要大于 1.1，理论上越小速度会越快，同时会消耗更多的内存
      * @return 返回自身用于链式调用
      */
-    public MonatomicParameterCalculator setCellStep(double sCellStep) {if (sCellStep != mNL.getCellStep()) {mNL.shutdown(); mNL = new NeighborListGetter(mAtomDataXYZ, mBox, sCellStep);} return this;}
+    public MonatomicParameterCalculator setCellStep(double sCellStep) {if (sCellStep != mNL.getCellStep()) {mNL.shutdown(); mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox, sCellStep);} return this;}
     
     
     /// 获取信息
@@ -204,7 +207,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @return gr 以及对应横坐标 r 构成的矩阵，排成两列，gr 在前 r 在后
      */
-    public IFunc1 calRDF_AB(final XYZ[] aAtomDataXYZ, int aN, final double aRMax) {
+    public IFunc1 calRDF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, int aN, final double aRMax) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         final double dr = aRMax/aN;
@@ -213,7 +216,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomNum, (i, threadID) -> {
             mNL.forEachNeighbor(aAtomDataXYZ[i], aRMax - dr*0.5, (x, y, z, idx, dis) -> {
                 int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
                 if (tIdx > 0 && tIdx < aN) dn[threadID].increment_(tIdx);
@@ -224,7 +227,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
         for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
-        final double rou = dr * aAtomDataXYZ.length * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
         gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
@@ -234,10 +237,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB(aAtomDataXYZ, 160);}
     public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB(aAtomDataXYZ, aN, mUnitLen*6);}
-    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {XYZ[] tAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB(tAtomDataXYZ, aN, aRMax); sXYZArrayTemp2.set(tAtomDataXYZ); return tOut;}
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax); returnXYZArray_(tAtomDataXYZ); return tOut;}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC                                    ) {return calRDF_AB(aMPC, 160);}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN                    ) {return calRDF_AB(aMPC, aN, mUnitLen*6);}
-    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN, final double aRMax) {return calRDF_AB(aMPC.mAtomDataXYZ, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
+    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN, final double aRMax) {return calRDF_AB(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
     
     
     
@@ -287,7 +290,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IFunc1 calRDF_G(int aN, final double aRMax               ) {return calRDF_G(aN, aRMax, 4);}
     
     
-    public IFunc1 calRDF_AB_G(final XYZ[] aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {
+    public IFunc1 calRDF_AB_G(final XYZ[] aAtomDataXYZ, int aAtomNum, int aN, final double aRMax, int aSigmaMul) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         final double dr = aRMax/aN;
@@ -302,7 +305,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final double tRShift = tDeltaG[0].zeroBoundR();
         
         // 使用 mNL 的专门获取近邻距离的方法
-        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomNum, (i, threadID) -> {
             mNL.forEachNeighbor(aAtomDataXYZ[i], aRMax+tRShift, (x, y, z, idx, dis) -> {
                 tDeltaG[threadID].setX0(dis);
                 dn[threadID].plus2this(tDeltaG[threadID]);
@@ -312,7 +315,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dn[0];
         for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
-        final double rou = aAtomDataXYZ.length * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        final double rou = aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
         gr.div2this(r -> r*r*4.0*PI*rou);
         
         // 修复截断数据
@@ -323,11 +326,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB_G(aAtomDataXYZ, 1000);}
     public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB_G(aAtomDataXYZ, aN, mUnitLen*6);}
     public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {return calRDF_AB_G(aAtomDataXYZ, aN, aRMax, 4);}
-    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {XYZ[] tAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB_G(tAtomDataXYZ, aN, aRMax, aSigmaMul); sXYZArrayTemp2.set(tAtomDataXYZ); return tOut;}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB_G(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax, aSigmaMul); returnXYZArray_(tAtomDataXYZ); return tOut;}
     public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC                                                   ) {return calRDF_AB_G(aMPC, 1000);}
     public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN                                   ) {return calRDF_AB_G(aMPC, aN, mUnitLen*6);}
     public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN, final double aRMax               ) {return calRDF_AB_G(aMPC, aN, aRMax, 4);}
-    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN, final double aRMax, int aSigmaMul) {return calRDF_AB_G(aMPC.mAtomDataXYZ, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN, final double aRMax, int aSigmaMul) {return calRDF_AB_G(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
     
     
     
@@ -383,7 +386,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aQMin 手动指定最小的截断的 q
      * @return Sq 以及对应横坐标 q 构成的矩阵，排成两列，Sq 在前 q 在后
      */
-    public IFunc1 calSF_AB(final XYZ[] aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {
+    public IFunc1 calSF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, double aQMax, int aN, final double aRMax, double aQMin) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         final double dq = (aQMax-aQMin)/aN;
@@ -392,7 +395,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         for (int i = 0; i < Hq.length; ++i) Hq[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         
         // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
-        pool().parfor(aAtomDataXYZ.length, (i, threadID) -> {
+        pool().parfor(aAtomNum, (i, threadID) -> {
             final XYZ cXYZ = aAtomDataXYZ[i];
             mNL.forEachNeighborMHT(cXYZ, aRMax, (x, y, z, idx, disMHT) -> {
                 double dis = cXYZ.distance(x, y, z);
@@ -403,7 +406,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 Sq = Hq[0];
         for (int i = 1; i < Hq.length; ++i) Sq.plus2this(Hq[i]);
-        Sq.div2this(Fast.sqrt(mAtomNum*aAtomDataXYZ.length));
+        Sq.div2this(Fast.sqrt(mAtomNum*aAtomNum));
         Sq.plus2this(1.0);
         
         // 修复截断数据
@@ -415,12 +418,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax) {return calSF_AB(aAtomDataXYZ, aQMax, 160);}
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN) {return calSF_AB(aAtomDataXYZ, aQMax, aN, mUnitLen*6);}
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax) {return calSF_AB(aAtomDataXYZ, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {XYZ[] tAtomDataXYZ = toValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calSF_AB(tAtomDataXYZ, aQMax, aN, aRMax, aQMin); sXYZArrayTemp2.set(tAtomDataXYZ); return tOut;}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calSF_AB(tAtomDataXYZ, aAtomDataXYZ.size(), aQMax, aN, aRMax, aQMin); returnXYZArray_(tAtomDataXYZ); return tOut;}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                                                ) {return calSF_AB(aMPC, 2.0*PI/mUnitLen * 6.0);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax                                          ) {return calSF_AB(aMPC, aQMax, 160);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN                                  ) {return calSF_AB(aMPC, aQMax, aN, mUnitLen*6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax              ) {return calSF_AB(aMPC, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
-    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(aMPC.mAtomDataXYZ, aQMax, aN, aRMax, aQMin);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aQMax, aN, aRMax, aQMin);}
     
     
     
@@ -578,7 +581,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, final IComplexVector[] rDest) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-        if (rDest.length != mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be atomNum("+mAtomNum+"), input: "+rDest.length);
+        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
         if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
         
         // 统计近邻数用于求平均
@@ -644,9 +647,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 直接全部平均一遍分两步算
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-        if (aQlm.length != mAtomNum) throw new IllegalArgumentException("Input row number aQlm MUST be atomNum("+mAtomNum+"), input: "+aQlm.length);
+        if (aQlm.length < mAtomNum) throw new IllegalArgumentException("Input row number aQlm MUST be GREATER than atomNum("+mAtomNum+"), input: "+aQlm.length);
         if (aQlm[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of aQlm MUST be l+l+1("+aL+aL+1+"), input: "+aQlm[0].size());
-        if (rDest.length != mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be atomNum("+mAtomNum+"), input: "+rDest.length);
+        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
         if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
         
         // 统计近邻数用于求平均（增加一个自身）
@@ -685,8 +688,28 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     
     
-    /** 直接使用 ThreadLocal 避免重复创建临时变量 */
-    private final static ThreadLocal<IComplexVector[]> sComplexVectorsTemp = new ThreadLocal<>(), sComplexVectorsTemp2 = new ThreadLocal<>();
+    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
+    private final static IObjectPool<ComplexVector[]> sComplexVectorsCache = new ObjectCachePool<>(), sComplexVectorsCache2 = new ObjectCachePool<>();
+    private static ComplexVector[] getComplexVectors_(int aAtomNum, int aSize) {return getComplexVectors_(aAtomNum, aSize, false);}
+    private static ComplexVector[] getComplexVectors_(int aAtomNum, int aSize, boolean aUseTemp2) {
+        ComplexVector[] tComplexVectors = (aUseTemp2 ? sComplexVectorsCache2 : sComplexVectorsCache).getObject();
+        if (tComplexVectors==null || tComplexVectors.length<aAtomNum) {
+            tComplexVectors = new ComplexVector[aAtomNum];
+            for (int i = 0; i < aAtomNum; ++i) tComplexVectors[i] = ComplexVector.zeros(aSize);
+        } else {
+            // 遍历合法化长度
+            for (int i = 0; i < aAtomNum; ++i) {
+                ComplexVector tComplexVector = tComplexVectors[i];
+                if (tComplexVector.size() != aSize) {
+                    if (tComplexVector.dataLength() >= aSize) tComplexVector.setSize(aSize);
+                    else tComplexVectors[i] = ComplexVector.zeros(aSize);
+                }
+            }
+        }
+        return tComplexVectors;
+    }
+    private static void returnComplexVectors_(ComplexVector[] aComplexVectors) {returnComplexVectors_(aComplexVectors, false);}
+    private static void returnComplexVectors_(ComplexVector[] aComplexVectors, boolean aUseTemp2) {(aUseTemp2 ? sComplexVectorsCache2 : sComplexVectorsCache).returnObject(aComplexVectors);}
     
     /**
      * 计算所有粒子的原始的 BOOP（local Bond Orientational Order Parameters, Ql），
@@ -703,14 +726,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = sComplexVectorsTemp.get();
-        if (Qlm==null || Qlm.length!=mAtomNum || Qlm[0].size()!=aL+aL+1) {
-            Qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
         
@@ -724,7 +740,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 返回最终计算结果
         return Ql;
@@ -748,21 +764,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = sComplexVectorsTemp.get();
-        if (Qlm==null || Qlm.length!=mAtomNum || Qlm[0].size()!=aL+aL+1) {
-            Qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
         
         // 计算三阶的乘积
         IVector Wl = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            IComplexVector Qlmi = Qlm[i];
+            ComplexVector Qlmi = Qlm[i];
             // 分母为复向量的点乘
             double rDiv = Qlmi.operation().dot();
             rDiv = Fast.sqrt(rDiv);
@@ -786,7 +795,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 返回最终计算结果
         return Wl;
@@ -815,29 +824,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = sComplexVectorsTemp.get();
-        if (Qlm==null || Qlm.length!=mAtomNum || Qlm[0].size()!=aL+aL+1) {
-            Qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
         // 再次获取缓存
-        IComplexVector[] qlm = sComplexVectorsTemp2.get();
-        if (qlm==null || qlm.length!=mAtomNum || qlm[0].size()!=aL+aL+1) {
-            qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp2.remove();
-        }
+        ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
         calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 直接求和
         IVector ql = Vectors.zeros(mAtomNum);
@@ -849,7 +845,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp2.set(qlm);
+        returnComplexVectors_(qlm, true);
         
         // 返回最终计算结果
         return ql;
@@ -879,34 +875,21 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = sComplexVectorsTemp.get();
-        if (Qlm==null || Qlm.length!=mAtomNum || Qlm[0].size()!=aL+aL+1) {
-            Qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
         // 再次获取缓存
-        IComplexVector[] qlm = sComplexVectorsTemp2.get();
-        if (qlm==null || qlm.length!=mAtomNum || qlm[0].size()!=aL+aL+1) {
-            qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp2.remove();
-        }
+        ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
         calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 计算 wl，这里同样不去考虑减少重复代码
         IVector wl = Vectors.zeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
-            IComplexVector qlmi = qlm[i];
+            ComplexVector qlmi = qlm[i];
             // 分母为复向量的点乘，等于实部虚部分别点乘
             double rDiv = qlmi.operation().dot();
             rDiv = Fast.sqrt(rDiv);
@@ -930,7 +913,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp2.set(qlm);
+        returnComplexVectors_(qlm, true);
         
         // 返回最终计算结果
         return wl;
@@ -966,15 +949,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] tQlm = sComplexVectorsTemp.get();
-        if (tQlm==null || tQlm.length!=mAtomNum || tQlm[0].size()!=aL+aL+1) {
-            tQlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) tQlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
-        final IComplexVector[] Qlm = tQlm;
+        final ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
         
@@ -991,12 +966,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
         for (int i = 0; i < mAtomNum; ++i) {
             // 统一获取行向量
-            final IComplexVector Qlmi = Qlm[i];
+            final ComplexVector Qlmi = Qlm[i];
             // 遍历近邻计算连接数
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
                 // 统一获取行向量
-                IComplexVector Qlmj = Qlm[idx];
+                ComplexVector Qlmj = Qlm[idx];
                 // 计算复向量的点乘
                 ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                 // 取模量来判断是否连接
@@ -1011,7 +986,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 返回最终计算结果
         return tConnectCount;
@@ -1044,30 +1019,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = sComplexVectorsTemp.get();
-        if (Qlm==null || Qlm.length!=mAtomNum || Qlm[0].size()!=aL+aL+1) {
-            Qlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp.remove();
-        }
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         // 然后直接使用缓存的变量来计算
         calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
         // 再次获取缓存
-        IComplexVector[] tqlm = sComplexVectorsTemp2.get();
-        if (tqlm==null || tqlm.length!=mAtomNum || tqlm[0].size()!=aL+aL+1) {
-            tqlm = new IComplexVector[mAtomNum];
-            for (int i = 0; i < mAtomNum; ++i) tqlm[i] = ComplexVector.zeros(aL+aL+1);
-        } else {
-            // 计算过程中先移除缓存中的值，避免其他位置再次获取
-            sComplexVectorsTemp2.remove();
-        }
-        final IComplexVector[] qlm = tqlm;
+        final ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
         calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp.set(Qlm);
+        returnComplexVectors_(Qlm);
         
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
@@ -1082,12 +1043,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
         for (int i = 0; i < mAtomNum; ++i) {
             // 统一获取行向量
-            final IComplexVector qlmi = qlm[i];
+            final ComplexVector qlmi = qlm[i];
             // 遍历近邻计算连接数
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
                 // 统一获取行向量
-                IComplexVector qlmj = qlm[idx];
+                ComplexVector qlmj = qlm[idx];
                 // 计算复向量的点乘
                 ComplexDouble Sij = qlmi.operation().dot(qlmj);
                 // 取模量来判断是否连接
@@ -1102,7 +1063,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 计算完成归还缓存数据
-        sComplexVectorsTemp2.set(qlm);
+        returnComplexVectors_(qlm, true);
         
         // 返回最终计算结果
         return tConnectCount;

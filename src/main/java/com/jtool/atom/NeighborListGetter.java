@@ -1,7 +1,9 @@
 package com.jtool.atom;
 
 import com.jtool.math.MathEX;
+import com.jtool.parallel.IObjectPool;
 import com.jtool.parallel.IShutdownable;
+import com.jtool.parallel.ObjectCachePool;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -20,6 +22,7 @@ import static com.jtool.code.UT.Code.toXYZ;
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  * <p> 此类线程安全，包括多个线程同时访问同一个实例 </p>
  */
+@SuppressWarnings("rawtypes")
 public class NeighborListGetter implements IShutdownable {
     final static double DEFAULT_CELL_STEP = 1.26; // 1.26*1.26*1.26 = 2.00
     
@@ -33,8 +36,27 @@ public class NeighborListGetter implements IShutdownable {
         @Override public double z() {return mXYZ.mZ;}
     }
     
+
+    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
+    private final static IObjectPool<Map<Integer, List[]>> sAllCellsAllocCache = new ObjectCachePool<>();
+    /** 缓存所有的 Cells 的内存空间 */
+    private final Map<Integer, List[]> mAllCellsAlloc;
     
-    private XYZ[] mAtomDataXYZ;
+    /** 方便使用的获取 Cells 内存空间的方法，线程不安全 */
+    private List[] getCellsAlloc_(int aMul, int aSizeX, int aSizeY, int aSizeZ) {
+        int tSize = aSizeX * aSizeY * aSizeZ;
+        List[] tCellsAlloc = mAllCellsAlloc.get(aMul);
+        if (tCellsAlloc==null || tCellsAlloc.length<tSize) {
+            tCellsAlloc = new List[tSize];
+            for (int i = 0; i < tSize; ++i) tCellsAlloc[i] = new ArrayList<>();
+            // 覆盖原本的缓存值
+            mAllCellsAlloc.put(aMul, tCellsAlloc);
+        }
+        return tCellsAlloc;
+    }
+    
+    
+    private XYZ[] mAtomDataXYZ;  // 注意 mAtomDataXYZ.length != mAtomNum
     private final XYZ mBox;
     private final int mAtomNum;
     private final double mMinBox;
@@ -44,7 +66,11 @@ public class NeighborListGetter implements IShutdownable {
     
     // 提供一个手动关闭的方法
     private volatile boolean mDead = false;
-    @Override public void shutdown() {mDead = true; mLinkedCells.clear(); mAtomDataXYZ = null;}
+    @Override public void shutdown() {
+        mDead = true; mLinkedCells.clear(); mAtomDataXYZ = null;
+        // 归还 Cells 的内存到缓存
+        sAllCellsAllocCache.returnObject(mAllCellsAlloc);
+    }
     
     public double getCellStep() {return mCellStep;}
     
@@ -53,14 +79,15 @@ public class NeighborListGetter implements IShutdownable {
     private final Lock mRL = mRWL.readLock();
     private final Lock mWL = mRWL.writeLock();
     
-    // NL 只支持已经经过平移的数据
-    public NeighborListGetter(XYZ[] aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, DEFAULT_CELL_STEP);}
-    public NeighborListGetter(XYZ[] aAtomDataXYZ, IXYZ aBox, double aCellStep) {
-        mAtomNum = aAtomDataXYZ.length;
+    /** NL 只支持已经经过平移的数据，目前暂不支持外部创建 */
+    NeighborListGetter(XYZ[] aAtomDataXYZ, int aAtomNum, IXYZ aBox, double aCellStep) {
         mAtomDataXYZ = aAtomDataXYZ;
+        mAtomNum = aAtomNum;
         mBox = toXYZ(aBox); // 仅用于计算，直接转为 XYZ 即可
         mMinBox = mBox.min();
         mCellStep = Math.max(aCellStep, 1.1);
+        Map<Integer, List[]> tAllCellsAlloc = sAllCellsAllocCache.getObject();
+        mAllCellsAlloc = tAllCellsAlloc==null ? new HashMap<>() : tAllCellsAlloc;
     }
     
     
@@ -100,7 +127,7 @@ public class NeighborListGetter implements IShutdownable {
             int aSizeX = Math.max((int)Math.floor(mBox.mX / tCellLength), tDiv); // 可以避免舍入误差的问题
             int aSizeY = Math.max((int)Math.floor(mBox.mY / tCellLength), tDiv);
             int aSizeZ = Math.max((int)Math.floor(mBox.mZ / tCellLength), tDiv);
-            tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ), mBox, aSizeX, aSizeY, aSizeZ);
+            tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ, mAtomNum), getCellsAlloc_(-tDiv, aSizeX, aSizeY, aSizeZ), mBox, aSizeX, aSizeY, aSizeZ);
             mLinkedCells.put(-tDiv, tLinkedCell);
         }
         // 再处理需要扩展的情况
@@ -117,10 +144,10 @@ public class NeighborListGetter implements IShutdownable {
             if (aSizeZ == 0) {aSizeZ = 1; aMulZ = (int)Math.ceil(tCellLength / mBox.mZ);}
             int tExpendAtomNum = mAtomNum*aMulX*aMulY*aMulZ;
             if (tExpendAtomNum == mAtomNum) {
-                tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ), mBox, aSizeX, aSizeY, aSizeZ);
+                tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ, mAtomNum), getCellsAlloc_(tMul, aSizeX, aSizeY, aSizeZ), mBox, aSizeX, aSizeY, aSizeZ);
                 mLinkedCells.put(tMul, tLinkedCell);
             } else {
-                tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ, mBox, aMulX, aMulY, aMulZ), mBox.multiply(aMulX, aMulY, aMulZ), aSizeX, aSizeY, aSizeZ);
+                tLinkedCell = new LinkedCell<>(toXYZ_IDX(mAtomDataXYZ, mAtomNum, mBox, aMulX, aMulY, aMulZ), getCellsAlloc_(tMul, aSizeX, aSizeY, aSizeZ), mBox.multiply(aMulX, aMulY, aMulZ), aSizeX, aSizeY, aSizeZ);
                 mLinkedCells.put(tMul, tLinkedCell);
             }
         }
@@ -131,11 +158,10 @@ public class NeighborListGetter implements IShutdownable {
     }
     
     /** 内部实用方法 */
-    private static Iterable<XYZ_IDX> toXYZ_IDX(final XYZ[] aAtomDataXYZ) {
+    private static Iterable<XYZ_IDX> toXYZ_IDX(final XYZ[] aAtomDataXYZ, final int mAtomNum) {
         return () -> new Iterator<XYZ_IDX>() {
-            private final int mSize = aAtomDataXYZ.length;
             int mIdx = 0;
-            @Override public boolean hasNext() {return mIdx < mSize;}
+            @Override public boolean hasNext() {return mIdx < mAtomNum;}
             @Override public XYZ_IDX next() {
                 if (hasNext()) {
                     XYZ_IDX tNext = new XYZ_IDX(aAtomDataXYZ[mIdx], mIdx);
@@ -147,9 +173,8 @@ public class NeighborListGetter implements IShutdownable {
             }
         };
     }
-    private static Iterable<XYZ_IDX> toXYZ_IDX(final XYZ[] aAtomDataXYZ, final XYZ aBox, final int aMulX, final int aMulY, final int aMulZ) {
+    private static Iterable<XYZ_IDX> toXYZ_IDX(final XYZ[] aAtomDataXYZ, final int mAtomNum, final XYZ aBox, final int aMulX, final int aMulY, final int aMulZ) {
         return () -> new Iterator<XYZ_IDX>() {
-            private final int mSize = aAtomDataXYZ.length;
             int mIdx = 0;
             int i = 0, j = 0, k = 0;
             @Override public boolean hasNext() {return k < aMulZ;}
@@ -163,7 +188,7 @@ public class NeighborListGetter implements IShutdownable {
                     );
                     XYZ_IDX tNext = new XYZ_IDX(aXYZ, mIdx);
                     ++mIdx;
-                    if (mIdx == mSize) {
+                    if (mIdx == mAtomNum) {
                         mIdx = 0;
                         ++i;
                         if (i == aMulX) {
