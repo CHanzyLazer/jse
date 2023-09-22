@@ -77,7 +77,13 @@ public interface IComplexDouble {
         return new ComplexDouble((aReal*lReal)/div, (-aReal*lImag)/div);
     }
     
-    default double abs() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
+    default ComplexDouble negative() {return new ComplexDouble(-real(), -imag());}
+    
+    default double norm() {return MathEX.Fast.sqrt(real()*real() + imag()*imag());}
+    default double phase() {return MathEX.Fast.atan2(imag(), real());}
+    /** matlab 的名称 */
+    default double abs() {return norm();}
+    default double angle() {return phase();}
     
     /** 获取复数的共轭值，conjugate */
     default ComplexDouble conj() {return new ComplexDouble(real(), -imag());}

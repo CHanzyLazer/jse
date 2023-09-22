@@ -979,7 +979,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 计算复向量的点乘
                 ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                 // 取模量来判断是否连接
-                if (Sij.abs() > aConnectThreshold) {
+                if (Sij.norm() > aConnectThreshold) {
                     tConnectCount.increment_(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {
@@ -1056,7 +1056,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 计算复向量的点乘
                 ComplexDouble Sij = qlmi.operation().dot(qlmj);
                 // 取模量来判断是否连接
-                if (Sij.abs() > aConnectThreshold) {
+                if (Sij.norm() > aConnectThreshold) {
                     tConnectCount.increment_(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {

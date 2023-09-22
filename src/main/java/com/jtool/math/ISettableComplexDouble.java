@@ -7,74 +7,73 @@ package com.jtool.math;
  * @author liqa
  */
 public interface ISettableComplexDouble extends IComplexDouble {
+    /** 考虑到性能以及复数的简单性，不返回自身 */
     void setReal(double aReal);
     void setImag(double aImag);
+    default void setComplexDouble(double aReal, double aImag) {setReal(aReal); setImag(aImag);}
+    default void setNormPhase(double aNorm, double aPhase) {setComplexDouble(aNorm * MathEX.Fast.cos(aPhase), aNorm * MathEX.Fast.sin(aPhase));}
     
     
-    default void plus2this(IComplexDouble aComplex) {setReal(real() + aComplex.real()); setImag(imag() + aComplex.imag());}
-    default void plus2this(ComplexDouble aComplex ) {setReal(real() + aComplex.mReal ); setImag(imag() + aComplex.mImag );}
+    default void plus2this(IComplexDouble aComplex) {setComplexDouble(real() + aComplex.real(), imag() + aComplex.imag());}
+    default void plus2this(ComplexDouble aComplex ) {setComplexDouble(real() + aComplex.mReal , imag() + aComplex.mImag );}
     default void plus2this(double aReal           ) {setReal(real() + aReal          );                                   }
     
-    default void minus2this(IComplexDouble aComplex) {setReal(real() - aComplex.real()); setImag(imag() - aComplex.imag());}
-    default void minus2this(ComplexDouble aComplex ) {setReal(real() - aComplex.mReal ); setImag(imag() - aComplex.mImag );}
+    default void minus2this(IComplexDouble aComplex) {setComplexDouble(real() - aComplex.real(), imag() - aComplex.imag());}
+    default void minus2this(ComplexDouble aComplex ) {setComplexDouble(real() - aComplex.mReal , imag() - aComplex.mImag );}
     default void minus2this(double aReal           ) {setReal(real() - aReal          );                                   }
     
-    default void lminus2this(IComplexDouble aComplex) {setReal(aComplex.real() - real()); setImag(aComplex.imag() - imag());}
-    default void lminus2this(ComplexDouble aComplex ) {setReal(aComplex.mReal  - real()); setImag(aComplex.mImag  - imag());}
-    default void lminus2this(double aReal           ) {setReal(aReal           - real()); setImag(                - imag());}
+    default void lminus2this(IComplexDouble aComplex) {setComplexDouble(aComplex.real() - real(), aComplex.imag() - imag());}
+    default void lminus2this(ComplexDouble aComplex ) {setComplexDouble(aComplex.mReal  - real(), aComplex.mImag  - imag());}
+    default void lminus2this(double aReal           ) {setComplexDouble(aReal           - real(),                 - imag());}
     
     default void multiply2this(IComplexDouble aComplex) {
         final double lReal = real(),          lImag = imag();
         final double rReal = aComplex.real(), rImag = aComplex.imag();
-        setReal(lReal*rReal - lImag*rImag);
-        setImag(lImag*rReal + lReal*rImag);
+        setComplexDouble(lReal*rReal - lImag*rImag, lImag*rReal + lReal*rImag);
     }
     default void multiply2this(ComplexDouble aComplex ) {
         final double lReal = real(),         lImag = imag();
         final double rReal = aComplex.mReal, rImag = aComplex.mImag;
-        setReal(lReal*rReal - lImag*rImag);
-        setImag(lImag*rReal + lReal*rImag);
+        setComplexDouble(lReal*rReal - lImag*rImag, lImag*rReal + lReal*rImag);
     }
     default void multiply2this(double aReal           ) {
-        setReal(real() * aReal); setImag(imag() * aReal);
+        setComplexDouble(real() * aReal, imag() * aReal);
     }
     
     default void div2this(IComplexDouble aComplex) {
         final double lReal = real(),          lImag = imag();
         final double rReal = aComplex.real(), rImag = aComplex.imag();
         final double div = rReal*rReal + rImag*rImag;
-        setReal((lReal*rReal + lImag*rImag)/div);
-        setImag((lImag*rReal - lReal*rImag)/div);
+        setComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
     }
     default void div2this(ComplexDouble aComplex ) {
         final double lReal = real(),         lImag = imag();
         final double rReal = aComplex.mReal, rImag = aComplex.mImag;
         final double div = rReal*rReal + rImag*rImag;
-        setReal((lReal*rReal + lImag*rImag)/div);
-        setImag((lImag*rReal - lReal*rImag)/div);
+        setComplexDouble((lReal*rReal + lImag*rImag)/div, (lImag*rReal - lReal*rImag)/div);
     }
     default void div2this(double aReal          ) {
-        setReal(real() / aReal); setImag(imag() / aReal);
+        setComplexDouble(real() / aReal, imag() / aReal);
     }
     
     default void ldiv2this(IComplexDouble aComplex) {
         final double lReal = real(),          lImag = imag();
         final double rReal = aComplex.real(), rImag = aComplex.imag();
         final double div = lReal*lReal + lImag*lImag;
-        setReal((rReal*lReal + rImag*lImag)/div);
-        setImag((rImag*lReal - rReal*lImag)/div);
+        setComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
     }
     default void ldiv2this(ComplexDouble aComplex ) {
         final double lReal = real(),         lImag = imag();
         final double rReal = aComplex.mReal, rImag = aComplex.mImag;
         final double div = lReal*lReal + lImag*lImag;
-        setReal((rReal*lReal + rImag*lImag)/div);
-        setImag((rImag*lReal - rReal*lImag)/div);
+        setComplexDouble((rReal*lReal + rImag*lImag)/div, (rImag*lReal - rReal*lImag)/div);
     }
     default void ldiv2this(double aReal          ) {
         final double lReal = real(), lImag = imag();
         final double div = lReal*lReal + lImag*lImag;
-        setReal((aReal*lReal)/div);
-        setImag((-aReal*lImag)/div);
+        setComplexDouble((aReal*lReal)/div, (-aReal*lImag)/div);
     }
+    
+    default void negative2this() {setComplexDouble(-real(), -imag());}
+    default void conj2this() {setImag(-imag());}
 }

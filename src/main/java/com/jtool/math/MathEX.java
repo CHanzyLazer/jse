@@ -1084,6 +1084,7 @@ public class MathEX {
         public static double asin(double aValue) {return FastMath.asin(aValue);}
         public static double acos(double aValue) {return FastMath.acos(aValue);}
         public static double atan(double aValue) {return FastMath.atan(aValue);}
+        public static double atan2(double aY, double aX) {return FastMath.atan2(aY, aX);}
         
         public static double pow(double aValue, double aPower) {return FastMath.pow(aValue, aPower);}
     }

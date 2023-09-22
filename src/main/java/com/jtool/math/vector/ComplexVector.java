@@ -311,6 +311,11 @@ public final class ComplexVector extends BiDoubleArrayVector {
                 mData[0][oIdx] = aValue;
                 mData[1][oIdx] = 0.0;
             }
+            @Override public void setComplexDouble(double aReal, double aImag) {
+                if (oIdx < 0) throw new IllegalStateException();
+                mData[0][oIdx] = aReal;
+                mData[1][oIdx] = aImag;
+            }
             
             /** 高性能接口重写来进行专门优化 */
             @Override public void nextAndSet(IComplexDouble aValue) {

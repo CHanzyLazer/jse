@@ -19,6 +19,7 @@ public final class ComplexDouble implements ISettableComplexDouble {
     @Override public double imag() {return mImag;}
     @Override public void setReal(double aReal) {mReal = aReal;}
     @Override public void setImag(double aImag) {mImag = aImag;}
+    @Override public void setComplexDouble(double aReal, double aImag) {mReal = aReal; mImag = aImag;}
     
     /** print */
     @Override public String toString() {return Double.compare(mImag, 0.0)>=0 ? String.format("%.4g + %.4gi", mReal, mImag) : String.format("%.4g - %.4gi", mReal, -mImag);}
@@ -143,7 +144,11 @@ public final class ComplexDouble implements ISettableComplexDouble {
         mReal = (aReal*lReal)/div;
         mImag = (-aReal*lImag)/div;
     }
+    @Override public ComplexDouble negative() {return new ComplexDouble(-mReal, -mImag);}
+    @Override public void negative2this() {mReal = -mReal; mImag = -mImag;}
     
-    @Override public double abs() {return MathEX.Fast.sqrt(mReal*mReal + mImag*mImag);}
+    @Override public double norm() {return MathEX.Fast.sqrt(mReal*mReal + mImag*mImag);}
+    @Override public double phase() {return MathEX.Fast.atan2(mImag, mReal);}
     @Override public ComplexDouble conj() {return new ComplexDouble(mReal, -mImag);}
+    @Override public void conj2this() {mImag = -mImag;}
 }
