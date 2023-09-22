@@ -56,7 +56,7 @@ mpc_C.shutdown();
 
 
 // 再计算生成的结果
-data_FCC = Structures.FCC(4.0, 10).opt().perturbG(0.25);
+data_FCC = Structures.FCC(4.0, 10).opt().perturbXYZ(0.25);
 mpc_FCC = data_FCC.getMPC();
 println("FCC, u: ${mpc_FCC.unitLen()}");
 UT.Timer.tic();
@@ -67,7 +67,7 @@ q6_FCC = mpc_FCC.calABOOP(6);
 UT.Timer.toc("FCC, q6");
 mpc_FCC.shutdown();
 
-data_BCC = Structures.BCC(4.0, 15).opt().perturbG(0.32);
+data_BCC = Structures.BCC(4.0, 15).opt().perturbXYZ(0.32);
 mpc_BCC = data_BCC.getMPC();
 println("BCC, u: ${mpc_BCC.unitLen()}");
 UT.Timer.tic();
