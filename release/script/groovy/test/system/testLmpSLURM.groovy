@@ -25,7 +25,7 @@ lmpIn.vOutRestartPath = 'lmp/.temp/melt-Cu108-init';
 lmpIn.pair_style = 'eam/alloy';
 lmpIn.pair_coeff = '* * lmp/potential/ZrCu.lammps.eam Cu Zr';
 // 附加势函数文件
-lmpIn.i('eam', 'lmp/potential/ZrCu.lammps.eam'); // 同样 key 可以随便起
+lmpIn.i('eam', 'lmp/.potential/ZrCu.lammps.eam'); // 同样 key 可以随便起
 // 写入输入文件
 lmpIn.write(inPath);
 

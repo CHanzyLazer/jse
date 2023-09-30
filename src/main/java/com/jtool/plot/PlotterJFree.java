@@ -39,7 +39,7 @@ import static java.awt.Color.*;
  * <p> 基于 JFreeChart 实现的 plot 类 </p>
  * <p> 暂不考虑对数坐标的情况 </p>
  */
-public class PlotterJFree implements IPlotter {
+public final class PlotterJFree implements IPlotter {
     protected class LineJFree extends AbstractLine {
         final int mID;
         final String mName;
@@ -157,12 +157,12 @@ public class PlotterJFree implements IPlotter {
     public final static double LEGEND_SIZE = 16.0;
     
     /** 内部成员 */
-    final XYSeriesCollection mLinesData;
-    final JFreeChart mChart;
-    final XYPlot mPlot;
-    final NumberAxis mXAxis, mYAxis;
-    final XYLineAndShapeRenderer mLineRender;
-    final List<LineJFree> mLines;
+    private final XYSeriesCollection mLinesData;
+    private final JFreeChart mChart;
+    private final XYPlot mPlot;
+    private NumberAxis mXAxis, mYAxis;
+    private final XYLineAndShapeRenderer mLineRender;
+    private final List<LineJFree> mLines;
     
     
     /** 一些默认的初始设定 */
@@ -348,8 +348,7 @@ public class PlotterJFree implements IPlotter {
     }
     
     /** 添加绘制数据 */
-    @Override
-    public ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
+    @Override public ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
         // 创建数据
         XYSeries tSeries = new XYSeries(aName, false, true); // 不做排序以及允许重复数值
         Iterator<? extends Number> itx = aX.iterator();
@@ -365,8 +364,34 @@ public class PlotterJFree implements IPlotter {
         return tLine;
     }
     
-    @Override
-    public IFigure show(String aName) {
+    /** 设置轴的类型 */
+    @Override public IPlotter xScaleLog() {
+        if (!(mXAxis instanceof LogarithmicAxis)) {
+            NumberAxis oXAxis = mXAxis;
+            mXAxis = new LogarithmicAxis(oXAxis.getLabel());
+            mXAxis.setAutoRangeIncludesZero(false);
+            mXAxis.setLabelFont(oXAxis.getLabelFont());
+            mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
+            mPlot.setDomainAxis(mXAxis);
+            // TODO: 范围设置需要专门更新
+        }
+        return this;
+    }
+    @Override public IPlotter yScaleLog() {
+        if (!(mYAxis instanceof LogarithmicAxis)) {
+            NumberAxis oYAxis = mYAxis;
+            mYAxis = new LogarithmicAxis(oYAxis.getLabel());
+            mYAxis.setAutoRangeIncludesZero(false);
+            mYAxis.setLabelFont(oYAxis.getLabelFont());
+            mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
+            mPlot.setRangeAxis(mYAxis);
+            // TODO: 范围设置需要专门更新
+        }
+        return this;
+    }
+    
+    
+    @Override public IFigure show(String aName) {
         // 显示图像
         final JFrame tFrame = new JFrame(aName);
         tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

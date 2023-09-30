@@ -6,6 +6,7 @@ import com.jtool.code.filter.IDoubleFilter;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.iterator.IHasDoubleIterator;
+import com.jtool.math.MathEX;
 import groovy.lang.Closure;
 
 import java.util.Collection;
@@ -80,11 +81,7 @@ public class Vectors {
     
     
     /** Vector 特有的构造 */
-    public static IVector sequence(double aStart, double aStep, double aEnd) {
-        int tSize = (int)Math.floor((aEnd-aStart)/aStep) + 1;
-        return linspace(aStart, aStep, tSize);
-    }
-    public static IVector linspace(double aStart, double aStep, int aN) {
+    public static IVector linsequence(double aStart, double aStep, int aN) {
         final IVector rVector = zeros(aN);
         final IDoubleSetIterator si = rVector.setIterator();
         double tValue = aStart;
@@ -93,5 +90,24 @@ public class Vectors {
             tValue += aStep;
         }
         return rVector;
+    }
+    public static IVector linspace(double aStart, double aEnd, int aN) {
+        double tStep = (aEnd-aStart)/(double)(aN-1);
+        return linsequence(aStart, tStep, aN);
+    }
+    
+    public static IVector logsequence(double aStart, double aStep, int aN) {
+        final IVector rVector = zeros(aN);
+        final IDoubleSetIterator si = rVector.setIterator();
+        double tValue = aStart;
+        while (si.hasNext()) {
+            si.nextAndSet(tValue);
+            tValue *= aStep;
+        }
+        return rVector;
+    }
+    public static IVector logspace(double aStart, double aEnd, int aN) {
+        double tStep = MathEX.Fast.pow(aEnd/aStart, 1.0/(double)(aN-1));
+        return logsequence(aStart, tStep, aN);
     }
 }

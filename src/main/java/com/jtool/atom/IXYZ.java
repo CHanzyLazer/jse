@@ -70,18 +70,21 @@ public interface IXYZ {
     
     
     
-    default double distance(IXYZ aRHS) {
+    default double distance2(IXYZ aRHS) {
         double tX = x() - aRHS.x();
         double tY = y() - aRHS.y();
         double tZ = z() - aRHS.z();
-        return MathEX.Fast.sqrt(tX*tX + tY*tY + tZ*tZ);
+        return tX*tX + tY*tY + tZ*tZ;
     }
-    default double distance(double aX, double aY, double aZ) {
+    default double distance2(double aX, double aY, double aZ) {
         aX -= x();
         aY -= y();
         aZ -= z();
-        return MathEX.Fast.sqrt(aX*aX + aY*aY + aZ*aZ);
+        return aX*aX + aY*aY + aZ*aZ;
     }
+    
+    default double distance(IXYZ aRHS) {return MathEX.Fast.sqrt(distance2(aRHS));}
+    default double distance(double aX, double aY, double aZ) {return MathEX.Fast.sqrt(distance2(aX, aY, aZ));}
     
     /**
      * MHT: ManHaTtan distance

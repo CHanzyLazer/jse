@@ -208,7 +208,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的矩阵，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
      * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
-     * @return gr 以及对应横坐标 r 构成的矩阵，排成两列，gr 在前 r 在后
+     * @return gr 函数
      */
     public IFunc1 calRDF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, int aN, final double aRMax) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -253,7 +253,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aN 指定分划的份数，这里需要更多的份数来得到合适的结果，默认为 1000
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
-     * @return gr 以及对应横坐标 r 构成的矩阵，排成两列，gr 在前 r 在后
+     * @return gr 函数
      */
     public IFunc1 calRDF_G(int aN, final double aRMax, int aSigmaMul) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -344,7 +344,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aQMin 可以手动指定最小的截断的 q（由于 pbc 的原因，过小的结果发散）
-     * @return Sq 以及对应横坐标 q 构成的矩阵，排成两列，Sq 在前 q 在后
+     * @return Sq 函数
      */
     public IFunc1 calSF(double aQMax, int aN, final double aRMax, double aQMin) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -387,7 +387,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aQMin 手动指定最小的截断的 q
-     * @return Sq 以及对应横坐标 q 构成的矩阵，排成两列，Sq 在前 q 在后
+     * @return Sq 函数
      */
     public IFunc1 calSF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, double aQMax, int aN, final double aRMax, double aQMin) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -537,7 +537,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aL 计算具体 Qlm 值的下标，即 Q4m: l = 4, Q6m: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @return Qlm 组成的矩阵
+     * @return Qlm 组成的复向量数组
      */
     public IComplexVector[] calYlmMean(int aL, double aRNearest, int aNnn) {
         final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
@@ -564,7 +564,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnnY 用来计算 YlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return qlm 组成的矩阵，以及近邻列表
+     * @return qlm 组成的复向量数组
      */
     public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         final IComplexVector[] Qlm = new IComplexVector[mAtomNum];

@@ -1,6 +1,9 @@
 .*
 __*
 
+# lammps shit
+log.lammps
+
 # 手动设置的 idea 运行脚本的配置
 !/.idea
 /.idea/*

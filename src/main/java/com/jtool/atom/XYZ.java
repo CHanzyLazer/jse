@@ -82,25 +82,26 @@ public final class XYZ implements IXYZ {
     public void div2this(double aRHS) {mX /= aRHS; mY /= aRHS; mZ /= aRHS;}
     
     
-    @Override public double distance(IXYZ aRHS) {
+    @Override public double distance2(IXYZ aRHS) {
         double tX = mX - aRHS.x();
         double tY = mY - aRHS.y();
         double tZ = mZ - aRHS.z();
-        return MathEX.Fast.sqrt(tX*tX + tY*tY + tZ*tZ);
+        return tX*tX + tY*tY + tZ*tZ;
     }
-    @Override public double distance(double aX, double aY, double aZ) {
+    @Override public double distance2(double aX, double aY, double aZ) {
         aX -= mX;
         aY -= mY;
         aZ -= mZ;
-        return MathEX.Fast.sqrt(aX*aX + aY*aY + aZ*aZ);
+        return aX*aX + aY*aY + aZ*aZ;
     }
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public double distance(XYZ aRHS) {
+    public double distance2(XYZ aRHS) {
         double tX = mX - aRHS.mX;
         double tY = mY - aRHS.mY;
         double tZ = mZ - aRHS.mZ;
-        return MathEX.Fast.sqrt(tX*tX + tY*tY + tZ*tZ);
+        return tX*tX + tY*tY + tZ*tZ;
     }
+    public double distance(XYZ aRHS) {return MathEX.Fast.sqrt(distance2(aRHS));}
     
     @Override public double distanceMHT(IXYZ aRHS) {
         return Math.abs(mX - aRHS.x()) + Math.abs(mY - aRHS.y()) + Math.abs(mZ - aRHS.z());

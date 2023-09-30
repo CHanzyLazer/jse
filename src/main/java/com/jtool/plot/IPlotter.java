@@ -93,6 +93,10 @@ public interface IPlotter {
     IPlotter insetsBottom(double aBottom);
     IPlotter insetsRight(double aRight);
     
+    /** 设置轴的类型 */
+    IPlotter xScaleLog();
+    IPlotter yScaleLog();
+    
     /** 直接保存结果 */
     void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException;
     default void save(@Nullable String aFilePath) throws IOException {save(aFilePath, 1024, 768);}

@@ -4,8 +4,11 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
+import com.jtool.code.collection.Pair;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.Matrices;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.Vectors;
 import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IObjectPool;
 import com.jtool.parallel.ObjectCachePool;
@@ -265,4 +268,46 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     public MonatomicParameterCalculator getMeanMPC() {return getMeanMPC(0, mFrameNum);}
     
     
+    /**
+     * 计算 t 时刻的 MSD (Mean Square Displacement)，
+     * TODO: 由于目前 Func1 只支持均匀间距的点，这里暂时直接输出两组向量
+     * @author liqa
+     * @param aN 需要计算的时间点数目，默认为 20
+     * @param aTimeGap 进行平均的时间间隔，认为这个时间间隔后的系统不再相关，默认为 10*mTimestep
+     * @return 对应时间下 MSD 的函数
+     */
+    public Pair<IVector, IVector> calMSD(int aN, double aTimeGap) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 初始化需要计算的变量
+        final IVector rMSD = Vectors.zeros(aN);
+        final IVector rTime = Vectors.logspace(mTimestep, mTimestep*mFrameNum*0.8, aN);
+        
+        // 先临时调整时间点到帧数值（不去排除重复值，如果存在）
+        rTime.operation().map2this(t -> Math.round(t / mTimestep));
+        // 获取需要间隔的帧数值
+        final int tFrameGap = Math.max(1, (int)Math.round(aTimeGap / mTimestep));
+        
+        // 根据帧数值来计算 MSD
+        pool().parfor(aN, i -> {
+            double rStatNum = 0;
+            double rMSDi = 0.0;
+            for (int start = 0, end = (int)rTime.get_(i); end < mFrameNum; start+=tFrameGap, end+=tFrameGap) {
+                XYZ[] tStartFrame = mAllAtomDataXYZ[start];
+                XYZ[] tEndFrame = mAllAtomDataXYZ[end];
+                for (int j = 0; j < mAtomNum; ++j) rMSDi += tStartFrame[j].distance2(tEndFrame[j]);
+                rStatNum += mAtomNum;
+            }
+            // 在这里统一设置可以避免频繁访问数组
+            rMSD.set_(i, rMSDi/rStatNum);
+        });
+        
+        // 最后将时间点调整回实际时间
+        rTime.multiply2this(mTimestep);
+        
+        // 输出结果
+        return new Pair<>(rTime, rMSD);
+    }
+    public Pair<IVector, IVector> calMSD(int aN) {return calMSD(aN, 10*mTimestep);}
+    public Pair<IVector, IVector> calMSD() {return calMSD(20);}
 }

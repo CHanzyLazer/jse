@@ -4,8 +4,10 @@ import com.jtool.atom.*;
 import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.NewCollections;
+import com.jtool.math.MathEX;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
+import com.jtool.math.table.AbstractMultiFrameTable;
 import com.jtool.math.table.ITable;
 import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
@@ -14,7 +16,10 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+
+import static com.jtool.code.UT.Code.toXYZ;
 
 
 /**
@@ -28,7 +33,7 @@ import java.util.List;
 public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubLammpstrj> {
     private final static String[] BOX_BOUND = {"pp", "pp", "pp"};
     
-    private final List<SubLammpstrj> mData;
+    private List<SubLammpstrj> mData;
     
     Lammpstrj(SubLammpstrj... aData) {mData = NewCollections.from(aData);}
     Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
@@ -66,15 +71,46 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
     public Box lmpBox() {return defaultFrame().lmpBox();}
     
     /** 提供直接转为表格的接口 */
-    public ITable asTable() {return defaultFrame().asTable();}
+    public AbstractMultiFrameTable<ITable> asTable() {
+        return new AbstractMultiFrameTable<ITable>() {
+            @Override public AbstractMultiFrameTable<ITable> copy() {return Lammpstrj.this.copy().asTable();}
+            @Override public ITable get(int index) {return Lammpstrj.this.get(index).asTable();}
+            @Override public int size() {return Lammpstrj.this.size();}
+            @Override public ITable defaultFrame() {return Lammpstrj.this.defaultFrame().asTable();}
+        };
+    }
+    
+    /** 密度归一化, 返回自身来支持链式调用 */
+    public Lammpstrj setDenseNormalized() {
+        for (SubLammpstrj tSubLammpstrj : this) tSubLammpstrj.setDenseNormalized();
+        return this;
+    }
+    /** 截断开头一部分, 返回自身来支持链式调用 */
+    public Lammpstrj cutFront(int aLength) {
+        if (aLength <= 0) return this;
+        if (aLength > mData.size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aLength));
+        List<SubLammpstrj> oData = mData;
+        mData = new ArrayList<>(oData.size() - aLength);
+        Iterator<SubLammpstrj> it = oData.listIterator(aLength);
+        while (it.hasNext()) mData.add(it.next());
+        return this;
+    }
+    /** 截断结尾一部分, 返回自身来支持链式调用 */
+    public Lammpstrj cutBack(int aLength) {
+        if (aLength <= 0) return this;
+        if (aLength > mData.size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aLength));
+        for (int i = 0; i < aLength; ++i) mData.remove(mData.size()-1);
+        return this;
+    }
+    
     
     /** 每个帧的子 Lammpstrj */
     public static class SubLammpstrj extends AbstractSettableAtomData {
         private final long mTimeStep;
         private final String[] mBoxBounds;
-        private final Box mBox;
         private final ITable mAtomData;
         private int mAtomTypeNum;
+        private Box mBox;
         
         String mKeyX = null, mKeyY = null, mKeyZ = null;
         private final boolean mHasVelocities;
@@ -138,6 +174,51 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         public long timeStep() {return mTimeStep;}
         public String[] boxBounds() {return mBoxBounds;}
         public Box lmpBox() {return mBox;}
+        
+        /** 密度归一化, 返回自身来支持链式调用 */
+        public SubLammpstrj setDenseNormalized() {
+            XYZ oShiftedBox = toXYZ(mBox.shiftedBox());
+            double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / atomNum());
+            tScale = 1.0 / tScale;
+            
+            // 从逻辑上考虑，这里不对原本数据做值拷贝
+            switch (mXType) {
+            case NORMAL: case UNWRAPPED: {
+                IVector tCol = mAtomData.col(mKeyX);
+                tCol.minus2this(mBox.xlo());
+                tCol.multiply2this(tScale);
+                break;
+            }
+            case SCALED: case SCALED_UNWRAPPED: {break;}
+            }
+            switch (mYType) {
+            case NORMAL: case UNWRAPPED: {
+                IVector tCol = mAtomData.col(mKeyY);
+                tCol.minus2this(mBox.ylo());
+                tCol.multiply2this(tScale);
+                break;
+            }
+            case SCALED: case SCALED_UNWRAPPED: {break;}
+            }
+            switch (mZType) {
+            case NORMAL: case UNWRAPPED: {
+                IVector tCol = mAtomData.col(mKeyZ);
+                tCol.minus2this(mBox.zlo());
+                tCol.multiply2this(tScale);
+                break;
+            }
+            case SCALED: case SCALED_UNWRAPPED: {break;}
+            }
+            
+            if (mAtomData.containsHead("vx")) mAtomData.col("vx").multiply2this(tScale);
+            if (mAtomData.containsHead("vy")) mAtomData.col("vy").multiply2this(tScale);
+            if (mAtomData.containsHead("vz")) mAtomData.col("vz").multiply2this(tScale);
+            
+            // box 还是会重新创建，因为 box 的值这里约定是严格的常量，可以避免一些问题
+            mBox = new Box(oShiftedBox.multiply(tScale));
+            
+            return this;
+        }
         
         /** 内部方法，用于从原始的数据获取合适的 x，y，z 数据 */
         private double getX_(int aIdx) {
