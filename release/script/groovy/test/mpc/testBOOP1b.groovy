@@ -62,20 +62,20 @@ mpcB2.shutdown();
 
 
 // 再计算生成的结果
-def dataFFS1   = Dump.read('lmp/.ffs-in/dump-fs1-new').last();
-if (onlyCu) dataFFS1 = dataFFS1.opt().filterType(1);
-if (onlyZr) dataFFS1 = dataFFS1.opt().filterType(2);
-mpcFFS1 = dataFFS1.getMPC(nThreads);
-println("FFS1, u: ${mpcFFS1.unitLen()}");
-UT.Timer.tic();
-q4FFS1 = mpcFFS1.calABOOP(4, mpcFFS1.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("FFS1, q4");
-UT.Timer.tic();
-q6FFS1 = mpcFFS1.calABOOP(6, mpcFFS1.unitLen()*cutoffMul, nnn);
-UT.Timer.toc("FFS1, q6");
-mpcFFS1.shutdown();
+//def dataFFS1   = Dump.read('lmp/.ffs-in/dump-fs1-new').last();
+//if (onlyCu) dataFFS1 = dataFFS1.opt().filterType(1);
+//if (onlyZr) dataFFS1 = dataFFS1.opt().filterType(2);
+//mpcFFS1 = dataFFS1.getMPC(nThreads);
+//println("FFS1, u: ${mpcFFS1.unitLen()}");
+//UT.Timer.tic();
+//q4FFS1 = mpcFFS1.calABOOP(4, mpcFFS1.unitLen()*cutoffMul, nnn);
+//UT.Timer.toc("FFS1, q4");
+//UT.Timer.tic();
+//q6FFS1 = mpcFFS1.calABOOP(6, mpcFFS1.unitLen()*cutoffMul, nnn);
+//UT.Timer.toc("FFS1, q6");
+//mpcFFS1.shutdown();
 
-//def dataFFS2   = Dump.read('lmp/.ffs-in/dump-fs2').last();
+//def dataFFS2   = Dump.read('lmp/.ffs-in/dump-fs2-new').last();
 //if (onlyCu) dataFFS2 = dataFFS2.opt().filterType(1);
 //if (onlyZr) dataFFS2 = dataFFS2.opt().filterType(2);
 //mpcFFS2 = dataFFS2.getMPC(nThreads);
@@ -101,16 +101,29 @@ q6Melt = mpcMelt.calABOOP(6, mpcMelt.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("melt, q6");
 mpcMelt.shutdown();
 
+def dataMelt2  = Dump.read('lmp/.stableglass-in/dump-fs1-melt-fast').getMFPC(0.002).getMeanAtomData(1000, 50);
+if (onlyCu) dataMelt2 = dataMelt2.opt().filterType(1);
+if (onlyZr) dataMelt2 = dataMelt2.opt().filterType(2);
+mpcMelt2 = dataMelt2.getMPC(nThreads);
+println("Melt2, u: ${mpcMelt2.unitLen()}");
+UT.Timer.tic();
+q4Melt2 = mpcMelt2.calABOOP(4, mpcMelt2.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("Melt2, q4");
+UT.Timer.tic();
+q6Melt2 = mpcMelt2.calABOOP(6, mpcMelt2.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("Melt2, q6");
+mpcMelt2.shutdown();
+
 
 // 使用 Plotter 绘图
-plt1 = Plotters.get();
-plt1.plot(q4MgCu2   , q6MgCu2   , 'MgCu2'  ).color('r').lineType('none').markerType('o').markerSize(4);
-plt1.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'  ).color('g').lineType('none').markerType('o').markerSize(4);
-plt1.plot(q4B2      , q6B2      , 'B2'     ).color('b').lineType('none').markerType('o').markerSize(4);
-plt1.plot(q4FFS1    , q6FFS1    , 'FFS1'   ).color('k').lineType('none').markerType('^').markerSize(5);
-plt1.xlabel('q4').ylabel('q6');
-plt1.xTick(0.02).yTick(0.02);
-plt1.show();
+//plt1 = Plotters.get();
+//plt1.plot(q4MgCu2   , q6MgCu2   , 'MgCu2'  ).color('r').lineType('none').markerType('o').markerSize(4);
+//plt1.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'  ).color('g').lineType('none').markerType('o').markerSize(4);
+//plt1.plot(q4B2      , q6B2      , 'B2'     ).color('b').lineType('none').markerType('o').markerSize(4);
+//plt1.plot(q4FFS1    , q6FFS1    , 'FFS1'   ).color('k').lineType('none').markerType('^').markerSize(5);
+//plt1.xlabel('q4').ylabel('q6');
+//plt1.xTick(0.02).yTick(0.02);
+//plt1.show();
 
 //plt2 = Plotters.get();
 //plt2.plot(q4MgCu2   , q6MgCu2   , 'MgCu2'  ).color('r').lineType('none').markerType('o').markerSize(4);
@@ -129,3 +142,12 @@ plt3.plot(q4Melt    , q6Melt    , 'melt'   ).color('k').lineType('none').markerT
 plt3.xlabel('q4').ylabel('q6');
 plt3.xTick(0.02).yTick(0.02);
 plt3.show();
+
+plt4 = Plotters.get();
+plt4.plot(q4MgCu2   , q6MgCu2   , 'MgCu2'  ).color('r').lineType('none').markerType('o').markerSize(4);
+plt4.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'  ).color('g').lineType('none').markerType('o').markerSize(4);
+plt4.plot(q4B2      , q6B2      , 'B2'     ).color('b').lineType('none').markerType('o').markerSize(4);
+plt4.plot(q4Melt2   , q6Melt2   , 'melt2'  ).color('k').lineType('none').markerType('^').markerSize(5);
+plt4.xlabel('q4').ylabel('q6');
+plt4.xTick(0.02).yTick(0.02);
+plt4.show();
