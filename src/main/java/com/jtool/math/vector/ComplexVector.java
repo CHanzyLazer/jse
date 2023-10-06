@@ -33,6 +33,18 @@ public final class ComplexVector extends BiDoubleArrayVector {
         private int mSize = 0;
         private Builder() {}
         
+        public ComplexDouble get(int aIdx) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            return new ComplexDouble(mData[0][aIdx], mData[1][aIdx]);
+        }
+        public void set(int aIdx, IComplexDouble aValue) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            mData[0][aIdx] = aValue.real();
+            mData[1][aIdx] = aValue.imag();
+        }
+        public int size() {return mSize;}
+        public boolean isEmpty() {return mSize==0;}
+        
         /** 在这里这个方法是必要的，虽然目前的约定下不会出现 {@code double aReal, double aImag} 两个参数的方法 */
         public void add(double aReal, double aImag) {
             if (mData.length <= mSize) {

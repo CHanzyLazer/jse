@@ -81,7 +81,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     
     
     /** 是否在关闭此实例时顺便关闭内部 exe */
-    public ConstantLmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
+    @Override public ConstantLmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     public ConstantLmpExecutor setFileSystemWaitTime(long aFileSystemWaitTime) {mFileSystemWaitTime = aFileSystemWaitTime; return this;}
     public ConstantLmpExecutor setSleepTime(long aSleepTime) {mSleepTime = aSleepTime; return this;}
     

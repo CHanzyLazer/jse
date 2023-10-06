@@ -34,7 +34,6 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     
     private final String mWorkingDir;
     
-    private final Random mRNG = new Random();
     private final ILmpExecutor mLMP;
     private final Lammpstrj mInitPoints;
     private final IInFile mGenDumpIn;
@@ -81,7 +80,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     }
     
     private static LmpIn getGenDumpIn(double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {
-        LmpIn rGenDumpIn = LmpIn.DUMP_MELT_NPT_Cu();
+        LmpIn rGenDumpIn = LmpIn.DATA2DUMP_MELT_NPT_Cu();
         rGenDumpIn.put("vT", aTemperature);
         rGenDumpIn.put("vTimestep", aTimestep);
         rGenDumpIn.put("vTdamp", aTimestep*50); // 增大控温的频率，因为都是短时的运行
@@ -94,7 +93,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     }
     
     /** 是否在关闭此实例时顺便关闭内部 exe */
-    public DumpPathGenerator setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
+    @Override public DumpPathGenerator setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     
     
     /** IPathGenerator stuff */
@@ -123,7 +122,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
                     mGenDumpIn.put("velocity", REMOVE);
                 } else {
                     mGenDumpIn.put("velocity", KEEP);
-                    mGenDumpIn.put("vSeed", mRNG.nextInt(MAX_SEED));
+                    mGenDumpIn.put("vSeed", UT.Code.randSeed());
                 }
                 mGenDumpIn.put("vInDataPath", tLmpDataPath);
                 mGenDumpIn.put("vDumpPath", tLmpDumpPath);

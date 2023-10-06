@@ -30,6 +30,17 @@ public final class LogicalVector extends BooleanArrayVector {
         private int mSize = 0;
         private Builder() {}
         
+        public boolean get(int aIdx) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            return mData[aIdx];
+        }
+        public void set(int aIdx, boolean aValue) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            mData[aIdx] = aValue;
+        }
+        public int size() {return mSize;}
+        public boolean isEmpty() {return mSize==0;}
+        
         public void add(boolean aValue) {
             if (mData.length <= mSize) {
                 boolean[] oData = mData;

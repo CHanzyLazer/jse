@@ -62,11 +62,12 @@ public class LmpIn extends AbstractInFileLines {
     public static LmpIn custom(String aLmpInPath) {return new LmpIn(aLmpInPath);}
     
     static LmpIn CONSTANT() {return new LmpIn("constant", true);}
-    public static LmpIn INIT_MELT_NPT_Cu    () {LmpIn tLmpIn = new LmpIn("init-melt-NPT-Cu"     , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/data/CuFCC108.lmpdat"         ).putOFiles("vOutRestartPath", "lmp/.temp/restart/melt-Cu108-init"); return tLmpIn;}
-    public static LmpIn DATA_MELT_NPT_Cu    () {LmpIn tLmpIn = new LmpIn("data-melt-NPT-Cu"     , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/.temp/data-in-Cu108"          ).putOFiles("vOutDataPath"   , "lmp/.temp/data-out-Cu108"         ); return tLmpIn;}
-    public static LmpIn DUMP_MELT_NPT_Cu    () {LmpIn tLmpIn = new LmpIn("dump-melt-NPT-Cu"     , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/data/Cu108.lmpdat"            ).putOFiles("vDumpPath"      , "lmp/.temp/dump/Cu108.lammpstrj"   ); return tLmpIn;}
-    public static LmpIn RESTART_MELT_NPT_Cu () {LmpIn tLmpIn = new LmpIn("restart-melt-NPT-Cu"  , true); tLmpIn.putIFiles("vInRestartPath" , "lmp/.temp/restart/melt-Cu108-init").putOFiles("vOutRestartPath", "lmp/.temp/restart/melt-Cu108", 5).setIOFilesStartKey("vBeginIdx", "vOutRestartPath").setIOFileEndKey("vEndIdx", "vOutRestartPath"); return tLmpIn;}
-    public static LmpIn DATA_COOLDOWN_NPT_Cu() {LmpIn tLmpIn = new LmpIn("data-cooldown-NPT-Cu" , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/.temp/data-in-Cu108"          ).putOFiles("vOutDataPath"   , "lmp/.temp/data-out-Cu108"         ); return tLmpIn;}
+    public static LmpIn DATA2RESTART_MELT_NPT_Cu    () {LmpIn tLmpIn = new LmpIn("data-restart-melt-NPT-Cu"         , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/data/CuFCC108.lmpdat"         ).putOFiles("vOutRestartPath", "lmp/.temp/restart/melt-Cu108-init"); return tLmpIn;}
+    public static LmpIn DATA2DATA_MELT_NPT_Cu       () {LmpIn tLmpIn = new LmpIn("data-data-melt-NPT-Cu"            , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/.temp/data-in-Cu108"          ).putOFiles("vOutDataPath"   , "lmp/.temp/data-out-Cu108"         ); return tLmpIn;}
+    public static LmpIn DATA2DUMP_MELT_NPT_Cu       () {LmpIn tLmpIn = new LmpIn("data-dump-melt-NPT-Cu"            , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/data/Cu108.lmpdat"            ).putOFiles("vDumpPath"      , "lmp/.temp/dump/Cu108.lammpstrj"   ); return tLmpIn;}
+    public static LmpIn RESTART2DUMP_MELT_NPT_Cu    () {LmpIn tLmpIn = new LmpIn("restart-dump-melt-NPT-Cu"         , true); tLmpIn.putIFiles("vInRestartPath" , "lmp/.temp/restart/melt-Cu108-init").putOFiles("vDumpPath"      , "lmp/.temp/dump/Cu108.lammpstrj"   ); return tLmpIn;}
+    public static LmpIn RESTART2MULTI_MELT_NPT_Cu   () {LmpIn tLmpIn = new LmpIn("restart-multirestart-melt-NPT-Cu" , true); tLmpIn.putIFiles("vInRestartPath" , "lmp/.temp/restart/melt-Cu108-init").putOFiles("vOutRestartPath", "lmp/.temp/restart/melt-Cu108", 5).setIOFilesStartKey("vBeginIdx", "vOutRestartPath").setIOFileEndKey("vEndIdx", "vOutRestartPath"); return tLmpIn;}
+    public static LmpIn DATA2DATA_COOLDOWN_NPT_Cu   () {LmpIn tLmpIn = new LmpIn("data-data-cooldown-NPT-Cu"        , true); tLmpIn.putIFiles("vInDataPath"    , "lmp/.temp/data-in-Cu108"          ).putOFiles("vOutDataPath"   , "lmp/.temp/data-out-Cu108"         ); return tLmpIn;}
     
     /** 默认行为 */
     @VisibleForTesting public static LmpIn of(String aLmpInPath) {return custom(aLmpInPath);}

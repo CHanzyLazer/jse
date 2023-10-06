@@ -36,7 +36,7 @@ public final class LmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
     public LmpExecutor(ISystemExecutor aEXE, String aLmpExe) {this(aEXE, aLmpExe, null);}
     
     /** 是否在关闭此实例时顺便关闭内部 exe */
-    public LmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
+    @Override public LmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     
     @Override public ISystemExecutor exec() {return mEXE;}
     private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) aThrowable.printStackTrace(System.err);}

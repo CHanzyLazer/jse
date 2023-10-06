@@ -269,20 +269,22 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     
     
     /**
-     * 计算 t 时刻的 MSD (Mean Square Displacement)，
+     * 计算 MSD (Mean Square Displacement)
+     * <p>
      * TODO: 由于目前 Func1 只支持均匀间距的点，这里暂时直接输出两组向量
      * @author liqa
      * @param aN 需要计算的时间点数目，默认为 20
      * @param aTimeGap 进行平均的时间间隔，认为这个时间间隔后的系统不再相关，默认为 10*mTimestep
-     * @return 对应时间下 MSD 的函数
+     * @param aMaxTime 希望的最高时间，默认为 mTimestep*mFrameNum*0.8，且不会超过此值
+     * @return 对应时间下 MSD 的函数（msd 在前，t 在后）
      */
-    public Pair<IVector, IVector> calMSD(int aN, double aTimeGap) {
+    public Pair<IVector, IVector> calMSD(int aN, double aTimeGap, double aMaxTime) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (mFrameNum <= 3) throw new RuntimeException("FrameNum MUST be Greater than 3 for MSD calculation, current: "+mFrameNum);
         
         // 初始化需要计算的变量
         final IVector rMSD = Vectors.zeros(aN);
-        final IVector rTime = Vectors.logspace(mTimestep*2.0, mTimestep*mFrameNum*0.8, aN);
+        final IVector rTime = Vectors.logspace(mTimestep*2.0, Math.min(mTimestep*mFrameNum*0.8, aMaxTime), aN);
         
         // 先临时调整时间点到帧数值（不去排除重复值，如果存在）
         rTime.operation().map2this(t -> Math.round(t / mTimestep));
@@ -307,8 +309,9 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         rTime.multiply2this(mTimestep);
         
         // 输出结果
-        return new Pair<>(rTime, rMSD);
+        return new Pair<>(rMSD, rTime);
     }
+    public Pair<IVector, IVector> calMSD(int aN, double aTimeGap) {return calMSD(aN, aTimeGap, mTimestep*mFrameNum*0.8);}
     public Pair<IVector, IVector> calMSD(int aN) {return calMSD(aN, 10*mTimestep);}
     public Pair<IVector, IVector> calMSD() {return calMSD(20);}
 }

@@ -106,7 +106,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling<T> setPruningProb(double aPruningProb) {mPruningProb = MathEX.Code.toRange(0.0, 1.0, aPruningProb); return this;}
     public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(1, aPruningThreshold); return this;}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
-    public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mFullPathGenerator.setDoNotShutdown(aDoNotShutdown); return this;}
+    @Override public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mFullPathGenerator.setDoNotShutdown(aDoNotShutdown); return this;}
     /** 可以从中间开始，此时则会直接跳过第一步（对于合法输入）*/
     public ForwardFluxSampling<T> setStep(int aStep, Iterable<? extends T> aPointsOnLambda, Map<?, ?> aRestData) {
         // 对于输入的合法性进行检测（界面需要兼容，这里只考虑现在省略了一些开头的界面以及完全不省略的情况）

@@ -13,4 +13,7 @@ public interface ILmpExecutor extends IHasAutoShutdown {
     ISystemExecutor exec();
     int run(IInFile aInFile);
     int run(String aInFile, IIOFiles aIOFiles);
+    
+    /** IHasAutoShutdown stuffs */
+    ILmpExecutor setDoNotShutdown(boolean aDoNotShutdown);
 }

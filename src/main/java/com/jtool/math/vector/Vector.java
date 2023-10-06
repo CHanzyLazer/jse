@@ -32,6 +32,17 @@ public final class Vector extends DoubleArrayVector {
         private int mSize = 0;
         private Builder() {}
         
+        public double get(int aIdx) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            return mData[aIdx];
+        }
+        public void set(int aIdx, double aValue) {
+            if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
+            mData[aIdx] = aValue;
+        }
+        public int size() {return mSize;}
+        public boolean isEmpty() {return mSize==0;}
+        
         public void add(double aValue) {
             if (mData.length <= mSize) {
                 double[] oData = mData;

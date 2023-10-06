@@ -24,7 +24,7 @@ public class BufferedFullPathGenerator<T> extends AbstractHasAutoShutdown implem
     }
     
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
-    public BufferedFullPathGenerator<T> setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
+    @Override public BufferedFullPathGenerator<T> setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     
     /** 这里还是保持一致，第一个值为 aStart（或等价于 aStart）*/
     @Override public ITimeAndParameterIterator<T> fullPathFrom(final T aStart) {return new BufferedIterator(aStart);}

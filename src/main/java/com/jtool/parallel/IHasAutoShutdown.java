@@ -5,4 +5,5 @@ package com.jtool.parallel;
  * @author liqa
  */
 public interface IHasAutoShutdown extends IAutoShutdown {
+    IHasAutoShutdown setDoNotShutdown(boolean aDoNotShutdown);
 }
