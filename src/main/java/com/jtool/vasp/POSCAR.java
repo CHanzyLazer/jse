@@ -139,7 +139,7 @@ public class POSCAR extends AbstractSettableAtomData {
             IMatrix rDirect = Matrices.zeros(aAtomData.atomNum(), 3);
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
-                for (IAtom tAtom : aAtomData.atoms()) if (tAtom.type() == tTypeMM+1) {
+                for (IAtom tAtom : aAtomData.asList()) if (tAtom.type() == tTypeMM+1) {
                     rAtomNumbers.increment_(tTypeMM);
                     rDirect.set(tIdx, 0, tAtom.x()/tBox.mX);
                     rDirect.set(tIdx, 1, tAtom.y()/tBox.mY);

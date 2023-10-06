@@ -1,13 +1,9 @@
 package com.jtool.lmp;
 
 import com.jtool.code.UT;
-import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.NewCollections;
-import com.jtool.math.matrix.IMatrix;
-import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.AbstractMultiFrameTable;
 import com.jtool.math.table.ITable;
-import com.jtool.math.table.Table;
 import com.jtool.math.table.Tables;
 import com.jtool.math.vector.IVector;
 
@@ -85,7 +81,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         for (ITable tTable : oTableList) {
             if (rHeads == null) {
                 rHeads = tTable.heads();
-                rTable = new ArrayList<>(tTable.rows());
+                rTable = NewCollections.from(tTable.rows());
             } else {
                 // 直接遍历比较是否相同，目前必须顺序完全相同才可以（后排可以更宽但是多余数据会抹除）
                 final Iterator<String> li = rHeads.iterator();
@@ -98,15 +94,15 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
                     rTable.addAll(tTable.rows());
                 } else {
                     // 否则则保存合并的结果，并开始下一步
-                    mTableList.add(Tables.fromRows(AbstractCollections.map(rTable, IVector::asList), rHeads.toArray(ZL_STR)));
+                    mTableList.add(Tables.fromRows(rTable, rHeads.toArray(ZL_STR)));
                     rHeads = tTable.heads();
-                    rTable = new ArrayList<>(tTable.rows());
+                    rTable = NewCollections.from(tTable.rows());
                 }
             }
         }
         // 最后保存最后一步的结果
         if (rHeads != null) {
-            mTableList.add(Tables.fromRows(AbstractCollections.map(rTable, IVector::asList), rHeads.toArray(ZL_STR)));
+            mTableList.add(Tables.fromRows(rTable, rHeads.toArray(ZL_STR)));
         }
     }
     
@@ -172,19 +168,19 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             if (idx >= aLines.size()) break;
             // 获取种类的 key
             tTokens = UT.Texts.splitBlank(aLines.get(idx));
-            String[] aHands = tTokens;
+            String[] tHands = tTokens;
             ++idx;
             // 获取结束的位置
             endIdx = UT.Texts.findLineContaining(aLines, idx, "Loop time of");
             if (endIdx >= aLines.size()) break;
-            IMatrix aData = RowMatrix.zeros(endIdx-idx, aHands.length);
+            ITable rTable = Tables.zeros(endIdx-idx, tHands);
             // 读取数据
-            for (IVector tRow : aData.rows()) {
-                tRow.fill(UT.Texts.str2data(aLines.get(idx), aHands.length));
+            for (IVector tRow : rTable.rows()) {
+                tRow.fill(UT.Texts.str2data(aLines.get(idx), tHands.length));
                 ++idx;
             }
             // 创建 Table 并附加到 rThermo 中
-            rThermo.add(new Table(aHands, aData));
+            rThermo.add(rTable);
         }
         return new Thermo(rThermo);
     }

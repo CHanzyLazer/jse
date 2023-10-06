@@ -20,8 +20,8 @@ public interface IAtomData {
     ITable dataVelocities();
     boolean hasVelocities();
     
-    /** 改为直接获取 {@link IAtom} 的容器 */
-    List<? extends IAtom> atoms();
+    /** 现在改为 asList，让其 set 接口更加合理 */
+    List<? extends IAtom> asList();
     /** 现在统一提供随机访问获取一个原子的接口 */
     IAtom pickAtom(int aIdx);
     

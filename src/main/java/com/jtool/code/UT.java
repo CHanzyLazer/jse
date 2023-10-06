@@ -15,9 +15,9 @@ import com.jtool.math.ComplexDouble;
 import com.jtool.math.IComplexDouble;
 import com.jtool.math.function.IFunc1;
 import com.jtool.math.matrix.IMatrix;
-import com.jtool.math.matrix.RowMatrix;
+import com.jtool.math.matrix.Matrices;
 import com.jtool.math.table.ITable;
-import com.jtool.math.table.Table;
+import com.jtool.math.table.Tables;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vectors;
 import com.jtool.parallel.MergedFuture;
@@ -26,8 +26,12 @@ import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
 import org.apache.groovy.json.internal.CharScanner;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
@@ -93,6 +97,18 @@ public class UT {
             for (Object tKey : aKeys) if (aMap.containsKey(tKey)) return aMap.get(tKey);
             return aDefaultValue;
         }
+        
+        
+        /** useful methods, wrapper of {@link DefaultGroovyMethods} stuffs */
+        @SuppressWarnings("UnusedReturnValue")
+        public static <T> T removeLast(List<T> self) {return DefaultGroovyMethods.removeLast(self);}
+        public static <T> T last(Deque<T> self) {return DefaultGroovyMethods.last(self);}
+        public static <T> T last(List<T> self) {return DefaultGroovyMethods.last(self);}
+        public static <T> T last(Iterable<T> self) {return DefaultGroovyMethods.last(self);}
+        public static <T> T last(T[] self) {return DefaultGroovyMethods.last(self);}
+        public static <T> T first(List<T> self) {return DefaultGroovyMethods.first(self);}
+        public static <T> T first(Iterable<T> self) {return DefaultGroovyMethods.first(self);}
+        public static <T> T first(T[] self) {return DefaultGroovyMethods.first(self);}
         
         
         /** 保留这些接口方便外部调用使用 */
@@ -466,7 +482,7 @@ public class UT {
             double2bytes(tBox.y(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             double2bytes(tBox.z(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
             // 原子数据
-            for (IAtom tAtom : aAtomData.atoms()) {
+            for (IAtom tAtom : aAtomData.asList()) {
                 double2bytes(tAtom.x(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
                 double2bytes(tAtom.y(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
                 double2bytes(tAtom.z(), rBytes, tIdx); tIdx+=DOUBLE_LEN;
@@ -827,7 +843,39 @@ public class UT {
          * @param aFilePath csv file path to read
          * @return a matrix
          */
-        public static IMatrix csv2data(String aFilePath) throws IOException {return csv2table(aFilePath).matrix();}
+        public static IMatrix csv2data(String aFilePath) throws IOException {
+            // 现在直接全部读取
+            List<String> tLines = readAllLines(aFilePath);
+            // 获取行数，末尾空行忽略
+            int tLineNum = tLines.size();
+            for (int i = tLines.size()-1; i >= 0; --i) {
+                if (tLines.get(i).trim().isEmpty()) --tLineNum;
+                else break;
+            }
+            // 需要的参数
+            IMatrix rMatrix;
+            Iterator<IVector> itRow;
+            String[] tTokens;
+            // 读取第一行检测是否有头，直接看能否成功粘贴
+            tTokens = Texts.splitComma(tLines.get(0));
+            IVector tFirstData = null;
+            try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
+            if (tFirstData != null) {
+                rMatrix = Matrices.zeros(tLineNum, tFirstData.size());
+                itRow = rMatrix.rows().iterator();
+                itRow.next().fill(tFirstData);
+            } else {
+                rMatrix = Matrices.zeros(tLineNum-1, tTokens.length);
+                itRow = rMatrix.rows().iterator();
+            }
+            // 遍历读取后续数据
+            for (int i = 1; i < tLineNum; ++i) {
+                tTokens = Texts.splitComma(tLines.get(i));
+                itRow.next().fill(AbstractCollections.map(tTokens, Double::parseDouble));
+            }
+            // 返回结果
+            return rMatrix;
+        }
         
         
         /**
@@ -838,7 +886,7 @@ public class UT {
          */
         public static void table2csv(ITable aTable, String aFilePath) throws IOException {
             List<String> rLines = AbstractCollections.map(aTable.rows(), subData -> String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
-            if (!aTable.noHead()) rLines = AbstractCollections.merge(String.join(",", aTable.heads()), rLines);
+            rLines = AbstractCollections.merge(String.join(",", aTable.heads()), rLines);
             write(aFilePath, rLines);
         }
         /**
@@ -857,28 +905,28 @@ public class UT {
                 else break;
             }
             // 需要的参数
-            String[] tHand;
-            IMatrix tData;
+            ITable rTable;
+            Iterator<IVector> itRow;
             String[] tTokens;
             // 读取第一行检测是否有头，直接看能否成功粘贴
             tTokens = Texts.splitComma(tLines.get(0));
             IVector tFirstData = null;
             try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
             if (tFirstData != null) {
-                tHand = null;
-                tData = RowMatrix.zeros(tLineNum, tFirstData.size());
-                tData.row(0).fill(tFirstData);
+                rTable = Tables.zeros(tLineNum, tFirstData.size());
+                itRow = rTable.rows().iterator();
+                itRow.next().fill(tFirstData);
             } else {
-                tHand = tTokens;
-                tData = RowMatrix.zeros(tLineNum-1, tHand.length);
+                rTable = Tables.zeros(tLineNum-1, tTokens);
+                itRow = rTable.rows().iterator();
             }
             // 遍历读取后续数据
             for (int i = 1; i < tLineNum; ++i) {
                 tTokens = Texts.splitComma(tLines.get(i));
-                tData.row(tHand==null ? i : i-1).fill(AbstractCollections.map(tTokens, Double::parseDouble));
+                itRow.next().fill(AbstractCollections.map(tTokens, Double::parseDouble));
             }
             // 返回结果
-            return tHand != null ? new Table(tHand, tData) : new Table(tData);
+            return rTable;
         }
         
         

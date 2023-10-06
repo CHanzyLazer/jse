@@ -94,7 +94,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
         List<IAtom> rAtoms = new ArrayList<>(aAtomData.atomNum());
         
         int tAtomTypeNum = Math.max(aMinTypeNum, aAtomData.atomTypeNum());
-        for (IAtom oAtom : aAtomData.atoms()) {
+        for (IAtom oAtom : aAtomData.asList()) {
             Atom tAtom = new Atom(oAtom);
             // 更新粒子种类数目
             int tType = aFilter.cal(oAtom);
@@ -153,7 +153,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
         
         List<IAtom> rAtoms = new ArrayList<>();
         
-        for (IAtom tAtom : aAtomData.atoms()) if (aFilter.accept(tAtom)) {
+        for (IAtom tAtom : aAtomData.asList()) if (aFilter.accept(tAtom)) {
             rAtoms.add(tAtom);
         }
         

@@ -8,8 +8,8 @@ import com.jtool.math.MathEX;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.RowMatrix;
 import com.jtool.math.table.AbstractMultiFrameTable;
+import com.jtool.math.table.AbstractTable;
 import com.jtool.math.table.ITable;
-import com.jtool.math.table.Table;
 import com.jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -99,7 +99,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
     public Lammpstrj cutBack(int aLength) {
         if (aLength <= 0) return this;
         if (aLength > mData.size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aLength));
-        for (int i = 0; i < aLength; ++i) mData.remove(mData.size()-1);
+        for (int i = 0; i < aLength; ++i) UT.Code.removeLast(mData);
         return this;
     }
     
@@ -471,7 +471,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
             String[] aBoxBounds;
             Box aBox;
             String[] aAtomDataKeys;
-            IMatrix aAtomData;
+            final IMatrix aAtomData;
             
             // 读取时间步数
             UT.Texts.findLineContaining(aReader, "ITEM: TIMESTEP", true); tLine=aReader.readLine();
@@ -503,17 +503,19 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
             tTokens = UT.Texts.splitBlank(tLine);
             aAtomDataKeys = new String[tTokens.length-2];
             System.arraycopy(tTokens, 2, aAtomDataKeys, 0, aAtomDataKeys.length);
-            boolean tAtomDataReadFull = true;
+            boolean tIsAtomDataReadFull = true;
             aAtomData = RowMatrix.zeros(tAtomNum, aAtomDataKeys.length);
             for (IVector tRow : aAtomData.rows()) {
                 tLine = aReader.readLine();
-                if (tLine == null) {tAtomDataReadFull = false; break;}
+                if (tLine == null) {tIsAtomDataReadFull = false; break;}
                 tRow.fill(UT.Texts.str2data(tLine, aAtomDataKeys.length));
             }
-            if (!tAtomDataReadFull) break;
+            if (!tIsAtomDataReadFull) break;
             
             // 创建 SubLammpstrj 并附加到 rLammpstrj 中
-            rLammpstrj.add(new SubLammpstrj(aTimeStep, aBoxBounds, aBox, new Table(aAtomDataKeys, aAtomData)));
+            rLammpstrj.add(new SubLammpstrj(aTimeStep, aBoxBounds, aBox, new AbstractTable(aAtomDataKeys) {
+                @Override public IMatrix asMatrix() {return aAtomData;}
+            }));
         }
         return new Lammpstrj(rLammpstrj);
     }

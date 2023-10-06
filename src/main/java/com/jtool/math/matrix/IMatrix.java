@@ -7,6 +7,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.math.vector.IVector;
 import groovy.lang.Closure;
 import org.jetbrains.annotations.ApiStatus;
@@ -52,9 +53,9 @@ public interface IMatrix extends IMatrixGetter {
     void fill(IMatrix aMatrix);
     void fill(IMatrixGetter aMatrixGetter);
     void fill(double[][] aData);
-    default void fill(Iterable<? extends Iterable<? extends Number>> aRows) {fillWithRows(aRows);}
-    void fillWithRows(Iterable<? extends Iterable<? extends Number>> aRows);
-    void fillWithCols(Iterable<? extends Iterable<? extends Number>> aCols);
+    default void fill(Iterable<?> aRows) {fillWithRows(aRows);}
+    void fillWithRows(Iterable<?> aRows);
+    void fillWithCols(Iterable<?> aCols);
     void assignCol(IDoubleSupplier aSup);
     void assignRow(IDoubleSupplier aSup);
     void forEachCol(IDoubleConsumer1 aCon);

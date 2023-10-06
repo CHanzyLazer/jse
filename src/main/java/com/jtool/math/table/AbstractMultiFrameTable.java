@@ -5,7 +5,6 @@ import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -16,7 +15,6 @@ import java.util.List;
 public abstract class AbstractMultiFrameTable<T extends ITable> extends AbstractRandomAccessList<T> implements ITable {
     /** ITable stuffs */
     @Override public final double[][] data() {return defaultFrame().data();}
-    @Override public final boolean noHead() {return defaultFrame().noHead();}
     @Override public final List<String> heads() {return defaultFrame().heads();}
     @Override public final String getHead(int aCol) {return defaultFrame().getHead(aCol);}
     @Override public final int getColumn(String aHead) {return defaultFrame().getColumn(aHead);}
@@ -27,12 +25,12 @@ public abstract class AbstractMultiFrameTable<T extends ITable> extends Abstract
     
     @Override public final double get(int aRow, String aHead) {return defaultFrame().get(aRow, aHead);}
     @Override public final void set(int aRow, String aHead, double aValue) {defaultFrame().set(aRow, aHead, aValue);}
-    @Override public final void fill(String aHead, double aValue) {defaultFrame().fill(aHead, aValue);}
-    @Override public final void fill(String aHead, IVector aVector) {defaultFrame().fill(aHead, aVector);}
-    @Override public final void fill(String aHead, IVectorGetter aVectorGetter) {defaultFrame().fill(aHead, aVectorGetter);}
-    @Override public final void fill(String aHead, double[] aData) {defaultFrame().fill(aHead, aData);}
-    @Override public final void fill(String aHead, Iterable<? extends Number> aList) {defaultFrame().fill(aHead, aList);}
-    @Override public final IMatrix matrix() {return defaultFrame().matrix();}
+    @Override public final void put(String aHead, double aValue) {defaultFrame().put(aHead, aValue);}
+    @Override public final void put(String aHead, IVector aVector) {defaultFrame().put(aHead, aVector);}
+    @Override public final void put(String aHead, IVectorGetter aVectorGetter) {defaultFrame().put(aHead, aVectorGetter);}
+    @Override public final void put(String aHead, double[] aData) {defaultFrame().put(aHead, aData);}
+    @Override public final void put(String aHead, Iterable<? extends Number> aList) {defaultFrame().put(aHead, aList);}
+    @Override public final IMatrix asMatrix() {return defaultFrame().asMatrix();}
     @Override public final List<IVector> rows() {return defaultFrame().rows();}
     @Override public final IVector row(int aRow) {return defaultFrame().row(aRow);}
     @Override public final List<IVector> cols() {return defaultFrame().cols();}

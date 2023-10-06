@@ -53,11 +53,11 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     default boolean isEmpty() {return size()==0;}
     default double last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty Vector");
-        else return get(size()-1);
+        return get(size()-1);
     }
     default double first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty Vector");
-        else return get(0);
+        return get(0);
     }
     
     /** 附加一些额外的单元素操作，对于 Vector 由于适用范围更广，提供更多的接口 */

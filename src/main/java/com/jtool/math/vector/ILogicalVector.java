@@ -47,11 +47,11 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     default boolean isEmpty() {return size()==0;}
     default boolean last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty LogicalVector");
-        else return get(size()-1);
+        return get(size()-1);
     }
     default boolean first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty LogicalVector");
-        else return get(0);
+        return get(0);
     }
     
     /** 附加一些额外的单元素操作，对于逻辑向量再增加一个翻转特定元素的操作 */

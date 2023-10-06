@@ -13,12 +13,10 @@ import com.jtool.system.ISystemExecutor;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-import static com.jtool.code.CS.*;
 import static com.jtool.code.CS.Exec.EXE;
+import static com.jtool.code.CS.WORKING_DIR;
 
 /**
  * 使用 lammps 来进行参数计算
@@ -297,7 +295,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
                 IDoubleIterator itMSD = tOut.mFirst.iterator();
                 IDoubleIterator itTime = tOut.mSecond.iterator();
                 itTime.next();
-                rMSD.set(rMSD.size()-1, (rMSD.get(rMSD.size()-1) + itMSD.next())*0.5);
+                rMSD.set(rMSD.size()-1, (rMSD.last() + itMSD.next())*0.5);
                 itMSD.forEachRemaining(rMSD::add);
                 itTime.forEachRemaining(rTime::add);
             }

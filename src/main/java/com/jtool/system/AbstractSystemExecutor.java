@@ -241,9 +241,8 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
                     while (tIdx < mRunningSystem.size()) {
                         SystemFuture<?> tSystem = mRunningSystem.get(tIdx);
                         if (tSystem.isDone()) {
-                            int tLastIdx = mRunningSystem.size()-1;
-                            mRunningSystem.set(tIdx, mRunningSystem.get(tLastIdx));
-                            mRunningSystem.remove(tLastIdx);
+                            mRunningSystem.set(tIdx, UT.Code.last(mRunningSystem));
+                            UT.Code.removeLast(mRunningSystem);
                             // 这里执行一次保证完成时一定执行 final 语句，包括下载输出文件等
                             tSystem.doFinal();
                         } else {

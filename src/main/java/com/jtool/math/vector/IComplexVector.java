@@ -106,11 +106,11 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     default boolean isEmpty() {return size()==0;}
     default ComplexDouble last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty ComplexVector");
-        else return get(size()-1);
+        return get(size()-1);
     }
     default ComplexDouble first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty ComplexVector");
-        else return get(0);
+        return get(0);
     }
     
     /** 附加一些额外的单元素操作，对于 ComplexVector 也提供略多的接口 */

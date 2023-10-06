@@ -1,5 +1,6 @@
 package com.jtool.math.matrix;
 
+import com.jtool.code.UT;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
 import groovy.lang.Closure;
@@ -44,14 +45,32 @@ public class Matrices {
     public static IMatrix from(int aRowNum, int aColNum, final Closure<? extends Number> aGroovyTask) {return from(aRowNum, aColNum, (i, j) -> aGroovyTask.call(i, j).doubleValue());}
     
     /** Matrix 暂时没有相关 Builder，因此不支持 Iterable 构造 */
-    public static IMatrix from(Collection<? extends Collection<? extends Number>> aRows) {return fromRows(aRows);}
-    public static IMatrix fromRows(Collection<? extends Collection<? extends Number>> aRows) {
-        IMatrix rMatrix = zeros(aRows.size(), aRows.iterator().next().size());
+    public static IMatrix from(Collection<?> aRows) {return fromRows(aRows);}
+    public static IMatrix fromRows(Collection<?> aRows) {
+        int tColNum;
+        Object tFirst = UT.Code.first(aRows);
+        if (tFirst instanceof Collection) {
+            tColNum = ((Collection<?>)tFirst).size();
+        } else if (tFirst instanceof IVector) {
+            tColNum = ((IVector)tFirst).size();
+        } else {
+            throw new IllegalArgumentException("Type of Row Must be Collection<? extends Number> or IVector");
+        }
+        IMatrix rMatrix = zeros(aRows.size(), tColNum);
         rMatrix.fillWithRows(aRows);
         return rMatrix;
     }
-    public static IMatrix fromCols(Collection<? extends Collection<? extends Number>> aCols) {
-        IMatrix rMatrix = zeros(aCols.iterator().next().size(), aCols.size());
+    public static IMatrix fromCols(Collection<?> aCols) {
+        int tRowNum;
+        Object tFirst = UT.Code.first(aCols);
+        if (tFirst instanceof Collection) {
+            tRowNum = ((Collection<?>)tFirst).size();
+        } else if (tFirst instanceof IVector) {
+            tRowNum = ((IVector)tFirst).size();
+        } else {
+            throw new IllegalArgumentException("Type of Column Must be Collection<? extends Number> or IVector");
+        }
+        IMatrix rMatrix = zeros(tRowNum, aCols.size());
         rMatrix.fillWithCols(aCols);
         return rMatrix;
     }

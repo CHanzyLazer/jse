@@ -13,7 +13,7 @@ public interface ISettableAtomData extends IAtomData {
     void setAtom(int aIdx, IAtom aAtom);
     ISettableAtomData setAtomTypeNum(int aAtomTypeNum);
     /** IAtomData stuffs*/
-    List<? extends ISettableAtom> atoms();
+    List<? extends ISettableAtom> asList();
     ISettableAtom pickAtom(int aIdx);
     ISettableAtomDataOperation operation();
     @VisibleForTesting default ISettableAtomDataOperation opt() {return operation();}

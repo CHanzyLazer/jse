@@ -1,8 +1,9 @@
 package com.jtool.math.table;
 
+import com.jtool.code.UT;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.matrix.IMatrixGetter;
-import com.jtool.math.matrix.Matrices;
+import com.jtool.math.vector.IVector;
 
 import java.util.Collection;
 
@@ -13,24 +14,38 @@ import java.util.Collection;
 public class Tables {
     private Tables() {}
     
+    public static ITable zeros(int aRowNum, String... aHeads) {return Table.zeros(aRowNum, aHeads);}
+    public static ITable zeros(int aRowNum, int aColNum) {return Table.zeros(aRowNum, aColNum);}
     
-    public static ITable from(int aSize, IMatrixGetter aMatrixGetter, String... aHeads) {return from(aSize, aSize, aMatrixGetter, aHeads);}
-    public static ITable from(int aRowNum, int aColNum, IMatrixGetter aMatrixGetter, String... aHeads) {
-        IMatrix tData = Matrices.from(aRowNum, aColNum, aMatrixGetter);
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aColNum, tData);
+    public static ITable from(int aRowNum, IMatrixGetter aDataGetter, String... aHeads) {
+        ITable rTable = zeros(aRowNum, aHeads);
+        rTable.asMatrix().fill(aDataGetter);
+        return rTable;
     }
-    public static ITable from(IMatrix aMatrix, String... aHeads) {
-        IMatrix tData = Matrices.from(aMatrix);
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(aMatrix.columnNumber(), tData);
+    public static ITable from(IMatrix aData, String... aHeads) {
+        ITable rTable = zeros(aData.rowNumber(), aHeads);
+        rTable.asMatrix().fill(aData);
+        return rTable;
     }
     
-    public static ITable from(Collection<? extends Collection<? extends Number>> aRows, String... aHeads) {return fromRows(aRows, aHeads);}
-    public static ITable fromRows(Collection<? extends Collection<? extends Number>> aRows, String... aHeads) {
-        IMatrix tData = Matrices.fromRows(aRows);
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(tData);
+    public static ITable from(Collection<?> aRows, String... aHeads) {return fromRows(aRows, aHeads);}
+    public static ITable fromRows(Collection<?> aRows, String... aHeads) {
+        ITable rTable = zeros(aRows.size(), aHeads);
+        rTable.asMatrix().fillWithRows(aRows);
+        return rTable;
     }
-    public static ITable fromCols(Collection<? extends Collection<? extends Number>> aCols, String... aHeads) {
-        IMatrix tData = Matrices.fromCols(aCols);
-        return (aHeads!=null && aHeads.length>0) ? new Table(aHeads, tData) : new Table(tData);
+    public static ITable fromCols(Collection<?> aCols, String... aHeads) {
+        int tRowNum;
+        Object tFirst = UT.Code.first(aCols);
+        if (tFirst instanceof Collection) {
+            tRowNum = ((Collection<?>)tFirst).size();
+        } else if (tFirst instanceof IVector) {
+            tRowNum = ((IVector)tFirst).size();
+        } else {
+            throw new IllegalArgumentException("Type of Column Must be Collection<? extends Number> or IVector");
+        }
+        ITable rTable = zeros(tRowNum, aHeads);
+        rTable.asMatrix().fillWithCols(aCols);
+        return rTable;
     }
 }

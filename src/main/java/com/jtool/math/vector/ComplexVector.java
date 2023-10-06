@@ -43,7 +43,17 @@ public final class ComplexVector extends BiDoubleArrayVector {
             mData[1][aIdx] = aValue.imag();
         }
         public int size() {return mSize;}
+        /** 用于方便访问 */
         public boolean isEmpty() {return mSize==0;}
+        public ComplexDouble last() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty ComplexVector.Builder");
+            int tSizeMM = mSize-1;
+            return new ComplexDouble(mData[0][tSizeMM], mData[1][tSizeMM]);
+        }
+        public ComplexDouble first() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty ComplexVector.Builder");
+            return new ComplexDouble(mData[0][0], mData[1][0]);
+        }
         
         /** 在这里这个方法是必要的，虽然目前的约定下不会出现 {@code double aReal, double aImag} 两个参数的方法 */
         public void add(double aReal, double aImag) {
@@ -249,6 +259,16 @@ public final class ComplexVector extends BiDoubleArrayVector {
         double oImag = tImagData[aIdx];
         tImagData[aIdx] = aImagOpt.cal(oImag);
         return oImag;
+    }
+    @Override public boolean isEmpty() {return mSize==0;}
+    @Override public ComplexDouble last() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty ComplexVector");
+        int tSizeMM = mSize-1;
+        return new ComplexDouble(mData[0][tSizeMM], mData[1][tSizeMM]);
+    }
+    @Override public ComplexDouble first() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty ComplexVector");
+        return new ComplexDouble(mData[0][0], mData[1][0]);
     }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式） */

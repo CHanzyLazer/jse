@@ -41,7 +41,16 @@ public final class Vector extends DoubleArrayVector {
             mData[aIdx] = aValue;
         }
         public int size() {return mSize;}
+        /** 用于方便访问 */
         public boolean isEmpty() {return mSize==0;}
+        public double last() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty Vector.Builder");
+            return mData[mSize-1];
+        }
+        public double first() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty Vector.Builder");
+            return mData[0];
+        }
         
         public void add(double aValue) {
             if (mData.length <= mSize) {
@@ -131,6 +140,15 @@ public final class Vector extends DoubleArrayVector {
         double tValue = mData[aIdx];
         mData[aIdx] = aOpt.cal(tValue);
         return tValue;
+    }
+    @Override public boolean isEmpty() {return mSize==0;}
+    @Override public double last() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty Vector");
+        return mData[mSize-1];
+    }
+    @Override public double first() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty Vector");
+        return mData[0];
     }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式） */

@@ -39,7 +39,16 @@ public final class LogicalVector extends BooleanArrayVector {
             mData[aIdx] = aValue;
         }
         public int size() {return mSize;}
+        /** 用于方便访问 */
         public boolean isEmpty() {return mSize==0;}
+        public boolean last() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty LogicalVector.Builder");
+            return mData[mSize-1];
+        }
+        public boolean first() {
+            if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty LogicalVector.Builder");
+            return mData[0];
+        }
         
         public void add(boolean aValue) {
             if (mData.length <= mSize) {
@@ -121,6 +130,15 @@ public final class LogicalVector extends BooleanArrayVector {
         boolean tValue = mData[aIdx];
         mData[aIdx] = aOpt.cal(tValue);
         return tValue;
+    }
+    @Override public boolean isEmpty() {return mSize==0;}
+    @Override public boolean last() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty LogicalVector");
+        return mData[mSize-1];
+    }
+    @Override public boolean first() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty LogicalVector");
+        return mData[0];
     }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式） */

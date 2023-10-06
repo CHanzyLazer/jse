@@ -32,10 +32,9 @@ if (genMSD) {
         lpc.runMelt(inDataPath, inDataPath, 800);
         def msd800 = lpc.calMSD(inDataPath, 800, true);
         
-        def table = Tables.from(msd800.first().size(), 2, {row, col ->
-            if (col == 0) return msd800.second()[row];
-            if (col == 1) return msd800.first()[row];
-        }, 't', '800');
+        def table = Tables.zeros(msd800.first().size());
+        table['t'] = msd800.second();
+        table['800'] = msd800.first();
         
         UT.IO.table2csv(table, FS1MSDPath);
     }
@@ -48,12 +47,11 @@ if (genMSD) {
         def msd850 = lpc.calMSD(inDataPath, 850, true);
         def msd900 = lpc.calMSD(inDataPath, 900, true);
         
-        def table = Tables.from(msd800.first().size(), 4, {row, col ->
-            if (col == 0) return msd800.second()[row];
-            if (col == 1) return msd800.first()[row];
-            if (col == 2) return msd850.first()[row];
-            if (col == 3) return msd900.first()[row];
-        }, 't', '800', '850', '900');
+        def table = Tables.zeros(msd800.first().size());
+        table['t'] = msd800.second();
+        table['800'] = msd800.first();
+        table['850'] = msd850.first();
+        table['900'] = msd900.first();
         
         UT.IO.table2csv(table, FS2MSDPath);
     }

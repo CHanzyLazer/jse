@@ -26,7 +26,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         try {tAtom.setVz(aAtom.vz());} catch (Exception ignored) {}
     }
     
-    @Override public List<? extends ISettableAtom> atoms() {
+    @Override public List<? extends ISettableAtom> asList() {
         return new AbstractRandomAccessList<ISettableAtom>() {
             @Override public ISettableAtom get(int index) {return pickAtom(index);}
             @Override public ISettableAtom set(int index, ISettableAtom element) {

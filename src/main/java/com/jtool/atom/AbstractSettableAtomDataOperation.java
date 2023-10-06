@@ -11,9 +11,9 @@ import static com.jtool.code.UT.Code.toXYZ;
 
 public abstract class AbstractSettableAtomDataOperation extends AbstractAtomDataOperation implements ISettableAtomDataOperation {
     
-    @Override public ISettableAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
-    @Override public ISettableAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
-    @Override public ISettableAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public ISettableAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public ISettableAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public ISettableAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
     
     
     @Override public void map2this(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {

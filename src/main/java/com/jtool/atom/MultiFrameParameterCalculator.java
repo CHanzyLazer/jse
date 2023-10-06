@@ -2,6 +2,7 @@ package com.jtool.atom;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.jtool.code.UT;
 import com.jtool.code.collection.AbstractCollections;
 import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.code.collection.Pair;
@@ -13,7 +14,6 @@ import com.jtool.parallel.AbstractThreadPool;
 import com.jtool.parallel.IObjectPool;
 import com.jtool.parallel.ObjectCachePool;
 import com.jtool.parallel.ParforThreadPool;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
@@ -144,7 +144,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, IXYZ aBox, double aTimestep, int aThreadNum) {this(aAtomDataList, aBox, aTimestep, aThreadNum, 1);}
     
     public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {this(aAtomDataList, aTimestep, 1);}
-    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::atoms), DefaultGroovyMethods.first(aAtomDataList).box(), aTimestep, aThreadNum, DefaultGroovyMethods.first(aAtomDataList).atomTypeNum());}
+    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::asList), UT.Code.first(aAtomDataList).box(), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNum());}
     
     
     /** 直接使用 ObjectCachePool 避免重复创建临时变量 */

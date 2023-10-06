@@ -1,5 +1,6 @@
 package com.jtool.math.table;
 
+import com.jtool.code.collection.AbstractRandomAccessList;
 import com.jtool.math.matrix.IMatrix;
 import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.IVectorGetter;
@@ -16,25 +17,30 @@ public interface ITable {
     /** 转为兼容性更好的 double[][] */
     double[][] data();
     
-    boolean noHead();
-    List<String> heads();
     String getHead(int aCol);
     int getColumn(String aHead);
+    default List<String> heads() {
+        // 这样防止被外部修改
+        return new AbstractRandomAccessList<String>() {
+            @Override public String get(int index) {return getHead(index);}
+            @Override public int size() {return columnNumber();}
+        };
+    }
     
     /** Map like stuffs */
     IVector get(String aHead);
+    void put(String aHead, double aValue);
+    void put(String aHead, IVector aVector);
+    void put(String aHead, IVectorGetter aVectorGetter);
+    void put(String aHead, double[] aData);
+    void put(String aHead, Iterable<? extends Number> aList);
     boolean containsHead(String aHead);
     boolean setHead(String aOldHead, String aNewHead);
     
     /** Matrix like stuffs */
-    IMatrix matrix();
+    IMatrix asMatrix();
     double get(int aRow, String aHead);
     void set(int aRow, String aHead, double aValue);
-    void fill(String aHead, double aValue);
-    void fill(String aHead, IVector aVector);
-    void fill(String aHead, IVectorGetter aVectorGetter);
-    void fill(String aHead, double[] aData);
-    void fill(String aHead, Iterable<? extends Number> aList);
     List<IVector> rows();
     IVector row(int aRow);
     List<IVector> cols();
@@ -54,8 +60,8 @@ public interface ITable {
     
     /** Groovy 的部分，重载一些运算符方便操作 */
     @VisibleForTesting default IVector getAt(String aHead) {return get(aHead);}
-    @VisibleForTesting default void putAt(String aHead, double aValue) {fill(aHead, aValue);}
-    @VisibleForTesting default void putAt(String aHead, IVector aVector) {fill(aHead, aVector);}
-    @VisibleForTesting default void putAt(String aHead, double[] aData) {fill(aHead, aData);}
-    @VisibleForTesting default void putAt(String aHead, Iterable<? extends Number> aList) {fill(aHead, aList);}
+    @VisibleForTesting default void putAt(String aHead, double aValue) {put(aHead, aValue);}
+    @VisibleForTesting default void putAt(String aHead, IVector aVector) {put(aHead, aVector);}
+    @VisibleForTesting default void putAt(String aHead, double[] aData) {put(aHead, aData);}
+    @VisibleForTesting default void putAt(String aHead, Iterable<? extends Number> aList) {put(aHead, aList);}
 }

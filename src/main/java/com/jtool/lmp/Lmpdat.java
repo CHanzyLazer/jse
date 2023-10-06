@@ -199,7 +199,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             return new Lmpdat(tLmpdat.atomTypeNum(), tLmpdat.mBox.copy(), aMasses, tLmpdat.mAtomData.copy(), tLmpdat.mVelocities==null?null:tLmpdat.mVelocities.copy());
         } else {
             // 一般的情况，通过 dataSTD 来创建，注意这里认为获取时已经经过了值拷贝，因此不再需要 copy
-            return new Lmpdat(aAtomData.atomTypeNum(), new Box(aAtomData.box()), aMasses, aAtomData.dataSTD().matrix(), aAtomData.hasVelocities()?aAtomData.dataVelocities().matrix():null);
+            return new Lmpdat(aAtomData.atomTypeNum(), new Box(aAtomData.box()), aMasses, aAtomData.dataSTD().asMatrix(), aAtomData.hasVelocities()?aAtomData.dataVelocities().asMatrix():null);
         }
     }
     

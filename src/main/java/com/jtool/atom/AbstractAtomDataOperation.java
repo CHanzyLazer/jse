@@ -20,16 +20,16 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     
     @Override public ISettableAtomData filter(IFilter<IAtom> aFilter) {
         IAtomData tThis = thisAtomData_();
-        List<IAtom> tFilterAtoms = NewCollections.filter(tThis.atoms(), aFilter);
+        List<IAtom> tFilterAtoms = NewCollections.filter(tThis.asList(), aFilter);
         ISettableAtomData rAtomData = newSettableAtomData_(tFilterAtoms.size());
         for (int i = 0; i < tFilterAtoms.size(); ++i) rAtomData.setAtom(i, tFilterAtoms.get(i));
         return rAtomData;
     }
     @Override public ISettableAtomData filterType(final int aType) {return filter(atom -> atom.type()==aType);}
     
-    @Override public IAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
-    @Override public IAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
-    @Override public IAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public IAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public IAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public IAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
     
     
     @Override public ISettableAtomData map(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {

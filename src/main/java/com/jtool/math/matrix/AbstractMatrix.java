@@ -9,6 +9,7 @@ import com.jtool.code.functional.IDoubleSupplier;
 import com.jtool.code.iterator.IDoubleIterator;
 import com.jtool.code.iterator.IDoubleSetIterator;
 import com.jtool.code.functional.IDoubleOperator1;
+import com.jtool.code.iterator.IHasDoubleIterator;
 import com.jtool.math.vector.*;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -324,24 +325,38 @@ public abstract class AbstractMatrix implements IMatrix {
             for (int col = 0; col < tColNum; ++col) si.nextAndSet(tRow[col]);
         }
     }
-    @Override public void fillWithRows(Iterable<? extends Iterable<? extends Number>> aRows) {
-        final Iterator<? extends Iterable<? extends Number>> tRowsIt = aRows.iterator();
+    @Override public void fillWithRows(Iterable<?> aRows) {
+        final Iterator<?> tRowsIt = aRows.iterator();
         final IDoubleSetIterator si = setIteratorRow();
         final int tRowNum = rowNumber();
         final int tColNum = columnNumber();
         for (int row = 0; row < tRowNum; ++row) {
-            final Iterator<? extends Number> tRowIt = tRowsIt.next().iterator();
-            for (int col = 0; col < tColNum; ++col) si.nextAndSet(tRowIt.next().doubleValue());
+            Object tRow = tRowsIt.next();
+            if (tRow instanceof Iterable) {
+                final Iterator<?> tRowIt = ((Iterable<?>)tRow).iterator();
+                for (int col = 0; col < tColNum; ++col) si.nextAndSet(((Number)tRowIt.next()).doubleValue());
+            } else
+            if (tRow instanceof IHasDoubleIterator) {
+                final IDoubleIterator tRowIt = ((IHasDoubleIterator)tRow).iterator();
+                for (int col = 0; col < tColNum; ++col) si.nextAndSet(tRowIt.next());
+            }
         }
     }
-    @Override public void fillWithCols(Iterable<? extends Iterable<? extends Number>> aCols) {
-        final Iterator<? extends Iterable<? extends Number>> tColsIt = aCols.iterator();
+    @Override public void fillWithCols(Iterable<?> aCols) {
+        final Iterator<?> tColsIt = aCols.iterator();
         final IDoubleSetIterator si = setIteratorCol();
         final int tRowNum = rowNumber();
         final int tColNum = columnNumber();
         for (int col = 0; col < tColNum; ++col) {
-            final Iterator<? extends Number> tColIt = tColsIt.next().iterator();
-            for (int row = 0; row < tRowNum; ++row) si.nextAndSet(tColIt.next().doubleValue());
+            Object tCol = tColsIt.next();
+            if (tCol instanceof Iterable) {
+                final Iterator<?> tColIt = ((Iterable<?>)tCol).iterator();
+                for (int row = 0; row < tRowNum; ++row) si.nextAndSet(((Number)tColIt.next()).doubleValue());
+            } else
+            if (tCol instanceof IHasDoubleIterator) {
+                final IDoubleIterator tColIt = ((IHasDoubleIterator)tCol).iterator();
+                for (int row = 0; row < tRowNum; ++row) si.nextAndSet(tColIt.next());
+            }
         }
     }
     
