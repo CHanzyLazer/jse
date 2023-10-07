@@ -6,6 +6,7 @@ import com.jtool.lmp.LPC
 import com.jtool.math.MathEX
 import com.jtool.math.table.Tables
 import com.jtool.plot.Plotters
+import com.jtool.system.SSH
 import com.jtool.system.WSL
 
 import static com.jtool.code.CS.*
@@ -13,24 +14,46 @@ import static com.jtool.code.CS.*
 /** 测试计算 MSD */
 
 // 需要先运行一下 lammps 来创建 dump
-final String lmpExe         = '~/.local/bin/lmp';
-final int lmpCores          = 12;
-
 final int Cu = 60, Zr = 40;
 final int meltTemp          = Math.round(1600 + MathEX.Code.units(800, Cu+Zr, Zr, false));
 final double cellSize       = 3.971 + Zr/(Cu+Zr) * 1.006;
 
+final String FS1dataPath    = 'lmp/.temp/data-fs1';
+final String FS2dataPath    = 'lmp/.temp/data-fs2';
+
 final String FS1MSDPath     = 'lmp/.temp/msd-fs1.csv';
 final String FS2MSDPath     = 'lmp/.temp/msd-fs2.csv';
-final boolean genMSD        = true;
 
-if (genMSD) {
+final boolean genData       = false;
+final boolean calMSD        = true;
+
+
+if (genData) {
+    String lmpExe   = '~/.local/bin/lmp';
+    int lmpCores    = 12;
+    
     UT.Timer.tic();
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr')) {
-        def inDataPath = 'lmp/.temp/data-fs1';
-        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], inDataPath, meltTemp);
-        lpc.runMelt(inDataPath, inDataPath, 800);
-        def msd800 = lpc.calMSD(inDataPath, 800, true);
+        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS1dataPath, meltTemp, 0.002, 500000);
+        lpc.runMelt(FS1dataPath, FS1dataPath, 1000, 0.002, 500000 );
+        lpc.runMelt(FS1dataPath, FS1dataPath, 800 , 0.002, 5000000);
+    }
+    try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_4.eam.fs Cu Zr')) {
+        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS2dataPath, meltTemp, 0.002, 500000);
+        lpc.runMelt(FS2dataPath, FS2dataPath, 1000, 0.002, 500000 );
+        lpc.runMelt(FS2dataPath, FS2dataPath, 850 , 0.002, 5000000);
+    }
+    UT.Timer.toc('genData');
+}
+
+
+if (calMSD) {
+    String lmpExe   = '~/.local/bin/lmp';
+    int lmpCores    = 12;
+    
+    UT.Timer.tic();
+    try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr')) {
+        def msd800 = lpc.calMSD(FS1dataPath, 800, true);
         
         def table = Tables.zeros(msd800.first().size());
         table['t'] = msd800.second();
@@ -40,12 +63,9 @@ if (genMSD) {
     }
     
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_4.eam.fs Cu Zr')) {
-        def inDataPath = 'lmp/.temp/data-fs2';
-        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], inDataPath, meltTemp);
-        lpc.runMelt(inDataPath, inDataPath, 850);
-        def msd800 = lpc.calMSD(inDataPath, 800, true);
-        def msd850 = lpc.calMSD(inDataPath, 850, true);
-        def msd900 = lpc.calMSD(inDataPath, 900, true);
+        def msd800 = lpc.calMSD(FS2dataPath, 800, true);
+        def msd850 = lpc.calMSD(FS2dataPath, 850, true);
+        def msd900 = lpc.calMSD(FS2dataPath, 900, true);
         
         def table = Tables.zeros(msd800.first().size());
         table['t'] = msd800.second();
@@ -55,7 +75,7 @@ if (genMSD) {
         
         UT.IO.table2csv(table, FS2MSDPath);
     }
-    UT.Timer.toc();
+    UT.Timer.toc('calMSD');
 }
 
 
