@@ -53,25 +53,37 @@ if (calMSD) {
     
     UT.Timer.tic();
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr')) {
-        def msd800 = lpc.calMSD(FS1dataPath, 800, true);
+        def subCal = lpc.calMSD(FS1dataPath, 800).setDenseNormalized();
+        def msd800Cu = subCal.calType(1);
+        def msd800Zr = subCal.calType(2);
         
-        def table = Tables.zeros(msd800.first().size());
-        table['t'] = msd800.second();
-        table['800'] = msd800.first();
+        def table = Tables.zeros(msd800Cu.first().size());
+        table['t'] = msd800Cu.second();
+        table['800-Cu'] = msd800Cu.first();
+        table['800-Zr'] = msd800Zr.first();
         
         UT.IO.table2csv(table, FS1MSDPath);
     }
     
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_4.eam.fs Cu Zr')) {
-        def msd800 = lpc.calMSD(FS2dataPath, 800, true);
-        def msd850 = lpc.calMSD(FS2dataPath, 850, true);
-        def msd900 = lpc.calMSD(FS2dataPath, 900, true);
+        def subCal = lpc.calMSD(FS2dataPath, 800).setDenseNormalized();
+        def msd800Cu = subCal.calType(1);
+        def msd800Zr = subCal.calType(2);
+        subCal = lpc.calMSD(FS2dataPath, 850).setDenseNormalized();
+        def msd850Cu = subCal.calType(1);
+        def msd850Zr = subCal.calType(2);
+        subCal = lpc.calMSD(FS2dataPath, 900).setDenseNormalized();
+        def msd900Cu = subCal.calType(1);
+        def msd900Zr = subCal.calType(2);
         
-        def table = Tables.zeros(msd800.first().size());
-        table['t'] = msd800.second();
-        table['800'] = msd800.first();
-        table['850'] = msd850.first();
-        table['900'] = msd900.first();
+        def table = Tables.zeros(msd800Cu.first().size());
+        table['t'] = msd800Cu.second();
+        table['800-Cu'] = msd800Cu.first();
+        table['800-Zr'] = msd800Zr.first();
+        table['850-Cu'] = msd850Cu.first();
+        table['850-Zr'] = msd850Zr.first();
+        table['900-Cu'] = msd900Cu.first();
+        table['900-Zr'] = msd900Zr.first();
         
         UT.IO.table2csv(table, FS2MSDPath);
     }
@@ -84,10 +96,18 @@ def msdFS1 = UT.IO.csv2table(FS1MSDPath);
 def msdFS2 = UT.IO.csv2table(FS2MSDPath);
 
 // 绘制
-def plt = Plotters.get();
-plt.loglog(msdFS1['t'], msdFS1['800'], 'FS1, 800K').marker('s');
-plt.loglog(msdFS2['t'], msdFS2['800'], 'FS2, 800K').marker('o');
-plt.loglog(msdFS2['t'], msdFS2['850'], 'FS2, 850K').marker('^');
-plt.loglog(msdFS2['t'], msdFS2['900'], 'FS2, 900K').marker('d');
-plt.xLabel('time[ps]').yLabel('msd');
-plt.show();
+def plt1 = Plotters.get();
+plt1.loglog(msdFS1['t'], msdFS1['800-Cu'], 'FS1-Cu, 800K').marker('s');
+plt1.loglog(msdFS2['t'], msdFS2['800-Cu'], 'FS2-Cu, 800K').marker('o');
+plt1.loglog(msdFS2['t'], msdFS2['850-Cu'], 'FS2-Cu, 850K').marker('^');
+plt1.loglog(msdFS2['t'], msdFS2['900-Cu'], 'FS2-Cu, 900K').marker('d');
+plt1.xLabel('time[ps]').yLabel('msd');
+plt1.show();
+
+def plt2 = Plotters.get();
+plt2.loglog(msdFS1['t'], msdFS1['800-Zr'], 'FS1-Zr, 800K').marker('s');
+plt2.loglog(msdFS2['t'], msdFS2['800-Zr'], 'FS2-Zr, 800K').marker('o');
+plt2.loglog(msdFS2['t'], msdFS2['850-Zr'], 'FS2-Zr, 850K').marker('^');
+plt2.loglog(msdFS2['t'], msdFS2['900-Zr'], 'FS2-Zr, 900K').marker('d');
+plt2.xLabel('time[ps]').yLabel('msd');
+plt2.show();

@@ -10,6 +10,7 @@ import com.jtool.math.vector.IVector;
 import com.jtool.math.vector.Vector;
 import com.jtool.parallel.AbstractHasAutoShutdown;
 import com.jtool.system.ISystemExecutor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -161,6 +162,28 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     }
     
     
+    /** 用于进行多次计算的通用子计算器，可以减少一些通用参数造成的重载 */
+    public interface ISubCalculator<T> {
+        /**
+         * 和 {@link Lmpdat} 等数据类似的将密度归一化的接口，
+         * 返回自身支持链式调用
+         */
+        ISubCalculator<T> setDenseNormalized();
+        
+        /**
+         * 执行计算，采用 {@link IAtomData} 中获取 MPC
+         * 类似的写法来设置仅计算某个种类以及线程数
+         * @param aType 指定仅计算某个种类的结果
+         * @param aThreadNum 指定线程数，默认为 1
+         * @return 计算结果
+         */
+        T calType(int aType, int aThreadNum);
+        T cal    (           int aThreadNum);
+        default T calType(int aType) {return calType(aType, 1);}
+        default T cal    (         ) {return cal(1);}
+    }
+    
+    
     /**
      * 计算 MSD (Mean Square Displacement)，
      * 会自动分划两组不同步长的 dump 分别计算
@@ -171,64 +194,58 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
      * @author liqa
      * @param aInDataPath 模拟作为输入的 data 文件路径
      * @param aTemperature 模拟的温度，K
-     * @param aDenseNormalized 是否在密度归一化后再进行计算，默认关闭
      * @param aN 期望计算的时间点数目，默认为 20
      * @param aTimestep 模拟的时间步长，默认为 0.002
      * @param aTimeGap 进行平均的时间间隔，认为这个时间间隔后的系统不再相关，默认为 100*aTimestep
      * @param aMaxStepNum 期望的最大模拟步骤数，默认为 100000
-     * @return 对应时间下 MSD 的函数
+     * @return 计算 MSD 的子计算器
      */
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(String aInDataPath, double aTemperature, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws Exception {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         // 由于可能存在外部并行，restart 需要一个独立的名称
         String tRestartPath = mWorkingDir+"restart@"+UT.Code.randID();
         // 先做预热处理
         runMelt_(aInDataPath, tRestartPath, aTemperature, aTimestep, 10000);
         // 然后计算 msd
-        return calMSD_(tRestartPath, aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, aMaxStepNum);
+        return calMSD_(tRestartPath, aTemperature, aN, aTimestep, aTimeGap, aMaxStepNum);
     }
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap) throws IOException {return calMSD(aInDataPath, aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, 100000);}
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep) throws IOException {return calMSD(aInDataPath, aTemperature, aDenseNormalized, aN, aTimestep, 100*aTimestep);}
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature, boolean aDenseNormalized, int aN) throws IOException {return calMSD(aInDataPath, aTemperature, aDenseNormalized, aN, 0.002);}
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature, boolean aDenseNormalized) throws IOException {return calMSD(aInDataPath, aTemperature, aDenseNormalized, 20);}
-    public Pair<IVector, IVector> calMSD(String aInDataPath, double aTemperature) throws IOException {return calMSD(aInDataPath, aTemperature, false);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(String aInDataPath, double aTemperature, int aN, double aTimestep, double aTimeGap) throws Exception {return calMSD(aInDataPath, aTemperature, aN, aTimestep, aTimeGap, 100000);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(String aInDataPath, double aTemperature, int aN, double aTimestep) throws Exception {return calMSD(aInDataPath, aTemperature, aN, aTimestep, 100*aTimestep);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(String aInDataPath, double aTemperature, int aN) throws Exception {return calMSD(aInDataPath, aTemperature, aN, 0.002);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(String aInDataPath, double aTemperature) throws Exception {return calMSD(aInDataPath, aTemperature, 20);}
     
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(Lmpdat aLmpdat, double aTemperature, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws Exception {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         // 由于可能存在外部并行，restart 需要一个独立的名称
         String tLmpRestartPath = mWorkingDir+"restart@"+UT.Code.randID();
         // 先做预热处理
         runMelt_(aLmpdat, tLmpRestartPath, aTemperature, aTimestep, 10000);
         // 然后计算 msd
-        return calMSD_(tLmpRestartPath, aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, aMaxStepNum);
+        return calMSD_(tLmpRestartPath, aTemperature, aN, aTimestep, aTimeGap, aMaxStepNum);
     }
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap) throws IOException {return calMSD(aLmpdat, aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, 100000);}
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep) throws IOException {return calMSD(aLmpdat, aTemperature, aDenseNormalized, aN, aTimestep, 100*aTimestep);}
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature, boolean aDenseNormalized, int aN) throws IOException {return calMSD(aLmpdat, aTemperature, aDenseNormalized, aN, 0.002);}
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature, boolean aDenseNormalized) throws IOException {return calMSD(aLmpdat, aTemperature, aDenseNormalized, 20);}
-    public Pair<IVector, IVector> calMSD(Lmpdat aLmpdat, double aTemperature) throws IOException {return calMSD(aLmpdat, aTemperature, false);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(Lmpdat aLmpdat, double aTemperature, int aN, double aTimestep, double aTimeGap) throws Exception {return calMSD(aLmpdat, aTemperature, aN, aTimestep, aTimeGap, 100000);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(Lmpdat aLmpdat, double aTemperature, int aN, double aTimestep) throws Exception {return calMSD(aLmpdat, aTemperature, aN, aTimestep, 100*aTimestep);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(Lmpdat aLmpdat, double aTemperature, int aN) throws Exception {return calMSD(aLmpdat, aTemperature, aN, 0.002);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(Lmpdat aLmpdat, double aTemperature) throws Exception {return calMSD(aLmpdat, aTemperature, 20);}
     
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, aMaxStepNum);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, aMaxStepNum);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap, aMaxStepNum);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep, aTimeGap);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN, aTimestep);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, boolean aDenseNormalized, int aN) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, boolean aDenseNormalized, int aN) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, boolean aDenseNormalized, int aN) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized, aN);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, boolean aDenseNormalized) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, boolean aDenseNormalized) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, boolean aDenseNormalized) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aDenseNormalized);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
-    public Pair<IVector, IVector> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature) throws IOException {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap, aMaxStepNum);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap, aMaxStepNum);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap, aMaxStepNum);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, int aN, double aTimestep, double aTimeGap) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep, aTimeGap);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, int aN, double aTimestep) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, int aN, double aTimestep) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, int aN, double aTimestep) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN, aTimestep);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature, int aN) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature, int aN) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature, int aN) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature, aN);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, IVector                      aMasses, double aTemperature) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, Collection<? extends Number> aMasses, double aTemperature) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
+    public ISubCalculator<Pair<IVector, IVector>> calMSD(IAtomData aAtomData, double[]                     aMasses, double aTemperature) throws Exception {return calMSD(Lmpdat.fromAtomData(aAtomData, aMasses), aTemperature);}
     
     /** 内部使用的 restart 输入的不做预热处理的方法 */
-    public Pair<IVector, IVector> calMSD_(String aInRestartPath, double aTemperature, boolean aDenseNormalized, int aN, double aTimestep, double aTimeGap, int aMaxStepNum) throws IOException {
+    public ISubCalculator<Pair<IVector, IVector>> calMSD_(String aInRestartPath, double aTemperature, int aN, final double aTimestep, final double aTimeGap, int aMaxStepNum) throws Exception {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 由于可能存在外部并行，dump 需要一个独立的名称
@@ -243,10 +260,10 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         rLmpIn.put("vInRestartPath", aInRestartPath);
         rLmpIn.put("vDumpPath", tLmpDumpPath);
         
-        Vector.Builder rMSD = Vector.builder();
-        Vector.Builder rTime = Vector.builder();
+        // 尝试获取短时数据
+        Lammpstrj tShotLammpstrj = null; int tShotN = -1;
         // 尝试分段，长时间固定取 200 帧
-        int tLongDumpStep = MathEX.Code.divup(aMaxStepNum, 200);
+        final int tLongDumpStep = MathEX.Code.divup(aMaxStepNum, 200);
         // 判断是否需要短时的，只要长间距大于 50 则需要
         if (tLongDumpStep > 50) {
             // 此时固定取 500 帧
@@ -254,9 +271,9 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
             // 固定最小间距为 10
             if (tShotDumpStep < 10) tShotDumpStep = 10;
             // 计算短时需要的分点
-            int tN = (int)Math.round(MathEX.Fast.log(tLongDumpStep*0.2) / MathEX.Fast.log(aMaxStepNum*0.08) * (aN-1));
-            if (tN > 0) {
-                aN -= tN; ++tN;
+            tShotN = (int)Math.round(MathEX.Fast.log(tLongDumpStep*0.2) / MathEX.Fast.log(aMaxStepNum*0.08) * (aN-1));
+            if (tShotN > 0) {
+                aN -= tShotN; ++tShotN;
                 // 进行短时分段的统计，这里要保证能“刚好”接上
                 rLmpIn.put("vRunStep", tShotDumpStep*500);
                 rLmpIn.put("vDumpStep", tShotDumpStep);
@@ -264,46 +281,80 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
                 int tExitValue = mLMP.run(rLmpIn);
                 // 这里失败直接报错
                 if (tExitValue != 0) throw new RuntimeException("LAMMPS run Failed, Exit Value: "+tExitValue);
-                //  使用 mfpc 来计算 msd
-                Lammpstrj tLammpstrj = Lammpstrj.read(tLmpDumpPath);
-                if (aDenseNormalized) tLammpstrj.setDenseNormalized();
-                try (MultiFrameParameterCalculator tMFPC = tLammpstrj.getMultiFrameParameterCalculator(aTimestep)) {
-                    Pair<IVector, IVector> tOut = tMFPC.calMSD(tN, aTimeGap, aTimestep*tLongDumpStep*2.0);
-                    tOut.mFirst.forEach(rMSD::add);
-                    tOut.mSecond.forEach(rTime::add);
-                }
+                // 读取结果并删除文件
+                tShotLammpstrj = Lammpstrj.read(tLmpDumpPath);
+                mLMP.exec().delete(tLmpDumpPath);
             }
         }
         
-        // 进行长时的统计
+        // 获取长时数据
         rLmpIn.put("vRunStep", aMaxStepNum);
         rLmpIn.put("vDumpStep", tLongDumpStep);
         // 运行 lammps 获取输出
         int tExitValue = mLMP.run(rLmpIn);
         // 这里失败直接报错
         if (tExitValue != 0) throw new RuntimeException("LAMMPS run Failed, Exit Value: "+tExitValue);
-        //  使用 mfpc 来计算 msd
-        Lammpstrj tLammpstrj = Lammpstrj.read(tLmpDumpPath);
-        if (aDenseNormalized) tLammpstrj.setDenseNormalized();
-        try (MultiFrameParameterCalculator tMFPC = tLammpstrj.getMultiFrameParameterCalculator(aTimestep)) {
-            Pair<IVector, IVector> tOut = tMFPC.calMSD(aN, aTimeGap);
-            // 连接处平均
-            if (rMSD.isEmpty()) {
-                tOut.mFirst.forEach(rMSD::add);
-                tOut.mSecond.forEach(rTime::add);
-            } else {
-                IDoubleIterator itMSD = tOut.mFirst.iterator();
-                IDoubleIterator itTime = tOut.mSecond.iterator();
-                itTime.next();
-                rMSD.set(rMSD.size()-1, (rMSD.last() + itMSD.next())*0.5);
-                itMSD.forEachRemaining(rMSD::add);
-                itTime.forEachRemaining(rTime::add);
-            }
-        }
+        // 读取结果并删除文件
+        Lammpstrj tLongLammpstrj = Lammpstrj.read(tLmpDumpPath);
+        mLMP.exec().delete(tLmpDumpPath);
         
-        // 返回结果
-        rMSD.shrinkToFit();
-        rTime.shrinkToFit();
-        return new Pair<>(rMSD.build(), rTime.build());
+        
+        // 返回子计算器
+        final @Nullable Lammpstrj fShotLammpstrj = tShotLammpstrj; final int fShotN = tShotN;
+        final @NotNull  Lammpstrj fLongLammpstrj = tLongLammpstrj; final int fLongN = aN;
+        return new ISubCalculator<Pair<IVector, IVector>>() {
+            private Pair<IVector, IVector> calMSD_(@Nullable MultiFrameParameterCalculator aShotMFPC, @NotNull MultiFrameParameterCalculator aLongMFPC) {
+                Vector.Builder rMSD = Vector.builder();
+                Vector.Builder rTime = Vector.builder();
+                if (aShotMFPC != null) {
+                    Pair<IVector, IVector> tOut = aShotMFPC.calMSD(fShotN, aTimeGap, aTimestep*tLongDumpStep*2.0);
+                    tOut.mFirst.forEach(rMSD::add);
+                    tOut.mSecond.forEach(rTime::add);
+                }
+                Pair<IVector, IVector> tOut = aLongMFPC.calMSD(fLongN, aTimeGap);
+                // 连接处平均
+                if (rMSD.isEmpty()) {
+                    tOut.mFirst.forEach(rMSD::add);
+                    tOut.mSecond.forEach(rTime::add);
+                } else {
+                    IDoubleIterator itMSD = tOut.mFirst.iterator();
+                    IDoubleIterator itTime = tOut.mSecond.iterator();
+                    itTime.next();
+                    rMSD.set(rMSD.size()-1, (rMSD.last() + itMSD.next())*0.5);
+                    itMSD.forEachRemaining(rMSD::add);
+                    itTime.forEachRemaining(rTime::add);
+                }
+                // 返回结果
+                rMSD.shrinkToFit();
+                rTime.shrinkToFit();
+                return new Pair<>(rMSD.build(), rTime.build());
+            }
+            private Pair<IVector, IVector> calMSD_(@NotNull MultiFrameParameterCalculator aLongMFPC) {return calMSD_(null, aLongMFPC);}
+            
+            @Override public ISubCalculator<Pair<IVector, IVector>> setDenseNormalized() {
+                if (fShotLammpstrj != null) fShotLammpstrj.setDenseNormalized();
+                fLongLammpstrj.setDenseNormalized();
+                return this;
+            }
+            
+            @Override public Pair<IVector, IVector> calType(int aType, int aThreadNum) {
+                try (MultiFrameParameterCalculator tLongMFPC = fLongLammpstrj.getTypeMultiFrameParameterCalculator(aTimestep, aType, aThreadNum)) {
+                    if (fShotLammpstrj != null) try (MultiFrameParameterCalculator tShotMFPC = fShotLammpstrj.getTypeMultiFrameParameterCalculator(aTimestep, aType, aThreadNum)) {
+                        return calMSD_(tShotMFPC, tLongMFPC);
+                    } else {
+                        return calMSD_(tLongMFPC);
+                    }
+                }
+            }
+            @Override public Pair<IVector, IVector> cal(int aThreadNum) {
+                try (MultiFrameParameterCalculator tLongMFPC = fLongLammpstrj.getMultiFrameParameterCalculator(aTimestep, aThreadNum)) {
+                    if (fShotLammpstrj != null) try (MultiFrameParameterCalculator tShotMFPC = fShotLammpstrj.getMultiFrameParameterCalculator(aTimestep, aThreadNum)) {
+                        return calMSD_(tShotMFPC, tLongMFPC);
+                    } else {
+                        return calMSD_(tLongMFPC);
+                    }
+                }
+            }
+        };
     }
 }
