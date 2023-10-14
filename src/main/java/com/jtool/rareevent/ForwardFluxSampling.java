@@ -197,7 +197,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             this.multiple = multiple;
         }
         Point(Point parent) {
-            this(parent, parent.value, parent.lambda, parent.multiple);
+            this(parent, parent.value, parent.lambda);
         }
         Point(Point parent, T value, double lambda) {
             this(parent, value, lambda, parent.multiple);
@@ -239,16 +239,17 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         // 不再需要检测 hasNext，内部保证永远都有 next
         // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定；这时需要特殊处理，不记录这段时间
         Point tRoot;
-        // 这个过程也需要 Pruning，但是不考虑时间因此这里不需要记录倍率
+        // 这个过程也需要 Pruning，即使不考虑时间也要记录倍率
         int tPruningIndex = mPruningThreshold;
+        double tPruningMul = 1.0;
         while (true) {
             tRawPoint = tPathInit.next();
             ++tStep1PointNum;
             // 检测是否到达 A
             tLambda = tPathInit.lambda();
             if (tLambda <= mSurfaceA) {
-                // 记录根节点
-                tRoot = new Point(tRawPoint, tLambda);
+                // 记录根节点，现在 pruning 的倍率也会记录到这里
+                tRoot = new Point(tRawPoint, tLambda, tPruningMul);
                 break;
             }
             // 如果到达 B 则重新回到 A，这里直接 return 来实现
@@ -272,14 +273,15 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     }
                     return;
                 }
-                // 这里不需要记录权重
+                // 否则增加权重，这里不需要记录时间
+                tPruningMul /= (1.0 - mPruningProb);
             }
         }
         
         // 开始一般情况处理
         // 这个过程也增加 Pruning
         tPruningIndex = mPruningThreshold;
-        double tPruningMul = 1.0;
+        tPruningMul = 1.0;
         // 先记录目前为止消耗的时间，不包含到统计中
         double oTimeConsumed = tPathInit.timeConsumed();
         while (true) {
@@ -290,9 +292,9 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 // 判断是否有穿过 λ0
                 tLambda = tPathInit.lambda();
                 if (tLambda >= mSurfaces.first()) {
-                    // 如果有穿过 λ0 则需要记录这些点
+                    // 如果有穿过 λ0 则需要记录这些点，现在 pruning 的倍率也会记录到这里
                     synchronized (this) {
-                        mPointsOnLambda.add(new Point(tRoot, tRawPoint, tLambda));
+                        mPointsOnLambda.add(new Point(tRoot, tRawPoint, tLambda, tRoot.multiple*tPruningMul));
                         mN0Eff += tPruningMul;
                     }
                     // 如果到达 B 则重新回到 A，这里直接 return 来实现（对于只有一个界面的情况）
@@ -420,9 +422,9 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 tLambda = tPathFrom.lambda();
                 // 判断是否穿过了 λi+1
                 if (tLambda >= tLambdaNext) {
-                    // 如果有穿过 λi+1 则需要记录这些点
+                    // 如果有穿过 λi+1 则需要记录这些点，现在 pruning 的倍率也会记录到这里
                     synchronized (this) {
-                        mPointsOnLambda.add(new Point(tStart, tRawPoint, tLambda, subMul));
+                        mPointsOnLambda.add(new Point(tStart, tRawPoint, tLambda, subMul*tPruningMul));
                         mMi += subMul;
                         mNippEff += subMul*tPruningMul;
                     }
