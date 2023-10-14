@@ -437,13 +437,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aGr the matrix form of g(r)
      * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
      * @param aN the split number of output（默认为 160）
-     * @param aQMax the max q of output S(q)（默认为 6 倍单位距离）
-     * @param aQMin the min q of output S(q)（默认为 0.4 倍单位距离）
+     * @param aQMax the max q of output S(q)（默认为 7.6 倍 gr 第一峰对应的距离）
+     * @param aQMin the min q of output S(q)（默认为 0.5 倍 gr 第一峰对应的距离）
      * @return the structural factor, S(q)
      */
-    public IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax, double aQMin) {
-        if (mDead) throw new RuntimeException("This Calculator is dead");
-        
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax, double aQMin) {
         double dq = (aQMax-aQMin)/aN;
         
         IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
@@ -454,10 +452,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         Sq.set_(0, 0.0);
         return Sq;
     }
-    public IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/mUnitLen * 0.4);}
-    public IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/mUnitLen * 6.0, 2.0*PI/mUnitLen * 0.4);}
-    public IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
-    public IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/aGr.operation().maxX()* 7.6, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
+    public        IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
     
     
     /**
@@ -466,13 +464,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aSq the matrix form of S(q)
      * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
      * @param aN the split number of output（默认为 160）
-     * @param aRMax the max r of output g(r)（默认为 6 倍单位距离）
-     * @param aRMin the min r of output g(r)（默认为 0.4 倍单位距离）
+     * @param aRMax the max r of output g(r)（默认为 7.6 倍 Sq 第一峰对应的距离）
+     * @param aRMin the min r of output g(r)（默认为 0.5 倍 Sq 第一峰对应的距离）
      * @return the radial distribution function, g(r)
      */
-    public IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax, double aRMin) {
-        if (mDead) throw new RuntimeException("This Calculator is dead");
-        
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax, double aRMin) {
         double dr = (aRMax-aRMin)/aN;
         
         IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN+1).setBound(0.0, 1.0);
@@ -483,10 +479,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         gr.set_(0, 0.0);
         return gr;
     }
-    public IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, mUnitLen * 0.4);}
-    public IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, mUnitLen * 6.0, mUnitLen * 0.4);}
-    public IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
-    public IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, 2.0*PI/aSq.operation().maxX() * 7.6, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
+    public        IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
     
     
     

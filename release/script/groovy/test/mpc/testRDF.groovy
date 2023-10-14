@@ -1,9 +1,11 @@
 package test.mpc
 
+import com.jtool.atom.MPC
 import com.jtool.code.UT
 import com.jtool.lmp.Lmpdat
 import com.jtool.plot.Plotters
 
+import static com.jtool.math.MathEX.Fast.*
 
 /** 测试计算 RDF */
 
@@ -13,26 +15,28 @@ nThreads = 4;
 // 首先导入 Lmpdat
 data = Lmpdat.read('lmp/data/data-glass');
 // 获取 MPC 计算单原子数据
-mpc = data.getMPC(nThreads);
+mpcCu = data.getTypeMPC(1, nThreads);
+mpcZr = data.getTypeMPC(2, nThreads);
 
 // 计算 RDF
 UT.Timer.tic();
-gr = mpc.calRDF();
+gr = mpcCu.calRDF_AB(mpcZr);
 UT.Timer.toc("${nThreads} threads, RDF");
 
 // 计算 SF
 UT.Timer.tic();
-Sq = mpc.calSF();
+Sq = mpcCu.calSF_AB(mpcZr);
 UT.Timer.toc("${nThreads} threads, SF");
 
 // 使用 FT 来计算
 UT.Timer.tic();
-grFT = mpc.SF2RDF(Sq);
-SqFT = mpc.RDF2SF(gr);
+grFT = MPC.SF2RDF(Sq, sqrt(mpcCu.rou()*mpcZr.rou()));
+SqFT = MPC.RDF2SF(gr, sqrt(mpcCu.rou()*mpcZr.rou()));
 UT.Timer.toc("FT");
 
 // 计算完毕关闭 MPC
-mpc.shutdown();
+mpcCu.shutdown();
+mpcZr.shutdown();
 
 // 输出为 csv 文件
 UT.IO.data2csv(gr, 'lmp/.temp/gr.csv');
