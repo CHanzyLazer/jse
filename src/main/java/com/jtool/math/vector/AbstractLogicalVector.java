@@ -163,7 +163,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     
     
     @Override public final ILogicalVector copy() {
-        ILogicalVector rVector = newZeros();
+        ILogicalVector rVector = newZeros_(size());
         rVector.fill(this);
         return rVector;
     }
@@ -172,7 +172,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     @Override public ILogicalVectorSlicer slicer() {
         return new AbstractLogicalVectorSlicer() {
-            @Override protected ILogicalVector getL(final List<Integer> aIndices) {ILogicalVector rVector = newZeros(aIndices.size()); rVector.fill(i -> AbstractLogicalVector.this.get(aIndices.get(i))); return rVector;}
+            @Override protected ILogicalVector getL(final List<Integer> aIndices) {ILogicalVector rVector = newZeros_(aIndices.size()); rVector.fill(i -> AbstractLogicalVector.this.get(aIndices.get(i))); return rVector;}
             @Override protected ILogicalVector getA() {return copy();}
             
             @Override protected int thisSize_() {return size();}
@@ -208,7 +208,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     @Override public ILogicalVectorOperation operation() {
         return new AbstractLogicalVectorOperation() {
             @Override protected ILogicalVector thisVector_() {return AbstractLogicalVector.this;}
-            @Override protected ILogicalVector newVector_(int aSize) {return newZeros(aSize);}
+            @Override protected ILogicalVector newVector_(int aSize) {return newZeros_(aSize);}
         };
     }
     
@@ -265,7 +265,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     public abstract void set_(int aIdx, boolean aValue);
     public abstract boolean getAndSet_(int aIdx, boolean aValue);
     public abstract int size();
-    public abstract ILogicalVector newZeros(int aSize);
+    protected abstract ILogicalVector newZeros_(int aSize);
     
     protected String toString_(boolean aValue) {return " "+(aValue?"T":"F");}
 }

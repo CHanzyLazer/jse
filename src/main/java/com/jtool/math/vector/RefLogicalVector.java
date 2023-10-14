@@ -5,7 +5,7 @@ package com.jtool.math.vector;
  * @author liqa
  */
 public abstract class RefLogicalVector extends AbstractLogicalVector {
-    @Override public final ILogicalVector newZeros(int aSize) {return LogicalVector.zeros(aSize);}
+    @Override protected final ILogicalVector newZeros_(int aSize) {return LogicalVector.zeros(aSize);}
     
     /** stuff to override */
     public abstract boolean get_(int aIdx);

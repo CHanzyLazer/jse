@@ -65,9 +65,6 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     void update(int aIdx, IBooleanOperator1 aOpt);
     boolean getAndUpdate(int aIdx, IBooleanOperator1 aOpt);
     
-    /** 现在不再提供生成器，只提供直接创建相同类型的全零的向量的接口，特殊向量的创建请使用 {@link Vectors} */
-    default ILogicalVector newZeros() {return newZeros(size());}
-    ILogicalVector newZeros(int aSize);
     
     ILogicalVector copy();
     

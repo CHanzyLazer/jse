@@ -80,10 +80,6 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     double getAndUpdate(int aIdx, IDoubleOperator1 aOpt);
     
     
-    /** 现在不再提供生成器，只提供直接创建相同类型的全零的向量的接口，特殊向量的创建请使用 {@link Vectors} */
-    default IVector newZeros() {return newZeros(size());}
-    IVector newZeros(int aSize);
-    
     IVector copy();
     
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */

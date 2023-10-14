@@ -18,7 +18,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     /** 通用的一些运算 */
     @Override public IComplexVector plus(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebePlus2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -27,7 +27,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector minus(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeMinus2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -36,7 +36,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector lminus(IComplexVector aRHS) {
         final BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeMinus2Dest(tDataR, IDataShell.shiftSize(aRHS), tDataL, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -45,7 +45,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector multiply(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeMultiply2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -54,7 +54,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector div(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeDiv2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -63,7 +63,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector ldiv(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeDiv2Dest(tDataR, IDataShell.shiftSize(aRHS), tDataL, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -72,7 +72,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector operate(IComplexVector aRHS, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeDo2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);
@@ -82,7 +82,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     
     @Override public IComplexVector plus(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapPlus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapPlus2Dest(tThis, aRHS, rVector);
@@ -90,7 +90,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector minus(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapMinus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapMinus2Dest(tThis, aRHS, rVector);
@@ -98,7 +98,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector lminus(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapLMinus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapLMinus2Dest(tThis, aRHS, rVector);
@@ -106,7 +106,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector multiply(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapMultiply2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapMultiply2Dest(tThis, aRHS, rVector);
@@ -114,7 +114,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector div(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapDiv2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapDiv2Dest(tThis, aRHS, rVector);
@@ -122,7 +122,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector ldiv(IComplexDouble aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapLDiv2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapLDiv2Dest(tThis, aRHS, rVector);
@@ -130,7 +130,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector plus(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapPlus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapPlus2Dest(tThis, aRHS, rVector);
@@ -138,7 +138,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector minus(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapMinus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapMinus2Dest(tThis, aRHS, rVector);
@@ -146,7 +146,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector lminus(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapLMinus2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapLMinus2Dest(tThis, aRHS, rVector);
@@ -154,7 +154,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector multiply(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapMultiply2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapMultiply2Dest(tThis, aRHS, rVector);
@@ -162,7 +162,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector div(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapDiv2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapDiv2Dest(tThis, aRHS, rVector);
@@ -170,7 +170,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector ldiv(double aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapLDiv2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapLDiv2Dest(tThis, aRHS, rVector);
@@ -178,7 +178,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector map(IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapDo2Dest(tDataL, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);
         else DATA.mapDo2Dest(tThis, rVector, aOpt);
@@ -244,7 +244,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     
     @Override public IComplexVector negative() {
         BiDoubleArrayVector tThis = thisVector_();
-        BiDoubleArrayVector rVector = newVector_(tThis.size());
+        BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapNegative2Dest(tDataL, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapNegative2Dest(tThis, rVector);
@@ -316,6 +316,10 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
         }
         return rDot;
     }
+    
+    
+    /** 方便内部使用，减少一些重复代码 */
+    private BiDoubleArrayVector newVector_() {return newVector_(thisVector_().size());}
     
     /** stuff to override */
     @Override protected abstract BiDoubleArrayVector thisVector_();

@@ -14,7 +14,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     /** 通用的一些运算 */
     @Override public ILogicalVector and(ILogicalVector aRHS) {
         final BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         boolean[] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeAnd2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -23,7 +23,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector or(ILogicalVector aRHS) {
         final BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         boolean[] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeOr2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -32,7 +32,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector xor(ILogicalVector aRHS) {
         final BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         boolean[] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeXor2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
@@ -41,7 +41,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector operate(ILogicalVector aRHS, IBooleanOperator2 aOpt) {
         final BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         boolean[] tDataR = rVector.getIfHasSameOrderData(aRHS);
         if (tDataL != null && tDataR != null) ARRAY.ebeDo2Dest(tDataL, tThis.shiftSize(), tDataR, IDataShell.shiftSize(aRHS), rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);
@@ -51,7 +51,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     
     @Override public ILogicalVector and(boolean aRHS) {
         BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapAnd2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapAnd2Dest(tThis, aRHS, rVector);
@@ -59,7 +59,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector or(boolean aRHS) {
         BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapOr2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapOr2Dest(tThis, aRHS, rVector);
@@ -67,7 +67,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector xor(boolean aRHS) {
         BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapXor2Dest(tDataL, tThis.shiftSize(), aRHS, rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.mapXor2Dest(tThis, aRHS, rVector);
@@ -75,7 +75,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     }
     @Override public ILogicalVector map(IBooleanOperator1 aOpt) {
         BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
         if (tDataL != null) ARRAY.mapDo2Dest(tDataL, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize(), aOpt);
         else DATA.mapDo2Dest(tThis, rVector, aOpt);
@@ -114,7 +114,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     
     @Override public ILogicalVector not     () {
         BooleanArrayVector tThis = thisVector_();
-        BooleanArrayVector rVector = newVector_(tThis.size());
+        BooleanArrayVector rVector = newVector_();
         boolean[] tData = rVector.getIfHasSameOrderData(tThis);
         if (tData != null) ARRAY.not2Dest(tData, tThis.shiftSize(), rVector.getData(), rVector.shiftSize(), rVector.dataSize());
         else DATA.not2Dest(tThis, rVector);
@@ -134,6 +134,9 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     @Override public boolean        any     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.anyOfThis  (tThis.getData(), tThis.shiftSize(), tThis.dataSize());}
     @Override public int            count   () {BooleanArrayVector tThis = thisVector_(); return ARRAY.countOfThis(tThis.getData(), tThis.shiftSize(), tThis.dataSize());}
     
+    
+    /** 方便内部使用，减少一些重复代码 */
+    private BooleanArrayVector newVector_() {return newVector_(thisVector_().size());}
     
     /** stuff to override */
     @Override protected abstract BooleanArrayVector thisVector_();

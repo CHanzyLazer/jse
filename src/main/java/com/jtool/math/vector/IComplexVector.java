@@ -137,10 +137,6 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     double getAndUpdateImag(int aIdx, IDoubleOperator1 aImagOpt);
     
     
-    /** 现在不再提供生成器，只提供直接创建相同类型的全零的向量的接口，特殊向量的创建请使用 {@link Vectors} */
-    default IComplexVector newZeros() {return newZeros(size());}
-    IComplexVector newZeros(int aSize);
-    
     IComplexVector copy();
     
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */

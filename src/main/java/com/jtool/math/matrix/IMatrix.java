@@ -92,11 +92,6 @@ public interface IMatrix extends IMatrixGetter {
     IVector col(int aCol);
     
     
-    /** 现在不再提供生成器，只提供直接创建相同类型的全零的矩阵的接口，特殊矩阵的创建请使用 {@link Matrices} */
-    default IMatrix newZeros() {return newZeros(rowNumber(), columnNumber());}
-    IMatrix newZeros(int aRowNum, int aColNum);
-    IVector newZerosVec(int aSize);
-    
     IMatrix copy();
     
     /** 切片操作，默认返回新的矩阵，refSlicer 则会返回引用的切片结果 */

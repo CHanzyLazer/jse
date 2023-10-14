@@ -19,7 +19,7 @@ public abstract class DoubleArrayVector extends AbstractVector implements IDataS
     
     protected class DoubleArrayVectorOperation_ extends DoubleArrayVectorOperation {
         @Override protected DoubleArrayVector thisVector_() {return DoubleArrayVector.this;}
-        @Override protected DoubleArrayVector newVector_(int aSize) {return newZeros(aSize);}
+        @Override protected DoubleArrayVector newVector_(int aSize) {return newZeros_(aSize);}
     }
     
     /** 向量运算实现 */
@@ -37,7 +37,7 @@ public abstract class DoubleArrayVector extends AbstractVector implements IDataS
     }
     
     /** stuff to override */
-    public abstract DoubleArrayVector newZeros(int aSize);
+    protected abstract DoubleArrayVector newZeros_(int aSize);
     public abstract DoubleArrayVector newShell();
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

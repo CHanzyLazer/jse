@@ -6,7 +6,7 @@ package com.jtool.math.vector;
  * @author liqa
  */
 public abstract class RefComplexVector extends AbstractComplexVector {
-    @Override public final IComplexVector newZeros(int aSize) {return ComplexVector.zeros(aSize);}
+    @Override protected final IComplexVector newZeros_(int aSize) {return ComplexVector.zeros(aSize);}
     
     /** stuff to override */
     public abstract double getReal_(int aIdx);

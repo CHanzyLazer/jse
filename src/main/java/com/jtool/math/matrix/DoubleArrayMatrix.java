@@ -1,6 +1,8 @@
 package com.jtool.math.matrix;
 
 import com.jtool.math.IDataShell;
+import com.jtool.math.vector.IVector;
+import com.jtool.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -20,15 +22,18 @@ public abstract class DoubleArrayMatrix extends AbstractMatrix implements IDataS
     
     protected class DoubleArrayMatrixOperation_ extends DoubleArrayMatrixOperation {
         @Override protected DoubleArrayMatrix thisMatrix_() {return DoubleArrayMatrix.this;}
-        @Override protected DoubleArrayMatrix newMatrix_(ISize aSize) {return newZeros(aSize.row(), aSize.col());}
+        @Override protected DoubleArrayMatrix newMatrix_(int aRowNum, int aColNum) {return newZeros_(aRowNum, aColNum);}
     }
     
     /** 矩阵运算实现 */
     @Override public IMatrixOperation operation() {return new DoubleArrayMatrixOperation_();}
     
+    /** 严谨起见重写此方法不允许子类修改 */
+    @Override protected final IVector newZerosVec_(int aSize) {return Vector.zeros(aSize);}
+    
     
     /** stuff to override */
-    public abstract DoubleArrayMatrix newZeros(int aRowNum, int aColNum);
+    protected abstract DoubleArrayMatrix newZeros_(int aRowNum, int aColNum);
     public abstract DoubleArrayMatrix newShell();
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

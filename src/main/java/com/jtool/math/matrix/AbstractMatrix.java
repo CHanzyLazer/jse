@@ -443,7 +443,7 @@ public abstract class AbstractMatrix implements IMatrix {
     
     
     @Override public final IMatrix copy() {
-        IMatrix rMatrix = newZeros();
+        IMatrix rMatrix = newZeros_(rowNumber(), columnNumber());
         rMatrix.fill(this);
         return rMatrix;
     }
@@ -452,27 +452,27 @@ public abstract class AbstractMatrix implements IMatrix {
     /** 切片操作，默认返回新的矩阵，refSlicer 则会返回引用的切片结果 */
     @Override public IMatrixSlicer slicer() {
         return new AbstractMatrixSlicer() {
-            @Override protected IVector getIL(final int aSelectedRow, final List<Integer> aSelectedCols) {IVector rVector = newZerosVec(aSelectedCols.size()); rVector.fill(refSlicer().get(aSelectedRow, aSelectedCols)); return rVector;}
-            @Override protected IVector getLI(final List<Integer> aSelectedRows, final int aSelectedCol) {IVector rVector = newZerosVec(aSelectedRows.size()); rVector.fill(refSlicer().get(aSelectedRows, aSelectedCol)); return rVector;}
-            @Override protected IVector getIA(final int aSelectedRow) {IVector rVector = newZerosVec(columnNumber()); rVector.fill(refSlicer().get(aSelectedRow, ALL)); return rVector;}
-            @Override protected IVector getAI(final int aSelectedCol) {IVector rVector = newZerosVec(rowNumber()   ); rVector.fill(refSlicer().get(ALL, aSelectedCol)); return rVector;}
+            @Override protected IVector getIL(final int aSelectedRow, final List<Integer> aSelectedCols) {IVector rVector = newZerosVec_(aSelectedCols.size()); rVector.fill(refSlicer().get(aSelectedRow, aSelectedCols)); return rVector;}
+            @Override protected IVector getLI(final List<Integer> aSelectedRows, final int aSelectedCol) {IVector rVector = newZerosVec_(aSelectedRows.size()); rVector.fill(refSlicer().get(aSelectedRows, aSelectedCol)); return rVector;}
+            @Override protected IVector getIA(final int aSelectedRow) {IVector rVector = newZerosVec_(columnNumber()); rVector.fill(refSlicer().get(aSelectedRow, ALL)); return rVector;}
+            @Override protected IVector getAI(final int aSelectedCol) {IVector rVector = newZerosVec_(rowNumber()); rVector.fill(refSlicer().get(ALL, aSelectedCol)); return rVector;}
             
-            @Override protected IMatrix getLL(final List<Integer> aSelectedRows, final List<Integer> aSelectedCols) {IMatrix rMatrix = newZeros(aSelectedRows.size(), aSelectedCols.size()); rMatrix.fill(refSlicer().get(aSelectedRows, aSelectedCols)); return rMatrix;}
-            @Override protected IMatrix getLA(final List<Integer> aSelectedRows) {IMatrix rMatrix = newZeros(aSelectedRows.size(), columnNumber()      ); rMatrix.fill(refSlicer().get(aSelectedRows, ALL)); return rMatrix;}
-            @Override protected IMatrix getAL(final List<Integer> aSelectedCols) {IMatrix rMatrix = newZeros(rowNumber()         , aSelectedCols.size()); rMatrix.fill(refSlicer().get(ALL, aSelectedCols)); return rMatrix;}
+            @Override protected IMatrix getLL(final List<Integer> aSelectedRows, final List<Integer> aSelectedCols) {IMatrix rMatrix = newZeros_(aSelectedRows.size(), aSelectedCols.size()); rMatrix.fill(refSlicer().get(aSelectedRows, aSelectedCols)); return rMatrix;}
+            @Override protected IMatrix getLA(final List<Integer> aSelectedRows) {IMatrix rMatrix = newZeros_(aSelectedRows.size(), columnNumber()); rMatrix.fill(refSlicer().get(aSelectedRows, ALL)); return rMatrix;}
+            @Override protected IMatrix getAL(final List<Integer> aSelectedCols) {IMatrix rMatrix = newZeros_(rowNumber()         , aSelectedCols.size()); rMatrix.fill(refSlicer().get(ALL, aSelectedCols)); return rMatrix;}
             @Override protected IMatrix getAA() {return copy();}
             
             @Override public IVector diag(final int aShift) {
                 IVector rVector;
                 if (aShift > 0) {
-                    rVector = newZerosVec(Math.min(rowNumber(), columnNumber()-aShift));
+                    rVector = newZerosVec_(Math.min(rowNumber(), columnNumber()-aShift));
                     rVector.fill(i -> AbstractMatrix.this.get_(i, i+aShift));
                 } else
                 if (aShift < 0) {
-                    rVector = newZerosVec(Math.min(rowNumber()+aShift, columnNumber()));
+                    rVector = newZerosVec_(Math.min(rowNumber()+aShift, columnNumber()));
                     rVector.fill(i -> AbstractMatrix.this.get_(i-aShift, i));
                 } else {
-                    rVector = newZerosVec(Math.min(rowNumber(), columnNumber()));
+                    rVector = newZerosVec_(Math.min(rowNumber(), columnNumber()));
                     rVector.fill(i -> AbstractMatrix.this.get_(i, i));
                 }
                 return rVector;
@@ -583,7 +583,8 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public IMatrixOperation operation() {
         return new AbstractMatrixOperation() {
             @Override protected IMatrix thisMatrix_() {return AbstractMatrix.this;}
-            @Override protected IMatrix newMatrix_(ISize aSize) {return newZeros(aSize.row(), aSize.col());}
+            @Override protected IMatrix newMatrix_(int aRowNum, int aColNum) {return newZeros_(aRowNum, aColNum);}
+            @Override protected IVector newVector_(int aSize) {return newZerosVec_(aSize);}
         };
     }
     
@@ -735,8 +736,8 @@ public abstract class AbstractMatrix implements IMatrix {
     public abstract double getAndSet_(int aRow, int aCol, double aValue); // 返回修改前的值
     public abstract int rowNumber();
     public abstract int columnNumber();
-    public abstract IMatrix newZeros(int aRowNum, int aColNum);
-    public abstract IVector newZerosVec(int aSize);
+    protected abstract IMatrix newZeros_(int aRowNum, int aColNum);
+    protected IVector newZerosVec_(int aSize) {return Vector.zeros(aSize);}
     
     protected String toString_(double aValue) {return String.format("   %.4g", aValue);}
 }

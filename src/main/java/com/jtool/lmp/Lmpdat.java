@@ -183,7 +183,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     /** 拷贝一份 Lmpdat，为了简洁还是只保留 copy 一种方法 */
     @Override public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.copy(), mVelocities==null?null:mVelocities.copy());}
     @Override protected Lmpdat newSame_() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.copy(), mVelocities==null?null:mVelocities.copy());}
-    @Override protected Lmpdat newZeros_(int aAtomNum) {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomData.newZeros(aAtomNum, mAtomData.columnNumber()), mVelocities==null?null:mVelocities.newZeros(aAtomNum, mVelocities.columnNumber()));}
+    @Override protected Lmpdat newZeros_(int aAtomNum) {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), RowMatrix.zeros(aAtomNum, mAtomData.columnNumber()), mVelocities==null?null:RowMatrix.zeros(aAtomNum, mVelocities.columnNumber()));}
     
     /** 从 IAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
     public static Lmpdat fromAtomData(IAtomData aAtomData) {return fromAtomData_(aAtomData, null);}

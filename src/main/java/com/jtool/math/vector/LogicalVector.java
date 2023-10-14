@@ -89,7 +89,7 @@ public final class LogicalVector extends BooleanArrayVector {
     }
     @Override public int size() {return mSize;}
     
-    @Override public LogicalVector newZeros(int aSize) {return LogicalVector.zeros(aSize);}
+    @Override protected LogicalVector newZeros_(int aSize) {return LogicalVector.zeros(aSize);}
     
     @Override public LogicalVector newShell() {return new LogicalVector(mSize, null);}
     @Override public boolean @Nullable[] getIfHasSameOrderData(Object aObj) {

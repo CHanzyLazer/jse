@@ -191,7 +191,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
         for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.div2this(r -> r*r*4.0*PI*rou);
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -231,7 +231,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
         for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.div2this(r -> r*r*4.0*PI*rou);
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -281,7 +281,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = dn[0];
         for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.div2this(r -> r*r*4.0*PI*rou);
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -319,7 +319,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = dn[0];
         for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.div2this(r -> r*r*4.0*PI*rou);
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -359,7 +359,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final XYZ cXYZ = mAtomDataXYZ[i];
             mNL.forEachNeighborMHT(i, aRMax, true, (x, y, z, idx, disMHT) -> {
                 double dis = cXYZ.distance(x, y, z);
-                Hq[threadID].plus2this(q -> Fast.sin(q*dis)/(q*dis));
+                Hq[threadID].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
             });
         });
         
@@ -402,7 +402,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final XYZ cXYZ = aAtomDataXYZ[i];
             mNL.forEachNeighborMHT(cXYZ, aRMax, (x, y, z, idx, disMHT) -> {
                 double dis = cXYZ.distance(x, y, z);
-                Hq[threadID].plus2this(q -> Fast.sin(q*dis)/(q*dis));
+                Hq[threadID].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
             });
         });
         

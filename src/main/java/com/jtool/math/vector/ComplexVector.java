@@ -107,7 +107,7 @@ public final class ComplexVector extends BiDoubleArrayVector {
     @Override public double getAndSetImag_(int aIdx, double aImag) {double oImag = mData[1][aIdx]; mData[1][aIdx] = aImag; return oImag;}
     @Override public int size() {return mSize;}
     
-    @Override public ComplexVector newZeros(int aSize) {return ComplexVector.zeros(aSize);}
+    @Override protected ComplexVector newZeros_(int aSize) {return ComplexVector.zeros(aSize);}
     
     @Override public ComplexVector newShell() {return new ComplexVector(mSize, null);}
     @Override public double @Nullable[][] getIfHasSameOrderData(Object aObj) {

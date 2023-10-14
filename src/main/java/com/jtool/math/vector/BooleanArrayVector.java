@@ -19,7 +19,7 @@ public abstract class BooleanArrayVector extends AbstractLogicalVector implement
     
     protected class BooleanArrayVectorOperation_ extends BooleanArrayVectorOperation {
         @Override protected BooleanArrayVector thisVector_() {return BooleanArrayVector.this;}
-        @Override protected BooleanArrayVector newVector_(int aSize) {return newZeros(aSize);}
+        @Override protected BooleanArrayVector newVector_(int aSize) {return newZeros_(aSize);}
     }
     
     /** 向量运算实现 */
@@ -37,7 +37,7 @@ public abstract class BooleanArrayVector extends AbstractLogicalVector implement
     }
     
     /** stuff to override */
-    public abstract BooleanArrayVector newZeros(int aSize);
+    protected abstract BooleanArrayVector newZeros_(int aSize);
     public abstract BooleanArrayVector newShell();
     public abstract boolean @Nullable[] getIfHasSameOrderData(Object aObj);
 }

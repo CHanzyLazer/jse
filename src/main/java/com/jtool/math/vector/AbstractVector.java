@@ -205,7 +205,7 @@ public abstract class AbstractVector implements IVector {
     
     
     @Override public final IVector copy() {
-        IVector rVector = newZeros();
+        IVector rVector = newZeros_(size());
         rVector.fill(this);
         return rVector;
     }
@@ -214,7 +214,7 @@ public abstract class AbstractVector implements IVector {
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     @Override public IVectorSlicer slicer() {
         return new AbstractVectorSlicer() {
-            @Override protected IVector getL(final List<Integer> aIndices) {IVector rVector = newZeros(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
+            @Override protected IVector getL(final List<Integer> aIndices) {IVector rVector = newZeros_(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
             @Override protected IVector getA() {return copy();}
             
             @Override protected int thisSize_() {return size();}
@@ -250,7 +250,7 @@ public abstract class AbstractVector implements IVector {
     @Override public IVectorOperation operation() {
         return new AbstractVectorOperation() {
             @Override protected IVector thisVector_() {return AbstractVector.this;}
-            @Override protected IVector newVector_(int aSize) {return newZeros(aSize);}
+            @Override protected IVector newVector_(int aSize) {return newZeros_(aSize);}
         };
     }
     
@@ -330,7 +330,7 @@ public abstract class AbstractVector implements IVector {
     public abstract void set_(int aIdx, double aValue);
     public abstract double getAndSet_(int aIdx, double aValue);
     public abstract int size();
-    public abstract IVector newZeros(int aSize);
+    protected abstract IVector newZeros_(int aSize);
     
     protected String toString_(double aValue) {return String.format("   %.4g", aValue);}
 }

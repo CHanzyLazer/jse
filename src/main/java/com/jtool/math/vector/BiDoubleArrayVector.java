@@ -19,7 +19,7 @@ public abstract class BiDoubleArrayVector extends AbstractComplexVector implemen
     
     protected class BiDoubleArrayVectorOperation_ extends BiDoubleArrayVectorOperation {
         @Override protected BiDoubleArrayVector thisVector_() {return BiDoubleArrayVector.this;}
-        @Override protected BiDoubleArrayVector newVector_(int aSize) {return newZeros(aSize);}
+        @Override protected BiDoubleArrayVector newVector_(int aSize) {return newZeros_(aSize);}
     }
 
     /** 向量运算实现 */
@@ -48,7 +48,7 @@ public abstract class BiDoubleArrayVector extends AbstractComplexVector implemen
     }
     
     /** stuff to override */
-    public abstract BiDoubleArrayVector newZeros(int aSize);
+    protected abstract BiDoubleArrayVector newZeros_(int aSize);
     public abstract BiDoubleArrayVector newShell();
     public abstract double @Nullable[][] getIfHasSameOrderData(Object aObj);
 }

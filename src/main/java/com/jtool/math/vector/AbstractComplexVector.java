@@ -333,7 +333,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
     
     
     @Override public final IComplexVector copy() {
-        IComplexVector rVector = newZeros();
+        IComplexVector rVector = newZeros_(size());
         rVector.fill(this);
         return rVector;
     }
@@ -342,7 +342,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     @Override public IComplexVectorSlicer slicer() {
         return new AbstractComplexVectorSlicer() {
-            @Override protected IComplexVector getL(final List<Integer> aIndices) {IComplexVector rVector = newZeros(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
+            @Override protected IComplexVector getL(final List<Integer> aIndices) {IComplexVector rVector = newZeros_(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
             @Override protected IComplexVector getA() {return copy();}
             
             @Override protected int thisSize_() {return size();}
@@ -384,7 +384,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
     @Override public IComplexVectorOperation operation() {
         return new AbstractComplexVectorOperation() {
             @Override protected IComplexVector thisVector_() {return AbstractComplexVector.this;}
-            @Override protected IComplexVector newVector_(int aSize) {return newZeros(aSize);}
+            @Override protected IComplexVector newVector_(int aSize) {return newZeros_(aSize);}
         };
     }
     
@@ -480,7 +480,7 @@ public abstract class AbstractComplexVector implements IComplexVector {
     public abstract double getAndSetImag_(int aIdx, double aImag);
     
     public abstract int size();
-    public abstract IComplexVector newZeros(int aSize);
+    protected abstract IComplexVector newZeros_(int aSize);
     
     protected String toString_(double aReal, double aImag) {return Double.compare(aImag, 0.0)>=0 ? String.format("   %.4g + %.4gi", aReal, aImag) : String.format("   %.4g - %.4gi", aReal, -aImag);}
 }
