@@ -68,5 +68,8 @@ echo "Error: jTool-*.jar not found"
 exit 1
 fi
 
+# 设置 UTF-8
+JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
+
 # 执行 jTool.jar
-java -Dfile.encoding=UTF-8 -jar "$JAR_LOCATION" "$@"
+java $JAVA_OPTS -jar "$JAR_LOCATION" "$@"

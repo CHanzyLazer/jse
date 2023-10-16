@@ -36,8 +36,8 @@ public class Main {
     
     public static void main(String[] aArgs) throws Exception {
         try {
-            // 没有输入时给出使用方法
-            if (aArgs.length == 0) {printHelp(); return;}
+            // 没有输入时启动 groovysh
+            if (aArgs.length == 0) {SP.Groovy.runShell(); return;}
             // 获取第一个值
             String tValue = aArgs[0];
             if (!tValue.startsWith("-")) {

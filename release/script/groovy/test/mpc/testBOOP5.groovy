@@ -16,7 +16,7 @@ final int l = 6;
 final double cutoffMul = 1.5;
 final int nnn = -1;
 final double connectThreshold = 0.84;
-final int maxConnect = 20;
+final int maxConnect = 16;
 final int solidThreshold = 7;
 
 final boolean onlyCu = false;
@@ -95,17 +95,18 @@ if (distributionZrCu2   [solidThreshold..maxConnect].sum() < 0.9) println('ZrCu2
 // 绘制结果
 def plt = Plotters.get();
 
-plt.plot(distributionG      , 'glass'   );
-plt.plot(distributionFCC    , 'fcc'     );
-plt.plot(distributionBCC    , 'bcc'     );
-plt.plot(distributionHCP    , 'hcp'     );
-plt.plot(distributionMgCu2  , 'MgCu2'   );
-plt.plot(distributionZr3Cu8 , 'Zr3Cu8'  );
-plt.plot(distributionZr7Cu10, 'Zr7Cu10' );
-plt.plot(distributionZrCu2  , 'ZrCu2'   );
+plt.plot(distributionG      , 'glass'       ).marker('o').lineType('-' );
+plt.plot(distributionFCC    , 'fcc'         ).marker('s').lineType('--').lineWidth(1.0).markerSize(10.0);
+plt.plot(distributionBCC    , 'bcc'         ).marker('d').lineType('--').lineWidth(1.0).markerSize(10.0);
+plt.plot(distributionHCP    , 'hcp'         ).marker('^').lineType('--').lineWidth(1.0).markerSize(10.0);
+plt.plot(distributionMgCu2  , 'laves-MgCu2' ).marker('*').lineType('-' );
+plt.plot(distributionZr3Cu8 , 'Cu8Zr3'      ).marker('s').lineType('-' );
+plt.plot(distributionZr7Cu10, 'Cu10Zr7'     ).marker('d').lineType('-' );
+plt.plot(distributionZrCu2  , 'Cu2Zr'       ).marker('^').lineType('-' );
+plt.plot([solidThreshold, solidThreshold], [0, 1], "n = ${solidThreshold}").color('r').lineType('-.');
 
 plt.xlabel('connect count, n').ylabel('p(n)');
-plt.axis(0, maxConnect, 0.0, 0.301);
-plt.xTick(4).yTick(0.05);
+plt.axis(0, maxConnect, 0.0, 0.501);
+plt.xTick(4);
 plt.show();
 

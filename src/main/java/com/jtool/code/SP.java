@@ -6,7 +6,9 @@ import com.jtool.code.script.ScriptObjectPython;
 import com.jtool.code.task.TaskCall;
 import groovy.lang.*;
 import jep.*;
+import org.apache.groovy.groovysh.Groovysh;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.tools.shell.IO;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -33,6 +35,14 @@ public class SP {
     /** Groovy 脚本运行支持 */
     public static class Groovy {
         private static GroovyClassLoader CLASS_LOADER = null;
+        
+        /** 获取 shell 的交互式运行 */
+        public synchronized static void runShell() throws Exception {
+            // 使用这个方法来自动设置种类
+            org.apache.groovy.groovysh.Main.setTerminalType("auto", false);
+            // 直接运行，这样手动指定 CLASS_LOADER
+            (new Groovysh(CLASS_LOADER, new Binding(), new IO())).run(null);
+        }
         
         /** 直接运行文本的脚本，底层不会进行缓存 */
         public synchronized static Object runText(String aText, String... aArgs) throws Exception {return getCallableOfText(aText, aArgs).call();}

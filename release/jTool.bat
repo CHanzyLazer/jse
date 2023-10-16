@@ -38,5 +38,11 @@ if not defined JAR_LOCATION (
   exit /b 1
 )
 
+@REM 设置 UTF-8
+set JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8
+
+@REM GROOVY-6453: groovysh in Windows 7/8/10 doesn't support arrow keys and Del
+set JAVA_OPTS=%JAVA_OPTS% -Djline.terminal=none
+
 @REM 执行 jTool.jar
-java -Dfile.encoding=UTF-8 -jar "%JAR_LOCATION%" %*
+java %JAVA_OPTS% -jar "%JAR_LOCATION%" %*

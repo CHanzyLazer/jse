@@ -25,6 +25,8 @@ import com.jtool.parallel.ParforThreadPool;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
+import groovy.yaml.YamlBuilder;
+import groovy.yaml.YamlSlurper;
 import org.apache.groovy.json.internal.CharScanner;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -798,6 +800,22 @@ public class UT {
         public static void map2json(Map<?, ?> aMap, String aFilePath) throws IOException {
             try (Writer tWriter = IO.toWriter(aFilePath)) {
                 (new JsonBuilder(aMap)).writeTo(tWriter);
+            }
+        }
+        /**
+         * convert between yaml and map
+         * @author liqa
+         */
+        public static Map<?, ?> yaml2map(String aFilePath) throws Exception {
+            try (Reader tReader = IO.toReader(aFilePath)) {
+                return (Map<?, ?>) (new YamlSlurper()).parse(tReader);
+            }
+        }
+        public static void map2yaml(Map<?, ?> aMap, String aFilePath) throws IOException {
+            try (Writer tWriter = IO.toWriter(aFilePath)) {
+                YamlBuilder tBuilder = new YamlBuilder();
+                tBuilder.call(aMap);
+                tBuilder.writeTo(tWriter);
             }
         }
         
