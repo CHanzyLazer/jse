@@ -1,8 +1,8 @@
 package test.mathex
 
-import com.jtool.math.vector.ComplexVector
+import jtool.math.vector.ComplexVector
 
-import static com.jtool.code.CS.*
+import static jtool.code.CS.*
 
 
 def vec = ComplexVector.zeros(5);

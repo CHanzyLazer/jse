@@ -1,14 +1,14 @@
 package test.mpc
 
-import com.jtool.atom.Structures
-import com.jtool.code.UT
-import com.jtool.lmp.Dump
-import com.jtool.lmp.Lmpdat
-import com.jtool.plot.Plotters
-import com.jtool.rareevent.atom.ABOOPSolidChecker
-import com.jtool.rareevent.atom.ClusterSizeCalculator
-import com.jtool.rareevent.atom.MultiTypeClusterSizeCalculator
-import com.jtool.vasp.POSCAR
+import jtool.atom.Structures
+import jtool.code.UT
+import jtool.lmp.Dump
+import jtool.lmp.Lmpdat
+import jtool.plot.Plotters
+import jtool.rareevent.atom.ABOOPSolidChecker
+import jtool.rareevent.atom.ClusterSizeCalculator
+import jtool.rareevent.atom.MultiTypeClusterSizeCalculator
+import jtool.vasp.POSCAR
 
 
 /** 测试计算 BOOP，测试团簇计算器的效果 */

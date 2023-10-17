@@ -1,8 +1,8 @@
 package test.system
 
-import com.jtool.code.UT
-import com.jtool.system.SLURM
-import com.jtool.system.SSH
+import jtool.code.UT
+import jtool.system.SLURM
+import jtool.system.SSH
 
 
 /** 测试 SLURM 打包功能 */

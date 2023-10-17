@@ -1,14 +1,14 @@
 package test.mfpc
 
-import com.jtool.atom.Structures
-import com.jtool.code.UT
-import com.jtool.lmp.LPC
-import com.jtool.math.MathEX
-import com.jtool.math.table.Tables
-import com.jtool.plot.Plotters
-import com.jtool.system.WSL
+import jtool.atom.Structures
+import jtool.code.UT
+import jtool.lmp.LPC
+import jtool.math.MathEX
+import jtool.math.table.Tables
+import jtool.plot.Plotters
+import jtool.system.WSL
 
-import static com.jtool.code.CS.*
+import static jtool.code.CS.*
 
 /** 测试计算 MSD */
 

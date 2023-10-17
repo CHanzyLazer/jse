@@ -1,8 +1,8 @@
 %% load lmp script and set global variable
-addjpath('lib/jTool-all.jar');
+addjpath('lib/jtool-all.jar');
 
 %% 使用 Generator 脚本获取多孔结构
-import com.jtool.atom.*
+import jtool.atom.*
 
 N = 100;
 meshSize = 0.20;
@@ -84,4 +84,4 @@ colorbar
 
 %% unload lmp script and clear global variable
 clear;
-rmjpath('lib/jTool-all.jar');
+rmjpath('lib/jtool-all.jar');

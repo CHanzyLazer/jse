@@ -1,0 +1,88 @@
+package jtool.math.matrix;
+
+
+import jtool.code.functional.IDoubleConsumer1;
+import jtool.code.functional.IDoubleOperator1;
+import jtool.code.functional.IDoubleOperator2;
+import jtool.code.functional.IDoubleSupplier;
+import jtool.math.vector.IVector;
+import org.jetbrains.annotations.VisibleForTesting;
+
+/**
+ * 任意的矩阵的运算
+ * @author liqa
+ */
+public interface IMatrixOperation {
+    /** 通用的一些运算 */
+    IMatrix plus        (IMatrix aRHS);
+    IMatrix minus       (IMatrix aRHS);
+    IMatrix lminus      (IMatrix aRHS);
+    IMatrix multiply    (IMatrix aRHS);
+    IMatrix div         (IMatrix aRHS);
+    IMatrix ldiv        (IMatrix aRHS);
+    IMatrix mod         (IMatrix aRHS);
+    IMatrix lmod        (IMatrix aRHS);
+    IMatrix operate     (IMatrix aRHS, IDoubleOperator2 aOpt);
+    
+    IMatrix plus        (double aRHS);
+    IMatrix minus       (double aRHS);
+    IMatrix lminus      (double aRHS);
+    IMatrix multiply    (double aRHS);
+    IMatrix div         (double aRHS);
+    IMatrix ldiv        (double aRHS);
+    IMatrix mod         (double aRHS);
+    IMatrix lmod        (double aRHS);
+    IMatrix map         (IDoubleOperator1 aOpt);
+    
+    void plus2this      (IMatrix aRHS);
+    void minus2this     (IMatrix aRHS);
+    void lminus2this    (IMatrix aRHS);
+    void multiply2this  (IMatrix aRHS);
+    void div2this       (IMatrix aRHS);
+    void ldiv2this      (IMatrix aRHS);
+    void mod2this       (IMatrix aRHS);
+    void lmod2this      (IMatrix aRHS);
+    void operate2this   (IMatrix aRHS, IDoubleOperator2 aOpt);
+    
+    void plus2this      (double aRHS);
+    void minus2this     (double aRHS);
+    void lminus2this    (double aRHS);
+    void multiply2this  (double aRHS);
+    void div2this       (double aRHS);
+    void ldiv2this      (double aRHS);
+    void mod2this       (double aRHS);
+    void lmod2this      (double aRHS);
+    void map2this       (IDoubleOperator1 aOpt);
+    
+    IMatrix negative();
+    void negative2this();
+    
+    /** 这两个方法名默认是作用到自身的，这里为了保持 operation 的使用简洁不在函数名上特殊说明 */
+    void fill           (double aRHS);
+    void fill           (IMatrix aRHS);
+    void fill           (IMatrixGetter aRHS);
+    void assignCol      (IDoubleSupplier aSup);
+    void assignRow      (IDoubleSupplier aSup);
+    void forEachCol     (IDoubleConsumer1 aCon);
+    void forEachRow     (IDoubleConsumer1 aCon);
+    
+    double sum          ();
+    double mean         ();
+    double max          ();
+    double min          ();
+    
+    
+    /** 矩阵的一些额外的运算 */
+    IVector sumOfCols   ();
+    IVector sumOfRows   ();
+    IVector meanOfCols  ();
+    IVector meanOfRows  ();
+    
+    IMatrix transpose();
+    @VisibleForTesting default IMatrix T() {return transpose();}
+    
+    IMatrix refTranspose();
+    @VisibleForTesting default IMatrix refT() {return refTranspose();}
+    
+    boolean isDiag();
+}

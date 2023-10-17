@@ -1,0 +1,1129 @@
+package jtool.atom;
+
+import jtool.code.functional.IOperator1;
+import jtool.math.ComplexDouble;
+import jtool.math.function.FixBoundFunc1;
+import jtool.math.function.Func1;
+import jtool.math.function.IFunc1;
+import jtool.math.function.IZeroBoundFunc1;
+import jtool.math.vector.*;
+import jtool.parallel.AbstractThreadPool;
+import jtool.parallel.IObjectPool;
+import jtool.parallel.ObjectCachePool;
+import jtool.parallel.ParforThreadPool;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static jtool.atom.NeighborListGetter.DEFAULT_CELL_STEP;
+import static jtool.code.CS.*;
+import static jtool.code.UT.Code.newBox;
+import static jtool.code.UT.Code.toXYZ;
+import static jtool.math.MathEX.*;
+
+/**
+ * @author liqa
+ * <p> 单原子的相关的参数的计算器 </p>
+ * <p> 存储 atomDataXYZ，并且暂存对应的 NeighborListGetter 来加速计算 </p>
+ * <p> 认为所有边界都是周期边界条件 </p>
+ * <p> 会存在一些重复的代码，为了可读性不进一步消去 </p>
+ * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
+ */
+public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
+    private XYZ[] mAtomDataXYZ; // 注意 mAtomDataXYZ.length != mAtomNum
+    private final IXYZ mBox;
+    
+    private final int mAtomNum;
+    private final double mRou; // 粒子数密度
+    private final double mUnitLen; // 平均单个原子的距离
+    
+    private NeighborListGetter mNL;
+    
+    /** IThreadPoolContainer stuffs */
+    private volatile boolean mDead = false;
+    @Override public void shutdown() {
+        mDead = true; super.shutdown();
+        mNL.shutdown(); // 内部保证执行后内部的 mAtomDataXYZ 以及置为 null
+        // 此时 MPC 关闭，归还 mAtomDataXYZ，这种写法保证永远能获取到 mAtomDataXYZ 时都是合法的
+        XYZ[] oAtomDataXYZ = mAtomDataXYZ;
+        mAtomDataXYZ = null;
+        returnXYZArray_(oAtomDataXYZ, true);
+    }
+    @Override public void shutdownNow() {shutdown();}
+    @Override public boolean isShutdown() {return mDead;}
+    @Override public boolean isTerminated() {return mDead;}
+    
+    
+    /**
+     * 根据输入数据直接创建 MPC
+     * @param aAtomDataXYZ 粒子数据，这里只需要知道 xyz 坐标即可
+     * @param aBox 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
+     * @param aThreadNum MPC 进行计算会使用的线程数
+     * @param aCellStep 内部用于加速近邻搜索的 LinkedCell 不同 Cell 大小的步长
+     */
+    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, int aThreadNum, double aCellStep) {
+        super(new ParforThreadPool(aThreadNum));
+        
+        // 获取模拟盒数据
+        mBox = newBox(aBox);
+        
+        // 获取合适的 XYZ[] 数据
+        mAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ, true);
+        mAtomNum = aAtomDataXYZ.size();
+        
+        // 计算单位长度供内部使用
+        mRou = mAtomNum / mBox.prod();
+        mUnitLen = Fast.cbrt(1.0/mRou);
+        
+        mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox, aCellStep);
+    }
+    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 1);}
+    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, int aThreadNum) {this(aAtomDataXYZ, aBox, aThreadNum, DEFAULT_CELL_STEP);}
+    
+    public MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
+    public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum) {this(aAtomData, aThreadNum, DEFAULT_CELL_STEP);}
+    public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum, double aCellStep) {this(aAtomData.asList(), aAtomData.box(), aThreadNum, aCellStep);}
+    
+    /** 主要用于内部使用 */
+    MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IOperator1<XYZ[], XYZ[]> aXYZValidOpt) {
+        super(new ParforThreadPool(aThreadNum));
+        mAtomNum = aAtomNum;
+        mBox = aBox;
+        mAtomDataXYZ = aXYZValidOpt.cal(sXYZArrayCache.getObject());
+        // 计算单位长度供内部使用
+        mRou = mAtomNum / mBox.prod();
+        mUnitLen = Fast.cbrt(1.0/mRou);
+        mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox, DEFAULT_CELL_STEP);
+    }
+    
+    
+    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
+    private final static IObjectPool<XYZ[]> sXYZArrayCache = new ObjectCachePool<>(), sXYZArrayCache2 = new ObjectCachePool<>();
+    
+    /** 内部使用方法，用来将 aAtomDataXYZ 转换成内部存储的格式，并且处理精度问题造成的超出边界问题 */
+    private XYZ[] getValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ) {return getValidAtomDataXYZ_(aAtomDataXYZ, false);}
+    private XYZ[] getValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ, boolean aInternal) {
+        int tSize = aAtomDataXYZ.size();
+        // 尝试先获取缓存的临时变量
+        XYZ[] tXYZArray = (aInternal ? sXYZArrayCache : sXYZArrayCache2).getObject();
+        if (tXYZArray==null || tXYZArray.length<tSize) {
+            tXYZArray = new XYZ[tSize];
+            int tIdx = 0;
+            for (IXYZ tXYZ : aAtomDataXYZ) {
+                tXYZArray[tIdx] = new XYZ(tXYZ);
+                ++tIdx;
+            }
+        } else {
+            // 直接遍历修改而不用创建新对象
+            int tIdx = 0;
+            for (IXYZ tXYZ : aAtomDataXYZ) {
+                tXYZArray[tIdx].setXYZ(tXYZ);
+                ++tIdx;
+            }
+        }
+        
+        // 由于 lammps 精度的问题，需要将超出边界的进行平移
+        XYZ tBox = toXYZ(mBox);
+        for (int i = 0; i < tSize; ++i) {
+            XYZ tXYZ = tXYZArray[i];
+            if      (tXYZ.mX <  0.0    ) tXYZ.mX += tBox.mX;
+            else if (tXYZ.mX >= tBox.mX) tXYZ.mX -= tBox.mX;
+            if      (tXYZ.mY <  0.0    ) tXYZ.mY += tBox.mY;
+            else if (tXYZ.mY >= tBox.mY) tXYZ.mY -= tBox.mY;
+            if      (tXYZ.mZ <  0.0    ) tXYZ.mZ += tBox.mZ;
+            else if (tXYZ.mZ >= tBox.mZ) tXYZ.mZ -= tBox.mZ;
+        }
+        
+        return tXYZArray;
+    }
+    private static void returnXYZArray_(XYZ @NotNull[] aXYZArray) {returnXYZArray_(aXYZArray, false);}
+    private static void returnXYZArray_(XYZ @NotNull[] aXYZArray, boolean aInternal) {(aInternal ? sXYZArrayCache : sXYZArrayCache2).returnObject(aXYZArray);}
+    
+    
+    /// 参数设置
+    /**
+     * 修改线程数，如果相同则不会进行任何操作
+     * @param aThreadNum 线程数目
+     * @return 返回自身用于链式调用
+     */
+    public MonatomicParameterCalculator setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum)); return this;}
+    /**
+     * 修改 LinkedCell 的步长，如果相同则不会进行任何操作
+     * @param sCellStep 步长，默认为 2.0，需要大于 1.1，理论上越小速度会越快，同时会消耗更多的内存
+     * @return 返回自身用于链式调用
+     */
+    public MonatomicParameterCalculator setCellStep(double sCellStep) {if (sCellStep != mNL.getCellStep()) {mNL.shutdown(); mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox, sCellStep);} return this;}
+    
+    
+    /// 获取信息
+    public double unitLen() {return mUnitLen;}
+    public double rou() {return mRou;}
+    public double rou(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRou*aMPC.mRou);}
+    
+    
+    /// 计算方法
+    /**
+     * 计算 RDF (radial distribution function，即 g(r))，只计算一个固定结构的值，因此不包含温度信息
+     * @author liqa
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @return gr 函数
+     */
+    public IFunc1 calRDF(int aN, final double aRMax) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final IVector[] dn = new IVector[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            mNL.forEachNeighbor(i, aRMax - dr*0.5, true, (x, y, z, idx, dis) -> {
+                int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
+                if (tIdx > 0 && tIdx < aN) dn[threadID].increment_(tIdx);
+            });
+        });
+        
+        // 获取结果
+        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
+        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
+        final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 修复截断数据
+        gr.set_(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF(                          ) {return calRDF(160);}
+    public IFunc1 calRDF(int aN                    ) {return calRDF(aN, mUnitLen*6);}
+    
+    
+    /**
+     * 计算自身与输入的 aAtomDataXYZ 之间的 RDF，只计算一个固定结构的值，因此不包含温度信息
+     * @author liqa
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的矩阵，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @return gr 函数
+     */
+    public IFunc1 calRDF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, int aN, final double aRMax) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final IVector[] dn = new IVector[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(aAtomNum, (i, threadID) -> {
+            mNL.forEachNeighbor(aAtomDataXYZ[i], aRMax - dr*0.5, (x, y, z, idx, dis) -> {
+                int tIdx = (int) Math.ceil((dis - dr*0.5) / dr);
+                if (tIdx > 0 && tIdx < aN) dn[threadID].increment_(tIdx);
+            });
+        });
+        
+        
+        // 获取结果
+        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
+        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
+        final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 修复截断数据
+        gr.set_(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB(aAtomDataXYZ, 160);}
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB(aAtomDataXYZ, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax); returnXYZArray_(tAtomDataXYZ); return tOut;}
+    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC                                    ) {return calRDF_AB(aMPC, 160);}
+    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN                    ) {return calRDF_AB(aMPC, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC        , int aN, final double aRMax) {return calRDF_AB(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
+    
+    
+    
+    /**
+     * 使用带有一定展宽的高斯分布代替直接计数来计算 RDF
+     * @author liqa
+     * @param aN 指定分划的份数，这里需要更多的份数来得到合适的结果，默认为 1000
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
+     * @return gr 函数
+     */
+    public IFunc1 calRDF_G(int aN, final double aRMax, int aSigmaMul) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里需要使用 IFunc 来进行函数的相关运算操作
+        final IFunc1[] dn = new IFunc1[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
+        
+        // 并行需要线程数个独立的 DeltaG
+        final IZeroBoundFunc1[] tDeltaG = new IZeroBoundFunc1[nThreads()];
+        for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func1.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
+        // 需要增加一个额外的偏移保证外部边界的统计正确性
+        final double tRShift = tDeltaG[0].zeroBoundR();
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            mNL.forEachNeighbor(i, aRMax+tRShift, true, (x, y, z, idx, dis) -> {
+                tDeltaG[threadID].setX0(dis);
+                dn[threadID].plus2this(tDeltaG[threadID]);
+            });
+        });
+        
+        // 获取结果
+        IFunc1 gr = dn[0];
+        for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
+        final double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 修复截断数据
+        gr.set_(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF_G(                                         ) {return calRDF_G(1000);}
+    public IFunc1 calRDF_G(int aN                                   ) {return calRDF_G(aN, mUnitLen*6);}
+    public IFunc1 calRDF_G(int aN, final double aRMax               ) {return calRDF_G(aN, aRMax, 4);}
+    
+    
+    public IFunc1 calRDF_AB_G(final XYZ[] aAtomDataXYZ, int aAtomNum, int aN, final double aRMax, int aSigmaMul) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里需要使用 IFunc 来进行函数的相关运算操作
+        final IFunc1[] dn = new IFunc1[nThreads()];
+        for (int i = 0; i < dn.length; ++i) dn[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
+        
+        // 并行需要线程数个独立的 DeltaG
+        final IZeroBoundFunc1[] tDeltaG = new IZeroBoundFunc1[nThreads()];
+        for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func1.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
+        // 需要增加一个额外的偏移保证外部边界的统计正确性
+        final double tRShift = tDeltaG[0].zeroBoundR();
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(aAtomNum, (i, threadID) -> {
+            mNL.forEachNeighbor(aAtomDataXYZ[i], aRMax+tRShift, (x, y, z, idx, dis) -> {
+                tDeltaG[threadID].setX0(dis);
+                dn[threadID].plus2this(tDeltaG[threadID]);
+            });
+        });
+        
+        // 获取结果
+        IFunc1 gr = dn[0];
+        for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
+        final double rou = aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 修复截断数据
+        gr.set_(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB_G(aAtomDataXYZ, 1000);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB_G(aAtomDataXYZ, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {return calRDF_AB_G(aAtomDataXYZ, aN, aRMax, 4);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calRDF_AB_G(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax, aSigmaMul); returnXYZArray_(tAtomDataXYZ); return tOut;}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC                                                   ) {return calRDF_AB_G(aMPC, 1000);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN                                   ) {return calRDF_AB_G(aMPC, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN, final double aRMax               ) {return calRDF_AB_G(aMPC, aN, aRMax, 4);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC        , int aN, final double aRMax, int aSigmaMul) {return calRDF_AB_G(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
+    
+    
+    
+    /**
+     * 计算 SF（structural factor，即 S(q)），结构参数，只计算一个固定结构的值，因此不包含温度信息
+     * @author liqa
+     * @param aQMax 额外指定最大计算的 q 的位置（默认为 6 倍单位长度）
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @param aQMin 可以手动指定最小的截断的 q（由于 pbc 的原因，过小的结果发散）
+     * @return Sq 函数
+     */
+    public IFunc1 calSF(double aQMax, int aN, final double aRMax, double aQMin) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dq = (aQMax-aQMin)/aN;
+        // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final IFunc1[] Hq = new IFunc1[nThreads()];
+        for (int i = 0; i < Hq.length; ++i) Hq[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
+        
+        // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            final XYZ cXYZ = mAtomDataXYZ[i];
+            mNL.forEachNeighborMHT(i, aRMax, true, (x, y, z, idx, disMHT) -> {
+                double dis = cXYZ.distance(x, y, z);
+                Hq[threadID].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+            });
+        });
+        
+        // 获取结果
+        IFunc1 Sq = Hq[0];
+        for (int i = 1; i < Hq.length; ++i) Sq.plus2this(Hq[i]);
+        Sq.div2this(mAtomNum*0.5);
+        Sq.plus2this(1.0);
+        
+        // 修复截断数据
+        Sq.set_(0, 0.0);
+        // 输出
+        return Sq;
+    }
+    public IFunc1 calSF(double aQMax, int aN, final double aRMax) {return calSF(aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF(double aQMax, int aN                    ) {return calSF(aQMax, aN, mUnitLen*6);}
+    public IFunc1 calSF(double aQMax                            ) {return calSF(aQMax, 160);}
+    public IFunc1 calSF(                                        ) {return calSF(2.0*PI/mUnitLen * 6.0);}
+    
+    
+    /**
+     * 计算自身与输入的 aAtomDataXYZ 之间的 SF，只计算一个固定结构的值，因此不包含温度信息
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的矩阵，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
+     * @param aQMax 额外指定最大计算的 q 的位置
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @param aQMin 手动指定最小的截断的 q
+     * @return Sq 函数
+     */
+    public IFunc1 calSF_AB(final XYZ[] aAtomDataXYZ, int aAtomNum, double aQMax, int aN, final double aRMax, double aQMin) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dq = (aQMax-aQMin)/aN;
+        // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final IFunc1[] Hq = new IFunc1[nThreads()];
+        for (int i = 0; i < Hq.length; ++i) Hq[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
+        
+        // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
+        pool().parfor(aAtomNum, (i, threadID) -> {
+            final XYZ cXYZ = aAtomDataXYZ[i];
+            mNL.forEachNeighborMHT(cXYZ, aRMax, (x, y, z, idx, disMHT) -> {
+                double dis = cXYZ.distance(x, y, z);
+                Hq[threadID].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+            });
+        });
+        
+        // 获取结果
+        IFunc1 Sq = Hq[0];
+        for (int i = 1; i < Hq.length; ++i) Sq.plus2this(Hq[i]);
+        Sq.div2this(Fast.sqrt(mAtomNum*aAtomNum));
+        Sq.plus2this(1.0);
+        
+        // 修复截断数据
+        Sq.set_(0, 0.0);
+        // 输出
+        return Sq;
+    }
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calSF_AB(aAtomDataXYZ, 2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax) {return calSF_AB(aAtomDataXYZ, aQMax, 160);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN) {return calSF_AB(aAtomDataXYZ, aQMax, aN, mUnitLen*6);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax) {return calSF_AB(aAtomDataXYZ, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calSF_AB(tAtomDataXYZ, aAtomDataXYZ.size(), aQMax, aN, aRMax, aQMin); returnXYZArray_(tAtomDataXYZ); return tOut;}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                                                ) {return calSF_AB(aMPC, 2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax                                          ) {return calSF_AB(aMPC, aQMax, 160);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN                                  ) {return calSF_AB(aMPC, aQMax, aN, mUnitLen*6);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax              ) {return calSF_AB(aMPC, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aQMax, aN, aRMax, aQMin);}
+    
+    
+    
+    /// gr 和 Sq 的相互转换，由于依旧需要体系的原子数密度，因此还是都移动到 MPC 中
+    /**
+     * 转换 g(r) 到 S(q)，这是主要计算 S(q) 的方法
+     * @author liqa
+     * @param aGr the matrix form of g(r)
+     * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aN the split number of output（默认为 160）
+     * @param aQMax the max q of output S(q)（默认为 7.6 倍 gr 第一峰对应的距离）
+     * @param aQMin the min q of output S(q)（默认为 0.5 倍 gr 第一峰对应的距离）
+     * @return the structural factor, S(q)
+     */
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax, double aQMin) {
+        double dq = (aQMax-aQMin)/aN;
+        
+        IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
+        Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Fast.sin(q*r) / q)));
+        Sq.multiply2this(4.0*PI*aRou);
+        Sq.plus2this(1.0);
+        
+        Sq.set_(0, 0.0);
+        return Sq;
+    }
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/aGr.operation().maxX()* 7.6, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
+    public        IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
+    
+    
+    /**
+     * 转换 S(q) 到 g(r)
+     * @author liqa
+     * @param aSq the matrix form of S(q)
+     * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aN the split number of output（默认为 160）
+     * @param aRMax the max r of output g(r)（默认为 7.6 倍 Sq 第一峰对应的距离）
+     * @param aRMin the min r of output g(r)（默认为 0.5 倍 Sq 第一峰对应的距离）
+     * @return the radial distribution function, g(r)
+     */
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax, double aRMin) {
+        double dr = (aRMax-aRMin)/aN;
+        
+        IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN+1).setBound(0.0, 1.0);
+        gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Fast.sin(q*r) / r)));
+        gr.multiply2this(1.0/(2.0*PI*PI*aRou));
+        gr.plus2this(1.0);
+        
+        gr.set_(0, 0.0);
+        return gr;
+    }
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, 2.0*PI/aSq.operation().maxX() * 7.6, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
+    public        IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
+    
+    
+    
+    /**
+     * 直接获取近邻列表的 api，不包括自身
+     * @author liqa
+     */
+    public List<Integer> getNeighborList(int aIdx, double aRMax, int aNnn) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final List<Integer> rNeighborList = new ArrayList<>();
+        mNL.forEachNeighbor(aIdx, aRMax, aNnn, (x, y, z, idx, dis) -> rNeighborList.add(idx));
+        return rNeighborList;
+    }
+    public List<Integer> getNeighborList(int aIdx, double aRMax) {return getNeighborList(aIdx, aRMax, -1);}
+    public List<Integer> getNeighborList(int aIdx              ) {return getNeighborList(aIdx, mUnitLen*R_NEAREST_MUL);}
+    
+    public List<Integer> getNeighborList(IXYZ aXYZ, double aRMax, int aNnn) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 为了方便统一拷贝一次输入 XYZ
+        XYZ tXYZ = new XYZ(aXYZ);
+        // 由于 lammps 精度的问题，需要将超出边界的进行平移
+        XYZ tBox = toXYZ(mBox);
+        if      (tXYZ.mX <  0.0    ) tXYZ.mX += tBox.mX;
+        else if (tXYZ.mX >= tBox.mX) tXYZ.mX -= tBox.mX;
+        if      (tXYZ.mY <  0.0    ) tXYZ.mY += tBox.mY;
+        else if (tXYZ.mY >= tBox.mY) tXYZ.mY -= tBox.mY;
+        if      (tXYZ.mZ <  0.0    ) tXYZ.mZ += tBox.mZ;
+        else if (tXYZ.mZ >= tBox.mZ) tXYZ.mZ -= tBox.mZ;
+        
+        final List<Integer> rNeighborList = new ArrayList<>();
+        mNL.forEachNeighbor(tXYZ, aRMax, aNnn, (x, y, z, idx, dis) -> rNeighborList.add(idx));
+        return rNeighborList;
+    }
+    public List<Integer> getNeighborList(IXYZ aXYZ, double aRMax) {return getNeighborList(aXYZ, aRMax, -1);}
+    public List<Integer> getNeighborList(IXYZ aXYZ              ) {return getNeighborList(aXYZ, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 计算所有粒子的近邻球谐函数的平均，即 Qlm；
+     * 返回一个复数矩阵，行为原子，列为 m
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 主要用于内部使用
+     * @author liqa
+     * @param aL 计算具体 Qlm 值的下标，即 Q4m: l = 4, Q6m: l = 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return Qlm 组成的复向量数组
+     */
+    public IComplexVector[] calYlmMean(int aL, double aRNearest, int aNnn) {
+        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
+        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
+        return Qlm;
+    }
+    public IComplexVector[] calYlmMean(int aL, double aRNearest) {return calYlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    /**
+     * 在 Qlm 基础上再次对所有近邻做一次平均，即 qlm；
+     * 返回一个复数矩阵，行为原子，列为 m
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * <p>
+     * 主要用于内部使用
+     * @author liqa
+     * @param aL 计算具体 qlm 值的下标，即 q4m: l = 4, q6m: l = 6
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return qlm 组成的复向量数组
+     */
+    public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
+        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        final IComplexVector[] qlm = new IComplexVector[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
+        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
+        return qlm;
+    }
+    public IComplexVector[] calQlmMean(int aL, double aRNearest, int aNnn) {return calQlmMean(aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, IComplexVector[] rDest) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
+        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
+        if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
+        
+        // 构造用于并行的暂存数组
+        final IComplexVector[][] rDestPar = new IComplexVector[nThreads()][];
+        rDestPar[0] = rDest;
+        for (int i = 1; i < rDestPar.length; ++i) rDestPar[i] = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 统计近邻数用于求平均，同样也需要为并行使用数组
+        final IVector[] tNNPar = new IVector[nThreads()];
+        for (int i = 0; i < tNNPar.length; ++i) tNNPar[i] = Vectors.zeros(mAtomNum);
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnn<=0;
+        
+        // 遍历计算 Qlm，只对这个最耗时的部分进行并行优化
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            // 先获取这个线程的 Qlm, tNN
+            final IComplexVector[] Qlm = rDestPar[threadID];
+            final IVector tNN = tNNPar[threadID];
+            // 一次计算一行
+            final IComplexVector Qlmi = Qlm[i];
+            final XYZ cXYZ = mAtomDataXYZ[i];
+            // 遍历近邻计算 Ylm
+            final int fI = i;
+            mNL.forEachNeighbor(fI, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
+                // 计算角度
+                double dx = x - cXYZ.mX;
+                double dy = y - cXYZ.mY;
+                double dz = z - cXYZ.mZ;
+                double theta = Fast.acos(dz / dis);
+                double disXY = Fast.sqrt(dx*dx + dy*dy);
+                double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0*PI - Fast.acos(dx / disXY));
+                
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                IComplexVector Qlmj = null;
+                if (aHalf) {
+                    Qlmj = Qlm[idx];
+                }
+                // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
+                for (int tM = 0; tM <= aL; ++tM) {
+                    int tCol = tM+aL;
+                    ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
+                    Qlmi.add_(tCol, tY);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) {
+                        Qlmj.add_(tCol, tY);
+                    }
+                    // m < 0 的部分直接利用对称性求
+                    if (tM != 0) {
+                        tCol = -tM+aL;
+                        tY = tY.conj();
+                        Qlmi.add_(tCol, tY);
+                        // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                        if (aHalf) {
+                            Qlmj.add_(tCol, tY);
+                        }
+                    }
+                }
+                
+                // 统计近邻数
+                tNN.increment_(fI);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (aHalf) {
+                    tNN.increment_(idx);
+                }
+            });
+        });
+        
+        // 获取结果
+        IVector tNN = tNNPar[0];
+        for (int i = 1; i < tNNPar.length; ++i) tNN.plus2this(tNNPar[i]);
+        for (int i = 1; i < rDestPar.length; ++i) {
+            IComplexVector[] subQlm = rDestPar[i];
+            for (int j = 0; j < mAtomNum; ++j) rDest[j].plus2this(subQlm[j]);
+        }
+        // 根据近邻数平均得到 Qlm
+        for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));
+    }
+    public void calQlmMean2Dest(int aL, final IComplexVector[] aQlm, double aRNearestQ, int aNnnQ, final IComplexVector[] rDest) {
+        // 直接全部平均一遍分两步算
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
+        if (aQlm.length < mAtomNum) throw new IllegalArgumentException("Input row number aQlm MUST be GREATER than atomNum("+mAtomNum+"), input: "+aQlm.length);
+        if (aQlm[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of aQlm MUST be l+l+1("+aL+aL+1+"), input: "+aQlm[0].size());
+        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
+        if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
+        
+        // 统计近邻数用于求平均（增加一个自身）
+        final IVector tNN = Vectors.ones(mAtomNum);
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnnQ<=0;
+        
+        // 遍历计算 qlm
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 一次计算一行
+            final IComplexVector qlmi = rDest[i];
+            final IComplexVector Qlmi = aQlm[i];
+            
+            // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
+            qlmi.fill(Qlmi);
+            // 再累加近邻
+            final int fI = i;
+            mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis) -> {
+                // 直接按行累加即可
+                qlmi.plus2this(aQlm[idx]);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
+                if (aHalf) {
+                    rDest[idx].plus2this(Qlmi);
+                }
+                
+                // 统计近邻数
+                tNN.increment_(fI);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (aHalf) {
+                    tNN.increment_(idx);
+                }
+            });
+        }
+        // 根据近邻数平均得到 qlm
+        for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));
+    }
+    
+    
+    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
+    private final static IObjectPool<ComplexVector[]> sComplexVectorsCache = new ObjectCachePool<>(), sComplexVectorsCache2 = new ObjectCachePool<>();
+    private static ComplexVector[] getComplexVectors_(int aAtomNum, int aSize) {return getComplexVectors_(aAtomNum, aSize, false);}
+    private static ComplexVector[] getComplexVectors_(int aAtomNum, int aSize, boolean aUseTemp2) {
+        ComplexVector[] tComplexVectors = (aUseTemp2 ? sComplexVectorsCache2 : sComplexVectorsCache).getObject();
+        if (tComplexVectors==null || tComplexVectors.length<aAtomNum) {
+            tComplexVectors = new ComplexVector[aAtomNum];
+            for (int i = 0; i < aAtomNum; ++i) tComplexVectors[i] = ComplexVector.zeros(aSize);
+        } else {
+            // 遍历合法化长度
+            for (int i = 0; i < aAtomNum; ++i) {
+                ComplexVector tComplexVector = tComplexVectors[i];
+                if (tComplexVector.size() != aSize) {
+                    if (tComplexVector.dataLength() >= aSize) tComplexVector.setSize(aSize);
+                    else tComplexVectors[i] = ComplexVector.zeros(aSize);
+                }
+            }
+        }
+        return tComplexVectors;
+    }
+    private static void returnComplexVectors_(ComplexVector @NotNull[] aComplexVectors) {returnComplexVectors_(aComplexVectors, false);}
+    private static void returnComplexVectors_(ComplexVector @NotNull[] aComplexVectors, boolean aUseTemp2) {(aUseTemp2 ? sComplexVectorsCache2 : sComplexVectorsCache).returnObject(aComplexVectors);}
+    
+    /**
+     * 计算所有粒子的原始的 BOOP（local Bond Orientational Order Parameters, Ql），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * @author liqa
+     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return Ql 组成的向量
+     */
+    public IVector calBOOP(int aL, double aRNearest, int aNnn) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
+        
+        // 直接求和
+        IVector Ql = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 直接计算复向量的点乘
+            double tDot = Qlm[i].operation().dot();
+            // 使用这个公式设置 Ql
+            Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 返回最终计算结果
+        return Ql;
+    }
+    public IVector calBOOP(int aL, double aRNearest) {return calBOOP(aL, aRNearest, -1);}
+    public IVector calBOOP(int aL                  ) {return calBOOP(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 计算所有粒子的三阶形式的 BOOP（local Bond Orientational Order Parameters, Wl），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * @author liqa
+     * @param aL 计算具体 W 值的下标，即 W4: l = 4, W6: l = 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return Wl 组成的向量
+     */
+    public IVector calBOOP3(int aL, double aRNearest, int aNnn) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
+        
+        // 计算三阶的乘积
+        IVector Wl = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            ComplexVector Qlmi = Qlm[i];
+            // 分母为复向量的点乘
+            double rDiv = Qlmi.operation().dot();
+            rDiv = Fast.sqrt(rDiv);
+            rDiv = Fast.pow3(rDiv);
+            // 分子需要这样计算，这里只保留实数（虚数部分为 0）
+            double rMul = 0.0;
+            for (int tM1 = -aL; tM1 <= aL; ++tM1) for (int tM2 = -aL; tM2 <= aL; ++tM2) {
+                int tM3 = -tM1-tM2;
+                if (tM3<=aL && tM3>=-aL) {
+                    // 计算乘积，注意使用复数乘法
+                    ComplexDouble subMul = Qlmi.get_(tM1+aL);
+                    subMul.multiply2this(Qlmi.get_(tM2+aL));
+                    subMul.multiply2this(Qlmi.get_(tM3+aL));
+                    subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
+                    // 累加到分子，这里只统计实数部分（虚数部分为 0）
+                    rMul += subMul.mReal;
+                }
+            }
+            // 最后求模量设置结果
+            Wl.set_(i, rMul/rDiv);
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 返回最终计算结果
+        return Wl;
+    }
+    public IVector calBOOP3(int aL, double aRNearest) {return calBOOP3(aL, aRNearest, -1);}
+    public IVector calBOOP3(int aL                  ) {return calBOOP3(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 计算所有粒子的 ABOOP（Averaged local Bond Orientational Order Parameters, ql），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * @author liqa
+     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return ql 组成的向量
+     */
+    public IVector calABOOP(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        // 再次获取缓存
+        ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
+        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 直接求和
+        IVector ql = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 直接计算复向量的点乘
+            double tDot = qlm[i].operation().dot();
+            // 使用这个公式设置 ql
+            ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(qlm, true);
+        
+        // 返回最终计算结果
+        return ql;
+    }
+    public IVector calABOOP(int aL, double aRNearest, int aNnn) {return calABOOP(aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calABOOP(int aL, double aRNearest          ) {return calABOOP(aL, aRNearest, -1);}
+    public IVector calABOOP(int aL                            ) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 计算所有粒子的三阶形式的 ABOOP（Averaged local Bond Orientational Order Parameters, wl），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * @author liqa
+     * @param aL 计算具体 w 值的下标，即 w4: l = 4, w6: l = 6
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return wl 组成的向量
+     */
+    public IVector calABOOP3(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        // 再次获取缓存
+        ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
+        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 计算 wl，这里同样不去考虑减少重复代码
+        IVector wl = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) {
+            ComplexVector qlmi = qlm[i];
+            // 分母为复向量的点乘，等于实部虚部分别点乘
+            double rDiv = qlmi.operation().dot();
+            rDiv = Fast.sqrt(rDiv);
+            rDiv = Fast.pow3(rDiv);
+            // 分子需要这样计算，这里只保留实数（虚数部分为 0）
+            double rMul = 0.0;
+            for (int tM1 = -aL; tM1 <= aL; ++tM1) for (int tM2 = -aL; tM2 <= aL; ++tM2) {
+                int tM3 = -tM1-tM2;
+                if (tM3<=aL && tM3>=-aL) {
+                    // 计算乘积，注意使用复数乘法
+                    ComplexDouble subMul = qlmi.get_(tM1+aL);
+                    subMul.multiply2this(qlmi.get_(tM2+aL));
+                    subMul.multiply2this(qlmi.get_(tM3+aL));
+                    subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
+                    // 累加到分子，这里只统计实数部分（虚数部分为 0）
+                    rMul += subMul.mReal;
+                }
+            }
+            // 最后求模量设置结果
+            wl.set_(i, rMul/rDiv);
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(qlm, true);
+        
+        // 返回最终计算结果
+        return wl;
+    }
+    public IVector calABOOP3(int aL, double aRNearest, int aNnn) {return calABOOP3(aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calABOOP3(int aL, double aRNearest          ) {return calABOOP3(aL, aRNearest, -1);}
+    public IVector calABOOP3(int aL                            ) {return calABOOP3(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 通过 bond order parameter（Ql）来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     * @author liqa
+     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接数目组成的逻辑向量
+     */
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        final ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnnS<=0;
+        // 统计连接数
+        final IVector tConnectCount = Vectors.zeros(mAtomNum);
+        
+        // 注意需要先对 Qlm 归一化
+        for (int i = 0; i < mAtomNum; ++i) {
+            Qlm[i].div2this(Qlm[i].operation().norm());
+        }
+        
+        // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 统一获取行向量
+            final ComplexVector Qlmi = Qlm[i];
+            // 遍历近邻计算连接数
+            final int fI = i;
+            mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
+                // 统一获取行向量
+                ComplexVector Qlmj = Qlm[idx];
+                // 计算复向量的点乘
+                ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
+                // 取模量来判断是否连接
+                if (Sij.norm() > aConnectThreshold) {
+                    tConnectCount.increment_(fI);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) {
+                        tConnectCount.increment_(idx);
+                    }
+                }
+            });
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 返回最终计算结果
+        return tConnectCount;
+    }
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountBOOP(aL, aConnectThreshold, aRNearest, -1);}
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold                            ) {return calConnectCountBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    
+    /**
+     * 通过 Averaged bond order parameter（ql）来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * @author liqa
+     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @param aRNearestS 用来计算 sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接数目组成的逻辑向量
+     */
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 尝试先获取缓存的临时变量
+        ComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
+        // 然后直接使用缓存的变量来计算
+        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        // 再次获取缓存
+        final ComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1, true);
+        // 使用两个缓存的变量来计算 qlm
+        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(Qlm);
+        
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnnS<=0;
+        // 统计连接数，这里同样不去考虑减少重复代码
+        final IVector tConnectCount = Vectors.zeros(mAtomNum);
+        
+        // 注意需要先对 qlm 归一化
+        for (int i = 0; i < mAtomNum; ++i) {
+            qlm[i].div2this(qlm[i].operation().norm());
+        }
+        
+        // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
+        for (int i = 0; i < mAtomNum; ++i) {
+            // 统一获取行向量
+            final ComplexVector qlmi = qlm[i];
+            // 遍历近邻计算连接数
+            final int fI = i;
+            mNL.forEachNeighbor(fI, aRNearestS, aNnnS, aHalf, (x, y, z, idx, dis) -> {
+                // 统一获取行向量
+                ComplexVector qlmj = qlm[idx];
+                // 计算复向量的点乘
+                ComplexDouble Sij = qlmi.operation().dot(qlmj);
+                // 取模量来判断是否连接
+                if (Sij.norm() > aConnectThreshold) {
+                    tConnectCount.increment_(fI);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) {
+                        tConnectCount.increment_(idx);
+                    }
+                }
+            });
+        }
+        
+        // 计算完成归还缓存数据
+        returnComplexVectors_(qlm, true);
+        
+        // 返回最终计算结果
+        return tConnectCount;
+    }
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountABOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountABOOP(aL, aConnectThreshold, aRNearest, -1);}
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold                            ) {return calConnectCountABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 具体通过 Q6 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 7
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     */
+    public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(6, aConnectThreshold, aRNearest, aNnn).greaterOrEqual(aSolidThreshold);}
+    public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidQ6(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
+    public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidQ6(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
+    public ILogicalVector checkSolidQ6(                                                                         ) {return checkSolidQ6(0.5, 7);}
+    
+    /**
+     * 具体通过 Q4 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     */
+    public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(4, aConnectThreshold, aRNearest, aNnn).greaterOrEqual(aSolidThreshold);}
+    public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidQ4(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
+    public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidQ4(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
+    public ILogicalVector checkSolidQ4(                                                                         ) {return checkSolidQ4(0.35, 6);}
+}

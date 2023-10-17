@@ -1,9 +1,9 @@
 package test.system
 
-import com.jtool.code.UT
-import com.jtool.iofile.IOFiles
-import com.jtool.plot.Plotters
-import com.jtool.system.SSH
+import jtool.code.UT
+import jtool.iofile.IOFiles
+import jtool.plot.Plotters
+import jtool.system.SSH
 import obj.GUT;
 
 
@@ -27,7 +27,7 @@ ssh.submitSystem('echo "submitSystem begin"; sleep 1s; echo "submitSystem done"'
 println('MARK');
 
 // 复杂指令（在服务器上计算 gr，带有输入输出，后续会使用 ProgramExecutor 来实现，这里展示直接使用 SystemExecutor 来实现通用的）
-// 由于需要使用 jTool 本身来计算，如果没有初始化需要首先使用这个指令初始化一下 ssh 上的 jTool 环境
+// 由于需要使用 jtool 本身来计算，如果没有初始化需要首先使用这个指令初始化一下 ssh 上的 jtool 环境
 //GUT.initJToolEnv(ssh);
 
 // 构造涉及的输入输出文件，包含计算 RDF 的脚本，输入的 data 文件和计算完成后输出的 csv 文件，key 可以随便取
@@ -36,7 +36,7 @@ ioFiles = (new IOFiles())
         .i('data', 'lmp/data/data-glass')
         .o('csv', 'lmp/.temp/gr.csv');
 // 提交指令
-ssh.system("./jTool -f ${ioFiles.i('<self>')}", ioFiles); // 通过 key 来获取注册的文件名
+ssh.system("./jtool -f ${ioFiles.i('<self>')}", ioFiles); // 通过 key 来获取注册的文件名
 
 // 关闭 ssh
 ssh.shutdown();

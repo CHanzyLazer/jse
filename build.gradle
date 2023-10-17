@@ -49,10 +49,10 @@ dependencies {
 
 shadowJar {
     // 指定输出的 jar 文件名，默认输出所有的工具包
-    archiveFileName.set('jTool-all.jar')
+    archiveFileName.set('jtool-all.jar')
     
     // 指定主要运行类
-    manifest {attributes 'Main-Class': 'com.jtool.Main'}
+    manifest {attributes 'Main-Class': 'jtool.Main'}
     
     // 现在只重命名实际遇到冲突的第三方库，避免意外的问题（主要是 matlab 自带的 jsch）
     relocate('com.jcraft.jsch', 'shade.com.jcraft.jsch')

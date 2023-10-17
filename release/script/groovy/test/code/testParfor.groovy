@@ -1,6 +1,6 @@
 package test.code
 
-import static com.jtool.code.UT.Par.*
+import static jtool.code.UT.Par.*
 
 
 /** 测试并行 for 循环 */

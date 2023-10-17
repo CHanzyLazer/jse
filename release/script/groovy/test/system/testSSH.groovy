@@ -1,7 +1,7 @@
 package test.system
-// import jTool classes
-import com.jtool.code.UT;
-import com.jtool.ssh.ServerSSH;
+// import jtool classes
+import jtool.code.UT;
+import jtool.ssh.ServerSSH;
 
 
 /** 创建 ssh */

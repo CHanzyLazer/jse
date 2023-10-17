@@ -1,7 +1,7 @@
 package test.mathex
 
-import com.jtool.math.matrix.Matrices
-import static com.jtool.code.CS.*
+import jtool.math.matrix.Matrices
+import static jtool.code.CS.*
 
 
 def mat = Matrices.from(5, 3, {row, col -> (row*10 + col)});

@@ -13,8 +13,14 @@ while [ -h "$PRG" ] ; do
 done
 SCRIPT_DIR="$(dirname "$PRG")"
 
-# 查找 jTool.jar 的位置
+# 查找 jtool.jar 的位置
 JAR_LOCATION=""
+for i in "$SCRIPT_DIR"/jtool-*.jar; do
+    if [ -e "$i" ]; then
+    JAR_LOCATION="$i"
+    break
+    fi
+done
 for i in "$SCRIPT_DIR"/jTool-*.jar; do
     if [ -e "$i" ]; then
     JAR_LOCATION="$i"
@@ -22,7 +28,7 @@ for i in "$SCRIPT_DIR"/jTool-*.jar; do
     fi
 done
 if [ -z "$JAR_LOCATION" ]; then
-for i in "$SCRIPT_DIR"/include/jTool-*.jar; do
+for i in "$SCRIPT_DIR"/lib/jtool-*.jar; do
     if [ -e "$i" ]; then
     JAR_LOCATION="$i"
     break
@@ -37,39 +43,16 @@ for i in "$SCRIPT_DIR"/lib/jTool-*.jar; do
     fi
 done
 fi
-if [ -z "$JAR_LOCATION" ]; then
-for i in "$SCRIPT_DIR"/libs/jTool-*.jar; do
-    if [ -e "$i" ]; then
-    JAR_LOCATION="$i"
-    break
-    fi
-done
-fi
-if [ -z "$JAR_LOCATION" ]; then
-for i in "$SCRIPT_DIR"/jar/jTool-*.jar; do
-    if [ -e "$i" ]; then
-    JAR_LOCATION="$i"
-    break
-    fi
-done
-fi
-if [ -z "$JAR_LOCATION" ]; then
-for i in "$SCRIPT_DIR"/java/jTool-*.jar; do
-    if [ -e "$i" ]; then
-    JAR_LOCATION="$i"
-    break
-    fi
-done
-fi
 
-# 检查是否找到了 jTool.jar
+
+# 检查是否找到了 jtool.jar
 if [ -z "$JAR_LOCATION" ]; then
-echo "Error: jTool-*.jar not found"
+echo "Error: jtool-*.jar not found"
 exit 1
 fi
 
 # 设置 UTF-8
 JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
 
-# 执行 jTool.jar
+# 执行 jtool.jar
 java $JAVA_OPTS -jar "$JAR_LOCATION" "$@"

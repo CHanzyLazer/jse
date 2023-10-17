@@ -1,11 +1,11 @@
 package test.mpc
 
-import com.jtool.atom.MPC
-import com.jtool.code.UT
-import com.jtool.lmp.Lmpdat
-import com.jtool.plot.Plotters
+import jtool.atom.MPC
+import jtool.code.UT
+import jtool.lmp.Lmpdat
+import jtool.plot.Plotters
 
-import static com.jtool.math.MathEX.Fast.*
+import static jtool.math.MathEX.Fast.*
 
 /** 测试计算 RDF */
 

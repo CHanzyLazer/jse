@@ -46,7 +46,7 @@
 
 <br>
 
-所有的任务提交器位于 [com.jtool.system](../src/main/java/com/jtool/system)，
+所有的任务提交器位于 [jtool.system](../src/main/java/com/jtool/system)，
 目前的各种任务提交器和说明如下：
 
 | 名称                       | 简写      | 参数 | 说明 |

@@ -1,13 +1,13 @@
 package test.system
 
-import com.jtool.code.UT
-import com.jtool.lmp.Dump
-import com.jtool.math.vector.Vectors
-import com.jtool.plot.Plotters
-import com.jtool.rareevent.atom.ClusterSizeCalculator
-import com.jtool.rareevent.atom.ClusterSizeCalculatorMPI
+import jtool.code.UT
+import jtool.lmp.Dump
+import jtool.math.vector.Vectors
+import jtool.plot.Plotters
+import jtool.rareevent.atom.ClusterSizeCalculator
+import jtool.rareevent.atom.ClusterSizeCalculatorMPI
 
-import static com.jtool.code.UT.Code.*
+import static jtool.code.UT.Code.*
 
 /** 测试基于 ZeroMQ 的跨进程通讯 */
 

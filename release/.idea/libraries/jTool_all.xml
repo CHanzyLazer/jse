@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="jTool-all">
+  <library name="jtool-all">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/jTool-all.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jtool-all.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

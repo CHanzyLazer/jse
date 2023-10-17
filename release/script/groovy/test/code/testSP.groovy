@@ -1,8 +1,8 @@
 package test.code
 
-import com.jtool.code.SP
-import com.jtool.math.MathEX
-import com.jtool.math.vector.Vectors
+import jtool.code.SP
+import jtool.math.MathEX
+import jtool.math.vector.Vectors
 
 /** 自定义 python 类的使用 */
 //SP.Python.importModule('testPy');

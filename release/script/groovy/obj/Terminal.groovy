@@ -1,8 +1,8 @@
 package obj
 
-import com.jtool.code.CS
-import com.jtool.code.UT
-import com.jtool.system.ISystemExecutor
+import jtool.code.CS
+import jtool.code.UT
+import jtool.system.ISystemExecutor
 
 /**
  * 用来实现在 Groovy 中像调用方法一样调用系统指令

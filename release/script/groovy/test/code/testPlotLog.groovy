@@ -1,8 +1,8 @@
 package test.code
 
-import com.jtool.math.MathEX;
-import com.jtool.math.vector.Vectors;
-import com.jtool.plot.Plotters;
+import jtool.math.MathEX;
+import jtool.math.vector.Vectors;
+import jtool.plot.Plotters;
 
 
 /** 测试直接在 java 上绘图 */

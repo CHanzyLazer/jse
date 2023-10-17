@@ -1,6 +1,6 @@
 package test.code
 
-import com.jtool.code.UT
+import jtool.code.UT
 
 data0 = [
     "pi": 3.141,

@@ -1,10 +1,10 @@
 package test.ffs
 
-import com.jtool.code.UT
-import com.jtool.math.vector.Vectors
-import com.jtool.plot.Plotters
-import com.jtool.rareevent.BufferedFullPathGenerator
-import com.jtool.rareevent.ForwardFluxSampling
+import jtool.code.UT
+import jtool.math.vector.Vectors
+import jtool.plot.Plotters
+import jtool.rareevent.BufferedFullPathGenerator
+import jtool.rareevent.ForwardFluxSampling
 import rareevent.BiClusterGrowth
 
 

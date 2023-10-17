@@ -1,7 +1,7 @@
 package rareevent
 
-import com.jtool.rareevent.IParameterCalculator
-import com.jtool.rareevent.IPathGenerator
+import jtool.rareevent.IParameterCalculator
+import jtool.rareevent.IPathGenerator
 
 
 /**

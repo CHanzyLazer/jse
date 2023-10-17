@@ -6,16 +6,16 @@
     "configurations": [
         {
             "type": "node-terminal",
-            "name": "jTool-RunCurrentScript",
+            "name": "jtool-RunCurrentScript",
             "request": "launch",
-            "command": "./jTool -f ${file}",
+            "command": "./jtool -f ${file}",
             "cwd": "${workspaceFolder}"
         },
         {
             "type": "node-terminal",
-            "name": "jTool-RunShell",
+            "name": "jtool-RunShell",
             "request": "launch",
-            "command": "./jTool",
+            "command": "./jtool",
             "cwd": "${workspaceFolder}"
         }
     ]

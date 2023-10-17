@@ -1,11 +1,11 @@
 package lmp
 
-// import jTool classes
-import com.jtool.code.UT;
-import com.jtool.atom.*;
-import com.jtool.lmp.*;
+// import jtool classes
+import jtool.code.UT;
+import jtool.atom.*;
+import jtool.lmp.*;
 
-import static com.jtool.code.CS.MASS;
+import static jtool.code.CS.MASS;
 
 
 /** 通用的生成多孔原子结构的方法 */

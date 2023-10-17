@@ -1,7 +1,7 @@
 package test.ffs
 
-import com.jtool.code.UT
-import com.jtool.rareevent.ForwardFluxSampling
+import jtool.code.UT
+import jtool.rareevent.ForwardFluxSampling
 import rareevent.ClusterGrowth
 
 
