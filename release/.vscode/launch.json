@@ -10,7 +10,13 @@
             "request": "launch",
             "command": "./jTool -f ${file}",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "jTool-RunShell",
+            "request": "launch",
+            "command": "./jTool",
+            "cwd": "${workspaceFolder}"
         }
-
     ]
 }

@@ -54,6 +54,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static com.jtool.code.CS.*;
+import static com.jtool.code.CS.Exec.EXE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -188,6 +189,14 @@ public class UT {
         public static ComplexDouble toComplexDouble(IComplexDouble aComplexDouble) {
             return (aComplexDouble instanceof ComplexDouble) ? (ComplexDouble)aComplexDouble : new ComplexDouble(aComplexDouble);
         }
+    }
+    
+    public static class Exec {
+        /** 提供这些接口方便外部调用使用 */
+        @VisibleForTesting public static int system(String aCommand) {return EXE.system(aCommand);}
+        @VisibleForTesting public static Future<Integer> submitSystem(String aCommand) {return EXE.submitSystem(aCommand);}
+        @VisibleForTesting public static List<String> system_str(String aCommand) {return EXE.system_str(aCommand);}
+        @VisibleForTesting public static Future<List<String>> submitSystem_str(String aCommand) {return EXE.submitSystem_str(aCommand);}
     }
     
     public static class Par {

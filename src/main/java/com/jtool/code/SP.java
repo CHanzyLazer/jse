@@ -1,9 +1,24 @@
 package com.jtool.code;
 
 import com.jtool.Main;
+import com.jtool.atom.AbstractAtoms;
+import com.jtool.atom.Structures;
+import com.jtool.code.collection.AbstractCollections;
+import com.jtool.code.collection.ArrayLists;
+import com.jtool.code.collection.Iterables;
+import com.jtool.code.collection.NewCollections;
 import com.jtool.code.script.ScriptObjectGroovy;
 import com.jtool.code.script.ScriptObjectPython;
 import com.jtool.code.task.TaskCall;
+import com.jtool.iofile.IOFiles;
+import com.jtool.iofile.InFiles;
+import com.jtool.math.ComplexDouble;
+import com.jtool.math.MathEX;
+import com.jtool.math.function.Func1;
+import com.jtool.math.matrix.Matrices;
+import com.jtool.math.table.Tables;
+import com.jtool.math.vector.Vectors;
+import com.jtool.plot.Plotters;
 import groovy.lang.*;
 import jep.*;
 import org.apache.groovy.groovysh.Groovysh;
@@ -19,8 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.jtool.code.CS.*;
 import static com.jtool.code.CS.Exec.EXE;
+import static com.jtool.code.CS.IS_WINDOWS;
+import static com.jtool.code.CS.WORKING_DIR;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -40,8 +56,33 @@ public class SP {
         public synchronized static void runShell() throws Exception {
             // 使用这个方法来自动设置种类
             org.apache.groovy.groovysh.Main.setTerminalType("auto", false);
-            // 直接运行，这样手动指定 CLASS_LOADER
-            (new Groovysh(CLASS_LOADER, new Binding(), new IO())).run(null);
+            // 这样手动指定 CLASS_LOADER
+            Groovysh tGroovysh = new Groovysh(CLASS_LOADER, new Binding(), new IO());
+            // 这样直接添加默认 import，shell 会默认导入这些方便使用
+            tGroovysh.getImports().add(AbstractAtoms.class.getName());
+            tGroovysh.getImports().add(Structures.class.getName());
+            tGroovysh.getImports().add(AbstractCollections.class.getName());
+            tGroovysh.getImports().add(Iterables.class.getName());
+            tGroovysh.getImports().add(NewCollections.class.getName());
+            tGroovysh.getImports().add(ArrayLists.class.getName());
+            tGroovysh.getImports().add(InFiles.class.getName());
+            tGroovysh.getImports().add(IOFiles.class.getName());
+            tGroovysh.getImports().add(MathEX.class.getName());
+            tGroovysh.getImports().add(ComplexDouble.class.getName());
+            tGroovysh.getImports().add(Func1.class.getName());
+            tGroovysh.getImports().add(Matrices.class.getName());
+            tGroovysh.getImports().add(Tables.class.getName());
+            tGroovysh.getImports().add(Vectors.class.getName());
+            tGroovysh.getImports().add(Plotters.class.getName());
+            tGroovysh.getImports().add("static "+MathEX.Code.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Timer.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Par.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Exec.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.IO.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Code.class.getName()+".*");
+            tGroovysh.getImports().add("static "+CS.class.getName()+".*");
+            tGroovysh.getImports().add("static "+CS.Exec.class.getName()+".*");
+            tGroovysh.run(null);
         }
         
         /** 直接运行文本的脚本，底层不会进行缓存 */

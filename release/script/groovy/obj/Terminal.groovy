@@ -1,8 +1,8 @@
 package obj
 
+import com.jtool.code.CS
 import com.jtool.code.UT
 import com.jtool.system.ISystemExecutor
-import com.jtool.system.Local
 
 /**
  * 用来实现在 Groovy 中像调用方法一样调用系统指令
@@ -11,7 +11,7 @@ import com.jtool.system.Local
 class Terminal {
     ISystemExecutor exe;
     
-    Terminal() {this.exe = new Local();}
+    Terminal() {this.exe = CS.Exec.EXE;}
     Terminal(ISystemExecutor exe) {this.exe = exe;}
     
     /** 调用方法则输出到控制台 */
