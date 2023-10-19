@@ -1,6 +1,8 @@
 package jtool.vasp;
 
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import jtool.atom.*;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
@@ -23,7 +25,7 @@ import static jtool.code.UT.Code.toXYZ;
  * <p> 包含读取写出的文本文件的格式 </p>
  * <p> 暂时不支持边界条件设置 </p>
  */
-public class POSCAR extends AbstractSettableAtomData {
+public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData {
     public final static String DEFAULT_DATA_NAME = "VASP_POSCAR_FROM_JTOOL";
     
     /** POSCAR 只存储每个原子的 xyz 缩放后的矢量 */
@@ -42,8 +44,8 @@ public class POSCAR extends AbstractSettableAtomData {
     private final NavigableMap<Integer, Integer> mIdx2Type;
     private final boolean mIsDiagBox;
     
-    /** 用于通过字符获取每个种类的粒子数 */
-    private final Map<String, Integer> mKey2Type;
+    /** 用于通过字符获取每个种类的粒子数，考虑了可能有相同 key 的情况 */
+    private final Multimap<String, Integer> mKey2Type;
     
     POSCAR(String aDataName, IMatrix aBox, double aBoxScale, String @NotNull[] aAtomTypes, IVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect) {
         mDirect = aDirect;
@@ -63,7 +65,7 @@ public class POSCAR extends AbstractSettableAtomData {
             mIdx2Type.put(rNumber, rType);
         }
         
-        mKey2Type = new HashMap<>();
+        mKey2Type = ArrayListMultimap.create();
         rType = 0;
         for (String tKey : mAtomTypes) {
             ++rType;
@@ -72,10 +74,25 @@ public class POSCAR extends AbstractSettableAtomData {
         
         mIsDiagBox = mBox.operation().isDiag();
     }
+    /** 用于方便构建，减少重复代码 */
+    POSCAR(IVaspCommonData aVaspCommonData, boolean aSelectiveDynamics, IMatrix aDirect) {
+        this(aVaspCommonData.dataName(), aVaspCommonData.vaspBox(), aVaspCommonData.vaspBoxScale(), aVaspCommonData.atomTypes(), aVaspCommonData.atomNumbers(), aSelectiveDynamics, aDirect);
+    }
     
     /** 对于 POSCAR 提供额外的实用接口 */
-    public int atomNum(String aKey) {return atomNum(mKey2Type.get(aKey));}
+    public int atomNum(String aKey) {
+        int rAtomNum = 0;
+        for (int tType : mKey2Type.get(aKey)) rAtomNum += atomNum(tType);
+        return rAtomNum;
+    }
     public int atomNum(int aType) {return (int)mAtomNumbers.get(aType-1);}
+    
+    public @Override String dataName() {return mDataName;}
+    public @Override String[] atomTypes() {return mAtomTypes;}
+    public @Override IVector atomNumbers() {return mAtomNumbers;}
+    public @Override IMatrix vaspBox() {return mBox;}
+    public @Override double vaspBoxScale() {return mBoxScale;}
+    public IMatrix direct() {return mDirect;}
     
     /** AbstractAtomData stuffs */
     @Override public ISettableAtom pickAtom(final int aIdx) {
@@ -121,15 +138,16 @@ public class POSCAR extends AbstractSettableAtomData {
     // 由于 POSCAR 不是全都可以修改，因此不重写另外两个
     
     /** 从 IAtomData 来创建，POSCAR 需要额外的原子种类字符串以及额外的是否开启 SelectiveDynamics */
-    public static POSCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, ZL_STR);}
-    public static POSCAR fromAtomData(IAtomData aAtomData, String... aAtomTypes) {return fromAtomData(aAtomData, false, aAtomTypes);}
+    public static POSCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).atomTypes() : ZL_STR);}
+    public static POSCAR fromAtomData(IAtomData aAtomData, String... aAtomTypes) {return fromAtomData(aAtomData, (aAtomData instanceof POSCAR) && ((POSCAR)aAtomData).mSelectiveDynamics, aAtomTypes);}
     public static POSCAR fromAtomData(IAtomData aAtomData, boolean aSelectiveDynamics, String... aAtomTypes) {
         if (aAtomTypes == null) aAtomTypes = ZL_STR;
+        if (aAtomTypes.length > 0) aAtomTypes = Arrays.copyOf(aAtomTypes, aAtomTypes.length);
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
             POSCAR tPOSCAR = (POSCAR)aAtomData;
-            return new POSCAR(tPOSCAR.mDataName, tPOSCAR.mBox.copy(), tPOSCAR.mBoxScale, aAtomTypes, tPOSCAR.mAtomNumbers, aSelectiveDynamics, tPOSCAR.mDirect.copy());
+            return new POSCAR(tPOSCAR.mDataName, tPOSCAR.mBox.copy(), tPOSCAR.mBoxScale, aAtomTypes, tPOSCAR.mAtomNumbers.copy(), aSelectiveDynamics, tPOSCAR.mDirect.copy());
         } else {
             // 一般的情况，这里直接遍历 atoms 来创建，这里需要按照 type 来排序
             XYZ tBox = toXYZ(aAtomData.box());

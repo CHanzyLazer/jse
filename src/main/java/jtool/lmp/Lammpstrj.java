@@ -14,10 +14,7 @@ import jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static jtool.code.UT.Code.toXYZ;
 
@@ -53,7 +50,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         mData.add(fromAtomData_(aAtomData, getTimeStep(aAtomData, mData.size())));
         return this;
     }
-    public Lammpstrj appendList(Iterable<IAtomData> aAtomDataList) {
+    public Lammpstrj appendList(Iterable<? extends IAtomData> aAtomDataList) {
         for (IAtomData tAtomData : aAtomDataList) mData.add(fromAtomData_(tAtomData, getTimeStep(tAtomData, mData.size())));
         return this;
     }
@@ -417,6 +414,17 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         }
         return new Lammpstrj(rLammpstrj);
     }
+    public static Lammpstrj fromAtomDataList(Collection<? extends IAtomData> aAtomDataList) {
+        if (aAtomDataList == null) return new Lammpstrj();
+        
+        List<SubLammpstrj> rLammpstrj = new ArrayList<>(aAtomDataList.size());
+        int i = 0;
+        for (IAtomData subAtomData : aAtomDataList) {
+            rLammpstrj.add(fromAtomData_(subAtomData, getTimeStep(subAtomData, i)));
+            ++i;
+        }
+        return new Lammpstrj(rLammpstrj);
+    }
     static SubLammpstrj fromAtomData_(IAtomData aAtomData, long aTimeStep) {
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof Lammpstrj) {
@@ -437,7 +445,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         return aDefault;
     }
     /** 对于 matlab 调用的兼容 */
-    public static Lammpstrj fromAtomData_compat(Object... aAtomDataArray) {
+    public static Lammpstrj fromAtomData_compat(Object[] aAtomDataArray) {
         if (aAtomDataArray == null || aAtomDataArray.length == 0) return new Lammpstrj();
         
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();

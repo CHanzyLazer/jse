@@ -555,6 +555,8 @@ public class UT {
             return rData;
         }
         
+        /** useful methods, wrapper of {@link StringGroovyMethods} stuffs */
+        public static boolean containsIgnoreCase(final CharSequence self, final CharSequence searchString) {return StringGroovyMethods.containsIgnoreCase(self, searchString);}
         
         /**
          * Start from aStartIdx to find the first index containing aContainStr
@@ -569,7 +571,7 @@ public class UT {
             int tIdx = aStartIdx;
             while (tIdx < aLines.size()) {
                 if (aIgnoreCase) {
-                    if (StringGroovyMethods.containsIgnoreCase(aLines.get(tIdx), aContainStr)) break;
+                    if (containsIgnoreCase(aLines.get(tIdx), aContainStr)) break;
                 } else {
                     if (aLines.get(tIdx).contains(aContainStr)) break;
                 }
@@ -583,7 +585,7 @@ public class UT {
             String tLine;
             while ((tLine = aReader.readLine()) != null) {
                 if (aIgnoreCase) {
-                    if (StringGroovyMethods.containsIgnoreCase(tLine, aContainStr)) return tLine;
+                    if (containsIgnoreCase(tLine, aContainStr)) return tLine;
                 } else {
                     if (tLine.contains(aContainStr)) return tLine;
                 }

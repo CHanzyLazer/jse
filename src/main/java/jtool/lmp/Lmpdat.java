@@ -120,7 +120,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     /// 获取属性
     public Box lmpBox() {return mBox;}
-    public IVector masses() {return mMasses;}
+    public @Nullable IVector masses() {return mMasses;}
     public double mass(int aType) {return mMasses!=null ? mMasses.get(aType-1) : Double.NaN;}
     
     
@@ -186,12 +186,17 @@ public class Lmpdat extends AbstractSettableAtomData {
     @Override protected Lmpdat newZeros_(int aAtomNum) {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), RowMatrix.zeros(aAtomNum, mAtomData.columnNumber()), mVelocities==null?null:RowMatrix.zeros(aAtomNum, mVelocities.columnNumber()));}
     
     /** 从 IAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
-    public static Lmpdat fromAtomData(IAtomData aAtomData) {return fromAtomData_(aAtomData, null);}
+    public static Lmpdat fromAtomData(IAtomData aAtomData) {
+        @Nullable IVector aMasses = null;
+        if (aAtomData instanceof Lmpdat) aMasses = ((Lmpdat)aAtomData).mMasses;
+        if (aMasses != null) aMasses = aMasses.copy();
+        return fromAtomData_(aAtomData, aMasses);
+    }
     public static Lmpdat fromAtomData(IAtomData aAtomData, IVector aMasses) {return fromAtomData_(aAtomData, Vectors.from(aMasses));}
     public static Lmpdat fromAtomData(IAtomData aAtomData, Collection<? extends Number> aMasses) {return fromAtomData_(aAtomData, Vectors.from(aMasses));}
     public static Lmpdat fromAtomData(IAtomData aAtomData, double[] aMasses) {return fromAtomData_(aAtomData, Vectors.from(aMasses));}
     
-    public static Lmpdat fromAtomData_(IAtomData aAtomData, IVector aMasses) {
+    static Lmpdat fromAtomData_(IAtomData aAtomData, @Nullable IVector aMasses) {
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof Lmpdat) {
             // Lmpdat 则直接获取即可（专门优化，保留完整模拟盒信息）

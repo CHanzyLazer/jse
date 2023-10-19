@@ -45,7 +45,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
         mTableList.add(aTable);
         return this;
     }
-    public Thermo appendList(Iterable<ITable> aTableList) {
+    public Thermo appendList(Iterable<? extends ITable> aTableList) {
         for (ITable tTable : aTableList) mTableList.add(tTable);
         return this;
     }
