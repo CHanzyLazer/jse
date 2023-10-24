@@ -14,6 +14,7 @@ import jtool.code.task.TaskRun;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.function.IFunc1;
+import jtool.math.function.IFunc1Subs;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
 import jtool.math.table.ITable;
@@ -27,6 +28,9 @@ import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
 import groovy.yaml.YamlBuilder;
 import groovy.yaml.YamlSlurper;
+import jtool.plot.ILine;
+import jtool.plot.IPlotter;
+import jtool.plot.Plotters;
 import net.jafama.FastMath;
 import org.apache.groovy.json.internal.CharScanner;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -1036,6 +1040,173 @@ public class UT {
             WORKING_PATH = Paths.get(wd);
         }
         static {init();}
+    }
+    
+    
+    /**
+     * 实现类似 matlab 中可以直接使用 plot 函数进行绘图
+     * <p>
+     * 这里简单起见只维护一个窗口
+     * @author liqa
+     */
+    @VisibleForTesting public static class Plot {
+        private static IPlotter PLT = Plotters.get();
+        
+        public static ILine plot(                                                   double[] aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                    IVector aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                     IFunc1 aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                               Collection<? extends Number> aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                   double[] aY, String aName) {ILine tLine = PLT.plot( aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                     double[] aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                     double[] aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                                                    IVector aY, String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                      IVector aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                      IVector aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                                                     IFunc1 aY, String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                   IFunc1Subs aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                   IFunc1Subs aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                               Collection<? extends Number> aY, String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        
+        public static ILine loglog(                                                   double[] aY) {xScaleLog(); yScaleLog(); return plot(aY);}
+        public static ILine loglog(                  double[] aX,                     double[] aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                   IVector aX,                     double[] aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(Iterable<? extends Number> aX,                     double[] aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                                                    IVector aY) {xScaleLog(); yScaleLog(); return plot(aY);}
+        public static ILine loglog(                  double[] aX,                      IVector aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                   IVector aX,                      IVector aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(Iterable<? extends Number> aX,                      IVector aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                                                     IFunc1 aY) {xScaleLog(); yScaleLog(); return plot(aY);}
+        public static ILine loglog(                  double[] aX,                   IFunc1Subs aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                   IVector aX,                   IFunc1Subs aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(Iterable<? extends Number> aX,                   IFunc1Subs aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                               Collection<? extends Number> aY) {xScaleLog(); yScaleLog(); return plot(aY);}
+        public static ILine loglog(                  double[] aX, Iterable  <? extends Number> aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                   IVector aX, Iterable  <? extends Number> aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
+        public static ILine loglog(                                                   double[] aY, String aName) {xScaleLog(); yScaleLog(); return plot(aY, aName);}
+        public static ILine loglog(                  double[] aX,                     double[] aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                   IVector aX,                     double[] aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(Iterable<? extends Number> aX,                     double[] aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                                                    IVector aY, String aName) {xScaleLog(); yScaleLog(); return plot(aY, aName);}
+        public static ILine loglog(                  double[] aX,                      IVector aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                   IVector aX,                      IVector aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(Iterable<? extends Number> aX,                      IVector aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                                                     IFunc1 aY, String aName) {xScaleLog(); yScaleLog(); return plot(aY, aName);}
+        public static ILine loglog(                  double[] aX,                   IFunc1Subs aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                   IVector aX,                   IFunc1Subs aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                               Collection<? extends Number> aY, String aName) {xScaleLog(); yScaleLog(); return plot(aY, aName);}
+        public static ILine loglog(                  double[] aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(                   IVector aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine loglog(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); yScaleLog(); return plot(aX, aY, aName);}
+        
+        public static ILine semilogx(                                                   double[] aY) {xScaleLog(); return plot(aY);}
+        public static ILine semilogx(                  double[] aX,                     double[] aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                   IVector aX,                     double[] aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                     double[] aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                                                    IVector aY) {xScaleLog(); return plot(aY);}
+        public static ILine semilogx(                  double[] aX,                      IVector aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                   IVector aX,                      IVector aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                      IVector aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                                                     IFunc1 aY) {xScaleLog(); return plot(aY);}
+        public static ILine semilogx(                  double[] aX,                   IFunc1Subs aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                   IVector aX,                   IFunc1Subs aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                   IFunc1Subs aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                               Collection<? extends Number> aY) {xScaleLog(); return plot(aY);}
+        public static ILine semilogx(                  double[] aX, Iterable  <? extends Number> aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                   IVector aX, Iterable  <? extends Number> aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {xScaleLog(); return plot(aX, aY);}
+        public static ILine semilogx(                                                   double[] aY, String aName) {xScaleLog(); return plot(aY, aName);}
+        public static ILine semilogx(                  double[] aX,                     double[] aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                   IVector aX,                     double[] aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                     double[] aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                                                    IVector aY, String aName) {xScaleLog(); return plot(aY, aName);}
+        public static ILine semilogx(                  double[] aX,                      IVector aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                   IVector aX,                      IVector aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                      IVector aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                                                     IFunc1 aY, String aName) {xScaleLog(); return plot(aY, aName);}
+        public static ILine semilogx(                  double[] aX,                   IFunc1Subs aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                   IVector aX,                   IFunc1Subs aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                               Collection<? extends Number> aY, String aName) {xScaleLog(); return plot(aY, aName);}
+        public static ILine semilogx(                  double[] aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(                   IVector aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogx(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {xScaleLog(); return plot(aX, aY, aName);}
+        
+        public static ILine semilogy(                                                   double[] aY) {yScaleLog(); return plot(aY);}
+        public static ILine semilogy(                  double[] aX,                     double[] aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                   IVector aX,                     double[] aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                     double[] aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                                                    IVector aY) {yScaleLog(); return plot(aY);}
+        public static ILine semilogy(                  double[] aX,                      IVector aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                   IVector aX,                      IVector aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                      IVector aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                                                     IFunc1 aY) {yScaleLog(); return plot(aY);}
+        public static ILine semilogy(                  double[] aX,                   IFunc1Subs aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                   IVector aX,                   IFunc1Subs aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                   IFunc1Subs aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                               Collection<? extends Number> aY) {yScaleLog(); return plot(aY);}
+        public static ILine semilogy(                  double[] aX, Iterable  <? extends Number> aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                   IVector aX, Iterable  <? extends Number> aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {yScaleLog(); return plot(aX, aY);}
+        public static ILine semilogy(                                                   double[] aY, String aName) {yScaleLog(); return plot(aY, aName);}
+        public static ILine semilogy(                  double[] aX,                     double[] aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                   IVector aX,                     double[] aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                     double[] aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                                                    IVector aY, String aName) {yScaleLog(); return plot(aY, aName);}
+        public static ILine semilogy(                  double[] aX,                      IVector aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                   IVector aX,                      IVector aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                      IVector aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                                                     IFunc1 aY, String aName) {yScaleLog(); return plot(aY, aName);}
+        public static ILine semilogy(                  double[] aX,                   IFunc1Subs aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                   IVector aX,                   IFunc1Subs aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                               Collection<? extends Number> aY, String aName) {yScaleLog(); return plot(aY, aName);}
+        public static ILine semilogy(                  double[] aX, Iterable  <? extends Number> aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(                   IVector aX, Iterable  <? extends Number> aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        public static ILine semilogy(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {yScaleLog(); return plot(aX, aY, aName);}
+        
+        public static void xScaleLog() {PLT.xScaleLog();}
+        public static void yScaleLog() {PLT.yScaleLog();}
+        public static void xScaleLinear() {PLT.xScaleLinear();}
+        public static void yScaleLinear() {PLT.yScaleLinear();}
+        
+        public static void title(String aTitle) {PLT.title(aTitle);}
+        public static void xLabel(String aXLabel) {PLT.xLabel(aXLabel);}
+        public static void yLabel(String aYLabel) {PLT.yLabel(aYLabel);}
+        public static void xlabel(String aXLabel) {PLT.xlabel(aXLabel);}
+        public static void ylabel(String aYLabel) {PLT.ylabel(aYLabel);}
+        
+        public static void xRange(double aMin, double aMax) {PLT.xRange(aMin, aMax);}
+        public static void yRange(double aMin, double aMax) {PLT.yRange(aMin, aMax);}
+        public static void axis(double aMin, double aMax) {PLT.axis(aMin, aMax);}
+        public static void axis(double aXMin, double aXMax, double aYMin, double aYMax) {PLT.axis(aXMin, aXMax, aYMin, aYMax);}
+        public static void axis(double[] aAxis) {PLT.axis(aAxis);}
+        
+        public static void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {PLT.save(aFilePath, aWidth, aHeight);}
+        public static void save(@Nullable String aFilePath) throws IOException {PLT.save(aFilePath);}
+        public static void save() throws IOException {PLT.save();}
+        
+        public static void cla() {PLT.clear();}
+        public static void clf() {PLT.dispose(); PLT = Plotters.get();}
     }
     
     

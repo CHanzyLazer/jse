@@ -194,9 +194,15 @@ public interface IPlotter {
     /** 设置轴的类型 */
     IPlotter xScaleLog();
     IPlotter yScaleLog();
+    IPlotter xScaleLinear();
+    IPlotter yScaleLinear();
     
     /** 直接保存结果 */
     void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException;
     default void save(@Nullable String aFilePath) throws IOException {save(aFilePath, 1024, 768);}
     default void save() throws IOException {save(null);}
+    
+    /** 清空数据 */
+    IPlotter clear();
+    void dispose();
 }

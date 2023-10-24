@@ -384,6 +384,17 @@ public final class PlotterJFree implements IPlotter {
         return tLine;
     }
     
+    @Override public IPlotter clear() {
+        mLinesData.removeAllSeries();
+        mLines.clear();
+        return this;
+    }
+    @Override public void dispose() {
+        if (mCurrentFigure != null) mCurrentFigure.dispose();
+        clear();
+    }
+    
+    
     /** 设置轴的类型 */
     @Override public IPlotter xScaleLog() {
         if (!(mXAxis instanceof LogarithmicAxis)) {
@@ -409,9 +420,44 @@ public final class PlotterJFree implements IPlotter {
         }
         return this;
     }
+    @Override public IPlotter xScaleLinear() {
+        if (!(mXAxis instanceof LargerTickUnitNumberAxis)) {
+            NumberAxis oXAxis = mXAxis;
+            mXAxis = new LargerTickUnitNumberAxis(oXAxis.getLabel());
+            mXAxis.setAutoRangeIncludesZero(false);
+            mXAxis.setLabelFont(oXAxis.getLabelFont());
+            mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
+            if (!oXAxis.isAutoTickUnitSelection()) mXAxis.setTickUnit(oXAxis.getTickUnit()); // 一般轴可以有 tickUnit
+            if (!oXAxis.isAutoRange()) mXAxis.setRange(oXAxis.getRange());
+            mPlot.setDomainAxis(mXAxis);
+        }
+        return this;
+    }
+    @Override public IPlotter yScaleLinear() {
+        if (!(mYAxis instanceof LargerTickUnitNumberAxis)) {
+            NumberAxis oYAxis = mYAxis;
+            mYAxis = new LargerTickUnitNumberAxis(oYAxis.getLabel());
+            mYAxis.setAutoRangeIncludesZero(false);
+            mYAxis.setLabelFont(oYAxis.getLabelFont());
+            mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
+            if (!oYAxis.isAutoTickUnitSelection()) mYAxis.setTickUnit(oYAxis.getTickUnit()); // 一般轴可以有 tickUnit
+            if (!oYAxis.isAutoRange()) mYAxis.setRange(oYAxis.getRange());
+            mPlot.setRangeAxis(mYAxis);
+        }
+        return this;
+    }
     
+    private @Nullable IFigure mCurrentFigure = null;
     
     @Override public IFigure show(String aName) {
+        // 如果已经有窗口则不再显示
+        if (mCurrentFigure != null) {
+            // 无论怎样都需要设置名称
+            mCurrentFigure.name(aName);
+            // 如果没有被关闭则直接结束
+            if (mCurrentFigure.isShowing()) return mCurrentFigure;
+        }
+        
         // 显示图像
         final JFrame tFrame = new JFrame(aName);
         tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -425,7 +471,10 @@ public final class PlotterJFree implements IPlotter {
         tFrame.setVisible(true);
         
         // 返回 IFigure
-        return new IFigure() {
+        mCurrentFigure = new IFigure() {
+            @Override public boolean isShowing() {return tFrame.isShowing();}
+            @Override public void dispose() {tFrame.dispose();}
+            
             @Override public IFigure name(String aName) {tFrame.setTitle(aName); return this;}
             @Override public IFigure size(int aWidth, int aHeight) {synchronized (tFrame.getTreeLock()) {tPanel.setSize(aWidth-tInset.left-tInset.right, aHeight-tInset.top-tInset.bottom); tFrame.setSize(aWidth, aHeight);} return this;}
             @Override public IFigure location(int aX, int aY) {tFrame.setLocation(aX, aY); return this;}
@@ -452,5 +501,7 @@ public final class PlotterJFree implements IPlotter {
                 }
             }
         };
+        
+        return mCurrentFigure;
     }
 }

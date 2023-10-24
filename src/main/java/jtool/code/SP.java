@@ -78,8 +78,9 @@ public class SP {
             tGroovysh.getImports().add("static "+UT.Par.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Exec.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.IO.class.getName()+".*");
-            tGroovysh.getImports().add("static "+UT.Code.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Math.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Plot.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Code.class.getName()+".*");
             tGroovysh.getImports().add("static "+CS.class.getName()+".*");
             tGroovysh.getImports().add("static "+CS.Exec.class.getName()+".*");
             tGroovysh.run(null);

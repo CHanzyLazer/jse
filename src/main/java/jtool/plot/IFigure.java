@@ -10,6 +10,9 @@ import java.io.IOException;
  * <p> 主要用于方便的管理图像等操作 </p>
  */
 public interface IFigure {
+    boolean isShowing();
+    void dispose();
+    
     IFigure name(String aName);
     IFigure size(int aWidth, int aHeight);
     IFigure location(int aX, int aY);
