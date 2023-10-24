@@ -185,7 +185,7 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
         rVector.assign(() -> {
             it.nextOnly();
             double tReal = it.real(), tImag = it.imag();
-            return MathEX.Fast.sqrt(tReal*tReal + tImag*tImag);
+            return MathEX.Fast.hypot(tReal, tImag);
         });
         return rVector;
     }

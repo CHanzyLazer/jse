@@ -607,7 +607,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double dy = y - cXYZ.mY;
                 double dz = z - cXYZ.mZ;
                 double theta = Fast.acos(dz / dis);
-                double disXY = Fast.sqrt(dx*dx + dy*dy);
+                double disXY = Fast.hypot(dx, dy);
                 double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0*PI - Fast.acos(dx / disXY));
                 
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计

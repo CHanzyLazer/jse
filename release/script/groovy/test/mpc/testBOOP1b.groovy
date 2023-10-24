@@ -47,6 +47,19 @@ q6ZrCu2 = mpcZrCu2.calABOOP(6, mpcZrCu2.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("ZrCu2, q6");
 mpcZrCu2.shutdown();
 
+//dataZr7Cu10 = Structures.from(POSCAR.read('lmp/data/Zr7Cu10.poscar'), 3).opt().perturbXYZ(0.25*perturbMul);
+//if (onlyCu) dataZr7Cu10 = dataZr7Cu10.opt().filterType(2);
+//if (onlyZr) dataZr7Cu10 = dataZr7Cu10.opt().filterType(1);
+//mpcZr7Cu10 = dataZr7Cu10.getMPC(nThreads);
+//println("Zr7Cu10, u: ${mpcZr7Cu10.unitLen()}");
+//UT.Timer.tic();
+//q4Zr7Cu10 = mpcZr7Cu10.calABOOP(4, mpcZr7Cu10.unitLen()*cutoffMul, nnn);
+//UT.Timer.toc("Zr7Cu10, q4");
+//UT.Timer.tic();
+//q6Zr7Cu10 = mpcZr7Cu10.calABOOP(6, mpcZr7Cu10.unitLen()*cutoffMul, nnn);
+//UT.Timer.toc("Zr7Cu10, q6");
+//mpcZr7Cu10.shutdown();
+
 dataB2 = Structures.from(POSCAR.read('lmp/data/ZrCu-B2.poscar'), 8).opt().perturbXYZ(0.25*perturbMul);
 if (onlyCu) dataB2 = dataB2.opt().filterType(2);
 if (onlyZr) dataB2 = dataB2.opt().filterType(1);
@@ -106,8 +119,9 @@ mpcMelt.shutdown();
 // 使用 Plotter 绘图
 plt1 = Plotters.get();
 plt1.plot(q4MgCu2   , q6MgCu2   , 'laves-MgCu2').color(1).lineType('none').markerType('o').markerSize(4);
-plt1.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'      ).color(2).lineType('none').markerType('o').markerSize(4);
+plt1.plot(q4ZrCu2   , q6ZrCu2   , 'Cu2Zr'      ).color(2).lineType('none').markerType('o').markerSize(4);
 plt1.plot(q4B2      , q6B2      , 'B2'         ).color(3).lineType('none').markerType('o').markerSize(4);
+//plt1.plot(q4Zr7Cu10 , q6Zr7Cu10 , 'Cu10Zr7'    ).color(4).lineType('none').markerType('o').markerSize(4);
 plt1.plot(q4FFS1    , q6FFS1    , 'FFS1'       ).color(0).lineType('none').markerType('^').markerSize(5);
 plt1.xlabel('q4').ylabel('q6');
 plt1.xTick(0.02);
@@ -115,8 +129,9 @@ plt1.show();
 
 plt2 = Plotters.get();
 plt2.plot(q4MgCu2   , q6MgCu2   , 'laves-MgCu2').color(1).lineType('none').markerType('o').markerSize(4);
-plt2.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'      ).color(2).lineType('none').markerType('o').markerSize(4);
+plt2.plot(q4ZrCu2   , q6ZrCu2   , 'Cu2Zr'      ).color(2).lineType('none').markerType('o').markerSize(4);
 plt2.plot(q4B2      , q6B2      , 'B2'         ).color(3).lineType('none').markerType('o').markerSize(4);
+//plt2.plot(q4Zr7Cu10 , q6Zr7Cu10 , 'Cu10Zr7'    ).color(4).lineType('none').markerType('o').markerSize(4);
 plt2.plot(q4FFS2    , q6FFS2    , 'FFS2'       ).color(0).lineType('none').markerType('^').markerSize(5);
 plt2.xlabel('q4').ylabel('q6');
 plt2.xTick(0.02);
@@ -124,8 +139,9 @@ plt2.show();
 
 plt3 = Plotters.get();
 plt3.plot(q4MgCu2   , q6MgCu2   , 'laves-MgCu2').color(1).lineType('none').markerType('o').markerSize(4);
-plt3.plot(q4ZrCu2   , q6ZrCu2   , 'ZrCu2'      ).color(2).lineType('none').markerType('o').markerSize(4);
+plt3.plot(q4ZrCu2   , q6ZrCu2   , 'Cu2Zr'      ).color(2).lineType('none').markerType('o').markerSize(4);
 plt3.plot(q4B2      , q6B2      , 'B2'         ).color(3).lineType('none').markerType('o').markerSize(4);
+//plt3.plot(q4Zr7Cu10 , q6Zr7Cu10 , 'Cu10Zr7'    ).color(4).lineType('none').markerType('o').markerSize(4);
 plt3.plot(q4Melt    , q6Melt    , 'melt'       ).color(0).lineType('none').markerType('^').markerSize(5);
 plt3.xlabel('q4').ylabel('q6');
 plt3.xTick(0.02);

@@ -46,12 +46,6 @@ public class CS {
         /** print */
         @Override public String toString() {return "(0.0, 0.0, 0.0)";}
     };
-    public final static IComplexDouble I = new IComplexDouble() {
-        @Override public double real() {return 0.0;}
-        @Override public double imag() {return 1.0;}
-        /** print */
-        @Override public String toString() {return "i";}
-    };
     
     public final static String WORKING_DIR = ".temp/%n/";
     

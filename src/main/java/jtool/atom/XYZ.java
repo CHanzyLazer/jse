@@ -101,11 +101,9 @@ public final class XYZ implements IXYZ {
         double tZ = mZ - aRHS.mZ;
         return tX*tX + tY*tY + tZ*tZ;
     }
-    public double distance(XYZ aRHS) {return MathEX.Fast.sqrt(distance2(aRHS));}
+    public double distance(XYZ aRHS) {return MathEX.Fast.hypot(mX-aRHS.mX, mY-aRHS.mY, mZ-aRHS.mZ);}
     
-    @Override public double distanceMHT(IXYZ aRHS) {
-        return Math.abs(mX - aRHS.x()) + Math.abs(mY - aRHS.y()) + Math.abs(mZ - aRHS.z());
-    }
+    @Override public double distanceMHT(IXYZ aRHS) {return Math.abs(mX-aRHS.x()) + Math.abs(mY-aRHS.y()) + Math.abs(mZ-aRHS.z());}
     @Override public double distanceMHT(double aX, double aY, double aZ) {
         aX -= mX;
         aY -= mY;
@@ -113,7 +111,5 @@ public final class XYZ implements IXYZ {
         return Math.abs(aX) + Math.abs(aY) + Math.abs(aZ);
     }
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
-    public double distanceMHT(XYZ aRHS) {
-        return Math.abs(mX - aRHS.mX) + Math.abs(mY - aRHS.mY) + Math.abs(mZ - aRHS.mZ);
-    }
+    public double distanceMHT(XYZ aRHS) {return Math.abs(mX-aRHS.mX) + Math.abs(mY-aRHS.mY) + Math.abs(mZ-aRHS.mZ);}
 }

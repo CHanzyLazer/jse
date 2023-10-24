@@ -1,7 +1,9 @@
 package test.mpc
 
 import jtool.atom.Structures
+import jtool.code.UT
 import jtool.lmp.Lmpdat
+import jtool.math.table.Tables
 import jtool.math.vector.Vectors
 import jtool.plot.Plotters
 import jtool.vasp.POSCAR
@@ -91,6 +93,20 @@ if (distributionMgCu2   [solidThreshold..maxConnect].sum() < 0.9) println('MgCu2
 if (distributionZr3Cu8  [solidThreshold..maxConnect].sum() < 0.9) println('Zr3Cu8'  );
 if (distributionZr7Cu10 [solidThreshold..maxConnect].sum() < 0.9) println('Zr7Cu10' );
 if (distributionZrCu2   [solidThreshold..maxConnect].sum() < 0.9) println('ZrCu2'   );
+
+
+// 正式图片，现在需要存一下 csv
+def data = Tables.zeros(distributionG.size());
+data['n'] = 0..maxConnect;
+data['glass'      ] = distributionG      ;
+data['fcc'        ] = distributionFCC    ;
+data['bcc'        ] = distributionBCC    ;
+data['hcp'        ] = distributionHCP    ;
+data['laves-MgCu2'] = distributionMgCu2  ;
+data['Cu8Zr3'     ] = distributionZr3Cu8 ;
+data['Cu10Zr7'    ] = distributionZr7Cu10;
+data['Cu2Zr'      ] = distributionZrCu2  ;
+UT.IO.table2csv(data, '.temp/Sij-new-Zr.csv');
 
 // 绘制结果
 def plt = Plotters.get();

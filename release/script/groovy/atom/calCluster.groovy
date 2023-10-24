@@ -8,7 +8,6 @@ import jtool.rareevent.atom.MultiTypeClusterSizeCalculator
 import static jtool.code.UT.Par.*
 
 
-
 //final def dataDir       = 'lmp/.stableglass-in/';
 //final def filterDir     = 'lmp/.stableglass-out/';
 //final def checker = new ABOOPSolidChecker().setRNearestQMul(4.0).setConnectThreshold(0.950).setSolidThreshold(7);
@@ -24,7 +23,7 @@ import static jtool.code.UT.Par.*
 //}
 
 
-final def dump = Dump.read('lmp/.stableglass-in/dump-fs1').appendFile('lmp/.stableglass-in/dump-fs1-c');
+final def dump = Dump.read('lmp/.stableglass-in/dump-fs1');
 final def calculator = new MultiTypeClusterSizeCalculator(
     new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.89).setSolidThreshold(7),
     [new ABOOPSolidChecker().setRNearestMul(1.8).setConnectThreshold(0.84).setSolidThreshold(13), new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7)]
