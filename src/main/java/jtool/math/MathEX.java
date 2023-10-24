@@ -1,22 +1,17 @@
 package jtool.math;
 
 import jtool.Main;
+import jtool.code.UT;
 import jtool.code.collection.Pair;
 import jtool.code.functional.*;
 import jtool.math.function.Func2;
 import jtool.math.function.Func3;
-import jtool.math.matrix.IMatrix;
-import jtool.math.matrix.Matrices;
-import jtool.math.vector.IVector;
-import jtool.math.vector.Vectors;
 import jtool.parallel.ParforThreadPool;
 import net.jafama.FastMath;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
 
-import static jtool.code.CS.RANDOM;
 import static jtool.code.CS.ZL_MAT;
 
 
@@ -27,15 +22,6 @@ import static jtool.code.CS.ZL_MAT;
  */
 @SuppressWarnings("DuplicatedCode")
 public class MathEX {
-    
-    public final static double PI = Math.PI;
-    public final static double E = Math.E;
-    public final static IComplexDouble i1 = new IComplexDouble() {
-        @Override public double real() {return 0.0;}
-        @Override public double imag() {return 1.0;}
-        /** print */
-        @Override public String toString() {return "i";}
-    };
     
     @ApiStatus.Obsolete
     @SuppressWarnings("UnusedReturnValue")
@@ -734,7 +720,7 @@ public class MathEX {
             for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
-            rFront /= 4*PI;
+            rFront /= 4* UT.PI;
             rFront = Fast.sqrt(rFront);
             // 计算连带 Legendre 多项式部分
             rFront *= legendre_(aL, tAbsM, Fast.cos(aTheta));
@@ -757,7 +743,7 @@ public class MathEX {
             for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
-            rFront /= 4*PI;
+            rFront /= 4* UT.PI;
             rFront = Fast.sqrtQuick(rFront);
             // 计算连带 Legendre 多项式部分
             rFront *= legendreQuick_(aL, tAbsM, Fast.cosQuick(aTheta));
@@ -1356,207 +1342,5 @@ public class MathEX {
                 out = tOut;
             }
         }
-    }
-    
-    
-    /// operations of REAL vectors and matrices like matlab or numpy usage
-    /** 这里再次使用独立的实现，保证效率的同时可以方便的复制过来实现，并且已有实现重构时不会受到影响 */
-    @VisibleForTesting
-    public static class Opt {
-        public final static double PI = FastMath.PI, pi = PI;
-        public final static double E = FastMath.E, e = E;
-        public final static IComplexDouble i1 = MathEX.i1, j1 = i1, i = i1, j = j1;
-        public final static double NaN = Double.NaN, nan = NaN;
-        public final static double Inf = Double.POSITIVE_INFINITY, inf = Inf;
-        
-        
-        public static double sqrt(double aValue) {return FastMath.sqrt(aValue);}
-        public static double cbrt(double aValue) {return FastMath.cbrt(aValue);}
-        public static double hypot(double aX, double aY) {return FastMath.hypot(aX, aY);}
-        public static double hypot(double aX, double aY, double aZ) {return FastMath.hypot(aX, aY, aZ);}
-        
-        public static double exp(double aValue) {return FastMath.exp(aValue);}
-        public static double log(double aValue) {return FastMath.log(aValue);}
-        public static double log10(double aValue) {return FastMath.log10(aValue);}
-        
-        public static double pow(double aValue, double aPower) {return FastMath.pow(aValue, aPower);}
-        public static double powFast(double aValue, int aPower) {return FastMath.powFast(aValue, aPower);}
-        public static double pow2(double aValue) {return aValue*aValue;}
-        public static double pow3(double aValue) {return aValue*aValue*aValue;}
-        
-        public static double sin(double aValue) {return FastMath.sin(aValue);}
-        public static double cos(double aValue) {return FastMath.cos(aValue);}
-        public static double tan(double aValue) {return FastMath.tan(aValue);}
-        
-        public static double asin(double aValue) {return FastMath.asin(aValue);}
-        public static double acos(double aValue) {return FastMath.acos(aValue);}
-        public static double atan(double aValue) {return FastMath.atan(aValue);}
-        public static double atan2(double aY, double aX) {return FastMath.atan2(aY, aX);}
-        
-        public static double sinh(double aValue) {return FastMath.sinh(aValue);}
-        public static double cosh(double aValue) {return FastMath.cosh(aValue);}
-        public static double tanh(double aValue) {return FastMath.tanh(aValue);}
-        
-        public static double asinh(double aValue) {return FastMath.asinh(aValue);}
-        public static double acosh(double aValue) {return FastMath.acosh(aValue);}
-        public static double atanh(double aValue) {return FastMath.atanh(aValue);}
-        
-        public static double floor(double aValue) {return FastMath.floor(aValue);}
-        public static double ceil(double aValue) {return FastMath.ceil(aValue);}
-        public static long round(double aValue) {return FastMath.round(aValue);}
-        
-        public static double toRange(double aMin, double aMax, double aValue) {return FastMath.toRange(aMin, aMax, aValue);}
-        public static int toRange(int aMin, int aMax, int aValue) {return FastMath.toRange(aMin, aMax, aValue);}
-        public static long toRange(long aMin, long aMax, long aValue) {return FastMath.toRange(aMin, aMax, aValue);}
-        
-        public static double abs(double aValue) {return Math.abs(aValue);}
-        public static double min(double aLHS, double aRHS) {return Math.min(aLHS, aRHS);}
-        public static double max(double aLHS, double aRHS) {return Math.max(aLHS, aRHS);}
-        public static double random() {return RANDOM.nextDouble();}
-        
-        
-        /// vectors
-        public static IVector sqrt(IVector aVec) {return aVec.operation().map(Opt::sqrt);}
-        public static IVector cbrt(IVector aVec) {return aVec.operation().map(Opt::cbrt);}
-        public static IVector hypot(IVector aX, final double aY) {return aX.operation().map(x -> hypot(x, aY));}
-        public static IVector hypot(final double aX, IVector aY) {return aY.operation().map(y -> hypot(aX, y));}
-        public static IVector hypot(IVector aX, IVector aY) {return aX.operation().operate(aY, Opt::hypot);}
-        public static IVector hypot(IVector aX, final double aY, final double aZ) {return aX.operation().map(x -> hypot(x, aY, aZ));}
-        public static IVector hypot(final double aX, IVector aY, final double aZ) {return aY.operation().map(y -> hypot(aX, y, aZ));}
-        public static IVector hypot(final double aX, final double aY, IVector aZ) {return aZ.operation().map(z -> hypot(aX, aY, z));}
-        public static IVector hypot(IVector aX, IVector aY, final double aZ) {return aX.operation().operate(aY, (x, y) -> hypot(x, y, aZ));}
-        public static IVector hypot(IVector aX, final double aY, IVector aZ) {return aX.operation().operate(aZ, (x, z) -> hypot(x, aY, z));}
-        public static IVector hypot(final double aX, IVector aY, IVector aZ) {return aY.operation().operate(aZ, (y, z) -> hypot(aX, y, z));}
-        /** IVector 不支持三元运算，这里不再考虑效率问题直接这样实现 */
-        public static IVector hypot(IVector aX, IVector aY, IVector aZ) {return Vectors.from(aX.size(), i -> hypot(aX.get(i), aY.get(i), aZ.get(i)));}
-        
-        public static IVector exp(IVector aVec) {return aVec.operation().map(Opt::exp);}
-        public static IVector log(IVector aVec) {return aVec.operation().map(Opt::log);}
-        public static IVector log10(IVector aVec) {return aVec.operation().map(Opt::log10);}
-        
-        public static IVector pow(IVector aVec, final double aPower) {return aVec.operation().map(v -> pow(v, aPower));}
-        public static IVector powFast(IVector aVec, final int aPower) {return aVec.operation().map(v -> powFast(v, aPower));}
-        public static IVector pow2(IVector aVec) {return aVec.operation().map(v -> v*v);}
-        public static IVector pow3(IVector aVec) {return aVec.operation().map(v -> v*v*v);}
-        
-        public static IVector sin(IVector aVec) {return aVec.operation().map(Opt::sin);}
-        public static IVector cos(IVector aVec) {return aVec.operation().map(Opt::cos);}
-        public static IVector tan(IVector aVec) {return aVec.operation().map(Opt::tan);}
-        
-        public static IVector asin(IVector aVec) {return aVec.operation().map(Opt::asin);}
-        public static IVector acos(IVector aVec) {return aVec.operation().map(Opt::acos);}
-        public static IVector atan(IVector aVec) {return aVec.operation().map(Opt::atan);}
-        public static IVector atan2(IVector aY, final double aX) {return aY.operation().map(y -> atan2(y, aX));}
-        public static IVector atan2(final double aY, IVector aX) {return aX.operation().map(x -> atan2(aY, x));}
-        public static IVector atan2(IVector aY, IVector aX) {return aY.operation().operate(aX, Opt::atan2);}
-        
-        public static IVector sinh(IVector aVec) {return aVec.operation().map(Opt::sinh);}
-        public static IVector cosh(IVector aVec) {return aVec.operation().map(Opt::cosh);}
-        public static IVector tanh(IVector aVec) {return aVec.operation().map(Opt::tanh);}
-        
-        public static IVector asinh(IVector aVec) {return aVec.operation().map(Opt::asinh);}
-        public static IVector acosh(IVector aVec) {return aVec.operation().map(Opt::acosh);}
-        public static IVector atanh(IVector aVec) {return aVec.operation().map(Opt::atanh);}
-        
-        public static IVector floor(IVector aVec) {return aVec.operation().map(Opt::floor);}
-        public static IVector ceil(IVector aVec) {return aVec.operation().map(Opt::ceil);}
-        public static IVector round(IVector aVec) {return aVec.operation().map(Opt::round);}
-        
-        public static IVector toRange(double aMin, double aMax, IVector aVec) {return aVec.operation().map(v -> toRange(aMin, aMax, v));}
-        
-        public static IVector abs(IVector aVec) {return aVec.operation().map(Opt::abs);}
-        public static double sum (IVector aVec) {return aVec.sum();}
-        public static double mean(IVector aVec) {return aVec.mean();}
-        public static double prod(IVector aVec) {return aVec.prod();}
-        public static double min (IVector aVec) {return aVec.min();}
-        public static double max (IVector aVec) {return aVec.max();}
-        public static IVector cumsum (IVector aVec) {return aVec.operation().cumsum();}
-        public static IVector cummean(IVector aVec) {return aVec.operation().cummean();}
-        public static IVector cumprod(IVector aVec) {return aVec.operation().cumprod();}
-        public static IVector cummin (IVector aVec) {return aVec.operation().cummin();}
-        public static IVector cummax (IVector aVec) {return aVec.operation().cummax();}
-        
-        public static double dot(IVector aVec) {return aVec.operation().dot();}
-        public static double dot(IVector aLHS, IVector aRHS) {return aLHS.operation().dot(aRHS);}
-        public static double norm(IVector aVec) {return aVec.operation().norm();}
-        
-        public static IVector zeros(int aSize) {return Vectors.zeros(aSize);}
-        public static IVector ones(int aSize) {return Vectors.ones(aSize);}
-        public static IVector NaN(int aSize) {return Vectors.NaN(aSize);}
-        public static IVector nan(int aSize) {return NaN(aSize);}
-        public static IVector random(int aSize) {IVector rVec = zeros(aSize); rVec.assign(Opt::random); return rVec;}
-        public static IVector linsequence(double aStart, double aStep, int aN) {return Vectors.linsequence(aStart, aStep, aN);}
-        public static IVector linspace(double aStart, double aEnd, int aN) {return Vectors.linspace(aStart, aEnd, aN);}
-        public static IVector logsequence(double aStart, double aStep, int aN) {return Vectors.logsequence(aStart, aStep, aN);}
-        public static IVector logspace(double aStart, double aEnd, int aN) {return Vectors.logspace(aStart, aEnd, aN);}
-        
-        
-        /// matrices
-        public static IMatrix sqrt(IMatrix aMat) {return aMat.operation().map(Opt::sqrt);}
-        public static IMatrix cbrt(IMatrix aVec) {return aVec.operation().map(Opt::cbrt);}
-        public static IMatrix hypot(IMatrix aX, final double aY) {return aX.operation().map(x -> hypot(x, aY));}
-        public static IMatrix hypot(final double aX, IMatrix aY) {return aY.operation().map(y -> hypot(aX, y));}
-        public static IMatrix hypot(IMatrix aX, IMatrix aY) {return aX.operation().operate(aY, Opt::hypot);}
-        public static IMatrix hypot(IMatrix aX, final double aY, final double aZ) {return aX.operation().map(x -> hypot(x, aY, aZ));}
-        public static IMatrix hypot(final double aX, IMatrix aY, final double aZ) {return aY.operation().map(y -> hypot(aX, y, aZ));}
-        public static IMatrix hypot(final double aX, final double aY, IMatrix aZ) {return aZ.operation().map(z -> hypot(aX, aY, z));}
-        public static IMatrix hypot(IMatrix aX, IMatrix aY, final double aZ) {return aX.operation().operate(aY, (x, y) -> hypot(x, y, aZ));}
-        public static IMatrix hypot(IMatrix aX, final double aY, IMatrix aZ) {return aX.operation().operate(aZ, (x, z) -> hypot(x, aY, z));}
-        public static IMatrix hypot(final double aX, IMatrix aY, IMatrix aZ) {return aY.operation().operate(aZ, (y, z) -> hypot(aX, y, z));}
-        /** IMatrix 不支持三元运算，这里不再考虑效率问题直接这样实现 */
-        public static IMatrix hypot(IMatrix aX, IMatrix aY, IMatrix aZ) {return Matrices.from(aX.rowNumber(), aX.columnNumber(), (i, j) -> hypot(aX.get(i, j), aY.get(i, j), aZ.get(i, j)));}
-        
-        public static IMatrix exp(IMatrix aMat) {return aMat.operation().map(Opt::exp);}
-        public static IMatrix log(IMatrix aMat) {return aMat.operation().map(Opt::log);}
-        public static IMatrix log10(IMatrix aMat) {return aMat.operation().map(Opt::log10);}
-        
-        public static IMatrix pow(IMatrix aMat, final double aPower) {return aMat.operation().map(v -> pow(v, aPower));}
-        public static IMatrix powFast(IMatrix aMat, final int aPower) {return aMat.operation().map(v -> powFast(v, aPower));}
-        public static IMatrix pow2(IMatrix aMat) {return aMat.operation().map(v -> v*v);}
-        public static IMatrix pow3(IMatrix aMat) {return aMat.operation().map(v -> v*v*v);}
-        
-        public static IMatrix sin(IMatrix aMat) {return aMat.operation().map(Opt::sin);}
-        public static IMatrix cos(IMatrix aMat) {return aMat.operation().map(Opt::cos);}
-        public static IMatrix tan(IMatrix aMat) {return aMat.operation().map(Opt::tan);}
-        
-        public static IMatrix asin(IMatrix aMat) {return aMat.operation().map(Opt::asin);}
-        public static IMatrix acos(IMatrix aMat) {return aMat.operation().map(Opt::acos);}
-        public static IMatrix atan(IMatrix aMat) {return aMat.operation().map(Opt::atan);}
-        public static IMatrix atan2(IMatrix aY, final double aX) {return aY.operation().map(y -> atan2(y, aX));}
-        public static IMatrix atan2(final double aY, IMatrix aX) {return aX.operation().map(x -> atan2(aY, x));}
-        public static IMatrix atan2(IMatrix aY, IMatrix aX) {return aY.operation().operate(aX, Opt::atan2);}
-        
-        public static IMatrix sinh(IMatrix aMat) {return aMat.operation().map(Opt::sinh);}
-        public static IMatrix cosh(IMatrix aMat) {return aMat.operation().map(Opt::cosh);}
-        public static IMatrix tanh(IMatrix aMat) {return aMat.operation().map(Opt::tanh);}
-        
-        public static IMatrix asinh(IMatrix aMat) {return aMat.operation().map(Opt::asinh);}
-        public static IMatrix acosh(IMatrix aMat) {return aMat.operation().map(Opt::acosh);}
-        public static IMatrix atanh(IMatrix aMat) {return aMat.operation().map(Opt::atanh);}
-        
-        public static IMatrix floor(IMatrix aMat) {return aMat.operation().map(Opt::floor);}
-        public static IMatrix ceil(IMatrix aMat) {return aMat.operation().map(Opt::ceil);}
-        public static IMatrix round(IMatrix aMat) {return aMat.operation().map(Opt::round);}
-        
-        public static IMatrix toRange(double aMin, double aMax, IMatrix aMat) {return aMat.operation().map(v -> toRange(aMin, aMax, v));}
-        
-        public static IMatrix abs(IMatrix aMat) {return aMat.operation().map(Opt::abs);}
-        public static double sum (IMatrix aMat) {return aMat.operation().sum ();}
-        public static double mean(IMatrix aMat) {return aMat.operation().mean();}
-        public static double min (IMatrix aMat) {return aMat.operation().min ();}
-        public static double max (IMatrix aMat) {return aMat.operation().max ();}
-        public static IVector sumOfCols (IMatrix aMat) {return aMat.operation().sumOfCols ();}
-        public static IVector sumOfRows (IMatrix aMat) {return aMat.operation().sumOfRows ();}
-        public static IVector meanOfCols(IMatrix aMat) {return aMat.operation().meanOfCols();}
-        public static IVector meanOfRows(IMatrix aMat) {return aMat.operation().meanOfRows();}
-        
-        public static IMatrix zeros(int aRowNum, int ColNum) {return Matrices.zeros(aRowNum, ColNum);}
-        public static IMatrix ones(int aRowNum, int ColNum) {return Matrices.ones(aRowNum, ColNum);}
-        public static IMatrix NaN(int aRowNum, int ColNum) {return Matrices.NaN(aRowNum, ColNum);}
-        public static IMatrix nan(int aRowNum, int ColNum) {return NaN(aRowNum, ColNum);}
-        public static IMatrix random(int aRowNum, int ColNum) {IMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Opt::random); return rMat;}
-        public static IMatrix diag(IVector aVec) {return Matrices.diag(aVec);}
-        public static IVector diag(IMatrix aMat) {return aMat.slicer().diag();}
-        public static IVector diag(IMatrix aMat, int aShift) {return aMat.slicer().diag(aShift);}
     }
 }

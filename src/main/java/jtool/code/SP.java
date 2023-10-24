@@ -74,12 +74,12 @@ public class SP {
             tGroovysh.getImports().add(Tables.class.getName());
             tGroovysh.getImports().add(Vectors.class.getName());
             tGroovysh.getImports().add(Plotters.class.getName());
-            tGroovysh.getImports().add("static "+MathEX.Opt.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Timer.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Par.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Exec.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.IO.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Code.class.getName()+".*");
+            tGroovysh.getImports().add("static "+UT.Math.class.getName()+".*");
             tGroovysh.getImports().add("static "+CS.class.getName()+".*");
             tGroovysh.getImports().add("static "+CS.Exec.class.getName()+".*");
             tGroovysh.run(null);

@@ -17,7 +17,7 @@ import rareevent.NoiseClusterGrowth
 int N0 = 100;
 def biCal = new NoiseClusterGrowth.ParameterCalculator();
 
-new StepJobManager('testFFS3c', 2)
+new StepJobManager('testFFS3c', 3)
 .init {println("0. 绘制 lambda 随时间变化曲线");}
 .doJob {
     def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 500, 40);
@@ -104,7 +104,7 @@ new StepJobManager('testFFS3c', 2)
 }
 .then {println("2. FFS 并绘制不同间距的结果");}
 .doJob {
-    def lambda = (20..200).step(5);
+    def lambda = (20..200).step(10);
     def k1 = Vectors.zeros(lambda.size());
     def k100 = Vectors.zeros(lambda.size());
     def k1000 = Vectors.zeros(lambda.size());
@@ -211,8 +211,8 @@ new StepJobManager('testFFS3c', 2)
 }
 .then {println("3. FFS 并绘制不同剪枝之间的结果");}
 .doJob {
-//    def lambda = [20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200];
-    def lambda = (20..200).step(5);
+//    def lambda = [20, 30, 40, 50, 60, 80, 100, 120, 140, 160, 180, 200];
+    def lambda = (20..200).step(10);
     def k3 = Vectors.zeros(lambda.size());
     def k5 = Vectors.zeros(lambda.size());
     def k8 = Vectors.zeros(lambda.size());

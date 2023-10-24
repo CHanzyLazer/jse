@@ -1,5 +1,6 @@
 package jtool.atom;
 
+import jtool.code.UT;
 import jtool.code.functional.IOperator1;
 import jtool.math.ComplexDouble;
 import jtool.math.function.FixBoundFunc1;
@@ -191,7 +192,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
         for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0* UT.PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -231,7 +232,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
         for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
         final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0* UT.PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -281,7 +282,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = dn[0];
         for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0* UT.PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -319,7 +320,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IFunc1 gr = dn[0];
         for (int i = 1; i < dn.length; ++i) gr.plus2this(dn[i]);
         final double rou = aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0* UT.PI*rou)));
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -374,10 +375,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 输出
         return Sq;
     }
-    public IFunc1 calSF(double aQMax, int aN, final double aRMax) {return calSF(aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF(double aQMax, int aN, final double aRMax) {return calSF(aQMax, aN, aRMax, 2.0* UT.PI/mUnitLen * 0.6);}
     public IFunc1 calSF(double aQMax, int aN                    ) {return calSF(aQMax, aN, mUnitLen*6);}
     public IFunc1 calSF(double aQMax                            ) {return calSF(aQMax, 160);}
-    public IFunc1 calSF(                                        ) {return calSF(2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF(                                        ) {return calSF(2.0* UT.PI/mUnitLen * 6.0);}
     
     
     /**
@@ -417,15 +418,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 输出
         return Sq;
     }
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calSF_AB(aAtomDataXYZ, 2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calSF_AB(aAtomDataXYZ, 2.0* UT.PI/mUnitLen * 6.0);}
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax) {return calSF_AB(aAtomDataXYZ, aQMax, 160);}
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN) {return calSF_AB(aAtomDataXYZ, aQMax, aN, mUnitLen*6);}
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax) {return calSF_AB(aAtomDataXYZ, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax) {return calSF_AB(aAtomDataXYZ, aQMax, aN, aRMax, 2.0* UT.PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, double aQMax, int aN, final double aRMax, double aQMin) {XYZ[] tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ); IFunc1 tOut = calSF_AB(tAtomDataXYZ, aAtomDataXYZ.size(), aQMax, aN, aRMax, aQMin); returnXYZArray_(tAtomDataXYZ); return tOut;}
-    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                                                ) {return calSF_AB(aMPC, 2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                                                ) {return calSF_AB(aMPC, 2.0* UT.PI/mUnitLen * 6.0);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax                                          ) {return calSF_AB(aMPC, aQMax, 160);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN                                  ) {return calSF_AB(aMPC, aQMax, aN, mUnitLen*6);}
-    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax              ) {return calSF_AB(aMPC, aQMax, aN, aRMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax              ) {return calSF_AB(aMPC, aQMax, aN, aRMax, 2.0* UT.PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC        , double aQMax, int aN, final double aRMax, double aQMin) {return calSF_AB(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aQMax, aN, aRMax, aQMin);}
     
     
@@ -446,14 +447,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Fast.sin(q*r) / q)));
-        Sq.multiply2this(4.0*PI*aRou);
+        Sq.multiply2this(4.0* UT.PI*aRou);
         Sq.plus2this(1.0);
         
         Sq.set_(0, 0.0);
         return Sq;
     }
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/aGr.operation().maxX()* 7.6, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0* UT.PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0* UT.PI/aGr.operation().maxX()* 7.6, 2.0* UT.PI/aGr.operation().maxX() * 0.5);}
     public static IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
     public        IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
     
@@ -473,14 +474,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN+1).setBound(0.0, 1.0);
         gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Fast.sin(q*r) / r)));
-        gr.multiply2this(1.0/(2.0*PI*PI*aRou));
+        gr.multiply2this(1.0/(2.0* UT.PI* UT.PI*aRou));
         gr.plus2this(1.0);
         
         gr.set_(0, 0.0);
         return gr;
     }
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, 2.0*PI/aSq.operation().maxX() * 7.6, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0* UT.PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, 2.0* UT.PI/aSq.operation().maxX() * 7.6, 2.0* UT.PI/aSq.operation().maxX() * 0.5);}
     public static IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
     public        IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
     
@@ -608,7 +609,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double dz = z - cXYZ.mZ;
                 double theta = Fast.acos(dz / dis);
                 double disXY = Fast.hypot(dx, dy);
-                double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0*PI - Fast.acos(dx / disXY));
+                double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0* UT.PI - Fast.acos(dx / disXY));
                 
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 IComplexVector Qlmj = null;
@@ -749,7 +750,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = Qlm[i].operation().dot();
             // 使用这个公式设置 Ql
-            Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            Ql.set_(i, Fast.sqrt(4.0* UT.PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -854,7 +855,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = qlm[i].operation().dot();
             // 使用这个公式设置 ql
-            ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            ql.set_(i, Fast.sqrt(4.0* UT.PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
