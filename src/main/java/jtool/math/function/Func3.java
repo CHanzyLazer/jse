@@ -109,10 +109,11 @@ public class Func3 {
     public Func3 copy() {return new Func3(mX0, mDx, mNx, mY0, mDy, mNy, mZ0, mDz, MathEX.Vec.copy(mData));}
     
     /** 获取结果 */
+    @SuppressWarnings("SuspiciousNameCombination")
     public double subs(double aX, double aY, double aZ) {
-        int tI = (int)Math.ceil((aX-mX0)/mDx);
-        int tJ = (int)Math.ceil((aY-mY0)/mDy);
-        int tK = (int)Math.ceil((aZ-mZ0)/mDz);
+        int tI = (int)MathEX.Code.ceil((aX-mX0)/mDx);
+        int tJ = (int)MathEX.Code.ceil((aY-mY0)/mDy);
+        int tK = (int)MathEX.Code.ceil((aZ-mZ0)/mDz);
         int tImm = tI-1, tJmm = tJ-1, tKmm = tK-1;
         
         double tX1 = mX0 + tImm*mDx;
@@ -143,10 +144,11 @@ public class Func3 {
     }
     
     /** 提供原生的 PBC 支持 */
+    @SuppressWarnings("SuspiciousNameCombination")
     public double subsPBC(double aX, double aY, double aZ) {
-        int tI = (int)Math.ceil((aX-mX0)/mDx);
-        int tJ = (int)Math.ceil((aY-mY0)/mDy);
-        int tK = (int)Math.ceil((aZ-mZ0)/mDz);
+        int tI = (int)MathEX.Code.ceil((aX-mX0)/mDx);
+        int tJ = (int)MathEX.Code.ceil((aY-mY0)/mDy);
+        int tK = (int)MathEX.Code.ceil((aZ-mZ0)/mDz);
         int tImm = tI-1, tJmm = tJ-1, tKmm = tK-1;
         
         double tX1 = mX0 + tImm*mDx;

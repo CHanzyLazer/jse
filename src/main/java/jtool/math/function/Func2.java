@@ -87,8 +87,8 @@ public class Func2 {
     
     /** 获取结果 */
     public double subs(double aX, double aY) {
-        int tI = (int)Math.ceil((aX-mX0)/mDx);
-        int tJ = (int)Math.ceil((aY-mY0)/mDy);
+        int tI = (int)MathEX.Code.ceil((aX-mX0)/mDx);
+        int tJ = (int)MathEX.Code.ceil((aY-mY0)/mDy);
         int tImm = tI-1, tJmm = tJ-1;
         
         double tX1 = mX0 + tImm*mDx;
@@ -113,8 +113,8 @@ public class Func2 {
     
     /** 提供原生的 PBC 支持 */
     public double subsPBC(double aX, double aY) {
-        int tI = (int)Math.ceil((aX-mX0)/mDx);
-        int tJ = (int)Math.ceil((aY-mY0)/mDy);
+        int tI = (int)MathEX.Code.ceil((aX-mX0)/mDx);
+        int tJ = (int)MathEX.Code.ceil((aY-mY0)/mDy);
         int tImm = tI-1, tJmm = tJ-1;
         
         double tX1 = mX0 + tImm*mDx;

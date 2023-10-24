@@ -618,6 +618,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
                 for (int tM = 0; tM <= aL; ++tM) {
                     int tCol = tM+aL;
+                    // 虽然存在更快速的版本，并且也存在瓶颈，但精度损失较大，这里不使用
                     ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
                     Qlmi.add_(tCol, tY);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计

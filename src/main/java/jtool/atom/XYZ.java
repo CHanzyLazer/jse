@@ -101,7 +101,10 @@ public final class XYZ implements IXYZ {
         double tZ = mZ - aRHS.mZ;
         return tX*tX + tY*tY + tZ*tZ;
     }
+    @Override public double distance(IXYZ aRHS) {return MathEX.Fast.hypot(mX-aRHS.x(), mY-aRHS.y(), mZ-aRHS.z());}
+    @Override public double distance(double aX, double aY, double aZ) {return MathEX.Fast.hypot(mX-aX, mY-aY, mZ-aZ);}
     public double distance(XYZ aRHS) {return MathEX.Fast.hypot(mX-aRHS.mX, mY-aRHS.mY, mZ-aRHS.mZ);}
+    public double distanceQuick(XYZ aRHS) {return MathEX.Fast.sqrtQuick(distance2(aRHS));}
     
     @Override public double distanceMHT(IXYZ aRHS) {return Math.abs(mX-aRHS.x()) + Math.abs(mY-aRHS.y()) + Math.abs(mZ-aRHS.z());}
     @Override public double distanceMHT(double aX, double aY, double aZ) {

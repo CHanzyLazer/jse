@@ -69,7 +69,7 @@ public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShel
     
     /** 获取结果，支持按照索引查找和按照 x 的值来查找 */
     @Override public final double subs(double aX) {
-        int tI = (int)Math.ceil((aX-mX0)/mDx);
+        int tI = (int)MathEX.Code.ceil((aX-mX0)/mDx);
         int tImm = tI-1;
         
         double tX1 = getX(tImm);

@@ -85,6 +85,8 @@ public interface IXYZ {
     
     default double distance(IXYZ aRHS) {return MathEX.Fast.hypot(x()-aRHS.x(), y()-aRHS.y(), z()-aRHS.z());}
     default double distance(double aX, double aY, double aZ) {return MathEX.Fast.hypot(x()-aX, y()-aY, z()-aZ);}
+    default double distanceQuick(IXYZ aRHS) {return MathEX.Fast.sqrtQuick(distance2(aRHS));}
+    default double distanceQuick(double aX, double aY, double aZ) {return MathEX.Fast.sqrtQuick(distance2(aX, aY, aZ));}
     
     /**
      * MHT: ManHaTtan distance

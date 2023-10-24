@@ -741,6 +741,29 @@ public class MathEX {
             // 返回结果，实部虚部分开计算
             return new ComplexDouble(rFront*Fast.cos(aM*aPhi), rFront*Fast.sin(aM*aPhi));
         }
+        /** Quick version of sphericalHarmonics */
+        public static ComplexDouble sphericalHarmonicsQuick(int aL, int aM, double aTheta, double aPhi) {
+            // 判断输入是否合法
+            if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
+            if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
+            
+            return sphericalHarmonicsQuick_(aL, aM, aTheta, aPhi);
+        }
+        public static ComplexDouble sphericalHarmonicsQuick_(int aL, int aM, double aTheta, double aPhi) {
+            int tAbsM = Math.abs(aM);
+            
+            // 计算前系数（实数部分）
+            double rFront = 1.0;
+            for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
+            rFront = 1.0 / rFront;
+            rFront *= aL+aL+1;
+            rFront /= 4*PI;
+            rFront = Fast.sqrtQuick(rFront);
+            // 计算连带 Legendre 多项式部分
+            rFront *= legendreQuick_(aL, tAbsM, Fast.cosQuick(aTheta));
+            // 返回结果，实部虚部分开计算
+            return new ComplexDouble(rFront*Fast.cosQuick(aM*aPhi), rFront*Fast.sinQuick(aM*aPhi));
+        }
         
         /**
          * 输出连带 Legendre 多项式函数，定义同 matlab 的 legendre
@@ -761,7 +784,7 @@ public class MathEX {
             int tGreater = aL - aM;
             if (tGreater == 0) {
                 if (aM == 0) return 1.0;
-                double tPmm = Fast.pow(1.0 - aX*aX, aM*0.5);
+                double tPmm = Fast.sqrt(Fast.powFast(1.0 - aX*aX, aM));
                 if ((aM&1)==1) tPmm = -tPmm;
                 for (int i = 3, tEnd = aM+aM-1; i <= tEnd; i+=2) tPmm *= i;
                 return tPmm;
@@ -770,6 +793,30 @@ public class MathEX {
                 return (aL+aL-1)*aX*legendre_(aL-1, aM, aX);
             } else {
                 return ((aL+aL-1)*aX*legendre_(aL-1, aM, aX) - (aL+aM-1)*legendre_(aL-2, aM, aX)) / (double)tGreater;
+            }
+        }
+        /** Quick version of legendre */
+        public static double legendreQuick(int aL, int aM, double aX) {
+            // 判断输入是否合法
+            if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
+            if (aM < 0 || aM > aL) throw new IllegalArgumentException("Input m MUST be in range 0 ~ l, input: "+aM);
+            
+            return legendreQuick_(aL, aM, aX);
+        }
+        public static double legendreQuick_(int aL, int aM, double aX) {
+            // 直接采用递推关系递归计算
+            int tGreater = aL - aM;
+            if (tGreater == 0) {
+                if (aM == 0) return 1.0;
+                double tPmm = Fast.sqrtQuick(Fast.powFast(1.0 - aX*aX, aM));
+                if ((aM&1)==1) tPmm = -tPmm;
+                for (int i = 3, tEnd = aM+aM-1; i <= tEnd; i+=2) tPmm *= i;
+                return tPmm;
+            } else
+            if (tGreater == 1) {
+                return (aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX);
+            } else {
+                return ((aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX) - (aL+aM-1)*legendreQuick_(aL-2, aM, aX)) / (double)tGreater;
             }
         }
         
@@ -1112,6 +1159,11 @@ public class MathEX {
         public static double asinh(double aValue) {return FastMath.asinh(aValue);}
         public static double acosh(double aValue) {return FastMath.acosh(aValue);}
         public static double atanh(double aValue) {return FastMath.atanh(aValue);}
+        
+        public static double powQuick(double aValue, double aPower) {return FastMath.powQuick(aValue, aPower);}
+        public static double sqrtQuick(double aValue) {return FastMath.sqrtQuick(aValue);}
+        public static double sinQuick(double aValue) {return FastMath.sinQuick(aValue);}
+        public static double cosQuick(double aValue) {return FastMath.cosQuick(aValue);}
     }
     
     
@@ -1284,7 +1336,7 @@ public class MathEX {
             int out = 1;
             while (out < aNum) {
                 tValue *= aRoot;
-                out = (int) Math.ceil(tValue);
+                out = (int) Code.ceil(tValue);
             }
             return out;
         }
@@ -1299,7 +1351,7 @@ public class MathEX {
             int out = 1;
             while (true) {
                 tValue *= aRoot;
-                int tOut = (int) Math.ceil(tValue);
+                int tOut = (int) Code.ceil(tValue);
                 if (tOut > aNum) return out;
                 out = tOut;
             }
