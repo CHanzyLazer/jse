@@ -17,10 +17,10 @@ import rareevent.NoiseClusterGrowth
 int N0 = 100;
 def biCal = new NoiseClusterGrowth.ParameterCalculator();
 
-new StepJobManager('testFFS3c', 3)
+new StepJobManager('testFFS3c', 2)
 .init {println("0. 绘制 lambda 随时间变化曲线");}
 .doJob {
-    def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 500, 40);
+    def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 500, 40);
     
     def fullPath = new BufferedFullPathGenerator<>(biPathGen, biCal);
     def pi = fullPath.fullPathInit();
@@ -59,7 +59,7 @@ new StepJobManager('testFFS3c', 3)
     def kNoise = Vectors.zeros(lambda.size());
     def kRef = Vectors.zeros(lambda.size());
     
-    def biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00050, 0.00050, 0.50, -0.10);
+    def biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00045, 0.00050, 0.50, -0.10);
     def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -75,7 +75,7 @@ new StepJobManager('testFFS3c', 3)
     UT.Timer.toc("noise, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00050, 0.00050, 0.10, -0.10);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00045, 0.00050, 0.10, -0.10);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -111,7 +111,7 @@ new StepJobManager('testFFS3c', 3)
     def k10000 = Vectors.zeros(lambda.size());
     def kRef = Vectors.zeros(lambda.size());
     
-    def biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00050, 0.00050, 0.50, -0.10);
+    def biPathGen = new NoiseClusterGrowth.PathGenerator(100, 0.00045, 0.00050, 0.50, -0.10);
     def FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(5).setMaxPathNum(N0*100000);
     UT.Timer.tic();
     FFS.run();
@@ -127,7 +127,7 @@ new StepJobManager('testFFS3c', 3)
     UT.Timer.toc("1, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 100);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 100);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(5).setMaxPathNum(N0*100000);
     UT.Timer.tic();
     FFS.run();
@@ -143,7 +143,7 @@ new StepJobManager('testFFS3c', 3)
     UT.Timer.toc("100, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 1000);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 1000);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(5).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -159,7 +159,7 @@ new StepJobManager('testFFS3c', 3)
     UT.Timer.toc("1000, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 10000);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 10000);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(5).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -176,7 +176,7 @@ new StepJobManager('testFFS3c', 3)
     FFS.shutdown();
     
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(10, 0.00050, 0.00050, 0.10, -0.10);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(100, 0.00045, 0.00050, 0.10, -0.10);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, 10, lambda, N0).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();

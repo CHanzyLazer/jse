@@ -89,10 +89,10 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
      * @param aInDataPath 模拟作为输入的 data 文件路径
      * @param aOutDataPath 输出的 data 文件路径
      * @param aTemperature 熔融温度，K
-     * @param aTimestep 模拟的时间步长，默认为 0.002
      * @param aRunStep 模拟步骤数，默认为 100000
+     * @param aTimestep 模拟的时间步长，默认为 0.002
      */
-    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature, double aTimestep, int aRunStep) {
+    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature, int aRunStep, double aTimestep) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         // 构造输入文件
@@ -111,27 +111,87 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         // 这里失败直接报错
         if (tExitValue != 0) throw new RuntimeException("LAMMPS run Failed, Exit Value: "+tExitValue);
     }
-    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature, double aTimestep) {runMelt(aInDataPath, aOutDataPath, aTemperature, aTimestep, 100000);}
-    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature) {runMelt(aInDataPath, aOutDataPath, aTemperature, 0.002);}
+    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature, int aRunStep) {runMelt(aInDataPath, aOutDataPath, aTemperature, aRunStep, 0.002);}
+    public void runMelt(String aInDataPath, String aOutDataPath, double aTemperature) {runMelt(aInDataPath, aOutDataPath, aTemperature, 100000);}
     
-    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature, double aTimestep, int aRunStep) throws IOException {
+    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature, int aRunStep, double aTimestep) throws IOException {
         // 由于可能存在外部并行，data 需要一个独立的名称
         String tInDataPath = mWorkingDir+"data@"+UT.Code.randID();
         aLmpdat.write(tInDataPath);
-        runMelt(tInDataPath, aOutDataPath, aTemperature, aTimestep, aRunStep);
+        runMelt(tInDataPath, aOutDataPath, aTemperature, aRunStep, aTimestep);
     }
-    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature, double aTimestep) throws IOException {runMelt(aLmpdat, aOutDataPath, aTemperature, aTimestep, 100000);}
-    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature) throws IOException {runMelt(aLmpdat, aOutDataPath, aTemperature, 0.002);}
+    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature, int aRunStep) throws IOException {runMelt(aLmpdat, aOutDataPath, aTemperature, aRunStep, 0.002);}
+    public void runMelt(Lmpdat aLmpdat, String aOutDataPath, double aTemperature) throws IOException {runMelt(aLmpdat, aOutDataPath, aTemperature, 100000);}
     
-    public void runMelt(IAtomData aAtomData, IVector                      aMasses, String aOutDataPath, double aTemperature, double aTimestep, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep, aRunStep);}
-    public void runMelt(IAtomData aAtomData, Collection<? extends Number> aMasses, String aOutDataPath, double aTemperature, double aTimestep, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep, aRunStep);}
-    public void runMelt(IAtomData aAtomData, double[]                     aMasses, String aOutDataPath, double aTemperature, double aTimestep, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep, aRunStep);}
-    public void runMelt(IAtomData aAtomData, IVector                      aMasses, String aOutDataPath, double aTemperature, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep);}
-    public void runMelt(IAtomData aAtomData, Collection<? extends Number> aMasses, String aOutDataPath, double aTemperature, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep);}
-    public void runMelt(IAtomData aAtomData, double[]                     aMasses, String aOutDataPath, double aTemperature, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aTimestep);}
+    public void runMelt(IAtomData aAtomData, IVector                      aMasses, String aOutDataPath, double aTemperature, int aRunStep, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep, aTimestep);}
+    public void runMelt(IAtomData aAtomData, Collection<? extends Number> aMasses, String aOutDataPath, double aTemperature, int aRunStep, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep, aTimestep);}
+    public void runMelt(IAtomData aAtomData, double[]                     aMasses, String aOutDataPath, double aTemperature, int aRunStep, double aTimestep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep, aTimestep);}
+    public void runMelt(IAtomData aAtomData, IVector                      aMasses, String aOutDataPath, double aTemperature, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep);}
+    public void runMelt(IAtomData aAtomData, Collection<? extends Number> aMasses, String aOutDataPath, double aTemperature, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep);}
+    public void runMelt(IAtomData aAtomData, double[]                     aMasses, String aOutDataPath, double aTemperature, int aRunStep) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature, aRunStep);}
     public void runMelt(IAtomData aAtomData, IVector                      aMasses, String aOutDataPath, double aTemperature) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature);}
     public void runMelt(IAtomData aAtomData, Collection<? extends Number> aMasses, String aOutDataPath, double aTemperature) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature);}
     public void runMelt(IAtomData aAtomData, double[]                     aMasses, String aOutDataPath, double aTemperature) throws IOException {runMelt(Lmpdat.fromAtomData(aAtomData, aMasses), aOutDataPath, aTemperature);}
+    
+    /**
+     * 将输入的原子数据在给定温度下进行熔融操作，将每步结构都输出到 aDumpPath
+     * <p>
+     * 会忽略速度信息
+     * @author liqa
+     * @param aInDataPath 模拟作为输入的 data 文件路径
+     * @param aDumpPath 输出的 dump 文件路径
+     * @param aTemperature 熔融温度，K
+     * @param aRunStep 模拟步骤数，默认为 100000
+     * @param aDumpStep 模拟每步结构输出的间隔数，默认为 1000，和 thermo 间隔同步
+     * @param aTimestep 模拟的时间步长，默认为 0.002
+     */
+    public void runMeltDump(String aInDataPath, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep, double aTimestep) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 构造输入文件
+        LmpIn rLmpIn = LmpIn.DATA2DUMP_MELT_NPT_Cu();
+        rLmpIn.put("vT", aTemperature);
+        rLmpIn.put("vTimestep", aTimestep);
+        rLmpIn.put("vRunStep", aRunStep);
+        rLmpIn.put("vThermoStep", aDumpStep);
+        rLmpIn.put("vDumpStep", aDumpStep);
+        rLmpIn.put("pair_style", mPairStyle);
+        rLmpIn.put("pair_coeff", mPairCoeff);
+        rLmpIn.put("vSeed", UT.Code.randSeed());
+        rLmpIn.put("vInDataPath", aInDataPath);
+        rLmpIn.put("vDumpPath", aDumpPath);
+        
+        // 运行 lammps 获取输出
+        int tExitValue = mLMP.run(rLmpIn);
+        // 这里失败直接报错
+        if (tExitValue != 0) throw new RuntimeException("LAMMPS run Failed, Exit Value: "+tExitValue);
+    }
+    public void runMeltDump(String aInDataPath, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep) {runMeltDump(aInDataPath, aDumpPath, aTemperature, aRunStep, aDumpStep, 0.002);}
+    public void runMeltDump(String aInDataPath, String aDumpPath, double aTemperature, int aRunStep) {runMeltDump(aInDataPath, aDumpPath, aTemperature, aRunStep, 1000);}
+    public void runMeltDump(String aInDataPath, String aDumpPath, double aTemperature) {runMeltDump(aInDataPath, aDumpPath, aTemperature, 100000);}
+    
+    public void runMeltDump(Lmpdat aLmpdat, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep, double aTimestep) throws IOException {
+        // 由于可能存在外部并行，data 需要一个独立的名称
+        String tInDataPath = mWorkingDir+"data@"+UT.Code.randID();
+        aLmpdat.write(tInDataPath);
+        runMeltDump(tInDataPath, aDumpPath, aTemperature, aRunStep, aDumpStep, aTimestep);
+    }
+    public void runMeltDump(Lmpdat aLmpdat, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep) throws IOException {runMeltDump(aLmpdat, aDumpPath, aTemperature, aRunStep, aDumpStep, 0.002);}
+    public void runMeltDump(Lmpdat aLmpdat, String aDumpPath, double aTemperature, int aRunStep) throws IOException {runMeltDump(aLmpdat, aDumpPath, aTemperature, aRunStep, 1000);}
+    public void runMeltDump(Lmpdat aLmpdat, String aDumpPath, double aTemperature) throws IOException {runMeltDump(aLmpdat, aDumpPath, aTemperature, 100000);}
+    
+    public void runMeltDump(IAtomData aAtomData, IVector                      aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep, double aTimestep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep, aTimestep);}
+    public void runMeltDump(IAtomData aAtomData, Collection<? extends Number> aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep, double aTimestep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep, aTimestep);}
+    public void runMeltDump(IAtomData aAtomData, double[]                     aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep, double aTimestep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep, aTimestep);}
+    public void runMeltDump(IAtomData aAtomData, IVector                      aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep);}
+    public void runMeltDump(IAtomData aAtomData, Collection<? extends Number> aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep);}
+    public void runMeltDump(IAtomData aAtomData, double[]                     aMasses, String aDumpPath, double aTemperature, int aRunStep, int aDumpStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep, aDumpStep);}
+    public void runMeltDump(IAtomData aAtomData, IVector                      aMasses, String aDumpPath, double aTemperature, int aRunStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep);}
+    public void runMeltDump(IAtomData aAtomData, Collection<? extends Number> aMasses, String aDumpPath, double aTemperature, int aRunStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep);}
+    public void runMeltDump(IAtomData aAtomData, double[]                     aMasses, String aDumpPath, double aTemperature, int aRunStep) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature, aRunStep);}
+    public void runMeltDump(IAtomData aAtomData, IVector                      aMasses, String aDumpPath, double aTemperature) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature);}
+    public void runMeltDump(IAtomData aAtomData, Collection<? extends Number> aMasses, String aDumpPath, double aTemperature) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature);}
+    public void runMeltDump(IAtomData aAtomData, double[]                     aMasses, String aDumpPath, double aTemperature) throws IOException {runMeltDump(Lmpdat.fromAtomData(aAtomData, aMasses), aDumpPath, aTemperature);}
     
     
     /** 内部使用的熔融操作，输出 restart 文件 */

@@ -1205,10 +1205,10 @@ public class UT {
          */
         @SuppressWarnings("unchecked")
         public static ILine[] plot(IAtomData aAtomData, Map<?, ?> aArgs) {
-            List<?> aTypes = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Types", "t");
-            List<?> aColors = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Colors", "c");
-            List<?> aSizes = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Sizes", "s");
-            String aAxis = String.valueOf(Code.getWithDefault(aArgs, "z", "Axis", "a"));
+            List<?> aTypes = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Types", "types", "t");
+            List<?> aColors = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Colors", "colors", "c");
+            List<?> aSizes = (List<?>)Code.getWithDefault(aArgs, ImmutableList.of(), "Sizes", "sizes", "s");
+            String aAxis = String.valueOf(Code.getWithDefault(aArgs, "z", "Axis", "axis", "a"));
             if (!aAxis.equals("x") && !aAxis.equals("y") && !aAxis.equals("z")) aAxis = "z";
             
             ILine[] rLines = new ILine[aAtomData.atomTypeNum()];

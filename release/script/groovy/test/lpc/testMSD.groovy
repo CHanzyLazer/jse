@@ -1,4 +1,4 @@
-package test.mfpc
+package test.lpc
 
 import jtool.atom.Structures
 import jtool.code.UT
@@ -33,14 +33,14 @@ if (genData) {
     
     UT.Timer.tic();
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr')) {
-        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS1dataPath, meltTemp, 0.002, 500000);
-        lpc.runMelt(FS1dataPath, FS1dataPath, 1000, 0.002, 500000 );
-        lpc.runMelt(FS1dataPath, FS1dataPath, 800 , 0.002, 5000000);
+        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS1dataPath, meltTemp, 500000);
+        lpc.runMelt(FS1dataPath, FS1dataPath, 1000, 500000 );
+        lpc.runMelt(FS1dataPath, FS1dataPath, 800 , 5000000);
     }
     try (def lpc = new LPC(new WSL(), "mpiexec -np ${lmpCores} ${lmpExe}", 'eam/fs', '* * lmp/.potential/Cu-Zr_4.eam.fs Cu Zr')) {
-        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS2dataPath, meltTemp, 0.002, 500000);
-        lpc.runMelt(FS2dataPath, FS2dataPath, 1000, 0.002, 500000 );
-        lpc.runMelt(FS2dataPath, FS2dataPath, 850 , 0.002, 5000000);
+        lpc.runMelt(Structures.FCC(cellSize, 10).opt().mapTypeRandom(Cu, Zr), [MASS.Cu, MASS.Zr], FS2dataPath, meltTemp, 500000);
+        lpc.runMelt(FS2dataPath, FS2dataPath, 1000, 500000 );
+        lpc.runMelt(FS2dataPath, FS2dataPath, 850 , 5000000);
     }
     UT.Timer.toc('genData');
 }

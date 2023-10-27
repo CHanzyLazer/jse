@@ -12,21 +12,21 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class NoiseClusterGrowth {
     static class Point {
-        final int value, valueNoise, time;
-        Point(int value, int valueNoise, int time) {this.value = value; this.valueNoise = valueNoise; this.time = time;}
+        final long value, valueNoise, time;
+        Point(long value, long valueNoise, long time) {this.value = value; this.valueNoise = valueNoise; this.time = time;}
         
         @Override String toString() {return value+valueNoise;}
     }
     
     
     static class PathGenerator implements IPathGenerator<Point> {
-        final int initValue;
+        final long initValue;
         final int pathLen;
         final double plusProb, minusProb;
         final double noiseProb, noiseScale;
         final int skipNum;
         final Random RNG = new Random();
-        PathGenerator(int pathLen, double plusProb, double minusProb, double noiseProb, double noiseScale, int skipNum=1, int initValue=0) {
+        PathGenerator(int pathLen, double plusProb, double minusProb, double noiseProb, double noiseScale, int skipNum=1, long initValue=0) {
             this.pathLen = pathLen;
             this.plusProb = plusProb;
             this.minusProb = minusProb;
@@ -42,7 +42,7 @@ class NoiseClusterGrowth {
             path.add(point);
             for (i in 1..<pathLen*skipNum) {
                 // 晶体直接增长
-                int value = point.value;
+                long value = point.value;
                 if (RNG.nextDouble() < plusProb) {
                     ++value;
                 } else
@@ -50,7 +50,7 @@ class NoiseClusterGrowth {
                     --value;
                 }
                 // 噪音变化
-                int valueNoise = point.valueNoise;
+                long valueNoise = point.valueNoise;
                 def rand = RNG.nextDouble();
                 double scale = MathEX.Fast.pow(Math.abs(valueNoise)+1, noiseScale);
                 boolean positive = valueNoise==0 ? RNG.nextBoolean() : valueNoise>0;
