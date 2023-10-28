@@ -431,19 +431,22 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 }
                 break;
             }
-            // 修剪，如果向前则有概率直接中断
+            // 修剪，如果向前则有概率直接中断，现在第二个过程的修剪概率存在一个上限
             if (mPruningProb > 0.0 && tPruningIndex >= 0 && tLambda <= mSurfaces.get_(tPruningIndex)) {
+                double tPruningProb = Math.min(mPruningProb, 1.0-getProb(tPruningIndex));
                 // 无论如何先减少 tPruningIndex
                 --tPruningIndex;
-                if (mRNG.nextDouble() < mPruningProb) {
-                    // 有 mPruningProb 中断
-                    synchronized (this) {
-                        mMi += tStart.multiple;
+                if (tPruningProb > 0.0) {
+                    if (mRNG.nextDouble() < tPruningProb) {
+                        // 有 mPruningProb 中断
+                        synchronized (this) {
+                            mMi += tStart.multiple;
+                        }
+                        break;
+                    } else {
+                        // 否则需要增加权重
+                        tPruningMul /= (1.0 - tPruningProb);
                     }
-                    break;
-                } else {
-                    // 否则需要增加权重
-                    tPruningMul /= (1.0 - mPruningProb);
                 }
             }
         }
@@ -471,6 +474,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, this::statA2Lambda0_);
             // 获取第一个过程的统计结果
             mK0 = mN0Eff / mTotTime0;
+            // 第一个过程会随机打乱得到的点
+            Collections.shuffle(mPointsOnLambda, mRNG);
             // 第一个过程完成（前提没有在运行过程中中断）
             if (!mFinished) {
                 mStepFinished = true;
@@ -510,7 +515,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 mMovedPoints = LogicalVector.zeros(oPointsOnLambda.size()+nThreads());
             }
             mMovedPoints.fill(false);
-            // 现在不再打乱顺序打乱顺序
+            // 现在不再打乱顺序
 //            Collections.shuffle(oPointsOnLambda, mRNG);
             
             // 初始化统计量
