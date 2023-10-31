@@ -2,7 +2,7 @@ package run
 
 import jtool.system.SRUN
 
-import static jtool.code.UT.Code.*
+import static jtool.code.UT.Par.*
 
 /** SLURM 在 node 中的任务再次创建任务的实例 */
 
