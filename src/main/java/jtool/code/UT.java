@@ -59,8 +59,10 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import static jtool.code.CS.*;
 import static jtool.code.CS.Exec.EXE;
@@ -739,7 +741,6 @@ public class UT {
         }
         private static void removeDir_(String aDir) throws IOException {
             String[] tFiles = UT.IO.list(aDir);
-            if (tFiles == null) return;
             for (String tName : tFiles) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
                 String tFileOrDir = aDir+tName;
@@ -761,12 +762,17 @@ public class UT {
         public static void      copy    (InputStream aSourceStream, String aTargetPath) throws IOException  {copy(aSourceStream, toAbsolutePath_(aTargetPath));}
         public static void      copy    (URL aSourceURL, String aTargetPath)            throws IOException  {copy(aSourceURL, toAbsolutePath_(aTargetPath));}
         public static void      move    (String aSourcePath, String aTargetPath)        throws IOException  {move(toAbsolutePath_(aSourcePath), toAbsolutePath_(aTargetPath));}
-        public static String[]  list    (String aDir)                                                       {return toFile(aDir).list();} // use the File.list not Files.list to get the simple result
         public static void      makeDir (Path aDir)                                     throws IOException  {Files.createDirectories(aDir);} // can mkdir nested
         public static void      copy    (Path aSourcePath, Path aTargetPath)            throws IOException  {validPath(aTargetPath); Files.copy(aSourcePath, aTargetPath, REPLACE_EXISTING);}
         public static void      copy    (InputStream aSourceStream, Path aTargetPath)   throws IOException  {validPath(aTargetPath); Files.copy(aSourceStream, aTargetPath, REPLACE_EXISTING);}
         public static void      copy    (URL aSourceURL, Path aTargetPath)              throws IOException  {try (InputStream tURLStream = aSourceURL.openStream()) {copy(tURLStream, aTargetPath);}}
         public static void      move    (Path aSourcePath, Path aTargetPath)            throws IOException  {validPath(aTargetPath); Files.move(aSourcePath, aTargetPath, REPLACE_EXISTING);}
+        /** use the {@link File#list} not {@link Files#list} to get the simple result */
+        public static String @NotNull[] list(String aDir) throws IOException {
+            String[] tList = toFile(aDir).list();
+            if (tList==null) throw new IOException("Fail to det list of \""+aDir+"\"");
+            return tList;
+        }
         
         /** output stuffs */
         public static PrintStream    toPrintStream (String aFilePath, OpenOption... aOptions)   throws IOException  {return new PrintStream(new BufferedOutputStream(toOutputStream(aFilePath, aOptions)), false, "UTF-8");}
@@ -813,6 +819,69 @@ public class UT {
                     }
                     tZipEntry = tZipInputStream.getNextEntry();
                 }
+            }
+        }
+        
+        /**
+         * compress directory to zip file
+         * @author liqa
+         */
+        public static void dir2zip(String aDir, String aZipFilePath, int aCompressLevel) throws IOException {
+            if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
+            try (ZipOutputStream tZipOutputStream = new ZipOutputStream(toOutputStream(aZipFilePath))) {
+                byte[] tBuffer = new byte[1024];
+                tZipOutputStream.setLevel(aCompressLevel);
+                for (String tName : list(aDir)) {
+                    if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
+                    String tPath = aDir+tName;
+                    if (isDir(tPath)) addDirToZip_("", tPath+"/", tName, tZipOutputStream, tBuffer);
+                    else addFileToZip_("", tPath, tName, tZipOutputStream, tBuffer);
+                }
+            }
+        }
+        public static void dir2zip(String aDir, String aZipFilePath) throws IOException {dir2zip(aDir, aZipFilePath, Deflater.DEFAULT_COMPRESSION);}
+        /**
+         * compress files/directories to zip file
+         * @author liqa
+         */
+        public static void files2zip(String[] aPaths, String aZipFilePath, int aCompressLevel) throws IOException {files2zip(AbstractCollections.from(aPaths), aZipFilePath, aCompressLevel);}
+        public static void files2zip(String[] aPaths, String aZipFilePath) throws IOException {files2zip(AbstractCollections.from(aPaths), aZipFilePath);}
+        /** Groovy stuff */
+        public static void files2zip(Iterable<? extends CharSequence> aPaths, String aZipFilePath, int aCompressLevel) throws IOException {
+            try (ZipOutputStream tZipOutputStream = new ZipOutputStream(toOutputStream(aZipFilePath))) {
+                byte[] tBuffer = new byte[1024];
+                tZipOutputStream.setLevel(aCompressLevel);
+                for (CharSequence tCS : aPaths) {
+                    String tPath = tCS.toString();
+                    File tFile = toFile(tPath);
+                    if (tFile.isDirectory()) {
+                        if (!tPath.isEmpty() && !tPath.endsWith("/") && !tPath.endsWith("\\")) tPath += "/";
+                        addDirToZip_("", tPath, tFile.getName(), tZipOutputStream, tBuffer);
+                    } else {
+                        addFileToZip_("", tPath, tFile.getName(), tZipOutputStream, tBuffer);
+                    }
+                }
+            }
+        }
+        public static void files2zip(Iterable<? extends CharSequence> aPaths, String aZipFilePath) throws IOException {files2zip(aPaths, aZipFilePath, Deflater.DEFAULT_COMPRESSION);}
+        
+        private static void addFileToZip_(String aZipDir, String aFilePath, String aFileName, ZipOutputStream aZipOutputStream, byte[] rBuffer) throws IOException {
+            try (InputStream tInputStream = toInputStream(aFilePath)) {
+                aZipOutputStream.putNextEntry(new ZipEntry(aZipDir+aFileName));
+                int length;
+                while ((length = tInputStream.read(rBuffer)) > 0) {
+                    aZipOutputStream.write(rBuffer, 0, length);
+                }
+                aZipOutputStream.closeEntry();
+            }
+        }
+        private static void addDirToZip_(String aZipDir, String aDir, String aDirName, ZipOutputStream aZipOutputStream, byte[] rBuffer) throws IOException {
+            String tZipDir = aZipDir+aDirName+"/";
+            for (String tName : list(aDir)) {
+                if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
+                String tPath = aDir+tName;
+                if (isDir(tPath)) addDirToZip_(tZipDir, tPath+"/", tName, aZipOutputStream, rBuffer);
+                else addFileToZip_(tZipDir, tPath, tName, aZipOutputStream, rBuffer);
             }
         }
         

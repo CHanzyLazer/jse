@@ -37,6 +37,11 @@ public abstract class AbstractTableSlicer implements ITableSlicer {
     @Override public final ITable get(List<Integer> aSelectedRows, String        aSelectedCol ) {return get(aSelectedRows, S2L(aSelectedCol ));}
     @Override public final ITable get(SliceType     aSelectedRows, String        aSelectedCol ) {return get(aSelectedRows, S2L(aSelectedCol ));}
     @Override public final ITable get(int           aSelectedRow , String        aSelectedCol ) {return get(aSelectedRow , S2L(aSelectedCol ));}
+    /** Groovy stuff */
+    @Override public final ITable get(int[]         aSelectedRows, Iterable<? extends CharSequence> aSelectedCols) {return get(aSelectedRows, S2L(aSelectedCols));}
+    @Override public final ITable get(List<Integer> aSelectedRows, Iterable<? extends CharSequence> aSelectedCols) {return get(aSelectedRows, S2L(aSelectedCols));}
+    @Override public final ITable get(SliceType     aSelectedRows, Iterable<? extends CharSequence> aSelectedCols) {return get(aSelectedRows, S2L(aSelectedCols));}
+    @Override public final ITable get(int           aSelectedRow , Iterable<? extends CharSequence> aSelectedCols) {return get(aSelectedRow , S2L(aSelectedCols));}
     
     final static String COL_MSG = "SelectedCols Must be a Filter or int[] or List<Integer> or String[] or ALL";
     final static String ROL_MSG = "SelectedRows Must be a Filter or int[] or List<Integer> or ALL";
@@ -53,10 +58,10 @@ public abstract class AbstractTableSlicer implements ITableSlicer {
     @Override public final ITable get(IIndexFilter  aSelectedRows, IFilter<String> aSelectedCols) {return get(NewCollections.filterInteger(thisRowNum_(), aSelectedRows), S2L(AbstractCollections.filter(thisHeads_(), aSelectedCols)));}
     
     private List<Integer> S2L(String[] aSelectedCols) {return S2L(Arrays.asList(aSelectedCols));}
-    private List<Integer> S2L(Iterable<String> aSelectedCols) {
+    private List<Integer> S2L(Iterable<? extends CharSequence> aSelectedCols) {
         List<Integer> rSelectedCols = new ArrayList<>();
-        for (String tHead : aSelectedCols) {
-            int tCol = head2col_(tHead);
+        for (CharSequence tHead : aSelectedCols) {
+            int tCol = head2col_(tHead.toString());
             if (tCol >= 0) rSelectedCols.add(tCol);
         }
         return rSelectedCols;

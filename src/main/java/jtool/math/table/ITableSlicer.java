@@ -42,6 +42,11 @@ public interface ITableSlicer {
     ITable get(List<Integer> aSelectedRows, String        aSelectedCol );
     ITable get(SliceType     aSelectedRows, String        aSelectedCol );
     ITable get(int           aSelectedRow , String        aSelectedCol );
+    /** Groovy stuff */
+    ITable get(int[]         aSelectedRows, Iterable<? extends CharSequence> aSelectedCols);
+    ITable get(List<Integer> aSelectedRows, Iterable<? extends CharSequence> aSelectedCols);
+    ITable get(SliceType     aSelectedRows, Iterable<? extends CharSequence> aSelectedCols);
+    ITable get(int           aSelectedRow , Iterable<? extends CharSequence> aSelectedCols);
     
     /** 支持过滤器输入，代替没有 {@code List<Boolean>，List<String>} 的缺陷 */
     ITable get(IIndexFilter  aSelectedRows, int[]           aSelectedCols);

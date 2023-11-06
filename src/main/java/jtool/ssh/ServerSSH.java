@@ -821,9 +821,8 @@ public final class ServerSSH implements IAutoShutdown {
             doDir(tLocalDir, mSSH.mRemoteWorkingDir + mDir);
             return null;
         }
-        private void doDir(String aLocalDir, String aRemoteDir) throws SftpException {
+        private void doDir(String aLocalDir, String aRemoteDir) throws IOException, SftpException {
             String[] tLocalFiles = UT.IO.list(aLocalDir);
-            if (tLocalFiles == null) return;
             initRemoteDir(aRemoteDir);
             for (String tName : tLocalFiles) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;

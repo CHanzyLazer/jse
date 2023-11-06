@@ -192,10 +192,10 @@ public class SP {
         static {
             // 手动加载 UT，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
             UT.IO.init();
+            // 在程序结束时关闭 CLASS_LOADER，最先添加来避免一些问题
+            Main.addGlobalAutoCloseable(Groovy::close);
             // 初始化 CLASS_LOADER
             initClassLoader_();
-            // 在程序结束时关闭 CLASS_LOADER
-            Main.addGlobalAutoCloseable(Groovy::close);
         }
         /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
         private synchronized static void initClassLoader_() {
@@ -271,6 +271,8 @@ public class SP {
         static {
             // 手动加载 UT，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
             UT.IO.init();
+            // 在 JVM 关闭时关闭 JEP_INTERP，最先添加来避免一些问题
+            Main.addGlobalAutoCloseable(Python::close);
             // 设置 Jep 非 java 库的路径，考虑到 WSL，windows 和 linux 使用不同的名称
             initJepLib_();
             // 配置 Jep，这里只能配置一次
@@ -282,8 +284,6 @@ public class SP {
                 .redirectStdErr(System.err));
             // 初始化 JEP_INTERP
             initInterpreter_();
-            // 在 JVM 关闭时关闭 JEP_INTERP
-            Main.addGlobalAutoCloseable(Python::close);
         }
         /** 初始化内部的 JEP_INTERP，主要用于减少重复代码 */
         private synchronized static void initInterpreter_() {JEP_INTERP = new SharedInterpreter();}
@@ -292,7 +292,8 @@ public class SP {
             // 如果不存在则需要重新通过源码编译
             if (!UT.IO.isFile(JEPLIB_PATH)) {
                 System.out.println("JEP INIT INFO: jep libraries not found. Reinstalling...");
-                installJep_();
+                try {installJep_();}
+                catch (Exception e) {throw new RuntimeException(e);}
             }
             // 设置库路径
             MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(JEPLIB_PATH));
@@ -362,27 +363,19 @@ public class SP {
         
         
         /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
-        private synchronized static void installJep_() {
+        private synchronized static void installJep_() throws Exception {
             // 首先获取源码路径，这里直接检测是否有 jep-4.1.1.zip
             String tJepZipPath = PYPKG_DIR+"jep-4.1.1.zip";
             // 如果没有 jep 包则直接下载，直接从 github 上下载保证结果稳定
             if (!UT.IO.isFile(tJepZipPath)) {
                 System.out.printf("JEP INIT INFO: No jep source code in %s, downloading...\n", PYPKG_DIR);
-                try {
-                    UT.IO.copy(new URL("https://github.com/ninia/jep/archive/v4.1.1.zip"), tJepZipPath);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                UT.IO.copy(new URL("https://github.com/ninia/jep/archive/v4.1.1.zip"), tJepZipPath);
                 System.out.println("JEP INIT INFO: jep source code downloading finished");
             }
             // 解压 jep 包到临时目录，如果已经存在则直接情况此目录
             String tWorkingDir = WORKING_DIR.replaceAll("%n", "jep-src");
-            try {
-                UT.IO.removeDir(tWorkingDir);
-                UT.IO.zip2dir(tJepZipPath, tWorkingDir);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            UT.IO.removeDir(tWorkingDir);
+            UT.IO.zip2dir(tJepZipPath, tWorkingDir);
             // 安装 jep 包，这里直接通过 setup.py 来安装
             System.out.println("JEP INIT INFO: Installing jep from source code...");
             // 首先获取源码路径，这里直接检测 jep 开头的文件夹
@@ -391,7 +384,7 @@ public class SP {
             for (String tName : tList) if (tName.contains("jep")) {
                 tJepDir = tName;
             }
-            if (tJepDir == null) throw new RuntimeException("JEP INIT ERROR: No Jep source code in "+tWorkingDir);
+            if (tJepDir == null) throw new Exception("JEP INIT ERROR: No Jep source code in "+tWorkingDir);
             tJepDir = tWorkingDir+tJepDir+"/";
             // 直接通过系统指令来编译 Jep 的库，关闭输出
             EXE.setNoSTDOutput().setNoERROutput();
@@ -404,7 +397,7 @@ public class SP {
             for (String tName : tList) if (tName.contains("lib")) {
                 tJepLibDir = tName;
             }
-            if (tJepLibDir == null) throw new RuntimeException("JEP BUILD ERROR: No Jep lib in "+tJepBuildDir);
+            if (tJepLibDir == null) throw new Exception("JEP BUILD ERROR: No Jep lib in "+tJepBuildDir);
             tJepLibDir = tJepBuildDir+tJepLibDir+"/jep/";
             // 获取 lib 文件夹下的 lib 名称
             tList = UT.IO.list(tJepLibDir);
@@ -412,26 +405,22 @@ public class SP {
             for (String tName : tList) if (tName.contains("jep") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib"))) {
                 tJepLibPath = tName;
             }
-            if (tJepLibPath == null) throw new RuntimeException("JEP BUILD ERROR: No Jep lib in "+tJepLibDir);
+            if (tJepLibPath == null) throw new Exception("JEP BUILD ERROR: No Jep lib in "+tJepLibDir);
             tJepLibPath = tJepLibDir+tJepLibPath;
-            try {
-                // 将 build 的输出拷贝到 lib 目录下
-                UT.IO.copy(tJepLibPath, JEPLIB_PATH);
-                // 顺便拷贝生成的 python 脚本
-                tList = UT.IO.list(tJepLibDir);
-                for (String tName : tList) if (tName.endsWith(".py")) {
-                    UT.IO.copy(tJepLibDir+tName, JEPLIB_DIR+tName);
-                }
-                // 完事后移除临时解压得到的源码
-                UT.IO.removeDir(tWorkingDir);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            // 将 build 的输出拷贝到 lib 目录下
+            UT.IO.copy(tJepLibPath, JEPLIB_PATH);
+            // 顺便拷贝生成的 python 脚本
+            tList = UT.IO.list(tJepLibDir);
+            for (String tName : tList) if (tName.endsWith(".py")) {
+                UT.IO.copy(tJepLibDir+tName, JEPLIB_DIR+tName);
             }
+            // 完事后移除临时解压得到的源码
+            UT.IO.removeDir(tWorkingDir);
             System.out.println("JEP INIT INFO: jep successfully installed.");
         }
         
         /** 一些内置的 python 库安装，主要用于内部使用 */
-        public synchronized static void installAse() {
+        public synchronized static void installAse() throws IOException {
             // 首先获取源码路径，这里直接检测是否是 ase-3.22.1 开头
             String[] tList = UT.IO.list(PYPKG_DIR);
             boolean tHasAsePkg = false;

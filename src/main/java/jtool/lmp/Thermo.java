@@ -58,7 +58,6 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             if (aPath.equals(".")) aPath = "";
             if (!aPath.isEmpty() && !aPath.endsWith("/") && !aPath.endsWith("\\")) aPath += "/";
             String[] tFiles = UT.IO.list(aPath);
-            if (tFiles == null) return this;
             for (String tName : tFiles) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
                 String tFileOrDir = aPath+tName;
@@ -119,7 +118,6 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
             if (aPath.equals(".")) aPath = "";
             if (!aPath.isEmpty() && !aPath.endsWith("/") && !aPath.endsWith("\\")) aPath += "/";
             String[] tFiles = UT.IO.list(aPath);
-            if (tFiles == null) return null;
             
             List<ITable> rThermo = new ArrayList<>();
             for (String tName : tFiles) {
