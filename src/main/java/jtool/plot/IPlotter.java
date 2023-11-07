@@ -174,6 +174,8 @@ public interface IPlotter {
     /** 设置绘制范围 */
     IPlotter xRange(double aMin, double aMax);
     IPlotter yRange(double aMin, double aMax);
+    @VisibleForTesting default IPlotter xrange(double aMin, double aMax) {return xRange(aMin, aMax);}
+    @VisibleForTesting default IPlotter yrange(double aMin, double aMax) {return yRange(aMin, aMax);}
     default IPlotter axis(double aMin, double aMax) {return axis(aMin, aMax, aMin, aMax);}
     default IPlotter axis(double aXMin, double aXMax, double aYMin, double aYMax) {return xRange(aXMin, aXMax).yRange(aYMin, aYMax);}
     @VisibleForTesting default IPlotter axis(double[] aAxis) {return axis(aAxis[0], aAxis[1], aAxis[2], aAxis[3]);}
@@ -181,6 +183,8 @@ public interface IPlotter {
     /** 设置 tick 间隔 */
     IPlotter xTick(double aTick);
     IPlotter yTick(double aTick);
+    @VisibleForTesting default IPlotter xtick(double aTick) {return xTick(aTick);}
+    @VisibleForTesting default IPlotter ytick(double aTick) {return yTick(aTick);}
     default IPlotter tick(double aTick) {return tick(aTick, aTick);}
     default IPlotter tick(double aXTick, double aYTick) {return xTick(aXTick).yTick(aYTick);}
     

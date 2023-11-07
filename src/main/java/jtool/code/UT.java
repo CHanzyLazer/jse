@@ -1280,16 +1280,27 @@ public class UT {
             String aAxis = String.valueOf(Code.getWithDefault(aArgs, "z", "Axis", "axis", "a"));
             if (!aAxis.equals("x") && !aAxis.equals("y") && !aAxis.equals("z")) aAxis = "z";
             
+            double tScale;
+            switch (aAxis) {
+            case "x": {tScale = 200.0/Math.max(aAtomData.box().y(), aAtomData.box().z()); break;}
+            case "y": {tScale = 200.0/Math.max(aAtomData.box().x(), aAtomData.box().z()); break;}
+            case "z": {tScale = 200.0/Math.max(aAtomData.box().x(), aAtomData.box().y()); break;}
+            default: throw new RuntimeException();
+            }
             ILine[] rLines = new ILine[aAtomData.atomTypeNum()];
             for (int i = 0; i < rLines.length; ++i) {
                 final int tType = i + 1;
                 Iterable<IAtom> tAtoms = AbstractCollections.filter(aAtomData.asList(), atom->atom.type()==tType);
+                Iterable<Double> aX, aY;
                 switch (aAxis) {
-                case "x": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::y), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
-                case "y": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
-                case "z": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::y), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
+                case "x": {aX = AbstractCollections.map(tAtoms, IAtom::y); aY = AbstractCollections.map(tAtoms, IAtom::z); break;}
+                case "y": {aX = AbstractCollections.map(tAtoms, IAtom::x); aY = AbstractCollections.map(tAtoms, IAtom::z); break;}
+                case "z": {aX = AbstractCollections.map(tAtoms, IAtom::x); aY = AbstractCollections.map(tAtoms, IAtom::y); break;}
+                default: throw new RuntimeException();
                 }
-                rLines[i].lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE);
+                double tSize = aSizes.size()>i ? ((Number)aSizes.get(i)).doubleValue() : 1.0;
+                PLT.plot(aX, aY).lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE).markerSize((tSize+0.4)*tScale).color(0).noLegend();
+                rLines[i] = PLT.plot(aX, aY, aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType).lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE).markerSize(tSize*tScale);
                 if (aColors.size() <= i) {
                     rLines[i].color(tType);
                 } else {
@@ -1307,7 +1318,6 @@ public class UT {
                         rLines[i].color(String.valueOf(tColor));
                     }
                 }
-                rLines[i].markerSize(aSizes.size()>i ? ((Number)aSizes.get(i)).doubleValue() : 10.0);
             }
             switch (aAxis) {
             case "x": {PLT.xLabel("y").yLabel("z").axis(0.0, aAtomData.box().y(), 0.0, aAtomData.box().z()); break;}
@@ -1318,8 +1328,16 @@ public class UT {
             PLT.show();
             return rLines;
         }
-        public static ILine[] plot(IAtomData aAtomData, String... aAtomTypes) {return plot(aAtomData, Maps.of("Types", AbstractCollections.from(aAtomTypes)));}
-        public static ILine[] plot(IAtomData aAtomData) {return plot(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).atomTypes() : ZL_STR);}
+        public static ILine[] plot(IAtomData aAtomData, final String... aAtomTypes) {
+            return plot(aAtomData, Maps.of(
+                "Types" , AbstractCollections.from(aAtomTypes),
+                "Colors", AbstractCollections.from(aAtomTypes.length, i -> COLOR.getOrDefault(aAtomTypes[i], Colors.COLOR(i+1))),
+                "Sizes" , AbstractCollections.map(aAtomTypes, type -> SIZE.getOrDefault(type, 1.0))
+                ));
+        }
+        public static ILine[] plot(IAtomData aAtomData) {
+            return plot(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).atomTypes() : ZL_STR);
+        }
         
         
         public static void xScaleLog() {PLT.xScaleLog();}
@@ -1335,9 +1353,18 @@ public class UT {
         
         public static void xRange(double aMin, double aMax) {PLT.xRange(aMin, aMax);}
         public static void yRange(double aMin, double aMax) {PLT.yRange(aMin, aMax);}
+        public static void xrange(double aMin, double aMax) {PLT.xrange(aMin, aMax);}
+        public static void yrange(double aMin, double aMax) {PLT.yrange(aMin, aMax);}
         public static void axis(double aMin, double aMax) {PLT.axis(aMin, aMax);}
         public static void axis(double aXMin, double aXMax, double aYMin, double aYMax) {PLT.axis(aXMin, aXMax, aYMin, aYMax);}
         public static void axis(double[] aAxis) {PLT.axis(aAxis);}
+        
+        public static void xTick(double aTick) {PLT.xTick(aTick);}
+        public static void yTick(double aTick) {PLT.yTick(aTick);}
+        public static void xtick(double aTick) {PLT.xtick(aTick);}
+        public static void ytick(double aTick) {PLT.ytick(aTick);}
+        public static void tick(double aTick) {PLT.tick(aTick);}
+        public static void tick(double aXTick, double aYTick) {PLT.tick(aXTick, aYTick);}
         
         public static void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {PLT.save(aFilePath, aWidth, aHeight);}
         public static void save(@Nullable String aFilePath) throws IOException {PLT.save(aFilePath);}

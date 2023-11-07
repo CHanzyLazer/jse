@@ -46,4 +46,8 @@ public interface ILine {
     default ILine markerType(String aMarkerType) {return markerType(toMarkerType(aMarkerType));}
     ILine markerType(MarkerType aMarkerType);
     ILine markerShape(Shape aMarkerShape);
+    
+    /** 是否显示 legend */
+    ILine noLegend();
+    ILine showLegend();
 }

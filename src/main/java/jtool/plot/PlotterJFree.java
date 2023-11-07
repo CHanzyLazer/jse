@@ -83,6 +83,9 @@ public final class PlotterJFree implements IPlotter {
             // Marker 大小变化时需要同步调整 Marker Stroke 的宽度
             mLineRender.setSeriesOutlineStroke(mID, getMarkerStroke(super.mMarkerType, aNewMarkerSize));
         }
+        
+        @Override public ILine noLegend() {mLineRender.setSeriesVisibleInLegend(mID, false); return this;}
+        @Override public ILine showLegend() {mLineRender.setSeriesVisibleInLegend(mID, true); return this;}
     }
     
     /** 重写 NumberAxis 的方式修改默认的 tick 间距 */
