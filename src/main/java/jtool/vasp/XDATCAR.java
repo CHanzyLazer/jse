@@ -94,7 +94,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
     public XDATCAR appendFile(String aFilePath) throws IOException {
         // 原则上只有正交的或者 box 完全相同才可以添加，这里直接通过 refDirect_ 的内部进行判断，即使 box 不相同也会可以添加
         final XDATCAR tXDATCAR = read(aFilePath);
-        mDirects.addAll(AbstractCollections.map(tXDATCAR.mDirects, direct->refDirect_(tXDATCAR.mBox, tXDATCAR.mBoxScale, mBoxScale, direct, tXDATCAR.mIsCartesian, mIsCartesian)));
+        mDirects.addAll(AbstractCollections.map(tXDATCAR.mDirects, direct -> refDirect_(tXDATCAR.mBox, tXDATCAR.mBoxScale, mBoxScale, direct, tXDATCAR.mIsCartesian, mIsCartesian)));
         return this;
     }
     /** Groovy stuffs，用于支持传入 IAtomData 来设置 */
