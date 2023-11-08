@@ -74,15 +74,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  */
 public class UT {
     
-    public final static double PI = java.lang.Math.PI;
-    public final static double E = java.lang.Math.E;
-    public final static IComplexDouble i1 = new IComplexDouble() {
-        @Override public double real() {return 0.0;}
-        @Override public double imag() {return 1.0;}
-        /** print */
-        @Override public String toString() {return "i";}
-    };
-    
     public static class Code {
         
         /**
@@ -1384,7 +1375,7 @@ public class UT {
     @VisibleForTesting public static class Math {
         public final static double PI = FastMath.PI, pi = PI;
         public final static double E = FastMath.E, e = E;
-        public final static IComplexDouble i1 = UT.i1, j1 = i1, i = i1, j = j1;
+        public final static IComplexDouble i1 = CS.i1, j1 = i1, i = i1, j = j1;
         public final static double NaN = Double.NaN, nan = NaN;
         public final static double Inf = Double.POSITIVE_INFINITY, inf = Inf;
         

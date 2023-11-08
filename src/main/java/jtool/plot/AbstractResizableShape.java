@@ -1,5 +1,7 @@
 package jtool.plot;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
@@ -7,7 +9,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 public abstract class AbstractResizableShape implements IResizableShape {
-    protected Shape mShape;
+    protected @NotNull Shape mShape;
     protected double mSize;
     
     protected AbstractResizableShape(double aSize) {mShape = getShape(aSize); mSize = aSize;}
@@ -26,5 +28,5 @@ public abstract class AbstractResizableShape implements IResizableShape {
     @Override public PathIterator getPathIterator(AffineTransform at, double flatness) {return mShape.getPathIterator(at, flatness);}
     
     /** stuff to override */
-    protected abstract Shape getShape(double aSize);
+    protected abstract @NotNull Shape getShape(double aSize);
 }

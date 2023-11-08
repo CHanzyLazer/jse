@@ -1,5 +1,7 @@
 package jtool.plot;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.awt.*;
 
 import static jtool.plot.Shapes.*;
@@ -16,17 +18,27 @@ public abstract class AbstractLine implements ILine {
     protected abstract void onMarkerTypeChange(MarkerType aOldMarkerType, MarkerType aNewMarkerType);
     protected abstract void onLineWidthChange(double aOldLineWidth, double aNewLineWidth);
     protected abstract void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize);
+    protected abstract void onMarkerEdgeWidthChange(double aOldEdgeWidth, double aNewEdgeWidth);
     
     protected IResizableStroke mLineStroke = toStroke(DEFAULT_LINE_TYPE, DEFAULT_LINE_WIDTH);
     protected IResizableShape mMarkerShape = toShape(DEFAULT_MARKER_TYPE, DEFAULT_MARKER_SIZE);
+    protected IResizableStroke mMarkerStroke = new Solid(DEFAULT_LINE_WIDTH);
     
     protected LineType mLineType = DEFAULT_LINE_TYPE;
     protected MarkerType mMarkerType = DEFAULT_MARKER_TYPE;
     
     
+    @Override public ILine markerEdgeWidth(double aEdgeWidth) {
+        double oEdgeWidth = mMarkerStroke.getSize();
+        mMarkerStroke.setSize(aEdgeWidth);
+        onMarkerEdgeWidthChange(oEdgeWidth, aEdgeWidth);
+        return this;
+    }
     @Override public ILine lineWidth(double aLineWidth) {
         double oLineWidth = mLineStroke.getSize();
         mLineStroke.setSize(aLineWidth);
+        // 线宽变化时还需要同步调整 Marker Stroke 的宽度
+        markerEdgeWidth(aLineWidth);
         onLineWidthChange(oLineWidth, aLineWidth);
         return this;
     }
@@ -47,11 +59,13 @@ public abstract class AbstractLine implements ILine {
             tLineStroke = (IResizableStroke)aLineStroke;
         } else {
             tLineStroke = new AbstractResizableStroke(oLineWidth) {
-                @Override protected Stroke getStroke(double aSize) {return aLineStroke;}
+                @Override protected @NotNull Stroke getStroke(double aSize) {return aLineStroke;}
             };
         }
         mLineStroke = tLineStroke;
-        onLineWidthChange(oLineWidth, tLineStroke.getSize());
+        // 线宽变化时还需要同步调整 Marker Stroke 的宽度
+        markerEdgeWidth(mLineStroke.getSize());
+        onLineWidthChange(oLineWidth, mLineStroke.getSize());
         onLineTypeChange(oLineType, mLineType);
         return this;
     }
@@ -79,7 +93,7 @@ public abstract class AbstractLine implements ILine {
             tMarkerShape = (IResizableShape)aMarkerShape;
         } else {
             tMarkerShape = new AbstractResizableShape(oMarkerSize) {
-                @Override protected Shape getShape(double aSize) {
+                @Override protected @NotNull Shape getShape(double aSize) {
                     return aMarkerShape;
                 }
             };

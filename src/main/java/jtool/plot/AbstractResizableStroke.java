@@ -1,9 +1,11 @@
 package jtool.plot;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.awt.*;
 
 public abstract class AbstractResizableStroke implements IResizableStroke {
-    protected Stroke mStroke;
+    protected @NotNull Stroke mStroke;
     protected double mSize;
     
     protected AbstractResizableStroke(double aSize) {mStroke = getStroke(aSize); mSize = aSize;}
@@ -13,5 +15,5 @@ public abstract class AbstractResizableStroke implements IResizableStroke {
     @Override public Shape createStrokedShape(Shape p) {return mStroke.createStrokedShape(p);}
     
     /** stuff to override */
-    protected abstract Stroke getStroke(double aSize);
+    protected abstract @NotNull Stroke getStroke(double aSize);
 }

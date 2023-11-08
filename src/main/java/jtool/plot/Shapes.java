@@ -1,6 +1,7 @@
 package jtool.plot;
 
 import jtool.math.MathEX;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -13,9 +14,10 @@ import java.awt.geom.*;
  */
 public class Shapes {
     /** 各种 marker 形状的实现，调整实际尺寸使得视觉上大小一致 */
+    private final static Shape EPT_SHAPE = new Rectangle(0, 0, 0, 0);
     public static class NullShape extends AbstractResizableShape {
         public NullShape(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {return null;}
+        @Override protected @NotNull Shape getShape(double aSize) {return EPT_SHAPE;}
     }
     public static class Square extends Rectangle2D.Double implements IResizableShape {
         public Square(double aSize) {super(-aSize*0.5, -aSize*0.5, aSize, aSize);}
@@ -44,7 +46,7 @@ public class Shapes {
     private final static double PLUS_MUL = 1.40;
     public static class Plus extends AbstractResizableShape {
         public Plus(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {
+        @Override protected @NotNull Shape getShape(double aSize) {
             double tLen = aSize*0.5*PLUS_MUL;
             Line2D hLine = new Line2D.Double(0-tLen, 0     , 0+tLen, 0     );
             Line2D vLine = new Line2D.Double(0     , 0-tLen, 0     , 0+tLen);
@@ -59,7 +61,7 @@ public class Shapes {
     private final static double ASTERISK_MUL = 1.30;
     public static class Asterisk extends AbstractResizableShape {
         public Asterisk(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {
+        @Override protected @NotNull Shape getShape(double aSize) {
             double tLen = aSize*0.5*ASTERISK_MUL;
             double dLen = tLen*SQRT2_INV;
             Line2D hLine  = new Line2D.Double(-tLen, 0.0  , +tLen, 0.0  );
@@ -77,7 +79,7 @@ public class Shapes {
     private final static double CROSS_MUL = PLUS_MUL;
     public static class Cross extends AbstractResizableShape {
         public Cross(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {
+        @Override protected @NotNull Shape getShape(double aSize) {
             double tLen = aSize*0.5*CROSS_MUL;
             double dLen = tLen*SQRT2_INV;
             Line2D dLine1 = new Line2D.Double(-dLen, -dLen, +dLen, +dLen);
@@ -91,7 +93,7 @@ public class Shapes {
     private final static double DIAMOND_MUL = 0.90;
     public static class Diamond extends AbstractResizableShape {
         public Diamond(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {
+        @Override protected @NotNull Shape getShape(double aSize) {
             double tLen = aSize*0.5*SQRT2*DIAMOND_MUL;
             GeneralPath tDiamond = new GeneralPath();
             tDiamond.moveTo(0.0  , +tLen);
@@ -106,7 +108,7 @@ public class Shapes {
     private final static double TRIANGLE_MUL_Y = TRIANGLE_MUL_X/MathEX.Fast.sqrt(3.0);
     public static class Triangle extends AbstractResizableShape {
         public Triangle(double aSize) {super(aSize);}
-        @Override protected Shape getShape(double aSize) {
+        @Override protected @NotNull Shape getShape(double aSize) {
             double tLenX = aSize*TRIANGLE_MUL_X;
             double tLenY = aSize*TRIANGLE_MUL_Y;
             GeneralPath tTriangle = new GeneralPath();
@@ -155,7 +157,7 @@ public class Shapes {
     
     public static IResizableShape toShape(MarkerType aMarkerType, double aMarkerSize) {
         switch (aMarkerType) {
-        case NULL:              return NULL_SHAPE;
+        case NULL:              return new NullShape(aMarkerSize);
         case CIRCLE:            return new Circle(aMarkerSize);
         case PLUS:              return new Plus(aMarkerSize);
         case ASTERISK:          return new Asterisk(aMarkerSize);
@@ -170,5 +172,4 @@ public class Shapes {
     /** 全局常量记录默认值 */
     public final static MarkerType DEFAULT_MARKER_TYPE = MarkerType.NULL;
     public final static double DEFAULT_MARKER_SIZE = 12.0;
-    public final static IResizableShape NULL_SHAPE = new NullShape(DEFAULT_MARKER_SIZE);
 }

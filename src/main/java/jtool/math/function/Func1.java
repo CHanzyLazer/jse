@@ -1,11 +1,12 @@
 package jtool.math.function;
 
-import jtool.code.UT;
 import jtool.math.MathEX;
 import jtool.math.vector.IVector;
 import jtool.math.vector.IVectorGetter;
 
 import java.util.Collection;
+
+import static jtool.code.CS.PI;
 
 /**
  * @author liqa
@@ -78,7 +79,7 @@ public class Func1 {
      */
     public static IZeroBoundFunc1 deltaG(double aSigma, final double aMu, double aResolution) {
         final double tXMul = -1.0 / (2.0*aSigma*aSigma);
-        final double tYMul =  1.0 / (MathEX.Fast.sqrt(2.0* UT.PI) * aSigma);
+        final double tYMul =  1.0 / (MathEX.Fast.sqrt(2.0*PI) * aSigma);
         
         IZeroBoundFunc1 rFunc1 = ZeroBoundSymmetryFunc1.zeros(aMu, aSigma/aResolution, (int)Math.round(aResolution*G_RANG));
         rFunc1.fill(x -> {

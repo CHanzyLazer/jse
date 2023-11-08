@@ -1,7 +1,6 @@
 package jtool.math;
 
 import jtool.Main;
-import jtool.code.UT;
 import jtool.code.collection.Pair;
 import jtool.code.functional.*;
 import jtool.math.function.Func2;
@@ -12,6 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 
+import static jtool.code.CS.PI;
 import static jtool.code.CS.ZL_MAT;
 
 
@@ -720,7 +720,7 @@ public class MathEX {
             for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
-            rFront /= 4* UT.PI;
+            rFront /= 4*PI;
             rFront = Fast.sqrt(rFront);
             // 计算连带 Legendre 多项式部分
             rFront *= legendre_(aL, tAbsM, Fast.cos(aTheta));
@@ -743,7 +743,7 @@ public class MathEX {
             for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
-            rFront /= 4* UT.PI;
+            rFront /= 4*PI;
             rFront = Fast.sqrtQuick(rFront);
             // 计算连带 Legendre 多项式部分
             rFront *= legendreQuick_(aL, tAbsM, Fast.cosQuick(aTheta));

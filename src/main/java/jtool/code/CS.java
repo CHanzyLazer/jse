@@ -7,6 +7,7 @@ import jtool.atom.IXYZ;
 import jtool.code.collection.AbstractCollections;
 import jtool.iofile.IIOFiles;
 import jtool.iofile.IOFiles;
+import jtool.math.IComplexDouble;
 import jtool.math.MathEX;
 import jtool.parallel.CompletedFuture;
 import jtool.system.*;
@@ -481,8 +482,18 @@ public class CS {
         .put("Ts", 2.00)
         .put("Og", 2.00)
         .build();
+    
+    public final static double PI = Math.PI;
+    public final static double E = Math.E;
+    public final static IComplexDouble i1 = new IComplexDouble() {
+        @Override public double real() {return 0.0;}
+        @Override public double imag() {return 1.0;}
+        /** print */
+        @Override public String toString() {return "i";}
+    };
     /** Boltzmann constant */
     public final static double K_B = 0.0000861733262; // eV / K
+    
     
     /** SystemExecutor Stuffs */
     public final static IIOFiles EPT_IOF = IOFiles.immutable();

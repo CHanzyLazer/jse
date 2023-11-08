@@ -44,7 +44,6 @@ public final class PlotterJFree implements IPlotter {
         final int mID;
         final String mName;
         final Iterable<? extends Number> mX, mY;
-        Paint mPaint;
         Shape mLegendLine;
         
         LineJFree(int aID, Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
@@ -52,27 +51,36 @@ public final class PlotterJFree implements IPlotter {
             mName = aName;
             mX = aX;
             mY = aY;
-            mPaint = COLOR(aID);
-            mLineRender.setSeriesPaint(mID, mPaint);
+            // 设置颜色，为了避免一些问题不在构造函数中调用自己的一些多态的方法
+            Paint tPaint = COLOR(aID);
+            mLineRender.setSeriesPaint(mID, tPaint);
+            mLineRender.setSeriesFillPaint(mID, tPaint);
+            mLineRender.setSeriesOutlinePaint(mID, tPaint);
+            // 设置 mLegendLine，为了避免一些问题不在构造函数中调用自己的一些多态的方法
             mLegendLine = new Line2D.Double(-super.mLineStroke.getSize()*LEGEND_SIZE, 0.0, super.mLineStroke.getSize()*LEGEND_SIZE, 0.0);
-            
             // 设置默认的线型，为了避免一些问题不在构造函数中调用自己的一些多态的方法
-            if (mLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
-            else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
-            if (mMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesOutlineStroke(mID, DEFAULT_MARKER_STROKE); mLineRender.setSeriesShapesVisible(mID, true);}
+            mLineRender.setSeriesStroke(mID, super.mLineStroke);
+            mLineRender.setSeriesShape(mID, super.mMarkerShape);
+            mLineRender.setSeriesOutlineStroke(mID, super.mMarkerStroke);
+            mLineRender.setSeriesLinesVisible(mID, mLineType!=LineType.NULL);
+            mLineRender.setSeriesShapesVisible(mID, mMarkerType!=MarkerType.NULL);
         }
         
-        @Override public ILine color(Paint aPaint) {mPaint = aPaint; mLineRender.setSeriesPaint(mID, aPaint); return this;} // 会覆盖掉 markerColor 的颜色设置
-        @Override public ILine markerColor(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); return this;}
+        @Override public ILine filled(boolean aFilled) {mLineRender.setSeriesShapesFilled(mID, aFilled); return this;}
+        
+        @Override public ILine color(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); mLineRender.setSeriesOutlinePaint(mID, aPaint); return this;} // 会覆盖掉 markerColor 的颜色设置
+        @Override public ILine lineColor(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); return this;} // 不会覆盖掉 markerColor 的颜色设置
+        @Override public ILine markerColor(Paint aPaint) {mLineRender.setSeriesOutlinePaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); return this;} // 会覆盖掉 markerFaceColor 的颜色设置
+        @Override public ILine markerFaceColor(Paint aPaint) {filled(); mLineRender.setSeriesFillPaint(mID, aPaint); return this;}
+        @Override public ILine markerEdgeColor(Paint aPaint) {mLineRender.setSeriesOutlinePaint(mID, aPaint); return this;}
         
         @Override protected void onLineTypeChange(LineType aOldLineType, LineType aNewLineType) {
-            if (aNewLineType == LineType.NULL) {mLineRender.setSeriesLinesVisible(mID, false);}
-            else {mLineRender.setSeriesStroke(mID, super.mLineStroke); mLineRender.setSeriesLinesVisible(mID, true);}
+            mLineRender.setSeriesStroke(mID, super.mLineStroke);
+            mLineRender.setSeriesLinesVisible(mID, aNewLineType!=LineType.NULL);
         }
         @Override protected void onMarkerTypeChange(MarkerType aOldMarkerType, MarkerType aNewMarkerType) {
-            if (aNewMarkerType == MarkerType.NULL) {mLineRender.setSeriesShapesVisible(mID, false);}
-            else {mLineRender.setSeriesShape(mID, super.mMarkerShape); mLineRender.setSeriesOutlineStroke(mID, getMarkerStroke(aNewMarkerType, super.mMarkerShape.getSize())); mLineRender.setSeriesShapesVisible(mID, true);}
+            mLineRender.setSeriesShape(mID, super.mMarkerShape);
+            mLineRender.setSeriesShapesVisible(mID, aNewMarkerType!=MarkerType.NULL);
         }
         @Override protected void onLineWidthChange(double aOldLineWidth, double aNewLineWidth) {
             // 线宽变化时需要同步调整 Legend 的长度
@@ -80,8 +88,10 @@ public final class PlotterJFree implements IPlotter {
             mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
         }
         @Override protected void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize) {
-            // Marker 大小变化时需要同步调整 Marker Stroke 的宽度
-            mLineRender.setSeriesOutlineStroke(mID, getMarkerStroke(super.mMarkerType, aNewMarkerSize));
+            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+        }
+        @Override protected void onMarkerEdgeWidthChange(double aOldEdgeWidth, double aNewEdgeWidth) {
+            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
         }
         
         @Override public ILine noLegend() {mLineRender.setSeriesVisibleInLegend(mID, false); return this;}
@@ -190,19 +200,17 @@ public final class PlotterJFree implements IPlotter {
         mYAxis.setAutoRangeIncludesZero(false);
         // 线渲染器，默认线型
         mLineRender = new XYLineAndShapeRenderer(true, true) {
-            @Override protected void drawFirstPassShape(Graphics2D g2, int pass, int series, int item, Shape shape) {
-                g2.setStroke(getItemStroke(series, item));
-                g2.setPaint(mLines.get(series).mPaint); // 重写绘制曲线获取颜色的部分
-                g2.draw(shape);
-            }
-            // 重写获取 legendItem 的部分，修改线的颜色为正确颜色
+            // 重写获取 legendItem 的部分，修改线长度
             @Override public LegendItem getLegendItem(int datasetIndex, int series) {
                 LegendItem tLegendItem = super.getLegendItem(datasetIndex, series);
-                tLegendItem.setLinePaint(mLines.get(series).mPaint);
                 tLegendItem.setLine(mLines.get(series).mLegendLine);
                 return tLegendItem;
             }
         };
+        mLineRender.setUseFillPaint(true); // 指定填充颜色独立
+        mLineRender.setDefaultShapesFilled(false); // 现在默认不开启 fill
+        mLineRender.setUseOutlinePaint(true); // 使用独立的 outline 颜色
+        mLineRender.setDrawOutlines(true); // 默认绘制 outline
         mLineRender.setDrawSeriesLineAsPath(true); // 指定按照路径的方式绘制
         // 绘制器
         mPlot = new XYPlot(mLinesData, mXAxis, mYAxis, mLineRender);
