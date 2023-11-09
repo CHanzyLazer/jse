@@ -138,15 +138,15 @@ mpc_Zr14Cu51.shutdown();
 // 使用 Plotter 绘图
 plt = Plotters.get();
 
-plt.plot(q4_G       , q6_G       , 'glass'   ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_FCC     , q6_FCC     , 'FCC'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_BCC     , q6_BCC     , 'BCC'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_HCP     , q6_HCP     , 'HCP'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_MgCu2   , q6_MgCu2   , 'MgCu2'   ).lineType('none').markerType('s').markerSize(4);
-plt.plot(q4_Zr3Cu8  , q6_Zr3Cu8  , 'Zr3Cu8'  ).lineType('none').markerType('^').markerSize(4);
-plt.plot(q4_Zr7Cu10 , q6_Zr7Cu10 , 'Zr7Cu10' ).lineType('none').markerType('^').markerSize(4);
-plt.plot(q4_ZrCu2   , q6_ZrCu2   , 'ZrCu2'   ).lineType('none').markerType('^').markerSize(4);
-plt.plot(q4_Zr14Cu51, q6_Zr14Cu51, 'Zr14Cu51').lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_G       , q6_G       , 'glass'   ).filled().lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_FCC     , q6_FCC     , 'FCC'     ).filled().lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_BCC     , q6_BCC     , 'BCC'     ).filled().lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_HCP     , q6_HCP     , 'HCP'     ).filled().lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_MgCu2   , q6_MgCu2   , 'MgCu2'   ).filled().lineType('none').markerType('s').markerSize(4);
+plt.plot(q4_Zr3Cu8  , q6_Zr3Cu8  , 'Zr3Cu8'  ).filled().lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_Zr7Cu10 , q6_Zr7Cu10 , 'Zr7Cu10' ).filled().lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_ZrCu2   , q6_ZrCu2   , 'ZrCu2'   ).filled().lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_Zr14Cu51, q6_Zr14Cu51, 'Zr14Cu51').filled().lineType('none').markerType('^').markerSize(4);
 
 plt.xlabel('q4').ylabel('q6');
 plt.xTick(0.02).yTick(0.05);

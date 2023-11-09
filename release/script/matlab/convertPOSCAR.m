@@ -2,7 +2,7 @@
 addjpath('lib/jtool-all.jar');
 
 %% 定义需要处理的 POSCAR 路径
-path = 'lmp/data/re_MgZn2.poscar';
+path = 'lmp/data/re_ZrCu-MoB-like.poscar';
 
 %% 读取 POSCAR
 import jtool.vasp.*

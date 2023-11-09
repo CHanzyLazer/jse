@@ -107,17 +107,45 @@ q6_MgZn2 = mpc_MgZn2.calABOOP(6, mpc_MgZn2.unitLen()*cutoffMul, nnn);
 UT.Timer.toc("MgZn2, q6");
 mpc_MgZn2.shutdown();
 
+data_ZrCu_Cm = Structures.from(POSCAR.read('lmp/data/re_ZrCu-Cm.poscar'), 2, 1, 1).opt().perturbXYZ(0.25*perturbMul);
+if (onlyCu) data_ZrCu_Cm = data_ZrCu_Cm.opt().filterType(2);
+if (onlyZr) data_ZrCu_Cm = data_ZrCu_Cm.opt().filterType(1);
+mpc_ZrCu_Cm = data_ZrCu_Cm.getMPC(nThreads);
+println("ZrCu_Cm, u: ${mpc_ZrCu_Cm.unitLen()}");
+UT.Timer.tic();
+q4_ZrCu_Cm = mpc_ZrCu_Cm.calABOOP(4, mpc_ZrCu_Cm.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu_Cm, q4");
+UT.Timer.tic();
+q6_ZrCu_Cm = mpc_ZrCu_Cm.calABOOP(6, mpc_ZrCu_Cm.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu_Cm, q6");
+mpc_ZrCu_Cm.shutdown();
+
+data_ZrCu_MoB = Structures.from(POSCAR.read('lmp/data/re_ZrCu-MoB-like.poscar'), 4, 1, 4).opt().perturbXYZ(0.25*perturbMul);
+if (onlyCu) data_ZrCu_MoB = data_ZrCu_MoB.opt().filterType(2);
+if (onlyZr) data_ZrCu_MoB = data_ZrCu_MoB.opt().filterType(1);
+mpc_ZrCu_MoB = data_ZrCu_MoB.getMPC(nThreads);
+println("ZrCu_MoB, u: ${mpc_ZrCu_MoB.unitLen()}");
+UT.Timer.tic();
+q4_ZrCu_MoB = mpc_ZrCu_MoB.calABOOP(4, mpc_ZrCu_MoB.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu_MoB, q4");
+UT.Timer.tic();
+q6_ZrCu_MoB = mpc_ZrCu_MoB.calABOOP(6, mpc_ZrCu_MoB.unitLen()*cutoffMul, nnn);
+UT.Timer.toc("ZrCu_MoB, q6");
+mpc_ZrCu_MoB.shutdown();
+
 
 // 使用 Plotter 绘图
 plt = Plotters.get();
 
-plt.plot(q4_G       , q6_G       , 'glass'   ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_FCC     , q6_FCC     , 'FCC'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_BCC     , q6_BCC     , 'BCC'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_HCP     , q6_HCP     , 'HCP'     ).lineType('none').markerType('o').markerSize(4);
-plt.plot(q4_MgCu2   , q6_MgCu2   , 'MgCu2'   ).lineType('none').markerType('s').markerSize(4);
-plt.plot(q4_MgNi2   , q6_MgNi2   , 'MgNi2'   ).lineType('none').markerType('d').markerSize(4);
-plt.plot(q4_MgZn2   , q6_MgZn2   , 'MgZn2'   ).lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_G       , q6_G       , 'glass'   ).filled().lineWidth(1.0).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_FCC     , q6_FCC     , 'FCC'     ).filled().lineWidth(1.0).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_BCC     , q6_BCC     , 'BCC'     ).filled().lineWidth(1.0).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_HCP     , q6_HCP     , 'HCP'     ).filled().lineWidth(1.0).lineType('none').markerType('o').markerSize(4);
+plt.plot(q4_MgCu2   , q6_MgCu2   , 'MgCu2'   ).filled().lineWidth(1.0).lineType('none').markerType('s').markerSize(4);
+plt.plot(q4_MgNi2   , q6_MgNi2   , 'MgNi2'   ).filled().lineWidth(1.0).lineType('none').markerType('d').markerSize(4);
+plt.plot(q4_MgZn2   , q6_MgZn2   , 'MgZn2'   ).filled().lineWidth(1.0).lineType('none').markerType('^').markerSize(4);
+plt.plot(q4_ZrCu_Cm , q6_ZrCu_Cm , 'ZrCu_Cm' ).filled().lineWidth(1.0).lineType('none').markerType('s').markerSize(4);
+plt.plot(q4_ZrCu_MoB, q6_ZrCu_MoB, 'ZrCu_MoB').filled().lineWidth(1.0).lineType('none').markerType('d').markerSize(4);
 
 plt.xlabel('q4').ylabel('q6');
 plt.xTick(0.02).yTick(0.05);
