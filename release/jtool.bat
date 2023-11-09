@@ -33,6 +33,9 @@ if not defined JAR_LOCATION (
 @REM 设置 UTF-8
 set JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8
 
+@REM 消除每 30s 一次的 prefs 的警告
+set JAVA_OPTS=%JAVA_OPTS% -Djava.util.prefs.syncInterval=1000000
+
 @REM GROOVY-6453: groovysh in Windows 7/8/10 doesn't support arrow keys and Del
 set JAVA_OPTS=%JAVA_OPTS% -Djline.terminal=none
 

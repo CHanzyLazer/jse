@@ -54,5 +54,8 @@ fi
 # 设置 UTF-8
 JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
 
+# 消除每 30s 一次的 prefs 的警告
+JAVA_OPTS="$JAVA_OPTS -Djava.util.prefs.syncInterval=1000000"
+
 # 执行 jtool.jar
 java $JAVA_OPTS -jar "$JAR_LOCATION" "$@"
