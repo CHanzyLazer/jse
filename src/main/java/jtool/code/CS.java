@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.awt.*;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -507,13 +508,18 @@ public class CS {
     public static class Exec {
         public final static ISystemExecutor EXE;
         public final static String JAR_PATH;
+        public final static String JAR_DIR;
         static {
             // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
             UT.IO.init();
             // 获取此 jar 的路径
             JAR_PATH = System.getProperty("java.class.path");
-            // 创建默认 EXE，无内部线程池，windows 下使用 powershell 统一指令
-            EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new LocalSystemExecutor();
+            Path tPath = UT.IO.toAbsolutePath_(JAR_PATH).getParent();
+            String tJarDir = tPath==null ? "" : tPath.toString();
+            if (!tJarDir.isEmpty() && !tJarDir.endsWith("/") && !tJarDir.endsWith("\\")) tJarDir += "/";
+            JAR_DIR = tJarDir;
+            // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令
+            EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new BashSystemExecutor();
             // 在程序结束时关闭 EXE
             Main.addGlobalAutoCloseable(EXE);
         }

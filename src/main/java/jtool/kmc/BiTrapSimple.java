@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Random;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -142,18 +141,18 @@ public class BiTrapSimple {
     }
     
     
-    public void run(int aStep                                                 ) {run(aStep, false);}
-    public void run(int aStep,                                 boolean aAppend) {run(aStep, 1, aAppend);}
-    public void run(int aStep, int aOutStep                                   ) {run(aStep, aOutStep, System.out);}
-    public void run(int aStep, int aOutStep,                   boolean aAppend) {run(aStep, aOutStep, System.out, aAppend);}
+    public void run(int aStep                                                 ) throws IOException {run(aStep, false);}
+    public void run(int aStep,                                 boolean aAppend) throws IOException {run(aStep, 1, aAppend);}
+    public void run(int aStep, int aOutStep                                   ) throws IOException {run(aStep, aOutStep, System.out::println);}
+    public void run(int aStep, int aOutStep,                   boolean aAppend) throws IOException {run(aStep, aOutStep, System.out::println, aAppend);}
     public void run(int aStep, int aOutStep, String aFilePath                 ) throws IOException {run(aStep, aOutStep, aFilePath, false);}
     public void run(int aStep, int aOutStep, String aFilePath, boolean aAppend) throws IOException {
-        try (PrintStream tFilePS = UT.IO.toPrintStream(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING)) {
-            run(aStep, aOutStep, tFilePS, aAppend);
+        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING)) {
+            run(aStep, aOutStep, tWriteln, aAppend);
         }
     }
-    public void run(int aStep, int aOutStep, @Nullable PrintStream aOut                 ) {run(aStep, aOutStep, aOut, false);}
-    public void run(int aStep, int aOutStep, @Nullable PrintStream aOut, boolean aAppend) {
+    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut                 ) throws IOException {run(aStep, aOutStep, aOut, false);}
+    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut, boolean aAppend) throws IOException {
         run(aStep, aOutStep, aOut, aAppend,
             String.format("%12s, %12s, %12s, %12s, %12s, %12s, %12s, %12s", "time", "temp", "Nlo", "Nhi", "clo", "chi", "Etot", "Epar"),
             () -> String.format("%12.6g, %12.6g, %12d, %12d, %12.6g, %12.6g, %12.6g, %12.6g", mTime, mTemp, mNlo, mNhi, concentrationLow(), concentrationHigh(), energyTotal(), energyParticle())
@@ -168,18 +167,18 @@ public class BiTrapSimple {
      * @param aHead 输出的标题字符串
      * @param aBody 输出的内容属性，重写 IStringSupplier 来指定具体内容
      */
-    public void run(int aStep, int aOutStep, @Nullable PrintStream aOut, boolean aAppend, @Nullable String aHead, IStringSupplier aBody) {
+    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut, boolean aAppend, @Nullable String aHead, IStringSupplier aBody) throws IOException {
         // 特殊输入处理
         if (aOutStep > 0) aStep = aStep*aOutStep;
         if (aStep < 0) {aOutStep = -1; aStep = Integer.MAX_VALUE;}
         // 标题
-        if (aOutStep > 0 && aOut != null && !aAppend && aHead != null) aOut.println(aHead);
+        if (aOutStep > 0 && aOut != null && !aAppend && aHead != null) aOut.writeln(aHead);
         // 初始情况
-        if (aOutStep > 0 && aOut != null && !aAppend) aOut.println(aBody.getAsString());
+        if (aOutStep > 0 && aOut != null && !aAppend) aOut.writeln(aBody.getAsString());
         // 开始模拟
         for (int i = 0; i < aStep; ++i) if (!mEnd) {
             nextStep();
-            if (aOut != null && aOutStep > 0 && (mEnd || aOutStep == 1 || (i != 0 && i%aOutStep == 0))) aOut.println(aBody.getAsString());
+            if (aOut != null && aOutStep > 0 && (mEnd || aOutStep == 1 || (i != 0 && i%aOutStep == 0))) aOut.writeln(aBody.getAsString());
         }
     }
     @FunctionalInterface public interface IStringSupplier {String getAsString();}

@@ -11,13 +11,10 @@ import jtool.plot.Plotters
 import jtool.system.SSH
 import jtool.system.WSL
 import jtool.vasp.POSCAR
-import shade.com.google.common.collect.TreeMultimap
 
-
-import jtool.system.PS;
-
-def exitValue = new PS().withCloseable {it.system('echo 123456')}
-println("exitValue: $exitValue");
+int a = 1;
+int b = '2' as int;
+println(a + b)
 
 
 //// 测试脚本调用中参数

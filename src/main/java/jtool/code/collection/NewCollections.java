@@ -9,6 +9,7 @@ import jtool.math.MathEX;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vector;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -187,55 +188,64 @@ public class NewCollections {
     }
     
     /**
-     * merge two array into one List
+     * merge two array into one array
      * @author liqa
      */
-    public static <T> List<T> merge(T[] aBefore, T[] aAfter) {
-        List<T> rOut = new ArrayList<>(aBefore.length+aAfter.length);
-        for (T tValue : aBefore) rOut.add(tValue);
-        for (T tValue : aAfter) rOut.add(tValue);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T[] aBefore, T[] aAfter) {
+        T[] rOut = (T[]) Array.newInstance(aBefore.getClass().getComponentType(), aBefore.length+aAfter.length);
+        System.arraycopy(aBefore, 0, rOut, 0, aBefore.length);
+        System.arraycopy(aAfter, 0, rOut, aBefore.length, aAfter.length);
         return rOut;
     }
-    public static <T> List<T> merge(T aBefore0, T[] aAfter) {
-        List<T> rOut = new ArrayList<>(1+aAfter.length);
-        rOut.add(aBefore0);
-        for (T tValue : aAfter) rOut.add(tValue);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T aBefore0, T[] aAfter) {
+        T[] rOut = (T[]) Array.newInstance(aAfter.getClass().getComponentType(), 1+aAfter.length);
+        rOut[0] = aBefore0;
+        System.arraycopy(aAfter, 0, rOut, 1, aAfter.length);
         return rOut;
     }
-    public static <T> List<T> merge(T aBefore0, T aBefore1, T[] aAfter) {
-        List<T> rOut = new ArrayList<>(2+aAfter.length);
-        rOut.add(aBefore0);
-        rOut.add(aBefore1);
-        for (T tValue : aAfter) rOut.add(tValue);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T aBefore0, T aBefore1, T[] aAfter) {
+        T[] rOut = (T[]) Array.newInstance(aAfter.getClass().getComponentType(), 2+aAfter.length);
+        rOut[0] = aBefore0;
+        rOut[1] = aBefore1;
+        System.arraycopy(aAfter, 0, rOut, 2, aAfter.length);
         return rOut;
     }
-    public static <T> List<T> merge(T aBefore0, T aBefore1, T aBefore2, T[] aAfter) {
-        List<T> rOut = new ArrayList<>(3+aAfter.length);
-        rOut.add(aBefore0);
-        rOut.add(aBefore1);
-        rOut.add(aBefore2);
-        for (T tValue : aAfter) rOut.add(tValue);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T aBefore0, T aBefore1, T aBefore2, T[] aAfter) {
+        T[] rOut = (T[]) Array.newInstance(aAfter.getClass().getComponentType(), 3+aAfter.length);
+        rOut[0] = aBefore0;
+        rOut[1] = aBefore1;
+        rOut[2] = aBefore2;
+        System.arraycopy(aAfter, 0, rOut, 3, aAfter.length);
         return rOut;
     }
-    public static <T> List<T> merge(T[] aBefore, T aAfter0) {
-        List<T> rOut = new ArrayList<>(aBefore.length+1);
-        for (T tValue : aBefore) rOut.add(tValue);
-        rOut.add(aAfter0);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T[] aBefore, T aAfter0) {
+        T[] rOut = (T[]) Array.newInstance(aBefore.getClass().getComponentType(), aBefore.length+1);
+        System.arraycopy(aBefore, 0, rOut, 0, aBefore.length);
+        rOut[aBefore.length] = aAfter0;
         return rOut;
     }
-    public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1) {
-        List<T> rOut = new ArrayList<>(aBefore.length+2);
-        for (T tValue : aBefore) rOut.add(tValue);
-        rOut.add(aAfter0);
-        rOut.add(aAfter1);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T[] aBefore, T aAfter0, T aAfter1) {
+        T[] rOut = (T[]) Array.newInstance(aBefore.getClass().getComponentType(), aBefore.length+2);
+        System.arraycopy(aBefore, 0, rOut, 0, aBefore.length);
+        int i = aBefore.length;
+        rOut[i] = aAfter0; ++i;
+        rOut[i] = aAfter1;
         return rOut;
     }
-    public static <T> List<T> merge(T[] aBefore, T aAfter0, T aAfter1, T aAfter2) {
-        List<T> rOut = new ArrayList<>(aBefore.length+3);
-        for (T tValue : aBefore) rOut.add(tValue);
-        rOut.add(aAfter0);
-        rOut.add(aAfter1);
-        rOut.add(aAfter2);
+    @SuppressWarnings("unchecked")
+    public static <T> T[] merge(T[] aBefore, T aAfter0, T aAfter1, T aAfter2) {
+        T[] rOut = (T[]) Array.newInstance(aBefore.getClass().getComponentType(), aBefore.length+3);
+        System.arraycopy(aBefore, 0, rOut, 0, aBefore.length);
+        int i = aBefore.length;
+        rOut[i] = aAfter0; ++i;
+        rOut[i] = aAfter1; ++i;
+        rOut[i] = aAfter2;
         return rOut;
     }
     public static <T> List<T> merge(Collection<? extends T> aBefore, Collection<? extends T> aAfter) {

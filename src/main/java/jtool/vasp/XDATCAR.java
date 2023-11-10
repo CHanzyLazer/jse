@@ -349,22 +349,22 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        try (BufferedWriter tWriter = UT.IO.toWriter(aFilePath)) {
+        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {
             // 先输出通用信息
-            tWriter.write(mDataName); tWriter.newLine();
-            tWriter.write(String.valueOf(mBoxScale)); tWriter.newLine();
-            tWriter.write(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2))); tWriter.newLine();
-            tWriter.write(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2))); tWriter.newLine();
-            tWriter.write(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2))); tWriter.newLine();
+            tWriteln.writeln(mDataName);
+            tWriteln.writeln(String.valueOf(mBoxScale));
+            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
+            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
+            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
             if (mAtomTypes.length!=0) {
-            tWriter.write(String.join(" ", AbstractCollections.map(mAtomTypes, type -> String.format("%6s", type)))); tWriter.newLine();
+            tWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomTypes, type -> String.format("%6s", type))));
             }
-            tWriter.write(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number.intValue())))); tWriter.newLine();
+            tWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number.intValue()))));
             // 再输出原子数据
             for (int i = 0; i < mDirects.size(); ++i) {
-            tWriter.write((mIsCartesian ? "Cartesian" : "Direct") + " configuration= " + (i+1)); tWriter.newLine();
+            tWriteln.writeln((mIsCartesian ? "Cartesian" : "Direct") + " configuration= " + (i+1));
             for (IVector subDirect : mDirects.get(i).rows()) {
-            tWriter.write(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2))); tWriter.newLine();
+            tWriteln.writeln(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
             }}
         }
     }

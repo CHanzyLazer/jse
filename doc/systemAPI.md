@@ -53,7 +53,7 @@
 | -------------------------- | --------- | ---- | ---- |
 | `LocalSystemExecutor`      | `Local`   | 无   | 本地的任务提交器，相当于 `Runtime.exec(command)` |
 | `MPISystemExecutor`        | `MPIEXEC` | `processNum`，int | 本地执行 MPI 的任务提交器，相当于 `Local.system("mpiexec -np $processNum $command")` |
-| `PowerShellSystemExecutor` | `PS`      | 无   | 本地在 powershell 中执行指令的任务提交器，相当于 `Local.system("powershell $command")` |
+| `PowerShellSystemExecutor` | `PWSH`    | 无   | 本地在 powershell 中执行指令的任务提交器，相当于 `Local.system("powershell $command")` |
 | `WSLSystemExecutor`        | `WSL`     | 无   | 本地在 [WSL](https://learn.microsoft.com/en-us/windows/wsl/) 中执行指令的任务提交器，相当于 `Local.system("wsl $command")` |
 | `SRUNSystemExecutor`       | `SRUN`    | `taskNum`，int<br>`maxParallelNum`，int | 本地执行 srun（slurm 系统）的任务提交器，相当于 `Local.system("srun -n $taskNum $command")`，考虑了整个任务分配的资源数来避免触及到 slurm 系统的限制。详见 [SRUN 任务提交器](systemSRUN.md) |
 | `SSHSystemExecutor`        | `SSH`     | 见 [SSH 任务提交器](systemSSH.md) | 向指定 SSH 服务器执行指令的任务提交器 |

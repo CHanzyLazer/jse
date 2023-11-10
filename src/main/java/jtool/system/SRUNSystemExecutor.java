@@ -65,7 +65,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         mAssignedResources.put(aResource, false);
     }
     
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         // 先尝试获取节点
@@ -79,7 +79,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             catch (InterruptedException e) {printStackTrace(e); return ERR_FUTURE;}
             tResource = assignResource();
         }
-        // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行（srun 特有的问题）
+        // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行（现在可能不会有问题了，不过为了避免出现意料外的情况还是不改了）
         String tTempScriptPath = mWorkingDir+UT.Code.randID()+".sh";
         try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
         catch (Exception e) {printStackTrace(e); returnResource(tResource); return ERR_FUTURE;}
@@ -89,7 +89,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         if (tCommand == null) {System.err.println("ERROR: Create SLURM job step Failed"); returnResource(tResource); return ERR_FUTURE;}
         // 任务完成后需要归还任务
         final Resource fResource = tResource;
-        return toSystemFuture(super.submitSystem__(tCommand, aPrintln), () -> returnResource(fResource));
+        return toSystemFuture(super.submitSystem__(tCommand, aWriteln), () -> returnResource(fResource));
     }
     
     /** 程序结束时删除自己的临时工作目录，并归还资源 */

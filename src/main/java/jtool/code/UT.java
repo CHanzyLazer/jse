@@ -2,7 +2,6 @@ package jtool.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableList;
 import jtool.atom.*;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.filter.IDoubleFilter;
@@ -47,6 +46,7 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -678,7 +678,13 @@ public class UT {
         public static void write(String aFilePath, byte[] aData, OpenOption... aOptions)                            throws IOException  {write(toAbsolutePath_(aFilePath), aData, aOptions);}
         public static void write(String aFilePath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions) throws IOException  {write(toAbsolutePath_(aFilePath), aLines, aOptions);}
         public static void write(Path aPath, byte[] aData, OpenOption... aOptions)                                  throws IOException  {validPath(aPath); Files.write(aPath, aData, aOptions);}
-        public static void write(Path aPath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions)       throws IOException  {validPath(aPath); Files.write(aPath, aLines, aOptions);}
+        public static void write(Path aPath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions)       throws IOException  {
+            validPath(aPath);
+            // 使用 UT.IO 中的 stream 统一使用 LF 换行符
+            try (IWriteln tWriteln = toWriteln(aPath, aOptions)) {
+                for (CharSequence tLine: aLines) {tWriteln.writeln(tLine);}
+            }
+        }
         /**
          * Wrapper of {@link Files}.readAllBytes
          * @author liqa
@@ -765,21 +771,35 @@ public class UT {
             return tList;
         }
         
+        /** only support writeln */
+        @FunctionalInterface public interface IWriteln extends AutoCloseable {void writeln(CharSequence aLine) throws IOException; default void close() throws IOException {/**/}}
+        
         /** output stuffs */
-        public static PrintStream    toPrintStream (String aFilePath, OpenOption... aOptions)   throws IOException  {return new PrintStream(new BufferedOutputStream(toOutputStream(aFilePath, aOptions)), false, "UTF-8");}
         public static OutputStream   toOutputStream(String aFilePath, OpenOption... aOptions)   throws IOException  {return toOutputStream(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
-        public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions)   throws IOException  {return toWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
-        public static BufferedWriter toWriter      (OutputStream aOutputStream)                                     {return new BufferedWriter(new OutputStreamWriter(aOutputStream, StandardCharsets.UTF_8));}
         public static OutputStream   toOutputStream(Path aPath, OpenOption... aOptions)         throws IOException  {validPath(aPath); return Files.newOutputStream(aPath, aOptions);}
-        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions)         throws IOException  {validPath(aPath); return Files.newBufferedWriter(aPath, aOptions);}
+        public static BufferedWriter toWriter      (String aFilePath, OpenOption... aOptions)   throws IOException  {return toWriter(UT.IO.toAbsolutePath_(aFilePath), aOptions);}
+        public static BufferedWriter toWriter      (Path aPath, OpenOption... aOptions)         throws IOException  {validPath(aPath); return new BufferedWriter(new OutputStreamWriter(toOutputStream(aPath, aOptions), StandardCharsets.UTF_8)) {@Override public void newLine() throws IOException {write("\n");}};}
+        public static BufferedWriter toWriter      (OutputStream aOutputStream)                                     {return toWriter(aOutputStream, StandardCharsets.UTF_8);}
+        public static BufferedWriter toWriter      (OutputStream aOutputStream, Charset aCS)                        {return new BufferedWriter(new OutputStreamWriter(aOutputStream, aCS)) {@Override public void newLine() throws IOException {write("\n");}};}
+        public static IWriteln       toWriteln     (String aFilePath, OpenOption... aOptions)   throws IOException  {return toWriteln(toWriter(aFilePath, aOptions));}
+        public static IWriteln       toWriteln     (Path aPath, OpenOption... aOptions)         throws IOException  {return toWriteln(toWriter(aPath, aOptions));}
+        public static IWriteln       toWriteln     (OutputStream aOutputStream)                                     {return toWriteln(toWriter(aOutputStream));}
+        public static IWriteln       toWriteln     (OutputStream aOutputStream, Charset aCS)                        {return toWriteln(toWriter(aOutputStream, aCS));}
+        public static IWriteln       toWriteln     (BufferedWriter aWriter)                                         {
+            return new IWriteln() {
+                @Override public void writeln(CharSequence aLine) throws IOException {aWriter.append(aLine); aWriter.newLine();}
+                @Override public void close() throws IOException {aWriter.close();}
+            };
+        }
         
         /** input stuffs */
         public static InputStream    toInputStream(String aFilePath)        throws IOException  {return toInputStream(UT.IO.toAbsolutePath_(aFilePath));}
-        public static BufferedReader toReader     (String aFilePath)        throws IOException  {return toReader(UT.IO.toAbsolutePath_(aFilePath));}
-        public static BufferedReader toReader     (InputStream aInputStream)                    {return new BufferedReader(new InputStreamReader(aInputStream, StandardCharsets.UTF_8));}
-        public static BufferedReader toReader     (URL aFileURL)            throws IOException  {return toReader(aFileURL.openStream());}
         public static InputStream    toInputStream(Path aPath)              throws IOException  {return Files.newInputStream(aPath);}
+        public static BufferedReader toReader     (String aFilePath)        throws IOException  {return toReader(UT.IO.toAbsolutePath_(aFilePath));}
         public static BufferedReader toReader     (Path aPath)              throws IOException  {return Files.newBufferedReader(aPath);}
+        public static BufferedReader toReader     (URL aFileURL)            throws IOException  {return toReader(aFileURL.openStream());}
+        public static BufferedReader toReader     (InputStream aInputStream)                    {return toReader(aInputStream, StandardCharsets.UTF_8);}
+        public static BufferedReader toReader     (InputStream aInputStream, Charset aCS)       {return new BufferedReader(new InputStreamReader(aInputStream, aCS));}
         
         /** misc stuffs */
         public static File toFile(String aFilePath)                     {return toAbsolutePath_(aFilePath).toFile();}
@@ -1096,8 +1116,6 @@ public class UT {
         public static void init() {
             if (INITIALIZED) return;
             INITIALIZED = true;
-            // 全局修改换行符为 LF
-            System.setProperty("line.separator", "\n");
             // 全局修改工作目录为正确的目录
             String wd = pwd();
             System.setProperty("user.dir", wd);

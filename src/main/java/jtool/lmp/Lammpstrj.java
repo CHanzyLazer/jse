@@ -537,19 +537,19 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        try (BufferedWriter tWriter = UT.IO.toWriter(aFilePath)) {
+        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {
             for (SubLammpstrj tSubLammpstrj : this) {
-                tWriter.write("ITEM: TIMESTEP"); tWriter.newLine();
-                tWriter.write(String.format("%d", tSubLammpstrj.timeStep())); tWriter.newLine();
-                tWriter.write("ITEM: NUMBER OF ATOMS"); tWriter.newLine();
-                tWriter.write(String.format("%d", tSubLammpstrj.atomNum())); tWriter.newLine();
-                tWriter.write(String.format("ITEM: BOX BOUNDS %s", String.join(" ", tSubLammpstrj.boxBounds()))); tWriter.newLine();
-                tWriter.write(String.format("%f %f", tSubLammpstrj.mBox.xlo(), tSubLammpstrj.mBox.xhi())); tWriter.newLine();
-                tWriter.write(String.format("%f %f", tSubLammpstrj.mBox.ylo(), tSubLammpstrj.mBox.yhi())); tWriter.newLine();
-                tWriter.write(String.format("%f %f", tSubLammpstrj.mBox.zlo(), tSubLammpstrj.mBox.zhi())); tWriter.newLine();
-                tWriter.write(String.format("ITEM: ATOMS %s", String.join(" ", tSubLammpstrj.mAtomData.heads()))); tWriter.newLine();
+                tWriteln.writeln("ITEM: TIMESTEP");
+                tWriteln.writeln(String.format("%d", tSubLammpstrj.timeStep()));
+                tWriteln.writeln("ITEM: NUMBER OF ATOMS");
+                tWriteln.writeln(String.format("%d", tSubLammpstrj.atomNum()));
+                tWriteln.writeln(String.format("ITEM: BOX BOUNDS %s", String.join(" ", tSubLammpstrj.boxBounds())));
+                tWriteln.writeln(String.format("%f %f", tSubLammpstrj.mBox.xlo(), tSubLammpstrj.mBox.xhi()));
+                tWriteln.writeln(String.format("%f %f", tSubLammpstrj.mBox.ylo(), tSubLammpstrj.mBox.yhi()));
+                tWriteln.writeln(String.format("%f %f", tSubLammpstrj.mBox.zlo(), tSubLammpstrj.mBox.zhi()));
+                tWriteln.writeln(String.format("ITEM: ATOMS %s", String.join(" ", tSubLammpstrj.mAtomData.heads())));
                 for (IVector subAtomData : tSubLammpstrj.mAtomData.rows()) {
-                    tWriter.write(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString))); tWriter.newLine();
+                tWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString)));
                 }
             }
         }

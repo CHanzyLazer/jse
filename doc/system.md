@@ -246,10 +246,10 @@ println('333333');
 要使用这些任务提交器，只需要直接创建对应的实例即可，例如：
 
 ```groovy
-import jtool.system.PS;
+import jtool.system.PWSH;
 
 // 创建一个 PowerShell 提交器实例
-def exe = new PS();
+def exe = new PWSH();
 
 // 使用 system() 指令来执行系统指令，返回指令的退出值
 def exitValue = exe.system('echo 123456');
@@ -267,9 +267,9 @@ exe.shutdown();
 由于任务提交器内部都存在线程池来管理后台任务，因此在使用结束后需要调用 `shutdown()` 来手动关闭这个任务提交器，例如：
 
 ```groovy
-import jtool.system.PS;
+import jtool.system.PWSH;
 
-def exe = new PS();
+def exe = new PWSH();
 exe.system('echo 123456');
 
 exe.shutdown();
@@ -278,9 +278,9 @@ exe.shutdown();
 但是如果在 `exe.shutdown();` 语句到达之前，程序抛出了一些错误中断了，此时任务提交器不会正常关闭，在一些时候程序会卡死。在 groovy 脚本中，支持 java 原生的 [try-with-resources](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html) 语法来自动关闭这个实例：
 
 ```groovy
-import jtool.system.PS;
+import jtool.system.PWSH;
 
-try (def exe = new PS()) {
+try (def exe = new PWSH()) {
     exe.system('echo 123456');
 }
 ```
@@ -290,18 +290,18 @@ try (def exe = new PS()) {
 在 groovy 中，还可以使用这种更加紧凑的写法：
 
 ```groovy
-import jtool.system.PS;
+import jtool.system.PWSH;
 
-def exitValue = new PS().withCloseable {def exe -> exe.system('echo 123456')}
+def exitValue = new PWSH().withCloseable {def exe -> exe.system('echo 123456')}
 println("exitValue: $exitValue");
 ```
 
 甚至可以省略掉变量 `exe` 的创建：
 
 ```groovy
-import jtool.system.PS;
+import jtool.system.PWSH;
 
-def exitValue = new PS().withCloseable {it.system('echo 123456')}
+def exitValue = new PWSH().withCloseable {it.system('echo 123456')}
 println("exitValue: $exitValue");
 ```
 

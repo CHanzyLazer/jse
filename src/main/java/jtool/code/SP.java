@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static jtool.code.CS.Exec.EXE;
+import static jtool.code.CS.Exec.*;
 import static jtool.code.CS.IS_WINDOWS;
 import static jtool.code.CS.WORKING_DIR;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
@@ -212,9 +212,9 @@ public class SP {
     public static class Python {
         /** 一样这里统一使用全局的一个解释器 */
         private static Interpreter JEP_INTERP = null;
-        /** python 离线包的路径以及 python 库的路径 */
-        private final static String PYPKG_DIR = ".pypkg/";
-        private final static String PYLIB_DIR = "lib/";
+        /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
+        private final static String PYPKG_DIR = JAR_DIR+".pypkg/";
+        private final static String PYLIB_DIR = JAR_DIR;
         private final static String JEPLIB_DIR = PYLIB_DIR+"jep/";
         private final static String JEPLIB_PATH = JEPLIB_DIR + (IS_WINDOWS ? "jep.dll" : "jep.so");
         

@@ -102,8 +102,8 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     @Override public final boolean isDir(String aDir) throws Exception {return mSSH.isDir(aDir);}
     
     /** 通过 ssh 直接执行命令 */
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IPrintlnSupplier aPrintln) {
-        final SSHSystemFuture tFuture = new SSHSystemFuture(aCommand, aPrintln);
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
+        final SSHSystemFuture tFuture = new SSHSystemFuture(aCommand, aWriteln);
         // 增加结束时都断开连接的任务
         return toSystemFuture(tFuture, () -> {if (tFuture.mChannelExec != null) tFuture.mChannelExec.disconnect();});
     }
@@ -113,7 +113,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         private final @Nullable ChannelExec mChannelExec;
         private volatile boolean mCancelled = false;
         private final Future<Void> mOutTask;
-        private SSHSystemFuture(String aCommand, final @NotNull IPrintlnSupplier aPrintln) {
+        private SSHSystemFuture(String aCommand, final @NotNull AbstractSystemExecutor.IWritelnSupplier aPrintln) {
             // 执行指令
             ChannelExec tChannelExec;
             try {tChannelExec = mSSH.systemChannel(aCommand, noERROutput());}
@@ -139,10 +139,10 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
                 mOutTask = null;
             } else {
                 mOutTask = UT.Par.runAsync(() -> {
-                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream()); IPrintln tPrintln = aPrintln.get()) {
+                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream()); UT.IO.IWriteln tPrintln = aPrintln.get()) {
                         mChannelExec.connect();
                         String tLine;
-                        while ((tLine = tReader.readLine()) != null) tPrintln.println(tLine);
+                        while ((tLine = tReader.readLine()) != null) tPrintln.writeln(tLine);
                     } catch (Exception e) {
                         printStackTrace(e);
                         // 发生错误则断开连接
