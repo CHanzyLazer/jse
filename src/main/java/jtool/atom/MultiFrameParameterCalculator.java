@@ -5,6 +5,7 @@ import com.google.common.collect.HashBiMap;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.AbstractRandomAccessList;
+import jtool.code.collection.NewCollections;
 import jtool.math.function.Func1;
 import jtool.math.function.IFunc1;
 import jtool.math.matrix.IMatrix;
@@ -178,6 +179,61 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     
     
     /// 计算方法
+    
+    /** 通过给定矩阵获取可以进行修改的原子数据 */
+    private ISettableAtomData getAtomData_(final IMatrix aData) {
+        return new SettableAtomData(new AbstractRandomAccessList<ISettableAtom>() {
+            private final @Unmodifiable BiMap<Integer, Integer> mIndex2Id = mId2Index.inverse();
+            @Override public ISettableAtom get(final int index) {
+                return new ISettableAtom() {
+                    @Override public double x() {return aData.get(index, TYPE_XYZ_X_COL);}
+                    @Override public double y() {return aData.get(index, TYPE_XYZ_Y_COL);}
+                    @Override public double z() {return aData.get(index, TYPE_XYZ_Z_COL);}
+                    @Override public int id() {return mIndex2Id.get(index);}
+                    @Override public int type() {return (int)aData.get(index, TYPE_XYZ_TYPE_COL);}
+                    
+                    @Override public ISettableAtom setX(double aX) {aData.set(index, TYPE_XYZ_X_COL, aX); return this;}
+                    @Override public ISettableAtom setY(double aY) {aData.set(index, TYPE_XYZ_Y_COL, aY); return this;}
+                    @Override public ISettableAtom setZ(double aZ) {aData.set(index, TYPE_XYZ_Z_COL, aZ); return this;}
+                    @Override public ISettableAtom setID(int aID) {throw new UnsupportedOperationException("setID");}
+                    @Override public ISettableAtom setType(int aType) {aData.set(index, TYPE_XYZ_TYPE_COL, aType); return this;}
+                };
+            }
+            @Override public int size() {return mAtomNum;}
+        }, mAtomTypeNum, newBox(mBox));
+    }
+    
+    /**
+     * 直接获取指定帧的原子数据，
+     * 为了数据独立并且避免 shutdown 后数据失效这里会进行一次值拷贝
+     * @author liqa
+     * @param aFrame 指定帧的索引
+     * @return 可以进行修改的原子数据，抹除了速度信息（如果有的话）
+     */
+    public ISettableAtomData getAtomData(final int aFrame) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aFrame < 0 || aFrame>=mFrameNum) throw new IllegalArgumentException("Input aFrame MUST be in range [0, "+mFrameNum+"), input: "+aFrame);
+        // 采用专门矩阵存储来节省空间
+        IMatrix rData = Matrices.zeros(mAtomNum, ATOM_DATA_KEYS_TYPE_XYZ.length);
+        // 先统一设置好粒子种类和坐标
+        XYZ[] subXYZArray = mAllAtomDataXYZ[aFrame];
+        for (int row = 0; row < mAtomNum; ++row) {
+            final XYZ tXYZ = subXYZArray[row];
+            rData.set_(row, TYPE_XYZ_X_COL, tXYZ.mX);
+            rData.set_(row, TYPE_XYZ_Y_COL, tXYZ.mY);
+            rData.set_(row, TYPE_XYZ_Z_COL, tXYZ.mZ);
+            rData.set_(row, TYPE_XYZ_TYPE_COL, mTypeArray[row]);
+        }
+        // 返回结果
+        return getAtomData_(rData);
+    }
+    /**
+     * 为了数据独立并且避免 shutdown 后数据失效这里会进行一次值拷贝
+     * @author liqa
+     * @return 可以进行修改的原子数据组成的抽象数组
+     */
+    public List<IAtomData> allAtomData() {return NewCollections.from(mFrameNum, this::getAtomData);}
+    
     /**
      * 获取这些多帧数据的平均原子坐标对应的原子数据
      * @author liqa
@@ -213,31 +269,48 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         rData.col(TYPE_XYZ_Z_COL).div2this(aFrameNum);
         
         // 返回结果
-        return new SettableAtomData(new AbstractRandomAccessList<ISettableAtom>() {
-            private final @Unmodifiable BiMap<Integer, Integer> mIndex2Id = mId2Index.inverse();
-            @Override public ISettableAtom get(final int index) {
-                return new ISettableAtom() {
-                    @Override public double x() {return rData.get(index, TYPE_XYZ_X_COL);}
-                    @Override public double y() {return rData.get(index, TYPE_XYZ_Y_COL);}
-                    @Override public double z() {return rData.get(index, TYPE_XYZ_Z_COL);}
-                    @Override public int id() {return mIndex2Id.get(index);}
-                    @Override public int type() {return (int)rData.get(index, TYPE_XYZ_TYPE_COL);}
-                    
-                    @Override public ISettableAtom setX(double aX) {rData.set(index, TYPE_XYZ_X_COL, aX); return this;}
-                    @Override public ISettableAtom setY(double aY) {rData.set(index, TYPE_XYZ_Y_COL, aY); return this;}
-                    @Override public ISettableAtom setZ(double aZ) {rData.set(index, TYPE_XYZ_Z_COL, aZ); return this;}
-                    @Override public ISettableAtom setID(int aID) {throw new UnsupportedOperationException("setID");}
-                    @Override public ISettableAtom setType(int aType) {rData.set(index, TYPE_XYZ_TYPE_COL, aType); return this;}
-                };
-            }
-            @Override public int size() {return mAtomNum;}
-        }, mAtomTypeNum, newBox(mBox));
+        return getAtomData_(rData);
     }
     public ISettableAtomData getMeanAtomData() {return getMeanAtomData(0, mFrameNum);}
     
     
     /**
-     * 直接获取这些多帧数据的平均原子坐标对应的 MPC，MPC 特有的参数会直接保持同步
+     * 获取指定帧的原子坐标对应的 MPC，MPC 特有的参数会直接保持同步；
+     * 返回得到的 MPC 同样需要关闭
+     * @author liqa
+     * @param aFrame 指定帧的索引
+     * @return 平均原子坐标对应的 MPC
+     */
+    public MonatomicParameterCalculator getMPC(final int aFrame) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aFrame < 0 || aFrame>=mFrameNum) throw new IllegalArgumentException("Input aFrame MUST be in range [0, "+mFrameNum+"), input: "+aFrame);
+        
+        // 使用这种方式创建 MPC
+        return new MonatomicParameterCalculator(mAtomNum, mBox, nThreads(), xyzArray -> {
+            XYZ[] subXYZArray = mAllAtomDataXYZ[aFrame];
+            if (xyzArray==null || xyzArray.length<mAtomNum) {
+                xyzArray = new XYZ[mAtomNum];
+                for (int i = 0; i < mAtomNum; ++i) xyzArray[i] = new XYZ(subXYZArray[i]);
+            } else {
+                for (int i = 0; i < mAtomNum; ++i) xyzArray[i].setXYZ(subXYZArray[i]);
+            }
+            return xyzArray;
+        });
+    }
+    /**
+     * 直接获取这些多帧数据的平均原子坐标对应的 MPC，MPC 特有的参数会直接保持同步；
+     * 为了数据独立并且避免 shutdown 后数据失效这里会进行一次值拷贝；
+     * 返回得到的 MPC 同样需要关闭
+     * @author liqa
+     * @return 平均原子坐标对应的 MPC
+     */
+    public @Unmodifiable List<MonatomicParameterCalculator> allMPC() {
+        return NewCollections.from(mFrameNum, this::getMPC);
+    }
+    
+    /**
+     * 直接获取这些多帧数据的平均原子坐标对应的 MPC，MPC 特有的参数会直接保持同步；
+     * 返回得到的 MPC 同样需要关闭
      * @author liqa
      * @param aStart 开始的帧，包含
      * @param aFrameNum 需要进行平均的帧的数目
