@@ -38,22 +38,22 @@ public interface IPlotter {
     default ILine plot(                  double[] aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
     default ILine plot(                   IVector aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
     default ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {return plot(aX, aY, defaultLineName_());}
-    default ILine plot(                                                   double[] aY, String aName) {return plot(AbstractCollections.range_(aY.length), aY, aName);}
-    default ILine plot(                  double[] aX,                     double[] aY, String aName) {return plot(AbstractCollections.from(aX), AbstractCollections.from(aY), aName);}
-    default ILine plot(                   IVector aX,                     double[] aY, String aName) {return plot(aX.iterable(), AbstractCollections.from(aY), aName);}
-    default ILine plot(Iterable<? extends Number> aX,                     double[] aY, String aName) {return plot(aX, AbstractCollections.from(aY), aName);}
-    default ILine plot(                                                    IVector aY, String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
-    default ILine plot(                  double[] aX,                      IVector aY, String aName) {return plot(AbstractCollections.from(aX), aY.iterable(), aName);}
-    default ILine plot(                   IVector aX,                      IVector aY, String aName) {return plot(aX.iterable(), aY.iterable(), aName);}
-    default ILine plot(Iterable<? extends Number> aX,                      IVector aY, String aName) {return plot(aX, aY.iterable(), aName);}
-    default ILine plot(                                                     IFunc1 aY, String aName) {return plot(aY.x(), aY.f(), aName);}
-    default ILine plot(                  double[] aX,                   IFunc1Subs aY, String aName) {return plot(AbstractCollections.from(aX), aY, aName);}
-    default ILine plot(                   IVector aX,                   IFunc1Subs aY, String aName) {return plot(aX.iterable(), aY, aName);}
-    default ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return plot(aX, AbstractCollections.map(aX, x -> aY.subs(x.doubleValue())), aName);}
-    default ILine plot(                               Collection<? extends Number> aY, String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
-    default ILine plot(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return plot(AbstractCollections.from(aX), aY, aName);}
-    default ILine plot(                   IVector aX, Iterable  <? extends Number> aY, String aName) {return plot(aX.iterable(), aY, aName);}
-            ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName);
+    default ILine plot(                                                   double[] aY, @Nullable String aName) {return plot(AbstractCollections.range_(aY.length), aY, aName);}
+    default ILine plot(                  double[] aX,                     double[] aY, @Nullable String aName) {return plot(AbstractCollections.from(aX), AbstractCollections.from(aY), aName);}
+    default ILine plot(                   IVector aX,                     double[] aY, @Nullable String aName) {return plot(aX.iterable(), AbstractCollections.from(aY), aName);}
+    default ILine plot(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {return plot(aX, AbstractCollections.from(aY), aName);}
+    default ILine plot(                                                    IVector aY, @Nullable String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
+    default ILine plot(                  double[] aX,                      IVector aY, @Nullable String aName) {return plot(AbstractCollections.from(aX), aY.iterable(), aName);}
+    default ILine plot(                   IVector aX,                      IVector aY, @Nullable String aName) {return plot(aX.iterable(), aY.iterable(), aName);}
+    default ILine plot(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {return plot(aX, aY.iterable(), aName);}
+    default ILine plot(                                                     IFunc1 aY, @Nullable String aName) {return plot(aY.x(), aY.f(), aName);}
+    default ILine plot(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {return plot(AbstractCollections.from(aX), aY, aName);}
+    default ILine plot(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {return plot(aX.iterable(), aY, aName);}
+    default ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {return plot(aX, AbstractCollections.map(aX, x -> aY.subs(x.doubleValue())), aName);}
+    default ILine plot(                               Collection<? extends Number> aY, @Nullable String aName) {return plot(AbstractCollections.range_(aY.size()), aY, aName);}
+    default ILine plot(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {return plot(AbstractCollections.from(aX), aY, aName);}
+    default ILine plot(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {return plot(aX.iterable(), aY, aName);}
+            ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName);
     
     default ILine loglog(                                                   double[] aY) {return xScaleLog().yScaleLog().plot(aY);}
     default ILine loglog(                  double[] aX,                     double[] aY) {return xScaleLog().yScaleLog().plot(aX, aY);}
@@ -71,22 +71,22 @@ public interface IPlotter {
     default ILine loglog(                  double[] aX, Iterable  <? extends Number> aY) {return xScaleLog().yScaleLog().plot(aX, aY);}
     default ILine loglog(                   IVector aX, Iterable  <? extends Number> aY) {return xScaleLog().yScaleLog().plot(aX, aY);}
     default ILine loglog(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {return xScaleLog().yScaleLog().plot(aX, aY);}
-    default ILine loglog(                                                   double[] aY, String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
-    default ILine loglog(                  double[] aX,                     double[] aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                   IVector aX,                     double[] aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(Iterable<? extends Number> aX,                     double[] aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                                                    IVector aY, String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
-    default ILine loglog(                  double[] aX,                      IVector aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                   IVector aX,                      IVector aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(Iterable<? extends Number> aX,                      IVector aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                                                     IFunc1 aY, String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
-    default ILine loglog(                  double[] aX,                   IFunc1Subs aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                   IVector aX,                   IFunc1Subs aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                               Collection<? extends Number> aY, String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
-    default ILine loglog(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(                   IVector aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
-    default ILine loglog(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                                                   double[] aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
+    default ILine loglog(                  double[] aX,                     double[] aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                   IVector aX,                     double[] aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                                                    IVector aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
+    default ILine loglog(                  double[] aX,                      IVector aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                   IVector aX,                      IVector aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                                                     IFunc1 aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
+    default ILine loglog(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                               Collection<? extends Number> aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aY, aName);}
+    default ILine loglog(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
+    default ILine loglog(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().yScaleLog().plot(aX, aY, aName);}
     
     default ILine semilogx(                                                   double[] aY) {return xScaleLog().plot(aY);}
     default ILine semilogx(                  double[] aX,                     double[] aY) {return xScaleLog().plot(aX, aY);}
@@ -104,22 +104,22 @@ public interface IPlotter {
     default ILine semilogx(                  double[] aX, Iterable  <? extends Number> aY) {return xScaleLog().plot(aX, aY);}
     default ILine semilogx(                   IVector aX, Iterable  <? extends Number> aY) {return xScaleLog().plot(aX, aY);}
     default ILine semilogx(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {return xScaleLog().plot(aX, aY);}
-    default ILine semilogx(                                                   double[] aY, String aName) {return xScaleLog().plot(aY, aName);}
-    default ILine semilogx(                  double[] aX,                     double[] aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                   IVector aX,                     double[] aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(Iterable<? extends Number> aX,                     double[] aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                                                    IVector aY, String aName) {return xScaleLog().plot(aY, aName);}
-    default ILine semilogx(                  double[] aX,                      IVector aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                   IVector aX,                      IVector aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(Iterable<? extends Number> aX,                      IVector aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                                                     IFunc1 aY, String aName) {return xScaleLog().plot(aY, aName);}
-    default ILine semilogx(                  double[] aX,                   IFunc1Subs aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                   IVector aX,                   IFunc1Subs aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                               Collection<? extends Number> aY, String aName) {return xScaleLog().plot(aY, aName);}
-    default ILine semilogx(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(                   IVector aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
-    default ILine semilogx(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                                                   double[] aY, @Nullable String aName) {return xScaleLog().plot(aY, aName);}
+    default ILine semilogx(                  double[] aX,                     double[] aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                   IVector aX,                     double[] aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                                                    IVector aY, @Nullable String aName) {return xScaleLog().plot(aY, aName);}
+    default ILine semilogx(                  double[] aX,                      IVector aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                   IVector aX,                      IVector aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                                                     IFunc1 aY, @Nullable String aName) {return xScaleLog().plot(aY, aName);}
+    default ILine semilogx(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                               Collection<? extends Number> aY, @Nullable String aName) {return xScaleLog().plot(aY, aName);}
+    default ILine semilogx(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
+    default ILine semilogx(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName) {return xScaleLog().plot(aX, aY, aName);}
     
     default ILine semilogy(                                                   double[] aY) {return yScaleLog().plot(aY);}
     default ILine semilogy(                  double[] aX,                     double[] aY) {return yScaleLog().plot(aX, aY);}
@@ -137,22 +137,22 @@ public interface IPlotter {
     default ILine semilogy(                  double[] aX, Iterable  <? extends Number> aY) {return yScaleLog().plot(aX, aY);}
     default ILine semilogy(                   IVector aX, Iterable  <? extends Number> aY) {return yScaleLog().plot(aX, aY);}
     default ILine semilogy(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {return yScaleLog().plot(aX, aY);}
-    default ILine semilogy(                                                   double[] aY, String aName) {return yScaleLog().plot(aY, aName);}
-    default ILine semilogy(                  double[] aX,                     double[] aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                   IVector aX,                     double[] aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(Iterable<? extends Number> aX,                     double[] aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                                                    IVector aY, String aName) {return yScaleLog().plot(aY, aName);}
-    default ILine semilogy(                  double[] aX,                      IVector aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                   IVector aX,                      IVector aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(Iterable<? extends Number> aX,                      IVector aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                                                     IFunc1 aY, String aName) {return yScaleLog().plot(aY, aName);}
-    default ILine semilogy(                  double[] aX,                   IFunc1Subs aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                   IVector aX,                   IFunc1Subs aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(Iterable<? extends Number> aX,                   IFunc1Subs aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                               Collection<? extends Number> aY, String aName) {return yScaleLog().plot(aY, aName);}
-    default ILine semilogy(                  double[] aX, Iterable  <? extends Number> aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(                   IVector aX, Iterable  <? extends Number> aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
-    default ILine semilogy(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                                                   double[] aY, @Nullable String aName) {return yScaleLog().plot(aY, aName);}
+    default ILine semilogy(                  double[] aX,                     double[] aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                   IVector aX,                     double[] aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                                                    IVector aY, @Nullable String aName) {return yScaleLog().plot(aY, aName);}
+    default ILine semilogy(                  double[] aX,                      IVector aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                   IVector aX,                      IVector aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                                                     IFunc1 aY, @Nullable String aName) {return yScaleLog().plot(aY, aName);}
+    default ILine semilogy(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                               Collection<? extends Number> aY, @Nullable String aName) {return yScaleLog().plot(aY, aName);}
+    default ILine semilogy(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
+    default ILine semilogy(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName) {return yScaleLog().plot(aX, aY, aName);}
     
     String DEFAULT_FIGURE_NAME = "figure";
     /** 显示结果 */

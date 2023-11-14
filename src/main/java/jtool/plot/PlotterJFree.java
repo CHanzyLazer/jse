@@ -2,6 +2,7 @@ package jtool.plot;
 
 import jtool.code.UT;
 import jtool.math.MathEX;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
@@ -385,12 +386,15 @@ public final class PlotterJFree implements IPlotter {
     }
     
     /** 添加绘制数据 */
-    @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, String aName) {
+    @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
+        @NotNull String tName = aName==null ? defaultLineName_() : aName;
         // 添加数据
-        mLinesData.addSeries(getValidXYSeries_(aX, aY, aName));
+        mLinesData.addSeries(getValidXYSeries_(aX, aY, tName));
         // 创建曲线
-        LineJFree tLine = new LineJFree(mLines.size(), aX, aY, aName);
+        LineJFree tLine = new LineJFree(mLines.size(), aX, aY, tName);
         mLines.add(tLine);
+        // 如果输入名字为 null 则不显示 legend
+        if (aName == null) tLine.noLegend();
         // 返回 LineJFree
         return tLine;
     }
