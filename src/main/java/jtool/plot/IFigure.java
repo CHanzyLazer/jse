@@ -23,6 +23,7 @@ public interface IFigure {
     IFigure insetsBottom(double aBottom);
     IFigure insetsRight(double aRight);
     
-    void save(@Nullable String aPath) throws IOException;
+    void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException;
+    void save(@Nullable String aFilePath) throws IOException;
     default void save() throws IOException {save(null);}
 }

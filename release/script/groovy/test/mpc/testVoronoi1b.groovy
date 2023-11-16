@@ -2,7 +2,6 @@ package test.mpc
 
 import jtool.code.UT
 import jtool.code.collection.ArrayLists
-import jtool.math.vector.LogicalVector
 import jtool.math.vector.Vectors
 import jtool.plot.Plotters
 import jtool.vasp.XDATCAR

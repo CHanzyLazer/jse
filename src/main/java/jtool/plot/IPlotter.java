@@ -203,7 +203,7 @@ public interface IPlotter {
     
     /** 直接保存结果 */
     void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException;
-    default void save(@Nullable String aFilePath) throws IOException {save(aFilePath, 1024, 768);}
+    void save(@Nullable String aFilePath) throws IOException;
     default void save() throws IOException {save(null);}
     
     /** 清空数据 */

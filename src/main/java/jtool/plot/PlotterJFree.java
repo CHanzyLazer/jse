@@ -117,7 +117,7 @@ public final class PlotterJFree implements IPlotter {
             double tickLabelWidth = estimateMaximumTickLabelWidth(g2, unit1);
             double unit1Width = lengthToJava2D(unit1.getSize(), dataArea, edge);
             NumberTickUnit unit2 = (NumberTickUnit) unit1;
-            double guess = ((tickLabelWidth+10.0) / unit1Width) * unit1.getSize(); // 修改这个来增大间距
+            double guess = ((tickLabelWidth+40.0) / unit1Width) * unit1.getSize(); // 修改这个来增大间距
             
             // 直接在这里限制 tick 的数目
             if (getRange().getLength() > 15.0*guess) guess = getRange().getLength()/15.0;
@@ -141,7 +141,7 @@ public final class PlotterJFree implements IPlotter {
             double unitHeight = lengthToJava2D(unit1.getSize(), dataArea, edge);
             double guess;
             if (unitHeight > 0) {
-                guess = ((tickLabelHeight+20.0) / unitHeight) * unit1.getSize(); // 修改这个来增大间距
+                guess = ((tickLabelHeight+40.0) / unitHeight) * unit1.getSize(); // 修改这个来增大间距
             } else {
                 guess = getRange().getLength() / 20.0;
             }
@@ -163,10 +163,10 @@ public final class PlotterJFree implements IPlotter {
     /** 全局常量记录默认值 */
     public final static String TITLE = null, X_LABEL = null, Y_LABEL = null;
     public final static Font
-          TITLE_FONT  = new Font("Times New Roman", Font.BOLD , 24)
-        , LABEL_FONT  = new Font("Times New Roman", Font.PLAIN, 20)
-        , LEGEND_FONT = new Font("Times New Roman", Font.PLAIN, 20)
-        , TICK_FONT   = new Font("Times New Roman", Font.PLAIN, 18)
+          TITLE_FONT  = new Font("Times New Roman", Font.BOLD, 32)
+        , LABEL_FONT  = new Font("Times New Roman", Font.BOLD, 30)
+        , LEGEND_FONT = new Font("Times New Roman", Font.BOLD, 26)
+        , TICK_FONT   = new Font("Times New Roman", Font.BOLD, 24)
         ;
     public final static double LEGEND_SIZE = 16.0;
     
@@ -379,10 +379,19 @@ public final class PlotterJFree implements IPlotter {
     
     /** 直接保存结果 */
     @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
+        // 有限走 mCurrentFigure 的 save，避免锁出现问题
+        if (mCurrentFigure!=null) {mCurrentFigure.save(aFilePath, aWidth, aHeight); return;}
+        // 如果没有 show，则直接保存
         if (aFilePath==null || aFilePath.isEmpty()) aFilePath = IPlotter.DEFAULT_FIGURE_NAME;
         if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
         UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
         ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
+    }
+    @Override public void save(@Nullable String aFilePath) throws IOException {
+        // 有限走 mCurrentFigure 的 save，避免锁出现问题
+        if (mCurrentFigure!=null) {mCurrentFigure.save(aFilePath); return;}
+        // 默认保存的大小
+        save(aFilePath, 1024, 768);
     }
     
     /** 添加绘制数据 */
@@ -507,13 +516,16 @@ public final class PlotterJFree implements IPlotter {
             @Override public IFigure insetsBottom(double aBottom) {synchronized (tFrame.getTreeLock()) {tInset.bottom = (int)Math.round(aBottom);} return this;}
             @Override public IFigure insetsRight(double aRight) {synchronized (tFrame.getTreeLock()) {tInset.right = (int)Math.round(aRight);} return this;}
             
-            @Override public void save(@Nullable String aFilePath) throws IOException {
+            @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
                 synchronized (tFrame.getTreeLock()) {
                     if (aFilePath==null || aFilePath.isEmpty()) aFilePath = tFrame.getTitle();
                     if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
                     UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
-                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, tPanel.getWidth()-tInset.left-tInset.right, tPanel.getHeight()-tInset.top-tInset.bottom);
+                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
                 }
+            }
+            @Override public void save(@Nullable String aFilePath) throws IOException {
+                save(aFilePath, tPanel.getWidth()-tInset.left-tInset.right, tPanel.getHeight()-tInset.top-tInset.bottom);
             }
         };
         

@@ -30,9 +30,10 @@ line4.lineType('-' ).lineWidth(3.0).markerType('d').markerColor('m');
 // 设置绘制范围，标题
 xLabel('x');
 yLabel('y');
+title('Title of Test Plot');
 // 现在自动设置 tick 和 axis 也可以
 //tick(0.2);
 //axis(-1.1, 1.1);
 
-// 保存图片（注意内部 panel 的 size 会和窗口设置尺寸后有一定出入，直接保存会和设置的尺寸关联，而等待一段后再保存则和实际显示的关联）
-//save('.temp/testPlot.png');
+// 保存图片
+save('.temp/testPlot.png', 800, 800);
