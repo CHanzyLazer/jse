@@ -9,7 +9,7 @@ import static jtool.code.CS.*
 data = Lmpdat.read('lmp/data/data-glass');
 
 UT.Timer.tic();
-voronoi = data.getMPC().withCloseable {it.calVoronoi();}
+voronoi = data.getMPC().withCloseable {it.calVoronoi();}.setAreaThreshold(0.02).setLengthThresholdAbs(0.04)
 UT.Timer.toc('voronoi');
 
 // 现在支持这样访问，不会有性能问题
@@ -33,7 +33,7 @@ for (i in 0..<data.atomNum()) {
 UT.IO.table2csv(table, 'lmp/.temp/voronoi.csv');
 
 // 读取 ovito 的表并对比
-tabelOvito = UT.IO.csv2table('lmp/.temp/voronoi-ovito.csv');
+tabelOvito = UT.IO.csv2table('lmp/.temp/voronoi-ovito-0,02-0,04.csv');
 
 diffNum = 0;
 for (i in 0..<data.atomNum()) {
