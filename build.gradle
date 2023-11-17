@@ -26,7 +26,7 @@ compileJava {
 }
 
 dependencies {
-    compileOnly('org.jetbrains:annotations:24.0.1')                 // debug
+    implementation('org.jetbrains:annotations:24.0.1')              // debug
     
 //    implementation files('.lib/jtoolex-algorithm.jar')            // test use
 //    implementation files('.lib/jtoolex-voronoi.jar')              // test use
@@ -70,8 +70,18 @@ shadowJar {
     destinationDirectory = file('./release/lib')
 }
 
+tasks.register('sourceJar', Jar) {
+    archiveBaseName = 'jtool'
+    archiveClassifier = 'src'
+    from sourceSets.main.allSource
+    
+    // 修改目标文件夹，打包后添加到子项目中
+    destinationDirectory = file('./release/src')
+}
+
+
 build {
-    dependsOn shadowJar
+    dependsOn shadowJar, sourceJar
     jar.enabled = false
 }
 

@@ -3,6 +3,7 @@ __*
 
 /build
 /release/lib
+/release/src
 
 !/.gitignore
 !/.gitattributes

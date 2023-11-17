@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/lib/jtool-all.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/src/jtool-src.jar!/" />
+    </SOURCES>
   </library>
 </component>
