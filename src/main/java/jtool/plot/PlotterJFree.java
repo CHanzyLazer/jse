@@ -8,14 +8,17 @@ import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
 import org.jfree.chart.event.RendererChangeEvent;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.SeriesRenderingOrder;
-import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.plot.*;
+import org.jfree.chart.renderer.RendererUtils;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.Range;
+import org.jfree.data.general.DatasetUtils;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -209,7 +212,75 @@ public final class PlotterJFree implements IPlotter {
         mLineRender.setDrawOutlines(true); // 默认绘制 outline
         mLineRender.setDrawSeriesLineAsPath(true); // 指定按照路径的方式绘制
         // 绘制器
-        mPlot = new XYPlot(mLinesData, mXAxis, mYAxis, mLineRender);
+        mPlot = new XYPlot(mLinesData, mXAxis, mYAxis, mLineRender) {
+            // 重写修改循环顺序，每个线单独绘制
+            @SuppressWarnings("ConstantValue")
+            @Override public boolean render(Graphics2D g2, Rectangle2D dataArea, int index, PlotRenderingInfo info, CrosshairState crosshairState) {
+                boolean foundData = false;
+                XYDataset dataset = getDataset(index);
+                if (!DatasetUtils.isEmptyOrNull(dataset)) {
+                    foundData = true;
+                    ValueAxis xAxis = getDomainAxisForDataset(index);
+                    ValueAxis yAxis = getRangeAxisForDataset(index);
+                    if (xAxis == null || yAxis == null) {
+                        return foundData;  // can't render anything without axes
+                    }
+                    XYItemRenderer renderer = getRenderer(index);
+                    if (renderer == null) {
+                        renderer = getRenderer();
+                        if (renderer == null) { // no default renderer available
+                            return foundData;
+                        }
+                    }
+                    XYItemRendererState state = renderer.initialise(g2, dataArea, this, dataset, info);
+                    int passCount = renderer.getPassCount();
+                    SeriesRenderingOrder seriesOrder = getSeriesRenderingOrder();
+                    if (seriesOrder == SeriesRenderingOrder.REVERSE) {
+                        //render series in reverse order
+                        int seriesCount = dataset.getSeriesCount();
+                        for (int series = seriesCount - 1; series >= 0; series--) {
+                            int firstItem = 0;
+                            int lastItem = dataset.getItemCount(series) - 1;
+                            if (lastItem == -1) continue;
+                            if (state.getProcessVisibleItemsOnly()) {
+                                int[] itemBounds = RendererUtils.findLiveItems(
+                                    dataset, series, xAxis.getLowerBound(),
+                                    xAxis.getUpperBound());
+                                firstItem = Math.max(itemBounds[0] - 1, 0);
+                                lastItem = Math.min(itemBounds[1] + 1, lastItem);
+                            }
+                            for (int pass = 0; pass < passCount; pass++) {
+                                state.startSeriesPass(dataset, series, firstItem, lastItem, pass, passCount);
+                                for (int item = firstItem; item <= lastItem; item++) {
+                                    renderer.drawItem(g2, state, dataArea, info, this, xAxis, yAxis, dataset, series, item, crosshairState, pass);
+                                }
+                                state.endSeriesPass(dataset, series, firstItem, lastItem, pass, passCount);
+                            }
+                        }
+                    } else {
+                        //render series in forward order
+                        int seriesCount = dataset.getSeriesCount();
+                        for (int series = 0; series < seriesCount; series++) {
+                            int firstItem = 0;
+                            int lastItem = dataset.getItemCount(series) - 1;
+                            if (state.getProcessVisibleItemsOnly()) {
+                                int[] itemBounds = RendererUtils.findLiveItems(dataset, series, xAxis.getLowerBound(), xAxis.getUpperBound());
+                                firstItem = Math.max(itemBounds[0] - 1, 0);
+                                lastItem = Math.min(itemBounds[1] + 1, lastItem);
+                            }
+                            for (int pass = 0; pass < passCount; pass++) {
+                                state.startSeriesPass(dataset, series, firstItem, lastItem, pass, passCount);
+                                for (int item = firstItem; item <= lastItem; item++) {
+                                    renderer.drawItem(g2, state, dataArea, info, this, xAxis, yAxis, dataset, series, item, crosshairState, pass);
+                                }
+                                state.endSeriesPass(dataset, series, firstItem, lastItem, pass, passCount);
+                            }
+                        }
+                    }
+                }
+                return foundData;
+            }
+        };
         mPlot.setOrientation(PlotOrientation.VERTICAL);
         mPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD); // 修改绘制顺序为常见的顺序
         // 默认开启 tooltips
