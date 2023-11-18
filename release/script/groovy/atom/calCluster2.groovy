@@ -15,11 +15,13 @@ final def calculator = new MultiTypeClusterSizeCalculator(
 );
 
 UT.Timer.tic();
+UT.Timer.pbar(dump.size());
 parfor(dump.size()) {int i ->
     def subDump = dump[i];
     def isSolid = subDump.getMPC().withCloseable {calculator.getIsSolid_(it, subDump)}
     // 现在可以利用 asTable 来直接增加一列
     subDump.asTable()['isSolid'] = isSolid.asVec();
+    UT.Timer.pbar();
 }
 UT.Timer.toc();
 

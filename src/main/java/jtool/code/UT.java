@@ -2,6 +2,7 @@ package jtool.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import jtool.Main;
 import jtool.atom.*;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.filter.IDoubleFilter;
@@ -31,6 +32,10 @@ import groovy.yaml.YamlBuilder;
 import groovy.yaml.YamlSlurper;
 import jtool.plot.*;
 import jtool.vasp.IVaspCommonData;
+import me.tongfei.progressbar.ConsoleProgressBarConsumer;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
 import net.jafama.FastMath;
 import org.apache.groovy.json.internal.CharScanner;
 import org.apache.groovy.util.Maps;
@@ -427,7 +432,37 @@ public class UT {
             double seconds = elapsedTime % 60.0;
             System.out.printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
         }
-        public static double toc(boolean aFlag) {return (System.currentTimeMillis() - sTime) / 1000.0;}
+        public static double toc(boolean aFlag) {
+            if (sTime == null) return 0.0;
+            return (System.currentTimeMillis() - sTime) / 1000.0;
+        }
+        
+        private static @Nullable ProgressBar sProgressBar = null;
+        public static synchronized void progressBar(String aName, long aN) {
+            if (sProgressBar != null) {
+                sProgressBar.close();
+                Main.removeGlobalAutoCloseable(sProgressBar);
+            }
+            sProgressBar = new ProgressBarBuilder()
+                .setTaskName(aName).setInitialMax(aN)
+                .setConsumer(new ConsoleProgressBarConsumer(System.out))
+                .setUpdateIntervalMillis((int)FILE_SYSTEM_SLEEP_TIME_2)
+                .build();
+            Main.addGlobalAutoCloseable(sProgressBar);
+        }
+        public static synchronized void progressBar(long aN) {progressBar("", aN);}
+        public static synchronized void progressBar() {
+            if (sProgressBar == null) return;
+            sProgressBar.step();
+            if (sProgressBar.getCurrent() >= sProgressBar.getMax()) {
+                sProgressBar.close();
+                Main.removeGlobalAutoCloseable(sProgressBar);
+                sProgressBar = null;
+            }
+        }
+        @VisibleForTesting public static void pbar(String aName, long aN) {progressBar(aName, aN);}
+        @VisibleForTesting public static void pbar(long aN) {progressBar(aN);}
+        @VisibleForTesting public static void pbar() {progressBar();}
     }
     
     /** 序列化和反序列化的一些方法 */
