@@ -20,6 +20,7 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     
     default Iterable<Boolean> iterable() {return () -> iterator().toIterator();}
     List<Boolean> asList();
+    IVector asVec();
     
     /** 转为兼容性更好的 boolean[] */
     boolean[] data();

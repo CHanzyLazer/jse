@@ -42,11 +42,11 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
     @Override public ITable remove(int aIndex) {return mTableList.remove(aIndex);}
     /** 提供更加易用的添加方法，返回自身支持链式调用 */
     public Thermo append(ITable aTable) {
-        mTableList.add(aTable);
+        mTableList.add(aTable.copy());
         return this;
     }
     public Thermo appendList(Iterable<? extends ITable> aTableList) {
-        for (ITable tTable : aTableList) mTableList.add(tTable);
+        for (ITable tTable : aTableList) mTableList.add(tTable.copy());
         return this;
     }
     public Thermo appendFile(String aFilePath) throws IOException {
@@ -138,10 +138,12 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
      * @author liqa
      */
     public static Thermo fromTable(ITable aTable) {
-        return new Thermo(aTable);
+        return new Thermo(aTable.copy());
     }
     public static Thermo fromTableList(Iterable<? extends ITable> aTableList) {
-        return new Thermo(NewCollections.from(aTableList));
+        List<ITable> rThermo = new ArrayList<>();
+        for (ITable tTable : aTableList) rThermo.add(tTable.copy());
+        return new Thermo(rThermo);
     }
     
     

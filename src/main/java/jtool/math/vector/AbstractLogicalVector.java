@@ -81,6 +81,14 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
             @Override public @NotNull Iterator<Boolean> iterator() {return AbstractLogicalVector.this.iterator().toIterator();}
         };
     }
+    @Override public IVector asVec() {
+        return new RefVector() {
+            @Override public double get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx) ? 1.0 : 0.0;}
+            @Override public void set_(int aIdx, double aValue) {AbstractLogicalVector.this.set_(aIdx, aValue!=0.0);}
+            public double getAndSet_(int aIdx, double aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx, aValue!=0.0) ? 1.0 : 0.0;}
+            @Override public int size() {return AbstractLogicalVector.this.size();}
+        };
+    }
     
     /** 转为兼容性更好的 boolean[] */
     @Override public boolean[] data() {

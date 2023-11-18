@@ -5,15 +5,15 @@ import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.NewCollections;
 import jtool.math.MathEX;
-import jtool.math.matrix.IMatrix;
-import jtool.math.matrix.RowMatrix;
 import jtool.math.table.AbstractMultiFrameTable;
-import jtool.math.table.AbstractTable;
 import jtool.math.table.ITable;
+import jtool.math.table.Tables;
 import jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -109,7 +109,6 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         
         String mKeyX = null, mKeyY = null, mKeyZ = null;
         private final boolean mHasVelocities;
-        private final XYZType mXType, mYType, mZType;
         
         /** 提供直接转为表格的接口 */
         public ITable asTable() {return mAtomData;}
@@ -128,41 +127,12 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
             }
             mHasVelocities = (mAtomData.containsHead("vx") && mAtomData.containsHead("vy") && mAtomData.containsHead("vz"));
             
-            switch (mKeyX) {
-            case "x"  : {mXType = XYZType.NORMAL;             break;}
-            case "xs" : {mXType = XYZType.SCALED;             break;}
-            case "xu" : {mXType = XYZType.UNWRAPPED;          break;}
-            case "xsu": {mXType = XYZType.SCALED_UNWRAPPED;   break;}
-            default: throw new RuntimeException();
-            }
-            switch (mKeyY) {
-            case "y"  : {mYType = XYZType.NORMAL;             break;}
-            case "ys" : {mYType = XYZType.SCALED;             break;}
-            case "yu" : {mYType = XYZType.UNWRAPPED;          break;}
-            case "ysu": {mYType = XYZType.SCALED_UNWRAPPED;   break;}
-            default: throw new RuntimeException();
-            }
-            switch (mKeyZ) {
-            case "z"  : {mZType = XYZType.NORMAL;             break;}
-            case "zs" : {mZType = XYZType.SCALED;             break;}
-            case "zu" : {mZType = XYZType.UNWRAPPED;          break;}
-            case "zsu": {mZType = XYZType.SCALED_UNWRAPPED;   break;}
-            default: throw new RuntimeException();
-            }
-            
             // 对于 dump，mAtomTypeNum 只能手动遍历统计
             int tAtomTypeNum = 1;
             if (mAtomData.containsHead("type")) {
                 tAtomTypeNum = (int)mAtomData.col("type").max();
             }
             mAtomTypeNum = tAtomTypeNum;
-        }
-        
-        private enum XYZType {
-              NORMAL
-            , SCALED
-            , UNWRAPPED
-            , SCALED_UNWRAPPED
         }
         
         // dump 额外的属性
@@ -172,37 +142,44 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         
         /** 密度归一化, 返回自身来支持链式调用 */
         public SubLammpstrj setDenseNormalized() {
+            if (mKeyX==null) throw new RuntimeException("No X data in this Lammpstrj");
+            if (mKeyY==null) throw new RuntimeException("No Y data in this Lammpstrj");
+            if (mKeyZ==null) throw new RuntimeException("No Z data in this Lammpstrj");
+            
             XYZ oShiftedBox = XYZ.toXYZ(mBox.shiftedBox());
             double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / atomNum());
             tScale = 1.0 / tScale;
             
             // 从逻辑上考虑，这里不对原本数据做值拷贝
-            switch (mXType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyX) {
+            case "x": case "xu": {
                 IVector tCol = mAtomData.col(mKeyX);
                 tCol.minus2this(mBox.xlo());
                 tCol.multiply2this(tScale);
                 break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {break;}
+            case "xs": case "xsu": {break;}
+            default: throw new RuntimeException();
             }
-            switch (mYType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyY) {
+            case "y": case "yu": {
                 IVector tCol = mAtomData.col(mKeyY);
                 tCol.minus2this(mBox.ylo());
                 tCol.multiply2this(tScale);
                 break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {break;}
+            case "ys": case "ysu": {break;}
+            default: throw new RuntimeException();
             }
-            switch (mZType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyZ) {
+            case "z": case "zu": {
                 IVector tCol = mAtomData.col(mKeyZ);
                 tCol.minus2this(mBox.zlo());
                 tCol.multiply2this(tScale);
                 break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {break;}
+            case "zs": case "zsu": {break;}
+            default: throw new RuntimeException();
             }
             
             if (mAtomData.containsHead("vx")) mAtomData.col("vx").multiply2this(tScale);
@@ -218,14 +195,14 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         /** 内部方法，用于从原始的数据获取合适的 x，y，z 数据 */
         private double getX_(int aIdx) {
             double tX = mAtomData.get(aIdx, mKeyX);
-            switch (mXType) {
-            case NORMAL: {
+            switch (mKeyX) {
+            case "x": {
                 return tX-mBox.xlo();
             }
-            case SCALED: {
+            case "xs": {
                 return tX*(mBox.xhi()-mBox.xlo());
             }
-            case UNWRAPPED: {
+            case "xu": {
                 double tBoxLoX = mBox.xlo();
                 double tBoxHiX = mBox.xhi();
                 double tBoxX = tBoxHiX - tBoxLoX;
@@ -233,7 +210,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
                 else if (tX >= tBoxHiX) {while (tX >= tBoxHiX) tX -= tBoxX;}
                 return tX-tBoxLoX;
             }
-            case SCALED_UNWRAPPED: {
+            case "xsu": {
                 if      (tX <  0.0) {while (tX <  0.0) ++tX;}
                 else if (tX >= 1.0) {while (tX >= 1.0) --tX;}
                 return tX*(mBox.xhi()-mBox.xlo());
@@ -243,14 +220,14 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         }
         private double getY_(int aIdx) {
             double tY = mAtomData.get(aIdx, mKeyY);
-            switch (mYType) {
-            case NORMAL: {
+            switch (mKeyY) {
+            case "y": {
                 return tY-mBox.ylo();
             }
-            case SCALED: {
+            case "ys": {
                 return tY*(mBox.yhi()-mBox.ylo());
             }
-            case UNWRAPPED: {
+            case "yu": {
                 double tBoxLoY = mBox.ylo();
                 double tBoxHiY = mBox.yhi();
                 double tBoxY = tBoxHiY - tBoxLoY;
@@ -258,7 +235,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
                 else if (tY >= tBoxHiY) {while (tY >= tBoxHiY) tY -= tBoxY;}
                 return tY-tBoxLoY;
             }
-            case SCALED_UNWRAPPED: {
+            case "ysu": {
                 if      (tY <  0.0) {while (tY <  0.0) ++tY;}
                 else if (tY >= 1.0) {while (tY >= 1.0) --tY;}
                 return tY*(mBox.yhi()-mBox.ylo());
@@ -268,14 +245,14 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         }
         private double getZ_(int aIdx) {
             double tZ = mAtomData.get(aIdx, mKeyZ);
-            switch (mZType) {
-            case NORMAL: {
+            switch (mKeyZ) {
+            case "z": {
                 return tZ-mBox.zlo();
             }
-            case SCALED: {
+            case "zs": {
                 return tZ*(mBox.zhi()-mBox.zlo());
             }
-            case UNWRAPPED: {
+            case "zu": {
                 double tBoxLoZ = mBox.zlo();
                 double tBoxHiZ = mBox.zhi();
                 double tBoxZ = tBoxHiZ - tBoxLoZ;
@@ -283,7 +260,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
                 else if (tZ >= tBoxHiZ) {while (tZ >= tBoxHiZ) tZ -= tBoxZ;}
                 return tZ-tBoxLoZ;
             }
-            case SCALED_UNWRAPPED: {
+            case "zsu": {
                 if      (tZ <  0.0) {while (tZ <  0.0) ++tZ;}
                 else if (tZ >= 1.0) {while (tZ >= 1.0) --tZ;}
                 return tZ*(mBox.zhi()-mBox.zlo());
@@ -294,33 +271,33 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         
         /** 内部方法，用于从原始的数据来设置内部 x，y，z 数据 */
         private void setX_(int aIdx, double aX) {
-            switch (mXType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyX) {
+            case "x": case "xu": {
                 mAtomData.set(aIdx, mKeyX, aX+mBox.xlo()); break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {
+            case "xs": case "xsu": {
                 mAtomData.set(aIdx, mKeyX, aX/(mBox.xhi()-mBox.xlo())); break;
             }
             default: throw new RuntimeException();
             }
         }
         private void setY_(int aIdx, double aY) {
-            switch (mYType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyY) {
+            case "y": case "yu": {
                 mAtomData.set(aIdx, mKeyY, aY+mBox.ylo()); break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {
+            case "ys": case "ysu": {
                 mAtomData.set(aIdx, mKeyY, aY/(mBox.yhi()-mBox.ylo())); break;
             }
             default: throw new RuntimeException();
             }
         }
         private void setZ_(int aIdx, double aZ) {
-            switch (mZType) {
-            case NORMAL: case UNWRAPPED: {
+            switch (mKeyZ) {
+            case "z": case "zu": {
                 mAtomData.set(aIdx, mKeyZ, aZ+mBox.zlo()); break;
             }
-            case SCALED: case SCALED_UNWRAPPED: {
+            case "zs": case "zsu": {
                 mAtomData.set(aIdx, mKeyZ, aZ/(mBox.zhi()-mBox.zlo())); break;
             }
             default: throw new RuntimeException();
@@ -476,8 +453,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
             int tAtomNum;
             String[] aBoxBounds;
             Box aBox;
-            String[] aAtomDataKeys;
-            final IMatrix aAtomData;
+            final ITable aAtomData;
             
             // 读取时间步数
             UT.Texts.findLineContaining(aReader, "ITEM: TIMESTEP", true); tLine=aReader.readLine();
@@ -507,21 +483,19 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
             tLine = UT.Texts.findLineContaining(aReader, "ITEM: ATOMS", true);
             if (tLine == null) break;
             tTokens = UT.Texts.splitBlank(tLine);
-            aAtomDataKeys = new String[tTokens.length-2];
-            System.arraycopy(tTokens, 2, aAtomDataKeys, 0, aAtomDataKeys.length);
+            String[] tAtomDataKeys = new String[tTokens.length-2];
+            System.arraycopy(tTokens, 2, tAtomDataKeys, 0, tAtomDataKeys.length);
             boolean tIsAtomDataReadFull = true;
-            aAtomData = RowMatrix.zeros(tAtomNum, aAtomDataKeys.length);
+            aAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
             for (IVector tRow : aAtomData.rows()) {
                 tLine = aReader.readLine();
                 if (tLine == null) {tIsAtomDataReadFull = false; break;}
-                tRow.fill(UT.Texts.str2data(tLine, aAtomDataKeys.length));
+                tRow.fill(UT.Texts.str2data(tLine, tAtomDataKeys.length));
             }
             if (!tIsAtomDataReadFull) break;
             
             // 创建 SubLammpstrj 并附加到 rLammpstrj 中
-            rLammpstrj.add(new SubLammpstrj(aTimeStep, aBoxBounds, aBox, new AbstractTable(aAtomDataKeys) {
-                @Override public IMatrix asMatrix() {return aAtomData;}
-            }));
+            rLammpstrj.add(new SubLammpstrj(aTimeStep, aBoxBounds, aBox, aAtomData));
         }
         return new Lammpstrj(rLammpstrj);
     }
