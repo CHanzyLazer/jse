@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import static java.nio.file.StandardOpenOption.*;
+import static jtool.code.CS.RANDOM;
 
 /**
  * @author liqa
@@ -39,7 +40,7 @@ public class BiTrapSimple {
     
     public BiTrapSimple(int aNlo, int aNhi, double aEa, double aEb, double aTempStart                               ) {this(aNlo, aNhi, aEa, aEb, aTempStart, 0.0);}
     public BiTrapSimple(int aN  ,           double aEa, double aEb, double aTempStart                               ) {this(aN, 0, aEa, aEb, aTempStart);}
-    public BiTrapSimple(int aNlo, int aNhi, double aEa, double aEb, double aTempStart, double aCoolRate             ) {this(aNlo, aNhi, aEa, aEb, aTempStart, aCoolRate, new Random());}
+    public BiTrapSimple(int aNlo, int aNhi, double aEa, double aEb, double aTempStart, double aCoolRate             ) {this(aNlo, aNhi, aEa, aEb, aTempStart, aCoolRate, RANDOM);}
     public BiTrapSimple(int aNlo, int aNhi, double aEa, double aEb, double aTempStart, double aCoolRate, long  aSeed) {this(aNlo, aNhi, aEa, aEb, aTempStart, aCoolRate, new Random(aSeed));}
     /**
      * 创建一个模拟器，可以指定 aSeed 来手动设定种子

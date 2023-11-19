@@ -8,6 +8,7 @@ import jtool.lmp.Dump
 import jtool.lmp.LmpIn
 import jtool.lmp.Lmpdat
 import jtool.math.MathEX
+import jtool.math.random.LocalRandom
 import jtool.plot.Plotters
 import jtool.system.SSH
 import jtool.system.WSL
@@ -20,6 +21,7 @@ println(rand());
 rng(123456);
 println(rand());
 println(new Random(123456).nextDouble());
+println(new LocalRandom(123456).nextDouble());
 
 //a = new XYZ(1, 0, 3);
 //b = new XYZ(0, 4, 0);

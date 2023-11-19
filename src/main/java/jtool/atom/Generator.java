@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static jtool.code.CS.RANDOM;
 import static jtool.code.UT.Code.newBox;
 import static jtool.math.MathEX.Func;
 import static jtool.math.MathEX.Vec;
@@ -37,8 +38,8 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
     // 独立的随机数生成器
     private final Random mRNG;
     
-    public Generator() {this(new Random());}
-    public Generator(int aThreadNum) {this(aThreadNum, new Random());}
+    public Generator() {this(RANDOM);}
+    public Generator(int aThreadNum) {this(aThreadNum, RANDOM);}
     public Generator(int aThreadNum, long aSeed) {this(aThreadNum, new Random(aSeed));}
     
     Generator(Random aRNG) {this(1, aRNG);}

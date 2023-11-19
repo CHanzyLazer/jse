@@ -17,6 +17,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
 
+import static jtool.code.CS.RANDOM;
+
 /**
  * 使用向前通量采样法（Forward Flux Sampling，FFS）来对稀有事件的概率进行采样；
  * 只用于技术上的简单实现，如果需要保留演化的路径信息请使用 BG
@@ -36,7 +38,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private int mStep1Mul; // 过程 1 需要的点的数目的倍数，更高的值可以保证结果有更好的统计性能
     
     private final int mN; // 界面数目-1，即 n
-    private final Random mRNG = new Random(); // 独立的随机数生成器
+    private Random mRNG = RANDOM; // 独立的随机数生成器
     
     private int mMaxPathNum; // 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0
     private double mCutoff; // 用来将过低权重的点截断，将更多的资源用于统计高权重的点
@@ -100,6 +102,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
+    public ForwardFluxSampling<T> setRNG(long aSeed) {mRNG = new Random(aSeed); return this;}
     public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(1, aStep1Mul); return this;}
     public ForwardFluxSampling<T> setMaxPathNum(int aMaxPathNum) {mMaxPathNum = Math.max(mN0, aMaxPathNum); return this;}
     public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = MathEX.Code.toRange(0.0, 0.5, aCutoff); return this;}
