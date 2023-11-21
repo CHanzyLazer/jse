@@ -1,5 +1,6 @@
 package rareevent
 
+import jtool.math.random.LocalRandom
 import jtoolex.rareevent.IParameterCalculator
 import jtoolex.rareevent.IPathGenerator
 
@@ -19,11 +20,12 @@ class RandomWalk {
     
     static class PathGenerator implements IPathGenerator<Point> {
         private final int pathLen;
-        private final def RNG = new Random();
         PathGenerator(int pathLen) {this.pathLen = pathLen;}
         
         @Override Point initPoint() {return new Point(0, 0);}
-        @Override List<Point> pathFrom(Point point) {
+        @Override List<Point> pathFrom(Point point, long seed) {
+            def RNG = new LocalRandom(seed);
+            
             def path = new ArrayList<Point>(pathLen);
             path.add(point);
             for (_ in 1..<pathLen) {

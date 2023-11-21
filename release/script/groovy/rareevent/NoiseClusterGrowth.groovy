@@ -1,11 +1,11 @@
 package rareevent
 
 import jtool.math.MathEX
+import jtool.math.random.LocalRandom
 import jtoolex.rareevent.IParameterCalculator
 import jtoolex.rareevent.IPathGenerator
 import groovy.transform.CompileStatic
 
-import java.util.concurrent.ThreadLocalRandom
 
 /**
  * 用来测试 FFS 准确性的实例，
@@ -38,9 +38,8 @@ class NoiseClusterGrowth {
         }
         
         @Override Point initPoint() {return new Point(initValue, 0, 0);}
-        @Override List<Point> pathFrom(Point point) {
-            // 改为 local 的 RNG 解决并行下的性能问题
-            def RNG = ThreadLocalRandom.current();
+        @Override List<Point> pathFrom(Point point, long seed) {
+            def RNG = new LocalRandom(seed);
             
             def path = new ArrayList<Point>(pathLen);
             path.add(point);

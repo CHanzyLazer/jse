@@ -19,6 +19,7 @@ import jtool.math.function.IFunc1;
 import jtool.math.function.IFunc1Subs;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
+import jtool.math.random.LocalRandom;
 import jtool.math.table.ITable;
 import jtool.math.table.Tables;
 import jtool.math.vector.IVector;
@@ -85,6 +86,7 @@ public class UT {
          * @author liqa
          */
         public static int randSeed() {return RANDOM.nextInt(MAX_SEED);}
+        public static int randSeed(long aSeed) {return new LocalRandom(aSeed).nextInt(MAX_SEED);}
         
         /**
          * Get the random id in URL and Filename safe Base64, 8 length

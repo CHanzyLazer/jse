@@ -1,6 +1,7 @@
 package rareevent
 
 import jtool.math.MathEX
+import jtool.math.random.LocalRandom
 import jtoolex.rareevent.IParameterCalculator
 import jtoolex.rareevent.IPathGenerator
 
@@ -22,7 +23,6 @@ class BiClusterGrowth {
         private final int pathLen;
         private final double plusProb, minusProb;
         private final double convertProb;
-        private final def RNG = new Random();
         PathGenerator(int pathLen, double plusProb, double minusProb, double convertProb) {
             this.pathLen = pathLen;
             this.plusProb = plusProb;
@@ -31,7 +31,9 @@ class BiClusterGrowth {
         }
         
         @Override Point initPoint() {return new Point(0, 0, 0);}
-        @Override List<Point> pathFrom(Point point) {
+        @Override List<Point> pathFrom(Point point, long seed) {
+            def RNG = new LocalRandom(seed);
+            
             def path = new ArrayList<Point>(pathLen);
             path.add(point);
             for (_ in 1..<pathLen) {

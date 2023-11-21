@@ -1,6 +1,7 @@
 package rareevent
 
 import jtool.math.MathEX
+import jtool.math.random.LocalRandom
 import jtoolex.rareevent.IParameterCalculator
 import jtoolex.rareevent.IPathGenerator
 
@@ -20,7 +21,6 @@ class ClusterGrowth {
     static class PathGenerator implements IPathGenerator<Point> {
         private final int pathLen;
         private final double smallProb, largeProb;
-        private final def RNG = new Random();
         PathGenerator(int pathLen, double smallProb, double largeProb) {
             this.pathLen = pathLen;
             this.smallProb = smallProb;
@@ -28,7 +28,9 @@ class ClusterGrowth {
         }
         
         @Override Point initPoint() {return new Point(0, 0);}
-        @Override List<Point> pathFrom(Point point) {
+        @Override List<Point> pathFrom(Point point, long seed) {
+            def RNG = new LocalRandom(seed);
+            
             def path = new ArrayList<Point>(pathLen);
             path.add(point);
             for (_ in 1..<pathLen) {

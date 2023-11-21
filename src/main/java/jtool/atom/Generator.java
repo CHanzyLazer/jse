@@ -1,5 +1,6 @@
 package jtool.atom;
 
+import jtool.code.CS;
 import jtool.code.filter.IDoubleFilter;
 import jtool.code.filter.IFilter;
 import jtool.code.functional.IDoubleOperator1;
@@ -30,7 +31,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
     @Override public void shutdownNow() {shutdown();}
     @Override public boolean isShutdown() {return mDead;}
     @Override public boolean isTerminated() {return mDead;}
-    // 独立的随机数生成器
+    /** 可定义的随机数生成器，默认为 {@link CS#RANDOM} */
     private final Random mRNG;
     
     public Generator() {this(RANDOM);}

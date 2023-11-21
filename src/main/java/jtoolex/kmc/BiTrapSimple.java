@@ -1,6 +1,7 @@
 package jtoolex.kmc;
 
 
+import jtool.code.CS;
 import jtool.code.UT;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +35,7 @@ public class BiTrapSimple {
     private final static double K_B = 0.0000861733262; // eV/K，玻尔兹曼常数
     private final static double TEMP_MIN = 0.1; // 设置模拟最低的温度
     
-    // 独立的随机数生成器
+    /** 可定义的随机数生成器，默认为 {@link CS#RANDOM} */
     private final Random mRNG;
     
     

@@ -3,6 +3,8 @@ package jtoolex.rareevent;
 
 import jtool.atom.IAtomData;
 
+import static jtool.code.CS.RANDOM;
+
 /**
  * 各种稀有事件采样方法内部使用的类，需要能够从给定的输出点随机生成一个完整路径，
  * 即可以永远遍历下去的无限长的路径，因此直接遍历会造成死循环
@@ -14,6 +16,8 @@ import jtool.atom.IAtomData;
  */
 public interface IFullPathGenerator<T> {
     /** 由于路径具有随机性，不能返回可以重复访问的 Iterable */
-    ITimeAndParameterIterator<T> fullPathInit();
-    ITimeAndParameterIterator<T> fullPathFrom(T aStart);
+    ITimeAndParameterIterator<T> fullPathInit(long aSeed);
+    ITimeAndParameterIterator<T> fullPathFrom(T aStart, long aSeed);
+    default ITimeAndParameterIterator<T> fullPathInit() {return fullPathInit(RANDOM.nextLong());}
+    default ITimeAndParameterIterator<T> fullPathFrom(T aStart) {return fullPathFrom(aStart, RANDOM.nextLong());}
 }

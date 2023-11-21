@@ -104,7 +104,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         if (mIdx == mInitPoints.size()) mIdx = 0;
         return tPoint;
     }
-    @Override public List<? extends IAtomData> pathFrom(IAtomData aStart) {
+    @Override public List<? extends IAtomData> pathFrom(IAtomData aStart, long aSeed) {
         // 由于存在并行，需要在工作目录中创建临时的路径生成的目录
         String tLmpDir = mWorkingDir+"LMP@"+UT.Code.randID()+"/";
         try {
@@ -122,7 +122,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
                     mGenDumpIn.put("velocity", REMOVE);
                 } else {
                     mGenDumpIn.put("velocity", KEEP);
-                    mGenDumpIn.put("vSeed", UT.Code.randSeed());
+                    mGenDumpIn.put("vSeed", UT.Code.randSeed(aSeed));
                 }
                 mGenDumpIn.put("vInDataPath", tLmpDataPath);
                 mGenDumpIn.put("vDumpPath", tLmpDumpPath);

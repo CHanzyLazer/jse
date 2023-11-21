@@ -2,6 +2,7 @@ package jtoolex.rareevent;
 
 
 import jtool.atom.IAtomData;
+import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.math.MathEX;
@@ -35,17 +36,25 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private final IVector mSurfaces;
     private final double mSurfaceA;
     private final int mN0;
-    private int mStep1Mul; // 过程 1 需要的点的数目的倍数，更高的值可以保证结果有更好的统计性能
+    /** 过程 1 需要的点的数目的倍数，更高的值可以保证结果有更好的统计性能 */
+    private int mStep1Mul;
     
-    private final int mN; // 界面数目-1，即 n
-    private Random mRNG = RANDOM; // 独立的随机数生成器，随机数生成在这里不是性能瓶颈，并且也较难在并行环境下控制结果一致，因此不使用线程独立的随机数生成器
+    /** 界面数目-1，即 n */
+    private final int mN;
+    /** 可定义的随机数生成器，默认为 {@link CS#RANDOM}；随机数生成在这里不是性能瓶颈，并且也较难在并行环境下控制结果一致，因此不使用线程独立的随机数生成器 */
+    private Random mRNG = RANDOM;
     
-    private int mMaxPathNum; // 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0
-    private double mCutoff; // 用来将过低权重的点截断，将更多的资源用于统计高权重的点
-    private int mMaxStatTimes; // 用于限制对高权重的点多次统计的次数，避免统计点过多
+    /** 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0 */
+    private int mMaxPathNum;
+    /** 用来将过低权重的点截断，将更多的资源用于统计高权重的点 */
+    private double mCutoff;
+    /** 用于限制对高权重的点多次统计的次数，避免统计点过多 */
+    private int mMaxStatTimes;
     
-    private double mPruningProb; // 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径
-    private int mPruningThreshold; // 开始进行裁剪的阈值，用来消除噪声的影响，默认为 1（即不添加阈值）
+    /** 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径 */
+    private double mPruningProb;
+    /** 开始进行裁剪的阈值，用来消除噪声的影响，默认为 1（即不添加阈值） */
+    private int mPruningThreshold;
     
     /**
      * 创建一个通用的 FFS 运算器
@@ -234,7 +243,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private void statA2Lambda0_() {
         long tStep1PointNum = 0;
         // 获取初始路径的迭代器
-        ITimeAndParameterIterator<T> tPathInit = mFullPathGenerator.fullPathInit();
+        ITimeAndParameterIterator<T> tPathInit = mFullPathGenerator.fullPathInit(mRNG.nextLong());
         T tRawPoint;
         double tLambda;
         // 不再需要检测 hasNext，内部保证永远都有 next
@@ -405,7 +414,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         double tPruningMul = 1.0;
         
         // 获取从 tStart 开始的路径的迭代器
-        ITimeAndParameterIterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(tStart.value);
+        ITimeAndParameterIterator<T> tPathFrom = mFullPathGenerator.fullPathFrom(tStart.value, mRNG.nextLong());
         // 为了不改变约定，这里直接跳过上面已经经过特殊考虑的第一个相同的点
         tPathFrom.next();
         
