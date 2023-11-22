@@ -35,13 +35,15 @@ public class Ising2D extends AbstractThreadPool<ParforThreadPool> {
      * @param aH 哈密顿量中的参数 H
      * @param aThreadNum 计算使用的线程数，默认为 1
      * @param aRNG 可自定义的随机数生成器
+     * @param aIsCompetitive 内部 parfor 是否是竞争的，默认为 true，在固定种子后为 false 来保证结果一致
      */
-    Ising2D(double aJ, double aH, int aThreadNum, Random aRNG) {
-        super(new ParforThreadPool(aThreadNum));
+    Ising2D(double aJ, double aH, int aThreadNum, Random aRNG, boolean aIsCompetitive) {
+        super(new ParforThreadPool(aThreadNum, aIsCompetitive));
         mJ = aJ; mH = aH;
         mRNG = aRNG;
     }
-    public Ising2D(double aJ, double aH, int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM);}
+    public Ising2D(double aJ, double aH, int aThreadNum, long aSeed) {this(aJ, aH, aThreadNum, new Random(aSeed), false);}
+    public Ising2D(double aJ, double aH, int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM, true);}
     public Ising2D(double aJ, double aH) {this(aJ, aH, 1);}
     
     private long[] genSeeds_(int aSize) {
@@ -51,12 +53,12 @@ public class Ising2D extends AbstractThreadPool<ParforThreadPool> {
     }
     
     /** 获取一个随机的初始结构 */
-    public static IMatrix initSpins(int aRowNum, int aColNum) {
+    public IMatrix initSpins(int aRowNum, int aColNum) {
         IMatrix rSpins = Matrices.zeros(aRowNum, aColNum);
-        rSpins.assignCol(() -> RANDOM.nextBoolean() ? 1.0 : -1.0);
+        rSpins.assignCol(() -> mRNG.nextBoolean() ? 1.0 : -1.0);
         return rSpins;
     }
-    public static IMatrix initSpins(int aL) {return initSpins(aL, aL);}
+    public IMatrix initSpins(int aL) {return initSpins(aL, aL);}
     
     
     /** 统计能量，注意自旋相互作用只需要考虑一半 */

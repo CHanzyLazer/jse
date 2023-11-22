@@ -34,7 +34,7 @@ try (def ISING = new Ising2D(J, H, threadNum)) {
     pbar(L.size()*T.size());
     for (i in 0..<L.size()) {
         // 初始化系统，直接初始化
-        def allSpins = ArrayLists.from(Ns[i], {Ising2D.initSpins(L[i])});
+        def allSpins = ArrayLists.from(Ns[i], {ISING.initSpins(L[i])});
         // 先在 T[0] 处维持 N[i]*10 步保证平衡
         ISING.startMonteCarlo(allSpins, N[i]*10, T[0], false);
         E[i] = zeros(T.size());
