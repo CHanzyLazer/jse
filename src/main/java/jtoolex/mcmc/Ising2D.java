@@ -111,7 +111,7 @@ public class Ising2D extends AbstractThreadPool<ParforThreadPool> {
         final IVector rSumE2 = aStat ? Vectors.zeros(tThreadNum) : null;
         final IVector rSumM2 = aStat ? Vectors.zeros(tThreadNum) : null;
         
-        // 为了避免随机数的性能问题，这里统一为每个线程生成一个种子，用于创建 LocalRandom
+        // 为了保证结果可重复，这里统一为每个线程生成一个种子，用于创建 LocalRandom
         final long[] tSeeds = genSeeds_(tThreadNum);
         
         pool().parfor(aSpinsList.size(), (l, threadID) -> {

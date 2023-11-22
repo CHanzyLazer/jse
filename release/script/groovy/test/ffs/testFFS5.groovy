@@ -15,9 +15,9 @@ import rareevent.NoiseClusterGrowth
  */
 
 long seed = 123456789;
-int N0 = 100;
+int N0 = 120;
 def biCal = new NoiseClusterGrowth.ParameterCalculator();
-int threadNum = 12;
+int threadNum = 24;
 
 
 def lambda = (20..200).step(5);
@@ -35,6 +35,7 @@ while (!FFS.finished()) {
 }
 UT.Timer.toc("noise, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 FFS.shutdown();
+// noise, k = 2.0999886901039358E-39, realValue = 6, totPointNum = 27026267, totPathNum = 43282, time: 00 hour 00 min 0.42 sec
 
 biPathGen = new NoiseClusterGrowth.PathGenerator(100, 0.00045, 0.00050, 0.10, -0.10);
 FFS = new ForwardFluxSampling<>(biPathGen, biCal, threadNum, 10, lambda, N0).setMaxPathNum(N0*1000).setRNG(seed);
@@ -49,4 +50,5 @@ while (!FFS.finished()) {
 }
 UT.Timer.toc("ref, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value}, totPointNum = ${FFS.totalPointNum()}, totPathNum = ${FFS.totalPathNum()},");
 FFS.shutdown();
+// ref, k = 8.373320012536551E-15, realValue = 197, totPointNum = 4919191240, totPathNum = 7561, time: 00 hour 00 min 27.55 sec
 
