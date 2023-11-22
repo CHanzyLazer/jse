@@ -29,7 +29,7 @@ public class BufferedFullPathGenerator<T> extends AbstractHasAutoShutdown implem
     
     /** 这里还是保持一致，第一个值为 aStart（或等价于 aStart）*/
     @Override public ITimeAndParameterIterator<T> fullPathFrom(T aStart, long aSeed) {return new BufferedIterator(aStart, aSeed);}
-    @Override public ITimeAndParameterIterator<T> fullPathInit(long aSeed) {return fullPathFrom(mPathGenerator.initPoint(), aSeed);}
+    @Override public ITimeAndParameterIterator<T> fullPathInit(long aSeed) {return new BufferedIterator(aSeed);}
     
     private class BufferedIterator implements ITimeAndParameterIterator<T> {
         /** 专门优化第一次调用，不去创建路径，因为可能直接满足条件 */
@@ -44,7 +44,15 @@ public class BufferedFullPathGenerator<T> extends AbstractHasAutoShutdown implem
         private final LocalRandom mRNG;
         
         /** 创建时进行初始化 */
-        BufferedIterator(T aStart, long aSeed) {mNext = aStart; mRNG = new LocalRandom(aSeed);}
+        BufferedIterator(T aStart, long aSeed) {
+            mRNG = new LocalRandom(aSeed);
+            mNext = aStart;
+        }
+        BufferedIterator(long aSeed) {
+            mRNG = new LocalRandom(aSeed);
+            // 现在自动构造初始点，不直接使用传入的 aSeed 可以保证随机数生成器的独立性
+            mNext = mPathGenerator.initPoint(mRNG.nextLong());
+        }
         
         /** 内部使用，初始化 mBuffer，会同时初始化 mNext，mStartTime，并累加 mTimeConsumed */
         private void validNextBuffer_() {

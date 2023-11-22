@@ -233,7 +233,7 @@ new StepJobManager('testFFS3c', 1)
     def k8 = Vectors.zeros(lambda.size());
     def kNone = Vectors.zeros(lambda.size());
     
-    def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 5000);
+    def biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 5000);
     def FFS = new ForwardFluxSampling<>(biPathGen, biCal, threadNum, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(3).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -249,7 +249,7 @@ new StepJobManager('testFFS3c', 1)
     UT.Timer.toc("3, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 5000);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 5000);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, threadNum, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(5).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -265,7 +265,7 @@ new StepJobManager('testFFS3c', 1)
     UT.Timer.toc("5, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 5000);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 5000);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, threadNum, 10, lambda, N0).setPruningProb(0.5).setPruningThreshold(8).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();
@@ -281,7 +281,7 @@ new StepJobManager('testFFS3c', 1)
     UT.Timer.toc("8, k = ${FFS.getK()}, realValue = ${FFS.pickPath().last().value},");
     FFS.shutdown();
     
-    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00050, 0.00050, 0.50, -0.10, 5000);
+    biPathGen = new NoiseClusterGrowth.PathGenerator(2, 0.00045, 0.00050, 0.50, -0.10, 5000);
     FFS = new ForwardFluxSampling<>(biPathGen, biCal, threadNum, 10, lambda, N0).setMaxPathNum(N0*1000);
     UT.Timer.tic();
     FFS.run();

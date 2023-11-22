@@ -37,7 +37,7 @@ class NoiseClusterGrowth {
             this.initValue = initValue;
         }
         
-        @Override Point initPoint() {return new Point(initValue, 0, 0);}
+        @Override Point initPoint(long seed) {return new Point(initValue, 0, 0);}
         @Override List<Point> pathFrom(Point point, long seed) {
             def RNG = new LocalRandom(seed);
             

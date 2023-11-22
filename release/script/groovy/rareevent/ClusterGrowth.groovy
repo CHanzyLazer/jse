@@ -27,7 +27,7 @@ class ClusterGrowth {
             this.largeProb = largeProb;
         }
         
-        @Override Point initPoint() {return new Point(0, 0);}
+        @Override Point initPoint(long seed) {return new Point(0, 0);}
         @Override List<Point> pathFrom(Point point, long seed) {
             def RNG = new LocalRandom(seed);
             

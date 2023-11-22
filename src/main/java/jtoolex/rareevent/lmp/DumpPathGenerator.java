@@ -13,6 +13,7 @@ import jtool.lmp.LmpIn;
 import jtool.lmp.Lmpdat;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
+import jtool.math.random.LocalRandom;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
 import jtool.parallel.AbstractHasAutoShutdown;
@@ -97,12 +98,8 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
     
     
     /** IPathGenerator stuff */
-    private int mIdx = 0;
-    @Override public synchronized SubLammpstrj initPoint() {
-        SubLammpstrj tPoint = mInitPoints.get(mIdx);
-        ++mIdx;
-        if (mIdx == mInitPoints.size()) mIdx = 0;
-        return tPoint;
+    @Override public SubLammpstrj initPoint(long aSeed) {
+        return mInitPoints.get(new LocalRandom(aSeed).nextInt(mInitPoints.size()));
     }
     @Override public List<? extends IAtomData> pathFrom(IAtomData aStart, long aSeed) {
         // 由于存在并行，需要在工作目录中创建临时的路径生成的目录

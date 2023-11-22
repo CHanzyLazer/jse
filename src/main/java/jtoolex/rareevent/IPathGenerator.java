@@ -16,7 +16,8 @@ import static jtool.code.CS.RANDOM;
  */
 public interface IPathGenerator<T> {
     /** 获取初始点，不需要任何输入参数 */
-    T initPoint();
+    T initPoint(long aSeed);
+    default T initPoint() {return initPoint(RANDOM.nextLong());}
     /** 获取从给定位置开始的路径，可以指定种子；注意这里约定获取到的路径的第一个点是 aStart（或等价于 aStart）*/
     List<? extends T> pathFrom(T aStart, long aSeed);
     default List<? extends T> pathFrom(T aStart) {return pathFrom(aStart, RANDOM.nextLong());}

@@ -6,13 +6,15 @@ import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.math.MathEX;
+import jtool.math.random.LocalRandom;
 import jtool.math.vector.ILogicalVector;
-import jtool.math.vector.LogicalVector;
-import jtool.parallel.AbstractThreadPool;
 import jtool.math.vector.IVector;
+import jtool.math.vector.LogicalVector;
 import jtool.math.vector.Vectors;
+import jtool.parallel.AbstractThreadPool;
 import jtool.parallel.IHasAutoShutdown;
 import jtool.parallel.ParforThreadPool;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -74,7 +76,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling(IPathGenerator<T> aPathGenerator, IParameterCalculator<? super T> aParameterCalculator,                 double aSurfaceA,                     double[] aSurfaces, int aN0) {this(new BufferedFullPathGenerator<>(aPathGenerator, aParameterCalculator), 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
     
     ForwardFluxSampling(BufferedFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA, IVector aSurfaces, int aN0) {
-        super(new ParforThreadPool(aThreadNum));
+        // FFS 这里固定采用非竞争的 ParforThreadPool
+        super(new ParforThreadPool(aThreadNum, false));
         
         mFullPathGenerator = aFullPathGenerator;
         mSurfaceA = aSurfaceA;
@@ -197,7 +200,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     /** 记录父节点的点，可以用来方便获取演化路径 */
     private class Point {
         /** 方便起见这里不用 OOP 结构，仅内部使用 */
-        final @Nullable Point parent;
+        @Nullable Point parent;
         final T value;
         final double lambda;
         /** 由于存在阶乘关系，需要使用 double 避免溢出 */
@@ -221,8 +224,6 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     }
     
     /** 统计信息 */
-    private double mN0Eff = 0; // N_{0}^{eff}, 第一个过程等价采样到的 N0 数目，这是考虑了 Pruning 的结果
-    private double mTotTime0 = 0.0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
     private final List<Point> mPointsOnLambda, oPointsOnLambda; // 第一次从 A 到达 λi 的那些点
     private ILogicalVector mMovedPoints;
     
@@ -239,139 +240,162 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private final IVector mStep2PointNum;
     private final IVector mStep2PathNum;
     
-    /** 统计一个路径所有的从 A 第一次到达 λ0 的点以及这个过程总共花费的时间 */
-    private void statA2Lambda0_() {
-        long tStep1PointNum = 0;
-        // 获取初始路径的迭代器
-        ITimeAndParameterIterator<T> tPathInit = mFullPathGenerator.fullPathInit(mRNG.nextLong());
-        T tRawPoint;
-        double tLambda;
-        // 不再需要检测 hasNext，内部保证永远都有 next
-        // 首先找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定；这时需要特殊处理，不记录这段时间
-        Point tRoot;
-        // 这个过程也需要 Pruning，即使不考虑时间也要记录倍率
-        int tPruningIndex = mPruningThreshold;
-        double tPruningMul = 1.0;
-        while (true) {
-            tRawPoint = tPathInit.next();
-            ++tStep1PointNum;
-            // 检测是否到达 A
-            tLambda = tPathInit.lambda();
-            if (tLambda <= mSurfaceA) {
-                // 记录根节点，现在 pruning 的倍率也会记录到这里
-                tRoot = new Point(tRawPoint, tLambda, tPruningMul);
-                break;
-            }
-            // 如果到达 B 则重新回到 A，这里直接 return 来实现
-            if (tLambda >= mSurfaces.last()) {
-                // 这里不保留消耗时间直接返回
-                synchronized (this) {
-                    mStep1PointNum += tStep1PointNum;
-                    ++mStep1PathNum;
+    
+    /** 期望向后运行直到 lambdaA 的路径，在向前运行时会进行剪枝，用于过程 1 使用 */
+    private class BackwardPath {
+        private ITimeAndParameterIterator<T> mPath;
+        private final LocalRandom mRNG;
+        private @Nullable Point mCurrentPoint = null;
+        private double mTimeConsumed = 0.0;
+        private long mPointNum = 0;
+        /** pruning stuffs */
+        private int mPruningIndex = mPruningThreshold;
+        private double mPruningMul = 1.0;
+        
+        private BackwardPath(long aSeed) {
+            mRNG = new LocalRandom(aSeed);
+            // 现在自动构造这个路径，不直接使用传入的 aSeed 可以保证随机数生成器的独立性
+            mPath = mFullPathGenerator.fullPathInit(mRNG.nextLong());
+        }
+        double timeConsumed() {return mTimeConsumed;}
+        long pointNum() {return mPointNum;}
+        
+        /** 运行 mPath 直到到达 aLambda0，没有另一种情况以及 pruning */
+        @NotNull Point nextUntilReachLambda0() {
+            if (mCurrentPoint == null) throw new RuntimeException();
+            double oTimeConsumed = mPath.timeConsumed();
+            Point tRoot = mCurrentPoint;
+            while (true) {
+                T tRawPoint = mPath.next(); ++mPointNum;
+                // 判断是否有穿过 λ0
+                double tLambda = mPath.lambda();
+                if (tLambda >= mSurfaces.first()) {
+                    // 记录耗时
+                    mTimeConsumed += (mPath.timeConsumed() - oTimeConsumed) * tRoot.multiple;
+                    // 如果有穿过 λ0 则返回这个点
+                    mCurrentPoint = new Point(tRoot, tRawPoint, tLambda, tRoot.multiple);
+                    return mCurrentPoint;
                 }
-                return;
             }
-            // 修剪，如果向前则有概率直接中断
-            if (mPruningProb > 0.0 && tPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(tPruningIndex)) {
-                // 无论如何先增加 tPruningIndex
-                ++tPruningIndex;
-                if (mRNG.nextDouble() < mPruningProb) {
-                    // 有 mPruningProb 中断，不保留消耗时间直接返回
-                    synchronized (this) {
-                        mStep1PointNum += tStep1PointNum;
-                        ++mStep1PathNum;
+        }
+        /** 运行 mPath 直到到达 aLambdaA 或者到达 aLambdaB，这里存在 pruning */
+        @Nullable Point nextUntilReachLambdaAOrLambdaB(boolean aStatTime) {
+            double oTimeConsumed = aStatTime ? mPath.timeConsumed() : Double.NaN;
+            while (true) {
+                T tRawPoint = mPath.next(); ++mPointNum;
+                double tLambda = mPath.lambda();
+                // 检测如果到达 A 则返回新的点
+                if (tLambda <= mSurfaceA) {
+                    // 记录耗时
+                    if (aStatTime) mTimeConsumed += (mPath.timeConsumed() - oTimeConsumed) * mPruningMul;
+                    // 到达 A 则返回新的点
+                    mCurrentPoint = new Point(tRawPoint, tLambda, mPruningMul);
+                    return mCurrentPoint;
+                }
+                // 检测如果到达 B 则返回 null 中断路径
+                if (tLambda >= mSurfaces.last()) {
+                    // 记录耗时
+                    if (aStatTime) mTimeConsumed += (mPath.timeConsumed() - oTimeConsumed) * mPruningMul;
+                    // 到达 B 则返回 null 中断路径
+                    mCurrentPoint = null;
+                    mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                    return null;
+                }
+                // pruning，如果向前则有概率直接中断，这里直接 return null 来标记 pruning 的情况
+                if (mPruningProb > 0.0 && mPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(mPruningIndex)) {
+                    // 无论如何先增加 mPruningIndex
+                    ++mPruningIndex;
+                    // 并且更新耗时
+                    if (aStatTime) {
+                        double tTimeConsumed = mPath.timeConsumed();
+                        mTimeConsumed += (tTimeConsumed - oTimeConsumed) * mPruningMul;
+                        oTimeConsumed = tTimeConsumed;
                     }
-                    return;
+                    // 有 mPruningProb 中断，由 pruning 中断的情况直接返回 null
+                    if (mRNG.nextDouble() < mPruningProb) {
+                        mCurrentPoint = null;
+                        mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                        return null;
+                    }
+                    // 否则增加权重
+                    mPruningMul /= (1.0 - mPruningProb);
                 }
-                // 否则增加权重，这里不需要记录时间
-                tPruningMul /= (1.0 - mPruningProb);
             }
+        }
+        @Nullable Point nextUntilReachLambdaAOrLambdaB() {return nextUntilReachLambdaAOrLambdaB(true);}
+    }
+    
+    
+    /** 记录过程 1 返回的信息，这样来保证方法的独立性 */
+    private static class Step1Return {
+        final double N0Eff; // N_{0}^{eff}, 第一个过程等价采样到的 N0 数目，这是考虑了 Pruning 的结果
+        final double totTime0; // 第一个过程中的总时间，注意不是 A 第一次到达 λ0 的时间，因此得到的 mK0 不是 A 到 λ0 的速率
+        final long pointNum;
+        final long pathNum;
+        
+        Step1Return(double N0Eff, double totTime0, long pointNum, long pathNum) {
+            this.N0Eff = N0Eff; this.totTime0 = totTime0;
+            this.pointNum = pointNum; this.pathNum = pathNum;
+        }
+    }
+    
+    /** 统计一个路径所有的从 A 第一次到达 λ0 的点以及这个过程总共花费的时间 */
+    Step1Return doStep1(int aN0, List<Point> rPointsOnLambda, long aSeed) {
+        LocalRandom tRNG = new LocalRandom(aSeed);
+        
+        long rPathNum = 0;
+        long rPointNum = 0;
+        // 获取初始路径的迭代器，并由此找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
+        BackwardPath tPath;
+        Point tRoot;
+        tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+        tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+        while (tRoot == null) {
+            rPointNum += tPath.pointNum();
+            tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+            tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
         }
         
         // 开始一般情况处理
-        // 这个过程也增加 Pruning
-        tPruningIndex = mPruningThreshold;
-        tPruningMul = 1.0;
-        // 先记录目前为止消耗的时间，不包含到统计中
-        double oTimeConsumed = tPathInit.timeConsumed();
+        double rN0Eff = 0.0;
+        double rTotTime0 = 0.0;
         while (true) {
             // 找到起始点后开始记录穿过 λ0 的点
-            while (true) {
-                tRawPoint = tPathInit.next();
-                ++tStep1PointNum;
-                // 判断是否有穿过 λ0
-                tLambda = tPathInit.lambda();
-                if (tLambda >= mSurfaces.first()) {
-                    // 如果有穿过 λ0 则需要记录这些点，现在 pruning 的倍率也会记录到这里
-                    synchronized (this) {
-                        mPointsOnLambda.add(new Point(tRoot, tRawPoint, tLambda, tRoot.multiple*tPruningMul));
-                        mN0Eff += tPruningMul;
-                    }
-                    // 如果到达 B 则重新回到 A，这里直接 return 来实现（对于只有一个界面的情况）
-                    if (tLambda >= mSurfaces.last()) {
-                        // 重设路径之前记得先保存旧的时间
-                        synchronized (this) {
-                            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
-                            mStep1PointNum += tStep1PointNum;
-                            ++mStep1PathNum;
-                        }
-                        return;
-                    }
-                    break;
-                }
+            Point tPoint = tPath.nextUntilReachLambda0();
+            rPointsOnLambda.add(tPoint);
+            rN0Eff += tPoint.multiple;
+            // 如果此时恰好到达 B 则重新回到 A（对于只有一个界面的情况）
+            if (tPoint.lambda >= mSurfaces.last()) {
+                // 重设路径之前记得先保存旧的时间
+                rTotTime0 += tPath.timeConsumed();
+                // 重设路径以及根节点
+                do {
+                    rPointNum += tPath.pointNum();
+                    tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+                    tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+                } while (tRoot == null);
             }
             // 每记录一个点查看总数是否达标
-            synchronized (this) {if (mPointsOnLambda.size() >= mN0*mStep1Mul) break;}
+            if (rPointsOnLambda.size() >= aN0) break;
+            
             // 再一直查找下次重新到达 A
-            while (true) {
-                tRawPoint = tPathInit.next();
-                ++tStep1PointNum;
-                // 检测是否到达 A
-                tLambda = tPathInit.lambda();
-                if (tLambda <= mSurfaceA) {
-                    // 记录根节点
-                    tRoot = new Point(tRawPoint, tLambda);
-                    break;
-                }
-                // 如果到达 B 则重新回到 A，这里直接 return 来实现
-                if (tLambda >= mSurfaces.last()) {
-                    // 重设路径之前记得先保存旧的时间
-                    synchronized (this) {
-                        mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
-                        mStep1PointNum += tStep1PointNum;
-                        ++mStep1PathNum;
-                    }
-                    return;
-                }
-                // 修剪，如果向前则有概率直接中断
-                if (mPruningProb > 0.0 && tPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(tPruningIndex)) {
-                    // 无论如何先增加 tPruningIndex
-                    ++tPruningIndex;
-                    if (mRNG.nextDouble() < mPruningProb) {
-                        // 有 mPruningProb 中断，记得先保存旧的时间
-                        synchronized (this) {
-                            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
-                            mStep1PointNum += tStep1PointNum;
-                            ++mStep1PathNum;
-                        }
-                        return;
-                    } else {
-                        // 否则需要增加权重，在此之前先记录已经消耗的时间
-                        double tTimeConsumed = tPathInit.timeConsumed();
-                        synchronized (this) {mTotTime0 += (tTimeConsumed-oTimeConsumed)*tPruningMul;}
-                        oTimeConsumed = tTimeConsumed;
-                        // 增加权重，此段之后的时间消耗会增加权重
-                        tPruningMul /= (1.0 - mPruningProb);
-                    }
-                }
+            tRoot = tPath.nextUntilReachLambdaAOrLambdaB();
+            // 如果没有回到 A 则需要重设路径
+            if (tRoot==null || tRoot.lambda > mSurfaceA) {
+                // 重设路径之前记得先保存旧的时间
+                rTotTime0 += tPath.timeConsumed();
+                do {
+                    rPointNum += tPath.pointNum();
+                    tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+                    tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+                } while (tRoot == null);
             }
         }
         // 最后统计所有的耗时
-        synchronized (this) {
-            mTotTime0 += (tPathInit.timeConsumed()-oTimeConsumed)*tPruningMul;
-            mStep1PointNum += tStep1PointNum;
-            ++mStep1PathNum;
-        }
+        rTotTime0 += tPath.timeConsumed();
+        rPointNum += tPath.pointNum();
+        
+        return new Step1Return(rN0Eff, rTotTime0, rPointNum, rPathNum);
     }
     
     /** 统计一个路径所有的从 λi 第一次到达 λi+1 的点 */
@@ -470,22 +494,47 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         }
     }
     
+    private long[] genSeeds_(int aSize) {
+        long[] rSeeds = new long[aSize];
+        for (int i = 0; i < aSize; ++i) rSeeds[i] = mRNG.nextLong();
+        return rSeeds;
+    }
     
     /** 一个简单的实现 */
     private int mStep = -1; // 记录运行的步骤，i
     private boolean mFinished = false;
     private boolean mStepFinished = true; // 标记此步骤是否正常完成结束而不是中断或者正在运行中
+    @SuppressWarnings("unchecked")
     public void run() {
         if (mFinished) return;
         // 实际分为两个过程，第一个过程首先统计轨迹通量（flux of trajectories）
         if (mStep < 0) {
             mStepFinished = false;
-            // 初始化统计量
-            mN0Eff = 0; mTotTime0 = 0.0;
-            // 统计从 A 到达 λ0，运行直到达到次数超过 mN0*mStep1Mul
-            pool().parwhile(() -> mPointsOnLambda.size()<mN0*mStep1Mul, this::statA2Lambda0_);
+            // 统计从 A 到达 λ0，运行直到采集到的点数目超过 mN0*mStep1Mul
+            // 这里使用非竞争的方式，每个线程都分别采集到 mN0*mStep1Mul/nThreads 才算结束
+            int tThreadNum = pool().nThreads();
+            final int subN0 = MathEX.Code.divup(mN0*mStep1Mul, tThreadNum);
+            // 每个线程存放到独立的点 List 上
+            final List<Point>[] tPointsOnLambdaBuffer = (List<Point>[]) new List[tThreadNum];
+            tPointsOnLambdaBuffer[0] = mPointsOnLambda;
+            for (int i = 1; i < tThreadNum; ++i) tPointsOnLambdaBuffer[i] = new ArrayList<>(subN0);
+            // 每个线程独立的返回值
+            final Step1Return[] tStep1ReturnBuffer = new Step1Return[tThreadNum];
+            // 为了避免随机数的性能问题，这里统一为每个线程生成一个种子，用于内部创建 LocalRandom
+            final long[] tSeeds = genSeeds_(tThreadNum);
+            pool().parfor(tThreadNum, i -> {
+                tStep1ReturnBuffer[i] = doStep1(subN0, tPointsOnLambdaBuffer[i], tSeeds[i]);
+            });
+            for (int i = 1; i < tThreadNum; ++i) mPointsOnLambda.addAll(tPointsOnLambdaBuffer[i]);
             // 获取第一个过程的统计结果
-            mK0 = mN0Eff / mTotTime0;
+            double rN0Eff = 0, rTotTime0 = 0.0;
+            for (int i = 0; i < tThreadNum; ++i) {
+                rN0Eff += tStep1ReturnBuffer[i].N0Eff;
+                rTotTime0 += tStep1ReturnBuffer[i].totTime0;
+                mStep1PathNum += tStep1ReturnBuffer[i].pathNum;
+                mStep1PointNum += tStep1ReturnBuffer[i].pointNum;
+            }
+            mK0 = rN0Eff / rTotTime0;
             // 第一个过程会随机打乱得到的点
             Collections.shuffle(mPointsOnLambda, mRNG);
             // 第一个过程完成（前提没有在运行过程中中断）
