@@ -78,6 +78,7 @@ tasks.register('sourceJar', Jar) {
     from(sourceSets.main.allSource)
     exclude('assets/**')
     // 添加过滤器来修复 relocate 的问题
+    filteringCharset = 'UTF-8'
     filter {line ->
         line = line.replace('com.jcraft.jsch' , 'shade.com.jcraft.jsch')
         line = line.replace('com.jcraft.jzlib', 'shade.com.jcraft.jzlib')

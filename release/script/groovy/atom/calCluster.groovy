@@ -2,8 +2,8 @@ package atom
 
 import jtool.code.UT
 import jtool.lmp.Dump
-import jtool.rareevent.atom.ABOOPSolidChecker
-import jtool.rareevent.atom.MultiTypeClusterSizeCalculator
+import jtoolex.rareevent.atom.ABOOPSolidChecker
+import jtoolex.rareevent.atom.MultiTypeClusterSizeCalculator
 
 import static jtool.code.UT.Par.*
 
