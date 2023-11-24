@@ -2,8 +2,10 @@ package test.ml
 
 import jtool.code.UT
 import jtool.math.table.Tables
-import jtoolex.ml.DecisionTree
+import jtoolex.ml.RandomForest
 
+import static jtool.code.UT.Math.*
+import static jtool.code.UT.Plot.*
 import static jtool.code.CS.*
 
 /**
@@ -79,22 +81,34 @@ def tableTest = table.refSlicer().get(0..<1000, ALL);
 def tableTrain = table.refSlicer().get(1000..<table.rowNumber(), ALL);
 
 // 第 0 列为输出，其余为输入
-def tree = DecisionTree.builder(tableTrain.refSlicer().get(ALL, h->h!='HeartDisease').rows(), tableTrain.col('HeartDisease').equal(1.0)).build();
+def tree = new RandomForest(tableTrain.refSlicer().get(ALL, h-> h!= 'HeartDisease').rows(), tableTrain.col('HeartDisease').equal(1.0), 3000, 0.01);
 
 // 统计预测结果表格
-int Npp = 0, Nnn = 0, Npn = 0, Nnp = 0;
-for (row in tableTest.rows()) {
-    boolean real = row[0] == (double)1.0;
-    boolean pred = tree.makeDecision(row[1..<row.size()]);
-    if (real) {
-        if (pred) ++Npp;
-        else ++Npn;
-    } else {
-        if (pred) ++Nnp;
-        else ++Nnn;
+def recall = zeros(20);
+def Ne = zeros(20);
+def ratio = [0.001, 0.002, 0.005, 0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+for (i in 0..<20) {
+    int Npp = 0, Nnn = 0, Npn = 0, Nnp = 0;
+    for (row in tableTest.rows()) {
+        boolean real = row[0] == (double)1.0;
+        boolean pred = tree.makeDecision(row[1..<row.size()], ratio[i] as double);
+        if (real) {
+            if (pred) ++Npp;
+            else ++Npn;
+        } else {
+            if (pred) ++Nnp;
+            else ++Nnn;
+        }
     }
+    recall[i] = Npp / (Npp + Npn);
+    Ne[i] = Nnp / (Nnn + Nnp);
 }
 
-println("Npp = $Npp, Npn = $Npn");
-println("Nnp = $Nnp, Nnn = $Nnn");
+//println("Npp = $Npp, Npn = $Npn");
+//println("Nnp = $Nnp, Nnn = $Nnn");
 
+plot([0, 1], [0, 1], null).lineType('--').width(1.0);
+plot(Ne, recall, 'roc');
+axis(0, 1, 0, 1);
+
+tree.shutdown();

@@ -1,5 +1,6 @@
 package jtool.math.random;
 
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -112,6 +113,28 @@ public class LocalRandom {
             haveNextNextGaussian = true;
             return v1 * multiplier;
         }
+    }
+    
+    
+    /** 使用 LocalRandom 的 shuffle */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static void shuffle(List<?> rList, LocalRandom aRNG) {
+        int size = rList.size();
+        if (size < SHUFFLE_THRESHOLD || rList instanceof RandomAccess) {
+            for (int i=size; i>1; --i) Collections.swap(rList, i-1, aRNG.nextInt(i));
+        } else {
+            Object[] arr = rList.toArray();
+            // Shuffle array
+            for (int i=size; i>1; --i) swap(arr, i-1, aRNG.nextInt(i));
+            ListIterator it = rList.listIterator();
+            for (Object e : arr) {it.next(); it.set(e);}
+        }
+    }
+    private static final int SHUFFLE_THRESHOLD = 5;
+    private static void swap(Object[] arr, int i, int j) {
+        Object tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
     }
 }
 
