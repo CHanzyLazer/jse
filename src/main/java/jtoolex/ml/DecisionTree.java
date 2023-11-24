@@ -108,7 +108,7 @@ public class DecisionTree {
         /** 构造并返回决策树 */
         public DecisionTree build() {
             // 连续值对于重要部分进行分点
-            IVector[] rCharacteristics = new IVector[mInputDim]; // 每个连续变量获取到的分点组成的向量
+            @Nullable IVector[] rCharacteristics = new IVector[mInputDim]; // 每个连续变量获取到的分点组成的向量
             for (int i = 0; i < mInputDim; ++i) {
                 // 需要先将值按照从小到大进行排序，并统计 ture 和 false 的数目
                 NavigableMap<Double, Integer> tCountMap = new TreeMap<>();
@@ -131,13 +131,23 @@ public class DecisionTree {
         }
         
         /** 统计所有使得结果变化较大的点作为分点，分点价值选取分点左右两分点间所有的 |真样本-假样本| */
-        final IVector getSplit(NavigableMap<Double, Integer> aCountMap) {
+        final @Nullable IVector getSplit(NavigableMap<Double, Integer> aCountMap) {
             // TreeMap 转为 Vector
             final IVector tKeys = Vectors.from(aCountMap.keySet());
             final IVector tCounts = Vectors.from(aCountMap.values());
             final int tSize = tKeys.size();
             final int tSizePP = tSize+1;
             final int tSizeMM = tSize-1;
+            // 最特殊情况，aCountMap 只有一个值，此时此特征值没有意义，返回 null
+            if (tSize <= 1) return null;
+            // 特殊情况，如果 aCountMap 是离散的，总数就小于 mMaxSplit，则直接全部都划分
+            if (tSizeMM <= mMaxSplit) {
+                IVector rSplit = Vectors.zeros(tSizeMM);
+                for (int i = 0; i < tSizeMM; ++i) {
+                    rSplit.set(i, (tKeys.get(i) + tKeys.get(i+1))*0.5);
+                }
+                return rSplit;
+            }
             // 统计所有待选分划点的变化率，这里区分正负并且增加两端；
             // 同样简单起见，直接使用随机访问而不是迭代器
             IVector tSplitRate = Vectors.zeros(tSizePP);
@@ -159,6 +169,8 @@ public class DecisionTree {
                 }
             }
             IIndexFilter tSplitIndex = i -> !Double.isNaN(rSplit.get(i));
+            // 为了避免退化的空分划点破坏一致性，这里检测到空则直接返回 null
+            if (rSplitNum == 0) return null;
             if (rSplitNum <= mMaxSplit) return rSplit.slicer().get(tSplitIndex);
             // 超过限制则需要移除多余分点，统计分点的权重
             final IVector rWeight = Vectors.NaN(tSizeMM);
