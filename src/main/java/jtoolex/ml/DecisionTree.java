@@ -11,6 +11,7 @@ import jtool.math.vector.IVector;
 import jtool.math.vector.LogicalVector;
 import jtool.math.vector.Vectors;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 
@@ -68,7 +69,7 @@ public class DecisionTree {
     /** 决策树使用的构造器 */
     public static class Builder {
         /** 输入训练数据组成的 List（不适用矩阵因为在优化过程中会不断拆分样本） */
-        private final List<? extends IVector> mTrainDataInput;
+        private final @Unmodifiable List<? extends IVector> mTrainDataInput;
         /** 输出训练数据 */
         private final ILogicalVector mTrainDataOutput;
         /** 对于连续变量最大的分划次数 */
@@ -87,7 +88,7 @@ public class DecisionTree {
         private final int mSampleNum;
         private final int mInputDim;
         
-        Builder(List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
+        Builder(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
             mTrainDataInput = aTrainDataInput;
             mTrainDataOutput = aTrainDataOutput;
             // 输入输出样本数应匹配
@@ -187,9 +188,9 @@ public class DecisionTree {
             // 权重取绝对值
             tWeight.operation().map2this(Math::abs);
             // 排序选取权重最高的 aMaxSplit 个分点
-            List<Integer> rSortedIndex = NewCollections.from(tSizeMM, i->i);
+            List<Integer> rSortedIndex = NewCollections.from(tWeight.size(), i->i);
             rSortedIndex.sort(Comparator.comparingDouble(tWeight::get).reversed());
-            return rSplit.refSlicer().get(tSplitIndex).refSlicer().get(rSortedIndex).slicer().get(AbstractCollections.range(mMaxSplit));
+            return rSplit.refSlicer().get(tSplitIndex).slicer().get(rSortedIndex.subList(0, mMaxSplit));
         }
         
         /** 递归方式生成树 */
@@ -305,7 +306,7 @@ public class DecisionTree {
         mRoot = aRoot;
     }
     
-    public static Builder builder(List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {return new Builder(aTrainDataInput, aTrainDataOutput);}
+    public static Builder builder(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {return new Builder(aTrainDataInput, aTrainDataOutput);}
     
     /** 输入 x 进行进行决策判断 */
     public boolean makeDecision(IVector aInput) {

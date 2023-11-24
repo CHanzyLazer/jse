@@ -33,10 +33,12 @@ import groovy.yaml.YamlBuilder;
 import groovy.yaml.YamlSlurper;
 import jtool.plot.*;
 import jtool.vasp.IVaspCommonData;
-import me.tongfei.progressbar.ConsoleProgressBarConsumer;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import net.jafama.FastMath;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.groovy.json.internal.CharScanner;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -1091,6 +1093,20 @@ public class UT {
             return rTable;
         }
         
+        /**
+         * 保证兼容性的读取 csv 到 String，
+         * 不假设 csv 是纯数字的，并且不识别 hand
+         * @author liqa
+         * @param aFilePath csv file path to read
+         * @return split 后的行组成的 List
+         */
+        public static List<String[]> csv2str(String aFilePath) throws IOException {
+            List<String[]> rLines = new ArrayList<>();
+            try (CSVParser tParser = new CSVParser(toReader(aFilePath), CSVFormat.DEFAULT)) {
+                for (CSVRecord tRecord : tParser) rLines.add(tRecord.values());
+            }
+            return rLines;
+        }
         
         /**
          * get URL of the resource

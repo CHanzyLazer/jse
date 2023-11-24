@@ -9,7 +9,9 @@ import static jtool.code.UT.Plot.*
 import static jtool.code.UT.Code.*
 import static jtool.code.CS.*
 
-// 测试简单的异或数据集
+/**
+ * 测试简单的异或数据集
+ */
 def dataInput = [
     Vectors.from(0.0, 0.0),
     Vectors.from(1.0, 0.0),
