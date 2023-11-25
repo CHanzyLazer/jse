@@ -1,6 +1,7 @@
 package jtool.math.vector;
 
 import jtool.code.CS.SliceType;
+import jtool.code.collection.NewCollections;
 import jtool.code.filter.IIndexFilter;
 import jtool.code.functional.*;
 import jtool.code.iterator.*;
@@ -77,6 +78,8 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     ILogicalVectorOperation operation();
     @VisibleForTesting default ILogicalVectorOperation opt() {return operation();}
     
+    /** 提供一个调用过滤的方法简化使用 */
+    default List<Integer> where() {return NewCollections.filterInteger(size(), this);}
     
     /** Groovy 的部分，增加向量基本的运算操作，现在也归入内部使用 */
     ILogicalVector and  (boolean aRHS);

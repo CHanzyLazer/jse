@@ -28,7 +28,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
     
     private final List<DecisionTree> mTrees;
     /** 构造一个空的随机森林，用于使用 put 手动构造 */
-    public RandomForest(int aThreadNum) {super(new ParforThreadPool(aThreadNum)); mTrees = new ArrayList<>();}
+    public RandomForest(int aThreadNum) {super(new ParforThreadPool(aThreadNum, true)); mTrees = new ArrayList<>();}
     public RandomForest() {this(DEFAULT_THREAD_NUM);} // 随机森林默认会开启并行
     public RandomForest put(DecisionTree aTree) {mTrees.add(aTree); return this;}
     
@@ -42,7 +42,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
     }
     
     /** 现在支持设置线程数 */
-    public RandomForest setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum)); return this;}
+    public RandomForest setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum, true)); return this;}
     
     /** 输入 x 进行进行决策判断 */
     public boolean makeDecision(final IVector aInput, double aRatio) {
@@ -109,8 +109,8 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
             if (!aNoPBar) UT.Timer.progressBar();
         });
         
-        // 统一设置回竞争形式的 pool，因为预测不需要非竞争
-        setPool(new ParforThreadPool(aThreadNum));
+        // 统一设置回竞争形式的 pool，预测开启非竞争可以提高效率
+        if (!aNoCompetitive) setPool(new ParforThreadPool(aThreadNum, true));
     }
     RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
         this(false, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aRNG, aNoCompetitive);

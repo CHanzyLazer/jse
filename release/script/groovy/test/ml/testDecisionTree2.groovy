@@ -1,6 +1,7 @@
 package test.ml
 
 import jtool.code.UT
+import jtool.code.collection.ArrayLists
 import jtool.math.table.Tables
 import jtoolex.ml.RandomForest
 
@@ -76,18 +77,41 @@ for (i in 1..<lines.size()) {
     row[14] = tokens[14] as double;
 }
 
-// 前 1000 个用于测试，后面全部用于训练
-def tableTest = table.refSlicer().get(0..<1000, ALL);
-def tableTrain = table.refSlicer().get(1000..<table.rowNumber(), ALL);
+// 前 5000 个用于测试，后面全部用于训练
+def tableTest = table.refSlicer().get(0..<5000, ALL);
+def tableTrain = table.refSlicer().get(5000..<table.rowNumber(), ALL);
+
+// 调整正负样本比例一致
+def isHeartDisease = tableTrain['HeartDisease'].equal(1.0);
+def positiveIndex = isHeartDisease.where();
+positiveIndex *= 2; // 正样本也扩容一倍
+def negativeIndex = (~isHeartDisease).where();
+negativeIndex.shuffle();
+negativeIndex = negativeIndex[0..<positiveIndex.size()];
+def totalIndex = ArrayLists.merge(positiveIndex, negativeIndex);
+totalIndex.shuffle();
+tableTrain = tableTrain.slicer().get(totalIndex, ALL);
 
 // 第 0 列为输出，其余为输入
-def tree = new RandomForest(tableTrain.refSlicer().get(ALL, h-> h!= 'HeartDisease').rows(), tableTrain.col('HeartDisease').equal(1.0), 3000, 0.01);
+def tree = new RandomForest(tableTrain.refSlicer().get(ALL, h-> h!= 'HeartDisease').rows(), tableTrain['HeartDisease'].equal(1.0));
 
 // 统计预测结果表格
 def recall = zeros(20);
 def Ne = zeros(20);
-def ratio = [0.001, 0.002, 0.005, 0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+def ratio = linspace(0.0, 1.0, 20);
+UT.Timer.pbar('RandomForest Pred', 20);
 for (i in 0..<20) {
+    UT.Timer.pbar();
+    if (ratio[i] == (double)0.0) {
+        recall[i] = 1.0;
+        Ne[i] = 1.0;
+        continue;
+    }
+    if (ratio[i] == (double)1.0) {
+        recall[i] = 0.0;
+        Ne[i] = 0.0;
+        continue;
+    }
     int Npp = 0, Nnn = 0, Npn = 0, Nnp = 0;
     for (row in tableTest.rows()) {
         boolean real = row[0] == (double)1.0;
@@ -108,7 +132,7 @@ for (i in 0..<20) {
 //println("Nnp = $Nnp, Nnn = $Nnn");
 
 plot([0, 1], [0, 1], null).lineType('--').width(1.0);
-plot(Ne, recall, 'roc');
+plot(Ne, recall, 'roc').marker('o');
 axis(0, 1, 0, 1);
 
 tree.shutdown();

@@ -218,7 +218,7 @@ public class DecisionTree {
             int tConsiderNum = getConsiderCharaNumber(tValidCharaNum);
             IIndexFilter tConsiderID;
             if (tConsiderNum < tValidCharaNum) {
-                List<Integer> rRandIndex = NewCollections.filterInteger(tValidChara.size(), tValidChara);
+                List<Integer> rRandIndex = tValidChara.where();
                 Collections.shuffle(rRandIndex, mRNG);
                 ILogicalVector rConsiderID = LogicalVector.zeros(mInputDim);
                 rConsiderID.refSlicer().get(rRandIndex.subList(0, tConsiderNum)).fill(true);
