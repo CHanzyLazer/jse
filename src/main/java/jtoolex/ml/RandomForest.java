@@ -28,8 +28,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
     
     private final List<DecisionTree> mTrees;
     /** 构造一个空的随机森林，用于使用 put 手动构造 */
-    public RandomForest(int aThreadNum, boolean aIsCompetitive) {super(new ParforThreadPool(aThreadNum, aIsCompetitive)); mTrees = new ArrayList<>();}
-    public RandomForest(int aThreadNum) {this(aThreadNum, true);}
+    public RandomForest(int aThreadNum) {super(new ParforThreadPool(aThreadNum)); mTrees = new ArrayList<>();}
     public RandomForest() {this(DEFAULT_THREAD_NUM);} // 随机森林默认会开启并行
     public RandomForest put(DecisionTree aTree) {mTrees.add(aTree); return this;}
     
@@ -41,6 +40,9 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
             }
         };
     }
+    
+    /** 现在支持设置线程数 */
+    public RandomForest setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     
     /** 输入 x 进行进行决策判断 */
     public boolean makeDecision(final IVector aInput, double aRatio) {
@@ -76,8 +78,8 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
      * @param aThreadNum 随机森林使用的线程数，默认为处理器线程数
      * @param aRNG 可自定义的随机数生成器，默认为 {@link CS#RANDOM}
      */
-    RandomForest(final boolean aNoPBar, final @Unmodifiable List<? extends IVector> aTrainDataInput, final ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aIsCompetitive) {
-        super(new ParforThreadPool(aThreadNum, aIsCompetitive));
+    RandomForest(final boolean aNoPBar, final @Unmodifiable List<? extends IVector> aTrainDataInput, final ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
+        super(new ParforThreadPool(aThreadNum, aNoCompetitive));
         
         // 输入输出样本数应匹配
         final int tSampleNum = aTrainDataInput.size();
@@ -106,15 +108,18 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
             mTrees.set(i, treeBuilder(subTrainDataInput, subTrainDataOutput).setRNG(tRNG.nextLong()).build());
             if (!aNoPBar) UT.Timer.progressBar();
         });
+        
+        // 统一设置回竞争形式的 pool，因为预测不需要非竞争
+        setPool(new ParforThreadPool(aThreadNum));
     }
-    RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aIsCompetitive) {
-        this(false, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aRNG, aIsCompetitive);
+    RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
+        this(false, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aRNG, aNoCompetitive);
     }
     public RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {
-        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, new Random(aSeed), false);
+        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, new Random(aSeed), true);
     }
     public RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {
-        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, true);
+        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, false);
     }
     public RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {
         this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, DEFAULT_THREAD_NUM);
@@ -124,10 +129,10 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
     }
     
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {
-        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, new Random(aSeed), false);
+        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, new Random(aSeed), true);
     }
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {
-        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, true);
+        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, false);
     }
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {
         this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, DEFAULT_THREAD_NUM);

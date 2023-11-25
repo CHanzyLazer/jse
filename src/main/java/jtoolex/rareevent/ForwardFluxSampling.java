@@ -46,7 +46,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     /** 可定义的主随机数生成器，默认为 {@link CS#RANDOM} */
     private Random mRNG = RANDOM;
     /** 此 FFS 是否是竞争性的，默认开启，当自定义了种子后会自动关闭保证结果一致 */
-    private boolean mIsCompetitive = true;
+    private boolean mNoCompetitive = false;
     
     /** 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0 */
     private long mMaxPathNum;
@@ -80,8 +80,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling(IPathGenerator<T> aPathGenerator, IParameterCalculator<? super T> aParameterCalculator,                 double aSurfaceA,                     double[] aSurfaces, int aN0) {this(new BufferedFullPathGenerator<>(aPathGenerator, aParameterCalculator), 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
     
     ForwardFluxSampling(BufferedFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA, IVector aSurfaces, int aN0) {
-        // FFS 这里固定采用非竞争的 ParforThreadPool
-        super(new ParforThreadPool(aThreadNum, false));
+        // FFS 这里固定采用非竞争的 ParforThreadPool，因为 parfor 都只有线程数的任务
+        super(new ParforThreadPool(aThreadNum, true));
         
         mFullPathGenerator = aFullPathGenerator;
         mSurfaceA = aSurfaceA;
@@ -119,7 +119,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     
     /** 参数设置，用来减少构造函数的重载数目，返回自身来支持链式调用 */
-    public ForwardFluxSampling<T> setRNG(long aSeed) {mRNG = new Random(aSeed); mIsCompetitive = false; return this;}
+    public ForwardFluxSampling<T> setRNG(long aSeed) {mRNG = new Random(aSeed); mNoCompetitive = true; return this;}
     public ForwardFluxSampling<T> setStep1Mul(int aStep1Mul) {mStep1Mul = Math.max(1, aStep1Mul); return this;}
     public ForwardFluxSampling<T> setMaxPathNum(long aMaxPathNum) {mMaxPathNum = Math.max(mN0, aMaxPathNum); return this;}
     public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = MathEX.Code.toRange(0.0, 0.5, aCutoff); return this;}
@@ -128,7 +128,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(1, aPruningThreshold); return this;}
     public ForwardFluxSampling<T> setStep1Pruning(boolean aStep1Pruning) {mStep1Pruning = aStep1Pruning; return this;}
     public ForwardFluxSampling<T> disableStep1Pruning() {return setStep1Pruning(false);}
-    public ForwardFluxSampling<T> setIsCompetitive(boolean aIsCompetitive) {mIsCompetitive = aIsCompetitive; return this;}
+    public ForwardFluxSampling<T> setNoCompetitive(boolean aNoCompetitive) {mNoCompetitive = aNoCompetitive; return this;}
+    public ForwardFluxSampling<T> setNoCompetitive() {return setNoCompetitive(true);}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
     @Override public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mFullPathGenerator.setDoNotShutdown(aDoNotShutdown); return this;}
     /** 可以从中间开始，此时则会直接跳过第一步（对于合法输入）*/
@@ -366,7 +367,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         while (true) {
             // 找到起始点后开始记录穿过 λ0 的点
             Point tPoint = tPath.nextUntilReachLambda0();
-            if (mIsCompetitive) {
+            if (!mNoCompetitive) {
                 // 如果是竞争的需要进行同步
                 synchronized (this) {
                     rPointsOnLambda.add(tPoint);
@@ -387,7 +388,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 } while (tRoot == null);
             }
             // 每记录一个点查看总数是否达标
-            if (mIsCompetitive) {
+            if (!mNoCompetitive) {
                 // 如果是竞争的需要进行同步
                 synchronized (this) {
                     if (rPointsOnLambda.size() >= aN0) break;
@@ -541,7 +542,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 rPointNum += tPath.pointNum();
                 // 如果有穿过 λi+1 则需要记录这些点并增加 rNippEff
                 if (tNext != null) {
-                    if (mIsCompetitive) {
+                    if (!mNoCompetitive) {
                         // 如果是竞争的需要进行同步
                         synchronized (this) {
                             rPointsOnLambda.add(tNext);
@@ -553,7 +554,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 }
             }
             // 这里统一检测点的总数是否达标，以及中断条件
-            if (mIsCompetitive) {
+            if (!mNoCompetitive) {
                 // 如果是竞争的需要进行同步
                 synchronized (this) {
                     if (rPointsOnLambda.size() >= aNipp) break;
@@ -589,7 +590,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             // 每个线程独立的返回值
             final Step1Return[] tStep1ReturnBuffer = new Step1Return[tThreadNum];
             // 统计从 A 到达 λ0，运行直到采集到的点数目超过 mN0*mStep1Mul
-            if (mIsCompetitive) {
+            if (!mNoCompetitive) {
                 // 竞争的写法，每个线程共用 mPointsOnLambda 并同步检测容量是否达标
                 // 在竞争的情况下不需要统一生成种子
                 pool().parfor(tThreadNum, i -> {
@@ -662,7 +663,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             // 每个线程独立的返回值
             final Step2Return[] tStep2ReturnBuffer = new Step2Return[tThreadNum];
             // 统计从 λi 第一次到达 λi+1 的点
-            if (mIsCompetitive) {
+            if (!mNoCompetitive) {
                 // 竞争的写法，每个线程共用 mPointsOnLambda 并同步检测容量是否达标
                 final long subMaxPathNum = MathEX.Code.divup(mMaxPathNum, tThreadNum);
                 // 在竞争的情况下不需要统一生成种子

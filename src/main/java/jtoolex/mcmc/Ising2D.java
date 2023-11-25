@@ -35,15 +35,15 @@ public class Ising2D extends AbstractThreadPool<ParforThreadPool> {
      * @param aH 哈密顿量中的参数 H
      * @param aThreadNum 计算使用的线程数，默认为 1
      * @param aRNG 可自定义的随机数生成器
-     * @param aIsCompetitive 内部 parfor 是否是竞争的，默认为 true，在固定种子后为 false 来保证结果一致
+     * @param aNoCompetitive 内部 parfor 是否是竞争的，默认为 false，在固定种子后为 true 来保证结果一致
      */
-    Ising2D(double aJ, double aH, int aThreadNum, Random aRNG, boolean aIsCompetitive) {
-        super(new ParforThreadPool(aThreadNum, aIsCompetitive));
+    Ising2D(double aJ, double aH, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
+        super(new ParforThreadPool(aThreadNum, aNoCompetitive));
         mJ = aJ; mH = aH;
         mRNG = aRNG;
     }
-    public Ising2D(double aJ, double aH, int aThreadNum, long aSeed) {this(aJ, aH, aThreadNum, new Random(aSeed), false);}
-    public Ising2D(double aJ, double aH, int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM, true);}
+    public Ising2D(double aJ, double aH, int aThreadNum, long aSeed) {this(aJ, aH, aThreadNum, new Random(aSeed), true);}
+    public Ising2D(double aJ, double aH, int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM, false);}
     public Ising2D(double aJ, double aH) {this(aJ, aH, 1);}
     
     private long[] genSeeds_(int aSize) {
