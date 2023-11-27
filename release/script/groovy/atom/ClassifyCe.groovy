@@ -24,15 +24,23 @@ class ClassifyCe {
     final static def basisCalculator;
     
     /** 计算对应的基，这里暂时使用现有的 python 脚本计算 */
-    static def calBasis(String path, int index=-1) {
+    static def calBasis(String path, List<Integer> slice, List<IVector> dest) {
         // 使用 ase 的读取 xdatcar 方法，读取成 ase 的实例
-        def data = read_vasp_xdatcar(path, [index: index]);
-        // 使用 basisCalculator 来计算基，输出为 numpy 的数组，注意需要调用一次 unwrap 来获取到 JEP 可以识别到的 python 对象
-        def basis = basisCalculator.evaluate(data.unwrap());
-        // 获取的是 jep.NDArray，这样获取内部数据，直接转为 IMatrix，这里获取到的是按行排列的
-        double[] basisData = basis.data;
-        int[] basisDim = basis.dimensions;
-        return new RowMatrix(basisDim[0], basisDim[1], basisData);
+        // ase 的 api 只支持 slice，很烦，而且看起来没有很好的方法获取 slice
+        SP.Python.runText("slicePy = slice(${slice[0]?:'None'}, ${slice[1]?:'None'}, ${slice[2]?:'None'})");
+        def slicePy = SP.Python.getValue('slicePy');
+        def datas = read_vasp_xdatcar(path, slicePy.unwrap()); // 这里需要 unwrap 而下面不需要，以后还是会自动识别避免这个烦人的问题
+        int len = 0;
+        for (data in datas) {
+            // 使用 basisCalculator 来计算基，输出为 numpy 的数组
+            def basis = basisCalculator.evaluate(data);
+            // 获取的是 jep.NDArray，这样获取内部数据，直接转为 IMatrix，这里获取到的是按行排列的
+            double[] basisData = basis.data;
+            int[] basisDim = basis.dimensions;
+            dest.addAll(new RowMatrix(basisDim[0], basisDim[1], basisData).rows());
+            ++len;
+        }
+        return len;
     }
     
     static {
@@ -48,60 +56,60 @@ class ClassifyCe {
     // 训练集和测试集定义
     final static def trainSet = [[
         path: 'vasp/.Ce/0UCe/4th5000/XDATCAR',
-        index: ((1000-1)..<5000).step(500),
+        slice: [1000-1, null, 500],
         ratio: [0, 100]
     ], [
         path: 'vasp/.Ce/0UCe/5th5000/XDATCAR',
-        index: ((1000-1)..<5000).step(500),
+        slice: [1000-1, null, 500],
         ratio: [0, 100]
     ], [
         path: 'vasp/.Ce/20U/1st400/XDATCAR',
-        index: ((200-1)..<400).step(50),
+        slice: [200-1, null, 50],
         ratio: [20, 80]
     ], [
         path: 'vasp/.Ce/20U/2nd400/XDATCAR',
-        index: ((200-1)..<400).step(50),
+        slice: [200-1, null, 50],
         ratio: [20, 80]
     ], [
         path: 'vasp/.Ce/40U/1st400/XDATCAR',
-        index: ((200-1)..<400).step(50),
+        slice: [200-1, null, 50],
         ratio: [40, 60]
     ], [
         path: 'vasp/.Ce/60U/1st350/XDATCAR',
-        index: ((200-1)..<350).step(50),
+        slice: [200-1, null, 50],
         ratio: [60, 40]
     ], [
         path: 'vasp/.Ce/60U/2nd350/XDATCAR',
-        index: ((200-1)..<350).step(50),
+        slice: [200-1, null, 50],
         ratio: [60, 40]
     ], [
         path: 'vasp/.Ce/80U/1st250/XDATCAR',
-        index: ((100-1)..<250).step(50),
+        slice: [100-1, null, 50],
         ratio: [80, 20]
     ], [
         path: 'vasp/.Ce/80U/2nd250/XDATCAR',
-        index: ((100-1)..<250).step(50),
+        slice: [100-1, null, 50],
         ratio: [80, 20]
     ], [
         path: 'vasp/.Ce/100UCe/3rd700/XDATCAR',
-        index: ((200-1)..<700).step(50),
+        slice: [200-1, null, 50],
         ratio: [100, 0]
     ], [
         path: 'vasp/.Ce/100UCe/7th700/XDATCAR',
-        index: ((200-1)..<700).step(50),
+        slice: [200-1, null, 50],
         ratio: [100, 0]
     ]];
     final static def testSet = [[
         path: 'vasp/.Ce/20Urandom/1000-20/XDATCAR',
-        index: ((200-1)..<500).step(50),
+        slice: [200-1, null, 50],
         ratio: [20, 80]
     ], [
         path: 'vasp/.Ce/20Urandom/2000-20/XDATCAR',
-        index: ((200-1)..<500).step(50),
+        slice: [200-1, null, 50],
         ratio: [20, 80]
     ], [
         path: 'vasp/.Ce/40Urandom/1000-40/XDATCAR',
-        index: ((200-1)..<500).step(50),
+        slice: [200-1, null, 50],
         ratio: [40, 60]
     ]];
     
@@ -112,8 +120,8 @@ class ClassifyCe {
         def trainInput = new ArrayList<IVector>();
         def trainOutput = LogicalVector.builder();
         for (subSet in trainSet) {
-            for (j in subSet.index) {
-                trainInput.addAll(calBasis(subSet.path, j).rows());
+            int len = calBasis(subSet.path, subSet.slice, trainInput);
+            for (j in 0..<len) {
                 // 加 U 为 true
                 for (i in 0..<subSet.ratio[0]) trainOutput.add(true);
                 for (i in 0..<subSet.ratio[1]) trainOutput.add(false);
@@ -124,8 +132,8 @@ class ClassifyCe {
         def testInput = new ArrayList<IVector>();
         def testOutput= LogicalVector.builder();
         for (subSet in testSet) {
-            for (j in subSet.index) {
-                testInput.addAll(calBasis(subSet.path, j).rows());
+            int len = calBasis(subSet.path, subSet.slice, testInput);
+            for (j in 0..<len) {
                 // 加 U 为 true
                 for (i in 0..<subSet.ratio[0]) testOutput.add(true);
                 for (i in 0..<subSet.ratio[1]) testOutput.add(false);
@@ -138,7 +146,7 @@ class ClassifyCe {
         
         // 训练随机森林和决策树
         def tree = DecisionTree.builder(trainInput, trainOutput).build();
-        def rf = new RandomForest(trainInput, trainOutput, 500, 0.02);
+        def rf = new RandomForest(trainInput, trainOutput, 500, 0.03);
         
         // 绘制 ROC
         axis(0, 1, 0, 1);
@@ -147,6 +155,9 @@ class ClassifyCe {
         plotROC(tree, testInput , testOutput , 'tree-test' , 1);
         plotROC(rf  , trainInput, trainOutput, 'rf-train'  , 3, '-.');
         plotROC(rf  , testInput , testOutput , 'rf-test'   , 3);
+        
+        // 输出部分预测结果看看是否是一致的
+        for (i in -1..-100) println("${testInput[i][0]}, ${testOutput[i]}, ${rf.makeDecision(testInput[i])}");
         
         rf.shutdown();
     }

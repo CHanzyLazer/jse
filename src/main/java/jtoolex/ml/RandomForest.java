@@ -110,7 +110,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
         });
         
         // 统一设置回竞争形式的 pool，预测开启非竞争可以提高效率
-        if (!aNoCompetitive) setPool(new ParforThreadPool(aThreadNum, true));
+        if (aThreadNum!=1 && !aNoCompetitive) setPool(new ParforThreadPool(aThreadNum, true));
     }
     RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
         this(false, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aRNG, aNoCompetitive);

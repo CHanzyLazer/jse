@@ -13,15 +13,20 @@ import jtool.plot.Plotters
 import jtool.system.SSH
 import jtool.system.WSL
 import jtool.vasp.POSCAR
+import jtool.vasp.XDATCAR
 
 import static jtool.code.UT.Math.*
 
-println(rand());
-println(rand());
-rng(123456);
-println(rand());
-println(new Random(123456).nextDouble());
-println(new LocalRandom(123456).nextDouble());
+
+a = [0, 1, 2, 3, 4, 5];
+for (i in -1..-3) println(a[i]);
+
+//println(rand());
+//println(rand());
+//rng(123456);
+//println(rand());
+//println(new Random(123456).nextDouble());
+//println(new LocalRandom(123456).nextDouble());
 
 //a = new XYZ(1, 0, 3);
 //b = new XYZ(0, 4, 0);
