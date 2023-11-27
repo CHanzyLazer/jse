@@ -1,12 +1,14 @@
 package jtoolex.ml;
 
 
+import com.google.common.collect.ImmutableMap;
 import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.DoublePair;
 import jtool.code.collection.NewCollections;
 import jtool.code.filter.IIndexFilter;
+import jtool.iofile.ISavable;
 import jtool.math.MathEX;
 import jtool.math.vector.ILogicalVector;
 import jtool.math.vector.IVector;
@@ -24,7 +26,7 @@ import static jtool.code.CS.RANDOM;
  * 这里只接受浮点的 {@link IVector} 输入
  * @author liqa
  */
-public class DecisionTree {
+public class DecisionTree implements ISavable {
     
     /** 内部使用的节点类 */
     interface INode {
@@ -368,5 +370,52 @@ public class DecisionTree {
             tNode = tNode.nextNode(aInput);
         }
         return tNode.result();
+    }
+    
+    
+    /** save/load，因为这里转为 map 是引用的，因此不等价于原本的 save 操作 */
+    public Map<String, Object> asMap() {
+        return ImmutableMap.of("root", asMap_(mRoot));
+    }
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override public void save(Map rSaveTo) {
+        rSaveTo.putAll(asMap());
+    }
+    public static DecisionTree load(Map<?, ?> aLoadFrom) {
+        return new DecisionTree(load_((Map<?, ?>)aLoadFrom.get("root")));
+    }
+    
+    
+    Map<String, Object> asMap_(INode aNode) {
+        if (aNode.isLeaf()) {
+            return ImmutableMap.of("type", "leaf",
+                                   "result", aNode.result());
+        } else
+        if (aNode instanceof NodeContinue) {
+            NodeContinue tNode = (NodeContinue)aNode;
+            return ImmutableMap.of("type" , "continue",
+                                   "split", tNode.mSplit,
+                                   "index", tNode.mIndex,
+                                   "left" , asMap_(tNode.mLeft),
+                                   "right", asMap_(tNode.mRight));
+        } else {
+            throw new RuntimeException();
+        }
+    }
+    static INode load_(Map<?, ?> aLoadFrom) {
+        String tType = (String)aLoadFrom.get("type");
+        switch (tType) {
+        case "leaf": {
+            return new NodeLeaf((Boolean)aLoadFrom.get("result"));
+        }
+        case "continue": {
+            Map<?, ?> tLeft  = (Map<?, ?>)aLoadFrom.get("left");
+            Map<?, ?> tRight = (Map<?, ?>)aLoadFrom.get("right");
+            int tIndex = ((Number)aLoadFrom.get("index")).intValue();
+            double tSplit = ((Number)aLoadFrom.get("split")).doubleValue();
+            return new NodeContinue(load_(tLeft), load_(tRight), tIndex, tSplit);
+        }
+        default: throw new RuntimeException();
+        }
     }
 }

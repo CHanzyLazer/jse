@@ -29,7 +29,7 @@ class ClassifyCe {
         // ase 的 api 只支持 slice，很烦，而且看起来没有很好的方法获取 slice
         SP.Python.runText("slicePy = slice(${slice[0]?:'None'}, ${slice[1]?:'None'}, ${slice[2]?:'None'})");
         def slicePy = SP.Python.getValue('slicePy');
-        def datas = read_vasp_xdatcar(path, slicePy.unwrap()); // 这里需要 unwrap 而下面不需要，以后还是会自动识别避免这个烦人的问题
+        def datas = read_vasp_xdatcar(path, slicePy.unwrap()); // TODO: 这里需要 unwrap 而下面不需要，以后还是会自动识别避免这个烦人的问题
         int len = 0;
         for (data in datas) {
             // 使用 basisCalculator 来计算基，输出为 numpy 的数组
@@ -146,7 +146,11 @@ class ClassifyCe {
         
         // 训练随机森林和决策树
         def tree = DecisionTree.builder(trainInput, trainOutput).build();
-        def rf = new RandomForest(trainInput, trainOutput, 500, 0.03);
+        def rf = new RandomForest(trainInput, trainOutput, 1000, 0.03);
+        
+        // 保存训练结果
+        UT.IO.map2json(rf.asMap(), 'vasp/.Ce/rf.json');
+        println("训练模型已保存至 'vasp/.Ce/rf.json'");
         
         // 绘制 ROC
         axis(0, 1, 0, 1);

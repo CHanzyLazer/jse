@@ -1,9 +1,11 @@
 package jtoolex.ml;
 
+import com.google.common.collect.ImmutableMap;
 import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.NewCollections;
+import jtool.iofile.ISavable;
 import jtool.math.MathEX;
 import jtool.math.random.LocalRandom;
 import jtool.math.vector.ILogicalVector;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import static jtool.code.CS.DEFAULT_THREAD_NUM;
@@ -24,7 +27,7 @@ import static jtool.code.CS.RANDOM;
  * 这里只接受浮点的 {@link IVector} 输入
  * @author liqa
  */
-public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
+public class RandomForest extends AbstractThreadPool<ParforThreadPool> implements ISavable {
     
     private final List<DecisionTree> mTrees;
     /** 构造一个空的随机森林，用于使用 put 手动构造 */
@@ -58,6 +61,21 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> {
     }
     public boolean makeDecision(IVector aInput) {
         return makeDecision(aInput, 0.5);
+    }
+    
+    
+    /** save/load，因为这里转为 map 是引用的，因此不等价于原本的 save 操作 */
+    public Map<String, Object> asMap() {
+        return ImmutableMap.of("trees", AbstractCollections.map(mTrees, DecisionTree::asMap));
+    }
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override public void save(Map rSaveTo) {
+        rSaveTo.putAll(asMap());
+    }
+    public static RandomForest load(Map<?, ?> aLoadFrom) {
+        RandomForest rRandomForest = new RandomForest();
+        rRandomForest.mTrees.addAll(AbstractCollections.map((List<?>)aLoadFrom.get("trees"), obj->DecisionTree.load((Map<?, ?>)obj)));
+        return rRandomForest;
     }
     
     

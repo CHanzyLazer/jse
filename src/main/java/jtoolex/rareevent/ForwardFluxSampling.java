@@ -1,6 +1,7 @@
 package jtoolex.rareevent;
 
 
+import com.google.common.collect.ImmutableMap;
 import jtool.atom.IAtomData;
 import jtool.code.CS;
 import jtool.code.UT;
@@ -759,16 +760,15 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         return AbstractCollections.map(mPointsOnLambda, point -> point.value);
     }
     
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public Map restData() {
-        Map rSaveTo = new HashMap();
-        rSaveTo.put("lambdas", AbstractCollections.map(mPointsOnLambda, point -> point.lambda));
-        rSaveTo.put("multiples", AbstractCollections.map(mPointsOnLambda, point -> point.multiple));
-        rSaveTo.put("k0", Double.isNaN(mK0) ? null : mK0);
-        rSaveTo.put("prob", AbstractCollections.map(mPi.asList(), prob -> (Double.isNaN(prob) ? null : prob)));
-        rSaveTo.put("surfaceA", mSurfaceA);
-        rSaveTo.put("surfaces", mSurfaces.asList());
-        return rSaveTo;
+    public Map<String, Object> restData() {
+        return ImmutableMap.<String, Object>builder()
+            .put("lambdas", AbstractCollections.map(mPointsOnLambda, point -> point.lambda))
+            .put("multiples", AbstractCollections.map(mPointsOnLambda, point -> point.multiple))
+            .put("k0", Double.isNaN(mK0) ? null : mK0)
+            .put("prob", AbstractCollections.map(mPi.asList(), prob -> (Double.isNaN(prob) ? null : prob)))
+            .put("surfaceA", mSurfaceA)
+            .put("surfaces", mSurfaces.asList())
+            .build();
     }
     
     /**程序结束时会顺便关闭内部的 mFullPathGenerator，通过切换不同的 mFullPathGenerator 来调整实际输入的生成器是否会顺便关闭 */
