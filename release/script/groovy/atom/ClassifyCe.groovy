@@ -24,47 +24,19 @@ import static jtool.code.UT.Plot.plot
  */
 class ClassifyCe {
     
-    final static def read_vasp_xdatcar;
-    final static def basisCalculator;
-    
-    /** 计算对应的基，这里暂时使用现有的 python 脚本计算 */
+    /** 计算对应的基，现在可以直接用内部的方法 */
     static int calBasis(String path, List<Integer> slice, List<IVector> dest) {
-        // 使用 ase 的读取 xdatcar 方法，读取成 ase 的实例
-        // ase 的 api 只支持 slice，很烦，而且看起来没有很好的方法获取 slice
-        SP.Python.runText("slicePy = slice(${slice[0]?:'None'}, ${slice[1]?:'None'}, ${slice[2]?:'None'})");
-        def slicePy = SP.Python.getValue('slicePy');
-        def datas = read_vasp_xdatcar(path, slicePy.unwrap()); // TODO: 这里需要 unwrap 而下面不需要，以后还是会自动识别避免这个烦人的问题
+        def xdatcar = XDATCAR.read(path);
         int len = 0;
-        for (data in datas) {
-            // 使用 basisCalculator 来计算基，输出为 numpy 的数组
-            def basis = basisCalculator.evaluate(data);
-            // 获取的是 jep.NDArray，这样获取内部数据，直接转为 IMatrix，这里获取到的是按行排列的
-            double[] basisData = basis.data;
-            int[] basisDim = basis.dimensions;
-            dest.addAll(new RowMatrix(basisDim[0], basisDim[1], basisData).rows());
+        for (j in ((slice[0]?:0)..<(slice[1]?:xdatcar.size())).step(slice[2]?:1)) {
+            xdatcar[j].getMPC().withCloseable {mpc ->
+                for (fp in mpc.calFPSuRui(5, 6, 6.5)) {
+                    dest.add(fp.asVecRow());
+                }
+            }
             ++len;
         }
         return len;
-    }
-    static int calBasis(String path, List<IVector> dest) {
-        def data = read_vasp_xdatcar(path);
-        // 使用 basisCalculator 来计算基，输出为 numpy 的数组
-        def basis = basisCalculator.evaluate(data);
-        // 获取的是 jep.NDArray，这样获取内部数据，直接转为 IMatrix，这里获取到的是按行排列的
-        double[] basisData = basis.data;
-        int[] basisDim = basis.dimensions;
-        dest.addAll(new RowMatrix(basisDim[0], basisDim[1], basisData).rows());
-        return 1;
-    }
-    
-    static {
-        // 导入需要的 python 包
-        SP.Python.runText('from ase.io.vasp import read_vasp_xdatcar');
-        SP.Python.runText('from libenv.spherical_chebyshev import SphericalChebyshev');
-        
-        // 获取需要的类/方法名，存为静态变量
-        read_vasp_xdatcar = SP.Python.getClass('read_vasp_xdatcar');
-        basisCalculator = SP.Python.newInstance('SphericalChebyshev', ['Ce'], 5, 6, (double)6.5);
     }
     
     // 训练集和测试集定义
@@ -129,11 +101,11 @@ class ClassifyCe {
     
     
     static def main(args) {
-//        trainAndSave();
+        trainAndSave();
         
 //        classifyXDATCAR('vasp/.Ce/20Urandom/2000-20/XDATCAR', 'vasp/.Ce-out/20Urandom/2000-20/dump');
         
-        compareWithAtomVolume();
+//        compareWithAtomVolume();
     }
     
     

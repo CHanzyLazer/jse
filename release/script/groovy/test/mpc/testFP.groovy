@@ -8,14 +8,14 @@ import jtool.vasp.XDATCAR
  * 测试基组正确性
  */
 
-
-data = XDATCAR.read('vasp/.lll-in/XDATCAR').last();
+index = 200;
+data = XDATCAR.read('vasp/.lll-in/XDATCAR')[index];
 
 UT.Timer.tic();
 fp = data.getMPC().withCloseable {it.calFPSuRui(5, 6, 6.5)}
 UT.Timer.toc();
 
-def lines = UT.IO.readAllLines('vasp/.lll-out/.XDATCAR-out/399.dat');
+def lines = UT.IO.readAllLines("vasp/.lll-out/.XDATCAR-out/${index}.dat");
 int colNum = UT.Texts.splitBlank(lines.first()).size();
 // 手动读取到 datas
 def datas = new ArrayList<IVector>();
