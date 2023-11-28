@@ -7,17 +7,17 @@ import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.NewCollections;
 import jtool.iofile.ISavable;
 import jtool.math.MathEX;
+import jtool.math.matrix.IMatrix;
 import jtool.math.random.LocalRandom;
 import jtool.math.vector.ILogicalVector;
 import jtool.math.vector.IVector;
+import jtool.math.vector.LogicalVector;
+import jtool.math.vector.Vectors;
 import jtool.parallel.AbstractThreadPool;
 import jtool.parallel.ParforThreadPool;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static jtool.code.CS.DEFAULT_THREAD_NUM;
 import static jtool.code.CS.RANDOM;
@@ -43,6 +43,15 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
             }
         }.setMaxDepth(8);
     }
+    public static DecisionTree.Builder treeBuilder(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput) {return treeBuilder(AbstractCollections.from(aTrainDataInput), aTrainDataOutput);}
+    public static DecisionTree.Builder treeBuilder(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput) {return treeBuilder(aTrainDataInput.rows(), aTrainDataOutput);}
+    public static DecisionTree.Builder treeBuilder(@Unmodifiable List<? extends IVector> aTrainDataInput, Collection<Boolean> aTrainDataOutput) {return treeBuilder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static DecisionTree.Builder treeBuilder(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput) {return treeBuilder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static DecisionTree.Builder treeBuilder(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput) {return treeBuilder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static DecisionTree.Builder treeBuilder(@Unmodifiable List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput) {return treeBuilder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    public static DecisionTree.Builder treeBuilder(IVector[] aTrainDataInput, boolean[] aTrainDataOutput) {return treeBuilder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    public static DecisionTree.Builder treeBuilder(IMatrix aTrainDataInput, boolean[] aTrainDataOutput) {return treeBuilder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    
     
     /** 现在支持设置线程数 */
     public RandomForest setThreadNum(int aThreadNum)  {if (aThreadNum!=nThreads()) setPool(new ParforThreadPool(aThreadNum, true)); return this;}
@@ -162,4 +171,80 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
         this(aNoPBar, aTrainDataInput, aTrainDataOutput, 1000, 0.01);
     }
+    
+    
+    public RandomForest(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio);}
+    public RandomForest(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput) {this(AbstractCollections.from(aTrainDataInput), aTrainDataOutput);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), aTrainDataOutput, aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), aTrainDataOutput);}
+    
+    public RandomForest(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio);}
+    public RandomForest(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput) {this(aTrainDataInput.rows(), aTrainDataOutput);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, aTrainDataInput.rows(), aTrainDataOutput, aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput) {this(aNoPBar, aTrainDataInput.rows(), aTrainDataOutput);}
+    
+    
+    public RandomForest(List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput) {this(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, List<Boolean> aTrainDataOutput) {this(aNoPBar, aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    
+    public RandomForest(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput) {this(AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), Vectors.fromBoolean(aTrainDataOutput));}
+    
+    public RandomForest(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput) {this(aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput) {this(aNoPBar, aTrainDataInput.rows(), Vectors.fromBoolean(aTrainDataOutput));}
+    
+    
+    public RandomForest(List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput) {this(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, aTrainDataInput, new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput) {this(aNoPBar, aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    
+    public RandomForest(IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(IVector[] aTrainDataInput, boolean[] aTrainDataOutput) {this(AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IVector[] aTrainDataInput, boolean[] aTrainDataOutput) {this(aNoPBar, AbstractCollections.from(aTrainDataInput), new LogicalVector(aTrainDataOutput));}
+    
+    public RandomForest(IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(IMatrix aTrainDataInput, boolean[] aTrainDataOutput) {this(aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput));}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, long aSeed) {this(aNoPBar, aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum, aSeed);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum) {this(aNoPBar, aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio, aThreadNum);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, boolean[] aTrainDataOutput, int aTreeNum, double aTrainRatio) {this(aNoPBar, aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput), aTreeNum, aTrainRatio);}
+    public RandomForest(boolean aNoPBar, IMatrix aTrainDataInput, boolean[] aTrainDataOutput) {this(aNoPBar, aTrainDataInput.rows(), new LogicalVector(aTrainDataOutput));}
+    
 }

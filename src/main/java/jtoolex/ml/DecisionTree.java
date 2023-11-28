@@ -10,6 +10,7 @@ import jtool.code.collection.NewCollections;
 import jtool.code.filter.IIndexFilter;
 import jtool.iofile.ISavable;
 import jtool.math.MathEX;
+import jtool.math.matrix.IMatrix;
 import jtool.math.vector.ILogicalVector;
 import jtool.math.vector.IVector;
 import jtool.math.vector.LogicalVector;
@@ -362,6 +363,14 @@ public class DecisionTree implements ISavable {
     }
     
     public static Builder builder(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {return new Builder(aTrainDataInput, aTrainDataOutput);}
+    public static Builder builder(IVector[] aTrainDataInput, ILogicalVector aTrainDataOutput) {return builder(AbstractCollections.from(aTrainDataInput), aTrainDataOutput);}
+    public static Builder builder(IMatrix aTrainDataInput, ILogicalVector aTrainDataOutput) {return builder(aTrainDataInput.rows(), aTrainDataOutput);}
+    public static Builder builder(@Unmodifiable List<? extends IVector> aTrainDataInput, Collection<Boolean> aTrainDataOutput) {return builder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static Builder builder(IVector[] aTrainDataInput, List<Boolean> aTrainDataOutput) {return builder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static Builder builder(IMatrix aTrainDataInput, List<Boolean> aTrainDataOutput) {return builder(aTrainDataInput, Vectors.fromBoolean(aTrainDataOutput));}
+    public static Builder builder(@Unmodifiable List<? extends IVector> aTrainDataInput, boolean[] aTrainDataOutput) {return builder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    public static Builder builder(IVector[] aTrainDataInput, boolean[] aTrainDataOutput) {return builder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
+    public static Builder builder(IMatrix aTrainDataInput, boolean[] aTrainDataOutput) {return builder(aTrainDataInput, new LogicalVector(aTrainDataOutput));}
     
     /** 输入 x 进行进行决策判断 */
     public boolean makeDecision(IVector aInput) {

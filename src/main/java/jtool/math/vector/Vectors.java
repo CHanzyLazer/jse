@@ -60,6 +60,42 @@ public class Vectors {
         return rVector;
     }
     
+    
+    public static ILogicalVector fromBoolean(int aSize, ILogicalVectorGetter aVectorGetter) {
+        ILogicalVector rVector = LogicalVector.zeros(aSize);
+        rVector.fill(aVectorGetter);
+        return rVector;
+    }
+    public static ILogicalVector fromBoolean(ILogicalVector aVector) {
+        if (aVector instanceof LogicalVector) {
+            return aVector.copy();
+        } else {
+            ILogicalVector rVector = LogicalVector.zeros(aVector.size());
+            rVector.fill(aVector);
+            return rVector;
+        }
+    }
+    /** Groovy stuff */
+    public static ILogicalVector fromBoolean(int aSize, final Closure<Boolean> aGroovyTask) {return fromBoolean(aSize, aGroovyTask::call);}
+    
+    public static ILogicalVector fromBoolean(Iterable<Boolean> aIterable) {
+        final LogicalVector.Builder rBuilder = LogicalVector.builder();
+        for (Boolean tValue : aIterable) rBuilder.add(tValue);
+        rBuilder.shrinkToFit();
+        return rBuilder.build();
+    }
+    public static ILogicalVector fromBoolean(Collection<Boolean> aList) {
+        ILogicalVector rVector = LogicalVector.zeros(aList.size());
+        rVector.fill(aList);
+        return rVector;
+    }
+    public static ILogicalVector fromBoolean(boolean[] aData) {
+        ILogicalVector rVector = LogicalVector.zeros(aData.length);
+        rVector.fill(aData);
+        return rVector;
+    }
+    
+    
     public static IVector merge(IVector aBefore, IVector aAfter) {
         IVector rVector = zeros(aBefore.size()+aAfter.size());
         // 原则上使用优化后的 refSlicer 会更快，但是优化需要的代码量较大，这里直接使用迭代器遍历，一个适中的优化效果
