@@ -60,12 +60,12 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     public double predict(final IVector aInput) {
         int tThreadNum = nThreads();
         int tTreeNum = mTrees.size();
-        int[] rPredTrueNumBuffer = new int[tThreadNum];
+        int[] rPredTrueNumPar = new int[tThreadNum];
         pool().parfor(tTreeNum, (i, threadID) -> {
-            if (mTrees.get(i).makeDecision(aInput)) ++rPredTrueNumBuffer[threadID];
+            if (mTrees.get(i).makeDecision(aInput)) ++rPredTrueNumPar[threadID];
         });
         int tPredTrueNum = 0;
-        for (int subPredTrueNum : rPredTrueNumBuffer) tPredTrueNum += subPredTrueNum;
+        for (int subPredTrueNum : rPredTrueNumPar) tPredTrueNum += subPredTrueNum;
         return tPredTrueNum / (double)tTreeNum;
     }
     public boolean makeDecision(final IVector aInput, double aRatio) {

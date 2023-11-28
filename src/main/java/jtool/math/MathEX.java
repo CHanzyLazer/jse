@@ -755,7 +755,32 @@ public class MathEX {
         }
         
         /**
-         * 输出球谐（Spherical Harmonics）函数，定义同北大数理方法教材
+         * 输出 Chebyshev 多项式函数，参见：
+         * <a href="https://en.wikipedia.org/wiki/Chebyshev_polynomials">
+         * Chebyshev polynomials </a>
+         * @author liqa
+         * @param aN Chebyshev 多项式阶数，有 {@code n >= 0}
+         * @return 计算结果，实数
+         */
+        public static double chebyshev(int aN, double aX) {
+            // 判断输入是否合法
+            if (aN < 0) throw new IllegalArgumentException("Input n MUST be Non-Negative, input: "+aN);
+            return chebyshev_(aN, aX);
+        }
+        
+        public static double chebyshev_(int aN, double aX) {
+            // 直接采用递推关系递归计算
+            switch(aN) {
+            case 0: {return 1.0;}
+            case 1: {return aX;}
+            default: {return 2.0 * aX * chebyshev_(aN - 1, aX) - chebyshev_(aN - 2, aX);}
+            }
+        }
+        
+        /**
+         * 输出球谐（Spherical Harmonics）函数，定义同北大数理方法教材，可参考：
+         * <a href="https://en.wikipedia.org/wiki/Spherical_harmonics">
+         * Spherical harmonics </a> 中声学的定义
          * @author liqa
          * @param aL 球谐函数参数 l，非负整数
          * @param aM 球谐函数参数 m，整数，-l ~ l
@@ -771,17 +796,21 @@ public class MathEX {
             return sphericalHarmonics_(aL, aM, aTheta, aPhi);
         }
         public static ComplexDouble sphericalHarmonics_(int aL, int aM, double aTheta, double aPhi) {
-            int tAbsM = Math.abs(aM);
-            
+            if (aM < 0) {
+                ComplexDouble tY = sphericalHarmonics_(aL, -aM, aTheta, aPhi);
+                tY.conj2this();
+                if ((aM&1)==1) tY.negative2this();
+                return tY;
+            }
             // 计算前系数（实数部分）
             double rFront = 1.0;
-            for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
+            for (int i = aL-aM+1, tEnd = aL+aM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
             rFront /= 4*PI;
             rFront = Fast.sqrt(rFront);
             // 计算连带 Legendre 多项式部分
-            rFront *= legendre_(aL, tAbsM, Fast.cos(aTheta));
+            rFront *= legendre_(aL, aM, Fast.cos(aTheta));
             // 返回结果，实部虚部分开计算
             return new ComplexDouble(rFront*Fast.cos(aM*aPhi), rFront*Fast.sin(aM*aPhi));
         }
@@ -794,23 +823,29 @@ public class MathEX {
             return sphericalHarmonicsQuick_(aL, aM, aTheta, aPhi);
         }
         public static ComplexDouble sphericalHarmonicsQuick_(int aL, int aM, double aTheta, double aPhi) {
-            int tAbsM = Math.abs(aM);
-            
+            if (aM < 0) {
+                ComplexDouble tY = sphericalHarmonicsQuick_(aL, -aM, aTheta, aPhi);
+                tY.conj2this();
+                if ((aM&1)==1) tY.negative2this();
+                return tY;
+            }
             // 计算前系数（实数部分）
             double rFront = 1.0;
-            for (int i = aL-tAbsM+1, tEnd = aL+tAbsM; i <= tEnd; ++i) rFront *= i;
+            for (int i = aL-aM+1, tEnd = aL+aM; i <= tEnd; ++i) rFront *= i;
             rFront = 1.0 / rFront;
             rFront *= aL+aL+1;
             rFront /= 4*PI;
             rFront = Fast.sqrtQuick(rFront);
             // 计算连带 Legendre 多项式部分
-            rFront *= legendreQuick_(aL, tAbsM, Fast.cosQuick(aTheta));
+            rFront *= legendreQuick_(aL, aM, Fast.cosQuick(aTheta));
             // 返回结果，实部虚部分开计算
             return new ComplexDouble(rFront*Fast.cosQuick(aM*aPhi), rFront*Fast.sinQuick(aM*aPhi));
         }
         
         /**
-         * 输出连带 Legendre 多项式函数，定义同 matlab 的 legendre
+         * 输出连带 Legendre 多项式函数，定义同 matlab 的 legendre，参见：
+         * <a href="https://en.wikipedia.org/wiki/Associated_Legendre_polynomials">
+         * Associated Legendre polynomials </a>
          * @author liqa
          * @param aL 连带 Legendre 多项式参数 l，非负整数
          * @param aM 连带 Legendre 多项式参数 m，非负整数，{@code m <= l}
@@ -826,18 +861,20 @@ public class MathEX {
         public static double legendre_(int aL, int aM, double aX) {
             // 直接采用递推关系递归计算
             int tGreater = aL - aM;
-            if (tGreater == 0) {
+            switch(tGreater) {
+            case 0: {
                 if (aM == 0) return 1.0;
                 double tPmm = Fast.sqrt(Fast.powFast(1.0 - aX*aX, aM));
                 if ((aM&1)==1) tPmm = -tPmm;
                 for (int i = 3, tEnd = aM+aM-1; i <= tEnd; i+=2) tPmm *= i;
                 return tPmm;
-            } else
-            if (tGreater == 1) {
-                return (aL+aL-1)*aX*legendre_(aL-1, aM, aX);
-            } else {
-                return ((aL+aL-1)*aX*legendre_(aL-1, aM, aX) - (aL+aM-1)*legendre_(aL-2, aM, aX)) / (double)tGreater;
             }
+            case 1: {
+                return (aL+aL-1)*aX*legendre_(aL-1, aM, aX);
+            }
+            default: {
+                return ((aL+aL-1)*aX*legendre_(aL-1, aM, aX) - (aL+aM-1)*legendre_(aL-2, aM, aX)) / (double)tGreater;
+            }}
         }
         /** Quick version of legendre */
         public static double legendreQuick(int aL, int aM, double aX) {
@@ -850,18 +887,20 @@ public class MathEX {
         public static double legendreQuick_(int aL, int aM, double aX) {
             // 直接采用递推关系递归计算
             int tGreater = aL - aM;
-            if (tGreater == 0) {
+            switch(tGreater) {
+            case 0: {
                 if (aM == 0) return 1.0;
                 double tPmm = Fast.sqrtQuick(Fast.powFast(1.0 - aX*aX, aM));
                 if ((aM&1)==1) tPmm = -tPmm;
                 for (int i = 3, tEnd = aM+aM-1; i <= tEnd; i+=2) tPmm *= i;
                 return tPmm;
-            } else
-            if (tGreater == 1) {
-                return (aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX);
-            } else {
-                return ((aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX) - (aL+aM-1)*legendreQuick_(aL-2, aM, aX)) / (double)tGreater;
             }
+            case 1: {
+                return (aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX);
+            }
+            default: {
+                return ((aL+aL-1)*aX*legendreQuick_(aL-1, aM, aX) - (aL+aM-1)*legendreQuick_(aL-2, aM, aX)) / (double)tGreater;
+            }}
         }
         
         /**

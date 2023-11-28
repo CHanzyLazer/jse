@@ -7,6 +7,8 @@ import jtool.math.function.FixBoundFunc1;
 import jtool.math.function.Func1;
 import jtool.math.function.IFunc1;
 import jtool.math.function.IZeroBoundFunc1;
+import jtool.math.matrix.IMatrix;
+import jtool.math.matrix.Matrices;
 import jtool.math.vector.*;
 import jtool.parallel.AbstractThreadPool;
 import jtool.parallel.IObjectPool;
@@ -539,7 +541,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @return Qlm 组成的复向量数组
      */
     public IComplexVector[] calYlmMean(int aL, double aRNearest, int aNnn) {
-        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
+        final ComplexVector[] Qlm = new ComplexVector[mAtomNum];
         for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
         calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
         return Qlm;
@@ -566,10 +568,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @return qlm 组成的复向量数组
      */
     public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
-        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
+        final ComplexVector[] Qlm = new ComplexVector[mAtomNum];
         for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
         calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
-        final IComplexVector[] qlm = new IComplexVector[mAtomNum];
+        final ComplexVector[] qlm = new ComplexVector[mAtomNum];
         for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
         calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
         return qlm;
@@ -578,14 +580,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
     public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
-    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, IComplexVector[] rDest) {
+    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, ComplexVector[] rDest) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
         if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
         
         // 构造用于并行的暂存数组
-        final IComplexVector[][] rDestPar = new IComplexVector[nThreads()][];
+        final ComplexVector[][] rDestPar = new ComplexVector[nThreads()][];
         rDestPar[0] = rDest;
         for (int i = 1; i < rDestPar.length; ++i) rDestPar[i] = getComplexVectors_(mAtomNum, aL+aL+1);
         // 统计近邻数用于求平均，同样也需要为并行使用数组
@@ -632,6 +634,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     if (tM != 0) {
                         tCol = -tM+aL;
                         tY = tY.conj();
+                        if ((tM&1)==1) tY.negative2this();
                         Qlmi.add_(tCol, tY);
                         // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                         if (aHalf) {
@@ -656,6 +659,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             IComplexVector[] subQlm = rDestPar[i];
             for (int j = 0; j < mAtomNum; ++j) rDest[j].plus2this(subQlm[j]);
         }
+        // 计算完成归还缓存数据（应该是忘记了）
+        for (int i = 1; i < rDestPar.length; ++i) returnComplexVectors_(rDestPar[i]);
         // 根据近邻数平均得到 Qlm
         for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));
     }
@@ -1199,4 +1204,83 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVoronoiCalculator calVoronoi(double aRCutOff, boolean aNoWarning) {return calVoronoi(aRCutOff, aNoWarning, 9);}
     public IVoronoiCalculator calVoronoi(double aRCutOff) {return calVoronoi(aRCutOff, false);}
     public IVoronoiCalculator calVoronoi() {return calVoronoi(mUnitLen*3.0);}
+    
+    
+    /**
+     * 一种基于 Chebyshev 多项式和球谐函数将原子局域环境展开成一个基组的方法，
+     * 或称为此原子的指纹（FingerPrints）， 主要用于作为机器学习的输入向量
+     * <p>
+     * References:
+     * <a href="https://arxiv.org/abs/2211.03350v3">
+     * Computing the 3D Voronoi Diagram Robustly: An Easy Explanation </a>
+     * @author Su Rui, liqa
+     * @param aNMax Chebyshev 多项式选取的最大阶数
+     * @param aLMax 球谐函数中 l 选取的最大阶数
+     * @param aRCutOff 截断半径
+     * @return 原子指纹矩阵组成的数组，n 为行，l 为列，因此 asVecRow 即为原本定义的基
+     */
+    public IMatrix[] calFPSuRui(final int aNMax, final int aLMax, final double aRCutOff) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aNMax < 0) throw new IllegalArgumentException("Input n_max MUST be Non-Negative, input: "+aNMax);
+        if (aLMax < 0) throw new IllegalArgumentException("Input l_max MUST be Non-Negative, input: "+aLMax);
+        
+        final IMatrix[] rFingerPrints = new IMatrix[mAtomNum];
+        for (int i = 0; i < mAtomNum; ++i) rFingerPrints[i] = Matrices.zeros(aNMax+1, aLMax+1);
+        
+        // 先不考虑一半遍历的优化，让代码较为简单看看结果是否正确
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            // 需要存储所有的 l，n，m 的值来统一进行近邻求和
+            final IComplexVector[][] cnlm = new IComplexVector[aNMax+1][aLMax+1];
+            for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
+                cnlm[tN][tL] = ComplexVector.zeros(tL+tL+1);
+            }
+            final XYZ cXYZ = mAtomDataXYZ[i];
+            // 遍历近邻计算 Ylm, Rn, fc
+            mNL.forEachNeighbor(i, aRCutOff, false, (x, y, z, idx, dis) -> {
+                // 计算角度
+                double dx = x - cXYZ.mX;
+                double dy = y - cXYZ.mY;
+                double dz = z - cXYZ.mZ;
+                double theta = Fast.acos(dz / dis);
+                double disXY = Fast.hypot(dx, dy);
+                double phi = (dy > 0) ? Fast.acos(dx / disXY) : (2.0*PI - Fast.acos(dx / disXY));
+                
+                // 计算截断函数 fc
+                double fc = dis>=aRCutOff ? 0.0 : Fast.powFast(1.0 - Fast.pow2(dis/aRCutOff), 4);
+                
+                // 遍历求 n，l 的情况
+                for (int tN = 0; tN <= aNMax; ++tN) {
+                    // 统一计算径向函数 Rn
+                    double Rn = Func.chebyshev_(tN, 1 - 2.0*dis/aRCutOff);
+                    for (int tL = 0; tL <= aLMax; ++tL) {
+                        // 得到 cnlm 向量
+                        IComplexVector cijm = cnlm[tN][tL];
+                        // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
+                        for (int tM = 0; tM <= tL; ++tM) {
+                            int tCol = tM+tL;
+                            // 虽然存在更快速的版本，并且也存在瓶颈，但精度损失较大，这里不使用
+                            ComplexDouble tY = Func.sphericalHarmonics_(tL, tM, theta, phi);
+                            // 乘上 fc，Rn 系数
+                            tY.multiply2this(fc*Rn);
+                            cijm.add_(tCol, tY);
+                            // m < 0 的部分直接利用对称性求
+                            if (tM != 0) {
+                                tCol = -tM+tL;
+                                tY = tY.conj();
+                                if ((tM&1)==1) tY.negative2this();
+                                cijm.add_(tCol, tY);
+                            }
+                        }
+                    }
+                }
+            });
+            // 做标量积消去 m 项，得到此原子的 FP
+            IMatrix tFP = rFingerPrints[i];
+            for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
+                tFP.set_(tN, tL, (4.0*PI/(double)(tL+tL+1)) * cnlm[tN][tL].operation().dot());
+            }
+        });
+        
+        return rFingerPrints;
+    }
 }
