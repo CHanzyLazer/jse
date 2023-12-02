@@ -15,9 +15,11 @@ import jtoolex.ml.RandomForest
  */
 
 
-final int nmax = 2;
-final int lmax = 4;
-final double cutoff = 1.5;
+final int nmax = 6;
+final int lmax = 6;
+final double cutoff = 2.0;
+
+final int N = 20;
 
 // 首先导入 Lmpdat
 def dataG       = Lmpdat.read('lmp/.ffs-in/data-fs1-init');
@@ -48,25 +50,25 @@ def predZr14Cu51= dataZr14Cu51.getMPC().withCloseable {def mpc -> rf.predict(mpc
 rf.shutdown();
 
 // 统计结果
-def distributionG       = Func1.zeros(0.05, 0.1, 10);
-def distributionFCC     = Func1.zeros(0.05, 0.1, 10);
-def distributionBCC     = Func1.zeros(0.05, 0.1, 10);
-def distributionHCP     = Func1.zeros(0.05, 0.1, 10);
-def distributionMgCu2   = Func1.zeros(0.05, 0.1, 10);
-def distributionZr3Cu8  = Func1.zeros(0.05, 0.1, 10);
-def distributionZr7Cu10 = Func1.zeros(0.05, 0.1, 10);
-def distributionZrCu2   = Func1.zeros(0.05, 0.1, 10);
-def distributionZr14Cu51= Func1.zeros(0.05, 0.1, 10);
+def distributionG       = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionFCC     = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionBCC     = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionHCP     = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionMgCu2   = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionZr3Cu8  = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionZr7Cu10 = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionZrCu2   = Func1.zeros(0.5/N, 1.0/N, N);
+def distributionZr14Cu51= Func1.zeros(0.5/N, 1.0/N, N);
 
-predG       .forEach {double p -> distributionG         .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predFCC     .forEach {double p -> distributionFCC       .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predBCC     .forEach {double p -> distributionBCC       .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predHCP     .forEach {double p -> distributionHCP       .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predMgCu2   .forEach {double p -> distributionMgCu2     .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predZr3Cu8  .forEach {double p -> distributionZr3Cu8    .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predZr7Cu10 .forEach {double p -> distributionZr7Cu10   .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predZrCu2   .forEach {double p -> distributionZrCu2     .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
-predZr14Cu51.forEach {double p -> distributionZr14Cu51  .update(Math.min(9, (int)Math.floor(p/0.1)), {it+1});}
+predG       .forEach {double p -> distributionG         .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predFCC     .forEach {double p -> distributionFCC       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predBCC     .forEach {double p -> distributionBCC       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predHCP     .forEach {double p -> distributionHCP       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predMgCu2   .forEach {double p -> distributionMgCu2     .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predZr3Cu8  .forEach {double p -> distributionZr3Cu8    .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predZr7Cu10 .forEach {double p -> distributionZr7Cu10   .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predZrCu2   .forEach {double p -> distributionZrCu2     .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predZr14Cu51.forEach {double p -> distributionZr14Cu51  .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
 distributionG       /= dataG        .atomNum();
 distributionFCC     /= dataFCC      .atomNum();
 distributionBCC     /= dataBCC      .atomNum();

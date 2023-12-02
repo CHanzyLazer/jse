@@ -17,9 +17,9 @@ import static jtool.code.UT.Par.parfor
  * 这里只区分 laves 相，可以方便对比
  */
 
-final int nmax = 2;
-final int lmax = 4;
-final double cutoff = 1.5;
+final int nmax = 6;
+final int lmax = 6;
+final double cutoff = 2.0;
 
 final double timestep = 0.002; // ps
 
@@ -36,9 +36,11 @@ cal = new MultiTypeClusterSizeCalculator(
     new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.89).setSolidThreshold(7),
     [new ABOOPSolidChecker().setRNearestMul(1.8).setConnectThreshold(0.84).setSolidThreshold(13), new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7)]
 );
+UT.Timer.pbar('new λ', dump.size());
 parfor(dump.size()) {int i ->
     // 统计结晶的数目
     crystalSizeNew[i] = cal.lambdaOf(dump[i]);
+    UT.Timer.pbar();
 }
 UT.Timer.toc('new λ');
 
@@ -46,9 +48,11 @@ UT.Timer.toc('new λ');
 UT.Timer.tic();
 def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
 cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})});
+UT.Timer.pbar('ml λ', dump.size());
 parfor(dump.size()) {int i ->
     // 统计结晶的数目
     crystalSizeML[i] = cal.lambdaOf(dump[i]);
+    UT.Timer.pbar();
 }
 rf.shutdown();
 UT.Timer.toc('ml λ');

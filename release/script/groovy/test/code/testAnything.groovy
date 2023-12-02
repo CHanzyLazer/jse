@@ -19,9 +19,15 @@ import jtool.vasp.XDATCAR
 import static jtool.code.UT.Math.*
 import static jtool.code.UT.Plot.*
 
+try (def wsl = new WSL()) {
+    wsl.system('ls');
+    wsl.system('echo 1');
+}
 
-data = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 4).opt().perturbXYZ(0.25);
-plot(data);
+
+
+//data = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 4).opt().perturbXYZ(0.25);
+//plot(data);
 
 //a = [0, 1, 2, 3, 4, 5];
 //for (i in -1..-3) println(a[i]);

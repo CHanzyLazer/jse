@@ -1,12 +1,10 @@
 package test.ml
 
-import jtool.atom.Structures
 import jtool.code.UT
 import jtool.code.collection.ArrayLists
 import jtool.lmp.Lmpdat
 import jtool.math.vector.IVector
 import jtool.math.vector.LogicalVector
-import jtool.vasp.POSCAR
 import jtoolex.ml.RandomForest
 import atom.ClassifyCe;
 
@@ -18,34 +16,25 @@ import static jtool.code.UT.Plot.plot
  * 这里只区分 laves 相，可以方便对比
  */
 
-final int nmax = 2;
-final int lmax = 4;
-final double cutoff = 1.5;
+final int nmax = 6;
+final int lmax = 6;
+final double cutoff = 2.0;
 
-
+final def lavesPaths = [
+    'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1000',
+    'lmp/.CuZr/data-laves2-600', 'lmp/.CuZr/data-laves2-800', 'lmp/.CuZr/data-laves2-1000',
+    'lmp/.CuZr/data-laves3-600', 'lmp/.CuZr/data-laves3-800', 'lmp/.CuZr/data-laves3-1000'
+];
+final def nolavesPaths = [
+    'lmp/.CuZr/data-nolaves-600', 'lmp/.CuZr/data-nolaves-800', 'lmp/.CuZr/data-nolaves-1000'
+];
 
 // 构造样本
 def dataIn = new ArrayList<IVector>();
 def dataOut = LogicalVector.builder();
 // 玻璃样本
-try (def mpc = Lmpdat.read('lmp/.ffs-in/data-fs1-sc').getMPC()) {
-    println("AtomNum of glass: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(false);
-    }
-}
-try (def mpc = Lmpdat.read('lmp/.ffs-in/data-fs1-init').getMPC()) {
-    println("AtomNum of glass: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(false);
-    }
-}
-try (def mpc = Lmpdat.read('lmp/.ffs-in/data-fs1-init').opt().perturbXYZ(0.30).getMPC()) {
-    println("AtomNum of glass: ${mpc.atomNum()}");
+for (nolavesPath in nolavesPaths) try (def mpc = Lmpdat.read(nolavesPath).getMPC()) {
+    println("AtomNum of $nolavesPath: ${mpc.atomNum()}");
     def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
     for (fp in basis) {
         dataIn.add(fp.asVecRow());
@@ -53,48 +42,8 @@ try (def mpc = Lmpdat.read('lmp/.ffs-in/data-fs1-init').opt().perturbXYZ(0.30).g
     }
 }
 // 三种 laves 相样本
-try (def mpc = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 7).opt().perturbXYZ(0.05).getMPC()) {
-    println("AtomNum of MgCu2: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(true);
-    }
-}
-try (def mpc = Structures.from(POSCAR.read('vasp/data/re_MgNi2.poscar'), 5).opt().perturbXYZ(0.05).getMPC()) {
-    println("AtomNum of MgNi2: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(true);
-    }
-}
-try (def mpc = Structures.from(POSCAR.read('vasp/data/re_MgZn2.poscar'), 7).opt().perturbXYZ(0.05).getMPC()) {
-    println("AtomNum of MgZn2: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(true);
-    }
-}
-try (def mpc = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 6).opt().perturbXYZ(0.15).getMPC()) {
-    println("AtomNum of MgCu2: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(true);
-    }
-}
-try (def mpc = Structures.from(POSCAR.read('vasp/data/re_MgNi2.poscar'), 4).opt().perturbXYZ(0.15).getMPC()) {
-    println("AtomNum of MgNi2: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
-    for (fp in basis) {
-        dataIn.add(fp.asVecRow());
-        dataOut.add(true);
-    }
-}
-try (def mpc = Structures.from(POSCAR.read('vasp/data/re_MgZn2.poscar'), 6).opt().perturbXYZ(0.15).getMPC()) {
-    println("AtomNum of MgZn2: ${mpc.atomNum()}");
+for (lavesPath in lavesPaths) try (def mpc = Lmpdat.read(lavesPath).getMPC()) {
+    println("AtomNum of $lavesPath: ${mpc.atomNum()}");
     def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
     for (fp in basis) {
         dataIn.add(fp.asVecRow());
@@ -114,7 +63,7 @@ def testIn = dataIn[randIndex[mid..<end]];
 def testOut = dataOut[randIndex[mid..<end]];
 
 // 训练随机森林
-def rf = new RandomForest(trainIn, trainOut, 200, 0.04);
+def rf = new RandomForest(trainIn, trainOut, 200, 0.02);
 
 // 保存训练结果
 UT.IO.map2json(rf.asMap(), 'lmp/.CuZr/rf.json');

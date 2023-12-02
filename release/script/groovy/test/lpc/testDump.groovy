@@ -8,8 +8,8 @@ import jtool.lmp.LPC
 import jtool.math.MathEX
 import jtool.math.vector.Vectors
 import jtool.plot.Plotters
-import jtool.rareevent.atom.ABOOPSolidChecker
-import jtool.rareevent.atom.MultiTypeClusterSizeCalculator
+import jtoolex.rareevent.atom.ABOOPSolidChecker
+import jtoolex.rareevent.atom.MultiTypeClusterSizeCalculator
 import jtool.system.WSL
 
 import static jtool.code.CS.*
@@ -31,7 +31,7 @@ final int lmpCores          = 12;
 
 
 
-new StepJobManager('testFFS3c', 2)
+new StepJobManager('testFFS3c', 0)
 .init {println("0. 初始化 ${initTemp}K 熔融 Cu${Cu}Zr${Zr} 结构");}
 .doJob {
     UT.Timer.tic()
