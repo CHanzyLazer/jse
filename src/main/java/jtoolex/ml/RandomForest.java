@@ -112,11 +112,12 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     @Override public void save(Map rSaveTo) {
         rSaveTo.putAll(asMap());
     }
-    public static RandomForest load(Map<?, ?> aLoadFrom) {
-        RandomForest rRandomForest = new RandomForest();
+    public static RandomForest load(Map<?, ?> aLoadFrom, int aThreadNum) {
+        RandomForest rRandomForest = new RandomForest(aThreadNum);
         rRandomForest.mTrees.addAll(AbstractCollections.map((List<?>)aLoadFrom.get("trees"), obj->DecisionTree.load((Map<?, ?>)obj)));
         return rRandomForest;
     }
+    public static RandomForest load(Map<?, ?> aLoadFrom) {return load(aLoadFrom, DEFAULT_THREAD_NUM);}
     
     
     private static long[] genSeeds_(int aSize, Random aRNG) {

@@ -1,0 +1,66 @@
+package test.ml
+
+import jtool.code.UT
+import jtool.lmp.Dump
+import jtool.math.vector.Vectors
+import jtool.plot.Plotters
+import jtoolex.ml.RandomForest
+import jtoolex.rareevent.atom.ABOOPSolidChecker
+import jtoolex.rareevent.atom.CustomClusterSizeCalculator
+import jtoolex.rareevent.atom.MultiTypeClusterSizeCalculator
+
+import static jtool.code.UT.Par.parfor
+
+
+/**
+ * 测试使用基组 + 随机森林来区分 CuZr 中的晶相，
+ * 这里只区分 laves 相，可以方便对比
+ */
+
+final int nmax = 2;
+final int lmax = 4;
+final double cutoff = 1.5;
+
+final double timestep = 0.002; // ps
+
+// 读取 dump
+def dump = Dump.read('lmp/.stableglass-in/dump-fs1');
+
+// 结果保存成 Vector
+def crystalSizeNew = Vectors.zeros(dump.size());
+def crystalSizeML  = Vectors.zeros(dump.size());
+
+// 用于计算合金的团簇计算器
+UT.Timer.tic();
+cal = new MultiTypeClusterSizeCalculator(
+    new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.89).setSolidThreshold(7),
+    [new ABOOPSolidChecker().setRNearestMul(1.8).setConnectThreshold(0.84).setSolidThreshold(13), new ABOOPSolidChecker().setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7)]
+);
+parfor(dump.size()) {int i ->
+    // 统计结晶的数目
+    crystalSizeNew[i] = cal.lambdaOf(dump[i]);
+}
+UT.Timer.toc('new λ');
+
+// 使用 ML 来区分
+UT.Timer.tic();
+def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
+cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})});
+parfor(dump.size()) {int i ->
+    // 统计结晶的数目
+    crystalSizeML[i] = cal.lambdaOf(dump[i]);
+}
+rf.shutdown();
+UT.Timer.toc('ml λ');
+
+def time = Vectors.linsequence(0, (dump[1].timeStep()-dump[0].timeStep())*timestep*0.001, dump.size());
+
+
+// 绘制
+def plt = Plotters.get();
+plt.plot(time, crystalSizeNew, 'λ-new');
+plt.plot(time, crystalSizeML , 'λ-ml' );
+plt.xlabel('t [ns]').ylabel('cluster size');
+//plt.axis(0, time.last(), 0, 200);
+plt.show();
+

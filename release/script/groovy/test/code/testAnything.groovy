@@ -1,5 +1,6 @@
 package test.code
 
+import jtool.atom.Structures
 import jtool.atom.XYZ
 import jtool.code.SP
 import jtool.code.UT
@@ -16,10 +17,14 @@ import jtool.vasp.POSCAR
 import jtool.vasp.XDATCAR
 
 import static jtool.code.UT.Math.*
+import static jtool.code.UT.Plot.*
 
 
-a = [0, 1, 2, 3, 4, 5];
-for (i in -1..-3) println(a[i]);
+data = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 4).opt().perturbXYZ(0.25);
+plot(data);
+
+//a = [0, 1, 2, 3, 4, 5];
+//for (i in -1..-3) println(a[i]);
 
 //println(rand());
 //println(rand());
