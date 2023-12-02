@@ -9,7 +9,7 @@ import jtool.lmp.Lmpdat
  * 测试基组效率
  */
 
-nThreads = 4;
+nThreads = 1;
 data = Structures.from(Lmpdat.read('lmp/data/data-glass'), 2);
 println("AtomNum: ${data.atomNum()}");
 

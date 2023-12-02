@@ -1,9 +1,7 @@
 package atom
 
-import jtool.code.SP
 import jtool.code.UT
 import jtool.lmp.Dump
-import jtool.math.matrix.RowMatrix
 import jtool.math.vector.ILogicalVector
 import jtool.math.vector.IVector
 import jtool.math.vector.LogicalVector
