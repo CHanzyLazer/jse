@@ -8,6 +8,7 @@ import jtool.plot.Plotters
 import jtool.vasp.POSCAR
 import jtoolex.ml.RandomForest
 
+import static test.ml.testCuZr.getBasisMean
 
 /**
  * 测试使用基组 + 随机森林来区分 CuZr 中的晶相，
@@ -15,37 +16,37 @@ import jtoolex.ml.RandomForest
  */
 
 
-final int nmax = 6;
+final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 2.0;
+final double cutoff = 1.5;
 
 final int N = 20;
 
 // 首先导入 Lmpdat
 def dataG       = Lmpdat.read('lmp/.ffs-in/data-fs1-init');
-def dataFCC     = Structures.FCC(4.0, 8).opt().perturbXYZ(0.10);
-def dataBCC     = Structures.BCC(4.0, 12).opt().perturbXYZ(0.10);
-def dataHCP     = Structures.HCP(4.0, 8).opt().perturbXYZ(0.10);
+def dataFCC     = Structures.FCC(4.0, 8).opt().perturbXYZ(0.20);
+def dataBCC     = Structures.BCC(4.0, 12).opt().perturbXYZ(0.25);
+def dataHCP     = Structures.HCP(4.0, 8).opt().perturbXYZ(0.25);
 
-def dataMgCu2   = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 5).opt().perturbXYZ(0.10);
-def dataZr3Cu8  = Structures.from(POSCAR.read('vasp/data/Zr3Cu8.poscar'), 4).opt().perturbXYZ(0.10);
-def dataZr7Cu10 = Structures.from(POSCAR.read('vasp/data/Zr7Cu10.poscar'), 4).opt().perturbXYZ(0.10);
-def dataZrCu2   = Structures.from(POSCAR.read('vasp/data/ZrCu2.poscar'), 6).opt().perturbXYZ(0.10);
-def dataZr14Cu51= Structures.from(POSCAR.read('vasp/data/re_Zr14Cu51.poscar'), 3).opt().perturbXYZ(0.10);
+def dataMgCu2   = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 5).opt().perturbXYZ(0.25);
+def dataZr3Cu8  = Structures.from(POSCAR.read('vasp/data/Zr3Cu8.poscar'), 4).opt().perturbXYZ(0.20);
+def dataZr7Cu10 = Structures.from(POSCAR.read('vasp/data/Zr7Cu10.poscar'), 4).opt().perturbXYZ(0.20);
+def dataZrCu2   = Structures.from(POSCAR.read('vasp/data/ZrCu2.poscar'), 6).opt().perturbXYZ(0.20);
+def dataZr14Cu51= Structures.from(POSCAR.read('vasp/data/re_Zr14Cu51.poscar'), 3).opt().perturbXYZ(0.20);
 
 // 然后导入已保存的分类器
 def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'));
 
 // 计算分类的概率
-def predG       = dataG       .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predFCC     = dataFCC     .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predBCC     = dataBCC     .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predHCP     = dataHCP     .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predMgCu2   = dataMgCu2   .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predZr3Cu8  = dataZr3Cu8  .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predZr7Cu10 = dataZr7Cu10 .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predZrCu2   = dataZrCu2   .getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
-def predZr14Cu51= dataZr14Cu51.getMPC().withCloseable {def mpc -> rf.predict(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})}
+def predG       = dataG       .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predFCC     = dataFCC     .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predBCC     = dataBCC     .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predHCP     = dataHCP     .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predMgCu2   = dataMgCu2   .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predZr3Cu8  = dataZr3Cu8  .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predZr7Cu10 = dataZr7Cu10 .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predZrCu2   = dataZrCu2   .getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
+def predZr14Cu51= dataZr14Cu51.getMPC().withCloseable {def mpc -> rf.predict(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})}
 
 rf.shutdown();
 
@@ -78,6 +79,8 @@ distributionZr3Cu8  /= dataZr3Cu8   .atomNum();
 distributionZr7Cu10 /= dataZr7Cu10  .atomNum();
 distributionZrCu2   /= dataZrCu2    .atomNum();
 distributionZr14Cu51/= dataZr14Cu51 .atomNum();
+// 计算玻璃中判断为固体的百分比（保证在一个较小的不为零的值，如 0.5%）
+println("solid prob in glass: ${distributionG.f()[(int)Math.round(N*0.7)..<N].sum()}");
 
 // 绘制结果
 def plt = Plotters.get();
@@ -94,6 +97,5 @@ plt.plot(distributionZr14Cu51, 'Cu51Zr14'    ).marker('s').lineType('-' );
 
 plt.xlabel('pred').ylabel('p(n)');
 plt.axis(0, 1, 0.0, 0.501);
-plt.xTick(4);
 plt.show();
 

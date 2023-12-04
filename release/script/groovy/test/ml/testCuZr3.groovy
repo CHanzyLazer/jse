@@ -10,21 +10,22 @@ import jtoolex.rareevent.atom.CustomClusterSizeCalculator
 import jtoolex.rareevent.atom.MultiTypeClusterSizeCalculator
 
 import static jtool.code.UT.Par.parfor
-
+import static test.ml.testCuZr.getBasisMean
 
 /**
  * 测试使用基组 + 随机森林来区分 CuZr 中的晶相，
  * 这里只区分 laves 相，可以方便对比
  */
 
-final int nmax = 6;
+final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 2.0;
+final double cutoff = 1.5;
 
 final double timestep = 0.002; // ps
 
 // 读取 dump
 def dump = Dump.read('lmp/.stableglass-in/dump-fs1');
+//dump = dump[(0..<dump.size()).step(8)];
 
 // 结果保存成 Vector
 def crystalSizeNew = Vectors.zeros(dump.size());
@@ -47,7 +48,7 @@ UT.Timer.toc('new λ');
 // 使用 ML 来区分
 UT.Timer.tic();
 def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
-cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff).collect {it.asVecRow()})});
+cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()}, 0.7)});
 UT.Timer.pbar('ml λ', dump.size());
 parfor(dump.size()) {int i ->
     // 统计结晶的数目

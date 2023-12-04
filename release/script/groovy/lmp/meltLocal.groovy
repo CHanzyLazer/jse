@@ -13,7 +13,7 @@ import static jtool.code.CS.MASS
  * 直接本地跑熔融，快速得到此温度下的结构
  */
 
-final int temp = 1000;
+final int temp = 1400;
 
 //final def dataIn = 'lmp/.ffs-in/data-fs1-init'
 //final def dataOut = "lmp/.CuZr/data-nolaves-$temp";

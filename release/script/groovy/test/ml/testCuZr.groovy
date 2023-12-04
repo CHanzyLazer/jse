@@ -1,10 +1,13 @@
 package test.ml
 
+import jtool.atom.Structures
 import jtool.code.UT
 import jtool.code.collection.ArrayLists
 import jtool.lmp.Lmpdat
+import jtool.math.matrix.IMatrix
 import jtool.math.vector.IVector
 import jtool.math.vector.LogicalVector
+import jtool.vasp.POSCAR
 import jtoolex.ml.RandomForest
 import atom.ClassifyCe;
 
@@ -16,17 +19,19 @@ import static jtool.code.UT.Plot.plot
  * 这里只区分 laves 相，可以方便对比
  */
 
-final int nmax = 6;
+
+
+final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 2.0;
+final double cutoff = 1.5;
 
 final def lavesPaths = [
-    'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1000',
-    'lmp/.CuZr/data-laves2-600', 'lmp/.CuZr/data-laves2-800', 'lmp/.CuZr/data-laves2-1000',
-    'lmp/.CuZr/data-laves3-600', 'lmp/.CuZr/data-laves3-800', 'lmp/.CuZr/data-laves3-1000'
+    'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1600',
+    'lmp/.CuZr/data-laves2-600', 'lmp/.CuZr/data-laves2-800', 'lmp/.CuZr/data-laves2-1600',
+    'lmp/.CuZr/data-laves3-600', 'lmp/.CuZr/data-laves3-800', 'lmp/.CuZr/data-laves3-1600'
 ];
 final def nolavesPaths = [
-    'lmp/.CuZr/data-nolaves-600', 'lmp/.CuZr/data-nolaves-800', 'lmp/.CuZr/data-nolaves-1000'
+    'lmp/.CuZr/data-nolaves-600', 'lmp/.CuZr/data-nolaves-800', 'lmp/.CuZr/data-nolaves-1600'
 ];
 
 // 构造样本
@@ -35,7 +40,7 @@ def dataOut = LogicalVector.builder();
 // 玻璃样本
 for (nolavesPath in nolavesPaths) try (def mpc = Lmpdat.read(nolavesPath).getMPC()) {
     println("AtomNum of $nolavesPath: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
+    def basis = getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff);
     for (fp in basis) {
         dataIn.add(fp.asVecRow());
         dataOut.add(false);
@@ -44,7 +49,7 @@ for (nolavesPath in nolavesPaths) try (def mpc = Lmpdat.read(nolavesPath).getMPC
 // 三种 laves 相样本
 for (lavesPath in lavesPaths) try (def mpc = Lmpdat.read(lavesPath).getMPC()) {
     println("AtomNum of $lavesPath: ${mpc.atomNum()}");
-    def basis = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
+    def basis = getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff);
     for (fp in basis) {
         dataIn.add(fp.asVecRow());
         dataOut.add(true);
@@ -63,7 +68,7 @@ def testIn = dataIn[randIndex[mid..<end]];
 def testOut = dataOut[randIndex[mid..<end]];
 
 // 训练随机森林
-def rf = new RandomForest(trainIn, trainOut, 200, 0.02);
+def rf = new RandomForest(trainIn, trainOut, 500, 0.02);
 
 // 保存训练结果
 UT.IO.map2json(rf.asMap(), 'lmp/.CuZr/rf.json');
@@ -81,7 +86,17 @@ rf.shutdown();
 
 
 
-
+// 再对近邻做一次平均来弱化温度的影响
+static IMatrix[] getBasisMean(IMatrix[] basis, def mpc, double cutoff) {
+    def basisMean = new IMatrix[mpc.atomNum()];
+    for (i in 0..<mpc.atomNum()) {
+        basisMean[i] = basis[i].copy();
+        def nl = mpc.getNeighborList(i, mpc.unitLen()*cutoff);
+        for (j in nl) basisMean[i].plus2this(basis[j]);
+        basisMean[i].div2this(nl.size()+1);
+    }
+    return basisMean;
+}
 
 
 
