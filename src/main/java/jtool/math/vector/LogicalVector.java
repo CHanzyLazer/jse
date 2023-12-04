@@ -24,11 +24,13 @@ public final class LogicalVector extends BooleanArrayVector {
     
     /** 提供 builder 方式的构建 */
     public static Builder builder() {return new Builder();}
+    public static Builder builder(int aInitSize) {return new Builder(aInitSize);}
     public static class Builder {
-        private final static int INIT_SIZE = 8;
-        private boolean[] mData = new boolean[INIT_SIZE];
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private boolean[] mData;
         private int mSize = 0;
-        private Builder() {}
+        private Builder() {this(DEFAULT_INIT_SIZE);}
+        private Builder(int aInitSize) {mData = new boolean[aInitSize];}
         
         public boolean get(int aIdx) {
             if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -62,7 +64,7 @@ public final class LogicalVector extends BooleanArrayVector {
         public LogicalVector build() {
             return new LogicalVector(mSize, mData);
         }
-        public void shrinkToFit() {
+        public void trimToSize() {
             if (mData.length != mSize) {
                 boolean[] oData = mData;
                 mData = new boolean[mSize];

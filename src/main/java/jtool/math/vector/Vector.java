@@ -26,11 +26,13 @@ public final class Vector extends DoubleArrayVector {
     
     /** 提供 builder 方式的构建 */
     public static Builder builder() {return new Builder();}
+    public static Builder builder(int aInitSize) {return new Builder(aInitSize);}
     public static class Builder {
-        private final static int INIT_SIZE = 8;
-        private double[] mData = new double[INIT_SIZE];
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private double[] mData;
         private int mSize = 0;
-        private Builder() {}
+        private Builder() {this(DEFAULT_INIT_SIZE);}
+        private Builder(int aInitSize) {mData = new double[aInitSize];}
         
         public double get(int aIdx) {
             if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -64,7 +66,7 @@ public final class Vector extends DoubleArrayVector {
         public Vector build() {
             return new Vector(mSize, mData);
         }
-        public void shrinkToFit() {
+        public void trimToSize() {
             if (mData.length != mSize) {
                 double[] oData = mData;
                 mData = new double[mSize];

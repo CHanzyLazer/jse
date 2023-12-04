@@ -161,12 +161,22 @@ public class NewCollections {
         for (T tValue : aIterable) if (aFilter.accept(tValue)) rList.add(tValue);
         return rList;
     }
+    public static <T> List<T> filter(Collection<? extends T> aCollection, IFilter<? super T> aFilter) {
+        ArrayList<T> rList = new ArrayList<>(aCollection.size());
+        for (T tValue : aCollection) if (aFilter.accept(tValue)) rList.add(tValue);
+        rList.trimToSize();
+        return rList;
+    }
     public static List<Integer> filterInteger(Iterable<Integer> aIndices, final IIndexFilter aFilter) {
         return filter(aIndices, aFilter::accept);
     }
+    public static List<Integer> filterInteger(Collection<Integer> aIndices, final IIndexFilter aFilter) {
+        return filter(aIndices, aFilter::accept);
+    }
     public static List<Integer> filterInteger(int aSize, IIndexFilter aFilter) {
-        List<Integer> rIndices = new ArrayList<>();
+        ArrayList<Integer> rIndices = new ArrayList<>(aSize);
         for (int i = 0; i < aSize; ++i) if (aFilter.accept(i)) rIndices.add(i);
+        rIndices.trimToSize();
         return rIndices;
     }
     public static IVector filterDouble(Iterable<? extends Number> aIterable, IDoubleFilter aFilter) {
@@ -175,7 +185,16 @@ public class NewCollections {
             double tValue = tNumber.doubleValue();
             if (aFilter.accept(tValue)) rBuilder.add(tValue);
         }
-        rBuilder.shrinkToFit();
+        rBuilder.trimToSize();
+        return rBuilder.build();
+    }
+    public static IVector filterDouble(Collection<? extends Number> aCollection, IDoubleFilter aFilter) {
+        Vector.Builder rBuilder = Vector.builder(aCollection.size());
+        for (Number tNumber : aCollection) {
+            double tValue = tNumber.doubleValue();
+            if (aFilter.accept(tValue)) rBuilder.add(tValue);
+        }
+        rBuilder.trimToSize();
         return rBuilder.build();
     }
     public static IVector filterDouble(IHasDoubleIterator aIterable, IDoubleFilter aFilter) {
@@ -183,7 +202,15 @@ public class NewCollections {
         aIterable.forEach(v -> {
             if (aFilter.accept(v)) rBuilder.add(v);
         });
-        rBuilder.shrinkToFit();
+        rBuilder.trimToSize();
+        return rBuilder.build();
+    }
+    public static IVector filterDouble(IVector aVector, IDoubleFilter aFilter) {
+        final Vector.Builder rBuilder = Vector.builder(aVector.size());
+        aVector.forEach(v -> {
+            if (aFilter.accept(v)) rBuilder.add(v);
+        });
+        rBuilder.trimToSize();
         return rBuilder.build();
     }
     

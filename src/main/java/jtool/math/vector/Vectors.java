@@ -46,7 +46,7 @@ public class Vectors {
     public static IVector from(Iterable<? extends Number> aIterable) {
         final Vector.Builder rBuilder = Vector.builder();
         for (Number tValue : aIterable) rBuilder.add(tValue.doubleValue());
-        rBuilder.shrinkToFit();
+        rBuilder.trimToSize();
         return rBuilder.build();
     }
     public static IVector from(Collection<? extends Number> aList) {
@@ -81,7 +81,7 @@ public class Vectors {
     public static ILogicalVector fromBoolean(Iterable<Boolean> aIterable) {
         final LogicalVector.Builder rBuilder = LogicalVector.builder();
         for (Boolean tValue : aIterable) rBuilder.add(tValue);
-        rBuilder.shrinkToFit();
+        rBuilder.trimToSize();
         return rBuilder.build();
     }
     public static ILogicalVector fromBoolean(Collection<Boolean> aList) {

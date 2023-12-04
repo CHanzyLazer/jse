@@ -27,11 +27,13 @@ public final class ComplexVector extends BiDoubleArrayVector {
     
     /** 提供 builder 方式的构建 */
     public static Builder builder() {return new Builder();}
+    public static Builder builder(int aInitSize) {return new Builder(aInitSize);}
     public static class Builder {
-        private final static int INIT_SIZE = 8;
-        private double[][] mData = new double[2][INIT_SIZE];
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private double[][] mData;
         private int mSize = 0;
-        private Builder() {}
+        private Builder() {this(DEFAULT_INIT_SIZE);}
+        private Builder(int aInitSize) {mData = new double[2][aInitSize];}
         
         public ComplexDouble get(int aIdx) {
             if (aIdx >= mSize) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -72,7 +74,7 @@ public final class ComplexVector extends BiDoubleArrayVector {
         public ComplexVector build() {
             return new ComplexVector(mSize, mData);
         }
-        public void shrinkToFit() {
+        public void trimToSize() {
             if (mData[0].length != mSize) {
                 double[][] oData = mData;
                 mData = new double[2][mSize];
