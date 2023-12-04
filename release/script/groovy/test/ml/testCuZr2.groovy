@@ -20,15 +20,15 @@ final int nmax = 1;
 final int lmax = 6;
 final double cutoff = 1.5;
 
-final int N = 20;
+final int N = 40;
 
 // 首先导入 Lmpdat
-def dataG       = Lmpdat.read('lmp/.ffs-in/data-fs1-init');
+def dataG       = Lmpdat.read('lmp/.CuZr/data-nolaves-800');
 def dataFCC     = Structures.FCC(4.0, 8).opt().perturbXYZ(0.20);
 def dataBCC     = Structures.BCC(4.0, 12).opt().perturbXYZ(0.25);
 def dataHCP     = Structures.HCP(4.0, 8).opt().perturbXYZ(0.25);
 
-def dataMgCu2   = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar'), 5).opt().perturbXYZ(0.25);
+def dataMgCu2   = Lmpdat.read('lmp/.CuZr/data-laves1-1600');
 def dataZr3Cu8  = Structures.from(POSCAR.read('vasp/data/Zr3Cu8.poscar'), 4).opt().perturbXYZ(0.20);
 def dataZr7Cu10 = Structures.from(POSCAR.read('vasp/data/Zr7Cu10.poscar'), 4).opt().perturbXYZ(0.20);
 def dataZrCu2   = Structures.from(POSCAR.read('vasp/data/ZrCu2.poscar'), 6).opt().perturbXYZ(0.20);
@@ -61,15 +61,15 @@ def distributionZr7Cu10 = Func1.zeros(0.5/N, 1.0/N, N);
 def distributionZrCu2   = Func1.zeros(0.5/N, 1.0/N, N);
 def distributionZr14Cu51= Func1.zeros(0.5/N, 1.0/N, N);
 
-predG       .forEach {double p -> distributionG         .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predFCC     .forEach {double p -> distributionFCC       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predBCC     .forEach {double p -> distributionBCC       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predHCP     .forEach {double p -> distributionHCP       .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predMgCu2   .forEach {double p -> distributionMgCu2     .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predZr3Cu8  .forEach {double p -> distributionZr3Cu8    .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predZr7Cu10 .forEach {double p -> distributionZr7Cu10   .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predZrCu2   .forEach {double p -> distributionZrCu2     .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
-predZr14Cu51.forEach {double p -> distributionZr14Cu51  .update(Math.min(N-1, (int)Math.floor(p/(1.0/N))), {it+1});}
+predG       .forEach {double p -> distributionG         .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predFCC     .forEach {double p -> distributionFCC       .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predBCC     .forEach {double p -> distributionBCC       .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predHCP     .forEach {double p -> distributionHCP       .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predMgCu2   .forEach {double p -> distributionMgCu2     .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predZr3Cu8  .forEach {double p -> distributionZr3Cu8    .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predZr7Cu10 .forEach {double p -> distributionZr7Cu10   .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predZrCu2   .forEach {double p -> distributionZrCu2     .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
+predZr14Cu51.forEach {double p -> distributionZr14Cu51  .update(Math.min(N-1, (int)Math.floor(p*N)), {it+1});}
 distributionG       /= dataG        .atomNum();
 distributionFCC     /= dataFCC      .atomNum();
 distributionBCC     /= dataBCC      .atomNum();
@@ -80,7 +80,7 @@ distributionZr7Cu10 /= dataZr7Cu10  .atomNum();
 distributionZrCu2   /= dataZrCu2    .atomNum();
 distributionZr14Cu51/= dataZr14Cu51 .atomNum();
 // 计算玻璃中判断为固体的百分比（保证在一个较小的不为零的值，如 0.5%）
-println("solid prob in glass: ${distributionG.f()[(int)Math.round(N*0.7)..<N].sum()}");
+println("solid prob in glass: ${distributionG.f()[(int)Math.round(N*0.5)..<N].sum()}");
 
 // 绘制结果
 def plt = Plotters.get();

@@ -1,13 +1,11 @@
 package test.ml
 
-import jtool.atom.Structures
 import jtool.code.UT
 import jtool.code.collection.ArrayLists
 import jtool.lmp.Lmpdat
 import jtool.math.matrix.IMatrix
 import jtool.math.vector.IVector
 import jtool.math.vector.LogicalVector
-import jtool.vasp.POSCAR
 import jtoolex.ml.RandomForest
 import atom.ClassifyCe;
 
@@ -26,9 +24,9 @@ final int lmax = 6;
 final double cutoff = 1.5;
 
 final def lavesPaths = [
-    'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1600',
-    'lmp/.CuZr/data-laves2-600', 'lmp/.CuZr/data-laves2-800', 'lmp/.CuZr/data-laves2-1600',
-    'lmp/.CuZr/data-laves3-600', 'lmp/.CuZr/data-laves3-800', 'lmp/.CuZr/data-laves3-1600'
+    'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1400', 'lmp/.CuZr/data-laves1-1600',
+    'lmp/.CuZr/data-laves2-600', 'lmp/.CuZr/data-laves2-800', 'lmp/.CuZr/data-laves2-1400', 'lmp/.CuZr/data-laves2-1600',
+    'lmp/.CuZr/data-laves3-600', 'lmp/.CuZr/data-laves3-800', 'lmp/.CuZr/data-laves3-1400', 'lmp/.CuZr/data-laves3-1600'
 ];
 final def nolavesPaths = [
     'lmp/.CuZr/data-nolaves-600', 'lmp/.CuZr/data-nolaves-800', 'lmp/.CuZr/data-nolaves-1600'

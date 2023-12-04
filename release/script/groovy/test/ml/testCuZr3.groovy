@@ -48,7 +48,7 @@ UT.Timer.toc('new λ');
 // 使用 ML 来区分
 UT.Timer.tic();
 def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
-cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()}, 0.7)});
+cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})});
 UT.Timer.pbar('ml λ', dump.size());
 parfor(dump.size()) {int i ->
     // 统计结晶的数目
