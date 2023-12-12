@@ -9,6 +9,7 @@ import jtool.math.function.IFunc1;
 import jtool.math.vector.IVector;
 import jtool.parallel.AbstractHasAutoShutdown;
 import jtool.system.ISystemExecutor;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +28,7 @@ import static jtool.code.CS.WORKING_DIR;
  * 可以减少各种类型文件的排列组合的接口
  * @author liqa
  */
+@ApiStatus.Experimental
 public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     private final String mWorkingDir;
     

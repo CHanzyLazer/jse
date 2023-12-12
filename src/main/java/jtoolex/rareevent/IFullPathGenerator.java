@@ -2,6 +2,7 @@ package jtoolex.rareevent;
 
 
 import jtool.atom.IAtomData;
+import org.jetbrains.annotations.ApiStatus;
 
 import static jtool.code.CS.RANDOM;
 
@@ -14,6 +15,7 @@ import static jtool.code.CS.RANDOM;
  * @author liqa
  * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
+@ApiStatus.Experimental
 public interface IFullPathGenerator<T> {
     /** 由于路径具有随机性，不能返回可以重复访问的 Iterable */
     ITimeAndParameterIterator<T> fullPathInit(long aSeed);

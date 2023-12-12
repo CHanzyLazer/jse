@@ -15,6 +15,7 @@ import jtool.math.vector.Vectors;
 import jtool.parallel.AbstractThreadPool;
 import jtool.parallel.IHasAutoShutdown;
 import jtool.parallel.ParforThreadPool;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -29,6 +30,7 @@ import static jtool.code.CS.RANDOM;
  * @author liqa
  * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
+@ApiStatus.Experimental
 public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool> implements Runnable, IHasAutoShutdown {
     private final static long DEFAULT_MAX_PATH_MUL = 100;
     private final static double DEFAULT_CUTOFF = 0.01;

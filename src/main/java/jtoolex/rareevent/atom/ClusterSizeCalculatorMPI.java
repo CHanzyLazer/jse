@@ -22,6 +22,7 @@ import static jtool.code.CS.FILE_SYSTEM_SLEEP_TIME;
  * @author liqa
  */
 @Deprecated
+@ApiStatus.ScheduledForRemoval
 public class ClusterSizeCalculatorMPI implements IParameterCalculator<IAtomData>, IAutoShutdown {
     /** 所有的 Worker，第二个值记录是否正在工作 */
     private final Map<MPI.Worker, Boolean> mWorkers = new HashMap<>();

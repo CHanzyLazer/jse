@@ -4,6 +4,7 @@ import jtool.atom.IAtomData;
 import jtool.math.random.LocalRandom;
 import jtool.parallel.AbstractHasAutoShutdown;
 import jtool.parallel.IAutoShutdown;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
  * @author liqa
  * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
+@ApiStatus.Experimental
 public class BufferedFullPathGenerator<T> extends AbstractHasAutoShutdown implements IFullPathGenerator<T> {
     private final IPathGenerator<T> mPathGenerator;
     private final IParameterCalculator<? super T> mParameterCalculator;

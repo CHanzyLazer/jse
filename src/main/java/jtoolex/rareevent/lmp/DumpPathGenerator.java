@@ -18,6 +18,7 @@ import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
 import jtool.parallel.AbstractHasAutoShutdown;
 import jtoolex.rareevent.IPathGenerator;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 
@@ -30,6 +31,7 @@ import static jtool.code.UT.Code.newBox;
  * 特别注意方法的线程安全要求
  * @author liqa
  */
+@ApiStatus.Experimental
 public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathGenerator<IAtomData> {
     private final static int TOLERANT = 3;
     

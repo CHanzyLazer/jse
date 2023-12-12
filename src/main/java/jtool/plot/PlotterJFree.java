@@ -353,6 +353,7 @@ public final class PlotterJFree implements IPlotter {
         return this;
     }
     @Override public IPlotter axis(double aXMin, double aXMax, double aYMin, double aYMax) {
+        // TODO: 未来需要加锁
         // 先进行设置范围，非法返回会自动报错
         mXAxis.setRange(aXMin, aXMax);
         mYAxis.setRange(aYMin, aYMax);
@@ -462,6 +463,7 @@ public final class PlotterJFree implements IPlotter {
     
     /** 添加绘制数据 */
     @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
+        // TODO: 未来需要加锁
         @NotNull String tName = aName==null ? defaultLineName_() : aName;
         LineJFree tLine;
         // 先检测是否有相同名称的，如果有则进行更新数据
