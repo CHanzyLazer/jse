@@ -18,6 +18,8 @@ mpc = data.getTypeMPC(1, nThreads);
 UT.Timer.tic();
 gr = mpc.calRDF();
 UT.Timer.toc("${nThreads} threads, RDF");
+// calRDF(1000, 100.0); 1 threads, RDF time: 00 hour 00 min 2.91 sec
+// calRDF(1000, 100.0); 4 threads, RDF time: 00 hour 00 min 0.84 sec
 
 // 计算 SF
 UT.Timer.tic();

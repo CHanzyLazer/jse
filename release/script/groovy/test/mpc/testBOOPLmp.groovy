@@ -1,13 +1,10 @@
 package test.mpc
 
-import jtool.atom.Structures
 import jtool.lmp.Dump
 import jtool.lmp.LmpExecutor
 import jtool.lmp.LmpIn
 import jtool.lmp.Lmpdat
 import jtool.system.WSL
-
-import static jtool.code.CS.*
 
 /**
  * 测试 BOOP 结果是否和 lammps 的一致
@@ -18,7 +15,7 @@ final def dataPath = 'lmp/data/data-crystal';
 final def dumpPath = 'lmp/.temp/out-cal'
 
 // 读取需要计算的结构
-def mpc = Lmpdat.read(dataPath).getMPC();
+def mpc = Lmpdat.read(dataPath).getMPC(4);
 
 // 先使用 lammps 计算
 final def lmpExe = '~/.local/bin/lmp';

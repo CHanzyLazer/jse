@@ -12,10 +12,7 @@ import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
-import jtool.parallel.AbstractThreadPool;
-import jtool.parallel.IObjectPool;
-import jtool.parallel.ObjectCachePool;
-import jtool.parallel.ParforThreadPool;
+import jtool.parallel.*;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
@@ -149,7 +146,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     
     
     /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
-    private final static IObjectPool<XYZ[][]> sXYZArrayCache = new ObjectCachePool<>();
+    private final static IObjectPool<XYZ[][]> sXYZArrayCache = new ThreadLocalObjectCachePool<>();
     /** 内部使用方法，处理精度问题造成的超出边界问题 */
     private void validXYZArray_(XYZ[] rXYZArray) {
         // 由于 lammps 精度的问题，需要将超出边界的进行平移

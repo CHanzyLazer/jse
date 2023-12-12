@@ -4,7 +4,7 @@ import jtool.code.functional.IIntegerConsumer1;
 import jtool.math.MathEX;
 import jtool.parallel.IObjectPool;
 import jtool.parallel.IShutdownable;
-import jtool.parallel.ObjectCachePool;
+import jtool.parallel.ThreadLocalObjectCachePool;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -42,12 +42,11 @@ public class NeighborListGetter implements IShutdownable {
         mBox = XYZ.toXYZ(aBox); // 仅用于计算，直接转为 XYZ 即可
         mMinBox = mBox.min();
         mCellStep = Math.max(aCellStep, 1.1);
-        Map<Integer, Cell[]> tAllCellsAlloc = sAllCellsAllocCache.getObject();
-        mAllCellsAlloc = tAllCellsAlloc==null ? new HashMap<>() : tAllCellsAlloc;
+        mAllCellsAlloc = sAllCellsAllocCache.getObject();
     }
     
     /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
-    private final static IObjectPool<Map<Integer, Cell[]>> sAllCellsAllocCache = new ObjectCachePool<>();
+    private final static IObjectPool<Map<Integer, Cell[]>> sAllCellsAllocCache = ThreadLocalObjectCachePool.withInitial(HashMap::new);
     /** 缓存所有的 Cells 的内存空间 */
     private Map<Integer, Cell[]> mAllCellsAlloc;
     

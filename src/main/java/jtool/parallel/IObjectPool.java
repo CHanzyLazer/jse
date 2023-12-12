@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * @author liqa
  */
 public interface IObjectPool<T> {
-    /** 返回 null 代表获取失败 */
-    @Nullable T getObject();
+    /** 现在不预设返回值是否是 null */
+    T getObject();
     void returnObject(@NotNull T aObject);
 }

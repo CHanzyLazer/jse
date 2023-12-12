@@ -1,46 +1,44 @@
 package jtool.parallel;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayDeque;
 import java.util.Deque;
-
-import static jtool.code.CS.DEFAULT_CACHE_SIZE;
+import java.util.function.Supplier;
 
 /**
  * 用于作为缓存的对象池，会在内存不足时自动回收缓存
  * <p>
- * 此类线程安全，包括多个线程同时访问同一个实例，但是会严重影响性能；
- * 用来实现跨线程的共享的对象池，因此主要用来减少程序内存的占用，
- * 如果需要提高性能建议直接使用 {@link ThreadLocal}
+ * 此类线程不安全，但不同实例间线程安全
  * <p>
  * 注意为了实现简洁和性能，此类对于 return 相同对象不进行检测
+ * <p>
+ * 现在统一不设置缓存数目上限
  * @author liqa
  */
-public final class ObjectCachePool<T> implements IObjectPool<T> {
+public class ObjectCachePool<T> implements IObjectPool<T> {
     private final Deque<SoftReference<T>> mCache;
-    private final int mSize;
     
-    public ObjectCachePool(int aSize) {
-        aSize = Math.max(1, aSize);
-        mSize = aSize;
-        mCache = new ArrayDeque<>(aSize+1);
+    public ObjectCachePool() {
+        mCache = new ArrayDeque<>();
     }
-    public ObjectCachePool() {this(DEFAULT_CACHE_SIZE);}
+    public static <S> ObjectCachePool<S> withInitial(final Supplier<? extends S> aSupplier) {
+        return new ObjectCachePool<S>() {
+            @Override protected S initialValue() {return aSupplier.get();}
+        };
+    }
+    T initialValue() {return null;}
     
-    
-    @Override public @Nullable T getObject() {
-        SoftReference<T> tObj;
-        synchronized (this) {tObj = mCache.pollLast();}
-        if (tObj == null) return null;
-        return tObj.get();
+    @Override public T getObject() {
+        T tObj = null;
+        while (!mCache.isEmpty()) {
+            tObj = mCache.pollLast().get();
+            if (tObj != null) break;
+        }
+        return tObj==null ? initialValue() : tObj;
     }
     @Override public void returnObject(@NotNull T aObject) {
-        synchronized (this) {
-            mCache.addLast(new SoftReference<>(aObject));
-            if (mCache.size() > mSize) mCache.removeFirst();
-        }
+        mCache.addLast(new SoftReference<>(aObject));
     }
 }
