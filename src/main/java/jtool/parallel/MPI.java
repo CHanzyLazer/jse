@@ -24,6 +24,8 @@ import static jtool.code.CS.ZL_BYTE;
  * @author liqa
  * <p> 跨程序通讯的通用接口，目前基于 ZeroMQ 实现 </p>
  */
+@Deprecated
+@ApiStatus.ScheduledForRemoval
 public class MPI {
     
     /**

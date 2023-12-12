@@ -1,6 +1,7 @@
 package jtool.parallel;
 
 import jtool.math.MathEX;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +18,7 @@ import static jtool.code.CS.ZL_VEC;
  * 会在内存不足时自动回收缓存
  * @author liqa
  */
+@ApiStatus.Experimental
 public class DoubleArrayCache {
     private DoubleArrayCache() {}
     

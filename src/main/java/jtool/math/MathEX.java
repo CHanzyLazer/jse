@@ -10,8 +10,8 @@ import jtool.code.functional.*;
 import jtool.math.function.Func2;
 import jtool.math.function.Func3;
 import jtool.math.vector.IVector;
-import jtool.math.vector.Vectors;
 import jtool.parallel.ParforThreadPool;
+import jtool.parallel.VectorCache;
 import jtoolex.algorithm.Geometry;
 import net.jafama.FastMath;
 import org.jetbrains.annotations.ApiStatus;
@@ -1203,26 +1203,34 @@ public class MathEX {
             return new DoublePair(tA, tB);
         }
         /**
-         * 带有误差考虑的线性拟合得到 y = a + bx + e，
-         * 会存在一个临时变量，暂没遇到性能问题不使用 ThreadLocal 包装
+         * 带有误差考虑的线性拟合得到 y = a + bx + e
          * @author liqa
          * @param aX x 数据组成的向量
          * @param aY y 数据组成的向量
          * @return {a, b, e} 组成的 triplet
          */
         public static DoubleTriplet lineFitSigma(IVector aX, IVector aY) {
-            DoublePair tAB = lineFit(aX, aY);
-            int tN = aX.size();
-            double tSigma = lineFitSigma_(aX, aY, tN, tAB.mFirst, tAB.mSecond, Vectors.zeros(tN));
-            return new DoubleTriplet(tAB.mFirst, tAB.mSecond, tSigma);
-        }
-        public static double lineFitSigma_(IVector aX, IVector aY, int aN, double aA, double aB, IVector rBuffer) {
+            int tNx = aX.size();
+            int tNy = aY.size();
+            if (tNx != tNy) throw new IllegalArgumentException("Input x, y MUST have same size, input: ("+tNx+", "+tNy+")");
+            
+            double tXMean = aX.mean();
+            double tYMean = aY.mean();
+            
+            double tB = (aX.operation().dot(aY) - tNx*tXMean*tYMean) / (aX.operation().dot() - tNx*tXMean*tXMean);
+            double tA = tYMean - tB*tXMean;
+            
+            IVector rBuffer = VectorCache.getVec(tNx);
             rBuffer.fill(aX);
-            rBuffer.multiply2this(aB);
-            rBuffer.plus2this(aA);
+            rBuffer.multiply2this(tB);
+            rBuffer.plus2this(tA);
             rBuffer.minus2this(aY);
             double tSSR = rBuffer.operation().dot();
-            return Fast.sqrt(tSSR / (aN-2.0));
+            VectorCache.returnVec(rBuffer);
+            
+            double tSigma = Fast.sqrt(tSSR / (tNx-2.0));
+            
+            return new DoubleTriplet(tA, tB, tSigma);
         }
         
         

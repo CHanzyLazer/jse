@@ -21,7 +21,7 @@ import static jtool.code.UT.Plot.plot
 
 final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 1.5;
+final double cutoff = 2.0;
 
 final def lavesPaths = [
     'lmp/.CuZr/data-laves1-600', 'lmp/.CuZr/data-laves1-800', 'lmp/.CuZr/data-laves1-1400', 'lmp/.CuZr/data-laves1-1600',

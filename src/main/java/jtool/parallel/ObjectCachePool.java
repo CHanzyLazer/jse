@@ -1,5 +1,6 @@
 package jtool.parallel;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.SoftReference;
@@ -17,6 +18,7 @@ import java.util.function.Supplier;
  * 现在统一不设置缓存数目上限
  * @author liqa
  */
+@ApiStatus.Experimental
 public class ObjectCachePool<T> implements IObjectPool<T> {
     private final Deque<SoftReference<T>> mCache;
     

@@ -3,6 +3,7 @@ package test.ml
 import jtool.code.UT
 import jtool.lmp.Dump
 import jtool.math.vector.Vectors
+import jtool.parallel.MatrixCache
 import jtool.plot.Plotters
 import jtoolex.ml.RandomForest
 import jtoolex.rareevent.atom.ABOOPSolidChecker
@@ -19,7 +20,7 @@ import static test.ml.testCuZr.getBasisMean
 
 final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 1.5;
+final double cutoff = 2.0;
 
 final double timestep = 0.002; // ps
 
@@ -44,11 +45,18 @@ parfor(dump.size()) {int i ->
     UT.Timer.pbar();
 }
 UT.Timer.toc('new λ');
+// new λ time: 00 hour 01 min 26.19 sec
 
 // 使用 ML 来区分
 UT.Timer.tic();
 def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
-cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})});
+//cal = new CustomClusterSizeCalculator({mpc -> rf.makeDecision(getBasisMean(mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff), mpc, cutoff).collect {it.asVecRow()})});
+cal = new CustomClusterSizeCalculator({mpc ->
+    def fp = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
+    def isSolid = rf.makeDecision(getBasisMean(fp, mpc, cutoff).collect {it.asVecRow()});
+    for (mat in fp) MatrixCache.returnMat(mat);
+    return isSolid;
+});
 UT.Timer.pbar('ml λ', dump.size());
 parfor(dump.size()) {int i ->
     // 统计结晶的数目
@@ -57,6 +65,8 @@ parfor(dump.size()) {int i ->
 }
 rf.shutdown();
 UT.Timer.toc('ml λ');
+// ml λ time: 00 hour 03 min 30.26 sec (no cache)
+// ml λ time: 00 hour 03 min 23.56 sec (cached)
 
 def time = Vectors.linsequence(0, (dump[1].timeStep()-dump[0].timeStep())*timestep*0.001, dump.size());
 

@@ -18,7 +18,7 @@ import static test.ml.testCuZr.getBasisMean
 
 final int nmax = 1;
 final int lmax = 6;
-final double cutoff = 1.5;
+final double cutoff = 2.0;
 
 final int N = 40;
 

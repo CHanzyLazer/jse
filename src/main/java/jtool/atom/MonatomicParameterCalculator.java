@@ -167,7 +167,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final double dr = aRMax/aN;
         // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         final IVector[] dn = new IVector[nThreads()];
-        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
+        for (int i = 0; i < dn.length; ++i) dn[i] = VectorCache.getZeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(mAtomNum, (i, threadID) -> {
@@ -178,10 +178,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         });
         
         // 获取结果
-        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
-        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
+        IFunc1 gr = FixBoundFunc1.zeros(0, dr, aN).setBound(0.0, 1.0);
+        for (IVector subDn : dn) gr.f().plus2this(subDn);
         final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
         gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 归还临时变量
+        for (IVector subDn : dn) VectorCache.returnVec(subDn);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -206,7 +209,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final double dr = aRMax/aN;
         // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
         final IVector[] dn = new IVector[nThreads()];
-        for (int i = 0; i < dn.length; ++i) dn[i] = Vectors.zeros(aN);
+        for (int i = 0; i < dn.length; ++i) dn[i] = VectorCache.getZeros(aN);
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(aAtomNum, (i, threadID) -> {
@@ -218,10 +221,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         
         // 获取结果
-        IFunc1 gr = new FixBoundFunc1(0, dr, dn[0].data()).setBound(0.0, 1.0);
-        for (int i = 1; i < dn.length; ++i) gr.f().plus2this(dn[i]);
+        IFunc1 gr = FixBoundFunc1.zeros(0, dr, aN).setBound(0.0, 1.0);
+        for (IVector subDn : dn) gr.f().plus2this(subDn);
         final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
         gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        
+        // 归还临时变量
+        for (IVector subDn : dn) VectorCache.returnVec(subDn);
         
         // 修复截断数据
         gr.set_(0, 0.0);
@@ -512,13 +518,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public List<Integer> getNeighborList(IXYZ aXYZ              ) {return getNeighborList(aXYZ, mUnitLen*R_NEAREST_MUL);}
     
     
+    
     /**
      * 计算所有粒子的近邻球谐函数的平均，即 Qlm；
      * 返回一个复数矩阵，行为原子，列为 m
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 主要用于内部使用
+     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
+     * 从而可以通过 {@link ComplexVectorCache#returnVec} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 Qlm 值的下标，即 Q4m: l = 4, Q6m: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
@@ -526,58 +534,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @return Qlm 组成的复向量数组
      */
     public IComplexVector[] calYlmMean(int aL, double aRNearest, int aNnn) {
-        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
-        for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
-        return Qlm;
-    }
-    public IComplexVector[] calYlmMean(int aL, double aRNearest) {return calYlmMean(aL, aRNearest, -1);}
-    public IComplexVector[] calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
-    
-    /**
-     * 在 Qlm 基础上再次对所有近邻做一次平均，即 qlm；
-     * 返回一个复数矩阵，行为原子，列为 m
-     * <p>
-     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
-     * <p>
-     * 主要用于内部使用
-     * @author liqa
-     * @param aL 计算具体 qlm 值的下标，即 q4m: l = 4, q6m: l = 6
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
-     * @param aNnnY 用来计算 YlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @param aRNearestQ 用来计算 QlmMean 搜索的最近邻半径。默认为 aRNearestY
-     * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return qlm 组成的复向量数组
-     */
-    public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
-        final IComplexVector[] Qlm = new IComplexVector[mAtomNum];
-        for (int i = 0; i < mAtomNum; ++i) Qlm[i] = ComplexVector.zeros(aL+aL+1);
-        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
-        final IComplexVector[] qlm = new IComplexVector[mAtomNum];
-        for (int i = 0; i < mAtomNum; ++i) qlm[i] = ComplexVector.zeros(aL+aL+1);
-        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
-        return qlm;
-    }
-    public IComplexVector[] calQlmMean(int aL, double aRNearest, int aNnn) {return calQlmMean(aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
-    public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
-    
-    public void calYlmMean2Dest(final int aL, double aRNearest, int aNnn, IComplexVector[] rDest) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
-        if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
         
         // 构造用于并行的暂存数组，注意需要初始值为 0.0
         final IComplexVector[][] rDestPar = new IComplexVector[nThreads()][];
-        rDestPar[0] = rDest;
-        for (int i = 1; i < rDestPar.length; ++i) rDestPar[i] = getComplexVectors_(mAtomNum, aL+aL+1);
+        for (int i = 0; i < rDestPar.length; ++i) rDestPar[i] = getComplexVectors_(mAtomNum, aL+aL+1);
         // 统计近邻数用于求平均，同样也需要为并行使用数组
         final IVector[] tNNPar = new IVector[nThreads()];
-        for (int i = 0; i < tNNPar.length; ++i) tNNPar[i] = Vectors.zeros(mAtomNum);
+        for (int i = 0; i < tNNPar.length; ++i) tNNPar[i] = VectorCache.getZeros(mAtomNum);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnn<=0;
         
@@ -640,34 +605,62 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IVector tNN = tNNPar[0];
         for (int i = 1; i < tNNPar.length; ++i) tNN.plus2this(tNNPar[i]);
+        IComplexVector[] Qlm = rDestPar[0];
         for (int i = 1; i < rDestPar.length; ++i) {
             IComplexVector[] subQlm = rDestPar[i];
-            for (int j = 0; j < mAtomNum; ++j) rDest[j].plus2this(subQlm[j]);
+            for (int j = 0; j < mAtomNum; ++j) Qlm[j].plus2this(subQlm[j]);
         }
-        // 计算完成归还缓存数据（应该是忘记了）
-        for (int i = 1; i < rDestPar.length; ++i) returnComplexVectors_(rDestPar[i]);
         // 根据近邻数平均得到 Qlm
-        for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));
+        for (int i = 0; i < mAtomNum; ++i) Qlm[i].div2this(tNN.get_(i));
+        
+        // 归还临时变量
+        for (int i = 1; i < rDestPar.length; ++i) returnComplexVectors_(rDestPar[i]);
+        for (IVector subNN : tNNPar) VectorCache.returnVec(subNN);
+        
+        return Qlm;
     }
-    public void calQlmMean2Dest(int aL, final IComplexVector[] aQlm, double aRNearestQ, int aNnnQ, final IComplexVector[] rDest) {
+    public IComplexVector[] calYlmMean(int aL, double aRNearest) {return calYlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    
+    /**
+     * 在 Qlm 基础上再次对所有近邻做一次平均，即 qlm；
+     * 返回一个复数矩阵，行为原子，列为 m
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     * <p>
+     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
+     * 从而可以通过 {@link ComplexVectorCache#returnVec} 来实现对象重复利用
+     * @author liqa
+     * @param aL 计算具体 qlm 值的下标，即 q4m: l = 4, q6m: l = 6
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return qlm 组成的复向量数组
+     */
+    public IComplexVector[] calQlmMean(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         // 直接全部平均一遍分两步算
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-        if (aQlm.length < mAtomNum) throw new IllegalArgumentException("Input row number aQlm MUST be GREATER than atomNum("+mAtomNum+"), input: "+aQlm.length);
-        if (aQlm[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of aQlm MUST be l+l+1("+aL+aL+1+"), input: "+aQlm[0].size());
-        if (rDest.length < mAtomNum) throw new IllegalArgumentException("Input row number rDest MUST be GREATER than atomNum("+mAtomNum+"), input: "+rDest.length);
-        if (rDest[0].size() != aL+aL+1) throw new IllegalArgumentException("Input column number of rDest MUST be l+l+1("+aL+aL+1+"), input: "+rDest[0].size());
+        
+        final IComplexVector[] Qlm = calYlmMean(aL, aRNearestY, aNnnY);
+        final IComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1);
         
         // 统计近邻数用于求平均（增加一个自身）
-        final IVector tNN = Vectors.ones(mAtomNum);
+        final IVector tNN = VectorCache.getVec(mAtomNum);
+        tNN.fill(1.0);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnQ<=0;
         
         // 遍历计算 qlm
         for (int i = 0; i < mAtomNum; ++i) {
             // 一次计算一行
-            final IComplexVector qlmi = rDest[i];
-            final IComplexVector Qlmi = aQlm[i];
+            final IComplexVector qlmi = qlm[i];
+            final IComplexVector Qlmi = Qlm[i];
             
             // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
             qlmi.fill(Qlmi);
@@ -675,10 +668,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final int fI = i;
             mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis) -> {
                 // 直接按行累加即可
-                qlmi.plus2this(aQlm[idx]);
+                qlmi.plus2this(Qlm[idx]);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
                 if (aHalf) {
-                    rDest[idx].plus2this(Qlmi);
+                    qlm[idx].plus2this(Qlmi);
                 }
                 
                 // 统计近邻数
@@ -690,8 +683,17 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             });
         }
         // 根据近邻数平均得到 qlm
-        for (int i = 0; i < mAtomNum; ++i) rDest[i].div2this(tNN.get_(i));
+        for (int i = 0; i < mAtomNum; ++i) qlm[i].div2this(tNN.get_(i));
+        
+        // 归还临时变量
+        VectorCache.returnVec(tNN);
+        returnComplexVectors_(Qlm);
+        
+        return qlm;
     }
+    public IComplexVector[] calQlmMean(int aL, double aRNearest, int aNnn) {return calQlmMean(aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IComplexVector[] calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
+    public IComplexVector[] calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
@@ -734,10 +736,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calBOOP(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
+        IComplexVector[] Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         // 直接求和
         IVector Ql = Vectors.zeros(mAtomNum);
@@ -772,10 +771,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calBOOP3(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearest, aNnn, Qlm);
+        IComplexVector[] Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         // 计算三阶的乘积
         IVector Wl = Vectors.zeros(mAtomNum);
@@ -819,6 +815,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      * @author liqa
@@ -832,20 +831,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
-        // 再次获取缓存
-        IComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 使用两个缓存的变量来计算 qlm
-        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
-        
-        // 计算完成归还缓存数据
-        returnComplexVectors_(Qlm);
+        IComplexVector[] qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
         
         // 直接求和
-        IVector ql = Vectors.zeros(mAtomNum);
+        IVector ql = VectorCache.getVec(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
             // 直接计算复向量的点乘
             double tDot = qlm[i].operation().dot();
@@ -870,6 +859,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      * @author liqa
@@ -883,20 +875,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP3(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
-        // 再次获取缓存
-        IComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 使用两个缓存的变量来计算 qlm
-        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
-        
-        // 计算完成归还缓存数据
-        returnComplexVectors_(Qlm);
+        IComplexVector[] qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
         
         // 计算 wl，这里同样不去考虑减少重复代码
-        IVector wl = Vectors.zeros(mAtomNum);
+        IVector wl = VectorCache.getVec(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
             IComplexVector qlmi = qlm[i];
             // 分母为复向量的点乘，等于实部虚部分别点乘
@@ -938,6 +920,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
      * Reference:
      * <a href="https://doi.org/10.1039/FD9960400093">
      * Simulation of homogeneous crystal nucleation close to coexistence</a>,
@@ -957,15 +942,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        final IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
+        final IComplexVector[] Qlm = calYlmMean(aL, aRNearestY, aNnnY);
         
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
         // 统计连接数
-        final IVector tConnectCount = Vectors.zeros(mAtomNum);
+        final IVector tConnectCount = VectorCache.getZeros(mAtomNum);
         
         // 注意需要先对 Qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
@@ -1010,6 +992,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
      * Reference:
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
@@ -1027,22 +1012,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        // 尝试先获取缓存的临时变量
-        IComplexVector[] Qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 然后直接使用缓存的变量来计算
-        calYlmMean2Dest(aL, aRNearestY, aNnnY, Qlm);
-        // 再次获取缓存
-        final IComplexVector[] qlm = getComplexVectors_(mAtomNum, aL+aL+1);
-        // 使用两个缓存的变量来计算 qlm
-        calQlmMean2Dest(aL, Qlm, aRNearestQ, aNnnQ, qlm);
-        
-        // 计算完成归还缓存数据
-        returnComplexVectors_(Qlm);
+        final IComplexVector[] qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
         
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
         // 统计连接数，这里同样不去考虑减少重复代码
-        final IVector tConnectCount = Vectors.zeros(mAtomNum);
+        final IVector tConnectCount = VectorCache.getZeros(mAtomNum);
         
         // 注意需要先对 qlm 归一化
         for (int i = 0; i < mAtomNum; ++i) {
@@ -1098,7 +1073,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return 最后判断得到是否是固体组成的逻辑向量
      */
-    public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(6, aConnectThreshold, aRNearest, aNnn).greaterOrEqual(aSolidThreshold);}
+    public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {IVector tConnectCount = calConnectCountBOOP(6, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(aSolidThreshold); VectorCache.returnVec(tConnectCount); return tIsSolid;}
     public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidQ6(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
     public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidQ6(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
     public ILogicalVector checkSolidQ6(                                                                         ) {return checkSolidQ6(0.5, 7);}
@@ -1119,7 +1094,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return 最后判断得到是否是固体组成的逻辑向量
      */
-    public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(4, aConnectThreshold, aRNearest, aNnn).greaterOrEqual(aSolidThreshold);}
+    public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {IVector tConnectCount = calConnectCountBOOP(4, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(aSolidThreshold); VectorCache.returnVec(tConnectCount); return tIsSolid;}
     public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidQ4(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
     public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidQ4(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
     public ILogicalVector checkSolidQ4(                                                                         ) {return checkSolidQ4(0.35, 6);}
@@ -1211,14 +1186,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (aLMax < 0) throw new IllegalArgumentException("Input l_max MUST be Non-Negative, input: "+aLMax);
         
         final IMatrix[] rFingerPrints = new IMatrix[mAtomNum];
-        for (int i = 0; i < mAtomNum; ++i) rFingerPrints[i] = RowMatrix.zeros(aNMax+1, aLMax+1);
+        for (int i = 0; i < mAtomNum; ++i) rFingerPrints[i] = MatrixCache.getMatRow(aNMax+1, aLMax+1);
         
         // TODO: 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存，这里暂不考虑
         pool().parfor(mAtomNum, (i, threadID) -> {
             // 需要存储所有的 l，n，m 的值来统一进行近邻求和
             final IComplexVector[][] cnlm = new IComplexVector[aNMax+1][aLMax+1];
             for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-                cnlm[tN][tL] = ComplexVector.zeros(tL+tL+1);
+                cnlm[tN][tL] = ComplexVectorCache.getZeros(tL+tL+1);
             }
             final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
             // 遍历近邻计算 Ylm, Rn, fc
@@ -1265,6 +1240,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             IMatrix tFP = rFingerPrints[i];
             for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
                 tFP.set_(tN, tL, (4.0*PI/(double)(tL+tL+1)) * cnlm[tN][tL].operation().dot());
+            }
+            // 归还临时变量
+            for (IComplexVector[] cilm : cnlm) for (IComplexVector cijm : cilm) {
+                ComplexVectorCache.returnVec(cijm);
             }
         });
         

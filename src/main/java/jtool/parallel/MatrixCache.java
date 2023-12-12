@@ -4,6 +4,7 @@ import jtool.math.IDataShell;
 import jtool.math.matrix.ColumnMatrix;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.RowMatrix;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * 会在内存不足时自动回收缓存
  * @author liqa
  */
+@ApiStatus.Experimental
 public class MatrixCache {
     private MatrixCache() {}
     

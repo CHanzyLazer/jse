@@ -3,6 +3,8 @@ package jtoolex.rareevent.atom;
 import jtool.atom.MonatomicParameterCalculator;
 import jtool.math.MathEX;
 import jtool.math.vector.ILogicalVector;
+import jtool.math.vector.IVector;
+import jtool.parallel.VectorCache;
 
 import static jtool.code.CS.R_NEAREST_MUL;
 
@@ -26,6 +28,9 @@ public class BOOPSolidChecker implements ISolidChecker {
     public BOOPSolidChecker setSolidThreshold(int aSolidThreshold) {mSolidThreshold = Math.max(0, aSolidThreshold); return this;}
     
     @Override public ILogicalVector checkSolid(MonatomicParameterCalculator aMPC) {
-        return aMPC.calConnectCountBOOP(mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn).greaterOrEqual(mSolidThreshold);
+        IVector tConnectCount = aMPC.calConnectCountBOOP(mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+        ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
+        VectorCache.returnVec(tConnectCount);
+        return tIsSolid;
     }
 }
