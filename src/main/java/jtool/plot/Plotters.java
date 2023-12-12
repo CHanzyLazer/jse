@@ -1,7 +1,5 @@
 package jtool.plot;
 
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * @author liqa
  * <p> 用来方便的获取 IPlot，可以不受具体实现的影响 </p>
@@ -16,6 +14,4 @@ public class Plotters {
      */
     public static IPlotter get() {return jFree();}
     public static PlotterJFree jFree() {return new PlotterJFree();}
-    
-    @Deprecated @ApiStatus.ScheduledForRemoval public static PlotterJFree getJFree() {return jFree();}
 }
