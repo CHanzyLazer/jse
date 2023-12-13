@@ -61,6 +61,7 @@ def connectCountZr3Cu8  = dataZr3Cu8  .getMPC(nThreads).withCloseable {def mpc -
 def connectCountZr7Cu10 = dataZr7Cu10 .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(l, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
 def connectCountZrCu2   = dataZrCu2   .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(l, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
 def connectCountZr14Cu51= dataZr14Cu51.getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(l, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
+def connectCountG2      = dataG       .getMPC(nThreads).withCloseable {def mpc -> mpc.calConnectCountABOOP(l, connectThreshold, mpc.unitLen()*cutoffMul, nnn)}
 
 // 统计结果
 def distributionG       = Vectors.zeros(maxConnect+1);
@@ -72,6 +73,7 @@ def distributionZr3Cu8  = Vectors.zeros(maxConnect+1);
 def distributionZr7Cu10 = Vectors.zeros(maxConnect+1);
 def distributionZrCu2   = Vectors.zeros(maxConnect+1);
 def distributionZr14Cu51= Vectors.zeros(maxConnect+1);
+def distributionG2      = Vectors.zeros(maxConnect+1);
 
 connectCountG       .forEach {distributionG         .increment(Math.min(maxConnect, (int)it));}
 connectCountFCC     .forEach {distributionFCC       .increment(Math.min(maxConnect, (int)it));}
@@ -82,6 +84,7 @@ connectCountZr3Cu8  .forEach {distributionZr3Cu8    .increment(Math.min(maxConne
 connectCountZr7Cu10 .forEach {distributionZr7Cu10   .increment(Math.min(maxConnect, (int)it));}
 connectCountZrCu2   .forEach {distributionZrCu2     .increment(Math.min(maxConnect, (int)it));}
 connectCountZr14Cu51.forEach {distributionZr14Cu51  .increment(Math.min(maxConnect, (int)it));}
+connectCountG2      .forEach {distributionG2        .increment(Math.min(maxConnect, (int)it));}
 distributionG       /= dataG        .atomNum();
 distributionFCC     /= dataFCC      .atomNum();
 distributionBCC     /= dataBCC      .atomNum();
@@ -91,8 +94,24 @@ distributionZr3Cu8  /= dataZr3Cu8   .atomNum();
 distributionZr7Cu10 /= dataZr7Cu10  .atomNum();
 distributionZrCu2   /= dataZrCu2    .atomNum();
 distributionZr14Cu51/= dataZr14Cu51 .atomNum();
+distributionG2      /= dataG        .atomNum();
+
+// 输出一些具体值用于 debug
+println("prob 0 in glass: ${distributionG[0]}");
+println("prob 0 in glass: ${distributionG2[0]}");
+// prob 0 in glass: 0.6687037037037037
+println("prob 1 in glass: ${distributionG[1]}");
+println("prob 1 in glass: ${distributionG2[1]}");
+// prob 1 in glass: 0.22074074074074074
+println("prob 2 in glass: ${distributionG[2]}");
+println("prob 2 in glass: ${distributionG2[2]}");
+// prob 2 in glass: 0.06962962962962962
+
 // 计算玻璃中判断为固体的百分比（保证在一个较小的不为零的值，如 0.5%）
 println("solid prob in glass: ${distributionG[solidThreshold..maxConnect].sum()}");
+println("solid prob in glass: ${distributionG2[solidThreshold..maxConnect].sum()}");
+// solid prob in glass: 1.8518518518518518E-4
+
 // 输出不能分辨的
 println('Can NOT Classify:');
 if (distributionFCC     [solidThreshold..maxConnect].sum() < 0.9) println('fcc'     );

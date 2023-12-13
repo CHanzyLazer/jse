@@ -9,7 +9,6 @@ import jtool.math.function.Func1;
 import jtool.math.function.IFunc1;
 import jtool.math.function.IZeroBoundFunc1;
 import jtool.math.matrix.IMatrix;
-import jtool.math.matrix.RowMatrix;
 import jtool.math.vector.*;
 import jtool.parallel.*;
 import jtoolex.voronoi.VoronoiBuilder;
