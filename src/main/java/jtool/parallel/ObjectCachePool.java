@@ -1,12 +1,13 @@
 package jtool.parallel;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Supplier;
+
+import static jtool.code.CS.NO_CACHE;
 
 /**
  * 用于作为缓存的对象池，会在内存不足时自动回收缓存
@@ -18,7 +19,6 @@ import java.util.function.Supplier;
  * 现在统一不设置缓存数目上限
  * @author liqa
  */
-@ApiStatus.Experimental
 public class ObjectCachePool<T> implements IObjectPool<T> {
     private final Deque<SoftReference<T>> mCache;
     
@@ -33,6 +33,7 @@ public class ObjectCachePool<T> implements IObjectPool<T> {
     T initialValue() {return null;}
     
     @Override public T getObject() {
+        if (NO_CACHE) return initialValue();
         T tObj = null;
         while (!mCache.isEmpty()) {
             tObj = mCache.pollLast().get();
@@ -41,6 +42,7 @@ public class ObjectCachePool<T> implements IObjectPool<T> {
         return tObj==null ? initialValue() : tObj;
     }
     @Override public void returnObject(@NotNull T aObject) {
+        if (NO_CACHE) return;
         mCache.addLast(new SoftReference<>(aObject));
     }
 }

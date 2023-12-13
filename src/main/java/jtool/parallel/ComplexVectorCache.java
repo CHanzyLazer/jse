@@ -3,8 +3,9 @@ package jtool.parallel;
 import jtool.math.IDataShell;
 import jtool.math.vector.ComplexVector;
 import jtool.math.vector.IComplexVector;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+
+import static jtool.code.CS.NO_CACHE;
 
 /**
  * 专门针对 {@link IComplexVector} 的全局线程独立缓存，
@@ -13,11 +14,11 @@ import org.jetbrains.annotations.NotNull;
  * 会在内存不足时自动回收缓存
  * @author liqa
  */
-@ApiStatus.Experimental
 public class ComplexVectorCache {
     private ComplexVectorCache() {}
     
     public static void returnVec(@NotNull IComplexVector aComplexVector) {
+        if (NO_CACHE) return;
         if (aComplexVector instanceof IDataShell) {
             Object tData = ((IDataShell<?>)aComplexVector).getData();
             if (tData instanceof double[][]) {

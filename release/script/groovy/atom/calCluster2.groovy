@@ -24,7 +24,10 @@ parfor(dump.size()) {int i ->
     UT.Timer.pbar();
 }
 UT.Timer.toc();
-// Total time: 00 hour 02 min 3.11 sec
+// Total time: 00 hour 02 min 9.88 sec (jdk8, 6g, no cache)
+// Total time: 00 hour 02 min 13.37 sec (jdk8, 6g, cached)
+// Total time: 00 hour 02 min 51.97 sec (jdk17, 4g, no cache)
+// Total time: 00 hour 02 min 37.83 sec (jdk17, 4g, cached)
 
 dump.write('lmp/.stableglass-out/filter2-dump-fs2');
 

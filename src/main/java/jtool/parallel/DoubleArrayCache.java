@@ -1,7 +1,6 @@
 package jtool.parallel;
 
 import jtool.math.MathEX;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static jtool.code.CS.NO_CACHE;
 import static jtool.code.CS.ZL_VEC;
 
 /**
@@ -18,7 +18,6 @@ import static jtool.code.CS.ZL_VEC;
  * 会在内存不足时自动回收缓存
  * @author liqa
  */
-@ApiStatus.Experimental
 public class DoubleArrayCache {
     private DoubleArrayCache() {}
     
@@ -31,6 +30,7 @@ public class DoubleArrayCache {
      * @author liqa
      */
     public static void returnArray(double @NotNull[] aArray) {
+        if (NO_CACHE) return;
         int tSizeKey = MathEX.Code.floorPower2(aArray.length);
         if (tSizeKey <= 0) return;
         CACHE.get().computeIfAbsent(tSizeKey, key -> new ObjectCachePool<>()).returnObject(aArray);
@@ -43,6 +43,7 @@ public class DoubleArrayCache {
      */
     public static double @NotNull[] getZeros(int aMinSize) {
         if (aMinSize <= 0) return ZL_VEC;
+        if (NO_CACHE) return new double[aMinSize];
         int tSize = MathEX.Code.ceilPower2(aMinSize);
         ObjectCachePool<double[]> tPool = CACHE.get().get(tSize);
         if (tPool == null) return new double[tSize];
@@ -60,6 +61,7 @@ public class DoubleArrayCache {
      */
     public static double @NotNull[] getArray(int aMinSize) {
         if (aMinSize <= 0) return ZL_VEC;
+        if (NO_CACHE) return new double[aMinSize];
         int tSize = MathEX.Code.ceilPower2(aMinSize);
         ObjectCachePool<double[]> tPool = CACHE.get().get(tSize);
         if (tPool == null) return new double[tSize];
