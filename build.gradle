@@ -28,8 +28,6 @@ compileJava {
 dependencies {
     implementation('org.jetbrains:annotations:24.0.1')              // debug
     
-//    implementation files('.lib/jtoolex-algorithm.jar')            // test use
-//    implementation files('.lib/jtoolex-voronoi.jar')              // test use
     implementation('com.github.CHanzyLazer.jToolEX-Voronoi-3D:jtoolex-algorithm:v1.7-dev') // jtoolex-algorithm，用于 voronoi 计算使用的算法，单独设置依赖可以在需要重写算法后不再包含到代码中
     implementation('com.github.CHanzyLazer.jToolEX-Voronoi-3D:jtoolex-voronoi:v1.7-dev')   // jtoolex-voronoi，用于做 voronoi 分析，分离出来避免开源协议限制
     
@@ -92,8 +90,6 @@ tasks.register('sourceJar', Jar) {
 tasks.register('downloadSource') {
     // 直接硬编码下载第三方库的源码文件
     if (!file('./release/src/groovy-4.0.15-sources.jar'             ).exists()) ant.get(src: 'https://repo1.maven.org/maven2/org/apache/groovy/groovy/4.0.15/groovy-4.0.15-sources.jar'                                          , dest: './release/src')
-    if (!file('./release/src/jtoolex-algorithm-v1.5-dev-sources.jar').exists()) ant.get(src: 'https://www.jitpack.io/com/github/CHanzyLazer/jToolEX-Voronoi-3D/jtoolex-algorithm/v1.5-dev/jtoolex-algorithm-v1.5-dev-sources.jar', dest: './release/src')
-    if (!file('./release/src/jtoolex-voronoi-v1.5-dev-sources.jar'  ).exists()) ant.get(src: 'https://www.jitpack.io/com/github/CHanzyLazer/jToolEX-Voronoi-3D/jtoolex-voronoi/v1.5-dev/jtoolex-voronoi-v1.5-dev-sources.jar'    , dest: './release/src')
 }
 
 

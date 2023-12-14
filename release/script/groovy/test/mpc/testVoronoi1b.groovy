@@ -9,7 +9,7 @@ import jtool.vasp.XDATCAR
 import static jtool.code.UT.Par.*
 import static jtool.code.UT.Code.*
 
-def dump = XDATCAR.read('lmp/.lll-in/XDATCAR');
+def dump = XDATCAR.read('vasp/.lll-in/XDATCAR');
 final int atomNum = dump.atomNum();
 
 //dump = dump[range(0, dump.size(), 20)];

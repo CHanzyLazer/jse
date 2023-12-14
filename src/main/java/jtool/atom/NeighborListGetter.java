@@ -47,23 +47,17 @@ public class NeighborListGetter implements IShutdownable {
     }
     
     /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
-    private final static IObjectPool<Map<Integer, Cell[]>> sAllCellsAllocCache = ThreadLocalObjectCachePool.withInitial(HashMap::new);
+    private final static IObjectPool<Map<Integer, List<Cell>>> sAllCellsAllocCache = ThreadLocalObjectCachePool.withInitial(HashMap::new);
     /** 缓存所有的 Cells 的内存空间 */
-    private Map<Integer, Cell[]> mAllCellsAlloc;
+    private Map<Integer, List<Cell>> mAllCellsAlloc;
     
     /** 方便使用的获取 Cells 内存空间的方法，线程不安全 */
-    private Cell[] getCellsAlloc_(int aMul, int aSizeX, int aSizeY, int aSizeZ) {
+    private List<Cell> getCellsAlloc_(int aMul, int aSizeX, int aSizeY, int aSizeZ) {
         int tSize = aSizeX * aSizeY * aSizeZ;
-        Cell[] tCellsAlloc = mAllCellsAlloc.get(aMul);
-        if (tCellsAlloc==null || tCellsAlloc.length<tSize) {
-            tCellsAlloc = new Cell[tSize];
-            for (int i = 0; i < tSize; ++i) tCellsAlloc[i] = new Cell();
-            // 覆盖原本的缓存值
-            mAllCellsAlloc.put(aMul, tCellsAlloc);
-        }
+        List<Cell> tCellsAlloc = mAllCellsAlloc.computeIfAbsent(aMul, key -> new ArrayList<>(tSize));
+        while (tCellsAlloc.size() < tSize) tCellsAlloc.add(new Cell());
         return tCellsAlloc;
     }
-    
     
     /** 专用的 Cell 类，内部只存储下标来减少内存占用 */
     private interface ICell {
@@ -164,7 +158,7 @@ public class NeighborListGetter implements IShutdownable {
     
     /** 一般的 LinkedCell 实现 */
     private final class LinkedCell implements ILinkedCell {
-        private final Cell[] mCells;
+        private final List<Cell> mCells;
         private final int mSizeX, mSizeY, mSizeZ;
         private final XYZ mCellBox;
         private LinkedCell(int aMul, int aSizeX, int aSizeY, int aSizeZ) {
@@ -172,14 +166,13 @@ public class NeighborListGetter implements IShutdownable {
             mCellBox = mBox.div(mSizeX, mSizeY, mSizeZ);
             // 初始化 cell
             mCells = getCellsAlloc_(aMul, aSizeX, aSizeY, aSizeZ);
-            int tSize = aSizeX * aSizeY * aSizeZ;
-            for (int i = 0; i < tSize; ++i) mCells[i].clear(); // 直接清空旧数据即可
+            for (Cell tCell : mCells) tCell.clear(); // 直接清空旧数据即可
             // 遍历添加 XYZ
             for (int idx = 0; idx < mAtomNum; ++idx) {
                 int i = (int) Math.floor(mAtomDataXYZ.get(idx, 0) / mCellBox.mX); if (i >= mSizeX) continue;
                 int j = (int) Math.floor(mAtomDataXYZ.get(idx, 1) / mCellBox.mY); if (j >= mSizeY) continue;
                 int k = (int) Math.floor(mAtomDataXYZ.get(idx, 2) / mCellBox.mZ); if (k >= mSizeZ) continue;
-                mCells[idx(i, j, k)].add(idx);
+                mCells.get(idx(i, j, k)).add(idx);
             }
         }
         private int idx(int i, int j, int k) {
@@ -196,7 +189,7 @@ public class NeighborListGetter implements IShutdownable {
             else if (j < 0)  {tIsMirror = true; j += mSizeY; tDirY = -mBox.mY;}
             if (k >= mSizeZ) {tIsMirror = true; k -= mSizeZ; tDirZ =  mBox.mZ;}
             else if (k < 0)  {tIsMirror = true; k += mSizeZ; tDirZ = -mBox.mZ;}
-            return tIsMirror ? new MirrorCell(mCells[idx(i, j, k)], tDirX, tDirY, tDirZ) : mCells[idx(i, j, k)];
+            return tIsMirror ? new MirrorCell(mCells.get(idx(i, j, k)), tDirX, tDirY, tDirZ) : mCells.get(idx(i, j, k));
         }
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
         @Override public void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo) {
@@ -505,7 +498,7 @@ public class NeighborListGetter implements IShutdownable {
     @Override public void shutdown() {
         mDead = true; mLinkedCells.clear(); mAtomDataXYZ = null;
         // 归还 Cells 的内存到缓存，这种写法保证永远能获取到 mAllCellsAlloc 时都是合法的
-        Map<Integer, Cell[]> oAllCellsAlloc = mAllCellsAlloc;
+        Map<Integer, List<Cell>> oAllCellsAlloc = mAllCellsAlloc;
         mAllCellsAlloc = null;
         sAllCellsAllocCache.returnObject(oAllCellsAlloc);
     }

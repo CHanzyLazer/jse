@@ -10,7 +10,7 @@ import jtool.vasp.XDATCAR
 import static jtool.code.UT.Par.*
 import static jtool.code.UT.Code.*
 
-def dump = XDATCAR.read('lmp/.lll-in/XDATCAR');
+def dump = XDATCAR.read('vasp/.lll-in/XDATCAR');
 final int atomNum = dump.atomNum();
 final int atomTypeNum = dump.atomTypeNum();
 
@@ -43,6 +43,9 @@ parfor(dump.size()) {int i ->
     }
 }
 UT.Timer.toc('voronoi');
+// voronoi time: 00 hour 00 min 4.49 sec (old version)
+// voronoi time: 00 hour 00 min 50.75 sec (no cache)
+// voronoi time: 00 hour 00 min 4.42 sec (cached)
 
 
 // 绘图

@@ -12,7 +12,9 @@ import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
-import jtool.parallel.*;
+import jtool.parallel.AbstractThreadPool;
+import jtool.parallel.MatrixCache;
+import jtool.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -35,7 +37,7 @@ import static jtool.code.UT.Code.newBox;
  */
 @ApiStatus.Experimental
 public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
-    private IMatrix[] mAllAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据；注意 mAllAtomDataXYZ.length != mFrameNum
+    private List<IMatrix> mAllAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
     private final double mTimestep;
     private final List<IXYZ> mBoxList;
     
@@ -51,9 +53,9 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         mDead = true; super.shutdown();
         // 此时 MFPC 关闭，归还 mAllAtomDataXYZ，这种写法保证永远能获取到 mAllAtomDataXYZ 时都是合法的
         if (mAllAtomDataXYZ != null) {
-            IMatrix[] oAllAtomDataXYZ = mAllAtomDataXYZ;
+            List<IMatrix> oAllAtomDataXYZ = mAllAtomDataXYZ;
             mAllAtomDataXYZ = null;
-            sMatricesCache.returnObject(oAllAtomDataXYZ);
+            MatrixCache.returnMat(oAllAtomDataXYZ);
         }
     }
     @Override public void shutdownNow() {shutdown();}
@@ -81,12 +83,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         if (aAtomDataList.isEmpty()) throw new IllegalArgumentException("aAtomDataList MUST be Non-Empty");
         mFrameNum = aAtomDataList.size();
         
-        // 获取合适的 XYZ 数据
-        IMatrix[] tXYZArray = sMatricesCache.getObject();
-        if (tXYZArray==null || tXYZArray.length<mFrameNum) {
-            if (tXYZArray != null) for (IMatrix tMat : tXYZArray) MatrixCache.returnMat(tMat);
-            tXYZArray = new IMatrix[mFrameNum];
-        }
+        List<IMatrix> tXYZArray = null;
         try {
             Iterator<? extends Collection<? extends IAtom>> it = aAtomDataList.iterator();
             Collection<? extends IAtom> tFirst = it.next();
@@ -95,18 +92,9 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
             mId2Index = HashBiMap.create(mAtomNum);
             mTypeArray = new int[mAtomNum];
             // 使用第一帧的数据初始化所有的 xyz 矩阵
-            for (int frame = 0; frame < mFrameNum; ++frame) {
-                IMatrix subXYZArray = tXYZArray[frame];
-                if (subXYZArray==null) {
-                    tXYZArray[frame] = MatrixCache.getMat(mAtomNum, 3);
-                } else
-                if (subXYZArray.rowNumber() != mAtomNum) {
-                    MatrixCache.returnMat(subXYZArray);
-                    tXYZArray[frame] = MatrixCache.getMat(mAtomNum, 3);
-                }
-            }
+            tXYZArray = MatrixCache.getMat(mAtomNum, 3, mFrameNum);
             // 获取第一帧粒子的 xyz 数据，顺便统计 mId2Index, mTypeArray 和 mAtomTypeNum
-            IMatrix subXYZArray = tXYZArray[0];
+            IMatrix subXYZArray = tXYZArray.get(0);
             XYZ tBox = XYZ.toXYZ(mBoxList.get(0));
             int tIdx = 0;
             for (IAtom tAtom : tFirst) {
@@ -121,7 +109,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
             // 获取其余帧粒子的 xyz 数据
             for (int frame = 1; it.hasNext(); ++frame) {
                 Collection<? extends IAtom> tAtomData = it.next();
-                subXYZArray = tXYZArray[frame];
+                subXYZArray = tXYZArray.get(frame);
                 tBox = XYZ.toXYZ(mBoxList.get(frame));
                 for (IAtom tAtom : tAtomData) {
                     tIdx = mId2Index.get(tAtom.id());
@@ -130,11 +118,10 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
             }
         } catch (Throwable t) {
             // 可能会有非法输入的错误，这里不去仔细处理，注意归还缓存即可
-            sMatricesCache.returnObject(tXYZArray);
+            if (tXYZArray != null) MatrixCache.returnMat(tXYZArray);
             throw t;
         }
         mAllAtomDataXYZ = tXYZArray;
-        
     }
     public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
     public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
@@ -143,8 +130,6 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::asList), AbstractCollections.map(aAtomDataList, IAtomData::box), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNum());}
     
     
-    /** 直接使用 ObjectCachePool 避免重复创建临时变量 */
-    private final static IObjectPool<IMatrix[]> sMatricesCache = new ThreadLocalObjectCachePool<>();
     /** 内部使用方法，处理精度问题造成的超出边界问题 */
     private static void setValidXYZ_(XYZ aBox, IMatrix rXYZMat, IXYZ aXYZ, int aIdx) {
         // 由于 lammps 精度的问题，需要将超出边界的进行平移
@@ -218,7 +203,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         // 采用专门矩阵存储来节省空间
         IMatrix rData = Matrices.zeros(mAtomNum, ATOM_DATA_KEYS_TYPE_XYZ.length);
         // 先统一设置好粒子种类和坐标
-        IMatrix subXYZArray = mAllAtomDataXYZ[aFrame];
+        IMatrix subXYZArray = mAllAtomDataXYZ.get(aFrame);
         rData.col(TYPE_XYZ_X_COL).fill(subXYZArray.col(0));
         rData.col(TYPE_XYZ_Y_COL).fill(subXYZArray.col(1));
         rData.col(TYPE_XYZ_Z_COL).fill(subXYZArray.col(2));
@@ -258,7 +243,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         // 再遍历统计坐标，这样的遍历顺序应该更加内存友好
         int tEnd = aStart + aFrameNum;
         for (int frame = aStart; frame < tEnd; ++frame) {
-            IMatrix subXYZArray = mAllAtomDataXYZ[frame];
+            IMatrix subXYZArray = mAllAtomDataXYZ.get(frame);
             rData.col(TYPE_XYZ_X_COL).plus2this(subXYZArray.col(0));
             rData.col(TYPE_XYZ_Y_COL).plus2this(subXYZArray.col(1));
             rData.col(TYPE_XYZ_Z_COL).plus2this(subXYZArray.col(2));
@@ -287,7 +272,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         
         // 使用这种方式创建 MPC
         return new MonatomicParameterCalculator(mAtomNum, mBoxList.get(aFrame), nThreads(), xyzMat -> {
-            xyzMat.fill(mAllAtomDataXYZ[aFrame]);
+            xyzMat.fill(mAllAtomDataXYZ.get(aFrame));
             return xyzMat;
         });
     }
@@ -322,7 +307,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
             xyzMat.fill(0.0);
             final int tEnd = aStart + aFrameNum;
             for (int frame = aStart; frame < tEnd; ++frame) {
-                xyzMat.plus2this(mAllAtomDataXYZ[frame]);
+                xyzMat.plus2this(mAllAtomDataXYZ.get(frame));
             }
             xyzMat.div2this(aFrameNum);
             return xyzMat;
@@ -359,8 +344,8 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
             double rStatNum = 0;
             double rMSDi = 0.0;
             for (int start = 0, end = (int)tFrames.get_(i); end < mFrameNum; start+=tFrameGap, end+=tFrameGap) {
-                IMatrix tStartFrame = mAllAtomDataXYZ[start];
-                IMatrix tEndFrame = mAllAtomDataXYZ[end];
+                IMatrix tStartFrame = mAllAtomDataXYZ.get(start);
+                IMatrix tEndFrame = mAllAtomDataXYZ.get(end);
                 for (int j = 0; j < mAtomNum; ++j) {
                     rMSDi += distance2(tStartFrame.get(j, 0), tStartFrame.get(j, 1), tStartFrame.get(j, 2), tEndFrame.get(j, 0), tEndFrame.get(j, 1), tEndFrame.get(j, 2));
                 }
