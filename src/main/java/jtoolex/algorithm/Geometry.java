@@ -33,7 +33,7 @@ import jtool.parallel.DoubleArrayCache;
  * four-stage pipeline. Instead, only two - the fastest and the exact stages -
  * are used.)
  *
- * @author Dave Hale, Colorado School of Mines, CHanzy
+ * @author Dave Hale, Colorado School of Mines
  * @version 2001.04.03, 2006.08.02
  */
 public class Geometry {
