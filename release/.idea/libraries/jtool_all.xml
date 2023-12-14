@@ -6,7 +6,7 @@
     <JAVADOC />
     <SOURCES>
       <root url="jar://$PROJECT_DIR$/src/jtool-src.jar!/" />
-      <root url="jar://$PROJECT_DIR$/src/groovy-4.0.15-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/src/groovy-4.0.16-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
