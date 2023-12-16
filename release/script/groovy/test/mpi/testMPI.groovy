@@ -1,21 +1,22 @@
 package test.mpi
 
-import static jtool.parallel.MPI.*;
+import jtool.parallel.MPI;
+
 import static jtool.code.UT.Math.*;
 
 /**
  * 测试 MPI
  */
 
-MPI_Init(args);
+MPI.init(args);
 
-int me = MPI_Comm_rank(MPI_COMM_WORLD);
-int size = MPI_Comm_size(MPI_COMM_WORLD);
+int me = MPI.Comm.WORLD.rank();
+int size = MPI.Comm.WORLD.size();
 double r = rand();
 println("rand of <$me>: $r");
 double [] recv = new double[size];
-MPI_Allgather([r] as double[], 1, recv, 1, MPI_COMM_WORLD);
+MPI.Comm.WORLD.allgather([r] as double[], 1, recv, 1);
 println("recv of <$me>: $recv");
 
-MPI_Finalize();
+MPI.shutdown();
 
