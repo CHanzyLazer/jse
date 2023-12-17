@@ -2,6 +2,11 @@ package jtool.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import groovy.json.JsonBuilder;
+import groovy.json.JsonSlurper;
+import groovy.lang.Closure;
+import groovy.yaml.YamlBuilder;
+import groovy.yaml.YamlSlurper;
 import jtool.Main;
 import jtool.atom.*;
 import jtool.code.collection.AbstractCollections;
@@ -19,23 +24,18 @@ import jtool.math.function.IFunc1;
 import jtool.math.function.IFunc1Subs;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.Matrices;
-import jtool.parallel.LocalRandom;
 import jtool.math.table.ITable;
 import jtool.math.table.Tables;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
+import jtool.parallel.LocalRandom;
 import jtool.parallel.MergedFuture;
 import jtool.parallel.ParforThreadPool;
-import groovy.json.JsonBuilder;
-import groovy.json.JsonSlurper;
-import groovy.lang.Closure;
-import groovy.yaml.YamlBuilder;
-import groovy.yaml.YamlSlurper;
 import jtool.plot.*;
 import jtool.vasp.IVaspCommonData;
+import me.tongfei.progressbar.ConsoleProgressBarConsumer;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarStyle;
 import net.jafama.FastMath;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -60,8 +60,8 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -72,9 +72,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jtool.code.CS.*;
 import static jtool.code.CS.Exec.EXE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * @author liqa
@@ -449,9 +449,8 @@ public class UT {
             }
             sProgressBar = new ProgressBarBuilder()
                 .setTaskName(aName).setInitialMax(aN)
-//                .setConsumer(new ConsoleProgressBarConsumer(System.out))
+                .setConsumer(new ConsoleProgressBarConsumer(System.err, 80)) // 一般来说 pbar 都是 err 流，这里需要重写一下避免乱码问题
                 .setUpdateIntervalMillis((int)FILE_SYSTEM_SLEEP_TIME_2)
-                .setStyle(ProgressBarStyle.ASCII)
                 .build();
             Main.addGlobalAutoCloseable(sProgressBar);
         }
