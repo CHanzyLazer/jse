@@ -435,15 +435,17 @@ public class MPI {
         
         private static void initMPI_() throws Exception {
             // 如果没有 cmake，在 windows 上，尝试直接用预编译的库
-            if (IS_WINDOWS) {
-                EXE.setNoSTDOutput().setNoERROutput();
-                boolean tNoCmake = EXE.system("cmake --version") != 0;
-                EXE.setNoSTDOutput(false).setNoERROutput(false);
-                if (tNoCmake) {
-                    System.err.println("MPI BUILD WARNING: no camke environment, using the pre-build libraries,");
+            EXE.setNoSTDOutput().setNoERROutput();
+            boolean tNoCmake = EXE.system("cmake --version") != 0;
+            EXE.setNoSTDOutput(false).setNoERROutput(false);
+            if (tNoCmake) {
+                if (IS_WINDOWS) {
+                    System.err.println("MPI BUILD WARNING: No camke environment, using the pre-build libraries,");
                     System.err.println("  which may have some problems.");
                     UT.IO.copy(UT.IO.getResource("mpi/lib/mpi.dll"), MPILIB_PATH);
                     return;
+                } else {
+                    throw new Exception("MPI BUILD ERROR: No camke environment.");
                 }
             }
             // 从内部资源解压到临时目录
@@ -460,13 +462,13 @@ public class MPI {
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件
             String tLibDir = tBuildDir+"lib/";
-            if (!UT.IO.isDir(tLibDir)) throw new Exception("MPI BUILD ERROR: No mpi lib in "+tBuildDir);
+            if (!UT.IO.isDir(tLibDir)) throw new Exception("MPI BUILD ERROR: Build Failed, No mpi lib in "+tBuildDir);
             String[] tList = UT.IO.list(tLibDir);
             String tLibPath = null;
             for (String tName : tList) if (tName.contains("mpi") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib") || tName.endsWith(".dylib"))) {
                 tLibPath = tName;
             }
-            if (tLibPath == null) throw new Exception("MPI BUILD ERROR: No mpi lib in "+tLibDir);
+            if (tLibPath == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpi lib in "+tLibDir);
             tLibPath = tLibDir+tLibPath;
             // 将 build 的输出拷贝到 lib 目录下
             UT.IO.copy(tLibPath, MPILIB_PATH);
