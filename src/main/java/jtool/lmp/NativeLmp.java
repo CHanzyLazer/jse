@@ -219,6 +219,8 @@ public class NativeLmp implements IAutoShutdown {
     }
     
     
+    private final static String EXECUTABLE_NAME = "liblammps";
+    private final static String[] DEFAULT_ARGS = {EXECUTABLE_NAME, "-log", "none"};
     private final long mLmpPtr;
     /**
      * Create an instance of the LAMMPS Java class.
@@ -244,12 +246,16 @@ public class NativeLmp implements IAutoShutdown {
      * @author liqa
      */
     public NativeLmp(String[] aArgs, long aComm, long aPtr) {
-        mLmpPtr = aComm==0 ? lammpsOpen_(aArgs, aPtr) : lammpsOpen_(aArgs, aComm, aPtr);
+        String[] tArgs = aArgs==null ? DEFAULT_ARGS : new String[aArgs.length+1];
+        tArgs[0] = EXECUTABLE_NAME;
+        if (aArgs != null) System.arraycopy(aArgs, 0, tArgs, 1, aArgs.length);
+        mLmpPtr = aComm==0 ? lammpsOpen_(tArgs, aPtr) : lammpsOpen_(tArgs, aComm, aPtr);
     }
     public NativeLmp(String[] aArgs, long aComm) {this(aArgs, aComm, 0);}
-    public NativeLmp(String[] aArgs) {this(aArgs, 0);}
     public NativeLmp(String[] aArgs, MPI.Comm aComm, long aPtr) {this(aArgs, aComm==null ? 0 : aComm.ptr_(), aPtr);}
     public NativeLmp(String[] aArgs, MPI.Comm aComm) {this(aArgs, aComm, 0);}
+    public NativeLmp(String[] aArgs) {this(aArgs, 0);}
+    public NativeLmp() {this(null);}
     private native static long lammpsOpen_(String[] aArgs, long aComm, long aPtr);
     private native static long lammpsOpen_(String[] aArgs, long aPtr);
     
