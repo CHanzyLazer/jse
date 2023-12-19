@@ -1,6 +1,7 @@
 package jtool.parallel;
 
 import jtool.code.UT;
+import org.jetbrains.annotations.ApiStatus;
 
 import static jtool.code.CS.*;
 import static jtool.code.CS.Exec.EXE;
@@ -57,6 +58,7 @@ public class MPI {
         
         private final long mPtr;
         Comm(long aPtr) {mPtr = aPtr;}
+        @ApiStatus.Internal public long ptr_() {return mPtr;}
         
         /** @return the number of calling process within the group of the communicator. */
         public int rank() {return Native.MPI_Comm_rank(mPtr);}
@@ -332,9 +334,9 @@ public class MPI {
         
         private final long mPtr;
         Op(long aPtr) {mPtr = aPtr;}
+        @ApiStatus.Internal public long ptr_() {return mPtr;}
     }
     
-    @SuppressWarnings("FieldCanBeLocal")
     public enum Datatype {
           NULL          (Native.MPI_DATATYPE_NULL)
         , SIGNED_CHAR   (Native.MPI_SIGNED_CHAR   )
@@ -349,6 +351,7 @@ public class MPI {
         
         private final long mPtr;
         Datatype(long aPtr) {mPtr = aPtr;}
+        @ApiStatus.Internal public long ptr_() {return mPtr;}
     }
     
     public final static class Thread {

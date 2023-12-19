@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6...3.16)
-project(mpijni C)
+project(lmpjni C)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -15,8 +15,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 
 SET(SOURCE_FILES
-        jtool_parallel_MPI_Native.c)
-ADD_LIBRARY(mpijni SHARED ${SOURCE_FILES})
+    jtool_lmp_NativeLmp.c)
+ADD_LIBRARY(lmpjni SHARED ${SOURCE_FILES})
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -35,12 +35,21 @@ endif ()
 # add mpi
 find_package(MPI)
 if (MPI_FOUND)
+    add_definitions(-DLAMMPS_LIB_MPI)
+    
     set(CMAKE_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
     set(CMAKE_LINK_FLAGS ${CMAKE_LINK_FLAGS} ${MPI_LINK_FLAGS})
-
+    
     include_directories(${MPI_INCLUDE_PATH})
-    target_link_libraries(mpijni ${MPI_LIBRARIES})
-else ()
-    message(FATAL_ERROR "No MPI Environment Found")
+    target_link_libraries(lmpjni ${MPI_LIBRARIES})
 endif(MPI_FOUND)
 
+# add lammps
+include_directories($ENV{LAMMPS_HOME}includes)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(lmpjni $ENV{LAMMPS_HOME}lib/liblammps.so)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    target_link_libraries(lmpjni $ENV{LAMMPS_HOME}lib/lammps.lib)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    target_link_libraries(lmpjni $ENV{LAMMPS_HOME}lib/liblammps.dylib)
+endif ()
