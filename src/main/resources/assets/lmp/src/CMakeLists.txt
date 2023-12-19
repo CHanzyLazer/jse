@@ -53,3 +53,4 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     target_link_libraries(lmpjni $ENV{LAMMPS_HOME}lib/liblammps.dylib)
 endif ()
+

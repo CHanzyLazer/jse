@@ -41,8 +41,15 @@ JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_Stri
     int tLen;
     char **sArgs = parseArgs(aEnv, aArgs, &tLen);
 #if defined(LAMMPS_LIB_MPI)
-    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
-    void *tLmpPtr = lammps_open(tLen, sArgs, tComm, (void *)aPtr);
+    void *tLmpPtr;
+    int tMpiInit;
+    MPI_Initialized(&tMpiInit);
+    if (tMpiInit) {
+        MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+        tLmpPtr = lammps_open(tLen, sArgs, tComm, (void *)aPtr);
+    } else {
+        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+    }
 #else
     void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
 #endif
@@ -54,7 +61,14 @@ JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_Stri
     int tLen;
     char **sArgs = parseArgs(aEnv, aArgs, &tLen);
 #if defined(LAMMPS_LIB_MPI)
-    void *tLmpPtr = lammps_open(tLen, sArgs, MPI_COMM_WORLD, (void *)aPtr);
+    void *tLmpPtr;
+    int tMpiInit;
+    MPI_Initialized(&tMpiInit);
+    if (tMpiInit) {
+        tLmpPtr = lammps_open(tLen, sArgs, MPI_COMM_WORLD, (void *)aPtr);
+    } else {
+        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+    }
 #else
     void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
 #endif

@@ -159,38 +159,41 @@ public class NativeLmp implements IAutoShutdown {
         }
         // 如果依旧没有 tNativeLmpLib 则构建失败
         if (!UT.IO.isFile(tNativeLmpLib)) throw new Exception("NATIVE_LMP BUILD ERROR: Lammps build Failed, No liblammps in "+Conf.LMP_HOME+"lib/");
-        // 从内部资源解压到临时目录
-        String tSrcDir = tWorkingDir+"src/";
-        for (String tName : LMPSRC_NAME) {
-            UT.IO.copy(UT.IO.getResource("lmp/src/"+tName), tSrcDir+tName);
-        }
-        // 这里对 CMakeLists.txt 特殊处理，替换其中的 lammps 库路径为设置好的路径
-        try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("lmp/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tSrcDir+"CMakeLists.txt")) {
-            String tLine;
-            while ((tLine = tReader.readLine()) != null) {
-                tLine = tLine.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                tWriter.writeln(tLine);
+        // 注意只有 jni 的 lib 没有检测到才编译 jni 的部分
+        if (!UT.IO.isFile(LMPLIB_PATH)) {
+            // 从内部资源解压到临时目录
+            String tSrcDir = tWorkingDir+"src/";
+            for (String tName : LMPSRC_NAME) {
+                UT.IO.copy(UT.IO.getResource("lmp/src/"+tName), tSrcDir+tName);
             }
+            // 这里对 CMakeLists.txt 特殊处理，替换其中的 lammps 库路径为设置好的路径
+            try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("lmp/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tSrcDir+"CMakeLists.txt")) {
+                String tLine;
+                while ((tLine = tReader.readLine()) != null) {
+                    tLine = tLine.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    tWriter.writeln(tLine);
+                }
+            }
+            System.out.println("NATIVE_LMP INIT INFO: Building lmpjni from source code...");
+            String tBuildDir = tSrcDir+"build/";
+            UT.IO.makeDir(tBuildDir);
+            // 直接通过系统指令来编译 lmpjni 的库，关闭输出
+            EXE.setNoSTDOutput();
+            EXE.system(String.format("cd %s; cmake ..; cmake --build . --config Release", tBuildDir));
+            EXE.setNoSTDOutput(false);
+            // 获取 build 目录下的 lib 文件
+            String tLibDir = tBuildDir+"lib/";
+            if (!UT.IO.isDir(tLibDir)) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in "+tBuildDir);
+            String[] tList = UT.IO.list(tLibDir);
+            String tLibPath = null;
+            for (String tName : tList) if (tName.contains("lmp") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib") || tName.endsWith(".dylib"))) {
+                tLibPath = tName;
+            }
+            if (tLibPath == null) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in "+tLibDir);
+            tLibPath = tLibDir+tLibPath;
+            // 将 build 的输出拷贝到 lib 目录下
+            UT.IO.copy(tLibPath, LMPLIB_PATH);
         }
-        System.out.println("NATIVE_LMP INIT INFO: Building lmpjni from source code...");
-        String tBuildDir = tSrcDir+"build/";
-        UT.IO.makeDir(tBuildDir);
-        // 直接通过系统指令来编译 lmpjni 的库，关闭输出
-        EXE.setNoSTDOutput();
-        EXE.system(String.format("cd %s; cmake ..; cmake --build . --config Release", tBuildDir));
-        EXE.setNoSTDOutput(false);
-        // 获取 build 目录下的 lib 文件
-        String tLibDir = tBuildDir+"lib/";
-        if (!UT.IO.isDir(tLibDir)) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in "+tBuildDir);
-        String[] tList = UT.IO.list(tLibDir);
-        String tLibPath = null;
-        for (String tName : tList) if (tName.contains("lmp") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib") || tName.endsWith(".dylib"))) {
-            tLibPath = tName;
-        }
-        if (tLibPath == null) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in "+tLibDir);
-        tLibPath = tLibDir+tLibPath;
-        // 将 build 的输出拷贝到 lib 目录下
-        UT.IO.copy(tLibPath, LMPLIB_PATH);
         // 完事后移除临时解压得到的源码（以及可能存在的临时下载的 lammps 源码压缩包）
         UT.IO.removeDir(tWorkingDir);
         System.out.println("NATIVE_LMP INIT INFO: lammps libraries successfully installed.");
@@ -229,7 +232,7 @@ public class NativeLmp implements IAutoShutdown {
      * calls to the C library interface.
      *
      * @param aArgs  array of command line arguments to be passed to the {@code lammps_open()}
-     *               (or {@code lammps_open_no_mpi()} when no mpi) function.
+     *               (or {@code lammps_open_no_mpi()} when no mpi or no init mpi) function.
      *               The executable name is automatically added.
      *
      * @param aComm MPI communicator as provided by {@link MPI} (or {@link MPI.Native}).
