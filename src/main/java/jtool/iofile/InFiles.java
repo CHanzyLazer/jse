@@ -6,6 +6,7 @@ import jtool.code.UT;
 import jtool.lmp.LmpIn;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -16,7 +17,14 @@ import java.io.Reader;
 public class InFiles {
     public static IInFile lmp(String aLmpInFilePath) {return LmpIn.custom(aLmpInFilePath);}
     public static IInFile json(final String aJsonFilePath) {return new AbstractInFileJson() {@Override protected Reader getInFileReader() throws IOException {return UT.IO.toReader(aJsonFilePath);}};}
-    public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {@Override public void write_(String aPath) throws IOException {UT.IO.copy(aInFilePath, aPath);}};}
+    public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {
+        @Override public void writeTo_(UT.IO.IWriteln aWriteln) throws IOException {
+            try (BufferedReader tReader = UT.IO.toReader(aInFilePath)) {
+                String tLine;
+                while ((tLine = tReader.readLine()) != null) aWriteln.writeln(tLine);
+            }
+        }
+    };}
     
     /**
      * 默认行为，这里约定：

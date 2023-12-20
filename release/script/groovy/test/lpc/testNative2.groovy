@@ -2,6 +2,7 @@ package test.lpc
 
 import jtool.atom.Structures
 import jtool.code.UT
+import jtool.lmp.Lmpdat
 import jtool.lmp.NativeLmp
 import jtool.parallel.MPI
 import jtool.vasp.POSCAR
@@ -18,25 +19,19 @@ NativeLmp.Conf.CMAKE_SETTING.PKG_MANYBODY = 'yes';
 NativeLmp.Conf.REBUILD = false; // 如果没有这个包需要开启此选项重新构建
 
 MPI.init();
-
 int me = MPI.Comm.WORLD.rank();
 
 double T = 1400;
 double P = 0.0;
 int seed = 4587281;
 
-def data = Structures.from(POSCAR.read('vasp/data/MgCu2.poscar').setBoxScale(1.030).opt().mapType({(int)3-it.type()}), 4);
+def data = Lmpdat.fromAtomData(Structures.from(POSCAR.read('vasp/data/MgCu2.poscar').setBoxScale(1.030).opt().mapType({(int)3- it.type()}), 4), [MASS.Cu, MASS.Zr]);
 
 try (def lammps = new NativeLmp()) {
     lammps.command('units           metal');
     lammps.command('boundary        p p p');
     lammps.command('timestep        0.0002');
-    def box = data.box();
-    lammps.command("region          box block 0 ${box.x()} 0 ${box.y()} 0 ${box.z()}");
-    lammps.command("create_box      ${data.atomTypeNum()} box");
-    lammps.command("mass            1 ${MASS.Cu}");
-    lammps.command("mass            2 ${MASS.Zr}");
-    lammps.creatAtoms(data.asList());
+    lammps.loadData(data);
     lammps.command('pair_style      eam/fs');
     lammps.command('pair_coeff      * * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr');
     lammps.command("velocity        all create $T $seed dist gaussian mom yes rot yes");
@@ -48,7 +43,7 @@ try (def lammps = new NativeLmp()) {
     lammps.command("fix             3 all press/berendsen iso $P $P 2000.0");
     lammps.command('run             50000');
     lammps.command('write_data      lmp/.temp/data-laves1-out');
-    lammps.lmpdat().write("lmp/.temp/data-laves1-out-$me");
+    lammps.data().write("lmp/.temp/data-laves1-out-$me");
 }
 // Total wall time: 0:04:11 (mpi np 1)
 // Total wall time: 0:01:06 (mpi np 4)

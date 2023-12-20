@@ -54,6 +54,7 @@ R *parse##TF##2##R (JNIEnv *aEnv, j##T##Array aJArray) {                        
 }
 
 GEN_PARSE_ANY_TO_ANY(int, double, Double)
+GEN_PARSE_ANY_TO_ANY(int64_t, double, Double)
 
 
 JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2JJ(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs, jlong aComm, jlong aPtr) {
@@ -180,11 +181,32 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
     free(tName);
     (*aEnv)->ReleaseDoubleArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 }
+JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jboolean aIsDouble, jint aCount, jdoubleArray aData) {
+    jdouble *tDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, aData, NULL);
+    char *tName = parseStr(aEnv, aName);
+    if (aIsDouble) {
+        lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+    } else {
+        size_t tLen = (size_t)(aCount * lammps_get_natoms((void *)aLmpPtr));
+        int *tIntBuf = malloc(tLen*sizeof(int));
+        for (int i = 0; i < tLen; ++i) tIntBuf[i] = (int)tDataBuf[i];
+        lammps_scatter((void *)aLmpPtr, tName, 0, aCount, tIntBuf);
+        free(tIntBuf);
+    }
+    free(tName);
+    (*aEnv)->ReleaseDoubleArrayElements(aEnv, aData, tDataBuf, JNI_ABORT); // read mode
+}
 JNIEXPORT jint JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdoubleArray aID, jdoubleArray aType, jdoubleArray aXYZ, jdoubleArray aVelocities, jdoubleArray aImage, jboolean aShrinkExceed) {
     jsize tN = (*aEnv)->GetArrayLength(aEnv, aID);
+#if !defined(LAMMPS_BIGBIG)
     int *tID    = parseDouble2int(aEnv, aID   );
     int *tType  = parseDouble2int(aEnv, aType );
     int *tImage = parseDouble2int(aEnv, aImage);
+#else
+    int64_t *tID    = parseDouble2int64_t(aEnv, aID   );
+    int     *tType  = parseDouble2int    (aEnv, aType );
+    int64_t *tImage = parseDouble2int64_t(aEnv, aImage);
+#endif
     jdouble *tXYZ        = aXYZ       ==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aXYZ       , NULL);
     jdouble *tVelocities = aVelocities==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aVelocities, NULL);
     int tOut = lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVelocities, tImage, aShrinkExceed);

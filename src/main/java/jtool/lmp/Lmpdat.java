@@ -123,6 +123,44 @@ public class Lmpdat extends AbstractSettableAtomData {
     public Box lmpBox() {return mBox;}
     public @Nullable IVector masses() {return mMasses;}
     public double mass(int aType) {return mMasses!=null ? mMasses.get(aType-1) : Double.NaN;}
+    public ISettableAtom pickAtomInternal(final int aIdx) {
+        return new AbstractSettableAtom() {
+            @Override public double x() {return mAtomData.get(aIdx, STD_X_COL);}
+            @Override public double y() {return mAtomData.get(aIdx, STD_Y_COL);}
+            @Override public double z() {return mAtomData.get(aIdx, STD_Z_COL);}
+            @Override public int id() {return (int)mAtomData.get(aIdx, STD_ID_COL);}
+            @Override public int type() {return (int)mAtomData.get(aIdx, STD_TYPE_COL);}
+            @Override public int index() {return aIdx;}
+            
+            @Override public double vx() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VX_COL);}
+            @Override public double vy() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VY_COL);}
+            @Override public double vz() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VZ_COL);}
+            @Override public boolean hasVelocities() {return mVelocities!=null;}
+            
+            @Override public ISettableAtom setX(double aX) {mAtomData.set(aIdx, STD_X_COL, aX); return this;}
+            @Override public ISettableAtom setY(double aY) {mAtomData.set(aIdx, STD_Y_COL, aY); return this;}
+            @Override public ISettableAtom setZ(double aZ) {mAtomData.set(aIdx, STD_Z_COL, aZ); return this;}
+            @Override public ISettableAtom setID(int aID) {mAtomData.set(aIdx, STD_ID_COL, aID); return this;}
+            @Override public ISettableAtom setType(int aType) {
+                // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
+                mAtomData.set(aIdx, STD_TYPE_COL, aType);
+                if (aType > atomTypeNum()) setAtomTypeNum(aType);
+                return this;
+            }
+            @Override public ISettableAtom setVx(double aVx) {
+                if (mVelocities == null) throw new UnsupportedOperationException("setVx");
+                mVelocities.set(aIdx, STD_VX_COL, aVx); return this;
+            }
+            @Override public ISettableAtom setVy(double aVy) {
+                if (mVelocities == null) throw new UnsupportedOperationException("setVy");
+                mVelocities.set(aIdx, STD_VY_COL, aVy); return this;
+            }
+            @Override public ISettableAtom setVz(double aVz) {
+                if (mVelocities == null) throw new UnsupportedOperationException("setVz");
+                mVelocities.set(aIdx, STD_VZ_COL, aVz); return this;
+            }
+        };
+    }
     
     
     /** AbstractAtomData stuffs */
@@ -153,7 +191,6 @@ public class Lmpdat extends AbstractSettableAtomData {
                 if (aType > atomTypeNum()) setAtomTypeNum(aType);
                 return this;
             }
-            
             @Override public ISettableAtom setVx(double aVx) {
                 if (mVelocities == null) throw new UnsupportedOperationException("setVx");
                 mVelocities.set(aIdx, STD_VX_COL, aVx); return this;

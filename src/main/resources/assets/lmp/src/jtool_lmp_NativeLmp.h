@@ -113,6 +113,14 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1
 
 /*
  * Class:     jtool_lmp_NativeLmp
+ * Method:    lammpsScatter_
+ * Signature: (JLjava/lang/String;ZI[D)V
+ */
+JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsScatter_1
+  (JNIEnv *, jclass, jlong, jstring, jboolean, jint, jdoubleArray);
+
+/*
+ * Class:     jtool_lmp_NativeLmp
  * Method:    lammpsCreateAtoms_
  * Signature: (J[D[D[D[D[DZ)I
  */

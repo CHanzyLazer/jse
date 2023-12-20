@@ -3,6 +3,7 @@ package jtool.iofile;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import jtool.code.UT;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -117,10 +118,17 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
     
     
     @Override public final void write(String aPath) throws IOException {
-        write_(aPath);
+        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aPath)) {
+            writeTo_(tWriteln);
+        }
         putIFiles(INFILE_SELF_KEY, aPath);
+    }
+    @Override public final List<String> toLines() throws IOException {
+        List<String> rLines = new ArrayList<>();
+        writeTo_(line -> rLines.add(line.toString()));
+        return rLines;
     }
     
     /** stuff to override */
-    protected abstract void write_(String aPath) throws IOException;
+    protected abstract void writeTo_(UT.IO.IWriteln aWriteln) throws IOException;
 }

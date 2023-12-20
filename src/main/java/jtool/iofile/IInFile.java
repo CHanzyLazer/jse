@@ -3,6 +3,7 @@ package jtool.iofile;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +24,7 @@ public interface IInFile extends IIOFiles, Map<String, Object> {
     
     /** 提供将设置的属性应用到输入文件，然后写成文件的接口 */
     void write(String aPath) throws IOException;
+    List<String> toLines() throws IOException;
     
     /** IOFile stuffs */
     IInFile putIFiles(String aIFileKey, String aIFilePath                      );

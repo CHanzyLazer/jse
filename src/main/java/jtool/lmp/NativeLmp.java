@@ -1,10 +1,14 @@
 package jtool.lmp;
 
 import jtool.atom.IAtom;
+import jtool.atom.IAtomData;
 import jtool.atom.IXYZ;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
+import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.iterator.IDoubleIterator;
+import jtool.iofile.IInFile;
+import jtool.math.matrix.ColumnMatrix;
 import jtool.math.matrix.DoubleArrayMatrix;
 import jtool.math.matrix.IMatrix;
 import jtool.math.matrix.RowMatrix;
@@ -13,10 +17,12 @@ import jtool.parallel.DoubleArrayCache;
 import jtool.parallel.IAutoShutdown;
 import jtool.parallel.MPI;
 import jtool.parallel.MatrixCache;
+import jtool.vasp.IVaspCommonData;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -297,6 +303,17 @@ public class NativeLmp implements IAutoShutdown {
     private native static void lammpsFile_(long aLmpPtr, String aPath);
     
     /**
+     * 提供一个更加易用的直接使用 {@link IInFile}
+     * 作为输入的 file 方法，底层会使用 {@link #commands}
+     * 来执行多行命令
+     * @param aLmpIn 需要读取的 lammps in 文件
+     * @author liqa
+     */
+    public void file(IInFile aLmpIn) throws IOException {
+        commands(aLmpIn.toLines().toArray(ZL_STR));
+    }
+    
+    /**
      * Process a single LAMMPS input command from a string.
      * <p>
      * This is a wrapper around the {@code lammps_command()} function of the C-library interface.
@@ -429,7 +446,8 @@ public class NativeLmp implements IAutoShutdown {
     private native static int lammpsExtractSetting_(long aLmpPtr, String aName);
     
     /**
-     * Retrieve per-atom properties from LAMMPS
+     * Gather the named per-atom, per-atom fix, per-atom compute,
+     * or fix property/atom-based entities from all processes, unordered.
      * <p>
      * This is a wrapper around the {@code lammps_gather_concat()} function of the C-library interface.
      * <a href="https://docs.lammps.org/Classes_atom.html#_CPPv4N9LAMMPS_NS4Atom7extractEPKc">
@@ -486,6 +504,65 @@ public class NativeLmp implements IAutoShutdown {
     }
     private native static void lammpsGatherConcat_(long aLmpPtr, String aName, boolean aIsDouble, int aCount, double[] rData);
     
+    /**
+     * Scatter the named per-atom, per-atom fix, per-atom compute,
+     * or fix property/atom-based entity in data to all processes.
+     * <p>
+     * This is a wrapper around the {@code lammps_scatter()} function of the C-library interface.
+     * This subroutine takes data stored in a one-dimensional array supplied by the user and
+     * scatters them to all atoms on all processes. The data must be ordered by atom ID,
+     * with the requirement that the IDs be consecutive. Use lammps_scatter_subset() to
+     * scatter data for some (or all) atoms, unordered.
+     * @param aName name of the property
+     * @param aData Matrix of data to set
+     * @see <a href="https://docs.lammps.org/Library_scatter.html#_CPPv414lammps_scatterPvPKciiPv">
+     * lammps_scatter() </a>
+     */
+    @SuppressWarnings("DuplicateBranchesInSwitch")
+    public void setAtomDataOf(String aName, IMatrix aData) {
+        switch(aName) {
+        case "mass":        {setAtomDataOf(aName, aData, true ); return;}
+        case "id":          {setAtomDataOf(aName, aData, false); return;}
+        case "type":        {setAtomDataOf(aName, aData, false); return;}
+        case "mask":        {setAtomDataOf(aName, aData, false); return;}
+        case "image":       {setAtomDataOf(aName, aData, false); return;}
+        case "x":           {setAtomDataOf(aName, aData, true ); return;}
+        case "v":           {setAtomDataOf(aName, aData, true ); return;}
+        case "f":           {setAtomDataOf(aName, aData, true ); return;}
+        case "molecule":    {setAtomDataOf(aName, aData, false); return;}
+        case "q":           {setAtomDataOf(aName, aData, true ); return;}
+        case "mu":          {setAtomDataOf(aName, aData, true ); return;}
+        case "omega":       {setAtomDataOf(aName, aData, true ); return;}
+        case "angmom":      {setAtomDataOf(aName, aData, true ); return;}
+        case "torque":      {setAtomDataOf(aName, aData, true ); return;}
+        case "radius":      {setAtomDataOf(aName, aData, true ); return;}
+        case "rmass":       {setAtomDataOf(aName, aData, true ); return;}
+        case "ellipsoid":   {setAtomDataOf(aName, aData, false); return;}
+        case "line":        {setAtomDataOf(aName, aData, false); return;}
+        case "tri":         {setAtomDataOf(aName, aData, false); return;}
+        case "body":        {setAtomDataOf(aName, aData, false); return;}
+        case "quat":        {setAtomDataOf(aName, aData, true ); return;}
+        case "temperature": {setAtomDataOf(aName, aData, true ); return;}
+        case "heatflow":    {setAtomDataOf(aName, aData, true ); return;}
+        default: {
+            if (aName.startsWith("i_")) {
+                setAtomDataOf(aName, aData, false);
+            } else
+            if (aName.startsWith("d_")) {
+                setAtomDataOf(aName, aData, true );
+            } else {
+                throw new IllegalArgumentException("Unexpected name: "+aName+", use setAtomDataOf(aName, aData, aIsDouble) to scatter this atom data.");
+            }
+        }}
+    }
+    public void setAtomDataOf(String aName, IMatrix aData, boolean aIsDouble) {
+        if ((aData instanceof RowMatrix) || ((aData instanceof ColumnMatrix) && aData.columnNumber()==1)) {
+            lammpsScatter_(mLmpPtr, aName, aIsDouble, aData.columnNumber(), ((DoubleArrayMatrix)aData).getData());
+        } else {
+            lammpsScatter_(mLmpPtr, aName, aIsDouble, aData.columnNumber(), aData.asVecRow().data());
+        }
+    }
+    private native static void lammpsScatter_(long aLmpPtr, String aName, boolean aIsDouble, int aCount, double[] aData);
     
     /**
      * 通过 {@link #atomDataOf} 直接构造一个 {@link Lmpdat}，
@@ -531,6 +608,47 @@ public class NativeLmp implements IAutoShutdown {
     @VisibleForTesting public Lmpdat data() {return lmpdat();}
     
     /**
+     * 更加易用的方法，类似于 lammps 的 {@code read_data} 命令，但是不需要走文件管理器；
+     * 实际实现过程有些区别
+     * @param aLmpdat 作为输入的原子数据
+     * @author liqa
+     */
+    public void loadLmpdat(final Lmpdat aLmpdat) {
+        Box tBox = aLmpdat.lmpBox();
+        if (tBox.type() == Box.Type.NORMAL) {
+        command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
+        } else {
+        BoxPrism pBox = (BoxPrism)tBox;
+        command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", pBox.xlo(), pBox.xhi(), pBox.ylo(), pBox.yhi(), pBox.zlo(), pBox.zhi(), pBox.xy(), pBox.xz(), pBox.yz()));
+        }
+        int tAtomTypeNum = aLmpdat.atomTypeNum();
+        command(String.format("create_box      %d box", tAtomTypeNum));
+        IVector tMasses = aLmpdat.masses();
+        if (tMasses != null) for (int i = 0; i < tAtomTypeNum; ++i) {
+        command(String.format("mass            %d %f", i+1, tMasses.get(i)));
+        }
+        creatAtoms(new AbstractRandomAccessList<IAtom>() {
+            @Override public IAtom get(int index) {return aLmpdat.pickAtomInternal(index);}
+            @Override public int size() {return aLmpdat.atomNum();}
+        });
+    }
+    public void loadData(IAtomData aAtomData) {
+        if (aAtomData instanceof Lmpdat) {loadLmpdat((Lmpdat)aAtomData); return;}
+        IXYZ tBox = aAtomData.box();
+        command(String.format("region          box block 0 %f 0 %f 0 %f", tBox.x(), tBox.y(), tBox.z()));
+        int tAtomTypeNum = aAtomData.atomTypeNum();
+        command(String.format("create_box      %d box", tAtomTypeNum));
+        // IVaspCommonData 包含原子种类字符，可以自动获取到质量
+        if (aAtomData instanceof IVaspCommonData) {
+        String[] tAtomTypes = ((IVaspCommonData)aAtomData).atomTypes();
+        if (tAtomTypes!=null && tAtomTypes.length>=tAtomTypeNum) for (int i = 0; i < tAtomTypeNum; ++i) {
+        command(String.format("mass            %d %f", i+1, MASS.getOrDefault(tAtomTypes[i], -1.0)));
+        }}
+        creatAtoms(aAtomData.asList());
+    }
+    @VisibleForTesting public void loadData(Lmpdat aLmpdat) {loadLmpdat(aLmpdat);}
+    
+    /**
      * Create N atoms from list of coordinates and properties
      * <p>
      * This function is a wrapper around the {@code lammps_create_atoms()} function of the C-library interface.
@@ -566,10 +684,18 @@ public class NativeLmp implements IAutoShutdown {
         if (tHasVelocities) DoubleArrayCache.returnArray(rVelocities);
         return tOut;
     }
+    @SuppressWarnings("UnusedReturnValue")
     public int creatAtoms(List<? extends IAtom> aAtoms) {
         return creatAtoms(aAtoms, false);
     }
     private native static int lammpsCreateAtoms_(long aLmpPtr, double[] aID, double[] aType, double[] aXYZ, double[] aVelocities, double[] aImage, boolean aShrinkExceed);
+    
+    /**
+     * lammps clear 指令
+     */
+    public void clear() {
+        command("clear");
+    }
     
     /**
      * Explicitly delete a LAMMPS instance through the C-library interface.

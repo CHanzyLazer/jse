@@ -7,6 +7,8 @@ import groovy.json.JsonSlurper;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static jtool.code.CS.KEEP;
@@ -19,7 +21,7 @@ import static jtool.code.CS.REMOVE;
  */
 public abstract class AbstractInFileJson extends AbstractInFile {
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Override public final void write_(String aPath) throws IOException {
+    @Override public final void writeTo_(UT.IO.IWriteln aWriteln) throws IOException {
         Map rJson;
         try (Reader tInFile = getInFileReader()) {
             rJson = (Map) (new JsonSlurper()).parse(tInFile);
@@ -29,9 +31,7 @@ public abstract class AbstractInFileJson extends AbstractInFile {
                 else rJson.put(subSetting.getKey(), subSetting.getValue());
             }
         }
-        try (Writer tWriter = UT.IO.toWriter(aPath)) {
-            (new JsonBuilder(rJson)).writeTo(tWriter);
-        }
+        aWriteln.writeln((new JsonBuilder(rJson)).toString());
     }
     
     /** stuff to override，提供一个获取 inFile 的方法即可 */
