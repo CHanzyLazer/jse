@@ -30,7 +30,7 @@ def data = Lmpdat.fromAtomData(Structures.from(POSCAR.read('vasp/data/MgCu2.posc
 try (def lammps = new NativeLmp()) {
     lammps.command('units           metal');
     lammps.command('boundary        p p p');
-    lammps.command('timestep        0.0002');
+    lammps.command('timestep        0.002');
     lammps.loadData(data);
     lammps.command('pair_style      eam/fs');
     lammps.command('pair_coeff      * * lmp/.potential/Cu-Zr_2.eam.fs Cu Zr');
