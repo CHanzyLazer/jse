@@ -37,6 +37,9 @@ try (def lammps = new NativeLmp()) {
     // 2 x 1 Matrix:
     //    0.000
     //    63.55
+    println(lammps.masses());
+    // 1-length Vector:
+    //    63.55
     def data1 = lammps.data();
     data1.write('lmp/.temp/test1.lmpdat');
     lammps.clear();

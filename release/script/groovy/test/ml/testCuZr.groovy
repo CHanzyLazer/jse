@@ -6,6 +6,7 @@ import jtool.lmp.Lmpdat
 import jtool.math.matrix.IMatrix
 import jtool.math.vector.IVector
 import jtool.math.vector.LogicalVector
+import jtool.parallel.MatrixCache
 import jtoolex.ml.RandomForest
 import atom.ClassifyCe;
 
@@ -85,14 +86,15 @@ rf.shutdown();
 
 
 // 再对近邻做一次平均来弱化温度的影响
-static IMatrix[] getBasisMean(IMatrix[] basis, def mpc, double cutoff) {
-    def basisMean = new IMatrix[mpc.atomNum()];
-    for (i in 0..<mpc.atomNum()) {
-        basisMean[i] = basis[i].copy();
+static List<IMatrix> getBasisMean(List<IMatrix> basis, def mpc, double cutoff) {
+    def basisMean = MatrixCache.getMat(basis.first().nrows(), basis.first().ncols(), basis.size());
+    for (int i : 0..<basis.size()) {
+        basisMean[i].fill(basis[i]);
         def nl = mpc.getNeighborList(i, mpc.unitLen()*cutoff);
-        for (j in nl) basisMean[i].plus2this(basis[j]);
+        for (int j : nl) basisMean[i].plus2this(basis[j]);
         basisMean[i].div2this(nl.size()+1);
     }
+    MatrixCache.returnMat(basis);
     return basisMean;
 }
 

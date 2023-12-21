@@ -50,6 +50,12 @@ public final class ShiftVector extends DoubleArrayVector {
     @Override public int shiftSize() {return mShift;}
     
     
+    /** Optimize stuffs，subVec 切片直接返回  {@link ShiftVector} */
+    @Override public IVector subVec(final int aFromIdx, final int aToIdx) {
+        subVecRangeCheck(aFromIdx, aToIdx, mSize);
+        return new ShiftVector(aToIdx-aFromIdx, aFromIdx+mShift, mData);
+    }
+    
     /** Optimize stuffs，引用反转直接返回 {@link ShiftReverseVector} */
     @Override public IVectorOperation operation() {
         return new DoubleArrayVectorOperation_() {

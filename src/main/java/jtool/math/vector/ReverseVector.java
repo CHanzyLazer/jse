@@ -56,6 +56,12 @@ public final class ReverseVector extends DoubleArrayVector {
     }
     
     
+    /** Optimize stuffs，subVec 切片直接返回  {@link ShiftReverseVector} */
+    @Override public IVector subVec(final int aFromIdx, final int aToIdx) {
+        subVecRangeCheck(aFromIdx, aToIdx, mSize);
+        return new ShiftReverseVector(aToIdx-aFromIdx, mSize-aToIdx, mData);
+    }
+    
     /** Optimize stuffs，引用反转直接返回 {@link Vector} */
     @Override public IVectorOperation operation() {
         return new DoubleArrayVectorOperation_() {

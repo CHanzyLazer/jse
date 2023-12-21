@@ -54,7 +54,7 @@ def rf = RandomForest.load(UT.IO.json2map('lmp/.CuZr/rf.json'), 1);
 cal = new CustomClusterSizeCalculator({mpc ->
     def fp = mpc.calFPSuRui(nmax, lmax, mpc.unitLen()*cutoff);
     def isSolid = rf.makeDecision(getBasisMean(fp, mpc, cutoff).collect {it.asVecRow()});
-    for (mat in fp) MatrixCache.returnMat(mat);
+    MatrixCache.returnMat(fp);
     return isSolid;
 });
 UT.Timer.pbar('ml λ', dump.size());

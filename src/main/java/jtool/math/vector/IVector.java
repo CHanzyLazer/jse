@@ -85,6 +85,7 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     IVectorSlicer slicer();
     IVectorSlicer refSlicer();
+    IVector subVec(int aFromIdx, int aToIdx);
     
     /** 向量的运算操作，默认返回新的向量 */
     IVectorOperation operation();

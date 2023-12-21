@@ -47,7 +47,15 @@ public final class ShiftReverseVector extends DoubleArrayVector {
         if (aObj instanceof ShiftReverseVector) return ((ShiftReverseVector)aObj).mData;
         return null;
     }
+    /** 需要指定平移的距离保证优化运算的正确性 */
+    @Override public int shiftSize() {return mShift;}
     
+    
+    /** Optimize stuffs，subVec 切片直接返回  {@link ShiftReverseVector} */
+    @Override public IVector subVec(final int aFromIdx, final int aToIdx) {
+        subVecRangeCheck(aFromIdx, aToIdx, mSize);
+        return new ShiftReverseVector(aToIdx-aFromIdx, mSize-aToIdx+mShift, mData);
+    }
     
     /** Optimize stuffs，引用反转直接返回 {@link ShiftVector} */
     @Override public IVectorOperation operation() {

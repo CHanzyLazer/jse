@@ -11,6 +11,7 @@ import jtool.code.functional.IDoubleOperator1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -244,6 +245,22 @@ public abstract class AbstractVector implements IVector {
             @Override protected int thisSize_() {return size();}
         };
     }
+    @Override public IVector subVec(final int aFromIdx, final int aToIdx) {
+        subVecRangeCheck(aFromIdx, aToIdx, size());
+        return new RefVector() {
+            /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
+            @Override public double get_(int aIdx) {return AbstractVector.this.get(aIdx+aFromIdx);}
+            @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set(aIdx+aFromIdx, aValue);}
+            @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet(aIdx+aFromIdx, aValue);}
+            @Override public int size() {return aToIdx-aFromIdx;}
+        };
+    }
+    static void subVecRangeCheck(int aFromIdx, int aToIdx, int aSize) {
+        if (aFromIdx < 0) throw new IndexOutOfBoundsException("fromIndex = " + aFromIdx);
+        if (aToIdx > aSize) throw new IndexOutOfBoundsException("toIndex = " + aToIdx);
+        if (aFromIdx > aToIdx) throw new IllegalArgumentException("fromIndex(" + aFromIdx + ") > toIndex(" + aToIdx + ")");
+    }
+    
     
     
     /** 向量的运算器 */

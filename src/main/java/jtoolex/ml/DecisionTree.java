@@ -326,9 +326,9 @@ public class DecisionTree implements ISavable {
             IVector subChara = aCharacteristics[rMinCharaID];
             assert subChara != null;
             IVector[] rCharaLeft = Arrays.copyOf(aCharacteristics, aCharacteristics.length);
-            rCharaLeft[rMinCharaID] = rMinCharaIndex > 0 ? subChara.slicer().get(AbstractCollections.range(rMinCharaIndex)) : null;
+            rCharaLeft[rMinCharaID] = rMinCharaIndex > 0 ? subChara.subVec(0, rMinCharaIndex) : null;
             IVector[] rCharaRight = Arrays.copyOf(aCharacteristics, aCharacteristics.length);
-            rCharaRight[rMinCharaID] = rMinCharaIndex+1 < subChara.size() ? subChara.slicer().get(AbstractCollections.range(rMinCharaIndex+1, subChara.size())) : null;
+            rCharaRight[rMinCharaID] = rMinCharaIndex+1 < subChara.size() ? subChara.subVec(rMinCharaIndex+1, subChara.size()) : null;
             
             // 按照统计结果进行扩展节点
             return new NodeContinue(getRootNodeCART(rDataInputLeft, rDataOutputLeft.build(), rCharaLeft, aCurrentDepth), getRootNodeCART(rDataInputRight, rDataOutputRight.build(), rCharaRight, aCurrentDepth), rMinCharaID, rMinCharaValue);

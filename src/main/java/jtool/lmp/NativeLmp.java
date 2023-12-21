@@ -606,7 +606,7 @@ public class NativeLmp implements IAutoShutdown {
     /** 提供 {@link Lmpdat} 格式的获取质量 */
     public IVector masses() {
         IVector tMasses = atomDataOf("mass").asVecRow();
-        return tMasses.refSlicer().get(AbstractCollections.range(1, tMasses.size()));
+        return tMasses.subVec(1, tMasses.size());
     }
     public double mass(int aType) {return atomDataOf("mass").get(aType, 1);}
     
@@ -627,8 +627,7 @@ public class NativeLmp implements IAutoShutdown {
         int tAtomNum = tXYZ.rowNumber();
         int tAtomTypeNum = tMasses.rowNumber()-1;
         // 设置 mass，按照 lammps 的设定只有这个范围内的才有意义（但是超出范围的依旧会进行访问，因此还是需要一个 atomNum 长的数组）
-        IVector tMassesData = tMasses.asVecRow().slicer().get(AbstractCollections.range(1, tAtomTypeNum+1));
-        DoubleArrayCache.returnArray(((DoubleArrayMatrix)tMasses).getData());
+        IVector tMassesData = tMasses.asVecRow().subVec(1, tAtomTypeNum+1);
         // 设置 atomData
         IMatrix tAtomData = RowMatrix.zeros(tAtomNum, STD_ATOM_DATA_KEYS.length);
         IDoubleIterator itID   = tID  .iteratorRow();
