@@ -50,20 +50,134 @@ import static jtool.code.CS.Exec.JAR_DIR;
 public class MPI {
     private MPI() {}
     
-    public enum Comm {
-          NULL (Native.MPI_COMM_NULL )
-        , WORLD(Native.MPI_COMM_WORLD)
-        , SELF (Native.MPI_COMM_SELF )
+    public static final int UNDEFINED = Native.MPI_UNDEFINED;
+    
+    public static class Group implements IAutoShutdown {
+        public final static Group
+          NULL  = new Group(Native.MPI_GROUP_NULL )
+        , EMPTY = new Group(Native.MPI_GROUP_EMPTY)
         ;
+        static Group of(long aPtr) {
+            if (aPtr == Native.MPI_GROUP_NULL ) return NULL ;
+            if (aPtr == Native.MPI_GROUP_EMPTY) return EMPTY;
+            return new Group(aPtr);
+        }
         
-        private final long mPtr;
-        Comm(long aPtr) {mPtr = aPtr;}
+        private long mPtr;
+        private Group(long aPtr) {mPtr = aPtr;}
+        @ApiStatus.Internal public long ptr_() {return mPtr;}
+
+        
+        /**
+         * @return The rank of the calling process in the specified group.
+         * A value of {@link #UNDEFINED} that the calling process is not a member of the specified group.
+         */
+        public int rank() {return Native.MPI_Group_rank(mPtr);}
+        /**
+         * @return The size of the specified group.
+         */
+        public int size() {return Native.MPI_Group_size(mPtr);}
+        
+        /** Free the group. */
+        @Override public void shutdown() {
+            if (mPtr != Native.MPI_GROUP_NULL) {
+                Native.MPI_Group_free(mPtr);
+                mPtr = Native.MPI_GROUP_NULL;
+            }
+        }
+        
+        
+        /// MPI Group Functions
+        /**
+         * Creates a new group from the difference between two existing groups.
+         * @param aRHS The second group.
+         * @return A new {@link MPI.Group} that contains all elements in the first group that
+         * are not present in the second group.
+         * The function returns {@link MPI.Group#EMPTY} if the new group is empty.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-difference-function"> MPI_Group_difference function </a>
+         */
+        public Group difference(Group aRHS) {return of(Native.MPI_Group_difference(mPtr, aRHS.mPtr));}
+        
+        /**
+         * A group constructor that is used to define a new group by deleting ranks from an existing group.
+         *
+         * @param aRanks The arrays of processes in group that are not to appear in newgroup.
+         *               The specified ranks must be valid in the existing group.
+         *               Each element in the array must be distinct.
+         *               If the array is empty then the new group will be identical to the existing group.
+         *
+         * @return A new {@link MPI.Group} that is derived from the existing group.
+         * The order of the existing group is preserved in the new group.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-excl-function"> MPI_Group_excl function </a>
+         */
+        public Group excl(int[] aRanks) {return of(Native.MPI_Group_excl(mPtr, aRanks));}
+        
+        /**
+         * Creates a new group that contains a subset of the processes in an existing group.
+         *
+         * @param aRanks The processes to be included in the new group.
+         *
+         * @return A new {@link MPI.Group}, which contains the included
+         * processes in the order that they are specified in the ranks parameter.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-incl-function"> MPI_Group_incl function </a>
+         */
+        public Group incl(int[] aRanks) {return of(Native.MPI_Group_incl(mPtr, aRanks));}
+        
+        /**
+         * Creates a new group from the intersection of two existing groups.
+         * @param aRHS The second group.
+         * @return A new {@link MPI.Group} with those elements that are present in both groups.
+         * The function returns {@link MPI.Group#EMPTY} if the new group is empty.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-intersection-function"> MPI_Group_intersection function </a>
+         */
+        public Group intersection(Group aRHS) {return of(Native.MPI_Group_intersection(mPtr, aRHS.mPtr));}
+        
+        /**
+         * Creates a new group from the union of two existing groups.
+         * @param aRHS The second group.
+         * @return A new {@link MPI.Group} that represents all elements in either group.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-union-function"> MPI_Group_union function </a>
+         */
+        public Group union(Group aRHS) {return of(Native.MPI_Group_union(mPtr, aRHS.mPtr));}
+    }
+    
+    public static class Comm implements IAutoShutdown {
+        public final static Comm
+          NULL  = new Comm(Native.MPI_COMM_NULL )
+        , WORLD = new Comm(Native.MPI_COMM_WORLD)
+        , SELF  = new Comm(Native.MPI_COMM_SELF )
+        ;
+        static Comm of(long aPtr) {
+            if (aPtr == Native.MPI_COMM_NULL ) return NULL ;
+            if (aPtr == Native.MPI_COMM_WORLD) return WORLD;
+            if (aPtr == Native.MPI_COMM_SELF ) return SELF ;
+            return new Comm(aPtr);
+        }
+        
+        private long mPtr;
+        private Comm(long aPtr) {mPtr = aPtr;}
         @ApiStatus.Internal public long ptr_() {return mPtr;}
         
         /** @return the number of calling process within the group of the communicator. */
         public int rank() {return Native.MPI_Comm_rank(mPtr);}
         /** @return the number of processes in the group for the communicator. */
         public int size() {return Native.MPI_Comm_size(mPtr);}
+        
+        /** Duplicate the communicator. */
+        public Comm copy() {return of(Native.MPI_Comm_dup(mPtr));}
+        
+        /**
+         * Frees the communicator that is allocated with the {@link MPI.Comm#copy}, {@link MPI.Comm#create},
+         * or {@link MPI.Comm#split} functions.
+         */
+        @Override public void shutdown() {
+            if (mPtr != Native.MPI_COMM_NULL) {
+                Native.MPI_Comm_free(mPtr);
+                mPtr = Native.MPI_COMM_NULL;
+            }
+        }
         
         
         /// MPI Collective Functions
@@ -264,6 +378,49 @@ public class MPI {
         public <T> void reduce(T rRecvBuf, int aCount, Op aOp, int aRoot) {
             Native.MPI_Reduce(Native.MPI_IN_PLACE, rRecvBuf, aCount, aOp.mPtr, aRoot, mPtr);
         }
+        
+        
+        /// MPI Communicator Functions
+        /**
+         * Extracts a subset a group of processes for the purpose of separate Multiple Instruction
+         * Multiple Data (MIMD) computation in a separate communicator.
+         *
+         * @param aGroup The group that defines the requested subset of the processes in the
+         *               source communicator.
+         * @return A new {@link MPI.Comm}.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-create-function"> MPI_Comm_create function </a>
+         */
+        public Comm create(Group aGroup) {return of(Native.MPI_Comm_create(mPtr, aGroup.mPtr));}
+        
+        /**
+         * Partitions the group that is associated with the specified communicator into
+         * a specified number of disjoint subgroups.
+         *
+         * @param aColor The new communicator that the calling process is to be assigned to.
+         *               The value of color must be non-negative.
+         *               <p>
+         *               If a process specifies the color value {@link #UNDEFINED},
+         *               the function returns {@link MPI.Comm#NULL} in the newcomm parameter to the calling process.
+         *
+         * @param aKey The relative rank of the calling process in the group of the new communicator.
+         *             For details on using the key and color parameters, see Remarks.
+         *
+         * @return A new {@link MPI.Comm}.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-split-function"> MPI_Comm_split function </a>
+         */
+        public Comm split(int aColor, int aKey) {return of(Native.MPI_Comm_split(mPtr, aColor, aKey));}
+        public Comm split(int aColor) {return split(aColor, rank());}
+        
+        
+        /// MPI Group Functions
+        /**
+         * Retrieves the group that is associated with a communicator.
+         * @return The new {@link MPI.Group} that is associated with the specified communicator.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-group-function"> MPI_Comm_group function </a>
+         */
+        public Group group() {return Group.of(Native.MPI_Comm_group(mPtr));}
         
         
         /// MPI Point to Point Functions
@@ -494,6 +651,9 @@ public class MPI {
             System.load(UT.IO.toAbsolutePath(MPILIB_PATH));
             
             // 初始化 final 常量
+            MPI_GROUP_NULL  = getMpiGroupNull_();
+            MPI_GROUP_EMPTY = getMpiGroupEmpty_();
+            
             MPI_COMM_NULL  = getMpiCommNull_();
             MPI_COMM_WORLD = getMpiCommWorld_();
             MPI_COMM_SELF  = getMpiCommSelf_();
@@ -547,7 +707,13 @@ public class MPI {
             MPI_ROOT       = getMpiRoot_();
             
             MPI_ANY_TAG = getMpiAnyTag_();
+            
+            MPI_UNDEFINED = getMpiUndefined_();
         }
+        
+        public final static long MPI_GROUP_NULL, MPI_GROUP_EMPTY;
+        private native static long getMpiGroupNull_();
+        private native static long getMpiGroupEmpty_();
         
         public final static long MPI_COMM_NULL, MPI_COMM_WORLD, MPI_COMM_SELF;
         private native static long getMpiCommNull_();
@@ -645,6 +811,10 @@ public class MPI {
         /* Used in: Tag */
         public final static int MPI_ANY_TAG;
         private native static int getMpiAnyTag_();
+        
+        /* Used in: Count, Index, Rank, Color, Toplogy, Precision, Exponent range  */
+        public final static int MPI_UNDEFINED;
+        private native static int getMpiUndefined_();
         
         
         /// 基础功能
@@ -931,6 +1101,175 @@ public class MPI {
             MPI_Reduce0(aSendBuf==MPI_IN_PLACE, aSendBuf, rRecvBuf, aCount, datatypeOf_(aSendBuf), aOp, aRoot, aComm);
         }
         private native static void MPI_Reduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, int aRoot, long aComm);
+        
+        
+        
+        /// MPI Communicator Functions
+        /**
+         * Extracts a subset a group of processes for the purpose of separate Multiple Instruction
+         * Multiple Data (MIMD) computation in a separate communicator.
+         *
+         * @param aComm The source communicator.
+         * @param aGroup The group that defines the requested subset of the processes in the
+         *               source communicator.
+         * @return An MPI_Comm handle to a new communicator.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-create-function"> MPI_Comm_create function </a>
+         */
+        public native static long MPI_Comm_create(long aComm, long aGroup);
+        
+        /**
+         * Duplicates an existing communicator with associated key values. For each key value,
+         * the respective copy callback function determines the attribute value that is associated
+         * with this key in the new communicator.
+         * The copy callback can, for example, delete the attribute from the new communicator.
+         *
+         * @param aComm The communicator to duplicate.
+         * @return An MPI_Comm handle to a new communicator. The new communicator has the same
+         * group or groups and any copied cached information from the source, but it contains
+         * new context information.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-dup-function"> MPI_Comm_dup function </a>
+         */
+        public native static long MPI_Comm_dup(long aComm);
+        
+        /**
+         * Frees a communicator that is allocated with the {@link #MPI_Comm_dup}, {@link #MPI_Comm_create},
+         * or {@link #MPI_Comm_split} functions.
+         *
+         * @param aComm The communicator handle to free.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-free-function"> MPI_Comm_free function </a>
+         */
+        public native static void MPI_Comm_free(long aComm);
+        
+        /**
+         * Partitions the group that is associated with the specified communicator into
+         * a specified number of disjoint subgroups.
+         *
+         * @param aComm The communicator to split.
+         *
+         * @param aColor The new communicator that the calling process is to be assigned to.
+         *               The value of color must be non-negative.
+         *               <p>
+         *               If a process specifies the color value {@link #MPI_UNDEFINED},
+         *               the function returns {@link #MPI_COMM_NULL} in the newcomm parameter to the calling process.
+         *
+         * @param aKey The relative rank of the calling process in the group of the new communicator.
+         *             For details on using the key and color parameters, see Remarks.
+         *
+         * @return An MPI_Comm handle to a new communicator.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-split-function"> MPI_Comm_split function </a>
+         */
+        public native static long MPI_Comm_split(long aComm, int aColor, int aKey);
+        
+        
+        
+        /// MPI Group Functions
+        /**
+         * Retrieves the group that is associated with a communicator.
+         *
+         * @param aComm The communicator on which to base the group.
+         * @return The MPI_Group handle to the group that is associated with the specified communicator.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-group-function"> MPI_Comm_group function </a>
+         */
+        public native static long MPI_Comm_group(long aComm);
+        
+        /**
+         * Creates a new group from the difference between two existing groups.
+         *
+         * @param aGroup1 The first group.
+         * @param aGroup2 The second group.
+         * @return A pointer to a handle that represents a new group that contains all elements in the first group that
+         * are not present in the second group. The function returns {@link #MPI_GROUP_EMPTY} if the new group is empty.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-difference-function"> MPI_Group_difference function </a>
+         */
+        public native static long MPI_Group_difference(long aGroup1, long aGroup2);
+        
+        /**
+         * A group constructor that is used to define a new group by deleting ranks from an existing group.
+         *
+         * @param aGroup The existing group.
+         *
+         * @param aRanks The arrays of processes in group that are not to appear in newgroup.
+         *               The specified ranks must be valid in the existing group.
+         *               Each element in the array must be distinct.
+         *               If the array is empty then the new group will be identical to the existing group.
+         *
+         * @return A pointer to a handle that represents the new group that is derived from the existing group.
+         * The order of the existing group is preserved in the new group.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-excl-function"> MPI_Group_excl function </a>
+         */
+        public native static long MPI_Group_excl(long aGroup, int[] aRanks);
+        
+        /**
+         * Frees a group.
+         * @param aGroup Group to free.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-free-function"> MPI_Group_free function </a>
+         */
+        public native static void MPI_Group_free(long aGroup);
+        
+        /**
+         * Creates a new group that contains a subset of the processes in an existing group.
+         *
+         * @param aGroup The existing group.
+         *
+         * @param aRanks The processes to be included in the new group.
+         *
+         * @return A pointer to a handle that represents the new group, which contains the included
+         * processes in the order that they are specified in the ranks parameter.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-incl-function"> MPI_Group_incl function </a>
+         */
+        public native static long MPI_Group_incl(long aGroup, int[] aRanks);
+        
+        /**
+         * Creates a new group from the intersection of two existing groups.
+         *
+         * @param aGroup1 The first group.
+         * @param aGroup2 The second group.
+         * @return A pointer to a handle that represents a new group with those elements that are present in both groups.
+         * The function returns {@link #MPI_GROUP_EMPTY} if the new group is empty.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-intersection-function"> MPI_Group_intersection function </a>
+         */
+        public native static long MPI_Group_intersection(long aGroup1, long aGroup2);
+        
+        /**
+         * Returns the rank of the calling process in the specified group.
+         *
+         * @param aGroup Specifies the group to query.
+         * @return An integer contains the rank of the calling process in the specified group.
+         * A value of {@link #MPI_UNDEFINED} that the calling process is not a member of the specified group.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-rank-function"> MPI_Group_rank function </a>
+         */
+        public native static int MPI_Group_rank(long aGroup);
+        
+        /**
+         * Retrieves the size of the specified group.
+         *
+         * @param aGroup The group to evaluate.
+         * @return The size of the specified group.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-size-function"> MPI_Group_size function </a>
+         */
+        public native static int MPI_Group_size(long aGroup);
+        
+        /**
+         * Creates a new group from the union of two existing groups.
+         *
+         * @param aGroup1 The first group.
+         * @param aGroup2 The second group.
+         * @return A pointer to a handle that represents a new group that represents all elements in either group.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-union-function"> MPI_Group_union function </a>
+         */
+        public native static long MPI_Group_union(long aGroup1, long aGroup2);
         
         
         

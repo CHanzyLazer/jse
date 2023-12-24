@@ -4,7 +4,6 @@ import jtool.atom.IAtom;
 import jtool.atom.IAtomData;
 import jtool.atom.IXYZ;
 import jtool.code.UT;
-import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.iofile.IInFile;

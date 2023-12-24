@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "mpi.h"
 #include "jtool_parallel_MPI_Native.h"
@@ -36,63 +35,21 @@ void releaseJArray(JNIEnv *aEnv, jobject aJArray, MPI_Datatype aDataType, void *
     }
 }
 
-int *parse2int(JNIEnv *aEnv, jobject aJArray, MPI_Datatype aDataType) {
-    if (aJArray==NULL) return NULL;
-    jsize tLen = (*aEnv)->GetArrayLength(aEnv, aJArray);
-    int *rOutBuf = (int *) malloc(tLen * sizeof(int));
-    
-    switch (aDataType) {
-    case MPI_SIGNED_CHAR: {
-        jbyte *tBuf = (*aEnv)->GetByteArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseByteArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_DOUBLE: {
-        jdouble *tBuf = (*aEnv)->GetDoubleArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseDoubleArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_UNSIGNED_CHAR:  {
-        jboolean *tBuf = (*aEnv)->GetBooleanArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseBooleanArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_UNSIGNED_SHORT: {
-        jchar *tBuf = (*aEnv)->GetCharArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseCharArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_SHORT: {
-        jshort *tBuf = (*aEnv)->GetShortArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseShortArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_INT32_T: {
-        jint *tBuf = (*aEnv)->GetIntArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseIntArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_INT64_T: {
-        jlong *tBuf = (*aEnv)->GetLongArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseLongArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    case MPI_FLOAT: {
-        jfloat *tBuf = (*aEnv)->GetFloatArrayElements(aEnv, aJArray, NULL);
-        for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (int)tBuf[i];
-        (*aEnv)->ReleaseFloatArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);
-        return rOutBuf;
-    }
-    default: {return NULL;}
-    }
+
+#define GEN_PARSE_JANY_TO_ANY(R, T, TF)                                             \
+R *parseJ##T##2##R (JNIEnv *aEnv, j##T##Array aJArray) {                            \
+    if (aJArray==NULL) return NULL;                                                 \
+    jsize tLen = (*aEnv)->GetArrayLength(aEnv, aJArray);                            \
+    R *rOutBuf = (R *) malloc(tLen * sizeof(R));                                    \
+                                                                                    \
+    j##T *tBuf = (*aEnv)->Get##TF##ArrayElements(aEnv, aJArray, NULL);              \
+    for (jsize i = 0; i < tLen; ++i) rOutBuf[i] = (R)tBuf[i];                       \
+    (*aEnv)->Release##TF##ArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);            \
+    return rOutBuf;                                                                 \
 }
+
+GEN_PARSE_JANY_TO_ANY(int, int, Int)
+
 
 
 char **parseArgs(JNIEnv *aEnv, jobjectArray aArgs, int *rLen) {
@@ -126,6 +83,8 @@ void freeArgs(char **aArgs, int aLen) {
 }
 
 
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiGroupNull_1 (JNIEnv *aEnv, jclass aClazz) {return MPI_GROUP_NULL ;}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiGroupEmpty_1(JNIEnv *aEnv, jclass aClazz) {return MPI_GROUP_EMPTY;}
 
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiCommNull_1 (JNIEnv *aEnv, jclass aClazz) {return MPI_COMM_NULL ;}
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiCommWorld_1(JNIEnv *aEnv, jclass aClazz) {return MPI_COMM_WORLD;}
@@ -181,6 +140,8 @@ JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiRoot_1     (JNI
 
 JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiAnyTag_1(JNIEnv *aEnv, jclass aClazz) {return MPI_ANY_TAG;}
 
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiUndefined_1(JNIEnv *aEnv, jclass aClazz) {return MPI_UNDEFINED;}
+
 
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Init(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs) {
     int tLen;
@@ -234,8 +195,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allgatherv0(JNIE
     MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
     void *tSendBuf = getJArray(aEnv, aSendArray, tSendType);
     void *rRecvBuf = getJArray(aEnv, rRecvArray, tRecvType);
-    int *tRecvCounts = parse2int(aEnv, aRecvCounts, MPI_INT32_T);
-    int *tDispls     = parse2int(aEnv, aDispls    , MPI_INT32_T);
+    int *tRecvCounts = parseJint2int(aEnv, aRecvCounts);
+    int *tDispls     = parseJint2int(aEnv, aDispls    );
     MPI_Allgatherv(aInPlace ? MPI_IN_PLACE : tSendBuf, aSendCount, tSendType, rRecvBuf, tRecvCounts, tDispls, tRecvType, tComm);
     releaseJArray(aEnv, aSendArray, tSendType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
     releaseJArray(aEnv, rRecvArray, tRecvType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
@@ -277,8 +238,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Gatherv0(JNIEnv 
     MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
     void *tSendBuf = getJArray(aEnv, aSendArray, tSendType);
     void *rRecvBuf = getJArray(aEnv, rRecvArray, tRecvType);
-    int *tRecvCounts = parse2int(aEnv, aRecvCounts, MPI_INT32_T);
-    int *tDispls     = parse2int(aEnv, aDispls    , MPI_INT32_T);
+    int *tRecvCounts = parseJint2int(aEnv, aRecvCounts);
+    int *tDispls     = parseJint2int(aEnv, aDispls    );
     MPI_Gatherv(aInPlace ? MPI_IN_PLACE : tSendBuf, aSendCount, tSendType, rRecvBuf, tRecvCounts, tDispls, tRecvType, aRoot, tComm);
     releaseJArray(aEnv, aSendArray, tSendType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
     releaseJArray(aEnv, rRecvArray, tRecvType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
@@ -295,6 +256,93 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Reduce0(JNIEnv *
     releaseJArray(aEnv, aSendArray, tDataType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
     releaseJArray(aEnv, rRecvArray, tDataType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
 }
+
+
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1create(JNIEnv *aEnv, jclass aClazz, jlong aComm, jlong aGroup) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Group tGroup = (MPI_Group) (intptr_t) aGroup;
+    MPI_Comm nComm;
+    MPI_Comm_create(tComm, tGroup, &nComm);
+    return nComm;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1dup(JNIEnv *aEnv, jclass aClazz, jlong aComm) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Comm nComm;
+    MPI_Comm_dup(tComm, &nComm);
+    return nComm;
+}
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1free(JNIEnv *aEnv, jclass aClazz, jlong aComm) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Comm_free(&tComm);
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1split(JNIEnv *aEnv, jclass aClazz, jlong aComm, jint aColor, jint aKey) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Comm nComm;
+    MPI_Comm_split(tComm, aColor, aKey, &nComm);
+    return nComm;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1group(JNIEnv *aEnv, jclass aClazz, jlong aComm) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Group nGroup;
+    MPI_Comm_group(tComm, &nGroup);
+    return nGroup;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1difference(JNIEnv *aEnv, jclass aClazz, jlong aGroup1, jlong aGroup2) {
+    MPI_Group tGroup1 = (MPI_Group) (intptr_t) aGroup1;
+    MPI_Group tGroup2 = (MPI_Group) (intptr_t) aGroup2;
+    MPI_Group nGroup;
+    MPI_Group_difference(tGroup1, tGroup2, &nGroup);
+    return nGroup;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1excl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jintArray aRanks) {
+    MPI_Group tGroup = (MPI_Group) (intptr_t) aGroup;
+    jsize tLen = aRanks==NULL ? 0 : (*aEnv)->GetArrayLength(aEnv, aRanks);
+    int *tRanks = parseJint2int(aEnv, aRanks);
+    MPI_Group nGroup;
+    MPI_Group_excl(tGroup, tLen, tRanks, &nGroup);
+    if (tRanks != NULL) free(tRanks);
+    return nGroup;
+}
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1free(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
+    MPI_Comm tGroup = (MPI_Comm) (intptr_t) aGroup;
+    MPI_Group_free(&tGroup);
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1incl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jintArray aRanks) {
+    MPI_Group tGroup = (MPI_Group) (intptr_t) aGroup;
+    jsize tLen = aRanks==NULL ? 0 : (*aEnv)->GetArrayLength(aEnv, aRanks);
+    int *tRanks = parseJint2int(aEnv, aRanks);
+    MPI_Group nGroup;
+    MPI_Group_incl(tGroup, tLen, tRanks, &nGroup);
+    if (tRanks != NULL) free(tRanks);
+    return nGroup;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1intersection(JNIEnv *aEnv, jclass aClazz, jlong aGroup1, jlong aGroup2) {
+    MPI_Group tGroup1 = (MPI_Group) (intptr_t) aGroup1;
+    MPI_Group tGroup2 = (MPI_Group) (intptr_t) aGroup2;
+    MPI_Group nGroup;
+    MPI_Group_intersection(tGroup1, tGroup2, &nGroup);
+    return nGroup;
+}
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1rank(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
+    MPI_Comm tGroup = (MPI_Comm) (intptr_t) aGroup;
+    int tRank;
+    MPI_Group_rank(tGroup, &tRank);
+    return tRank;
+}
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1size(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
+    MPI_Comm tGroup = (MPI_Comm) (intptr_t) aGroup;
+    int tSize;
+    MPI_Group_size(tGroup, &tSize);
+    return tSize;
+}
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1union(JNIEnv *aEnv, jclass aClazz, jlong aGroup1, jlong aGroup2) {
+    MPI_Group tGroup1 = (MPI_Group) (intptr_t) aGroup1;
+    MPI_Group tGroup2 = (MPI_Group) (intptr_t) aGroup2;
+    MPI_Group nGroup;
+    MPI_Group_union(tGroup1, tGroup2, &nGroup);
+    return nGroup;
+}
+
 
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Send0(JNIEnv *aEnv, jclass aClazz, jobject aArray, jint aCount, jlong aDataType, jint aDest, jint aTag, jlong aComm) {
     MPI_Datatype tDataType = (MPI_Datatype) (intptr_t) aDataType;

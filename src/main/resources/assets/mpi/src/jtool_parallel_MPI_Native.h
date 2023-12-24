@@ -9,6 +9,22 @@ extern "C" {
 #endif
 /*
  * Class:     jtool_parallel_MPI_Native
+ * Method:    getMpiGroupNull_
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiGroupNull_1
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    getMpiGroupEmpty_
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_getMpiGroupEmpty_1
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
  * Method:    getMpiCommNull_
  * Signature: ()J
  */
@@ -393,6 +409,14 @@ JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiAnyTag_1
 
 /*
  * Class:     jtool_parallel_MPI_Native
+ * Method:    getMpiUndefined_
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiUndefined_1
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
  * Method:    MPI_Init
  * Signature: ([Ljava/lang/String;)V
  */
@@ -494,6 +518,110 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Gatherv0
  */
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Reduce0
   (JNIEnv *, jclass, jboolean, jobject, jobject, jint, jlong, jlong, jint, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Comm_create
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1create
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Comm_dup
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1dup
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Comm_free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1free
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Comm_split
+ * Signature: (JII)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1split
+  (JNIEnv *, jclass, jlong, jint, jint);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Comm_group
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1group
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_difference
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1difference
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_excl
+ * Signature: (J[I)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1excl
+  (JNIEnv *, jclass, jlong, jintArray);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1free
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_incl
+ * Signature: (J[I)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1incl
+  (JNIEnv *, jclass, jlong, jintArray);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_intersection
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1intersection
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_rank
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1rank
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_size
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1size
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Group_union
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1union
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     jtool_parallel_MPI_Native

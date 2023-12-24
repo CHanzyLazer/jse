@@ -10,8 +10,7 @@ import jtool.vasp.POSCAR
 import static jtool.code.CS.MASS
 
 /**
- * 测试本地原生的 lammps 不输入 in 的情况下运行，
- * 考虑 mpi 的情况
+ * 测试本地原生的 lammps 在拆分的 Comm 下运行
  */
 
 // CuZr 需要开启 MANYBODY 包
@@ -21,13 +20,15 @@ NativeLmp.Conf.REBUILD = false; // 如果没有这个包需要开启此选项重
 MPI.init();
 int me = MPI.Comm.WORLD.rank();
 
+final int color = me.intdiv(4);
+
 double T = 1400;
 double P = 0.0;
-int seed = 4587281;
+int seed = [1895402606, 153909642, 1842492275, 285027627, 1987270005, 135951474][color];
 
 def data = Lmpdat.fromAtomData(Structures.from(POSCAR.read('vasp/data/MgCu2.poscar').setBoxScale(1.030).opt().mapType({(int)3- it.type()}), 4), [MASS.Cu, MASS.Zr]);
 
-try (def lammps = new NativeLmp()) {
+try (def subComm = MPI.Comm.WORLD.split(color); def lammps = new NativeLmp(null, subComm)) {
     lammps.command('units           metal');
     lammps.command('boundary        p p p');
     lammps.command('timestep        0.002');
@@ -42,10 +43,9 @@ try (def lammps = new NativeLmp()) {
     lammps.command("fix             2 all temp/berendsen $T $T 0.2");
     lammps.command("fix             3 all press/berendsen iso $P $P 2000.0");
     lammps.command('run             50000');
-    lammps.command('write_data      lmp/.temp/data-laves1-out');
+    lammps.command("write_data      lmp/.temp/data-laves1-out$color");
     lammps.data().write("lmp/.temp/data-laves1-out-$me");
 }
-// Total wall time: 0:04:11 (mpi np 1)
 // Total wall time: 0:01:06 (mpi np 4)
 
 
