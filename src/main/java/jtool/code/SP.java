@@ -1,6 +1,5 @@
 package jtool.code;
 
-import jep.python.PyBuiltins;
 import jtool.Main;
 import jtool.atom.AbstractAtoms;
 import jtool.atom.Structures;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -369,35 +367,23 @@ public class SP {
         
         /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
         private synchronized static void installJep_() throws Exception {
-            // 首先获取源码路径，这里直接检测是否有 jep-$JEP_VERSION.zip
-            String tJepZipPath = PYPKG_DIR+"jep-"+JEP_VERSION+".zip";
-            // 如果没有 jep 包则直接下载，直接从 github 上下载保证结果稳定
-            if (!UT.IO.isFile(tJepZipPath)) {
-                System.out.printf("JEP INIT INFO: No jep source code in %s, downloading...\n", PYPKG_DIR);
-                UT.IO.copy(new URL("https://github.com/ninia/jep/archive/refs/tags/v"+JEP_VERSION+".zip"), tJepZipPath);
-                System.out.println("JEP INIT INFO: jep source code downloading finished.");
-            }
-            // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
             String tWorkingDir = WORKING_DIR.replaceAll("%n", "jepsrc");
-            UT.IO.removeDir(tWorkingDir);
-            UT.IO.zip2dir(tJepZipPath, tWorkingDir);
+            // 首先获取源码路径，这里直接从 resource 里输出
+            String tJepZipPath = tWorkingDir+"jep-"+JEP_VERSION+".zip";
+            UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
+            // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
+            String tJepDir = tWorkingDir+"jep/";
+            UT.IO.removeDir(tJepDir);
+            UT.IO.zip2dir(tJepZipPath, tJepDir);
             // 安装 jep 包，这里直接通过 setup.py 来安装
             System.out.println("JEP INIT INFO: Installing jep from source code...");
-            // 首先获取源码路径，这里直接检测 jep 开头的文件夹
-            String[] tList = UT.IO.list(tWorkingDir);
-            String tJepDir = null;
-            for (String tName : tList) if (tName.contains("jep")) {
-                tJepDir = tName;
-            }
-            if (tJepDir == null) throw new Exception("JEP INIT ERROR: No Jep source code in "+tWorkingDir);
-            tJepDir = tWorkingDir+tJepDir+"/";
             // 直接通过系统指令来编译 Jep 的库，关闭输出
             EXE.setNoSTDOutput().setNoERROutput();
             EXE.system(String.format("cd %s; python setup.py build", tJepDir));
             EXE.setNoSTDOutput(false).setNoERROutput(false);
             // 获取 build 目录下的 lib 文件夹
             String tJepBuildDir = tJepDir+"build/";
-            tList = UT.IO.list(tJepBuildDir);
+            String[] tList = UT.IO.list(tJepBuildDir);
             String tJepLibDir = null;
             for (String tName : tList) if (tName.contains("lib")) {
                 tJepLibDir = tName;
