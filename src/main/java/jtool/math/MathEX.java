@@ -12,7 +12,7 @@ import jtool.math.function.Func3;
 import jtool.math.vector.IVector;
 import jtool.parallel.ParforThreadPool;
 import jtool.parallel.VectorCache;
-import jtoolex.algorithm.Geometry;
+import jtoolex.voronoi.Geometry;
 import net.jafama.FastMath;
 import org.jetbrains.annotations.ApiStatus;
 
