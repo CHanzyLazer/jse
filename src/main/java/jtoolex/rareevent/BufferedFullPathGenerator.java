@@ -3,7 +3,6 @@ package jtoolex.rareevent;
 import jtool.atom.IAtomData;
 import jtool.parallel.LocalRandom;
 import jtool.parallel.AbstractHasAutoShutdown;
-import jtool.parallel.IAutoShutdown;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Iterator;
@@ -109,11 +108,9 @@ public class BufferedFullPathGenerator<T> extends AbstractHasAutoShutdown implem
     
     /** 默认程序结束时会顺便关闭内部的 mPathGenerator, mParameterCalculator */
     @Override protected void shutdownInternal_() {
-        if (mPathGenerator instanceof IAutoShutdown) ((IAutoShutdown)mPathGenerator).shutdown();
-        if (mParameterCalculator instanceof IAutoShutdown) ((IAutoShutdown)mParameterCalculator).shutdown();
+        mPathGenerator.shutdown();
     }
     @Override protected void closeInternal_() {
-        if (mPathGenerator instanceof AutoCloseable) try {((AutoCloseable)mPathGenerator).close();} catch (Exception ignored) {}
-        if (mParameterCalculator instanceof AutoCloseable) try {((AutoCloseable)mParameterCalculator).close();} catch (Exception ignored) {}
+        mPathGenerator.close();
     }
 }

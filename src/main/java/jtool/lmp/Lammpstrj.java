@@ -30,8 +30,8 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
     
     private List<SubLammpstrj> mData;
     
-    Lammpstrj(SubLammpstrj... aData) {mData = NewCollections.from(aData);}
-    Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
+    public Lammpstrj(SubLammpstrj... aData) {mData = NewCollections.from(aData);}
+    public Lammpstrj(List<SubLammpstrj> aData) {mData = aData;}
     
     /** AbstractList stuffs */
     @Override public int size() {return mData.size();}

@@ -1,7 +1,7 @@
 package jtool.parallel;
 
 
-import org.jetbrains.annotations.VisibleForTesting;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 内部包含可以关闭的类，提供接口来是否在关闭时同时关闭内部的 IAutoShutdown
@@ -16,7 +16,7 @@ public abstract class AbstractHasAutoShutdown implements IHasAutoShutdown {
     }
     
     /** 注意有些类（如线程池）的 close 逻辑不完全和 shutdown 相同，这里需要专门使用内部的 close */
-    @VisibleForTesting @Override public final void close() {
+    @ApiStatus.Internal @Override public final void close() {
         close_();
         if (!mDoNotShutdown) closeInternal_();
     }

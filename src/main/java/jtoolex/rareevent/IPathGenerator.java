@@ -1,6 +1,8 @@
 package jtoolex.rareevent;
 
 import jtool.atom.IAtomData;
+import jtool.parallel.IAutoShutdown;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 
@@ -14,7 +16,8 @@ import static jtool.code.CS.RANDOM;
  * @author liqa
  * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
-public interface IPathGenerator<T> {
+@ApiStatus.Experimental
+public interface IPathGenerator<T> extends IAutoShutdown {
     /** 获取初始点，不需要任何输入参数 */
     T initPoint(long aSeed);
     default T initPoint() {return initPoint(RANDOM.nextLong());}
@@ -25,4 +28,6 @@ public interface IPathGenerator<T> {
     double timeOf(T aPoint);
     /** 获取精简一个点的数据，用于减少内存占用，也可以用于区分一条路径上继续和从存储的点继续两种不同的情况；对于lammps则需要返回没有速率的点来重新分配速率 */
     default T reducedPoint(T aPoint) {return aPoint;}
+    
+    default void shutdown() {/**/}
 }

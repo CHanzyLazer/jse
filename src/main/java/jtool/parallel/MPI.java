@@ -449,7 +449,7 @@ public class MPI {
         /**
          * Performs a receive operation and does not return until a matching message is received.
          *
-         * @param aBuf The data array to be received
+         * @param rBuf The data array to be received
          *
          * @param aCount The number of elements in the buffer. If the data part of the message
          *               is empty, set the count parameter to 0.
@@ -464,11 +464,11 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-recv-function"> MPI_Recv function </a>
          */
-        public <T> void recv(T aBuf, int aCount, int aSource, int aTag) {
-            Native.MPI_Recv(aBuf, aCount, aSource, aTag, mPtr);
+        public <T> void recv(T rBuf, int aCount, int aSource, int aTag) {
+            Native.MPI_Recv(rBuf, aCount, aSource, aTag, mPtr);
         }
-        public <T> void recv(T aBuf, int aCount, int aSource) {
-            Native.MPI_Recv(aBuf, aCount, aSource, Tag.ANY, mPtr);
+        public <T> void recv(T rBuf, int aCount, int aSource) {
+            Native.MPI_Recv(rBuf, aCount, aSource, Tag.ANY, mPtr);
         }
     }
     
@@ -1299,7 +1299,7 @@ public class MPI {
         /**
          * Performs a receive operation and does not return until a matching message is received.
          *
-         * @param aBuf The data array to be received
+         * @param rBuf The data array to be received
          *
          * @param aCount The number of elements in the buffer. If the data part of the message
          *               is empty, set the count parameter to 0.
@@ -1316,10 +1316,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-recv-function"> MPI_Recv function </a>
          */
-        public static <T> void MPI_Recv(T aBuf, int aCount, int aSource, int aTag, long aComm) {
-            MPI_Recv0(aBuf, aCount, datatypeOf_(aBuf), aSource, aTag, aComm);
+        public static <T> void MPI_Recv(T rBuf, int aCount, int aSource, int aTag, long aComm) {
+            MPI_Recv0(rBuf, aCount, datatypeOf_(rBuf), aSource, aTag, aComm);
         }
-        private native static void MPI_Recv0(Object aBuf, int aCount, long aDataType, int aSource, int aTag, long aComm);
+        private native static void MPI_Recv0(Object rBuf, int aCount, long aDataType, int aSource, int aTag, long aComm);
         
         
         

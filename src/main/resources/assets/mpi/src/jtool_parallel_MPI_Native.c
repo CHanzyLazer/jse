@@ -351,12 +351,12 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Send0(JNIEnv *aE
     MPI_Send(tBuf, aCount, tDataType, aDest, aTag, tComm);
     releaseJArray(aEnv, aArray, tDataType, tBuf, JNI_ABORT); // read mode, Do not update the data on the Java heap. Free the space used by the copy.
 }
-JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Recv0(JNIEnv *aEnv, jclass aClazz, jobject aArray, jint aCount, jlong aDataType, jint aSource, jint aTag, jlong aComm) {
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Recv0(JNIEnv *aEnv, jclass aClazz, jobject rArray, jint aCount, jlong aDataType, jint aSource, jint aTag, jlong aComm) {
     MPI_Datatype tDataType = (MPI_Datatype) (intptr_t) aDataType;
     MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
-    void *tBuf = getJArray(aEnv, aArray, tDataType);
-    MPI_Recv(tBuf, aCount, tDataType, aSource, aTag, tComm, MPI_STATUS_IGNORE); // no return Status, because its field name is unstable
-    releaseJArray(aEnv, aArray, tDataType, tBuf, 0); // write mode, Update the data on the Java heap. Free the space used by the copy.
+    void *rBuf = getJArray(aEnv, rArray, tDataType);
+    MPI_Recv(rBuf, aCount, tDataType, aSource, aTag, tComm, MPI_STATUS_IGNORE); // no return Status, because its field name is unstable
+    releaseJArray(aEnv, rArray, tDataType, rBuf, 0); // write mode, Update the data on the Java heap. Free the space used by the copy.
 }
 
 

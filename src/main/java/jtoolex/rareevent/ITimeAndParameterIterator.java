@@ -1,5 +1,6 @@
 package jtoolex.rareevent;
 
+import jtool.parallel.IAutoShutdown;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Iterator;
@@ -9,7 +10,9 @@ import java.util.Iterator;
  * @author liqa
  */
 @ApiStatus.Experimental
-public interface ITimeAndParameterIterator<E> extends Iterator<E> {
+public interface ITimeAndParameterIterator<E> extends Iterator<E>, IAutoShutdown {
     double timeConsumed();
     double lambda();
+    
+    default void shutdown() {/**/}
 }

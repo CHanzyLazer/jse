@@ -7,18 +7,14 @@ import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.math.MathEX;
-import jtool.parallel.LocalRandom;
+import jtool.parallel.*;
 import jtool.math.vector.ILogicalVector;
 import jtool.math.vector.IVector;
 import jtool.math.vector.LogicalVector;
 import jtool.math.vector.Vectors;
-import jtool.parallel.AbstractThreadPool;
-import jtool.parallel.IHasAutoShutdown;
-import jtool.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
 
@@ -250,8 +246,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     
     /** 期望向后运行直到 lambdaA 的路径，在向前运行时会进行剪枝，用于过程 1 使用 */
-    private class BackwardPath {
-        private ITimeAndParameterIterator<T> mPath;
+    private class BackwardPath implements IAutoShutdown {
+        private final ITimeAndParameterIterator<T> mPath;
         private final LocalRandom mRNG_;
         private @Nullable Point mCurrentPoint = null;
         private double mTimeConsumed = 0.0;
@@ -259,6 +255,14 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         /** pruning stuffs */
         private int mPruningIndex = mPruningThreshold;
         private double mPruningMul = 1.0;
+        
+        private boolean mDead = false;
+        @Override public void shutdown() {
+            if (mDead) return;
+            mPath.shutdown();
+            mDead = true;
+        }
+        
         
         private BackwardPath(long aSeed) {
             mRNG_ = new LocalRandom(aSeed);
@@ -270,7 +274,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         
         /** 运行 mPath 直到到达 aLambda0，没有另一种情况以及 pruning */
         @NotNull Point nextUntilReachLambda0() {
-            if (mCurrentPoint == null) throw new RuntimeException();
+            if (mCurrentPoint == null || mDead) throw new RuntimeException();
             double oTimeConsumed = mPath.timeConsumed();
             Point tRoot = mCurrentPoint;
             while (true) {
@@ -288,6 +292,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         }
         /** 运行 mPath 直到到达 aLambdaA 或者到达 aLambdaB，这里存在 pruning */
         @Nullable Point nextUntilReachLambdaAOrLambdaB(boolean aStatTime) {
+            if (mDead) throw new RuntimeException();
             double oTimeConsumed = aStatTime ? mPath.timeConsumed() : Double.NaN;
             while (true) {
                 T tRawPoint = mPath.next(); ++mPointNum;
@@ -306,7 +311,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     if (aStatTime) mTimeConsumed += (mPath.timeConsumed() - oTimeConsumed) * mPruningMul;
                     // 到达 B 则返回 null 中断路径
                     mCurrentPoint = null;
-                    mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                    shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
                     return null;
                 }
                 // pruning，如果向前则有概率直接中断，这里直接 return null 来标记 pruning 的情况
@@ -322,7 +327,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     // 有 mPruningProb 中断，由 pruning 中断的情况直接返回 null
                     if (mRNG_.nextDouble() < mPruningProb) {
                         mCurrentPoint = null;
-                        mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                        shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
                         return null;
                     }
                     // 否则增加权重
@@ -353,83 +358,94 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         
         long rPathNum = 0;
         long rPointNum = 0;
-        // 获取初始路径的迭代器，并由此找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
-        BackwardPath tPath;
-        Point tRoot;
-        tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
-        tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
-        while (tRoot == null) {
-            rPointNum += tPath.pointNum();
-            tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
-            tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
-        }
-        
-        // 开始一般情况处理
         double rN0Eff = 0.0;
         double rTotTime0 = 0.0;
-        while (true) {
-            // 找到起始点后开始记录穿过 λ0 的点
-            Point tPoint = tPath.nextUntilReachLambda0();
-            if (!mNoCompetitive) {
-                // 如果是竞争的需要进行同步
-                synchronized (this) {
-                    rPointsOnLambda.add(tPoint);
-                }
-            } else {
-                rPointsOnLambda.add(tPoint);
-            }
-            rN0Eff += tPoint.multiple;
-            // 如果此时恰好到达 B 则重新回到 A（对于只有一个界面的情况）
-            if (tPoint.lambda >= mSurfaces.last()) {
-                // 重设路径之前记得先保存旧的时间
-                rTotTime0 += tPath.timeConsumed();
-                // 重设路径以及根节点
-                do {
-                    rPointNum += tPath.pointNum();
-                    tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
-                    tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
-                } while (tRoot == null);
-            }
-            // 每记录一个点查看总数是否达标
-            if (!mNoCompetitive) {
-                // 如果是竞争的需要进行同步
-                synchronized (this) {
-                    if (rPointsOnLambda.size() >= aN0) break;
-                }
-            } else {
-                if (rPointsOnLambda.size() >= aN0) break;
+        // 获取初始路径的迭代器，并由此找到到达 A 的起始位置，一般来说直接初始化的点都会在 A，但是不一定
+        BackwardPath tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+        Point tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+        try {
+            while (tRoot == null) {
+                rPointNum += tPath.pointNum();
+                tPath.close();
+                tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+                tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
             }
             
-            // 再一直查找下次重新到达 A
-            tRoot = tPath.nextUntilReachLambdaAOrLambdaB();
-            // 如果没有回到 A 则需要重设路径
-            if (tRoot==null || tRoot.lambda > mSurfaceA) {
-                // 重设路径之前记得先保存旧的时间
-                rTotTime0 += tPath.timeConsumed();
-                do {
-                    rPointNum += tPath.pointNum();
-                    tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
-                    tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
-                } while (tRoot == null);
+            // 开始一般情况处理
+            while (true) {
+                // 找到起始点后开始记录穿过 λ0 的点
+                Point tPoint = tPath.nextUntilReachLambda0();
+                if (!mNoCompetitive) {
+                    // 如果是竞争的需要进行同步
+                    synchronized (this) {
+                        rPointsOnLambda.add(tPoint);
+                    }
+                } else {
+                    rPointsOnLambda.add(tPoint);
+                }
+                rN0Eff += tPoint.multiple;
+                // 如果此时恰好到达 B 则重新回到 A（对于只有一个界面的情况）
+                if (tPoint.lambda >= mSurfaces.last()) {
+                    // 重设路径之前记得先保存旧的时间
+                    rTotTime0 += tPath.timeConsumed();
+                    // 重设路径以及根节点
+                    do {
+                        rPointNum += tPath.pointNum();
+                        tPath.close();
+                        tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+                        tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+                    } while (tRoot == null);
+                }
+                // 每记录一个点查看总数是否达标
+                if (!mNoCompetitive) {
+                    // 如果是竞争的需要进行同步
+                    synchronized (this) {
+                        if (rPointsOnLambda.size() >= aN0) break;
+                    }
+                } else {
+                    if (rPointsOnLambda.size() >= aN0) break;
+                }
+                
+                // 再一直查找下次重新到达 A
+                tRoot = tPath.nextUntilReachLambdaAOrLambdaB();
+                // 如果没有回到 A 则需要重设路径
+                if (tRoot==null || tRoot.lambda > mSurfaceA) {
+                    // 重设路径之前记得先保存旧的时间
+                    rTotTime0 += tPath.timeConsumed();
+                    do {
+                        rPointNum += tPath.pointNum();
+                        tPath.close();
+                        tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
+                        tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
+                    } while (tRoot == null);
+                }
             }
+            // 最后统计所有的耗时
+            rTotTime0 += tPath.timeConsumed();
+            rPointNum += tPath.pointNum();
+        } finally {
+            tPath.close();
         }
-        // 最后统计所有的耗时
-        rTotTime0 += tPath.timeConsumed();
-        rPointNum += tPath.pointNum();
-        
         return new Step1Return(rN0Eff, rTotTime0, rPointNum, rPathNum);
     }
     
     
     /** 期望向前运行直到下一个界面的路径，在向后运行时会进行剪枝，用于过程 2 使用 */
-    private class ForwardPath {
-        private ITimeAndParameterIterator<T> mPath;
+    private class ForwardPath implements IAutoShutdown {
+        private final ITimeAndParameterIterator<T> mPath;
         private final LocalRandom mRNG_;
         private final Point mStart;
         private long mPointNum = 0;
         /** pruning stuffs */
         private int mPruningIndex = mStep-mPruningThreshold;
         private double mPruningMul = 1.0;
+        
+        private boolean mDead = false;
+        @Override public void shutdown() {
+            if (mDead) return;
+            mPath.shutdown();
+            mDead = true;
+        }
         
         private ForwardPath(Point aStart, long aSeed) {
             mRNG_ = new LocalRandom(aSeed);
@@ -441,6 +457,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         
         /** 运行 mPath 直到到达 aLambdaNext 或者到达 aLambdaA，这里存在 pruning */
         @Nullable Point nextUntilReachLambdaNextOrLambdaA() {
+            if (mDead) throw new RuntimeException();
             final double tLambdaNext = mSurfaces.get(mStep+1);
             // 为了不改变约定，这里直接跳过已经经过特殊考虑的第一个相同的点
             mPath.next();
@@ -456,7 +473,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 // 判断是否穿过了 A
                 if (tLambda <= mSurfaceA) {
                     // 穿过 A 直接返回 null
-                    mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                    shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
                     return null;
                 }
                 // 修剪，如果向前则有概率直接中断，现在第二个过程的修剪概率存在一个上限
@@ -467,7 +484,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     if (tPruningProb > 0.0) {
                         if (mRNG_.nextDouble() < tPruningProb) {
                             // 有 mPruningProb 中断，直接返回 null
-                            mPath = null; // 中断后不再有 path，从而让 next 相关操作非法
+                            shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
                             return null;
                         } else {
                             // 否则需要增加权重
@@ -534,9 +551,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     tStart = null;
                 }
             }
-            if (tStart != null) {
-                // 构造向前路径
-                ForwardPath tPath = new ForwardPath(tStart, tRNG.nextLong());
+            // 构造向前路径
+            if (tStart != null) try (ForwardPath tPath = new ForwardPath(tStart, tRNG.nextLong())) {
                 // 获取下一个点
                 Point tNext = tPath.nextUntilReachLambdaNextOrLambdaA();
                 // 无论什么结果都需要增加 Mi
@@ -773,8 +789,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             .build();
     }
     
-    /**程序结束时会顺便关闭内部的 mFullPathGenerator，通过切换不同的 mFullPathGenerator 来调整实际输入的生成器是否会顺便关闭 */
+    /** 程序结束时会顺便关闭内部的 mFullPathGenerator，通过切换不同的 mFullPathGenerator 来调整实际输入的生成器是否会顺便关闭 */
     @Override public void shutdown() {super.shutdown(); mFullPathGenerator.shutdown();}
     /** 注意有些类（如线程池）的 close 逻辑不完全和 shutdown 相同，这里需要专门使用内部的 close */
-    @VisibleForTesting @Override public void close() {super.close(); mFullPathGenerator.close();}
+    @ApiStatus.Internal @Override public void close() {super.close(); mFullPathGenerator.close();}
 }

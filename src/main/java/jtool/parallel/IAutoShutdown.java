@@ -1,6 +1,6 @@
 package jtool.parallel;
 
-import org.jetbrains.annotations.VisibleForTesting;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * {@link AutoCloseable} 的另外版本，让线程池也可以使用 try-with-resources 自动关闭
@@ -9,5 +9,5 @@ import org.jetbrains.annotations.VisibleForTesting;
 public interface IAutoShutdown extends IShutdownable, AutoCloseable {
     /** AutoClosable stuffs */
     void shutdown();
-    @VisibleForTesting default void close() {shutdown();}
+    @ApiStatus.Internal default void close() {shutdown();}
 }

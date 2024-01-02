@@ -1,5 +1,6 @@
 package jtool.parallel;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
 /**
@@ -18,7 +19,7 @@ public interface IThreadPool extends IAutoShutdown {
     int nThreads();
     
     /** 注意线程池的 try-with-resources 自动关闭还需要等待线程池完全关闭（注意需要忽略 InterruptedException 让后续可能的资源正常释放） */
-    @VisibleForTesting @Override default void close() {shutdown(); try {awaitTermination();} catch (InterruptedException ignored) {}}
+    @ApiStatus.Internal @Override default void close() {shutdown(); try {awaitTermination();} catch (InterruptedException ignored) {}}
     
     @VisibleForTesting default int getTaskNumber() {return nJobs();}
 }

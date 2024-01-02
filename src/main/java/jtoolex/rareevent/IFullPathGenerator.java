@@ -2,6 +2,8 @@ package jtoolex.rareevent;
 
 
 import jtool.atom.IAtomData;
+import jtool.parallel.IAutoShutdown;
+import jtool.parallel.IHasAutoShutdown;
 import org.jetbrains.annotations.ApiStatus;
 
 import static jtool.code.CS.RANDOM;
@@ -16,10 +18,12 @@ import static jtool.code.CS.RANDOM;
  * @param <T> 获取到点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */
 @ApiStatus.Experimental
-public interface IFullPathGenerator<T> {
+public interface IFullPathGenerator<T> extends IAutoShutdown {
     /** 由于路径具有随机性，不能返回可以重复访问的 Iterable */
     ITimeAndParameterIterator<T> fullPathInit(long aSeed);
     ITimeAndParameterIterator<T> fullPathFrom(T aStart, long aSeed);
     default ITimeAndParameterIterator<T> fullPathInit() {return fullPathInit(RANDOM.nextLong());}
     default ITimeAndParameterIterator<T> fullPathFrom(T aStart) {return fullPathFrom(aStart, RANDOM.nextLong());}
+    
+    default void shutdown() {/**/}
 }

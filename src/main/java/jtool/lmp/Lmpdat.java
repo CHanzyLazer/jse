@@ -31,7 +31,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     private Box mBox;
     private @Nullable IVector mMasses;
     private final IMatrix mAtomData;
-    private final @Nullable IMatrix mVelocities;
+    private @Nullable IMatrix mVelocities;
     
     /**
      * 直接根据数据创建 Lmpdat
@@ -41,7 +41,7 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @param aAtomData 原子数据组成的矩阵（必须）
      * @param aVelocities 原子速度组成的矩阵
      */
-    Lmpdat(int aAtomTypeNum, Box aBox, @Nullable IVector aMasses, IMatrix aAtomData, @Nullable IMatrix aVelocities) {
+    public Lmpdat(int aAtomTypeNum, Box aBox, @Nullable IVector aMasses, IMatrix aAtomData, @Nullable IMatrix aVelocities) {
         mBox = aBox;
         mMasses = aMasses;
         mAtomData = aAtomData;
@@ -60,6 +60,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     public Lmpdat setMasses(Collection<? extends Number> aMasses) {return setMasses(Vectors.from(aMasses));}
     public Lmpdat setMasses(IVector aMasses) {mMasses = aMasses; return this;}
     @Override public Lmpdat setAtomTypeNum(int aAtomTypeNum) {mAtomTypeNum = aAtomTypeNum; return this;}
+    public Lmpdat setVelocities(IMatrix aVelocities) {mVelocities = aVelocities; return this;}
     
     /**
      * 修改模拟盒类型
@@ -121,6 +122,8 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     /// 获取属性
     public Box lmpBox() {return mBox;}
+    public IMatrix atomData() {return mAtomData;}
+    public @Nullable IMatrix velocities() {return mVelocities;}
     public @Nullable IVector masses() {return mMasses;}
     public double mass(int aType) {return mMasses!=null ? mMasses.get(aType-1) : Double.NaN;}
     public ISettableAtom pickAtomInternal(final int aIdx) {

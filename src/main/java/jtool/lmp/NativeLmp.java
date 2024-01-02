@@ -690,7 +690,7 @@ public class NativeLmp implements IAutoShutdown {
         }}
         creatAtoms(aAtomData.asList());
     }
-    @VisibleForTesting public void loadData(Lmpdat aLmpdat) {loadLmpdat(aLmpdat);}
+    public void loadData(Lmpdat aLmpdat) {loadLmpdat(aLmpdat);}
     
     /**
      * Create N atoms from list of coordinates and properties
