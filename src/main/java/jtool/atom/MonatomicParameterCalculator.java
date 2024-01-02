@@ -805,7 +805,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        List<IComplexVector> qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
+        List<IComplexVector> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         
         // 直接求和
         IVector ql = VectorCache.getVec(mAtomNum);
@@ -849,7 +849,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP3(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        List<IComplexVector> qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
+        List<IComplexVector> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         
         // 计算 wl，这里同样不去考虑减少重复代码
         IVector wl = VectorCache.getVec(mAtomNum);
@@ -986,7 +986,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
-        final List<IComplexVector> qlm = calQlmMean(aL, aRNearestQ, aNnnQ);
+        final List<IComplexVector> qlm = calQlmMean(aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
         
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnS<=0;
