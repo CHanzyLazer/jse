@@ -100,6 +100,15 @@ public final class ShiftVector extends DoubleArrayVector {
         mData[aIdx] = aOpt.cal(tValue);
         return tValue;
     }
+    @Override public boolean isEmpty() {return mSize==0;}
+    @Override public double last() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty Vector");
+        return mData[mSize-1+mShift];
+    }
+    @Override public double first() {
+        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty Vector");
+        return mData[mShift];
+    }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式） */
     @Override public IDoubleIterator iterator() {

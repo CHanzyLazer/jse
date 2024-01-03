@@ -248,10 +248,10 @@ public abstract class AbstractVector implements IVector {
     @Override public IVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefVector() {
-            /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-            @Override public double get_(int aIdx) {return AbstractVector.this.get(aIdx+aFromIdx);}
-            @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set(aIdx+aFromIdx, aValue);}
-            @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet(aIdx+aFromIdx, aValue);}
+            /** 由于一开始有边界检查，所以这里不再需要边检检查 */
+            @Override public double get_(int aIdx) {return AbstractVector.this.get_(aIdx+aFromIdx);}
+            @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set_(aIdx+aFromIdx, aValue);}
+            @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
             @Override public int size() {return aToIdx-aFromIdx;}
         };
     }

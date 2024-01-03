@@ -142,6 +142,7 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
     IComplexVectorSlicer slicer();
     IComplexVectorSlicer refSlicer();
+    IComplexVector subVec(int aFromIdx, int aToIdx);
 
     /** 向量的运算操作，默认返回新的向量 */
     IComplexVectorOperation operation();

@@ -135,6 +135,25 @@ public abstract class AbstractComplexVector implements IComplexVector {
         };
     }
     
+    @Override public IComplexVector subVec(final int aFromIdx, final int aToIdx) {
+        subVecRangeCheck(aFromIdx, aToIdx, size());
+        return new RefComplexVector() {
+            /** 由于一开始有边界检查，所以这里不再需要边检检查 */
+            @Override public double getReal_(int aIdx) {return AbstractComplexVector.this.getReal_(aIdx+aFromIdx);}
+            @Override public double getImag_(int aIdx) {return AbstractComplexVector.this.getImag_(aIdx+aFromIdx);}
+            @Override public void setReal_(int aIdx, double aReal) {AbstractComplexVector.this.setReal_(aIdx+aFromIdx, aReal);}
+            @Override public void setImag_(int aIdx, double aImag) {AbstractComplexVector.this.setImag_(aIdx+aFromIdx, aImag);}
+            @Override public double getAndSetReal_(int aIdx, double aReal) {return AbstractComplexVector.this.getAndSetReal_(aIdx+aFromIdx, aReal);}
+            @Override public double getAndSetImag_(int aIdx, double aImag) {return AbstractComplexVector.this.getAndSetImag_(aIdx+aFromIdx, aImag);}
+            @Override public int size() {return aToIdx-aFromIdx;}
+        };
+    }
+    static void subVecRangeCheck(int aFromIdx, int aToIdx, int aSize) {
+        if (aFromIdx < 0) throw new IndexOutOfBoundsException("fromIndex = " + aFromIdx);
+        if (aToIdx > aSize) throw new IndexOutOfBoundsException("toIndex = " + aToIdx);
+        if (aFromIdx > aToIdx) throw new IllegalArgumentException("fromIndex(" + aFromIdx + ") > toIndex(" + aToIdx + ")");
+    }
+    
     /** 转为兼容性更好的 double[][] */
     @Override public double[][] data() {
         final int tSize = size();
