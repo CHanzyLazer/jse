@@ -66,11 +66,11 @@ public final class ShiftComplexVector extends BiDoubleArrayVector {
     
     
     /** Optimize stuffs，real()，imag() 直接返回 {@link ShiftVector} */
-    @Override public IVector real() {return new ShiftVector(mSize, mShift, mData[0]);}
-    @Override public IVector imag() {return new ShiftVector(mSize, mShift, mData[1]);}
+    @Override public ShiftVector real() {return new ShiftVector(mSize, mShift, mData[0]);}
+    @Override public ShiftVector imag() {return new ShiftVector(mSize, mShift, mData[1]);}
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftComplexVector} */
-    @Override public IComplexVector subVec(final int aFromIdx, final int aToIdx) {
+    @Override public ShiftComplexVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return new ShiftComplexVector(aToIdx-aFromIdx, aFromIdx+mShift, mData);
     }

@@ -1,11 +1,10 @@
 package jtool.math.matrix;
 
 import jtool.code.functional.IDoubleConsumer1;
+import jtool.code.functional.IDoubleOperator1;
 import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.math.vector.IVector;
 import jtool.math.vector.ShiftVector;
 import jtool.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
@@ -69,13 +68,13 @@ public final class ColumnMatrix extends DoubleArrayMatrix {
     
     
     /** Optimize stuffs，重写这个提高列向的索引速度 */
-    @Override public IVector col(final int aCol) {
+    @Override public ShiftVector col(final int aCol) {
         if (aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException("Col: "+aCol);
         return new ShiftVector(mRowNum, aCol*mRowNum, mData);
     }
     
     /** Optimize stuffs，列向展开的向量直接返回 */
-    @Override public IVector asVecCol() {return new Vector(mRowNum*mColNum, mData);}
+    @Override public Vector asVecCol() {return new Vector(mRowNum*mColNum, mData);}
     
     /** Optimize stuffs，引用转置直接返回 {@link RowMatrix} */
     @Override public IMatrixOperation operation() {

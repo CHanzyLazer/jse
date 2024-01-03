@@ -4,7 +4,6 @@ import jtool.code.iterator.IComplexDoubleIterator;
 import jtool.code.iterator.IComplexDoubleSetIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
-import jtool.math.vector.IComplexVector;
 import jtool.math.vector.ShiftComplexVector;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,7 +64,7 @@ public final class RowComplexMatrix extends BiDoubleArrayMatrix {
     
     
     /** Optimize stuffs，重写这个提高行向的索引速度 */
-    @Override public IComplexVector row(final int aRow) {
+    @Override public ShiftComplexVector row(final int aRow) {
         if (aRow<0 || aRow>=rowNumber()) throw new IndexOutOfBoundsException("Row: "+aRow);
         return new ShiftComplexVector(mColNum, aRow*mColNum, mData);
     }
