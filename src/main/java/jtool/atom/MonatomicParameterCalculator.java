@@ -13,6 +13,7 @@ import jtool.math.matrix.IMatrix;
 import jtool.math.vector.*;
 import jtool.parallel.*;
 import jtoolex.voronoi.VoronoiBuilder;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 
@@ -540,13 +541,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             }
             // 根据分划数获取对应的 mXLo, mXhi, mYLo, mYHi, mZLo, mZHi
             int tRank = aComm.rank();
-            int tX = tRank/rSizeZ/rSizeY;
-            int tY = tRank/rSizeZ%rSizeY;
-            int tZ = tRank%rSizeZ;
-            XYZ subBox = mBox.div(rSizeX, rSizeY, rSizeZ);
-            mXLo = tX * subBox.mX; mXHi = mXLo + subBox.mX;
-            mYLo = tY * subBox.mY; mYHi = mYLo + subBox.mY;
-            mZLo = tZ * subBox.mZ; mZHi = mZLo + subBox.mZ;
+            int tI = tRank/rSizeZ/rSizeY;
+            int tJ = tRank/rSizeZ%rSizeY;
+            int tK = tRank%rSizeZ;
+            XYZ tCellSize = mBox.div(rSizeX, rSizeY, rSizeZ);
+            mXLo = tI * tCellSize.mX; mXHi = mXLo + tCellSize.mX;
+            mYLo = tJ * tCellSize.mY; mYHi = mYLo + tCellSize.mY;
+            mZLo = tK * tCellSize.mZ; mZHi = mZLo + tCellSize.mZ;
         }
         @SuppressWarnings("RedundantIfStatement")
         boolean inRegin(IXYZ aXYZ) {
@@ -745,14 +746,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         // 根据近邻数平均得到 Qlm
-        for (int i = 0; i < mAtomNum; ++i) {
-            double subNN = tNN.get_(i);
-            if (subNN > 0.0) Qlm.get(i).div2this(subNN);
+        for (int i = 0; i < mAtomNum; ++i) if (tCalRegion.inRegin(i)) {
+            Qlm.get(i).div2this(tNN.get_(i));
         }
         // 归还临时变量
         VectorCache.returnVec(tNN);
         
-        // 所有进程将统计到的 Qlm 求和，这里直接遍历 mAtomNum 实现
+        // 所有进程将统计到的 Qlm 求和，这里直接遍历 mAtomNum 实现；
+        // 虽然拷贝到一整个 double[] 一起同步更快，但是内存不友好并且也不美观，这里不这样做
         if (!aNoReduce) for (IComplexVector Qlmi : Qlm) {
             double[][] tData = ((BiDoubleArrayVector)Qlmi).getData();
             int tCount = ((BiDoubleArrayVector)Qlmi).dataSize();
@@ -837,12 +838,80 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public List<IComplexVector> calQlmMean(int aL, double aRNearest          ) {return calQlmMean(aL, aRNearest, -1);}
     public List<IComplexVector> calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
+    /** MPI 版本的在 Qlm 基础上再次对所有近邻做一次平均，即 qlm */
+    public List<IComplexVector> calQlmMean_MPI(boolean aNoReduce, final MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+        // 直接全部平均一遍分两步算
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
+        
+        final List<IComplexVector> Qlm = calYlmMean_MPI(aComm, aL, aRNearestY, aNnnY);
+        final List<IComplexVector> qlm = ComplexVectorCache.getZeros(aL+aL+1, mAtomNum);
+        
+        // 统计近邻数用于求平均（增加一个自身）
+        final IVector tNN = VectorCache.getVec(mAtomNum);
+        tNN.fill(1.0);
+        // 如果限制了 aNnn 需要关闭 half 遍历的优化
+        final boolean aHalf = aNnnQ<=0;
+        
+        // 获取 MPI 的考虑区域
+        final MPIRegion tCalRegion = new MPIRegion(aComm);
+        
+        // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
+        for (int i = 0; i < mAtomNum; ++i) if (tCalRegion.inRegin(i)) {
+            // 一次计算一行
+            final IComplexVector qlmi = qlm.get(i);
+            final IComplexVector Qlmi = Qlm.get(i);
+            
+            // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
+            qlmi.fill(Qlmi);
+            // 再累加近邻
+            final int fI = i;
+            mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, tCalRegion::inRegin, (x, y, z, idx, dis) -> {
+                // 直接按行累加即可
+                qlmi.plus2this(Qlm.get(idx));
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
+                boolean tHalfStat = aHalf && tCalRegion.inRegin(idx);
+                if (tHalfStat) {
+                    qlm.get(idx).plus2this(Qlmi);
+                }
+                
+                // 统计近邻数
+                tNN.increment_(fI);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (tHalfStat) {
+                    tNN.increment_(idx);
+                }
+            });
+        }
+        // 根据近邻数平均得到 qlm
+        for (int i = 0; i < mAtomNum; ++i) if (tCalRegion.inRegin(i)) {
+            qlm.get(i).div2this(tNN.get_(i));
+        }
+        
+        // 归还临时变量
+        VectorCache.returnVec(tNN);
+        ComplexVectorCache.returnVec(Qlm);
+        
+        // 所有进程将统计到的 qlm 求和，这里直接遍历 mAtomNum 实现；
+        // 虽然拷贝到一整个 double[] 一起同步更快，但是内存不友好并且也不美观，这里不这样做
+        if (!aNoReduce) for (IComplexVector qlmi : qlm) {
+            double[][] tData = ((BiDoubleArrayVector)qlmi).getData();
+            int tCount = ((BiDoubleArrayVector)qlmi).dataSize();
+            aComm.allreduce(tData[0], tCount, MPI.Op.SUM);
+            aComm.allreduce(tData[1], tCount, MPI.Op.SUM);
+        }
+        
+        return qlm;
+    }
     
     /**
      * 计算所有粒子的原始的 BOOP（local Bond Orientational Order Parameters, Ql），
      * 输出结果为按照输入原子顺序排列的向量；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
@@ -855,7 +924,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         List<IComplexVector> Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         // 直接求和
-        IVector Ql = Vectors.zeros(mAtomNum);
+        IVector Ql = VectorCache.getVec(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
             // 直接计算复向量的点乘
             double tDot = Qlm.get(i).operation().dot();
@@ -882,7 +951,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         MPIRegion tCalRegion = new MPIRegion(aComm);
         
         // 直接求和
-        IVector Ql = Vectors.zeros(mAtomNum);
+        IVector Ql = VectorCache.getZeros(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) if (tCalRegion.inRegin(i)) {
             // 直接计算复向量的点乘
             double tDot = Qlm.get(i).operation().dot();
@@ -893,7 +962,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 计算完成归还缓存数据
         ComplexVectorCache.returnVec(Qlm);
         
-        // 所有进程将统计到的 Ql 求和，这里直接遍历 mAtomNum 实现
+        // 所有进程将统计到的 Ql 求和
         if (!aNoReduce) {
             aComm.allreduce(((DoubleArrayVector)Ql).getData(), ((DoubleArrayVector)Ql).dataSize(), MPI.Op.SUM);
         }
@@ -914,6 +983,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 输出结果为按照输入原子顺序排列的向量；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 W 值的下标，即 W4: l = 4, W6: l = 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
@@ -926,7 +998,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         List<IComplexVector> Qlm = calYlmMean(aL, aRNearest, aNnn);
         
         // 计算三阶的乘积
-        IVector Wl = Vectors.zeros(mAtomNum);
+        IVector Wl = VectorCache.getVec(mAtomNum);
         for (int i = 0; i < mAtomNum; ++i) {
             IComplexVector Qlmi = Qlm.get(i);
             // 分母为复向量的点乘
@@ -1003,6 +1075,43 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP(int aL, double aRNearest, int aNnn) {return calABOOP(aL, aRNearest, aNnn, aRNearest, aNnn);}
     public IVector calABOOP(int aL, double aRNearest          ) {return calABOOP(aL, aRNearest, -1);}
     public IVector calABOOP(int aL                            ) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
+    
+    /** MPI 版本的计算所有粒子的 ABOOP */
+    public IVector calABOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        List<IComplexVector> qlm = calQlmMean_MPI(true, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
+        
+        // 获取 MPI 的考虑区域
+        MPIRegion tCalRegion = new MPIRegion(aComm);
+        
+        // 直接求和
+        IVector ql = VectorCache.getZeros(mAtomNum);
+        for (int i = 0; i < mAtomNum; ++i) if (tCalRegion.inRegin(i)) {
+            // 直接计算复向量的点乘
+            double tDot = qlm.get(i).operation().dot();
+            // 使用这个公式设置 ql
+            ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+        }
+        
+        // 计算完成归还缓存数据
+        ComplexVectorCache.returnVec(qlm);
+        
+        // 所有进程将统计到的 ql 求和
+        if (!aNoReduce) {
+            aComm.allreduce(((DoubleArrayVector)ql).getData(), ((DoubleArrayVector)ql).dataSize(), MPI.Op.SUM);
+        }
+        
+        // 返回最终计算结果
+        return ql;
+    }
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {return calABOOP_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) {return calABOOP_MPI(aComm, aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) {return calABOOP_MPI(aComm, aL, aRNearest, -1);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL                            ) {return calABOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
+    public IVector calABOOP_MPI(                int aL, double aRNearest, int aNnn) {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
+    public IVector calABOOP_MPI(                int aL, double aRNearest          ) {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
+    public IVector calABOOP_MPI(                int aL                            ) {return calABOOP_MPI(MPI.Comm.WORLD, aL);}
     
     
     /**
@@ -1332,6 +1441,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aRCutOff 截断半径
      * @return 原子指纹矩阵组成的数组，n 为行，l 为列，因此 asVecRow 即为原本定义的基
      */
+    @ApiStatus.Experimental
     public List<IMatrix> calFPSuRui(final int aNMax, final int aLMax, final double aRCutOff) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aNMax < 0) throw new IllegalArgumentException("Input n_max MUST be Non-Negative, input: "+aNMax);
