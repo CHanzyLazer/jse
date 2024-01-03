@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6...3.16)
 project(lmpjni C)
 
-set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_STANDARD 11)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)

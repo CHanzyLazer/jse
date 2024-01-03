@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "mpi.h"
 #include "jtool_parallel_MPI_Native.h"
