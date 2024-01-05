@@ -399,7 +399,7 @@ public class SP {
             UT.IO.makeDir(tJepBuildDir);
             // 直接通过系统指令来编译 Jep 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd %s; cmake ..; cmake --build . --config Release", tJepBuildDir));
+            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tJepBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件夹
             String tJepLibDir = tJepBuildDir+"lib/";

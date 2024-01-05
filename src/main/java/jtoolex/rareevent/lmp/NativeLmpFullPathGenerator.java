@@ -4,10 +4,9 @@ import jtool.atom.IAtomData;
 import jtool.code.collection.NewCollections;
 import jtool.lmp.Lmpdat;
 import jtool.lmp.NativeLmp;
+import jtool.math.matrix.RowMatrix;
 import jtool.math.vector.IVector;
-import jtool.parallel.IAutoShutdown;
-import jtool.parallel.LocalRandom;
-import jtool.parallel.MPI;
+import jtool.parallel.*;
 import jtoolex.rareevent.IFullPathGenerator;
 import jtoolex.rareevent.IParameterCalculator;
 import jtoolex.rareevent.ITimeAndParameterIterator;
@@ -45,6 +44,8 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
     private final MPI.Comm mLmpComm;
     private final IParameterCalculator<? super IAtomData> mParameterCalculator;
     
+    private boolean mReturnLast = false;
+    
     /**
      * 创建一个生成器；
      * 每个进程都需要调用来进行创建，除了特殊说明，输入参数都需要一致
@@ -71,6 +72,8 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
         mLmpComm = aLmpComm;
         mParameterCalculator = aParameterCalculator;
     }
+    
+    NativeLmpFullPathGenerator setReturnLast() {mReturnLast = true; return this;}
     
     
     @Override public ITimeAndParameterIterator<Lmpdat> fullPathFrom(IAtomData aStart, long aSeed) {return new NativeLmpIterator(aStart, aSeed);}
@@ -116,6 +119,18 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
             // 加入对 mLmpComm 的同步，避免相同的 mLmpComm 对应的 NativeLmp 实例同时运行
             synchronized (mLmpComm) {
                 mLmp.command("run       "+mDumpStep);
+            }
+            // 由于这里底层的 NativeLmp 获取的 Lmpdat 也是使用了缓存，因此对于上一步的 mNext 可以归还；
+            // 当然一般情况下获取的 next 会在外部保存，不能归还，因此默认关闭
+            if (mReturnLast) {
+                if (mNext.hasVelocities()) {
+                    RowMatrix tVelocities = mNext.velocities();
+                    assert tVelocities != null;
+                    MatrixCache.returnMat(tVelocities);
+                }
+                MatrixCache.returnMat(mNext.positions());
+                VectorCache.returnVec(mNext.types());
+                VectorCache.returnVec(mNext.ids());
             }
             mNext = mLmp.lmpdat(true);
             return mNext;

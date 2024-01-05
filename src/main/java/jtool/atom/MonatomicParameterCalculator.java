@@ -521,7 +521,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /** 用于分割模拟盒，判断给定 XYZ 或者 idx 处的原子是否在需要考虑的区域中 */
     private class MPIRegion {
         private final double mXLo, mXHi, mYLo, mYHi, mZLo, mZHi;
-        MPIRegion(MPI.Comm aComm) {
+        MPIRegion(MPI.Comm aComm) throws MPI.Error {
             int tSizeRest = aComm.size();
             // 使用这个方法来获取每个方向的分划数
             Deque<Integer> rFactors = new ArrayDeque<>();
@@ -680,7 +680,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IComplexMatrix calYlmMean(int aL                  ) {return calYlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的计算 计算所有粒子的近邻球谐函数的平均，即 Qlm */
-    public IComplexMatrix calYlmMean_MPI(boolean aNoReduce, MPI.Comm aComm, final int aL, double aRNearest, int aNnn) {
+    public IComplexMatrix calYlmMean_MPI(boolean aNoReduce, MPI.Comm aComm, final int aL, double aRNearest, int aNnn) throws MPI.Error {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         
@@ -765,7 +765,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         return Qlm;
     }
-    public IComplexMatrix calYlmMean_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) {return calYlmMean_MPI(false, aComm, aL, aRNearest, aNnn);}
+    public IComplexMatrix calYlmMean_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPI.Error {return calYlmMean_MPI(false, aComm, aL, aRNearest, aNnn);}
     
     
     /**
@@ -841,7 +841,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IComplexMatrix calQlmMean(int aL                            ) {return calQlmMean(aL, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的在 Qlm 基础上再次对所有近邻做一次平均，即 qlm */
-    public IComplexMatrix calQlmMean_MPI(boolean aNoReduce, final MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+    public IComplexMatrix calQlmMean_MPI(boolean aNoReduce, final MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPI.Error {
         // 直接全部平均一遍分两步算
         if (mDead) throw new RuntimeException("This Calculator is dead");
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
@@ -904,7 +904,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         return qlm;
     }
-    public IComplexMatrix calQlmMean_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {return calQlmMean_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
+    public IComplexMatrix calQlmMean_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPI.Error {return calQlmMean_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
     
     
     /**
@@ -945,7 +945,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calBOOP(int aL                  ) {return calBOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的计算所有粒子的原始的 BOOP */
-    public IVector calBOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aRNearest, int aNnn) {
+    public IVector calBOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPI.Error {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         IComplexMatrix Qlm = calYlmMean_MPI(true, aComm, aL, aRNearest, aNnn);
@@ -973,12 +973,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return Ql;
     }
-    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) {return calBOOP_MPI(false, aComm, aL, aRNearest, aNnn);}
-    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) {return calBOOP_MPI(aComm, aL, aRNearest, -1);}
-    public IVector calBOOP_MPI(MPI.Comm aComm, int aL                            ) {return calBOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
-    public IVector calBOOP_MPI(                int aL, double aRNearest, int aNnn) {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
-    public IVector calBOOP_MPI(                int aL, double aRNearest          ) {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
-    public IVector calBOOP_MPI(                int aL                            ) {return calBOOP_MPI(MPI.Comm.WORLD, aL);}
+    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPI.Error {return calBOOP_MPI(false, aComm, aL, aRNearest, aNnn);}
+    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) throws MPI.Error {return calBOOP_MPI(aComm, aL, aRNearest, -1);}
+    public IVector calBOOP_MPI(MPI.Comm aComm, int aL                            ) throws MPI.Error {return calBOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
+    public IVector calBOOP_MPI(                int aL, double aRNearest, int aNnn) throws MPI.Error {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
+    public IVector calBOOP_MPI(                int aL, double aRNearest          ) throws MPI.Error {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
+    public IVector calBOOP_MPI(                int aL                            ) throws MPI.Error {return calBOOP_MPI(MPI.Comm.WORLD, aL);}
     
     
     /**
@@ -1080,7 +1080,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calABOOP(int aL                            ) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的计算所有粒子的 ABOOP */
-    public IVector calABOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
+    public IVector calABOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPI.Error {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         IComplexMatrix qlm = calQlmMean_MPI(true, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
@@ -1108,13 +1108,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return ql;
     }
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {return calABOOP_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) {return calABOOP_MPI(aComm, aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) {return calABOOP_MPI(aComm, aL, aRNearest, -1);}
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL                            ) {return calABOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
-    public IVector calABOOP_MPI(                int aL, double aRNearest, int aNnn) {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
-    public IVector calABOOP_MPI(                int aL, double aRNearest          ) {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
-    public IVector calABOOP_MPI(                int aL                            ) {return calABOOP_MPI(MPI.Comm.WORLD, aL);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPI.Error {return calABOOP_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPI.Error {return calABOOP_MPI(aComm, aL, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) throws MPI.Error {return calABOOP_MPI(aComm, aL, aRNearest, -1);}
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL                            ) throws MPI.Error {return calABOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
+    public IVector calABOOP_MPI(                int aL, double aRNearest, int aNnn) throws MPI.Error {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
+    public IVector calABOOP_MPI(                int aL, double aRNearest          ) throws MPI.Error {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
+    public IVector calABOOP_MPI(                int aL                            ) throws MPI.Error {return calABOOP_MPI(MPI.Comm.WORLD, aL);}
     
     
     /**
@@ -1252,7 +1252,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountBOOP(int aL, double aConnectThreshold                            ) {return calConnectCountBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的 BOOP 连接数目 */
-    public IVector calConnectCountBOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
+    public IVector calConnectCountBOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPI.Error {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         final IComplexMatrix Qlm = calYlmMean_MPI(aComm, aL, aRNearestY, aNnnY);
@@ -1305,13 +1305,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return tConnectCount;
     }
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {return calConnectCountBOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold                            ) {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPI.Error {return calConnectCountBOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPI.Error {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPI.Error {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPI.Error {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPI.Error {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPI.Error {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPI.Error {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**
@@ -1386,7 +1386,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold                            ) {return calConnectCountABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
     /** MPI 版本的 BOOP 连接数目 */
-    public IVector calConnectCountABOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
+    public IVector calConnectCountABOOP_MPI(boolean aNoReduce, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPI.Error {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
         final IComplexMatrix qlm = calQlmMean_MPI(aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);
@@ -1439,13 +1439,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 返回最终计算结果
         return tConnectCount;
     }
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {return calConnectCountABOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold                            ) {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPI.Error {return calConnectCountABOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPI.Error {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPI.Error {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPI.Error {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPI.Error {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPI.Error {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPI.Error {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**

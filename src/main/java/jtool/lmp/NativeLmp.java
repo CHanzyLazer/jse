@@ -96,17 +96,17 @@ public class NativeLmp implements IAutoShutdown {
     private static String initCmakeSettingCmd_(String aNativeLmpBuildDir) {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
-        rCommand.add("cd"); rCommand.add(aNativeLmpBuildDir); rCommand.add(";");
+        rCommand.add("cd"); rCommand.add("\""+aNativeLmpBuildDir+"\""); rCommand.add(";");
         rCommand.add("cmake");
         // 设置输出动态链接库
         rCommand.add("-D"); rCommand.add("BUILD_SHARED_LIBS=yes");
-        // 设置构建输出目录为 lib
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY=lib");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY=lib");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY=lib");
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE=lib");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE=lib");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=lib");
+        // 设置构建输出目录为 lib（linux 下无效，暂没有好的解决方法）
+        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY=\""+aNativeLmpBuildDir+"lib\"");
+        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY=\""+aNativeLmpBuildDir+"lib\"");
+        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY=\""+aNativeLmpBuildDir+"lib\"");
+        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE=\""+aNativeLmpBuildDir+"lib\"");
+        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE=\""+aNativeLmpBuildDir+"lib\"");
+        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=\""+aNativeLmpBuildDir+"lib\"");
         // 添加额外的设置参数
         for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
             rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
@@ -163,13 +163,13 @@ public class NativeLmp implements IAutoShutdown {
             // 编译 lammps，直接通过系统指令来编译，关闭输出
             EXE.setNoSTDOutput();
             // 初始化 cmake
-            EXE.system(String.format("cd %s; cmake ../cmake", Conf.LMP_HOME));
+            EXE.system(String.format("cd \"%s\"; cmake ../cmake", Conf.LMP_HOME));
             // 设置参数
             EXE.system(initCmakeSettingCmd_(Conf.LMP_HOME));
             // 如果设置 CLEAN 则进行 clean 操作
-            if (Conf.CLEAN) EXE.system(String.format("cd %s; cmake --build . --target clean", Conf.LMP_HOME));
+            if (Conf.CLEAN) EXE.system(String.format("cd \"%s\"; cmake --build . --target clean", Conf.LMP_HOME));
             // 最后进行构造操作
-            EXE.system(String.format("cd %s; cmake --build . --config Release", Conf.LMP_HOME));
+            EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", Conf.LMP_HOME));
             EXE.setNoSTDOutput(false);
         }
         // 如果依旧没有 tNativeLmpLib 则构建失败
@@ -194,7 +194,7 @@ public class NativeLmp implements IAutoShutdown {
             UT.IO.makeDir(tBuildDir);
             // 直接通过系统指令来编译 lmpjni 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd %s; cmake ..; cmake --build . --config Release", tBuildDir));
+            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件
             String tLibDir = tBuildDir+"lib/";

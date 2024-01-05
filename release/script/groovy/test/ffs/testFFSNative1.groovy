@@ -3,6 +3,7 @@ package test.ffs
 import jtool.code.UT
 import jtool.lmp.Dump
 import jtool.lmp.Lmpdat
+import jtool.lmp.NativeLmp
 import jtool.math.MathEX
 import jtool.math.vector.Vectors
 import jtool.parallel.MPI
@@ -18,6 +19,10 @@ import static jtool.code.UT.Code.range
  * lammps 跑 FFS 的实例；
  * 此脚本需要原生 lammps 环境
  */
+
+// CuZr 需要开启 MANYBODY 包
+NativeLmp.Conf.CMAKE_SETTING.PKG_MANYBODY = 'yes';
+NativeLmp.Conf.REBUILD = false; // 如果没有这个包需要开启此选项重新构建
 
 /** 体系参数 */
 final int Cu = 15;
@@ -94,7 +99,7 @@ println("SURFACES: ${surfaces}");
 println("PRUNING_PROB: ${pruningProb}");
 println("PRUNING_THRESHOLD: ${pruningThreshold}");
 
-try (def FFS = new ForwardFluxSampling<>(fullPathGen, parallelNum, surfaceA, surfaces, N0).setStep1Mul(step1Mul).setPruningProb(pruningProb).setPruningThreshold(pruningThreshold)) {
+try (def FFS = new ForwardFluxSampling<>(fullPathGen, parallelNum, surfaceA, surfaces, N0).setRNG(123456789).setStep1Mul(step1Mul).setPruningProb(pruningProb).setPruningThreshold(pruningThreshold)) {
     // 第一步，每步都会输出结构
     UT.Timer.tic();
     FFS.run();
@@ -123,6 +128,7 @@ try (def FFS = new ForwardFluxSampling<>(fullPathGen, parallelNum, surfaceA, sur
     println("=====${UNIQUE_NAME} FINISHED=====");
     println("k = ${FFS.getK()}, totalPointNum = ${FFS.totalPointNum()}");
 }}}
+// i = -1, k0 = 0.897492300923889, step1PointNum = 11429, step1PathNum = 6, time: 00 hour 05 min 28.89 sec
 
 
 MPI.shutdown();

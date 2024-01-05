@@ -72,16 +72,16 @@ public class MPI {
          * @return The rank of the calling process in the specified group.
          * A value of {@link #UNDEFINED} that the calling process is not a member of the specified group.
          */
-        public int rank() {return Native.MPI_Group_rank(mPtr);}
+        public int rank() throws Error {return Native.MPI_Group_rank(mPtr);}
         /**
          * @return The size of the specified group.
          */
-        public int size() {return Native.MPI_Group_size(mPtr);}
+        public int size() throws Error {return Native.MPI_Group_size(mPtr);}
         
         /** Free the group. */
         @Override public void shutdown() {
             if (mPtr != Native.MPI_GROUP_NULL) {
-                Native.MPI_Group_free(mPtr);
+                try {Native.MPI_Group_free(mPtr);} catch (Error ignored) {}
                 mPtr = Native.MPI_GROUP_NULL;
             }
         }
@@ -96,7 +96,7 @@ public class MPI {
          * The function returns {@link MPI.Group#EMPTY} if the new group is empty.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-difference-function"> MPI_Group_difference function </a>
          */
-        public Group difference(Group aRHS) {return of(Native.MPI_Group_difference(mPtr, aRHS.mPtr));}
+        public Group difference(Group aRHS) throws Error {return of(Native.MPI_Group_difference(mPtr, aRHS.mPtr));}
         
         /**
          * A group constructor that is used to define a new group by deleting ranks from an existing group.
@@ -111,7 +111,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-excl-function"> MPI_Group_excl function </a>
          */
-        public Group excl(int[] aRanks) {return of(Native.MPI_Group_excl(mPtr, aRanks));}
+        public Group excl(int[] aRanks) throws Error {return of(Native.MPI_Group_excl(mPtr, aRanks));}
         
         /**
          * Creates a new group that contains a subset of the processes in an existing group.
@@ -123,7 +123,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-incl-function"> MPI_Group_incl function </a>
          */
-        public Group incl(int[] aRanks) {return of(Native.MPI_Group_incl(mPtr, aRanks));}
+        public Group incl(int[] aRanks) throws Error {return of(Native.MPI_Group_incl(mPtr, aRanks));}
         
         /**
          * Creates a new group from the intersection of two existing groups.
@@ -132,7 +132,7 @@ public class MPI {
          * The function returns {@link MPI.Group#EMPTY} if the new group is empty.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-intersection-function"> MPI_Group_intersection function </a>
          */
-        public Group intersection(Group aRHS) {return of(Native.MPI_Group_intersection(mPtr, aRHS.mPtr));}
+        public Group intersection(Group aRHS) throws Error {return of(Native.MPI_Group_intersection(mPtr, aRHS.mPtr));}
         
         /**
          * Creates a new group from the union of two existing groups.
@@ -140,7 +140,7 @@ public class MPI {
          * @return A new {@link MPI.Group} that represents all elements in either group.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-union-function"> MPI_Group_union function </a>
          */
-        public Group union(Group aRHS) {return of(Native.MPI_Group_union(mPtr, aRHS.mPtr));}
+        public Group union(Group aRHS) throws Error {return of(Native.MPI_Group_union(mPtr, aRHS.mPtr));}
     }
     
     public static class Comm implements IAutoShutdown {
@@ -161,12 +161,12 @@ public class MPI {
         @ApiStatus.Internal public long ptr_() {return mPtr;}
         
         /** @return the number of calling process within the group of the communicator. */
-        public int rank() {return Native.MPI_Comm_rank(mPtr);}
+        public int rank() throws Error {return Native.MPI_Comm_rank(mPtr);}
         /** @return the number of processes in the group for the communicator. */
-        public int size() {return Native.MPI_Comm_size(mPtr);}
+        public int size() throws Error {return Native.MPI_Comm_size(mPtr);}
         
         /** Duplicate the communicator. */
-        public Comm copy() {return of(Native.MPI_Comm_dup(mPtr));}
+        public Comm copy() throws Error {return of(Native.MPI_Comm_dup(mPtr));}
         
         /**
          * Frees the communicator that is allocated with the {@link MPI.Comm#copy}, {@link MPI.Comm#create},
@@ -174,7 +174,7 @@ public class MPI {
          */
         @Override public void shutdown() {
             if (mPtr != Native.MPI_COMM_NULL) {
-                Native.MPI_Comm_free(mPtr);
+                try {Native.MPI_Comm_free(mPtr);} catch (Error ignored) {}
                 mPtr = Native.MPI_COMM_NULL;
             }
         }
@@ -204,10 +204,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgather-function"> MPI_Allgather function </a>
          */
-        public <S, R> void allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount) {
+        public <S, R> void allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount) throws Error {
             Native.MPI_Allgather(aSendBuf, aSendCount, rRecvBuf, aRecvCount, mPtr);
         }
-        public <R> void allgather(R rRecvBuf, int aRecvCount) {
+        public <R> void allgather(R rRecvBuf, int aRecvCount) throws Error {
             Native.MPI_Allgather(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCount, mPtr);
         }
         
@@ -238,10 +238,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgatherv-function"> MPI_Allgatherv function </a>
          */
-        public <S, R> void allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls) {
+        public <S, R> void allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls) throws Error {
             Native.MPI_Allgatherv(aSendBuf, aSendCount, rRecvBuf, aRecvCounts, aDispls, mPtr);
         }
-        public <R> void allgatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls) {
+        public <R> void allgatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls) throws Error {
             Native.MPI_Allgatherv(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCounts, aDispls, mPtr);
         }
         
@@ -264,10 +264,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allreduce-function"> MPI_Allreduce function </a>
          */
-        public <T> void allreduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp) {
+        public <T> void allreduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp) throws Error {
             Native.MPI_Allreduce(aSendBuf, rRecvBuf, aCount, aOp.mPtr, mPtr);
         }
-        public <T> void allreduce(T rRecvBuf, int aCount, Op aOp) {
+        public <T> void allreduce(T rRecvBuf, int aCount, Op aOp) throws Error {
             Native.MPI_Allreduce(Native.MPI_IN_PLACE, rRecvBuf, aCount, aOp.mPtr, mPtr);
         }
         
@@ -286,7 +286,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-bcast-function"> MPI_Bcast function </a>
          */
-        public <T> void bcast(T rBuf, int aCount, int aRoot) {
+        public <T> void bcast(T rBuf, int aCount, int aRoot) throws Error {
             Native.MPI_Bcast(rBuf, aCount, aRoot, mPtr);
         }
         
@@ -309,10 +309,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gather-function"> MPI_Gather function </a>
          */
-        public <S, R> void gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot) {
+        public <S, R> void gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot) throws Error {
             Native.MPI_Gather(aSendBuf, aSendCount, rRecvBuf, aRecvCount, aRoot, mPtr);
         }
-        public <R> void gather(R rRecvBuf, int aRecvCount, int aRoot) {
+        public <R> void gather(R rRecvBuf, int aRecvCount, int aRoot) throws Error {
             Native.MPI_Gather(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCount, aRoot, mPtr);
         }
         
@@ -347,10 +347,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gatherv-function"> MPI_Gatherv function </a>
          */
-        public <S, R> void gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) {
+        public <S, R> void gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) throws Error {
             Native.MPI_Gatherv(aSendBuf, aSendCount, rRecvBuf, aRecvCounts, aDispls, aRoot, mPtr);
         }
-        public <R> void gatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) {
+        public <R> void gatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) throws Error {
             Native.MPI_Gatherv(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCounts, aDispls, aRoot, mPtr);
         }
         
@@ -372,10 +372,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-reduce-function"> MPI_Reduce function </a>
          */
-        public <T> void reduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp, int aRoot) {
+        public <T> void reduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp, int aRoot) throws Error {
             Native.MPI_Reduce(aSendBuf, rRecvBuf, aCount, aOp.mPtr, aRoot, mPtr);
         }
-        public <T> void reduce(T rRecvBuf, int aCount, Op aOp, int aRoot) {
+        public <T> void reduce(T rRecvBuf, int aCount, Op aOp, int aRoot) throws Error {
             Native.MPI_Reduce(Native.MPI_IN_PLACE, rRecvBuf, aCount, aOp.mPtr, aRoot, mPtr);
         }
         
@@ -391,7 +391,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-create-function"> MPI_Comm_create function </a>
          */
-        public Comm create(Group aGroup) {return of(Native.MPI_Comm_create(mPtr, aGroup.mPtr));}
+        public Comm create(Group aGroup) throws Error {return of(Native.MPI_Comm_create(mPtr, aGroup.mPtr));}
         
         /**
          * Partitions the group that is associated with the specified communicator into
@@ -410,8 +410,8 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-split-function"> MPI_Comm_split function </a>
          */
-        public Comm split(int aColor, int aKey) {return of(Native.MPI_Comm_split(mPtr, aColor, aKey));}
-        public Comm split(int aColor) {return split(aColor, rank());}
+        public Comm split(int aColor, int aKey) throws Error {return of(Native.MPI_Comm_split(mPtr, aColor, aKey));}
+        public Comm split(int aColor) throws Error {return split(aColor, rank());}
         
         
         /// MPI Group Functions
@@ -420,7 +420,7 @@ public class MPI {
          * @return The new {@link MPI.Group} that is associated with the specified communicator.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-group-function"> MPI_Comm_group function </a>
          */
-        public Group group() {return Group.of(Native.MPI_Comm_group(mPtr));}
+        public Group group() throws Error {return Group.of(Native.MPI_Comm_group(mPtr));}
         
         
         /// MPI Point to Point Functions
@@ -439,10 +439,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-send-function"> MPI_Send function </a>
          */
-        public <T> void send(T aBuf, int aCount, int aDest, int aTag) {
+        public <T> void send(T aBuf, int aCount, int aDest, int aTag) throws Error {
             Native.MPI_Send(aBuf, aCount, aDest, aTag, mPtr);
         }
-        public <T> void send(T aBuf, int aCount, int aDest) {
+        public <T> void send(T aBuf, int aCount, int aDest) throws Error {
             Native.MPI_Send(aBuf, aCount, aDest, 0, mPtr);
         }
         
@@ -464,10 +464,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-recv-function"> MPI_Recv function </a>
          */
-        public <T> void recv(T rBuf, int aCount, int aSource, int aTag) {
+        public <T> void recv(T rBuf, int aCount, int aSource, int aTag) throws Error {
             Native.MPI_Recv(rBuf, aCount, aSource, aTag, mPtr);
         }
-        public <T> void recv(T rBuf, int aCount, int aSource) {
+        public <T> void recv(T rBuf, int aCount, int aSource) throws Error {
             Native.MPI_Recv(rBuf, aCount, aSource, Tag.ANY, mPtr);
         }
         
@@ -486,10 +486,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-ssend-function"> MPI_Ssend function </a>
          */
-        public <T> void ssend(T aBuf, int aCount, int aDest, int aTag) {
+        public <T> void ssend(T aBuf, int aCount, int aDest, int aTag) throws Error {
             Native.MPI_Ssend(aBuf, aCount, aDest, aTag, mPtr);
         }
-        public <T> void ssend(T aBuf, int aCount, int aDest) {
+        public <T> void ssend(T aBuf, int aCount, int aDest) throws Error {
             Native.MPI_Ssend(aBuf, aCount, aDest, 0, mPtr);
         }
     }
@@ -559,7 +559,13 @@ public class MPI {
         public final static int ANY = Native.MPI_ANY_TAG;
     }
     
-    
+    public final static class Error extends Exception {
+        public final int mErrCode;
+        public Error(int aErrCode, String aMessage) {
+            super(aMessage);
+            mErrCode = aErrCode;
+        }
+    }
     
     
     /// 基础功能
@@ -567,22 +573,22 @@ public class MPI {
      * Initializes the calling MPI process’s execution environment for single threaded execution.
      * @param aArgs the argument list for the program
      */
-    public static void init(String[] aArgs) {Native.MPI_Init(aArgs);}
+    public static void init(String[] aArgs) throws Error {Native.MPI_Init(aArgs);}
     /**
      * Indicates whether {@link MPI#init} has been called.
      * @return true if {@link MPI#init} or {@link MPI#initThread} has been called and false otherwise.
      */
-    public static boolean initialized() {return Native.MPI_Initialized();}
+    public static boolean initialized() throws Error {return Native.MPI_Initialized();}
     
     /**
      * Terminates the calling MPI process’s execution environment.
      */
-    public static void shutdown() {Native.MPI_Finalize();}
+    public static void shutdown() throws Error {Native.MPI_Finalize();}
     /**
      * Indicates whether {@link MPI#shutdown} has been called.
      * @return true if MPI_Finalize has been called and false otherwise.
      */
-    public static boolean isShutdown() {return Native.MPI_Finalized();}
+    public static boolean isShutdown() throws Error {return Native.MPI_Finalized();}
     
     
     
@@ -596,7 +602,7 @@ public class MPI {
      * @return The level of provided thread support.
      * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-init-thread-function"> MPI_Init_thread function </a>
      */
-    public static int initThread(String[] aArgs, int aRequired) {return Native.MPI_Init_thread(aArgs, aRequired);}
+    public static int initThread(String[] aArgs, int aRequired) throws Error {return Native.MPI_Init_thread(aArgs, aRequired);}
     
     
     
@@ -641,7 +647,7 @@ public class MPI {
             UT.IO.makeDir(tBuildDir);
             // 直接通过系统指令来编译 mpijni 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd %s; cmake ..; cmake --build . --config Release", tBuildDir));
+            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件
             String tLibDir = tBuildDir+"lib/";
@@ -845,19 +851,19 @@ public class MPI {
          * Initializes the calling MPI process’s execution environment for single threaded execution.
          * @param aArgs the argument list for the program
          */
-        public native static void MPI_Init(String[] aArgs);
+        public native static void MPI_Init(String[] aArgs) throws Error;
         /**
          * Indicates whether {@link #MPI_Init} has been called.
          * @return true if {@link #MPI_Init} or {@link #MPI_Init_thread} has been called and false otherwise.
          */
-        public native static boolean MPI_Initialized();
+        public native static boolean MPI_Initialized() throws Error;
         
         /**
          * Retrieves the rank of the calling process in the group of the specified communicator.
          * @param aComm The communicator.
          * @return the number of calling process within the group of the communicator.
          */
-        public native static int MPI_Comm_rank(long aComm);
+        public native static int MPI_Comm_rank(long aComm) throws Error;
         
         /**
          * Retrieves the number of processes involved in a communicator, or the total number of
@@ -866,17 +872,17 @@ public class MPI {
          *              the total number of processes available.
          * @return the number of processes in the group for the communicator.
          */
-        public native static int MPI_Comm_size(long aComm);
+        public native static int MPI_Comm_size(long aComm) throws Error;
         
         /**
          * Terminates the calling MPI process’s execution environment.
          */
-        public native static void MPI_Finalize();
+        public native static void MPI_Finalize() throws Error;
         /**
          * Indicates whether {@link #MPI_Finalize} has been called.
          * @return true if MPI_Finalize has been called and false otherwise.
          */
-        public native static boolean MPI_Finalized();
+        public native static boolean MPI_Finalized() throws Error;
         
         
         
@@ -912,10 +918,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgather-function"> MPI_Allgather function </a>
          */
-        public static <S, R> void MPI_Allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, long aComm) {
+        public static <S, R> void MPI_Allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, long aComm) throws Error {
             MPI_Allgather0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aComm);
         }
-        private native static void MPI_Allgather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, long aComm);
+        private native static void MPI_Allgather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, long aComm) throws Error;
         
         /**
          * Gathers a variable amount of data from each member of a group and sends the data to all members of the group.
@@ -952,10 +958,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgatherv-function"> MPI_Allgatherv function </a>
          */
-        public static <S, R> void MPI_Allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, long aComm) {
+        public static <S, R> void MPI_Allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, long aComm) throws Error {
             MPI_Allgatherv0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aComm);
         }
-        private native static void MPI_Allgatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, long aComm);
+        private native static void MPI_Allgatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, long aComm) throws Error;
         
         /**
          * Combines values from all processes and distributes the result back to all processes.
@@ -983,10 +989,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allreduce-function"> MPI_Allreduce function </a>
          */
-        public static <T> void MPI_Allreduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, long aComm) {
+        public static <T> void MPI_Allreduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, long aComm) throws Error {
             MPI_Allreduce0(aSendBuf==MPI_IN_PLACE, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aComm);
         }
-        private native static void MPI_Allreduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, long aComm);
+        private native static void MPI_Allreduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, long aComm) throws Error;
         
         
         /**
@@ -1006,10 +1012,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-bcast-function"> MPI_Bcast function </a>
          */
-        public static <T> void MPI_Bcast(T rBuf, int aCount, int aRoot, long aComm) {
+        public static <T> void MPI_Bcast(T rBuf, int aCount, int aRoot, long aComm) throws Error {
             MPI_Bcast0(rBuf, aCount, datatypeOf_(rBuf), aRoot, aComm);
         }
-        private native static void MPI_Bcast0(Object rBuf, int aCount, long aDataType, int aRoot, long aComm);
+        private native static void MPI_Bcast0(Object rBuf, int aCount, long aDataType, int aRoot, long aComm) throws Error;
         
         
         /**
@@ -1041,10 +1047,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gather-function"> MPI_Gather function </a>
          */
-        public static <S, R> void MPI_Gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot, long aComm) {
+        public static <S, R> void MPI_Gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot, long aComm) throws Error {
             MPI_Gather0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aRoot, aComm);
         }
-        private native static void MPI_Gather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, int aRoot, long aComm);
+        private native static void MPI_Gather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, int aRoot, long aComm) throws Error;
         
         /**
          * Gathers variable data from all members of a group to one member.
@@ -1087,10 +1093,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gatherv-function"> MPI_Gatherv function </a>
          */
-        public static <S, R> void MPI_Gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot, long aComm) {
+        public static <S, R> void MPI_Gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot, long aComm) throws Error {
             MPI_Gatherv0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aRoot, aComm);
         }
-        private native static void MPI_Gatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, int aRoot, long aComm);
+        private native static void MPI_Gatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, int aRoot, long aComm) throws Error;
         
         /**
          * Performs a global reduce operation across all members of a group. You can specify
@@ -1120,10 +1126,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-reduce-function"> MPI_Reduce function </a>
          */
-        public static <T> void MPI_Reduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, int aRoot, long aComm) {
+        public static <T> void MPI_Reduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, int aRoot, long aComm) throws Error {
             MPI_Reduce0(aSendBuf==MPI_IN_PLACE, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aRoot, aComm);
         }
-        private native static void MPI_Reduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, int aRoot, long aComm);
+        private native static void MPI_Reduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, int aRoot, long aComm) throws Error;
         
         
         
@@ -1139,7 +1145,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-create-function"> MPI_Comm_create function </a>
          */
-        public native static long MPI_Comm_create(long aComm, long aGroup);
+        public native static long MPI_Comm_create(long aComm, long aGroup) throws Error;
         
         /**
          * Duplicates an existing communicator with associated key values. For each key value,
@@ -1154,7 +1160,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-dup-function"> MPI_Comm_dup function </a>
          */
-        public native static long MPI_Comm_dup(long aComm);
+        public native static long MPI_Comm_dup(long aComm) throws Error;
         
         /**
          * Frees a communicator that is allocated with the {@link #MPI_Comm_dup}, {@link #MPI_Comm_create},
@@ -1164,7 +1170,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-free-function"> MPI_Comm_free function </a>
          */
-        public native static void MPI_Comm_free(long aComm);
+        public native static void MPI_Comm_free(long aComm) throws Error;
         
         /**
          * Partitions the group that is associated with the specified communicator into
@@ -1185,7 +1191,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-split-function"> MPI_Comm_split function </a>
          */
-        public native static long MPI_Comm_split(long aComm, int aColor, int aKey);
+        public native static long MPI_Comm_split(long aComm, int aColor, int aKey) throws Error;
         
         
         
@@ -1198,7 +1204,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-comm-group-function"> MPI_Comm_group function </a>
          */
-        public native static long MPI_Comm_group(long aComm);
+        public native static long MPI_Comm_group(long aComm) throws Error;
         
         /**
          * Creates a new group from the difference between two existing groups.
@@ -1210,7 +1216,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-difference-function"> MPI_Group_difference function </a>
          */
-        public native static long MPI_Group_difference(long aGroup1, long aGroup2);
+        public native static long MPI_Group_difference(long aGroup1, long aGroup2) throws Error;
         
         /**
          * A group constructor that is used to define a new group by deleting ranks from an existing group.
@@ -1227,14 +1233,14 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-excl-function"> MPI_Group_excl function </a>
          */
-        public native static long MPI_Group_excl(long aGroup, int[] aRanks);
+        public native static long MPI_Group_excl(long aGroup, int[] aRanks) throws Error;
         
         /**
          * Frees a group.
          * @param aGroup Group to free.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-free-function"> MPI_Group_free function </a>
          */
-        public native static void MPI_Group_free(long aGroup);
+        public native static void MPI_Group_free(long aGroup) throws Error;
         
         /**
          * Creates a new group that contains a subset of the processes in an existing group.
@@ -1248,7 +1254,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-incl-function"> MPI_Group_incl function </a>
          */
-        public native static long MPI_Group_incl(long aGroup, int[] aRanks);
+        public native static long MPI_Group_incl(long aGroup, int[] aRanks) throws Error;
         
         /**
          * Creates a new group from the intersection of two existing groups.
@@ -1260,7 +1266,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-intersection-function"> MPI_Group_intersection function </a>
          */
-        public native static long MPI_Group_intersection(long aGroup1, long aGroup2);
+        public native static long MPI_Group_intersection(long aGroup1, long aGroup2) throws Error;
         
         /**
          * Returns the rank of the calling process in the specified group.
@@ -1271,7 +1277,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-rank-function"> MPI_Group_rank function </a>
          */
-        public native static int MPI_Group_rank(long aGroup);
+        public native static int MPI_Group_rank(long aGroup) throws Error;
         
         /**
          * Retrieves the size of the specified group.
@@ -1281,7 +1287,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-size-function"> MPI_Group_size function </a>
          */
-        public native static int MPI_Group_size(long aGroup);
+        public native static int MPI_Group_size(long aGroup) throws Error;
         
         /**
          * Creates a new group from the union of two existing groups.
@@ -1292,7 +1298,7 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-group-union-function"> MPI_Group_union function </a>
          */
-        public native static long MPI_Group_union(long aGroup1, long aGroup2);
+        public native static long MPI_Group_union(long aGroup1, long aGroup2) throws Error;
         
         
         
@@ -1314,10 +1320,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-send-function"> MPI_Send function </a>
          */
-        public static <T> void MPI_Send(T aBuf, int aCount, int aDest, int aTag, long aComm) {
+        public static <T> void MPI_Send(T aBuf, int aCount, int aDest, int aTag, long aComm) throws Error {
             MPI_Send0(aBuf, aCount, datatypeOf_(aBuf), aDest, aTag, aComm);
         }
-        private native static void MPI_Send0(Object aBuf, int aCount, long aDataType, int aDest, int aTag, long aComm);
+        private native static void MPI_Send0(Object aBuf, int aCount, long aDataType, int aDest, int aTag, long aComm) throws Error;
         
         /**
          * Performs a receive operation and does not return until a matching message is received.
@@ -1339,10 +1345,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-recv-function"> MPI_Recv function </a>
          */
-        public static <T> void MPI_Recv(T rBuf, int aCount, int aSource, int aTag, long aComm) {
+        public static <T> void MPI_Recv(T rBuf, int aCount, int aSource, int aTag, long aComm) throws Error {
             MPI_Recv0(rBuf, aCount, datatypeOf_(rBuf), aSource, aTag, aComm);
         }
-        private native static void MPI_Recv0(Object rBuf, int aCount, long aDataType, int aSource, int aTag, long aComm);
+        private native static void MPI_Recv0(Object rBuf, int aCount, long aDataType, int aSource, int aTag, long aComm) throws Error;
         
         /**
          * Performs a synchronous mode send operation and returns when the send buffer can be safely reused.
@@ -1361,10 +1367,10 @@ public class MPI {
          *
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-ssend-function"> MPI_Ssend function </a>
          */
-        public static <T> void MPI_Ssend(T aBuf, int aCount, int aDest, int aTag, long aComm) {
+        public static <T> void MPI_Ssend(T aBuf, int aCount, int aDest, int aTag, long aComm) throws Error {
             MPI_Ssend0(aBuf, aCount, datatypeOf_(aBuf), aDest, aTag, aComm);
         }
-        private native static void MPI_Ssend0(Object aBuf, int aCount, long aDataType, int aDest, int aTag, long aComm);
+        private native static void MPI_Ssend0(Object aBuf, int aCount, long aDataType, int aDest, int aTag, long aComm) throws Error;
         
         
         
@@ -1377,7 +1383,7 @@ public class MPI {
          * @return The level of provided thread support.
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-init-thread-function"> MPI_Init_thread function </a>
          */
-        public native static int MPI_Init_thread(String[] aArgs, int aRequired);
+        public native static int MPI_Init_thread(String[] aArgs, int aRequired) throws Error;
         
         
         

@@ -32,9 +32,13 @@ public class BOOPSolidChecker_MPI implements ISolidChecker {
     public BOOPSolidChecker_MPI setSolidThreshold(int aSolidThreshold) {mSolidThreshold = Math.max(0, aSolidThreshold); return this;}
     
     @Override public ILogicalVector checkSolid(MonatomicParameterCalculator aMPC) {
-        IVector tConnectCount = aMPC.calConnectCountBOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
-        ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
-        VectorCache.returnVec(tConnectCount);
-        return tIsSolid;
+        try {
+            IVector tConnectCount = aMPC.calConnectCountBOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+            ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
+            VectorCache.returnVec(tConnectCount);
+            return tIsSolid;
+        } catch (MPI.Error e) {
+            throw new RuntimeException(e);
+        }
     }
 }
