@@ -15,7 +15,6 @@ import jtoolex.rareevent.ITimeAndParameterIterator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.*;
@@ -78,9 +77,9 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         // MPI 相关参数
         mWorldComm = aWorldComm;
         mWorldRoot = aWorldRoot;
-        mWorldMe = aWorldComm.rank();
-        mLmpComm = aLmpComm;
-        mLmpMe = aLmpComm.rank();
+        mWorldMe = mWorldComm.rank();
+        mLmpComm = aLmpComm.copy(); // 对于数据传输使用的 Comm 要拷贝一份，和 lammps 使用的 Comm 进行区分避免相互干扰
+        mLmpMe = mLmpComm.rank();
         if (aLmpRoots == null) {
             if (mWorldMe == mWorldRoot) throw new IllegalArgumentException("aLmpRoots of WorldRoot ("+mWorldRoot+") can NOT be null");
             mLmpRoots = null;
@@ -325,23 +324,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 case PATH_NEXT: {
                     Lmpdat tNext = mIt.next();
                     if (mLmpMe == 0) {
-                        // 好像很容易在这里卡住，这里增加一个时间限制
-                        try {
-                            UT.Par.runAsync(() -> {
-                                try {sendLmpdat_(tNext, mWorldRoot, mWorldComm);}
-                                catch (MPI.Error e) {throw new RuntimeException(e);}
-                            }).get(500, TimeUnit.MILLISECONDS);
-                        } catch (TimeoutException e) {
-                            System.err.printf("Rank %d (%d in lmpComm) timeout when sendLmpdat_ to %d%n", mWorldMe, mLmpMe, mWorldRoot);
-                            String tPath = ".temp/"+"data@"+UT.Code.randID();
-                            try {
-                                tNext.write(tPath);
-                                System.err.printf("Sending Lmpdat has been written to %s%n", tPath);
-                            } catch (IOException ex) {throw new RuntimeException(ex);}
-                            throw new RuntimeException(e);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
+                        sendLmpdat_(tNext, mWorldRoot, mWorldComm);
                     }
                     // 当然在这里直接 return Lmpdat 是非法的，
                     // 因为获取 lambda 时也需要这个 Lmpdat 值；

@@ -53,7 +53,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
      * 每个进程都需要调用来进行创建，除了特殊说明，输入参数都需要一致
      * @author liqa
      * @param aLmpComm 此进程需要运行 {@link NativeLmp} 的 {@link MPI.Comm}，默认为 {@link MPI.Comm#WORLD}
-     * @param aParameterCalculator 计算对应 Lmpdat 参数的计算器，建议使用 MPI 版本的计算器，并使用相同的 {@link MPI.Comm}
+     * @param aParameterCalculator 计算对应 Lmpdat 参数的计算器，建议使用 MPI 版本的计算器，并使用相同范围的 {@link MPI.Comm}
      * @param aInitAtomDataList  用于初始的原子数据
      * @param aMesses 每个种类的原子对应的摩尔质量，且长度指定原子种类数目
      * @param aTemperature 创建路径的温度
