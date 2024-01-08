@@ -29,7 +29,6 @@ final int Cu = 15;
 final int Zr = 100-Cu;
 final int replicate = 10; // 共 4x10x10x10 = 4000 原子
 final def pairStyle = 'eam/fs';
-final def pairCoeff = '* * lmp/.potential/Cu-Zr_4.eam.fs Cu Zr';
 
 final int atomNum = replicate*replicate*replicate*4;
 
@@ -76,12 +75,18 @@ def initPoints = range(parallelNum).collect {Lmpdat.read("${SCOutDataPath}-${it}
 int color = me.intdiv(lmpCores);
 try (def subComm = MPI.Comm.WORLD.split(color)) {
 
+if (subComm.rank()==0) {
+    UT.IO.copy('lmp/.potential/Cu-Zr_4.eam.fs', "lmp/.temp/potential/Cu-Zr-eam-fs-$color");
+}
+def pairCoeff = "* * lmp/.temp/potential/Cu-Zr-eam-fs-$color Cu Zr";
+
+
 def dumpCal = new MultiTypeClusterSizeCalculator(
     new ABOOPSolidChecker_MPI().setComm(subComm).setRNearestMul(1.5).setConnectThreshold(0.89).setSolidThreshold(7),
     [new ABOOPSolidChecker_MPI().setComm(subComm).setRNearestMul(1.8).setConnectThreshold(0.84).setSolidThreshold(13), new ABOOPSolidChecker_MPI().setComm(subComm).setRNearestMul(1.5).setConnectThreshold(0.84).setSolidThreshold(7)]
 );
 
-MultipleNativeLmpFullPathGenerator.ofWith(MPI.Comm.WORLD, 0, subComm, subRoots, dumpCal, initPoints, Vectors.from([MASS.Cu, MASS.Zr]), SCTemp, pairStyle, pairCoeff, timestep, dumpStep) {fullPathGen ->
+MultipleNativeLmpFullPathGenerator.withOf(MPI.Comm.WORLD, 0, subComm, subRoots, dumpCal, initPoints, Vectors.from([MASS.Cu, MASS.Zr]), SCTemp, pairStyle, pairCoeff, timestep, dumpStep) {fullPathGen ->
     
     /** 开始 FFS */
     println("=====BEGIN ${UNIQUE_NAME} OF Cu${Cu}Zr${Zr}=====");

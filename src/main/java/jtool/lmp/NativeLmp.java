@@ -35,6 +35,8 @@ import static jtool.code.CS.*;
  * 使用类似 python 调用 lammps 的结构，
  * 使用 {@link MPI} 实现并行。
  * <p>
+ * 由于 lammps 的特性，此类线程不安全，并且要求所有方法都由相同的线程调用
+ * <p>
  * References:
  * <a href="https://docs.lammps.org/Python_module.html">
  * The lammps Python module </a>,
@@ -285,7 +287,10 @@ public class NativeLmp implements IAutoShutdown {
     private native static long lammpsOpen_(String[] aArgs, long aComm, long aPtr) throws Error;
     private native static long lammpsOpen_(String[] aArgs, long aPtr) throws Error;
     
-    void checkThread() throws Error {
+    public boolean threadValid() {
+        return Thread.currentThread().getId() == mInitTheadID;
+    }
+    public void checkThread() throws Error {
         long tCurrentThreadID = Thread.currentThread().getId();
         if (tCurrentThreadID != mInitTheadID) throw new Error("Thread of NativeLmp MUST be SAME: "+tCurrentThreadID+" vs "+mInitTheadID);
     }

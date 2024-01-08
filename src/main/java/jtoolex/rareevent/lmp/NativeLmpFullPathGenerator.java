@@ -25,7 +25,7 @@ import static jtool.code.CS.MAX_SEED;
  * 后续所有信息也需要所有进程进行调用来进行 mpi 计算；
  * 除了特殊说明，输入参数都需要一致
  * <p>
- * 要求这些方法是线程安全的，可以同一个实例并行运行同一个方法，注意获取到的容器是线程不安全的（不同实例间线程安全）
+ * 由于 lammps 的特性，此类线程不安全，并且要求所有方法都由相同的线程调用
  * <p>
  * 现在统一对于包含 {@link MPI.Comm} 不进行自动关闭的管理，和 {@link NativeLmp} 一致，
  * 这样可以简单处理很多情况
@@ -175,4 +175,8 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
     }
     
     @Override public void shutdown() {mLmp.shutdown();}
+    
+    
+    public boolean threadValid() {return mLmp.threadValid();}
+    public void checkThread() throws NativeLmp.Error {mLmp.checkThread();}
 }
