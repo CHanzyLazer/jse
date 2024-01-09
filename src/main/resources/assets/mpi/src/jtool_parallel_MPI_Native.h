@@ -417,6 +417,14 @@ JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiUndefined_1
 
 /*
  * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Get_library_version
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Get_1library_1version
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
  * Method:    MPI_Init
  * Signature: ([Ljava/lang/String;)V
  */

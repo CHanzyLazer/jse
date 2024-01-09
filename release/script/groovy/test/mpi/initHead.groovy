@@ -1,5 +1,6 @@
 package test.mpi
 
+import jtool.lmp.NativeLmp
 import jtool.parallel.MPI
 
 import static jtool.code.CS.Exec.*

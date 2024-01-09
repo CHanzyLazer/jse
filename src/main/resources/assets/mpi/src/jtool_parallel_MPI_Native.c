@@ -170,6 +170,16 @@ JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiAnyTag_1(JNIEnv
 JNIEXPORT jint JNICALL Java_jtool_parallel_MPI_00024Native_getMpiUndefined_1(JNIEnv *aEnv, jclass aClazz) {return MPI_UNDEFINED;}
 
 
+
+JNIEXPORT jstring JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Get_1library_1version(JNIEnv *aEnv, jclass aClazz) {
+    char rVersionStr[MPI_MAX_LIBRARY_VERSION_STRING];
+    int rLen;
+    int tExitCode = MPI_Get_library_version(rVersionStr, &rLen);
+    exceptionCheck(aEnv, tExitCode);
+    return (*aEnv)->NewStringUTF(aEnv, (const char*)rVersionStr);
+}
+
+
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Init(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs) {
     int tLen;
     char **sArgs = parseArgs(aEnv, aArgs, &tLen);

@@ -23,6 +23,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(BUILD_SHARED_LIBS ON)
 endif ()
 
+
 # add jni
 find_package(JNI)
 if (JNI_FOUND)
@@ -32,15 +33,16 @@ else ()
     message(FATAL_ERROR "No Java Environment Found")
 endif(JNI_FOUND)
 
+
 # add mpi
 find_package(MPI)
-if (MPI_FOUND)
-    set(CMAKE_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-    set(CMAKE_LINK_FLAGS ${CMAKE_LINK_FLAGS} ${MPI_LINK_FLAGS})
+if (MPI_C_FOUND)
+    set(CMAKE_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+    set(CMAKE_LINK_FLAGS ${CMAKE_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
     
-    include_directories(${MPI_INCLUDE_PATH})
-    target_link_libraries(mpijni ${MPI_LIBRARIES})
+    include_directories(${MPI_C_INCLUDE_DIRS})
+    target_link_libraries(mpijni ${MPI_C_LIBRARIES})
 else ()
-    message(FATAL_ERROR "No MPI Environment Found")
-endif(MPI_FOUND)
+    message(FATAL_ERROR "No MPI C Environment Found")
+endif(MPI_C_FOUND)
 

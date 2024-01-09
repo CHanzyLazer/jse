@@ -49,6 +49,7 @@ import static jtool.code.CS.Exec.JAR_DIR;
  */
 public class MPI {
     private MPI() {}
+    public static String libraryVersion() throws Error {return MPI.Native.MPI_Get_library_version();}
     
     public static final int UNDEFINED = Native.MPI_UNDEFINED;
     
@@ -639,6 +640,8 @@ public class MPI {
             }
             // 从内部资源解压到临时目录
             String tWorkingDir = WORKING_DIR.replaceAll("%n", "mpisrc");
+            // 如果已经存在则先删除
+            UT.IO.removeDir(tWorkingDir);
             for (String tName : MPISRC_NAME) {
                 UT.IO.copy(UT.IO.getResource("mpi/src/"+tName), tWorkingDir+tName);
             }
@@ -837,13 +840,17 @@ public class MPI {
         private native static int getMpiAnySource_();
         private native static int getMpiRoot_();
         
-        /* Used in: Tag */
+        /** Used in: Tag */
         public final static int MPI_ANY_TAG;
         private native static int getMpiAnyTag_();
         
-        /* Used in: Count, Index, Rank, Color, Toplogy, Precision, Exponent range  */
+        /** Used in: Count, Index, Rank, Color, Toplogy, Precision, Exponent range  */
         public final static int MPI_UNDEFINED;
         private native static int getMpiUndefined_();
+        
+        
+        /** Debug, 输出此 mpi 实例的版本，可以用来检测 mpi 是否一致 */
+        public native static String MPI_Get_library_version() throws Error;
         
         
         /// 基础功能

@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     jtool_lmp_NativeLmp
  * Method:    lammpsOpen_
- * Signature: ([Ljava/lang/String;JJ)J
- */
-JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2JJ
-  (JNIEnv *, jclass, jobjectArray, jlong, jlong);
-
-/*
- * Class:     jtool_lmp_NativeLmp
- * Method:    lammpsOpen_
  * Signature: ([Ljava/lang/String;J)J
  */
 JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2J
   (JNIEnv *, jclass, jobjectArray, jlong);
+
+/*
+ * Class:     jtool_lmp_NativeLmp
+ * Method:    lammpsOpen_
+ * Signature: ([Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2
+  (JNIEnv *, jclass, jobjectArray);
 
 /*
  * Class:     jtool_lmp_NativeLmp
@@ -130,9 +130,9 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsScatter_1
 /*
  * Class:     jtool_lmp_NativeLmp
  * Method:    lammpsCreateAtoms_
- * Signature: (J[D[D[D[D[DZ)I
+ * Signature: (J[D[D[D[D[DZ)V
  */
-JNIEXPORT jint JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1
+JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1
   (JNIEnv *, jclass, jlong, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jboolean);
 
 /*

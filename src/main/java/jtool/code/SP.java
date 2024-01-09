@@ -386,6 +386,8 @@ public class SP {
             EXE.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("JEP BUILD ERROR: No camke environment.");
             String tWorkingDir = WORKING_DIR.replaceAll("%n", "jepsrc");
+            // 如果已经存在则先删除
+            UT.IO.removeDir(tWorkingDir);
             // 首先获取源码路径，这里直接从 resource 里输出
             String tJepZipPath = tWorkingDir+"jep-"+JEP_VERSION+".zip";
             UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);

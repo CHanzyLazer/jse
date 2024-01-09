@@ -90,6 +90,19 @@ public class NativeLmp implements IAutoShutdown {
          * 这会大大增加二次编译的时间
          */
         public static boolean CLEAN = false;
+        
+        /**
+         * 是否是旧版本的 lammps，具体来说大致为 18Sep2020 之前版本的 lammps，
+         * 开启后会使用更老的 api，兼容性会更高
+         */
+        public static boolean IS_OLD = false;
+        
+        /**
+         * lammps 是否有 exception 相关接口，
+         * 对于新版的 lammps 总是存在，但对于旧版可能不会存在，
+         * 关闭后可以保证编译通过
+         */
+        public static boolean HAS_EXCEPTIONS = true;
     }
     
     private final static String LMPLIB_DIR = JAR_DIR+"lmp/";
@@ -101,7 +114,7 @@ public class NativeLmp implements IAutoShutdown {
     private final static String NATIVE_DIR_NAME = "native", BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     private final static String NATIVE_LMPLIB_NAME = IS_WINDOWS ? "liblammps.dll" : (IS_MAC ? "liblammps.dylib" : "liblammps.so");
     
-    private static String initCmakeSettingCmd_(String aNativeLmpBuildDir) {
+    private static String initCmakeSettingCmdNativeLmp_(String aNativeLmpBuildDir) {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cd"); rCommand.add("\""+aNativeLmpBuildDir+"\""); rCommand.add(";");
@@ -126,6 +139,16 @@ public class NativeLmp implements IAutoShutdown {
         rCommand.add(".");
         return String.join(" ", rCommand);
     }
+    private static String initCmakeSettingCmdLmpJni_(String aLmpJniBuildDir) {
+        // 设置参数，这里使用 List 来构造这个长指令
+        List<String> rCommand = new ArrayList<>();
+        rCommand.add("cd"); rCommand.add("\""+aLmpJniBuildDir+"\""); rCommand.add(";");
+        rCommand.add("cmake");
+        rCommand.add("-D"); rCommand.add("LAMMPS_IS_OLD="        +(Conf.IS_OLD        ?"ON":"OFF"));
+        rCommand.add("-D"); rCommand.add("LAMMPS_HAS_EXCEPTIONS="+(Conf.HAS_EXCEPTIONS?"ON":"OFF"));
+        rCommand.add(".");
+        return String.join(" ", rCommand);
+    }
     
     private static void initLmp_() throws Exception {
         // 检测 cmake，这里要求一定要有 cmake 环境
@@ -134,6 +157,8 @@ public class NativeLmp implements IAutoShutdown {
         EXE.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("NATIVE_LMP BUILD ERROR: No camke environment.");
         String tWorkingDir = WORKING_DIR.replaceAll("%n", "nativelmp");
+        // 如果已经存在则先删除
+        UT.IO.removeDir(tWorkingDir);
         // LMP_HOME 不合法，需要重新指定
         if (!UT.IO.isDir(Conf.LMP_HOME)) {
             String tNativeLmpDir = LMPLIB_DIR+NATIVE_DIR_NAME+"/";
@@ -177,7 +202,7 @@ public class NativeLmp implements IAutoShutdown {
             // 初始化 cmake
             EXE.system(String.format("cd \"%s\"; cmake ../cmake", Conf.LMP_HOME));
             // 设置参数
-            EXE.system(initCmakeSettingCmd_(Conf.LMP_HOME));
+            EXE.system(initCmakeSettingCmdNativeLmp_(Conf.LMP_HOME));
             // 如果设置 CLEAN 则进行 clean 操作
             if (Conf.CLEAN) EXE.system(String.format("cd \"%s\"; cmake --build . --target clean", Conf.LMP_HOME));
             // 最后进行构造操作
@@ -206,7 +231,12 @@ public class NativeLmp implements IAutoShutdown {
             UT.IO.makeDir(tBuildDir);
             // 直接通过系统指令来编译 lmpjni 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tBuildDir));
+            // 初始化 cmake
+            EXE.system(String.format("cd \"%s\"; cmake ..", tBuildDir));
+            // 设置参数
+            EXE.system(initCmakeSettingCmdLmpJni_(tBuildDir));
+            // 最后进行构造操作
+            EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件
             String tLibDir = tBuildDir+"lib/";
@@ -269,25 +299,20 @@ public class NativeLmp implements IAutoShutdown {
      * @param aComm MPI communicator as provided by {@link MPI} (or {@link MPI.Native}).
      *              null (or 0) means use {@link MPI.Comm#WORLD} implicitly.
      *
-     * @param aPtr pointer to a LAMMPS C++ class instance when called from an embedded Python interpreter.
-     *             0 means load symbols from shared library.
-     *
      * @author liqa
      */
-    public NativeLmp(String[] aArgs, long aComm, long aPtr) throws Error {
+    public NativeLmp(String[] aArgs, long aComm) throws Error {
         String[] tArgs = aArgs==null ? DEFAULT_ARGS : new String[aArgs.length+1];
         tArgs[0] = EXECUTABLE_NAME;
         if (aArgs != null) System.arraycopy(aArgs, 0, tArgs, 1, aArgs.length);
-        mLmpPtr = aComm==0 ? lammpsOpen_(tArgs, aPtr) : lammpsOpen_(tArgs, aComm, aPtr);
+        mLmpPtr = aComm==0 ? lammpsOpen_(tArgs) : lammpsOpen_(tArgs, aComm);
         mInitTheadID = Thread.currentThread().getId();
     }
-    public NativeLmp(String[] aArgs, long aComm) throws Error {this(aArgs, aComm, 0);}
-    public NativeLmp(String[] aArgs, MPI.Comm aComm, long aPtr) throws Error {this(aArgs, aComm==null ? 0 : aComm.ptr_(), aPtr);}
-    public NativeLmp(String[] aArgs, MPI.Comm aComm) throws Error {this(aArgs, aComm, 0);}
+    public NativeLmp(String[] aArgs, MPI.Comm aComm) throws Error {this(aArgs, aComm==null ? 0 : aComm.ptr_());}
     public NativeLmp(String[] aArgs) throws Error {this(aArgs, 0);}
     public NativeLmp() throws Error {this(null);}
-    private native static long lammpsOpen_(String[] aArgs, long aComm, long aPtr) throws Error;
-    private native static long lammpsOpen_(String[] aArgs, long aPtr) throws Error;
+    private native static long lammpsOpen_(String[] aArgs, long aComm) throws Error;
+    private native static long lammpsOpen_(String[] aArgs) throws Error;
     
     public boolean threadValid() {
         return Thread.currentThread().getId() == mInitTheadID;
@@ -718,9 +743,8 @@ public class NativeLmp implements IAutoShutdown {
      * This function is a wrapper around the {@code lammps_create_atoms()} function of the C-library interface.
      * @param aAtoms List of Atoms
      * @param aShrinkExceed whether to expand shrink-wrap boundaries if atoms are outside the box (false in default)
-     * @return number of atoms created. 0 if insufficient or invalid data
      */
-    public int creatAtoms(List<? extends IAtom> aAtoms, boolean aShrinkExceed) throws Error {
+    public void creatAtoms(List<? extends IAtom> aAtoms, boolean aShrinkExceed) throws Error {
         checkThread();
         final boolean tHasVelocities = UT.Code.first(aAtoms).hasVelocities();
         final int tAtomNum = aAtoms.size();
@@ -742,18 +766,16 @@ public class NativeLmp implements IAutoShutdown {
                 rVelocities[j2] = tAtom.vz(); ++j2;
             }
         }
-        int tOut = lammpsCreateAtoms_(mLmpPtr, rID, rType, rXYZ, rVelocities, null, aShrinkExceed);
+        lammpsCreateAtoms_(mLmpPtr, rID, rType, rXYZ, rVelocities, null, aShrinkExceed);
         DoubleArrayCache.returnArray(rID);
         DoubleArrayCache.returnArray(rType);
         DoubleArrayCache.returnArray(rXYZ);
         if (tHasVelocities) DoubleArrayCache.returnArray(rVelocities);
-        return tOut;
     }
-    @SuppressWarnings("UnusedReturnValue")
-    public int creatAtoms(List<? extends IAtom> aAtoms) throws Error {
-        return creatAtoms(aAtoms, false);
+    public void creatAtoms(List<? extends IAtom> aAtoms) throws Error {
+        creatAtoms(aAtoms, false);
     }
-    private native static int lammpsCreateAtoms_(long aLmpPtr, double[] aID, double[] aType, double[] aXYZ, double[] aVelocities, double[] aImage, boolean aShrinkExceed) throws Error;
+    private native static void lammpsCreateAtoms_(long aLmpPtr, double[] aID, double[] aType, double[] aXYZ, double[] aVelocities, double[] aImage, boolean aShrinkExceed) throws Error;
     
     /**
      * lammps clear 指令

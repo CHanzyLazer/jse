@@ -11,6 +11,8 @@ import static jtool.code.UT.Math.*;
 
 MPI.init(args);
 
+println(MPI.libraryVersion());
+
 final int me = MPI.Comm.WORLD.rank();
 final int np = MPI.Comm.WORLD.size();
 

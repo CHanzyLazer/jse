@@ -23,6 +23,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(BUILD_SHARED_LIBS ON)
 endif ()
 
+
 # add jni
 find_package(JNI)
 if (JNI_FOUND)
@@ -32,19 +33,32 @@ else ()
     message(FATAL_ERROR "No Java Environment Found")
 endif(JNI_FOUND)
 
+
 # add mpi
 find_package(MPI)
-if (MPI_FOUND)
+if (MPI_C_FOUND)
     add_definitions(-DLAMMPS_LIB_MPI)
     
-    set(CMAKE_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-    set(CMAKE_LINK_FLAGS ${CMAKE_LINK_FLAGS} ${MPI_LINK_FLAGS})
+    set(CMAKE_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+    set(CMAKE_LINK_FLAGS ${CMAKE_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
     
-    include_directories(${MPI_INCLUDE_PATH})
-    target_link_libraries(lmpjni ${MPI_LIBRARIES})
-endif(MPI_FOUND)
+    include_directories(${MPI_C_INCLUDE_DIRS})
+    target_link_libraries(lmpjni ${MPI_C_LIBRARIES})
+endif(MPI_C_FOUND)
+
 
 # add lammps
+option(LAMMPS_IS_OLD "Build based on old version lammps (like version below 18Sep2020)" OFF)
+option(LAMMPS_HAS_EXCEPTIONS "Build based on lammps which has error handling" ON)
+
+if (LAMMPS_IS_OLD)
+    add_definitions(-DLAMMPS_OLD)
+endif(LAMMPS_IS_OLD)
+
+if (LAMMPS_HAS_EXCEPTIONS)
+    add_definitions(-DLAMMPS_EXCEPTIONS)
+endif(LAMMPS_HAS_EXCEPTIONS)
+
 include_directories($ENV{LAMMPS_HOME}includes)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(lmpjni $ENV{LAMMPS_HOME}lib/liblammps.so)

@@ -66,6 +66,7 @@ GEN_PARSE_JANY_TO_ANY(intbig, double, Double)
 #define LMP_MAX_ERROR_STRING 512
 
 void exceptionCheck(JNIEnv *aEnv, void *aLmpPtr) {
+#ifdef LAMMPS_EXCEPTIONS
     if (!lammps_has_error(aLmpPtr)) return;
     
     // find class runtime due to asm
@@ -88,44 +89,72 @@ void exceptionCheck(JNIEnv *aEnv, void *aLmpPtr) {
     (*aEnv)->Throw(aEnv, tLmpError);
     (*aEnv)->DeleteLocalRef(aEnv, tLmpError);
     (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
+#endif
 }
 
 
-JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2JJ(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs, jlong aComm, jlong aPtr) {
+
+JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2J(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs, jlong aComm) {
     int tLen;
     char **sArgs = parseStrBuf(aEnv, aArgs, &tLen);
-#if defined(LAMMPS_LIB_MPI)
+#ifdef LAMMPS_LIB_MPI
     void *tLmpPtr;
     int tMpiInit;
     MPI_Initialized(&tMpiInit);
     if (tMpiInit) {
         MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
-        tLmpPtr = lammps_open(tLen, sArgs, tComm, (void *)aPtr);
+#ifdef LAMMPS_OLD
+        lammps_open(tLen, sArgs, tComm, &tLmpPtr);
+#else
+        tLmpPtr = lammps_open(tLen, sArgs, tComm, NULL);
+#endif
     } else {
-        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+#ifdef LAMMPS_OLD
+        lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
+#else
+        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
+#endif
     }
 #else
-    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+#ifdef LAMMPS_OLD
+    void *tLmpPtr;
+    lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
+#else
+    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
+#endif
 #endif
     exceptionCheck(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
     return (intptr_t)tLmpPtr;
 }
 
-JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2J(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs, jlong aPtr) {
+JNIEXPORT jlong JNICALL Java_jtool_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs) {
     int tLen;
     char **sArgs = parseStrBuf(aEnv, aArgs, &tLen);
-#if defined(LAMMPS_LIB_MPI)
+#ifdef LAMMPS_LIB_MPI
     void *tLmpPtr;
     int tMpiInit;
     MPI_Initialized(&tMpiInit);
     if (tMpiInit) {
-        tLmpPtr = lammps_open(tLen, sArgs, MPI_COMM_WORLD, (void *)aPtr);
+#ifdef LAMMPS_OLD
+        lammps_open(tLen, sArgs, MPI_COMM_WORLD, &tLmpPtr);
+#else
+        tLmpPtr = lammps_open(tLen, sArgs, MPI_COMM_WORLD, NULL);
+#endif
     } else {
-        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+#ifdef LAMMPS_OLD
+        lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
+#else
+        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
+#endif
     }
 #else
-    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, (void *)aPtr);
+#ifdef LAMMPS_OLD
+    void *tLmpPtr;
+    lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
+#else
+    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
+#endif
 #endif
     exceptionCheck(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
@@ -151,7 +180,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCommand_1(JNIEnv *aEnv, jc
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCommandsList_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jobjectArray aCmds) {
     int tLen;
     char **tCmds = parseStrBuf(aEnv, aCmds, &tLen);
-    lammps_commands_list((void *)aLmpPtr, tLen, (const char **)tCmds);
+    lammps_commands_list((void *)aLmpPtr, tLen, tCmds);
     exceptionCheck(aEnv, (void *)aLmpPtr);
     freeStrBuf(tCmds, tLen);
 }
@@ -216,12 +245,20 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
     jdouble *rDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, rData, NULL);
     char *tName = parseStr(aEnv, aName);
     if (aIsDouble) {
+#ifdef LAMMPS_OLD
+        lammps_gather_atoms_concat((void *)aLmpPtr, tName, 1, aCount, rDataBuf);
+#else
         lammps_gather_concat((void *)aLmpPtr, tName, 1, aCount, rDataBuf);
+#endif
         exceptionCheck(aEnv, (void *)aLmpPtr);
     } else {
         jint tLen = aCount * aAtomNum;
         int *rIntBuf = malloc(tLen*sizeof(int));
+#ifdef LAMMPS_OLD
+        lammps_gather_atoms_concat((void *)aLmpPtr, tName, 0, aCount, rIntBuf);
+#else
         lammps_gather_concat((void *)aLmpPtr, tName, 0, aCount, rIntBuf);
+#endif
         exceptionCheck(aEnv, (void *)aLmpPtr);
         for (int i = 0; i < tLen; ++i) rDataBuf[i] = rIntBuf[i];
         free(rIntBuf);
@@ -324,34 +361,41 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jc
     jdouble *tDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, aData, NULL);
     char *tName = parseStr(aEnv, aName);
     if (aIsDouble) {
+#ifdef LAMMPS_OLD
+        lammps_scatter_atoms((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+#else
         lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+#endif
         exceptionCheck(aEnv, (void *)aLmpPtr);
     } else {
         jint tLen = aCount * aAtomNum;
         int *tIntBuf = malloc(tLen*sizeof(int));
         for (int i = 0; i < tLen; ++i) tIntBuf[i] = (int)tDataBuf[i];
-        lammps_scatter((void *)aLmpPtr, tName, 0, aCount, tIntBuf);
+#ifdef LAMMPS_OLD
+        lammps_scatter_atoms((void *)aLmpPtr, tName, 0, aCount, tIntBuf);
+#else
+        lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+#endif
         exceptionCheck(aEnv, (void *)aLmpPtr);
         free(tIntBuf);
     }
     free(tName);
     (*aEnv)->ReleaseDoubleArrayElements(aEnv, aData, tDataBuf, JNI_ABORT); // read mode
 }
-JNIEXPORT jint JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdoubleArray aID, jdoubleArray aType, jdoubleArray aXYZ, jdoubleArray aVelocities, jdoubleArray aImage, jboolean aShrinkExceed) {
+JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdoubleArray aID, jdoubleArray aType, jdoubleArray aXYZ, jdoubleArray aVelocities, jdoubleArray aImage, jboolean aShrinkExceed) {
     jsize tN = (*aEnv)->GetArrayLength(aEnv, aID);
     intbig *tID    = parseJdouble2intbig(aEnv, aID   );
     int    *tType  = parseJdouble2int   (aEnv, aType );
     intbig *tImage = parseJdouble2intbig(aEnv, aImage);
     jdouble *tXYZ        = aXYZ       ==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aXYZ       , NULL);
     jdouble *tVelocities = aVelocities==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aVelocities, NULL);
-    int tOut = lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVelocities, tImage, aShrinkExceed);
+    lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVelocities, tImage, aShrinkExceed);
     exceptionCheck(aEnv, (void *)aLmpPtr);
     if (tID    != NULL) free(tID   );
     if (tType  != NULL) free(tType );
     if (tImage != NULL) free(tImage);
     if (tXYZ        != NULL) (*aEnv)->ReleaseDoubleArrayElements(aEnv, aXYZ       , tXYZ       , JNI_ABORT); // read mode
     if (tVelocities != NULL) (*aEnv)->ReleaseDoubleArrayElements(aEnv, aVelocities, tVelocities, JNI_ABORT); // read mode
-    return tOut;
 }
 
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsClose_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {

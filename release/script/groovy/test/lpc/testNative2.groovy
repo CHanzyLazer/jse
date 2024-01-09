@@ -1,7 +1,6 @@
 package test.lpc
 
 import jtool.atom.Structures
-import jtool.code.UT
 import jtool.lmp.Lmpdat
 import jtool.lmp.NativeLmp
 import jtool.parallel.MPI
