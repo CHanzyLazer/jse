@@ -262,7 +262,11 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allreduce0(JNIEn
     releaseJArray(aEnv, aSendArray, tDataType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
     releaseJArray(aEnv, rRecvArray, tDataType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
 }
-
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Barrier(JNIEnv *aEnv, jclass aClazz, jlong aComm) {
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    int tExitCode = MPI_Barrier(tComm);
+    exceptionCheck(aEnv, tExitCode);
+}
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Bcast0(JNIEnv *aEnv, jclass aClazz, jobject rArray, jint aCount, jlong aDataType, jint aRoot, jlong aComm) {
     MPI_Datatype tDataType = (MPI_Datatype) (intptr_t) aDataType;
     MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;

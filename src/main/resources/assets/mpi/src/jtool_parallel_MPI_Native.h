@@ -497,6 +497,14 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allreduce0
 
 /*
  * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Barrier
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Barrier
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
  * Method:    MPI_Bcast0
  * Signature: (Ljava/lang/Object;IJIJ)V
  */

@@ -8,6 +8,7 @@ import jtool.lmp.NativeLmp;
 import jtool.math.matrix.RowMatrix;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vector;
+import jtool.math.vector.Vectors;
 import jtool.parallel.*;
 import jtoolex.rareevent.IFullPathGenerator;
 import jtoolex.rareevent.IParameterCalculator;
@@ -15,6 +16,7 @@ import jtoolex.rareevent.ITimeAndParameterIterator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.*;
@@ -59,7 +61,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
      * 每个进程都需要调用来进行创建，除了特殊说明，输入参数都需要一致
      * @author liqa
      * @param aWorldComm 此进程用于和主进程通讯的 {@link MPI.Comm}，默认为 {@link MPI.Comm#WORLD}
-     * @param aWorldRoot 主进程编号，一般为 0
+     * @param aWorldRoot 主进程编号，默认为 0
      * @param aLmpComm 此进程需要运行 {@link NativeLmp} 的 {@link MPI.Comm}，不同分组（color）的进程可以不同
      * @param aLmpRoots aLmpComm 对应的主进程 0 在 aWorldComm 中的编号列表，一般为 n * aLmpComm.size()，可以只有主进程 aWorldRoot 传入
      * @param aParameterCalculator 计算对应 Lmpdat 参数的计算器，建议使用 MPI 版本的计算器，并使用和 aLmpComm 相同的 {@link MPI.Comm}
@@ -73,7 +75,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
      */
     private MultipleNativeLmpFullPathGenerator(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) throws MPI.Error, NativeLmp.Error {
         // 基本参数存储
-        mMesses = aMesses.copy();
+        mMesses = aMesses;
         // MPI 相关参数
         mWorldComm = aWorldComm;
         mWorldRoot = aWorldRoot;
@@ -92,7 +94,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
     }
     
     /** 这里改为 static 方法来构造，从而避免一些问题，顺便实现自动资源释放 */
-    public static void withOf(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {
+    private static void withOf_(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {
         try (MultipleNativeLmpFullPathGenerator tPathGen = new MultipleNativeLmpFullPathGenerator(aWorldComm, aWorldRoot, aLmpComm, aLmpRoots,  aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep)) {
             // 在另一个线程执行后续操作
             Future<Void> tLaterTask = null;
@@ -108,6 +110,18 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             }
         }
     }
+    public static void withOf(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {
+        withOf_(aWorldComm, aWorldRoot, aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aDoLater);
+    }
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf_(MPI.Comm.WORLD, 0, aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep,                Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff,                                  Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf_(MPI.Comm.WORLD, 0, aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep,                Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff,                                  Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf_(MPI.Comm.WORLD, 0, aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep,                Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10, aDoLater);}
+    public static void withOf(MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff,                                  Consumer<MultipleNativeLmpFullPathGenerator> aDoLater) throws Exception {withOf(aLmpComm, aLmpRoots, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002, aDoLater);}
     
     
     @Override public ITimeAndParameterIterator<Lmpdat> fullPathFrom(IAtomData aStart, long aSeed) {
@@ -257,18 +271,28 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
           LMPDAT_INFO = 100
         , DATA_XYZ = 101, DATA_ID = 103, DATA_Type = 104, DATA_VELOCITIES = 102
         , JOB_TYPE = 109
-        , LONG1_INFO = 108, DOUBLE1_INFO = 107;
+        , LONG1_INFO = 108, DOUBLE1_INFO = 107
+        ;
+    /** 各种任务完成的信息 tag */
+    private final static int
+          SHUTDOWN_FINISHED = 119
+        , PATH_INIT_FINISHED = 110, PATH_FROM_FINISHED = 111
+        , PATH_NEXT_FINISHED = 112, PATH_TIME_FINISHED = 113, PATH_LAMBDA_FINISHED = 114
+        , PATH_SHUTDOWN_FINISHED = 118
+        ;
     /** 各种任务的种类 */
     private final static byte
           SHUTDOWN = -1
         , PATH_INIT = 0, PATH_FROM = 1
         , PATH_NEXT = 2, PATH_TIME = 3, PATH_LAMBDA = 4
-        , PATH_SHUTDOWN = -2;
+        , PATH_SHUTDOWN = -2
+        ;
     private final static byte[]
           SHUTDOWN_BUF = {SHUTDOWN}
         , PATH_INIT_BUF = {PATH_INIT}, PATH_FROM_BUF = {PATH_FROM}
         , PATH_NEXT_BUF = {PATH_NEXT}, PATH_TIME_BUF = {PATH_TIME}, PATH_LAMBDA_BUF = {PATH_LAMBDA}
-        , PATH_SHUTDOWN_BUF = {PATH_SHUTDOWN};
+        , PATH_SHUTDOWN_BUF = {PATH_SHUTDOWN}
+        ;
     
     
     private class PathGenServer implements IAutoShutdown, Runnable {
@@ -290,6 +314,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 switch (tJob) {
                 case SHUTDOWN: {
                     shutdown();
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, SHUTDOWN_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     return;
                 }
                 case PATH_INIT: {
@@ -302,6 +330,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     LONG1_CACHE.returnObject(rSeedBuf);
                     if (mIt != null) mIt.shutdown();
                     mIt = mPathGen.fullPathInit(tSeed);
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_INIT_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 case PATH_FROM: {
@@ -319,6 +351,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     tStart = bcastLmpdat_(tStart, 0, mLmpComm);
                     if (mIt != null) mIt.shutdown();
                     mIt = mPathGen.fullPathFrom(tStart, tSeed);
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_FROM_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 case PATH_NEXT: {
@@ -330,6 +366,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     // 因为获取 lambda 时也需要这个 Lmpdat 值；
                     // 并且下一步的 lammps 运行也需要这个 Lmpdat 作为输入，
                     // 直接闪退并且不报任何错误应该也是 lammps 运行的原因
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_NEXT_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 case PATH_TIME: {
@@ -340,6 +380,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                         mWorldComm.send(tTimeConsumedBuf, 1, mWorldRoot, DOUBLE1_INFO);
                         DOUBLE1_CACHE.returnObject(tTimeConsumedBuf);
                     }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_TIME_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 case PATH_LAMBDA: {
@@ -350,6 +394,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                         mWorldComm.send(tLambdaBuf, 1, mWorldRoot, DOUBLE1_INFO);
                         DOUBLE1_CACHE.returnObject(tLambdaBuf);
                     }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_LAMBDA_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 case PATH_SHUTDOWN: {
@@ -357,6 +405,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                         mIt.shutdown();
                         mIt = null;
                     }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(null, 0, mWorldRoot, PATH_SHUTDOWN_FINISHED);
+                    }
+                    mLmpComm.barrier();
                     break;
                 }
                 default: {
@@ -373,6 +425,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 mIt = null;
             }
             mPathGen.shutdown();
+            // 由于是 copy 的，可以并且应该直接 shutdown，注意线程安全的问题
+            synchronized (mLmpComm) {mLmpComm.shutdown();}
         }
     }
     
@@ -395,7 +449,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             mLmpRoot = tLmpRoot;
             try {
                 // 根据输入发送创建一个 path 的任务
-                mWorldComm.send((aStart==null) ? PATH_INIT_BUF : PATH_FROM_BUF, 1, mLmpRoot, JOB_TYPE);
+                mWorldComm.send(aStart==null ? PATH_INIT_BUF : PATH_FROM_BUF, 1, mLmpRoot, JOB_TYPE);
                 // 无论怎样都先发送种子
                 long[] tSeedBuf = LONG1_CACHE.getObject();
                 tSeedBuf[0] = aSeed;
@@ -406,6 +460,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     Lmpdat tStart = (aStart instanceof Lmpdat) ? (Lmpdat)aStart : Lmpdat.fromAtomData(aStart);
                     sendLmpdat_(tStart, mLmpRoot, mWorldComm);
                 }
+                // 接收任务完成信息
+                mWorldComm.recv(null, 0, mLmpRoot, aStart==null ? PATH_INIT_FINISHED : PATH_FROM_FINISHED);
             } catch (Throwable t) {
                 this.shutdown();
                 throw new RuntimeException(t);
@@ -418,7 +474,10 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 // 发送 next 任务
                 mWorldComm.send(PATH_NEXT_BUF, 1, mLmpRoot, JOB_TYPE);
                 // 之后获取 Lmpdat 即可
-                return recvLmpdat_(mLmpRoot, mWorldComm);
+                Lmpdat tNext = recvLmpdat_(mLmpRoot, mWorldComm);
+                // 接收任务完成信息
+                mWorldComm.recv(null, 0, mLmpRoot, PATH_NEXT_FINISHED);
+                return tNext;
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
             }
@@ -433,6 +492,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 mWorldComm.recv(rTimeConsumedBuf, 1, mLmpRoot, DOUBLE1_INFO);
                 double tTimeConsumed = rTimeConsumedBuf[0];
                 DOUBLE1_CACHE.returnObject(rTimeConsumedBuf);
+                // 接收任务完成信息
+                mWorldComm.recv(null, 0, mLmpRoot, PATH_TIME_FINISHED);
                 return tTimeConsumed;
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
@@ -448,6 +509,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 mWorldComm.recv(rLambdaBuf, 1, mLmpRoot, DOUBLE1_INFO);
                 double tLambda = rLambdaBuf[0];
                 DOUBLE1_CACHE.returnObject(rLambdaBuf);
+                // 接收任务完成信息
+                mWorldComm.recv(null, 0, mLmpRoot, PATH_LAMBDA_FINISHED);
                 return tLambda;
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
@@ -459,7 +522,12 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         /** 关闭时归还 mLmpRoot */
         @Override public void shutdown() {
             if (mLmpRoot >= 0) {
-                try {mWorldComm.send(PATH_SHUTDOWN_BUF, 1, mLmpRoot, JOB_TYPE);} catch (MPI.Error ignored) {}
+                try {
+                    mWorldComm.send(PATH_SHUTDOWN_BUF, 1, mLmpRoot, JOB_TYPE);
+                    mWorldComm.recv(null, 0, mLmpRoot, PATH_SHUTDOWN_FINISHED);
+                } catch (MPI.Error e) {
+                    e.printStackTrace(System.err);
+                }
                 mLmpRoots.addLast(mLmpRoot);
                 mLmpRoot = -1;
             }
@@ -475,9 +543,16 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         }
         if (mWorldMe==mWorldRoot) {
             for (int tLmpRoot : mLmpRoots) {
-                try {mWorldComm.send(SHUTDOWN_BUF, 1, tLmpRoot, JOB_TYPE);} catch (MPI.Error ignored) {}
+                try {
+                    mWorldComm.send(SHUTDOWN_BUF, 1, tLmpRoot, JOB_TYPE);
+                    mWorldComm.recv(null, 0, tLmpRoot, SHUTDOWN_FINISHED);
+                } catch (MPI.Error e) {
+                    e.printStackTrace(System.err);
+                }
             }
             mLmpRoots.clear();
         }
+        // 由于是 copy 的，可以并且应该直接 shutdown，注意线程安全的问题
+        synchronized (mLmpComm) {mLmpComm.shutdown();} // 这样会存在重复关闭的问题，不过不重要就是
     }
 }

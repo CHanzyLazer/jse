@@ -273,6 +273,14 @@ public class MPI {
         }
         
         /**
+         * Initiates barrier synchronization across all members of a group.
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-barrier-function"> MPI_Barrier function </a>
+         */
+        public void barrier() throws Error {
+            Native.MPI_Barrier(mPtr);
+        }
+        
+        /**
          * Broadcasts data from one member of a group to all members of the group.
          *
          * @param rBuf The data array. On the process that is specified by the root parameter,
@@ -1001,6 +1009,25 @@ public class MPI {
         }
         private native static void MPI_Allreduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, long aComm) throws Error;
         
+        /**
+         * Initiates barrier synchronization across all members of a group.
+         *
+         * @param aComm The communicator to synchronize.
+         *              <p>
+         *              If this is an intracommunicator, the MPI_Barrier function blocks the caller
+         *              until all group members have called it.
+         *              The function does not return on any process until all group processes have
+         *              called the function.
+         *              <p>
+         *              If this is an intercommunicator, the MPI_Barrier function involves two groups.
+         *              The function returns on processes in one group, group A, only after all members
+         *              of the other group, group B, have called the function, and vice versa.
+         *              The function can return for a process before all processes in its own group
+         *              have called the function.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-barrier-function"> MPI_Barrier function </a>
+         */
+        public native static void MPI_Barrier(long aComm) throws Error;
         
         /**
          * Broadcasts data from one member of a group to all members of the group.
