@@ -15,6 +15,7 @@ import jtool.parallel.IAutoShutdown;
 import jtool.parallel.MPI;
 import jtool.parallel.MatrixCache;
 import jtool.vasp.IVaspCommonData;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -286,6 +287,7 @@ public class NativeLmp implements IAutoShutdown {
     private final static String EXECUTABLE_NAME = "liblammps";
     private final static String[] DEFAULT_ARGS = {EXECUTABLE_NAME, "-log", "none"};
     private final long mLmpPtr;
+    private final @Nullable MPI.Comm mComm;
     private final long mInitTheadID; // lammps 需要保证初始化时的线程和调用时的是相同的
     private boolean mDead = false;
     /**
@@ -313,6 +315,7 @@ public class NativeLmp implements IAutoShutdown {
         tArgs[0] = EXECUTABLE_NAME;
         if (aArgs != null) System.arraycopy(aArgs, 0, tArgs, 1, aArgs.length);
         mLmpPtr = aComm==0 ? lammpsOpen_(tArgs) : lammpsOpen_(tArgs, aComm);
+        mComm = aComm==0 ? null : MPI.Comm.of(aComm);
         mInitTheadID = Thread.currentThread().getId();
     }
     public NativeLmp(String[] aArgs, MPI.Comm aComm) throws Error {this(aArgs, aComm==null ? 0 : aComm.ptr_());}
@@ -340,6 +343,13 @@ public class NativeLmp implements IAutoShutdown {
         return lammpsVersion_(mLmpPtr);
     }
     private native static int lammpsVersion_(long aLmpPtr) throws Error;
+    
+    /**
+     * @return the {@link MPI.Comm} of this NativeLmp
+     */
+    public @NotNull MPI.Comm comm() {
+        return mComm==null ? MPI.Comm.WORLD : mComm;
+    }
     
     /**
      * Read LAMMPS commands from a file.

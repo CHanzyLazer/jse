@@ -58,7 +58,7 @@ public class MPI {
           NULL  = new Group(Native.MPI_GROUP_NULL )
         , EMPTY = new Group(Native.MPI_GROUP_EMPTY)
         ;
-        static Group of(long aPtr) {
+        @ApiStatus.Internal public static Group of(long aPtr) {
             if (aPtr == Native.MPI_GROUP_NULL ) return NULL ;
             if (aPtr == Native.MPI_GROUP_EMPTY) return EMPTY;
             return new Group(aPtr);
@@ -150,7 +150,7 @@ public class MPI {
         , WORLD = new Comm(Native.MPI_COMM_WORLD)
         , SELF  = new Comm(Native.MPI_COMM_SELF )
         ;
-        static Comm of(long aPtr) {
+        @ApiStatus.Internal public static Comm of(long aPtr) {
             if (aPtr == Native.MPI_COMM_NULL ) return NULL ;
             if (aPtr == Native.MPI_COMM_WORLD) return WORLD;
             if (aPtr == Native.MPI_COMM_SELF ) return SELF ;

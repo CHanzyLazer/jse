@@ -5,13 +5,16 @@ import jtool.iofile.IInFile;
 import jtool.parallel.AbstractHasAutoShutdown;
 import jtool.parallel.MPI;
 import jtool.system.ISystemExecutor;
+import org.jetbrains.annotations.ApiStatus;
 
 import static jtool.code.CS.Exec.EXE;
 
 /**
- * 基于 {@link NativeLmp} 的 lammps 运行器实现
+ * 基于 {@link NativeLmp} 的 lammps 运行器实现；
+ * 由于 MPI 环境下不同进程下随机数流不同的问题，这里暂不能使用
  * @author liqa
  */
+@ApiStatus.Experimental
 public class NativeLmpExecutor extends AbstractHasAutoShutdown implements ILmpExecutor {
     @Override public ISystemExecutor exec() {return EXE;}
     
