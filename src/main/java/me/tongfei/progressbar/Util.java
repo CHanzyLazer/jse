@@ -1,10 +1,6 @@
 package me.tongfei.progressbar;
 
-import jtool.code.UT;
-
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
@@ -37,9 +33,7 @@ class Util {
     }
 
     static ConsoleProgressBarConsumer createConsoleConsumer(PrintStream out, int predefinedWidth) {
-        return TerminalUtils.hasCursorMovementSupport()
-                ? new InteractiveConsoleProgressBarConsumer(out, predefinedWidth)
-                : new ConsoleProgressBarConsumer(out, predefinedWidth);
+        return new ConsoleProgressBarConsumer(out, predefinedWidth);
     }
 
     static String repeat(char c, int n) {

@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  */
 public class CS {
     /** version of jtool */
-    public final static String VERSION = "2.3.7";
+    public final static String VERSION = "2.3.7c";
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
@@ -533,6 +533,7 @@ public class CS {
         public final static int CORES_PER_NODE;
         public final static int CORES_PER_TASK;
         public final static int MAX_STEP_COUNT;
+        public final static int JOB_ID;
         public final static List<String> NODE_LIST;
         public final static ResourcesManager RESOURCES_MANAGER;
         
@@ -675,6 +676,8 @@ public class CS {
             IS_SLURM = PROCID >= 0;
             // 是 slurm 则从环境变量中读取后续参数，否则使用默认非法值
             if (IS_SLURM) {
+                // 获取作业 id
+                JOB_ID = Integer.parseInt(System.getenv("SLURM_JOB_ID"));
                 // 获取任务总数
                 NTASKS = Integer.parseInt(System.getenv("SLURM_NTASKS"));
                 
@@ -702,6 +705,7 @@ public class CS {
                 
                 RESOURCES_MANAGER = new ResourcesManager();
             } else {
+                JOB_ID = -1;
                 NTASKS = -1;
                 CORES_PER_NODE = -1;
                 CORES_PER_TASK = -1;

@@ -9,14 +9,9 @@ package me.tongfei.progressbar;
 public class ProgressBarStyleBuilder {
     private static final String ESC_CODE = "\u001b[";
 
-    private final ProgressBarStyle style = new ProgressBarStyle("\r", "[", "", "]", '=', ' ', ">", ' ');
+    private final ProgressBarStyle style = new ProgressBarStyle("[", "", "]", '=', ' ', " >", '>');
     private byte colorCode = 0;
-
-    /** Set refresh prompt. Default "\r". */
-    public ProgressBarStyleBuilder refreshPrompt(String refreshPrompt) {
-        style.refreshPrompt = refreshPrompt;
-        return this;
-    }
+    
 
     /** Set left bracket. Default "[". */
     public ProgressBarStyleBuilder leftBracket(String leftBracket) {

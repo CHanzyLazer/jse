@@ -52,7 +52,6 @@ class ProgressUpdateAction implements Runnable {
                 forceRefresh();
                 if (clearDisplayOnFinish) consumer.clear();
                 consumer.close();
-                TerminalUtils.closeTerminal();
             }
         }
     }

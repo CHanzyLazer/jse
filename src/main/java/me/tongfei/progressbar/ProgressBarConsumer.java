@@ -9,6 +9,7 @@ import java.util.function.Consumer;
  * @author Tongfei Chen
  */
 public interface ProgressBarConsumer extends Consumer<String>, Appendable, AutoCloseable {
+    int DEFAULT_MAX_WIDTH = 80;
 
     /**
      * Returns the maximum length allowed for the rendered form of a progress bar.
