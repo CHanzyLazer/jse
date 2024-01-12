@@ -1,6 +1,5 @@
 package test.mpi
 
-import jtool.math.vector.DoubleArrayVector
 import jtool.parallel.MPI
 
 import static jtool.code.UT.Math.*;
@@ -16,8 +15,15 @@ final int np = MPI.Comm.WORLD.size();
 
 def r = rand(10);
 println("rand of <$me>: $r");
-MPI.Comm.WORLD.allreduce(((DoubleArrayVector)r).getData(), r.size(), MPI.Op.SUM);
+// 测试 allreduce IN_PLACE
+MPI.Comm.WORLD.allreduce(r.getData(), r.size(), MPI.Op.SUM);
 println("sum of <$me>: $r");
+double[] r1 = new double[np];
+r1[me] = rand();
+println("rand1 of <$me>: $r1");
+// 测试 allgather IN_PLACE
+MPI.Comm.WORLD.allgather(r1, 1);
+println("rand1 of <$me>: $r1");
 
 MPI.shutdown();
 

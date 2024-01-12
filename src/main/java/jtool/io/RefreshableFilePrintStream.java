@@ -7,7 +7,8 @@ import java.io.*;
 
 /**
  * 支持使用 \r 来 refresh 的 {@link PrintStream}，
- * 主要用于进度条使用
+ * 主要用于进度条使用；
+ * 由于主要用于重写 out 流，因此这里不进行 buffer
  * @author liqa
  */
 public class RefreshableFilePrintStream extends PrintStream {

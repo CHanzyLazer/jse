@@ -537,6 +537,22 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Reduce0
 
 /*
  * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Scatter0
+ * Signature: (ZLjava/lang/Object;IJLjava/lang/Object;IJIJ)V
+ */
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatter0
+  (JNIEnv *, jclass, jboolean, jobject, jint, jlong, jobject, jint, jlong, jint, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
+ * Method:    MPI_Scatterv0
+ * Signature: (ZLjava/lang/Object;[I[IJLjava/lang/Object;IJIJ)V
+ */
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatterv0
+  (JNIEnv *, jclass, jboolean, jobject, jintArray, jintArray, jlong, jobject, jint, jlong, jint, jlong);
+
+/*
+ * Class:     jtool_parallel_MPI_Native
  * Method:    MPI_Comm_create
  * Signature: (JJ)J
  */

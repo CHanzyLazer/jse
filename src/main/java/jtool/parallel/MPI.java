@@ -208,8 +208,11 @@ public class MPI {
         public <S, R> void allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount) throws Error {
             Native.MPI_Allgather(aSendBuf, aSendCount, rRecvBuf, aRecvCount, mPtr);
         }
-        public <R> void allgather(R rRecvBuf, int aRecvCount) throws Error {
-            Native.MPI_Allgather(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCount, mPtr);
+        public <S, R> void allgather(S aSendBuf, R rRecvBuf, int aCount) throws Error {
+            Native.MPI_Allgather(aSendBuf, aCount, rRecvBuf, aCount, mPtr);
+        }
+        public <R> void allgather(R rBuf, int aCount) throws Error {
+            Native.MPI_Allgather(rBuf, aCount, mPtr);
         }
         
         /**
@@ -242,8 +245,8 @@ public class MPI {
         public <S, R> void allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls) throws Error {
             Native.MPI_Allgatherv(aSendBuf, aSendCount, rRecvBuf, aRecvCounts, aDispls, mPtr);
         }
-        public <R> void allgatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls) throws Error {
-            Native.MPI_Allgatherv(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCounts, aDispls, mPtr);
+        public <R> void allgatherv(R rBuf, int[] aCounts, int[] aDispls) throws Error {
+            Native.MPI_Allgatherv(rBuf, aCounts, aDispls, mPtr);
         }
         
         /**
@@ -268,8 +271,8 @@ public class MPI {
         public <T> void allreduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp) throws Error {
             Native.MPI_Allreduce(aSendBuf, rRecvBuf, aCount, aOp.mPtr, mPtr);
         }
-        public <T> void allreduce(T rRecvBuf, int aCount, Op aOp) throws Error {
-            Native.MPI_Allreduce(Native.MPI_IN_PLACE, rRecvBuf, aCount, aOp.mPtr, mPtr);
+        public <T> void allreduce(T rBuf, int aCount, Op aOp) throws Error {
+            Native.MPI_Allreduce(rBuf, aCount, aOp.mPtr, mPtr);
         }
         
         /**
@@ -321,8 +324,11 @@ public class MPI {
         public <S, R> void gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot) throws Error {
             Native.MPI_Gather(aSendBuf, aSendCount, rRecvBuf, aRecvCount, aRoot, mPtr);
         }
-        public <R> void gather(R rRecvBuf, int aRecvCount, int aRoot) throws Error {
-            Native.MPI_Gather(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCount, aRoot, mPtr);
+        public <S, R> void gather(S aSendBuf, R rRecvBuf, int aCount, int aRoot) throws Error {
+            Native.MPI_Gather(aSendBuf, aCount, rRecvBuf, aCount, aRoot, mPtr);
+        }
+        public <R> void gather(R rBuf, int aCount, int aRoot) throws Error {
+            Native.MPI_Gather(rBuf, aCount, aRoot, mPtr);
         }
         
         /**
@@ -359,8 +365,8 @@ public class MPI {
         public <S, R> void gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) throws Error {
             Native.MPI_Gatherv(aSendBuf, aSendCount, rRecvBuf, aRecvCounts, aDispls, aRoot, mPtr);
         }
-        public <R> void gatherv(R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot) throws Error {
-            Native.MPI_Gatherv(Native.MPI_IN_PLACE, 0, rRecvBuf, aRecvCounts, aDispls, aRoot, mPtr);
+        public <R> void gatherv(R rBuf, int[] aCounts, int[] aDispls, int aRoot) throws Error {
+            Native.MPI_Gatherv(rBuf, aCounts, aDispls, aRoot, mPtr);
         }
         
         /**
@@ -384,8 +390,81 @@ public class MPI {
         public <T> void reduce(T aSendBuf, T rRecvBuf, int aCount, Op aOp, int aRoot) throws Error {
             Native.MPI_Reduce(aSendBuf, rRecvBuf, aCount, aOp.mPtr, aRoot, mPtr);
         }
-        public <T> void reduce(T rRecvBuf, int aCount, Op aOp, int aRoot) throws Error {
-            Native.MPI_Reduce(Native.MPI_IN_PLACE, rRecvBuf, aCount, aOp.mPtr, aRoot, mPtr);
+        public <T> void reduce(T rBuf, int aCount, Op aOp, int aRoot) throws Error {
+            Native.MPI_Reduce(rBuf, aCount, aOp.mPtr, aRoot, mPtr);
+        }
+        
+        /**
+         * Scatters data from one member across all members of a group.
+         * The MPI_Scatter function performs the inverse of the operation
+         * that is performed by the {@link #gather} function.
+         *
+         * @param aSendBuf The data array to be sent by the root process.
+         *                 <p>
+         *                 The aSendBuf parameter is ignored for all non-root processes.
+         *
+         * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
+         *                   If sendcount is zero, the data part of the message is empty.
+         *                   <p>
+         *                   The aSendCount parameter is ignored for all non-root processes.
+         *
+         * @param rRecvBuf The data array that is received on each process. The number and data type of
+         *                 the elements in the buffer are specified in the recvcount and recvtype parameters.
+         *
+         * @param aRecvCount The number of elements in the receive buffer. If the count is zero,
+         *                   the data part of the message is empty.
+         *
+         * @param aRoot The rank of the sending process within the specified communicator.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-scatter-function"> MPI_Scatter function </a>
+         */
+        public <S, R> void scatter(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot) throws Error {
+            Native.MPI_Scatter(aSendBuf, aSendCount, rRecvBuf, aRecvCount, aRoot, mPtr);
+        }
+        public <S, R> void scatter(S aSendBuf, R rRecvBuf, int aCount, int aRoot) throws Error {
+            Native.MPI_Scatter(aSendBuf, aCount, rRecvBuf, aCount, aRoot, mPtr);
+        }
+        public <S> void scatter(S rBuf, int aCount, int aRoot) throws Error {
+            Native.MPI_Scatter(rBuf, aCount, aRoot, mPtr);
+        }
+        
+        /**
+         * Scatters data from one member across all members of a group.
+         * The MPI_Scatterv function performs the inverse of the operation
+         * that is performed by the {@link #gatherv} function.
+         *
+         * @param aSendBuf The data array to be sent by the root process.
+         *                 <p>
+         *                 The aSendBuf parameter is ignored for all non-root processes.
+         *
+         * @param aSendCounts The number of elements in the buffer that is specified in the sendbuf parameter.
+         *                    If sendcount[i] is zero, the data part of the message for that process is empty.
+         *                    <p>
+         *                    The aSendCount parameter is ignored for all non-root processes.
+         *
+         * @param aDispls The locations of the data to send to each communicator process.
+         *                Each location in the array is relative to the corresponding element of the sendbuf array.
+         *                <p>
+         *                In the sendbuf, sendcounts, and displs parameter arrays, the nth element of
+         *                each array refers to the data to be sent to the nth communicator process.
+         *                <p>
+         *                This parameter is significant only at the root process.
+         *
+         * @param rRecvBuf The data array that is received on each process. The number and data type of
+         *                 the elements in the buffer are specified in the recvcount and recvtype parameters.
+         *
+         * @param aRecvCount The number of elements in the receive buffer. If the count is zero,
+         *                   the data part of the message is empty.
+         *
+         * @param aRoot The rank of the receiving process within the specified communicator.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-scatterv-function"> MPI_Scatterv function </a>
+         */
+        public <S, R> void scatterv(S aSendBuf, int[] aSendCounts, int[] aDispls, R rRecvBuf, int aRecvCount, int aRoot) throws Error {
+            Native.MPI_Scatterv(aSendBuf, aSendCounts, aDispls, rRecvBuf, aRecvCount, aRoot, mPtr);
+        }
+        public <R> void scatterv(R rBuf, int[] aCounts, int[] aDispls, int aRoot) throws Error {
+            Native.MPI_Scatterv(rBuf, aCounts, aDispls, aRoot, mPtr);
         }
         
         
@@ -834,8 +913,6 @@ public class MPI {
             }
         }
         
-        public final static byte[] MPI_IN_PLACE = new byte[0];
-        
         public final static int MPI_THREAD_SINGLE, MPI_THREAD_FUNNELED, MPI_THREAD_SERIALIZED, MPI_THREAD_MULTIPLE;
         private native static int getMpiThreadSingle_();
         private native static int getMpiThreadFunneled_();
@@ -912,12 +989,6 @@ public class MPI {
          *                 of the elements in the buffer are specified in the aSendCount and
          *                 the data type will be detected automatically.
          *                 Each element in the buffer corresponds to a process in the group.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 The aSendCount parameter and the type of data are ignored. Each process enters
-         *                 data in the corresponding receive buffer element.
-         *                 The nth process sends data to the nth element of the receive buffer.
          *
          * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
          *                   If sendcount is zero, the data part of the message is empty.
@@ -934,7 +1005,10 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgather-function"> MPI_Allgather function </a>
          */
         public static <S, R> void MPI_Allgather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, long aComm) throws Error {
-            MPI_Allgather0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aComm);
+            MPI_Allgather0(false, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aComm);
+        }
+        public static <T> void MPI_Allgather(T rBuf, int aCount, long aComm) throws Error {
+            MPI_Allgather0(true, null, 0, MPI_DATATYPE_NULL, rBuf, aCount, datatypeOf_(rBuf), aComm);
         }
         private native static void MPI_Allgather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, long aComm) throws Error;
         
@@ -948,12 +1022,6 @@ public class MPI {
          *                 of the elements in the buffer are specified in the aSendCount and
          *                 the data type will be detected automatically.
          *                 Each element in the buffer corresponds to a process in the group.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 The aSendCount parameter and the type of data are ignored. Each process enters
-         *                 data in the corresponding receive buffer element.
-         *                 The nth process sends data to the nth element of the receive buffer.
          *
          * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
          *                   If sendcount is zero, the data part of the message is empty.
@@ -974,7 +1042,10 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allgatherv-function"> MPI_Allgatherv function </a>
          */
         public static <S, R> void MPI_Allgatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, long aComm) throws Error {
-            MPI_Allgatherv0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aComm);
+            MPI_Allgatherv0(false, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aComm);
+        }
+        public static <T> void MPI_Allgatherv(T rBuf, int[] aCounts, int[] aDispls, long aComm) throws Error {
+            MPI_Allgatherv0(true, null, 0, MPI_DATATYPE_NULL, rBuf, aCounts, aDispls, datatypeOf_(rBuf), aComm);
         }
         private native static void MPI_Allgatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, long aComm) throws Error;
         
@@ -985,11 +1056,6 @@ public class MPI {
          *                 of the elements in the buffer are specified in the aSendCount and
          *                 the data type will be detected automatically.
          *                 Each element in the buffer corresponds to a process in the group.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 In this case, the input data is taken at each process from the rRecvBuf buffer,
-         *                 where it will be replaced by the output data.
          *
          * @param rRecvBuf The data array that is received from each process. The number of the elements in
          *                 the buffer are specified in the aRecvCounts parameters and the data type will be
@@ -1005,7 +1071,10 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-allreduce-function"> MPI_Allreduce function </a>
          */
         public static <T> void MPI_Allreduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, long aComm) throws Error {
-            MPI_Allreduce0(aSendBuf==MPI_IN_PLACE, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aComm);
+            MPI_Allreduce0(false, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aComm);
+        }
+        public static <T> void MPI_Allreduce(T rBuf, int aCount, long aOp, long aComm) throws Error {
+            MPI_Allreduce0(true, null, rBuf, aCount, datatypeOf_(rBuf), aOp, aComm);
         }
         private native static void MPI_Allreduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, long aComm) throws Error;
         
@@ -1056,14 +1125,6 @@ public class MPI {
          * Gathers data from all members of a group to one member.
          *
          * @param aSendBuf The data array to be sent to the root process.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 The aSendCount parameter and the type of data are ignored. Each process enters
-         *                 data in the corresponding receive buffer element.
-         *                 The nth process sends data to the nth element of the receive buffer.
-         *                 The data that is sent by the root process is assumed to be in the correct place
-         *                 in the receive buffer.
          *
          * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
          *                   If sendcount is zero, the data part of the message is empty.
@@ -1082,7 +1143,11 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gather-function"> MPI_Gather function </a>
          */
         public static <S, R> void MPI_Gather(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot, long aComm) throws Error {
-            MPI_Gather0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aRoot, aComm);
+            MPI_Gather0(false, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aRoot, aComm);
+        }
+        public static <T> void MPI_Gather(T rBuf, int aCount, int aRoot, long aComm) throws Error {
+            if (MPI_Comm_rank(aComm) == aRoot) MPI_Gather0(true, null, 0, MPI_DATATYPE_NULL, rBuf, aCount, datatypeOf_(rBuf), aRoot, aComm);
+            else MPI_Gather0(false, rBuf, aCount, datatypeOf_(rBuf), null, 0, MPI_DATATYPE_NULL, aRoot, aComm);
         }
         private native static void MPI_Gather0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, int aRoot, long aComm) throws Error;
         
@@ -1092,14 +1157,6 @@ public class MPI {
          * allowing a varying count of data from each process.
          *
          * @param aSendBuf The data array to be sent to the root process.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 The aSendCount parameter and the type of data are ignored. Each process enters
-         *                 data in the corresponding receive buffer element.
-         *                 The nth process sends data to the nth element of the receive buffer.
-         *                 The data that is sent by the root process is assumed to be in the correct place
-         *                 in the receive buffer.
          *
          * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
          *                   If sendcount is zero, the data part of the message is empty.
@@ -1128,7 +1185,12 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-gatherv-function"> MPI_Gatherv function </a>
          */
         public static <S, R> void MPI_Gatherv(S aSendBuf, int aSendCount, R rRecvBuf, int[] aRecvCounts, int[] aDispls, int aRoot, long aComm) throws Error {
-            MPI_Gatherv0(aSendBuf==MPI_IN_PLACE, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aRoot, aComm);
+            MPI_Gatherv0(false, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCounts, aDispls, datatypeOf_(rRecvBuf), aRoot, aComm);
+        }
+        public static <T> void MPI_Gatherv(T rBuf, int[] aCounts, int[] aDispls, int aRoot, long aComm) throws Error {
+            int tRank = MPI_Comm_rank(aComm);
+            if (tRank == aRoot) MPI_Gatherv0(true, null, 0, MPI_DATATYPE_NULL, rBuf, aCounts, aDispls, datatypeOf_(rBuf), aRoot, aComm);
+            else MPI_Gatherv0(false, rBuf, aCounts[tRank], datatypeOf_(rBuf), null, null, null, MPI_DATATYPE_NULL, aRoot, aComm);
         }
         private native static void MPI_Gatherv0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int[] aRecvCounts, int[] aDispls, long aRecvType, int aRoot, long aComm) throws Error;
         
@@ -1137,14 +1199,6 @@ public class MPI {
          * a predefined mathematical or logical operation or an application-defined operation.
          *
          * @param aSendBuf The data array to be sent to the root process.
-         *                 <p>
-         *                 If the comm parameter references an intracommunicator, you can specify an
-         *                 in-place option by specifying {@link #MPI_IN_PLACE} in all processes.
-         *                 The aSendCount parameter and the type of data are ignored. Each process enters
-         *                 data in the corresponding receive buffer element.
-         *                 The nth process sends data to the nth element of the receive buffer.
-         *                 The data that is sent by the root process is assumed to be in the correct place
-         *                 in the receive buffer.
          *
          * @param rRecvBuf The data array to receive the result of the reduction operation.
          *                 This parameter is significant only at the root process.
@@ -1161,9 +1215,91 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-reduce-function"> MPI_Reduce function </a>
          */
         public static <T> void MPI_Reduce(T aSendBuf, T rRecvBuf, int aCount, long aOp, int aRoot, long aComm) throws Error {
-            MPI_Reduce0(aSendBuf==MPI_IN_PLACE, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aRoot, aComm);
+            MPI_Reduce0(false, aSendBuf, rRecvBuf, aCount, datatypeOf_(rRecvBuf), aOp, aRoot, aComm);
+        }
+        public static <T> void MPI_Reduce(T rBuf, int aCount, long aOp, int aRoot, long aComm) throws Error {
+            MPI_Reduce0(true, null, rBuf, aCount, datatypeOf_(rBuf), aOp, aRoot, aComm);
         }
         private native static void MPI_Reduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, long aOp, int aRoot, long aComm) throws Error;
+        
+        /**
+         * Scatters data from one member across all members of a group.
+         * The MPI_Scatter function performs the inverse of the operation
+         * that is performed by the {@link #MPI_Gather} function.
+         *
+         * @param aSendBuf The data array to be sent by the root process.
+         *                 <p>
+         *                 The aSendBuf parameter is ignored for all non-root processes.
+         *
+         * @param aSendCount The number of elements in the buffer that is specified in the sendbuf parameter.
+         *                   If sendcount is zero, the data part of the message is empty.
+         *                   <p>
+         *                   The aSendCount parameter is ignored for all non-root processes.
+         *
+         * @param rRecvBuf The data array that is received on each process. The number and data type of
+         *                 the elements in the buffer are specified in the recvcount and recvtype parameters.
+         *
+         * @param aRecvCount The number of elements in the receive buffer. If the count is zero,
+         *                   the data part of the message is empty.
+         *
+         * @param aRoot The rank of the sending process within the specified communicator.
+         *
+         * @param aComm The MPI_Comm communicator handle.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-scatter-function"> MPI_Scatter function </a>
+         */
+        public static <S, R> void MPI_Scatter(S aSendBuf, int aSendCount, R rRecvBuf, int aRecvCount, int aRoot, long aComm) throws Error {
+            MPI_Scatter0(false, aSendBuf, aSendCount, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aRoot, aComm);
+        }
+        public static <T> void MPI_Scatter(T rBuf, int aCount, int aRoot, long aComm) throws Error {
+            if (MPI_Comm_rank(aComm) == aRoot) MPI_Scatter0(true, rBuf, aCount, datatypeOf_(rBuf), null, 0, MPI_DATATYPE_NULL, aRoot, aComm);
+            else MPI_Scatter0(false, null, 0, MPI_DATATYPE_NULL, rBuf, aCount, datatypeOf_(rBuf), aRoot, aComm);
+        }
+        private native static void MPI_Scatter0(boolean aInPlace, Object aSendBuf, int aSendCount, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, int aRoot, long aComm) throws Error;
+        
+        /**
+         * Scatters data from one member across all members of a group.
+         * The MPI_Scatterv function performs the inverse of the operation
+         * that is performed by the {@link #MPI_Gatherv} function.
+         *
+         * @param aSendBuf The data array to be sent by the root process.
+         *                 <p>
+         *                 The aSendBuf parameter is ignored for all non-root processes.
+         *
+         * @param aSendCounts The number of elements in the buffer that is specified in the sendbuf parameter.
+         *                    If sendcount[i] is zero, the data part of the message for that process is empty.
+         *                    <p>
+         *                    The aSendCount parameter is ignored for all non-root processes.
+         *
+         * @param aDispls The locations of the data to send to each communicator process.
+         *                Each location in the array is relative to the corresponding element of the sendbuf array.
+         *                <p>
+         *                In the sendbuf, sendcounts, and displs parameter arrays, the nth element of
+         *                each array refers to the data to be sent to the nth communicator process.
+         *                <p>
+         *                This parameter is significant only at the root process.
+         *
+         * @param rRecvBuf The data array that is received on each process. The number and data type of
+         *                 the elements in the buffer are specified in the recvcount and recvtype parameters.
+         *
+         * @param aRecvCount The number of elements in the receive buffer. If the count is zero,
+         *                   the data part of the message is empty.
+         *
+         * @param aRoot The rank of the receiving process within the specified communicator.
+         *
+         * @param aComm The MPI_Comm communicator handle.
+         *
+         * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-scatterv-function"> MPI_Scatterv function </a>
+         */
+        public static <S, R> void MPI_Scatterv(S aSendBuf, int[] aSendCounts, int[] aDispls, R rRecvBuf, int aRecvCount, int aRoot, long aComm) throws Error {
+            MPI_Scatterv0(false, aSendBuf, aSendCounts, aDispls, datatypeOf_(aSendBuf), rRecvBuf, aRecvCount, datatypeOf_(rRecvBuf), aRoot, aComm);
+        }
+        public static <T> void MPI_Scatterv(T rBuf, int[] aCounts, int[] aDispls, int aRoot, long aComm) throws Error {
+            int tRank = MPI_Comm_rank(aComm);
+            if (tRank == aRoot) MPI_Scatterv0(true, rBuf, aCounts, aDispls, datatypeOf_(rBuf), null, 0, MPI_DATATYPE_NULL, aRoot, aComm);
+            else MPI_Scatterv0(false, null, null, null, MPI_DATATYPE_NULL, rBuf, aCounts[tRank], datatypeOf_(rBuf), aRoot, aComm);
+        }
+        private native static void MPI_Scatterv0(boolean aInPlace, Object aSendBuf, int[] aSendCounts, int[] aDispls, long aSendType, Object rRecvBuf, int aRecvCount, long aRecvType, int aRoot, long aComm) throws Error;
         
         
         

@@ -313,6 +313,32 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Reduce0(JNIEnv *
     releaseJArray(aEnv, aSendArray, tDataType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
     releaseJArray(aEnv, rRecvArray, tDataType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
 }
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatter0(JNIEnv *aEnv, jclass aClazz, jboolean aInPlace, jobject aSendArray, jint aSendCount, jlong aSendType, jobject rRecvArray, jint aRecvCount, jlong aRecvType, jint aRoot, jlong aComm) {
+    MPI_Datatype tSendType = (MPI_Datatype) (intptr_t) aSendType;
+    MPI_Datatype tRecvType = (MPI_Datatype) (intptr_t) aRecvType;
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    void *tSendBuf = getJArray(aEnv, aSendArray, tSendType);
+    void *rRecvBuf = getJArray(aEnv, rRecvArray, tRecvType);
+    int tExitCode = MPI_Scatter(tSendBuf, aSendCount, tSendType, aInPlace ? MPI_IN_PLACE : rRecvBuf, aRecvCount, tRecvType, aRoot, tComm);
+    exceptionCheck(aEnv, tExitCode);
+    releaseJArray(aEnv, aSendArray, tSendType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
+    releaseJArray(aEnv, rRecvArray, tRecvType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
+}
+JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatterv0(JNIEnv *aEnv, jclass aClazz, jboolean aInPlace, jobject aSendArray, jintArray aSendCounts, jintArray aDispls, jlong aSendType, jobject rRecvArray, jint aRecvCount, jlong aRecvType, jint aRoot, jlong aComm) {
+    MPI_Datatype tSendType = (MPI_Datatype) (intptr_t) aSendType;
+    MPI_Datatype tRecvType = (MPI_Datatype) (intptr_t) aRecvType;
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    void *tSendBuf = getJArray(aEnv, aSendArray, tSendType);
+    void *rRecvBuf = getJArray(aEnv, rRecvArray, tRecvType);
+    int *tSendCounts = parseJint2int(aEnv, aSendCounts);
+    int *tDispls     = parseJint2int(aEnv, aDispls    );
+    int tExitCode = MPI_Scatterv(tSendBuf, tSendCounts, tDispls, tSendType, aInPlace ? MPI_IN_PLACE : rRecvBuf, aRecvCount, tRecvType, aRoot, tComm);
+    exceptionCheck(aEnv, tExitCode);
+    releaseJArray(aEnv, aSendArray, tSendType, tSendBuf, JNI_ABORT); // read  mode, Do not update the data on the Java heap. Free the space used by the copy.
+    releaseJArray(aEnv, rRecvArray, tRecvType, rRecvBuf, 0);         // write mode, Update the data on the Java heap. Free the space used by the copy.
+    if (tSendCounts != NULL) free(tSendCounts);
+    if (tDispls     != NULL) free(tDispls    );
+}
 
 
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Comm_1create(JNIEnv *aEnv, jclass aClazz, jlong aComm, jlong aGroup) {
