@@ -1,5 +1,6 @@
 package test.mpc
 
+import jtool.atom.MPC
 import jtool.code.UT
 import jtool.lmp.Lmpdat
 import jtool.parallel.MPI

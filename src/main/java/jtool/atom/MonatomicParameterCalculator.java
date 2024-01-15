@@ -37,6 +37,9 @@ import static jtool.math.MathEX.Func;
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  */
 public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
+    /** 是否使用快速版本的球谐函数计算，但精度损失较大，这里默认不使用 */
+    public static boolean USE_QUICK_SH = false;
+    
     private IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
     private final IXYZ mBox;
     
@@ -702,8 +705,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 for (int tM = 0; tM <= aL; ++tM) {
                     int tColP =  tM+aL;
                     int tColN = -tM+aL;
-                    // 虽然存在更快速的版本，并且也存在瓶颈，但精度损失较大，这里不使用
-                    ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
+                    ComplexDouble tY = USE_QUICK_SH ? Func.sphericalHarmonicsQuick_(aL, tM, theta, phi) : Func.sphericalHarmonics_(aL, tM, theta, phi);
                     Qlmi.add_(tColP, tY);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {
@@ -788,8 +790,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 for (int tM = 0; tM <= aL; ++tM) {
                     int tColP =  tM+aL;
                     int tColN = -tM+aL;
-                    // 虽然存在更快速的版本，并且也存在瓶颈，但精度损失较大，这里不使用
-                    ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
+                    ComplexDouble tY = USE_QUICK_SH ? Func.sphericalHarmonicsQuick_(aL, tM, theta, phi) : Func.sphericalHarmonics_(aL, tM, theta, phi);
                     Qlmi.add_(tColP, tY);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (tHalfStat) {
@@ -1792,8 +1793,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     for (int tM = 0; tM <= tL; ++tM) {
                         int tColP =  tM+tL;
                         int tColN = -tM+tL;
-                        // 虽然存在更快速的版本，并且也存在瓶颈，但精度损失较大，这里不使用
-                        ComplexDouble tY = Func.sphericalHarmonics_(tL, tM, theta, phi);
+                        ComplexDouble tY = USE_QUICK_SH ? Func.sphericalHarmonicsQuick_(tL, tM, theta, phi) : Func.sphericalHarmonics_(tL, tM, theta, phi);
                         for (int tN = 0; tN <= aNMax; ++tN) {
                             // 得到 cnlm 向量
                             IComplexVector cijm = cnlm[tN][tL];
