@@ -365,7 +365,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
         // NO need to free due to it is lammps internal data
         tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rIntDataBuf, tCounts, tDispls, MPI_INT, tLmpComm);
         exceptionCheckMPI(aEnv, tExitCodeMPI);
-        for (int i = 0; i < tDataSize; ++i) rDataBuf[i] = rIntDataBuf[i];
+        for (int i = 0; i < tDataSize; ++i) rDataBuf[i] = (jdouble)rIntDataBuf[i];
         free(rIntDataBuf);
     }
     free(tCounts);

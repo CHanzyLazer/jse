@@ -5,7 +5,6 @@ import jtool.lmp.Dump
 import jtool.lmp.Lmpdat
 import jtool.lmp.NativeLmp
 import jtool.math.MathEX
-import jtool.math.vector.Vectors
 import jtool.parallel.MPI
 import jtoolex.rareevent.ForwardFluxSampling
 import jtoolex.rareevent.atom.ABOOPSolidChecker_MPI

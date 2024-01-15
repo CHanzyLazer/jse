@@ -104,6 +104,14 @@ public class UT {
             return Base64.getUrlEncoder().withoutPadding().encodeToString(rBytes);
         }
         
+        /**
+         * Get the unique id in Base16, 8 length
+         * @author liqa
+         */
+        public static String uniqueID(Object... aObjects) {
+            return Integer.toHexString(Arrays.hashCode(aObjects));
+        }
+        
         
         /**
          * Get the value in the map according to the order of the keys

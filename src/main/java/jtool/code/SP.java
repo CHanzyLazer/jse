@@ -221,15 +221,15 @@ public class SP {
     
     /** Python 脚本运行支持，完全基于 jep */
     public static class Python {
-        /** 一样这里统一使用全局的一个解释器 */
-        private static Interpreter JEP_INTERP = null;
+        /** 包的版本 */
+        private final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.22.1";
         /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
         private final static String PYPKG_DIR = JAR_DIR+".pypkg/";
         private final static String PYLIB_DIR = JAR_DIR;
         private final static String JEPLIB_DIR = PYLIB_DIR+"jep/";
-        private final static String JEPLIB_PATH = JEPLIB_DIR + (IS_WINDOWS ? "jep.dll" : (IS_MAC ? "jep.jnilib" : "jep.so"));
-        /** 包的版本 */
-        private final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.22.1";
+        private final static String JEPLIB_PATH = JEPLIB_DIR + "jepjni@"+UT.Code.uniqueID(VERSION, JEP_VERSION) + JNILIB_EXTENSION;
+        /** 一样这里统一使用全局的一个解释器 */
+        private static Interpreter JEP_INTERP = null;
         
         /** 直接运行文本的脚本 */
         public synchronized static void runText(String aText) throws JepException {JEP_INTERP.exec(aText);}

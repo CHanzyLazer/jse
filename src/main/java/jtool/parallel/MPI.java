@@ -839,7 +839,7 @@ public class MPI {
         private Native() {}
         
         private final static String MPILIB_DIR = JAR_DIR+"mpi/";
-        private final static String MPILIB_PATH = MPILIB_DIR + (IS_WINDOWS ? "mpi.dll" : (IS_MAC ? "mpi.jnilib" : "mpi.so"));
+        private final static String MPILIB_PATH = MPILIB_DIR + "mpijni@"+UT.Code.uniqueID(VERSION) + JNILIB_EXTENSION;
         private final static String[] MPISRC_NAME = {
               "CMakeLists.txt"
             , "jtool_parallel_MPI_Native.c"
@@ -847,20 +847,11 @@ public class MPI {
         };
         
         private static void initMPI_() throws Exception {
-            // 如果没有 cmake，在 windows 上，尝试直接用预编译的库
+            // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
             EXE.setNoSTDOutput().setNoERROutput();
             boolean tNoCmake = EXE.system("cmake --version") != 0;
             EXE.setNoSTDOutput(false).setNoERROutput(false);
-            if (tNoCmake) {
-                if (IS_WINDOWS) {
-                    System.err.println("MPI BUILD WARNING: No camke environment, using the pre-build libraries,");
-                    System.err.println("  which may have some problems.");
-                    UT.IO.copy(UT.IO.getResource("mpi/lib/mpi.dll"), MPILIB_PATH);
-                    return;
-                } else {
-                    throw new Exception("MPI BUILD ERROR: No camke environment.");
-                }
-            }
+            if (tNoCmake) throw new Exception("MPI BUILD ERROR: No camke environment.");
             // 从内部资源解压到临时目录
             String tWorkingDir = WORKING_DIR.replaceAll("%n", "mpisrc");
             // 如果已经存在则先删除

@@ -113,7 +113,7 @@ public class NativeLmp implements IAutoShutdown {
     }
     
     private final static String LMPLIB_DIR = JAR_DIR+"lmp/";
-    private final static String LMPLIB_PATH = LMPLIB_DIR + (IS_WINDOWS ? "lmp.dll" : (IS_MAC ? "lmp.jnilib" : "lmp.so"));
+    private final static String LMPLIB_PATH = LMPLIB_DIR + "lmpjni@"+UT.Code.uniqueID(VERSION, Conf.LMP_HOME, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT) + JNILIB_EXTENSION;
     private final static String[] LMPSRC_NAME = {
           "jtool_lmp_NativeLmp.c"
         , "jtool_lmp_NativeLmp.h"
