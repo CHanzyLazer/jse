@@ -829,29 +829,46 @@ public class MathEX {
         public static ComplexVector sphericalHarmonicsTL(boolean aCalAllL, int aL, double aTheta, double aPhi) {
             // 判断输入是否合法
             if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-            if (aL > SH_LARGEST_L) throw new IllegalArgumentException("Input l MUST be Less than SH_LARGEST_L("+SH_LARGEST_L+") for Taweetham Limpanuparb sphericalHarmonics, input: "+aL);
+            if (aL > SH_LARGEST_L) throw new IllegalArgumentException("Input l MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for Taweetham Limpanuparb sphericalHarmonics, input: "+aL);
             return sphericalHarmonicsTL_(aCalAllL, aL, aTheta, aPhi);
         }
         public static ComplexVector sphericalHarmonicsTL(int aL, double aTheta, double aPhi) {
+            return sphericalHarmonicsTL(false, aL, aTheta, aPhi);
+        }
+        public static void sphericalHarmonicsTL2Dest(boolean aCalAllL, int aL, double aTheta, double aPhi, IComplexVector rY, Vector rBufP) {
             // 判断输入是否合法
             if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
-            if (aL > SH_LARGEST_L) throw new IllegalArgumentException("Input l MUST be Less than SH_LARGEST_L("+SH_LARGEST_L+") for Taweetham Limpanuparb sphericalHarmonics, input: "+aL);
-            return sphericalHarmonicsTL_(aL, aTheta, aPhi);
+            if (aL > SH_LARGEST_L) throw new IllegalArgumentException("Input l MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for Taweetham Limpanuparb sphericalHarmonics, input: "+aL);
+            if (rY.size() < aL+aL+1) throw new IllegalArgumentException("Size of rY MUST be GreaterOrEqual to 2l+1 ("+(aL+aL+1)+"), input: "+rY.size());
+            if (rBufP.size() < (aL+2)*(aL+1)/2) throw new IllegalArgumentException("Size of rBufP MUST be GreaterOrEqual to (aL+2)*(aL+1)/2 ("+((aL+2)*(aL+1)/2)+"), input: "+rBufP.size());
+            sphericalHarmonicsTL2Dest_(aCalAllL, aL, aTheta, aPhi, rY, rBufP);
+        }
+        public static void sphericalHarmonicsTL2Dest(int aL, double aTheta, double aPhi, IComplexVector rY, Vector rBufP) {
+            sphericalHarmonicsTL2Dest(false, aL, aTheta, aPhi, rY, rBufP);
         }
         public static ComplexVector sphericalHarmonicsTL_(boolean aCalAllL, int aL, double aTheta, double aPhi) {
+            ComplexVector rY = ComplexVectorCache.getVec(aCalAllL ? (aL+1)*(aL+1) : (aL+aL+1));
+            Vector rP = VectorCache.getVec((aL+2)*(aL+1)/2);
+            sphericalHarmonicsTL2Dest_(aCalAllL, aL, aTheta, aPhi, rY, rP);
+            VectorCache.returnVec(rP);
+            return rY;
+        }
+        public static ComplexVector sphericalHarmonicsTL_(int aL, double aTheta, double aPhi) {
+            return sphericalHarmonicsTL_(false, aL, aTheta, aPhi);
+        }
+        public static void sphericalHarmonicsTL2Dest_(boolean aCalAllL, int aL, double aTheta, double aPhi, IComplexVector rY, Vector rBufP) {
             DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
             double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            IVector tP = normalizedLegendre_(aCalAllL, aL, tJafamaDoubleWrapper.value, tSinTheta);
-            ComplexVector tY = ComplexVectorCache.getVec(aCalAllL ? (aL+1)*(aL+1) : (aL+aL+1));
+            IVector tP = normalizedLegendre_(aCalAllL, aL, tJafamaDoubleWrapper.value, tSinTheta, rBufP);
             if (aCalAllL) {
                 int tStartY = 0, tStartP = 0;
                 for (int tL = 0; tL <= aL; ++tL) {
-                    tY.set(tStartY+tL, tP.get(tStartP));
+                    rY.set(tStartY+tL, tP.get(tStartP));
                     tStartY += tL+tL+1;
                     tStartP += tL+1;
                 }
             } else {
-                tY.set(aL, tP.get(0));
+                rY.set(aL, tP.get(0));
             }
             double tSinMmmPhi = 0.0;
             double tCosMmmPhi = 1.0;
@@ -867,15 +884,15 @@ public class MathEX {
                         double tPlm = tP.get(tStartP+tM);
                         double tReal = tPlm * tCosMPhi;
                         double tImag = tPlm * tSinMPhi;
-                        tY.setReal(tIdxPos, tReal);
-                        tY.setImag(tIdxPos, tImag);
+                        rY.setReal(tIdxPos, tReal);
+                        rY.setImag(tIdxPos, tImag);
                         // 利用对称性设置另一半
                         if ((tM&1)==1) {
-                            tY.setReal(tIdxNeg, -tReal);
-                            tY.setImag(tIdxNeg,  tImag);
+                            rY.setReal(tIdxNeg, -tReal);
+                            rY.setImag(tIdxNeg,  tImag);
                         } else {
-                            tY.setReal(tIdxNeg,  tReal);
-                            tY.setImag(tIdxNeg, -tImag);
+                            rY.setReal(tIdxNeg,  tReal);
+                            rY.setImag(tIdxNeg, -tImag);
                         }
                         tStartY += tL+tL+1;
                         tStartP += tL+1;
@@ -886,15 +903,15 @@ public class MathEX {
                     double tPlm = tP.get(tM);
                     double tReal = tPlm * tCosMPhi;
                     double tImag = tPlm * tSinMPhi;
-                    tY.setReal(tIdxPos, tReal);
-                    tY.setImag(tIdxPos, tImag);
+                    rY.setReal(tIdxPos, tReal);
+                    rY.setImag(tIdxPos, tImag);
                     // 利用对称性设置另一半
                     if ((tM&1)==1) {
-                        tY.setReal(tIdxNeg, -tReal);
-                        tY.setImag(tIdxNeg,  tImag);
+                        rY.setReal(tIdxNeg, -tReal);
+                        rY.setImag(tIdxNeg,  tImag);
                     } else {
-                        tY.setReal(tIdxNeg,  tReal);
-                        tY.setImag(tIdxNeg, -tImag);
+                        rY.setReal(tIdxNeg,  tReal);
+                        rY.setImag(tIdxNeg, -tImag);
                     }
                 }
                 // 利用和差化积的递推公式来更新 tSinMPhi tCosMPhi
@@ -903,38 +920,32 @@ public class MathEX {
                 tSinMmmPhi = tSinMPhi; tCosMmmPhi = tCosMPhi;
                 tSinMPhi = tSinMppPhi; tCosMPhi = tCosMppPhi;
             }
-            // 归还临时变量
-            VectorCache.returnVec(tP);
-            // 输出
-            return tY;
         }
-        public static ComplexVector sphericalHarmonicsTL_(int aL, double aTheta, double aPhi) {
-            return sphericalHarmonicsTL_(false, aL, aTheta, aPhi);
+        public static void sphericalHarmonicsTL2Dest_(int aL, double aTheta, double aPhi, IComplexVector rY, Vector rBufP) {
+            sphericalHarmonicsTL2Dest_(false, aL, aTheta, aPhi, rY, rBufP);
         }
-        private static DoubleArrayVector normalizedLegendre_(boolean aCalAllL, int aL, double aX, double aY) {
+        private static DoubleArrayVector normalizedLegendre_(boolean aCalAllL, int aL, double aX, double aY, Vector rBufP) {
             double tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
-            final int tSize = (aL+2)*(aL+1)/2;
-            Vector tP = VectorCache.getVec(tSize);
-            tP.set(0, tPll);
+            rBufP.set(0, tPll);
             if (aL > 0) {
-                tP.set(1, SQRT3 * aX * tPll);
+                rBufP.set(1, SQRT3 * aX * tPll);
                 tPll *= (-SQRT3DIV2 * aY);
-                tP.set(2, tPll);
+                rBufP.set(2, tPll);
                 int tStartL = 3, tStartLmm = 1, tStartLm2 = 0;
                 for (int tL = 2; tL <= aL; ++tL) {
                     for (int tM = 0; tM < tL-1; ++tM) {
                         int tIdx = tStartL+tM;
-                        tP.set(tIdx, SH_A.get(tIdx) * (aX*tP.get(tStartLmm+tM) + SH_B.get(tIdx)*tP.get(tStartLm2+tM)));
+                        rBufP.set(tIdx, SH_A.get(tIdx) * (aX*rBufP.get(tStartLmm+tM) + SH_B.get(tIdx)*rBufP.get(tStartLm2+tM)));
                     }
-                    tP.set(tStartL+tL-1, aX * Fast.sqrt(2.0*(tL-1) + 3.0) * tPll);
+                    rBufP.set(tStartL+tL-1, aX * Fast.sqrt(2.0*(tL-1) + 3.0) * tPll);
                     tPll *= (-Fast.sqrt(1.0 + 0.5/(double)tL) * aY);
-                    tP.set(tStartL+tL, tPll);
+                    rBufP.set(tStartL+tL, tPll);
                     tStartLm2 = tStartLmm;
                     tStartLmm = tStartL;
                     tStartL += tL+1;
                 }
             }
-            return aCalAllL ? tP : tP.subVec((aL+1)*aL/2, tSize);
+            return aCalAllL ? rBufP : rBufP.subVec((aL+1)*aL/2, rBufP.size());
         }
         
         

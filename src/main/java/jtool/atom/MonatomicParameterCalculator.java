@@ -1,11 +1,11 @@
 package jtool.atom;
 
 import jtool.code.collection.AbstractRandomAccessList;
-import jtool.code.collection.NewCollections;
 import jtool.code.functional.IOperator1;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.math.ComplexDouble;
+import jtool.math.MathEX;
 import jtool.math.function.FixBoundFunc1;
 import jtool.math.function.Func1;
 import jtool.math.function.IFunc1;
@@ -18,6 +18,7 @@ import jtool.math.vector.*;
 import jtool.parallel.*;
 import jtoolex.voronoi.VoronoiBuilder;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -35,6 +36,9 @@ import static jtool.math.MathEX.*;
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
  */
 public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
+    public static boolean BUFFER_NL = true; // 是否缓存近邻列表从而避免重复计算距离，对于非常多的粒子时近邻列表会占用很多内存，当然这里不会遇到
+    public static double MAX_BUFFER_NL_MUL = 4.0; // 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难
+    
     private IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
     private final IXYZ mBox;
     
@@ -53,6 +57,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IMatrix oAtomDataXYZ = mAtomDataXYZ;
         mAtomDataXYZ = null;
         MatrixCache.returnMat(oAtomDataXYZ);
+        if (BUFFER_NL && mBufferedNL!=null) {
+            int[][] oBufferedNL = mBufferedNL;
+            mBufferedNL = null;
+            mBufferedNLRMax = Double.NaN;
+            NL_CACHE.returnObject(oBufferedNL);
+        }
     }
     @Override public void shutdownNow() {shutdown();}
     @Override public boolean isShutdown() {return mDead;}
@@ -647,6 +657,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     
     
+    private double mBufferedNLRMax = Double.NaN;
+    private int[][] mBufferedNL = null;
+    private final static IObjectPool<int[] @Nullable[]> NL_CACHE = new ThreadLocalObjectCachePool<>();
+    private final static int INIT_NL_SIZE = 16;
+    
     /**
      * 计算所有粒子的近邻球谐函数的平均，即 Qlm；
      * 返回一个复数矩阵，行为原子，列为 m
@@ -666,23 +681,49 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (aL < 0) throw new IllegalArgumentException("Input l MUST be Non-Negative, input: "+aL);
         
         // 构造用于并行的暂存数组，注意需要初始值为 0.0
-        final List<IComplexMatrix> rDestPar = NewCollections.from(nThreads(), i -> ComplexMatrixCache.getZerosRow(mAtomNum, aL+aL+1));
+        final List<? extends IComplexMatrix> rDestPar = ComplexMatrixCache.getZerosRow(mAtomNum, aL+aL+1, nThreads());
         // 统计近邻数用于求平均，同样也需要为并行使用数组
         final List<? extends IVector> tNNPar = VectorCache.getZeros(mAtomNum, nThreads());
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnn<=0;
+        
+        // 全局暂存 Y 和 P 的数组，这样可以用来防止重复获取来提高效率
+        final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec(aL+aL+1, nThreads());
+        final List<Vector> tBufPPar = VectorCache.getVec((aL+2)*(aL+1)/2, nThreads());
+        
+        // 缓存近邻列表
+        final boolean tWillBufferNL = BUFFER_NL && aRNearest<mUnitLen*MAX_BUFFER_NL_MUL;
+        if (tWillBufferNL) {
+            if (mBufferedNL == null) {
+                mBufferedNL = NL_CACHE.getObject();
+                if (mBufferedNL==null || mBufferedNL.length<mAtomNum) {
+                    mBufferedNL = new int[mAtomNum][];
+                }
+            }
+            for (int i = 0; i < mAtomNum; ++i) {
+                int[] tNL = mBufferedNL[i];
+                if (tNL == null) {
+                    tNL = IntegerArrayCache.getArray(INIT_NL_SIZE);
+                    mBufferedNL[i] = tNL;
+                }
+                // 统一分配 -1 初始值，以后遍历遇到 -1 则结束循环（没有 IntegerVector 的临时做法）
+                Arrays.fill(tNL, -1);
+            }
+            mBufferedNLRMax = aRNearest;
+        }
         
         // 遍历计算 Qlm，只对这个最耗时的部分进行并行优化
         pool().parfor(mAtomNum, (i, threadID) -> {
             // 先获取这个线程的 Qlm, tNN
             final IComplexMatrix Qlm = rDestPar.get(threadID);
             final IVector tNN = tNNPar.get(threadID);
+            final IComplexVector tY = tYPar.get(threadID);
+            final Vector tBufP = tBufPPar.get(threadID);
             // 一次计算一行
             final IComplexVector Qlmi = Qlm.row(i);
             final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
             // 遍历近邻计算 Ylm
-            final int fI = i;
-            mNL.forEachNeighbor(fI, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
+            mNL.forEachNeighbor(i, aRNearest, aNnn, aHalf, (x, y, z, idx, dis) -> {
                 // 计算角度
                 double dx = x - cXYZ.mX;
                 double dy = y - cXYZ.mY;
@@ -697,29 +738,30 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     Qlmj = Qlm.row(idx);
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
-                for (int tM = 0; tM <= aL; ++tM) {
-                    int tColP =  tM+aL;
-                    int tColN = -tM+aL;
-                    ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
-                    Qlmi.add_(tColP, tY);
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                    if (aHalf) {
-                        Qlmj.add_(tColP, tY);
+                Func.sphericalHarmonicsTL2Dest(aL, theta, phi, tY, tBufP);
+                Qlmi.plus2this(tY);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (aHalf) Qlmj.plus2this(tY);
+                // 内部实现支持这样直接返回
+                ComplexVectorCache.returnVec(tY);
+                
+                // 统计近邻
+                if (tWillBufferNL) {
+                    int tSize = (int)tNN.get_(i);
+                    int[] tNL = mBufferedNL[i];
+                    if (tNL.length <= tSize) {
+                        int[] oNL = tNL;
+                        tNL = IntegerArrayCache.getArray(oNL.length * 2);
+                        Arrays.fill(tNL, -1); // 注意分配 -1 初始值
+                        System.arraycopy(oNL, 0, tNL, 0, oNL.length);
+                        IntegerArrayCache.returnArray(oNL);
+                        mBufferedNL[i] = tNL;
                     }
-                    // m < 0 的部分直接利用对称性求
-                    if (tM != 0) {
-                        tY.conj2this();
-                        if ((tM&1)==1) tY.negative2this();
-                        Qlmi.add_(tColN, tY);
-                        // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                        if (aHalf) {
-                            Qlmj.add_(tColN, tY);
-                        }
-                    }
+                    tNL[tSize] = idx;
                 }
                 
                 // 统计近邻数
-                tNN.increment_(fI);
+                tNN.increment_(i);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (aHalf) {
                     tNN.increment_(idx);
@@ -741,6 +783,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 归还临时变量
         for (int i = 1; i < rDestPar.size(); ++i) ComplexMatrixCache.returnMat(rDestPar.get(i));
         VectorCache.returnVec(tNNPar);
+        ComplexVectorCache.returnVec(tYPar);
+        VectorCache.returnVec(tBufPPar);
         
         return Qlm;
     }
@@ -758,6 +802,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IVector tNN = VectorCache.getZeros(mAtomNum);
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnn<=0;
+        
+        // 全局暂存 Y 和 P 的数组，这样可以用来防止重复获取来提高效率
+        final IComplexVector tY = ComplexVectorCache.getVec(aL+aL+1);
+        final Vector tBufP = VectorCache.getVec((aL+2)*(aL+1)/2);
         
         // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
         for (int i = 0; i < mAtomNum; ++i) if (aMPIInfo.inRegin(i)) {
@@ -782,26 +830,12 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     Qlmj = Qlm.row(idx);
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
-                for (int tM = 0; tM <= aL; ++tM) {
-                    int tColP =  tM+aL;
-                    int tColN = -tM+aL;
-                    ComplexDouble tY = Func.sphericalHarmonics_(aL, tM, theta, phi);
-                    Qlmi.add_(tColP, tY);
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                    if (tHalfStat) {
-                        Qlmj.add_(tColP, tY);
-                    }
-                    // m < 0 的部分直接利用对称性求
-                    if (tM != 0) {
-                        tY.conj2this();
-                        if ((tM&1)==1) tY.negative2this();
-                        Qlmi.add_(tColN, tY);
-                        // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                        if (tHalfStat) {
-                            Qlmj.add_(tColN, tY);
-                        }
-                    }
-                }
+                Func.sphericalHarmonicsTL2Dest(aL, theta, phi, tY, tBufP);
+                Qlmi.plus2this(tY);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (tHalfStat) Qlmj.plus2this(tY);
+                // 内部实现支持这样直接返回
+                ComplexVectorCache.returnVec(tY);
                 
                 // 统计近邻数
                 tNN.increment_(fI);
@@ -890,6 +924,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnQ<=0;
         
+        boolean tUseBufferNL = BUFFER_NL && MathEX.Code.numericEqual(mBufferedNLRMax, aRNearestQ);
+        
         // 遍历计算 qlm
         for (int i = 0; i < mAtomNum; ++i) {
             // 一次计算一行
@@ -899,22 +935,41 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
             qlmi.fill(Qlmi);
             // 再累加近邻
-            final int fI = i;
-            mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis) -> {
-                // 直接按行累加即可
-                qlmi.plus2this(Qlm.row(idx));
-                // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
-                if (aHalf) {
-                    qlm.row(idx).plus2this(Qlmi);
+            if (tUseBufferNL) {
+                for (int idx : mBufferedNL[i]) {
+                    if (idx < 0) break;
+                    // 直接按行累加即可
+                    qlmi.plus2this(Qlm.row(idx));
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
+                    if (aHalf) {
+                        qlm.row(idx).plus2this(Qlmi);
+                    }
+                    
+                    // 统计近邻数
+                    tNN.increment_(i);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) {
+                        tNN.increment_(idx);
+                    }
                 }
-                
-                // 统计近邻数
-                tNN.increment_(fI);
-                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                if (aHalf) {
-                    tNN.increment_(idx);
-                }
-            });
+            } else {
+                final int fI = i;
+                mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis) -> {
+                    // 直接按行累加即可
+                    qlmi.plus2this(Qlm.row(idx));
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
+                    if (aHalf) {
+                        qlm.row(idx).plus2this(Qlmi);
+                    }
+                    
+                    // 统计近邻数
+                    tNN.increment_(fI);
+                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                    if (aHalf) {
+                        tNN.increment_(idx);
+                    }
+                });
+            }
         }
         // 根据近邻数平均得到 qlm
         for (int i = 0; i < mAtomNum; ++i) qlm.row(i).div2this(tNN.get_(i));
@@ -1758,7 +1813,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         final List<? extends IMatrix> rFingerPrints = MatrixCache.getMatRow(aNMax+1, aLMax+1, mAtomNum);
         
-        // TODO: 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存，这里暂不考虑
+        // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存，这里不考虑
         pool().parfor(mAtomNum, (i, threadID) -> {
             // 需要存储所有的 l，n，m 的值来统一进行近邻求和
             final IComplexVector[][] cnlm = new IComplexVector[aNMax+1][aLMax+1];

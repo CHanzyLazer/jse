@@ -134,9 +134,9 @@ public final class ComplexVector extends BiDoubleArrayVector {
     @Override public Vector imag() {return new Vector(mSize, mData[1]);}
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftComplexVector} */
-    @Override public ShiftComplexVector subVec(final int aFromIdx, final int aToIdx) {
+    @Override public BiDoubleArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
-        return new ShiftComplexVector(aToIdx-aFromIdx, aFromIdx, mData);
+        return aFromIdx==0 ? new ComplexVector(aToIdx, mData) : new ShiftComplexVector(aToIdx-aFromIdx, aFromIdx, mData);
     }
     
     /** Optimize stuffs，重写加速遍历 */

@@ -111,9 +111,9 @@ public final class Vector extends DoubleArrayVector {
     
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftVector} */
-    @Override public ShiftVector subVec(final int aFromIdx, final int aToIdx) {
+    @Override public DoubleArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
-        return new ShiftVector(aToIdx-aFromIdx, aFromIdx, mData);
+        return aFromIdx==0 ? new Vector(aToIdx, mData) : new ShiftVector(aToIdx-aFromIdx, aFromIdx, mData);
     }
     
     /** Optimize stuffs，引用反转直接返回 {@link ReverseVector} */
