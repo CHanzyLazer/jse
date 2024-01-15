@@ -1,7 +1,7 @@
 package jtool.math.matrix;
 
 import jtool.code.CS.SliceType;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.math.vector.IVector;
 
 import java.util.List;

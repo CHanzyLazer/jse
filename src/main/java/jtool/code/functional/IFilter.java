@@ -1,4 +1,4 @@
-package jtool.code.filter;
+package jtool.code.functional;
 
 @FunctionalInterface
 public interface IFilter<T> {

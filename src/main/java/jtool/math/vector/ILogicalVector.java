@@ -2,7 +2,7 @@ package jtool.math.vector;
 
 import jtool.code.CS.SliceType;
 import jtool.code.collection.NewCollections;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.*;
 import jtool.code.iterator.*;
 import org.jetbrains.annotations.VisibleForTesting;

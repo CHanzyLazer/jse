@@ -1,6 +1,6 @@
 package jtool.atom;
 
-import jtool.code.functional.IIndexChecker;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IIntegerConsumer1;
 import jtool.math.MathEX;
 import jtool.math.matrix.IMatrix;
@@ -63,7 +63,7 @@ public class NeighborListGetter implements IShutdownable {
     /** 专用的 Cell 类，内部只存储下标来减少内存占用 */
     private interface ICell {
         void forEach(IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
-        void forEach(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
+        void forEach(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
     }
     
     private final static class Cell implements ICell {
@@ -82,13 +82,13 @@ public class NeighborListGetter implements IShutdownable {
                 aXYZIdxDo.run(aAtomDataXYZ.get(tIdx, 0), aAtomDataXYZ.get(tIdx, 1), aAtomDataXYZ.get(tIdx, 2), tIdx);
             }
         }
-        @Override public void forEach(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEach(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo) {
             final int tSize = mSize;
             for (int i = 0; i < tSize; ++i) {
                 int tIdx = mData[i];
                 if (aHalf) {
                     // 由于有区域限制，因此一半优化时不在区域内的也需要进行统计
-                    if (tIdx < aIdx || (aRegion!=null && !aRegion.cal(tIdx))) {
+                    if (tIdx < aIdx || (aRegion!=null && !aRegion.accept(tIdx))) {
                         aXYZIdxDo.run(aAtomDataXYZ.get(tIdx, 0), aAtomDataXYZ.get(tIdx, 1), aAtomDataXYZ.get(tIdx, 2), tIdx);
                     }
                 } else {
@@ -128,13 +128,13 @@ public class NeighborListGetter implements IShutdownable {
             }
         }
         /** 对于镜像的不能排除 idx 相同的，而对于 Half 的情况要仔细分析 */
-        @Override public void forEach(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEach(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo) {
             final int tSize = mCell.mSize;
             for (int i = 0; i < tSize; ++i) {
                 int tIdx = mCell.mData[i];
                 if (aHalf) {
                     // 由于有区域限制，因此一半优化时不在区域内的也需要进行统计
-                    if (tIdx < aIdx || (aRegion!=null && !aRegion.cal(tIdx))) {
+                    if (tIdx < aIdx || (aRegion!=null && !aRegion.accept(tIdx))) {
                         aXYZIdxDo.run(aAtomDataXYZ.get(tIdx, 0) + mDirX, aAtomDataXYZ.get(tIdx, 1) + mDirY, aAtomDataXYZ.get(tIdx, 2) + mDirZ, tIdx);
                     } else
                     if (tIdx == aIdx) {
@@ -154,7 +154,7 @@ public class NeighborListGetter implements IShutdownable {
     private interface ILinkedCell {
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
         void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo);
-        void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IXYZIdxDo aXYZIdxDo);
+        void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo);
         void forEachCell(IIntegerConsumer1 aIdxDo);
         void forEachMirrorCell(IXYZIdxDo aXYZIdxDo);
     }
@@ -227,7 +227,7 @@ public class NeighborListGetter implements IShutdownable {
             cell(i-1, j-1, k+1).forEach(mAtomDataXYZ, aXYZIdxDo);
             cell(i-1, j-1, k-1).forEach(mAtomDataXYZ, aXYZIdxDo);
         }
-        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo) {
             if (aIdx >= mAtomNum) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
             final int i = (int) Math.floor(mAtomDataXYZ.get(aIdx, 0) / mCellBox.mX);
             final int j = (int) Math.floor(mAtomDataXYZ.get(aIdx, 1) / mCellBox.mY);
@@ -325,7 +325,7 @@ public class NeighborListGetter implements IShutdownable {
                 aXYZIdxDo.run(tX-mBox.mX, tY-mBox.mY, tZ-mBox.mZ, idx);
             }
         }
-        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo) {
             if (aIdx >= mAtomNum) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
             // 先统一处理一般情况
             final int tEnd = aHalf ? aIdx : mAtomNum;
@@ -381,7 +381,7 @@ public class NeighborListGetter implements IShutdownable {
                 aXYZIdxDo.run(tX+mBox.mX, tY-mBox.mY, tZ-mBox.mZ, aIdx);
             }
             // half 且有 region 时还需要考虑另外一半
-            if (aHalf && aRegion!=null) for (int idx = aIdx+1; idx < mAtomNum; ++idx) if (!aRegion.cal(idx)) {
+            if (aHalf && aRegion!=null) for (int idx = aIdx+1; idx < mAtomNum; ++idx) if (!aRegion.accept(idx)) {
                 double tX = mAtomDataXYZ.get(idx, 0);
                 double tY = mAtomDataXYZ.get(idx, 1);
                 double tZ = mAtomDataXYZ.get(idx, 2);
@@ -465,7 +465,7 @@ public class NeighborListGetter implements IShutdownable {
                 }
             }
         }
-        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexChecker aRegion, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo) {
             if (aIdx >= mAtomNum) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
             // 先统一处理一般情况
             final int tEnd = aHalf ? aIdx : mAtomNum;
@@ -510,7 +510,7 @@ public class NeighborListGetter implements IShutdownable {
                 }
             }
             // half 且有 region 时还需要考虑另外一半
-            if (aHalf && aRegion!=null) for (int idx = aIdx+1; idx < mAtomNum; ++idx) if (!aRegion.cal(idx)) {
+            if (aHalf && aRegion!=null) for (int idx = aIdx+1; idx < mAtomNum; ++idx) if (!aRegion.accept(idx)) {
                 double tX = mAtomDataXYZ.get(idx, 0);
                 double tY = mAtomDataXYZ.get(idx, 1);
                 double tZ = mAtomDataXYZ.get(idx, 2);
@@ -636,7 +636,7 @@ public class NeighborListGetter implements IShutdownable {
      * @param aHalf 是否考虑 index 对易后一致的情况，只遍历一半的原子
      * @param aMHT 是否采用曼哈顿距离（MHT: ManHaTtan distance）来作为距离的判据
      */
-     void forEachNeighbor_(final int aIDX, final double aRMax, boolean aHalf, final boolean aMHT, @Nullable IIndexChecker aRegion, final IXYZIdxDisDo aXYZIdxDisDo) {
+     void forEachNeighbor_(final int aIDX, final double aRMax, boolean aHalf, final boolean aMHT, @Nullable IIndexFilter aRegion, final IXYZIdxDisDo aXYZIdxDisDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(aIDX));
@@ -700,13 +700,13 @@ public class NeighborListGetter implements IShutdownable {
         }
         
         /** 直接使用 for-each 的形式来遍历，并且全部交给这里来实现避免多重转发 */
-        void forEachNeighbor(int aIDX, boolean aHalf, @Nullable IIndexChecker aRegion, IXYZIdxDisDo aXYZIdxDisDo) {
+        void forEachNeighbor(int aIDX, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDisDo aXYZIdxDisDo) {
             for (XYZIdxDis tXYZIdxDis : mNNList) {
                 if (aHalf) {
                     int tIDX = tXYZIdxDis.mIdx;
                     // 这里对 idx 相同的情况简单处理，因为精确处理较为麻烦且即使精确处理结果也是不对的
                     // 由于有区域限制，因此一半优化时不在区域内的也需要进行统计
-                    if (tIDX <= aIDX || (aRegion!=null && !aRegion.cal(tIDX))) {
+                    if (tIDX <= aIDX || (aRegion!=null && !aRegion.accept(tIDX))) {
                         aXYZIdxDisDo.run(tXYZIdxDis.mX, tXYZIdxDis.mY, tXYZIdxDis.mZ, tIDX, tXYZIdxDis.mDis);
                     }
                 } else {
@@ -734,7 +734,7 @@ public class NeighborListGetter implements IShutdownable {
      * @param aHalf 是否考虑 index 对易后一致的情况，只遍历一半的原子（当设置了最大近邻后建议关闭，否则会爆出警告）
      * @param aMHT 是否采用曼哈顿距离（MHT: ManHaTtan distance）来作为距离的判据
      */
-    void forEachNeighbor_(final int aIDX, final double aRMax, int aNnn, boolean aHalf, final boolean aMHT, @Nullable IIndexChecker aRegion, IXYZIdxDisDo aXYZIdxDisDo) {
+    void forEachNeighbor_(final int aIDX, final double aRMax, int aNnn, boolean aHalf, final boolean aMHT, @Nullable IIndexFilter aRegion, IXYZIdxDisDo aXYZIdxDisDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         // 特殊输入处理，直接回到没有限制的情况
@@ -816,7 +816,7 @@ public class NeighborListGetter implements IShutdownable {
      * 使用给定区域限制下遍历时，合法 half 遍历的方法
      * @author liqa
      */
-    public void forEachNeighbor(int aIDX, double aRMax, int aNnn, boolean aHalf, IIndexChecker aRegion, IXYZIdxDisDo aXYZIdxDisDo) {forEachNeighbor_(aIDX, aRMax, aNnn, aHalf, false, aRegion, aXYZIdxDisDo);}
+    public void forEachNeighbor(int aIDX, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IXYZIdxDisDo aXYZIdxDisDo) {forEachNeighbor_(aIDX, aRMax, aNnn, aHalf, false, aRegion, aXYZIdxDisDo);}
     
     
     /**

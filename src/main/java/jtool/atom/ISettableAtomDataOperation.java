@@ -1,6 +1,6 @@
 package jtool.atom;
 
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IOperator1;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;

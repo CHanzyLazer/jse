@@ -1,7 +1,7 @@
 package jtool.math.vector;
 
 
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import org.jetbrains.annotations.VisibleForTesting;
 
 /**

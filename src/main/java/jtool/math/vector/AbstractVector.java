@@ -2,7 +2,7 @@ package jtool.math.vector;
 
 import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractRandomAccessList;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IDoubleConsumer1;
 import jtool.code.functional.IDoubleOperator1;
 import jtool.code.functional.IDoubleSupplier;

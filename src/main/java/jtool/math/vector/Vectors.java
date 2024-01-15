@@ -2,7 +2,7 @@ package jtool.math.vector;
 
 
 import jtool.code.collection.NewCollections;
-import jtool.code.filter.IDoubleFilter;
+import jtool.code.functional.IDoubleFilter;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.code.iterator.IHasDoubleIterator;

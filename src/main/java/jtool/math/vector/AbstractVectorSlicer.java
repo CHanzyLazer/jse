@@ -3,7 +3,7 @@ package jtool.math.vector;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.NewCollections;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 
 import java.util.List;
 

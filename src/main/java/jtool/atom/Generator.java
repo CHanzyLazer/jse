@@ -1,8 +1,8 @@
 package jtool.atom;
 
 import jtool.code.CS;
-import jtool.code.filter.IDoubleFilter;
-import jtool.code.filter.IFilter;
+import jtool.code.functional.IDoubleFilter;
+import jtool.code.functional.IFilter;
 import jtool.code.functional.IDoubleOperator1;
 import jtool.math.MathEX;
 import jtool.math.function.Func3;

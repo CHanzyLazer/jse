@@ -7,7 +7,7 @@ import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.DoublePair;
 import jtool.code.collection.NewCollections;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.io.ISavable;
 import jtool.math.MathEX;
 import jtool.math.matrix.IMatrix;

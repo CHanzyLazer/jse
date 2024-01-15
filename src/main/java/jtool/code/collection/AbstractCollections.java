@@ -1,9 +1,9 @@
 package jtool.code.collection;
 
 import com.google.common.collect.ImmutableList;
-import jtool.code.filter.IDoubleFilter;
-import jtool.code.filter.IFilter;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IDoubleFilter;
+import jtool.code.functional.IFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IOperator1;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IHasDoubleIterator;

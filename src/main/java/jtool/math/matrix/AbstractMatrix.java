@@ -3,7 +3,7 @@ package jtool.math.matrix;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.AbstractRandomAccessList;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IDoubleConsumer1;
 import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;

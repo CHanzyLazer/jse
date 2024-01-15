@@ -1,8 +1,8 @@
 package jtool.math.table;
 
 import jtool.code.CS.SliceType;
-import jtool.code.filter.IFilter;
-import jtool.code.filter.IIndexFilter;
+import jtool.code.functional.IFilter;
+import jtool.code.functional.IIndexFilter;
 
 import java.util.List;
 
