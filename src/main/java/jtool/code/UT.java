@@ -17,6 +17,7 @@ import jtool.code.functional.IOperator1;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.code.task.TaskCall;
 import jtool.code.task.TaskRun;
+import jtool.code.timer.FixedTimer;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.MathEX;
@@ -86,6 +87,14 @@ import static jtool.code.CS.Exec.EXE;
 public class UT {
     
     public static class Code {
+        
+        /**
+         * Convert a prob value to percent String
+         * @author liqa
+         */
+        public static String percent(double aProb) {
+            return String.format("%.2f", aProb*100) + "%";
+        }
         
         /**
          * Get the random seed for lammps usage
@@ -434,13 +443,13 @@ public class UT {
     }
     
     public static class Timer {
-        private static Long sTime = null;
+        private final static FixedTimer TIMER = new FixedTimer();
         
-        public static void tic() {sTime = System.currentTimeMillis();}
+        public static void tic() {TIMER.reset();}
         public static void toc() {toc("Total");}
         public static void toc(String aMsg) {
-            double elapsedTime = toc(true);
-            sTime = null;
+            double elapsedTime = TIMER.get();
+            TIMER.reset();
             
             int hours = (int) java.lang.Math.floor(elapsedTime / 3600.0);
             int minutes = (int) java.lang.Math.floor(elapsedTime % 3600.0) / 60;
@@ -448,8 +457,9 @@ public class UT {
             System.out.printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
         }
         public static double toc(boolean aFlag) {
-            if (sTime == null) return 0.0;
-            return (System.currentTimeMillis() - sTime) / 1000.0;
+            double elapsedTime = TIMER.get();
+            TIMER.reset();
+            return elapsedTime;
         }
         
         public static boolean USE_ASCII = false;

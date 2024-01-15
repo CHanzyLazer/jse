@@ -2,6 +2,8 @@ package jtoolex.rareevent.lmp;
 
 import jtool.atom.IAtomData;
 import jtool.code.UT;
+import jtool.code.timer.AccumulatedTimer;
+import jtool.code.timer.FixedTimer;
 import jtool.lmp.Box;
 import jtool.lmp.Lmpdat;
 import jtool.lmp.NativeLmp;
@@ -263,6 +265,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
     }
     
     
+    private final static ThreadLocalObjectCachePool<double[]> TIMER_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new double[4]);
     private final static ThreadLocalObjectCachePool<double[]> DOUBLE1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new double[1]);
     private final static ThreadLocalObjectCachePool<long[]> LONG1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new long[1]);
     private final static ThreadLocalObjectCachePool<byte[]> BYTE1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new byte[1]);
@@ -272,6 +275,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         , DATA_XYZ = 101, DATA_ID = 103, DATA_Type = 104, DATA_VELOCITIES = 102
         , JOB_TYPE = 109
         , LONG1_INFO = 108, DOUBLE1_INFO = 107
+        , TIMER_INFO = 106
         ;
     /** 各种任务完成的信息 tag */
     private final static int
@@ -279,6 +283,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         , PATH_INIT_FINISHED = 110, PATH_FROM_FINISHED = 111
         , PATH_NEXT_FINISHED = 112, PATH_TIME_FINISHED = 113, PATH_LAMBDA_FINISHED = 114
         , PATH_SHUTDOWN_FINISHED = 118
+        , TIMER_INIT_FINISHED = 115, TIMER_GET_FINISHED = 116, TIMER_RESET_FINISHED = 117
         ;
     /** 各种任务的种类 */
     private final static byte
@@ -286,17 +291,22 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         , PATH_INIT = 0, PATH_FROM = 1
         , PATH_NEXT = 2, PATH_TIME = 3, PATH_LAMBDA = 4
         , PATH_SHUTDOWN = -2
+        , TIMER_INIT = 5, TIMER_GET = 6, TIMER_RESET = 7
         ;
     private final static byte[]
           SHUTDOWN_BUF = {SHUTDOWN}
         , PATH_INIT_BUF = {PATH_INIT}, PATH_FROM_BUF = {PATH_FROM}
         , PATH_NEXT_BUF = {PATH_NEXT}, PATH_TIME_BUF = {PATH_TIME}, PATH_LAMBDA_BUF = {PATH_LAMBDA}
         , PATH_SHUTDOWN_BUF = {PATH_SHUTDOWN}
+        , TIMER_INIT_BUF = {TIMER_INIT}, TIMER_GET_BUF = {TIMER_GET}, TIMER_RESET_BUF = {TIMER_RESET}
         ;
     
     
     private class PathGenServer implements IAutoShutdown, Runnable {
         private ITimeAndParameterIterator<Lmpdat> mIt = null;
+        /** 一些用来统计效率的计时器 */
+        private @Nullable FixedTimer mTotTimer = null;
+        private @Nullable AccumulatedTimer mLmpTimer = null, mCalTimer = null, mWaitTimer = null;
         
         @Override public void run() {
             try {mPathGen.checkThread();}
@@ -305,7 +315,9 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 // 获取任务种类，mLmpComm 主进程接收后使用 bcast 转发给所有进程
                 byte[] rJobBuf = BYTE1_CACHE.getObject();
                 if (mLmpMe == 0) {
+                    if (mWaitTimer != null) mWaitTimer.from();
                     mWorldComm.recv(rJobBuf, 1, mWorldRoot, JOB_TYPE);
+                    if (mWaitTimer != null) mWaitTimer.to();
                 }
                 mLmpComm.bcast(rJobBuf, 1, 0);
                 byte tJob = rJobBuf[0];
@@ -358,7 +370,9 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     break;
                 }
                 case PATH_NEXT: {
+                    if (mLmpMe==0 && mLmpTimer!=null) mLmpTimer.from();
                     Lmpdat tNext = mIt.next();
+                    if (mLmpMe==0 && mLmpTimer!=null) mLmpTimer.to();
                     if (mLmpMe == 0) {
                         sendLmpdat_(tNext, mWorldRoot, mWorldComm);
                     }
@@ -387,7 +401,9 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     break;
                 }
                 case PATH_LAMBDA: {
+                    if (mLmpMe==0 && mCalTimer!=null) mCalTimer.from();
                     double tLambda = mIt.lambda();
+                    if (mLmpMe==0 && mCalTimer!=null) mCalTimer.to();
                     if (mLmpMe == 0) {
                         double[] tLambdaBuf = DOUBLE1_CACHE.getObject();
                         tLambdaBuf[0] = tLambda;
@@ -411,6 +427,51 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     mLmpComm.barrier();
                     break;
                 }
+                case TIMER_INIT: {
+                    // 这里简单处理，只需要 mLmpMe == 0 的统计耗时
+                    if (mLmpMe == 0) {
+                        mTotTimer = new FixedTimer();
+                        mLmpTimer = new AccumulatedTimer();
+                        mCalTimer = new AccumulatedTimer();
+                        mWaitTimer = new AccumulatedTimer();
+                    }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(mWorldRoot, TIMER_INIT_FINISHED);
+                    }
+                    mLmpComm.barrier();
+                    break;
+                }
+                case TIMER_GET: {
+                    if (mLmpMe == 0) {
+                        assert mTotTimer!=null && mLmpTimer!=null && mCalTimer!=null && mWaitTimer!=null;
+                        double[] tTimeBuf = TIMER_CACHE.getObject();
+                        tTimeBuf[0] = mTotTimer.get();
+                        tTimeBuf[1] = mLmpTimer.get();
+                        tTimeBuf[2] = mCalTimer.get();
+                        tTimeBuf[3] = mWaitTimer.get();
+                        mWorldComm.send(tTimeBuf, 4, mWorldRoot, TIMER_INFO);
+                        TIMER_CACHE.returnObject(tTimeBuf);
+                    }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(mWorldRoot, TIMER_GET_FINISHED);
+                    }
+                    mLmpComm.barrier();
+                    break;
+                }
+                case TIMER_RESET: {
+                    if (mLmpMe == 0) {
+                        assert mTotTimer!=null && mLmpTimer!=null && mCalTimer!=null && mWaitTimer!=null;
+                        mTotTimer.reset();
+                        mLmpTimer.reset();
+                        mCalTimer.reset();
+                        mWaitTimer.reset();
+                    }
+                    if (mLmpMe == 0) {
+                        mWorldComm.send(mWorldRoot, TIMER_RESET_FINISHED);
+                    }
+                    mLmpComm.barrier();
+                    break;
+                }
                 default: {
                     throw new IllegalArgumentException("job type: "+tJob);
                 }}
@@ -428,6 +489,57 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             // 由于是 copy 的，可以并且应该直接 shutdown，注意线程安全的问题
             synchronized (mLmpComm) {mLmpComm.shutdown();}
         }
+    }
+    
+    /** 获取统计时间的接口 */
+    public void initTimer() throws MPI.Error {
+        if (mWorldMe != mWorldRoot) throw new RuntimeException("initTimer can ONLY be called from WorldRoot ("+mWorldRoot+")");
+        if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
+        for (int tLmpRoot : mLmpRoots) {
+            mWorldComm.send(TIMER_INIT_BUF, 1, tLmpRoot, JOB_TYPE);
+            mWorldComm.recv(tLmpRoot, TIMER_INIT_FINISHED);
+        }
+    }
+    public void resetTimer() throws MPI.Error {
+        if (mWorldMe != mWorldRoot) throw new RuntimeException("resetTimer can ONLY be called from WorldRoot ("+mWorldRoot+")");
+        if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
+        for (int tLmpRoot : mLmpRoots) {
+            mWorldComm.send(TIMER_RESET_BUF, 1, tLmpRoot, JOB_TYPE);
+            mWorldComm.recv(tLmpRoot, TIMER_RESET_FINISHED);
+        }
+    }
+    public static class TimerInfo {
+        public final double total, lmp, lambda, wait;
+        public final double other;
+        public TimerInfo(double total, double lmp, double lambda, double wait) {
+            this.total = total; this.lmp = lmp; this.lambda = lambda; this.wait = wait;
+            this.other = this.total - this.lmp - this.lambda - this.wait;
+        }
+    }
+    public TimerInfo getTimerInfo() throws MPI.Error {return getTimerInfo(false);}
+    public TimerInfo getTimerInfo(boolean aExcludeWorldRoot) throws MPI.Error {
+        if (mWorldMe != mWorldRoot) throw new RuntimeException("getTimerInfo can ONLY be called from WorldRoot ("+mWorldRoot+")");
+        if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
+        double rTotal = 0.0, rLmp = 0.0, rLambda = 0.0, rWait = 0.0;
+        int tStatTimes = 0;
+        double[] rTimeBuf = TIMER_CACHE.getObject();
+        for (int tLmpRoot : mLmpRoots) {
+            if (aExcludeWorldRoot && tLmpRoot==mWorldRoot) continue;
+            mWorldComm.send(TIMER_GET_BUF, 1, tLmpRoot, JOB_TYPE);
+            mWorldComm.recv(rTimeBuf, 4, tLmpRoot, TIMER_INFO);
+            mWorldComm.recv(tLmpRoot, TIMER_GET_FINISHED);
+            rTotal  += rTimeBuf[0];
+            rLmp    += rTimeBuf[1];
+            rLambda += rTimeBuf[2];
+            rWait   += rTimeBuf[3];
+            ++tStatTimes;
+        }
+        TIMER_CACHE.returnObject(rTimeBuf);
+        rTotal  /= (double)tStatTimes;
+        rLmp    /= (double)tStatTimes;
+        rLambda /= (double)tStatTimes;
+        rWait   /= (double)tStatTimes;
+        return new TimerInfo(rTotal, rLmp, rLambda, rWait);
     }
     
     

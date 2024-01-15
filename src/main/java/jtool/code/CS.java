@@ -58,6 +58,7 @@ public class CS {
     public final static String NO_LOG_LINUX = "/dev/null";
     public final static String NO_LOG_WIN = "NUL";
     public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
+    public final static String JNILIB_EXTENSION = IS_WINDOWS ? ".dll" : (IS_MAC ? ".jnilib" : ".so");
     
     public final static int DEFAULT_THREAD_NUM = Runtime.getRuntime().availableProcessors();
     public final static boolean NO_CACHE = false;

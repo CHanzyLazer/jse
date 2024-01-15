@@ -13,6 +13,7 @@ import jtoolex.rareevent.lmp.MultipleNativeLmpFullPathGenerator
 
 import static jtool.code.CS.MASS
 import static jtool.code.UT.Code.range
+import static jtool.code.UT.Code.percent
 
 /**
  * lammps 跑 FFS 的实例；
@@ -44,7 +45,7 @@ final def SCDir             = workingDir+'supercooling/';
 final def SCOutDataPath     = SCDir+'data-out';
 
 /** FFS 参数 */
-final int lmpCores          = 2;
+final int lmpCores          = 4;
 
 final int dumpStep          = 5; // 0.01 ps
 
@@ -101,10 +102,15 @@ MultipleNativeLmpFullPathGenerator.withOf(subComm, subRoots, dumpCal, initPoints
     // MARK: seed = 123456789, np = 12, windows 下会卡死
     UT.Timer.USE_ASCII = true; // 避免乱码，并且现在修复了 ASCII 的显示问题
     try (def FFS = new ForwardFluxSampling<>(fullPathGen, parallelNum, surfaceA, surfaces, N0).setProgressBar().setStep1Mul(step1Mul).setPruningProb(pruningProb).setPruningThreshold(pruningThreshold)) {
+        // 增加对 fullPathGen 的单元耗时统计
+        fullPathGen.initTimer();
         // 第一步，每步都会输出结构
         UT.Timer.tic();
         FFS.run();
         UT.Timer.toc("i = -1, k0 = ${FFS.getK0()}, step1PointNum = ${FFS.step1PointNum()}, step1PathNum = ${FFS.step1PathNum()},");
+        // 输出 fullPathGen 的耗时
+        def info = fullPathGen.getTimerInfo();
+        println("FullPathGenTime: lmp = ${percent(info.lmp/info.total)}, lambda = ${percent(info.lambda/info.total)}, wait = ${percent(info.wait/info.total)}, else = ${percent((info.total-info.lmp-info.lambda-info.wait)/info.total)}");
         // 然后直接随便选一个输出路径到 dump 并保存 restart
         Dump.fromAtomDataList(FFS.pickPath()).write(FFSDumpPath);
         if (FFS.stepFinished()) {
@@ -115,9 +121,14 @@ MultipleNativeLmpFullPathGenerator.withOf(subComm, subRoots, dumpCal, initPoints
         // 后面的步骤，每步都会输出结构并保存 restart
         def i = 0;
         while (!FFS.finished()) {
+            // 增加对 fullPathGen 的单元耗时统计
+            fullPathGen.resetTimer();
             UT.Timer.tic();
             FFS.run();
             UT.Timer.toc("i = ${i}, prob = ${FFS.getProb(i)}, step2PointNum = ${FFS.step2PointNum(i)}, step2PathNum = ${FFS.step2PathNum(i)},");
+            // 输出 fullPathGen 的耗时
+            info = fullPathGen.getTimerInfo();
+            println("FullPathGenTime: lmp = ${percent(info.lmp/info.total)}, lambda = ${percent(info.lambda/info.total)}, wait = ${percent(info.wait/info.total)}, else = ${percent(info.other/info.total)}");
             // 然后直接随便选一个输出路径到 dump 并保存 restart
             Dump.fromAtomDataList(FFS.pickPath()).write(FFSDumpPath);
             if (FFS.stepFinished()) {
