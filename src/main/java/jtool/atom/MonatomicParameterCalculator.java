@@ -1,6 +1,8 @@
 package jtool.atom;
 
 import jtool.code.collection.AbstractRandomAccessList;
+import jtool.code.functional.IIndexFilter;
+import jtool.code.functional.IIntegerConsumer1;
 import jtool.code.functional.IOperator1;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
@@ -18,6 +20,7 @@ import jtool.math.vector.*;
 import jtool.parallel.*;
 import jtoolex.voronoi.VoronoiBuilder;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -34,10 +37,11 @@ import static jtool.math.MathEX.*;
  * <p> 认为所有边界都是周期边界条件 </p>
  * <p> 会存在一些重复的代码，为了可读性不进一步消去 </p>
  * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
+ * <p> 此类线程不安全（主要由于近邻列表缓存），但不同实例之间线程安全 </p>
  */
 public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
-    public static boolean BUFFER_NL = true; // 是否缓存近邻列表从而避免重复计算距离，对于非常多的粒子时近邻列表会占用很多内存，当然这里不会遇到
-    public static double MAX_BUFFER_NL_MUL = 4.0; // 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难
+    public static int BUFFER_NL_NUM = 4; // 缓存近邻列表从而避免重复计算距离，这里设置缓存的大小，设置为 0 关闭缓存；即使现在优化了近邻列表获取，缓存依旧能大幅加速近邻遍历
+    public static double BUFFER_NL_RMAX = 4.0; // 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难
     
     private IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
     private final IXYZ mBox;
@@ -57,11 +61,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         IMatrix oAtomDataXYZ = mAtomDataXYZ;
         mAtomDataXYZ = null;
         MatrixCache.returnMat(oAtomDataXYZ);
-        if (BUFFER_NL && mBufferedNL!=null) {
-            int[][] oBufferedNL = mBufferedNL;
+        if (mBufferedNL != null) {
+            BufferedNL oBufferedNL = mBufferedNL;
             mBufferedNL = null;
-            mBufferedNLRMax = Double.NaN;
-            NL_CACHE.returnObject(oBufferedNL);
+            sBufferedNLCache.returnObject(oBufferedNL);
         }
     }
     @Override public void shutdownNow() {shutdown();}
@@ -657,10 +660,178 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     
     
-    private double mBufferedNLRMax = Double.NaN;
-    private int[][] mBufferedNL = null;
-    private final static IObjectPool<int[] @Nullable[]> NL_CACHE = new ThreadLocalObjectCachePool<>();
-    private final static int INIT_NL_SIZE = 16;
+    private static class NL {
+        private final static int INIT_NL_SIZE = 16;
+        
+        private int[] mNL;
+        private int mSize;
+        
+        NL() {
+            // 由于整体做了缓存，并且数组增长过程进行缓存会混淆全局的整型缓存，使用线程也不一致，因此这里不做缓存
+            mSize = 0;
+            mNL = new int[INIT_NL_SIZE];
+        }
+        
+        void add(int aIdx) {
+            if (mNL.length <= mSize) {
+                int[] oNL = mNL;
+                mNL = new int[oNL.length * 2];
+                System.arraycopy(oNL, 0, mNL, 0, oNL.length);
+            }
+            mNL[mSize] = aIdx;
+            ++mSize;
+        }
+        void clear() {
+            mSize = 0;
+        }
+        
+        void forEach(IIntegerConsumer1 aIdxDo) {
+            for (int i = 0; i < mSize; ++i) aIdxDo.run(mNL[i]);
+        }
+    }
+    
+    private static class BufferedNL {
+        private final IVector mBufferedNLRMax;
+        private final boolean[] mBufferedNLHalf;
+        private final int[] mBufferedNLMPI;
+        private final int[] mBufferedNLNnn;
+        private final NL[][] mBufferedNL;
+        private int mAtomNum;
+        private int mSize;
+        private int mIdx;
+        
+        BufferedNL(int aSize, int aAtomNum) {
+            mAtomNum = aAtomNum;
+            mSize = aSize;
+            mIdx = 0;
+            mBufferedNLRMax = Vectors.NaN(mSize);
+            mBufferedNLHalf = new boolean[mSize];
+            mBufferedNLMPI = new int[mSize];
+            mBufferedNLNnn = new int[mSize];
+            mBufferedNL = new NL[mSize][];
+        }
+        
+        int size() {return mSize;}
+        void setSize(int aSize) {mSize = MathEX.Code.toRange(0, mBufferedNL.length, aSize);}
+        int dataLength() {return mBufferedNL.length;}
+        void reset() {mIdx = 0; mBufferedNLRMax.fill(Double.NaN);}
+        void setAtomNum(int aAtomNum) {mAtomNum = aAtomNum;}
+        
+        
+        /**
+         * 根据参数获取合适的 NL 用于缓存，
+         * 此时 null 表示没有合适的缓存的近邻列表
+         */
+        NL @Nullable[] getValidBufferedNL(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+            // 直接遍历搜索
+            for (int i = 0; i < mSize; ++i) {
+                if (mBufferedNLNnn[i]==aNnn && mBufferedNLHalf[i]==aHalf && mBufferedNLMPI[i]==aMPISize) {
+                    NL @Nullable[] tNL = mBufferedNL[i];
+                    if (tNL == null) continue;
+                    double tNLRMax = mBufferedNLRMax.get(i);
+                    if (Double.isNaN(tNLRMax)) continue;
+                    if (MathEX.Code.numericEqual(tNLRMax, aRMax)) return tNL;
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * 根据参数获取合适的 NL 用于缓存，
+         * 此时不会返回 null
+         */
+        NL @NotNull[] getValidNLToBuffer(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+            // 这里直接根据 mIdx 返回
+            mBufferedNLRMax.set(mIdx, aRMax);
+            mBufferedNLHalf[mIdx] = aHalf;
+            mBufferedNLMPI[mIdx]= aMPISize;
+            mBufferedNLNnn[mIdx] = aNnn;
+            @Nullable NL @Nullable[] tNL = mBufferedNL[mIdx];
+            if (tNL==null || tNL.length<mAtomNum) {
+                NL @Nullable[] oNL = tNL;
+                tNL = new NL[mAtomNum];
+                if (oNL != null) System.arraycopy(oNL, 0, tNL, 0, oNL.length);
+            }
+            mBufferedNL[mIdx] = tNL;
+            for (int i = 0; i < mAtomNum; ++i) {
+                @Nullable NL subNL = tNL[i];
+                if (subNL == null) {
+                    subNL = new NL();
+                    tNL[i] = subNL;
+                } else {
+                    subNL.clear();
+                }
+            }
+            ++mIdx;
+            if (mIdx == mSize) mIdx = 0;
+            return tNL;
+        }
+    }
+    
+    // 简单处理这里直接缓存整个对象，而内部不再缓存
+    private @Nullable BufferedNL mBufferedNL = null;
+    private final static IObjectPool<BufferedNL> sBufferedNLCache = new ThreadLocalObjectCachePool<>();
+    
+    private void initBufferNL_() {
+        if (mBufferedNL != null) return;
+        if (BUFFER_NL_NUM <= 0) return;
+        mBufferedNL = sBufferedNLCache.getObject();
+        if (mBufferedNL==null || mBufferedNL.dataLength()<BUFFER_NL_NUM) {
+            mBufferedNL = new BufferedNL(BUFFER_NL_NUM, mAtomNum);
+        } else {
+            mBufferedNL.setSize(BUFFER_NL_NUM);
+            mBufferedNL.setAtomNum(mAtomNum);
+            mBufferedNL.reset();
+        }
+    }
+    
+    /**
+     * 根据参数获取合适的 NL 用于缓存，
+     * 此时 null 表示关闭了近邻列表缓存或者没有合适的缓存的近邻列表
+     */
+    private NL @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+        initBufferNL_();
+        if (mBufferedNL == null) return null;
+        return mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize);
+    }
+    private NL @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf) {
+        return getValidBufferedNL_(aRMax, aNnn, aHalf, 1);
+    }
+    /**
+     * 根据参数获取合适的 NL 用于缓存，
+     * 此时 null 表示已经有了缓存或者关闭了近邻列表缓存或者参数非法（近邻半径过大）
+     */
+    private NL @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+        initBufferNL_();
+        if (mBufferedNL == null) return null;
+        if (aRMax > BUFFER_NL_RMAX*mUnitLen) return null;
+        if (mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize) != null) return null;
+        return mBufferedNL.getValidNLToBuffer(aRMax, aNnn, aHalf, aMPISize);
+    }
+    private NL @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf) {
+        return getNLWhichNeedBuffer_(aRMax, aNnn, aHalf, 1);
+    }
+    
+    /** 会自动使用缓存的近邻列表遍历，用于减少重复代码 */
+    private void forEachNeighbor(NL @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIntegerConsumer1 aIdxDo) {
+        if (aNL != null) {
+            // 如果 aNL 不为 null，则直接使用 aNL 遍历
+            aNL[aIdx].forEach(aIdxDo);
+        } else {
+            // aNL 为 null，则使用 mNL 完整遍历
+            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, (x, y, z, idx, dis2) -> aIdxDo.run(idx));
+        }
+    }
+    private void forEachNeighbor(NL @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IIntegerConsumer1 aIdxDo) {
+        if (aNL != null) {
+            // 如果 aNL 不为 null，则直接使用 aNL 遍历
+            aNL[aIdx].forEach(aIdxDo);
+        } else {
+            // aNL 为 null，则使用 mNL 完整遍历
+            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, aRegion, (x, y, z, idx, dis2) -> aIdxDo.run(idx));
+        }
+    }
+    
     
     /**
      * 计算所有粒子的近邻球谐函数的平均，即 Qlm；
@@ -691,26 +862,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec(aL+aL+1, nThreads());
         final List<Vector> tBufPPar = VectorCache.getVec((aL+2)*(aL+1)/2, nThreads());
         
-        // 缓存近邻列表
-        final boolean tWillBufferNL = BUFFER_NL && aRNearest<mUnitLen*MAX_BUFFER_NL_MUL;
-        if (tWillBufferNL) {
-            if (mBufferedNL == null) {
-                mBufferedNL = NL_CACHE.getObject();
-                if (mBufferedNL==null || mBufferedNL.length<mAtomNum) {
-                    mBufferedNL = new int[mAtomNum][];
-                }
-            }
-            for (int i = 0; i < mAtomNum; ++i) {
-                int[] tNL = mBufferedNL[i];
-                if (tNL == null) {
-                    tNL = IntegerArrayCache.getArray(INIT_NL_SIZE);
-                    mBufferedNL[i] = tNL;
-                }
-                // 统一分配 -1 初始值，以后遍历遇到 -1 则结束循环（没有 IntegerVector 的临时做法）
-                Arrays.fill(tNL, -1);
-            }
-            mBufferedNLRMax = aRNearest;
-        }
+        // 获取需要缓存的近邻列表
+        final NL @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRNearest, aNnn, aHalf);
         
         // 遍历计算 Qlm，只对这个最耗时的部分进行并行优化
         pool().parfor(mAtomNum, (i, threadID) -> {
@@ -742,22 +895,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 Qlmi.plus2this(tY);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (aHalf) Qlmj.plus2this(tY);
-                // 内部实现支持这样直接返回
-                ComplexVectorCache.returnVec(tY);
                 
                 // 统计近邻
-                if (tWillBufferNL) {
-                    int tSize = (int)tNN.get_(i);
-                    int[] tNL = mBufferedNL[i];
-                    if (tNL.length <= tSize) {
-                        int[] oNL = tNL;
-                        tNL = IntegerArrayCache.getArray(oNL.length * 2);
-                        Arrays.fill(tNL, -1); // 注意分配 -1 初始值
-                        System.arraycopy(oNL, 0, tNL, 0, oNL.length);
-                        IntegerArrayCache.returnArray(oNL);
-                        mBufferedNL[i] = tNL;
-                    }
-                    tNL[tSize] = idx;
+                if (tNLToBuffer != null) {
+                    tNLToBuffer[i].add(idx);
                 }
                 
                 // 统计近邻数
@@ -807,6 +948,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IComplexVector tY = ComplexVectorCache.getVec(aL+aL+1);
         final Vector tBufP = VectorCache.getVec((aL+2)*(aL+1)/2);
         
+        // 获取需要缓存的近邻列表
+        final NL @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRNearest, aNnn, aHalf, aMPIInfo.mSize);
+        
         // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
         for (int i = 0; i < mAtomNum; ++i) if (aMPIInfo.inRegin(i)) {
             // 一次计算一行
@@ -834,8 +978,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 Qlmi.plus2this(tY);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (tHalfStat) Qlmj.plus2this(tY);
-                // 内部实现支持这样直接返回
-                ComplexVectorCache.returnVec(tY);
+                
+                // 统计近邻
+                if (tNLToBuffer != null) {
+                    tNLToBuffer[fI].add(idx);
+                }
                 
                 // 统计近邻数
                 tNN.increment_(fI);
@@ -852,6 +999,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         // 归还临时变量
         VectorCache.returnVec(tNN);
+        ComplexVectorCache.returnVec(tY);
+        VectorCache.returnVec(tBufP);
         
         // 收集所有进程将统计到的 Qlm，现在可以直接一起同步保证效率
         if (!aNoGather) {
@@ -924,7 +1073,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnQ<=0;
         
-        boolean tUseBufferNL = BUFFER_NL && MathEX.Code.numericEqual(mBufferedNLRMax, aRNearestQ);
+        // 获取缓存近邻列表，这里只需要进行遍历 idx
+        NL @Nullable[] tNL = getValidBufferedNL_(aRNearestQ, aNnnQ, aHalf);
+        // 如果为 null 还需要获取需要缓存的近邻列表
+        final NL @Nullable[] tNLToBuffer = tNL==null ? getNLWhichNeedBuffer_(aRNearestQ, aNnnQ, aHalf) : null;
         
         // 遍历计算 qlm
         for (int i = 0; i < mAtomNum; ++i) {
@@ -935,41 +1087,27 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 先累加自身（不直接拷贝矩阵因为以后会改成复数向量的数组）
             qlmi.fill(Qlmi);
             // 再累加近邻
-            if (tUseBufferNL) {
-                for (int idx : mBufferedNL[i]) {
-                    if (idx < 0) break;
-                    // 直接按行累加即可
-                    qlmi.plus2this(Qlm.row(idx));
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
-                    if (aHalf) {
-                        qlm.row(idx).plus2this(Qlmi);
-                    }
-                    
-                    // 统计近邻数
-                    tNN.increment_(i);
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                    if (aHalf) {
-                        tNN.increment_(idx);
-                    }
+            final int fI = i;
+            forEachNeighbor(tNL, fI, aRNearestQ, aNnnQ, aHalf, idx -> {
+                // 直接按行累加即可
+                qlmi.plus2this(Qlm.row(idx));
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
+                if (aHalf) {
+                    qlm.row(idx).plus2this(Qlmi);
                 }
-            } else {
-                final int fI = i;
-                mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, (x, y, z, idx, dis2) -> {
-                    // 直接按行累加即可
-                    qlmi.plus2this(Qlm.row(idx));
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
-                    if (aHalf) {
-                        qlm.row(idx).plus2this(Qlmi);
-                    }
-                    
-                    // 统计近邻数
-                    tNN.increment_(fI);
-                    // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
-                    if (aHalf) {
-                        tNN.increment_(idx);
-                    }
-                });
-            }
+                
+                // 统计近邻
+                if (tNLToBuffer != null) {
+                    tNLToBuffer[fI].add(idx);
+                }
+                
+                // 统计近邻数
+                tNN.increment_(fI);
+                // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
+                if (aHalf) {
+                    tNN.increment_(idx);
+                }
+            });
         }
         // 根据近邻数平均得到 qlm
         for (int i = 0; i < mAtomNum; ++i) qlm.row(i).div2this(tNN.get_(i));
@@ -999,6 +1137,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnnQ<=0;
         
+        // 获取缓存近邻列表，这里只需要进行遍历 idx
+        NL @Nullable[] tNL = getValidBufferedNL_(aRNearestQ, aNnnQ, aHalf, aMPIInfo.mSize);
+        // 如果为 null 还需要获取需要缓存的近邻列表
+        final NL @Nullable[] tNLToBuffer = tNL==null ? getNLWhichNeedBuffer_(aRNearestQ, aNnnQ, aHalf, aMPIInfo.mSize) : null;
+        
         // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
         for (int i = 0; i < mAtomNum; ++i) if (aMPIInfo.inRegin(i)) {
             // 一次计算一行
@@ -1009,13 +1152,18 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             qlmi.fill(Qlmi);
             // 再累加近邻
             final int fI = i;
-            mNL.forEachNeighbor(fI, aRNearestQ, aNnnQ, aHalf, aMPIInfo::inRegin, (x, y, z, idx, dis2) -> {
+            forEachNeighbor(tNL, fI, aRNearestQ, aNnnQ, aHalf, aMPIInfo::inRegin, idx -> {
                 // 直接按行累加即可
                 qlmi.plus2this(Qlm.row(idx));
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
                 boolean tHalfStat = aHalf && aMPIInfo.inRegin(idx);
                 if (tHalfStat) {
                     qlm.row(idx).plus2this(Qlmi);
+                }
+                
+                // 统计近邻
+                if (tNLToBuffer != null) {
+                    tNLToBuffer[fI].add(idx);
                 }
                 
                 // 统计近邻数
