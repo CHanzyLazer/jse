@@ -850,9 +850,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         final boolean aHalf = aNnn<=0;
         
-        // 全局暂存 Y 和 P 的数组，这样可以用来防止重复获取来提高效率
+        // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
         final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec(aL+aL+1, nThreads());
-        final List<Vector> tBufPPar = VectorCache.getVec((aL+2)*(aL+1)/2, nThreads());
         
         // 获取需要缓存的近邻列表
         final IntegerList @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRNearest, aNnn, aHalf);
@@ -863,7 +862,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IComplexMatrix Qlm = rDestPar.get(threadID);
             final IVector tNN = tNNPar.get(threadID);
             final IComplexVector tY = tYPar.get(threadID);
-            final Vector tBufP = tBufPPar.get(threadID);
             // 一次计算一行
             final IComplexVector Qlmi = Qlm.row(i);
             final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
@@ -883,7 +881,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     Qlmj = Qlm.row(idx);
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
-                Func.sphericalHarmonicsTL2Dest(aL, theta, phi, tY, tBufP);
+                Func.sphericalHarmonics2Dest(aL, theta, phi, tY);
                 Qlmi.plus2this(tY);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (aHalf) Qlmj.plus2this(tY);
@@ -915,7 +913,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         for (int i = 1; i < rDestPar.size(); ++i) ComplexMatrixCache.returnMat(rDestPar.get(i));
         VectorCache.returnVec(tNNPar);
         ComplexVectorCache.returnVec(tYPar);
-        VectorCache.returnVec(tBufPPar);
         
         return Qlm;
     }
@@ -936,7 +933,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         // 全局暂存 Y 和 P 的数组，这样可以用来防止重复获取来提高效率
         final IComplexVector tY = ComplexVectorCache.getVec(aL+aL+1);
-        final Vector tBufP = VectorCache.getVec((aL+2)*(aL+1)/2);
         
         // 获取需要缓存的近邻列表
         final IntegerList @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRNearest, aNnn, aHalf, aMPIInfo.mSize);
@@ -964,7 +960,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                     Qlmj = Qlm.row(idx);
                 }
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
-                Func.sphericalHarmonicsTL2Dest(aL, theta, phi, tY, tBufP);
+                Func.sphericalHarmonics2Dest(aL, theta, phi, tY);
                 Qlmi.plus2this(tY);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (tHalfStat) Qlmj.plus2this(tY);
@@ -988,7 +984,6 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 归还临时变量
         VectorCache.returnVec(tNN);
         ComplexVectorCache.returnVec(tY);
-        VectorCache.returnVec(tBufP);
         
         // 收集所有进程将统计到的 Qlm，现在可以直接一起同步保证效率
         if (!aNoGather) {
