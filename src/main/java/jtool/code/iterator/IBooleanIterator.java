@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 
 /**
- * 返回 double 类型的迭代器，用来避免外套类型
+ * 返回 boolean 类型的迭代器，用来避免外套类型
  * @author liqa
  */
 public interface IBooleanIterator {

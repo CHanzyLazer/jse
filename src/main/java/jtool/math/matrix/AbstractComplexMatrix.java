@@ -6,7 +6,6 @@ import jtool.code.iterator.IComplexDoubleSetIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.vector.IComplexVector;
-import jtool.math.vector.IVector;
 import jtool.math.vector.RefComplexVector;
 
 import java.util.List;

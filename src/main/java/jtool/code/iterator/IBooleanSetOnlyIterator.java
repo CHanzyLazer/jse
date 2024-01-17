@@ -1,7 +1,7 @@
 package jtool.code.iterator;
 
 /**
- * 返回 double 类型的设置迭代器，用来避免外套类型
+ * 返回 boolean 类型的设置迭代器，用来避免外套类型
  * @author liqa
  */
 public interface IBooleanSetOnlyIterator {

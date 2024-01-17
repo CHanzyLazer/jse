@@ -2,6 +2,7 @@ package jtool.code.collection;
 
 import jtool.code.functional.IIntegerConsumer1;
 import jtool.math.IDataShell;
+import jtool.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -83,6 +84,26 @@ public class IntegerList implements IDataShell<int[]> {
             @Override public int size() {return IntegerList.this.size();}
         };
     }
+    public IIntegerVector asVec() {
+        return new RefIntegerVector() {
+            @Override public int get_(int aIdx) {return mData[aIdx];}
+            @Override public void set_(int aIdx, int aValue) {mData[aIdx] = aValue;}
+            @Override public int size() {return mSize;}
+        };
+    }
+    @ApiStatus.Experimental
+    public IIntegerVector asConstVec() {
+        return new RefIntegerVector() {
+            @Override public int get_(int aIdx) {return mData[aIdx];}
+            @Override public int size() {return mSize;}
+        };
+    }
+    @ApiStatus.Experimental
+    public IntegerVector copy2vec() {
+        IntegerVector rVector = IntegerVector.zeros(mSize);
+        System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
+        return rVector;
+    }
     
     
     /** IDataShell stuffs */
@@ -92,6 +113,7 @@ public class IntegerList implements IDataShell<int[]> {
     @Override public int[] internalData() {return mData;}
     @ApiStatus.Internal @Override public int @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof IntegerList) return ((IntegerList)aObj).mData;
+        if (aObj instanceof IntegerVector) return ((IntegerVector)aObj).internalData();
         if (aObj instanceof int[]) return (int[])aObj;
         return null;
     }
