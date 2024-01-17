@@ -850,44 +850,44 @@ public class MathEX {
          * <p>
          * 注意原文存在许多错误在这里已经修复，并且修改了返回形式依旧为复数，可以方便使用
          * <p>
-         * 一次直接计算小于等于 aMaxL 的 l 以及对应的所有 m 的 Ylm 值
+         * 一次直接计算小于等于 aLMax 的 l 以及对应的所有 m 的 Ylm 值
          * @author liqa
-         * @param aMaxL 球谐函数参数 l，非负整数
+         * @param aLMax 球谐函数参数 l，非负整数
          * @param aTheta 球坐标下径向方向与 z 轴的角度
          * @param aPhi 球坐标下径向方向在 xy 平面投影下和 x 轴的角度
-         * @return l = 0 ~ aMaxL, m = -l ~ l 下所有球谐函数值组成的复向量，按照 l 从小到大排列，先遍历 m 后遍历 l
+         * @return l = 0 ~ aLMax, m = -l ~ l 下所有球谐函数值组成的复向量，按照 l 从小到大排列，先遍历 m 后遍历 l
          */
-        public static ComplexVector sphericalHarmonicsFull(int aMaxL, double aTheta, double aPhi) {
+        public static ComplexVector sphericalHarmonicsFull(int aLMax, double aTheta, double aPhi) {
             // 判断输入是否合法
-            if (aMaxL < 0) throw new IllegalArgumentException("Input L MUST be Non-Negative, input: "+aMaxL);
-            if (aMaxL > SH_LARGEST_L) throw new IllegalArgumentException("Input L MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for sphericalHarmonics, input: "+aMaxL);
-            return sphericalHarmonicsFull_(aMaxL, aTheta, aPhi);
+            if (aLMax < 0) throw new IllegalArgumentException("Input L MUST be Non-Negative, input: "+aLMax);
+            if (aLMax > SH_LARGEST_L) throw new IllegalArgumentException("Input L MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for sphericalHarmonics, input: "+aLMax);
+            return sphericalHarmonicsFull_(aLMax, aTheta, aPhi);
         }
-        public static void sphericalHarmonicsFull2Dest(int aMaxL, double aTheta, double aPhi, IComplexVector rDest) {
+        public static void sphericalHarmonicsFull2Dest(int aLMax, double aTheta, double aPhi, IComplexVector rDest) {
             // 判断输入是否合法
-            if (aMaxL < 0) throw new IllegalArgumentException("Input L MUST be Non-Negative, input: "+aMaxL);
-            if (aMaxL > SH_LARGEST_L) throw new IllegalArgumentException("Input L MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for sphericalHarmonics, input: "+aMaxL);
-            if (rDest.size() < (aMaxL+1)*(aMaxL+1)) throw new IllegalArgumentException("Size of rDest MUST be GreaterOrEqual to (L+1)^2 ("+((aMaxL+1)*(aMaxL+1))+"), input: "+rDest.size());
-            sphericalHarmonicsFull2Dest_(aMaxL, aTheta, aPhi, rDest);
+            if (aLMax < 0) throw new IllegalArgumentException("Input L MUST be Non-Negative, input: "+aLMax);
+            if (aLMax > SH_LARGEST_L) throw new IllegalArgumentException("Input L MUST be Less than SH_LARGEST_L ("+SH_LARGEST_L+") for sphericalHarmonics, input: "+aLMax);
+            if (rDest.size() < (aLMax+1)*(aLMax+1)) throw new IllegalArgumentException("Size of rDest MUST be GreaterOrEqual to (L+1)^2 ("+((aLMax+1)*(aLMax+1))+"), input: "+rDest.size());
+            sphericalHarmonicsFull2Dest_(aLMax, aTheta, aPhi, rDest);
         }
-        public static ComplexVector sphericalHarmonicsFull_(int aMaxL, double aTheta, double aPhi) {
-            ComplexVector rY = ComplexVector.zeros((aMaxL+1)*(aMaxL+1));
-            sphericalHarmonicsFull2Dest_(aMaxL, aTheta, aPhi, rY);
+        public static ComplexVector sphericalHarmonicsFull_(int aLMax, double aTheta, double aPhi) {
+            ComplexVector rY = ComplexVector.zeros((aLMax+1)*(aLMax+1));
+            sphericalHarmonicsFull2Dest_(aLMax, aTheta, aPhi, rY);
             return rY;
         }
-        public static void sphericalHarmonicsFull2Dest_(int aMaxL, double aTheta, double aPhi, IComplexVector rDest) {
+        public static void sphericalHarmonicsFull2Dest_(int aLMax, double aTheta, double aPhi, IComplexVector rDest) {
             DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
             double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            normalizedLegendreFull2Dest_(aMaxL, tJafamaDoubleWrapper.value, tSinTheta, rDest);
+            normalizedLegendreFull2Dest_(aLMax, tJafamaDoubleWrapper.value, tSinTheta, rDest);
             // 现在 m = 0 的情况不需要设置了
             double tSinMmmPhi = 0.0;
             double tCosMmmPhi = 1.0;
             double tSinMPhi = FastMath.sinAndCos(aPhi, tJafamaDoubleWrapper);
             double tCosMPhi = tJafamaDoubleWrapper.value;
             final double tCosPhi2 = tCosMPhi+tCosMPhi;
-            for (int tM = 1; tM <= aMaxL; ++tM) {
+            for (int tM = 1; tM <= aLMax; ++tM) {
                 int tStartL = tM*tM+tM;
-                for (int tL = tM; tL <= aMaxL; ++tL) {
+                for (int tL = tM; tL <= aLMax; ++tL) {
                     int tIdxPos = tStartL+tM;
                     int tIdxNeg = tStartL-tM;
                     final double fCosMPhi = tCosMPhi;
@@ -903,17 +903,17 @@ public class MathEX {
                 tSinMPhi = tSinMppPhi; tCosMPhi = tCosMppPhi;
             }
         }
-        private static void normalizedLegendreFull2Dest_(int aMaxL, double aX, double aY, IComplexVector rDest) {
+        private static void normalizedLegendreFull2Dest_(int aLMax, double aX, double aY, IComplexVector rDest) {
             // 直接设置到 rY 上，可以减少缓存的使用，并且可以简化实现
             double tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
             rDest.set(0, tPll);
-            if (aMaxL > 0) {
+            if (aLMax > 0) {
                 rDest.set(2, SQRT3 * aX * tPll);
                 tPll *= (-SQRT3DIV2 * aY);
                 setY_(rDest, 2, 1, tPll);
                 int tStartL = 6, tStartLmm = 2, tStartLm2 = 0;
                 int tStartAB = 3;
-                for (int tL = 2; tL <= aMaxL; ++tL) {
+                for (int tL = 2; tL <= aLMax; ++tL) {
                     for (int tM = 0; tM < tL-1; ++tM) {
                         int tIdxAB = tStartAB+tM;
                         double tPlm = SH_Alm.get(tIdxAB) * (aX*rDest.getReal(tStartLmm+tM) + SH_Blm.get(tIdxAB)*rDest.getReal(tStartLm2+tM));

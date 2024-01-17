@@ -25,6 +25,6 @@ for (i in 0..<lines.size()) {
 
 for (i in 0..<fp.size()) {
     def diff = fp[i].asVecRow() - datas[i];
-    if (diff.opt().norm() > 0.0001) println("$i, $diff");
+    if (diff.opt().norm() > 0.00001) println("$i, $diff");
 }
 

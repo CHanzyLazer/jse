@@ -1974,16 +1974,26 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         final List<? extends IMatrix> rFingerPrints = MatrixCache.getMatRow(aNMax+1, aLMax+1, mAtomNum);
         
+        // 需要存储所有的 l，n，m 的值来统一进行近邻求和
+        final IComplexVector[][] cnlmPar = new IComplexVector[nThreads()][aNMax+1];
+        for (IComplexVector[] cnlm : cnlmPar) for (int tN = 0; tN <= aNMax; ++tN) {
+            cnlm[tN] = ComplexVectorCache.getVec((aLMax+1)*(aLMax+1));
+        }
+        // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
+        final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec((aLMax+1)*(aLMax+1), nThreads());
+        
         // 获取需要缓存的近邻列表
         final IntegerList @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRCutOff, -1, false);
         
-        // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存，这里不考虑
+        // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存（所有近邻的 Ylm, Rn, fc 都要存，会随着截断半径增加爆炸增涨），这里不考虑
         pool().parfor(mAtomNum, (i, threadID) -> {
-            // 需要存储所有的 l，n，m 的值来统一进行近邻求和
-            final IComplexVector[][] cnlm = new IComplexVector[aNMax+1][aLMax+1];
-            for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-                cnlm[tN][tL] = ComplexVectorCache.getZeros(tL+tL+1);
+            // 获取线程独立的变量
+            final IComplexVector[] cnlm = cnlmPar[threadID];
+            for (int tN = 0; tN <= aNMax; ++tN) {
+                cnlm[tN].fill(0.0); // 需要手动置为 0，后面直接对近邻进行累加
             }
+            final IComplexVector tY = tYPar.get(threadID);
+            
             final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
             // 遍历近邻计算 Ylm, Rn, fc
             mNL.forEachNeighbor(i, aRCutOff, false, (x, y, z, idx, dis2) -> {
@@ -2002,27 +2012,18 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 final double tX = 1.0 - 2.0*dis/aRCutOff;
                 IVector Rn = Vectors.from(aNMax+1, n -> Func.chebyshev_(n, tX));
                 
-                // 遍历求 n，l 的情况，这里这样遍历来减少球谐函数的计算频率，因此这个基组理论上有很多冗余信息
-                for (int tL = 0; tL <= aLMax; ++tL) {
-                    // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
-                    for (int tM = 0; tM <= tL; ++tM) {
-                        int tColP =  tM+tL;
-                        int tColN = -tM+tL;
-                        ComplexDouble tY = Func.sphericalHarmonics_(tL, tM, theta, phi);
-                        for (int tN = 0; tN <= aNMax; ++tN) {
-                            // 得到 cnlm 向量
-                            IComplexVector cijm = cnlm[tN][tL];
-                            // 乘上 fc，Rn 系数
-                            ComplexDouble cijk = tY.multiply(fc*Rn.get_(tN));
-                            cijm.add_(tColP, cijk);
-                            // m < 0 的部分直接利用对称性求
-                            if (tM != 0) {
-                                cijk.conj2this();
-                                if ((tM&1)==1) cijk.negative2this();
-                                cijm.add_(tColN, cijk);
-                            }
-                        }
-                    }
+                // 遍历求 n，l 的情况
+                Func.sphericalHarmonicsFull2Dest(aLMax, theta, phi, tY);
+                IVector tYReal = tY.real();
+                IVector tYImag = tY.imag();
+                for (int tN = 0; tN <= aNMax; ++tN) {
+                    // 得到 cnlm 向量
+                    IComplexVector cijm = cnlm[tN];
+                    // 得到 fc*Ri
+                    final double tMul = fc * Rn.get(tN);
+                    // 这里分别使用 real 和 imag 部分来运算来避免缓存数组以及自定义复数运算频繁创建 ComplexDouble 的问题
+                    cijm.real().operation().operate2this(tYReal, (lhs, rhs) -> (lhs + tMul*rhs));
+                    cijm.imag().operation().operate2this(tYImag, (lhs, rhs) -> (lhs + tMul*rhs));
                 }
                 // 统计近邻
                 if (tNLToBuffer != null) {tNLToBuffer[i].add(idx);}
@@ -2030,13 +2031,18 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 做标量积消去 m 项，得到此原子的 FP
             IMatrix tFP = rFingerPrints.get(i);
             for (int tN = 0; tN <= aNMax; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-                tFP.set_(tN, tL, (4.0*PI/(double)(tL+tL+1)) * cnlm[tN][tL].operation().dot());
-            }
-            // 归还临时变量
-            for (IComplexVector[] cilm : cnlm) for (IComplexVector cijm : cilm) {
-                ComplexVectorCache.returnVec(cijm);
+                // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
+                int tStart = tL*tL;
+                int tLen = tL+tL+1;
+                tFP.set_(tN, tL, (4.0*PI/(double)tLen) * cnlm[tN].subVec(tStart, tStart+tLen).operation().dot());
             }
         });
+        
+        // 归还临时变量
+        for (IComplexVector[] cnlm : cnlmPar) for (IComplexVector cilm : cnlm) {
+            ComplexVectorCache.returnVec(cilm);
+        }
+        ComplexVectorCache.returnVec(tYPar);
         
         return rFingerPrints;
     }
