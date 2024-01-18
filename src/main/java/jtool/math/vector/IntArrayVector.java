@@ -12,12 +12,12 @@ public abstract class IntArrayVector extends AbstractIntVector implements IDataS
     @Override public int[] internalData() {return mData;}
     @Override public int internalDataSize() {return size();}
     
-    protected class IntegerArrayVectorOperation_ extends IntegerArrayVectorOperation {
+    protected class IntArrayVectorOperation_ extends IntArrayVectorOperation {
         @Override protected IntArrayVector thisVector_() {return IntArrayVector.this;}
     }
     
     /** 向量运算实现 */
-    @Override public IIntegerVectorOperation operation() {return new IntegerArrayVectorOperation_();}
+    @Override public IIntVectorOperation operation() {return new IntArrayVectorOperation_();}
     
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
     @Override public void fill(int[] aData) {System.arraycopy(aData, 0, internalData(), internalDataShift(), internalDataSize());}

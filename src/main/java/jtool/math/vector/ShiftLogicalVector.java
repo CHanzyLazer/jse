@@ -1,9 +1,7 @@
 package jtool.math.vector;
 
 import jtool.code.collection.BooleanList;
-import jtool.code.functional.IBooleanConsumer;
 import jtool.code.functional.IBooleanUnaryOperator;
-import jtool.code.functional.IBooleanSupplier;
 import jtool.code.iterator.IBooleanIterator;
 import jtool.code.iterator.IBooleanSetIterator;
 import jtool.math.MathEX;
@@ -64,24 +62,6 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
     @Override public ShiftLogicalVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return new ShiftLogicalVector(aToIdx-aFromIdx, aFromIdx+mShift, mData);
-    }
-    
-    /** Optimize stuffs，重写加速遍历 */
-    @Override public ILogicalVectorOperation operation() {
-        return new BooleanArrayVectorOperation_() {
-            @Override public void fill(ILogicalVectorGetter aRHS) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift, j = 0; i < tEnd; ++i, ++j) mData[i] = aRHS.get(j);
-            }
-            @Override public void assign(IBooleanSupplier aSup) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsBoolean();
-            }
-            @Override public void forEach(IBooleanConsumer aCon) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
-            }
-        };
     }
     
     /** Optimize stuffs，重写加速这些操作 */

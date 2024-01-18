@@ -1,18 +1,17 @@
 package jtool.math.vector;
 
 import jtool.code.collection.ComplexDoubleList;
-import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.code.functional.IUnaryFullOperator;
-import jtool.code.iterator.*;
+import jtool.code.iterator.IComplexDoubleIterator;
+import jtool.code.iterator.IComplexDoubleSetIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.MathEX;
-import groovy.lang.Closure;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.function.*;
+import java.util.function.DoubleUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -95,95 +94,6 @@ public final class ComplexVector extends BiDoubleArrayVector {
     @Override public BiDoubleArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return aFromIdx==0 ? new ComplexVector(aToIdx, mData) : new ShiftComplexVector(aToIdx-aFromIdx, aFromIdx, mData);
-    }
-    
-    /** Optimize stuffs，重写加速遍历 */
-    @Override public IComplexVectorOperation operation() {
-        return new BiDoubleArrayVectorOperation_() {
-            @Override public void fill(IComplexVectorGetter aRHS) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    IComplexDouble tValue = aRHS.get(i);
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                }
-            }
-            @Override public void fill(IVectorGetter aRHS) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    tRealData[i] = aRHS.get(i);
-                    tImagData[i] = 0.0;
-                }
-            }
-            @Override public void assign(Supplier<? extends IComplexDouble> aSup) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    IComplexDouble tValue = aSup.get();
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                }
-            }
-            @Override public void assign(DoubleSupplier aSup) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    tRealData[i] = aSup.getAsDouble();
-                    tImagData[i] = 0.0;
-                }
-            }
-            @Override public void forEach(Consumer<? super ComplexDouble> aCon) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
-                }
-            }
-            @Override public void forEach(IDoubleBinaryConsumer aCon) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    aCon.accept(tRealData[i], tImagData[i]);
-                }
-            }
-            /** Groovy stuffs */
-            @Override public void fill(Closure<?> aGroovyTask) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    // 直接先执行然后检测类型决定如何设置
-                    Object tObj = aGroovyTask.call(i);
-                    if (tObj instanceof IComplexDouble) {
-                        IComplexDouble tValue = (IComplexDouble)tObj;
-                        tRealData[i] = tValue.real();
-                        tImagData[i] = tValue.imag();
-                    } else
-                    if (tObj instanceof Number) {
-                        tRealData[i] = ((Number)tObj).doubleValue();
-                        tImagData[i] = 0.0;
-                    }
-                }
-            }
-            @Override public void assign(Closure<?> aGroovyTask) {
-                final double[] tRealData = mData[0];
-                final double[] tImagData = mData[1];
-                for (int i = 0; i < mSize; ++i) {
-                    // 直接先执行然后检测类型决定如何设置
-                    Object tObj = aGroovyTask.call();
-                    if (tObj instanceof IComplexDouble) {
-                        IComplexDouble tValue = (IComplexDouble)tObj;
-                        tRealData[i] = tValue.real();
-                        tImagData[i] = tValue.imag();
-                    } else
-                    if (tObj instanceof Number) {
-                        tRealData[i] = ((Number)tObj).doubleValue();
-                        tImagData[i] = 0.0;
-                    }
-                }
-            }
-        };
     }
     
     /** Optimize stuffs，重写加速这些操作 */

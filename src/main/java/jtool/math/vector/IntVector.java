@@ -8,8 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
@@ -72,21 +70,6 @@ public final class IntVector extends IntArrayVector {
     @Override public IntArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return aFromIdx==0 ? new IntVector(aToIdx, mData) : new ShiftIntVector(aToIdx-aFromIdx, aFromIdx, mData);
-    }
-    
-    /** Optimize stuffs，重写加速遍历 */
-    @Override public IIntegerVectorOperation operation() {
-        return new IntegerArrayVectorOperation_() {
-            @Override public void fill(IIntegerVectorGetter aRHS) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aRHS.get(i);
-            }
-            @Override public void assign(IntSupplier aSup) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aSup.getAsInt();
-            }
-            @Override public void forEach(IntConsumer aCon) {
-                for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
-            }
-        };
     }
     
     /** Optimize stuffs，重写加速这些操作 */

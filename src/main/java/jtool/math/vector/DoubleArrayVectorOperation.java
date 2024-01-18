@@ -6,6 +6,8 @@ import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
 
 import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
 /**
@@ -253,6 +255,9 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
+    @Override public void fill          (IVectorGetter  aRHS) {DoubleArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void assign        (DoubleSupplier aSup) {DoubleArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
+    @Override public void forEach       (DoubleConsumer aCon) {DoubleArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
     
     @Override public double sum ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.sumOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public double mean()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.meanOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}

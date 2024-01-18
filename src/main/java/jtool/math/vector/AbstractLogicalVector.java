@@ -12,6 +12,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.BooleanSupplier;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -130,7 +131,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
             ++idx;
         }
     }
-    @Override public final void assign(IBooleanSupplier aSup) {operation().assign(aSup);}
+    @Override public final void assign(BooleanSupplier aSup) {operation().assign(aSup);}
     @Override public final void forEach(IBooleanConsumer aCon) {operation().forEach(aCon);}
     
     @Override public boolean get(int aIdx) {

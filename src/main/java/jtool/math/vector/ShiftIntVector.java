@@ -7,8 +7,6 @@ import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
@@ -58,24 +56,6 @@ public final class ShiftIntVector extends IntArrayVector {
     @Override public ShiftIntVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return new ShiftIntVector(aToIdx-aFromIdx, aFromIdx+mShift, mData);
-    }
-    
-    /** Optimize stuffs，重写加速遍历 */
-    @Override public IIntegerVectorOperation operation() {
-        return new IntegerArrayVectorOperation_() {
-            @Override public void fill(IIntegerVectorGetter aRHS) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift, j = 0; i < tEnd; ++i, ++j) mData[i] = aRHS.get(j);
-            }
-            @Override public void assign(IntSupplier aSup) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsInt();
-            }
-            @Override public void forEach(IntConsumer aCon) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
-            }
-        };
     }
     
     /** Optimize stuffs，重写加速这些操作 */

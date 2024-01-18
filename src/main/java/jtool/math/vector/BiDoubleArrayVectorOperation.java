@@ -1,5 +1,7 @@
 package jtool.math.vector;
 
+import groovy.lang.Closure;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.functional.IBinaryFullOperator;
 import jtool.math.ComplexDouble;
@@ -7,6 +9,11 @@ import jtool.math.IComplexDouble;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
+
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /**
  * 对于内部含有 double[][] 的复向量的运算使用专门优化后的函数
@@ -260,6 +267,15 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
+    @Override public void fill          (IComplexVectorGetter               aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void fill          (IVectorGetter                      aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void assign        (Supplier<? extends IComplexDouble> aSup) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
+    @Override public void assign        (DoubleSupplier                     aSup) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
+    @Override public void forEach       (Consumer<? super ComplexDouble>    aCon) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
+    @Override public void forEach       (IDoubleBinaryConsumer              aCon) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
+    /** Groovy stuffs */
+    @Override public void fill          (Closure<?>                         aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void assign        (Closure<?>                         aSup) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
     
     @Override public ComplexDouble sum () {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.sumOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public ComplexDouble mean() {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.meanOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}

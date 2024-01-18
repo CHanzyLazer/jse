@@ -1,7 +1,11 @@
 package jtool.math.vector;
 
 
-import jtool.code.functional.*;
+import jtool.code.functional.IBooleanBinaryOperator;
+import jtool.code.functional.IBooleanConsumer;
+import jtool.code.functional.IBooleanUnaryOperator;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * 任意的逻辑向量的运算
@@ -11,22 +15,22 @@ public interface ILogicalVectorOperation {
     ILogicalVector and      (ILogicalVector aRHS);
     ILogicalVector or       (ILogicalVector aRHS);
     ILogicalVector xor      (ILogicalVector aRHS);
-    ILogicalVector operate(ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
+    ILogicalVector operate  (ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
     
     ILogicalVector and      (boolean aRHS);
     ILogicalVector or       (boolean aRHS);
     ILogicalVector xor      (boolean aRHS);
-    ILogicalVector map(IBooleanUnaryOperator aOpt);
+    ILogicalVector map      (IBooleanUnaryOperator aOpt);
     
     void and2this           (ILogicalVector aRHS);
     void or2this            (ILogicalVector aRHS);
     void xor2this           (ILogicalVector aRHS);
-    void operate2this(ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
+    void operate2this       (ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
     
     void and2this           (boolean aRHS);
     void or2this            (boolean aRHS);
     void xor2this           (boolean aRHS);
-    void map2this(IBooleanUnaryOperator aRHS);
+    void map2this           (IBooleanUnaryOperator aRHS);
     
     ILogicalVector not      ();
     void not2this           ();
@@ -35,7 +39,7 @@ public interface ILogicalVectorOperation {
     void fill               (boolean aRHS);
     void fill               (ILogicalVector aRHS);
     void fill               (ILogicalVectorGetter aRHS);
-    void assign             (IBooleanSupplier aSup);
+    void assign             (BooleanSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */
     void forEach            (IBooleanConsumer aCon);
     

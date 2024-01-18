@@ -5,14 +5,21 @@ import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
 
-public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorOperation {
-    @Override public void fill              (int aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void fill              (IIntVector aRHS) {
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+
+public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation {
+    @Override public void fill          (int aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
+    @Override public void fill          (IIntVector aRHS) {
         final IntArrayVector rThis = thisVector_();
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
+    @Override public void fill          (IIntVectorGetter aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void assign        (IntSupplier      aSup) {IntArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
+    @Override public void forEach       (IntConsumer      aCon) {IntArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
+    
     
     /** 排序不自己实现 */
     @Override public void sort() {

@@ -118,7 +118,7 @@ public class Vectors {
     }
     
     
-    public static IntVector fromInteger(int aSize, IIntegerVectorGetter aVectorGetter) {
+    public static IntVector fromInteger(int aSize, IIntVectorGetter aVectorGetter) {
         IntVector rVector = IntVector.zeros(aSize);
         rVector.fill(aVectorGetter);
         return rVector;

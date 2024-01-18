@@ -1,7 +1,7 @@
 package jtool.math.vector;
 
 import jtool.code.collection.BooleanList;
-import jtool.code.functional.*;
+import jtool.code.functional.IBooleanUnaryOperator;
 import jtool.code.iterator.IBooleanIterator;
 import jtool.code.iterator.IBooleanSetIterator;
 import jtool.math.MathEX;
@@ -76,21 +76,6 @@ public final class LogicalVector extends BooleanArrayVector {
     @Override public BooleanArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return aFromIdx==0 ? new LogicalVector(aToIdx, mData) : new ShiftLogicalVector(aToIdx-aFromIdx, aFromIdx, mData);
-    }
-    
-    /** Optimize stuffs，重写加速遍历 */
-    @Override public ILogicalVectorOperation operation() {
-        return new BooleanArrayVectorOperation_() {
-            @Override public void fill(ILogicalVectorGetter aRHS) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aRHS.get(i);
-            }
-            @Override public void assign(IBooleanSupplier aSup) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aSup.getAsBoolean();
-            }
-            @Override public void forEach(IBooleanConsumer aCon) {
-                for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
-            }
-        };
     }
     
     /** Optimize stuffs，重写加速这些操作 */

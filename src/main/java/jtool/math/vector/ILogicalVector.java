@@ -10,6 +10,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author liqa
@@ -36,7 +37,7 @@ public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBoole
     void fill(ILogicalVectorGetter aVectorGetter);
     void fill(boolean[] aData);
     void fill(Iterable<Boolean> aList);
-    void assign(IBooleanSupplier aSup);
+    void assign(BooleanSupplier aSup);
     void forEach(IBooleanConsumer aCon);
     
     /** 访问和修改部分，自带的接口 */

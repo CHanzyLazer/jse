@@ -11,18 +11,12 @@ import java.util.function.IntUnaryOperator;
 
 import static jtool.code.CS.RANDOM;
 
-public abstract class AbstractIntegerVectorOperation implements IIntegerVectorOperation {
-    @Override public void fill              (int                  aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
-    @Override public void fill(IIntVector aRHS) {DATA.ebeFill2This(thisVector_(), aRHS);}
-    @Override public void assign            (IntSupplier          aSup) {DATA.assign2This  (thisVector_(), aSup);}
-    @Override public void forEach           (IntConsumer          aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
-    @Override public void fill              (IIntegerVectorGetter aRHS) {
-        final IIntVector tThis = thisVector_();
-        final IIntSetOnlyIterator si = tThis.setIterator();
-        final int tSize = tThis.size();
-        for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
-    }
-    
+public abstract class AbstractIntVectorOperation implements IIntVectorOperation {
+    @Override public void fill          (int                aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IIntVector         aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void assign        (IntSupplier        aSup) {DATA.assign2This  (thisVector_(), aSup);}
+    @Override public void forEach       (IntConsumer        aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
+    @Override public void fill          (IIntVectorGetter   aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
     @Override public void reverse2this() {DATA.reverse2This(thisVector_());}
     
     /** 排序不自己实现 */

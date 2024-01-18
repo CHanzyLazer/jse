@@ -65,18 +65,6 @@ public final class ShiftVector extends DoubleArrayVector {
     /** Optimize stuffs，引用反转直接返回 {@link ShiftReverseVector} */
     @Override public IVectorOperation operation() {
         return new DoubleArrayVectorOperation_() {
-            @Override public void fill(IVectorGetter aRHS) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift, j = 0; i < tEnd; ++i, ++j) mData[i] = aRHS.get(j);
-            }
-            @Override public void assign(DoubleSupplier aSup) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsDouble();
-            }
-            @Override public void forEach(DoubleConsumer aCon) {
-                final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
-            }
             @Override public ShiftReverseVector refReverse() {
                 return new ShiftReverseVector(mSize, mShift, mData);
             }

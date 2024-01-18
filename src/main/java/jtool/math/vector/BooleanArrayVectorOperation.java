@@ -1,10 +1,13 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IBooleanUnaryOperator;
 import jtool.code.functional.IBooleanBinaryOperator;
+import jtool.code.functional.IBooleanConsumer;
+import jtool.code.functional.IBooleanUnaryOperator;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * 对于内部含有 boolean[] 的向量的运算使用专门优化后的函数
@@ -129,6 +132,9 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
+    @Override public void fill              (ILogicalVectorGetter aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
+    @Override public void assign            (BooleanSupplier      aSup) {BooleanArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
+    @Override public void forEach           (IBooleanConsumer     aCon) {BooleanArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
     
     @Override public boolean        all     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.allOfThis  (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public boolean        any     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.anyOfThis  (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}

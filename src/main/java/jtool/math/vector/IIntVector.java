@@ -20,7 +20,7 @@ import java.util.function.IntUnaryOperator;
  * <p> 由于完全实现工作量较大，这里暂只实现用到的接口 </p>
  * <p> 当然为了后续完善的方便，结构依旧保持一致 </p>
  */
-public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSetIterator, IIntegerVectorGetter {
+public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSetIterator, IIntVectorGetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
     IIntIterator iterator();
     IIntSetIterator setIterator();
@@ -35,7 +35,7 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     /** 批量修改的接口 */
     void fill(int aValue);
     void fill(IIntVector aVector);
-    void fill(IIntegerVectorGetter aVectorGetter);
+    void fill(IIntVectorGetter aVectorGetter);
     void fill(int[] aData);
     void fill(Iterable<Integer> aList);
     void assign(IntSupplier aSup);
@@ -73,8 +73,8 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     IIntVector subVec(int aFromIdx, int aToIdx);
     
     /** 向量的运算操作，默认返回新的向量 */
-    IIntegerVectorOperation operation();
-    @VisibleForTesting default IIntegerVectorOperation opt() {return operation();}
+    IIntVectorOperation operation();
+    @VisibleForTesting default IIntVectorOperation opt() {return operation();}
     
     /** 增加向量基本的运算操作以及 IntegerVector 特有的操作，现在也归入内部使用 */
     void sort();

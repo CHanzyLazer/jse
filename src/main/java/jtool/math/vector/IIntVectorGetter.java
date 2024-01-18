@@ -1,6 +1,6 @@
 package jtool.math.vector;
 
 @FunctionalInterface
-public interface IIntegerVectorGetter {
+public interface IIntVectorGetter {
     int get(int aIdx);
 }

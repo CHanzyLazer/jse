@@ -1,12 +1,12 @@
 package jtool.math.operation;
 
 import com.mastfrog.util.sort.Sort;
+import groovy.lang.Closure;
 import jtool.code.iterator.*;
 import jtool.code.functional.*;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
-import jtool.math.vector.IIntVector;
-import jtool.math.vector.IVector;
+import jtool.math.vector.*;
 
 import java.util.function.*;
 
@@ -823,6 +823,16 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
+    public static void vecFill2This(IComplexVector rThis, IComplexVectorGetter aVec) {
+        final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) si.nextAndSet(aVec.get(i));
+    }
+    public static void vecFill2This(IComplexVector rThis, IVectorGetter aVec) {
+        final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) si.nextAndSet(aVec.get(i));
+    }
     public static void assign2This(IHasComplexDoubleSetOnlyIterator rThis, Supplier<? extends IComplexDouble> aSup) {
         final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.get());
@@ -842,6 +852,34 @@ public class DATA {
             aCon.accept(it.real(), it.imag());
         }
     }
+    /** Groovy stuffs */
+    public static void vecFill2This(IComplexVector rThis, Closure<?> aGroovyTask) {
+        final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) {
+            // 直接先执行然后检测类型决定如何设置
+            Object tObj = aGroovyTask.call(i);
+            if (tObj instanceof IComplexDouble) si.nextAndSet((IComplexDouble)tObj);
+            else if (tObj instanceof Number) si.nextAndSet(((Number)tObj).doubleValue());
+        }
+    }
+    public static void assign2This(IHasComplexDoubleSetOnlyIterator rThis, Closure<?> aGroovyTask) {
+        final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
+        while (si.hasNext()) {
+            // 直接先执行然后检测类型决定如何设置
+            Object tObj = aGroovyTask.call();
+            if (tObj instanceof IComplexDouble) si.nextAndSet((IComplexDouble)tObj);
+            else if (tObj instanceof Number) si.nextAndSet(((Number)tObj).doubleValue());
+        }
+    }
+    public static void forEachOfThis(IHasComplexDoubleIterator aThis, Closure<?> aGroovyTask) {
+        int tN = aGroovyTask.getMaximumNumberOfParameters();
+        switch (tN) {
+        case 1: {forEachOfThis(aThis, value -> aGroovyTask.call(value)); return;}
+        case 2: {forEachOfThis(aThis, (real, imag) -> aGroovyTask.call(real, imag)); return;}
+        default: throw new IllegalArgumentException("Parameters Number of forEach in ComplexVector Must be 1 or 2");
+        }
+    }
     
     public static void mapFill2This(IHasDoubleSetOnlyIterator rThis, final double aRHS) {
         rThis.assign(() -> aRHS);
@@ -851,6 +889,11 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
+    public static void vecFill2This(IVector rThis, IVectorGetter aVec) {
+        final IDoubleSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) si.nextAndSet(aVec.get(i));
+    }
     public static void assign2This(IHasDoubleSetOnlyIterator rThis, DoubleSupplier aSup) {
         final IDoubleSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.getAsDouble());
@@ -868,7 +911,12 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
-    public static void assign2This(IHasBooleanSetOnlyIterator rThis, IBooleanSupplier aSup) {
+    public static void vecFill2This(ILogicalVector rThis, ILogicalVectorGetter aVec) {
+        final IBooleanSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) si.nextAndSet(aVec.get(i));
+    }
+    public static void assign2This(IHasBooleanSetOnlyIterator rThis, BooleanSupplier aSup) {
         final IBooleanSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.getAsBoolean());
     }
@@ -885,6 +933,11 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
+    public static void vecFill2This(IIntVector rThis, IIntVectorGetter aVec) {
+        final IIntSetOnlyIterator si = rThis.setIterator();
+        final int tSize = rThis.size();
+        for (int i = 0; i < tSize; ++i) si.nextAndSet(aVec.get(i));
+    }
     public static void assign2This(IHasIntSetOnlyIterator rThis, IntSupplier aSup) {
         final IIntSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.getAsInt());

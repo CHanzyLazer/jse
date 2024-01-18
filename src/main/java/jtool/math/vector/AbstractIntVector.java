@@ -100,7 +100,7 @@ public abstract class AbstractIntVector implements IIntVector {
     /** 批量修改的接口 */
     @Override public final void fill(int aValue) {operation().fill(aValue);}
     @Override public final void fill(IIntVector aVector) {operation().fill(aVector);}
-    @Override public final void fill(IIntegerVectorGetter aVectorGetter) {operation().fill(aVectorGetter);}
+    @Override public final void fill(IIntVectorGetter aVectorGetter) {operation().fill(aVectorGetter);}
     @Override public final void fill(Iterable<Integer> aList) {
         final Iterator<Integer> it = aList.iterator();
         assign(it::next);
@@ -215,8 +215,8 @@ public abstract class AbstractIntVector implements IIntVector {
     }
     
     /** 向量的运算器 */
-    @Override public IIntegerVectorOperation operation() {
-        return new AbstractIntegerVectorOperation() {
+    @Override public IIntVectorOperation operation() {
+        return new AbstractIntVectorOperation() {
             @Override protected IIntVector thisVector_() {return AbstractIntVector.this;}
         };
     }

@@ -1,18 +1,19 @@
 package jtool.math.vector;
 
+import groovy.lang.Closure;
 import jtool.code.functional.IBinaryFullOperator;
 import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.IComplexDoubleIterator;
-import jtool.code.iterator.IComplexDoubleSetOnlyIterator;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.MathEX;
 import jtool.math.operation.DATA;
-import groovy.lang.Closure;
 
-import java.util.function.*;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /**
  * 一般的实向量运算的实现，默认没有做任何优化
@@ -81,55 +82,20 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
     @Override public IComplexVector negative() {IComplexVector rVector = newVector_(); DATA.mapNegative2Dest(thisVector_(), rVector); return rVector;}
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     
-    @Override public void fill          (IComplexDouble aRHS) {DATA.mapFill2This(thisVector_(), aRHS);}
-    @Override public void fill          (double aRHS) {DATA.mapFill2This(thisVector_(), aRHS);}
-    @Override public void fill          (IComplexVector aRHS) {DATA.ebeFill2This(thisVector_(), aRHS);}
-    @Override public void fill          (IVector aRHS) {DATA.ebeFill2This(thisVector_(), aRHS);}
-    @Override public void assign        (Supplier<? extends IComplexDouble> aSup) {DATA.assign2This(thisVector_(), aSup);}
-    @Override public void assign        (DoubleSupplier aSup) {DATA.assign2This(thisVector_(), aSup);}
-    @Override public void forEach       (Consumer<? super ComplexDouble> aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
-    @Override public void forEach(IDoubleBinaryConsumer aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
-    @Override public void fill          (IComplexVectorGetter aRHS) {
-        final IComplexVector tThis = thisVector_();
-        final IComplexDoubleSetOnlyIterator si = tThis.setIterator();
-        final int tSize = tThis.size();
-        for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
-    }
-    @Override public void fill          (IVectorGetter aRHS) {
-        final IComplexVector tThis = thisVector_();
-        final IComplexDoubleSetOnlyIterator si = tThis.setIterator();
-        final int tSize = tThis.size();
-        for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
-    }
+    @Override public void fill          (IComplexDouble                     aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (double                             aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IComplexVector                     aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IVector                            aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void assign        (Supplier<? extends IComplexDouble> aSup) {DATA.assign2This  (thisVector_(), aSup);}
+    @Override public void assign        (DoubleSupplier                     aSup) {DATA.assign2This  (thisVector_(), aSup);}
+    @Override public void forEach       (Consumer<? super ComplexDouble>    aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
+    @Override public void forEach       (IDoubleBinaryConsumer              aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
+    @Override public void fill          (IComplexVectorGetter               aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IVectorGetter                      aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
     /** Groovy stuffs */
-    @Override public void fill          (Closure<?> aGroovyTask) {
-        final IComplexVector tThis = thisVector_();
-        final IComplexDoubleSetOnlyIterator si = tThis.setIterator();
-        final int tSize = tThis.size();
-        for (int i = 0; i < tSize; ++i) {
-            // 直接先执行然后检测类型决定如何设置
-            Object tObj = aGroovyTask.call(i);
-            if (tObj instanceof IComplexDouble) si.nextAndSet((IComplexDouble)tObj);
-            else if (tObj instanceof Number) si.nextAndSet(((Number)tObj).doubleValue());
-        }
-    }
-    @Override public void assign        (Closure<?> aGroovyTask) {
-        final IComplexDoubleSetOnlyIterator si = thisVector_().setIterator();
-        while (si.hasNext()) {
-            // 直接先执行然后检测类型决定如何设置
-            Object tObj = aGroovyTask.call();
-            if (tObj instanceof IComplexDouble) si.nextAndSet((IComplexDouble)tObj);
-            else if (tObj instanceof Number) si.nextAndSet(((Number)tObj).doubleValue());
-        }
-    }
-    @Override public void forEach       (Closure<?> aGroovyTask) {
-        int tN = aGroovyTask.getMaximumNumberOfParameters();
-        switch (tN) {
-        case 1: {forEach(value -> aGroovyTask.call(value)); return;}
-        case 2: {forEach((real, imag) -> aGroovyTask.call(real, imag)); return;}
-        default: throw new IllegalArgumentException("Parameters Number of forEach in ComplexVector Must be 1 or 2");
-        }
-    }
+    @Override public void fill          (Closure<?> aGroovyTask) {DATA.vecFill2This (thisVector_(), aGroovyTask);}
+    @Override public void assign        (Closure<?> aGroovyTask) {DATA.assign2This  (thisVector_(), aGroovyTask);}
+    @Override public void forEach       (Closure<?> aGroovyTask) {DATA.forEachOfThis(thisVector_(), aGroovyTask);}
     
     @Override public ComplexDouble sum () {return DATA.sumOfThis (thisVector_());}
     @Override public ComplexDouble mean() {return DATA.meanOfThis(thisVector_());}

@@ -1,11 +1,9 @@
 package jtool.math.vector;
 
-import com.mastfrog.util.sort.Sort;
 import jtool.code.functional.IChecker;
 import jtool.code.functional.IComparator;
 import jtool.code.functional.ISwapper;
 import jtool.code.iterator.IDoubleIterator;
-import jtool.code.iterator.IDoubleSetOnlyIterator;
 import jtool.math.MathEX;
 import jtool.math.operation.DATA;
 
@@ -60,16 +58,11 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public IVector negative() {IVector rVector = newVector_(); DATA.mapNegative2Dest(thisVector_(), rVector); return rVector;}
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     
-    @Override public void fill          (double aRHS) {DATA.mapFill2This(thisVector_(), aRHS);}
-    @Override public void fill          (IVector aRHS) {DATA.ebeFill2This(thisVector_(), aRHS);}
-    @Override public void assign        (DoubleSupplier aSup) {DATA.assign2This(thisVector_(), aSup);}
+    @Override public void fill          (double         aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IVector        aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void assign        (DoubleSupplier aSup) {DATA.assign2This  (thisVector_(), aSup);}
     @Override public void forEach       (DoubleConsumer aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
-    @Override public void fill          (IVectorGetter aRHS) {
-        final IVector tThis = thisVector_();
-        final IDoubleSetOnlyIterator si = tThis.setIterator();
-        final int tSize = tThis.size();
-        for (int i = 0; i < tSize; ++i) si.nextAndSet(aRHS.get(i));
-    }
+    @Override public void fill          (IVectorGetter  aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
     
     @Override public double sum ()                      {return DATA.sumOfThis  (thisVector_()      );}
     @Override public double mean()                      {return DATA.meanOfThis (thisVector_()      );}
