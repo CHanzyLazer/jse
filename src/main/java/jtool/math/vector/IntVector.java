@@ -1,8 +1,8 @@
 package jtool.math.vector;
 
-import jtool.code.collection.IntegerList;
-import jtool.code.iterator.IIntegerIterator;
-import jtool.code.iterator.IIntegerSetIterator;
+import jtool.code.collection.IntList;
+import jtool.code.iterator.IIntIterator;
+import jtool.code.iterator.IIntSetIterator;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,34 +19,34 @@ import static jtool.math.vector.AbstractVector.subVecRangeCheck;
  * @author liqa
  * <p> 整数向量的一般实现 </p>
  */
-public final class IntegerVector extends IntegerArrayVector {
+public final class IntVector extends IntArrayVector {
     /** 提供默认的创建 */
-    public static IntegerVector ones(int aSize) {
+    public static IntVector ones(int aSize) {
         int[] tData = new int[aSize];
         Arrays.fill(tData, 1);
-        return new IntegerVector(tData);
+        return new IntVector(tData);
     }
-    public static IntegerVector zeros(int aSize) {return new IntegerVector(new int[aSize]);}
+    public static IntVector zeros(int aSize) {return new IntVector(new int[aSize]);}
     
     /** 提供 builder 方式的构建 */
     public static Builder builder() {return new Builder();}
     public static Builder builder(int aInitSize) {return new Builder(aInitSize);}
-    public final static class Builder extends IntegerList {
+    public final static class Builder extends IntList {
         private final static int DEFAULT_INIT_SIZE = 8;
         private Builder() {super(DEFAULT_INIT_SIZE);}
         private Builder(int aInitSize) {super(aInitSize);}
         
-        public IntegerVector build() {
-            return new IntegerVector(mSize, mData);
+        public IntVector build() {
+            return new IntVector(mSize, mData);
         }
     }
     
     private int mSize;
-    public IntegerVector(int aSize, int[] aData) {super(aData); mSize = aSize;}
-    public IntegerVector(int[] aData) {this(aData.length, aData);}
+    public IntVector(int aSize, int[] aData) {super(aData); mSize = aSize;}
+    public IntVector(int[] aData) {this(aData.length, aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public IntegerVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public IntVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
     public int dataLength() {return mData.length;}
     
     /** IIntegerVector stuffs */
@@ -59,19 +59,19 @@ public final class IntegerVector extends IntegerArrayVector {
     }
     @Override public int size() {return mSize;}
     
-    @Override public IntegerVector newShell() {return new IntegerVector(mSize, null);}
+    @Override public IntVector newShell() {return new IntVector(mSize, null);}
     @Override public int @Nullable[] getIfHasSameOrderData(Object aObj) {
-        if (aObj instanceof IntegerVector) return ((IntegerVector)aObj).mData;
-        if (aObj instanceof ShiftIntegerVector) return ((ShiftIntegerVector)aObj).mData;
-        if (aObj instanceof IntegerList) return ((IntegerList)aObj).internalData();
+        if (aObj instanceof IntVector) return ((IntVector)aObj).mData;
+        if (aObj instanceof ShiftIntVector) return ((ShiftIntVector)aObj).mData;
+        if (aObj instanceof IntList) return ((IntList)aObj).internalData();
         if (aObj instanceof int[]) return (int[])aObj;
         return null;
     }
     
-    /** Optimize stuffs，subVec 切片直接返回  {@link ShiftIntegerVector} */
-    @Override public IntegerArrayVector subVec(final int aFromIdx, final int aToIdx) {
+    /** Optimize stuffs，subVec 切片直接返回  {@link ShiftIntVector} */
+    @Override public IntArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
-        return aFromIdx==0 ? new IntegerVector(aToIdx, mData) : new ShiftIntegerVector(aToIdx-aFromIdx, aFromIdx, mData);
+        return aFromIdx==0 ? new IntVector(aToIdx, mData) : new ShiftIntVector(aToIdx-aFromIdx, aFromIdx, mData);
     }
     
     /** Optimize stuffs，重写加速遍历 */
@@ -111,8 +111,8 @@ public final class IntegerVector extends IntegerArrayVector {
     }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式）*/
-    @Override public IIntegerIterator iterator() {
-        return new IIntegerIterator() {
+    @Override public IIntIterator iterator() {
+        return new IIntIterator() {
             private int mIdx = 0;
             @Override public boolean hasNext() {return mIdx < mSize;}
             @Override public int next() {
@@ -126,8 +126,8 @@ public final class IntegerVector extends IntegerArrayVector {
             }
         };
     }
-    @Override public IIntegerSetIterator setIterator() {
-        return new IIntegerSetIterator() {
+    @Override public IIntSetIterator setIterator() {
+        return new IIntSetIterator() {
             private int mIdx = 0, oIdx = -1;
             @Override public boolean hasNext() {return mIdx < mSize;}
             @Override public void set(int aValue) {

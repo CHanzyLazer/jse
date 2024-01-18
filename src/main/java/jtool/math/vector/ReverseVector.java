@@ -57,6 +57,7 @@ public final class ReverseVector extends DoubleArrayVector {
         if (aObj instanceof ShiftReverseVector) return ((ShiftReverseVector)aObj).mData;
         return null;
     }
+    @Override public boolean isReverse() {return true;}
     
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftReverseVector} */

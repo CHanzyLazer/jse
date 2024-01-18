@@ -184,7 +184,7 @@ public class DecisionTree implements ISavable {
                 return rSplit;
             }
             case RANDOM: {
-                IIntegerVector tRandIdx = Vectors.range(tSizeMM);
+                IIntVector tRandIdx = Vectors.range(tSizeMM);
                 tRandIdx.shuffle(mRNG);
                 tRandIdx = tRandIdx.subVec(0, mMaxSplit);
                 tRandIdx.sort();
@@ -237,7 +237,7 @@ public class DecisionTree implements ISavable {
                 // 权重取绝对值
                 tWeight.operation().map2this(Math::abs);
                 // 排序选取权重最高的 aMaxSplit 个分点
-                IIntegerVector rSortedIndex = Vectors.range(tWeight.size());
+                IIntVector rSortedIndex = Vectors.range(tWeight.size());
                 rSortedIndex.sort(Comparator.comparingDouble(tWeight::get).reversed());
                 return rSplit.refSlicer().get(tSplitIndex).slicer().get(rSortedIndex.subVec(0, mMaxSplit));
             }
@@ -270,7 +270,7 @@ public class DecisionTree implements ISavable {
             int tConsiderNum = getConsiderCharaNumber(tValidCharaNum);
             IIndexFilter tConsiderID;
             if (tConsiderNum < tValidCharaNum) {
-                IIntegerVector rRandIndex = tValidChara.where();
+                IIntVector rRandIndex = tValidChara.where();
                 rRandIndex.shuffle(mRNG);
                 ILogicalVector rConsiderID = LogicalVector.zeros(mInputDim);
                 rConsiderID.refSlicer().get(rRandIndex.subVec(0, tConsiderNum)).fill(true);

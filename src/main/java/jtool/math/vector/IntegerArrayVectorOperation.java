@@ -9,9 +9,9 @@ import java.util.Comparator;
 import java.util.function.IntUnaryOperator;
 
 public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorOperation {
-    @Override public void fill              (int aRHS) {IntegerArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void fill              (IIntegerVector aRHS) {
-        final IntegerArrayVector rThis = thisVector_();
+    @Override public void fill              (int aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
+    @Override public void fill(IIntVector aRHS) {
+        final IntArrayVector rThis = thisVector_();
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
@@ -19,13 +19,13 @@ public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorO
     
     /** 排序不自己实现 */
     @Override public void sort() {
-        final IntegerArrayVector rThis = thisVector_();
+        final IntArrayVector rThis = thisVector_();
         final int rShift = rThis.internalDataShift();
         final int tEnd = rThis.internalDataSize() + rShift;
         Arrays.sort(rThis.internalData(), rShift, tEnd);
     }
     @Override public void sort(Comparator<? super Integer> aComp) {
-        final IntegerArrayVector rThis = thisVector_();
+        final IntArrayVector rThis = thisVector_();
         final int[] rData = rThis.internalData();
         final int rShift = rThis.internalDataShift();
         final int tSize = rThis.internalDataSize();
@@ -41,7 +41,7 @@ public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorO
     }
     
     @Override public void shuffle(IntUnaryOperator aRng) {
-        final IntegerArrayVector rThis = thisVector_();
+        final IntArrayVector rThis = thisVector_();
         final int[] rData = rThis.internalData();
         final int rShift = rThis.internalDataShift();
         final int tEnd = rThis.internalDataSize() + rShift;
@@ -58,5 +58,5 @@ public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorO
     }
     
     /** stuff to override */
-    @Override protected abstract IntegerArrayVector thisVector_();
+    @Override protected abstract IntArrayVector thisVector_();
 }

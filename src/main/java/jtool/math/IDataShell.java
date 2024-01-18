@@ -15,11 +15,15 @@ public interface IDataShell<D> {
     void setInternalData(D aData);
     IDataShell<D> newShell();
     D internalData();
-    @ApiStatus.Internal @Nullable D getIfHasSameOrderData(Object aObj);
     /** 返回需要使用的 data 长度，因为可能会通过 setData 导致 data 过长 */
     int internalDataSize();
     /** 返回 data 开头需要平移的长度，部分结构支持传入任意数组然后从中间开始访问 */
     default int internalDataShift() {return 0;}
+    /** 返回内部数组是否是倒序排列的，告知在进行遍历时最好使用倒序 */
+    default boolean isReverse() {return false;}
+    
+    /** 返回内部数据如果拥有相同种类并且顺序相同，包含了 {@link #isReverse()} 也要相同 */
+    @ApiStatus.Internal @Nullable D getIfHasSameOrderData(Object aObj);
     
     static int internalDataShift(Object aObj) {
         if (aObj instanceof IDataShell) return ((IDataShell<?>)aObj).internalDataShift();

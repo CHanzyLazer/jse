@@ -3,7 +3,6 @@ package jtool.math.vector;
 
 import jtool.code.collection.NewCollections;
 import jtool.code.functional.IDoubleFilter;
-import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.math.MathEX;
@@ -119,49 +118,49 @@ public class Vectors {
     }
     
     
-    public static IntegerVector fromInteger(int aSize, IIntegerVectorGetter aVectorGetter) {
-        IntegerVector rVector = IntegerVector.zeros(aSize);
+    public static IntVector fromInteger(int aSize, IIntegerVectorGetter aVectorGetter) {
+        IntVector rVector = IntVector.zeros(aSize);
         rVector.fill(aVectorGetter);
         return rVector;
     }
-    public static IntegerVector fromInteger(IIntegerVector aVector) {
-        IntegerVector rVector = IntegerVector.zeros(aVector.size());
+    public static IntVector fromInteger(IIntVector aVector) {
+        IntVector rVector = IntVector.zeros(aVector.size());
         rVector.fill(aVector);
         return rVector;
     }
     /** Groovy stuff */
-    public static IntegerVector fromInteger(int aSize, final Closure<Integer> aGroovyTask) {return fromInteger(aSize, aGroovyTask::call);}
+    public static IntVector fromInteger(int aSize, final Closure<Integer> aGroovyTask) {return fromInteger(aSize, aGroovyTask::call);}
     
-    public static IntegerVector fromInteger(Iterable<Integer> aIterable) {
-        final IntegerVector.Builder rBuilder = IntegerVector.builder();
+    public static IntVector fromInteger(Iterable<Integer> aIterable) {
+        final IntVector.Builder rBuilder = IntVector.builder();
         for (Integer tValue : aIterable) rBuilder.add(tValue);
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static IntegerVector fromInteger(Collection<Integer> aList) {
-        IntegerVector rVector = IntegerVector.zeros(aList.size());
+    public static IntVector fromInteger(Collection<Integer> aList) {
+        IntVector rVector = IntVector.zeros(aList.size());
         rVector.fill(aList);
         return rVector;
     }
-    public static IntegerVector fromInteger(int[] aData) {
-        IntegerVector rVector = IntegerVector.zeros(aData.length);
+    public static IntVector fromInteger(int[] aData) {
+        IntVector rVector = IntVector.zeros(aData.length);
         rVector.fill(aData);
         return rVector;
     }
     
     /** IntegerVector 特有的构造 */
-    public static IntegerVector range(int aSize) {
-        IntegerVector rVector = IntegerVector.zeros(aSize);
+    public static IntVector range(int aSize) {
+        IntVector rVector = IntVector.zeros(aSize);
         rVector.fill(i->i);
         return rVector;
     }
-    public static IntegerVector range(final int aStart, int aStop) {
-        IntegerVector rVector = IntegerVector.zeros(aStop-aStart);
+    public static IntVector range(final int aStart, int aStop) {
+        IntVector rVector = IntVector.zeros(aStop-aStart);
         rVector.fill(i->i+aStart);
         return rVector;
     }
-    public static IntegerVector range(final int aStart, int aStop, int aStep) {
-        IntegerVector rVector = IntegerVector.zeros(MathEX.Code.divup(aStop-aStart, aStep));
+    public static IntVector range(final int aStart, int aStop, int aStep) {
+        IntVector rVector = IntVector.zeros(MathEX.Code.divup(aStop-aStart, aStep));
         rVector.fill(i -> (i*aStep + aStart));
         return rVector;
     }
@@ -185,11 +184,11 @@ public class Vectors {
         rVector.subVec(tBSize, tTotSize).fill(aAfter);
         return rVector;
     }
-    public static IntegerVector merge(IIntegerVector aBefore, IIntegerVector aAfter) {
+    public static IntVector merge(IIntVector aBefore, IIntVector aAfter) {
         final int tBSize = aBefore.size();
         final int tASize = aAfter.size();
         final int tTotSize = tBSize+tASize;
-        IntegerVector rVector = IntegerVector.zeros(aBefore.size()+aAfter.size());
+        IntVector rVector = IntVector.zeros(aBefore.size()+aAfter.size());
         rVector.subVec(0, tBSize).fill(aBefore);
         rVector.subVec(tBSize, tTotSize).fill(aAfter);
         return rVector;

@@ -1,6 +1,6 @@
 package jtool.atom;
 
-import jtool.code.collection.IntegerList;
+import jtool.code.collection.IntList;
 import jtool.code.functional.IIndexFilter;
 import jtool.math.MathEX;
 import jtool.math.matrix.IMatrix;
@@ -67,7 +67,7 @@ public class NeighborListGetter implements IShutdownable {
         void forEach(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
     }
     
-    private final static class Cell extends IntegerList implements ICell {
+    private final static class Cell extends IntList implements ICell {
         private Cell(int aInitDataLength) {super(aInitDataLength);}
         private Cell() {super();}
         

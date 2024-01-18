@@ -1,12 +1,12 @@
 package jtool.code.collection;
 
-import jtool.math.vector.IIntegerVector;
+import jtool.math.vector.IIntVector;
 
 import java.util.List;
 
 /**
  * 用来切片输入的通用类，仅用于切片的输入；
- * 单独出来主要用于和 {@link IIntegerVector} 进行功能区分
+ * 单独出来主要用于和 {@link IIntVector} 进行功能区分
  * @author liqa
  */
 public interface ISlice {

@@ -12,7 +12,7 @@ import java.util.function.IntUnaryOperator;
 public interface IIntegerVectorOperation {
     /** 这两个方法名默认是作用到自身的，这里为了保持 operation 的使用简洁不在函数名上特殊说明 */
     void fill               (int aRHS);
-    void fill               (IIntegerVector aRHS);
+    void fill(IIntVector aRHS);
     void fill               (IIntegerVectorGetter aRHS);
     void assign             (IntSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */

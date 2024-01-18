@@ -81,7 +81,7 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     @VisibleForTesting default ILogicalVectorOperation opt() {return operation();}
     
     /** 提供一个调用过滤的方法简化使用 */
-    default IIntegerVector where() {return NewCollections.filterInteger(size(), this);}
+    default IIntVector where() {return NewCollections.filterInteger(size(), this);}
     
     /** Groovy 的部分，增加向量基本的运算操作，现在也归入内部使用 */
     ILogicalVector and  (boolean aRHS);

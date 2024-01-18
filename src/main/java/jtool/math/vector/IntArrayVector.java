@@ -3,9 +3,9 @@ package jtool.math.vector;
 import jtool.math.IDataShell;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class IntegerArrayVector extends AbstractIntegerVector implements IDataShell<int[]> {
+public abstract class IntArrayVector extends AbstractIntVector implements IDataShell<int[]> {
     protected int[] mData;
-    protected IntegerArrayVector(int[] aData) {mData = aData;}
+    protected IntArrayVector(int[] aData) {mData = aData;}
     
     /** DataShell stuffs */
     @Override public void setInternalData(int[] aData) {mData = aData;}
@@ -13,7 +13,7 @@ public abstract class IntegerArrayVector extends AbstractIntegerVector implement
     @Override public int internalDataSize() {return size();}
     
     protected class IntegerArrayVectorOperation_ extends IntegerArrayVectorOperation {
-        @Override protected IntegerArrayVector thisVector_() {return IntegerArrayVector.this;}
+        @Override protected IntArrayVector thisVector_() {return IntArrayVector.this;}
     }
     
     /** 向量运算实现 */
@@ -23,7 +23,7 @@ public abstract class IntegerArrayVector extends AbstractIntegerVector implement
     @Override public void fill(int[] aData) {System.arraycopy(aData, 0, internalData(), internalDataShift(), internalDataSize());}
     
     /** stuff to override */
-    public abstract IntegerArrayVector newShell();
+    public abstract IntArrayVector newShell();
     public abstract int @Nullable[] getIfHasSameOrderData(Object aObj);
 }
 

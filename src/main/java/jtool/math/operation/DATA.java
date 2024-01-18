@@ -874,20 +874,20 @@ public class DATA {
         while (it.hasNext()) aCon.accept(it.next());
     }
     
-    public static void mapFill2This(IHasIntegerSetOnlyIterator rThis, final int aRHS) {
+    public static void mapFill2This(IHasIntSetOnlyIterator rThis, final int aRHS) {
         rThis.assign(() -> aRHS);
     }
-    public static void ebeFill2This(IHasIntegerSetOnlyIterator rThis, IHasIntegerIterator aRHS) {
-        final IIntegerIterator it = aRHS.iterator();
+    public static void ebeFill2This(IHasIntSetOnlyIterator rThis, IHasIntIterator aRHS) {
+        final IIntIterator it = aRHS.iterator();
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
-    public static void assign2This(IHasIntegerSetOnlyIterator rThis, IntSupplier aSup) {
-        final IIntegerSetOnlyIterator si = rThis.setIterator();
+    public static void assign2This(IHasIntSetOnlyIterator rThis, IntSupplier aSup) {
+        final IIntSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.getAsInt());
     }
-    public static void forEachOfThis(IHasIntegerIterator aThis, IntConsumer aCon) {
-        final IIntegerIterator it = aThis.iterator();
+    public static void forEachOfThis(IHasIntIterator aThis, IntConsumer aCon) {
+        final IIntIterator it = aThis.iterator();
         while (it.hasNext()) aCon.accept(it.next());
     }
     

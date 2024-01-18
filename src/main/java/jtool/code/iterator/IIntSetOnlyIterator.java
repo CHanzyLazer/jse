@@ -4,7 +4,7 @@ package jtool.code.iterator;
  * 返回 int 类型的设置迭代器，用来避免外套类型
  * @author liqa
  */
-public interface IIntegerSetOnlyIterator {
+public interface IIntSetOnlyIterator {
     boolean hasNext();
     void nextOnly();
     void set(int aValue);
@@ -17,10 +17,10 @@ public interface IIntegerSetOnlyIterator {
     /** convert to Integer */
     default ISetOnlyIterator<Integer> toSetOnlyIterator() {
         return new ISetOnlyIterator<Integer>() {
-            @Override public boolean hasNext() {return IIntegerSetOnlyIterator.this.hasNext();}
-            @Override public void nextOnly() {IIntegerSetOnlyIterator.this.nextOnly();}
-            @Override public void set(Integer aValue) {IIntegerSetOnlyIterator.this.set(aValue);}
-            @Override public void nextAndSet(Integer aValue) {IIntegerSetOnlyIterator.this.nextAndSet(aValue);}
+            @Override public boolean hasNext() {return IIntSetOnlyIterator.this.hasNext();}
+            @Override public void nextOnly() {IIntSetOnlyIterator.this.nextOnly();}
+            @Override public void set(Integer aValue) {IIntSetOnlyIterator.this.set(aValue);}
+            @Override public void nextAndSet(Integer aValue) {IIntSetOnlyIterator.this.nextAndSet(aValue);}
         };
     }
 }

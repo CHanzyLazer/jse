@@ -10,7 +10,7 @@ import java.util.function.IntConsumer;
  * 返回 int 类型的迭代器，用来避免外套类型
  * @author liqa
  */
-public interface IIntegerIterator {
+public interface IIntIterator {
     boolean hasNext();
     int next();
     
@@ -24,11 +24,11 @@ public interface IIntegerIterator {
     /** convert to Integer */
     default Iterator<Integer> toIterator() {
         return new Iterator<Integer>() {
-            @Override public boolean hasNext() {return IIntegerIterator.this.hasNext();}
-            @Override public Integer next() {return IIntegerIterator.this.next();}
+            @Override public boolean hasNext() {return IIntIterator.this.hasNext();}
+            @Override public Integer next() {return IIntIterator.this.next();}
             
-            @Override public void remove() {IIntegerIterator.this.remove();}
-            @Override public void forEachRemaining(Consumer<? super Integer> action) {IIntegerIterator.this.forEachRemaining(action::accept);}
+            @Override public void remove() {IIntIterator.this.remove();}
+            @Override public void forEachRemaining(Consumer<? super Integer> action) {IIntIterator.this.forEachRemaining(action::accept);}
         };
     }
 }

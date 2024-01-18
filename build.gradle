@@ -49,6 +49,7 @@ dependencies {
 //  implementation('black.ninia:jep:4.2.0')                         // 调用 python 代码支持，需要系统有需要的 python 环境，并且需要初始化，因此这里不作为主要代码的使用；由于 PyObject 不能 groovy 原生调用，现在包含到项目中
 //  implementation('org.zeromq:jeromq:0.5.4')                       // 跨 JVM 并行库，可以支持超算上跨节点并行；虽然 java 标准库也有类似功能，但是这个更加易用；现在直接使用 mpi
     
+    implementation('com.mastfrog:sort:2.9.7')                       // 实用的多排序功能，因此现在不再支持支持性不好的 Compare 排序
 //  implementation('org.apache.commons:commons-rng-sampling:1.5')   // 只使用随机数生成器，还是太复杂了
 //  implementation('me.tongfei:progressbar:0.9.5')                  // 简单的进度条实现（最新版需要 jdk9）；由于字符问题这里直接把源码包含到项目中
 //  implementation('jline:jline:2.14.6')                            // 这样的话就需要包含一下 jline 这个前置，这里用 groovy 同款来减少包的大小；现在不需要了

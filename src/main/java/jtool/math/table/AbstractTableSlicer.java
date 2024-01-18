@@ -3,7 +3,7 @@ package jtool.math.table;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.ISlice;
-import jtool.code.collection.IntegerList;
+import jtool.code.collection.IntList;
 import jtool.code.collection.NewCollections;
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
@@ -57,7 +57,7 @@ public abstract class AbstractTableSlicer implements ITableSlicer {
     
     private ISlice S2L(String[] aSelectedCols) {return S2L(Arrays.asList(aSelectedCols));}
     private ISlice S2L(Iterable<? extends CharSequence> aSelectedCols) {
-        IntegerList rSelectedCols = new IntegerList();
+        IntList rSelectedCols = new IntList();
         for (CharSequence tHead : aSelectedCols) {
             int tCol = head2col_(tHead.toString());
             if (tCol >= 0) rSelectedCols.add(tCol);

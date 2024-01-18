@@ -53,6 +53,7 @@ public final class ShiftReverseVector extends DoubleArrayVector {
     }
     /** 需要指定平移的距离保证优化运算的正确性 */
     @Override public int internalDataShift() {return shift();}
+    @Override public boolean isReverse() {return true;}
     
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftReverseVector} */

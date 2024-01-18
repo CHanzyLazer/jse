@@ -1,8 +1,8 @@
 package jtool.math.vector;
 
 import jtool.code.collection.AbstractRandomAccessList;
-import jtool.code.iterator.IIntegerIterator;
-import jtool.code.iterator.IIntegerSetIterator;
+import jtool.code.iterator.IIntIterator;
+import jtool.code.iterator.IIntSetIterator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -12,7 +12,7 @@ import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
-public abstract class AbstractIntegerVector implements IIntegerVector {
+public abstract class AbstractIntVector implements IIntVector {
     /** print */
     @Override public String toString() {
         StringBuilder rStr  = new StringBuilder();
@@ -23,8 +23,8 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
     }
     
     /** Iterator stuffs */
-    @Override public IIntegerIterator iterator() {
-        return new IIntegerIterator() {
+    @Override public IIntIterator iterator() {
+        return new IIntIterator() {
             private final int mSize = size();
             private int mIdx = 0;
             @Override public boolean hasNext() {return mIdx < mSize;}
@@ -39,8 +39,8 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
             }
         };
     }
-    @Override public IIntegerSetIterator setIterator() {
-        return new IIntegerSetIterator() {
+    @Override public IIntSetIterator setIterator() {
+        return new IIntSetIterator() {
             private final int mSize = size();
             private int mIdx = 0, oIdx = -1;
             @Override public boolean hasNext() {return mIdx < mSize;}
@@ -71,31 +71,31 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
     /** 转换为其他类型 */
     @Override public List<Integer> asList() {
         return new AbstractRandomAccessList<Integer>() {
-            @Override public Integer get(int index) {return AbstractIntegerVector.this.get(index);}
+            @Override public Integer get(int index) {return AbstractIntVector.this.get(index);}
             @Override public Integer set(int index, Integer element) {return getAndSet(index, element);}
-            @Override public int size() {return AbstractIntegerVector.this.size();}
-            @Override public @NotNull Iterator<Integer> iterator() {return AbstractIntegerVector.this.iterator().toIterator();}
+            @Override public int size() {return AbstractIntVector.this.size();}
+            @Override public @NotNull Iterator<Integer> iterator() {return AbstractIntVector.this.iterator().toIterator();}
         };
     }
     @Override public IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return AbstractIntegerVector.this.get_(aIdx);}
-            @Override public void set_(int aIdx, double aValue) {AbstractIntegerVector.this.set_(aIdx, (int)aValue);}
-            public double getAndSet_(int aIdx, double aValue) {return AbstractIntegerVector.this.getAndSet_(aIdx, (int)aValue);}
-            @Override public int size() {return AbstractIntegerVector.this.size();}
+            @Override public double get_(int aIdx) {return AbstractIntVector.this.get_(aIdx);}
+            @Override public void set_(int aIdx, double aValue) {AbstractIntVector.this.set_(aIdx, (int)aValue);}
+            public double getAndSet_(int aIdx, double aValue) {return AbstractIntVector.this.getAndSet_(aIdx, (int)aValue);}
+            @Override public int size() {return AbstractIntVector.this.size();}
         };
     }
     
     /** 批量修改的接口 */
     @Override public final void fill(int aValue) {operation().fill(aValue);}
-    @Override public final void fill(IIntegerVector aVector) {operation().fill(aVector);}
+    @Override public final void fill(IIntVector aVector) {operation().fill(aVector);}
     @Override public final void fill(IIntegerVectorGetter aVectorGetter) {operation().fill(aVectorGetter);}
     @Override public final void fill(Iterable<Integer> aList) {
         final Iterator<Integer> it = aList.iterator();
         assign(it::next);
     }
     @Override public void fill(int[] aData) {
-        final IIntegerSetIterator si = setIterator();
+        final IIntSetIterator si = setIterator();
         int idx = 0;
         while (si.hasNext()) {
             si.nextAndSet(aData[idx]);
@@ -192,13 +192,13 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
         return getAndUpdate_(aIdx, aOpt);
     }
     
-    @Override public IIntegerVector subVec(final int aFromIdx, final int aToIdx) {
+    @Override public IIntVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, size());
-        return new RefIntegerVector() {
+        return new RefIntVector() {
             /** 由于一开始有边界检查，所以这里不再需要边检检查 */
-            @Override public int get_(int aIdx) {return AbstractIntegerVector.this.get_(aIdx+aFromIdx);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntegerVector.this.set_(aIdx+aFromIdx, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntegerVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
+            @Override public int get_(int aIdx) {return AbstractIntVector.this.get_(aIdx+aFromIdx);}
+            @Override public void set_(int aIdx, int aValue) {AbstractIntVector.this.set_(aIdx+aFromIdx, aValue);}
+            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
             @Override public int size() {return aToIdx-aFromIdx;}
         };
     }
@@ -206,7 +206,7 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
     /** 向量的运算器 */
     @Override public IIntegerVectorOperation operation() {
         return new AbstractIntegerVectorOperation() {
-            @Override protected IIntegerVector thisVector_() {return AbstractIntegerVector.this;}
+            @Override protected IIntVector thisVector_() {return AbstractIntVector.this;}
         };
     }
     

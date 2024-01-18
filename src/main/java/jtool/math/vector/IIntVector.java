@@ -1,10 +1,10 @@
 package jtool.math.vector;
 
 import jtool.code.collection.ISlice;
-import jtool.code.iterator.IHasIntegerIterator;
-import jtool.code.iterator.IHasIntegerSetIterator;
-import jtool.code.iterator.IIntegerIterator;
-import jtool.code.iterator.IIntegerSetIterator;
+import jtool.code.iterator.IHasIntIterator;
+import jtool.code.iterator.IHasIntSetIterator;
+import jtool.code.iterator.IIntIterator;
+import jtool.code.iterator.IIntSetIterator;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Comparator;
@@ -20,10 +20,10 @@ import java.util.function.IntUnaryOperator;
  * <p> 由于完全实现工作量较大，这里暂只实现用到的接口 </p>
  * <p> 当然为了后续完善的方便，结构依旧保持一致 </p>
  */
-public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasIntegerSetIterator, IIntegerVectorGetter {
+public interface IIntVector extends ISlice, IHasIntIterator, IHasIntSetIterator, IIntegerVectorGetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
-    IIntegerIterator iterator();
-    IIntegerSetIterator setIterator();
+    IIntIterator iterator();
+    IIntSetIterator setIterator();
     
     default Iterable<Integer> iterable() {return () -> iterator().toIterator();}
     List<Integer> asList();
@@ -31,7 +31,7 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     
     /** 批量修改的接口 */
     void fill(int aValue);
-    void fill(IIntegerVector aVector);
+    void fill(IIntVector aVector);
     void fill(IIntegerVectorGetter aVectorGetter);
     void fill(int[] aData);
     void fill(Iterable<Integer> aList);
@@ -67,7 +67,7 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     void update(int aIdx, IntUnaryOperator aOpt);
     int getAndUpdate(int aIdx, IntUnaryOperator aOpt);
     
-    IIntegerVector subVec(int aFromIdx, int aToIdx);
+    IIntVector subVec(int aFromIdx, int aToIdx);
     
     /** 向量的运算操作，默认返回新的向量 */
     IIntegerVectorOperation operation();
