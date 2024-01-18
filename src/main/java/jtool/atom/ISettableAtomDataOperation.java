@@ -1,7 +1,7 @@
 package jtool.atom;
 
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -21,11 +21,11 @@ public interface ISettableAtomDataOperation extends IAtomDataOperation {
     ISettableAtomData refSlice(int[] aIndices);
     ISettableAtomData refSlice(IIndexFilter aIndices);
     
-    void map2this(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator);
-    default void map2this(IOperator1<? extends IAtom, ? super IAtom> aOperator) {map2this(1, aOperator);}
+    void map2this(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator);
+    default void map2this(IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {map2this(1, aOperator);}
     
-    void mapType2this(int aMinTypeNum, IOperator1<Integer, ? super IAtom> aOperator);
-    default void mapType2this(IOperator1<Integer, ? super IAtom> aOperator) {mapType2this(1, aOperator);}
+    void mapType2this(int aMinTypeNum, IUnaryFullOperator<Integer, ? super IAtom> aOperator);
+    default void mapType2this(IUnaryFullOperator<Integer, ? super IAtom> aOperator) {mapType2this(1, aOperator);}
     
     void mapTypeRandom2this(Random aRandom, IVector aTypeWeights);
     default void mapTypeRandom2this(IVector aTypeWeights) {mapTypeRandom2this(RANDOM, aTypeWeights);}

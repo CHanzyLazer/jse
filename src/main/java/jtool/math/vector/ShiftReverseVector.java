@@ -1,14 +1,12 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -69,11 +67,11 @@ public final class ShiftReverseVector extends DoubleArrayVector {
             @Override public void fill(IVectorGetter aRHS) {
                 for (int i = totShift, j = 0; i >= mShift; --i, ++j) mData[i] = aRHS.get(j);
             }
-            @Override public void assign(IDoubleSupplier aSup) {
-                for (int i = totShift; i >= mShift; --i) mData[i] = aSup.get();
+            @Override public void assign(DoubleSupplier aSup) {
+                for (int i = totShift; i >= mShift; --i) mData[i] = aSup.getAsDouble();
             }
-            @Override public void forEach(IDoubleConsumer1 aCon) {
-                for (int i = totShift; i >= mShift; --i) aCon.run(mData[i]);
+            @Override public void forEach(DoubleConsumer aCon) {
+                for (int i = totShift; i >= mShift; --i) aCon.accept(mData[i]);
             }
             @Override public ShiftVector refReverse() {
                 return new ShiftVector(mSize, mShift, mData);
@@ -94,14 +92,14 @@ public final class ShiftReverseVector extends DoubleArrayVector {
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx = totShift-aIdx;
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+        mData[aIdx] = aOpt.applyAsDouble(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx = totShift-aIdx;
         double tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsDouble(tValue);
         return tValue;
     }
     

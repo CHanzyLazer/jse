@@ -1,8 +1,8 @@
 package jtool.math.vector;
 
 import jtool.code.collection.BooleanList;
-import jtool.code.functional.IBooleanConsumer1;
-import jtool.code.functional.IBooleanOperator1;
+import jtool.code.functional.IBooleanConsumer;
+import jtool.code.functional.IBooleanUnaryOperator;
 import jtool.code.functional.IBooleanSupplier;
 import jtool.code.iterator.IBooleanIterator;
 import jtool.code.iterator.IBooleanSetIterator;
@@ -75,11 +75,11 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
             }
             @Override public void assign(IBooleanSupplier aSup) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.get();
+                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsBoolean();
             }
-            @Override public void forEach(IBooleanConsumer1 aCon) {
+            @Override public void forEach(IBooleanConsumer aCon) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.run(mData[i]);
+                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
             }
         };
     }
@@ -95,14 +95,14 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
         mData[aIdx] = !tValue;
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
         aIdx += mShift;
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+        mData[aIdx] = aOpt.applyAsBoolean(mData[aIdx]);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         aIdx += mShift;
         boolean tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsBoolean(tValue);
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}

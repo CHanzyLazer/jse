@@ -34,7 +34,7 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     void fill(boolean[] aData);
     void fill(Iterable<Boolean> aList);
     void assign(IBooleanSupplier aSup);
-    void forEach(IBooleanConsumer1 aCon);
+    void forEach(IBooleanConsumer aCon);
     
     /** 访问和修改部分，自带的接口 */
     boolean get_(int aIdx);
@@ -60,13 +60,13 @@ public interface ILogicalVector extends IHasBooleanIterator, IHasBooleanSetItera
     /** 附加一些额外的单元素操作，对于逻辑向量再增加一个翻转特定元素的操作 */
     void flip_(int aIdx);
     boolean getAndFlip_(int aIdx);
-    void update_(int aIdx, IBooleanOperator1 aOpt);
-    boolean getAndUpdate_(int aIdx, IBooleanOperator1 aOpt);
+    void update_(int aIdx, IBooleanUnaryOperator aOpt);
+    boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt);
     
     void flip(int aIdx);
     boolean getAndFlip(int aIdx);
-    void update(int aIdx, IBooleanOperator1 aOpt);
-    boolean getAndUpdate(int aIdx, IBooleanOperator1 aOpt);
+    void update(int aIdx, IBooleanUnaryOperator aOpt);
+    boolean getAndUpdate(int aIdx, IBooleanUnaryOperator aOpt);
     
     
     ILogicalVector copy();

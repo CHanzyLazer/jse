@@ -1,6 +1,6 @@
 package jtool.code.collection;
 
-import jtool.code.functional.IBooleanConsumer1;
+import jtool.code.functional.IBooleanConsumer;
 import jtool.math.IDataShell;
 import jtool.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
@@ -65,8 +65,8 @@ public class BooleanList implements IDataShell<boolean[]> {
     public void clear() {
         mSize = 0;
     }
-    public void forEach(IBooleanConsumer1 aCon) {
-        for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+    public void forEach(IBooleanConsumer aCon) {
+        for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
     }
     
     public List<Boolean> asList() {

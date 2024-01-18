@@ -1,12 +1,10 @@
 package jtool.math.function;
 
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -27,8 +25,8 @@ public interface IFunc1 extends IFunc1Subs {
         final Iterator<? extends Number> it = aList.iterator();
         assign(() -> it.next().doubleValue());
     }
-    default void assign(IDoubleSupplier aSup) {operation().assign(aSup);}
-    default void forEach(IDoubleConsumer1 aCon) {operation().forEach(aCon);}
+    default void assign(DoubleSupplier aSup) {operation().assign(aSup);}
+    default void forEach(DoubleConsumer aCon) {operation().forEach(aCon);}
     
     /** 拷贝的接口 */
     IFunc1 copy();
@@ -57,13 +55,13 @@ public interface IFunc1 extends IFunc1Subs {
     void setX0(double aNewX0);
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    void update_(int aI, IDoubleOperator1 aOpt);
-    double getAndUpdate_(int aI, IDoubleOperator1 aOpt);
-    default void update(int aI, IDoubleOperator1 aOpt) {
+    void update_(int aI, DoubleUnaryOperator aOpt);
+    double getAndUpdate_(int aI, DoubleUnaryOperator aOpt);
+    default void update(int aI, DoubleUnaryOperator aOpt) {
         if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
         update_(aI, aOpt);
     }
-    default double getAndUpdate(int aI, IDoubleOperator1 aOpt) {
+    default double getAndUpdate(int aI, DoubleUnaryOperator aOpt) {
         if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
         return getAndUpdate_(aI, aOpt);
     }

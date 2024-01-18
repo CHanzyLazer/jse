@@ -1,6 +1,6 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IBooleanConsumer1;
+import jtool.code.functional.IBooleanConsumer;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -17,9 +17,9 @@ public interface IBooleanIterator {
     
     /** Iterator default stuffs */
     default void remove() {throw new UnsupportedOperationException("remove");}
-    default void forEachRemaining(IBooleanConsumer1 aCon) {
+    default void forEachRemaining(IBooleanConsumer aCon) {
         Objects.requireNonNull(aCon);
-        while (hasNext()) aCon.run(next());
+        while (hasNext()) aCon.accept(next());
     }
     
     /** convert to Boolean */

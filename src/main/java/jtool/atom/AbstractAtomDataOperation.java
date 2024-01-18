@@ -4,7 +4,7 @@ import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.NewCollections;
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.math.vector.IVector;
 
 import java.util.*;
@@ -30,13 +30,13 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     @Override public IAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
     
     
-    @Override public ISettableAtomData map(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {
+    @Override public ISettableAtomData map(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {
         final IAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNum();
         ISettableAtomData rAtomData = newSettableAtomData_(tAtomNum);
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
-            rAtomData.setAtom(i, aOperator.cal(tThis.pickAtom(i)));
+            rAtomData.setAtom(i, aOperator.apply(tThis.pickAtom(i)));
         }
         // 这里不进行 try 包含，因为目前这里的实例都是支持的，并且手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (rAtomData.atomTypeNum() < aMinTypeNum) rAtomData.setAtomTypeNum(aMinTypeNum);
@@ -44,13 +44,13 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     }
     
     
-    @Override public ISettableAtomData mapType(int aMinTypeNum, IOperator1<Integer, ? super IAtom> aOperator) {
+    @Override public ISettableAtomData mapType(int aMinTypeNum, IUnaryFullOperator<Integer, ? super IAtom> aOperator) {
         final IAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNum();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
-            rAtomData.pickAtom(i).setType(aOperator.cal(tThis.pickAtom(i)));
+            rAtomData.pickAtom(i).setType(aOperator.apply(tThis.pickAtom(i)));
         }
         // 这里不进行 try 包含，因为目前这里的实例都是支持的，并且手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (rAtomData.atomTypeNum() < aMinTypeNum) rAtomData.setAtomTypeNum(aMinTypeNum);

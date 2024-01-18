@@ -1,7 +1,6 @@
 package jtool.code.collection;
 
-import jtool.code.functional.IConsumer1;
-import jtool.code.functional.IDoubleConsumer2;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.IDataShell;
@@ -12,6 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 /**
  * 通用的使用 {@code double[][]} 存储内部元素的 list，
@@ -77,18 +77,18 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     public void clear() {
         mSize = 0;
     }
-    public void forEach(IConsumer1<? super ComplexDouble> aCon) {
+    public void forEach(Consumer<? super ComplexDouble> aCon) {
         final double[] tRealData = mData[0];
         final double[] tImagData = mData[1];
         for (int i = 0; i < mSize; ++i) {
-            aCon.run(new ComplexDouble(tRealData[i], tImagData[i]));
+            aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
         }
     }
-    public void forEach(IDoubleConsumer2 aCon) {
+    public void forEach(IDoubleBinaryConsumer aCon) {
         final double[] tRealData = mData[0];
         final double[] tImagData = mData[1];
         for (int i = 0; i < mSize; ++i) {
-            aCon.run(tRealData[i], tImagData[i]);
+            aCon.accept(tRealData[i], tImagData[i]);
         }
     }
     

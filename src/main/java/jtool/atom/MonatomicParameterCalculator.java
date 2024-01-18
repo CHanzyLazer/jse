@@ -3,8 +3,7 @@ package jtool.atom;
 import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.collection.IntegerList;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.math.ComplexDouble;
@@ -25,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.IntConsumer;
 
 import static jtool.atom.NeighborListGetter.DEFAULT_CELL_STEP;
 import static jtool.code.CS.R_NEAREST_MUL;
@@ -114,11 +114,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum, double aCellStep) {this(aAtomData.asList(), aAtomData.box(), aThreadNum, aCellStep);}
     
     /** 主要用于内部使用 */
-    MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IOperator1<IMatrix, IMatrix> aXYZValidOpt) {
+    MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
         super(new ParforThreadPool(aThreadNum));
         mAtomNum = aAtomNum;
         mBox = aBox;
-        mAtomDataXYZ = aXYZValidOpt.cal(MatrixCache.getMatRow(aAtomNum, 3));
+        mAtomDataXYZ = aXYZValidOpt.apply(MatrixCache.getMatRow(aAtomNum, 3));
         // 计算单位长度供内部使用
         mRou = mAtomNum / mBox.prod();
         mUnitLen = Fast.cbrt(1.0/mRou);
@@ -805,22 +805,22 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     
     /** 会自动使用缓存的近邻列表遍历，用于减少重复代码 */
-    private void forEachNeighbor(IntegerList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIntegerConsumer1 aIdxDo) {
+    private void forEachNeighbor(IntegerList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
         } else {
             // aNL 为 null，则使用 mNL 完整遍历
-            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, (x, y, z, idx, dis2) -> aIdxDo.run(idx));
+            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, (x, y, z, idx, dis2) -> aIdxDo.accept(idx));
         }
     }
-    private void forEachNeighbor(IntegerList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IIntegerConsumer1 aIdxDo) {
+    private void forEachNeighbor(IntegerList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
         } else {
             // aNL 为 null，则使用 mNL 完整遍历
-            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, aRegion, (x, y, z, idx, dis2) -> aIdxDo.run(idx));
+            mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, aRegion, (x, y, z, idx, dis2) -> aIdxDo.accept(idx));
         }
     }
     

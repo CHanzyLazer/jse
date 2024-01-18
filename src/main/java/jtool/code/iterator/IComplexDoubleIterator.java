@@ -2,16 +2,14 @@ package jtool.code.iterator;
 
 import jtool.atom.IAtom;
 import jtool.atom.IXYZ;
-import jtool.code.functional.IConsumer1;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleConsumer2;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import groovy.lang.Closure;
 
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.function.*;
 
 /**
  * 支持将下一步和获取数据分开，然后分别获取实部和虚部，用来减少外套类型的使用
@@ -35,29 +33,29 @@ public interface IComplexDoubleIterator extends IComplexDouble {
     }
     /** Iterator default stuffs */
     default void remove() {throw new UnsupportedOperationException("remove");}
-    default void forEachRemaining(IConsumer1<? super ComplexDouble> aCon) {
+    default void forEachRemaining(Consumer<? super ComplexDouble> aCon) {
         Objects.requireNonNull(aCon);
-        while (hasNext()) aCon.run(next());
+        while (hasNext()) aCon.accept(next());
     }
-    default void forEachRemaining(IDoubleConsumer2 aCon) {
+    default void forEachRemaining(IDoubleBinaryConsumer aCon) {
         Objects.requireNonNull(aCon);
         while (hasNext()) {
             nextOnly();
-            aCon.run(real(), imag());
+            aCon.accept(real(), imag());
         }
     }
-    default void forEachRemainingReal(IDoubleConsumer1 aRealCon) {
+    default void forEachRemainingReal(DoubleConsumer aRealCon) {
         Objects.requireNonNull(aRealCon);
         while (hasNext()) {
             nextOnly();
-            aRealCon.run(real());
+            aRealCon.accept(real());
         }
     }
-    default void forEachRemainingImag(IDoubleConsumer1 aImagCon) {
+    default void forEachRemainingImag(DoubleConsumer aImagCon) {
         Objects.requireNonNull(aImagCon);
         while (hasNext()) {
             nextOnly();
-            aImagCon.run(imag());
+            aImagCon.accept(imag());
         }
     }
     /** Groovy stuffs */

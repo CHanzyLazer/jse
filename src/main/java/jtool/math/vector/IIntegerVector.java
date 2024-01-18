@@ -1,19 +1,18 @@
 package jtool.math.vector;
 
 import jtool.code.collection.ISlice;
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
 import jtool.code.iterator.IHasIntegerIterator;
 import jtool.code.iterator.IHasIntegerSetIterator;
 import jtool.code.iterator.IIntegerIterator;
 import jtool.code.iterator.IIntegerSetIterator;
-import jtool.parallel.LocalRandom;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 /**
  * @author liqa
@@ -36,8 +35,8 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     void fill(IIntegerVectorGetter aVectorGetter);
     void fill(int[] aData);
     void fill(Iterable<Integer> aList);
-    void assign(IIntegerSupplier aSup);
-    void forEach(IIntegerConsumer1 aCon);
+    void assign(IntSupplier aSup);
+    void forEach(IntConsumer aCon);
     
     /** 访问和修改部分，自带的接口 */
     int get_(int aIdx);
@@ -56,8 +55,8 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     int getAndDecrement_(int aIdx);
     void add_(int aIdx, int aDelta);
     int getAndAdd_(int aIdx, int aDelta);
-    void update_(int aIdx, IIntegerOperator1 aOpt);
-    int getAndUpdate_(int aIdx, IIntegerOperator1 aOpt);
+    void update_(int aIdx, IntUnaryOperator aOpt);
+    int getAndUpdate_(int aIdx, IntUnaryOperator aOpt);
     
     void increment(int aIdx);
     int getAndIncrement(int aIdx);
@@ -65,8 +64,8 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     int getAndDecrement(int aIdx);
     void add(int aIdx, int aDelta);
     int getAndAdd(int aIdx, int aDelta);
-    void update(int aIdx, IIntegerOperator1 aOpt);
-    int getAndUpdate(int aIdx, IIntegerOperator1 aOpt);
+    void update(int aIdx, IntUnaryOperator aOpt);
+    int getAndUpdate(int aIdx, IntUnaryOperator aOpt);
     
     IIntegerVector subVec(int aFromIdx, int aToIdx);
     
@@ -79,5 +78,5 @@ public interface IIntegerVector extends ISlice, IHasIntegerIterator, IHasInteger
     void sort(Comparator<? super Integer> aComp);
     void shuffle();
     void shuffle(Random aRng);
-    void shuffle(IIntegerOperator1 aRng);
+    void shuffle(IntUnaryOperator aRng);
 }

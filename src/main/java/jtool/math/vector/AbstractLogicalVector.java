@@ -120,7 +120,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         }
     }
     @Override public final void assign(IBooleanSupplier aSup) {operation().assign(aSup);}
-    @Override public final void forEach(IBooleanConsumer1 aCon) {operation().forEach(aCon);}
+    @Override public final void forEach(IBooleanConsumer aCon) {operation().forEach(aCon);}
     
     @Override public boolean get(int aIdx) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -143,14 +143,14 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         set_(aIdx, !tValue);
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = get_(aIdx);
-        tValue = aOpt.cal(tValue);
+        tValue = aOpt.applyAsBoolean(tValue);
         set_(aIdx, tValue);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = get_(aIdx);
-        set_(aIdx, aOpt.cal(tValue));
+        set_(aIdx, aOpt.applyAsBoolean(tValue));
         return tValue;
     }
     
@@ -162,11 +162,11 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndFlip_(aIdx);
     }
-    @Override public void update(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public void update(int aIdx, IBooleanUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
     }
-    @Override public boolean getAndUpdate(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public boolean getAndUpdate(int aIdx, IBooleanUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
     }

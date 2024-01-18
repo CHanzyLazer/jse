@@ -1,10 +1,10 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleOperator2;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
+
+import java.util.function.*;
 
 /**
  * 对于内部含有 double[] 的向量的运算使用专门优化后的函数
@@ -86,7 +86,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         else DATA.ebeMod2Dest(aRHS, tThis, rVector);
         return rVector;
     }
-    @Override public IVector operate(IVector aRHS, IDoubleOperator2 aOpt) {
+    @Override public IVector operate(IVector aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayVector tThis = thisVector_();
         DoubleArrayVector rVector = newVector_();
         double[] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -160,7 +160,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         else DATA.mapLMod2Dest(tThis, aRHS, rVector);
         return rVector;
     }
-    @Override public IVector map(IDoubleOperator1 aOpt) {
+    @Override public IVector map(DoubleUnaryOperator aOpt) {
         DoubleArrayVector tThis = thisVector_();
         DoubleArrayVector rVector = newVector_();
         double[] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -217,7 +217,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         if (tDataR != null) ARRAY.ebeLMod2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMod2This(rThis, aRHS);
     }
-    @Override public void operate2this(IVector aRHS, IDoubleOperator2 aOpt) {
+    @Override public void operate2this(IVector aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayVector rThis = thisVector_();
         double[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
@@ -232,7 +232,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public void ldiv2this     (double aRHS) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapLDiv2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void mod2this      (double aRHS) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapMod2This     (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void lmod2this     (double aRHS) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapLMod2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void map2this      (IDoubleOperator1 aOpt) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
+    @Override public void map2this      (DoubleUnaryOperator aOpt) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
     @Override public IVector negative() {
         DoubleArrayVector tThis = thisVector_();
@@ -257,7 +257,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public double prod()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.prodOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public double max ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.maxOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public double min ()                      {DoubleArrayVector tThis = thisVector_(); return ARRAY.minOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
-    @Override public double stat(IDoubleOperator2 aOpt) {DoubleArrayVector tThis = thisVector_(); return ARRAY.statOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize(), aOpt);}
+    @Override public double stat(DoubleBinaryOperator aOpt) {DoubleArrayVector tThis = thisVector_(); return ARRAY.statOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize(), aOpt);}
     
     
     /** 向量的一些额外的运算 */

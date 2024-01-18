@@ -1,12 +1,12 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IIntegerOperator1;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.function.IntUnaryOperator;
 
 public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorOperation {
     @Override public void fill              (int aRHS) {IntegerArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
@@ -40,14 +40,14 @@ public abstract class IntegerArrayVectorOperation extends AbstractIntegerVectorO
         }
     }
     
-    @Override public void shuffle(IIntegerOperator1 aRng) {
+    @Override public void shuffle(IntUnaryOperator aRng) {
         final IntegerArrayVector rThis = thisVector_();
         final int[] rData = rThis.internalData();
         final int rShift = rThis.internalDataShift();
         final int tEnd = rThis.internalDataSize() + rShift;
         final int rShiftPP = rShift+1;
         for (int i = tEnd; i > rShiftPP; --i) {
-            swap(rData, i-1, aRng.cal(i));
+            swap(rData, i-1, aRng.applyAsInt(i));
         }
     }
     

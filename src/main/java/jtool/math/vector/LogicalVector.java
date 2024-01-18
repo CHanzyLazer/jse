@@ -85,10 +85,10 @@ public final class LogicalVector extends BooleanArrayVector {
                 for (int i = 0; i < mSize; ++i) mData[i] = aRHS.get(i);
             }
             @Override public void assign(IBooleanSupplier aSup) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aSup.get();
+                for (int i = 0; i < mSize; ++i) mData[i] = aSup.getAsBoolean();
             }
-            @Override public void forEach(IBooleanConsumer1 aCon) {
-                for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+            @Override public void forEach(IBooleanConsumer aCon) {
+                for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
             }
         };
     }
@@ -102,12 +102,12 @@ public final class LogicalVector extends BooleanArrayVector {
         mData[aIdx] = !tValue;
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanOperator1 aOpt) {
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
+        mData[aIdx] = aOpt.applyAsBoolean(mData[aIdx]);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanOperator1 aOpt) {
+    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsBoolean(tValue);
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}

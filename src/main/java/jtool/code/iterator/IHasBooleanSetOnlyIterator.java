@@ -12,6 +12,6 @@ public interface IHasBooleanSetOnlyIterator {
     default void assign(IBooleanSupplier aSup) {
         Objects.requireNonNull(aSup);
         final IBooleanSetOnlyIterator si = setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsBoolean());
     }
 }

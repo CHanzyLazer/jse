@@ -1,6 +1,6 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IBooleanConsumer1;
+import jtool.code.functional.IBooleanConsumer;
 
 import java.util.Objects;
 
@@ -11,9 +11,9 @@ public interface IHasBooleanIterator {
     default Iterable<Boolean> iterable() {return () -> iterator().toIterator();}
     
     /** Iterable like stuffs */
-    default void forEach(IBooleanConsumer1 aCon) {
+    default void forEach(IBooleanConsumer aCon) {
         Objects.requireNonNull(aCon);
         final IBooleanIterator it = iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
 }

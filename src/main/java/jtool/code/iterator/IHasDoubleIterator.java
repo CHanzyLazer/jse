@@ -1,6 +1,6 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IDoubleConsumer1;
+import java.util.function.DoubleConsumer;
 
 import java.util.Objects;
 
@@ -11,9 +11,9 @@ public interface IHasDoubleIterator {
     default Iterable<Double> iterable() {return () -> iterator().toIterator();}
     
     /** Iterable like stuffs */
-    default void forEach(IDoubleConsumer1 aCon) {
+    default void forEach(DoubleConsumer aCon) {
         Objects.requireNonNull(aCon);
         final IDoubleIterator it = iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
 }

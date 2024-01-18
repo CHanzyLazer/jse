@@ -1,10 +1,13 @@
 package jtool.math.vector;
 
-import jtool.code.functional.*;
+import jtool.code.functional.IChecker;
+import jtool.code.functional.IComparator;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetOnlyIterator;
 import jtool.math.MathEX;
 import jtool.math.operation.DATA;
+
+import java.util.function.*;
 
 /**
  * 一般的实向量运算的实现，默认没有做任何优化
@@ -20,7 +23,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public IVector ldiv       (IVector aRHS) {IVector rVector = newVector_(); DATA.ebeDiv2Dest     (aRHS, thisVector_(), rVector); return rVector;}
     @Override public IVector mod        (IVector aRHS) {IVector rVector = newVector_(); DATA.ebeMod2Dest     (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IVector lmod       (IVector aRHS) {IVector rVector = newVector_(); DATA.ebeMod2Dest     (aRHS, thisVector_(), rVector); return rVector;}
-    @Override public IVector operate    (IVector aRHS, IDoubleOperator2 aOpt) {IVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
+    @Override public IVector operate    (IVector aRHS, DoubleBinaryOperator aOpt) {IVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
     
     @Override public IVector plus       (double aRHS) {IVector rVector = newVector_(); DATA.mapPlus2Dest       (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IVector minus      (double aRHS) {IVector rVector = newVector_(); DATA.mapMinus2Dest      (thisVector_(), aRHS, rVector); return rVector;}
@@ -30,7 +33,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public IVector ldiv       (double aRHS) {IVector rVector = newVector_(); DATA.mapLDiv2Dest       (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IVector mod        (double aRHS) {IVector rVector = newVector_(); DATA.mapMod2Dest        (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IVector lmod       (double aRHS) {IVector rVector = newVector_(); DATA.mapLMod2Dest       (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IVector map        (IDoubleOperator1 aOpt) {IVector rVector = newVector_(); DATA.mapDo2Dest(thisVector_(), rVector, aOpt); return rVector;}
+    @Override public IVector map        (DoubleUnaryOperator aOpt) {IVector rVector = newVector_(); DATA.mapDo2Dest(thisVector_(), rVector, aOpt); return rVector;}
     
     @Override public void plus2this     (IVector aRHS) {DATA.ebePlus2This    (thisVector_(), aRHS);}
     @Override public void minus2this    (IVector aRHS) {DATA.ebeMinus2This   (thisVector_(), aRHS);}
@@ -40,7 +43,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void ldiv2this     (IVector aRHS) {DATA.ebeLDiv2This    (thisVector_(), aRHS);}
     @Override public void mod2this      (IVector aRHS) {DATA.ebeMod2This     (thisVector_(), aRHS);}
     @Override public void lmod2this     (IVector aRHS) {DATA.ebeLMod2This    (thisVector_(), aRHS);}
-    @Override public void operate2this  (IVector aRHS, IDoubleOperator2 aOpt) {DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
+    @Override public void operate2this  (IVector aRHS, DoubleBinaryOperator aOpt) {DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
     
     @Override public void plus2this     (double aRHS) {DATA.mapPlus2This    (thisVector_(), aRHS);}
     @Override public void minus2this    (double aRHS) {DATA.mapMinus2This   (thisVector_(), aRHS);}
@@ -50,15 +53,15 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void ldiv2this     (double aRHS) {DATA.mapLDiv2This    (thisVector_(), aRHS);}
     @Override public void mod2this      (double aRHS) {DATA.mapMod2This     (thisVector_(), aRHS);}
     @Override public void lmod2this     (double aRHS) {DATA.mapLMod2This    (thisVector_(), aRHS);}
-    @Override public void map2this      (IDoubleOperator1 aOpt) {DATA.mapDo2This(thisVector_(), aOpt);}
+    @Override public void map2this      (DoubleUnaryOperator aOpt) {DATA.mapDo2This(thisVector_(), aOpt);}
     
     @Override public IVector negative() {IVector rVector = newVector_(); DATA.mapNegative2Dest(thisVector_(), rVector); return rVector;}
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     
     @Override public void fill          (double aRHS) {DATA.mapFill2This(thisVector_(), aRHS);}
     @Override public void fill          (IVector aRHS) {DATA.ebeFill2This(thisVector_(), aRHS);}
-    @Override public void assign        (IDoubleSupplier aSup) {DATA.assign2This(thisVector_(), aSup);}
-    @Override public void forEach       (IDoubleConsumer1 aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
+    @Override public void assign        (DoubleSupplier aSup) {DATA.assign2This(thisVector_(), aSup);}
+    @Override public void forEach       (DoubleConsumer aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill          (IVectorGetter aRHS) {
         final IVector tThis = thisVector_();
         final IDoubleSetOnlyIterator si = tThis.setIterator();
@@ -71,14 +74,14 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public double prod()                      {return DATA.prodOfThis (thisVector_()      );}
     @Override public double max ()                      {return DATA.maxOfThis  (thisVector_()      );}
     @Override public double min ()                      {return DATA.minOfThis  (thisVector_()      );}
-    @Override public double stat(IDoubleOperator2 aOpt) {return DATA.statOfThis (thisVector_(), aOpt);}
+    @Override public double stat(DoubleBinaryOperator aOpt) {return DATA.statOfThis (thisVector_(), aOpt);}
     
     @Override public IVector cumsum ()                      {IVector rVector = newVector_(); DATA.cumsum2Dest    (thisVector_(), rVector      ); return rVector;}
     @Override public IVector cummean()                      {IVector rVector = newVector_(); DATA.cummean2Dest   (thisVector_(), rVector      ); return rVector;}
     @Override public IVector cumprod()                      {IVector rVector = newVector_(); DATA.cumprod2Dest   (thisVector_(), rVector      ); return rVector;}
     @Override public IVector cummax ()                      {IVector rVector = newVector_(); DATA.cummax2Dest    (thisVector_(), rVector      ); return rVector;}
     @Override public IVector cummin ()                      {IVector rVector = newVector_(); DATA.cummin2Dest    (thisVector_(), rVector      ); return rVector;}
-    @Override public IVector cumstat(IDoubleOperator2 aOpt) {IVector rVector = newVector_(); DATA.cumstat2Dest   (thisVector_(), rVector, aOpt); return rVector;}
+    @Override public IVector cumstat(DoubleBinaryOperator aOpt) {IVector rVector = newVector_(); DATA.cumstat2Dest   (thisVector_(), rVector, aOpt); return rVector;}
     
     /** 获取逻辑结果的运算 */
     @Override public ILogicalVector equal           (IVector aRHS) {ILogicalVector rVector = newLogicalVector_(); DATA.ebeEqual2Dest         (thisVector_(), aRHS, rVector); return rVector;}

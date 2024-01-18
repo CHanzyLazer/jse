@@ -1,8 +1,5 @@
 package jtool.math.matrix;
 
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.math.vector.ShiftVector;
@@ -11,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -86,13 +83,13 @@ public final class RowMatrix extends DoubleArrayMatrix {
                     ++idx;
                 }
             }
-            @Override public void assignRow(IDoubleSupplier aSup) {
+            @Override public void assignRow(DoubleSupplier aSup) {
                 int rEnd = mRowNum*mColNum;
-                for (int i = 0; i < rEnd; ++i) mData[i] = aSup.get();
+                for (int i = 0; i < rEnd; ++i) mData[i] = aSup.getAsDouble();
             }
-            @Override public void forEachRow(IDoubleConsumer1 aCon) {
+            @Override public void forEachRow(DoubleConsumer aCon) {
                 int rEnd = mRowNum*mColNum;
-                for (int i = 0; i < rEnd; ++i) aCon.run(mData[i]);
+                for (int i = 0; i < rEnd; ++i) aCon.accept(mData[i]);
             }
             @Override public ColumnMatrix refTranspose() {
                 return new ColumnMatrix(mRowNum, mColNum, mData);
@@ -101,14 +98,14 @@ public final class RowMatrix extends DoubleArrayMatrix {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public void update_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         int tIdx = aCol + aRow*mColNum;
-        mData[tIdx] = aOpt.cal(mData[tIdx]);
+        mData[tIdx] = aOpt.applyAsDouble(mData[tIdx]);
     }
-    @Override public double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         int tIdx = aCol + aRow*mColNum;
         double tValue = mData[tIdx];
-        mData[tIdx] = aOpt.cal(tValue);
+        mData[tIdx] = aOpt.applyAsDouble(tValue);
         return tValue;
     }
     

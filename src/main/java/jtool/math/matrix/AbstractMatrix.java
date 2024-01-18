@@ -5,11 +5,8 @@ import jtool.code.collection.AbstractCollections;
 import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.collection.ISlice;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
-import jtool.code.functional.IDoubleOperator1;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.math.vector.*;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -17,6 +14,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 import static jtool.code.CS.ALL;
 
@@ -393,10 +391,10 @@ public abstract class AbstractMatrix implements IMatrix {
         }
     }
     
-    @Override public final void assignCol(IDoubleSupplier aSup) {operation().assignCol(aSup);}
-    @Override public final void assignRow(IDoubleSupplier aSup) {operation().assignRow(aSup);}
-    @Override public final void forEachCol(IDoubleConsumer1 aCon) {operation().forEachCol(aCon);}
-    @Override public final void forEachRow(IDoubleConsumer1 aCon) {operation().forEachRow(aCon);}
+    @Override public final void assignCol(DoubleSupplier aSup) {operation().assignCol(aSup);}
+    @Override public final void assignRow(DoubleSupplier aSup) {operation().assignRow(aSup);}
+    @Override public final void forEachCol(DoubleConsumer aCon) {operation().forEachCol(aCon);}
+    @Override public final void forEachRow(DoubleConsumer aCon) {operation().forEachRow(aCon);}
     
     
     @Override public double get(int aRow, int aCol) {
@@ -454,21 +452,21 @@ public abstract class AbstractMatrix implements IMatrix {
         };
     }
     
-    @Override public void update_(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public void update_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         double tValue = get_(aRow, aCol);
-        tValue = aOpt.cal(tValue);
+        tValue = aOpt.applyAsDouble(tValue);
         set_(aRow, aCol, tValue);
     }
-    @Override public double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         double tValue = get_(aRow, aCol);
-        set_(aRow, aCol, aOpt.cal(tValue));
+        set_(aRow, aCol, aOpt.applyAsDouble(tValue));
         return tValue;
     }
-    @Override public void update(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public void update(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         update_(aRow, aCol, aOpt);
     }
-    @Override public double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         if (aRow<0 || aRow>=rowNumber() || aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException(String.format("Row: %d, Col: %d", aRow, aCol));
         return getAndUpdate_(aRow, aCol, aOpt);
     }

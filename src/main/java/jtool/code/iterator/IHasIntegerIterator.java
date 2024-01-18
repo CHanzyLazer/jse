@@ -1,8 +1,7 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IIntegerConsumer1;
-
 import java.util.Objects;
+import java.util.function.IntConsumer;
 
 @FunctionalInterface
 public interface IHasIntegerIterator {
@@ -11,9 +10,9 @@ public interface IHasIntegerIterator {
     default Iterable<Integer> iterable() {return () -> iterator().toIterator();}
     
     /** Iterable like stuffs */
-    default void forEach(IIntegerConsumer1 aCon) {
+    default void forEach(IntConsumer aCon) {
         Objects.requireNonNull(aCon);
         final IIntegerIterator it = iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
 }

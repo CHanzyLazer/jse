@@ -1,10 +1,11 @@
 package jtool.math.matrix;
 
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleOperator2;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
+
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * 对于内部含有 double[] 的向量的运算使用专门优化后的函数
@@ -84,7 +85,7 @@ public abstract class DoubleArrayMatrixOperation extends AbstractMatrixOperation
         else DATA.ebeMod2Dest(aRHS::iteratorCol, tThis::iteratorCol, rMatrix::setIteratorCol);
         return rMatrix;
     }
-    @Override public IMatrix operate(IMatrix aRHS, IDoubleOperator2 aOpt) {
+    @Override public IMatrix operate(IMatrix aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayMatrix tThis = thisMatrix_();
         DoubleArrayMatrix rMatrix = newMatrix_();
         double[] tDataL = rMatrix.getIfHasSameOrderData(tThis);
@@ -158,7 +159,7 @@ public abstract class DoubleArrayMatrixOperation extends AbstractMatrixOperation
         else DATA.mapLMod2Dest(tThis::iteratorCol, aRHS, rMatrix::setIteratorCol);
         return rMatrix;
     }
-    @Override public IMatrix map(IDoubleOperator1 aOpt) {
+    @Override public IMatrix map(DoubleUnaryOperator aOpt) {
         DoubleArrayMatrix tThis = thisMatrix_();
         DoubleArrayMatrix rMatrix = newMatrix_();
         double[] tDataL = rMatrix.getIfHasSameOrderData(tThis);
@@ -215,7 +216,7 @@ public abstract class DoubleArrayMatrixOperation extends AbstractMatrixOperation
         if (tDataR != null) ARRAY.ebeLMod2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMod2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
-    @Override public void operate2this(IMatrix aRHS, IDoubleOperator2 aOpt) {
+    @Override public void operate2this(IMatrix aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayMatrix rThis = thisMatrix_();
         double[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
@@ -230,7 +231,7 @@ public abstract class DoubleArrayMatrixOperation extends AbstractMatrixOperation
     @Override public void ldiv2this     (double aRHS) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapLDiv2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void mod2this      (double aRHS) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapMod2This     (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void lmod2this     (double aRHS) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapLMod2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void map2this      (IDoubleOperator1 aOpt) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
+    @Override public void map2this      (DoubleUnaryOperator aOpt) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
     @Override public IMatrix negative() {
         DoubleArrayMatrix tThis = thisMatrix_();

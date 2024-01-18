@@ -1,21 +1,23 @@
 package jtool.math.vector;
 
+import groovy.lang.Closure;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.collection.ISlice;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.*;
-import jtool.code.iterator.*;
+import jtool.code.functional.IUnaryFullOperator;
+import jtool.code.iterator.IComplexDoubleIterator;
+import jtool.code.iterator.IComplexDoubleSetIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
-import groovy.lang.Closure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -200,13 +202,13 @@ public abstract class AbstractComplexVector implements IComplexVector {
     }
     
     @Override public final void assign(Supplier<? extends IComplexDouble> aSup) {operation().assign(aSup);}
-    @Override public final void assign(IDoubleSupplier aSup) {operation().assign(aSup);}
-    @Override public final void assignReal(IDoubleSupplier aRealSup) {real().assign(aRealSup);}
-    @Override public final void assignImag(IDoubleSupplier aImagSup) {imag().assign(aImagSup);}
-    @Override public final void forEach(IConsumer1<? super ComplexDouble> aCon) {operation().forEach(aCon);}
-    @Override public final void forEach(IDoubleConsumer2 aCon) {operation().forEach(aCon);}
-    @Override public final void forEachReal(IDoubleConsumer1 aCon) {real().forEach(aCon);}
-    @Override public final void forEachImag(IDoubleConsumer1 aCon) {imag().forEach(aCon);}
+    @Override public final void assign(DoubleSupplier aSup) {operation().assign(aSup);}
+    @Override public final void assignReal(DoubleSupplier aRealSup) {real().assign(aRealSup);}
+    @Override public final void assignImag(DoubleSupplier aImagSup) {imag().assign(aImagSup);}
+    @Override public final void forEach(Consumer<? super ComplexDouble> aCon) {operation().forEach(aCon);}
+    @Override public final void forEach(IDoubleBinaryConsumer aCon) {operation().forEach(aCon);}
+    @Override public final void forEachReal(DoubleConsumer aCon) {real().forEach(aCon);}
+    @Override public final void forEachImag(DoubleConsumer aCon) {imag().forEach(aCon);}
     /** Groovy stuff */
     @Override public void fill(Closure<?> aGroovyTask) {operation().fill(aGroovyTask);}
     @Override public void fillReal(Closure<? extends Number> aGroovyTask) {real().fill(aGroovyTask);}
@@ -288,22 +290,22 @@ public abstract class AbstractComplexVector implements IComplexVector {
         tImag += aImag;
         setImag_(aIdx, tImag);
     }
-    @Override public void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {set_(aIdx, aOpt.cal(get_(aIdx)));}
-    @Override public void updateReal_(int aIdx, IDoubleOperator1 aRealOpt) {setReal_(aIdx, aRealOpt.cal(getReal_(aIdx)));}
-    @Override public void updateImag_(int aIdx, IDoubleOperator1 aImagOpt) {setImag_(aIdx, aImagOpt.cal(getImag_(aIdx)));}
-    @Override public ComplexDouble getAndUpdate_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public void update_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {set_(aIdx, aOpt.apply(get_(aIdx)));}
+    @Override public void updateReal_(int aIdx, DoubleUnaryOperator aRealOpt) {setReal_(aIdx, aRealOpt.applyAsDouble(getReal_(aIdx)));}
+    @Override public void updateImag_(int aIdx, DoubleUnaryOperator aImagOpt) {setImag_(aIdx, aImagOpt.applyAsDouble(getImag_(aIdx)));}
+    @Override public ComplexDouble getAndUpdate_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         ComplexDouble oValue = get_(aIdx);
-        set_(aIdx, aOpt.cal(new ComplexDouble(oValue))); // 用来防止意外的修改
+        set_(aIdx, aOpt.apply(new ComplexDouble(oValue))); // 用来防止意外的修改
         return oValue;
     }
-    @Override public double getAndUpdateReal_(int aIdx, IDoubleOperator1 aRealOpt) {
+    @Override public double getAndUpdateReal_(int aIdx, DoubleUnaryOperator aRealOpt) {
         double tReal = getReal_(aIdx);
-        setReal_(aIdx, aRealOpt.cal(tReal));
+        setReal_(aIdx, aRealOpt.applyAsDouble(tReal));
         return tReal;
     }
-    @Override public double getAndUpdateImag_(int aIdx, IDoubleOperator1 aImagOpt) {
+    @Override public double getAndUpdateImag_(int aIdx, DoubleUnaryOperator aImagOpt) {
         double tImag = getImag_(aIdx);
-        setImag_(aIdx, aImagOpt.cal(tImag));
+        setImag_(aIdx, aImagOpt.applyAsDouble(tImag));
         return tImag;
     }
     
@@ -323,27 +325,27 @@ public abstract class AbstractComplexVector implements IComplexVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         addImag_(aIdx, aImag);
     }
-    @Override public void update(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public void update(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
     }
-    @Override public void updateReal(int aIdx, IDoubleOperator1 aRealOpt) {
+    @Override public void updateReal(int aIdx, DoubleUnaryOperator aRealOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         updateReal_(aIdx, aRealOpt);
     }
-    @Override public void updateImag(int aIdx, IDoubleOperator1 aImagOpt) {
+    @Override public void updateImag(int aIdx, DoubleUnaryOperator aImagOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         updateImag_(aIdx, aImagOpt);
     }
-    @Override public ComplexDouble getAndUpdate(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public ComplexDouble getAndUpdate(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
     }
-    @Override public double getAndUpdateReal(int aIdx, IDoubleOperator1 aRealOpt) {
+    @Override public double getAndUpdateReal(int aIdx, DoubleUnaryOperator aRealOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdateReal_(aIdx, aRealOpt);
     }
-    @Override public double getAndUpdateImag(int aIdx, IDoubleOperator1 aImagOpt) {
+    @Override public double getAndUpdateImag(int aIdx, DoubleUnaryOperator aImagOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdateImag_(aIdx, aImagOpt);
     }

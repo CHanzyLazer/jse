@@ -5,7 +5,7 @@ import jtool.code.functional.*;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static jtool.code.UT.Code.toComplexDouble;
 
@@ -102,7 +102,7 @@ public class DATA {
     public static void ebeCompare2Dest          (IHasDoubleIterator aLHS, IHasDoubleIterator aRHS, IHasBooleanSetOnlyIterator rDest, final IComparator aOpt) {
         final IDoubleIterator li = aLHS.iterator();
         final IDoubleIterator ri = aRHS.iterator();
-        rDest.assign(() -> aOpt.cal(li.next(), ri.next()));
+        rDest.assign(() -> aOpt.apply(li.next(), ri.next()));
     }
     
     public static void mapEqual2Dest            (IHasDoubleIterator aLHS, final double aRHS, IHasBooleanSetOnlyIterator rDest) {mapCheck2Dest(aLHS, rDest, lhs -> (lhs == aRHS));}
@@ -112,7 +112,7 @@ public class DATA {
     public static void mapLessOrEqual2Dest      (IHasDoubleIterator aLHS, final double aRHS, IHasBooleanSetOnlyIterator rDest) {mapCheck2Dest(aLHS, rDest, lhs -> (lhs <= aRHS));}
     public static void mapCheck2Dest            (IHasDoubleIterator aData, IHasBooleanSetOnlyIterator rDest, final IChecker aOpt) {
         final IDoubleIterator it = aData.iterator();
-        rDest.assign(() -> aOpt.cal(it.next()));
+        rDest.assign(() -> aOpt.apply(it.next()));
     }
     
     
@@ -721,75 +721,75 @@ public class DATA {
     }
     
     /** do stuff */
-    public static void ebeDo2Dest(IHasComplexDoubleIterator aLHS, IHasDoubleIterator aRHS, IHasComplexDoubleSetOnlyIterator rDest, final IOperator2<? extends IComplexDouble, ? super ComplexDouble, Double> aOpt) {
+    public static void ebeDo2Dest(IHasComplexDoubleIterator aLHS, IHasDoubleIterator aRHS, IHasComplexDoubleSetOnlyIterator rDest, final IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, Double> aOpt) {
         final IComplexDoubleIterator li = aLHS.iterator();
         final IDoubleIterator ri = aRHS.iterator();
-        rDest.assign(() -> aOpt.cal(li.next(), ri.next()));
+        rDest.assign(() -> aOpt.apply(li.next(), ri.next()));
     }
-    public static void ebeDo2Dest(IHasComplexDoubleIterator aLHS, IHasComplexDoubleIterator aRHS, IHasComplexDoubleSetOnlyIterator rDest, final IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void ebeDo2Dest(IHasComplexDoubleIterator aLHS, IHasComplexDoubleIterator aRHS, IHasComplexDoubleSetOnlyIterator rDest, final IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleIterator li = aLHS.iterator();
         final IComplexDoubleIterator ri = aRHS.iterator();
-        rDest.assign(() -> aOpt.cal(li.next(), ri.next()));
+        rDest.assign(() -> aOpt.apply(li.next(), ri.next()));
     }
-    public static void mapDo2Dest(IHasDoubleIterator aLHS, IHasComplexDoubleSetOnlyIterator rDest, final IOperator1<? extends IComplexDouble, Double> aOpt) {
+    public static void mapDo2Dest(IHasDoubleIterator aLHS, IHasComplexDoubleSetOnlyIterator rDest, final IUnaryFullOperator<? extends IComplexDouble, Double> aOpt) {
         final IDoubleIterator it = aLHS.iterator();
-        rDest.assign(() -> aOpt.cal(it.next()));
+        rDest.assign(() -> aOpt.apply(it.next()));
     }
-    public static void mapDo2Dest(IHasComplexDoubleIterator aLHS, IHasComplexDoubleSetOnlyIterator rDest, final IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void mapDo2Dest(IHasComplexDoubleIterator aLHS, IHasComplexDoubleSetOnlyIterator rDest, final IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleIterator it = aLHS.iterator();
-        rDest.assign(() -> aOpt.cal(it.next()));
+        rDest.assign(() -> aOpt.apply(it.next()));
     }
-    public static void ebeDo2This(IHasComplexDoubleSetIterator rThis, IHasDoubleIterator aRHS, IOperator2<? extends IComplexDouble, ? super ComplexDouble, Double> aOpt) {
+    public static void ebeDo2This(IHasComplexDoubleSetIterator rThis, IHasDoubleIterator aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, Double> aOpt) {
         final IDoubleIterator ri = aRHS.iterator();
         final IComplexDoubleSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next(), ri.next()));
+        while (si.hasNext()) si.set(aOpt.apply(si.next(), ri.next()));
     }
-    public static void ebeDo2This(IHasComplexDoubleSetIterator rThis, IHasComplexDoubleIterator aRHS, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void ebeDo2This(IHasComplexDoubleSetIterator rThis, IHasComplexDoubleIterator aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleIterator ri = aRHS.iterator();
         final IComplexDoubleSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next(), ri.next()));
+        while (si.hasNext()) si.set(aOpt.apply(si.next(), ri.next()));
     }
-    public static void mapDo2This(IHasComplexDoubleSetIterator rThis, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void mapDo2This(IHasComplexDoubleSetIterator rThis, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next()));
+        while (si.hasNext()) si.set(aOpt.apply(si.next()));
     }
     
-    public static void ebeDo2Dest(IHasDoubleIterator aLHS, IHasDoubleIterator aRHS, IHasDoubleSetOnlyIterator rDest, final IDoubleOperator2 aOpt) {
+    public static void ebeDo2Dest(IHasDoubleIterator aLHS, IHasDoubleIterator aRHS, IHasDoubleSetOnlyIterator rDest, final DoubleBinaryOperator aOpt) {
         final IDoubleIterator li = aLHS.iterator();
         final IDoubleIterator ri = aRHS.iterator();
-        rDest.assign(() -> aOpt.cal(li.next(), ri.next()));
+        rDest.assign(() -> aOpt.applyAsDouble(li.next(), ri.next()));
     }
-    public static void mapDo2Dest(IHasDoubleIterator aLHS, IHasDoubleSetOnlyIterator rDest, final IDoubleOperator1 aOpt) {
+    public static void mapDo2Dest(IHasDoubleIterator aLHS, IHasDoubleSetOnlyIterator rDest, final DoubleUnaryOperator aOpt) {
         final IDoubleIterator it = aLHS.iterator();
-        rDest.assign(() -> aOpt.cal(it.next()));
+        rDest.assign(() -> aOpt.applyAsDouble(it.next()));
     }
-    public static void ebeDo2This(IHasDoubleSetIterator rThis, IHasDoubleIterator aRHS, IDoubleOperator2 aOpt) {
+    public static void ebeDo2This(IHasDoubleSetIterator rThis, IHasDoubleIterator aRHS, DoubleBinaryOperator aOpt) {
         final IDoubleIterator ri = aRHS.iterator();
         final IDoubleSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next(), ri.next()));
+        while (si.hasNext()) si.set(aOpt.applyAsDouble(si.next(), ri.next()));
     }
-    public static void mapDo2This(IHasDoubleSetIterator rThis, IDoubleOperator1 aOpt) {
+    public static void mapDo2This(IHasDoubleSetIterator rThis, DoubleUnaryOperator aOpt) {
         final IDoubleSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next()));
+        while (si.hasNext()) si.set(aOpt.applyAsDouble(si.next()));
     }
     
-    public static void ebeDo2Dest(IHasBooleanIterator aLHS, IHasBooleanIterator aRHS, IHasBooleanSetOnlyIterator rDest, final IBooleanOperator2 aOpt) {
+    public static void ebeDo2Dest(IHasBooleanIterator aLHS, IHasBooleanIterator aRHS, IHasBooleanSetOnlyIterator rDest, final IBooleanBinaryOperator aOpt) {
         final IBooleanIterator li = aLHS.iterator();
         final IBooleanIterator ri = aRHS.iterator();
-        rDest.assign(() -> aOpt.cal(li.next(), ri.next()));
+        rDest.assign(() -> aOpt.applyAsBoolean(li.next(), ri.next()));
     }
-    public static void mapDo2Dest(IHasBooleanIterator aLHS, IHasBooleanSetOnlyIterator rDest, final IBooleanOperator1 aOpt) {
+    public static void mapDo2Dest(IHasBooleanIterator aLHS, IHasBooleanSetOnlyIterator rDest, final IBooleanUnaryOperator aOpt) {
         final IBooleanIterator it = aLHS.iterator();
-        rDest.assign(() -> aOpt.cal(it.next()));
+        rDest.assign(() -> aOpt.applyAsBoolean(it.next()));
     }
-    public static void ebeDo2This(IHasBooleanSetIterator rThis, IHasBooleanIterator aRHS, IBooleanOperator2 aOpt) {
+    public static void ebeDo2This(IHasBooleanSetIterator rThis, IHasBooleanIterator aRHS, IBooleanBinaryOperator aOpt) {
         final IBooleanIterator ri = aRHS.iterator();
         final IBooleanSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next(), ri.next()));
+        while (si.hasNext()) si.set(aOpt.applyAsBoolean(si.next(), ri.next()));
     }
-    public static void mapDo2This(IHasBooleanSetIterator rThis, IBooleanOperator1 aOpt) {
+    public static void mapDo2This(IHasBooleanSetIterator rThis, IBooleanUnaryOperator aOpt) {
         final IBooleanSetIterator si = rThis.setIterator();
-        while (si.hasNext()) si.set(aOpt.cal(si.next()));
+        while (si.hasNext()) si.set(aOpt.applyAsBoolean(si.next()));
     }
     
     
@@ -824,19 +824,19 @@ public class DATA {
         final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.get());
     }
-    public static void assign2This(IHasComplexDoubleSetOnlyIterator rThis, IDoubleSupplier aSup) {
+    public static void assign2This(IHasComplexDoubleSetOnlyIterator rThis, DoubleSupplier aSup) {
         final IComplexDoubleSetOnlyIterator si = rThis.setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsDouble());
     }
-    public static void forEachOfThis(IHasComplexDoubleIterator aThis, IConsumer1<? super ComplexDouble> aCon) {
+    public static void forEachOfThis(IHasComplexDoubleIterator aThis, Consumer<? super ComplexDouble> aCon) {
         final IComplexDoubleIterator it = aThis.iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
-    public static void forEachOfThis(IHasComplexDoubleIterator aThis, IDoubleConsumer2 aCon) {
+    public static void forEachOfThis(IHasComplexDoubleIterator aThis, IDoubleBinaryConsumer aCon) {
         final IComplexDoubleIterator it = aThis.iterator();
         while (it.hasNext()) {
             it.nextOnly();
-            aCon.run(it.real(), it.imag());
+            aCon.accept(it.real(), it.imag());
         }
     }
     
@@ -848,13 +848,13 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
-    public static void assign2This(IHasDoubleSetOnlyIterator rThis, IDoubleSupplier aSup) {
+    public static void assign2This(IHasDoubleSetOnlyIterator rThis, DoubleSupplier aSup) {
         final IDoubleSetOnlyIterator si = rThis.setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsDouble());
     }
-    public static void forEachOfThis(IHasDoubleIterator aThis, IDoubleConsumer1 aCon) {
+    public static void forEachOfThis(IHasDoubleIterator aThis, DoubleConsumer aCon) {
         final IDoubleIterator it = aThis.iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
     
     public static void mapFill2This(IHasBooleanSetOnlyIterator rThis, final boolean aRHS) {
@@ -867,11 +867,11 @@ public class DATA {
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
     public static void assign2This(IHasBooleanSetOnlyIterator rThis, IBooleanSupplier aSup) {
         final IBooleanSetOnlyIterator si = rThis.setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsBoolean());
     }
-    public static void forEachOfThis(IHasBooleanIterator aThis, IBooleanConsumer1 aCon) {
+    public static void forEachOfThis(IHasBooleanIterator aThis, IBooleanConsumer aCon) {
         final IBooleanIterator it = aThis.iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
     
     public static void mapFill2This(IHasIntegerSetOnlyIterator rThis, final int aRHS) {
@@ -882,13 +882,13 @@ public class DATA {
         rThis.assign(it::next);
     }
     /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
-    public static void assign2This(IHasIntegerSetOnlyIterator rThis, IIntegerSupplier aSup) {
+    public static void assign2This(IHasIntegerSetOnlyIterator rThis, IntSupplier aSup) {
         final IIntegerSetOnlyIterator si = rThis.setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsInt());
     }
-    public static void forEachOfThis(IHasIntegerIterator aThis, IIntegerConsumer1 aCon) {
+    public static void forEachOfThis(IHasIntegerIterator aThis, IntConsumer aCon) {
         final IIntegerIterator it = aThis.iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
     
     
@@ -963,16 +963,16 @@ public class DATA {
         }
         return rMin;
     }
-    public static double statOfThis(IHasDoubleIterator aThis, IDoubleOperator2 aOpt) {
+    public static double statOfThis(IHasDoubleIterator aThis, DoubleBinaryOperator aOpt) {
         final IDoubleIterator it = aThis.iterator();
         double rStat = Double.NaN;
-        while (it.hasNext()) rStat = aOpt.cal(rStat, it.next());
+        while (it.hasNext()) rStat = aOpt.applyAsDouble(rStat, it.next());
         return rStat;
     }
-    public static ComplexDouble statOfThis(IHasComplexDoubleIterator aThis, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static ComplexDouble statOfThis(IHasComplexDoubleIterator aThis, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleIterator it = aThis.iterator();
         ComplexDouble rStat = null;
-        while (it.hasNext()) rStat = toComplexDouble(aOpt.cal(rStat, it.next()));
+        while (it.hasNext()) rStat = toComplexDouble(aOpt.apply(rStat, it.next()));
         return rStat;
     }
     
@@ -1063,21 +1063,21 @@ public class DATA {
             si.nextAndSet(rMin);
         }
     }
-    public static void cumstat2Dest(IHasDoubleIterator aThis, IHasDoubleSetOnlyIterator rDest, IDoubleOperator2 aOpt) {
+    public static void cumstat2Dest(IHasDoubleIterator aThis, IHasDoubleSetOnlyIterator rDest, DoubleBinaryOperator aOpt) {
         final IDoubleSetOnlyIterator si = rDest.setIterator();
         final IDoubleIterator it = aThis.iterator();
         double rStat = Double.NaN;
         while (it.hasNext()) {
-            rStat = aOpt.cal(rStat, it.next());
+            rStat = aOpt.applyAsDouble(rStat, it.next());
             si.nextAndSet(rStat);
         }
     }
-    public static void cumstat2Dest(IHasComplexDoubleIterator aThis, IHasComplexDoubleSetOnlyIterator rDest, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void cumstat2Dest(IHasComplexDoubleIterator aThis, IHasComplexDoubleSetOnlyIterator rDest, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleSetOnlyIterator si = rDest.setIterator();
         final IComplexDoubleIterator it = aThis.iterator();
         ComplexDouble rStat = null;
         while (it.hasNext()) {
-            rStat = toComplexDouble(aOpt.cal(rStat, it.next()));
+            rStat = toComplexDouble(aOpt.apply(rStat, it.next()));
             si.nextOnly();
             si.setReal(rStat.mReal);
             si.setImag(rStat.mImag);

@@ -3,7 +3,7 @@ package jtool.code.collection;
 import jtool.code.functional.IDoubleFilter;
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.code.iterator.IHasIntegerIterator;
 import jtool.math.MathEX;
@@ -108,19 +108,19 @@ public class NewCollections {
      * map {@code Iterable<T> to List<R>}
      * @author liqa
      */
-    public static <R, T> ArrayList<R> map(final Iterable<T> aIterable, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> ArrayList<R> map(final Iterable<T> aIterable, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         ArrayList<R> rOut = new ArrayList<>();
-        for (T tValue : aIterable) rOut.add(aOpt.cal(tValue));
+        for (T tValue : aIterable) rOut.add(aOpt.apply(tValue));
         return rOut;
     }
-    public static <R, T> ArrayList<R> map(final Collection<T> aCollection, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> ArrayList<R> map(final Collection<T> aCollection, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         ArrayList<R> rOut = new ArrayList<>(aCollection.size());
-        for (T tValue : aCollection) rOut.add(aOpt.cal(tValue));
+        for (T tValue : aCollection) rOut.add(aOpt.apply(tValue));
         return rOut;
     }
-    public static <R, T> ArrayList<R> map(final T[] aArray, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> ArrayList<R> map(final T[] aArray, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         ArrayList<R> rOut = new ArrayList<>(aArray.length);
-        for (T tValue : aArray) rOut.add(aOpt.cal(tValue));
+        for (T tValue : aArray) rOut.add(aOpt.apply(tValue));
         return rOut;
     }
     

@@ -1,21 +1,21 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
 import jtool.code.iterator.IIntegerSetOnlyIterator;
 import jtool.math.operation.DATA;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 import static jtool.code.CS.RANDOM;
 
 public abstract class AbstractIntegerVectorOperation implements IIntegerVectorOperation {
     @Override public void fill              (int                  aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
     @Override public void fill              (IIntegerVector       aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
-    @Override public void assign            (IIntegerSupplier     aSup) {DATA.assign2This  (thisVector_(), aSup);}
-    @Override public void forEach           (IIntegerConsumer1    aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
+    @Override public void assign            (IntSupplier          aSup) {DATA.assign2This  (thisVector_(), aSup);}
+    @Override public void forEach           (IntConsumer          aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill              (IIntegerVectorGetter aRHS) {
         final IIntegerVector tThis = thisVector_();
         final IIntegerSetOnlyIterator si = tThis.setIterator();
@@ -33,11 +33,11 @@ public abstract class AbstractIntegerVectorOperation implements IIntegerVectorOp
     }
     
     @Override public final void shuffle() {shuffle(RANDOM::nextInt);}
-    @Override public void shuffle(IIntegerOperator1 aRng) {
+    @Override public void shuffle(IntUnaryOperator aRng) {
         final IIntegerVector tThis = thisVector_();
         final int tSize = tThis.size();
         for (int i = tSize; i > 1; --i) {
-            swap(tThis, i-1, aRng.cal(i));
+            swap(tThis, i-1, aRng.applyAsInt(i));
         }
     }
     

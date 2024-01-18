@@ -1,7 +1,7 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IOperator1;
-import jtool.code.functional.IOperator2;
+import jtool.code.functional.IUnaryFullOperator;
+import jtool.code.functional.IBinaryFullOperator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 import jtool.math.IDataShell;
@@ -70,7 +70,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
         else DATA.ebeDiv2Dest(aRHS, tThis, rVector);
         return rVector;
     }
-    @Override public IComplexVector operate(IComplexVector aRHS, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public IComplexVector operate(IComplexVector aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector tThis = thisVector_();
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -176,7 +176,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
         else DATA.mapLDiv2Dest(tThis, aRHS, rVector);
         return rVector;
     }
-    @Override public IComplexVector map(IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public IComplexVector map(IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector tThis = thisVector_();
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -221,7 +221,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
         if (tDataR != null) ARRAY.ebeLDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLDiv2This(rThis, aRHS);
     }
-    @Override public void operate2this(IComplexVector aRHS, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public void operate2this(IComplexVector aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector rThis = thisVector_();
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
@@ -240,7 +240,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     @Override public void multiply2this (double         aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapMultiply2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void div2this      (double         aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapDiv2This     (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void ldiv2this     (double         aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapLDiv2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void map2this      (IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
+    @Override public void map2this(IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
     @Override public IComplexVector negative() {
         BiDoubleArrayVector tThis = thisVector_();
@@ -264,7 +264,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     @Override public ComplexDouble sum () {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.sumOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public ComplexDouble mean() {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.meanOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public ComplexDouble prod() {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.prodOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
-    @Override public ComplexDouble stat(IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.statOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize(), aOpt);}
+    @Override public ComplexDouble stat(IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {BiDoubleArrayVector tThis = thisVector_(); return ARRAY.statOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize(), aOpt);}
     
     
     /** 向量的一些额外的运算 */

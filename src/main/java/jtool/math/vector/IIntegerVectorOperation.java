@@ -1,10 +1,9 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
-
 import java.util.Comparator;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 /**
  * 任意的整数向量的运算
@@ -15,13 +14,13 @@ public interface IIntegerVectorOperation {
     void fill               (int aRHS);
     void fill               (IIntegerVector aRHS);
     void fill               (IIntegerVectorGetter aRHS);
-    void assign             (IIntegerSupplier aSup);
+    void assign             (IntSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */
-    void forEach            (IIntegerConsumer1 aCon);
+    void forEach            (IntConsumer aCon);
     
     /** IntegerVector 特有的操作 */
     void sort();
     void sort(Comparator<? super Integer> aComp);
     void shuffle();
-    void shuffle(IIntegerOperator1 aRng);
+    void shuffle(IntUnaryOperator aRng);
 }

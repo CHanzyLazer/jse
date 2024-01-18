@@ -1,9 +1,6 @@
 package jtool.math.vector;
 
 import jtool.code.collection.IntegerList;
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
 import jtool.code.iterator.IIntegerIterator;
 import jtool.code.iterator.IIntegerSetIterator;
 import jtool.math.MathEX;
@@ -11,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -80,11 +80,11 @@ public final class IntegerVector extends IntegerArrayVector {
             @Override public void fill(IIntegerVectorGetter aRHS) {
                 for (int i = 0; i < mSize; ++i) mData[i] = aRHS.get(i);
             }
-            @Override public void assign(IIntegerSupplier aSup) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aSup.get();
+            @Override public void assign(IntSupplier aSup) {
+                for (int i = 0; i < mSize; ++i) mData[i] = aSup.getAsInt();
             }
-            @Override public void forEach(IIntegerConsumer1 aCon) {
-                for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+            @Override public void forEach(IntConsumer aCon) {
+                for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
             }
         };
     }
@@ -101,12 +101,12 @@ public final class IntegerVector extends IntegerArrayVector {
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, IIntegerOperator1 aOpt) {
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+    @Override public void update_(int aIdx, IntUnaryOperator aOpt) {
+        mData[aIdx] = aOpt.applyAsInt(mData[aIdx]);
     }
-    @Override public int getAndUpdate_(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public int getAndUpdate_(int aIdx, IntUnaryOperator aOpt) {
         int tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsInt(tValue);
         return tValue;
     }
     

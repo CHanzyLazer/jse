@@ -1,11 +1,12 @@
 package jtool.math.function;
 
 
-import jtool.code.functional.*;
 import jtool.math.IDataShell;
 import jtool.math.MathEX;
 import jtool.math.operation.ARRAY;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.function.*;
 
 /**
  * 针对包含 double[] 的函数的运算，这里更进一步是针对 {@link DoubleArrayFunc1} 的运算。
@@ -134,7 +135,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
         }
         return rFunc1;
     }
-    @Override public IFunc1 operate(IFunc1 aRHS, IDoubleOperator2 aOpt) {
+    @Override public IFunc1 operate(IFunc1 aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayFunc1 tThis = thisFunc1_();
         DoubleArrayFunc1 rFunc1 = newFunc1_();
         double[] tDataL = rFunc1.getIfHasSameOrderData(tThis);
@@ -145,7 +146,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
         } else {
             // 其余情况不考虑 double[] 的结构，这里不对零边界的情况做优化
             final int tNx = rFunc1.Nx();
-            for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.cal(tThis.get_(i), aRHS.subs(rFunc1.getX(i))));
+            for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), aRHS.subs(rFunc1.getX(i))));
         }
         return rFunc1;
     }
@@ -262,7 +263,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
         }
         return rFunc1;
     }
-    @Override public IFunc1 map(IDoubleOperator1 aOpt) {
+    @Override public IFunc1 map(DoubleUnaryOperator aOpt) {
         DoubleArrayFunc1 tThis = thisFunc1_();
         DoubleArrayFunc1 rFunc1 = newFunc1_();
         double[] tDataL = rFunc1.getIfHasSameOrderData(tThis);
@@ -272,7 +273,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
         } else {
             // 其余情况不考虑 double[] 的结构，这里不对零边界的情况做优化
             final int tNx = rFunc1.Nx();
-            for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.cal(tThis.get_(i)));
+            for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i)));
         }
         return rFunc1;
     }
@@ -391,7 +392,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
             for (int i = 0; i < tNx; ++i) rThis.set_(i, aRHS.subs(rThis.getX(i)) % rThis.get_(i));
         }
     }
-    @Override public void operate2this(IFunc1 aRHS, IDoubleOperator2 aOpt) {
+    @Override public void operate2this(IFunc1 aRHS, DoubleBinaryOperator aOpt) {
         DoubleArrayFunc1 rThis = thisFunc1_();
         double[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) {
@@ -400,7 +401,7 @@ public abstract class DoubleArrayFunc1Operation extends AbstractFunc1Operation {
         } else {
             // 其余情况不考虑 double[] 的结构，这里不对零边界的情况做优化
             final int tNx = rThis.Nx();
-            for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.cal(rThis.get_(i), aRHS.subs(rThis.getX(i))));
+            for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), aRHS.subs(rThis.getX(i))));
         }
     }
     

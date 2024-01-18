@@ -3,15 +3,13 @@ package jtool.math.vector;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.ISlice;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.*;
-import jtool.code.functional.IDoubleOperator1;
 import groovy.lang.Closure;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -34,8 +32,8 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     void fill(IVectorGetter aVectorGetter);
     void fill(double[] aData);
     void fill(Iterable<? extends Number> aList);
-    void assign(IDoubleSupplier aSup);
-    void forEach(IDoubleConsumer1 aCon);
+    void assign(DoubleSupplier aSup);
+    void forEach(DoubleConsumer aCon);
     /** Groovy stuff */
     default void fill(final Closure<? extends Number> aGroovyTask) {fill(i -> aGroovyTask.call(i).doubleValue());}
     default void assign(final Closure<? extends Number> aGroovyTask) {assign(() -> aGroovyTask.call().doubleValue());}
@@ -68,8 +66,8 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     double getAndDecrement_(int aIdx);
     void add_(int aIdx, double aDelta);
     double getAndAdd_(int aIdx, double aDelta);
-    void update_(int aIdx, IDoubleOperator1 aOpt);
-    double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt);
+    void update_(int aIdx, DoubleUnaryOperator aOpt);
+    double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt);
     
     void increment(int aIdx);
     double getAndIncrement(int aIdx);
@@ -77,8 +75,8 @@ public interface IVector extends IHasDoubleIterator, IHasDoubleSetIterator, IVec
     double getAndDecrement(int aIdx);
     void add(int aIdx, double aDelta);
     double getAndAdd(int aIdx, double aDelta);
-    void update(int aIdx, IDoubleOperator1 aOpt);
-    double getAndUpdate(int aIdx, IDoubleOperator1 aOpt);
+    void update(int aIdx, DoubleUnaryOperator aOpt);
+    double getAndUpdate(int aIdx, DoubleUnaryOperator aOpt);
     
     
     IVector copy();

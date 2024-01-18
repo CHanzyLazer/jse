@@ -3,7 +3,6 @@ package jtool.atom;
 import jtool.code.CS;
 import jtool.code.functional.IDoubleFilter;
 import jtool.code.functional.IFilter;
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.MathEX;
 import jtool.math.function.Func3;
 import jtool.parallel.AbstractThreadPool;
@@ -12,6 +11,7 @@ import jtool.parallel.ParforThreadPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.DoubleUnaryOperator;
 
 import static jtool.code.CS.RANDOM;
 import static jtool.code.UT.Code.newBox;
@@ -108,7 +108,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
      * @param aToProb 通用的转换成概率的函数，输出 0-1 的浮点数，不指定则直接使用 aFunc3
      * @return 过滤后的 AtomData
      */
-    public IAtomData filterProbFunc3AtomData(IAtomData aAtomData, Func3 aFunc3, final IDoubleOperator1 aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.cal(u)));}
+    public IAtomData filterProbFunc3AtomData(IAtomData aAtomData, Func3 aFunc3, final DoubleUnaryOperator aToProb) {return filterFunc3AtomData(aAtomData, aFunc3, u -> (mRNG.nextDouble() < aToProb.applyAsDouble(u)));}
     public IAtomData filterProbFunc3AtomData(IAtomData aAtomData, Func3 aFunc3) {return filterProbFunc3AtomData(aAtomData, aFunc3, u -> u);}
     /**
      * 对于 aFunc3 = u, u = c1 - c0, c1 + c0 = 1，选取 c1 的特殊情况
@@ -134,7 +134,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
      * @param aSteps 迭代的步数
      * @return 返回最终得到的 u
      */
-    public Func3 porousCahnHilliard(IDoubleOperator1 aDfu, double aTheta, final Func3 aInitU, double aDt, int aSteps) {
+    public Func3 porousCahnHilliard(DoubleUnaryOperator aDfu, double aTheta, final Func3 aInitU, double aDt, int aSteps) {
         if (mDead) throw new RuntimeException("This Generator is dead");
         
         final double tTheta2 = aTheta*aTheta;
@@ -148,7 +148,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
             Func3 tFunc31 = aInitU.shell().setData(uu);
             Func3 tFunc32 = aInitU.shell().setData(tArrayTemp1);
             Func.parlaplacian2Dest(pool(), tFunc31, tFunc32); // 计算 uu 的 laplacian，存储到 tFunc32 中
-            Vec.parebeDo2Dest(pool(), tBlockSize, tFunc32.data(), uu, (lapU, u) -> (aDfu.cal(u) - tTheta2*lapU)); // 计算 df/du - θ^2Δu，结果存储到 tFunc32
+            Vec.parebeDo2Dest(pool(), tBlockSize, tFunc32.data(), uu, (lapU, u) -> (aDfu.applyAsDouble(u) - tTheta2*lapU)); // 计算 df/du - θ^2Δu，结果存储到 tFunc32
             tFunc31.setData(tArrayTemp2);
             return Func.parlaplacian2Dest(pool(), tFunc32, tFunc31).data(); // 最后结果再做一次 laplacian，存储到 tArrayTemp2（tFunc31） 并返回
         }, aInitU.data(), aDt, aSteps));

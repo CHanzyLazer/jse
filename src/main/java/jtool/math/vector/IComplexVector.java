@@ -1,20 +1,24 @@
 package jtool.math.vector;
 
+import groovy.lang.Closure;
 import jtool.atom.IAtom;
 import jtool.atom.IXYZ;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.ISlice;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.*;
-import jtool.code.iterator.*;
+import jtool.code.functional.IUnaryFullOperator;
+import jtool.code.iterator.IComplexDoubleIterator;
+import jtool.code.iterator.IComplexDoubleSetIterator;
+import jtool.code.iterator.IHasComplexDoubleIterator;
+import jtool.code.iterator.IHasComplexDoubleSetIterator;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
-import groovy.lang.Closure;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -59,13 +63,13 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     void fillReal(Iterable<? extends Number> aRealList);
     void fillImag(Iterable<? extends Number> aImagList);
     void assign(Supplier<? extends IComplexDouble> aSup);
-    void assign(IDoubleSupplier aSup);
-    void assignReal(IDoubleSupplier aRealSup);
-    void assignImag(IDoubleSupplier aImagSup);
-    void forEach(IConsumer1<? super ComplexDouble> aCon);
-    void forEach(IDoubleConsumer2 aCon);
-    void forEachReal(IDoubleConsumer1 aCon);
-    void forEachImag(IDoubleConsumer1 aCon);
+    void assign(DoubleSupplier aSup);
+    void assignReal(DoubleSupplier aRealSup);
+    void assignImag(DoubleSupplier aImagSup);
+    void forEach(Consumer<? super ComplexDouble> aCon);
+    void forEach(IDoubleBinaryConsumer aCon);
+    void forEachReal(DoubleConsumer aCon);
+    void forEachImag(DoubleConsumer aCon);
     /** Groovy stuff */
     void fill(Closure<?> aGroovyTask);
     void fillReal(Closure<? extends Number> aGroovyTask);
@@ -119,23 +123,23 @@ public interface IComplexVector extends IHasComplexDoubleIterator, IHasComplexDo
     void add_(int aIdx, ComplexDouble aDelta);
     void add_(int aIdx, double aDelta);
     void addImag_(int aIdx, double aImag);
-    void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    void updateReal_(int aIdx, IDoubleOperator1 aRealOpt);
-    void updateImag_(int aIdx, IDoubleOperator1 aImagOpt);
-    ComplexDouble getAndUpdate_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    double getAndUpdateReal_(int aIdx, IDoubleOperator1 aRealOpt);
-    double getAndUpdateImag_(int aIdx, IDoubleOperator1 aImagOpt);
+    void update_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
+    void updateReal_(int aIdx, DoubleUnaryOperator aRealOpt);
+    void updateImag_(int aIdx, DoubleUnaryOperator aImagOpt);
+    ComplexDouble getAndUpdate_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
+    double getAndUpdateReal_(int aIdx, DoubleUnaryOperator aRealOpt);
+    double getAndUpdateImag_(int aIdx, DoubleUnaryOperator aImagOpt);
     
     void add(int aIdx, IComplexDouble aDelta);
     void add(int aIdx, ComplexDouble aDelta);
     void add(int aIdx, double aDelta);
     void addImag(int aIdx, double aImag);
-    void update(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    void updateReal(int aIdx, IDoubleOperator1 aRealOpt);
-    void updateImag(int aIdx, IDoubleOperator1 aImagOpt);
-    ComplexDouble getAndUpdate(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    double getAndUpdateReal(int aIdx, IDoubleOperator1 aRealOpt);
-    double getAndUpdateImag(int aIdx, IDoubleOperator1 aImagOpt);
+    void update(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
+    void updateReal(int aIdx, DoubleUnaryOperator aRealOpt);
+    void updateImag(int aIdx, DoubleUnaryOperator aImagOpt);
+    ComplexDouble getAndUpdate(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
+    double getAndUpdateReal(int aIdx, DoubleUnaryOperator aRealOpt);
+    double getAndUpdateImag(int aIdx, DoubleUnaryOperator aImagOpt);
     
     
     IComplexVector copy();

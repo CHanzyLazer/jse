@@ -1,12 +1,8 @@
 package jtool.math.matrix;
 
-
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleOperator2;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
+import java.util.function.*;
 
 /**
  * 任意的矩阵的运算
@@ -22,7 +18,7 @@ public interface IMatrixOperation {
     IMatrix ldiv        (IMatrix aRHS);
     IMatrix mod         (IMatrix aRHS);
     IMatrix lmod        (IMatrix aRHS);
-    IMatrix operate     (IMatrix aRHS, IDoubleOperator2 aOpt);
+    IMatrix operate     (IMatrix aRHS, DoubleBinaryOperator aOpt);
     
     IMatrix plus        (double aRHS);
     IMatrix minus       (double aRHS);
@@ -32,7 +28,7 @@ public interface IMatrixOperation {
     IMatrix ldiv        (double aRHS);
     IMatrix mod         (double aRHS);
     IMatrix lmod        (double aRHS);
-    IMatrix map         (IDoubleOperator1 aOpt);
+    IMatrix map         (DoubleUnaryOperator aOpt);
     
     void plus2this      (IMatrix aRHS);
     void minus2this     (IMatrix aRHS);
@@ -42,7 +38,7 @@ public interface IMatrixOperation {
     void ldiv2this      (IMatrix aRHS);
     void mod2this       (IMatrix aRHS);
     void lmod2this      (IMatrix aRHS);
-    void operate2this   (IMatrix aRHS, IDoubleOperator2 aOpt);
+    void operate2this   (IMatrix aRHS, DoubleBinaryOperator aOpt);
     
     void plus2this      (double aRHS);
     void minus2this     (double aRHS);
@@ -52,7 +48,7 @@ public interface IMatrixOperation {
     void ldiv2this      (double aRHS);
     void mod2this       (double aRHS);
     void lmod2this      (double aRHS);
-    void map2this       (IDoubleOperator1 aOpt);
+    void map2this       (DoubleUnaryOperator aOpt);
     
     IMatrix negative();
     void negative2this();
@@ -61,10 +57,10 @@ public interface IMatrixOperation {
     void fill           (double aRHS);
     void fill           (IMatrix aRHS);
     void fill           (IMatrixGetter aRHS);
-    void assignCol      (IDoubleSupplier aSup);
-    void assignRow      (IDoubleSupplier aSup);
-    void forEachCol     (IDoubleConsumer1 aCon);
-    void forEachRow     (IDoubleConsumer1 aCon);
+    void assignCol      (DoubleSupplier aSup);
+    void assignRow      (DoubleSupplier aSup);
+    void forEachCol     (DoubleConsumer aCon);
+    void forEachRow     (DoubleConsumer aCon);
     
     double sum          ();
     double mean         ();

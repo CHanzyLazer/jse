@@ -2,7 +2,6 @@ package jtool.atom;
 
 import jtool.code.collection.IntegerList;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IIntegerConsumer1;
 import jtool.math.MathEX;
 import jtool.math.matrix.IMatrix;
 import jtool.parallel.IObjectPool;
@@ -14,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.IntConsumer;
 
 
 /**
@@ -140,7 +140,7 @@ public class NeighborListGetter implements IShutdownable {
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
         void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo);
         void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo);
-        void forEachCell(IIntegerConsumer1 aIdxDo);
+        void forEachCell(IntConsumer aIdxDo);
         void forEachMirrorCell(IXYZIdxDo aXYZIdxDo);
     }
     
@@ -245,7 +245,7 @@ public class NeighborListGetter implements IShutdownable {
             cell(i-1, j-1, k+1).forEach(aIdx, aHalf, aRegion, mAtomDataXYZ, aXYZIdxDo);
             cell(i-1, j-1, k-1).forEach(aIdx, aHalf, aRegion, mAtomDataXYZ, aXYZIdxDo);
         }
-        @Override public void forEachCell(IIntegerConsumer1 aIdxDo) {
+        @Override public void forEachCell(IntConsumer aIdxDo) {
             for (Cell tCell : mCells) tCell.forEach(aIdxDo);
         }
         @Override public void forEachMirrorCell(IXYZIdxDo aXYZIdxDo) {
@@ -399,8 +399,8 @@ public class NeighborListGetter implements IShutdownable {
                 aXYZIdxDo.run(tX-mBox.mX, tY-mBox.mY, tZ-mBox.mZ, idx);
             }
         }
-        @Override public void forEachCell(IIntegerConsumer1 aIdxDo) {
-            for (int idx = 0; idx < mAtomNum; ++idx) aIdxDo.run(idx);
+        @Override public void forEachCell(IntConsumer aIdxDo) {
+            for (int idx = 0; idx < mAtomNum; ++idx) aIdxDo.accept(idx);
         }
         @Override public void forEachMirrorCell(IXYZIdxDo aXYZIdxDo) {
             // 不是最优顺序，不过不重要
@@ -508,8 +508,8 @@ public class NeighborListGetter implements IShutdownable {
                 }
             }
         }
-        @Override public void forEachCell(IIntegerConsumer1 aIdxDo) {
-            for (int idx = 0; idx < mAtomNum; ++idx) aIdxDo.run(idx);
+        @Override public void forEachCell(IntConsumer aIdxDo) {
+            for (int idx = 0; idx < mAtomNum; ++idx) aIdxDo.accept(idx);
         }
         @Override public void forEachMirrorCell(IXYZIdxDo aXYZIdxDo) {
             // 不是最优顺序，不过不重要
@@ -876,7 +876,7 @@ public class NeighborListGetter implements IShutdownable {
      * @param aRCell 需要的 cell 半径
      * @param aIdxDo 由于不涉及镜像，这里直接返回原子的 index
      */
-    public void forEachCell(double aRCell, IIntegerConsumer1 aIdxDo) {
+    public void forEachCell(double aRCell, IntConsumer aIdxDo) {
         getProperLinkedCell(aRCell).forEachCell(aIdxDo);
     }
     

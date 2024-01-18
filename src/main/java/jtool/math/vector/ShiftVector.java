@@ -1,15 +1,13 @@
 package jtool.math.vector;
 
 import jtool.code.collection.DoubleList;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -71,13 +69,13 @@ public final class ShiftVector extends DoubleArrayVector {
                 final int tEnd = mSize + mShift;
                 for (int i = mShift, j = 0; i < tEnd; ++i, ++j) mData[i] = aRHS.get(j);
             }
-            @Override public void assign(IDoubleSupplier aSup) {
+            @Override public void assign(DoubleSupplier aSup) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.get();
+                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsDouble();
             }
-            @Override public void forEach(IDoubleConsumer1 aCon) {
+            @Override public void forEach(DoubleConsumer aCon) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.run(mData[i]);
+                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
             }
             @Override public ShiftReverseVector refReverse() {
                 return new ShiftReverseVector(mSize, mShift, mData);
@@ -98,14 +96,14 @@ public final class ShiftVector extends DoubleArrayVector {
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx += mShift;
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+        mData[aIdx] = aOpt.applyAsDouble(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx += mShift;
         double tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsDouble(tValue);
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}

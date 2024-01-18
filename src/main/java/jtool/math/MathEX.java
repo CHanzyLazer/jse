@@ -21,6 +21,7 @@ import net.jafama.FastMath;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
+import java.util.function.*;
 
 import static jtool.code.CS.ZL_MAT;
 
@@ -123,55 +124,55 @@ public class MathEX {
         }
         
         /// Vector operations
-        public static boolean[] mapDo(boolean[] aData, IBooleanOperator1 aOpt) {
+        public static boolean[] mapDo(boolean[] aData, IBooleanUnaryOperator aOpt) {
             boolean[] tOut = new boolean[aData.length];
-            for (int i = 0; i < aData.length; ++i) tOut[i] = aOpt.cal(aData[i]);
+            for (int i = 0; i < aData.length; ++i) tOut[i] = aOpt.applyAsBoolean(aData[i]);
             return tOut;
         }
-        public static boolean[] mapDo2Dest(boolean[] rDest, IBooleanOperator1 aOpt) {return mapDo2Dest(rDest, aOpt, 0, rDest.length);}
-        public static boolean[] mapDo2Dest(boolean[] rDest, IBooleanOperator1 aOpt, int aDestPos, int aLength) {
-            for (int i = aDestPos; i < aDestPos+aLength; ++i) rDest[i] = aOpt.cal(rDest[i]);
+        public static boolean[] mapDo2Dest(boolean[] rDest, IBooleanUnaryOperator aOpt) {return mapDo2Dest(rDest, aOpt, 0, rDest.length);}
+        public static boolean[] mapDo2Dest(boolean[] rDest, IBooleanUnaryOperator aOpt, int aDestPos, int aLength) {
+            for (int i = aDestPos; i < aDestPos+aLength; ++i) rDest[i] = aOpt.applyAsBoolean(rDest[i]);
             return rDest;
         }
-        public static boolean[] ebeDo(boolean[] aData1, boolean[] aData2, IBooleanOperator2 aOpt) {
+        public static boolean[] ebeDo(boolean[] aData1, boolean[] aData2, IBooleanBinaryOperator aOpt) {
             boolean t1Bigger = aData1.length > aData2.length;
             int tMinSize = t1Bigger ? aData2.length : aData1.length;
             boolean[] tOut = new boolean[t1Bigger ? aData1.length : aData2.length];
-            for (int i = 0; i < tMinSize; ++i) tOut[i] = aOpt.cal(aData1[i], aData2[i]);
-            if (t1Bigger) {for (int i = tMinSize; i < aData1.length; ++i) tOut[i] = aOpt.cal(aData1[i], false);}
-            else          {for (int i = tMinSize; i < aData2.length; ++i) tOut[i] = aOpt.cal(false, aData2[i]);}
+            for (int i = 0; i < tMinSize; ++i) tOut[i] = aOpt.applyAsBoolean(aData1[i], aData2[i]);
+            if (t1Bigger) {for (int i = tMinSize; i < aData1.length; ++i) tOut[i] = aOpt.applyAsBoolean(aData1[i], false);}
+            else          {for (int i = tMinSize; i < aData2.length; ++i) tOut[i] = aOpt.applyAsBoolean(false, aData2[i]);}
             return tOut;
         }
-        public static boolean[] ebeDo2Dest(boolean[] rDest, boolean[] aData, IBooleanOperator2 aOpt) {return ebeDo2Dest(rDest, aData, aOpt, 0, 0, Math.min(aData.length, rDest.length));}
-        public static boolean[] ebeDo2Dest(boolean[] rDest, boolean[] aData, IBooleanOperator2 aOpt, int aDestPos, int aDataPos, int aLength) {
+        public static boolean[] ebeDo2Dest(boolean[] rDest, boolean[] aData, IBooleanBinaryOperator aOpt) {return ebeDo2Dest(rDest, aData, aOpt, 0, 0, Math.min(aData.length, rDest.length));}
+        public static boolean[] ebeDo2Dest(boolean[] rDest, boolean[] aData, IBooleanBinaryOperator aOpt, int aDestPos, int aDataPos, int aLength) {
             int j = aDataPos;
-            for (int i = aDestPos; i < aDestPos+aLength; ++i) {rDest[i] = aOpt.cal(rDest[i], aData[j]); ++j;}
+            for (int i = aDestPos; i < aDestPos+aLength; ++i) {rDest[i] = aOpt.applyAsBoolean(rDest[i], aData[j]); ++j;}
             return rDest;
         }
         
-        public static double[] mapDo(double[] aData, IDoubleOperator1 aOpt) {
+        public static double[] mapDo(double[] aData, DoubleUnaryOperator aOpt) {
             double[] tOut = new double[aData.length];
-            for (int i = 0; i < aData.length; ++i) tOut[i] = aOpt.cal(aData[i]);
+            for (int i = 0; i < aData.length; ++i) tOut[i] = aOpt.applyAsDouble(aData[i]);
             return tOut;
         }
-        public static double[] mapDo2Dest(double[] rDest, IDoubleOperator1 aOpt) {return mapDo2Dest(rDest, aOpt, 0, rDest.length);}
-        public static double[] mapDo2Dest(double[] rDest, IDoubleOperator1 aOpt, int aDestPos, int aLength) {
-            for (int i = aDestPos; i < aDestPos+aLength; ++i) rDest[i] = aOpt.cal(rDest[i]);
+        public static double[] mapDo2Dest(double[] rDest, DoubleUnaryOperator aOpt) {return mapDo2Dest(rDest, aOpt, 0, rDest.length);}
+        public static double[] mapDo2Dest(double[] rDest, DoubleUnaryOperator aOpt, int aDestPos, int aLength) {
+            for (int i = aDestPos; i < aDestPos+aLength; ++i) rDest[i] = aOpt.applyAsDouble(rDest[i]);
             return rDest;
         }
-        public static double[] ebeDo(double[] aData1, double[] aData2, IDoubleOperator2 aOpt) {
+        public static double[] ebeDo(double[] aData1, double[] aData2, DoubleBinaryOperator aOpt) {
             boolean t1Bigger = aData1.length > aData2.length;
             int tMinSize = t1Bigger ? aData2.length : aData1.length;
             double[] tOut = new double[t1Bigger ? aData1.length : aData2.length];
-            for (int i = 0; i < tMinSize; ++i) tOut[i] = aOpt.cal(aData1[i], aData2[i]);
-            if (t1Bigger) {for (int i = tMinSize; i < aData1.length; ++i) tOut[i] = aOpt.cal(aData1[i], Double.NaN);}
-            else          {for (int i = tMinSize; i < aData2.length; ++i) tOut[i] = aOpt.cal(Double.NaN, aData2[i]);}
+            for (int i = 0; i < tMinSize; ++i) tOut[i] = aOpt.applyAsDouble(aData1[i], aData2[i]);
+            if (t1Bigger) {for (int i = tMinSize; i < aData1.length; ++i) tOut[i] = aOpt.applyAsDouble(aData1[i], Double.NaN);}
+            else          {for (int i = tMinSize; i < aData2.length; ++i) tOut[i] = aOpt.applyAsDouble(Double.NaN, aData2[i]);}
             return tOut;
         }
-        public static double[] ebeDo2Dest(double[] rDest, double[] aData, IDoubleOperator2 aOpt) {return ebeDo2Dest(rDest, aData, aOpt, 0, 0, Math.min(aData.length, rDest.length));}
-        public static double[] ebeDo2Dest(double[] rDest, double[] aData, IDoubleOperator2 aOpt, int aDestPos, int aDataPos, int aLength) {
+        public static double[] ebeDo2Dest(double[] rDest, double[] aData, DoubleBinaryOperator aOpt) {return ebeDo2Dest(rDest, aData, aOpt, 0, 0, Math.min(aData.length, rDest.length));}
+        public static double[] ebeDo2Dest(double[] rDest, double[] aData, DoubleBinaryOperator aOpt, int aDestPos, int aDataPos, int aLength) {
             int j = aDataPos;
-            for (int i = aDestPos; i < aDestPos+aLength; ++i) {rDest[i] = aOpt.cal(rDest[i], aData[j]); ++j;}
+            for (int i = aDestPos; i < aDestPos+aLength; ++i) {rDest[i] = aOpt.applyAsDouble(rDest[i], aData[j]); ++j;}
             return rDest;
         }
         
@@ -181,35 +182,35 @@ public class MathEX {
          * otherwise there will be no acceleration effect </p>
          * <p> For convenience, assume here aData1.length == aData2.length </p>
          */
-        public static boolean[] parmapDo(final int aBlockSize, final boolean[] aData, final IBooleanOperator1 aOpt) {return parmapDo(Par.POOL, aBlockSize, aData, aOpt);}
-        public static boolean[] parmapDo(ParforThreadPool aPool, final int aBlockSize, final boolean[] aData, final IBooleanOperator1 aOpt) {
+        public static boolean[] parmapDo(final int aBlockSize, final boolean[] aData, final IBooleanUnaryOperator aOpt) {return parmapDo(Par.POOL, aBlockSize, aData, aOpt);}
+        public static boolean[] parmapDo(ParforThreadPool aPool, final int aBlockSize, final boolean[] aData, final IBooleanUnaryOperator aOpt) {
             if (aPool.nThreads()==1) return mapDo(aData, aOpt);
             
             int tN = aData.length/aBlockSize;
             boolean[] tOut = new boolean[aData.length];
             aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
-                for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.cal(aData[j]);
+                for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.applyAsBoolean(aData[j]);
             });
             int tParEnd = tN*aBlockSize;
-            for (int j = tParEnd; j < aData.length; ++j) tOut[j] = aOpt.cal(aData[j]);
+            for (int j = tParEnd; j < aData.length; ++j) tOut[j] = aOpt.applyAsBoolean(aData[j]);
             return tOut;
         }
-        public static boolean[] parmapDo2Dest(final int aBlockSize, final boolean[] rDest, final IBooleanOperator1 aOpt) {return parmapDo2Dest(Par.POOL, aBlockSize, rDest, aOpt);}
-        public static boolean[] parmapDo2Dest(ParforThreadPool aPool, final int aBlockSize, final boolean[] rDest, final IBooleanOperator1 aOpt) {
+        public static boolean[] parmapDo2Dest(final int aBlockSize, final boolean[] rDest, final IBooleanUnaryOperator aOpt) {return parmapDo2Dest(Par.POOL, aBlockSize, rDest, aOpt);}
+        public static boolean[] parmapDo2Dest(ParforThreadPool aPool, final int aBlockSize, final boolean[] rDest, final IBooleanUnaryOperator aOpt) {
             if (aPool.nThreads()==1) return mapDo2Dest(rDest, aOpt);
             
             int tN = rDest.length/aBlockSize;
             aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
-                for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.cal(rDest[j]);
+                for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.applyAsBoolean(rDest[j]);
             });
             int tParEnd = tN*aBlockSize;
-            for (int j = tParEnd; j < rDest.length; ++j) rDest[j] = aOpt.cal(rDest[j]);
+            for (int j = tParEnd; j < rDest.length; ++j) rDest[j] = aOpt.applyAsBoolean(rDest[j]);
             return rDest;
         }
-        public static double[] parebeDo(final int aBlockSize, final double[] aData1, final double[] aData2, IDoubleOperator2 aOpt) {return parebeDo(Par.POOL, aBlockSize, aData1, aData2, aOpt);}
-        public static double[] parebeDo(ParforThreadPool aPool, final int aBlockSize, final double[] aData1, final double[] aData2, IDoubleOperator2 aOpt) {
+        public static double[] parebeDo(final int aBlockSize, final double[] aData1, final double[] aData2, DoubleBinaryOperator aOpt) {return parebeDo(Par.POOL, aBlockSize, aData1, aData2, aOpt);}
+        public static double[] parebeDo(ParforThreadPool aPool, final int aBlockSize, final double[] aData1, final double[] aData2, DoubleBinaryOperator aOpt) {
             if (aPool.nThreads()==1) return ebeDo(aData1, aData2, aOpt);
             assert aData1.length == aData2.length;
             
@@ -217,24 +218,24 @@ public class MathEX {
             final double[] tOut = new double[aData1.length];
             aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
-                for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.cal(aData1[j], aData2[j]);
+                for (int j = tStart; j < tEnd; ++j) tOut[j] = aOpt.applyAsDouble(aData1[j], aData2[j]);
             });
             int tParEnd = tN*aBlockSize;
-            for (int j = tParEnd; j < aData1.length; ++j) tOut[j] = aOpt.cal(aData1[j], aData2[j]);
+            for (int j = tParEnd; j < aData1.length; ++j) tOut[j] = aOpt.applyAsDouble(aData1[j], aData2[j]);
             return tOut;
         }
-        public static double[] parebeDo2Dest(final int aBlockSize, final double[] rDest, final double[] aData, final IDoubleOperator2 aOpt) {return parebeDo2Dest(Par.POOL, aBlockSize, rDest, aData, aOpt);}
-        public static double[] parebeDo2Dest(ParforThreadPool aPool, final int aBlockSize, final double[] rDest, final double[] aData, final IDoubleOperator2 aOpt) {
+        public static double[] parebeDo2Dest(final int aBlockSize, final double[] rDest, final double[] aData, final DoubleBinaryOperator aOpt) {return parebeDo2Dest(Par.POOL, aBlockSize, rDest, aData, aOpt);}
+        public static double[] parebeDo2Dest(ParforThreadPool aPool, final int aBlockSize, final double[] rDest, final double[] aData, final DoubleBinaryOperator aOpt) {
             if (aPool.nThreads()==1) return ebeDo2Dest(rDest, aData, aOpt);
             assert rDest.length == aData.length;
             
             int tN = aData.length/aBlockSize;
             aPool.parfor(tN, i -> {
                 int tStart = i*aBlockSize, tEnd = tStart+aBlockSize;
-                for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.cal(rDest[j], aData[j]);
+                for (int j = tStart; j < tEnd; ++j) rDest[j] = aOpt.applyAsDouble(rDest[j], aData[j]);
             });
             int tParEnd = tN*aBlockSize;
-            for (int j = tParEnd; j < aData.length; ++j) rDest[j] = aOpt.cal(rDest[j], aData[j]);
+            for (int j = tParEnd; j < aData.length; ++j) rDest[j] = aOpt.applyAsDouble(rDest[j], aData[j]);
             return rDest;
         }
         
@@ -530,10 +531,10 @@ public class MathEX {
             return rDest;
         }
         
-        public static double statBy(double[] aData, IDoubleOperator2 aOpt) {return statBy(aData, aOpt, 0, aData.length);}
-        public static double statBy(double[] aData, IDoubleOperator2 aOpt, int aBeginPos, int aLength) {
+        public static double statBy(double[] aData, DoubleBinaryOperator aOpt) {return statBy(aData, aOpt, 0, aData.length);}
+        public static double statBy(double[] aData, DoubleBinaryOperator aOpt, int aBeginPos, int aLength) {
             double tOut = Double.NaN;
-            for (int i = aBeginPos; i < aBeginPos+aLength; ++i) tOut = aOpt.cal(tOut, aData[i]);
+            for (int i = aBeginPos; i < aBeginPos+aLength; ++i) tOut = aOpt.applyAsDouble(tOut, aData[i]);
             return tOut;
         }
         public static double min(double[] aData) {
@@ -1298,64 +1299,64 @@ public class MathEX {
          * @return the array of solution y(x) in default, or the single value of y(last) = y(aStartX+aDx*aSteps) if use "odeLast"
          */
         @ApiStatus.Obsolete
-        public static double[] odeEuler(IDoubleOperator2 aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
+        public static double[] odeEuler(DoubleBinaryOperator aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
             double[] tResult = new double[aSteps+1];
             tResult[0] = aStartY;
             double tX = aStartX;
             for (int i = 0; i < aSteps; ++i) {
-                tResult[i+1] = tResult[i] + aDx*aFunc2.cal(tResult[i], tX);
+                tResult[i+1] = tResult[i] + aDx*aFunc2.applyAsDouble(tResult[i], tX);
                 tX += aDx;
             }
             return tResult;
         }
         @ApiStatus.Obsolete
-        public static double odeLastEuler(IDoubleOperator2 aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
+        public static double odeLastEuler(DoubleBinaryOperator aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
             double tResult = aStartY;
             double tX = aStartX;
             for (int i = 0; i < aSteps; ++i) {
-                tResult += aDx*aFunc2.cal(tResult, tX);
+                tResult += aDx*aFunc2.applyAsDouble(tResult, tX);
                 tX += aDx;
             }
             return tResult;
         }
         @ApiStatus.Obsolete
-        public static double[][] odeEuler(IOperator2<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
+        public static double[][] odeEuler(IBinaryFullOperator<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[][] tResult = new double[aSteps+1][];
             tResult[0] = aStartY;
             double tX = aStartX;
             for (int i = 0; i < aSteps; ++i) {
-                tResult[i+1] = Vec.ebeDo(tResult[i], aFunc2.cal(tResult[i], tX), (y, fyx) -> y + aDx*fyx);
+                tResult[i+1] = Vec.ebeDo(tResult[i], aFunc2.apply(tResult[i], tX), (y, fyx) -> y + aDx*fyx);
                 tX += aDx;
             }
             return tResult;
         }
         /** 利用上 aDestFunc2 产生的临时变量 */
         @ApiStatus.Obsolete
-        public static double[][] ode2DestEuler(IOperator2<double[], double[], Double> aDestFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
+        public static double[][] ode2DestEuler(IBinaryFullOperator<double[], double[], Double> aDestFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[][] tResult = new double[aSteps+1][];
             tResult[0] = aStartY;
             double tX = aStartX;
             for (int i = 0; i < aSteps; ++i) {
-                tResult[i+1] = Vec.ebeDo2Dest(aDestFunc2.cal(tResult[i], tX), tResult[i], (fyx, y) -> y + aDx*fyx);
+                tResult[i+1] = Vec.ebeDo2Dest(aDestFunc2.apply(tResult[i], tX), tResult[i], (fyx, y) -> y + aDx*fyx);
                 tX += aDx;
             }
             return tResult;
         }
         @ApiStatus.Obsolete
-        public static double[] odeLastEuler(IOperator2<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
+        public static double[] odeLastEuler(IBinaryFullOperator<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[] tResult = Vec.copy(aStartY);
             double tX = aStartX;
             for (int i = 0; i < aSteps; ++i) {
-                Vec.ebeDo2Dest(tResult, aFunc2.cal(tResult, tX), (y, fyx) -> y + aDx*fyx);
+                Vec.ebeDo2Dest(tResult, aFunc2.apply(tResult, tX), (y, fyx) -> y + aDx*fyx);
                 tX += aDx;
             }
             return tResult;
         }
-        @ApiStatus.Obsolete public static double[]   odeEuler         (IDoubleOperator2 aFunc2, double aStartY, double aDx, int aSteps) {return odeEuler    (aFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double     odeLastEuler     (IDoubleOperator2 aFunc2, double aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[][] odeEuler(IOperator2<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[][] ode2DestEuler(IOperator2<double[], double[], Double> aDestFunc2, double[] aStartY, double aDx, int aSteps) {return ode2DestEuler(aDestFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[]   odeLastEuler(IOperator2<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
+        @ApiStatus.Obsolete public static double[]   odeEuler         (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeEuler    (aFunc2, aStartY, 0.0, aDx, aSteps);}
+        @ApiStatus.Obsolete public static double     odeLastEuler     (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2, aStartY, 0.0, aDx, aSteps);}
+        @ApiStatus.Obsolete public static double[][] odeEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
+        @ApiStatus.Obsolete public static double[][] ode2DestEuler(IBinaryFullOperator<double[], double[], Double> aDestFunc2, double[] aStartY, double aDx, int aSteps) {return ode2DestEuler(aDestFunc2, aStartY, 0.0, aDx, aSteps);}
+        @ApiStatus.Obsolete public static double[]   odeLastEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
     }
     
     
@@ -1462,7 +1463,7 @@ public class MathEX {
          * @return list of cluster
          * @param <T> type of the point
          */
-        public static <T> List<List<T>> getClustersBFS(Iterable<? extends T> aPoints, IOperator1<? extends Iterable<? extends T>, ? super T> aNeighborListGetter) {
+        public static <T> List<List<T>> getClustersBFS(Iterable<? extends T> aPoints, IUnaryFullOperator<? extends Iterable<? extends T>, ? super T> aNeighborListGetter) {
             List<List<T>> rClusters = new ArrayList<>();
             Set<T> tVisited = new HashSet<>();
             
@@ -1478,7 +1479,7 @@ public class MathEX {
                     T currentPoint = tQueue.poll();
                     subCluster.add(currentPoint);
                     
-                    for (T tNeighbor : aNeighborListGetter.cal(currentPoint)) if (!tVisited.contains(tNeighbor)) {
+                    for (T tNeighbor : aNeighborListGetter.apply(currentPoint)) if (!tVisited.contains(tNeighbor)) {
                         tQueue.offer(tNeighbor);
                         tVisited.add(tNeighbor);
                     }
@@ -1496,7 +1497,7 @@ public class MathEX {
          * @return list of cluster
          * @param <T> type of the point
          */
-        public static <T> List<List<T>> getClustersDFS(Iterable<? extends T> aPoints, IOperator1<? extends Iterable<? extends T>, ? super T> aNeighborListGetter) {
+        public static <T> List<List<T>> getClustersDFS(Iterable<? extends T> aPoints, IUnaryFullOperator<? extends Iterable<? extends T>, ? super T> aNeighborListGetter) {
             List<List<T>> rClusters = new ArrayList<>();
             Set<T> tVisited = new HashSet<>();
             
@@ -1513,7 +1514,7 @@ public class MathEX {
                         T currentPoint = tStack.pop();
                         subCluster.add(currentPoint);
                         
-                        for (T tNeighbor : aNeighborListGetter.cal(currentPoint)) {
+                        for (T tNeighbor : aNeighborListGetter.apply(currentPoint)) {
                             if (!tVisited.contains(tNeighbor)) {
                                 tStack.push(tNeighbor);
                                 tVisited.add(tNeighbor);

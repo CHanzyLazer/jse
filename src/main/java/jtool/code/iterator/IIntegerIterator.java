@@ -1,10 +1,9 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IIntegerConsumer1;
-
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 
 /**
@@ -17,9 +16,9 @@ public interface IIntegerIterator {
     
     /** Iterator default stuffs */
     default void remove() {throw new UnsupportedOperationException("remove");}
-    default void forEachRemaining(IIntegerConsumer1 aCon) {
+    default void forEachRemaining(IntConsumer aCon) {
         Objects.requireNonNull(aCon);
-        while (hasNext()) aCon.run(next());
+        while (hasNext()) aCon.accept(next());
     }
     
     /** convert to Integer */

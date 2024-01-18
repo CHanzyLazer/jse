@@ -1,7 +1,5 @@
 package jtool.math.function;
 
-
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.IDataShell;
 import jtool.math.MathEX;
 import jtool.math.vector.RefVector;
@@ -9,6 +7,8 @@ import jtool.math.vector.IVector;
 import jtool.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.DoubleUnaryOperator;
 
 
 /**
@@ -95,12 +95,12 @@ public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShel
     @Override public final void setX0(double aNewX0) {mX0 = aNewX0;}
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    @Override public final void update_(int aI, IDoubleOperator1 aOpt) {
-        mData[aI] = aOpt.cal(mData[aI]);
+    @Override public final void update_(int aI, DoubleUnaryOperator aOpt) {
+        mData[aI] = aOpt.applyAsDouble(mData[aI]);
     }
-    @Override public final double getAndUpdate_(int aI, IDoubleOperator1 aOpt) {
+    @Override public final double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
         double tV = mData[aI];
-        mData[aI] = aOpt.cal(tV);
+        mData[aI] = aOpt.applyAsDouble(tV);
         return tV;
     }
     

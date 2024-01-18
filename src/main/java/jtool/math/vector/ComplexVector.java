@@ -1,7 +1,8 @@
 package jtool.math.vector;
 
 import jtool.code.collection.ComplexDoubleList;
-import jtool.code.functional.*;
+import jtool.code.functional.IDoubleBinaryConsumer;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.*;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -125,26 +126,26 @@ public final class ComplexVector extends BiDoubleArrayVector {
                     tImagData[i] = tValue.imag();
                 }
             }
-            @Override public void assign(IDoubleSupplier aSup) {
+            @Override public void assign(DoubleSupplier aSup) {
                 final double[] tRealData = mData[0];
                 final double[] tImagData = mData[1];
                 for (int i = 0; i < mSize; ++i) {
-                    tRealData[i] = aSup.get();
+                    tRealData[i] = aSup.getAsDouble();
                     tImagData[i] = 0.0;
                 }
             }
-            @Override public void forEach(IConsumer1<? super ComplexDouble> aCon) {
+            @Override public void forEach(Consumer<? super ComplexDouble> aCon) {
                 final double[] tRealData = mData[0];
                 final double[] tImagData = mData[1];
                 for (int i = 0; i < mSize; ++i) {
-                    aCon.run(new ComplexDouble(tRealData[i], tImagData[i]));
+                    aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
                 }
             }
-            @Override public void forEach(IDoubleConsumer2 aCon) {
+            @Override public void forEach(IDoubleBinaryConsumer aCon) {
                 final double[] tRealData = mData[0];
                 final double[] tImagData = mData[1];
                 for (int i = 0; i < mSize; ++i) {
-                    aCon.run(tRealData[i], tImagData[i]);
+                    aCon.accept(tRealData[i], tImagData[i]);
                 }
             }
             /** Groovy stuffs */
@@ -196,40 +197,40 @@ public final class ComplexVector extends BiDoubleArrayVector {
     }
     @Override public void add_(int aIdx, double aDelta) {mData[0][aIdx] += aDelta;}
     @Override public void addImag_(int aIdx, double aImag) {mData[1][aIdx] += aImag;}
-    @Override public void update_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public void update_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealData = mData[0];
         final double[] tImagData = mData[1];
-        IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealData[aIdx], tImagData[aIdx]));
+        IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealData[aIdx], tImagData[aIdx]));
         tRealData[aIdx] = tValue.real();
         tImagData[aIdx] = tValue.imag();
     }
-    @Override public void updateReal_(int aIdx, IDoubleOperator1 aRealOpt) {
+    @Override public void updateReal_(int aIdx, DoubleUnaryOperator aRealOpt) {
         final double[] tRealData = mData[0];
-        tRealData[aIdx] = aRealOpt.cal(tRealData[aIdx]);
+        tRealData[aIdx] = aRealOpt.applyAsDouble(tRealData[aIdx]);
     }
-    @Override public void updateImag_(int aIdx, IDoubleOperator1 aImagOpt) {
+    @Override public void updateImag_(int aIdx, DoubleUnaryOperator aImagOpt) {
         final double[] tImagData = mData[1];
-        tImagData[aIdx] = aImagOpt.cal(tImagData[aIdx]);
+        tImagData[aIdx] = aImagOpt.applyAsDouble(tImagData[aIdx]);
     }
-    @Override public ComplexDouble getAndUpdate_(int aIdx, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    @Override public ComplexDouble getAndUpdate_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealData = mData[0];
         final double[] tImagData = mData[1];
         ComplexDouble oValue = new ComplexDouble(tRealData[aIdx], tImagData[aIdx]);
-        IComplexDouble tValue = aOpt.cal(new ComplexDouble(oValue)); // 用来防止意外的修改
+        IComplexDouble tValue = aOpt.apply(new ComplexDouble(oValue)); // 用来防止意外的修改
         tRealData[aIdx] = tValue.real();
         tImagData[aIdx] = tValue.imag();
         return oValue;
     }
-    @Override public double getAndUpdateReal_(int aIdx, IDoubleOperator1 aRealOpt) {
+    @Override public double getAndUpdateReal_(int aIdx, DoubleUnaryOperator aRealOpt) {
         final double[] tRealData = mData[0];
         double oReal = tRealData[aIdx];
-        tRealData[aIdx] = aRealOpt.cal(oReal);
+        tRealData[aIdx] = aRealOpt.applyAsDouble(oReal);
         return oReal;
     }
-    @Override public double getAndUpdateImag_(int aIdx, IDoubleOperator1 aImagOpt) {
+    @Override public double getAndUpdateImag_(int aIdx, DoubleUnaryOperator aImagOpt) {
         final double[] tImagData = mData[1];
         double oImag = tImagData[aIdx];
-        tImagData[aIdx] = aImagOpt.cal(oImag);
+        tImagData[aIdx] = aImagOpt.applyAsDouble(oImag);
         return oImag;
     }
     @Override public boolean isEmpty() {return mSize==0;}

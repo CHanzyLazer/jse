@@ -4,6 +4,8 @@ import jtool.code.functional.*;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
 
+import java.util.function.*;
+
 import static jtool.code.UT.Code.toComplexDouble;
 
 
@@ -629,7 +631,7 @@ public class ARRAY {
     
     
     /** do stuff */
-    public static void ebeDo2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void ebeDo2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
         final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
         final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
@@ -637,118 +639,118 @@ public class ARRAY {
         if (rShift == aShiftL) {
             if (rShift == aShiftR) {
                 for (int i = rShift; i < rEnd; ++i) {
-                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
                     rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
                 }
             } else {
                 for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
-                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
                     rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
                 }
             }
         } else {
             if (rShift == aShiftR) {
                 for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
-                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
                     rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
                 }
             } else {
                 for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
-                    IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
                     rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
                 }
             }
         }
     }
-    public static void mapDo2Dest(double[][] aDataL, int aShiftL, double[][] rDest, int rShift, int aLength, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void mapDo2Dest(double[][] aDataL, int aShiftL, double[][] rDest, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
         final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
         final int rEnd = aLength + rShift;
         if (rShift == aShiftL) {
             for (int i = rShift; i < rEnd; ++i) {
-                IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[i], tImagDataL[i]));
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]));
                 rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
             }
         } else {
             for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
-                IComplexDouble tValue = aOpt.cal(new ComplexDouble(tRealDataL[j], tImagDataL[j]));
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]));
                 rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
             }
         }
     }
-    public static void ebeDo2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void ebeDo2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
         final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
         final int rEnd = aLength + rShift;
         if (rShift == aShiftR) {
             for (int i = rShift; i < rEnd; ++i) {
-                IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
                 rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
             }
         } else {
             for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
-                IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[j], tImagDataR[j]));
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[j], tImagDataR[j]));
                 rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
             }
         }
     }
-    public static void mapDo2This(double[][] rThis, int rShift, int aLength, IOperator1<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+    public static void mapDo2This(double[][] rThis, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] rRealThis = rThis[0], rImagThis = rThis[1];
         final int rEnd = aLength + rShift;
         for (int i = rShift; i < rEnd; ++i) {
-            IComplexDouble tValue = aOpt.cal(new ComplexDouble(rRealThis[i], rImagThis[i]));
+            IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]));
             rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
         }
     }
     
-    public static void ebeDo2Dest(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, double[] rDest, int rShift, int aLength, IDoubleOperator2 aOpt) {
+    public static void ebeDo2Dest(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, double[] rDest, int rShift, int aLength, DoubleBinaryOperator aOpt) {
         final int rEnd = aLength + rShift;
         if (rShift == aShiftL) {
-            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.cal(aDataL[i], aDataR[i]);
-            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.cal(aDataL[i], aDataR[k]);
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[i]);
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[k]);
         } else {
-            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.cal(aDataL[j], aDataR[i]);
-            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.cal(aDataL[j], aDataR[k]);
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[i]);
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[k]);
         }
     }
-    public static void mapDo2Dest(double[] aDataL, int aShiftL, double[] rDest, int rShift, int aLength, IDoubleOperator1 aOpt) {
+    public static void mapDo2Dest(double[] aDataL, int aShiftL, double[] rDest, int rShift, int aLength, DoubleUnaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.cal(aDataL[i]);
-        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.cal(aDataL[j]);
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i]);
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j]);
     }
-    public static void ebeDo2This(double[] rThis, int rShift, double[] aDataR, int aShiftR, int aLength, IDoubleOperator2 aOpt) {
+    public static void ebeDo2This(double[] rThis, int rShift, double[] aDataR, int aShiftR, int aLength, DoubleBinaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.cal(rThis[i], aDataR[i]);
-        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.cal(rThis[i], aDataR[j]);
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[i]);
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[j]);
     }
-    public static void mapDo2This(double[] rThis, int rShift, int aLength, IDoubleOperator1 aOpt) {
+    public static void mapDo2This(double[] rThis, int rShift, int aLength, DoubleUnaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.cal(rThis[i]);
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i]);
     }
     
-    public static void ebeDo2Dest(boolean[] aDataL, int aShiftL, boolean[] aDataR, int aShiftR, boolean[] rDest, int rShift, int aLength, IBooleanOperator2 aOpt) {
+    public static void ebeDo2Dest(boolean[] aDataL, int aShiftL, boolean[] aDataR, int aShiftR, boolean[] rDest, int rShift, int aLength, IBooleanBinaryOperator aOpt) {
         final int rEnd = aLength + rShift;
         if (rShift == aShiftL) {
-            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.cal(aDataL[i], aDataR[i]);
-            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.cal(aDataL[i], aDataR[k]);
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[i]);
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[k]);
         } else {
-            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.cal(aDataL[j], aDataR[i]);
-            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.cal(aDataL[j], aDataR[k]);
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[i]);
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[k]);
         }
     }
-    public static void mapDo2Dest(boolean[] aDataL, int aShiftL, boolean[] rDest, int rShift, int aLength, IBooleanOperator1 aOpt) {
+    public static void mapDo2Dest(boolean[] aDataL, int aShiftL, boolean[] rDest, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.cal(aDataL[i]);
-        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.cal(aDataL[j]);
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i]);
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j]);
     }
-    public static void ebeDo2This(boolean[] rThis, int rShift, boolean[] aDataR, int aShiftR, int aLength, IBooleanOperator2 aOpt) {
+    public static void ebeDo2This(boolean[] rThis, int rShift, boolean[] aDataR, int aShiftR, int aLength, IBooleanBinaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.cal(rThis[i], aDataR[i]);
-        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.cal(rThis[i], aDataR[j]);
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[i]);
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[j]);
     }
-    public static void mapDo2This(boolean[] rThis, int rShift, int aLength, IBooleanOperator1 aOpt) {
+    public static void mapDo2This(boolean[] rThis, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
         final int rEnd = aLength + rShift;
-        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.cal(rThis[i]);
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i]);
     }
     
     
@@ -868,19 +870,19 @@ public class ARRAY {
         }
         return rMin;
     }
-    public static double statOfThis(double[] aThis, int aShift, int aLength, IDoubleOperator2 aOpt) {
+    public static double statOfThis(double[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
         final int tEnd = aLength + aShift;
         
         double rStat = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.cal(rStat, aThis[i]);
+        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
         return rStat;
     }
-    public static ComplexDouble statOfThis(double[][] aThis, int aShift, int aLength, IOperator2<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+    public static ComplexDouble statOfThis(double[][] aThis, int aShift, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealThis = aThis[0], tImagThis = aThis[1];
         final int tEnd = aLength + aShift;
         
         ComplexDouble rStat = null;
-        for (int i = aShift; i < tEnd; ++i) rStat = toComplexDouble(aOpt.cal(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
+        for (int i = aShift; i < tEnd; ++i) rStat = toComplexDouble(aOpt.apply(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
         return rStat;
     }
     

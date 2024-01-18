@@ -1,6 +1,6 @@
 package jtool.math.function;
 
-import jtool.code.functional.IDoubleOperator3;
+import jtool.code.functional.IDoubleTernaryOperator;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -95,7 +95,7 @@ public class Func3 {
             }
         }
     }
-    public Func3(IDoubleOperator3 aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy, double aZ0, double aDz, int aNz) {
+    public Func3(IDoubleTernaryOperator aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy, double aZ0, double aDz, int aNz) {
         mX0 = aX0; mDx = aDx;
         mY0 = aY0; mDy = aDy;
         mZ0 = aZ0; mDz = aDz;
@@ -103,7 +103,7 @@ public class Func3 {
         mNy = aNy;
         
         mData = new double[aNx*aNy*aNz];
-        for (int k = 0; k < aNz; ++k) for (int j = 0; j < aNy; ++j) for (int i = 0; i < aNx; ++i) mData[i + j*mNx + k*mNx*mNy] = aFunc.cal(mX0 + i*mDx, mY0 + j*mDy, mZ0 + k*mDz);
+        for (int k = 0; k < aNz; ++k) for (int j = 0; j < aNy; ++j) for (int i = 0; i < aNx; ++i) mData[i + j*mNx + k*mNx*mNy] = aFunc.applyAsDouble(mX0 + i*mDx, mY0 + j*mDy, mZ0 + k*mDz);
     }
     
     public Func3 copy() {return new Func3(mX0, mDx, mNx, mY0, mDy, mNy, mZ0, mDz, MathEX.Vec.copy(mData));}

@@ -1,7 +1,7 @@
 package jtool.math.vector;
 
-import jtool.code.functional.IBooleanOperator1;
-import jtool.code.functional.IBooleanOperator2;
+import jtool.code.functional.IBooleanUnaryOperator;
+import jtool.code.functional.IBooleanBinaryOperator;
 import jtool.math.IDataShell;
 import jtool.math.operation.ARRAY;
 import jtool.math.operation.DATA;
@@ -39,7 +39,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         else DATA.ebeXor2Dest(tThis, aRHS, rVector);
         return rVector;
     }
-    @Override public ILogicalVector operate(ILogicalVector aRHS, IBooleanOperator2 aOpt) {
+    @Override public ILogicalVector operate(ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {
         final BooleanArrayVector tThis = thisVector_();
         BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -73,7 +73,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         else DATA.mapXor2Dest(tThis, aRHS, rVector);
         return rVector;
     }
-    @Override public ILogicalVector map(IBooleanOperator1 aOpt) {
+    @Override public ILogicalVector map(IBooleanUnaryOperator aOpt) {
         BooleanArrayVector tThis = thisVector_();
         BooleanArrayVector rVector = newVector_();
         boolean[] tDataL = rVector.getIfHasSameOrderData(tThis);
@@ -100,7 +100,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         if (tDataR != null) ARRAY.ebeXor2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeXor2This(rThis, aRHS);
     }
-    @Override public void operate2this(ILogicalVector aRHS, IBooleanOperator2 aOpt) {
+    @Override public void operate2this(ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {
         final BooleanArrayVector rThis = thisVector_();
         boolean[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
@@ -110,7 +110,7 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
     @Override public void and2this          (boolean aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.mapAnd2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void or2this           (boolean aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.mapOr2This (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void xor2this          (boolean aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.mapXor2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
-    @Override public void map2this          (IBooleanOperator1 aOpt) {BooleanArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
+    @Override public void map2this(IBooleanUnaryOperator aOpt) {BooleanArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
     @Override public ILogicalVector not     () {
         BooleanArrayVector tThis = thisVector_();

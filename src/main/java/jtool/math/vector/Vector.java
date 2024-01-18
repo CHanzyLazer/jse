@@ -1,9 +1,6 @@
 package jtool.math.vector;
 
 import jtool.code.collection.DoubleList;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import jtool.math.MathEX;
@@ -11,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -86,11 +84,11 @@ public final class Vector extends DoubleArrayVector {
             @Override public void fill(IVectorGetter aRHS) {
                 for (int i = 0; i < mSize; ++i) mData[i] = aRHS.get(i);
             }
-            @Override public void assign(IDoubleSupplier aSup) {
-                for (int i = 0; i < mSize; ++i) mData[i] = aSup.get();
+            @Override public void assign(DoubleSupplier aSup) {
+                for (int i = 0; i < mSize; ++i) mData[i] = aSup.getAsDouble();
             }
-            @Override public void forEach(IDoubleConsumer1 aCon) {
-                for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+            @Override public void forEach(DoubleConsumer aCon) {
+                for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
             }
             @Override public ReverseVector refReverse() {
                 return new ReverseVector(mSize, mData);
@@ -110,12 +108,12 @@ public final class Vector extends DoubleArrayVector {
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
+        mData[aIdx] = aOpt.applyAsDouble(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsDouble(tValue);
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}

@@ -1,5 +1,6 @@
 package jtool.code.functional;
 
+@FunctionalInterface
 public interface IBooleanSupplier {
-    boolean get();
+    boolean getAsBoolean();
 }

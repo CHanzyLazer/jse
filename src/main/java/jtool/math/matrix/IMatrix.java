@@ -3,17 +3,15 @@ package jtool.math.matrix;
 import jtool.code.CS.SliceType;
 import jtool.code.collection.ISlice;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.vector.IVector;
 import groovy.lang.Closure;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -56,10 +54,10 @@ public interface IMatrix extends IMatrixGetter {
     default void fill(Iterable<?> aRows) {fillWithRows(aRows);}
     void fillWithRows(Iterable<?> aRows);
     void fillWithCols(Iterable<?> aCols);
-    void assignCol(IDoubleSupplier aSup);
-    void assignRow(IDoubleSupplier aSup);
-    void forEachCol(IDoubleConsumer1 aCon);
-    void forEachRow(IDoubleConsumer1 aCon);
+    void assignCol(DoubleSupplier aSup);
+    void assignRow(DoubleSupplier aSup);
+    void forEachCol(DoubleConsumer aCon);
+    void forEachRow(DoubleConsumer aCon);
     /** Groovy stuff */
     default void fill(final Closure<? extends Number> aGroovyTask) {fill((i, j) -> aGroovyTask.call(i, j).doubleValue());}
     default void assignCol(final Closure<? extends Number> aGroovyTask) {assignCol(() -> aGroovyTask.call().doubleValue());}
@@ -80,10 +78,10 @@ public interface IMatrix extends IMatrixGetter {
     default @VisibleForTesting int ncols() {return columnNumber();}
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    void update_(int aRow, int aCol, IDoubleOperator1 aOpt);
-    double getAndUpdate_(int aRow, int aCol, IDoubleOperator1 aOpt);
-    void update(int aRow, int aCol, IDoubleOperator1 aOpt);
-    double getAndUpdate(int aRow, int aCol, IDoubleOperator1 aOpt);
+    void update_(int aRow, int aCol, DoubleUnaryOperator aOpt);
+    double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt);
+    void update(int aRow, int aCol, DoubleUnaryOperator aOpt);
+    double getAndUpdate(int aRow, int aCol, DoubleUnaryOperator aOpt);
     
     
     List<IVector> rows();

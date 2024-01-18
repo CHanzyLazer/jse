@@ -4,9 +4,6 @@ import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractRandomAccessList;
 import jtool.code.collection.ISlice;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IDoubleSetIterator;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +12,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.*;
 
 /**
  * @author liqa
@@ -112,8 +110,8 @@ public abstract class AbstractVector implements IVector {
             ++idx;
         }
     }
-    @Override public final void assign(IDoubleSupplier aSup) {operation().assign(aSup);}
-    @Override public final void forEach(IDoubleConsumer1 aCon) {operation().forEach(aCon);}
+    @Override public final void assign(DoubleSupplier aSup) {operation().assign(aSup);}
+    @Override public final void forEach(DoubleConsumer aCon) {operation().forEach(aCon);}
     
     
     @Override public double get(int aIdx) {
@@ -159,14 +157,14 @@ public abstract class AbstractVector implements IVector {
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public void update_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = get_(aIdx);
-        tValue = aOpt.cal(tValue);
+        tValue = aOpt.applyAsDouble(tValue);
         set_(aIdx, tValue);
     }
-    @Override public double getAndUpdate_(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = get_(aIdx);
-        set_(aIdx, aOpt.cal(tValue));
+        set_(aIdx, aOpt.applyAsDouble(tValue));
         return tValue;
     }
     
@@ -194,11 +192,11 @@ public abstract class AbstractVector implements IVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndAdd_(aIdx, aDelta);
     }
-    @Override public void update(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public void update(int aIdx, DoubleUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
     }
-    @Override public double getAndUpdate(int aIdx, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate(int aIdx, DoubleUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
     }

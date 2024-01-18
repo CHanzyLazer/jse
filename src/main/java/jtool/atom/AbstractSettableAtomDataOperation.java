@@ -2,7 +2,7 @@ package jtool.atom;
 
 import jtool.code.collection.AbstractCollections;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.math.vector.IVector;
 
 import java.util.*;
@@ -15,23 +15,23 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
     @Override public ISettableAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
     
     
-    @Override public void map2this(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator) {
+    @Override public void map2this(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {
         final ISettableAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNum();
         for (int i = 0; i < tAtomNum; ++i) {
-            tThis.setAtom(i, aOperator.cal(tThis.pickAtom(i)));
+            tThis.setAtom(i, aOperator.apply(tThis.pickAtom(i)));
         }
         // 这里不进行 try 包含，因为手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (tThis.atomTypeNum() < aMinTypeNum) tThis.setAtomTypeNum(aMinTypeNum);
     }
     
-    @Override public void mapType2this(int aMinTypeNum, IOperator1<Integer, ? super IAtom> aOperator) {
+    @Override public void mapType2this(int aMinTypeNum, IUnaryFullOperator<Integer, ? super IAtom> aOperator) {
         final ISettableAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNum();
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
             ISettableAtom tAtom = tThis.pickAtom(i);
-            tAtom.setType(aOperator.cal(tAtom));
+            tAtom.setType(aOperator.apply(tAtom));
         }
         // 这里不进行 try 包含，因为手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (tThis.atomTypeNum() < aMinTypeNum) tThis.setAtomTypeNum(aMinTypeNum);

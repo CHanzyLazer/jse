@@ -1,14 +1,14 @@
 package jtool.math.vector;
 
 import jtool.code.collection.AbstractRandomAccessList;
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
 import jtool.code.iterator.IIntegerIterator;
 import jtool.code.iterator.IIntegerSetIterator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -102,8 +102,8 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
             ++idx;
         }
     }
-    @Override public final void assign(IIntegerSupplier aSup) {operation().assign(aSup);}
-    @Override public final void forEach(IIntegerConsumer1 aCon) {operation().forEach(aCon);}
+    @Override public final void assign(IntSupplier aSup) {operation().assign(aSup);}
+    @Override public final void forEach(IntConsumer aCon) {operation().forEach(aCon);}
     
     @Override public int get(int aIdx) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
@@ -148,14 +148,14 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public void update_(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public void update_(int aIdx, IntUnaryOperator aOpt) {
         int tValue = get_(aIdx);
-        tValue = aOpt.cal(tValue);
+        tValue = aOpt.applyAsInt(tValue);
         set_(aIdx, tValue);
     }
-    @Override public int getAndUpdate_(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public int getAndUpdate_(int aIdx, IntUnaryOperator aOpt) {
         int tValue = get_(aIdx);
-        set_(aIdx, aOpt.cal(tValue));
+        set_(aIdx, aOpt.applyAsInt(tValue));
         return tValue;
     }
     
@@ -183,11 +183,11 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndAdd_(aIdx, aDelta);
     }
-    @Override public void update(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public void update(int aIdx, IntUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         update_(aIdx, aOpt);
     }
-    @Override public int getAndUpdate(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public int getAndUpdate(int aIdx, IntUnaryOperator aOpt) {
         if (aIdx<0 || aIdx>=size()) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
         return getAndUpdate_(aIdx, aOpt);
     }
@@ -215,7 +215,7 @@ public abstract class AbstractIntegerVector implements IIntegerVector {
     @Override public final void sort(Comparator<? super Integer> aComp) {operation().sort(aComp);}
     @Override public final void shuffle() {operation().shuffle();}
     @Override public final void shuffle(Random aRng) {operation().shuffle(aRng::nextInt);}
-    @Override public final void shuffle(IIntegerOperator1 aRng) {operation().shuffle(aRng);}
+    @Override public final void shuffle(IntUnaryOperator aRng) {operation().shuffle(aRng);}
     
     
     /** stuff to override */

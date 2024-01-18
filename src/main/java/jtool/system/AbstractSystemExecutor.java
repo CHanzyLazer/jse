@@ -2,7 +2,7 @@ package jtool.system;
 
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.io.IIOFiles;
 import jtool.io.MergedIOFiles;
 import jtool.parallel.AbstractThreadPool;
@@ -171,7 +171,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
             return mOut;
         }
         
-        private volatile List<IOperator1<T, T>> mDoFinal = null;
+        private volatile List<IUnaryFullOperator<T, T>> mDoFinal = null;
         private volatile T mOut = null;
         private volatile boolean mValidOut = false;
         /** 加入同步保证最终操作（下载文件）是串行执行的 */
@@ -182,7 +182,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
                     try {mOut = mFuture.get();} catch (Exception ignored) {}
                     mValidOut = true;
                 }
-                for (IOperator1<T, T> tDo : mDoFinal) mOut = tDo.cal(mOut);
+                for (IUnaryFullOperator<T, T> tDo : mDoFinal) mOut = tDo.apply(mOut);
                 mDoFinal = null;
             }
         }
@@ -190,7 +190,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     protected <T> SystemFuture<T> toSystemFuture(Future<T> aFuture) {
         return (aFuture instanceof SystemFuture) ? (SystemFuture<T>)aFuture : new SystemFuture<>(aFuture);
     }
-    protected <T> SystemFuture<T> toSystemFuture(Future<T> aFuture, IOperator1<T, T> aDoFinal) {
+    protected <T> SystemFuture<T> toSystemFuture(Future<T> aFuture, IUnaryFullOperator<T, T> aDoFinal) {
         SystemFuture<T> tSystemFuture = (aFuture instanceof SystemFuture) ? (SystemFuture<T>)aFuture : new SystemFuture<>(aFuture);
         if (tSystemFuture.mDoFinal == null) tSystemFuture.mDoFinal = new ArrayList<>();
         tSystemFuture.mDoFinal.add(aDoFinal);

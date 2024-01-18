@@ -1,7 +1,9 @@
 package jtool.math.vector;
 
+import jtool.code.functional.IComparator;
+import jtool.code.functional.IChecker;
 
-import jtool.code.functional.*;
+import java.util.function.*;
 
 /**
  * 任意的实向量的运算
@@ -17,7 +19,7 @@ public interface IVectorOperation {
     IVector ldiv        (IVector aRHS);
     IVector mod         (IVector aRHS);
     IVector lmod        (IVector aRHS);
-    IVector operate     (IVector aRHS, IDoubleOperator2 aOpt);
+    IVector operate     (IVector aRHS, DoubleBinaryOperator aOpt);
     
     IVector plus        (double aRHS);
     IVector minus       (double aRHS);
@@ -27,7 +29,7 @@ public interface IVectorOperation {
     IVector ldiv        (double aRHS);
     IVector mod         (double aRHS);
     IVector lmod        (double aRHS);
-    IVector map         (IDoubleOperator1 aOpt);
+    IVector map         (DoubleUnaryOperator aOpt);
     
     void plus2this      (IVector aRHS);
     void minus2this     (IVector aRHS);
@@ -37,7 +39,7 @@ public interface IVectorOperation {
     void ldiv2this      (IVector aRHS);
     void mod2this       (IVector aRHS);
     void lmod2this      (IVector aRHS);
-    void operate2this   (IVector aRHS, IDoubleOperator2 aOpt);
+    void operate2this   (IVector aRHS, DoubleBinaryOperator aOpt);
     
     void plus2this      (double aRHS);
     void minus2this     (double aRHS);
@@ -47,7 +49,7 @@ public interface IVectorOperation {
     void ldiv2this      (double aRHS);
     void mod2this       (double aRHS);
     void lmod2this      (double aRHS);
-    void map2this       (IDoubleOperator1 aOpt);
+    void map2this       (DoubleUnaryOperator aOpt);
     
     IVector negative();
     void negative2this();
@@ -56,23 +58,23 @@ public interface IVectorOperation {
     void fill           (double aRHS);
     void fill           (IVector aRHS);
     void fill           (IVectorGetter aRHS);
-    void assign         (IDoubleSupplier aSup);
+    void assign         (DoubleSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */
-    void forEach        (IDoubleConsumer1 aCon);
+    void forEach        (DoubleConsumer aCon);
     
     double sum          ();
     double mean         ();
     double prod         ();
     double max          ();
     double min          ();
-    double stat         (IDoubleOperator2 aOpt);
+    double stat         (DoubleBinaryOperator aOpt);
     
     IVector cumsum      ();
     IVector cummean     ();
     IVector cumprod     ();
     IVector cummax      ();
     IVector cummin      ();
-    IVector cumstat     (IDoubleOperator2 aOpt);
+    IVector cumstat     (DoubleBinaryOperator aOpt);
     
     /** 获取逻辑结果的运算 */
     ILogicalVector equal            (IVector aRHS);

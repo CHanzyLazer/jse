@@ -1,14 +1,17 @@
 package jtool.code.collection;
 
-import jtool.code.functional.IIntegerConsumer1;
 import jtool.math.IDataShell;
-import jtool.math.vector.*;
+import jtool.math.vector.IIntegerVector;
+import jtool.math.vector.IntegerVector;
+import jtool.math.vector.RefIntegerVector;
+import jtool.math.vector.ShiftIntegerVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.IntConsumer;
 
 import static jtool.code.CS.ZL_INT;
 
@@ -65,8 +68,8 @@ public class IntegerList implements ISlice, IDataShell<int[]> {
     public void clear() {
         mSize = 0;
     }
-    public void forEach(IIntegerConsumer1 aCon) {
-        for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+    public void forEach(IntConsumer aCon) {
+        for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
     }
     
     public List<Integer> asList() {

@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import jtool.code.functional.IDoubleFilter;
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.math.MathEX;
@@ -178,10 +178,10 @@ public class AbstractCollections {
      * map {@code Iterable<T> to Iterable<R>} like {@link Stream}.map
      * @author liqa
      */
-    public static <R, T> @Unmodifiable Iterable<R> map(final Iterable<T> aIterable, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> @Unmodifiable Iterable<R> map(final Iterable<T> aIterable, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         return () -> map(aIterable.iterator(), aOpt);
     }
-    public static <R, T> @Unmodifiable Iterator<R> map(final Iterator<T> aIterator, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> @Unmodifiable Iterator<R> map(final Iterator<T> aIterator, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         return new Iterator<R>() {
             final Iterator<T> mIt = aIterator;
             @Override public boolean hasNext() {
@@ -189,29 +189,29 @@ public class AbstractCollections {
             }
             @Override public R next() {
                 if (hasNext()) {
-                    return aOpt.cal(mIt.next());
+                    return aOpt.apply(mIt.next());
                 } else {
                     throw new NoSuchElementException();
                 }
             }
         };
     }
-    public static <R, T> @Unmodifiable Collection<R> map(final Collection<T> aCollection, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> @Unmodifiable Collection<R> map(final Collection<T> aCollection, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         return new AbstractCollection<R>() {
             @Override public @NotNull Iterator<R> iterator() {return map(aCollection.iterator(), aOpt);}
             @Override public int size() {return aCollection.size();}
         };
     }
-    public static <R, T> @Unmodifiable List<R> map(final List<T> aList, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> @Unmodifiable List<R> map(final List<T> aList, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         return new AbstractRandomAccessList<R>() {
-            @Override public R get(int index) {return aOpt.cal(aList.get(index));}
+            @Override public R get(int index) {return aOpt.apply(aList.get(index));}
             @Override public int size() {return aList.size();}
             @Override public @NotNull @Unmodifiable Iterator<R> iterator() {return map(aList.iterator(), aOpt);}
         };
     }
-    public static <R, T> @Unmodifiable List<R> map(final T[] aArray, final IOperator1<? extends R, ? super T> aOpt) {
+    public static <R, T> @Unmodifiable List<R> map(final T[] aArray, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
         return new AbstractRandomAccessList<R>() {
-            @Override public R get(int index) {return aOpt.cal(aArray[index]);}
+            @Override public R get(int index) {return aOpt.apply(aArray[index]);}
             @Override public int size() {return aArray.length;}
         };
     }

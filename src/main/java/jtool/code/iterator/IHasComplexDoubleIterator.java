@@ -2,13 +2,13 @@ package jtool.code.iterator;
 
 import jtool.atom.IAtom;
 import jtool.atom.IXYZ;
-import jtool.code.functional.IConsumer1;
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleConsumer2;
+import jtool.code.functional.IDoubleBinaryConsumer;
 import jtool.math.ComplexDouble;
 import groovy.lang.Closure;
 
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 
 /**
  * 和 {@link IXYZ} 或者 {@link IAtom} 部分的用法思路不同，
@@ -23,33 +23,33 @@ public interface IHasComplexDoubleIterator {
     default Iterable<ComplexDouble> iterable() {return () -> iterator().toIterator();}
     
     /** Iterable like stuffs */
-    default void forEach(IDoubleConsumer2 aCon) {
+    default void forEach(IDoubleBinaryConsumer aCon) {
         Objects.requireNonNull(aCon);
         final IComplexDoubleIterator it = iterator();
         while (it.hasNext()) {
             it.nextOnly();
-            aCon.run(it.real(), it.imag());
+            aCon.accept(it.real(), it.imag());
         }
     }
-    default void forEach(IConsumer1<? super ComplexDouble> aCon) {
+    default void forEach(Consumer<? super ComplexDouble> aCon) {
         Objects.requireNonNull(aCon);
         final IComplexDoubleIterator it = iterator();
-        while (it.hasNext()) aCon.run(it.next());
+        while (it.hasNext()) aCon.accept(it.next());
     }
-    default void forEachReal(IDoubleConsumer1 aRealCon) {
+    default void forEachReal(DoubleConsumer aRealCon) {
         Objects.requireNonNull(aRealCon);
         final IComplexDoubleIterator it = iterator();
         while (it.hasNext()) {
             it.nextOnly();
-            aRealCon.run(it.real());
+            aRealCon.accept(it.real());
         }
     }
-    default void forEachImag(IDoubleConsumer1 aImagCon) {
+    default void forEachImag(DoubleConsumer aImagCon) {
         Objects.requireNonNull(aImagCon);
         final IComplexDoubleIterator it = iterator();
         while (it.hasNext()) {
             it.nextOnly();
-            aImagCon.run(it.imag());
+            aImagCon.accept(it.imag());
         }
     }
     /** Groovy stuffs */

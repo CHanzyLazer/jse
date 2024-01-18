@@ -1,6 +1,5 @@
 package jtool.code.collection;
 
-import jtool.code.functional.IDoubleConsumer1;
 import jtool.math.IDataShell;
 import jtool.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
@@ -9,6 +8,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.DoubleConsumer;
 
 import static jtool.code.CS.ZL_VEC;
 
@@ -65,8 +65,8 @@ public class DoubleList implements IDataShell<double[]> {
     public void clear() {
         mSize = 0;
     }
-    public void forEach(IDoubleConsumer1 aCon) {
-        for (int i = 0; i < mSize; ++i) aCon.run(mData[i]);
+    public void forEach(DoubleConsumer aCon) {
+        for (int i = 0; i < mSize; ++i) aCon.accept(mData[i]);
     }
     
     public List<Double> asList() {

@@ -3,7 +3,7 @@ package jtool.atom;
 
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -55,8 +55,8 @@ public interface IAtomDataOperation {
      * @param aOperator 自定义的原子映射运算，输入 {@link IAtom} 输出修改后的 {@link IAtom}
      * @return 新创建的修改后的 AtomData
      */
-    ISettableAtomData map(int aMinTypeNum, IOperator1<? extends IAtom, ? super IAtom> aOperator);
-    default ISettableAtomData map(IOperator1<? extends IAtom, ? super IAtom> aOperator) {return map(1, aOperator);}
+    ISettableAtomData map(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator);
+    default ISettableAtomData map(IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {return map(1, aOperator);}
     
     /**
      * 根据特殊的原子种类映射 aOperator 来遍历映射修改原子种类
@@ -65,8 +65,8 @@ public interface IAtomDataOperation {
      * @param aOperator 自定义的原子映射运算，输入 {@link IAtom} 输出应该分配的种类
      * @return 新创建的修改后的 AtomData
      */
-    ISettableAtomData mapType(int aMinTypeNum, IOperator1<Integer, ? super IAtom> aOperator);
-    default ISettableAtomData mapType(IOperator1<Integer, ? super IAtom> aOperator) {return mapType(1, aOperator);}
+    ISettableAtomData mapType(int aMinTypeNum, IUnaryFullOperator<Integer, ? super IAtom> aOperator);
+    default ISettableAtomData mapType(IUnaryFullOperator<Integer, ? super IAtom> aOperator) {return mapType(1, aOperator);}
     
     
     /**

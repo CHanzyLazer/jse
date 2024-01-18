@@ -1,8 +1,8 @@
 package jtool.math.function;
 
-import jtool.code.functional.IDoubleOperator2;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
+import java.util.function.DoubleBinaryOperator;
 
 /**
  * @author liqa
@@ -74,13 +74,13 @@ public class Func2 {
             }
         }
     }
-    public Func2(IDoubleOperator2 aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy) {
+    public Func2(DoubleBinaryOperator aFunc, double aX0, double aDx, int aNx, double aY0, double aDy, int aNy) {
         mX0 = aX0; mDx = aDx;
         mY0 = aY0; mDy = aDy;
         mNx = aNx;
         
         mData = new double[aNx*aNy];
-        for (int j = 0; j < aNy; ++j) for (int i = 0; i < aNx; ++i) mData[i + j*mNx] = aFunc.cal(mX0 + i*mDx, mY0 + j*mDy);
+        for (int j = 0; j < aNy; ++j) for (int i = 0; i < aNx; ++i) mData[i + j*mNx] = aFunc.applyAsDouble(mX0 + i*mDx, mY0 + j*mDy);
     }
     
     public Func2 copy() {return new Func2(mX0, mDx, mNx, mY0, mDy, MathEX.Vec.copy(mData));}

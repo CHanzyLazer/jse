@@ -1,6 +1,5 @@
 package jtool.math.function;
 
-import jtool.code.functional.IDoubleOperator1;
 import jtool.math.MathEX;
 import jtool.math.vector.IVector;
 import jtool.math.vector.IVectorGetter;
@@ -9,6 +8,7 @@ import jtool.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Arrays;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * 不等间距的 Func1 实例，这里只提供一个专门的实现，
@@ -96,12 +96,12 @@ public final class UnequalIntervalFunc1 implements IZeroBoundFunc1 {
     }
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    @Override public void update_(int aI, IDoubleOperator1 aOpt) {
-        mF[aI] = aOpt.cal(mF[aI]);
+    @Override public void update_(int aI, DoubleUnaryOperator aOpt) {
+        mF[aI] = aOpt.applyAsDouble(mF[aI]);
     }
-    @Override public double getAndUpdate_(int aI, IDoubleOperator1 aOpt) {
+    @Override public double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
         double tV = mF[aI];
-        mF[aI] = aOpt.cal(tV);
+        mF[aI] = aOpt.applyAsDouble(tV);
         return tV;
     }
     

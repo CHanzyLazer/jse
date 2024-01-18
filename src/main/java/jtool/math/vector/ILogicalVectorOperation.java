@@ -11,22 +11,22 @@ public interface ILogicalVectorOperation {
     ILogicalVector and      (ILogicalVector aRHS);
     ILogicalVector or       (ILogicalVector aRHS);
     ILogicalVector xor      (ILogicalVector aRHS);
-    ILogicalVector operate  (ILogicalVector aRHS, IBooleanOperator2 aOpt);
+    ILogicalVector operate(ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
     
     ILogicalVector and      (boolean aRHS);
     ILogicalVector or       (boolean aRHS);
     ILogicalVector xor      (boolean aRHS);
-    ILogicalVector map      (IBooleanOperator1 aOpt);
+    ILogicalVector map(IBooleanUnaryOperator aOpt);
     
     void and2this           (ILogicalVector aRHS);
     void or2this            (ILogicalVector aRHS);
     void xor2this           (ILogicalVector aRHS);
-    void operate2this       (ILogicalVector aRHS, IBooleanOperator2 aOpt);
+    void operate2this(ILogicalVector aRHS, IBooleanBinaryOperator aOpt);
     
     void and2this           (boolean aRHS);
     void or2this            (boolean aRHS);
     void xor2this           (boolean aRHS);
-    void map2this           (IBooleanOperator1 aRHS);
+    void map2this(IBooleanUnaryOperator aRHS);
     
     ILogicalVector not      ();
     void not2this           ();
@@ -37,7 +37,7 @@ public interface ILogicalVectorOperation {
     void fill               (ILogicalVectorGetter aRHS);
     void assign             (IBooleanSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */
-    void forEach            (IBooleanConsumer1 aCon);
+    void forEach            (IBooleanConsumer aCon);
     
     boolean all             ();
     boolean any             ();

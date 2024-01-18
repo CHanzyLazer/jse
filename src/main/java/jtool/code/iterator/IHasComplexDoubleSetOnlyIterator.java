@@ -1,10 +1,10 @@
 package jtool.code.iterator;
 
-import jtool.code.functional.IDoubleSupplier;
 import jtool.math.IComplexDouble;
 import groovy.lang.Closure;
 
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 @FunctionalInterface
@@ -17,20 +17,20 @@ public interface IHasComplexDoubleSetOnlyIterator {
         final IComplexDoubleSetOnlyIterator si = setIterator();
         while (si.hasNext()) si.nextAndSet(aSup.get());
     }
-    default void assign(IDoubleSupplier aSup) {
+    default void assign(DoubleSupplier aSup) {
         Objects.requireNonNull(aSup);
         final IComplexDoubleSetOnlyIterator si = setIterator();
-        while (si.hasNext()) si.nextAndSet(aSup.get());
+        while (si.hasNext()) si.nextAndSet(aSup.getAsDouble());
     }
-    default void assignReal(IDoubleSupplier aRealSup) {
+    default void assignReal(DoubleSupplier aRealSup) {
         Objects.requireNonNull(aRealSup);
         final IComplexDoubleSetOnlyIterator si = setIterator();
-        while (si.hasNext()) si.nextAndSetReal(aRealSup.get());
+        while (si.hasNext()) si.nextAndSetReal(aRealSup.getAsDouble());
     }
-    default void assignImag(IDoubleSupplier aImagSup) {
+    default void assignImag(DoubleSupplier aImagSup) {
         Objects.requireNonNull(aImagSup);
         final IComplexDoubleSetOnlyIterator si = setIterator();
-        while (si.hasNext()) si.nextAndSetImag(aImagSup.get());
+        while (si.hasNext()) si.nextAndSetImag(aImagSup.getAsDouble());
     }
     /** Groovy stuffs */
     default void assign(Closure<?> aGroovyTask) {

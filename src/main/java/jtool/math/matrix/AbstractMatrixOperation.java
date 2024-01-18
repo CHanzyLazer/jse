@@ -1,15 +1,12 @@
 package jtool.math.matrix;
 
-import jtool.code.functional.IDoubleConsumer1;
-import jtool.code.functional.IDoubleSupplier;
 import jtool.code.iterator.IDoubleIterator;
-import jtool.code.functional.IDoubleOperator1;
-import jtool.code.functional.IDoubleOperator2;
 import jtool.code.iterator.IDoubleSetOnlyIterator;
 import jtool.math.operation.DATA;
-import jtool.math.vector.ILogicalVector;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vectors;
+
+import java.util.function.*;
 
 /**
  * 一般的实矩阵运算的实现，默认没有做任何优化
@@ -24,7 +21,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public IMatrix ldiv       (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); DATA.ebeDiv2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
     @Override public IMatrix mod        (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); DATA.ebeMod2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
     @Override public IMatrix lmod       (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); DATA.ebeMod2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix operate    (IMatrix aRHS, IDoubleOperator2 aOpt) {IMatrix rMatrix = newMatrix_(); DATA.ebeDo2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
+    @Override public IMatrix operate    (IMatrix aRHS, DoubleBinaryOperator aOpt) {IMatrix rMatrix = newMatrix_(); DATA.ebeDo2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
     
     @Override public IMatrix plus       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapPlus2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
     @Override public IMatrix minus      (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapMinus2Dest    (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
@@ -34,7 +31,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public IMatrix ldiv       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapLDiv2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
     @Override public IMatrix mod        (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapMod2Dest      (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
     @Override public IMatrix lmod       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapLMod2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix map        (IDoubleOperator1 aOpt) {IMatrix rMatrix = newMatrix_(); DATA.mapDo2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
+    @Override public IMatrix map        (DoubleUnaryOperator aOpt) {IMatrix rMatrix = newMatrix_(); DATA.mapDo2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
     
     @Override public void plus2this     (IMatrix aRHS) {DATA.ebePlus2This    (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
     @Override public void minus2this    (IMatrix aRHS) {DATA.ebeMinus2This   (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
@@ -44,7 +41,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void ldiv2this     (IMatrix aRHS) {DATA.ebeLDiv2This    (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
     @Override public void mod2this      (IMatrix aRHS) {DATA.ebeMod2This     (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
     @Override public void lmod2this     (IMatrix aRHS) {DATA.ebeLMod2This    (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
-    @Override public void operate2this  (IMatrix aRHS, IDoubleOperator2 aOpt) {DATA.ebeDo2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol, aOpt);}
+    @Override public void operate2this  (IMatrix aRHS, DoubleBinaryOperator aOpt) {DATA.ebeDo2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol, aOpt);}
     
     @Override public void plus2this     (double aRHS) {DATA.mapPlus2This    (thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void minus2this    (double aRHS) {DATA.mapMinus2This   (thisMatrix_()::setIteratorCol, aRHS);}
@@ -54,17 +51,17 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void ldiv2this     (double aRHS) {DATA.mapLDiv2This    (thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void mod2this      (double aRHS) {DATA.mapMod2This     (thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void lmod2this     (double aRHS) {DATA.mapLMod2This    (thisMatrix_()::setIteratorCol, aRHS);}
-    @Override public void map2this      (IDoubleOperator1 aOpt) {DATA.mapDo2This(thisMatrix_()::setIteratorCol, aOpt);}
+    @Override public void map2this      (DoubleUnaryOperator aOpt) {DATA.mapDo2This(thisMatrix_()::setIteratorCol, aOpt);}
     
     @Override public IMatrix negative() {IMatrix rMatrix = newMatrix_(); DATA.mapNegative2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
     @Override public void negative2this() {DATA.mapNegative2This(thisMatrix_()::setIteratorCol);}
     
     @Override public void fill          (double aRHS) {DATA.mapFill2This(thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void fill          (IMatrix aRHS) {DATA.ebeFill2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
-    @Override public void assignCol     (IDoubleSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorCol, aSup);}
-    @Override public void assignRow     (IDoubleSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorRow, aSup);}
-    @Override public void forEachCol    (IDoubleConsumer1 aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorCol, aCon);}
-    @Override public void forEachRow    (IDoubleConsumer1 aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorRow, aCon);}
+    @Override public void assignCol     (DoubleSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorCol, aSup);}
+    @Override public void assignRow     (DoubleSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorRow, aSup);}
+    @Override public void forEachCol    (DoubleConsumer aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorCol, aCon);}
+    @Override public void forEachRow    (DoubleConsumer aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorRow, aCon);}
     @Override public void fill          (IMatrixGetter aRHS) {
         final IMatrix tThis = thisMatrix_();
         final IDoubleSetOnlyIterator si = tThis.setIteratorCol();

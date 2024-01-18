@@ -13,7 +13,7 @@ import jtool.code.collection.AbstractCollections;
 import jtool.code.functional.IDoubleFilter;
 import jtool.code.functional.IFilter;
 import jtool.code.functional.IIndexFilter;
-import jtool.code.functional.IOperator1;
+import jtool.code.functional.IUnaryFullOperator;
 import jtool.code.iterator.IHasDoubleIterator;
 import jtool.code.task.TaskCall;
 import jtool.code.task.TaskRun;
@@ -186,11 +186,11 @@ public class UT {
         @VisibleForTesting public static IHasDoubleIterator filterDouble(final IHasDoubleIterator aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
         
         /** 保留这些接口方便外部调用使用 */
-        @VisibleForTesting public static <R, T> Iterable<R>   map(Iterable<T> aIterable,     IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterable, aOpt);}
-        @VisibleForTesting public static <R, T> Iterator<R>   map(Iterator<T> aIterator,     IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterator, aOpt);}
-        @VisibleForTesting public static <R, T> Collection<R> map(Collection<T> aCollection, IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aCollection, aOpt);}
-        @VisibleForTesting public static <R, T> List<R>       map(List<T> aList,             IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aList, aOpt);}
-        @VisibleForTesting public static <R, T> List<R>       map(T[] aArray,                IOperator1<? extends R, ? super T> aOpt) {return AbstractCollections.map(aArray, aOpt);}
+        @VisibleForTesting public static <R, T> Iterable<R>   map(Iterable<T> aIterable,     IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterable, aOpt);}
+        @VisibleForTesting public static <R, T> Iterator<R>   map(Iterator<T> aIterator,     IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterator, aOpt);}
+        @VisibleForTesting public static <R, T> Collection<R> map(Collection<T> aCollection, IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aCollection, aOpt);}
+        @VisibleForTesting public static <R, T> List<R>       map(List<T> aList,             IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aList, aOpt);}
+        @VisibleForTesting public static <R, T> List<R>       map(T[] aArray,                IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aArray, aOpt);}
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static List<Double> asList(final double[] aData) {return AbstractCollections.from(aData);}
@@ -280,13 +280,13 @@ public class UT {
          * map {@code Future<T> to Future<R>} like {@link Stream}.map
          * @author liqa
          */
-        public static <R, T> Future<R> map(final Future<T> aFuture, final IOperator1<? extends R, ? super T> aOpt) {
+        public static <R, T> Future<R> map(final Future<T> aFuture, final IUnaryFullOperator<? extends R, ? super T> aOpt) {
             return new Future<R>() {
                 @Override public boolean cancel(boolean mayInterruptIfRunning) {return aFuture.cancel(mayInterruptIfRunning);}
                 @Override public boolean isCancelled() {return aFuture.isCancelled();}
                 @Override public boolean isDone() {return aFuture.isDone();}
-                @Override public R get() throws InterruptedException, ExecutionException {return aOpt.cal(aFuture.get());}
-                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {return aOpt.cal(aFuture.get(timeout, unit));}
+                @Override public R get() throws InterruptedException, ExecutionException {return aOpt.apply(aFuture.get());}
+                @Override public R get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {return aOpt.apply(aFuture.get(timeout, unit));}
             };
         }
         

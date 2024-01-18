@@ -1,8 +1,10 @@
 package jtool.math.function;
 
-import jtool.code.functional.*;
+import jtool.code.functional.IDoubleTernaryOperator;
 import jtool.math.vector.IVector;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.function.*;
 
 /**
  * 通用的的函数运算。
@@ -20,11 +22,11 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public IFunc1 ldiv    (IFunc1 aRHS) {return operate(aRHS, (lhs, rhs) -> (rhs / lhs));}
     @Override public IFunc1 mod     (IFunc1 aRHS) {return operate(aRHS, (lhs, rhs) -> (lhs % rhs));}
     @Override public IFunc1 lmod    (IFunc1 aRHS) {return operate(aRHS, (lhs, rhs) -> (rhs % lhs));}
-    @Override public IFunc1 operate (IFunc1 aRHS, IDoubleOperator2 aOpt) {
+    @Override public IFunc1 operate (IFunc1 aRHS, DoubleBinaryOperator aOpt) {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.cal(tThis.get_(i), aRHS.subs(rFunc1.getX(i))));
+        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), aRHS.subs(rFunc1.getX(i))));
         return rFunc1;
     }
     
@@ -36,11 +38,11 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public IFunc1 ldiv    (final double aRHS) {return map(lhs -> (aRHS / lhs));}
     @Override public IFunc1 mod     (final double aRHS) {return map(lhs -> (lhs % aRHS));}
     @Override public IFunc1 lmod    (final double aRHS) {return map(lhs -> (aRHS % lhs));}
-    @Override public IFunc1 map     (IDoubleOperator1 aOpt) {
+    @Override public IFunc1 map     (DoubleUnaryOperator aOpt) {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.cal(tThis.get_(i)));
+        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i)));
         return rFunc1;
     }
     
@@ -53,10 +55,10 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public void ldiv2this     (IFunc1 aRHS) {operate2this(aRHS, (lhs, rhs) -> (rhs / lhs));}
     @Override public void mod2this      (IFunc1 aRHS) {operate2this(aRHS, (lhs, rhs) -> (lhs % rhs));}
     @Override public void lmod2this     (IFunc1 aRHS) {operate2this(aRHS, (lhs, rhs) -> (rhs % lhs));}
-    @Override public void operate2this  (IFunc1 aRHS, IDoubleOperator2 aOpt) {
+    @Override public void operate2this  (IFunc1 aRHS, DoubleBinaryOperator aOpt) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
-        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.cal(rThis.get_(i), aRHS.subs(rThis.getX(i))));
+        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), aRHS.subs(rThis.getX(i))));
     }
     
     @Override public void plus2this     (double aRHS) {thisFunc1_().f().operation().plus2this    (aRHS);}
@@ -67,7 +69,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public void ldiv2this     (double aRHS) {thisFunc1_().f().operation().ldiv2this    (aRHS);}
     @Override public void mod2this      (double aRHS) {thisFunc1_().f().operation().mod2this     (aRHS);}
     @Override public void lmod2this     (double aRHS) {thisFunc1_().f().operation().lmod2this    (aRHS);}
-    @Override public void map2this      (IDoubleOperator1 aOpt) {thisFunc1_().f().operation().map2this(aOpt);}
+    @Override public void map2this      (DoubleUnaryOperator aOpt) {thisFunc1_().f().operation().map2this(aOpt);}
     
     @Override public void fill          (double aRHS) {thisFunc1_().f().operation().fill(aRHS);}
     @Override public void fill          (IVector aRHS) {thisFunc1_().f().operation().fill(aRHS);}
@@ -77,39 +79,39 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         final int tNx = rThis.Nx();
         for (int i = 0; i < tNx; ++i) rThis.set_(i, aRHS.subs(rThis.getX(i)));
     }
-    @Override public void assign        (IDoubleSupplier aSup) {thisFunc1_().f().operation().assign(aSup);}
-    @Override public void forEach       (IDoubleConsumer1 aCon) {thisFunc1_().f().operation().forEach(aCon);}
+    @Override public void assign        (DoubleSupplier aSup) {thisFunc1_().f().operation().assign(aSup);}
+    @Override public void forEach       (DoubleConsumer aCon) {thisFunc1_().f().operation().forEach(aCon);}
     
     /** 函数特有的运算 */
-    @Override public IFunc1 operateFull(IFunc1 aRHS, IDoubleOperator3 aOpt) {
+    @Override public IFunc1 operateFull(IFunc1 aRHS, IDoubleTernaryOperator aOpt) {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
         for (int i = 0; i < tNx; ++i) {
             double tX = rFunc1.getX(i);
-            rFunc1.set_(i, aOpt.cal(tThis.get_(i), aRHS.subs(tX), tX));
+            rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), aRHS.subs(tX), tX));
         }
         return rFunc1;
     }
-    @Override public IFunc1 mapFull(IDoubleOperator2 aOpt) {
+    @Override public IFunc1 mapFull(DoubleBinaryOperator aOpt) {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.cal(tThis.get_(i), rFunc1.getX(i)));
+        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), rFunc1.getX(i)));
         return rFunc1;
     }
-    @Override public void operateFull2this(IFunc1 aRHS, IDoubleOperator3 aOpt) {
+    @Override public void operateFull2this(IFunc1 aRHS, IDoubleTernaryOperator aOpt) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
         for (int i = 0; i < tNx; ++i) {
             double tX = rThis.getX(i);
-            rThis.set_(i, aOpt.cal(rThis.get_(i), aRHS.subs(tX), tX));
+            rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), aRHS.subs(tX), tX));
         }
     }
-    @Override public void mapFull2this(IDoubleOperator2 aOpt) {
+    @Override public void mapFull2this(DoubleBinaryOperator aOpt) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
-        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.cal(rThis.get_(i), rThis.getX(i)));
+        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), rThis.getX(i)));
     }
     
     

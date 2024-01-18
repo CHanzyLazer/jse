@@ -1,15 +1,15 @@
 package jtool.math.vector;
 
 import jtool.code.collection.IntegerList;
-import jtool.code.functional.IIntegerConsumer1;
-import jtool.code.functional.IIntegerOperator1;
-import jtool.code.functional.IIntegerSupplier;
 import jtool.code.iterator.IIntegerIterator;
 import jtool.code.iterator.IIntegerSetIterator;
 import jtool.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 
 import static jtool.math.vector.AbstractVector.subVecRangeCheck;
 
@@ -67,13 +67,13 @@ public final class ShiftIntegerVector extends IntegerArrayVector {
                 final int tEnd = mSize + mShift;
                 for (int i = mShift, j = 0; i < tEnd; ++i, ++j) mData[i] = aRHS.get(j);
             }
-            @Override public void assign(IIntegerSupplier aSup) {
+            @Override public void assign(IntSupplier aSup) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.get();
+                for (int i = mShift; i < tEnd; ++i) mData[i] = aSup.getAsInt();
             }
-            @Override public void forEach(IIntegerConsumer1 aCon) {
+            @Override public void forEach(IntConsumer aCon) {
                 final int tEnd = mSize + mShift;
-                for (int i = mShift; i < tEnd; ++i) aCon.run(mData[i]);
+                for (int i = mShift; i < tEnd; ++i) aCon.accept(mData[i]);
             }
         };
     }
@@ -91,14 +91,14 @@ public final class ShiftIntegerVector extends IntegerArrayVector {
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public void update_(int aIdx, IntUnaryOperator aOpt) {
         aIdx += mShift;
-        mData[aIdx] = aOpt.cal(mData[aIdx]);
+        mData[aIdx] = aOpt.applyAsInt(mData[aIdx]);
     }
-    @Override public int getAndUpdate_(int aIdx, IIntegerOperator1 aOpt) {
+    @Override public int getAndUpdate_(int aIdx, IntUnaryOperator aOpt) {
         aIdx += mShift;
         int tValue = mData[aIdx];
-        mData[aIdx] = aOpt.cal(tValue);
+        mData[aIdx] = aOpt.applyAsInt(tValue);
         return tValue;
     }
     
