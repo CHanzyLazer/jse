@@ -1,6 +1,7 @@
 package jtool.atom;
 
 import jtool.code.collection.AbstractRandomAccessList;
+import jtool.code.collection.IntDeque;
 import jtool.code.collection.IntList;
 import jtool.code.functional.IIndexFilter;
 import jtool.code.functional.IUnaryFullOperator;
@@ -559,25 +560,25 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             mSize = mComm.size();
             int tSizeRest = mSize;
             // 使用这个方法来获取每个方向的分划数
-            Deque<Integer> rFactors = new ArrayDeque<>();
+            IntDeque rFactors = new IntDeque();
             for (int tFactor = 2; tFactor <= tSizeRest; ++tFactor) {
                 while (tSizeRest % tFactor == 0) {
                     rFactors.addFirst(tFactor); // 直接使用 addFirst 来实现逆序的作用
                     tSizeRest /= tFactor;
                 }
             }
-            int rSizeX = 1, rSizeY = 1, rSizeZ = 1;
-            for (int tFactor : rFactors) {
-                if (rSizeX <= rSizeY && rSizeX <= rSizeZ) {
-                    rSizeX *= tFactor;
+            final int[] rSizeX = {1}, rSizeY = {1}, rSizeZ = {1};
+            rFactors.forEach(factor -> {
+                if (rSizeX[0] <= rSizeY[0] && rSizeX[0] <= rSizeZ[0]) {
+                    rSizeX[0] *= factor;
                 } else
-                if (rSizeY <= rSizeX && rSizeY <= rSizeZ) {
-                    rSizeY *= tFactor;
+                if (rSizeY[0] <= rSizeX[0] && rSizeY[0] <= rSizeZ[0]) {
+                    rSizeY[0] *= factor;
                 } else {
-                    rSizeZ *= tFactor;
+                    rSizeZ[0] *= factor;
                 }
-            }
-            mSizeX = rSizeX; mSizeY = rSizeY; mSizeZ = rSizeZ;
+            });
+            mSizeX = rSizeX[0]; mSizeY = rSizeY[0]; mSizeZ = rSizeZ[0];
             // 根据分划数获取对应的 mXLo, mXhi, mYLo, mYHi, mZLo, mZHi
             int tI = mRank/mSizeZ/mSizeY;
             int tJ = mRank/mSizeZ%mSizeY;

@@ -23,7 +23,7 @@ public class IntList implements ISlice, IDataShell<int[]> {
     protected int[] mData;
     protected int mSize = 0;
     private IntList(int aSize, int[] aData) {mSize = aSize; mData = aData;}
-    public IntList() {mData = ZL_INT; mSize = 0;}
+    public IntList() {mData = ZL_INT;}
     public IntList(int aInitSize) {mData = new int[aInitSize];}
     
     public int get(int aIdx) {
@@ -38,11 +38,11 @@ public class IntList implements ISlice, IDataShell<int[]> {
     /** 用于方便访问 */
     public boolean isEmpty() {return mSize==0;}
     public int last() {
-        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty IntegerList");
+        if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty IntList");
         return mData[mSize-1];
     }
     public int first() {
-        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty IntegerList");
+        if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty IntList");
         return mData[0];
     }
     

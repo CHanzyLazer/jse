@@ -1464,22 +1464,22 @@ public class MathEX {
             final List<IntVector> rClusters = new ArrayList<>();
             final ILogicalVector tVisited = LogicalVectorCache.getZeros(aSize);
             
-            final Queue<Integer> tQueue = new ArrayDeque<>();
+            final IntDeque tQueue = new IntDeque();
             aPoints.forEach(point -> {
                 if (!tVisited.get(point)) {
                     IntVector.Builder subCluster = IntVector.builder();
 //                  tQueue.clear(); // 由于后面会遍历移除，因此此时 tQueue 永远为空
                     
-                    tQueue.offer(point);
+                    tQueue.addLast(point);
                     tVisited.set(point, true);
                     
                     while (!tQueue.isEmpty()) {
-                        int currentPoint = tQueue.poll();
+                        int currentPoint = tQueue.removeFirst();
                         subCluster.add(currentPoint);
                         
                         aNeighborListGetter.get(currentPoint).forEach(neighbor -> {
                             if (!tVisited.get(neighbor)) {
-                                tQueue.offer(neighbor);
+                                tQueue.addLast(neighbor);
                                 tVisited.set(neighbor, true);
                             }
                         });
@@ -1504,7 +1504,7 @@ public class MathEX {
             final List<IntVector> rClusters = new ArrayList<>();
             final ILogicalVector tVisited = LogicalVectorCache.getZeros(aSize);
             
-            final Deque<Integer> tStack = new ArrayDeque<>();
+            final IntDeque tStack = new IntDeque();
             aPoints.forEach(point -> {
                 if (!tVisited.get(point)) {
                     IntVector.Builder subCluster = IntVector.builder();

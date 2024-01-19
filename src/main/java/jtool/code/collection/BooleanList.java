@@ -20,7 +20,7 @@ public class BooleanList implements IDataShell<boolean[]> {
     protected boolean[] mData;
     protected int mSize = 0;
     private BooleanList(int aSize, boolean[] aData) {mSize = aSize; mData = aData;}
-    public BooleanList() {mData = ZL_BOOL; mSize = 0;}
+    public BooleanList() {mData = ZL_BOOL;}
     public BooleanList(int aInitSize) {mData = new boolean[aInitSize];}
     
     public boolean get(int aIdx) {

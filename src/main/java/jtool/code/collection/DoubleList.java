@@ -20,7 +20,7 @@ public class DoubleList implements IDataShell<double[]> {
     protected double[] mData;
     protected int mSize = 0;
     private DoubleList(int aSize, double[] aData) {mSize = aSize; mData = aData;}
-    public DoubleList() {mData = ZL_VEC; mSize = 0;}
+    public DoubleList() {mData = ZL_VEC;}
     public DoubleList(int aInitSize) {mData = new double[aInitSize];}
     
     public double get(int aIdx) {
