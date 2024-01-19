@@ -1105,6 +1105,21 @@ public class ARRAY {
         }
         return rSum;
     }
+    public static double sumOfThis(int[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rSum = 0.0;
+        for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
+        return rSum;
+    }
+    public static double sumOfThis(long[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rSum = 0.0;
+        for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
+        return rSum;
+    }
+    
     public static double meanOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         

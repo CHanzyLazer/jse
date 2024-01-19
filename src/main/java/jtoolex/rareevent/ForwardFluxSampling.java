@@ -1,17 +1,13 @@
 package jtoolex.rareevent;
 
-
 import com.google.common.collect.ImmutableMap;
 import jtool.atom.IAtomData;
 import jtool.code.CS;
 import jtool.code.UT;
 import jtool.code.collection.AbstractCollections;
 import jtool.math.MathEX;
+import jtool.math.vector.*;
 import jtool.parallel.*;
-import jtool.math.vector.ILogicalVector;
-import jtool.math.vector.IVector;
-import jtool.math.vector.LogicalVector;
-import jtool.math.vector.Vectors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,8 +104,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         
         // 计算过程需要的量的初始化
         mN = mSurfaces.size() - 1;
-        mStep2PointNum = Vectors.zeros(mN);
-        mStep2PathNum = Vectors.zeros(mN);
+        mStep2PointNum = LongVector.zeros(mN);
+        mStep2PathNum = LongVector.zeros(mN);
         mPi = Vectors.NaN(mN);
         
         mPointsOnLambda = new ArrayList<>(mN0);
@@ -245,8 +241,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     /** 记录一下每个过程使用的点的数目 */
     private long mStep1PointNum = 0;
     private long mStep1PathNum = 0;
-    private final IVector mStep2PointNum;
-    private final IVector mStep2PathNum;
+    private final ILongVector mStep2PointNum;
+    private final ILongVector mStep2PathNum;
     
     
     /** 期望向后运行直到 lambdaA 的路径，在向前运行时会进行剪枝，用于过程 1 使用 */
@@ -756,8 +752,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     public long step1PointNum() {return mStep1PointNum;}
     public long step1PathNum() {return mStep1PathNum;}
-    public long step2PointNum(int aIdx) {return (long)mStep2PointNum.get(aIdx);}
-    public long step2PathNum(int aIdx) {return (long)mStep2PathNum.get(aIdx);}
+    public long step2PointNum(int aIdx) {return mStep2PointNum.get(aIdx);}
+    public long step2PathNum(int aIdx) {return mStep2PathNum.get(aIdx);}
     public long totalPointNum() {return mStep1PointNum + (long)mStep2PointNum.sum();}
     public long totalPathNum() {return mStep1PathNum + (long)mStep2PathNum.sum();}
     

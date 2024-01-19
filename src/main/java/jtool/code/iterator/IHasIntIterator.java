@@ -15,4 +15,6 @@ public interface IHasIntIterator {
         final IIntIterator it = iterator();
         while (it.hasNext()) aCon.accept(it.next());
     }
+    
+    default IHasDoubleIterator asDouble() {return () -> IHasIntIterator.this.iterator().asDouble();}
 }
