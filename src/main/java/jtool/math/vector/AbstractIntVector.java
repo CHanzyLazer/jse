@@ -203,6 +203,12 @@ public abstract class AbstractIntVector implements IIntVector {
         return getAndUpdate_(aIdx, aOpt);
     }
     
+    @Override public IIntVector copy() {
+        IIntVector rVector = newZeros_(size());
+        rVector.fill(this);
+        return rVector;
+    }
+    
     @Override public IIntVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefIntVector() {
@@ -233,6 +239,7 @@ public abstract class AbstractIntVector implements IIntVector {
     public abstract void set_(int aIdx, int aValue);
     public abstract int getAndSet_(int aIdx, int aValue);
     public abstract int size();
+    protected abstract IIntVector newZeros_(int aSize);
     
     protected String toString_(int aValue) {return " "+aValue;}
 }

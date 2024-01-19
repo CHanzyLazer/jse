@@ -9,7 +9,7 @@ import jtool.lmp.Lmpdat;
 import jtool.lmp.NativeLmp;
 import jtool.math.matrix.RowMatrix;
 import jtool.math.vector.IVector;
-import jtool.math.vector.Vector;
+import jtool.math.vector.IntVector;
 import jtool.math.vector.Vectors;
 import jtool.parallel.*;
 import jtoolex.rareevent.IFullPathGenerator;
@@ -21,7 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static jtool.code.CS.*;
@@ -146,8 +147,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
     private void sendLmpdat_(Lmpdat aLmpdat, int aDest, MPI.Comm aComm) throws MPI.Error {
         // 获取必要信息
         final int tAtomNum = aLmpdat.atomNum();
-        final Vector tAtomID = aLmpdat.ids();
-        final Vector tAtomType = aLmpdat.types();
+        final IntVector tAtomID = aLmpdat.ids();
+        final IntVector tAtomType = aLmpdat.types();
         final RowMatrix tAtomXYZ = aLmpdat.positions();
         final @Nullable RowMatrix tVelocities = aLmpdat.velocities();
         final boolean tHasVelocities = aLmpdat.hasVelocities();
@@ -179,8 +180,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
         aComm.recv(tLmpdatInfo, LMP_INFO_LEN, aSource, LMPDAT_INFO);
         // 还是使用缓存的数据
-        Vector tAtomID = VectorCache.getVec((int)tLmpdatInfo[0]);
-        Vector tAtomType = VectorCache.getVec((int)tLmpdatInfo[0]);
+        IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+        IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
         RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
         @Nullable RowMatrix tVelocities = null;
         // 先是基本信息，后是速度信息
@@ -207,8 +208,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         if (tMe == aRoot) {
             // 获取必要信息
             final int tAtomNum = aLmpdat.atomNum();
-            final Vector tAtomID = aLmpdat.ids();
-            final Vector tAtomType = aLmpdat.types();
+            final IntVector tAtomID = aLmpdat.ids();
+            final IntVector tAtomType = aLmpdat.types();
             final RowMatrix tAtomXYZ = aLmpdat.positions();
             final @Nullable RowMatrix tVelocities = aLmpdat.velocities();
             final boolean tHasVelocities = aLmpdat.hasVelocities();
@@ -240,8 +241,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
             aComm.bcast(tLmpdatInfo, LMP_INFO_LEN, aRoot);
             // 还是使用缓存的数据
-            Vector tAtomID = VectorCache.getVec((int)tLmpdatInfo[0]);
-            Vector tAtomType = VectorCache.getVec((int)tLmpdatInfo[0]);
+            IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+            IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
             RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
             @Nullable RowMatrix tVelocities = null;
             // 先是基本信息，后是速度信息

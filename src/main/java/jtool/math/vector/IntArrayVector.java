@@ -22,7 +22,10 @@ public abstract class IntArrayVector extends AbstractIntVector implements IDataS
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
     @Override public void fill(int[] aData) {System.arraycopy(aData, 0, internalData(), internalDataShift(), internalDataSize());}
     
+    @Override public IntArrayVector copy() {return (IntArrayVector)super.copy();}
+    
     /** stuff to override */
+    protected abstract IntArrayVector newZeros_(int aSize);
     public abstract IntArrayVector newShell();
     public abstract int @Nullable[] getIfHasSameOrderData(Object aObj);
 }

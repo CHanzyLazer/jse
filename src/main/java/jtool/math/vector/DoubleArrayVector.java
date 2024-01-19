@@ -36,6 +36,8 @@ public abstract class DoubleArrayVector extends AbstractVector implements IDataS
         return rData;
     }
     
+    @Override public DoubleArrayVector copy() {return (DoubleArrayVector)super.copy();}
+    
     /** stuff to override */
     protected abstract DoubleArrayVector newZeros_(int aSize);
     public abstract DoubleArrayVector newShell();

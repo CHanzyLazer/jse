@@ -5,15 +5,9 @@ import jtool.atom.IAtomData;
 import jtool.atom.IXYZ;
 import jtool.code.UT;
 import jtool.io.IInFile;
-import jtool.math.matrix.ColumnMatrix;
-import jtool.math.matrix.DoubleArrayMatrix;
-import jtool.math.matrix.IMatrix;
-import jtool.math.matrix.RowMatrix;
+import jtool.math.matrix.*;
 import jtool.math.vector.IVector;
-import jtool.parallel.DoubleArrayCache;
-import jtool.parallel.IAutoShutdown;
-import jtool.parallel.MPI;
-import jtool.parallel.MatrixCache;
+import jtool.parallel.*;
 import jtool.vasp.IVaspCommonData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -577,7 +571,43 @@ public class NativeLmp implements IAutoShutdown {
             if (aName.startsWith("d_")) {
                 return fullAtomDataOf(aName, true , 1);
             } else {
-                throw new IllegalArgumentException("Unexpected name: "+aName+", use fullAtomDataOf(aName, aIsDouble, aRowNum, aColNum) to gather this atom data.");
+                throw new IllegalArgumentException("Unexpected name: \""+aName+"\", use fullAtomDataOf(\""+aName+"\", aIsDouble, aRowNum, aColNum) to gather this atom data.");
+            }
+        }}
+    }
+    @SuppressWarnings("DuplicateBranchesInSwitch")
+    public RowIntMatrix atomIntDataOf(String aName) throws Error {
+        switch(aName) {
+        case "id":          {return fullAtomIntDataOf(aName, 1);}
+        case "type":        {return fullAtomIntDataOf(aName, 1);}
+        case "mask":        {return fullAtomIntDataOf(aName, 1);}
+        case "image":       {return fullAtomIntDataOf(aName, 1);}
+        case "x":           {throw new IllegalArgumentException("Data type of \"x\" is double, use atomDataOf(\"x\") to gather this atom data.");}
+        case "v":           {throw new IllegalArgumentException("Data type of \"v\" is double, use atomDataOf(\"v\") to gather this atom data.");}
+        case "f":           {throw new IllegalArgumentException("Data type of \"f\" is double, use atomDataOf(\"f\") to gather this atom data.");}
+        case "molecule":    {return fullAtomIntDataOf(aName, 1);}
+        case "q":           {throw new IllegalArgumentException("Data type of \"q\" is double, use atomDataOf(\"q\") to gather this atom data.");}
+        case "mu":          {throw new IllegalArgumentException("Data type of \"mu\" is double, use atomDataOf(\"mu\") to gather this atom data.");}
+        case "omega":       {throw new IllegalArgumentException("Data type of \"omega\" is double, use atomDataOf(\"omega\") to gather this atom data.");}
+        case "angmom":      {throw new IllegalArgumentException("Data type of \"angmom\" is double, use atomDataOf(\"angmom\") to gather this atom data.");}
+        case "torque":      {throw new IllegalArgumentException("Data type of \"torque\" is double, use atomDataOf(\"torque\") to gather this atom data.");}
+        case "radius":      {throw new IllegalArgumentException("Data type of \"radius\" is double, use atomDataOf(\"radius\") to gather this atom data.");}
+        case "rmass":       {throw new IllegalArgumentException("Data type of \"rmass\" is double, use atomDataOf(\"rmass\") to gather this atom data.");}
+        case "ellipsoid":   {return fullAtomIntDataOf(aName, 1);}
+        case "line":        {return fullAtomIntDataOf(aName, 1);}
+        case "tri":         {return fullAtomIntDataOf(aName, 1);}
+        case "body":        {return fullAtomIntDataOf(aName, 1);}
+        case "quat":        {throw new IllegalArgumentException("Data type of \"quat\" is double, use atomDataOf(\"quat\") to gather this atom data.");}
+        case "temperature": {throw new IllegalArgumentException("Data type of \"temperature\" is double, use atomDataOf(\"temperature\") to gather this atom data.");}
+        case "heatflow":    {throw new IllegalArgumentException("Data type of \"heatflow\" is double, use atomDataOf(\"heatflow\") to gather this atom data.");}
+        default: {
+            if (aName.startsWith("i_")) {
+                return fullAtomIntDataOf(aName, 1);
+            } else
+            if (aName.startsWith("d_")) {
+                throw new IllegalArgumentException("Data type of \""+aName+"\" is double, use atomDataOf(\""+aName+"\") to gather this atom data.");
+            } else {
+                throw new IllegalArgumentException("Unexpected name: \""+aName+"\", use fullAtomIntDataOf(\""+aName+"\", aRowNum, aColNum) to gather this atom data.");
             }
         }}
     }
@@ -598,6 +628,12 @@ public class NativeLmp implements IAutoShutdown {
         lammpsGatherConcat_(mLmpPtr, aName, aIsDouble, aColNum, rData.internalData());
         return rData;
     }
+    public RowIntMatrix fullAtomIntDataOf(String aName, int aColNum) throws Error {
+        checkThread();
+        RowIntMatrix rData = IntMatrixCache.getMatRow(atomNum(), aColNum);
+        lammpsGatherConcatInt_(mLmpPtr, aName, aColNum, rData.internalData());
+        return rData;
+    }
     /**
      * 获取此进程的原子数据而不进行收集操作，
      * 似乎 mass 需要使用此方法才能合法获取；
@@ -616,8 +652,17 @@ public class NativeLmp implements IAutoShutdown {
         lammpsExtractAtom_(mLmpPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
         return rData;
     }
+    public RowIntMatrix localAtomIntDataOf(String aName, int aDataType, int aRowNum, int aColNum) throws Error {
+        checkThread();
+        RowIntMatrix rData = IntMatrixCache.getMatRow(aRowNum, aColNum);
+        lammpsExtractAtomInt_(mLmpPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
+        return rData;
+    }
     private native static void lammpsGatherConcat_(long aLmpPtr, String aName, boolean aIsDouble, int aCount, double[] rData) throws Error;
+    private native static void lammpsGatherConcatInt_(long aLmpPtr, String aName, int aCount, int[] rData) throws Error;
     private native static void lammpsExtractAtom_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, double[] rData) throws Error;
+    private native static void lammpsExtractAtomInt_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, int[] rData) throws Error;
+    private native static void lammpsExtractAtomLong_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, long[] rData) throws Error;
     
     /**
      * Scatter the named per-atom, per-atom fix, per-atom compute,
@@ -695,8 +740,8 @@ public class NativeLmp implements IAutoShutdown {
      */
     public Lmpdat lmpdat(boolean aNoVelocities) throws Error {
         // 获取数据
-        RowMatrix tID = atomDataOf("id");
-        RowMatrix tType = atomDataOf("type");
+        RowIntMatrix tID = atomIntDataOf("id");
+        RowIntMatrix tType = atomIntDataOf("type");
         RowMatrix tXYZ = atomDataOf("x");
         @Nullable RowMatrix tVelocities = aNoVelocities ? null : atomDataOf("v");
         IMatrix tMasses = atomDataOf("mass");
@@ -734,7 +779,7 @@ public class NativeLmp implements IAutoShutdown {
         command(String.format("mass            %d %f", i+1, tMasses.get(i)));
         }
         @Nullable RowMatrix tVelocities = aLmpdat.velocities();
-        lammpsCreateAtoms_(mLmpPtr, aLmpdat.ids().internalData(), aLmpdat.types().internalData(), aLmpdat.positions().internalData(), tVelocities==null ? null : tVelocities.internalData(), null, false);
+        lammpsCreateAtoms_(mLmpPtr, aLmpdat.atomNum(), aLmpdat.ids().internalData(), aLmpdat.types().internalData(), aLmpdat.positions().internalData(), tVelocities==null ? null : tVelocities.internalData(), null, false);
     }
     public void loadData(IAtomData aAtomData) throws Error {
         checkThread();
@@ -764,8 +809,8 @@ public class NativeLmp implements IAutoShutdown {
         checkThread();
         final boolean tHasVelocities = UT.Code.first(aAtoms).hasVelocities();
         final int tAtomNum = aAtoms.size();
-        double[] rID = DoubleArrayCache.getArray(tAtomNum);
-        double[] rType = DoubleArrayCache.getArray(tAtomNum);
+        int[] rID = IntArrayCache.getArray(tAtomNum);
+        int[] rType = IntArrayCache.getArray(tAtomNum);
         double[] rXYZ = DoubleArrayCache.getArray(tAtomNum*3);
         double[] rVelocities = tHasVelocities ? DoubleArrayCache.getArray(tAtomNum*3) : null;
         int i = 0, j1 = 0, j2 = 0;
@@ -782,16 +827,16 @@ public class NativeLmp implements IAutoShutdown {
                 rVelocities[j2] = tAtom.vz(); ++j2;
             }
         }
-        lammpsCreateAtoms_(mLmpPtr, rID, rType, rXYZ, rVelocities, null, aShrinkExceed);
-        DoubleArrayCache.returnArray(rID);
-        DoubleArrayCache.returnArray(rType);
+        lammpsCreateAtoms_(mLmpPtr, tAtomNum, rID, rType, rXYZ, rVelocities, null, aShrinkExceed);
+        IntArrayCache.returnArray(rID);
+        IntArrayCache.returnArray(rType);
         DoubleArrayCache.returnArray(rXYZ);
         if (tHasVelocities) DoubleArrayCache.returnArray(rVelocities);
     }
     public void creatAtoms(List<? extends IAtom> aAtoms) throws Error {
         creatAtoms(aAtoms, false);
     }
-    private native static void lammpsCreateAtoms_(long aLmpPtr, double[] aID, double[] aType, double[] aXYZ, double[] aVelocities, double[] aImage, boolean aShrinkExceed) throws Error;
+    private native static void lammpsCreateAtoms_(long aLmpPtr, int aAtomNum, int[] aID, int[] aType, double[] aXYZ, double[] aVelocities, int[] aImage, boolean aShrinkExceed) throws Error;
     
     /**
      * lammps clear 指令

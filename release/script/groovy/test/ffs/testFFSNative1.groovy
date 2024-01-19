@@ -141,9 +141,13 @@ MultipleNativeLmpFullPathGenerator.withOf(subComm, subRoots, dumpCal, initPoints
         println("k = ${FFS.getK()}, totalPointNum = ${FFS.totalPointNum()}");
     }}
 }
-// i = -1, k0 = 0.897492300923889, step1PointNum = 11429, step1PathNum = 6, time: 00 hour 05 min 28.89 sec
-// i = 0, prob = 0.13007159904534607, step2PointNum = 9516, step2PathNum = 838, time: 00 hour 03 min 59.42 sec
-// i = 1, prob = 0.13552188552188585, step2PointNum = 20869, step2PathNum = 1009, time: 00 hour 09 min 47.59 sec
+// i = -1, k0 = 0.897492300923889, step1PointNum = 11429, step1PathNum = 6, time: 00 hour 03 min 38.64 sec
+// FullPathGenTime: lmp = 47.57%, lambda = 24.36%, wait = 27.85%, else = 0.22%
+// i = 0, prob = 0.13007159904534607, step2PointNum = 9516, step2PathNum = 838, time: 00 hour 02 min 35.62 sec
+// FullPathGenTime: lmp = 61.02%, lambda = 26.77%, wait = 11.83%, else = 0.38%
+// i = 1, prob = 0.13552188552188585, step2PointNum = 20869, step2PathNum = 1009, time: 00 hour 06 min 18.81 sec
+// FullPathGenTime: lmp = 53.79%, lambda = 25.24%, wait = 20.65%, else = 0.31%
+
 // i = 2, prob = 0.20618919751727793, step2PointNum = 23835, step2PathNum = 688, time: 00 hour 10 min 21.89 sec
 // i = 3, prob = 0.247749468787495, step2PointNum = 28745, step2PathNum = 578, time: 00 hour 12 min 36.06 sec
 

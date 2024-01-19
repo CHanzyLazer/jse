@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @author liqa
  * <p> 内部存储 double[] 的矩阵，会加速相关的运算 </p>
- * <p> 由于没有需要的实现，暂时略去中间的 RealMatrix 这一层 </p>
  */
 public abstract class DoubleArrayMatrix extends AbstractMatrix implements IDataShell<double[]> {
     protected double[] mData;

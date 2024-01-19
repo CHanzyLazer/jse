@@ -70,6 +70,8 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     void update(int aIdx, IntUnaryOperator aOpt);
     int getAndUpdate(int aIdx, IntUnaryOperator aOpt);
     
+    IIntVector copy();
+    
     IIntVector subVec(int aFromIdx, int aToIdx);
     
     /** 向量的运算操作，默认返回新的向量 */

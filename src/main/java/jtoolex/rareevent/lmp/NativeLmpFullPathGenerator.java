@@ -137,8 +137,8 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
                     MatrixCache.returnMat(tVelocities);
                 }
                 MatrixCache.returnMat(mNext.positions());
-                VectorCache.returnVec(mNext.types());
-                VectorCache.returnVec(mNext.ids());
+                IntVectorCache.returnVec(mNext.types());
+                IntVectorCache.returnVec(mNext.ids());
             }
             try {mNext = mLmp.lmpdat(true);}
             catch (NativeLmp.Error e) {throw new RuntimeException(e);}

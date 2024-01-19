@@ -5,6 +5,7 @@ package jtool.math.vector;
  * @author liqa
  */
 public abstract class RefIntVector extends AbstractIntVector {
+    @Override protected final IIntVector newZeros_(int aSize) {return IntVector.zeros(aSize);}
     
     /** stuff to override */
     public abstract int get_(int aIdx);
