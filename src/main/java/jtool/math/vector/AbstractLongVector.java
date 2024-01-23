@@ -40,9 +40,9 @@ public abstract class AbstractLongVector implements ILongVector {
     }
     @Override public IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return AbstractLongVector.this.get_(aIdx);}
-            @Override public void set_(int aIdx, double aValue) {AbstractLongVector.this.set_(aIdx, (long)aValue);}
-            public double getAndSet_(int aIdx, double aValue) {return AbstractLongVector.this.getAndSet_(aIdx, (long)aValue);}
+            @Override protected double get_(int aIdx) {return AbstractLongVector.this.get_(aIdx);}
+            @Override protected void set_(int aIdx, double aValue) {AbstractLongVector.this.set_(aIdx, (long)aValue);}
+            @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractLongVector.this.getAndSet_(aIdx, (long)aValue);}
             @Override public int size() {return AbstractLongVector.this.size();}
         };
     }
@@ -54,7 +54,7 @@ public abstract class AbstractLongVector implements ILongVector {
         if (aIdx2<0 || aIdx2>=tSize) throw new IndexOutOfBoundsException(String.format("Index 2: %d", aIdx1));
         swap_(aIdx1, aIdx2);
     }
-    void swap_(int aIdx1, int aIdx2) {
+    protected void swap_(int aIdx1, int aIdx2) {
         set_(aIdx1, getAndSet_(aIdx2, get_(aIdx1)));
     }
     
@@ -72,42 +72,42 @@ public abstract class AbstractLongVector implements ILongVector {
         set_(aIdx, aValue);
     }
     
-    @Override public void increment_(int aIdx) {
+    protected void increment_(int aIdx) {
         long tValue = get_(aIdx);
         ++tValue;
         set_(aIdx, tValue);
     }
-    @Override public long getAndIncrement_(int aIdx) {
+    protected long getAndIncrement_(int aIdx) {
         long tValue = get_(aIdx);
         set_(aIdx, tValue+1);
         return tValue;
     }
-    @Override public void decrement_(int aIdx) {
+    protected void decrement_(int aIdx) {
         long tValue = get_(aIdx);
         --tValue;
         set_(aIdx, tValue);
     }
-    @Override public long getAndDecrement_(int aIdx) {
+    protected long getAndDecrement_(int aIdx) {
         long tValue = get_(aIdx);
         set_(aIdx, tValue-1);
         return tValue;
     }
-    @Override public void add_(int aIdx, long aDelta) {
+    protected void add_(int aIdx, long aDelta) {
         long tValue = get_(aIdx);
         tValue += aDelta;
         set_(aIdx, tValue);
     }
-    @Override public long getAndAdd_(int aIdx, long aDelta) {
+    protected long getAndAdd_(int aIdx, long aDelta) {
         long tValue = get_(aIdx);
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public void update_(int aIdx, LongUnaryOperator aOpt) {
+    protected void update_(int aIdx, LongUnaryOperator aOpt) {
         long tValue = get_(aIdx);
         tValue = aOpt.applyAsLong(tValue);
         set_(aIdx, tValue);
     }
-    @Override public long getAndUpdate_(int aIdx, LongUnaryOperator aOpt) {
+    protected long getAndUpdate_(int aIdx, LongUnaryOperator aOpt) {
         long tValue = get_(aIdx);
         set_(aIdx, aOpt.applyAsLong(tValue));
         return tValue;
@@ -157,9 +157,9 @@ public abstract class AbstractLongVector implements ILongVector {
     @Override public final double sum() {return operation().sum();}
     
     /** stuff to override */
-    public abstract long get_(int aIdx);
-    public abstract void set_(int aIdx, long aValue);
-    public abstract long getAndSet_(int aIdx, long aValue);
+    protected abstract long get_(int aIdx);
+    protected abstract void set_(int aIdx, long aValue);
+    protected abstract long getAndSet_(int aIdx, long aValue);
     public abstract int size();
     
     protected String toString_(long aValue) {return " "+aValue;}

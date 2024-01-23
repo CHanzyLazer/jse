@@ -10,9 +10,9 @@ public abstract class RefMatrix extends AbstractMatrix {
     @Override protected final IMatrix newZeros_(int aRowNum, int aColNum) {return ColumnMatrix.zeros(aRowNum, aColNum);}
     
     /** stuff to override */
-    public abstract double get_(int aRow, int aCol);
-    @Override public void set_(int aRow, int aCol, double aValue) {throw new UnsupportedOperationException("set");}
-    @Override public double getAndSet_(int aRow, int aCol, double aValue) {
+    protected abstract double get_(int aRow, int aCol);
+    @Override protected void set_(int aRow, int aCol, double aValue) {throw new UnsupportedOperationException("set");}
+    @Override protected double getAndSet_(int aRow, int aCol, double aValue) {
         double oValue = get_(aRow, aCol);
         set_(aRow, aCol, aValue);
         return oValue;

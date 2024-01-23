@@ -662,7 +662,7 @@ public class UT {
                     }
                 } else {
                     if (tCharCode <= 32) {
-                        rData.set_(tIdx, CharScanner.parseDouble(tChar, tFrom, i));
+                        rData.set(tIdx, CharScanner.parseDouble(tChar, tFrom, i));
                         tFrom = -1;
                         ++tIdx;
                         if (tIdx == aLength) return rData;
@@ -670,7 +670,7 @@ public class UT {
                 }
             }
             // 最后一个数据
-            if (tFrom >= 0 && tFrom < tChar.length) rData.set_(tIdx, CharScanner.parseDouble(tChar, tFrom, tChar.length));
+            if (tFrom >= 0 && tFrom < tChar.length) rData.set(tIdx, CharScanner.parseDouble(tChar, tFrom, tChar.length));
             return rData;
         }
         
@@ -1067,7 +1067,7 @@ public class UT {
             write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData.iterable(), String::valueOf)));
         }
         public static void data2csv(IFunc1 aFunc, String aFilePath, String... aHeads) throws IOException {
-            List<String> rLines = AbstractCollections.map(AbstractCollections.range(aFunc.Nx()), i -> aFunc.get_(i)+","+aFunc.getX(i));
+            List<String> rLines = AbstractCollections.map(AbstractCollections.range(aFunc.Nx()), i -> aFunc.get(i)+","+aFunc.getX(i));
             rLines = AbstractCollections.merge((aHeads!=null && aHeads.length>0) ? String.join(",", aHeads) : "f,x", rLines);
             write(aFilePath, rLines);
         }

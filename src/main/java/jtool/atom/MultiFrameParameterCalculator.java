@@ -208,7 +208,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         rData.col(TYPE_XYZ_Y_COL).fill(subXYZArray.col(1));
         rData.col(TYPE_XYZ_Z_COL).fill(subXYZArray.col(2));
         for (int row = 0; row < mAtomNum; ++row) {
-            rData.set_(row, TYPE_XYZ_TYPE_COL, mTypeArray[row]);
+            rData.set(row, TYPE_XYZ_TYPE_COL, mTypeArray[row]);
         }
         // 返回结果
         return getAtomData_(rData, mBoxList.get(aFrame));
@@ -238,7 +238,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         final IMatrix rData = Matrices.zeros(mAtomNum, ATOM_DATA_KEYS_TYPE_XYZ.length);
         // 先统一设置好粒子种类
         for (int row = 0; row < mAtomNum; ++row) {
-            rData.set_(row, TYPE_XYZ_TYPE_COL, mTypeArray[row]);
+            rData.set(row, TYPE_XYZ_TYPE_COL, mTypeArray[row]);
         }
         // 再遍历统计坐标，这样的遍历顺序应该更加内存友好
         int tEnd = aStart + aFrameNum;
@@ -334,7 +334,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         // 通过时间点计算帧数值（不去排除重复值，如果存在）
         tFrames.operation().map2this(t -> Math.round(t / mTimestep));
         // x 坐标为通过帧数计算得到的时间值
-        final IFunc1 rMSD = Func1.zeros(aN, i -> (tFrames.get_(i) * mTimestep));
+        final IFunc1 rMSD = Func1.zeros(aN, i -> (tFrames.get(i) * mTimestep));
         
         // 获取需要间隔的帧数值
         final int tFrameGap = Math.max(1, (int)Math.round(aTimeGap / mTimestep));
@@ -343,7 +343,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         pool().parfor(aN, i -> {
             double rStatNum = 0;
             double rMSDi = 0.0;
-            for (int start = 0, end = (int)tFrames.get_(i); end < mFrameNum; start+=tFrameGap, end+=tFrameGap) {
+            for (int start = 0, end = (int)tFrames.get(i); end < mFrameNum; start+=tFrameGap, end+=tFrameGap) {
                 IMatrix tStartFrame = mAllAtomDataXYZ.get(start);
                 IMatrix tEndFrame = mAllAtomDataXYZ.get(end);
                 for (int j = 0; j < mAtomNum; ++j) {
@@ -352,7 +352,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
                 rStatNum += mAtomNum;
             }
             // 在这里统一设置可以避免频繁访问数组
-            rMSD.set_(i, rMSDi/rStatNum);
+            rMSD.set(i, rMSDi/rStatNum);
         });
         
         // 输出结果

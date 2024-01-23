@@ -26,7 +26,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), aRHS.subs(rFunc1.getX(i))));
+        for (int i = 0; i < tNx; ++i) rFunc1.set(i, aOpt.applyAsDouble(tThis.get(i), aRHS.subs(rFunc1.getX(i))));
         return rFunc1;
     }
     
@@ -42,7 +42,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i)));
+        for (int i = 0; i < tNx; ++i) rFunc1.set(i, aOpt.applyAsDouble(tThis.get(i)));
         return rFunc1;
     }
     
@@ -58,7 +58,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public void operate2this  (IFunc1 aRHS, DoubleBinaryOperator aOpt) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
-        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), aRHS.subs(rThis.getX(i))));
+        for (int i = 0; i < tNx; ++i) rThis.set(i, aOpt.applyAsDouble(rThis.get(i), aRHS.subs(rThis.getX(i))));
     }
     
     @Override public void plus2this     (double aRHS) {thisFunc1_().f().operation().plus2this    (aRHS);}
@@ -77,7 +77,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public void fill          (IFunc1Subs aRHS) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
-        for (int i = 0; i < tNx; ++i) rThis.set_(i, aRHS.subs(rThis.getX(i)));
+        for (int i = 0; i < tNx; ++i) rThis.set(i, aRHS.subs(rThis.getX(i)));
     }
     @Override public void assign        (DoubleSupplier aSup) {thisFunc1_().f().operation().assign(aSup);}
     @Override public void forEach       (DoubleConsumer aCon) {thisFunc1_().f().operation().forEach(aCon);}
@@ -89,7 +89,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         final int tNx = rFunc1.Nx();
         for (int i = 0; i < tNx; ++i) {
             double tX = rFunc1.getX(i);
-            rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), aRHS.subs(tX), tX));
+            rFunc1.set(i, aOpt.applyAsDouble(tThis.get(i), aRHS.subs(tX), tX));
         }
         return rFunc1;
     }
@@ -97,7 +97,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         IFunc1 tThis = thisFunc1_();
         IFunc1 rFunc1 = newFunc1_();
         final int tNx = rFunc1.Nx();
-        for (int i = 0; i < tNx; ++i) rFunc1.set_(i, aOpt.applyAsDouble(tThis.get_(i), rFunc1.getX(i)));
+        for (int i = 0; i < tNx; ++i) rFunc1.set(i, aOpt.applyAsDouble(tThis.get(i), rFunc1.getX(i)));
         return rFunc1;
     }
     @Override public void operateFull2this(IFunc1 aRHS, IDoubleTernaryOperator aOpt) {
@@ -105,13 +105,13 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         final int tNx = rThis.Nx();
         for (int i = 0; i < tNx; ++i) {
             double tX = rThis.getX(i);
-            rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), aRHS.subs(tX), tX));
+            rThis.set(i, aOpt.applyAsDouble(rThis.get(i), aRHS.subs(tX), tX));
         }
     }
     @Override public void mapFull2this(DoubleBinaryOperator aOpt) {
         IFunc1 rThis = thisFunc1_();
         final int tNx = rThis.Nx();
-        for (int i = 0; i < tNx; ++i) rThis.set_(i, aOpt.applyAsDouble(rThis.get_(i), rThis.getX(i)));
+        for (int i = 0; i < tNx; ++i) rThis.set(i, aOpt.applyAsDouble(rThis.get(i), rThis.getX(i)));
     }
     
     
@@ -120,11 +120,11 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     
     @Override public double integral() {
         final IFunc1 tThis = thisFunc1_();
-        double pF = tThis.get_(0);
+        double pF = tThis.get(0);
         double tResult = 0.0;
         int tNx = tThis.Nx();
         for (int i = 1; i < tNx; ++i) {
-            double tF = tThis.get_(i);
+            double tF = tThis.get(i);
             tResult += tThis.dx(i-1)*(tF + pF)*0.5;
             pF = tF;
         }
@@ -140,11 +140,11 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public IFunc1Subs refConvolve(IFunc2Subs aConv) {
         final IFunc1 tThis = thisFunc1_();
         return k -> {
-            double pC = aConv.subs(tThis.x0(), k) * tThis.get_(0);
+            double pC = aConv.subs(tThis.x0(), k) * tThis.get(0);
             double tResult = 0.0;
             int tNx = tThis.Nx();
             for (int i = 1; i < tNx; ++i) {
-                double tC = aConv.subs(tThis.getX(i), k) * tThis.get_(i);
+                double tC = aConv.subs(tThis.getX(i), k) * tThis.get(i);
                 tResult += tThis.dx(i-1)*(tC + pC)*0.5;
                 pC = tC;
             }
@@ -161,11 +161,11 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv) {
         final IFunc1 tThis = thisFunc1_();
         return k -> {
-            double pC = aConv.subs(tThis.get_(0), tThis.x0(), k);
+            double pC = aConv.subs(tThis.get(0), tThis.x0(), k);
             double tResult = 0.0;
             int tNx = tThis.Nx();
             for (int i = 1; i < tNx; ++i) {
-                double tC = aConv.subs(tThis.get_(i), tThis.getX(i), k);
+                double tC = aConv.subs(tThis.get(i), tThis.getX(i), k);
                 tResult += tThis.dx(i-1)*(tC + pC)*0.5;
                 pC = tC;
             }
@@ -181,7 +181,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         double tMaxValue = Double.NEGATIVE_INFINITY;
         int tNx = tThis.Nx();
         for (int i = 0; i < tNx; ++i) {
-            double tValue = tThis.get_(i);
+            double tValue = tThis.get(i);
             if (tValue > tMaxValue) {
                 tMaxValue = tValue;
                 tMaxIdx = i;
@@ -195,7 +195,7 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         double tMinValue = Double.POSITIVE_INFINITY;
         int tNx = tThis.Nx();
         for (int i = 0; i < tNx; ++i) {
-            double tValue = tThis.get_(i);
+            double tValue = tThis.get(i);
             if (tValue < tMinValue) {
                 tMinValue = tValue;
                 tMinIdx = i;

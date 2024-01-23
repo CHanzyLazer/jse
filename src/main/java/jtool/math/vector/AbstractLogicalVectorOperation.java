@@ -59,9 +59,9 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
     @Override public ILogicalVector refReverse() {
         return new RefLogicalVector() {
             private final ILogicalVector mThis = thisVector_();
-            @Override public boolean get_(int aIdx) {return mThis.get_(mThis.size()-1-aIdx);}
-            @Override public void set_(int aIdx, boolean aValue) {mThis.set_(mThis.size()-1-aIdx, aValue);}
-            @Override public boolean getAndSet_(int aIdx, boolean aValue) {return mThis.getAndSet_(mThis.size()-1-aIdx, aValue);}
+            @Override protected boolean get_(int aIdx) {return mThis.get(mThis.size()-1-aIdx);}
+            @Override protected void set_(int aIdx, boolean aValue) {mThis.set(mThis.size()-1-aIdx, aValue);}
+            @Override protected boolean getAndSet_(int aIdx, boolean aValue) {return mThis.getAndSet(mThis.size()-1-aIdx, aValue);}
             @Override public int size() {return mThis.size();}
         };
     }

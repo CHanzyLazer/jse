@@ -23,7 +23,7 @@ public interface IXYZ {
     default double[] data() {return new double[] {x(), y(), z()};}
     default IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {
+            @Override protected double get_(int aIdx) {
                 switch(aIdx) {
                 case 0: return x();
                 case 1: return y();

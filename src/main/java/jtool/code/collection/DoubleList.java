@@ -86,15 +86,15 @@ public class DoubleList implements IDataShell<double[]> {
     }
     public IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return mData[aIdx];}
-            @Override public void set_(int aIdx, double aValue) {mData[aIdx] = aValue;}
+            @Override protected double get_(int aIdx) {return mData[aIdx];}
+            @Override protected void set_(int aIdx, double aValue) {mData[aIdx] = aValue;}
             @Override public int size() {return mSize;}
         };
     }
     @ApiStatus.Experimental
     public IVector asConstVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return mData[aIdx];}
+            @Override protected double get_(int aIdx) {return mData[aIdx];}
             @Override public int size() {return mSize;}
         };
     }

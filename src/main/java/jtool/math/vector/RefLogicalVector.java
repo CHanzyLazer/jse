@@ -8,9 +8,9 @@ public abstract class RefLogicalVector extends AbstractLogicalVector {
     @Override protected final ILogicalVector newZeros_(int aSize) {return LogicalVector.zeros(aSize);}
     
     /** stuff to override */
-    public abstract boolean get_(int aIdx);
-    public void set_(int aIdx, boolean aValue) {throw new UnsupportedOperationException("set");}
-    public boolean getAndSet_(int aIdx, boolean aValue) {
+    protected abstract boolean get_(int aIdx);
+    protected void set_(int aIdx, boolean aValue) {throw new UnsupportedOperationException("set");}
+    protected boolean getAndSet_(int aIdx, boolean aValue) {
         boolean oValue = get_(aIdx);
         set_(aIdx, aValue);
         return oValue;

@@ -167,12 +167,12 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
     @Override public IComplexVector refReverse() {
         return new RefComplexVector() {
             private final IComplexVector mThis = thisVector_();
-            @Override public double getReal_(int aIdx) {return mThis.getReal_(mThis.size()-1-aIdx);}
-            @Override public double getImag_(int aIdx) {return mThis.getImag_(mThis.size()-1-aIdx);}
-            @Override public void setReal_(int aIdx, double aReal) {mThis.setReal_(mThis.size()-1-aIdx, aReal);}
-            @Override public void setImag_(int aIdx, double aImag) {mThis.setImag_(mThis.size()-1-aIdx, aImag);}
-            @Override public double getAndSetReal_(int aIdx, double aReal) {return mThis.getAndSetReal_(mThis.size()-1-aIdx, aReal);}
-            @Override public double getAndSetImag_(int aIdx, double aImag) {return mThis.getAndSetImag_(mThis.size()-1-aIdx, aImag);}
+            @Override protected double getReal_(int aIdx) {return mThis.getReal(mThis.size()-1-aIdx);}
+            @Override protected double getImag_(int aIdx) {return mThis.getImag(mThis.size()-1-aIdx);}
+            @Override protected void setReal_(int aIdx, double aReal) {mThis.setReal(mThis.size()-1-aIdx, aReal);}
+            @Override protected void setImag_(int aIdx, double aImag) {mThis.setImag(mThis.size()-1-aIdx, aImag);}
+            @Override protected double getAndSetReal_(int aIdx, double aReal) {return mThis.getAndSetReal(mThis.size()-1-aIdx, aReal);}
+            @Override protected double getAndSetImag_(int aIdx, double aImag) {return mThis.getAndSetImag(mThis.size()-1-aIdx, aImag);}
             @Override public int size() {return mThis.size();}
         };
     }

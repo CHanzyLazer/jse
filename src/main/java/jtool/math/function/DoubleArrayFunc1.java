@@ -18,7 +18,7 @@ import java.util.function.DoubleUnaryOperator;
  * <p> 如果完全抽象的实现会非常复杂（包括新的专门用于函数的迭代器，相关运算之类，复杂度会超过矩阵向量库），这里暂不打算实现（至少等矩阵向量库完全成熟稳定） </p>
  */
 @ApiStatus.Experimental
-public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShell<double[]> {
+public abstract class DoubleArrayFunc1 extends AbstractFunc1 implements IEqualIntervalFunc1, IDataShell<double[]> {
     protected double[] mData;
     protected double mX0;
     protected final double mDx;
@@ -58,7 +58,7 @@ public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShel
     /** IFunc1 stuffs */
     @Override public final IVector x() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return getX(aIdx);}
+            @Override protected double get_(int aIdx) {return getX(aIdx);}
             @Override public int size() {return Nx();}
         };
     }
@@ -84,8 +84,8 @@ public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShel
     }
     
     /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
-    @Override public final double get_(int aI) {return mData[aI];}
-    @Override public final void set_(int aI, double aV) {mData[aI] = aV;}
+    @Override protected final double get_(int aI) {return mData[aI];}
+    @Override protected final void set_(int aI, double aV) {mData[aI] = aV;}
     
     /** 索引和 x 相互转换的接口 */
     @Override public final int Nx() {return mData.length;}
@@ -95,10 +95,10 @@ public abstract class DoubleArrayFunc1 implements IEqualIntervalFunc1, IDataShel
     @Override public final void setX0(double aNewX0) {mX0 = aNewX0;}
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    @Override public final void update_(int aI, DoubleUnaryOperator aOpt) {
+    @Override protected final void update_(int aI, DoubleUnaryOperator aOpt) {
         mData[aI] = aOpt.applyAsDouble(mData[aI]);
     }
-    @Override public final double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
+    @Override protected final double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
         double tV = mData[aI];
         mData[aI] = aOpt.applyAsDouble(tV);
         return tV;

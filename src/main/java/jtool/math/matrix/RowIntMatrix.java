@@ -35,9 +35,9 @@ public final class RowIntMatrix extends IntArrayMatrix {
     
     
     /** IComplexMatrix stuffs */
-    @Override public int get_(int aRow, int aCol) {return mData[aCol + aRow*mColNum];}
-    @Override public void set_(int aRow, int aCol, int aValue) {mData[aCol + aRow*mColNum] = aValue;}
-    @Override public int getAndSet_(int aRow, int aCol, int aValue) {
+    @Override protected int get_(int aRow, int aCol) {return mData[aCol + aRow*mColNum];}
+    @Override protected void set_(int aRow, int aCol, int aValue) {mData[aCol + aRow*mColNum] = aValue;}
+    @Override protected int getAndSet_(int aRow, int aCol, int aValue) {
         int tIdx = aCol + aRow*mColNum;
         int oValue = mData[tIdx];
         mData[tIdx] = aValue;

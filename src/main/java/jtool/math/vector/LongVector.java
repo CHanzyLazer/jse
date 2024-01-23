@@ -44,9 +44,9 @@ public final class LongVector extends LongArrayVector {
     public int dataLength() {return mData.length;}
     
     /** IIntegerVector stuffs */
-    @Override public long get_(int aIdx) {return mData[aIdx];}
-    @Override public void set_(int aIdx, long aValue) {mData[aIdx] = aValue;}
-    @Override public long getAndSet_(int aIdx, long aValue) {
+    @Override protected long get_(int aIdx) {return mData[aIdx];}
+    @Override protected void set_(int aIdx, long aValue) {mData[aIdx] = aValue;}
+    @Override protected long getAndSet_(int aIdx, long aValue) {
         long oValue = mData[aIdx];
         mData[aIdx] = aValue;
         return oValue;
@@ -61,27 +61,27 @@ public final class LongVector extends LongArrayVector {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override void swap_(int aIdx1, int aIdx2) {
+    @Override protected void swap_(int aIdx1, int aIdx2) {
         long tValue = mData[aIdx2];
         mData[aIdx2] = mData[aIdx1];
         mData[aIdx1] = tValue;
     }
     
-    @Override public void increment_(int aIdx) {++mData[aIdx];}
-    @Override public long getAndIncrement_(int aIdx) {return mData[aIdx]++;}
-    @Override public void decrement_(int aIdx) {--mData[aIdx];}
-    @Override public long getAndDecrement_(int aIdx) {return mData[aIdx]--;}
+    @Override protected void increment_(int aIdx) {++mData[aIdx];}
+    @Override protected long getAndIncrement_(int aIdx) {return mData[aIdx]++;}
+    @Override protected void decrement_(int aIdx) {--mData[aIdx];}
+    @Override protected long getAndDecrement_(int aIdx) {return mData[aIdx]--;}
     
-    @Override public void add_(int aIdx, long aDelta) {mData[aIdx] += aDelta;}
-    @Override public long getAndAdd_(int aIdx, long aDelta) {
+    @Override protected void add_(int aIdx, long aDelta) {mData[aIdx] += aDelta;}
+    @Override protected long getAndAdd_(int aIdx, long aDelta) {
         long tValue = mData[aIdx];
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, LongUnaryOperator aOpt) {
+    @Override protected void update_(int aIdx, LongUnaryOperator aOpt) {
         mData[aIdx] = aOpt.applyAsLong(mData[aIdx]);
     }
-    @Override public long getAndUpdate_(int aIdx, LongUnaryOperator aOpt) {
+    @Override protected long getAndUpdate_(int aIdx, LongUnaryOperator aOpt) {
         long tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsLong(tValue);
         return tValue;

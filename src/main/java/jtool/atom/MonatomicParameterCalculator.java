@@ -199,7 +199,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         pool().parfor(mAtomNum, (i, threadID) -> {
             mNL.forEachNeighbor(i, aRMax - dr*0.5, true, (x, y, z, idx, dis2) -> {
                 int tIdx = (int) Math.ceil((Fast.sqrt(dis2) - dr*0.5) / dr);
-                if (tIdx > 0 && tIdx < aN) dn.get(threadID).increment_(tIdx);
+                if (tIdx > 0 && tIdx < aN) dn.get(threadID).increment(tIdx);
             });
         });
         
@@ -213,7 +213,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         VectorCache.returnVec(dn);
         
         // 修复截断数据
-        gr.set_(0, 0.0);
+        gr.set(0, 0.0);
         // 输出
         return gr;
     }
@@ -240,7 +240,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         pool().parfor(aAtomNum, (i, threadID) -> {
             mNL.forEachNeighbor(new XYZ(aAtomDataXYZ.row(i)), aRMax - dr*0.5, (x, y, z, idx, dis2) -> {
                 int tIdx = (int) Math.ceil((Fast.sqrt(dis2) - dr*0.5) / dr);
-                if (tIdx > 0 && tIdx < aN) dn.get(threadID).increment_(tIdx);
+                if (tIdx > 0 && tIdx < aN) dn.get(threadID).increment(tIdx);
             });
         });
         
@@ -255,7 +255,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         VectorCache.returnVec(dn);
         
         // 修复截断数据
-        gr.set_(0, 0.0);
+        gr.set(0, 0.0);
         // 输出
         return gr;
     }
@@ -305,7 +305,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
-        gr.set_(0, 0.0);
+        gr.set(0, 0.0);
         // 输出
         return gr;
     }
@@ -343,7 +343,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
         
         // 修复截断数据
-        gr.set_(0, 0.0);
+        gr.set(0, 0.0);
         // 输出
         return gr;
     }
@@ -391,7 +391,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         Sq.plus2this(1.0);
         
         // 修复截断数据
-        Sq.set_(0, 0.0);
+        Sq.set(0, 0.0);
         // 输出
         return Sq;
     }
@@ -434,7 +434,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         Sq.plus2this(1.0);
         
         // 修复截断数据
-        Sq.set_(0, 0.0);
+        Sq.set(0, 0.0);
         // 输出
         return Sq;
     }
@@ -470,7 +470,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         Sq.multiply2this(4.0*PI*aRou);
         Sq.plus2this(1.0);
         
-        Sq.set_(0, 0.0);
+        Sq.set(0, 0.0);
         return Sq;
     }
     public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
@@ -497,7 +497,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         gr.multiply2this(1.0/(2.0*PI*PI*aRou));
         gr.plus2this(1.0);
         
-        gr.set_(0, 0.0);
+        gr.set(0, 0.0);
         return gr;
     }
     public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
@@ -893,10 +893,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 if (tNLToBuffer != null) {tNLToBuffer[i].add(idx);}
                 
                 // 统计近邻数
-                tNN.increment_(i);
+                tNN.increment(i);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (aHalf) {
-                    tNN.increment_(idx);
+                    tNN.increment(idx);
                 }
             });
         });
@@ -910,7 +910,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             Qlm.plus2this(subQlm);
         }
         // 根据近邻数平均得到 Qlm
-        for (int i = 0; i < mAtomNum; ++i) Qlm.row(i).div2this(tNN.get_(i));
+        for (int i = 0; i < mAtomNum; ++i) Qlm.row(i).div2this(tNN.get(i));
         
         // 归还临时变量
         for (int i = 1; i < rDestPar.size(); ++i) ComplexMatrixCache.returnMat(rDestPar.get(i));
@@ -972,17 +972,17 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 if (tNLToBuffer != null) {tNLToBuffer[fI].add(idx);}
                 
                 // 统计近邻数
-                tNN.increment_(fI);
+                tNN.increment(fI);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (tHalfStat) {
-                    tNN.increment_(idx);
+                    tNN.increment(idx);
                 }
             });
         }
         
         // 根据近邻数平均得到 Qlm
         for (int i = 0; i < mAtomNum; ++i) if (aMPIInfo.inRegin(i)) {
-            Qlm.row(i).div2this(tNN.get_(i));
+            Qlm.row(i).div2this(tNN.get(i));
         }
         // 归还临时变量
         VectorCache.returnVec(tNN);
@@ -1087,15 +1087,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 if (tNLToBuffer != null) {tNLToBuffer[fI].add(idx);}
                 
                 // 统计近邻数
-                tNN.increment_(fI);
+                tNN.increment(fI);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (aHalf) {
-                    tNN.increment_(idx);
+                    tNN.increment(idx);
                 }
             });
         }
         // 根据近邻数平均得到 qlm
-        for (int i = 0; i < mAtomNum; ++i) qlm.row(i).div2this(tNN.get_(i));
+        for (int i = 0; i < mAtomNum; ++i) qlm.row(i).div2this(tNN.get(i));
         
         // 归还临时变量
         VectorCache.returnVec(tNN);
@@ -1150,16 +1150,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 if (tNLToBuffer != null) {tNLToBuffer[fI].add(idx);}
                 
                 // 统计近邻数
-                tNN.increment_(fI);
+                tNN.increment(fI);
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 if (tHalfStat) {
-                    tNN.increment_(idx);
+                    tNN.increment(idx);
                 }
             });
         }
         // 根据近邻数平均得到 qlm
         for (int i = 0; i < mAtomNum; ++i) if (aMPIInfo.inRegin(i)) {
-            qlm.row(i).div2this(tNN.get_(i));
+            qlm.row(i).div2this(tNN.get(i));
         }
         
         // 归还临时变量
@@ -1230,7 +1230,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = Qlm.row(i).operation().dot();
             // 使用这个公式设置 Ql
-            Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            Ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1254,7 +1254,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = Qlm.row(i).operation().dot();
             // 使用这个公式设置 Ql
-            Ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            Ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1330,16 +1330,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tM3 = -tM1-tM2;
                 if (tM3<=aL && tM3>=-aL) {
                     // 计算乘积，注意使用复数乘法
-                    ComplexDouble subMul = Qlmi.get_(tM1+aL);
-                    subMul.multiply2this(Qlmi.get_(tM2+aL));
-                    subMul.multiply2this(Qlmi.get_(tM3+aL));
+                    ComplexDouble subMul = Qlmi.get(tM1+aL);
+                    subMul.multiply2this(Qlmi.get(tM2+aL));
+                    subMul.multiply2this(Qlmi.get(tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
                     rMul += subMul.mReal;
                 }
             }
             // 最后求模量设置结果
-            Wl.set_(i, rMul/rDiv);
+            Wl.set(i, rMul/rDiv);
         }
         
         // 计算完成归还缓存数据
@@ -1382,7 +1382,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = qlm.row(i).operation().dot();
             // 使用这个公式设置 ql
-            ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1407,7 +1407,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 直接计算复向量的点乘
             double tDot = qlm.row(i).operation().dot();
             // 使用这个公式设置 ql
-            ql.set_(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1489,16 +1489,16 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tM3 = -tM1-tM2;
                 if (tM3<=aL && tM3>=-aL) {
                     // 计算乘积，注意使用复数乘法
-                    ComplexDouble subMul = qlmi.get_(tM1+aL);
-                    subMul.multiply2this(qlmi.get_(tM2+aL));
-                    subMul.multiply2this(qlmi.get_(tM3+aL));
+                    ComplexDouble subMul = qlmi.get(tM1+aL);
+                    subMul.multiply2this(qlmi.get(tM2+aL));
+                    subMul.multiply2this(qlmi.get(tM3+aL));
                     subMul.multiply2this(Func.wigner3j_(aL, aL, aL, tM1, tM2, tM3));
                     // 累加到分子，这里只统计实数部分（虚数部分为 0）
                     rMul += subMul.mReal;
                 }
             }
             // 最后求模量设置结果
-            wl.set_(i, rMul/rDiv);
+            wl.set(i, rMul/rDiv);
         }
         
         // 计算完成归还缓存数据
@@ -1571,10 +1571,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                 // 取模量来判断是否连接
                 if (Sij.norm() > aConnectThreshold) {
-                    tConnectCount.increment_(fI);
+                    tConnectCount.increment(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {
-                        tConnectCount.increment_(idx);
+                        tConnectCount.increment(idx);
                     }
                 }
                 // 统计近邻
@@ -1627,11 +1627,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                 // 取模量来判断是否连接
                 if (Sij.norm() > aConnectThreshold) {
-                    tConnectCount.increment_(fI);
+                    tConnectCount.increment(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
                     boolean tHalfStat = aHalf && aMPIInfo.inRegin(idx);
                     if (tHalfStat) {
-                        tConnectCount.increment_(idx);
+                        tConnectCount.increment(idx);
                     }
                 }
                 // 统计近邻
@@ -1737,10 +1737,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 ComplexDouble Sij = qlmi.operation().dot(qlmj);
                 // 取模量来判断是否连接
                 if (Sij.norm() > aConnectThreshold) {
-                    tConnectCount.increment_(fI);
+                    tConnectCount.increment(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                     if (aHalf) {
-                        tConnectCount.increment_(idx);
+                        tConnectCount.increment(idx);
                     }
                 }
                 // 统计近邻
@@ -1793,11 +1793,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 ComplexDouble Sij = qlmi.operation().dot(qlmj);
                 // 取模量来判断是否连接
                 if (Sij.norm() > aConnectThreshold) {
-                    tConnectCount.increment_(fI);
+                    tConnectCount.increment(fI);
                     // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
                     boolean tHalfStat = aHalf && aMPIInfo.inRegin(idx);
                     if (tHalfStat) {
-                        tConnectCount.increment_(idx);
+                        tConnectCount.increment(idx);
                     }
                 }
                 // 统计近邻
@@ -2034,7 +2034,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
                 int tStart = tL*tL;
                 int tLen = tL+tL+1;
-                tFP.set_(tN, tL, (4.0*PI/(double)tLen) * cnlm[tN].subVec(tStart, tStart+tLen).operation().dot());
+                tFP.set(tN, tL, (4.0*PI/(double)tLen) * cnlm[tN].subVec(tStart, tStart+tLen).operation().dot());
             }
         });
         

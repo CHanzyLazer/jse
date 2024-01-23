@@ -110,18 +110,18 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     }
     public IComplexVector asVec() {
         return new RefComplexVector() {
-            @Override public double getReal_(int aIdx) {return mData[0][aIdx];}
-            @Override public double getImag_(int aIdx) {return mData[1][aIdx];}
-            @Override public void setReal_(int aIdx, double aReal) {mData[0][aIdx] = aReal;}
-            @Override public void setImag_(int aIdx, double aImag) {mData[1][aIdx] = aImag;}
+            @Override protected double getReal_(int aIdx) {return mData[0][aIdx];}
+            @Override protected double getImag_(int aIdx) {return mData[1][aIdx];}
+            @Override protected void setReal_(int aIdx, double aReal) {mData[0][aIdx] = aReal;}
+            @Override protected void setImag_(int aIdx, double aImag) {mData[1][aIdx] = aImag;}
             @Override public int size() {return mSize;}
         };
     }
     @ApiStatus.Experimental
     public IComplexVector asConstVec() {
         return new RefComplexVector() {
-            @Override public double getReal_(int aIdx) {return mData[0][aIdx];}
-            @Override public double getImag_(int aIdx) {return mData[1][aIdx];}
+            @Override protected double getReal_(int aIdx) {return mData[0][aIdx];}
+            @Override protected double getImag_(int aIdx) {return mData[1][aIdx];}
             @Override public int size() {return mSize;}
         };
     }

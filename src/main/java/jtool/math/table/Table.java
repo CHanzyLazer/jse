@@ -62,9 +62,9 @@ public final class Table extends AbstractTable {
     /** AbstractTable stuffs */
     @Override public IMatrix asMatrix() {
         return new RefMatrix() {
-            @Override public double get_(int aRow, int aCol) {return mData.get(aCol).get_(aRow);}
-            @Override public void set_(int aRow, int aCol, double aValue) {mData.get(aCol).set_(aRow, aValue);}
-            @Override public double getAndSet_(int aRow, int aCol, double aValue) {return mData.get(aCol).getAndSet_(aRow, aValue);}
+            @Override protected double get_(int aRow, int aCol) {return mData.get(aCol).get(aRow);}
+            @Override protected void set_(int aRow, int aCol, double aValue) {mData.get(aCol).set(aRow, aValue);}
+            @Override protected double getAndSet_(int aRow, int aCol, double aValue) {return mData.get(aCol).getAndSet(aRow, aValue);}
             @Override public int rowNumber() {return mRowNum;}
             @Override public int columnNumber() {return mData.size();}
             

@@ -3,8 +3,9 @@ package jtool.math.function;
 import jtool.math.vector.IVector;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.Iterator;
-import java.util.function.*;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * @author liqa
@@ -17,35 +18,22 @@ public interface IFunc1 extends IFunc1Subs {
     
     /** 批量修改的接口 */
     void fill(double[] aData);
-    default void fill(double aValue) {operation().fill(aValue);}
-    default void fill(IVector aVector) {operation().fill(aVector);}
-    default void fill(IFunc1 aFunc1) {operation().fill(aFunc1);}
-    default void fill(IFunc1Subs aFunc1Subs) {operation().fill(aFunc1Subs);}
-    default void fill(Iterable<? extends Number> aList) {
-        final Iterator<? extends Number> it = aList.iterator();
-        assign(() -> it.next().doubleValue());
-    }
-    default void assign(DoubleSupplier aSup) {operation().assign(aSup);}
-    default void forEach(DoubleConsumer aCon) {operation().forEach(aCon);}
+    void fill(double aValue);
+    void fill(IVector aVector);
+    void fill(IFunc1 aFunc1);
+    void fill(IFunc1Subs aFunc1Subs);
+    void fill(Iterable<? extends Number> aList);
+    void assign(DoubleSupplier aSup);
+    void forEach(DoubleConsumer aCon);
     
     /** 拷贝的接口 */
     IFunc1 copy();
     
     /** 获取结果，支持按照索引查找和按照 x 的值来查找 */
     double subs(double aX);
-    default double get(int aI) {
-        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
-        return get_(aI);
-    }
+    double get(int aI);
     /** 设置结果，简单起见只允许按照索引来设置 */
-    default void set(int aI, double aV) {
-        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
-        set_(aI, aV);
-    }
-    
-    /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
-    double get_(int aI);
-    void set_(int aI, double aV);
+    void set(int aI, double aV);
     
     /** 索引和 x 相互转换的接口 */
     int Nx();
@@ -55,16 +43,8 @@ public interface IFunc1 extends IFunc1Subs {
     void setX0(double aNewX0);
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    void update_(int aI, DoubleUnaryOperator aOpt);
-    double getAndUpdate_(int aI, DoubleUnaryOperator aOpt);
-    default void update(int aI, DoubleUnaryOperator aOpt) {
-        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
-        update_(aI, aOpt);
-    }
-    default double getAndUpdate(int aI, DoubleUnaryOperator aOpt) {
-        if (aI<0 || aI>=Nx()) throw new IndexOutOfBoundsException(String.format("Index: %d", aI));
-        return getAndUpdate_(aI, aOpt);
-    }
+    void update(int aI, DoubleUnaryOperator aOpt);
+    double getAndUpdate(int aI, DoubleUnaryOperator aOpt);
     
     /** 还提供一个给函数专用的运算 */
     IFunc1Operation operation();

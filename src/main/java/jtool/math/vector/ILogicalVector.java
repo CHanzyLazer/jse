@@ -41,13 +41,9 @@ public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBoole
     void forEach(IBooleanConsumer aCon);
     
     /** 访问和修改部分，自带的接口 */
-    boolean get_(int aIdx);
-    void set_(int aIdx, boolean aValue);
-    boolean getAndSet_(int aIdx, boolean aValue); // 返回修改前的值
     int size();
-    
     boolean get(int aIdx);
-    boolean getAndSet(int aIdx, boolean aValue);
+    boolean getAndSet(int aIdx, boolean aValue); // 返回修改前的值
     void set(int aIdx, boolean aValue);
     
     /** 用于方便访问 */
@@ -62,11 +58,6 @@ public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBoole
     }
     
     /** 附加一些额外的单元素操作，对于逻辑向量再增加一个翻转特定元素的操作 */
-    void flip_(int aIdx);
-    boolean getAndFlip_(int aIdx);
-    void update_(int aIdx, IBooleanUnaryOperator aOpt);
-    boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt);
-    
     void flip(int aIdx);
     boolean getAndFlip(int aIdx);
     void update(int aIdx, IBooleanUnaryOperator aOpt);

@@ -253,7 +253,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
                 for (IAtom tAtom : aAtomData.asList()) if (tAtom.type() == tTypeMM+1) {
-                    rAtomNumbers.increment_(tTypeMM);
+                    rAtomNumbers.increment(tTypeMM);
                     rDirect.set(tIdx, 0, tAtom.x());
                     rDirect.set(tIdx, 1, tAtom.y());
                     rDirect.set(tIdx, 2, tAtom.z());
@@ -297,14 +297,14 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
         
         final double tScale = aSrcBoxScale / aToBoxScale;
         if (aToCartesian) return new RefMatrix() {
-            @Override public double get_(int aRow, int aCol) {return aDirect.get_(aRow, aCol) * aBox.get(aCol, aCol) * tScale;}
-            @Override public void set_(int aRow, int aCol, double aValue) {aDirect.set_(aRow, aCol, aValue / aBox.get(aCol, aCol) / tScale);}
+            @Override protected double get_(int aRow, int aCol) {return aDirect.get(aRow, aCol) * aBox.get(aCol, aCol) * tScale;}
+            @Override protected void set_(int aRow, int aCol, double aValue) {aDirect.set(aRow, aCol, aValue / aBox.get(aCol, aCol) / tScale);}
             @Override public int rowNumber() {return aDirect.rowNumber();}
             @Override public int columnNumber() {return aDirect.columnNumber();}
         };
         else return new RefMatrix() {
-            @Override public double get_(int aRow, int aCol) {return aDirect.get_(aRow, aCol) / aBox.get(aCol, aCol) * tScale;}
-            @Override public void set_(int aRow, int aCol, double aValue) {aDirect.set_(aRow, aCol, aValue * aBox.get(aCol, aCol) / tScale);}
+            @Override protected double get_(int aRow, int aCol) {return aDirect.get(aRow, aCol) / aBox.get(aCol, aCol) * tScale;}
+            @Override protected void set_(int aRow, int aCol, double aValue) {aDirect.set(aRow, aCol, aValue * aBox.get(aCol, aCol) / tScale);}
             @Override public int rowNumber() {return aDirect.rowNumber();}
             @Override public int columnNumber() {return aDirect.columnNumber();}
         };

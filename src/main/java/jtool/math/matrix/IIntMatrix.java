@@ -19,14 +19,10 @@ public interface IIntMatrix {
     IIntVector asVecRow();
     
     /** 访问和修改部分，自带的接口 */
-    int get_(int aRow, int aCol);
-    void set_(int aRow, int aCol, int aValue);
-    int getAndSet_(int aRow, int aCol, int aValue); // 返回修改前的值
     int rowNumber();
     int columnNumber();
-    
     int get(int aRow, int aCol);
-    int getAndSet(int aRow, int aCol, int aValue);
+    int getAndSet(int aRow, int aCol, int aValue); // 返回修改前的值
     void set(int aRow, int aCol, int aValue);
     IMatrix.ISize size();
     default @VisibleForTesting int nrows() {return rowNumber();}

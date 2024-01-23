@@ -16,7 +16,7 @@ import java.util.function.DoubleUnaryOperator;
  * @author liqa
  */
 @ApiStatus.Experimental
-public final class UnequalIntervalFunc1 implements IZeroBoundFunc1 {
+public final class UnequalIntervalFunc1 extends AbstractFunc1 implements IZeroBoundFunc1 {
     /** 在这里提供一些常用的构造 */
     public static UnequalIntervalFunc1 zeros(int aNx, IVectorGetter aXGetter) {
         double[] rX = new double[aNx];
@@ -46,7 +46,7 @@ public final class UnequalIntervalFunc1 implements IZeroBoundFunc1 {
     @Override public IVector x() {
         // 这样防止外部修改
         return new RefVector() {
-            @Override public double get_(int aIdx) {return mX[aIdx];}
+            @Override protected double get_(int aIdx) {return mX[aIdx];}
             @Override public int size() {return Nx();}
         };
     }
@@ -75,8 +75,8 @@ public final class UnequalIntervalFunc1 implements IZeroBoundFunc1 {
     }
     
     /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
-    @Override public double get_(int aI) {return mF[aI];}
-    @Override public void set_(int aI, double aV) {mF[aI] = aV;}
+    @Override protected double get_(int aI) {return mF[aI];}
+    @Override protected void set_(int aI, double aV) {mF[aI] = aV;}
     
     /** 索引和 x 相互转换的接口 */
     @Override public int Nx() {return mF.length;}
@@ -96,10 +96,10 @@ public final class UnequalIntervalFunc1 implements IZeroBoundFunc1 {
     }
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    @Override public void update_(int aI, DoubleUnaryOperator aOpt) {
+    @Override protected void update_(int aI, DoubleUnaryOperator aOpt) {
         mF[aI] = aOpt.applyAsDouble(mF[aI]);
     }
-    @Override public double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
+    @Override protected double getAndUpdate_(int aI, DoubleUnaryOperator aOpt) {
         double tV = mF[aI];
         mF[aI] = aOpt.applyAsDouble(tV);
         return tV;

@@ -86,15 +86,15 @@ public class BooleanList implements IDataShell<boolean[]> {
     }
     public ILogicalVector asVec() {
         return new RefLogicalVector() {
-            @Override public boolean get_(int aIdx) {return mData[aIdx];}
-            @Override public void set_(int aIdx, boolean aValue) {mData[aIdx] = aValue;}
+            @Override protected boolean get_(int aIdx) {return mData[aIdx];}
+            @Override protected void set_(int aIdx, boolean aValue) {mData[aIdx] = aValue;}
             @Override public int size() {return mSize;}
         };
     }
     @ApiStatus.Experimental
     public ILogicalVector asConstVec() {
         return new RefLogicalVector() {
-            @Override public boolean get_(int aIdx) {return mData[aIdx];}
+            @Override protected boolean get_(int aIdx) {return mData[aIdx];}
             @Override public int size() {return mSize;}
         };
     }

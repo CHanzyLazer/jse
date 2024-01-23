@@ -42,25 +42,12 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     void forEach(IntConsumer aCon);
     
     /** 访问和修改部分，自带的接口 */
-    int get_(int aIdx);
-    void set_(int aIdx, int aValue);
-    int getAndSet_(int aIdx, int aValue); // 返回修改前的值
     int size();
-    
     int get(int aIdx);
-    int getAndSet(int aIdx, int aValue);
+    int getAndSet(int aIdx, int aValue); // 返回修改前的值
     void set(int aIdx, int aValue);
     
     /** 附加一些额外的单元素操作，对于 IntegerVector 由于适用范围更广，提供更多的接口 */
-    void increment_(int aIdx);
-    int getAndIncrement_(int aIdx);
-    void decrement_(int aIdx);
-    int getAndDecrement_(int aIdx);
-    void add_(int aIdx, int aDelta);
-    int getAndAdd_(int aIdx, int aDelta);
-    void update_(int aIdx, IntUnaryOperator aOpt);
-    int getAndUpdate_(int aIdx, IntUnaryOperator aOpt);
-    
     void increment(int aIdx);
     int getAndIncrement(int aIdx);
     void decrement(int aIdx);

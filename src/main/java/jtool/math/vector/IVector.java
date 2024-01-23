@@ -48,13 +48,9 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     default void assign(final Closure<? extends Number> aGroovyTask) {assign(() -> aGroovyTask.call().doubleValue());}
     
     /** 访问和修改部分，自带的接口 */
-    double get_(int aIdx);
-    void set_(int aIdx, double aValue);
-    double getAndSet_(int aIdx, double aValue); // 返回修改前的值
     int size();
-    
     double get(int aIdx);
-    double getAndSet(int aIdx, double aValue);
+    double getAndSet(int aIdx, double aValue); // 返回修改前的值
     void set(int aIdx, double aValue);
     
     /** 用于方便访问 */
@@ -69,15 +65,6 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     }
     
     /** 附加一些额外的单元素操作，对于 Vector 由于适用范围更广，提供更多的接口 */
-    void increment_(int aIdx);
-    double getAndIncrement_(int aIdx);
-    void decrement_(int aIdx);
-    double getAndDecrement_(int aIdx);
-    void add_(int aIdx, double aDelta);
-    double getAndAdd_(int aIdx, double aDelta);
-    void update_(int aIdx, DoubleUnaryOperator aOpt);
-    double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt);
-    
     void increment(int aIdx);
     double getAndIncrement(int aIdx);
     void decrement(int aIdx);

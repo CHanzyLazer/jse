@@ -76,7 +76,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
             for (DecisionTree tTree : mTrees) {
                 if (tTree.makeDecision(tInput)) ++rPredTrueNum;
             }
-            rPred.set_(i, rPredTrueNum / (double)mTrees.size());
+            rPred.set(i, rPredTrueNum / (double)mTrees.size());
         });
         return rPred;
     }
@@ -95,7 +95,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
             for (DecisionTree tTree : mTrees) {
                 if (tTree.makeDecision(tInput)) ++rPredTrueNum;
             }
-            if (rPredTrueNum > mTrees.size()*aRatio) rPred.set_(i, true);
+            if (rPredTrueNum > mTrees.size()*aRatio) rPred.set(i, true);
         });
         return rPred;
     }

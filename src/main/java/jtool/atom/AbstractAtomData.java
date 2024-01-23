@@ -45,9 +45,9 @@ public abstract class AbstractAtomData implements IAtomData {
         IMatrix rMat = rData.asMatrix();
         int row = 0;
         for (IAtom tAtom : asList()) {
-            rMat.set_(row, XYZ_X_COL, tAtom.x());
-            rMat.set_(row, XYZ_Y_COL, tAtom.y());
-            rMat.set_(row, XYZ_Z_COL, tAtom.z());
+            rMat.set(row, XYZ_X_COL, tAtom.x());
+            rMat.set(row, XYZ_Y_COL, tAtom.y());
+            rMat.set(row, XYZ_Z_COL, tAtom.z());
             ++row;
         }
         return rData;
@@ -57,10 +57,10 @@ public abstract class AbstractAtomData implements IAtomData {
         IMatrix rMat = rData.asMatrix();
         int row = 0;
         for (IAtom tAtom : asList()) {
-            rMat.set_(row, XYZID_X_COL, tAtom.x());
-            rMat.set_(row, XYZID_Y_COL, tAtom.y());
-            rMat.set_(row, XYZID_Z_COL, tAtom.z());
-            rMat.set_(row, XYZID_ID_COL, tAtom.id());
+            rMat.set(row, XYZID_X_COL, tAtom.x());
+            rMat.set(row, XYZID_Y_COL, tAtom.y());
+            rMat.set(row, XYZID_Z_COL, tAtom.z());
+            rMat.set(row, XYZID_ID_COL, tAtom.id());
             ++row;
         }
         return rData;
@@ -70,11 +70,11 @@ public abstract class AbstractAtomData implements IAtomData {
         IMatrix rMat = rData.asMatrix();
         int row = 0;
         for (IAtom tAtom : asList()) {
-            rMat.set_(row, STD_ID_COL, tAtom.id());
-            rMat.set_(row, STD_TYPE_COL, tAtom.type());
-            rMat.set_(row, STD_X_COL, tAtom.x());
-            rMat.set_(row, STD_Y_COL, tAtom.y());
-            rMat.set_(row, STD_Z_COL, tAtom.z());
+            rMat.set(row, STD_ID_COL, tAtom.id());
+            rMat.set(row, STD_TYPE_COL, tAtom.type());
+            rMat.set(row, STD_X_COL, tAtom.x());
+            rMat.set(row, STD_Y_COL, tAtom.y());
+            rMat.set(row, STD_Z_COL, tAtom.z());
             ++row;
         }
         return rData;
@@ -84,14 +84,14 @@ public abstract class AbstractAtomData implements IAtomData {
         IMatrix rMat = rData.asMatrix();
         int row = 0;
         for (IAtom tAtom : asList()) {
-            rMat.set_(row, ALL_ID_COL, tAtom.id());
-            rMat.set_(row, ALL_TYPE_COL, tAtom.type());
-            rMat.set_(row, ALL_X_COL, tAtom.x());
-            rMat.set_(row, ALL_Y_COL, tAtom.y());
-            rMat.set_(row, ALL_Z_COL, tAtom.z());
-            rMat.set_(row, ALL_VX_COL, tAtom.vx());
-            rMat.set_(row, ALL_VY_COL, tAtom.vy());
-            rMat.set_(row, ALL_VZ_COL, tAtom.vz());
+            rMat.set(row, ALL_ID_COL, tAtom.id());
+            rMat.set(row, ALL_TYPE_COL, tAtom.type());
+            rMat.set(row, ALL_X_COL, tAtom.x());
+            rMat.set(row, ALL_Y_COL, tAtom.y());
+            rMat.set(row, ALL_Z_COL, tAtom.z());
+            rMat.set(row, ALL_VX_COL, tAtom.vx());
+            rMat.set(row, ALL_VY_COL, tAtom.vy());
+            rMat.set(row, ALL_VZ_COL, tAtom.vz());
             ++row;
         }
         return rData;
@@ -101,9 +101,9 @@ public abstract class AbstractAtomData implements IAtomData {
         IMatrix rMat = rData.asMatrix();
         int row = 0;
         for (IAtom tAtom : asList()) {
-            rMat.set_(row, STD_VX_COL, tAtom.vx());
-            rMat.set_(row, STD_VY_COL, tAtom.vy());
-            rMat.set_(row, STD_VZ_COL, tAtom.vz());
+            rMat.set(row, STD_VX_COL, tAtom.vx());
+            rMat.set(row, STD_VY_COL, tAtom.vy());
+            rMat.set(row, STD_VZ_COL, tAtom.vz());
             ++row;
         }
         return rData;

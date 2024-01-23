@@ -179,8 +179,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             // 设置概率
             if (tSurfaceCompat) {
                 for (int i = 0; i < mN && pi.hasNext() && si.hasNext(); ++i) {
-                    if (MathEX.Code.numericEqual(((Number)si.next()).doubleValue(), mSurfaces.get_(i+1))) {
-                        mPi.set_(i, ((Number)pi.next()).doubleValue());
+                    if (MathEX.Code.numericEqual(((Number)si.next()).doubleValue(), mSurfaces.get(i+1))) {
+                        mPi.set(i, ((Number)pi.next()).doubleValue());
                     } else {
                         System.err.println("WARNING: surfaces from restData is NOT compatible with the surfaces from this instance!!!");
                         //noinspection UnusedAssignment
@@ -315,7 +315,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     return null;
                 }
                 // pruning，如果向前则有概率直接中断，这里直接 return null 来标记 pruning 的情况
-                if (mStep1Pruning && mPruningProb > 0.0 && mPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get_(mPruningIndex)) {
+                if (mStep1Pruning && mPruningProb > 0.0 && mPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get(mPruningIndex)) {
                     // 无论如何先增加 mPruningIndex
                     ++mPruningIndex;
                     // 并且更新耗时
@@ -479,7 +479,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     return null;
                 }
                 // 修剪，如果向前则有概率直接中断，现在第二个过程的修剪概率存在一个上限
-                if (mPruningProb > 0.0 && mPruningIndex >= 0 && tLambda <= mSurfaces.get_(mPruningIndex)) {
+                if (mPruningProb > 0.0 && mPruningIndex >= 0 && tLambda <= mSurfaces.get(mPruningIndex)) {
                     double tPruningProb = Math.min(mPruningProb, 1.0-getProb(mPruningIndex));
                     // 无论如何先减少 mPruningIndex
                     --mPruningIndex;
@@ -665,7 +665,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
             }
             // 遍历添加到 oPointsOnLambda，现在顺便统一将下一步会开始的点的高权重的点进行拆分，拥有更多次数的统计来得到更好的统计效果
             oPointsOnLambda.clear();
-            double tLambdaNext = mSurfaces.get_(mStep+1);
+            double tLambdaNext = mSurfaces.get(mStep+1);
             for (Point tPoint : mPointsOnLambda) {
                 if (tPoint.lambda<tLambdaNext && tPoint.multiple>2.0) {
                     // 减少倍率并增加拷贝样本
@@ -727,7 +727,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 }
             }
             // 获取概率统计结果
-            mPi.set_(mStep, rNippEff / rMi);
+            mPi.set(mStep, rNippEff / rMi);
             
             // 归一化得到的面上所有的点的权重
             double rMean = 0.0;

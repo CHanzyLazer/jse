@@ -79,9 +79,9 @@ public abstract class AbstractIntVector implements IIntVector {
     }
     @Override public IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return AbstractIntVector.this.get_(aIdx);}
-            @Override public void set_(int aIdx, double aValue) {AbstractIntVector.this.set_(aIdx, (int)aValue);}
-            public double getAndSet_(int aIdx, double aValue) {return AbstractIntVector.this.getAndSet_(aIdx, (int)aValue);}
+            @Override protected double get_(int aIdx) {return AbstractIntVector.this.get_(aIdx);}
+            @Override protected void set_(int aIdx, double aValue) {AbstractIntVector.this.set_(aIdx, (int)aValue);}
+            @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractIntVector.this.getAndSet_(aIdx, (int)aValue);}
             @Override public int size() {return AbstractIntVector.this.size();}
         };
     }
@@ -93,7 +93,7 @@ public abstract class AbstractIntVector implements IIntVector {
         if (aIdx2<0 || aIdx2>=tSize) throw new IndexOutOfBoundsException(String.format("Index 2: %d", aIdx1));
         swap_(aIdx1, aIdx2);
     }
-    void swap_(int aIdx1, int aIdx2) {
+    protected void swap_(int aIdx1, int aIdx2) {
         set_(aIdx1, getAndSet_(aIdx2, get_(aIdx1)));
     }
     
@@ -129,42 +129,42 @@ public abstract class AbstractIntVector implements IIntVector {
         set_(aIdx, aValue);
     }
     
-    @Override public void increment_(int aIdx) {
+    protected void increment_(int aIdx) {
         int tValue = get_(aIdx);
         ++tValue;
         set_(aIdx, tValue);
     }
-    @Override public int getAndIncrement_(int aIdx) {
+    protected int getAndIncrement_(int aIdx) {
         int tValue = get_(aIdx);
         set_(aIdx, tValue+1);
         return tValue;
     }
-    @Override public void decrement_(int aIdx) {
+    protected void decrement_(int aIdx) {
         int tValue = get_(aIdx);
         --tValue;
         set_(aIdx, tValue);
     }
-    @Override public int getAndDecrement_(int aIdx) {
+    protected int getAndDecrement_(int aIdx) {
         int tValue = get_(aIdx);
         set_(aIdx, tValue-1);
         return tValue;
     }
-    @Override public void add_(int aIdx, int aDelta) {
+    protected void add_(int aIdx, int aDelta) {
         int tValue = get_(aIdx);
         tValue += aDelta;
         set_(aIdx, tValue);
     }
-    @Override public int getAndAdd_(int aIdx, int aDelta) {
+    protected int getAndAdd_(int aIdx, int aDelta) {
         int tValue = get_(aIdx);
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public void update_(int aIdx, IntUnaryOperator aOpt) {
+    protected void update_(int aIdx, IntUnaryOperator aOpt) {
         int tValue = get_(aIdx);
         tValue = aOpt.applyAsInt(tValue);
         set_(aIdx, tValue);
     }
-    @Override public int getAndUpdate_(int aIdx, IntUnaryOperator aOpt) {
+    protected int getAndUpdate_(int aIdx, IntUnaryOperator aOpt) {
         int tValue = get_(aIdx);
         set_(aIdx, aOpt.applyAsInt(tValue));
         return tValue;
@@ -213,9 +213,9 @@ public abstract class AbstractIntVector implements IIntVector {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefIntVector() {
             /** 由于一开始有边界检查，所以这里不再需要边检检查 */
-            @Override public int get_(int aIdx) {return AbstractIntVector.this.get_(aIdx+aFromIdx);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntVector.this.set_(aIdx+aFromIdx, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
+            @Override protected int get_(int aIdx) {return AbstractIntVector.this.get_(aIdx+aFromIdx);}
+            @Override protected void set_(int aIdx, int aValue) {AbstractIntVector.this.set_(aIdx+aFromIdx, aValue);}
+            @Override protected int getAndSet_(int aIdx, int aValue) {return AbstractIntVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
             @Override public int size() {return aToIdx-aFromIdx;}
         };
     }
@@ -235,9 +235,9 @@ public abstract class AbstractIntVector implements IIntVector {
     
     
     /** stuff to override */
-    public abstract int get_(int aIdx);
-    public abstract void set_(int aIdx, int aValue);
-    public abstract int getAndSet_(int aIdx, int aValue);
+    protected abstract int get_(int aIdx);
+    protected abstract void set_(int aIdx, int aValue);
+    protected abstract int getAndSet_(int aIdx, int aValue);
     public abstract int size();
     protected abstract IIntVector newZeros_(int aSize);
     

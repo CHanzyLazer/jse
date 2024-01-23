@@ -46,9 +46,9 @@ public final class Vector extends DoubleArrayVector {
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
-    @Override public double get_(int aIdx) {return mData[aIdx];}
-    @Override public void set_(int aIdx, double aValue) {mData[aIdx] = aValue;}
-    @Override public double getAndSet_(int aIdx, double aValue) {
+    @Override protected double get_(int aIdx) {return mData[aIdx];}
+    @Override protected void set_(int aIdx, double aValue) {mData[aIdx] = aValue;}
+    @Override protected double getAndSet_(int aIdx, double aValue) {
         double oValue = mData[aIdx];
         mData[aIdx] = aValue;
         return oValue;
@@ -84,27 +84,27 @@ public final class Vector extends DoubleArrayVector {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override void swap_(int aIdx1, int aIdx2) {
+    @Override protected void swap_(int aIdx1, int aIdx2) {
         double tValue = mData[aIdx2];
         mData[aIdx2] = mData[aIdx1];
         mData[aIdx1] = tValue;
     }
     
-    @Override public void increment_(int aIdx) {++mData[aIdx];}
-    @Override public double getAndIncrement_(int aIdx) {return mData[aIdx]++;}
-    @Override public void decrement_(int aIdx) {--mData[aIdx];}
-    @Override public double getAndDecrement_(int aIdx) {return mData[aIdx]--;}
+    @Override protected void increment_(int aIdx) {++mData[aIdx];}
+    @Override protected double getAndIncrement_(int aIdx) {return mData[aIdx]++;}
+    @Override protected void decrement_(int aIdx) {--mData[aIdx];}
+    @Override protected double getAndDecrement_(int aIdx) {return mData[aIdx]--;}
     
-    @Override public void add_(int aIdx, double aDelta) {mData[aIdx] += aDelta;}
-    @Override public double getAndAdd_(int aIdx, double aDelta) {
+    @Override protected void add_(int aIdx, double aDelta) {mData[aIdx] += aDelta;}
+    @Override protected double getAndAdd_(int aIdx, double aDelta) {
         double tValue = mData[aIdx];
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
+    @Override protected void update_(int aIdx, DoubleUnaryOperator aOpt) {
         mData[aIdx] = aOpt.applyAsDouble(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
+    @Override protected double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsDouble(tValue);
         return tValue;

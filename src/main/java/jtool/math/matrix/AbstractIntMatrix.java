@@ -26,9 +26,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector asVecCol() {
         return new RefIntVector() {
             private final int mRowNum = rowNumber(), mColNum = columnNumber();
-            @Override public int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx%mRowNum, aIdx/mRowNum);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx%mRowNum, aIdx/mRowNum, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx%mRowNum, aIdx/mRowNum, aValue);}
+            @Override protected int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx%mRowNum, aIdx/mRowNum);}
+            @Override protected void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx%mRowNum, aIdx/mRowNum, aValue);}
+            @Override protected int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx%mRowNum, aIdx/mRowNum, aValue);}
             @Override public int size() {return mRowNum * mColNum;}
 //            @Override public IDoubleIterator iterator() {return iteratorCol();}
 //            @Override public IDoubleSetIterator setIterator() {return setIteratorCol();}
@@ -37,9 +37,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector asVecRow() {
         return new RefIntVector() {
             private final int mRowNum = rowNumber(), mColNum = columnNumber();
-            @Override public int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx/mColNum, aIdx%mColNum);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx/mColNum, aIdx%mColNum, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx/mColNum, aIdx%mColNum, aValue);}
+            @Override protected int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx/mColNum, aIdx%mColNum);}
+            @Override protected void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx/mColNum, aIdx%mColNum, aValue);}
+            @Override protected int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx/mColNum, aIdx%mColNum, aValue);}
             @Override public int size() {return mRowNum * mColNum;}
 //            @Override public IDoubleIterator iterator() {return iteratorRow();}
 //            @Override public IDoubleSetIterator setIterator() {return setIteratorRow();}
@@ -76,9 +76,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector row(final int aRow) {
         if (aRow<0 || aRow>=rowNumber()) throw new IndexOutOfBoundsException("Row: "+aRow);
         return new RefIntVector() {
-            @Override public int get_(int aIdx) {return AbstractIntMatrix.this.get_(aRow, aIdx);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aRow, aIdx, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aRow, aIdx, aValue);}
+            @Override protected int get_(int aIdx) {return AbstractIntMatrix.this.get_(aRow, aIdx);}
+            @Override protected void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aRow, aIdx, aValue);}
+            @Override protected int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aRow, aIdx, aValue);}
             @Override public int size() {return columnNumber();}
 //            @Override public IDoubleIterator iterator() {return iteratorRowAt(aRow);}
 //            @Override public IDoubleSetIterator setIterator() {return setIteratorRowAt(aRow);}
@@ -93,9 +93,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector col(final int aCol) {
         if (aCol<0 || aCol>=columnNumber()) throw new IndexOutOfBoundsException("Col: "+aCol);
         return new RefIntVector() {
-            @Override public int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx, aCol);}
-            @Override public void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx, aCol, aValue);}
-            @Override public int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx, aCol, aValue);}
+            @Override protected int get_(int aIdx) {return AbstractIntMatrix.this.get_(aIdx, aCol);}
+            @Override protected void set_(int aIdx, int aValue) {AbstractIntMatrix.this.set_(aIdx, aCol, aValue);}
+            @Override protected int getAndSet_(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet_(aIdx, aCol, aValue);}
             @Override public int size() {return rowNumber();}
 //            @Override public IDoubleIterator iterator() {return iteratorColAt(aCol);}
 //            @Override public IDoubleSetIterator setIterator() {return setIteratorColAt(aCol);}
@@ -104,9 +104,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     
     
     /** stuff to override */
-    public abstract int get_(int aRow, int aCol);
-    public abstract void set_(int aRow, int aCol, int aValue);
-    public abstract int getAndSet_(int aRow, int aCol, int aValue); // 返回修改前的值
+    protected abstract int get_(int aRow, int aCol);
+    protected abstract void set_(int aRow, int aCol, int aValue);
+    protected abstract int getAndSet_(int aRow, int aCol, int aValue); // 返回修改前的值
     public abstract int rowNumber();
     public abstract int columnNumber();
     

@@ -72,7 +72,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         final IntVector.Builder tBuilder = IntVector.builder(tAtomNum+tMaxType);
         for (int tType = 1; tType <= tMaxType; ++tType) {
             // 计算这种种类的粒子数目
-            long tSteps = Math.round((aTypeWeights.get_(tType-1) / tTotWeight) * tAtomNum);
+            long tSteps = Math.round((aTypeWeights.get(tType-1) / tTotWeight) * tAtomNum);
             for (int i = 0; i < tSteps; ++i) tBuilder.add(tType);
         }
         // 简单处理，如果数量不够则添加最后一种种类

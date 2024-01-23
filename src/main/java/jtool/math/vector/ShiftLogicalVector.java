@@ -29,9 +29,9 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
     public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */
-    @Override public boolean get_(int aIdx) {return mData[aIdx + mShift];}
-    @Override public void set_(int aIdx, boolean aValue) {mData[aIdx + mShift] = aValue;}
-    @Override public boolean getAndSet_(int aIdx, boolean aValue) {
+    @Override protected boolean get_(int aIdx) {return mData[aIdx + mShift];}
+    @Override protected void set_(int aIdx, boolean aValue) {mData[aIdx + mShift] = aValue;}
+    @Override protected boolean getAndSet_(int aIdx, boolean aValue) {
         aIdx += mShift;
         boolean oValue = mData[aIdx];
         mData[aIdx] = aValue;
@@ -65,7 +65,7 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override void swap_(int aIdx1, int aIdx2) {
+    @Override protected void swap_(int aIdx1, int aIdx2) {
         aIdx1 += mShift;
         aIdx2 += mShift;
         boolean tValue = mData[aIdx2];
@@ -73,21 +73,21 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
         mData[aIdx1] = tValue;
     }
     
-    @Override public void flip_(int aIdx) {
+    @Override protected void flip_(int aIdx) {
         aIdx += mShift;
         mData[aIdx] = !mData[aIdx];
     }
-    @Override public boolean getAndFlip_(int aIdx) {
+    @Override protected boolean getAndFlip_(int aIdx) {
         aIdx += mShift;
         boolean tValue = mData[aIdx];
         mData[aIdx] = !tValue;
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
+    @Override protected void update_(int aIdx, IBooleanUnaryOperator aOpt) {
         aIdx += mShift;
         mData[aIdx] = aOpt.applyAsBoolean(mData[aIdx]);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
+    @Override protected boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         aIdx += mShift;
         boolean tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsBoolean(tValue);

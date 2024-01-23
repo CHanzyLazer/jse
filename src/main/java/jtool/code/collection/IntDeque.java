@@ -168,12 +168,12 @@ public class IntDeque {
     }
     public IIntVector asVec() {
         return new RefIntVector() {
-            @Override public int get_(int aIdx) {
+            @Override protected int get_(int aIdx) {
                 aIdx += mStart;
                 if (mEnd<mStart && aIdx>=mData.length) aIdx -= mData.length;
                 return mData[aIdx];
             }
-            @Override public void set_(int aIdx, int aValue) {
+            @Override protected void set_(int aIdx, int aValue) {
                 aIdx += mStart;
                 if (mEnd<mStart && aIdx>=mData.length) aIdx -= mData.length;
                 mData[aIdx] = aValue;

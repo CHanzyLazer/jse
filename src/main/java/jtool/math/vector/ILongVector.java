@@ -25,25 +25,12 @@ public interface ILongVector extends ISwapper, IHasLongIterator {
     void swap(int aIdx1, int aIdx2);
     
     /** 访问和修改部分，自带的接口 */
-    long get_(int aIdx);
-    void set_(int aIdx, long aValue);
-    long getAndSet_(int aIdx, long aValue); // 返回修改前的值
     int size();
-    
     long get(int aIdx);
-    long getAndSet(int aIdx, long aValue);
+    long getAndSet(int aIdx, long aValue); // 返回修改前的值
     void set(int aIdx, long aValue);
     
     /** 附加一些额外的单元素操作，对于 IntegerVector 由于适用范围更广，提供更多的接口 */
-    void increment_(int aIdx);
-    long getAndIncrement_(int aIdx);
-    void decrement_(int aIdx);
-    long getAndDecrement_(int aIdx);
-    void add_(int aIdx, long aDelta);
-    long getAndAdd_(int aIdx, long aDelta);
-    void update_(int aIdx, LongUnaryOperator aOpt);
-    long getAndUpdate_(int aIdx, LongUnaryOperator aOpt);
-    
     void increment(int aIdx);
     long getAndIncrement(int aIdx);
     void decrement(int aIdx);

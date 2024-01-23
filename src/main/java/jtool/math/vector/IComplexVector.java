@@ -82,21 +82,7 @@ public interface IComplexVector extends ISwapper, IHasComplexDoubleIterator, IHa
     void forEach(Closure<?> aGroovyTask);
     
     /** 访问和修改部分，自带的接口 */
-    ComplexDouble get_(int aIdx);
-    double getReal_(int aIdx);
-    double getImag_(int aIdx);
-    void set_(int aIdx, IComplexDouble aValue);
-    void set_(int aIdx, ComplexDouble aValue);
-    void set_(int aIdx, double aValue);
-    void setReal_(int aIdx, double aReal);
-    void setImag_(int aIdx, double aImag);
-    ComplexDouble getAndSet_(int aIdx, IComplexDouble aValue); // 返回修改前的值
-    ComplexDouble getAndSet_(int aIdx, ComplexDouble aValue);
-    ComplexDouble getAndSet_(int aIdx, double aValue);
-    double getAndSetReal_(int aIdx, double aReal);
-    double getAndSetImag_(int aIdx, double aImag);
     int size();
-    
     ComplexDouble get(int aIdx);
     double getReal(int aIdx);
     double getImag(int aIdx);
@@ -105,7 +91,7 @@ public interface IComplexVector extends ISwapper, IHasComplexDoubleIterator, IHa
     void set(int aIdx, double aValue);
     void setReal(int aIdx, double aReal);
     void setImag(int aIdx, double aImag);
-    ComplexDouble getAndSet(int aIdx, IComplexDouble aValue);
+    ComplexDouble getAndSet(int aIdx, IComplexDouble aValue); // 返回修改前的值
     ComplexDouble getAndSet(int aIdx, ComplexDouble aValue);
     ComplexDouble getAndSet(int aIdx, double aValue);
     double getAndSetReal(int aIdx, double aReal);
@@ -123,17 +109,6 @@ public interface IComplexVector extends ISwapper, IHasComplexDoubleIterator, IHa
     }
     
     /** 附加一些额外的单元素操作，对于 ComplexVector 也提供略多的接口 */
-    void add_(int aIdx, IComplexDouble aDelta);
-    void add_(int aIdx, ComplexDouble aDelta);
-    void add_(int aIdx, double aDelta);
-    void addImag_(int aIdx, double aImag);
-    void update_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    void updateReal_(int aIdx, DoubleUnaryOperator aRealOpt);
-    void updateImag_(int aIdx, DoubleUnaryOperator aImagOpt);
-    ComplexDouble getAndUpdate_(int aIdx, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt);
-    double getAndUpdateReal_(int aIdx, DoubleUnaryOperator aRealOpt);
-    double getAndUpdateImag_(int aIdx, DoubleUnaryOperator aImagOpt);
-    
     void add(int aIdx, IComplexDouble aDelta);
     void add(int aIdx, ComplexDouble aDelta);
     void add(int aIdx, double aDelta);

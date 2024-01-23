@@ -28,9 +28,9 @@ public final class ShiftReverseVector extends DoubleArrayVector {
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */
-    @Override public double get_(int aIdx) {return mData[totShift-aIdx];}
-    @Override public void set_(int aIdx, double aValue) {mData[totShift-aIdx] = aValue;}
-    @Override public double getAndSet_(int aIdx, double aValue) {
+    @Override protected double get_(int aIdx) {return mData[totShift-aIdx];}
+    @Override protected void set_(int aIdx, double aValue) {mData[totShift-aIdx] = aValue;}
+    @Override protected double getAndSet_(int aIdx, double aValue) {
         aIdx = totShift-aIdx;
         double oValue = mData[aIdx];
         mData[aIdx] = aValue;
@@ -68,7 +68,7 @@ public final class ShiftReverseVector extends DoubleArrayVector {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override void swap_(int aIdx1, int aIdx2) {
+    @Override protected void swap_(int aIdx1, int aIdx2) {
         aIdx1 = totShift-aIdx1;
         aIdx2 = totShift-aIdx2;
         double tValue = mData[aIdx2];
@@ -76,23 +76,23 @@ public final class ShiftReverseVector extends DoubleArrayVector {
         mData[aIdx1] = tValue;
     }
     
-    @Override public void increment_(int aIdx) {++mData[totShift-aIdx];}
-    @Override public double getAndIncrement_(int aIdx) {return mData[totShift-aIdx]++;}
-    @Override public void decrement_(int aIdx) {--mData[totShift-aIdx];}
-    @Override public double getAndDecrement_(int aIdx) {return mData[totShift-aIdx]--;}
+    @Override protected void increment_(int aIdx) {++mData[totShift-aIdx];}
+    @Override protected double getAndIncrement_(int aIdx) {return mData[totShift-aIdx]++;}
+    @Override protected void decrement_(int aIdx) {--mData[totShift-aIdx];}
+    @Override protected double getAndDecrement_(int aIdx) {return mData[totShift-aIdx]--;}
     
-    @Override public void add_(int aIdx, double aDelta) {mData[totShift-aIdx] += aDelta;}
-    @Override public double getAndAdd_(int aIdx, double aDelta) {
+    @Override protected void add_(int aIdx, double aDelta) {mData[totShift-aIdx] += aDelta;}
+    @Override protected double getAndAdd_(int aIdx, double aDelta) {
         aIdx = totShift-aIdx;
         double tValue = mData[aIdx];
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
+    @Override protected void update_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx = totShift-aIdx;
         mData[aIdx] = aOpt.applyAsDouble(mData[aIdx]);
     }
-    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
+    @Override protected double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         aIdx = totShift-aIdx;
         double tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsDouble(tValue);

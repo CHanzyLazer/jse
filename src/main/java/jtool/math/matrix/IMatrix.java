@@ -64,22 +64,16 @@ public interface IMatrix extends IMatrixGetter {
     default void assignRow(final Closure<? extends Number> aGroovyTask) {assignRow(() -> aGroovyTask.call().doubleValue());}
     
     /** 访问和修改部分，自带的接口 */
-    double get_(int aRow, int aCol);
-    void set_(int aRow, int aCol, double aValue);
-    double getAndSet_(int aRow, int aCol, double aValue); // 返回修改前的值
     int rowNumber();
     int columnNumber();
-    
     double get(int aRow, int aCol);
-    double getAndSet(int aRow, int aCol, double aValue);
+    double getAndSet(int aRow, int aCol, double aValue); // 返回修改前的值
     void set(int aRow, int aCol, double aValue);
     ISize size();
     default @VisibleForTesting int nrows() {return rowNumber();}
     default @VisibleForTesting int ncols() {return columnNumber();}
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
-    void update_(int aRow, int aCol, DoubleUnaryOperator aOpt);
-    double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt);
     void update(int aRow, int aCol, DoubleUnaryOperator aOpt);
     double getAndUpdate(int aRow, int aCol, DoubleUnaryOperator aOpt);
     

@@ -23,10 +23,6 @@ public interface IFunc2 extends IFunc2Subs {
     /** 设置结果，简单起见只允许按照索引来设置 */
     void set(int aI, int aJ, double aV);
     
-    /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
-    double get_(int aI, int aJ);
-    void set_(int aI, int aJ, double aV);
-    
     /** 索引和 x, y 相互转换的接口 */
     int Nx();
     int Ny();

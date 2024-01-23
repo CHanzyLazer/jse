@@ -85,7 +85,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tColNum = tThis.columnNumber();
         IVector rVector = newVector_(tColNum);
         for (int col = 0; col < tColNum; ++col) {
-            rVector.set_(col, tThis.col(col).sum());
+            rVector.set(col, tThis.col(col).sum());
         }
         return rVector;
     }
@@ -95,7 +95,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tRowNum = tThis.rowNumber();
         IVector rVector = newVector_(tRowNum);
         for (int row = 0; row < tRowNum; ++row) {
-            rVector.set_(row, tThis.row(row).sum());
+            rVector.set(row, tThis.row(row).sum());
         }
         return rVector;
     }
@@ -106,7 +106,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tColNum = tThis.columnNumber();
         IVector rVector = newVector_(tColNum);
         for (int col = 0; col < tColNum; ++col) {
-            rVector.set_(col, tThis.col(col).mean());
+            rVector.set(col, tThis.col(col).mean());
         }
         return rVector;
     }
@@ -116,22 +116,23 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tRowNum = tThis.rowNumber();
         IVector rVector = newVector_(tRowNum);
         for (int row = 0; row < tRowNum; ++row) {
-            rVector.set_(row, tThis.row(row).mean());
+            rVector.set(row, tThis.row(row).mean());
         }
         return rVector;
     }
     
     @Override public IMatrix transpose() {
-        IMatrix rMatrix = newMatrix_();
+        final IMatrix tThis = thisMatrix_();
+        IMatrix rMatrix = newMatrix_(tThis.columnNumber(), tThis.rowNumber());
         rMatrix.fill(refTranspose());
         return rMatrix;
     }
     @Override public IMatrix refTranspose() {
         return new RefMatrix() {
             private final IMatrix mThis = thisMatrix_();
-            @Override public double get_(int aRow, int aCol) {return mThis.get_(aCol, aRow);}
-            @Override public void set_(int aRow, int aCol, double aValue)  {mThis.set_(aCol, aRow, aValue);}
-            @Override public double getAndSet_(int aRow, int aCol, double aValue) {return mThis.getAndSet_(aCol, aRow, aValue);}
+            @Override protected double get_(int aRow, int aCol) {return mThis.get(aCol, aRow);}
+            @Override protected void set_(int aRow, int aCol, double aValue)  {mThis.set(aCol, aRow, aValue);}
+            @Override protected double getAndSet_(int aRow, int aCol, double aValue) {return mThis.getAndSet(aCol, aRow, aValue);}
             @Override public int rowNumber() {return mThis.columnNumber();}
             @Override public int columnNumber() {return mThis.rowNumber();}
         };

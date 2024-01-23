@@ -89,15 +89,15 @@ public class IntList implements ISlice, IDataShell<int[]> {
     }
     public IIntVector asVec() {
         return new RefIntVector() {
-            @Override public int get_(int aIdx) {return mData[aIdx];}
-            @Override public void set_(int aIdx, int aValue) {mData[aIdx] = aValue;}
+            @Override protected int get_(int aIdx) {return mData[aIdx];}
+            @Override protected void set_(int aIdx, int aValue) {mData[aIdx] = aValue;}
             @Override public int size() {return mSize;}
         };
     }
     @ApiStatus.Experimental
     public IIntVector asConstVec() {
         return new RefIntVector() {
-            @Override public int get_(int aIdx) {return mData[aIdx];}
+            @Override protected int get_(int aIdx) {return mData[aIdx];}
             @Override public int size() {return mSize;}
         };
     }

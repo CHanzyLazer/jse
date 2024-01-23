@@ -87,9 +87,9 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     }
     @Override public IVector asVec() {
         return new RefVector() {
-            @Override public double get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx) ? 1.0 : 0.0;}
-            @Override public void set_(int aIdx, double aValue) {AbstractLogicalVector.this.set_(aIdx, aValue!=0.0);}
-            public double getAndSet_(int aIdx, double aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx, aValue!=0.0) ? 1.0 : 0.0;}
+            @Override protected double get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx) ? 1.0 : 0.0;}
+            @Override protected void set_(int aIdx, double aValue) {AbstractLogicalVector.this.set_(aIdx, aValue!=0.0);}
+            @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx, aValue!=0.0) ? 1.0 : 0.0;}
             @Override public int size() {return AbstractLogicalVector.this.size();}
         };
     }
@@ -110,7 +110,7 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         if (aIdx2<0 || aIdx2>=tSize) throw new IndexOutOfBoundsException(String.format("Index 2: %d", aIdx1));
         swap_(aIdx1, aIdx2);
     }
-    void swap_(int aIdx1, int aIdx2) {
+    protected void swap_(int aIdx1, int aIdx2) {
         set_(aIdx1, getAndSet_(aIdx2, get_(aIdx1)));
     }
     
@@ -147,20 +147,20 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         set_(aIdx, aValue);
     }
     
-    @Override public void flip_(int aIdx) {
+    protected void flip_(int aIdx) {
         set_(aIdx, !get_(aIdx));
     }
-    @Override public boolean getAndFlip_(int aIdx) {
+    protected boolean getAndFlip_(int aIdx) {
         boolean tValue = get_(aIdx);
         set_(aIdx, !tValue);
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
+    protected void update_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = get_(aIdx);
         tValue = aOpt.applyAsBoolean(tValue);
         set_(aIdx, tValue);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
+    protected boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = get_(aIdx);
         set_(aIdx, aOpt.applyAsBoolean(tValue));
         return tValue;
@@ -206,18 +206,18 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
             @Override protected ILogicalVector getL(final ISlice aIndices) {
                 return new RefLogicalVector() {
                     /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public boolean get_(int aIdx) {return AbstractLogicalVector.this.get(aIndices.get(aIdx));}
-                    @Override public void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set(aIndices.get(aIdx), aValue);}
-                    @Override public boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override protected boolean get_(int aIdx) {return AbstractLogicalVector.this.get(aIndices.get(aIdx));}
+                    @Override protected void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set(aIndices.get(aIdx), aValue);}
+                    @Override protected boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet(aIndices.get(aIdx), aValue);}
                     @Override public int size() {return aIndices.size();}
                 };
             }
             @Override protected ILogicalVector getA() {
                 return new RefLogicalVector() {
                     /** 对于全部切片，则不再需要二次边界检查 */
-                    @Override public boolean get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx);}
-                    @Override public void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set_(aIdx, aValue);}
-                    @Override public boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx, aValue);}
+                    @Override protected boolean get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx);}
+                    @Override protected void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set_(aIdx, aValue);}
+                    @Override protected boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx, aValue);}
                     @Override public int size() {return AbstractLogicalVector.this.size();}
                 };
             }
@@ -229,9 +229,9 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefLogicalVector() {
             /** 由于一开始有边界检查，所以这里不再需要边检检查 */
-            @Override public boolean get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx+aFromIdx);}
-            @Override public void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set_(aIdx+aFromIdx, aValue);}
-            @Override public boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
+            @Override protected boolean get_(int aIdx) {return AbstractLogicalVector.this.get_(aIdx+aFromIdx);}
+            @Override protected void set_(int aIdx, boolean aValue) {AbstractLogicalVector.this.set_(aIdx+aFromIdx, aValue);}
+            @Override protected boolean getAndSet_(int aIdx, boolean aValue) {return AbstractLogicalVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
             @Override public int size() {return aToIdx-aFromIdx;}
         };
     }
@@ -300,9 +300,9 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
     
     
     /** stuff to override */
-    public abstract boolean get_(int aIdx);
-    public abstract void set_(int aIdx, boolean aValue);
-    public abstract boolean getAndSet_(int aIdx, boolean aValue);
+    protected abstract boolean get_(int aIdx);
+    protected abstract void set_(int aIdx, boolean aValue);
+    protected abstract boolean getAndSet_(int aIdx, boolean aValue);
     public abstract int size();
     protected abstract ILogicalVector newZeros_(int aSize);
     

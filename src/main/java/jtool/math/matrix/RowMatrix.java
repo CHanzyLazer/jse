@@ -38,9 +38,9 @@ public final class RowMatrix extends DoubleArrayMatrix {
     
     
     /** IMatrix stuffs */
-    @Override public double get_(int aRow, int aCol) {return mData[aCol + aRow*mColNum];}
-    @Override public void set_(int aRow, int aCol, double aValue) {mData[aCol + aRow*mColNum] = aValue;}
-    @Override public double getAndSet_(int aRow, int aCol, double aValue) {
+    @Override protected double get_(int aRow, int aCol) {return mData[aCol + aRow*mColNum];}
+    @Override protected void set_(int aRow, int aCol, double aValue) {mData[aCol + aRow*mColNum] = aValue;}
+    @Override protected double getAndSet_(int aRow, int aCol, double aValue) {
         int tIdx = aCol + aRow*mColNum;
         double oValue = mData[tIdx];
         mData[tIdx] = aValue;
@@ -98,11 +98,11 @@ public final class RowMatrix extends DoubleArrayMatrix {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override public void update_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
+    @Override protected void update_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         int tIdx = aCol + aRow*mColNum;
         mData[tIdx] = aOpt.applyAsDouble(mData[tIdx]);
     }
-    @Override public double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
+    @Override protected double getAndUpdate_(int aRow, int aCol, DoubleUnaryOperator aOpt) {
         int tIdx = aCol + aRow*mColNum;
         double tValue = mData[tIdx];
         mData[tIdx] = aOpt.applyAsDouble(tValue);

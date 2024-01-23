@@ -39,19 +39,19 @@ public final class RowComplexMatrix extends BiDoubleArrayMatrix {
     
     
     /** IComplexMatrix stuffs */
-    @Override public ComplexDouble get_(int aRow, int aCol) {int tIdx = aCol + aRow*mColNum; return new ComplexDouble(mData[0][tIdx], mData[1][tIdx]);}
-    @Override public double getReal_(int aRow, int aCol) {return mData[0][aCol + aRow*mColNum];}
-    @Override public double getImag_(int aRow, int aCol) {return mData[1][aCol + aRow*mColNum];}
-    @Override public void set_(int aRow, int aCol, IComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue.real(); mData[1][tIdx] = aValue.imag();}
-    @Override public void set_(int aRow, int aCol, ComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue.mReal; mData[1][tIdx] = aValue.mImag;}
-    @Override public void set_(int aRow, int aCol, double aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue; mData[1][tIdx] = 0.0;}
-    @Override public void setReal_(int aRow, int aCol, double aReal) {mData[0][aCol + aRow*mColNum] = aReal;}
-    @Override public void setImag_(int aRow, int aCol, double aImag) {mData[1][aCol + aRow*mColNum] = aImag;}
-    public ComplexDouble getAndSet_(int aRow, int aCol, IComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue.real(); mData[1][tIdx] = aValue.imag(); return oValue;}
-    public ComplexDouble getAndSet_(int aRow, int aCol, ComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue.mReal; mData[1][tIdx] = aValue.mImag; return oValue;}
-    public ComplexDouble getAndSet_(int aRow, int aCol, double aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue; mData[1][tIdx] = 0.0; return oValue;}
-    @Override public double getAndSetReal_(int aRow, int aCol, double aReal) {int tIdx = aCol + aRow*mColNum; double oReal = mData[0][tIdx]; mData[0][tIdx] = aReal; return oReal;}
-    @Override public double getAndSetImag_(int aRow, int aCol, double aImag) {int tIdx = aCol + aRow*mColNum; double oImag = mData[1][tIdx]; mData[1][tIdx] = aImag; return oImag;}
+    @Override protected ComplexDouble get_(int aRow, int aCol) {int tIdx = aCol + aRow*mColNum; return new ComplexDouble(mData[0][tIdx], mData[1][tIdx]);}
+    @Override protected double getReal_(int aRow, int aCol) {return mData[0][aCol + aRow*mColNum];}
+    @Override protected double getImag_(int aRow, int aCol) {return mData[1][aCol + aRow*mColNum];}
+    @Override protected void set_(int aRow, int aCol, IComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue.real(); mData[1][tIdx] = aValue.imag();}
+    @Override protected void set_(int aRow, int aCol, ComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue.mReal; mData[1][tIdx] = aValue.mImag;}
+    @Override protected void set_(int aRow, int aCol, double aValue) {int tIdx = aCol + aRow*mColNum; mData[0][tIdx] = aValue; mData[1][tIdx] = 0.0;}
+    @Override protected void setReal_(int aRow, int aCol, double aReal) {mData[0][aCol + aRow*mColNum] = aReal;}
+    @Override protected void setImag_(int aRow, int aCol, double aImag) {mData[1][aCol + aRow*mColNum] = aImag;}
+    @Override protected ComplexDouble getAndSet_(int aRow, int aCol, IComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue.real(); mData[1][tIdx] = aValue.imag(); return oValue;}
+    @Override protected ComplexDouble getAndSet_(int aRow, int aCol, ComplexDouble aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue.mReal; mData[1][tIdx] = aValue.mImag; return oValue;}
+    @Override protected ComplexDouble getAndSet_(int aRow, int aCol, double aValue) {int tIdx = aCol + aRow*mColNum; ComplexDouble oValue = new ComplexDouble(mData[0][tIdx], mData[1][tIdx]); mData[0][tIdx] = aValue; mData[1][tIdx] = 0.0; return oValue;}
+    @Override protected double getAndSetReal_(int aRow, int aCol, double aReal) {int tIdx = aCol + aRow*mColNum; double oReal = mData[0][tIdx]; mData[0][tIdx] = aReal; return oReal;}
+    @Override protected double getAndSetImag_(int aRow, int aCol, double aImag) {int tIdx = aCol + aRow*mColNum; double oImag = mData[1][tIdx]; mData[1][tIdx] = aImag; return oImag;}
     @Override public int rowNumber() {return mRowNum;}
     @Override public int columnNumber() {return mColNum;}
     

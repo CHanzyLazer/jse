@@ -100,7 +100,7 @@ public abstract class AbstractVector implements IVector {
         if (aIdx2<0 || aIdx2>=tSize) throw new IndexOutOfBoundsException(String.format("Index 2: %d", aIdx1));
         swap_(aIdx1, aIdx2);
     }
-    void swap_(int aIdx1, int aIdx2) {
+    protected void swap_(int aIdx1, int aIdx2) {
         set_(aIdx1, getAndSet_(aIdx2, get_(aIdx1)));
     }
     
@@ -138,42 +138,42 @@ public abstract class AbstractVector implements IVector {
         set_(aIdx, aValue);
     }
     
-    @Override public void increment_(int aIdx) {
+    protected void increment_(int aIdx) {
         double tValue = get_(aIdx);
         ++tValue;
         set_(aIdx, tValue);
     }
-    @Override public double getAndIncrement_(int aIdx) {
+    protected double getAndIncrement_(int aIdx) {
         double tValue = get_(aIdx);
         set_(aIdx, tValue+1);
         return tValue;
     }
-    @Override public void decrement_(int aIdx) {
+    protected void decrement_(int aIdx) {
         double tValue = get_(aIdx);
         --tValue;
         set_(aIdx, tValue);
     }
-    @Override public double getAndDecrement_(int aIdx) {
+    protected double getAndDecrement_(int aIdx) {
         double tValue = get_(aIdx);
         set_(aIdx, tValue-1);
         return tValue;
     }
-    @Override public void add_(int aIdx, double aDelta) {
+    protected void add_(int aIdx, double aDelta) {
         double tValue = get_(aIdx);
         tValue += aDelta;
         set_(aIdx, tValue);
     }
-    @Override public double getAndAdd_(int aIdx, double aDelta) {
+    protected double getAndAdd_(int aIdx, double aDelta) {
         double tValue = get_(aIdx);
         set_(aIdx, tValue+aDelta);
         return tValue;
     }
-    @Override public void update_(int aIdx, DoubleUnaryOperator aOpt) {
+    protected void update_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = get_(aIdx);
         tValue = aOpt.applyAsDouble(tValue);
         set_(aIdx, tValue);
     }
-    @Override public double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
+    protected double getAndUpdate_(int aIdx, DoubleUnaryOperator aOpt) {
         double tValue = get_(aIdx);
         set_(aIdx, aOpt.applyAsDouble(tValue));
         return tValue;
@@ -235,18 +235,18 @@ public abstract class AbstractVector implements IVector {
             @Override protected IVector getL(final ISlice aIndices) {
                 return new RefVector() {
                     /** 方便起见，依旧使用带有边界检查的方法，保证一般方法的边界检测永远生效 */
-                    @Override public double get_(int aIdx) {return AbstractVector.this.get(aIndices.get(aIdx));}
-                    @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set(aIndices.get(aIdx), aValue);}
-                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override protected double get_(int aIdx) {return AbstractVector.this.get(aIndices.get(aIdx));}
+                    @Override protected void set_(int aIdx, double aValue) {AbstractVector.this.set(aIndices.get(aIdx), aValue);}
+                    @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet(aIndices.get(aIdx), aValue);}
                     @Override public int size() {return aIndices.size();}
                 };
             }
             @Override protected IVector getA() {
                 return new RefVector() {
                     /** 对于全部切片，则不再需要二次边界检查 */
-                    @Override public double get_(int aIdx) {return AbstractVector.this.get_(aIdx);}
-                    @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set_(aIdx, aValue);}
-                    @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet_(aIdx, aValue);}
+                    @Override protected double get_(int aIdx) {return AbstractVector.this.get_(aIdx);}
+                    @Override protected void set_(int aIdx, double aValue) {AbstractVector.this.set_(aIdx, aValue);}
+                    @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet_(aIdx, aValue);}
                     @Override public int size() {return AbstractVector.this.size();}
                 };
             }
@@ -258,9 +258,9 @@ public abstract class AbstractVector implements IVector {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefVector() {
             /** 由于一开始有边界检查，所以这里不再需要边检检查 */
-            @Override public double get_(int aIdx) {return AbstractVector.this.get_(aIdx+aFromIdx);}
-            @Override public void set_(int aIdx, double aValue) {AbstractVector.this.set_(aIdx+aFromIdx, aValue);}
-            @Override public double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
+            @Override protected double get_(int aIdx) {return AbstractVector.this.get_(aIdx+aFromIdx);}
+            @Override protected void set_(int aIdx, double aValue) {AbstractVector.this.set_(aIdx+aFromIdx, aValue);}
+            @Override protected double getAndSet_(int aIdx, double aValue) {return AbstractVector.this.getAndSet_(aIdx+aFromIdx, aValue);}
             @Override public int size() {return aToIdx-aFromIdx;}
         };
     }
@@ -359,9 +359,9 @@ public abstract class AbstractVector implements IVector {
     
     
     /** stuff to override */
-    public abstract double get_(int aIdx);
-    public abstract void set_(int aIdx, double aValue);
-    public abstract double getAndSet_(int aIdx, double aValue);
+    protected abstract double get_(int aIdx);
+    protected abstract void set_(int aIdx, double aValue);
+    protected abstract double getAndSet_(int aIdx, double aValue);
     public abstract int size();
     protected abstract IVector newZeros_(int aSize);
     

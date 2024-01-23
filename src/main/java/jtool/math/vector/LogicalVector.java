@@ -47,9 +47,9 @@ public final class LogicalVector extends BooleanArrayVector {
     public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */
-    @Override public boolean get_(int aIdx) {return mData[aIdx];}
-    @Override public void set_(int aIdx, boolean aValue) {mData[aIdx] = aValue;}
-    @Override public boolean getAndSet_(int aIdx, boolean aValue) {
+    @Override protected boolean get_(int aIdx) {return mData[aIdx];}
+    @Override protected void set_(int aIdx, boolean aValue) {mData[aIdx] = aValue;}
+    @Override protected boolean getAndSet_(int aIdx, boolean aValue) {
         boolean oValue = mData[aIdx];
         mData[aIdx] = aValue;
         return oValue;
@@ -79,24 +79,24 @@ public final class LogicalVector extends BooleanArrayVector {
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override void swap_(int aIdx1, int aIdx2) {
+    @Override protected void swap_(int aIdx1, int aIdx2) {
         boolean tValue = mData[aIdx2];
         mData[aIdx2] = mData[aIdx1];
         mData[aIdx1] = tValue;
     }
     
-    @Override public void flip_(int aIdx) {
+    @Override protected void flip_(int aIdx) {
         mData[aIdx] = !mData[aIdx];
     }
-    @Override public boolean getAndFlip_(int aIdx) {
+    @Override protected boolean getAndFlip_(int aIdx) {
         boolean tValue = mData[aIdx];
         mData[aIdx] = !tValue;
         return tValue;
     }
-    @Override public void update_(int aIdx, IBooleanUnaryOperator aOpt) {
+    @Override protected void update_(int aIdx, IBooleanUnaryOperator aOpt) {
         mData[aIdx] = aOpt.applyAsBoolean(mData[aIdx]);
     }
-    @Override public boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
+    @Override protected boolean getAndUpdate_(int aIdx, IBooleanUnaryOperator aOpt) {
         boolean tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsBoolean(tValue);
         return tValue;

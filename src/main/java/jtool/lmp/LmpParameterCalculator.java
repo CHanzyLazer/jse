@@ -373,9 +373,9 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
                 // 这里直接构造 Func1
                 IFunc1 rMSD = Func1.zeros(fLongN+fShortN-1, i -> (i < fShortN) ? tShortMSD.getX(i) : tLongMSD.getX(i-fShortN+1));
                 // 直接遍历设置，连接处平均
-                for (int i = 0; i < fShortN; ++i) rMSD.set_(i, tShortMSD.get_(i));
-                rMSD.update_(fShortN-1, v -> (v + tLongMSD.get_(0))*0.5);
-                for (int i = 1, j = fShortN; i < fLongN; ++i, ++j) rMSD.set_(j, tLongMSD.get_(i));
+                for (int i = 0; i < fShortN; ++i) rMSD.set(i, tShortMSD.get(i));
+                rMSD.update(fShortN-1, v -> (v + tLongMSD.get(0))*0.5);
+                for (int i = 1, j = fShortN; i < fLongN; ++i, ++j) rMSD.set(j, tLongMSD.get(i));
                 // 返回结果
                 return rMSD;
             }

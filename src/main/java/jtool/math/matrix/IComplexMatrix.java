@@ -21,22 +21,8 @@ public interface IComplexMatrix {
     IComplexDoubleSetIterator setIteratorCol();
     
     /** 访问和修改部分，自带的接口 */
-    ComplexDouble get_(int aRow, int aCol);
-    double getReal_(int aRow, int aCol);
-    double getImag_(int aRow, int aCol);
-    void set_(int aRow, int aCol, IComplexDouble aValue);
-    void set_(int aRow, int aCol, ComplexDouble aValue);
-    void set_(int aRow, int aCol, double aValue);
-    void setReal_(int aRow, int aCol, double aReal);
-    void setImag_(int aRow, int aCol, double aImag);
-    ComplexDouble getAndSet_(int aRow, int aCol, IComplexDouble aValue); // 返回修改前的值
-    ComplexDouble getAndSet_(int aRow, int aCol, ComplexDouble aValue);
-    ComplexDouble getAndSet_(int aRow, int aCol, double aValue);
-    double getAndSetReal_(int aRow, int aCol, double aReal);
-    double getAndSetImag_(int aRow, int aCol, double aImag);
     int rowNumber();
     int columnNumber();
-    
     ComplexDouble get(int aRow, int aCol);
     double getReal(int aRow, int aCol);
     double getImag(int aRow, int aCol);
@@ -45,7 +31,7 @@ public interface IComplexMatrix {
     void set(int aRow, int aCol, double aValue);
     void setReal(int aRow, int aCol, double aReal);
     void setImag(int aRow, int aCol, double aImag);
-    ComplexDouble getAndSet(int aRow, int aCol, IComplexDouble aValue);
+    ComplexDouble getAndSet(int aRow, int aCol, IComplexDouble aValue); // 返回修改前的值
     ComplexDouble getAndSet(int aRow, int aCol, ComplexDouble aValue);
     ComplexDouble getAndSet(int aRow, int aCol, double aValue);
     double getAndSetReal(int aRow, int aCol, double aReal);

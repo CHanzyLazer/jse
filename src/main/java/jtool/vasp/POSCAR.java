@@ -334,7 +334,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
                 for (IAtom tAtom : aAtomData.asList()) if (tAtom.type() == tTypeMM+1) {
-                    rAtomNumbers.increment_(tTypeMM);
+                    rAtomNumbers.increment(tTypeMM);
                     rDirect.set(tIdx, 0, tAtom.x());
                     rDirect.set(tIdx, 1, tAtom.y());
                     rDirect.set(tIdx, 2, tAtom.z());

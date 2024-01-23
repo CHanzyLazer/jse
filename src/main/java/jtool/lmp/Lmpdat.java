@@ -251,7 +251,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             int tAtomTypeNum = aAtomData.atomTypeNum();
             if (tAtomTypes!=null && tAtomTypes.length>=tAtomTypeNum) {
                 aMasses = Vectors.zeros(tAtomTypeNum);
-                for (int i = 0; i < tAtomTypeNum; ++i) aMasses.set_(i, MASS.getOrDefault(tAtomTypes[i], -1.0));
+                for (int i = 0; i < tAtomTypeNum; ++i) aMasses.set(i, MASS.getOrDefault(tAtomTypes[i], -1.0));
             }
         }
         return fromAtomData_(aAtomData, aMasses);
@@ -275,15 +275,15 @@ public class Lmpdat extends AbstractSettableAtomData {
             @Nullable RowMatrix rVelocities = aAtomData.hasVelocities() ? RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length) : null;
             int row = 0;
             for (IAtom tAtom : aAtomData.asList()) {
-                rAtomID.set_(row, tAtom.id());
-                rAtomType.set_(row, tAtom.type());
-                rAtomXYZ.set_(row, XYZ_X_COL, tAtom.x());
-                rAtomXYZ.set_(row, XYZ_Y_COL, tAtom.y());
-                rAtomXYZ.set_(row, XYZ_Z_COL, tAtom.z());
+                rAtomID.set(row, tAtom.id());
+                rAtomType.set(row, tAtom.type());
+                rAtomXYZ.set(row, XYZ_X_COL, tAtom.x());
+                rAtomXYZ.set(row, XYZ_Y_COL, tAtom.y());
+                rAtomXYZ.set(row, XYZ_Z_COL, tAtom.z());
                 if (rVelocities != null) {
-                    rVelocities.set_(row, STD_VX_COL, tAtom.vx());
-                    rVelocities.set_(row, STD_VY_COL, tAtom.vy());
-                    rVelocities.set_(row, STD_VZ_COL, tAtom.vz());
+                    rVelocities.set(row, STD_VX_COL, tAtom.vx());
+                    rVelocities.set(row, STD_VY_COL, tAtom.vy());
+                    rVelocities.set(row, STD_VZ_COL, tAtom.vz());
                 }
                 ++row;
             }

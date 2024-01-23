@@ -8,9 +8,9 @@ public abstract class RefVector extends AbstractVector {
     @Override protected final IVector newZeros_(int aSize) {return Vector.zeros(aSize);}
     
     /** stuff to override */
-    public abstract double get_(int aIdx);
-    public void set_(int aIdx, double aValue) {throw new UnsupportedOperationException("set");}
-    public double getAndSet_(int aIdx, double aValue) {
+    protected abstract double get_(int aIdx);
+    protected void set_(int aIdx, double aValue) {throw new UnsupportedOperationException("set");}
+    protected double getAndSet_(int aIdx, double aValue) {
         double oValue = get_(aIdx);
         set_(aIdx, aValue);
         return oValue;
