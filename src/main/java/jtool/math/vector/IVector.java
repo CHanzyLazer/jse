@@ -74,7 +74,6 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     void update(int aIdx, DoubleUnaryOperator aOpt);
     double getAndUpdate(int aIdx, DoubleUnaryOperator aOpt);
     
-    
     IVector copy();
     
     /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */

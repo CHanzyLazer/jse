@@ -13,7 +13,7 @@ import static jtool.math.vector.AbstractVector.*;
 
 /**
  * @author liqa
- * <p> 支持将内部的 int[] 进行平移访问的 IntegerVector，理论拥有和 {@link IntVector} 几乎一样的性能 </p>
+ * <p> 支持将内部的 int[] 进行平移访问的 IntVector，理论拥有和 {@link IntVector} 几乎一样的性能 </p>
  * <p> 仅用于临时操作，因此由此返回的新对象类型依旧为 {@link IntVector} </p>
  */
 public final class ShiftIntVector extends IntArrayVector {
@@ -97,11 +97,11 @@ public final class ShiftIntVector extends IntArrayVector {
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}
-    @Override public double last() {
+    @Override public int last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty IntVector");
         return mData[mSize-1+mShift];
     }
-    @Override public double first() {
+    @Override public int first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty IntVector");
         return mData[mShift];
     }

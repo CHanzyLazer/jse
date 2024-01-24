@@ -54,5 +54,6 @@ public interface ILogicalVectorOperation {
     
     ILogicalVector reverse      ();
     ILogicalVector refReverse   ();
+    void reverse2this();
     @VisibleForTesting default ILogicalVector refreverse() {return refReverse();}
 }

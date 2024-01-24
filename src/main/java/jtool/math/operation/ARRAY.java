@@ -5,10 +5,7 @@ import groovy.lang.Closure;
 import jtool.code.functional.*;
 import jtool.math.ComplexDouble;
 import jtool.math.IComplexDouble;
-import jtool.math.vector.IComplexVectorGetter;
-import jtool.math.vector.IIntVectorGetter;
-import jtool.math.vector.ILogicalVectorGetter;
-import jtool.math.vector.IVectorGetter;
+import jtool.math.vector.*;
 
 import java.util.Arrays;
 import java.util.function.*;
@@ -1101,6 +1098,42 @@ public class ARRAY {
         }
     }
     
+    public static void mapFill2This(long[] rThis, int rShift, long aRHS, int aLength) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS; // 注意在指定区域外不能填充，因此不能使用 Arrays.fill
+    }
+    public static void ebeFill2This(long[] rThis, int rShift, long[] aDataR, int aShiftR, int aLength) {
+        System.arraycopy(aDataR, aShiftR, rThis, rShift, aLength);
+    }
+    public static void vecFill2This(long[] rThis, int rShift, int aLength, boolean aReverse, ILongVectorGetter aVec) {
+        if (aReverse) {
+            final int tEndMM = aLength + rShift - 1;
+            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) rThis[i] = aVec.get(j);
+        } else {
+            final int tEnd = aLength + rShift;
+            if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
+            else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
+        }
+    }
+    public static void assign2This(long[] rThis, int rShift, int aLength, boolean aReverse, LongSupplier aSup) {
+        if (aReverse) {
+            final int tEndMM = aLength + rShift - 1;
+            for (int i = tEndMM; i >= rShift; --i) rThis[i] = aSup.getAsLong();
+        } else {
+            final int tEnd = aLength + rShift;
+            for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsLong();
+        }
+    }
+    public static void forEachOfThis(long[] aThis, int aShift, int aLength, boolean aReverse, LongConsumer aCon) {
+        if (aReverse) {
+            final int tEndMM = aLength + aShift - 1;
+            for (int i = tEndMM; i >= aShift; --i) aCon.accept(aThis[i]);
+        } else {
+            final int tEnd = aLength + aShift;
+            for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
+        }
+    }
+    
     /** stat stuff */
     public static double sumOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
@@ -1154,6 +1187,21 @@ public class ARRAY {
         rMean.div2this(aLength);
         return rMean;
     }
+    public static double meanOfThis(int[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rSum = 0.0;
+        for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
+        return rSum / (double)aLength;
+    }
+    public static double meanOfThis(long[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rSum = 0.0;
+        for (int i = aShift; i < tEnd; ++i) rSum += aThis[i];
+        return rSum / (double)aLength;
+    }
+    
     public static double prodOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
@@ -1174,6 +1222,21 @@ public class ARRAY {
         }
         return rProd;
     }
+    public static double prodOfThis(int[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rProd = 1.0;
+        for (int i = aShift; i < tEnd; ++i) rProd *= aThis[i];
+        return rProd;
+    }
+    public static double prodOfThis(long[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        double rProd = 1.0;
+        for (int i = aShift; i < tEnd; ++i) rProd *= aThis[i];
+        return rProd;
+    }
+    
     public static double maxOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
@@ -1184,6 +1247,27 @@ public class ARRAY {
         }
         return rMax;
     }
+    public static int maxOfThis(int[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        int rMax = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
+            int tValue = aThis[i];
+            if (tValue > rMax) rMax = tValue;
+        }
+        return rMax;
+    }
+    public static long maxOfThis(long[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        long rMax = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
+            long tValue = aThis[i];
+            if (tValue > rMax) rMax = tValue;
+        }
+        return rMax;
+    }
+    
     public static double minOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
@@ -1194,6 +1278,27 @@ public class ARRAY {
         }
         return rMin;
     }
+    public static int minOfThis(int[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        int rMin = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
+            int tValue = aThis[i];
+            if (tValue < rMin) rMin = tValue;
+        }
+        return rMin;
+    }
+    public static long minOfThis(long[] aThis, int aShift, int aLength) {
+        final int tEnd = aLength + aShift;
+        
+        long rMin = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
+            long tValue = aThis[i];
+            if (tValue < rMin) rMin = tValue;
+        }
+        return rMin;
+    }
+    
     public static double statOfThis(double[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
         final int tEnd = aLength + aShift;
         
@@ -1207,6 +1312,20 @@ public class ARRAY {
         
         ComplexDouble rStat = null;
         for (int i = aShift; i < tEnd; ++i) rStat = toComplexDouble(aOpt.apply(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
+        return rStat;
+    }
+    public static double statOfThis(int[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
+        final int tEnd = aLength + aShift;
+        
+        double rStat = Double.NaN;
+        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
+        return rStat;
+    }
+    public static double statOfThis(long[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
+        final int tEnd = aLength + aShift;
+        
+        double rStat = Double.NaN;
+        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
         return rStat;
     }
     
@@ -1234,6 +1353,12 @@ public class ARRAY {
             rDest[j] = aData[i];
         }
     }
+    public static void reverse2Dest(long[] aData, int aShift, long[] rDest, int rShift, int aLength) {
+        final int tEnd = aShift + aLength;
+        for (int i = aShift, j = rShift+aLength-1; i < tEnd; ++i, --j) {
+            rDest[j] = aData[i];
+        }
+    }
     
     public static void sort(double[] rData, int rShift, int aLength) {
         Arrays.sort(rData, rShift, aLength+rShift);
@@ -1241,10 +1366,16 @@ public class ARRAY {
     public static void sort(int[] rData, int rShift, int aLength) {
         Arrays.sort(rData, rShift, aLength+rShift);
     }
+    public static void sort(long[] rData, int rShift, int aLength) {
+        Arrays.sort(rData, rShift, aLength+rShift);
+    }
     public static void biSort(double[] rData, int rShift, int aLength, ISwapper aSwapper) {
         Sort.multiSort(rData, rShift, aLength+rShift, aSwapper);
     }
     public static void biSort(int[] rData, int rShift, int aLength, ISwapper aSwapper) {
+        Sort.multiSort(rData, rShift, aLength+rShift, aSwapper);
+    }
+    public static void biSort(long[] rData, int rShift, int aLength, ISwapper aSwapper) {
         Sort.multiSort(rData, rShift, aLength+rShift, aSwapper);
     }
     

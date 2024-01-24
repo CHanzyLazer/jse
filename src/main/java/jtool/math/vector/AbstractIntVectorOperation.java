@@ -3,12 +3,10 @@ package jtool.math.vector;
 import jtool.code.functional.ISwapper;
 import jtool.math.operation.DATA;
 
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
-import java.util.function.IntUnaryOperator;
+import java.util.function.*;
 
 import static jtool.code.CS.RANDOM;
+import static jtool.math.vector.AbstractVector.rangeCheck;
 
 public abstract class AbstractIntVectorOperation implements IIntVectorOperation {
     @Override public void fill          (int                aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
@@ -16,9 +14,27 @@ public abstract class AbstractIntVectorOperation implements IIntVectorOperation 
     @Override public void assign        (IntSupplier        aSup) {DATA.assign2This  (thisVector_(), aSup);}
     @Override public void forEach       (IntConsumer        aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill          (IIntVectorGetter   aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
-    @Override public void reverse2this() {DATA.reverse2This(thisVector_());}
     
-    @Override public double sum ()                      {return DATA.sumOfThis(thisVector_().asDouble());}
+    @Override public double sum ()                      {return DATA.sumOfThis  (thisVector_().asDouble());}
+    @Override public double mean()                      {return DATA.meanOfThis (thisVector_().asDouble());}
+    @Override public double prod()                      {return DATA.prodOfThis (thisVector_().asDouble());}
+    @Override public int    max ()                      {return DATA.maxOfThis  (thisVector_()           );}
+    @Override public int    min ()                      {return DATA.minOfThis  (thisVector_()           );}
+    @Override public double stat(DoubleBinaryOperator aOpt) {return DATA.statOfThis(thisVector_().asDouble(), aOpt);}
+    
+    
+    /** 向量的一些额外的运算 */
+    @Override public IIntVector reverse() {IIntVector rVector = newVector_(); DATA.reverse2Dest(thisVector_(), rVector); return rVector;}
+    @Override public IIntVector refReverse() {
+        return new RefIntVector() {
+            private final IIntVector mThis = thisVector_();
+            @Override public int get(int aIdx) {rangeCheck(aIdx, size()); return mThis.get(mThis.size()-1-aIdx);}
+            @Override public void set(int aIdx, int aValue) {rangeCheck(aIdx, size()); mThis.set(mThis.size()-1-aIdx, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {rangeCheck(aIdx, size()); return mThis.getAndSet(mThis.size()-1-aIdx, aValue);}
+            @Override public int size() {return mThis.size();}
+        };
+    }
+    @Override public void reverse2this() {DATA.reverse2This(thisVector_());}
     
     /** 排序不自己实现 */
     @Override public void sort() {DATA.sort(thisVector_());}
@@ -35,6 +51,11 @@ public abstract class AbstractIntVectorOperation implements IIntVectorOperation 
         }
     }
     
+    
+    /** 方便内部使用，减少一些重复代码 */
+    private IIntVector newVector_() {return newVector_(thisVector_().size());}
+    
     /** stuff to override */
     protected abstract IIntVector thisVector_();
+    protected abstract IIntVector newVector_(int aSize);
 }

@@ -114,6 +114,7 @@ public interface IComplexVectorOperation {
     
     IComplexVector reverse     ();
     IComplexVector refReverse  ();
+    void reverse2this();
     @VisibleForTesting default IComplexVector refreverse() {return refReverse();}
     
     /** 较为复杂的运算，只有遇到时专门增加，主要避免 IOperator2 使用需要新建 ComplexDouble */

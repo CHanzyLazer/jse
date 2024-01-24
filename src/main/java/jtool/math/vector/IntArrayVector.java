@@ -14,6 +14,7 @@ public abstract class IntArrayVector extends AbstractIntVector implements IDataS
     
     protected class IntArrayVectorOperation_ extends IntArrayVectorOperation {
         @Override protected IntArrayVector thisVector_() {return IntArrayVector.this;}
+        @Override protected IntArrayVector newVector_(int aSize) {return IntArrayVector.this.newZeros_(aSize);}
     }
     
     /** 向量运算实现 */
@@ -21,6 +22,14 @@ public abstract class IntArrayVector extends AbstractIntVector implements IDataS
     
     /** Optimize stuffs，重写这些接口来加速批量填充过程 */
     @Override public void fill(int[] aData) {System.arraycopy(aData, 0, internalData(), internalDataShift(), internalDataSize());}
+    
+    /** Optimize stuffs，重写这些接口来加速获取 data 的过程 */
+    @Override public int[] data() {
+        final int tSize = internalDataSize();
+        int[] rData = new int[tSize];
+        System.arraycopy(internalData(), internalDataShift(), rData, 0, tSize);
+        return rData;
+    }
     
     @Override public IntArrayVector copy() {return (IntArrayVector)super.copy();}
     

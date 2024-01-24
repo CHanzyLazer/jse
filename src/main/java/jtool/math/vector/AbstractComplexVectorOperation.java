@@ -174,6 +174,7 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
             @Override public int size() {return mThis.size();}
         };
     }
+    @Override public void reverse2this() {DATA.reverse2This(thisVector_());}
     
     
     @Override public void mplus2this(IComplexVector aRHS, double aMul) {DATA.mapMultiplyThenEbePlus2This(thisVector_(), aRHS, aMul);}

@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 public class CS {
     /** version of jtool */
-    public final static String VERSION = "2.4.7";
+    public final static String VERSION = "2.4.7b";
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
@@ -102,6 +102,7 @@ public class CS {
     public final static double[][] ZL_MAT = new double[0][];
     public final static double[]   ZL_VEC = new double[0];
     public final static int[]      ZL_INT = new int[0];
+    public final static long[]    ZL_LONG = new long[0];
     public final static byte[]    ZL_BYTE = new byte[0];
     public final static boolean[] ZL_BOOL = new boolean[0];
     

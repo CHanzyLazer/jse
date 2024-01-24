@@ -3,10 +3,7 @@ package jtool.math.vector;
 import jtool.code.functional.ISwapper;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
-import java.util.function.IntUnaryOperator;
+import java.util.function.*;
 
 /**
  * 任意的整数向量的运算
@@ -15,17 +12,24 @@ import java.util.function.IntUnaryOperator;
 public interface IIntVectorOperation {
     /** 这两个方法名默认是作用到自身的，这里为了保持 operation 的使用简洁不在函数名上特殊说明 */
     void fill               (int aRHS);
-    void fill(IIntVector aRHS);
-    void fill(IIntVectorGetter aRHS);
+    void fill               (IIntVector aRHS);
+    void fill               (IIntVectorGetter aRHS);
     void assign             (IntSupplier aSup);
     /** 统一提供一个 for-each 运算来减少优化需要的重复代码 */
     void forEach            (IntConsumer aCon);
     
     double sum          ();
-    
+    double mean         ();
+    double prod         ();
+    int    max          ();
+    int    min          ();
+    double stat         (DoubleBinaryOperator aOpt);
     
     /** 向量的一些额外的运算 */
+    IIntVector reverse     ();
+    IIntVector refReverse  ();
     void reverse2this();
+    @VisibleForTesting default IIntVector refreverse() {return refReverse();}
     
     /** 各种排序操作 */
     void sort();

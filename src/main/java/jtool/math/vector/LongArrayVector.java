@@ -14,12 +14,27 @@ public abstract class LongArrayVector extends AbstractLongVector implements IDat
     
     protected class LongArrayVectorOperation_ extends LongArrayVectorOperation {
         @Override protected LongArrayVector thisVector_() {return LongArrayVector.this;}
+        @Override protected LongArrayVector newVector_(int aSize) {return LongArrayVector.this.newZeros_(aSize);}
     }
     
     /** 向量运算实现 */
     @Override public ILongVectorOperation operation() {return new LongArrayVectorOperation_();}
     
+    /** Optimize stuffs，重写这些接口来加速批量填充过程 */
+    @Override public void fill(long[] aData) {System.arraycopy(aData, 0, internalData(), internalDataShift(), internalDataSize());}
+    
+    /** Optimize stuffs，重写这些接口来加速获取 data 的过程 */
+    @Override public long[] data() {
+        final int tSize = internalDataSize();
+        long[] rData = new long[tSize];
+        System.arraycopy(internalData(), internalDataShift(), rData, 0, tSize);
+        return rData;
+    }
+    
+    @Override public LongArrayVector copy() {return (LongArrayVector)super.copy();}
+    
     /** stuff to override */
+    protected abstract LongArrayVector newZeros_(int aSize);
     public abstract LongArrayVector newShell();
     public abstract long @Nullable[] getIfHasSameOrderData(Object aObj);
 }

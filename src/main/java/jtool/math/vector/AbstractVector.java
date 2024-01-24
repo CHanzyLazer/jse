@@ -289,7 +289,7 @@ public abstract class AbstractVector implements IVector {
     @Override public final ILogicalVector less          (double aRHS) {return operation().less          (aRHS);}
     @Override public final ILogicalVector lessOrEqual   (double aRHS) {return operation().lessOrEqual   (aRHS);}
     
-    /** Groovy 的部分，增加矩阵切片操作 */
+    /** Groovy 的部分，增加向量切片操作 */
     @VisibleForTesting @Override public double call(int aIdx) {return get(aIdx);}
     @VisibleForTesting @Override public IVector call(ISlice        aIndices) {return slicer().get(aIndices);}
     @VisibleForTesting @Override public IVector call(List<Integer> aIndices) {return slicer().get(aIndices);}

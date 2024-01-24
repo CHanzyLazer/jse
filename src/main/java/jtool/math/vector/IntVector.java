@@ -107,11 +107,11 @@ public final class IntVector extends IntArrayVector {
         return tValue;
     }
     @Override public boolean isEmpty() {return mSize==0;}
-    @Override public double last() {
+    @Override public int last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty IntVector");
         return mData[mSize-1];
     }
-    @Override public double first() {
+    @Override public int first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty IntVector");
         return mData[0];
     }

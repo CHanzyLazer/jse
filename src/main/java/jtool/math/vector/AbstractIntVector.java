@@ -1,11 +1,19 @@
 package jtool.math.vector;
 
+import jtool.code.CS.SliceType;
 import jtool.code.collection.AbstractRandomAccessList;
+import jtool.code.collection.ISlice;
+import jtool.code.functional.IIndexFilter;
+import jtool.code.iterator.IDoubleIterator;
 import jtool.code.iterator.IIntIterator;
 import jtool.code.iterator.IIntSetIterator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
@@ -83,7 +91,17 @@ public abstract class AbstractIntVector implements IIntVector {
             @Override public void set(int aIdx, double aValue) {AbstractIntVector.this.set(aIdx, (int)aValue);}
             @Override public double getAndSet(int aIdx, double aValue) {return AbstractIntVector.this.getAndSet(aIdx, (int)aValue);}
             @Override public int size() {return AbstractIntVector.this.size();}
+            @Override public @NotNull IDoubleIterator iterator() {return AbstractIntVector.this.iterator().asDouble();}
         };
+    }
+    
+    /** 转为兼容性更好的 int[] */
+    @Override public int[] data() {
+        final int tSize = size();
+        int[] rData = new int[tSize];
+        final IIntIterator it = iterator();
+        for (int i = 0; i < tSize; ++i) rData[i] = it.next();
+        return rData;
     }
     
     /** ISwapper stuffs */
@@ -96,9 +114,9 @@ public abstract class AbstractIntVector implements IIntVector {
     @Override public final void fill(int aValue) {operation().fill(aValue);}
     @Override public final void fill(IIntVector aVector) {operation().fill(aVector);}
     @Override public final void fill(IIntVectorGetter aVectorGetter) {operation().fill(aVectorGetter);}
-    @Override public final void fill(Iterable<Integer> aList) {
-        final Iterator<Integer> it = aList.iterator();
-        assign(it::next);
+    @Override public final void fill(Iterable<? extends Number> aList) {
+        final Iterator<? extends Number> it = aList.iterator();
+        assign(() -> it.next().intValue());
     }
     @Override public void fill(int[] aData) {
         final IIntSetIterator si = setIterator();
@@ -168,6 +186,37 @@ public abstract class AbstractIntVector implements IIntVector {
         return rVector;
     }
     
+    /** 切片操作，默认返回新的向量，refSlicer 则会返回引用的切片结果 */
+    @Override public IIntVectorSlicer slicer() {
+        return new AbstractIntVectorSlicer() {
+            @Override protected IIntVector getL(final ISlice aIndices) {IIntVector rVector = newZeros_(aIndices.size()); rVector.fill(refSlicer().get(aIndices)); return rVector;}
+            @Override protected IIntVector getA() {return copy();}
+            
+            @Override protected int thisSize_() {return size();}
+        };
+    }
+    @Override public IIntVectorSlicer refSlicer() {
+        return new AbstractIntVectorSlicer() {
+            @Override protected IIntVector getL(final ISlice aIndices) {
+                return new RefIntVector() {
+                    @Override public int get(int aIdx) {return AbstractIntVector.this.get(aIndices.get(aIdx));}
+                    @Override public void set(int aIdx, int aValue) {AbstractIntVector.this.set(aIndices.get(aIdx), aValue);}
+                    @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntVector.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override public int size() {return aIndices.size();}
+                };
+            }
+            @Override protected IIntVector getA() {
+                return new RefIntVector() {
+                    @Override public int get(int aIdx) {return AbstractIntVector.this.get(aIdx);}
+                    @Override public void set(int aIdx, int aValue) {AbstractIntVector.this.set(aIdx, aValue);}
+                    @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntVector.this.getAndSet(aIdx, aValue);}
+                    @Override public int size() {return AbstractIntVector.this.size();}
+                };
+            }
+            
+            @Override protected int thisSize_() {return size();}
+        };
+    }
     @Override public IIntVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, size());
         return new RefIntVector() {
@@ -183,16 +232,50 @@ public abstract class AbstractIntVector implements IIntVector {
     @Override public IIntVectorOperation operation() {
         return new AbstractIntVectorOperation() {
             @Override protected IIntVector thisVector_() {return AbstractIntVector.this;}
+            @Override protected IIntVector newVector_(int aSize) {return newZeros_(aSize);}
         };
     }
     
     /** 向量基本的运算操作 */
-    @Override public final double sum() {return operation().sum();}
+    @Override public final double sum   () {return operation().sum  ();}
+    @Override public final double mean  () {return operation().mean ();}
+    @Override public final double prod  () {return operation().prod ();}
+    @Override public final int    max   () {return operation().max  ();}
+    @Override public final int    min   () {return operation().min  ();}
     
     @Override public final void sort() {operation().sort();}
     @Override public final void shuffle() {operation().shuffle();}
     @Override public final void shuffle(Random aRng) {operation().shuffle(aRng::nextInt);}
     @Override public final void shuffle(IntUnaryOperator aRng) {operation().shuffle(aRng);}
+    
+    /** Groovy 的部分，增加向量切片操作 */
+    @VisibleForTesting @Override public int call(int aIdx) {return get(aIdx);}
+    @VisibleForTesting @Override public IIntVector call(ISlice        aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector call(List<Integer> aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector call(SliceType     aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector call(IIndexFilter  aIndices) {return slicer().get(aIndices);}
+    
+    @VisibleForTesting @Override public IIntVector getAt(ISlice        aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector getAt(List<Integer> aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector getAt(SliceType     aIndices) {return slicer().get(aIndices);}
+    @VisibleForTesting @Override public IIntVector getAt(IIndexFilter  aIndices) {return slicer().get(aIndices);}
+    
+    @VisibleForTesting @Override public void putAt(ISlice        aIndices, int aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(ISlice        aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(ISlice        aIndices, IIntVector aVector) {refSlicer().get(aIndices).fill(aVector);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, int aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(List<Integer> aIndices, IIntVector aVector) {refSlicer().get(aIndices).fill(aVector);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, int aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(SliceType     aIndices, IIntVector aVector) {refSlicer().get(aIndices).fill(aVector);}
+    @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, int aValue) {refSlicer().get(aIndices).fill(aValue);}
+    @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, Iterable<? extends Number> aList) {refSlicer().get(aIndices).fill(aList);}
+    @VisibleForTesting @Override public void putAt(IIndexFilter  aIndices, IIntVector aVector) {refSlicer().get(aIndices).fill(aVector);}
+    
+    /** 对于 groovy 的单个数的方括号索引（python like），提供负数索引支持，注意对于数组索引不提供这个支持 */
+    @VisibleForTesting @Override public int getAt(int aIdx) {return get((aIdx < 0) ? (size()+aIdx) : aIdx);}
+    @VisibleForTesting @Override public void putAt(int aIdx, int aValue) {set((aIdx < 0) ? (size()+aIdx) : aIdx, aValue);}
     
     
     /** stuff to override */

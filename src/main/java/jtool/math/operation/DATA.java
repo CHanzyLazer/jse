@@ -943,6 +943,27 @@ public class DATA {
         while (it.hasNext()) aCon.accept(it.next());
     }
     
+    public static void mapFill2This(IHasLongSetOnlyIterator rThis, final long aRHS) {
+        rThis.assign(() -> aRHS);
+    }
+    public static void ebeFill2This(IHasLongSetOnlyIterator rThis, IHasLongIterator aRHS) {
+        final ILongIterator it = aRHS.iterator();
+        rThis.assign(it::next);
+    }
+    /** 注意这几个方法不能替换成通用遍历方法，会造成无限递归 */
+    public static void vecFill2This(IHasLongSetOnlyIterator rThis, ILongVectorGetter aVec) {
+        final ILongSetOnlyIterator si = rThis.setIterator();
+        for (int i = 0; si.hasNext(); ++i) si.nextAndSet(aVec.get(i));
+    }
+    public static void assign2This(IHasLongSetOnlyIterator rThis, LongSupplier aSup) {
+        final ILongSetOnlyIterator si = rThis.setIterator();
+        while (si.hasNext()) si.nextAndSet(aSup.getAsLong());
+    }
+    public static void forEachOfThis(IHasLongIterator aThis, LongConsumer aCon) {
+        final ILongIterator it = aThis.iterator();
+        while (it.hasNext()) aCon.accept(it.next());
+    }
+    
     
     /** stat stuff */
     public static double sumOfThis(IHasDoubleIterator aThis) {
@@ -1012,6 +1033,42 @@ public class DATA {
         while (it.hasNext()) {
             double tValue = it.next();
             if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
+        }
+        return rMin;
+    }
+    public static int maxOfThis(IHasIntIterator aThis) {
+        final IIntIterator it = aThis.iterator();
+        int rMax = it.next();
+        while (it.hasNext()) {
+            int tValue = it.next();
+            if (tValue > rMax) rMax = tValue;
+        }
+        return rMax;
+    }
+    public static int minOfThis(IHasIntIterator aThis) {
+        final IIntIterator it = aThis.iterator();
+        int rMin = it.next();
+        while (it.hasNext()) {
+            int tValue = it.next();
+            if (tValue < rMin) rMin = tValue;
+        }
+        return rMin;
+    }
+    public static long maxOfThis(IHasLongIterator aThis) {
+        final ILongIterator it = aThis.iterator();
+        long rMax = it.next();
+        while (it.hasNext()) {
+            long tValue = it.next();
+            if (tValue > rMax) rMax = tValue;
+        }
+        return rMax;
+    }
+    public static long minOfThis(IHasLongIterator aThis) {
+        final ILongIterator it = aThis.iterator();
+        long rMin = it.next();
+        while (it.hasNext()) {
+            long tValue = it.next();
+            if (tValue < rMin) rMin = tValue;
         }
         return rMin;
     }
@@ -1167,10 +1224,26 @@ public class DATA {
             rDest.set(i, it.next());
         }
     }
+    public static void reverse2Dest(IHasLongIterator aThis, ILongVector rDest) {
+        final int tSize = rDest.size();
+        final ILongIterator it = aThis.iterator();
+        for (int i = tSize-1; i >= 0; --i) {
+            rDest.set(i, it.next());
+        }
+    }
     public static void reverse2This(IVector rThis) {
         reverse2This(rThis, rThis.size());
     }
+    public static void reverse2This(IComplexVector rThis) {
+        reverse2This(rThis, rThis.size());
+    }
+    public static void reverse2This(ILogicalVector rThis) {
+        reverse2This(rThis, rThis.size());
+    }
     public static void reverse2This(IIntVector rThis) {
+        reverse2This(rThis, rThis.size());
+    }
+    public static void reverse2This(ILongVector rThis) {
         reverse2This(rThis, rThis.size());
     }
     public static void reverse2This(ISwapper rThis, int aSize) {
@@ -1184,10 +1257,16 @@ public class DATA {
     public static void sort(final IIntVector rVec) {
         Sort.sortAdhoc(rVec, rVec.size(), (i, j) -> Integer.compare(rVec.get(i), rVec.get(j)));
     }
+    public static void sort(final ILongVector rVec) {
+        Sort.sortAdhoc(rVec, rVec.size(), (i, j) -> Long.compare(rVec.get(i), rVec.get(j)));
+    }
     public static void sort(IVector rVec, IntBinaryOperator aComp) {
         Sort.sortAdhoc(rVec, rVec.size(), aComp);
     }
     public static void sort(IIntVector rVec, IntBinaryOperator aComp) {
+        Sort.sortAdhoc(rVec, rVec.size(), aComp);
+    }
+    public static void sort(ILongVector rVec, IntBinaryOperator aComp) {
         Sort.sortAdhoc(rVec, rVec.size(), aComp);
     }
     public static void biSort(final IVector rVec, ISwapper aSwapper) {
@@ -1196,10 +1275,16 @@ public class DATA {
     public static void biSort(final IIntVector rVec, ISwapper aSwapper) {
         Sort.sortAdhoc(rVec.merge(aSwapper), rVec.size(), (i, j) -> Integer.compare(rVec.get(i), rVec.get(j)));
     }
+    public static void biSort(final ILongVector rVec, ISwapper aSwapper) {
+        Sort.sortAdhoc(rVec.merge(aSwapper), rVec.size(), (i, j) -> Long.compare(rVec.get(i), rVec.get(j)));
+    }
     public static void biSort(final IVector rVec, ISwapper aSwapper, IntBinaryOperator aComp) {
         Sort.sortAdhoc(rVec.merge(aSwapper), rVec.size(), aComp);
     }
     public static void biSort(final IIntVector rVec, ISwapper aSwapper, IntBinaryOperator aComp) {
+        Sort.sortAdhoc(rVec.merge(aSwapper), rVec.size(), aComp);
+    }
+    public static void biSort(final ILongVector rVec, ISwapper aSwapper, IntBinaryOperator aComp) {
         Sort.sortAdhoc(rVec.merge(aSwapper), rVec.size(), aComp);
     }
     

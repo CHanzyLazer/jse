@@ -3,7 +3,6 @@ package jtool.math.vector;
 import jtool.code.functional.IBooleanBinaryOperator;
 import jtool.code.functional.IBooleanConsumer;
 import jtool.code.functional.IBooleanUnaryOperator;
-import jtool.code.iterator.IBooleanIterator;
 import jtool.math.operation.DATA;
 
 import java.util.function.BooleanSupplier;
@@ -64,6 +63,7 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
             @Override public int size() {return mThis.size();}
         };
     }
+    @Override public void reverse2this() {DATA.reverse2This(thisVector_());}
     
     
     /** 方便内部使用，减少一些重复代码 */
