@@ -32,10 +32,7 @@ import jtool.math.table.Tables;
 import jtool.math.vector.IVector;
 import jtool.math.vector.Vector;
 import jtool.math.vector.Vectors;
-import jtool.parallel.LocalRandom;
-import jtool.parallel.MPI;
-import jtool.parallel.MergedFuture;
-import jtool.parallel.ParforThreadPool;
+import jtool.parallel.*;
 import jtool.plot.*;
 import jtool.vasp.IVaspCommonData;
 import me.tongfei.progressbar.ConsoleProgressBarConsumer;
@@ -106,6 +103,34 @@ public class UT {
         public static int randSeed(long aSeed) {return new LocalRandom(aSeed).nextInt(MAX_SEED);}
         
         /**
+         * MPI version of {@link #randSeed},
+         * will get the same rand seed for all process
+         * @author liqa
+         */
+        public static int randSeed(MPI.Comm aComm, int aRoot) throws MPI.Error {
+            int[] tSeedBuf = INT1_CACHE.getObject();
+            try {
+                if (aComm.rank() == aRoot) tSeedBuf[0] = UT.Code.randSeed();
+                aComm.bcast(tSeedBuf, 1, aRoot);
+                return tSeedBuf[0];
+            } finally {
+                INT1_CACHE.returnObject(tSeedBuf);
+            }
+        }
+        public static int randSeed(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
+            int[] tSeedBuf = INT1_CACHE.getObject();
+            try {
+                if (aComm.rank() == aRoot) tSeedBuf[0] = UT.Code.randSeed(aSeed);
+                aComm.bcast(tSeedBuf, 1, aRoot);
+                return tSeedBuf[0];
+            } finally {
+                INT1_CACHE.returnObject(tSeedBuf);
+            }
+        }
+        private final static ThreadLocalObjectCachePool<int[]> INT1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new int[1]);
+        
+        
+        /**
          * Get the random id in URL and Filename safe Base64, 8 length
          * @author liqa
          */
@@ -114,6 +139,38 @@ public class UT {
             RANDOM.nextBytes(rBytes);
             return Base64.getUrlEncoder().withoutPadding().encodeToString(rBytes);
         }
+        public static String randID(long aSeed) {
+            byte[] rBytes = new byte[6];
+            new LocalRandom(aSeed).nextBytes(rBytes);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(rBytes);
+        }
+        
+        /**
+         * MPI version of {@link #randID},
+         * will get the same rand ID for all process
+         * @author liqa
+         */
+        public static String randID(MPI.Comm aComm, int aRoot) throws MPI.Error {
+            byte[] tBuf = BYTE6_CACHE.getObject();
+            try {
+                if (aComm.rank() == aRoot) RANDOM.nextBytes(tBuf);
+                aComm.bcast(tBuf, 6, aRoot);
+                return Base64.getUrlEncoder().withoutPadding().encodeToString(tBuf);
+            } finally {
+                BYTE6_CACHE.returnObject(tBuf);
+            }
+        }
+        public static String randID(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
+            byte[] tBuf = BYTE6_CACHE.getObject();
+            try {
+                if (aComm.rank() == aRoot) new LocalRandom(aSeed).nextBytes(tBuf);
+                aComm.bcast(tBuf, 6, aRoot);
+                return Base64.getUrlEncoder().withoutPadding().encodeToString(tBuf);
+            } finally {
+                BYTE6_CACHE.returnObject(tBuf);
+            }
+        }
+        private final static ThreadLocalObjectCachePool<byte[]> BYTE6_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new byte[6]);
         
         /**
          * Get the unique id in Base16, 8 length

@@ -86,16 +86,20 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         mWorldRoot = aWorldRoot;
         mWorldMe = mWorldComm.rank();
         mLmpComm = aLmpComm.copy(); // 对于数据传输使用的 Comm 要拷贝一份，和 lammps 使用的 Comm 进行区分避免相互干扰
-        mLmpMe = mLmpComm.rank();
-        if (aLmpRoots == null) {
-            if (mWorldMe == mWorldRoot) throw new IllegalArgumentException("aLmpRoots of WorldRoot ("+mWorldRoot+") can NOT be null");
-            mLmpRoots = null;
-        } else {
-            // 直接使用 ConcurrentLinkedDeque 来简单处理并行访问的情况
-            mLmpRoots = new ConcurrentLinkedDeque<>(aLmpRoots);
+        try {
+            mLmpMe = mLmpComm.rank();
+            if (aLmpRoots == null) {
+                if (mWorldMe == mWorldRoot) throw new IllegalArgumentException("aLmpRoots of WorldRoot ("+mWorldRoot+") can NOT be null");
+                mLmpRoots = null;
+            } else {
+                // 直接使用 ConcurrentLinkedDeque 来简单处理并行访问的情况
+                mLmpRoots = new ConcurrentLinkedDeque<>(aLmpRoots);
+            }
+            mPathGen = new NativeLmpFullPathGenerator(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep).setReturnLast();
+        } catch (MPI.Error | NativeLmp.Error e) {
+            mLmpComm.shutdown();
+            throw e;
         }
-        
-        mPathGen = new NativeLmpFullPathGenerator(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep).setReturnLast();
     }
     
     /** 这里改为 static 方法来构造，从而避免一些问题，顺便实现自动资源释放 */

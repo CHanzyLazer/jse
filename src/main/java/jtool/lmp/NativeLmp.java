@@ -331,20 +331,19 @@ public class NativeLmp implements IAutoShutdown {
      *               The executable name is automatically added.
      *
      * @param aComm MPI communicator as provided by {@link MPI} (or {@link MPI.Native}).
-     *              null (or 0) means use {@link MPI.Comm#WORLD} implicitly.
+     *              null means use {@link MPI.Comm#WORLD} implicitly.
      *
      * @author liqa
      */
-    public NativeLmp(String[] aArgs, long aComm) throws Error {
+    public NativeLmp(String[] aArgs, @Nullable MPI.Comm aComm) throws Error {
         String[] tArgs = aArgs==null ? DEFAULT_ARGS : new String[aArgs.length+1];
         tArgs[0] = EXECUTABLE_NAME;
         if (aArgs != null) System.arraycopy(aArgs, 0, tArgs, 1, aArgs.length);
-        mLmpPtr = aComm==0 ? lammpsOpen_(tArgs) : lammpsOpen_(tArgs, aComm);
-        mComm = aComm==0 ? null : MPI.Comm.of(aComm);
+        mLmpPtr = aComm==null ? lammpsOpen_(tArgs) : lammpsOpen_(tArgs, aComm.ptr_());
+        mComm = aComm;
         mInitTheadID = Thread.currentThread().getId();
     }
-    public NativeLmp(String[] aArgs, MPI.Comm aComm) throws Error {this(aArgs, aComm==null ? 0 : aComm.ptr_());}
-    public NativeLmp(String[] aArgs) throws Error {this(aArgs, 0);}
+    public NativeLmp(String[] aArgs) throws Error {this(aArgs, null);}
     public NativeLmp() throws Error {this(null);}
     private native static long lammpsOpen_(String[] aArgs, long aComm) throws Error;
     private native static long lammpsOpen_(String[] aArgs) throws Error;

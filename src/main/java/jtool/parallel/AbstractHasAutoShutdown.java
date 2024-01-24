@@ -9,6 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public abstract class AbstractHasAutoShutdown implements IHasAutoShutdown {
     private boolean mDoNotShutdown = false;
+    protected final boolean isDoNotShutdown_() {return mDoNotShutdown;}
     protected final void setDoNotShutdown_(boolean aDoNotShutdown) {mDoNotShutdown = aDoNotShutdown;}
     @Override public final void shutdown() {
         shutdown_();
