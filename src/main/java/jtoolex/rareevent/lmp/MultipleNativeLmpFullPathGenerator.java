@@ -160,17 +160,20 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         final boolean tHasVelocities = aLmpdat.hasVelocities();
         // 先发送 Lmpdat 的必要信息，[AtomNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities]
         long[] rLmpdatInfo = LMP_INFO_CACHE.getObject();
-        rLmpdatInfo[0] = tAtomNum;
-        rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
-        rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
-        rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
-        rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
-        rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
-        rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
-        rLmpdatInfo[7] = tHasVelocities ? 1 : 0;
-        aComm.send(rLmpdatInfo, LMP_INFO_LEN, aDest, LMPDAT_INFO);
-        // 发送后归还临时数据
-        LMP_INFO_CACHE.returnObject(rLmpdatInfo);
+        try {
+            rLmpdatInfo[0] = tAtomNum;
+            rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
+            rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
+            rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
+            rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
+            rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
+            rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
+            rLmpdatInfo[7] = tHasVelocities ? 1 : 0;
+            aComm.send(rLmpdatInfo, LMP_INFO_LEN, aDest, LMPDAT_INFO);
+        } finally {
+            // 发送后归还临时数据
+            LMP_INFO_CACHE.returnObject(rLmpdatInfo);
+        }
         // 必要信息发送完成后分别发送 atomData 和 velocities
         aComm.send(tAtomID  .internalData(), tAtomID  .internalDataSize(), aDest, DATA_ID);
         aComm.send(tAtomType.internalData(), tAtomType.internalDataSize(), aDest, DATA_Type);
@@ -184,29 +187,31 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
     private Lmpdat recvLmpdat_(int aSource, MPI.Comm aComm) throws MPI.Error {
         // 同样先接收必要信息，[AtomNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities]
         long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
-        aComm.recv(tLmpdatInfo, LMP_INFO_LEN, aSource, LMPDAT_INFO);
-        // 还是使用缓存的数据
-        IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
-        IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
-        RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
-        @Nullable RowMatrix tVelocities = null;
-        // 先是基本信息，后是速度信息
-        aComm.recv(tAtomID  .internalData(), tAtomID  .internalDataSize(), aSource, DATA_ID);
-        aComm.recv(tAtomType.internalData(), tAtomType.internalDataSize(), aSource, DATA_Type);
-        aComm.recv(tAtomXYZ .internalData(), tAtomXYZ .internalDataSize(), aSource, DATA_XYZ);
-        if (tLmpdatInfo[7] == 1) {
-            tVelocities = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_VELOCITY.length);
-            aComm.recv(tVelocities.internalData(), tVelocities.internalDataSize(), aSource, DATA_VELOCITIES);
+        try {
+            aComm.recv(tLmpdatInfo, LMP_INFO_LEN, aSource, LMPDAT_INFO);
+            // 还是使用缓存的数据
+            IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+            IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+            RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
+            @Nullable RowMatrix tVelocities = null;
+            // 先是基本信息，后是速度信息
+            aComm.recv(tAtomID  .internalData(), tAtomID  .internalDataSize(), aSource, DATA_ID);
+            aComm.recv(tAtomType.internalData(), tAtomType.internalDataSize(), aSource, DATA_Type);
+            aComm.recv(tAtomXYZ .internalData(), tAtomXYZ .internalDataSize(), aSource, DATA_XYZ);
+            if (tLmpdatInfo[7] == 1) {
+                tVelocities = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_VELOCITY.length);
+                aComm.recv(tVelocities.internalData(), tVelocities.internalDataSize(), aSource, DATA_VELOCITIES);
+            }
+            // 创建 Lmpdat
+            return new Lmpdat(mMesses.size(), new Box(
+                Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
+                Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
+                Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])
+            ), mMesses.copy(), tAtomID, tAtomType, tAtomXYZ, tVelocities);
+        } finally {
+            // 完事归还临时数据
+            LMP_INFO_CACHE.returnObject(tLmpdatInfo);
         }
-        // 创建 Lmpdat
-        Lmpdat tOut = new Lmpdat(mMesses.size(), new Box(
-            Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
-            Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
-            Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])
-        ), mMesses.copy(), tAtomID, tAtomType, tAtomXYZ, tVelocities);
-        // 完事归还临时数据
-        LMP_INFO_CACHE.returnObject(tLmpdatInfo);
-        return tOut;
     }
     @SuppressWarnings("SameParameterValue")
     private Lmpdat bcastLmpdat_(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPI.Error {
@@ -221,17 +226,20 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             final boolean tHasVelocities = aLmpdat.hasVelocities();
             // 先发送 Lmpdat 的必要信息，[AtomNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities]
             long[] rLmpdatInfo = LMP_INFO_CACHE.getObject();
-            rLmpdatInfo[0] = tAtomNum;
-            rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
-            rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
-            rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
-            rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
-            rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
-            rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
-            rLmpdatInfo[7] = tHasVelocities ? 1 : 0;
-            aComm.bcast(rLmpdatInfo, LMP_INFO_LEN, aRoot);
-            // 发送后归还临时数据
-            LMP_INFO_CACHE.returnObject(rLmpdatInfo);
+            try {
+                rLmpdatInfo[0] = tAtomNum;
+                rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
+                rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
+                rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
+                rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
+                rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
+                rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
+                rLmpdatInfo[7] = tHasVelocities ? 1 : 0;
+                aComm.bcast(rLmpdatInfo, LMP_INFO_LEN, aRoot);
+            } finally {
+                // 发送后归还临时数据
+                LMP_INFO_CACHE.returnObject(rLmpdatInfo);
+            }
             // 必要信息发送完成后分别发送 atomData 和 velocities
             aComm.bcast(tAtomID  .internalData(), tAtomID  .internalDataSize(), aRoot);
             aComm.bcast(tAtomType.internalData(), tAtomType.internalDataSize(), aRoot);
@@ -245,29 +253,31 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         } else {
             // 同样先接收必要信息，[AtomNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities]
             long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
-            aComm.bcast(tLmpdatInfo, LMP_INFO_LEN, aRoot);
-            // 还是使用缓存的数据
-            IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
-            IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
-            RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
-            @Nullable RowMatrix tVelocities = null;
-            // 先是基本信息，后是速度信息
-            aComm.bcast(tAtomID  .internalData(), tAtomID  .internalDataSize(), aRoot);
-            aComm.bcast(tAtomType.internalData(), tAtomType.internalDataSize(), aRoot);
-            aComm.bcast(tAtomXYZ .internalData(), tAtomXYZ .internalDataSize(), aRoot);
-            if (tLmpdatInfo[7] == 1) {
-                tVelocities = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_VELOCITY.length);
-                aComm.bcast(tVelocities.internalData(), tVelocities.internalDataSize(), aRoot);
+            try {
+                aComm.bcast(tLmpdatInfo, LMP_INFO_LEN, aRoot);
+                // 还是使用缓存的数据
+                IntVector tAtomID = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+                IntVector tAtomType = IntVectorCache.getVec((int)tLmpdatInfo[0]);
+                RowMatrix tAtomXYZ = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_XYZ.length);
+                @Nullable RowMatrix tVelocities = null;
+                // 先是基本信息，后是速度信息
+                aComm.bcast(tAtomID  .internalData(), tAtomID  .internalDataSize(), aRoot);
+                aComm.bcast(tAtomType.internalData(), tAtomType.internalDataSize(), aRoot);
+                aComm.bcast(tAtomXYZ .internalData(), tAtomXYZ .internalDataSize(), aRoot);
+                if (tLmpdatInfo[7] == 1) {
+                    tVelocities = MatrixCache.getMatRow((int)tLmpdatInfo[0], ATOM_DATA_KEYS_VELOCITY.length);
+                    aComm.bcast(tVelocities.internalData(), tVelocities.internalDataSize(), aRoot);
+                }
+                // 创建 Lmpdat
+                return new Lmpdat(mMesses.size(), new Box(
+                    Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
+                    Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
+                    Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])
+                ), mMesses.copy(), tAtomID, tAtomType, tAtomXYZ, tVelocities);
+            } finally {
+                // 完事归还临时数据
+                LMP_INFO_CACHE.returnObject(tLmpdatInfo);
             }
-            // 创建 Lmpdat
-            Lmpdat tOut = new Lmpdat(mMesses.size(), new Box(
-                Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
-                Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
-                Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])
-            ), mMesses.copy(), tAtomID, tAtomType, tAtomXYZ, tVelocities);
-            // 完事归还临时数据
-            LMP_INFO_CACHE.returnObject(tLmpdatInfo);
-            return tOut;
         }
     }
     
@@ -315,20 +325,39 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         private @Nullable FixedTimer mTotTimer = null;
         private @Nullable AccumulatedTimer mLmpTimer = null, mCalTimer = null, mWaitTimer = null;
         
-        @Override public void run() {
-            try {mPathGen.checkThread();}
-            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
-            try {while (true) {
-                // 获取任务种类，mLmpComm 主进程接收后使用 bcast 转发给所有进程
-                byte[] rJobBuf = BYTE1_CACHE.getObject();
+        private byte getJobID_() throws MPI.Error {
+            byte[] rJobBuf = BYTE1_CACHE.getObject();
+            try {
                 if (mLmpMe == 0) {
                     if (mWaitTimer != null) mWaitTimer.from();
                     mWorldComm.recv(rJobBuf, 1, mWorldRoot, JOB_TYPE);
                     if (mWaitTimer != null) mWaitTimer.to();
                 }
                 mLmpComm.bcast(rJobBuf, 1, 0);
-                byte tJob = rJobBuf[0];
+                return rJobBuf[0];
+            } finally {
                 BYTE1_CACHE.returnObject(rJobBuf);
+            }
+        }
+        private long getSeed_() throws MPI.Error {
+            long[] rSeedBuf = LONG1_CACHE.getObject();
+            try {
+                if (mLmpMe == 0) {
+                    mWorldComm.recv(rSeedBuf, 1, mWorldRoot, LONG1_INFO);
+                }
+                mLmpComm.bcast(rSeedBuf, 1, 0);
+                return rSeedBuf[0];
+            } finally {
+                LONG1_CACHE.returnObject(rSeedBuf);
+            }
+        }
+        
+        @Override public void run() {
+            try {mPathGen.checkThread();}
+            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
+            try {while (true) {
+                // 获取任务种类，mLmpComm 主进程接收后使用 bcast 转发给所有进程
+                byte tJob = getJobID_();
                 // 根据获取到的任务种类执行操作
                 switch (tJob) {
                 case SHUTDOWN: {
@@ -340,13 +369,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     return;
                 }
                 case PATH_INIT: {
-                    long[] rSeedBuf = LONG1_CACHE.getObject();
-                    if (mLmpMe == 0) {
-                        mWorldComm.recv(rSeedBuf, 1, mWorldRoot, LONG1_INFO);
-                    }
-                    mLmpComm.bcast(rSeedBuf, 1, 0);
-                    long tSeed = rSeedBuf[0];
-                    LONG1_CACHE.returnObject(rSeedBuf);
+                    long tSeed = getSeed_();
                     if (mIt != null) mIt.shutdown();
                     mIt = mPathGen.fullPathInit(tSeed);
                     if (mLmpMe == 0) {
@@ -356,13 +379,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     break;
                 }
                 case PATH_FROM: {
-                    long[] rSeedBuf = LONG1_CACHE.getObject();
-                    if (mLmpMe == 0) {
-                        mWorldComm.recv(rSeedBuf, 1, mWorldRoot, LONG1_INFO);
-                    }
-                    mLmpComm.bcast(rSeedBuf, 1, 0);
-                    long tSeed = rSeedBuf[0];
-                    LONG1_CACHE.returnObject(rSeedBuf);
+                    // 注意顺序，约定一定是先接受 seed 后接受 lmpdat
+                    long tSeed = getSeed_();
                     Lmpdat tStart = null;
                     if (mLmpMe == 0) {
                         tStart = recvLmpdat_(mWorldRoot, mWorldComm);
@@ -397,9 +415,12 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     double tTimeConsumed = mIt.timeConsumed();
                     if (mLmpMe == 0) {
                         double[] tTimeConsumedBuf = DOUBLE1_CACHE.getObject();
-                        tTimeConsumedBuf[0] = tTimeConsumed;
-                        mWorldComm.send(tTimeConsumedBuf, 1, mWorldRoot, DOUBLE1_INFO);
-                        DOUBLE1_CACHE.returnObject(tTimeConsumedBuf);
+                        try {
+                            tTimeConsumedBuf[0] = tTimeConsumed;
+                            mWorldComm.send(tTimeConsumedBuf, 1, mWorldRoot, DOUBLE1_INFO);
+                        } finally {
+                            DOUBLE1_CACHE.returnObject(tTimeConsumedBuf);
+                        }
                     }
                     if (mLmpMe == 0) {
                         mWorldComm.send(mWorldRoot, PATH_TIME_FINISHED);
@@ -413,9 +434,12 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     if (mLmpMe==0 && mCalTimer!=null) mCalTimer.to();
                     if (mLmpMe == 0) {
                         double[] tLambdaBuf = DOUBLE1_CACHE.getObject();
-                        tLambdaBuf[0] = tLambda;
-                        mWorldComm.send(tLambdaBuf, 1, mWorldRoot, DOUBLE1_INFO);
-                        DOUBLE1_CACHE.returnObject(tLambdaBuf);
+                        try {
+                            tLambdaBuf[0] = tLambda;
+                            mWorldComm.send(tLambdaBuf, 1, mWorldRoot, DOUBLE1_INFO);
+                        } finally {
+                            DOUBLE1_CACHE.returnObject(tLambdaBuf);
+                        }
                     }
                     if (mLmpMe == 0) {
                         mWorldComm.send(mWorldRoot, PATH_LAMBDA_FINISHED);
@@ -452,12 +476,15 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     if (mLmpMe == 0) {
                         assert mTotTimer!=null && mLmpTimer!=null && mCalTimer!=null && mWaitTimer!=null;
                         double[] tTimeBuf = TIMER_CACHE.getObject();
-                        tTimeBuf[0] = mTotTimer.get();
-                        tTimeBuf[1] = mLmpTimer.get();
-                        tTimeBuf[2] = mCalTimer.get();
-                        tTimeBuf[3] = mWaitTimer.get();
-                        mWorldComm.send(tTimeBuf, 4, mWorldRoot, TIMER_INFO);
-                        TIMER_CACHE.returnObject(tTimeBuf);
+                        try {
+                            tTimeBuf[0] = mTotTimer.get();
+                            tTimeBuf[1] = mLmpTimer.get();
+                            tTimeBuf[2] = mCalTimer.get();
+                            tTimeBuf[3] = mWaitTimer.get();
+                            mWorldComm.send(tTimeBuf, 4, mWorldRoot, TIMER_INFO);
+                        } finally {
+                            TIMER_CACHE.returnObject(tTimeBuf);
+                        }
                     }
                     if (mLmpMe == 0) {
                         mWorldComm.send(mWorldRoot, TIMER_GET_FINISHED);
@@ -541,18 +568,21 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         double rTotal = 0.0, rLmp = 0.0, rLambda = 0.0, rWait = 0.0;
         int tStatTimes = 0;
         double[] rTimeBuf = TIMER_CACHE.getObject();
-        for (int tLmpRoot : mLmpRoots) {
-            if (aExcludeWorldRoot && tLmpRoot==mWorldRoot) continue;
-            mWorldComm.send(TIMER_GET_BUF, 1, tLmpRoot, JOB_TYPE);
-            mWorldComm.recv(rTimeBuf, 4, tLmpRoot, TIMER_INFO);
-            mWorldComm.recv(tLmpRoot, TIMER_GET_FINISHED);
-            rTotal  += rTimeBuf[0];
-            rLmp    += rTimeBuf[1];
-            rLambda += rTimeBuf[2];
-            rWait   += rTimeBuf[3];
-            ++tStatTimes;
+        try {
+            for (int tLmpRoot : mLmpRoots) {
+                if (aExcludeWorldRoot && tLmpRoot==mWorldRoot) continue;
+                mWorldComm.send(TIMER_GET_BUF, 1, tLmpRoot, JOB_TYPE);
+                mWorldComm.recv(rTimeBuf, 4, tLmpRoot, TIMER_INFO);
+                mWorldComm.recv(tLmpRoot, TIMER_GET_FINISHED);
+                rTotal  += rTimeBuf[0];
+                rLmp    += rTimeBuf[1];
+                rLambda += rTimeBuf[2];
+                rWait   += rTimeBuf[3];
+                ++tStatTimes;
+            }
+        } finally {
+            TIMER_CACHE.returnObject(rTimeBuf);
         }
-        TIMER_CACHE.returnObject(rTimeBuf);
         rTotal  /= (double)tStatTimes;
         rLmp    /= (double)tStatTimes;
         rLambda /= (double)tStatTimes;
@@ -584,9 +614,12 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 mWorldComm.send(aStart==null ? PATH_INIT_BUF : PATH_FROM_BUF, 1, mLmpRoot, JOB_TYPE);
                 // 无论怎样都先发送种子
                 long[] tSeedBuf = LONG1_CACHE.getObject();
-                tSeedBuf[0] = aSeed;
-                mWorldComm.send(tSeedBuf, 1, mLmpRoot, LONG1_INFO);
-                LONG1_CACHE.returnObject(tSeedBuf);
+                try {
+                    tSeedBuf[0] = aSeed;
+                    mWorldComm.send(tSeedBuf, 1, mLmpRoot, LONG1_INFO);
+                } finally {
+                    LONG1_CACHE.returnObject(tSeedBuf);
+                }
                 if (aStart != null) {
                     // from 需要发送整个 Lmpdat
                     Lmpdat tStart = (aStart instanceof Lmpdat) ? (Lmpdat)aStart : Lmpdat.fromAtomData(aStart);
@@ -617,16 +650,18 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         @Override public double timeConsumed() {
             if (mLmpRoot < 0) throw new RuntimeException("This RemotePathIterator is dead");
             try {
-                // 发送获取时间任务
-                mWorldComm.send(PATH_TIME_BUF, 1, mLmpRoot, JOB_TYPE);
-                // 之后获取时间即可
                 double[] rTimeConsumedBuf = DOUBLE1_CACHE.getObject();
-                mWorldComm.recv(rTimeConsumedBuf, 1, mLmpRoot, DOUBLE1_INFO);
-                double tTimeConsumed = rTimeConsumedBuf[0];
-                DOUBLE1_CACHE.returnObject(rTimeConsumedBuf);
-                // 接收任务完成信息
-                mWorldComm.recv(mLmpRoot, PATH_TIME_FINISHED);
-                return tTimeConsumed;
+                try {
+                    // 发送获取时间任务
+                    mWorldComm.send(PATH_TIME_BUF, 1, mLmpRoot, JOB_TYPE);
+                    // 之后获取时间即可
+                    mWorldComm.recv(rTimeConsumedBuf, 1, mLmpRoot, DOUBLE1_INFO);
+                    // 接收任务完成信息
+                    mWorldComm.recv(mLmpRoot, PATH_TIME_FINISHED);
+                    return rTimeConsumedBuf[0];
+                } finally {
+                    DOUBLE1_CACHE.returnObject(rTimeConsumedBuf);
+                }
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
             }
@@ -634,16 +669,18 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         @Override public double lambda() {
             if (mLmpRoot < 0) throw new RuntimeException("This RemotePathIterator is dead");
             try {
-                // 发送获取 lambda 任务
-                mWorldComm.send(PATH_LAMBDA_BUF, 1, mLmpRoot, JOB_TYPE);
-                // 之后获取 lambda
                 double[] rLambdaBuf = DOUBLE1_CACHE.getObject();
-                mWorldComm.recv(rLambdaBuf, 1, mLmpRoot, DOUBLE1_INFO);
-                double tLambda = rLambdaBuf[0];
-                DOUBLE1_CACHE.returnObject(rLambdaBuf);
-                // 接收任务完成信息
-                mWorldComm.recv(mLmpRoot, PATH_LAMBDA_FINISHED);
-                return tLambda;
+                try {
+                    // 发送获取 lambda 任务
+                    mWorldComm.send(PATH_LAMBDA_BUF, 1, mLmpRoot, JOB_TYPE);
+                    // 之后获取 lambda
+                    mWorldComm.recv(rLambdaBuf, 1, mLmpRoot, DOUBLE1_INFO);
+                    // 接收任务完成信息
+                    mWorldComm.recv(mLmpRoot, PATH_LAMBDA_FINISHED);
+                    return rLambdaBuf[0];
+                } finally {
+                    DOUBLE1_CACHE.returnObject(rLambdaBuf);
+                }
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
             }
