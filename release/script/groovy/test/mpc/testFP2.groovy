@@ -1,6 +1,5 @@
 package test.mpc
 
-import jtool.atom.Structures
 import jtool.code.UT
 import jtool.lmp.Lmpdat
 
@@ -10,12 +9,14 @@ import jtool.lmp.Lmpdat
  */
 
 nThreads = 1;
-data = Structures.from(Lmpdat.read('lmp/data/data-glass'), 2);
+data = Lmpdat.read('lmp/data/data-glass');
 println("AtomNum: ${data.atomNum()}");
 
 UT.Timer.tic();
-data.getMPC(nThreads).withCloseable {it.calFPSuRui(5, 6, 6.5)}
+mpc = data.getMPC(nThreads);
+for (_ in 1..20) mpc.calFPSuRui(5, 6, 6.5);
+mpc.shutdown();
 UT.Timer.toc("${nThreads} threads");
-// 1 threads time: 00 hour 00 min 1.21 sec
-// 4 threads time: 00 hour 00 min 0.75 sec
+// 1 threads time: 00 hour 00 min 3.19 sec
+// 4 threads time: 00 hour 00 min 1.80 sec
 
