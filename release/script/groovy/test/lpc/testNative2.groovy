@@ -24,7 +24,7 @@ double T = 1400;
 double P = 0.0;
 int seed = 4587281;
 
-def data = Lmpdat.fromAtomData(Structures.from(POSCAR.read('vasp/data/MgCu2.poscar').setBoxScale(1.030).opt().mapType({(int)3- it.type()}), 4), [MASS.Cu, MASS.Zr]);
+def data = Lmpdat.fromAtomData(Structures.from(POSCAR.read('vasp/data/MgCu2.poscar').setBoxScale(1.030).opt().mapType({(int)3-it.type()}), 4), [MASS.Cu, MASS.Zr]);
 
 try (def lammps = new NativeLmp()) {
     lammps.command('units           metal');
@@ -46,7 +46,7 @@ try (def lammps = new NativeLmp()) {
 }
 // Total wall time: 0:04:11 (mpi np 1)
 // Total wall time: 0:01:06 (mpi np 4)
-
+// 0:02:41
 
 MPI.shutdown();
 

@@ -47,32 +47,304 @@ typedef int64_t intbig;
 typedef int intbig;
 #endif
 
-#define GEN_PARSE_JANY_TO_ANY(R, T, TF)                                                 \
-R *parsej##T##2##R (JNIEnv *aEnv, j##T##Array aJArray, jint aSize) {                    \
-    if (aJArray==NULL) return NULL;                                                     \
-    R *rOutBuf = (R *) malloc(aSize * sizeof(R));                                       \
-    j##T *tBuf = (*aEnv)->Get##TF##ArrayElements(aEnv, aJArray, NULL);                  \
-    for (jint i = 0; i < aSize; ++i) rOutBuf[i] = (R)tBuf[i];                           \
-    (*aEnv)->Release##TF##ArrayElements(aEnv, aJArray, tBuf, JNI_ABORT);                \
-    return rOutBuf;                                                                     \
+void parsedouble2jdouble(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, const double *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    // jdouble is always double
+    (*aEnv)->SetDoubleArrayRegion(aEnv, rJArray, 0, aSize, aBuf);
+}
+void parseint2jdouble(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, const int *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jdouble *rBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    for (jint i = 0; i < aSize; ++i) rBuf[i] = (jdouble)aBuf[i];
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint2jint(JNIEnv *aEnv, jintArray rJArray, jint aSize, const int *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jint *rBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    for (jint i = 0; i < aSize; ++i) rBuf[i] = (jint)aBuf[i];
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
 }
 
-#define GEN_PARSE_ANY_TO_JANY(T, R, RF)                                                 \
-void parse##T##2j##R (JNIEnv *aEnv, j##R##Array rJArray, jint aSize, const T *aBuf) {   \
-    if (rJArray==NULL) return;                                                          \
-    j##R *rBuf = (*aEnv)->Get##RF##ArrayElements(aEnv, rJArray, NULL);                  \
-    for (jint i = 0; i < aSize; ++i) rBuf[i] = (T)aBuf[i];                              \
-    (*aEnv)->Release##RF##ArrayElements(aEnv, rJArray, rBuf, 0);                        \
+void parsejdouble2double(JNIEnv *aEnv, jdoubleArray aJArray, jint aSize, double *rBuf) {
+    if (aJArray==NULL || rBuf==NULL) return;
+    // jdouble is always double
+    (*aEnv)->GetDoubleArrayRegion(aEnv, aJArray, 0, aSize, rBuf);
+}
+void parsejdouble2int(JNIEnv *aEnv, jdoubleArray aJArray, jint aSize, int *rBuf) {
+    if (aJArray==NULL || rBuf==NULL) return;
+    jdouble *tBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aJArray, NULL);
+    for (jint i = 0; i < aSize; ++i) rBuf[i] = (int)tBuf[i];
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aJArray, tBuf, JNI_ABORT); // read mode
+}
+void parsejint2int(JNIEnv *aEnv, jintArray aJArray, jint aSize, int *rBuf) {
+    if (aJArray==NULL || rBuf==NULL) return;
+    jint *tBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aJArray, NULL);
+    for (jint i = 0; i < aSize; ++i) rBuf[i] = (int)tBuf[i];
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aJArray, tBuf, JNI_ABORT); // read mode
+}
+void parsejint2intbig(JNIEnv *aEnv, jintArray aJArray, jint aSize, intbig *rBuf) {
+    if (aJArray==NULL || rBuf==NULL) return;
+    jint *tBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aJArray, NULL);
+    for (jint i = 0; i < aSize; ++i) rBuf[i] = (intbig)tBuf[i];
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aJArray, tBuf, JNI_ABORT); // read mode
 }
 
-GEN_PARSE_JANY_TO_ANY(int, double, Double)
-GEN_PARSE_ANY_TO_JANY(int, double, Double)
-GEN_PARSE_JANY_TO_ANY(intbig, double, Double)
-GEN_PARSE_ANY_TO_JANY(intbig, double, Double)
-GEN_PARSE_JANY_TO_ANY(int, int, Int)
-GEN_PARSE_ANY_TO_JANY(int, int, Int)
-GEN_PARSE_JANY_TO_ANY(intbig, int, Int)
-GEN_PARSE_ANY_TO_JANY(intbig, int, Int)
+
+void parsedouble2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    if (aCount > 1) {
+        jdouble * rBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+        // now aBuf is double **
+        double **tNestedBuf = (double **)aBuf;
+        jdouble *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            double *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jdouble)subBuf[j];
+                ++it;
+            }
+        }
+        (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+    } else {
+        // jdouble is always double
+        (*aEnv)->SetDoubleArrayRegion(aEnv, rJArray, 0, aSize, (jdouble *)aBuf);
+    }
+}
+void parseint2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jdouble * rBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is int **
+        int **tNestedBuf = (int **)aBuf;
+        jdouble *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jdouble)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        int *tBuf = (int *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jdouble)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseintbig2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jdouble * rBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is intbig **
+        intbig **tNestedBuf = (intbig **)aBuf;
+        jdouble *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            intbig *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jdouble)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        intbig *tBuf = (intbig *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jdouble)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint64t2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jdouble * rBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is int64_t **
+        int64_t **tNestedBuf = (int64_t **)aBuf;
+        jdouble *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int64_t *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jdouble)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        int64_t *tBuf = (int64_t *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jdouble)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint2jintWithCount(JNIEnv *aEnv, jintArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jint * rBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is int **
+        int **tNestedBuf = (int **)aBuf;
+        jint *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jint)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        int *tBuf = (int *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jint)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parsedouble2jintWithCount(JNIEnv *aEnv, jintArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jint * rBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is double **
+        double **tNestedBuf = (double **)aBuf;
+        jint *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            double *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jint)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        double *tBuf = (double *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jint)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseintbig2jintWithCount(JNIEnv *aEnv, jintArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jint * rBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is intbig **
+        intbig **tNestedBuf = (intbig **)aBuf;
+        jint *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            intbig *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jint)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        intbig *tBuf = (intbig *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jint)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint64t2jintWithCount(JNIEnv *aEnv, jintArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jint * rBuf = (jint *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is intbig **
+        int64_t **tNestedBuf = (int64_t **)aBuf;
+        jint *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int64_t *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jint)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        int64_t *tBuf = (int64_t *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jint)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint2jlongWithCount(JNIEnv *aEnv, jlongArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jlong * rBuf = (jlong *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is int **
+        int **tNestedBuf = (int **)aBuf;
+        jlong *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jlong)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        int *tBuf = (int *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jlong)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parsedouble2jlongWithCount(JNIEnv *aEnv, jlongArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jlong * rBuf = (jlong *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is double **
+        double **tNestedBuf = (double **)aBuf;
+        jlong *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            double *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jlong)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        double *tBuf = (double *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jlong)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseintbig2jlongWithCount(JNIEnv *aEnv, jlongArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jlong * rBuf = (jlong *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is intbig **
+        intbig **tNestedBuf = (intbig **)aBuf;
+        jlong *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            intbig *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jlong)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        intbig *tBuf = (intbig *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jlong)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
+void parseint64t2jlongWithCount(JNIEnv *aEnv, jlongArray rJArray, jint aSize, jint aCount, const void *aBuf) {
+    if (rJArray==NULL || aBuf==NULL) return;
+    jlong * rBuf = (jlong *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rJArray, NULL);
+    if (aCount > 1) {
+        // now aBuf is int64_t **
+        int64_t **tNestedBuf = (int64_t **)aBuf;
+        jlong *it = rBuf;
+        for (jint i = 0; i < aSize; ++i) {
+            int64_t *subBuf = tNestedBuf[i];
+            if (subBuf == NULL) break;
+            for (jint j = 0; j < aCount; ++j) {
+                *it = (jlong)subBuf[j];
+                ++it;
+            }
+        }
+    } else {
+        // Although jlong is always 64 bit, I can not guarantee it is int64_t
+        // (which is '__int64' in windows, while 'int64_t' is 'long long'),
+        // I can not guarantee it is ok for 'int64_t *' to '__int64 *'
+        int64_t *tBuf = (int64_t *)aBuf;
+        for (jint i = 0; i < aSize; ++i) rBuf[i] = (jlong)tBuf[i];
+    }
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rJArray, rBuf, 0); // write mode
+}
 
 
 #define LMP_MAX_ERROR_STRING 512
@@ -258,7 +530,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv,
     int rBoxflag[3];
     lammps_extract_box((void *)aLmpPtr, rBoxlo, rBoxhi, &rXY, &rYZ, &rXZ, rPflags, rBoxflag);
     exceptionCheck(aEnv, (void *)aLmpPtr);
-    jdouble *rBoxBuf = (*aEnv)->GetDoubleArrayElements(aEnv, rBox, NULL);
+    jdouble *rBoxBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rBox, NULL);
     rBoxBuf[0 ] = rBoxlo[0];
     rBoxBuf[1 ] = rBoxlo[1];
     rBoxBuf[2 ] = rBoxlo[2];
@@ -274,7 +546,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv,
     rBoxBuf[12] = rBoxflag[0];
     rBoxBuf[13] = rBoxflag[1];
     rBoxBuf[14] = rBoxflag[2];
-    (*aEnv)->ReleaseDoubleArrayElements(aEnv, rBox, rBoxBuf, 0); // write mode
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rBox, rBoxBuf, 0); // write mode
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsResetBox_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdouble aXlo, jdouble aYlo, jdouble aZlo, jdouble aXhi, jdouble aYhi, jdouble aZhi, jdouble aXY, jdouble aYZ, jdouble aXZ) {
     double tBoxLo[] = {aXlo, aYlo, aZlo};
@@ -304,7 +576,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
 #endif
     void *tLmpPtr = (void *)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom(tLmpPtr, tName);
+    void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheck(aEnv, tLmpPtr);
     free(tName);
     if (tHasException || tRef==NULL) return;
@@ -317,47 +589,48 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
     tExitCodeMPI = MPI_Comm_rank(tLmpComm, &tLmpMe); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
     tExitCodeMPI = MPI_Comm_size(tLmpComm, &tLmpNP); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
     // allgather counts (tLocalAtomNum * aCount)
-    int *tCounts = malloc(tLmpNP * sizeof(int));
+    int *tCounts = (int *)malloc(tLmpNP * sizeof(int));
     tCounts[tLmpMe] = tLocalAtomNum * aCount;
     tExitCodeMPI = MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tCounts, 1, MPI_INT, tLmpComm);
     if (exceptionCheckMPI(aEnv, tExitCodeMPI)) {free(tCounts); return;}
     // cal displs
-    int *tDispls = malloc(tLmpNP * sizeof(int));
+    int *tDispls = (int *)malloc(tLmpNP * sizeof(int));
     tDispls[0] = 0;
     for (int i = 1; i < tLmpNP; ++i) {
         tDispls[i] = tDispls[i-1] + tCounts[i-1];
     }
     // gather atom data by allgatherv
-    jdouble *rDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, rData, NULL);
+    int tDataSize = tDispls[tLmpNP-1] + tCounts[tLmpNP-1];
     if (aIsDouble) {
+        double *rDataBuf = (double *)malloc(tDataSize * sizeof(double));
         if (aCount > 1) {
             double **tDoubleRef = (double **)tRef;
-            jdouble *it = rDataBuf + tDispls[tLmpMe];
+            double *it = rDataBuf + tDispls[tLmpMe];
             for (int i = 0; i < tLocalAtomNum; ++i) {
                 double *subDoubleRef = tDoubleRef[i];
                 if (subDoubleRef == NULL) break;
                 for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subDoubleRef[j];
+                    *it = subDoubleRef[j];
                     ++it;
                 }
             }
         } else {
             double *tDoubleRef = (double *)tRef;
-            jdouble *it = rDataBuf + tDispls[tLmpMe];
+            double *it = rDataBuf + tDispls[tLmpMe];
             for (int i = 0; i < tLocalAtomNum; ++i) {
-                *it = (jdouble)tDoubleRef[i];
+                *it = tDoubleRef[i];
                 ++it;
             }
         }
-        // NO need to free due to it is lammps internal data
         tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rDataBuf, tCounts, tDispls, MPI_DOUBLE, tLmpComm);
         exceptionCheckMPI(aEnv, tExitCodeMPI);
+        parsedouble2jdouble(aEnv, rData, tDataSize, rDataBuf);
+        free(rDataBuf);
     } else {
-        int tDataSize = tDispls[tLmpNP-1] + tCounts[tLmpNP-1];
-        int *rIntDataBuf = malloc(tDataSize * sizeof(int));
+        int *rDataBuf = (int *)malloc(tDataSize * sizeof(int));
         if (aCount > 1) {
             int **tIntRef = (int **)tRef;
-            int *it = rIntDataBuf + tDispls[tLmpMe];
+            int *it = rDataBuf + tDispls[tLmpMe];
             for (int i = 0; i < tLocalAtomNum; ++i) {
                 int *subIntRef = tIntRef[i];
                 if (subIntRef == NULL) break;
@@ -368,59 +641,26 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEn
             }
         } else {
             int *tIntRef = (int *)tRef;
-            int *it = rIntDataBuf + tDispls[tLmpMe];
+            int *it = rDataBuf + tDispls[tLmpMe];
             for (int i = 0; i < tLocalAtomNum; ++i) {
                 *it = tIntRef[i];
                 ++it;
             }
         }
         // NO need to free due to it is lammps internal data
-        tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rIntDataBuf, tCounts, tDispls, MPI_INT, tLmpComm);
+        tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rDataBuf, tCounts, tDispls, MPI_INT, tLmpComm);
         exceptionCheckMPI(aEnv, tExitCodeMPI);
-        for (int i = 0; i < tDataSize; ++i) rDataBuf[i] = (jdouble)rIntDataBuf[i];
-        free(rIntDataBuf);
+        parseint2jdouble(aEnv, rData, tDataSize, rDataBuf);
+        free(rDataBuf);
     }
     free(tCounts);
     free(tDispls);
-    (*aEnv)->ReleaseDoubleArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 #else
-    jdouble *rDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, rData, NULL);
     if (aIsDouble) {
-        if (aCount > 1) {
-            double **tDoubleRef = (double **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < tLocalAtomNum; ++i) {
-                double *subDoubleRef = tDoubleRef[i];
-                if (subDoubleRef == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subDoubleRef[j];
-                    ++it;
-                }
-            }
-        } else {
-            double *tDoubleRef = (double *)tRef;
-            for (int i = 0; i < tLocalAtomNum; ++i) rDataBuf[i] = (jdouble)tDoubleRef[i];
-        }
-        // NO need to free due to it is lammps internal data
+        parsedouble2jdoubleWithCount(aEnv, rData, tLocalAtomNum, aCount, tRef);
     } else {
-        if (aCount > 1) {
-            int **tIntRef = (int **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < tLocalAtomNum; ++i) {
-                int *subIntRef = tIntRef[i];
-                if (subIntRef == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subIntRef[j];
-                    ++it;
-                }
-            }
-        } else {
-            int *tIntRef = (int *)tRef;
-            for (int i = 0; i < tLocalAtomNum; ++i) rDataBuf[i] = (jdouble)tIntRef[i];
-        }
-        // NO need to free due to it is lammps internal data
+        parseint2jdoubleWithCount(aEnv, rData, tLocalAtomNum, aCount, tRef);
     }
-    (*aEnv)->ReleaseDoubleArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 #endif
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aCount, jintArray rData) {
@@ -431,7 +671,7 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *
 #endif
     void *tLmpPtr = (void *)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom(tLmpPtr, tName);
+    void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheck(aEnv, tLmpPtr);
     free(tName);
     if (tHasException || tRef==NULL) return;
@@ -444,19 +684,19 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *
     tExitCodeMPI = MPI_Comm_rank(tLmpComm, &tLmpMe); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
     tExitCodeMPI = MPI_Comm_size(tLmpComm, &tLmpNP); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
     // allgather counts (tLocalAtomNum * aCount)
-    int *tCounts = malloc(tLmpNP * sizeof(int));
+    int *tCounts = (int *)malloc(tLmpNP * sizeof(int));
     tCounts[tLmpMe] = tLocalAtomNum * aCount;
     tExitCodeMPI = MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tCounts, 1, MPI_INT, tLmpComm);
     if (exceptionCheckMPI(aEnv, tExitCodeMPI)) {free(tCounts); return;}
     // cal displs
-    int *tDispls = malloc(tLmpNP * sizeof(int));
+    int *tDispls = (int *)malloc(tLmpNP * sizeof(int));
     tDispls[0] = 0;
     for (int i = 1; i < tLmpNP; ++i) {
         tDispls[i] = tDispls[i-1] + tCounts[i-1];
     }
     // gather atom data by allgatherv
     int tDataSize = tDispls[tLmpNP-1] + tCounts[tLmpNP-1];
-    int *rDataBuf = malloc(tDataSize * sizeof(int));
+    int *rDataBuf = (int *)malloc(tDataSize * sizeof(int));
     if (aCount > 1) {
         int **tIntRef = (int **)tRef;
         int *it = rDataBuf + tDispls[tLmpMe];
@@ -476,7 +716,6 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *
             ++it;
         }
     }
-    // NO need to free due to it is lammps internal data
     tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rDataBuf, tCounts, tDispls, MPI_INT, tLmpComm);
     exceptionCheckMPI(aEnv, tExitCodeMPI);
     free(tCounts);
@@ -484,335 +723,129 @@ JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *
     parseint2jint(aEnv, rData, tDataSize, rDataBuf);
     free(rDataBuf);
 #else
-    jint *rDataBuf = (*aEnv)->GetIntArrayElements(aEnv, rData, NULL);
-    if (aCount > 1) {
-        int **tIntRef = (int **)tRef;
-        jint *it = rDataBuf;
-        for (int i = 0; i < tLocalAtomNum; ++i) {
-            int *subIntRef = tIntRef[i];
-            if (subIntRef == NULL) break;
-            for (int j = 0; j < aCount; ++j) {
-                *it = (jint)subIntRef[j];
-                ++it;
-            }
-        }
-    } else {
-        int *tIntRef = (int *)tRef;
-        for (int i = 0; i < tLocalAtomNum; ++i) rDataBuf[i] = (jint)tIntRef[i];
-    }
-    // NO need to free due to it is lammps internal data
-    (*aEnv)->ReleaseIntArrayElements(aEnv, rData, rDataBuf, 0); // write mode
+    parseint2jintWithCount(aEnv, rData, tLocalAtomNum, aCount, tRef);
 #endif
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsExtractAtom_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jdoubleArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName);
+    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheck(aEnv, (void *)aLmpPtr);
     free(tName);
     if (tHasException || tRef==NULL) return;
-    jdouble *rDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, rData, NULL);
     switch (aDataType) {
     case 0: {
-        if (aCount > 1) {
-            int **tIntRef = (int **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < aAtomNum; ++i) {
-                int *subIntRef = tIntRef[i];
-                if (subIntRef == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subIntRef[j];
-                    ++it;
-                }
-            }
-        } else {
-            int *tIntRef = (int *)tRef;
-            for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jdouble)tIntRef[i];
-        }
-        // NO need to free due to it is lammps internal data
-        break;
+        parseint2jdoubleWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+        return;
     }
     case 1: {
-        if (aCount > 1) {
-            double **tDoubleRef = (double **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < aAtomNum; ++i) {
-                double *subDoubleRef = tDoubleRef[i];
-                if (subDoubleRef == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subDoubleRef[j];
-                    ++it;
-                }
-            }
-        } else {
-            double *tDoubleRef = (double *)tRef;
-            for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jdouble)tDoubleRef[i];
-        }
-        // NO need to free due to it is lammps internal data
-        break;
+        parsedouble2jdoubleWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+        return;
     }
     case 2: {
-        if (aCount > 1) {
-            intbig **tIntbigRef = (intbig **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < aAtomNum; ++i) {
-                intbig *subIntbigRef = tIntbigRef[i];
-                if (subIntbigRef == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subIntbigRef[j];
-                    ++it;
-                }
-            }
-        } else {
-            intbig *tIntbigRef = (intbig *)tRef;
-            for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jdouble)tIntbigRef[i];
-        }
-        // NO need to free due to it is lammps internal data
-        break;
+        parseintbig2jdoubleWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+        return;
     }
     case 3: {
-        if (aCount > 1) {
-            int64_t **tInt64Ref = (int64_t **)tRef;
-            jdouble *it = rDataBuf;
-            for (int i = 0; i < aAtomNum; ++i) {
-                int64_t *subInt64Ref = tInt64Ref[i];
-                if (subInt64Ref == NULL) break;
-                for (int j = 0; j < aCount; ++j) {
-                    *it = (jdouble)subInt64Ref[j];
-                    ++it;
-                }
-            }
-        } else {
-            int64_t *tInt64Ref = (int64_t *)tRef;
-            for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jdouble)tInt64Ref[i];
-        }
-        // NO need to free due to it is lammps internal data
-        break;
+        parseint64t2jdoubleWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+        return;
     }
     default: {
-        (*aEnv)->ReleaseDoubleArrayElements(aEnv, rData, rDataBuf, JNI_ABORT);
-        assert(0); return;
+        throwException(aEnv, "DataType of lammpsExtractAtom can ONLY be 0, 1, 2 or 3");
+        return;
     }}
-    (*aEnv)->ReleaseDoubleArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsExtractAtomInt_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jintArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName);
+    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheck(aEnv, (void *)aLmpPtr);
     free(tName);
     if (tHasException || tRef==NULL) return;
-    jint *rDataBuf = (*aEnv)->GetIntArrayElements(aEnv, rData, NULL);
     switch (aDataType) {
         case 0: {
-            if (aCount > 1) {
-                int **tIntRef = (int **)tRef;
-                jint *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    int *subIntRef = tIntRef[i];
-                    if (subIntRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jint)subIntRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                int *tIntRef = (int *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jint)tIntRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseint2jintWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 1: {
-            if (aCount > 1) {
-                double **tDoubleRef = (double **)tRef;
-                jint *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    double *subDoubleRef = tDoubleRef[i];
-                    if (subDoubleRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jint)subDoubleRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                double *tDoubleRef = (double *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jint)tDoubleRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parsedouble2jintWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 2: {
-            if (aCount > 1) {
-                intbig **tIntbigRef = (intbig **)tRef;
-                jint *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    intbig *subIntbigRef = tIntbigRef[i];
-                    if (subIntbigRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jint)subIntbigRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                intbig *tIntbigRef = (intbig *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jint)tIntbigRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseintbig2jintWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 3: {
-            if (aCount > 1) {
-                int64_t **tInt64Ref = (int64_t **)tRef;
-                jint *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    int64_t *subInt64Ref = tInt64Ref[i];
-                    if (subInt64Ref == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jint)subInt64Ref[j];
-                        ++it;
-                    }
-                }
-            } else {
-                int64_t *tInt64Ref = (int64_t *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jint)tInt64Ref[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseint64t2jintWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         default: {
-            (*aEnv)->ReleaseIntArrayElements(aEnv, rData, rDataBuf, JNI_ABORT);
-            assert(0); return;
+            throwException(aEnv, "DataType of lammpsExtractAtomInt can ONLY be 0, 1, 2 or 3");
+            return;
         }}
-    (*aEnv)->ReleaseIntArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsExtractAtomLong_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jlongArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName);
+    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheck(aEnv, (void *)aLmpPtr);
     free(tName);
     if (tHasException || tRef==NULL) return;
-    jlong *rDataBuf = (*aEnv)->GetLongArrayElements(aEnv, rData, NULL);
     switch (aDataType) {
         case 0: {
-            if (aCount > 1) {
-                int **tIntRef = (int **)tRef;
-                jlong *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    int *subIntRef = tIntRef[i];
-                    if (subIntRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jlong)subIntRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                int *tIntRef = (int *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jlong)tIntRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseint2jlongWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 1: {
-            if (aCount > 1) {
-                double **tDoubleRef = (double **)tRef;
-                jlong *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    double *subDoubleRef = tDoubleRef[i];
-                    if (subDoubleRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jlong)subDoubleRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                double *tDoubleRef = (double *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jlong)tDoubleRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parsedouble2jlongWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 2: {
-            if (aCount > 1) {
-                intbig **tIntbigRef = (intbig **)tRef;
-                jlong *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    intbig *subIntbigRef = tIntbigRef[i];
-                    if (subIntbigRef == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jlong)subIntbigRef[j];
-                        ++it;
-                    }
-                }
-            } else {
-                intbig *tIntbigRef = (intbig *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jlong)tIntbigRef[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseintbig2jlongWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         case 3: {
-            if (aCount > 1) {
-                int64_t **tInt64Ref = (int64_t **)tRef;
-                jlong *it = rDataBuf;
-                for (int i = 0; i < aAtomNum; ++i) {
-                    int64_t *subInt64Ref = tInt64Ref[i];
-                    if (subInt64Ref == NULL) break;
-                    for (int j = 0; j < aCount; ++j) {
-                        *it = (jlong)subInt64Ref[j];
-                        ++it;
-                    }
-                }
-            } else {
-                int64_t *tInt64Ref = (int64_t *)tRef;
-                for (int i = 0; i < aAtomNum; ++i) rDataBuf[i] = (jlong)tInt64Ref[i];
-            }
-            // NO need to free due to it is lammps internal data
-            break;
+            parseint64t2jlongWithCount(aEnv, rData, aAtomNum, aCount, tRef);
+            return;
         }
         default: {
-            (*aEnv)->ReleaseLongArrayElements(aEnv, rData, rDataBuf, JNI_ABORT);
-            assert(0); return;
+            throwException(aEnv, "DataType of lammpsExtractAtomLong can ONLY be 0, 1, 2 or 3");
+            return;
         }}
-    (*aEnv)->ReleaseLongArrayElements(aEnv, rData, rDataBuf, 0); // write mode
 }
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jboolean aIsDouble, jint aAtomNum, jint aCount, jdoubleArray aData) {
-    jdouble *tDataBuf = (*aEnv)->GetDoubleArrayElements(aEnv, aData, NULL);
-    char *tName = parseStr(aEnv, aName);
+    void *tDataBuf;
     if (aIsDouble) {
-#ifdef LAMMPS_OLD
-        lammps_scatter_atoms((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
-#else
-        lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
-#endif
-        exceptionCheck(aEnv, (void *)aLmpPtr);
+        jint tLen = aCount * aAtomNum;
+        tDataBuf = malloc(tLen * sizeof(double));
+        parsejdouble2double(aEnv, aData, tLen, (double *)tDataBuf);
     } else {
         jint tLen = aCount * aAtomNum;
-        int *tIntBuf = malloc(tLen*sizeof(int));
-        for (int i = 0; i < tLen; ++i) tIntBuf[i] = (int)tDataBuf[i];
-#ifdef LAMMPS_OLD
-        lammps_scatter_atoms((void *)aLmpPtr, tName, 0, aCount, tIntBuf);
-#else
-        lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
-#endif
-        exceptionCheck(aEnv, (void *)aLmpPtr);
-        free(tIntBuf);
+        tDataBuf = malloc(tLen * sizeof(int));
+        parsejdouble2int(aEnv, aData, tLen, (int *)tDataBuf);
     }
+    char *tName = parseStr(aEnv, aName);
+#ifdef LAMMPS_OLD
+    lammps_scatter_atoms((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+#else
+    lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+#endif
+    exceptionCheck(aEnv, (void *)aLmpPtr);
     free(tName);
-    (*aEnv)->ReleaseDoubleArrayElements(aEnv, aData, tDataBuf, JNI_ABORT); // read mode
+    if (tDataBuf != NULL) free(tDataBuf);
 }
-JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jint aAtomNum, jintArray aID, jintArray aType, jdoubleArray aXYZ, jdoubleArray aVelocities, jintArray aImage, jboolean aShrinkExceed) {
+JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jint aAtomNum, jintArray aID, jintArray aType, jdoubleArray aXYZ, jdoubleArray aVel, jintArray aImage, jboolean aShrinkExceed) {
     jsize tN = (*aEnv)->GetArrayLength(aEnv, aID);
-    intbig *tID    = parsejint2intbig(aEnv, aID   , aAtomNum);
-    int    *tType  = parsejint2int   (aEnv, aType , aAtomNum);
-    intbig *tImage = parsejint2intbig(aEnv, aImage, aAtomNum);
-    jdouble *tXYZ        = aXYZ       ==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aXYZ       , NULL);
-    jdouble *tVelocities = aVelocities==NULL ? NULL : (*aEnv)->GetDoubleArrayElements(aEnv, aVelocities, NULL);
-    lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVelocities, tImage, aShrinkExceed);
+    jint tAtomNum3 = aAtomNum * 3;
+    intbig  *tID    = aID   ==NULL ? NULL : (intbig  *)malloc(aAtomNum * sizeof(intbig )); parsejint2intbig   (aEnv, aID   , aAtomNum , tID   );
+    int     *tType  = aType ==NULL ? NULL : (int     *)malloc(aAtomNum * sizeof(int    )); parsejint2int      (aEnv, aType , aAtomNum , tType );
+    intbig  *tImage = aImage==NULL ? NULL : (intbig  *)malloc(aAtomNum * sizeof(intbig )); parsejint2intbig   (aEnv, aImage, aAtomNum , tImage);
+    jdouble *tXYZ   = aXYZ  ==NULL ? NULL : (jdouble *)malloc(tAtomNum3* sizeof(jdouble)); parsejdouble2double(aEnv, aXYZ  , tAtomNum3, tXYZ  );
+    jdouble *tVel   = aVel  ==NULL ? NULL : (jdouble *)malloc(tAtomNum3* sizeof(jdouble)); parsejdouble2double(aEnv, aVel  , tAtomNum3, tVel  );
+    lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVel, tImage, aShrinkExceed);
     exceptionCheck(aEnv, (void *)aLmpPtr);
     if (tID    != NULL) free(tID   );
     if (tType  != NULL) free(tType );
     if (tImage != NULL) free(tImage);
-    if (tXYZ        != NULL) (*aEnv)->ReleaseDoubleArrayElements(aEnv, aXYZ       , tXYZ       , JNI_ABORT); // read mode
-    if (tVelocities != NULL) (*aEnv)->ReleaseDoubleArrayElements(aEnv, aVelocities, tVelocities, JNI_ABORT); // read mode
+    if (tXYZ   != NULL) free(tXYZ  );
+    if (tVel   != NULL) free(tVel  );
 }
 
 JNIEXPORT void JNICALL Java_jtool_lmp_NativeLmp_lammpsClose_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
