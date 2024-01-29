@@ -1,5 +1,7 @@
 package jtool.code;
 
+import groovy.lang.*;
+import jep.*;
 import jtool.Main;
 import jtool.atom.AbstractAtoms;
 import jtool.atom.Structures;
@@ -17,11 +19,10 @@ import jtool.math.matrix.Matrices;
 import jtool.math.table.Tables;
 import jtool.math.vector.Vectors;
 import jtool.plot.Plotters;
-import groovy.lang.*;
-import jep.*;
 import org.apache.groovy.groovysh.Groovysh;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.IO;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -31,8 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static jtool.code.CS.Exec.EXE;
+import static jtool.code.CS.Exec.JAR_DIR;
 import static jtool.code.CS.*;
-import static jtool.code.CS.Exec.*;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -234,6 +236,16 @@ public class SP {
             }
         }
         
+        public final static class Conf {
+            /**
+             * 自定义构建 jep 时使用的编译器，
+             * cmake 有时不能自动检测到希望使用的编译器
+             */
+            public static @Nullable String CMAKE_C_COMPILER   = null;
+            public static @Nullable String CMAKE_CXX_COMPILER = null;
+        }
+        
+        
         /** 包的版本 */
         private final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.22.1";
         /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
@@ -393,6 +405,19 @@ public class SP {
         public static void installPackage(String aRequirement) {installPackage(aRequirement, false);}
         
         
+        private static String cmakeInitCmd_(String aJepBuildDir) {
+            // 设置参数，这里使用 List 来构造这个长指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("cd"); rCommand.add("\""+aJepBuildDir+"\""); rCommand.add(";");
+            rCommand.add("cmake");
+            // 这里设置 C/C++ 编译器（如果有）
+            if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER  );}
+            if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
+            // 初始化使用上一个目录的 CMakeList.txt
+            rCommand.add("..");
+            return String.join(" ", rCommand);
+        }
+        
         /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
         private synchronized static void installJep_() throws Exception {
             // 检测 cmake，这里要求一定要有 cmake 环境
@@ -416,7 +441,10 @@ public class SP {
             UT.IO.makeDir(tJepBuildDir);
             // 直接通过系统指令来编译 Jep 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tJepBuildDir));
+            // 初始化 cmake
+            EXE.system(cmakeInitCmd_(tJepBuildDir));
+            // 最后进行构造操作
+            EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tJepBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件夹
             String tJepLibDir = tJepBuildDir+"lib/";

@@ -1,6 +1,7 @@
 package jtool.clib;
 
 import jtool.code.UT;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +32,17 @@ public class MiMalloc {
         }
     }
     
-    public final static String MIMALLOC_VERSION = "2.1.2+4e50d67";
+    public final static class Conf {
+        /**
+         * 自定义构建 mimalloc 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER   = null;
+        public static @Nullable String CMAKE_CXX_COMPILER = null;
+    }
+    
+    
+    public final static String MIMALLOC_VERSION = "2.1.2";
     
     public final static String MIMALLOC_DIR = JAR_DIR+"mimalloc/" + UT.Code.uniqueID(VERSION, MIMALLOC_VERSION) + "/";
     public final static String MIMALLOC_LIB_DIR = MIMALLOC_DIR+"lib/";
@@ -39,7 +50,19 @@ public class MiMalloc {
     public final static String MIMALLOC_LIB_PATH = MIMALLOC_LIB_DIR + (IS_WINDOWS ? "mimalloc.dll" : (IS_MAC ? "libmimalloc.dylib" : "libmimalloc.so"));
     
     
-    private static String initCmakeSettingCmd_(String aMiBuildDir) throws IOException {
+    private static String cmakeInitCmd_(String aMiBuildDir) {
+        // 设置参数，这里使用 List 来构造这个长指令
+        List<String> rCommand = new ArrayList<>();
+        rCommand.add("cd"); rCommand.add("\""+aMiBuildDir+"\""); rCommand.add(";");
+        rCommand.add("cmake");
+        // 这里设置 C/C++ 编译器（如果有）
+        if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  +Conf.CMAKE_C_COMPILER  );}
+        if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+Conf.CMAKE_CXX_COMPILER);}
+        // 初始化使用上一个目录的 CMakeList.txt
+        rCommand.add("..");
+        return String.join(" ", rCommand);
+    }
+    private static String cmakeSettingCmd_(String aMiBuildDir) throws IOException {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cd"); rCommand.add("\""+aMiBuildDir+"\""); rCommand.add(";");
@@ -54,6 +77,8 @@ public class MiMalloc {
         rCommand.add("-D"); rCommand.add("MI_WIN_REDIRECT=OFF");
         rCommand.add("-D"); rCommand.add("MI_OSX_INTERPOSE=OFF");
         rCommand.add("-D"); rCommand.add("MI_OSX_ZONE=OFF");
+        // 虽然在 msvc 上设置 c++ 编译器可以得到更好的性能，但是这个是自动设置的，因此这里保持默认来保证有最大的兼容性
+//      rCommand.add("-D"); rCommand.add("MI_USE_CXX=ON");
         // 设置编译模式 Release
         rCommand.add("-D"); rCommand.add("CMAKE_BUILD_TYPE=Release");
         // 设置构建输出目录为 lib
@@ -77,8 +102,8 @@ public class MiMalloc {
         // 如果已经存在则先删除
         UT.IO.removeDir(tWorkingDir);
         // 首先获取源码路径，这里直接从 resource 里输出
-        String tMiZipPath = tWorkingDir+"mimalloc.zip";
-        UT.IO.copy(UT.IO.getResource("mimalloc/mimalloc.zip"), tMiZipPath);
+        String tMiZipPath = tWorkingDir+"mimalloc-"+MIMALLOC_VERSION+".zip";
+        UT.IO.copy(UT.IO.getResource("mimalloc/mimalloc-"+MIMALLOC_VERSION+".zip"), tMiZipPath);
         // 解压 mimalloc 包到临时目录，如果已经存在则直接清空此目录
         String tMiDir = tWorkingDir+"mimalloc/";
         UT.IO.removeDir(tMiDir);
@@ -90,9 +115,9 @@ public class MiMalloc {
         // 直接通过系统指令来编译 mimalloc 的库，关闭输出
         EXE.setNoSTDOutput();
         // 初始化 cmake
-        EXE.system(String.format("cd \"%s\"; cmake ..", tMiBuildDir));
+        EXE.system(cmakeInitCmd_(tMiBuildDir));
         // 设置参数
-        EXE.system(initCmakeSettingCmd_(tMiBuildDir));
+        EXE.system(cmakeSettingCmd_(tMiBuildDir));
         // 最后进行构造操作
         EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tMiBuildDir));
         EXE.setNoSTDOutput(false);

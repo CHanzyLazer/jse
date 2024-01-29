@@ -62,7 +62,7 @@ public class NativeLmp implements IAutoShutdown {
      * 使用子类的成员不会触发 {@link NativeLmp} 的静态初始化
      * @author liqa
      */
-    public static class Conf {
+    public final static class Conf {
         private Conf() {}
         private final static String DEFAULT_LMP_TAG = "stable_2Aug2023_update2";
         
@@ -81,10 +81,24 @@ public class NativeLmp implements IAutoShutdown {
         public static String LMP_TAG = null;
         
         /**
-         * 包含所有的 cmake 参数设置，
+         * 自定义构建 native lammps 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
         public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        
+        /**
+         * 自定义构建 native lammps 以及 lmpjni 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER   = null;
+        public static @Nullable String CMAKE_CXX_COMPILER = null;
+        
+        /**
+         * 自定义构建 lmpjni 时使用的编译器，会覆盖上面的设置，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER_LMPJNI   = null;
+        public static @Nullable String CMAKE_CXX_COMPILER_LMPJNI = null;
         
         /**
          * 是否在检测到库文件时依旧重新编译 lammps，
@@ -129,7 +143,31 @@ public class NativeLmp implements IAutoShutdown {
     private final static String NATIVE_DIR_NAME = "native", BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     private final static String NATIVE_LMPLIB_NAME = IS_WINDOWS ? "liblammps.dll" : (IS_MAC ? "liblammps.dylib" : "liblammps.so");
     
-    private static String initCmakeSettingCmdNativeLmp_(String aNativeLmpBuildDir) {
+    private static String cmakeInitCmdNativeLmp_(String aNativeLmpBuildDir) {
+        // 设置参数，这里使用 List 来构造这个长指令
+        List<String> rCommand = new ArrayList<>();
+        rCommand.add("cd"); rCommand.add("\""+aNativeLmpBuildDir+"\""); rCommand.add(";");
+        rCommand.add("cmake");
+        // 这里设置 C/C++ 编译器（如果有）
+        if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER);}
+        if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
+        // 初始化使用上一个目录的 CMakeList.txt
+        rCommand.add("..");
+        return String.join(" ", rCommand);
+    }
+    private static String cmakeInitCmdLmpJni_(String aLmpJniBuildDir) {
+        // 设置参数，这里使用 List 来构造这个长指令
+        List<String> rCommand = new ArrayList<>();
+        rCommand.add("cd"); rCommand.add("\""+aLmpJniBuildDir+"\""); rCommand.add(";");
+        rCommand.add("cmake");
+        // 这里设置 C/C++ 编译器（如果有）
+        if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + (Conf.CMAKE_C_COMPILER_LMPJNI  ==null ? Conf.CMAKE_C_COMPILER   : Conf.CMAKE_C_COMPILER_LMPJNI  ));}
+        if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ (Conf.CMAKE_CXX_COMPILER_LMPJNI==null ? Conf.CMAKE_CXX_COMPILER : Conf.CMAKE_CXX_COMPILER_LMPJNI));}
+        // 初始化使用上一个目录的 CMakeList.txt
+        rCommand.add("..");
+        return String.join(" ", rCommand);
+    }
+    private static String cmakeSettingCmdNativeLmp_(String aNativeLmpBuildDir) {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cd"); rCommand.add("\""+aNativeLmpBuildDir+"\""); rCommand.add(";");
@@ -154,7 +192,7 @@ public class NativeLmp implements IAutoShutdown {
         rCommand.add(".");
         return String.join(" ", rCommand);
     }
-    private static String initCmakeSettingCmdLmpJni_(String aLmpJniBuildDir) {
+    private static String cmakeSettingCmdLmpJni_(String aLmpJniBuildDir) {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cd"); rCommand.add("\""+aLmpJniBuildDir+"\""); rCommand.add(";");
@@ -209,9 +247,9 @@ public class NativeLmp implements IAutoShutdown {
             // 编译 lammps，直接通过系统指令来编译，关闭输出
             EXE.setNoSTDOutput();
             // 初始化 cmake
-            EXE.system(String.format("cd \"%s\"; cmake ../cmake", Conf.LMP_HOME));
+            EXE.system(cmakeInitCmdNativeLmp_(Conf.LMP_HOME));
             // 设置参数
-            EXE.system(initCmakeSettingCmdNativeLmp_(Conf.LMP_HOME));
+            EXE.system(cmakeSettingCmdNativeLmp_(Conf.LMP_HOME));
             // 如果设置 CLEAN 则进行 clean 操作
             if (Conf.CLEAN) EXE.system(String.format("cd \"%s\"; cmake --build . --target clean", Conf.LMP_HOME));
             // 最后进行构造操作
@@ -242,9 +280,9 @@ public class NativeLmp implements IAutoShutdown {
             // 直接通过系统指令来编译 lmpjni 的库，关闭输出
             EXE.setNoSTDOutput();
             // 初始化 cmake
-            EXE.system(String.format("cd \"%s\"; cmake ..", tBuildDir));
+            EXE.system(cmakeInitCmdLmpJni_(tBuildDir));
             // 设置参数
-            EXE.system(initCmakeSettingCmdLmpJni_(tBuildDir));
+            EXE.system(cmakeSettingCmdLmpJni_(tBuildDir));
             // 最后进行构造操作
             EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);

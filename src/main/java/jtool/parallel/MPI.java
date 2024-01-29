@@ -3,8 +3,11 @@ package jtool.parallel;
 import jtool.clib.MiMalloc;
 import jtool.code.UT;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import static jtool.code.CS.Exec.EXE;
 import static jtool.code.CS.Exec.JAR_DIR;
@@ -63,6 +66,15 @@ public class MPI {
             // 此常量由于需要在 initThread 中使用，一定会在 MPI.init 之前就需要初始化，因此手动调用一定可以实现初始化
             if (!INITIALIZED) String.valueOf(Native.MPI_THREAD_SINGLE);
         }
+    }
+    
+    public final static class Conf {
+        /**
+         * 自定义构建 mpijni 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER   = null;
+        public static @Nullable String CMAKE_CXX_COMPILER = null;
     }
     
     public static String libraryVersion() throws Error {return MPI.Native.MPI_Get_library_version();}
@@ -976,6 +988,19 @@ public class MPI {
             , "jtool_parallel_MPI_Native.h"
         };
         
+        private static String cmakeInitCmd_(String aBuildDir) {
+            // 设置参数，这里使用 List 来构造这个长指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("cd"); rCommand.add("\""+aBuildDir+"\""); rCommand.add(";");
+            rCommand.add("cmake");
+            // 这里设置 C/C++ 编译器（如果有）
+            if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER  );}
+            if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
+            // 初始化使用上一个目录的 CMakeList.txt
+            rCommand.add("..");
+            return String.join(" ", rCommand);
+        }
+        
         private static void initMPI_() throws Exception {
             // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
             EXE.setNoSTDOutput().setNoERROutput();
@@ -1002,7 +1027,10 @@ public class MPI {
             UT.IO.makeDir(tBuildDir);
             // 直接通过系统指令来编译 mpijni 的库，关闭输出
             EXE.setNoSTDOutput();
-            EXE.system(String.format("cd \"%s\"; cmake ..; cmake --build . --config Release", tBuildDir));
+            // 初始化 cmake
+            EXE.system(cmakeInitCmd_(tBuildDir));
+            // 最后进行构造操作
+            EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
             // 获取 build 目录下的 lib 文件
             String tLibDir = tBuildDir+"lib/";
