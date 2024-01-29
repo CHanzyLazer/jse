@@ -6,6 +6,8 @@ import jtool.math.vector.Vectors
 
 
 /** 自定义 python 类的使用 */
+//SP.Python.runScript('script/python/testJava.py');
+
 //SP.Python.importModule('testPy');
 //
 //def pyClass = SP.Python.newInstance('testPy.PyClass', 3, 4);

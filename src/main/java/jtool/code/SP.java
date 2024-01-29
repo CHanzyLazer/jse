@@ -278,6 +278,7 @@ public class SP {
             }
             return JEP_INTERP.invoke(aMethodName, aArgs);
         }
+        public synchronized static void importAny(String aName) throws JepException {runText("import " + aName);}
         public synchronized static Object importModule(String aModuleName) throws JepException {return invoke("import_module", aModuleName);}
         /** 创建 Python 实例，这里可以直接将类名当作函数调用即可 */
         public synchronized static Object newInstance(String aClassName, Object... aArgs) throws JepException {return invoke(aClassName, aArgs);}
