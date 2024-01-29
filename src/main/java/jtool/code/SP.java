@@ -24,6 +24,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.IO;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -63,6 +65,29 @@ public class SP {
             public static Object of(Object aObj) {return (!(aObj instanceof GroovyObjectWrapper) && (aObj instanceof GroovyObject)) ? (new GroovyObjectWrapper((GroovyObject)aObj)) : aObj;}
         }
         
+        private final static String GROOVY_SP_DIR = "script/groovy/";
+        /** 将 aScriptPath 转换成 File，现在可以省略掉 script/groovy/ 以及后缀 */
+        private static File toScriptFile(String aScriptPath) throws IOException {
+            // 如果不是 .groovy 后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
+            if (!aScriptPath.endsWith(".groovy")) {
+                @Nullable File tFile = toScriptFile_(aScriptPath+".groovy");
+                if (tFile != null) return tFile;
+            }
+            @Nullable File tFile = toScriptFile_(aScriptPath);
+            if (tFile == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+            return tFile;
+        }
+        /** 返回 null 表示没有找到文件 */
+        private static @Nullable File toScriptFile_(String aScriptPath) {
+            // 首先如果此文件存在则直接返回
+            File tFile = UT.IO.toFile(aScriptPath);
+            if (tFile.isFile()) return tFile;
+            // 否则增加 script/groovy/ 后再次检测
+            tFile = UT.IO.toFile(GROOVY_SP_DIR+aScriptPath);
+            if (tFile.isFile()) return tFile;
+            // 否则返回 null
+            return null;
+        }
         private static GroovyClassLoader CLASS_LOADER = null;
         
         /** 获取 shell 的交互式运行 */
@@ -109,7 +134,7 @@ public class SP {
         /** 创建脚本类的实例 */
         public synchronized static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类，底层自动进行了缓存，并且在文件修改时会自动更新
-            Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
+            Class<?> tScriptClass = CLASS_LOADER.parseClass(toScriptFile(aScriptPath));
             // 获取 ScriptClass 的实例
             return newInstance_(tScriptClass, aArgs);
         }
@@ -130,14 +155,14 @@ public class SP {
         }
         public synchronized static TaskCall<?> getCallableOfScript(String aScriptPath, String... aArgs) throws IOException {
             // 获取脚本的类，底层自动进行了缓存
-            Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
+            Class<?> tScriptClass = CLASS_LOADER.parseClass(toScriptFile(aScriptPath));
             // 获取 ScriptClass 的执行 Task
             return getCallableOfScript_(tScriptClass, aArgs);
         }
         /** 注意是脚本中的方法或者是类中静态方法，成员方法可以获取对象后直接用 {@link UT.Hack}.getTaskOfMethod */
         public synchronized static TaskCall<?> getCallableOfScriptMethod(String aScriptPath, final String aMethodName, Object... aArgs) throws IOException {
             // 获取脚本的类，底层自动进行了缓存
-            Class<?> tScriptClass = CLASS_LOADER.parseClass(UT.IO.toFile(aScriptPath));
+            Class<?> tScriptClass = CLASS_LOADER.parseClass(toScriptFile(aScriptPath));
             // 获取 ScriptClass 中具体方法的 Task
             return getCallableOfScriptMethod_(tScriptClass, aMethodName, aArgs);
         }
@@ -215,7 +240,7 @@ public class SP {
             // 重新指定 ClassLoader 为这个类的实际加载器
             CLASS_LOADER = new GroovyClassLoader(SP.class.getClassLoader());
             // 指定默认的 Groovy 脚本的类路径
-            CLASS_LOADER.addClasspath(UT.IO.toAbsolutePath("script/groovy/"));
+            CLASS_LOADER.addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
         }
     }
     
@@ -253,6 +278,30 @@ public class SP {
         private final static String PYLIB_DIR = JAR_DIR+"python/";
         private final static String JEPLIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(VERSION, JEP_VERSION) + "/";
         private final static String JEPLIB_PATH = JEPLIB_DIR + "jepjni" + JNILIB_EXTENSION;
+        private final static String PYTHON_SP_DIR = "script/python/";
+        /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
+        private static String validScriptPath(String aScriptPath) throws IOException {
+            // 如果不是 .py 后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
+            if (!aScriptPath.endsWith(".py")) {
+                @Nullable String tPath = validScriptPath_(aScriptPath+".py");
+                if (tPath != null) return tPath;
+            }
+            @Nullable String tPath = validScriptPath_(aScriptPath);
+            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+            return tPath;
+        }
+        /** 返回 null 表示没有找到文件 */
+        private static @Nullable String validScriptPath_(String aScriptPath) {
+            // 都转为绝对路径避免意料外的问题
+            String tPath = UT.IO.toAbsolutePath(aScriptPath);
+            // 首先如果此文件存在则直接返回
+            if (UT.IO.isFile(tPath)) return tPath;
+            // 否则增加 script/python/ 后再次检测
+            tPath = UT.IO.toAbsolutePath(PYTHON_SP_DIR+aScriptPath);
+            if (UT.IO.isFile(tPath)) return tPath;
+            // 否则返回 null
+            return null;
+        }
         /** 一样这里统一使用全局的一个解释器 */
         private static Interpreter JEP_INTERP = null;
         
@@ -264,8 +313,8 @@ public class SP {
         public synchronized static Object get(String aValueName) throws JepException {return getValue(aValueName);}
         public synchronized static void set(String aValueName, Object aValue) throws JepException {setValue(aValueName, aValue);}
         /** 运行脚本文件 */
-        public synchronized static void run(String aScriptPath) throws JepException {runScript(aScriptPath);}
-        public synchronized static void runScript(String aScriptPath) throws JepException {JEP_INTERP.runScript(aScriptPath);}
+        public synchronized static void run(String aScriptPath) throws JepException, IOException {runScript(aScriptPath);}
+        public synchronized static void runScript(String aScriptPath) throws JepException, IOException {JEP_INTERP.runScript(validScriptPath(aScriptPath));}
         /** 调用方法，python 中需要结合 import 使用 */
         @SuppressWarnings("unchecked")
         public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {
@@ -318,7 +367,7 @@ public class SP {
             initJepLib_();
             // 配置 Jep，这里只能配置一次
             SharedInterpreter.setConfig(new JepConfig()
-                .addIncludePaths(UT.IO.toAbsolutePath("script/python/"))
+                .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_SP_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(PYLIB_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(JEPLIB_DIR))
                 .setClassLoader(SP.class.getClassLoader())

@@ -6,7 +6,7 @@ import jtool.math.vector.Vectors
 
 
 /** 自定义 python 类的使用 */
-//SP.Python.runScript('script/python/testJava.py');
+//SP.Python.runScript('testJava');
 
 //SP.Python.importModule('testPy');
 //
