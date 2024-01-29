@@ -981,8 +981,8 @@ public class MPI {
     public static class Native {
         private Native() {}
         
-        private final static String MPILIB_DIR = JAR_DIR+"mpi/";
-        private final static String MPILIB_PATH = MPILIB_DIR + "mpijni@"+UT.Code.uniqueID(VERSION) + JNILIB_EXTENSION;
+        private final static String MPILIB_DIR = JAR_DIR+"mpi/" + UT.Code.uniqueID(VERSION) + "/";
+        private final static String MPILIB_PATH = MPILIB_DIR + "mpijni"+JNILIB_EXTENSION;
         private final static String[] MPISRC_NAME = {
               "jtool_parallel_MPI_Native.c"
             , "jtool_parallel_MPI_Native.h"

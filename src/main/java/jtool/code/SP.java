@@ -250,9 +250,9 @@ public class SP {
         private final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.22.1";
         /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
         private final static String PYPKG_DIR = JAR_DIR+".pypkg/";
-        private final static String PYLIB_DIR = JAR_DIR;
-        private final static String JEPLIB_DIR = PYLIB_DIR+"jep/";
-        private final static String JEPLIB_PATH = JEPLIB_DIR + "jepjni@"+UT.Code.uniqueID(VERSION, JEP_VERSION) + JNILIB_EXTENSION;
+        private final static String PYLIB_DIR = JAR_DIR+"python/";
+        private final static String JEPLIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(VERSION, JEP_VERSION) + "/";
+        private final static String JEPLIB_PATH = JEPLIB_DIR + "jepjni" + JNILIB_EXTENSION;
         /** 一样这里统一使用全局的一个解释器 */
         private static Interpreter JEP_INTERP = null;
         
@@ -319,6 +319,7 @@ public class SP {
             SharedInterpreter.setConfig(new JepConfig()
                 .addIncludePaths(UT.IO.toAbsolutePath("script/python/"))
                 .addIncludePaths(UT.IO.toAbsolutePath(PYLIB_DIR))
+                .addIncludePaths(UT.IO.toAbsolutePath(JEPLIB_DIR))
                 .setClassLoader(SP.class.getClassLoader())
                 .redirectStdout(System.out)
                 .redirectStdErr(System.err));
@@ -461,10 +462,9 @@ public class SP {
             UT.IO.copy(tJepLibPath, JEPLIB_PATH);
             // 顺便拷贝 python 脚本
             String tJepPyDir = tJepDir+"src/main/python/jep/";
-            tList = UT.IO.list(tJepPyDir);
-            for (String tName : tList) if (tName.endsWith(".py")) {
-                UT.IO.copy(tJepPyDir+tName, JEPLIB_DIR+tName);
-            }
+            String tJepLibPyDir = JEPLIB_DIR+"jep/";
+            UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
+            UT.IO.move(tJepPyDir, tJepLibPyDir);
             // 完事后移除临时解压得到的源码
             UT.IO.removeDir(tWorkingDir);
             System.out.println("JEP INIT INFO: jep successfully installed.");
