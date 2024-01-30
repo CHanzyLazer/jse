@@ -153,7 +153,7 @@ public class NativeLmp implements IAutoShutdown {
         if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER);}
         if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
         // 初始化使用上一个目录的 CMakeList.txt
-        rCommand.add("..");
+        rCommand.add("../cmake");
         return String.join(" ", rCommand);
     }
     private static String cmakeInitCmdLmpJni_(String aLmpJniBuildDir) {

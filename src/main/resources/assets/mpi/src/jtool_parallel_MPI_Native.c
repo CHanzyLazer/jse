@@ -311,10 +311,19 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Barrier(JNIEnv *
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Bcast0(JNIEnv *aEnv, jclass aClazz, jobject rArray, jint aCount, jlong aDataType, jint aRoot, jlong aComm) {
     MPI_Datatype tDataType = (MPI_Datatype)(intptr_t)aDataType;
     MPI_Comm tComm = (MPI_Comm)(intptr_t)aComm;
+    int tSize, tRank;
+    int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
+    if (exceptionCheck(aEnv, tExitCode)) return;
     void *rBuf = allocBuf(aCount, tDataType);
-    parseJArray2Buf(aEnv, rArray, 0, aCount, tDataType, rBuf);
-    int tExitCode = MPI_Bcast(rBuf, aCount, tDataType, aRoot, tComm);
-    exceptionCheck(aEnv, tExitCode);
+    if (tRank == aRoot) {
+        parseJArray2Buf(aEnv, rArray, 0, aCount, tDataType, rBuf);
+        tExitCode = MPI_Bcast(rBuf, aCount, tDataType, aRoot, tComm);
+        exceptionCheck(aEnv, tExitCode);
+    } else {
+        tExitCode = MPI_Bcast(rBuf, aCount, tDataType, aRoot, tComm);
+        exceptionCheck(aEnv, tExitCode);
+        parseBuf2JArray(aEnv, rArray, 0, aCount, tDataType, rBuf);
+    }
     freeBuf(rBuf);
 }
 
