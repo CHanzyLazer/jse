@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6...3.16)
+cmake_minimum_required(VERSION 3.14)
 project(lmpjni C)
 
 set(CMAKE_C_STANDARD 11)
@@ -48,14 +48,19 @@ endif(MPI_C_FOUND)
 
 
 # add mimalloc
-include_directories($ENV{MIMALLOC_HOME}include)
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/libmimalloc.so)
-elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/mimalloc.lib)
-elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/libmimalloc.dylib)
-endif ()
+option(USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
+if (USE_MIMALLOC)
+    add_definitions(-DUSE_MIMALLOC)
+    
+    include_directories($ENV{MIMALLOC_HOME}include)
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+        target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/libmimalloc.so)
+    elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
+        target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/mimalloc.lib)
+    elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+        target_link_libraries(lmpjni $ENV{MIMALLOC_HOME}lib/libmimalloc.dylib)
+    endif ()
+endif (USE_MIMALLOC)
 
 
 # add lammps

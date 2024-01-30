@@ -1,6 +1,31 @@
+#ifdef USE_MIMALLOC
+    #include "mimalloc.h"
+    #define MALLOCN(tp, n) ((tp*)mi_mallocn(n, sizeof(tp)))
+    #define CALLOC(tp, n) ((tp*)mi_calloc(n, sizeof(tp)))
+    #define FREE(ptr) (mi_free(ptr))
+    #define STRDUP(str) (mi_strdup(str))
+#else
+    #include <stdlib.h>
+    #define MALLOCN(tp, n) ((tp*)malloc((n) * sizeof(tp)))
+    #define CALLOC(tp, n) ((tp*)calloc(n, sizeof(tp)))
+    #define FREE(ptr) (free(ptr))
+    
+    #include <string.h>
+    #ifdef WIN32
+    #define STRDUP(str) (_strdup(str))
+    #elif _WIN64
+    #define STRDUP(str) (_strdup(str))
+    #elif _WIN32
+    #define STRDUP(str) (_strdup(str))
+    #elif __unix__
+    #define STRDUP(str) (strdup(str))
+    #elif __linux__
+    #define STRDUP(str) (strdup(str))
+    #endif
+#endif
+
 #include <stdint.h>
 
-#include "mimalloc.h"
 #include "mpi.h"
 #include "jtool_parallel_MPI_Native.h"
 
@@ -37,19 +62,19 @@ void parseJArray2Buf(JNIEnv *aEnv, jobject aJArray, jsize aStart, jsize aLen, MP
 void *allocBuf(jsize aSize, MPI_Datatype aDataType) {
     if (aSize <= 0) return NULL;
     switch (aDataType) {
-        case MPI_SIGNED_CHAR:    {return (jbyte    *)mi_malloc(aSize * sizeof(jbyte   ));}
-        case MPI_DOUBLE:         {return (jdouble  *)mi_malloc(aSize * sizeof(jdouble ));}
-        case MPI_UNSIGNED_CHAR:  {return (jboolean *)mi_malloc(aSize * sizeof(jboolean));}
-        case MPI_UNSIGNED_SHORT: {return (jchar    *)mi_malloc(aSize * sizeof(jchar   ));}
-        case MPI_SHORT:          {return (jshort   *)mi_malloc(aSize * sizeof(jshort  ));}
-        case MPI_INT32_T:        {return (jint     *)mi_malloc(aSize * sizeof(jint    ));}
-        case MPI_INT64_T:        {return (jlong    *)mi_malloc(aSize * sizeof(jlong   ));}
-        case MPI_FLOAT:          {return (jfloat   *)mi_malloc(aSize * sizeof(jfloat  ));}
+        case MPI_SIGNED_CHAR:    {return MALLOCN(jbyte   , aSize);}
+        case MPI_DOUBLE:         {return MALLOCN(jdouble , aSize);}
+        case MPI_UNSIGNED_CHAR:  {return MALLOCN(jboolean, aSize);}
+        case MPI_UNSIGNED_SHORT: {return MALLOCN(jchar   , aSize);}
+        case MPI_SHORT:          {return MALLOCN(jshort  , aSize);}
+        case MPI_INT32_T:        {return MALLOCN(jint    , aSize);}
+        case MPI_INT64_T:        {return MALLOCN(jlong   , aSize);}
+        case MPI_FLOAT:          {return MALLOCN(jfloat  , aSize);}
         default:                 {return NULL;}
     }
 }
 void freeBuf(void *aBuf) {
-    if (aBuf != NULL) mi_free(aBuf);
+    if (aBuf != NULL) FREE(aBuf);
 }
 
 void parsejint2int(JNIEnv *aEnv, jintArray aJArray, jint aSize, int *rBuf) {
@@ -61,12 +86,12 @@ void parsejint2int(JNIEnv *aEnv, jintArray aJArray, jint aSize, int *rBuf) {
 
 char **parseArgs(JNIEnv *aEnv, jobjectArray aArgs, int *rLen) {
     jsize tLen = (*aEnv)->GetArrayLength(aEnv, aArgs);
-    char **sArgs = (char**)mi_calloc(tLen+1, sizeof(char*));
+    char **sArgs = CALLOC(char*, tLen+1);
     
     for (jsize i = 0; i < tLen; i++) {
         jstring jc = (jstring)(*aEnv)->GetObjectArrayElement(aEnv, aArgs, i);
         const char *s = (*aEnv)->GetStringUTFChars(aEnv, jc, NULL);
-        sArgs[i] = mi_strdup(s);
+        sArgs[i] = STRDUP(s);
         (*aEnv)->ReleaseStringUTFChars(aEnv, jc, s);
         (*aEnv)->DeleteLocalRef(aEnv, jc);
     }
@@ -75,8 +100,8 @@ char **parseArgs(JNIEnv *aEnv, jobjectArray aArgs, int *rLen) {
     return sArgs;
 }
 void freeArgs(char **aArgs, int aLen) {
-    for(int i = 0; i < aLen; i++) mi_free(aArgs[i]);
-    mi_free(aArgs);
+    for(int i = 0; i < aLen; i++) FREE(aArgs[i]);
+    FREE(aArgs);
 }
 
 void throwException(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
@@ -263,8 +288,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allgatherv0(JNIE
     int tSize, tRank;
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheck(aEnv, tExitCode)) return;
-    int *tRecvCounts = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aRecvCounts, tSize, tRecvCounts);
-    int *tDispls     = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
+    int *tRecvCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aRecvCounts, tSize, tRecvCounts);
+    int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
     jsize tTotSize = 0;
     for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tRecvCounts[i];
     void *rRecvBuf = allocBuf(tTotSize  , tRecvType);
@@ -281,8 +306,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allgatherv0(JNIE
     }
     parseBuf2JArray(aEnv, rRecvArray, 0, tTotSize, tRecvType, rRecvBuf);
     freeBuf(rRecvBuf);
-    mi_free(tRecvCounts);
-    mi_free(tDispls    );
+    FREE(tRecvCounts);
+    FREE(tDispls    );
 }
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Allreduce0(JNIEnv *aEnv, jclass aClazz, jboolean aInPlace, jobject aSendArray, jobject rRecvArray, jint aCount, jlong aDataType, jlong aOp, jlong aComm) {
     MPI_Datatype tDataType = (MPI_Datatype)(intptr_t)aDataType;
@@ -371,8 +396,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Gatherv0(JNIEnv 
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheck(aEnv, tExitCode)) return;
     if (tRank == aRoot) {
-        int *tRecvCounts = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aRecvCounts, tSize, tRecvCounts);
-        int *tDispls     = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
+        int *tRecvCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aRecvCounts, tSize, tRecvCounts);
+        int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
         jsize tTotSize = 0;
         for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tRecvCounts[i];
         void *rRecvBuf = allocBuf(tTotSize, tRecvType);
@@ -389,8 +414,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Gatherv0(JNIEnv 
         }
         parseBuf2JArray(aEnv, rRecvArray, 0, tTotSize, tRecvType, rRecvBuf);
         freeBuf(rRecvBuf);
-        mi_free(tRecvCounts);
-        mi_free(tDispls    );
+        FREE(tRecvCounts);
+        FREE(tDispls    );
     } else {
         if (aInPlace) {
             throwException(aEnv, "MPI_IN_PLACE can ONLY be set in Root for MPI_Gatherv", -1);
@@ -482,8 +507,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatterv0(JNIEnv
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheck(aEnv, tExitCode)) return;
     if (tRank == aRoot) {
-        int *tSendCounts = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aSendCounts, tSize, tSendCounts);
-        int *tDispls     = (int *)mi_malloc(tSize * sizeof(int)); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
+        int *tSendCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aSendCounts, tSize, tSendCounts);
+        int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tSize, tDispls    );
         jsize tTotSize = 0;
         for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tSendCounts[i];
         void *tSendBuf = allocBuf(tTotSize, tSendType);
@@ -499,8 +524,8 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Scatterv0(JNIEnv
             freeBuf(rRecvBuf);
         }
         freeBuf(tSendBuf);
-        mi_free(tSendCounts);
-        mi_free(tDispls    );
+        FREE(tSendCounts);
+        FREE(tDispls    );
     } else {
         if (aInPlace) {
             throwException(aEnv, "MPI_IN_PLACE can ONLY be set in Root for MPI_Scatterv", -1);
@@ -560,11 +585,11 @@ JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1differen
 }
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1excl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jint aN, jintArray aRanks) {
     MPI_Group tGroup = (MPI_Group)(intptr_t)aGroup;
-    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : (int *)mi_malloc(aN * sizeof(int)); parsejint2int(aEnv, aRanks, aN, tRanks);
+    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN(int, aN); parsejint2int(aEnv, aRanks, aN, tRanks);
     MPI_Group nGroup;
     int tExitCode = MPI_Group_excl(tGroup, aN, tRanks, &nGroup);
     exceptionCheck(aEnv, tExitCode);
-    if (tRanks != NULL) mi_free(tRanks);
+    if (tRanks != NULL) FREE(tRanks);
     return nGroup;
 }
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1free(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
@@ -574,11 +599,11 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1free(JNIE
 }
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1incl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jint aN, jintArray aRanks) {
     MPI_Group tGroup = (MPI_Group)(intptr_t)aGroup;
-    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : (int *)mi_malloc(aN * sizeof(int)); parsejint2int(aEnv, aRanks, aN, tRanks);
+    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN(int, aN); parsejint2int(aEnv, aRanks, aN, tRanks);
     MPI_Group nGroup;
     int tExitCode = MPI_Group_incl(tGroup, aN, tRanks, &nGroup);
     exceptionCheck(aEnv, tExitCode);
-    if (tRanks != NULL) mi_free(tRanks);
+    if (tRanks != NULL) FREE(tRanks);
     return nGroup;
 }
 JNIEXPORT jlong JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Group_1intersection(JNIEnv *aEnv, jclass aClazz, jlong aGroup1, jlong aGroup2) {
@@ -629,6 +654,7 @@ JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Recv0(JNIEnv *aE
     int tExitCode = MPI_Recv(rBuf, aCount, tDataType, aSource, aTag, tComm, MPI_STATUS_IGNORE); // no return Status, because its field name is unstable
     exceptionCheck(aEnv, tExitCode);
     parseBuf2JArray(aEnv, rArray, 0, aCount, tDataType, rBuf);
+    freeBuf(rBuf);
 }
 JNIEXPORT void JNICALL Java_jtool_parallel_MPI_00024Native_MPI_1Sendrecv0(JNIEnv *aEnv, jclass aClazz, jobject aSendArray, jint aSendCount, jlong aSendType, jint aDest, jint aSendTag, jobject rRecvArray, jint aRecvCount, jlong aRecvType, jint aSource, jint aRecvTag, jlong aComm) {
     MPI_Datatype tSendType = (MPI_Datatype)(intptr_t)aSendType;

@@ -101,6 +101,12 @@ public class NativeLmp implements IAutoShutdown {
         public static @Nullable String CMAKE_CXX_COMPILER_LMPJNI = null;
         
         /**
+         * 对于 lmpjni，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
+         * 这对于 java 数组和 c 数组的转换很有效
+         */
+        public static boolean USE_MIMALLOC = true;
+        
+        /**
          * 是否在检测到库文件时依旧重新编译 lammps，
          * 在需要修改 lammps 包时很有用
          */
@@ -198,6 +204,7 @@ public class NativeLmp implements IAutoShutdown {
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cd"); rCommand.add("\""+aLmpJniBuildDir+"\""); rCommand.add(";");
         rCommand.add("cmake");
+        rCommand.add("-D"); rCommand.add("USE_MIMALLOC="                  +(Conf.USE_MIMALLOC           ?"ON":"OFF"));
         rCommand.add("-D"); rCommand.add("LAMMPS_IS_OLD="                 +(Conf.IS_OLD                 ?"ON":"OFF"));
         rCommand.add("-D"); rCommand.add("LAMMPS_HAS_EXCEPTIONS="         +(Conf.HAS_EXCEPTIONS         ?"ON":"OFF"));
         rCommand.add("-D"); rCommand.add("LAMMPS_EXCEPTIONS_NULL_SUPPORT="+(Conf.EXCEPTIONS_NULL_SUPPORT?"ON":"OFF"));
@@ -271,7 +278,9 @@ public class NativeLmp implements IAutoShutdown {
                 String tLine;
                 while ((tLine = tReader.readLine()) != null) {
                     tLine = tLine.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    if (Conf.USE_MIMALLOC) {
                     tLine = tLine.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    }
                     tWriter.writeln(tLine);
                 }
             }
@@ -307,8 +316,8 @@ public class NativeLmp implements IAutoShutdown {
     
     static {
         InitHelper.INITIALIZED = true;
-        // 不管怎样都会依赖 MiMalloc
-        MiMalloc.InitHelper.init();
+        // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
+        if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
         
         // 先规范化 LMP_HOME 的格式
         if (Conf.LMP_HOME == null) {
@@ -339,7 +348,7 @@ public class NativeLmp implements IAutoShutdown {
         NATIVE_LMPLIB_PATH = Conf.LMP_HOME+"lib/"+NATIVE_LMPLIB_NAME;
         // 现在 uniqueID 不再包含这个 tag（确实当时也想到了），因为已经包含到了 LMP_HOME 中
         // 在这里初始化保证顺序合理
-        LMPLIB_DIR = LMPLIB_ROOT + UT.Code.uniqueID(VERSION, Conf.LMP_HOME, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT) + "/";
+        LMPLIB_DIR = LMPLIB_ROOT + UT.Code.uniqueID(VERSION, Conf.LMP_HOME, Conf.USE_MIMALLOC, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT) + "/";
         LMPLIB_PATH = LMPLIB_DIR + "lmpjni"+JNILIB_EXTENSION;
         // 如果不存在 jni lib 则需要重新通过源码编译
         if (Conf.REBUILD || !UT.IO.isFile(LMPLIB_PATH) || !UT.IO.isFile(NATIVE_LMPLIB_PATH)) {

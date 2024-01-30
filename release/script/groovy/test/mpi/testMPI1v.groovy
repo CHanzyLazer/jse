@@ -34,7 +34,7 @@ for (i in range(displs[me], counts[me]+displs[me])) r[i] = rand();
 println("rand of <$me>: $r");
 
 // 测试 allgatherv IN_PLACE
-MPI.Comm.WORLD.allgatherv(r.getData(), counts, displs);
+MPI.Comm.WORLD.allgatherv(r.internalData(), counts, displs);
 println("allgathered rand of <$me>: $r");
 
 MPI.shutdown();

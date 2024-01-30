@@ -16,7 +16,7 @@ final int np = MPI.Comm.WORLD.size();
 def r = rand(10);
 println("rand of <$me>: $r");
 // 测试 allreduce IN_PLACE
-MPI.Comm.WORLD.allreduce(r.getData(), r.size(), MPI.Op.SUM);
+MPI.Comm.WORLD.allreduce(r.internalData(), r.size(), MPI.Op.SUM);
 println("sum of <$me>: $r");
 double[] r1 = new double[np];
 r1[me] = rand();

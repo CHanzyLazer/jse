@@ -75,6 +75,12 @@ public class MPI {
          */
         public static @Nullable String CMAKE_C_COMPILER   = null;
         public static @Nullable String CMAKE_CXX_COMPILER = null;
+        
+        /**
+         * 对于 mpijni，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
+         * 这对于 java 数组和 c 数组的转换很有效
+         */
+        public static boolean USE_MIMALLOC = true;
     }
     
     public static String libraryVersion() throws Error {return MPI.Native.MPI_Get_library_version();}
@@ -95,7 +101,7 @@ public class MPI {
         private long mPtr;
         private Group(long aPtr) {mPtr = aPtr;}
         @ApiStatus.Internal public long ptr_() {return mPtr;}
-
+        
         
         /**
          * @return The rank of the calling process in the specified group.
@@ -981,7 +987,7 @@ public class MPI {
     public static class Native {
         private Native() {}
         
-        private final static String MPILIB_DIR = JAR_DIR+"mpi/" + UT.Code.uniqueID(VERSION) + "/";
+        private final static String MPILIB_DIR = JAR_DIR+"mpi/" + UT.Code.uniqueID(VERSION, Conf.USE_MIMALLOC) + "/";
         private final static String MPILIB_PATH = MPILIB_DIR + "mpijni"+JNILIB_EXTENSION;
         private final static String[] MPISRC_NAME = {
               "jtool_parallel_MPI_Native.c"
@@ -998,6 +1004,15 @@ public class MPI {
             if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
             // 初始化使用上一个目录的 CMakeList.txt
             rCommand.add("..");
+            return String.join(" ", rCommand);
+        }
+        private static String cmakeSettingCmd_(String aBuildDir) {
+            // 设置参数，这里使用 List 来构造这个长指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("cd"); rCommand.add("\""+aBuildDir+"\""); rCommand.add(";");
+            rCommand.add("cmake");
+            rCommand.add("-D"); rCommand.add("USE_MIMALLOC="+(Conf.USE_MIMALLOC?"ON":"OFF"));
+            rCommand.add(".");
             return String.join(" ", rCommand);
         }
         
@@ -1018,7 +1033,9 @@ public class MPI {
             try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("mpi/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tWorkingDir+"CMakeLists.txt")) {
                 String tLine;
                 while ((tLine = tReader.readLine()) != null) {
+                    if (Conf.USE_MIMALLOC) {
                     tLine = tLine.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    }
                     tWriter.writeln(tLine);
                 }
             }
@@ -1029,6 +1046,8 @@ public class MPI {
             EXE.setNoSTDOutput();
             // 初始化 cmake
             EXE.system(cmakeInitCmd_(tBuildDir));
+            // 设置参数
+            EXE.system(cmakeSettingCmd_(tBuildDir));
             // 最后进行构造操作
             EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
@@ -1054,8 +1073,8 @@ public class MPI {
         // 这对于一般的 MPI 实现应该都是没有问题的
         static {
             InitHelper.INITIALIZED = true;
-            // 不管怎样都会依赖 MiMalloc
-            MiMalloc.InitHelper.init();
+            // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
+            if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
             
             // 如果不存在 jni lib 则需要重新通过源码编译
             if (!UT.IO.isFile(MPILIB_PATH)) {

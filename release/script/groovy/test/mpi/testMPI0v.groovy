@@ -41,18 +41,18 @@ println("rand of <$me>: $r");
 MPI.Comm.WORLD.barrier();
 if (me == 0) println("==========gatherv IN_PLACE==========");
 MPI.Comm.WORLD.barrier();
-MPI.Comm.WORLD.gatherv(r.getData(), counts, displs, 0);
+MPI.Comm.WORLD.gatherv(r.internalData(), counts, displs, 0);
 if (me == 0) {
     println("gathered rand of <$me>: $r");
     // 排序
-    Arrays.sort(r.getData());
+    Arrays.sort(r.internalData());
     println("sorted rand of <$me>: $r");
 }
 MPI.Comm.WORLD.barrier();
 if (me == 0) println("==========scatterv IN_PLACE==========");
 MPI.Comm.WORLD.barrier();
 println("rand of <$me>: $r");
-MPI.Comm.WORLD.scatterv(r.getData(), counts, displs, 0);
+MPI.Comm.WORLD.scatterv(r.internalData(), counts, displs, 0);
 println("scattered rand of <$me>: $r");
 
 sleep(100);

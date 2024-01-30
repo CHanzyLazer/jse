@@ -9,6 +9,9 @@ import static jtool.code.UT.Math.*;
  * 暴力测试 MPI 是否存在内存泄漏
  */
 
+// 选项测试在开关 mimalloc 的情况下的内存占用
+MPI.Conf.USE_MIMALLOC = true;
+
 MPI.init(args);
 final int me = MPI.Comm.WORLD.rank();
 final int np = MPI.Comm.WORLD.size();
