@@ -514,7 +514,7 @@ public class UT {
             int hours = (int) java.lang.Math.floor(elapsedTime / 3600.0);
             int minutes = (int) java.lang.Math.floor(elapsedTime % 3600.0) / 60;
             double seconds = elapsedTime % 60.0;
-            System.out.printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
+            (USE_ERR?System.err:System.out).printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
         }
         public static double toc(boolean aFlag) {
             double elapsedTime = TIMER.get();
@@ -523,6 +523,7 @@ public class UT {
         }
         
         public static boolean USE_ASCII = false;
+        public static boolean USE_ERR = false; // 一般来说 pbar 都是 err 流来保证 ssh 环境下及时更新，这里改为默认 out 从而可以有意避开扰乱
         private static @Nullable ProgressBar sProgressBar = null;
         public static synchronized void progressBar(String aName, long aN) {
             if (sProgressBar != null) {
@@ -531,7 +532,7 @@ public class UT {
             }
             sProgressBar = new ProgressBarBuilder()
                 .setTaskName(aName).setInitialMax(aN)
-                .setConsumer(new ConsoleProgressBarConsumer(System.out)) // 一般来说 pbar 都是 err 流，这里需要重写一下避免乱码问题，并改用 out 从而可以有意避开扰乱
+                .setConsumer(new ConsoleProgressBarConsumer(USE_ERR?System.err:System.out)) // 这里总是需要重写一下避免乱码问题
                 .setUpdateIntervalMillis((int)FILE_SYSTEM_SLEEP_TIME_2)
                 .setStyle(USE_ASCII ? ProgressBarStyle.ASCII : ProgressBarStyle.COLORFUL_UNICODE_BLOCK)
                 .build();
