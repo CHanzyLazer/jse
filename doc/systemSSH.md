@@ -5,7 +5,6 @@
     - [其他种类的任务提交器](system.md#其他种类的任务提交器)
     - [关闭任务提交器](system.md#关闭任务提交器)
 - [SSH 任务提交器](systemSSH.md)
-- [SRUN 任务提交器](systemSRUN.md)
 - [API 文档](systemAPI.md)
 - [**⟶ 目录**](contents.md)
 
