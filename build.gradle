@@ -78,7 +78,7 @@ shadowJar {
     relocate('com.jcraft.jzlib', 'shade.com.jcraft.jzlib')
     
     // 修改目标文件夹，打包后添加到子项目中
-    destinationDirectory = file('./release/lib')
+    destinationDirectory = mkdir('./release/lib')
 }
 
 tasks.register('sourceJar', Jar) {
@@ -95,10 +95,11 @@ tasks.register('sourceJar', Jar) {
     }
     
     // 修改目标文件夹，打包后添加到子项目中
-    destinationDirectory = file('./release/src')
+    destinationDirectory = mkdir('./release/src')
 }
 
 tasks.register('downloadSource') {
+    mkdir('./release/src')
     // 直接硬编码下载第三方库的源码文件
     if (!file('./release/src/groovy-4.0.16-sources.jar').exists()) ant.get(src: 'https://repo1.maven.org/maven2/org/apache/groovy/groovy/4.0.16/groovy-4.0.16-sources.jar', dest: './release/src')
 }
