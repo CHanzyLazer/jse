@@ -440,14 +440,14 @@ public class UT {
         public static TaskCall<Object> getCallableOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return getCallableOfMethod_(aInstance.getClass(), aInstance, aMethodName, aArgs);}
         public static TaskRun          getRunnableOfMethod      (final @NotNull Object aInstance, String aMethodName, Object... aArgs) throws NoSuchMethodException {return getCallableOfMethod(aInstance, aMethodName, aArgs).toRunnable();}
         
-        public static Method findMethod_(Class<?> aClazz, String aMethodName, Object @NotNull... aArgs) {
+        public static @Nullable Method findMethod_(Class<?> aClazz, String aMethodName, Object @NotNull... aArgs) {
             Method[] tAllMethods = aClazz.getMethods();
             for (Method tMethod : tAllMethods) if (tMethod.getName().equals(aMethodName)) {
                 if (compatible(aArgs, tMethod.getParameterTypes())) return tMethod;
             }
             return null;
         }
-        public static Constructor<?> findConstructor_(Class<?> aClazz, Object @NotNull... aArgs) {
+        public static @Nullable Constructor<?> findConstructor_(Class<?> aClazz, Object @NotNull... aArgs) {
             Constructor<?>[] tAllConstructors = aClazz.getConstructors();
             for (Constructor<?> tConstructor : tAllConstructors) {
                 if (compatible(aArgs, tConstructor.getParameterTypes())) return tConstructor;
@@ -456,7 +456,7 @@ public class UT {
         }
         private static boolean compatible(Object[] aArgs, Class<?>[] aMethodParameterTypes) {
             if (aArgs.length != aMethodParameterTypes.length) return false;
-            for (int i = 0; i < aArgs.length; i++) if (!compatible(aArgs[i], aMethodParameterTypes[i])) return false;
+            for (int i = 0; i < aArgs.length; ++i) if (!compatible(aArgs[i], aMethodParameterTypes[i])) return false;
             return true;
         }
         @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -469,7 +469,7 @@ public class UT {
             return aMethodParameterType.isInstance(aArg);
         }
         public static void convertArgs_(Object[] rArgs, Class<?>[] aParameterTypes) {
-            for (int i = 0; i < aParameterTypes.length; i++) {
+            for (int i = 0; i < aParameterTypes.length; ++i) {
                 Class<?> tArgClazz = rArgs[i].getClass();
                 Class<?> tParClazz = toWrapperType(aParameterTypes[i]); // 注意需要转换成 Wrapper 的类型
                 if (tArgClazz == tParClazz) continue;

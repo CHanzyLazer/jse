@@ -947,6 +947,7 @@ public class MPI {
      * @param aArgs the argument list for the program
      */
     public static void init(String[] aArgs) throws Error {Native.MPI_Init(aArgs);}
+    public static void init() throws Error {Native.MPI_Init(ZL_STR);}
     /**
      * Indicates whether {@link MPI#init} has been called.
      * @return true if {@link MPI#init} or {@link MPI#initThread} has been called and false otherwise.
@@ -976,7 +977,7 @@ public class MPI {
      * @see <a href="https://learn.microsoft.com/en-us/message-passing-interface/mpi-init-thread-function"> MPI_Init_thread function </a>
      */
     public static int initThread(String[] aArgs, int aRequired) throws Error {return Native.MPI_Init_thread(aArgs, aRequired);}
-    
+    public static int initThread(int aRequired) throws Error {return Native.MPI_Init_thread(ZL_STR, aRequired);}
     
     
     
