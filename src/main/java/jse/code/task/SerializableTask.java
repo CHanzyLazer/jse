@@ -2,6 +2,7 @@ package jse.code.task;
 
 import com.google.common.collect.ImmutableList;
 import jse.code.collection.Pair;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ import static jse.code.CS.ZL_STR;
  * @author liqa
  * <p> 可以序列化的 Task，目前仅用于 ssh 端的一些 task 的读写上 </p>
  */
-@Deprecated
+@Deprecated @ApiStatus.ScheduledForRemoval
 public class SerializableTask extends Task {
     public SerializableTask(Callable<Boolean> aCall) {super(aCall);}
     

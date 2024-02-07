@@ -142,10 +142,10 @@ public abstract class AbstractLongTimeSystemExecutor<T extends ISystemExecutor> 
         }
     }
     private FutureJob loadFutureJob(Map<?, ?> aLoadFrom) {
-        String aSubmitCommand = (String)aLoadFrom.get("SubmitCommand");
+        String aSubmitCommand = UT.Code.toString(aLoadFrom.get("SubmitCommand"));
         List<String> aOFiles = new ArrayList<>();
         List<?> tList = (List<?>)aLoadFrom.get("OFiles");
-        if (tList != null) for (Object tObj : tList) aOFiles.add((String)tObj);
+        if (tList != null) for (Object tObj : tList) aOFiles.add(UT.Code.toString(tObj));
         return new FutureJob(aSubmitCommand, aOFiles);
     }
     private synchronized void setJobNumber(int aJobNumber) {mJobNumber = aJobNumber;}

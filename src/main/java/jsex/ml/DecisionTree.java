@@ -408,7 +408,7 @@ public class DecisionTree implements ISavable {
         }
     }
     static INode load_(Map<?, ?> aLoadFrom) {
-        String tType = (String)aLoadFrom.get("type");
+        String tType = UT.Code.toString(aLoadFrom.get("type"));
         switch (tType) {
         case "leaf": {
             return new NodeLeaf((Boolean)aLoadFrom.get("result"));

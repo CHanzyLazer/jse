@@ -1,5 +1,6 @@
 package jse.code.task;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.Callable;
@@ -8,7 +9,7 @@ import java.util.concurrent.Callable;
  * @author liqa
  * <p> General task for this project </p>
  */
-@Deprecated
+@Deprecated @ApiStatus.ScheduledForRemoval
 public class Task extends TaskCall<Boolean> {
     public Task(Callable<Boolean> aCall) {super(aCall);}
     

@@ -48,10 +48,7 @@ import org.apache.groovy.json.internal.CharScanner;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
-import org.jetbrains.annotations.VisibleForTesting;
+import org.jetbrains.annotations.*;
 
 import java.awt.*;
 import java.io.*;
@@ -88,11 +85,12 @@ public class UT {
     public static class Code {
         
         /**
-         * Convert a prob value to percent String
+         * 保留 null 的转换 String
          * @author liqa
          */
-        public static String percent(double aProb) {
-            return String.format("%.2f", aProb*100) + "%";
+        @Contract(value = "null->null; !null -> !null", pure = true)
+        public static @Nullable String toString(@Nullable Object aObj) {
+            return aObj==null ? null : aObj.toString();
         }
         
         /**
@@ -185,7 +183,7 @@ public class UT {
          * Get the value in the map according to the order of the keys
          * @author liqa
          */
-        public static Object get(Map<?, ?> aMap, Object... aKeys) {
+        public static @Nullable Object get(Map<?, ?> aMap, Object... aKeys) {
             if (aKeys == null) return null;
             for (Object tKey : aKeys) if (aMap.containsKey(tKey)) return aMap.get(tKey);
             return null;
@@ -692,6 +690,14 @@ public class UT {
     }
     
     public static class Texts {
+        
+        /**
+         * Convert a prob value to percent String
+         * @author liqa
+         */
+        public static String percent(double aProb) {
+            return String.format("%.2f", aProb*100) + "%";
+        }
         
         /**
          * 重复给定 char，照搬 {@code me.tongfei.progressbar.Util} 中的方法

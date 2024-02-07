@@ -64,7 +64,7 @@ public abstract class AbstractInFile extends AbstractMap<String, Object> impleme
                         String tFilePath = aFilePath;
                         if (mSettings.containsKey(aFileKey)) {
                             // 注意 String 输入不一定真的是 String，这样可以兼容任何输入
-                            tFilePath = String.valueOf(mSettings.get(aFileKey));
+                            tFilePath = UT.Code.toString(mSettings.get(aFileKey));
                         }
                         return tFilePath;
                     }

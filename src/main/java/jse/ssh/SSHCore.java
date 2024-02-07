@@ -5,6 +5,7 @@ import jse.code.UT;
 import jse.parallel.ExecutorsEX;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.IExecutorEX;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -65,14 +66,14 @@ public final class SSHCore implements IAutoShutdown {
     }
     @SuppressWarnings("rawtypes")
     public static SSHCore load(Map aJson) throws Exception {
-        String aUsername = (String) UT.Code.get(aJson, "Username", "username", "user", "u");
-        String aHostname = (String) UT.Code.get(aJson, "Hostname", "hostname", "host", "h");
+        String aUsername = UT.Code.toString(UT.Code.get(aJson, "Username", "username", "user", "u"));
+        String aHostname = UT.Code.toString(UT.Code.get(aJson, "Hostname", "hostname", "host", "h"));
         int aPort = ((Number) UT.Code.getWithDefault(aJson, 22, "Port", "port", "p")).intValue();
         
-        String aLocalWorkingDir  = (String) UT.Code.get(aJson, "LocalWorkingDir", "localworkingdir", "lwd");
-        String aRemoteWorkingDir = (String) UT.Code.get(aJson, "RemoteWorkingDir", "remoteworkingdir", "rwd", "wd");
-        String aPassword         = (String) UT.Code.get(aJson, "Password", "password", "pw");
-        String aKeyPath          = (String) UT.Code.getWithDefault(aJson, System.getProperty("user.home")+"/.ssh/id_rsa", "KeyPath", "keypath", "key", "k");
+        @Nullable String aLocalWorkingDir  = UT.Code.toString(UT.Code.get(aJson, "LocalWorkingDir", "localworkingdir", "lwd"));
+        @Nullable String aRemoteWorkingDir = UT.Code.toString(UT.Code.get(aJson, "RemoteWorkingDir", "remoteworkingdir", "rwd", "wd"));
+        @Nullable String aPassword         = UT.Code.toString(UT.Code.get(aJson, "Password", "password", "pw"));
+        @Nullable String aKeyPath          = UT.Code.toString(UT.Code.getWithDefault(aJson, System.getProperty("user.home")+"/.ssh/id_rsa", "KeyPath", "keypath", "key", "k"));
         
         SSHCore rServerSSH = null;
         try {
@@ -93,7 +94,7 @@ public final class SSHCore implements IAutoShutdown {
             Object tBeforeCommand = UT.Code.get(aJson, "BeforeCommand", "beforecommand", "bcommand", "bc");
             
             if (tCompressLevel != null) rServerSSH.setCompressionLevel(((Number)tCompressLevel).intValue());
-            if (tBeforeCommand != null) rServerSSH.setBeforeSystem((String)tBeforeCommand);
+            if (tBeforeCommand != null) rServerSSH.setBeforeSystem(tBeforeCommand.toString());
         } catch (Exception e) {
             // 获取失败会自动关闭
             if (rServerSSH != null) rServerSSH.shutdown();
@@ -110,7 +111,7 @@ public final class SSHCore implements IAutoShutdown {
         session().setConfig("StrictHostKeyChecking", "no");
     }
     // 修改本地路径和远程路径
-    public SSHCore setLocalWorkingDir(String aLocalWorkingDir) {
+    public SSHCore setLocalWorkingDir(@Nullable String aLocalWorkingDir) {
         if (mDead) throw new RuntimeException("Can NOT setLocalWorkingDir from a Dead SSH.");
         if (aLocalWorkingDir == null) aLocalWorkingDir = "";
         mLocalWorkingDir_ = aLocalWorkingDir;
@@ -119,7 +120,7 @@ public final class SSHCore implements IAutoShutdown {
         mLocalWorkingDir = aLocalWorkingDir;
         return this;
     }
-    public SSHCore setRemoteWorkingDir(String aRemoteWorkingDir) {
+    public SSHCore setRemoteWorkingDir(@Nullable String aRemoteWorkingDir) {
         if (mDead) throw new RuntimeException("Can NOT setRemoteWorkingDir from a Dead SSH.");
         if (aRemoteWorkingDir == null) aRemoteWorkingDir = "";
         mRemoteWorkingDir_ = aRemoteWorkingDir;

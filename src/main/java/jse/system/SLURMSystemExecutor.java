@@ -176,8 +176,8 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     
     private static int       getParallelNum         (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "ParallelNumber", "parallelnumber", "ParallelNum", "parallelnum", "pn")).intValue();}
     private static long      getSleepTime           (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, SSH_SLEEP_TIME, "SleepTime", "sleeptime", "stime", "st")).longValue();}
-    private static String    getJobName             (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J");}
-    private static @Nullable String getPartition    (Map<?, ?> aArgs) {return (String)  UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p");}
+    private static String    getJobName             (Map<?, ?> aArgs) {return UT.Code.toString(UT.Code.getWithDefault(aArgs, "SLURM@"+UT.Code.randID(), "JobName", "jobname", "job-name", "J"));}
+    private static @Nullable String getPartition    (Map<?, ?> aArgs) {return UT.Code.toString(UT.Code.getWithDefault(aArgs, null, "Partition", "partition", "p"));}
     private static int       getTaskNumber          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 1, "TaskNumber", "tasknumber", "TaskNum", "tasknum", "nTasks", "ntasks", "n")).intValue();}
     private static int       getMaxTaskNumPerNode   (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 20, "MaxTaskNumberPerNode", "maxtasknumberpernode", "MaxTaskNumPerNode", "maxtasknumpernode", "CoresPerNode", "corespernode", "ntaskspernode", "ntasks-per-node")).intValue();}
     private static int       getMaxNodeNum          (Map<?, ?> aArgs) {return ((Number) UT.Code.getWithDefault(aArgs, 10, "MaxNodeNumber", "maxnodenumber", "MaxNodeNum", "maxnodenum", "nodes", "N")).intValue();}
