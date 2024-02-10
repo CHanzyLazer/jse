@@ -97,8 +97,8 @@ final class SSHCore implements IAutoShutdown {
                 rServerSSH.mPassword = aPassword;
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "password");
             } else {
-                rServerSSH.mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : aKeyPath);
-                rServerSSH.mKeyPath = aKeyPath;
+                rServerSSH.mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : UT.IO.toAbsolutePath(aKeyPath));
+                rServerSSH.mKeyPath = aKeyPath; // 传入 addIdentity 的需要转为绝对路径，而内部存储的属性保留输入的格式
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "publickey");
             }
             rServerSSH.mSession.connect();
@@ -177,9 +177,9 @@ final class SSHCore implements IAutoShutdown {
     public SSHCore setKey(String aKeyPath) throws Exception {
         if (mDead) throw new RuntimeException("Can NOT setKey from a Dead SSH.");
         mJsch.removeAllIdentity(); // 移除旧的认证
-        mJsch.addIdentity(aKeyPath);
+        mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : UT.IO.toAbsolutePath(aKeyPath));
         mPassword = null;
-        mKeyPath = aKeyPath;
+        mKeyPath = aKeyPath; // 传入 addIdentity 的需要转为绝对路径，而内部存储的属性保留输入的格式
         session().setConfig("PreferredAuthentications", "publickey");
         session().rekey();
         return this;
