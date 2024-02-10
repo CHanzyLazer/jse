@@ -8,6 +8,7 @@ import jse.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.*;
 
@@ -30,9 +31,9 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
     
     private final long mSleepTime;
     private final String mUniqueJobName; // 注意一定要是独立的，避免相互干扰或者影响其他用户的结果
-    private @Nullable String mPartition;
-    private int mTaskNum; // 目前一个 Executor 固定一个 taskNumber，用不到变化的，打包起来也会更加方便
-    private int mMaxTaskNumPerNode;
+    private final @Nullable String mPartition;
+    private final int mTaskNum; // 目前一个 Executor 固定一个 taskNumber，用不到变化的，打包起来也会更加方便
+    private final int mMaxTaskNumPerNode;
     private final int mMaxNodeNum;
     SLURMSystemExecutor(SSHSystemExecutor aSystemExecutor, int aParallelNum, long aSleepTime, String aUniqueJobName, @Nullable String aPartition, int aTaskNum, int aMaxTaskNumPerNode, int aMaxNodeNum) throws Exception {
         super(aSystemExecutor, aParallelNum);
@@ -71,13 +72,43 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         } catch (Exception ignored) {}
     }
     
-    /** 用来设置额外参数的接口，避免构造函数过于复杂 */
-    public SLURMSystemExecutor setParallelNum(int aParallelNum) {mParallelNum = Math.max(1, aParallelNum); return this;}
-    public SLURMSystemExecutor setIOThreadNum(int aIOThreadNum) {mEXE.setIOThreadNum(aIOThreadNum); return this;}
-    public SLURMSystemExecutor setPartition(String aPartition) {mPartition = aPartition; return this;}
-    public SLURMSystemExecutor setTaskNum(int aTaskNum) {mTaskNum = Math.max(1, aTaskNum); return this;}
-    public SLURMSystemExecutor setMaxTaskNumPerNode(int aMaxTaskNumPerNode) {mMaxTaskNumPerNode = Math.max(1, aMaxTaskNumPerNode); return this;}
     
+    /** 现在也支持使用 builder 来构造 */
+    public static Builder builder() {return new Builder();}
+    public final static class Builder {
+        private Builder() {}
+        SSHSystemExecutor.Builder mSSHBuilder = SSHSystemExecutor.builder();
+        int mParallelNum = 1;
+        @Nullable String mPartition = null;
+        int mTaskNum = 1;
+        int mMaxTaskNumPerNode = 20;
+        long mSleepTime = SSH_SLEEP_TIME;
+        String mUniqueJobName = "SLURM@"+UT.Code.randID();
+        int mMaxNodeNum = 10;
+        
+        public Builder setParallelNumber(@Range(from = 1, to = Integer.MAX_VALUE) int aParallelNum) {mParallelNum = aParallelNum; return this;}
+        public Builder setPartition(String aPartition) {mPartition = aPartition; return this;}
+        public Builder setTaskNumber(@Range(from = 1, to = Integer.MAX_VALUE) int aTaskNum) {mTaskNum = aTaskNum; return this;}
+        public Builder setMaxTaskNumberPerNode(@Range(from = 1, to = Integer.MAX_VALUE) int aMaxTaskNumPerNode) {mMaxTaskNumPerNode = aMaxTaskNumPerNode; return this;}
+        public Builder setSleepTime(@Range(from = 0, to = Long.MAX_VALUE) long aSleepTime) {mSleepTime = aSleepTime; return this;}
+        public Builder setUniqueJobName(String aUniqueJobName) {mUniqueJobName = aUniqueJobName; return this;}
+        public Builder setMaxNodeNumber(@Range(from = 1, to = Integer.MAX_VALUE) int aMaxNodeNum) {mMaxNodeNum = aMaxNodeNum; return this;}
+        public Builder setIOThreadNumber(int aIOThreadNum) {mSSHBuilder.mIOThreadNum = aIOThreadNum; return this;}
+        
+        public Builder setUsername(String aUsername) {mSSHBuilder.mUsername = aUsername; return this;}
+        public Builder setHostname(String aHostname) {mSSHBuilder.mHostname = aHostname; return this;}
+        public Builder setPort(int aPort) {mSSHBuilder.mPort = aPort; return this;}
+        public Builder setLocalWorkingDir(String aLocalWorkingDir) {mSSHBuilder.mLocalWorkingDir = aLocalWorkingDir; return this;}
+        public Builder setRemoteWorkingDir(String aRemoteWorkingDir) {mSSHBuilder.mRemoteWorkingDir = aRemoteWorkingDir; return this;}
+        public Builder setPassword(String aPassword) {mSSHBuilder.mPassword = aPassword; return this;}
+        public Builder setKeyPath(String aKeyPath) {mSSHBuilder.mKeyPath = aKeyPath; return this;}
+        public Builder setCompressLevel(int aCompressLevel) {mSSHBuilder.mCompressLevel = aCompressLevel; return this;}
+        public Builder setBeforeCommand(String aBeforeCommand) {mSSHBuilder.mBeforeCommand = aBeforeCommand; return this;}
+        
+        public SLURMSystemExecutor build() throws Exception {
+            return new SLURMSystemExecutor(mSSHBuilder.build(), mParallelNum, mSleepTime, mUniqueJobName, mPartition, mTaskNum, mMaxTaskNumPerNode, mMaxNodeNum);
+        }
+    }
     
     /** 保存参数部分，和输入格式完全一直，需要增加 mQueuedJobList 和 mJobList 的保存 */
     @ApiStatus.Internal

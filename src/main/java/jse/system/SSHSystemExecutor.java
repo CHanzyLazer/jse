@@ -3,7 +3,6 @@ package jse.system;
 import com.jcraft.jsch.ChannelExec;
 import jse.code.UT;
 import jse.io.ISavable;
-import jse.ssh.SSHCore;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +20,7 @@ import static jse.code.CS.SSH_SLEEP_TIME;
  */
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
     final SSHCore mSSH;
-    private int mIOThreadNum;
+    private final int mIOThreadNum;
     SSHSystemExecutor(int aIOThreadNum, SSHCore aSSH) throws Exception {
         super();
         mIOThreadNum = aIOThreadNum; mSSH = aSSH;
@@ -35,8 +34,39 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         }
     }
     
-    /** 用来设置额外参数的接口，避免构造函数过于复杂 */
-    public SSHSystemExecutor setIOThreadNum(int aIOThreadNum) {mIOThreadNum = aIOThreadNum; return this;}
+    /** 现在也支持使用 builder 来构造 */
+    public static Builder builder() {return new Builder();}
+    public final static class Builder {
+        private Builder() {}
+        int mIOThreadNum = -1;
+        String mUsername; String mHostname; int mPort = 22;
+        @Nullable String mLocalWorkingDir = null;
+        @Nullable String mRemoteWorkingDir = null;
+        @Nullable String mPassword = null;
+        @Nullable String mKeyPath = null;
+        int mCompressLevel = -1;
+        @Nullable String mBeforeCommand = null;
+        
+        public Builder setIOThreadNumber(int aIOThreadNum) {mIOThreadNum = aIOThreadNum; return this;}
+        
+        public Builder setUsername(String aUsername) {mUsername = aUsername; return this;}
+        public Builder setHostname(String aHostname) {mHostname = aHostname; return this;}
+        public Builder setPort(int aPort) {mPort = aPort; return this;}
+        public Builder setLocalWorkingDir(String aLocalWorkingDir) {mLocalWorkingDir = aLocalWorkingDir; return this;}
+        public Builder setRemoteWorkingDir(String aRemoteWorkingDir) {mRemoteWorkingDir = aRemoteWorkingDir; return this;}
+        public Builder setPassword(String aPassword) {mPassword = aPassword; return this;}
+        public Builder setKeyPath(String aKeyPath) {mKeyPath = aKeyPath; return this;}
+        public Builder setCompressLevel(int aCompressLevel) {mCompressLevel = aCompressLevel; return this;}
+        public Builder setBeforeCommand(String aBeforeCommand) {mBeforeCommand = aBeforeCommand; return this;}
+        
+        public SSHSystemExecutor build() throws Exception {
+            return new SSHSystemExecutor(mIOThreadNum, SSHCore.of(
+                mUsername, mHostname, mPort,
+                mLocalWorkingDir, mRemoteWorkingDir,
+                mPassword, mKeyPath,
+                mCompressLevel, mBeforeCommand));
+        }
+    }
     
     
     /** 保存参数部分，和输入格式完全一直 */

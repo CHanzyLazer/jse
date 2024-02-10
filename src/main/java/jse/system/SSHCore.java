@@ -1,4 +1,4 @@
-package jse.ssh;
+package jse.system;
 
 import com.jcraft.jsch.*;
 import jse.code.UT;
@@ -24,10 +24,10 @@ import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
  * <p> 由于免密登录只支持经典的 openssh 密钥（即需要生成时加上 -m pem），因此还提供密码登录的支持，
  * 但依旧不建议使用密码登录，因为会在代码中出现明文密码 </p>
  * <p>
- * <p> 更加简洁的实现，现在只保留需要的一些功能 </p>
+ * <p> 更加简洁的实现，现在只保留需要的一些功能，并且削弱了可见性 </p>
  */
 @SuppressWarnings("UnusedReturnValue")
-public final class SSHCore implements IAutoShutdown {
+final class SSHCore implements IAutoShutdown {
     private final static String DEFAULT_KEY_PATH = USER_HOME+".ssh/id_rsa";
     
     // 本地和远程的工作目录
@@ -48,27 +48,27 @@ public final class SSHCore implements IAutoShutdown {
     private volatile boolean mDead = false;
     
     /** 内部使用的保存到 json 和从 json 读取 */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtypes", "SuspiciousIndentAfterControlStatement"})
     public void save(Map rJson) {
         rJson.put("Username", session().getUserName());
         rJson.put("Hostname", session().getHost());
         rJson.put("Port", session().getPort());
         
         if (!mLocalWorkingDir_.isEmpty())
-            rJson.put("LocalWorkingDir", mLocalWorkingDir_);
+        rJson.put("LocalWorkingDir", mLocalWorkingDir_);
         if (!mRemoteWorkingDir_.isEmpty())
-            rJson.put("RemoteWorkingDir", mRemoteWorkingDir_);
+        rJson.put("RemoteWorkingDir", mRemoteWorkingDir_);
         if (mPassword!=null)
-            rJson.put("Password", mPassword);
+        rJson.put("Password", mPassword);
         if (mKeyPath!=null)
-            rJson.put("KeyPath", mKeyPath);
+        rJson.put("KeyPath", mKeyPath);
         if (mBeforeCommand!=null)
-            rJson.put("BeforeCommand", mBeforeCommand);
+        rJson.put("BeforeCommand", mBeforeCommand);
         
         int tCompressLevel = -1;
         if (!session().getConfig("compression.c2s").equals("none")) tCompressLevel = Integer.parseInt(session().getConfig("compression_level"));
         if (tCompressLevel > 0)
-            rJson.put("CompressLevel", tCompressLevel);
+        rJson.put("CompressLevel", tCompressLevel);
     }
     @SuppressWarnings("rawtypes")
     public static SSHCore load(Map aJson) throws Exception {
@@ -83,11 +83,11 @@ public final class SSHCore implements IAutoShutdown {
                   UT.Code.toString(UT.Code.get(aJson, "BeforeCommand", "beforecommand", "bcommand", "bc"))
                  );
     }
-    public static SSHCore of(String aUsername, String aHostname, int aPort,
-                             @Nullable String aLocalWorkingDir, @Nullable String aRemoteWorkingDir,
-                             @Nullable String aPassword, @Nullable String aKeyPath,
-                             int aCompressLevel, @Nullable String aBeforeCommand
-                            ) throws Exception {
+    static SSHCore of(String aUsername, String aHostname, int aPort,
+                      @Nullable String aLocalWorkingDir, @Nullable String aRemoteWorkingDir,
+                      @Nullable String aPassword, @Nullable String aKeyPath,
+                      int aCompressLevel, @Nullable String aBeforeCommand
+                     ) throws Exception {
         SSHCore rServerSSH = null;
         try {
             rServerSSH = new SSHCore(aUsername, aHostname, aPort).setLocalWorkingDir(aLocalWorkingDir).setRemoteWorkingDir(aRemoteWorkingDir);
