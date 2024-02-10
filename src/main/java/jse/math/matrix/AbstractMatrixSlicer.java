@@ -1,6 +1,6 @@
 package jse.math.matrix;
 
-import jse.code.CS.SliceType;
+import jse.math.SliceType;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
 import jse.code.functional.IIndexFilter;

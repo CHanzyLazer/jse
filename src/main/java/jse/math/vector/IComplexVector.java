@@ -3,7 +3,7 @@ package jse.math.vector;
 import groovy.lang.Closure;
 import jse.atom.IAtom;
 import jse.atom.IXYZ;
-import jse.code.CS.SliceType;
+import jse.math.SliceType;
 import jse.code.collection.ISlice;
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.functional.IIndexFilter;

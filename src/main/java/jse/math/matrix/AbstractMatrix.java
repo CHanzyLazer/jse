@@ -1,6 +1,6 @@
 package jse.math.matrix;
 
-import jse.code.CS.SliceType;
+import jse.math.SliceType;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.ISlice;

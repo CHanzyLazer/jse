@@ -1,7 +1,7 @@
 package jse.math.vector;
 
 import groovy.lang.Closure;
-import jse.code.CS.SliceType;
+import jse.math.SliceType;
 import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.ISwapper;

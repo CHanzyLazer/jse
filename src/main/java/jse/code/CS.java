@@ -9,6 +9,7 @@ import jse.code.collection.AbstractCollections;
 import jse.io.IIOFiles;
 import jse.io.IOFiles;
 import jse.math.MathEX;
+import jse.math.SliceType;
 import jse.parallel.CompletedFuture;
 import jse.system.*;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +61,6 @@ public class CS {
     
     
     /** MathEX stuffs */
-    public enum SliceType {ALL}
     public final static SliceType ALL = SliceType.ALL;
     
     /** Sleep time stuff, ms */
