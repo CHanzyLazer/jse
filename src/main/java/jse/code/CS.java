@@ -501,9 +501,14 @@ public class CS {
         public final static ISystemExecutor EXE;
         public final static String JAR_PATH;
         public final static String JAR_DIR;
+        public final static String USER_HOME;
         static {
             // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
             UT.IO.InitHelper.init();
+            // 获取 user.home
+            String tUserHome = System.getProperty("user.home"); // user.home 这里统一认为 user.home 就是绝对路径
+            if (!tUserHome.isEmpty() && !tUserHome.endsWith("/") && !tUserHome.endsWith("\\")) tUserHome += "/";
+            USER_HOME = tUserHome;
             // 获取此 jar 的路径
             JAR_PATH = System.getProperty("java.class.path");
             Path tPath = UT.IO.toAbsolutePath_(JAR_PATH).getParent();

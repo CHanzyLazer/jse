@@ -1307,7 +1307,7 @@ public class UT {
             try {
                 tProcess = Runtime.getRuntime().exec(IS_WINDOWS ? "cmd /c cd" : "pwd");
             } catch (IOException e) {
-                return System.getProperty("user.home");
+                return USER_HOME_RAW;
             }
             
             String wd;
@@ -1315,7 +1315,7 @@ public class UT {
                 tProcess.waitFor();
                 wd = tReader.readLine().trim();
             } catch (Exception e) {
-                wd = System.getProperty("user.home");
+                wd = USER_HOME_RAW;
             }
             return wd;
         }
@@ -1337,7 +1337,7 @@ public class UT {
         public static Path toAbsolutePath_(String aPath) {
             if (aPath.startsWith("~")) {
                 // 默认不支持 ~
-                aPath = System.getProperty("user.home") + aPath.substring(1);
+                return Paths.get(USER_HOME_RAW + aPath.substring(1)); // user.home 这里统一认为 user.home 就是绝对路径
             }
             return WORKING_PATH.resolve(aPath);
         }
@@ -1354,10 +1354,12 @@ public class UT {
             }
         }
         
+        private final static String USER_HOME_RAW;
         // reset the working dir to correct value
         private final static Path WORKING_PATH;
         static {
             InitHelper.INITIALIZED = true;
+            USER_HOME_RAW = System.getProperty("user.home");
             // 全局修改工作目录为正确的目录
             String wd = pwd();
             System.setProperty("user.dir", wd);

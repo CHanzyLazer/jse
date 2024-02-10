@@ -7,8 +7,12 @@ import jse.parallel.IAutoShutdown;
 import jse.parallel.IExecutorEX;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Map;
+import java.util.Vector;
 
+import static jse.code.CS.Exec.USER_HOME;
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
 
 
@@ -24,6 +28,8 @@ import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
  */
 @SuppressWarnings("UnusedReturnValue")
 public final class SSHCore implements IAutoShutdown {
+    private final static String DEFAULT_KEY_PATH = USER_HOME+".ssh/id_rsa";
+    
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;
     private String mRemoteWorkingDir_;
@@ -33,11 +39,11 @@ public final class SSHCore implements IAutoShutdown {
     final JSch mJsch;
     private Session mSession;
     // 为了实现断开重连需要暂存密码
-    private String mPassword = null;
+    private @Nullable String mPassword = null;
     // 暂存密钥路径以供保存和加载
-    private String mKeyPath = null;
+    private @Nullable String mKeyPath = null;
     // 在 system 之前执行的指令
-    private String mBeforeCommand = null;
+    private @Nullable String mBeforeCommand = null;
     // 记录是否已经被关闭
     private volatile boolean mDead = false;
     
@@ -54,7 +60,7 @@ public final class SSHCore implements IAutoShutdown {
             rJson.put("RemoteWorkingDir", mRemoteWorkingDir_);
         if (mPassword!=null)
             rJson.put("Password", mPassword);
-        if (mKeyPath!=null && !mKeyPath.isEmpty() && !mKeyPath.equals(System.getProperty("user.home")+"/.ssh/id_rsa"))
+        if (mKeyPath!=null)
             rJson.put("KeyPath", mKeyPath);
         if (mBeforeCommand!=null)
             rJson.put("BeforeCommand", mBeforeCommand);
@@ -66,35 +72,39 @@ public final class SSHCore implements IAutoShutdown {
     }
     @SuppressWarnings("rawtypes")
     public static SSHCore load(Map aJson) throws Exception {
-        String aUsername = UT.Code.toString(UT.Code.get(aJson, "Username", "username", "user", "u"));
-        String aHostname = UT.Code.toString(UT.Code.get(aJson, "Hostname", "hostname", "host", "h"));
-        int aPort = ((Number) UT.Code.getWithDefault(aJson, 22, "Port", "port", "p")).intValue();
-        
-        @Nullable String aLocalWorkingDir  = UT.Code.toString(UT.Code.get(aJson, "LocalWorkingDir", "localworkingdir", "lwd"));
-        @Nullable String aRemoteWorkingDir = UT.Code.toString(UT.Code.get(aJson, "RemoteWorkingDir", "remoteworkingdir", "rwd", "wd"));
-        @Nullable String aPassword         = UT.Code.toString(UT.Code.get(aJson, "Password", "password", "pw"));
-        @Nullable String aKeyPath          = UT.Code.toString(UT.Code.getWithDefault(aJson, System.getProperty("user.home")+"/.ssh/id_rsa", "KeyPath", "keypath", "key", "k"));
-        
+        return of(UT.Code.toString(UT.Code.get(aJson, "Username", "username", "user", "u")),
+                  UT.Code.toString(UT.Code.get(aJson, "Hostname", "hostname", "host", "h")),
+                  ((Number) UT.Code.getWithDefault(aJson, 22, "Port", "port", "p")).intValue(),
+                  UT.Code.toString(UT.Code.get(aJson, "LocalWorkingDir", "localworkingdir", "lwd")),
+                  UT.Code.toString(UT.Code.get(aJson, "RemoteWorkingDir", "remoteworkingdir", "rwd", "wd")),
+                  UT.Code.toString(UT.Code.get(aJson, "Password", "password", "pw")),
+                  UT.Code.toString(UT.Code.getWithDefault(aJson, DEFAULT_KEY_PATH, "KeyPath", "keypath", "key", "k")),
+                  ((Number) UT.Code.getWithDefault(aJson, -1, "CompressLevel", "compresslevel", "cl")).intValue(),
+                  UT.Code.toString(UT.Code.get(aJson, "BeforeCommand", "beforecommand", "bcommand", "bc"))
+                 );
+    }
+    public static SSHCore of(String aUsername, String aHostname, int aPort,
+                             @Nullable String aLocalWorkingDir, @Nullable String aRemoteWorkingDir,
+                             @Nullable String aPassword, @Nullable String aKeyPath,
+                             int aCompressLevel, @Nullable String aBeforeCommand
+                            ) throws Exception {
         SSHCore rServerSSH = null;
         try {
             rServerSSH = new SSHCore(aUsername, aHostname, aPort).setLocalWorkingDir(aLocalWorkingDir).setRemoteWorkingDir(aRemoteWorkingDir);
             // 如果有密码使用密码连接，否则使用密钥连接
-            if (aPassword!=null) {
+            if (aPassword != null) {
                 rServerSSH.mSession.setPassword(aPassword);
                 rServerSSH.mPassword = aPassword;
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "password");
             } else {
-                rServerSSH.mJsch.addIdentity(aKeyPath);
+                rServerSSH.mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : aKeyPath);
                 rServerSSH.mKeyPath = aKeyPath;
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "publickey");
             }
             rServerSSH.mSession.connect();
             
-            Object tCompressLevel = UT.Code.get(aJson, "CompressLevel", "compresslevel", "cl");
-            Object tBeforeCommand = UT.Code.get(aJson, "BeforeCommand", "beforecommand", "bcommand", "bc");
-            
-            if (tCompressLevel != null) rServerSSH.setCompressionLevel(((Number)tCompressLevel).intValue());
-            if (tBeforeCommand != null) rServerSSH.setBeforeSystem(tBeforeCommand.toString());
+            if (aCompressLevel >= 0) rServerSSH.setCompressionLevel(aCompressLevel);
+            if (aBeforeCommand != null) rServerSSH.setBeforeSystem(aBeforeCommand);
         } catch (Exception e) {
             // 获取失败会自动关闭
             if (rServerSSH != null) rServerSSH.shutdown();
