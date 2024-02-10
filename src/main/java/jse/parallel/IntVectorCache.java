@@ -1,5 +1,6 @@
 package jse.parallel;
 
+import jse.code.Conf;
 import jse.code.collection.AbstractCollections;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IntArrayVector;
@@ -8,8 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static jse.code.CS.NO_CACHE;
 
 /**
  * 专门针对 {@link IIntVector} 和 {@code List<IIntVector>} 的全局线程独立缓存，
@@ -24,11 +23,11 @@ public class IntVectorCache {
     private IntVectorCache() {}
     
     public static void returnVec(@NotNull IIntVector aVector) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         IntArrayCache.returnArray(((IntArrayVector)aVector).internalData());
     }
     public static void returnVec(final @NotNull List<? extends @NotNull IIntVector> aVectorList) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         if (aVectorList.isEmpty()) return;
         // 这里不实际缓存 List<IVector>，而是直接统一归还内部值，这样实现会比较简单
         IntArrayCache.returnArrayFrom(aVectorList.size(), i -> ((IntArrayVector)aVectorList.get(i)).internalData());

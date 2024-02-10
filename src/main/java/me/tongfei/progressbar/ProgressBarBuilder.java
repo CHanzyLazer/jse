@@ -1,6 +1,5 @@
 package me.tongfei.progressbar;
 
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -25,7 +24,8 @@ public class ProgressBarBuilder {
     private boolean showSpeed = false;
     private boolean hideEta = false;
     private Function<ProgressState, Optional<Duration>> eta = Util::linearEta;
-    private DecimalFormat speedFormat;
+    private String speedFormat;
+    private int speedLength = 0;
     private ChronoUnit speedUnit = ChronoUnit.SECONDS;
     private long processed = 0;
     private Duration elapsed = Duration.ZERO;
@@ -85,12 +85,13 @@ public class ProgressBarBuilder {
     }
 
     public ProgressBarBuilder showSpeed() {
-        return showSpeed(new DecimalFormat("#.0"));
+        return showSpeed("%.1f", 4);
     }
 
-    public ProgressBarBuilder showSpeed(DecimalFormat speedFormat) {
+    public ProgressBarBuilder showSpeed(String speedFormat, int speedLength) {
         this.showSpeed = true;
         this.speedFormat = speedFormat;
+        this.speedLength = speedLength;
         return this;
     }
 
@@ -133,7 +134,7 @@ public class ProgressBarBuilder {
                 elapsed,
                 new DefaultProgressBarRenderer(
                         style, unitName, unitSize,
-                        showSpeed, speedFormat, speedUnit,
+                        showSpeed, speedFormat, speedLength, speedUnit,
                         !hideEta, eta),
                 consumer == null ? Util.createConsoleConsumer(maxRenderedLength) : consumer
         );

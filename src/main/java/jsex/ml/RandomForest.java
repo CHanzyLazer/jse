@@ -2,6 +2,7 @@ package jsex.ml;
 
 import com.google.common.collect.ImmutableMap;
 import jse.code.CS;
+import jse.code.Conf;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.NewCollections;
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 
-import static jse.code.CS.DEFAULT_THREAD_NUM;
 import static jse.code.CS.RANDOM;
 
 /**
@@ -32,7 +32,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     private final List<DecisionTree> mTrees;
     /** 构造一个空的随机森林，用于使用 put 手动构造 */
     public RandomForest(int aThreadNum) {super(new ParforThreadPool(aThreadNum, true)); mTrees = new ArrayList<>();}
-    public RandomForest() {this(DEFAULT_THREAD_NUM);} // 随机森林默认会开启并行
+    public RandomForest() {this(Conf.PARFOR_THREAD_NUM);} // 随机森林默认会开启并行
     public RandomForest put(DecisionTree aTree) {mTrees.add(aTree); return this;}
     
     /** 随机森林使用略微修改的决策树来增加随机性 */
@@ -117,7 +117,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
         rRandomForest.mTrees.addAll(AbstractCollections.map((List<?>)aLoadFrom.get("trees"), obj->DecisionTree.load((Map<?, ?>)obj)));
         return rRandomForest;
     }
-    public static RandomForest load(Map<?, ?> aLoadFrom) {return load(aLoadFrom, DEFAULT_THREAD_NUM);}
+    public static RandomForest load(Map<?, ?> aLoadFrom) {return load(aLoadFrom, Conf.PARFOR_THREAD_NUM);}
     
     
     private static long[] genSeeds_(int aSize, Random aRNG) {
@@ -180,7 +180,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
         this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, false);
     }
     public RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {
-        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, DEFAULT_THREAD_NUM);
+        this(aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, Conf.PARFOR_THREAD_NUM);
     }
     public RandomForest(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
         this(aTrainDataInput, aTrainDataOutput, 1000, 0.01);
@@ -193,7 +193,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
         this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, aThreadNum, RANDOM, false);
     }
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio) {
-        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, DEFAULT_THREAD_NUM);
+        this(aNoPBar, aTrainDataInput, aTrainDataOutput, aTreeNum, aTrainRatio, Conf.PARFOR_THREAD_NUM);
     }
     public RandomForest(boolean aNoPBar, @Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
         this(aNoPBar, aTrainDataInput, aTrainDataOutput, 1000, 0.01);

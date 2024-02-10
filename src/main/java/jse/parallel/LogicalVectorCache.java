@@ -1,5 +1,6 @@
 package jse.parallel;
 
+import jse.code.Conf;
 import jse.code.collection.AbstractCollections;
 import jse.math.vector.ILogicalVector;
 import jse.math.vector.BooleanArrayVector;
@@ -8,8 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static jse.code.CS.NO_CACHE;
 
 /**
  * 专门针对 {@link ILogicalVector} 和 {@code List<ILogicalVector>} 的全局线程独立缓存，
@@ -24,11 +23,11 @@ public class LogicalVectorCache {
     private LogicalVectorCache() {}
     
     public static void returnVec(@NotNull ILogicalVector aVector) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         BooleanArrayCache.returnArray(((BooleanArrayVector)aVector).internalData());
     }
     public static void returnVec(final @NotNull List<? extends @NotNull ILogicalVector> aVectorList) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         if (aVectorList.isEmpty()) return;
         // 这里不实际缓存 List<IVector>，而是直接统一归还内部值，这样实现会比较简单
         BooleanArrayCache.returnArrayFrom(aVectorList.size(), i -> ((BooleanArrayVector)aVectorList.get(i)).internalData());

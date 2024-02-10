@@ -61,6 +61,7 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
@@ -183,7 +184,7 @@ public class UT {
          * Get the value in the map according to the order of the keys
          * @author liqa
          */
-        public static @Nullable Object get(Map<?, ?> aMap, Object... aKeys) {
+        public static Object get(Map<?, ?> aMap, Object... aKeys) {
             if (aKeys == null) return null;
             for (Object tKey : aKeys) if (aMap.containsKey(tKey)) return aMap.get(tKey);
             return null;
@@ -292,7 +293,7 @@ public class UT {
          * parfor for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, Conf.PARFOR_THREAD_NUM, aGroovyTask);}
         @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -308,7 +309,7 @@ public class UT {
          * parwhile for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, DEFAULT_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, Conf.PARFOR_THREAD_NUM, aGroovyTask);}
         @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -503,7 +504,7 @@ public class UT {
             int hours = (int) java.lang.Math.floor(elapsedTime / 3600.0);
             int minutes = (int) java.lang.Math.floor(elapsedTime % 3600.0) / 60;
             double seconds = elapsedTime % 60.0;
-            (USE_ERR?System.err:System.out).printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
+            System.out.printf("%s time: %02d hour %02d min %02.2f sec\n", aMsg, hours, minutes, seconds);
         }
         public static double toc(boolean aFlag) {
             double elapsedTime = TIMER.get();
@@ -511,21 +512,45 @@ public class UT {
             return elapsedTime;
         }
         
-        public static boolean USE_ASCII = false;
-        public static boolean USE_ERR = false; // 一般来说 pbar 都是 err 流来保证 ssh 环境下及时更新，这里改为默认 out 从而可以有意避开扰乱
         private static @Nullable ProgressBar sProgressBar = null;
-        public static synchronized void progressBar(String aName, long aN) {
+        private static synchronized void progressBar_(String aName, long aN, ProgressBarStyle aStyle, PrintStream aConsumer, int aUpdateIntervalMillis, String aUnitName, long aUnitSize, int aMaxRenderedLength, boolean aShowSpeed, ChronoUnit aSpeedUnit) {
             if (sProgressBar != null) {
                 sProgressBar.close();
                 Main.removeGlobalAutoCloseable(sProgressBar);
             }
-            sProgressBar = new ProgressBarBuilder()
+            ProgressBarBuilder rBuilder = new ProgressBarBuilder()
                 .setTaskName(aName).setInitialMax(aN)
-                .setConsumer(new ConsoleProgressBarConsumer(USE_ERR?System.err:System.out)) // 这里总是需要重写一下避免乱码问题
-                .setUpdateIntervalMillis((int)FILE_SYSTEM_SLEEP_TIME_2)
-                .setStyle(USE_ASCII ? ProgressBarStyle.ASCII : ProgressBarStyle.COLORFUL_UNICODE_BLOCK)
-                .build();
+                .setConsumer(new ConsoleProgressBarConsumer(aConsumer)) // 这里总是需要重写一下避免乱码问题
+                .setUpdateIntervalMillis(aUpdateIntervalMillis)
+                .setStyle(aStyle)
+                .setUnit(aUnitName, aUnitSize)
+                .setMaxRenderedLength(aMaxRenderedLength);
+            if (aShowSpeed) rBuilder.showSpeed().setSpeedUnit(aSpeedUnit);
+            sProgressBar = rBuilder.build();
             Main.addGlobalAutoCloseable(sProgressBar);
+        }
+        public static synchronized void progressBar(Map<?, ?> aArgs) {
+            progressBar_(UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "TaskName", "taskname", "Name", "name")),
+                         ((Number)UT.Code.get(aArgs, "InitialMax", "initialmax", "Max", "max", "N", "n")).intValue(),
+                         (ProgressBarStyle)UT.Code.getWithDefault(aArgs, Conf.UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII, "Style", "style", "s"),
+                         (PrintStream)UT.Code.getWithDefault(aArgs, System.out, "Consumer", "consumer", "c"),
+                         ((Number)UT.Code.getWithDefault(aArgs, (int)FILE_SYSTEM_SLEEP_TIME_2, "UpdateIntervalMillis", "updateintervalmills", "Update", "update")).intValue(),
+                         UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "UnitName", "unitname", "uname")),
+                         ((Number)UT.Code.getWithDefault(aArgs, 1, "UnitSize", "unitsize", "usize")).longValue(),
+                         ((Number)UT.Code.getWithDefault(aArgs, -1, "MaxRenderedLength", "maxrenderlength", "Length", "length", "l")).intValue(),
+                         (Boolean)UT.Code.getWithDefault(aArgs, false, "ShowSpeed", "showspeed", "Speed", "speed"),
+                         (ChronoUnit)UT.Code.getWithDefault(aArgs, ChronoUnit.SECONDS, "SpeedUnit", "speedunit")
+                        );
+        }
+        public static synchronized void progressBar(String aName, long aN) {
+            progressBar_(aName, aN,
+                         Conf.UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII,
+                         System.out, // 一般来说 pbar 都是 err 流来保证 ssh 环境下及时更新，这里改为默认 out 从而可以有意避开扰乱
+                         (int)FILE_SYSTEM_SLEEP_TIME_2,
+                         "", 1,
+                         -1,
+                         false, ChronoUnit.SECONDS
+                        );
         }
         public static synchronized void progressBar(long aN) {progressBar("", aN);}
         public static synchronized void progressBar() {
@@ -537,6 +562,7 @@ public class UT {
                 sProgressBar = null;
             }
         }
+        @VisibleForTesting public static void pbar(Map<?, ?> aArgs) {progressBar(aArgs);}
         @VisibleForTesting public static void pbar(String aName, long aN) {progressBar(aName, aN);}
         @VisibleForTesting public static void pbar(long aN) {progressBar(aN);}
         @VisibleForTesting public static void pbar() {progressBar();}

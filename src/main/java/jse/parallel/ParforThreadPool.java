@@ -1,7 +1,7 @@
 package jse.parallel;
 
+import jse.code.Conf;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,9 +20,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * 当线程数为 1 时同一个实例的操作不会加锁 </p>
  */
 public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
-    /** 控制 parfor 的模式，在竞争模式下不同线程分配到的任务是不一定的，而关闭后是一定的，有时需要保证重复运行结果一致 */
-    @VisibleForTesting public static boolean DEFAULT_NO_COMPETITIVE = false;
-    
     private final Lock @Nullable[] mLocks; // 用来在并行时给每个线程独立加锁，保证每个线程独立写入的操作的可见性
     private final boolean mNoCompetitive;
     
@@ -43,7 +40,7 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
         }
         mNoCompetitive = aNoCompetitive;
     }
-    public ParforThreadPool(int aThreadNum) {this(aThreadNum, DEFAULT_NO_COMPETITIVE);}
+    public ParforThreadPool(int aThreadNum) {this(aThreadNum, Conf.PARFOR_NO_COMPETITIVE);}
     
     
     /**

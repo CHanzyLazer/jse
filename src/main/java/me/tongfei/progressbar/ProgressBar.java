@@ -2,10 +2,7 @@ package me.tongfei.progressbar;
 
 import me.tongfei.progressbar.wrapped.*;
 
-import static me.tongfei.progressbar.Util.createConsoleConsumer;
-
 import java.io.*;
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.BaseStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static me.tongfei.progressbar.Util.createConsoleConsumer;
 
 /**
  * A console-based progress bar with minimal runtime overhead.
@@ -38,7 +37,7 @@ public class ProgressBar implements AutoCloseable {
         this(
                 task, initialMax, 1000, false, false,
                 System.err, ProgressBarStyle.COLORFUL_UNICODE_BLOCK,
-                "", 1L, false, null,
+                "", 1L, false, null, 0,
                 ChronoUnit.SECONDS, 0L, Duration.ZERO
         );
     }
@@ -66,7 +65,8 @@ public class ProgressBar implements AutoCloseable {
             String unitName,
             long unitSize,
             boolean showSpeed,
-            DecimalFormat speedFormat,
+            String speedFormat,
+            int speedLength,
             ChronoUnit speedUnit,
             long processed,
             Duration elapsed
@@ -74,7 +74,7 @@ public class ProgressBar implements AutoCloseable {
         this(task, initialMax, updateIntervalMillis, continuousUpdate, clearDisplayOnFinish, processed, elapsed,
                 new DefaultProgressBarRenderer(
                         style, unitName, unitSize,
-                        showSpeed, speedFormat, speedUnit,
+                        showSpeed, speedFormat, speedLength, speedUnit,
                         true, Util::linearEta
                 ),
                 createConsoleConsumer(os)

@@ -1,6 +1,5 @@
 package me.tongfei.progressbar;
 
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -21,7 +20,8 @@ public class DefaultProgressBarRenderer implements ProgressBarRenderer {
     private final String unitName;
     private final long unitSize;
     private final boolean isSpeedShown;
-    private final DecimalFormat speedFormat;
+    private final String speedFormat;
+    private final int speedLength;
     private final ChronoUnit speedUnit;
     private final boolean isEtaShown;
     private final Function<ProgressState, Optional<Duration>> eta;
@@ -31,7 +31,8 @@ public class DefaultProgressBarRenderer implements ProgressBarRenderer {
             String unitName,
             long unitSize,
             boolean isSpeedShown,
-            DecimalFormat speedFormat,
+            String speedFormat,
+            int speedLength,
             ChronoUnit speedUnit,
             boolean isEtaShown,
             Function<ProgressState, Optional<Duration>> eta
@@ -40,7 +41,8 @@ public class DefaultProgressBarRenderer implements ProgressBarRenderer {
         this.unitName = unitName;
         this.unitSize = unitSize;
         this.isSpeedShown = isSpeedShown;
-        this.speedFormat = isSpeedShown && speedFormat == null ? new DecimalFormat() : speedFormat;
+        this.speedFormat = isSpeedShown && speedFormat==null ? "%.1f" : speedFormat;
+        this.speedLength = isSpeedShown && speedLength<=0 ? 4 : speedLength;
         this.speedUnit = speedUnit;
         this.isEtaShown = isEtaShown;
         this.eta = eta;
@@ -101,10 +103,12 @@ public class DefaultProgressBarRenderer implements ProgressBarRenderer {
             }
 
         if (elapsedSeconds == 0)
-            return "?" + unitName + suffix;
+            return Util.repeat(' ', speedLength-1) + "?" + unitName + suffix;
         double speed = (double) (progress.current - progress.start) / elapsedInUnit;
         double speedWithUnit = speed / unitSize;
-        return speedFormat.format(speedWithUnit) + unitName + suffix;
+        String speedStr = String.format(speedFormat, speedWithUnit);
+        if (speedStr.length() < speedLength) speedStr = Util.repeat(' ', speedLength-speedStr.length()) + speedStr;
+        return speedStr + unitName + suffix;
     }
 
     public String render(ProgressState progress, int maxLength) {

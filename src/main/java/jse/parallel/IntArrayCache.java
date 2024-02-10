@@ -1,5 +1,6 @@
 package jse.parallel;
 
+import jse.code.Conf;
 import jse.code.collection.IListGetter;
 import jse.code.collection.IListSetter;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import static jse.code.CS.NO_CACHE;
 import static jse.code.CS.ZL_INT;
 
 /**
@@ -33,7 +33,7 @@ public class IntArrayCache {
      * @author liqa
      */
     public static void returnArray(int @NotNull[] aArray) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         final int tSizeKey = aArray.length;
         if (tSizeKey == 0) return;
         CACHE.get().computeIfAbsent(tSizeKey, key -> new ObjectCachePool<>()).returnObject(aArray);
@@ -47,7 +47,7 @@ public class IntArrayCache {
      */
     public static int @NotNull[] getZeros(int aMinSize) {
         if (aMinSize <= 0) return ZL_INT;
-        if (NO_CACHE) return new int[aMinSize];
+        if (Conf.NO_CACHE) return new int[aMinSize];
         Map.Entry<Integer, IObjectPool<int[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (tEntry == null || tEntry.getKey()>=aMinSize*2) return new int[aMinSize];
         IObjectPool<int[]> tPool = tEntry.getValue();
@@ -65,7 +65,7 @@ public class IntArrayCache {
      */
     public static int @NotNull[] getArray(int aMinSize) {
         if (aMinSize <= 0) return ZL_INT;
-        if (NO_CACHE) return new int[aMinSize];
+        if (Conf.NO_CACHE) return new int[aMinSize];
         Map.Entry<Integer, IObjectPool<int[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (tEntry == null || tEntry.getKey()>=aMinSize*2) return new int[aMinSize];
         IObjectPool<int[]> tPool = tEntry.getValue();
@@ -79,7 +79,7 @@ public class IntArrayCache {
     
     /** 批量操作的接口，约定所有数组都等长 */
     public static void returnArrayFrom(int aMultiple, IListGetter<int @NotNull[]> aArrayGetter) {
-        if (NO_CACHE) return;
+        if (Conf.NO_CACHE) return;
         if (aMultiple <= 0) return;
         int[] tFirst = aArrayGetter.get(0);
         final int tSizeKey = tFirst.length;
@@ -95,7 +95,7 @@ public class IntArrayCache {
             for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, ZL_INT);
             return;
         }
-        if (NO_CACHE) {
+        if (Conf.NO_CACHE) {
             for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, new int[aMinSize]);
             return;
         }
@@ -129,7 +129,7 @@ public class IntArrayCache {
             for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, ZL_INT);
             return;
         }
-        if (NO_CACHE) {
+        if (Conf.NO_CACHE) {
             for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, new int[aMinSize]);
             return;
         }
