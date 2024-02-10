@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.function.Supplier;
 
 import static jse.code.CS.Exec.EXE;
-import static jse.code.CS.WORKING_DIR;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 使用 lammps 来进行参数计算
@@ -70,7 +70,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         mPairStyle = aPairStyle;
         mPairCoeff = aPairCoeff;
         // 最后设置一下工作目录
-        mWorkingDir = WORKING_DIR.replaceAll("%n", "LPC@"+UT.Code.randID());
+        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "LPC@"+UT.Code.randID());
     }
     
     private void runRoot_(Runnable aRunnable) {

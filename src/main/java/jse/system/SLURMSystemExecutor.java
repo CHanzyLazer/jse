@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Range;
 import java.util.*;
 
 import static jse.code.CS.*;
+import static jse.code.CS.Exec.NO_LOG_LINUX;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * @author liqa
@@ -21,8 +23,8 @@ import static jse.code.CS.*;
  */
 public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSystemExecutor> {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
-    public final static String SPLIT_NODE_SCRIPT_PATH = WORKING_DIR+"splitNodeList.sh";
-    public final static String BATCHED_SCRIPT_DIR = WORKING_DIR+"batched/";
+    public final static String SPLIT_NODE_SCRIPT_PATH = TEMP_WORKING_DIR +"splitNodeList.sh";
+    public final static String BATCHED_SCRIPT_DIR = TEMP_WORKING_DIR +"batched/";
     public final static String DEFAULT_OUTFILE_DIR = ".temp/slurm/";
     public final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%i-%n";
     
@@ -45,7 +47,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         mMaxTaskNumPerNode = aMaxTaskNumPerNode;
         mMaxNodeNum = aMaxNodeNum;
         // 需要初始化输出的文件夹
-        mWorkingDir = WORKING_DIR.replaceAll("%n", mUniqueJobName);
+        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", mUniqueJobName);
         mSplitNodeScriptPath = SPLIT_NODE_SCRIPT_PATH.replaceAll("%n", mUniqueJobName);
         mBatchedScriptDir = BATCHED_SCRIPT_DIR.replaceAll("%n", mUniqueJobName);
         // 从资源文件中创建已经准备好的 SplitNodeScript

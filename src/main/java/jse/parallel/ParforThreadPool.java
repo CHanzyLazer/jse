@@ -1,6 +1,5 @@
 package jse.parallel;
 
-import jse.code.Conf;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
@@ -8,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static jse.code.Conf.PARFOR_NO_COMPETITIVE;
 
 /**
  * @author liqa
@@ -40,7 +41,7 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
         }
         mNoCompetitive = aNoCompetitive;
     }
-    public ParforThreadPool(int aThreadNum) {this(aThreadNum, Conf.PARFOR_NO_COMPETITIVE);}
+    public ParforThreadPool(int aThreadNum) {this(aThreadNum, PARFOR_NO_COMPETITIVE);}
     
     
     /**

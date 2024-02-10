@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jse.code.CS.Exec.EXE;
-import static jse.code.CS.Exec.JAR_DIR;
-import static jse.code.CS.*;
+import static jse.code.CS.Exec.*;
+import static jse.code.CS.VERSION;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 其他 jni 库或者此项目需要依赖的 c 库；
@@ -98,7 +98,7 @@ public class MiMalloc {
         boolean tNoCmake = EXE.system("cmake --version") != 0;
         EXE.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("MIMALLOC BUILD ERROR: No camke environment.");
-        String tWorkingDir = WORKING_DIR.replaceAll("%n", "mimalloc");
+        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "mimalloc");
         // 如果已经存在则先删除
         UT.IO.removeDir(tWorkingDir);
         // 首先获取源码路径，这里直接从 resource 里输出

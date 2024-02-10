@@ -16,9 +16,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.awt.*;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -49,16 +49,6 @@ public class CS {
         @Override public double y() {return 0.0;}
         @Override public double z() {return 0.0;}
     };
-    
-    public final static String WORKING_DIR = ".temp/%n/";
-    
-    public final static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
-    public final static boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
-    public final static String NO_LOG_LINUX = "/dev/null";
-    public final static String NO_LOG_WIN = "NUL";
-    public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
-    public final static String JNILIB_EXTENSION = IS_WINDOWS ? ".dll" : (IS_MAC ? ".jnilib" : ".so");
-    
     
     /** MathEX stuffs */
     public final static SliceType ALL = SliceType.ALL;
@@ -498,24 +488,63 @@ public class CS {
     
     /** 内部运行相关，使用子类分割避免冗余初始化 */
     public static class Exec {
+        /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
+        public final static class InitHelper {
+            private static volatile boolean INITIALIZED = false;
+            
+            public static boolean initialized() {return INITIALIZED;}
+            @SuppressWarnings("ResultOfMethodCallIgnored")
+            public static void init() {
+                // 手动调用此值来强制初始化
+                if (!INITIALIZED) String.valueOf(WORKING_DIR);
+            }
+        }
+        
+        public final static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+        public final static boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
+        public final static String NO_LOG_LINUX = "/dev/null";
+        public final static String NO_LOG_WIN = "NUL";
+        public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
+        public final static String JNILIB_EXTENSION = IS_WINDOWS ? ".dll" : (IS_MAC ? ".jnilib" : ".so");
+        
         public final static ISystemExecutor EXE;
         public final static String JAR_PATH;
         public final static String JAR_DIR;
         public final static String USER_HOME;
+        public final static String USER_HOME_DIR;
+        public final static String WORKING_DIR;
+        
         static {
-            // 先手动加载 UT，会自动重新设置工作目录，保证路径的正确性
-            UT.IO.InitHelper.init();
-            // 获取 user.home
-            String tUserHome = System.getProperty("user.home"); // user.home 这里统一认为 user.home 就是绝对路径
-            if (!tUserHome.isEmpty() && !tUserHome.endsWith("/") && !tUserHome.endsWith("\\")) tUserHome += "/";
-            USER_HOME = tUserHome;
+            InitHelper.INITIALIZED = true;
+            // 先获取 user.home
+            USER_HOME = System.getProperty("user.home"); // user.home 这里统一认为 user.home 就是绝对路径
+            USER_HOME_DIR = (USER_HOME.isEmpty() || USER_HOME.endsWith("/") || USER_HOME.endsWith("\\")) ? USER_HOME : (USER_HOME+"/");
+            // 然后通过执行指令来初始化 WORKING_DIR；
+            // 这种写法可以保证有最大的兼容性，即使后续 EXE 可能非法（不是所有平台都有 bash）
+            String wd = USER_HOME;
+            Process tProcess = null;
+            try {tProcess = Runtime.getRuntime().exec(IS_WINDOWS ? "cmd /c cd" : "pwd");}
+            catch (IOException ignored) {}
+            if (tProcess != null) {
+                try (BufferedReader tReader = new BufferedReader(new InputStreamReader(tProcess.getInputStream()))) {
+                    tProcess.waitFor();
+                    wd = tReader.readLine().trim();
+                } catch (Exception ignored) {}
+            }
+            // 全局修改工作目录为正确的目录
+            System.setProperty("user.dir", wd);
+            // jse 内部使用的 dir 需要末尾增加 `/`
+            if (!wd.isEmpty() && !wd.endsWith("/") && !wd.endsWith("\\")) wd += "/";
+            WORKING_DIR = wd;
+            
             // 获取此 jar 的路径
-            JAR_PATH = System.getProperty("java.class.path");
-            Path tPath = UT.IO.toAbsolutePath_(JAR_PATH).getParent();
+            JAR_PATH = System.getProperty("java.class.path"); // 此属性理论上会直接获取到绝对路径，即使不是也和 user.home 一样保持原样
+            Path tPath = Paths.get(JAR_PATH).getParent(); // 注意这里不能使用 UT.IO 避免循环初始化
             String tJarDir = tPath==null ? "" : tPath.toString();
             if (!tJarDir.isEmpty() && !tJarDir.endsWith("/") && !tJarDir.endsWith("\\")) tJarDir += "/";
             JAR_DIR = tJarDir;
-            // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令
+            // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令；
+            // 这种选择可以保证指令使用统一，即使这些终端不一定所有平台都有
             EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new BashSystemExecutor();
             // 在程序结束时关闭 EXE
             Main.addGlobalAutoCloseable(EXE);

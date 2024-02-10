@@ -6,7 +6,7 @@ import jse.code.UT;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jse.code.CS.WORKING_DIR;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * @author liqa
@@ -22,7 +22,7 @@ public class StepJobManager {
     
     public StepJobManager(String aUniqueName) {this(aUniqueName, -1);}
     public StepJobManager(String aUniqueName, int aForceStep) {
-        String tWorkingDir = WORKING_DIR.replaceAll("%n", "SJM@" + aUniqueName);
+        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "SJM@" + aUniqueName);
         mStepFile = tWorkingDir +"step";
         mJobList = new ArrayList<>();
         mConnectorList = new ArrayList<>();

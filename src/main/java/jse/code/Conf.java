@@ -7,6 +7,9 @@ package jse.code;
 public class Conf {
     private Conf() {}
     
+    /** 设置 jse 许多类工作的临时目录，一般来说使用 .jse/ 目录应该会更加合适，这里为了兼容并减少目录数还是默认保持使用 .temp */
+    public static String TEMP_WORKING_DIR = ".temp/%n/";
+    
     /** {@link System#out} 和 {@link System#err} 是否支持复杂的 unicode 字符，禁用后可以避免乱码问题 */
     public static boolean UNICODE_SUPPORT = true;
     

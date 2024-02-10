@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
-import static jse.code.CS.WORKING_DIR;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * @author liqa
@@ -31,7 +31,7 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> implements IShutdown
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader) {this(aUniqueName, aLongTimeJobPoolLoader, false);}
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader, boolean aWaitUntilDone) {this(aUniqueName, aLongTimeJobPoolLoader, aWaitUntilDone, -1);}
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader, boolean aWaitUntilDone, int aForceStep) {
-        String tWorkingDir = WORKING_DIR.replaceAll("%n", "LTJM@" + aUniqueName);
+        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "LTJM@" + aUniqueName);
         mStepFile = tWorkingDir +"step";
         mJobPoolFile = tWorkingDir + "jobpool";
         mShutdownFile = tWorkingDir + "shutdown";

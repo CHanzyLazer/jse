@@ -1,12 +1,13 @@
 package jse.parallel;
 
-import jse.code.Conf;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Supplier;
+
+import static jse.code.Conf.NO_CACHE;
 
 /**
  * 用于作为缓存的对象池，会在内存不足时自动回收缓存
@@ -32,7 +33,7 @@ public class ObjectCachePool<T> implements IObjectPool<T> {
     T initialValue() {return null;}
     
     @Override public T getObject() {
-        if (Conf.NO_CACHE) return initialValue();
+        if (NO_CACHE) return initialValue();
         T tObj = null;
         while (!mCache.isEmpty()) {
             tObj = mCache.pollLast().get();
@@ -41,7 +42,7 @@ public class ObjectCachePool<T> implements IObjectPool<T> {
         return tObj==null ? initialValue() : tObj;
     }
     @Override public void returnObject(@NotNull T aObject) {
-        if (Conf.NO_CACHE) return;
+        if (NO_CACHE) return;
         mCache.addLast(new SoftReference<>(aObject));
     }
 }

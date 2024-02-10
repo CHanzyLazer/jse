@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static jse.code.CS.*;
 import static jse.code.CS.Exec.EXE;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 长时的 lammps 运行器，开启一个长时挂起的 lammps 程序来运行，可以绕过 system 指令限制
@@ -51,7 +52,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         mSleepTime = FILE_SYSTEM_SLEEP_TIME;
         // 设置一下工作目录
         String tUniqueJobName = "CLMP@"+UT.Code.randID();
-        mWorkingDir = WORKING_DIR.replaceAll("%n", tUniqueJobName);
+        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", tUniqueJobName);
         mLogPath = aLogPath.replaceAll("%n", tUniqueJobName);
         // 提交长时的 lammps 任务
         IInFile tConstantInFile = LmpIn.CONSTANT();

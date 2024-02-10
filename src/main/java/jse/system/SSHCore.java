@@ -12,7 +12,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Vector;
 
-import static jse.code.CS.Exec.USER_HOME;
+import static jse.code.CS.Exec.USER_HOME_DIR;
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
 
 
@@ -28,7 +28,7 @@ import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
  */
 @SuppressWarnings("UnusedReturnValue")
 final class SSHCore implements IAutoShutdown {
-    private final static String DEFAULT_KEY_PATH = USER_HOME+".ssh/id_rsa";
+    private final static String DEFAULT_KEY_PATH = USER_HOME_DIR+".ssh/id_rsa";
     
     // 本地和远程的工作目录
     private String mLocalWorkingDir_;

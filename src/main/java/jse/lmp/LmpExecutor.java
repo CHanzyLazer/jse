@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static jse.code.CS.Exec.EXE;
-import static jse.code.CS.WORKING_DIR;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 一般的 lammps 运行器实现，使用输入的 ISystemExecutor 来执行
@@ -29,7 +29,7 @@ public final class LmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
         mLmpExe = aLmpExe;
         mLogPath = aLogPath;
         // 最后设置一下工作目录
-        mWorkingDir = WORKING_DIR.replaceAll("%n", "LMP@"+UT.Code.randID());
+        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "LMP@"+UT.Code.randID());
     }
     public LmpExecutor(String aLmpExe, @Nullable String aLogPath) {this(EXE, aLmpExe, aLogPath); setDoNotShutdown_(true);}
     public LmpExecutor(String aLmpExe) {this(aLmpExe, null);}

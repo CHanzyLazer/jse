@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
-import static jse.code.CS.Exec.EXE;
-import static jse.code.CS.Exec.JAR_DIR;
-import static jse.code.CS.*;
+import static jse.code.CS.Exec.*;
+import static jse.code.CS.MASS;
+import static jse.code.CS.VERSION;
+import static jse.code.CS.ZL_STR;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 基于 jni 的调用本地原生 lammps 的类，
@@ -218,7 +220,7 @@ public class NativeLmp implements IAutoShutdown {
         boolean tNoCmake = EXE.system("cmake --version") != 0;
         EXE.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("NATIVE_LMP BUILD ERROR: No camke environment.");
-        String tWorkingDir = WORKING_DIR.replaceAll("%n", "nativelmp");
+        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "nativelmp");
         // 如果已经存在则先删除
         UT.IO.removeDir(tWorkingDir);
         // 如果有 NATIVE_LMP_DIR 但是不合法，则需要下载 lammps

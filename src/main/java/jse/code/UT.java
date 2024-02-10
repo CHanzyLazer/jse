@@ -76,6 +76,10 @@ import java.util.zip.ZipOutputStream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jse.code.CS.*;
+import static jse.code.CS.Exec.USER_HOME;
+import static jse.code.CS.Exec.WORKING_DIR;
+import static jse.code.Conf.PARFOR_THREAD_NUM;
+import static jse.code.Conf.UNICODE_SUPPORT;
 
 /**
  * @author liqa
@@ -293,7 +297,7 @@ public class UT {
          * parfor for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, Conf.PARFOR_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, PARFOR_THREAD_NUM, aGroovyTask);}
         @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -309,7 +313,7 @@ public class UT {
          * parwhile for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, Conf.PARFOR_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, PARFOR_THREAD_NUM, aGroovyTask);}
         @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -532,7 +536,7 @@ public class UT {
         public static synchronized void progressBar(Map<?, ?> aArgs) {
             progressBar_(UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "TaskName", "taskname", "Name", "name")),
                          ((Number)UT.Code.get(aArgs, "InitialMax", "initialmax", "Max", "max", "N", "n")).intValue(),
-                         (ProgressBarStyle)UT.Code.getWithDefault(aArgs, Conf.UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII, "Style", "style", "s"),
+                         (ProgressBarStyle)UT.Code.getWithDefault(aArgs, UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII, "Style", "style", "s"),
                          (PrintStream)UT.Code.getWithDefault(aArgs, System.out, "Consumer", "consumer", "c"),
                          ((Number)UT.Code.getWithDefault(aArgs, (int)FILE_SYSTEM_SLEEP_TIME_2, "UpdateIntervalMillis", "updateintervalmills", "Update", "update")).intValue(),
                          UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "UnitName", "unitname", "uname")),
@@ -544,7 +548,7 @@ public class UT {
         }
         public static synchronized void progressBar(String aName, long aN) {
             progressBar_(aName, aN,
-                         Conf.UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII,
+                         UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII,
                          System.out, // 一般来说 pbar 都是 err 流来保证 ssh 环境下及时更新，这里改为默认 out 从而可以有意避开扰乱
                          (int)FILE_SYSTEM_SLEEP_TIME_2,
                          "", 1,
@@ -1296,35 +1300,10 @@ public class UT {
         }
         
         /**
-         * <p> use Runtime.exec() to get the working dir </p>
-         * <p> it seems like the only way to get the correct working dir in matlab </p>
-         * <p> return `System.getProperty("user.home")` if failed in exec </p>
-         * @author liqa
-         * @return the working dir
-         */
-        public static String pwd() {
-            Process tProcess;
-            try {
-                tProcess = Runtime.getRuntime().exec(IS_WINDOWS ? "cmd /c cd" : "pwd");
-            } catch (IOException e) {
-                return USER_HOME_RAW;
-            }
-            
-            String wd;
-            try (BufferedReader tReader = new BufferedReader(new InputStreamReader(tProcess.getInputStream()))) {
-                tProcess.waitFor();
-                wd = tReader.readLine().trim();
-            } catch (Exception e) {
-                wd = USER_HOME_RAW;
-            }
-            return wd;
-        }
-        
-        /**
          * check whether the two paths are actually same
          * @author liqa
          */
-        public static boolean samePath(String aPath1, String aPath2) {return WORKING_PATH.resolve(aPath1).normalize().equals(WORKING_PATH.resolve(aPath2).normalize());}
+        public static boolean samePath(String aPath1, String aPath2) {return WORKING_DIR_PATH.resolve(aPath1).normalize().equals(WORKING_DIR_PATH.resolve(aPath2).normalize());}
         
         /**
          * Right `toAbsolutePath` method,
@@ -1337,9 +1316,9 @@ public class UT {
         public static Path toAbsolutePath_(String aPath) {
             if (aPath.startsWith("~")) {
                 // 默认不支持 ~
-                return Paths.get(USER_HOME_RAW + aPath.substring(1)); // user.home 这里统一认为 user.home 就是绝对路径
+                return Paths.get(USER_HOME + aPath.substring(1)); // user.home 这里统一认为 user.home 就是绝对路径
             }
-            return WORKING_PATH.resolve(aPath);
+            return WORKING_DIR_PATH.resolve(aPath);
         }
         
         /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
@@ -1350,20 +1329,17 @@ public class UT {
             @SuppressWarnings("ResultOfMethodCallIgnored")
             public static void init() {
                 // 手动调用此值来强制初始化
-                if (!INITIALIZED) String.valueOf(WORKING_PATH);
+                if (!INITIALIZED) String.valueOf(WORKING_DIR_PATH);
             }
         }
         
-        private final static String USER_HOME_RAW;
         // reset the working dir to correct value
-        private final static Path WORKING_PATH;
+        private final static Path WORKING_DIR_PATH;
         static {
             InitHelper.INITIALIZED = true;
-            USER_HOME_RAW = System.getProperty("user.home");
-            // 全局修改工作目录为正确的目录
-            String wd = pwd();
-            System.setProperty("user.dir", wd);
-            WORKING_PATH = Paths.get(wd);
+            // 现在初始化工作目录放到了 CS.Exec 中，为了保证逻辑不变这里也会强制初始化
+            CS.Exec.InitHelper.init();
+            WORKING_DIR_PATH = Paths.get(WORKING_DIR);
         }
     }
     
@@ -1377,6 +1353,7 @@ public class UT {
         public static Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return exec().submitSystem(aCommand, aOutFilePath);}
         public static List<String> system_str(String aCommand) {return exec().system_str(aCommand);}
         public static Future<List<String>> submitSystem_str(String aCommand) {return exec().submitSystem_str(aCommand);}
+        static {CS.Exec.InitHelper.init();}
     }
     
     

@@ -1,6 +1,5 @@
 package jse.parallel;
 
-import jse.code.Conf;
 import jse.code.collection.IListGetter;
 import jse.code.collection.IListSetter;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +10,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import static jse.code.CS.*;
+import static jse.code.CS.ZL_BOOL;
+import static jse.code.Conf.NO_CACHE;
 
 /**
  * 专门针对 {@code boolean[]} 的全局线程独立缓存，
@@ -33,7 +33,7 @@ public class BooleanArrayCache {
      * @author liqa
      */
     public static void returnArray(boolean @NotNull[] aArray) {
-        if (Conf.NO_CACHE) return;
+        if (NO_CACHE) return;
         final int tSizeKey = aArray.length;
         if (tSizeKey == 0) return;
         CACHE.get().computeIfAbsent(tSizeKey, key -> new ObjectCachePool<>()).returnObject(aArray);
@@ -47,7 +47,7 @@ public class BooleanArrayCache {
      */
     public static boolean @NotNull[] getZeros(int aMinSize) {
         if (aMinSize <= 0) return ZL_BOOL;
-        if (Conf.NO_CACHE) return new boolean[aMinSize];
+        if (NO_CACHE) return new boolean[aMinSize];
         Map.Entry<Integer, IObjectPool<boolean[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (tEntry == null || tEntry.getKey()>=aMinSize*2) return new boolean[aMinSize];
         IObjectPool<boolean[]> tPool = tEntry.getValue();
@@ -65,7 +65,7 @@ public class BooleanArrayCache {
      */
     public static boolean @NotNull[] getArray(int aMinSize) {
         if (aMinSize <= 0) return ZL_BOOL;
-        if (Conf.NO_CACHE) return new boolean[aMinSize];
+        if (NO_CACHE) return new boolean[aMinSize];
         Map.Entry<Integer, IObjectPool<boolean[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (tEntry == null || tEntry.getKey()>=aMinSize*2) return new boolean[aMinSize];
         IObjectPool<boolean[]> tPool = tEntry.getValue();
@@ -79,7 +79,7 @@ public class BooleanArrayCache {
     
     /** 批量操作的接口，约定所有数组都等长 */
     public static void returnArrayFrom(int aMultiple, IListGetter<boolean @NotNull[]> aArrayGetter) {
-        if (Conf.NO_CACHE) return;
+        if (NO_CACHE) return;
         if (aMultiple <= 0) return;
         boolean[] tFirst = aArrayGetter.get(0);
         final int tSizeKey = tFirst.length;
@@ -95,7 +95,7 @@ public class BooleanArrayCache {
             for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, ZL_BOOL);
             return;
         }
-        if (Conf.NO_CACHE) {
+        if (NO_CACHE) {
             for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, new boolean[aMinSize]);
             return;
         }
@@ -129,7 +129,7 @@ public class BooleanArrayCache {
             for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, ZL_BOOL);
             return;
         }
-        if (Conf.NO_CACHE) {
+        if (NO_CACHE) {
             for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, new boolean[aMinSize]);
             return;
         }

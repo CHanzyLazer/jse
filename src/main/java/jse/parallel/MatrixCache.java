@@ -1,6 +1,5 @@
 package jse.parallel;
 
-import jse.code.Conf;
 import jse.code.collection.AbstractCollections;
 import jse.math.matrix.ColumnMatrix;
 import jse.math.matrix.DoubleArrayMatrix;
@@ -10,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static jse.code.Conf.NO_CACHE;
 
 /**
  * 专门针对 {@link IMatrix} 和 {@code List<IMatrix>} 的全局线程独立缓存，
@@ -24,11 +25,11 @@ public class MatrixCache {
     private MatrixCache() {}
     
     public static void returnMat(@NotNull IMatrix aMatrix) {
-        if (Conf.NO_CACHE) return;
+        if (NO_CACHE) return;
         DoubleArrayCache.returnArray(((DoubleArrayMatrix)aMatrix).internalData());
     }
     public static void returnMat(final @NotNull List<? extends @NotNull IMatrix> aMatrixList) {
-        if (Conf.NO_CACHE) return;
+        if (NO_CACHE) return;
         if (aMatrixList.isEmpty()) return;
         // 这里不实际缓存 List<IMatrix>，而是直接统一归还内部值，这样实现会比较简单
         DoubleArrayCache.returnArrayFrom(aMatrixList.size(), i -> ((DoubleArrayMatrix)aMatrixList.get(i)).internalData());

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.*;
 
 import static jse.code.CS.*;
+import static jse.code.Conf.TEMP_WORKING_DIR;
 import static jse.code.UT.Code.newBox;
 
 
@@ -79,7 +80,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;
         // 最后设置一下工作目录
-        mWorkingDir = WORKING_DIR.replaceAll("%n", "DUMP_GEN@"+UT.Code.randID());
+        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "DUMP_GEN@"+UT.Code.randID());
     }
     
     private static LmpIn getGenDumpIn(double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {
