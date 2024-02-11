@@ -1,11 +1,9 @@
 package jse.clib;
 
 import jse.code.UT;
-import jse.parallel.MPI;
 
 import static jse.code.CS.Exec.JAR_DIR;
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.TEMP_WORKING_DIR;
 
 /**
  * 其他 jni 库或者此项目需要依赖的 c 库；
@@ -51,6 +49,7 @@ public class JNIUtil {
         // 直接从内部资源解压到需要目录，如果已经存在则先删除
         UT.IO.removeDir(JNIUTIL_INCLUDE_DIR);
         UT.IO.copy(UT.IO.getResource("jniutil/src/"+JNIUTIL_HEADER_NAME), JNIUTIL_HEADER_PATH);
+        System.out.println("JNIUTIL INIT INFO: jniutil successfully installed.");
     }
     
     static {

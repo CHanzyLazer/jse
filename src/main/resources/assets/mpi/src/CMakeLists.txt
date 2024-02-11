@@ -34,6 +34,10 @@ else ()
 endif(JNI_FOUND)
 
 
+# add jniutil
+include_directories($ENV{JNIUTIL_HOME}include)
+
+
 # add mpi
 find_package(MPI)
 if (MPI_C_FOUND)

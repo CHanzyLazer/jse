@@ -3,6 +3,7 @@ package jse.lmp;
 import jse.atom.IAtom;
 import jse.atom.IAtomData;
 import jse.atom.IXYZ;
+import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
 import jse.code.UT;
 import jse.io.IInFile;
@@ -275,11 +276,15 @@ public class NativeLmp implements IAutoShutdown {
             for (String tName : LMPSRC_NAME) {
                 UT.IO.copy(UT.IO.getResource("lmp/src/"+tName), tSrcDir+tName);
             }
-            // 这里对 CMakeLists.txt 特殊处理，替换其中的 lammps 库路径为设置好的路径
+            // 这里对 CMakeLists.txt 特殊处理
             try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("lmp/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tSrcDir+"CMakeLists.txt")) {
                 String tLine;
                 while ((tLine = tReader.readLine()) != null) {
+                    // 替换其中的 jniutil 库路径为设置好的路径
+                    tLine = tLine.replace("$ENV{JNIUTIL_HOME}", JNIUtil.JNIUTIL_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    // 替换其中的 lammps 库路径为设置好的路径
                     tLine = tLine.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    // 替换其中的 mimalloc 库路径为设置好的路径
                     if (Conf.USE_MIMALLOC) {
                     tLine = tLine.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
                     }
@@ -318,6 +323,8 @@ public class NativeLmp implements IAutoShutdown {
     
     static {
         InitHelper.INITIALIZED = true;
+        // 依赖 jniutil
+        JNIUtil.InitHelper.init();
         // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
         if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
         

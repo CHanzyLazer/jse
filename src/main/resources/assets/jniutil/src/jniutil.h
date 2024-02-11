@@ -56,7 +56,7 @@ extern "C" {
 #endif
 
 /** jarray to buf stuffs */
-inline void parseBuf2JArrayV(JNIEnv *aEnv, jobject rJArray, jsize aJStart, int aJArrayType, const void *aBuf, jsize aBStart, jsize aLen) {
+inline void parseBuf2JArrayV(JNIEnv *aEnv, jobject rJArray, jsize aJStart, jint aJArrayType, const void *aBuf, jsize aBStart, jsize aLen) {
     if (rJArray==NULL || aBuf==NULL) return;
     switch (aJArrayType) {
 #ifdef __cplusplus
@@ -81,9 +81,9 @@ inline void parseBuf2JArrayV(JNIEnv *aEnv, jobject rJArray, jsize aJStart, int a
         default:            {return;}
     }
 }
-inline void parseBuf2JArray(JNIEnv *aEnv, jobject rJArray, int aJArrayType, const void *aBuf, jsize aLen) {parseBuf2JArrayV(aEnv, rJArray, 0, aJArrayType, aBuf, 0, aLen);}
+inline void parseBuf2JArray(JNIEnv *aEnv, jobject rJArray, jint aJArrayType, const void *aBuf, jsize aLen) {parseBuf2JArrayV(aEnv, rJArray, 0, aJArrayType, aBuf, 0, aLen);}
 
-inline void parseJArray2BufV(JNIEnv *aEnv, jobject aJArray, jsize aJStart, int aJArrayType, void *rBuf, jsize aBStart, jsize aLen) {
+inline void parseJArray2BufV(JNIEnv *aEnv, jobject aJArray, jsize aJStart, jint aJArrayType, void *rBuf, jsize aBStart, jsize aLen) {
     if (aJArray==NULL || rBuf==NULL) return;
     switch (aJArrayType) {
 #ifdef __cplusplus
@@ -108,9 +108,9 @@ inline void parseJArray2BufV(JNIEnv *aEnv, jobject aJArray, jsize aJStart, int a
         default:            {return;}
     }
 }
-inline void parseJArray2Buf(JNIEnv *aEnv, jobject aJArray, int aJArrayType, void *rBuf, jsize aLen) {parseJArray2BufV(aEnv, aJArray, 0, aJArrayType, rBuf, 0, aLen);}
+inline void parseJArray2Buf(JNIEnv *aEnv, jobject aJArray, jint aJArrayType, void *rBuf, jsize aLen) {parseJArray2BufV(aEnv, aJArray, 0, aJArrayType, rBuf, 0, aLen);}
 
-inline void *allocBuf(int aJArrayType, jsize aSize) {
+inline void *allocBuf(jint aJArrayType, jsize aSize) {
     if (aSize <= 0) return NULL;
     switch (aJArrayType) {
         case JTYPE_BYTE:    {return MALLOCN(jbyte   , aSize);}
@@ -356,39 +356,49 @@ inline void parsedouble2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArray, con
 
 
 /** string stuffs */
-char **parseArgs(JNIEnv *aEnv, jobjectArray aArgs, int *rLen) {
+inline char *parseStr(JNIEnv *aEnv, jstring aStr) {
 #ifdef __cplusplus
-    jsize tLen = aEnv->GetArrayLength( aArgs);
-    char **sArgs = CALLOC(char*, tLen+1);
+    const char *tBuf = aEnv->GetStringUTFChars(aStr, NULL);
+    char *rStr = STRDUP(tBuf);
+    aEnv->ReleaseStringUTFChars(aStr, tBuf);
+#else
+    const char *tBuf = (*aEnv)->GetStringUTFChars(aEnv, aStr, NULL);
+    char *rStr = STRDUP(tBuf);
+    (*aEnv)->ReleaseStringUTFChars(aEnv, aStr, tBuf);
+#endif
+    return rStr;
+}
+inline char **parseStrBuf(JNIEnv *aEnv, jobjectArray aStrBuf, int *rLen) {
+#ifdef __cplusplus
+    jsize tLen = aEnv->GetArrayLength(aStrBuf);
+    char **rStrBuf = CALLOC(char*, tLen+1);
     
     for (jsize i = 0; i < tLen; ++i) {
-        auto jc = (jstring)aEnv->GetObjectArrayElement(aArgs, i);
-        const char *s = aEnv->GetStringUTFChars(jc, NULL);
-        sArgs[i] = STRDUP(s);
-        aEnv->ReleaseStringUTFChars(jc, s);
+        auto jc = (jstring)aEnv->GetObjectArrayElement(aStrBuf, i);
+        rStrBuf[i] = parseStr(aEnv, jc);
         aEnv->DeleteLocalRef(jc);
     }
 #else
-    jsize tLen = (*aEnv)->GetArrayLength(aEnv, aArgs);
-    char **sArgs = CALLOC(char*, tLen+1);
+    jsize tLen = (*aEnv)->GetArrayLength(aEnv, aStrBuf);
+    char **rStrBuf = CALLOC(char*, tLen+1);
     
     for (jsize i = 0; i < tLen; ++i) {
-        jstring jc = (jstring)(*aEnv)->GetObjectArrayElement(aEnv, aArgs, i);
-        const char *s = (*aEnv)->GetStringUTFChars(aEnv, jc, NULL);
-        sArgs[i] = STRDUP(s);
-        (*aEnv)->ReleaseStringUTFChars(aEnv, jc, s);
+        jstring jc = (jstring)(*aEnv)->GetObjectArrayElement(aEnv, aStrBuf, i);
+        rStrBuf[i] = parseStr(aEnv, jc);
         (*aEnv)->DeleteLocalRef(aEnv, jc);
     }
 #endif
     *rLen = tLen;
-    return sArgs;
+    return rStrBuf;
 }
-void freeArgs(char **aArgs, int aLen) {
-    for(int i = 0; i < aLen; ++i) FREE(aArgs[i]);
-    FREE(aArgs);
+inline void freeStrBuf(char **aStrBuf, int aLen) {
+    for(int i = 0; i < aLen; ++i) FREE(aStrBuf[i]);
+    FREE(aStrBuf);
 }
 
-void throwException(JNIEnv *aEnv, const char *aClazzName, const char *aInitSig, ...) {
+
+/** exception stuffs */
+inline void throwException(JNIEnv *aEnv, const char *aClazzName, const char *aInitSig, ...) {
 #ifdef __cplusplus
     // find class runtime due to asm
     jclass tClazz = aEnv->FindClass(aClazzName);
