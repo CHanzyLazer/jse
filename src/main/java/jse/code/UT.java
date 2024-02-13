@@ -77,7 +77,7 @@ import java.util.zip.ZipOutputStream;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jse.code.CS.*;
 import static jse.code.CS.Exec.USER_HOME;
-import static jse.code.CS.Exec.WORKING_DIR;
+import static jse.code.CS.Exec.WORKING_DIR_PATH;
 import static jse.code.Conf.PARFOR_THREAD_NUM;
 import static jse.code.Conf.UNICODE_SUPPORT;
 
@@ -575,8 +575,27 @@ public class UT {
     
     /** 序列化和反序列化的一些方法 */
     public static class Serial {
-        public final static int LONG_LEN = 8, DOUBLE_LEN = LONG_LEN;
-        public final static int INT_LEN = 4;
+        /** 合并 int */
+        public static long combineI(int aI1, int aI2) {return ((long)aI1 & 0xffffffffL) | (long)aI2 << 32;}
+        /** 将 long 拆分成 int */
+        public static int toIntL(long aL, @Range(from = 0, to = 1) int aIdx) {return (int)(aL >> (aIdx<<5));}
+        
+        /** 合并 boolean */
+        public static byte combineZ(boolean aZ1)                                                                                            {return (byte)(aZ1?1:0);}
+        public static byte combineZ(boolean aZ1, boolean aZ2)                                                                               {return (byte)((aZ1?1:0) | (aZ2?2:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3)                                                                  {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3, boolean aZ4)                                                     {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0) | (aZ4?8:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3, boolean aZ4, boolean aZ5)                                        {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0) | (aZ4?8:0) | (aZ5?16:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3, boolean aZ4, boolean aZ5, boolean aZ6)                           {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0) | (aZ4?8:0) | (aZ5?16:0) | (aZ6?32:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3, boolean aZ4, boolean aZ5, boolean aZ6, boolean aZ7)              {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0) | (aZ4?8:0) | (aZ5?16:0) | (aZ6?32:0) | (aZ7?64:0));}
+        public static byte combineZ(boolean aZ1, boolean aZ2, boolean aZ3, boolean aZ4, boolean aZ5, boolean aZ6, boolean aZ7, boolean aZ8) {return (byte)((aZ1?1:0) | (aZ2?2:0) | (aZ3?4:0) | (aZ4?8:0) | (aZ5?16:0) | (aZ6?32:0) | (aZ7?64:0) | (aZ8?128:0));}
+        /** 将 byte 拆分成 boolean */
+        public static boolean toBooleanB(byte aB, @Range(from = 0, to = 7) int aIdx) {return (aB & (byte)(1<<aIdx)) != 0;}
+        
+        
+        
+        private final static int LONG_LEN = 8, DOUBLE_LEN = LONG_LEN;
+        private final static int INT_LEN = 4;
         
         
         public static void int2bytes(int aI, byte[] rBytes, final int aPos) {
@@ -1317,26 +1336,7 @@ public class UT {
             return WORKING_DIR_PATH.resolve(aPath);
         }
         
-        /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
-        public final static class InitHelper {
-            private static volatile boolean INITIALIZED = false;
-            
-            public static boolean initialized() {return INITIALIZED;}
-            @SuppressWarnings("ResultOfMethodCallIgnored")
-            public static void init() {
-                // 手动调用此值来强制初始化
-                if (!INITIALIZED) String.valueOf(WORKING_DIR_PATH);
-            }
-        }
-        
-        // reset the working dir to correct value
-        private final static Path WORKING_DIR_PATH;
-        static {
-            InitHelper.INITIALIZED = true;
-            // 现在初始化工作目录放到了 CS.Exec 中，为了保证逻辑不变这里也会强制初始化
-            CS.Exec.InitHelper.init();
-            WORKING_DIR_PATH = Paths.get(WORKING_DIR);
-        }
+        static {CS.Exec.InitHelper.init();}
     }
     
     

@@ -269,8 +269,8 @@ public class SP {
         }
         
         static {
-            // 手动加载 UT，会自动重新设置工作目录，保证 Groovy 读取到的工作目录是正确的
-            UT.IO.InitHelper.init();
+            // 手动加载 CS.Exec，会自动重新设置工作目录，保证 Groovy 读取到的工作目录是正确的
+            CS.Exec.InitHelper.init();
             // 在程序结束时关闭 CLASS_LOADER，最先添加来避免一些问题
             Main.addGlobalAutoCloseable(Groovy::close);
             // 初始化 CLASS_LOADER
@@ -400,8 +400,8 @@ public class SP {
         static {
             InitHelper.INITIALIZED = true;
             
-            // 手动加载 UT，会自动重新设置工作目录，保证 jep 读取到的工作目录是正确的
-            UT.IO.InitHelper.init();
+            // 手动加载 CS.Exec，会自动重新设置工作目录，保证 jep 读取到的工作目录是正确的
+            CS.Exec.InitHelper.init();
             // 在 JVM 关闭时关闭 JEP_INTERP，最先添加来避免一些问题
             Main.addGlobalAutoCloseable(Python::close);
             // 设置 Jep 非 java 库的路径，考虑到 WSL，windows 和 linux 使用不同的名称

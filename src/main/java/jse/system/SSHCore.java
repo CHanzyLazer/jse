@@ -1,6 +1,7 @@
 package jse.system;
 
 import com.jcraft.jsch.*;
+import jse.code.CS;
 import jse.code.UT;
 import jse.parallel.ExecutorsEX;
 import jse.parallel.IAutoShutdown;
@@ -580,6 +581,6 @@ final class SSHCore implements IAutoShutdown {
         }
     }
     
-    // 手动加载 UT，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
-    static {UT.IO.InitHelper.init();}
+    // 手动加载 CS.Exec，会自动重新设置工作目录，会在调用静态函数 get 或者 load 时自动加载保证路径的正确性
+    static {CS.Exec.InitHelper.init();}
 }

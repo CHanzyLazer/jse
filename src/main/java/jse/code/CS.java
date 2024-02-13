@@ -513,6 +513,7 @@ public class CS {
         public final static String USER_HOME;
         public final static String USER_HOME_DIR;
         public final static String WORKING_DIR;
+        final static Path WORKING_DIR_PATH;
         
         static {
             InitHelper.INITIALIZED = true;
@@ -536,11 +537,15 @@ public class CS {
             // jse 内部使用的 dir 需要末尾增加 `/`
             if (!wd.isEmpty() && !wd.endsWith("/") && !wd.endsWith("\\")) wd += "/";
             WORKING_DIR = wd;
+            WORKING_DIR_PATH = Paths.get(WORKING_DIR);
             
             // 获取此 jar 的路径
-            JAR_PATH = System.getProperty("java.class.path"); // 此属性理论上会直接获取到绝对路径，即使不是也和 user.home 一样保持原样
-            Path tPath = Paths.get(JAR_PATH).getParent(); // 注意这里不能使用 UT.IO 避免循环初始化
-            String tJarDir = tPath==null ? "" : tPath.toString();
+            // 注意此属性在 linux 上有时不是绝对路径，这可能会造成一些问题；
+            // 现在应该可以随意使用 UT.IO 而不会循环初始化
+            Path tJarPath = UT.IO.toAbsolutePath_(System.getProperty("java.class.path"));
+            JAR_PATH = tJarPath.toString();
+            Path tJarDirPath = tJarPath.getParent();
+            String tJarDir = tJarDirPath==null ? "" : tJarDirPath.toString();
             if (!tJarDir.isEmpty() && !tJarDir.endsWith("/") && !tJarDir.endsWith("\\")) tJarDir += "/";
             JAR_DIR = tJarDir;
             // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令；
