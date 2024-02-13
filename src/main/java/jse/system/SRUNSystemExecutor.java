@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
 import static jse.code.CS.*;
 import static jse.code.CS.Slurm.IS_SLURM;
 import static jse.code.CS.Slurm.RESOURCES_MANAGER;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * @author liqa
@@ -30,7 +30,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         
         mAssignedResources = new HashMap<>();
         // 设置一下工作目录
-        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "SRUN@"+UT.Code.randID());
+        mWorkingDir = WORKING_DIR_OF("SRUN@"+UT.Code.randID());
         // 由于是本地的，这里不需要创建文件夹
         // 仅 slurm 可用
         if (!IS_SLURM) {

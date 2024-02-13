@@ -4,11 +4,14 @@ import jse.code.UT;
 import jse.io.ILoader;
 import jse.parallel.IShutdownable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * @author liqa
@@ -31,7 +34,7 @@ public class LongTimeJobManager<T extends ILongTimeJobPool> implements IShutdown
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader) {this(aUniqueName, aLongTimeJobPoolLoader, false);}
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader, boolean aWaitUntilDone) {this(aUniqueName, aLongTimeJobPoolLoader, aWaitUntilDone, -1);}
     public LongTimeJobManager(String aUniqueName, ILoader<T> aLongTimeJobPoolLoader, boolean aWaitUntilDone, int aForceStep) {
-        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "LTJM@" + aUniqueName);
+        String tWorkingDir = WORKING_DIR_OF("LTJM@" + aUniqueName);
         mStepFile = tWorkingDir +"step";
         mJobPoolFile = tWorkingDir + "jobpool";
         mShutdownFile = tWorkingDir + "shutdown";

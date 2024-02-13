@@ -906,6 +906,25 @@ public class UT {
     }
     
     public static class IO {
+        
+        /**
+         * 内部使用，判断一个文件夹路径 aDir 是否符合内部使用的格式，
+         * 内部使用时需要 aDir 的结尾为 / 或者为空，保证可以直接统一通过 + 文件名
+         * 的方式来获取路径
+         * @author liqa
+         */
+        @ApiStatus.Internal @Contract(pure = true) public static boolean isInternalValidDir(@NotNull String aDir) {
+            return aDir.isEmpty() || aDir.endsWith("/") || aDir.endsWith("\\");
+        }
+        /**
+         * 内部使用，将一个文件夹路径 aDir 转换为符合内部使用的格式
+         * @author liqa
+         */
+        @ApiStatus.Internal @CheckReturnValue @Contract(pure = true) public static String toInternalValidDir(@NotNull String aDir) {
+            return isInternalValidDir(aDir) ? aDir : (aDir+"/");
+        }
+        
+        
         /**
          * Wrapper of {@link Files}.write
          * @author liqa
@@ -972,7 +991,7 @@ public class UT {
          */
         @VisibleForTesting public static void rmdir(String aDir) throws IOException {removeDir(aDir);}
         public static void removeDir(String aDir) throws IOException {
-            if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
+            aDir = toInternalValidDir(aDir);
             if (!isDir(aDir)) return;
             removeDir_(aDir);
         }
@@ -1051,7 +1070,7 @@ public class UT {
          * @author liqa
          */
         public static void zip2dir(String aZipFilePath, String aDir) throws IOException {
-            if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
+            aDir = toInternalValidDir(aDir);
             makeDir(aDir);
             byte[] tBuffer = new byte[1024];
             try (ZipInputStream tZipInputStream = new ZipInputStream(toInputStream(aZipFilePath))) {
@@ -1078,7 +1097,7 @@ public class UT {
          * @author liqa
          */
         public static void dir2zip(String aDir, String aZipFilePath, int aCompressLevel) throws IOException {
-            if (!aDir.isEmpty() && !aDir.endsWith("/") && !aDir.endsWith("\\")) aDir += "/";
+            aDir = toInternalValidDir(aDir);
             try (ZipOutputStream tZipOutputStream = new ZipOutputStream(toOutputStream(aZipFilePath))) {
                 byte[] tBuffer = new byte[1024];
                 tZipOutputStream.setLevel(aCompressLevel);
@@ -1106,7 +1125,7 @@ public class UT {
                     String tPath = tCS.toString();
                     File tFile = toFile(tPath);
                     if (tFile.isDirectory()) {
-                        if (!tPath.isEmpty() && !tPath.endsWith("/") && !tPath.endsWith("\\")) tPath += "/";
+                        tPath = toInternalValidDir(tPath);
                         addDirToZip_("", tPath, tFile.getName(), tZipOutputStream, tBuffer);
                     } else {
                         addFileToZip_("", tPath, tFile.getName(), tZipOutputStream, tBuffer);

@@ -56,7 +56,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
     public Thermo appendCSV(String aPath) throws IOException {
         if (UT.IO.isDir(aPath)) {
             if (aPath.equals(".")) aPath = "";
-            if (!aPath.isEmpty() && !aPath.endsWith("/") && !aPath.endsWith("\\")) aPath += "/";
+            aPath = UT.IO.toInternalValidDir(aPath);
             String[] tFiles = UT.IO.list(aPath);
             for (String tName : tFiles) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
@@ -116,7 +116,7 @@ public class Thermo extends AbstractMultiFrameTable<ITable> {
     public static Thermo fromCSV(String aPath) throws IOException {
         if (UT.IO.isDir(aPath)) {
             if (aPath.equals(".")) aPath = "";
-            if (!aPath.isEmpty() && !aPath.endsWith("/") && !aPath.endsWith("\\")) aPath += "/";
+            aPath = UT.IO.toInternalValidDir(aPath);
             String[] tFiles = UT.IO.list(aPath);
             
             List<ITable> rThermo = new ArrayList<>();

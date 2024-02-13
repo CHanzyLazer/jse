@@ -126,8 +126,7 @@ final class SSHCore implements IAutoShutdown {
         if (mDead) throw new RuntimeException("Can NOT setLocalWorkingDir from a Dead SSH.");
         if (aLocalWorkingDir == null) aLocalWorkingDir = "";
         mLocalWorkingDir_ = aLocalWorkingDir;
-        aLocalWorkingDir = UT.IO.toAbsolutePath(aLocalWorkingDir);
-        if (!aLocalWorkingDir.isEmpty() && !aLocalWorkingDir.endsWith("/") && !aLocalWorkingDir.endsWith("\\")) aLocalWorkingDir += "/";
+        aLocalWorkingDir = UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(aLocalWorkingDir));
         mLocalWorkingDir = aLocalWorkingDir;
         return this;
     }
@@ -135,7 +134,7 @@ final class SSHCore implements IAutoShutdown {
         if (mDead) throw new RuntimeException("Can NOT setRemoteWorkingDir from a Dead SSH.");
         if (aRemoteWorkingDir == null) aRemoteWorkingDir = "";
         mRemoteWorkingDir_ = aRemoteWorkingDir;
-        if (!aRemoteWorkingDir.isEmpty() && !aRemoteWorkingDir.endsWith("/") && !aRemoteWorkingDir.endsWith("\\")) aRemoteWorkingDir += "/";
+        aRemoteWorkingDir = UT.IO.toInternalValidDir(aRemoteWorkingDir);
         if (aRemoteWorkingDir.startsWith("~/")) aRemoteWorkingDir = aRemoteWorkingDir.substring(2); // JSch 不支持 ~
         mRemoteWorkingDir = aRemoteWorkingDir;
         return this;
@@ -242,7 +241,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            if (!aDir.isEmpty() && !aDir.endsWith("/")) aDir += "/";
+            aDir = UT.IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 如果没有此文件夹则直接退出
             if (!isDir_(tChannelSftp, tRemoteDir)) return;
@@ -264,7 +263,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            if (!aDir.isEmpty() && !aDir.endsWith("/")) aDir += "/";
+            aDir = UT.IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 创建文件夹
             makeDir_(tChannelSftp, tRemoteDir);
@@ -284,7 +283,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            if (!aDir.isEmpty() && !aDir.endsWith("/")) aDir += "/";
+            aDir = UT.IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 获取结果
             return isDir_(tChannelSftp, tRemoteDir);

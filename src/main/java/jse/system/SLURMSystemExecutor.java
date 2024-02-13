@@ -12,9 +12,9 @@ import org.jetbrains.annotations.Range;
 
 import java.util.*;
 
-import static jse.code.CS.*;
 import static jse.code.CS.Exec.NO_LOG_LINUX;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.CS.*;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * @author liqa
@@ -23,10 +23,10 @@ import static jse.code.Conf.TEMP_WORKING_DIR;
  */
 public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSystemExecutor> {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
-    public final static String SPLIT_NODE_SCRIPT_PATH = TEMP_WORKING_DIR +"splitNodeList.sh";
-    public final static String BATCHED_SCRIPT_DIR = TEMP_WORKING_DIR +"batched/";
-    public final static String DEFAULT_OUTFILE_DIR = ".temp/slurm/";
-    public final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%i-%n";
+    private final static String SPLIT_NODE_SCRIPT_NAME = "splitNodeList.sh";
+    private final static String BATCHED_SCRIPT_DIR_NAME = "batched";
+    private final static String DEFAULT_OUTFILE_DIR = ".temp/slurm/";
+    private final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%i-%n";
     
     /// 构造函数部分
     private final String mWorkingDir, mSplitNodeScriptPath, mBatchedScriptDir;
@@ -47,9 +47,9 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         mMaxTaskNumPerNode = aMaxTaskNumPerNode;
         mMaxNodeNum = aMaxNodeNum;
         // 需要初始化输出的文件夹
-        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", mUniqueJobName);
-        mSplitNodeScriptPath = SPLIT_NODE_SCRIPT_PATH.replaceAll("%n", mUniqueJobName);
-        mBatchedScriptDir = BATCHED_SCRIPT_DIR.replaceAll("%n", mUniqueJobName);
+        mWorkingDir = WORKING_DIR_OF(mUniqueJobName);
+        mSplitNodeScriptPath = mWorkingDir + SPLIT_NODE_SCRIPT_NAME;
+        mBatchedScriptDir = mWorkingDir + BATCHED_SCRIPT_DIR_NAME + "/";
         // 从资源文件中创建已经准备好的 SplitNodeScript
         try {
             UT.IO.copy(UT.IO.getResource("slurm/splitNodeList.sh"), mSplitNodeScriptPath);

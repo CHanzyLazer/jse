@@ -1,6 +1,9 @@
 package jsex.rareevent.lmp;
 
-import jse.atom.*;
+import jse.atom.AbstractAtom;
+import jse.atom.AtomData;
+import jse.atom.IAtom;
+import jse.atom.IAtomData;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractRandomAccessList;
@@ -13,17 +16,19 @@ import jse.lmp.LmpIn;
 import jse.lmp.Lmpdat;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.Matrices;
-import jse.parallel.LocalRandom;
 import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 import jse.parallel.AbstractHasAutoShutdown;
+import jse.parallel.LocalRandom;
 import jsex.rareevent.IPathGenerator;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static jse.code.CS.*;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.Conf.WORKING_DIR_OF;
 import static jse.code.UT.Code.newBox;
 
 
@@ -80,7 +85,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;
         // 最后设置一下工作目录
-        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "DUMP_GEN@"+UT.Code.randID());
+        mWorkingDir = WORKING_DIR_OF("DUMP_GEN@"+UT.Code.randID());
     }
     
     private static LmpIn getGenDumpIn(double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {

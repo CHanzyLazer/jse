@@ -14,7 +14,7 @@ import static jse.clib.JNIUtil.*;
 import static jse.code.CS.Exec.*;
 import static jse.code.CS.VERSION;
 import static jse.code.CS.ZL_STR;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * 基于 jni 实现的 MPI wrapper, 介绍部分基于
@@ -1027,7 +1027,7 @@ public class MPI {
             EXE.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("MPI BUILD ERROR: No camke environment.");
             // 从内部资源解压到临时目录
-            String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "mpisrc");
+            String tWorkingDir = WORKING_DIR_OF("mpisrc");
             // 如果已经存在则先删除
             UT.IO.removeDir(tWorkingDir);
             for (String tName : MPISRC_NAME) {

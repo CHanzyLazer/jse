@@ -38,9 +38,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static jse.code.CS.*;
 import static jse.code.CS.Exec.*;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.CS.VERSION;
+import static jse.code.Conf.WORKING_DIR_OF;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -517,7 +517,7 @@ public class SP {
             boolean tNoCmake = EXE.system("cmake --version") != 0;
             EXE.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("JEP BUILD ERROR: No camke environment.");
-            String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "jepsrc");
+            String tWorkingDir = WORKING_DIR_OF("jepsrc");
             // 如果已经存在则先删除
             UT.IO.removeDir(tWorkingDir);
             // 首先获取源码路径，这里直接从 resource 里输出

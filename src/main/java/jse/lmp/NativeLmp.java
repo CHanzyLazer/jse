@@ -18,13 +18,14 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static jse.code.CS.Exec.*;
-import static jse.code.CS.MASS;
-import static jse.code.CS.VERSION;
-import static jse.code.CS.ZL_STR;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.CS.*;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * 基于 jni 的调用本地原生 lammps 的类，
@@ -221,7 +222,7 @@ public class NativeLmp implements IAutoShutdown {
         boolean tNoCmake = EXE.system("cmake --version") != 0;
         EXE.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("NATIVE_LMP BUILD ERROR: No camke environment.");
-        String tWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", "nativelmp");
+        String tWorkingDir = WORKING_DIR_OF("nativelmp");
         // 如果已经存在则先删除
         UT.IO.removeDir(tWorkingDir);
         // 如果有 NATIVE_LMP_DIR 但是不合法，则需要下载 lammps
@@ -346,13 +347,12 @@ public class NativeLmp implements IAutoShutdown {
                     }
                 }
             }
-            if (!tNativeDir.isEmpty() && !tNativeDir.endsWith("/") && !tNativeDir.endsWith("\\")) tNativeDir += "/";
+            tNativeDir = UT.IO.toInternalValidDir(tNativeDir);
             NATIVE_LMP_DIR = tNativeDir;
             Conf.LMP_HOME = NATIVE_LMP_DIR+BUILD_DIR_NAME+"/";
         } else {
             NATIVE_LMP_DIR = null;
-            Conf.LMP_HOME = UT.IO.toAbsolutePath(Conf.LMP_HOME);
-            if (!Conf.LMP_HOME.isEmpty() && !Conf.LMP_HOME.endsWith("/") && !Conf.LMP_HOME.endsWith("\\")) Conf.LMP_HOME += "/";
+            Conf.LMP_HOME = UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(Conf.LMP_HOME));
         }
         NATIVE_LMPLIB_PATH = Conf.LMP_HOME+"lib/"+NATIVE_LMPLIB_NAME;
         // 现在 uniqueID 不再包含这个 tag（确实当时也想到了），因为已经包含到了 LMP_HOME 中

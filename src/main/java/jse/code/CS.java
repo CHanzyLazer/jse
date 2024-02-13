@@ -519,7 +519,7 @@ public class CS {
             InitHelper.INITIALIZED = true;
             // 先获取 user.home
             USER_HOME = System.getProperty("user.home"); // user.home 这里统一认为 user.home 就是绝对路径
-            USER_HOME_DIR = (USER_HOME.isEmpty() || USER_HOME.endsWith("/") || USER_HOME.endsWith("\\")) ? USER_HOME : (USER_HOME+"/");
+            USER_HOME_DIR = UT.IO.toInternalValidDir(USER_HOME);
             // 然后通过执行指令来初始化 WORKING_DIR；
             // 这种写法可以保证有最大的兼容性，即使后续 EXE 可能非法（不是所有平台都有 bash）
             String wd = USER_HOME;
@@ -535,8 +535,7 @@ public class CS {
             // 全局修改工作目录为正确的目录
             System.setProperty("user.dir", wd);
             // jse 内部使用的 dir 需要末尾增加 `/`
-            if (!wd.isEmpty() && !wd.endsWith("/") && !wd.endsWith("\\")) wd += "/";
-            WORKING_DIR = wd;
+            WORKING_DIR = UT.IO.toInternalValidDir(wd);
             WORKING_DIR_PATH = Paths.get(WORKING_DIR);
             
             // 获取此 jar 的路径
@@ -546,7 +545,7 @@ public class CS {
             JAR_PATH = tJarPath.toString();
             Path tJarDirPath = tJarPath.getParent();
             String tJarDir = tJarDirPath==null ? "" : tJarDirPath.toString();
-            if (!tJarDir.isEmpty() && !tJarDir.endsWith("/") && !tJarDir.endsWith("\\")) tJarDir += "/";
+            tJarDir = UT.IO.toInternalValidDir(tJarDir);
             JAR_DIR = tJarDir;
             // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令；
             // 这种选择可以保证指令使用统一，即使这些终端不一定所有平台都有

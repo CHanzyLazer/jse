@@ -15,9 +15,10 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static jse.code.CS.*;
 import static jse.code.CS.Exec.EXE;
-import static jse.code.Conf.TEMP_WORKING_DIR;
+import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
+import static jse.code.CS.FILE_SYSTEM_TIMEOUT;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * 长时的 lammps 运行器，开启一个长时挂起的 lammps 程序来运行，可以绕过 system 指令限制
@@ -27,8 +28,8 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     private final static long DEFAULT_FILE_SYSTEM_WAIT_TIME = 0;
     private final static int TOLERANT = 3;
     /** 一些目录设定， %n: unique job name, %i: index of lammps，注意只有 OUTFILE_PATH 支持 %i */
-    public final static String DEFAULT_OUTFILE_DIR = ".temp/ltlmp/";
-    public final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%i-%n";
+    private final static String DEFAULT_OUTFILE_DIR = ".temp/ltlmp/";
+    private final static String DEFAULT_OUTFILE_PATH = DEFAULT_OUTFILE_DIR+"out-%i-%n";
     
     private final String mWorkingDir;
     
@@ -52,7 +53,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         mSleepTime = FILE_SYSTEM_SLEEP_TIME;
         // 设置一下工作目录
         String tUniqueJobName = "CLMP@"+UT.Code.randID();
-        mWorkingDir = TEMP_WORKING_DIR.replaceAll("%n", tUniqueJobName);
+        mWorkingDir = WORKING_DIR_OF(tUniqueJobName);
         mLogPath = aLogPath.replaceAll("%n", tUniqueJobName);
         // 提交长时的 lammps 任务
         IInFile tConstantInFile = LmpIn.CONSTANT();
