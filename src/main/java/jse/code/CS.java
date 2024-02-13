@@ -8,6 +8,7 @@ import jse.atom.IXYZ;
 import jse.code.collection.AbstractCollections;
 import jse.io.IIOFiles;
 import jse.io.IOFiles;
+import jse.io.SettingType;
 import jse.math.MathEX;
 import jse.math.SliceType;
 import jse.parallel.CompletedFuture;
@@ -100,7 +101,6 @@ public class CS {
         , OFILE_KEY = "<o>"
         , IFILE_KEY = "<i>"
         ;
-    public enum SettingType {REMOVE, KEEP}
     public final static SettingType
           REMOVE = SettingType.REMOVE
         , KEEP = SettingType.KEEP
