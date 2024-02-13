@@ -1201,8 +1201,7 @@ public class UT {
                 else break;
             }
             // 需要的参数
-            IMatrix rMatrix;
-            Iterator<? extends IVector> itRow;
+            IMatrix rMatrix; int row = 0;
             String[] tTokens;
             // 读取第一行检测是否有头，直接看能否成功粘贴
             tTokens = Text.splitComma(tLines.get(0));
@@ -1210,16 +1209,14 @@ public class UT {
             try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
             if (tFirstData != null) {
                 rMatrix = Matrices.zeros(tLineNum, tFirstData.size());
-                itRow = rMatrix.rows().iterator();
-                itRow.next().fill(tFirstData);
+                rMatrix.row(row).fill(tFirstData); ++row;
             } else {
                 rMatrix = Matrices.zeros(tLineNum-1, tTokens.length);
-                itRow = rMatrix.rows().iterator();
             }
             // 遍历读取后续数据
-            for (int i = 1; i < tLineNum; ++i) {
+            for (int i = 1; i < tLineNum; ++i, ++row) {
                 tTokens = Text.splitComma(tLines.get(i));
-                itRow.next().fill(AbstractCollections.map(tTokens, Double::parseDouble));
+                rMatrix.row(row).fill(AbstractCollections.map(tTokens, Double::parseDouble));
             }
             // 返回结果
             return rMatrix;
@@ -1253,25 +1250,23 @@ public class UT {
                 else break;
             }
             // 需要的参数
-            ITable rTable;
-            Iterator<? extends IVector> itRow;
+            ITable rTable; int row = 0;
             String[] tTokens;
             // 读取第一行检测是否有头，直接看能否成功粘贴
             tTokens = Text.splitComma(tLines.get(0));
             IVector tFirstData = null;
-            try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
+            try {tFirstData = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));}
+            catch (Exception ignored) {} // 直接看能否成功粘贴
             if (tFirstData != null) {
                 rTable = Tables.zeros(tLineNum, tFirstData.size());
-                itRow = rTable.rows().iterator();
-                itRow.next().fill(tFirstData);
+                rTable.row(row).fill(tFirstData); ++row;
             } else {
                 rTable = Tables.zeros(tLineNum-1, tTokens);
-                itRow = rTable.rows().iterator();
             }
             // 遍历读取后续数据
-            for (int i = 1; i < tLineNum; ++i) {
+            for (int i = 1; i < tLineNum; ++i, ++row) {
                 tTokens = Text.splitComma(tLines.get(i));
-                itRow.next().fill(AbstractCollections.map(tTokens, Double::parseDouble));
+                rTable.row(row).fill(AbstractCollections.map(tTokens, Double::parseDouble));
             }
             // 返回结果
             return rTable;
