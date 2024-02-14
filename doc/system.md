@@ -365,7 +365,7 @@ ssh-keygen -p -f .ssh/id_rsa -m pem
   
   描述：设置所有 ssh 指令前添加的指令，一般是环境初始化。
   
-  例子：`'source ../env.sh'`
+  例子：`'module load jse'`
   
   默认行为：不添加此指令
   

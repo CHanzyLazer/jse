@@ -78,7 +78,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jse.code.CS.*;
 import static jse.code.CS.Exec.USER_HOME;
 import static jse.code.CS.Exec.WORKING_DIR_PATH;
-import static jse.code.Conf.PARFOR_THREAD_NUM;
+import static jse.code.Conf.PARFOR_THREAD_NUMBER;
 import static jse.code.Conf.UNICODE_SUPPORT;
 
 /**
@@ -269,7 +269,7 @@ public class UT {
          * parfor for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, PARFOR_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parfor(int aSize, Closure<?> aGroovyTask) {parfor(aSize, PARFOR_THREAD_NUMBER, aGroovyTask);}
         @VisibleForTesting public static void parfor(int aSize, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -285,7 +285,7 @@ public class UT {
          * parwhile for groovy usage
          * @author liqa
          */
-        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, PARFOR_THREAD_NUM, aGroovyTask);}
+        @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, Closure<?> aGroovyTask) {parwhile(aChecker, PARFOR_THREAD_NUMBER, aGroovyTask);}
         @VisibleForTesting public static void parwhile(ParforThreadPool.IParwhileChecker aChecker, int aThreadNum, final Closure<?> aGroovyTask) {
             try (ParforThreadPool tPool = new ParforThreadPool(aThreadNum)) {
                 int tN = aGroovyTask.getMaximumNumberOfParameters();
@@ -1331,15 +1331,44 @@ public class UT {
     }
     
     
-    @VisibleForTesting public static class Exec {
+    public static class Exec {
+        /** 更加易用的获取环境变量的接口 */
+        public static @Nullable String env(String aName) {
+            try {return System.getenv(aName);}
+            catch (Throwable ignored) {} // 获取失败不抛出错误，在 jse 中获取环境变量都是非必要的
+            return null;
+        }
+        public static String env(String aName, String aDefault) {
+            String tEnv = env(aName);
+            return tEnv==null ? aDefault : tEnv;
+        }
+        public static int envI(String aName, int aDefault) throws NumberFormatException {
+            String tEnv = env(aName);
+            return tEnv==null ? aDefault : Integer.parseInt(tEnv);
+        }
+        public static double envD(String aName, double aDefault) throws NumberFormatException {
+            String tEnv = env(aName);
+            return tEnv==null ? aDefault : Double.parseDouble(tEnv);
+        }
+        public static boolean envZ(String aName, boolean aDefault) throws NumberFormatException {
+            String tEnv = env(aName);
+            if (tEnv == null) return aDefault;
+            tEnv = tEnv.toLowerCase();
+            switch(tEnv) {
+            case "true" : case "t": case "on" : case "yes": case "1": {return true ;}
+            case "false": case "f": case "off": case "no" : case "0": {return false;}
+            default: {throw new NumberFormatException("For input string: \""+tEnv+"\"");}
+            }
+        }
+        
         /** 提供这些接口方便外部调用使用 */
-        public static ISystemExecutor exec() {return CS.Exec.EXE;}
-        public static int system(String aCommand) {return exec().system(aCommand);}
-        public static int system(String aCommand, String aOutFilePath) {return exec().system(aCommand, aOutFilePath);}
-        public static Future<Integer> submitSystem(String aCommand) {return exec().submitSystem(aCommand);}
-        public static Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return exec().submitSystem(aCommand, aOutFilePath);}
-        public static List<String> system_str(String aCommand) {return exec().system_str(aCommand);}
-        public static Future<List<String>> submitSystem_str(String aCommand) {return exec().submitSystem_str(aCommand);}
+        @VisibleForTesting public static ISystemExecutor exec() {return CS.Exec.EXE;}
+        @VisibleForTesting public static int system(String aCommand) {return exec().system(aCommand);}
+        @VisibleForTesting public static int system(String aCommand, String aOutFilePath) {return exec().system(aCommand, aOutFilePath);}
+        @VisibleForTesting public static Future<Integer> submitSystem(String aCommand) {return exec().submitSystem(aCommand);}
+        @VisibleForTesting public static Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return exec().submitSystem(aCommand, aOutFilePath);}
+        @VisibleForTesting public static List<String> system_str(String aCommand) {return exec().system_str(aCommand);}
+        @VisibleForTesting public static Future<List<String>> submitSystem_str(String aCommand) {return exec().submitSystem_str(aCommand);}
         static {CS.Exec.InitHelper.init();}
     }
     

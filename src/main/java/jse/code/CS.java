@@ -702,22 +702,20 @@ public class CS {
         
         static {
             // 获取 ID，如果失败则不是 slurm
-            int tId = -1;
-            try {tId = Integer.parseInt(System.getenv("SLURM_PROCID"));} catch (Exception ignored) {}
-            PROCID = tId;
+            PROCID = UT.Exec.envI("SLURM_PROCID", -1);
             IS_SLURM = PROCID >= 0;
             // 是 slurm 则从环境变量中读取后续参数，否则使用默认非法值
             if (IS_SLURM) {
                 // 获取作业 id
-                JOB_ID = Integer.parseInt(System.getenv("SLURM_JOB_ID"));
+                JOB_ID = UT.Exec.envI("SLURM_JOB_ID", -1);
                 // 获取任务总数
-                NTASKS = Integer.parseInt(System.getenv("SLURM_NTASKS"));
+                NTASKS = UT.Exec.envI("SLURM_NTASKS", -1);
                 // 获取对应的 node id 和节点名
-                NODEID = Integer.parseInt(System.getenv("SLURM_NODEID"));
-                NODENAME = System.getenv("SLURMD_NODENAME");
+                NODEID = UT.Exec.envI("SLURM_NODEID", -1);
+                NODENAME = UT.Exec.env("SLURMD_NODENAME");
                 
                 // 获取每节点的核心数
-                String tRawCoresPerNode = System.getenv("SLURM_JOB_CPUS_PER_NODE");
+                String tRawCoresPerNode = UT.Exec.env("SLURM_JOB_CPUS_PER_NODE");
                 // 目前仅支持单一的 CoresPerNode，对于有多个的情况会选取最小值
                 Pattern tPattern = Pattern.compile("(\\d+)(\\([^)]+\\))?"); // 匹配整数部分和可选的括号部分
                 Matcher tMatcher = tPattern.matcher(tRawCoresPerNode);
@@ -729,14 +727,15 @@ public class CS {
                 CORES_PER_NODE = tCoresPerNode;
                 
                 // 获取每任务的核心数，可能为 null
-                String tRawCoresPerTask = System.getenv("SLURM_CPUS_PER_TASK");
+                String tRawCoresPerTask = UT.Exec.env("SLURM_CPUS_PER_TASK");
                 CORES_PER_TASK = tRawCoresPerTask==null ? 1 : Integer.parseInt(tRawCoresPerTask);
                 
                 // 单个任务的作业步限制，不能获取，默认为此值
                 MAX_STEP_COUNT = 40000;
                 
                 // 获取节点列表
-                NODE_LIST = ImmutableList.copyOf(UT.Text.splitNodeList(System.getenv("SLURM_NODELIST")));
+                String tRowNodeList = UT.Exec.env("SLURM_NODELIST");
+                NODE_LIST = tRowNodeList==null ? null : ImmutableList.copyOf(UT.Text.splitNodeList(tRowNodeList));
                 
                 RESOURCES_MANAGER = new ResourcesManager();
             } else {
