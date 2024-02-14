@@ -9,7 +9,7 @@ package jsex.voronoi;
 
 import jse.atom.XYZ;
 import jse.code.collection.DoublePair;
-import jse.parallel.DoubleArrayCache;
+import jse.cache.DoubleArrayCache;
 
 /**
  * Robust geometric predicates.

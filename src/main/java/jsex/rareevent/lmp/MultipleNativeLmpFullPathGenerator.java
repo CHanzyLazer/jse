@@ -10,7 +10,7 @@ import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.MPI;
-import jse.parallel.ThreadLocalObjectCachePool;
+import jse.cache.ThreadLocalObjectCachePool;
 import jsex.rareevent.IFullPathGenerator;
 import jsex.rareevent.IParameterCalculator;
 import jsex.rareevent.ITimeAndParameterIterator;

@@ -10,7 +10,7 @@ import jse.math.table.ITable;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
 import jse.parallel.MPI;
-import jse.parallel.ThreadLocalObjectCachePool;
+import jse.cache.ThreadLocalObjectCachePool;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;

@@ -1,4 +1,4 @@
-package jse.parallel;
+package jse.cache;
 
 import org.jetbrains.annotations.NotNull;
 

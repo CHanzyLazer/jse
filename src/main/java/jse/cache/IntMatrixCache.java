@@ -1,4 +1,4 @@
-package jse.parallel;
+package jse.cache;
 
 import jse.code.collection.AbstractCollections;
 import jse.math.matrix.ColumnIntMatrix;

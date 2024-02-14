@@ -5,7 +5,7 @@ import jse.math.MathEX;
 import jse.math.vector.ILogicalVector;
 import jse.math.vector.IVector;
 import jse.parallel.MPI;
-import jse.parallel.VectorCache;
+import jse.cache.VectorCache;
 
 import static jse.code.CS.R_NEAREST_MUL;
 

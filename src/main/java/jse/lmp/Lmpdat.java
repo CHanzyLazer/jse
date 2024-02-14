@@ -1,6 +1,10 @@
 package jse.lmp;
 
 import jse.atom.*;
+import jse.cache.IntVectorCache;
+import jse.cache.MatrixCache;
+import jse.cache.ThreadLocalObjectCachePool;
+import jse.cache.VectorCache;
 import jse.code.UT;
 import jse.math.MathEX;
 import jse.math.matrix.ColumnMatrix;
@@ -10,7 +14,7 @@ import jse.math.vector.IIntVector;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vectors;
-import jse.parallel.*;
+import jse.parallel.MPI;
 import jse.vasp.IVaspCommonData;
 import org.jetbrains.annotations.Nullable;
 

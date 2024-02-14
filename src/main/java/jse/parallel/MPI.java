@@ -1,5 +1,6 @@
 package jse.parallel;
 
+import jse.cache.ByteArrayCache;
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
 import jse.code.UT;

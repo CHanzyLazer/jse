@@ -4,9 +4,9 @@ import jse.code.collection.IntList;
 import jse.code.functional.IIndexFilter;
 import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
-import jse.parallel.IObjectPool;
+import jse.cache.IObjectPool;
 import jse.parallel.IShutdownable;
-import jse.parallel.ThreadLocalObjectCachePool;
+import jse.cache.ThreadLocalObjectCachePool;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

@@ -13,7 +13,7 @@ import jse.math.matrix.Matrices;
 import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 import jse.parallel.AbstractThreadPool;
-import jse.parallel.MatrixCache;
+import jse.cache.MatrixCache;
 import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;

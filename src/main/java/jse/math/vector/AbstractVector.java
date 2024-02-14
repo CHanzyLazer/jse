@@ -6,7 +6,7 @@ import jse.code.functional.IIndexFilter;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
 import jse.math.SliceType;
-import jse.parallel.VectorCache;
+import jse.cache.VectorCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 

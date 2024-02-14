@@ -7,8 +7,7 @@ import jse.code.functional.IIndexFilter;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
-import jse.parallel.IntVectorCache;
-import org.jetbrains.annotations.ApiStatus;
+import jse.cache.IntVectorCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 

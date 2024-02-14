@@ -1,5 +1,6 @@
 package jse.atom;
 
+import jse.cache.*;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.IntList;
 import jse.code.functional.IIndexFilter;
