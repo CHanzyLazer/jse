@@ -619,14 +619,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         /** Gather stuffs */
         private boolean mInitialized = false;
-        private int[] mCounts;
-        private int[] mDispls;
-        private int[] mBuf2Idx;
+        private IntVector mCounts;
+        private IntVector mDispls;
+        private IntVector mBuf2Idx;
         private void init_() {
             if (mDead) throw new RuntimeException("This MPIInfo is dead");
             if (mInitialized) return;
             mInitialized = true;
-            mCounts = IntArrayCache.getZeros(mSize);
+            mCounts = IntVectorCache.getZeros(mSize);
             final int[][] rBuf2Idx = new int[mSize][];
             IntArrayCache.getArrayTo(mAtomNum, mSize, (i, array) -> rBuf2Idx[i] = array);
             // 遍历所有的原子统计位置
@@ -640,32 +640,78 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tJ = (int) Math.floor(tY / tCellSize.mY);
                 int tK = (int) Math.floor(tZ / tCellSize.mZ);
                 int tRank = (tI*mSizeY*mSizeZ + tJ*mSizeZ + tK); // 这里的排序和 LinkedCell 不同，但是和新的 AbstractAtoms 的一直，为了避免问题这里暂时不去改 LinkedCell 的排序
-                int tCount = mCounts[tRank];
+                int tCount = mCounts.get(tRank);
                 rBuf2Idx[tRank][tCount] = i;
-                ++mCounts[tRank];
+                mCounts.increment(tRank);
             }
-            mBuf2Idx = IntArrayCache.getArray(mAtomNum);
-            mDispls = IntArrayCache.getArray(mSize);
-            mDispls[0] = 0;
+            mBuf2Idx = IntVectorCache.getVec(mAtomNum);
+            mDispls = IntVectorCache.getVec(mSize);
+            mDispls.set(0, 0);
             for (int i = 0; i < mSize; ++i) {
-                int tStart = mDispls[i];
-                int tCount = mCounts[i];
-                System.arraycopy(rBuf2Idx[i], 0, mBuf2Idx, tStart, tCount);
-                if (i != mSize-1) mDispls[i+1] = tStart + tCount;
+                int tStart = mDispls.get(i);
+                int tCount = mCounts.get(i);
+                int tEnd = tStart+tCount;
+                mBuf2Idx.subVec(tStart, tEnd).fill(rBuf2Idx[i]);
+                if (i != mSize-1) mDispls.set(i+1, tEnd);
             }
             IntArrayCache.returnArrayFrom(mSize, i -> rBuf2Idx[i]);
         }
-        int[] counts() {
+        /** 收集所有数据到所有进程，主要用于最终输出 */
+        void allgatherAll(IComplexMatrix rData) throws MPI.Error {
             if (!mInitialized) init_();
-            return mCounts;
+            final int tMul = rData.columnNumber();
+            // 先创建临时的同步数组
+            RowComplexMatrix rBuf = ComplexMatrixCache.getMatRow(mAtomNum, tMul);
+            try {
+                // 通过 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
+                final int tStart = mDispls.get(mRank);
+                final int tEnd = tStart + mCounts.get(mRank);
+                for (int i = tStart; i < tEnd; ++i) {
+                    rBuf.row(i).fill(rData.row(mBuf2Idx.get(i)));
+                }
+                // 使用 allgatherv 收集所有 buf，注意实际 mCounts 和 mDispls 需要临时增倍；
+                // 这样会导致线程不安全，当然这里 MPIInfo 都是在调用计算函数时临时创建的，因此也不存在这个问题
+                mCounts.multiply2this(tMul);
+                mDispls.multiply2this(tMul);
+                try {
+                    double[][] tData = rBuf.internalData();
+                    mComm.allgatherv(tData[0], mCounts.internalData(), mDispls.internalData());
+                    mComm.allgatherv(tData[1], mCounts.internalData(), mDispls.internalData());
+                } finally {
+                    mCounts.div2this(tMul);
+                    mDispls.div2this(tMul);
+                }
+                // 将在 buf 中的数据重新设回 rData
+                for (int i = 0; i < mAtomNum; ++i) {
+                    rData.row(mBuf2Idx.get(i)).fill(rBuf.row(i));
+                }
+            } finally {
+                // 归还临时数组
+                ComplexMatrixCache.returnMat(rBuf);
+            }
         }
-        int[] displs() {
+        void allgatherAll(IVector rData) throws MPI.Error {
             if (!mInitialized) init_();
-            return mDispls;
-        }
-        int[] buf2idx() {
-            if (!mInitialized) init_();
-            return mBuf2Idx;
+            // 先创建临时的同步数组
+            Vector rBuf = VectorCache.getVec(mAtomNum);
+            try {
+                // 通过 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
+                final int tStart = mDispls.get(mRank);
+                final int tEnd = tStart + mCounts.get(mRank);
+                for (int i = tStart; i < tEnd; ++i) {
+                    rBuf.set(i, rData.get(mBuf2Idx.get(i)));
+                }
+                // 使用 allgatherv 收集所有 buf
+                double[] tData = rBuf.internalData();
+                mComm.allgatherv(tData, mCounts.internalData(), mDispls.internalData());
+                // 将在 buf 中的数据重新设回 qlm
+                for (int i = 0; i < mAtomNum; ++i) {
+                    rData.set(mBuf2Idx.get(i), rBuf.get(i));
+                }
+            } finally {
+                // 归还临时数组
+                VectorCache.returnVec(rBuf);
+            }
         }
         
         private boolean mDead = false;
@@ -673,9 +719,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             if (mDead) return;
             mDead = true;
             if (mInitialized) {
-                IntArrayCache.returnArray(mCounts);
-                IntArrayCache.returnArray(mDispls);
-                IntArrayCache.returnArray(mBuf2Idx);
+                IntVectorCache.returnVec(mCounts);
+                IntVectorCache.returnVec(mDispls);
+                IntVectorCache.returnVec(mBuf2Idx);
             }
         }
     }
@@ -990,36 +1036,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexVectorCache.returnVec(tY);
         
         // 收集所有进程将统计到的 Qlm，现在可以直接一起同步保证效率
-        if (!aNoGather) {
-            int tMul = aL+aL+1;
-            // 先创建临时的同步数组
-            RowComplexMatrix rBuf = ComplexMatrixCache.getMatRow(mAtomNum, tMul);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.row(i).fill(Qlm.row(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf，注意实际 tCounts 和 tDispls 需要增倍
-            int[] tCountsMul = IntArrayCache.getArray(aMPIInfo.mSize);
-            int[] tDisplsMul = IntArrayCache.getArray(aMPIInfo.mSize);
-            for (int i = 0; i < aMPIInfo.mSize; ++i) tCountsMul[i] = tCounts[i] * tMul;
-            for (int i = 0; i < aMPIInfo.mSize; ++i) tDisplsMul[i] = tDispls[i] * tMul;
-            double[][] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData[0], tCountsMul, tDisplsMul);
-            aMPIInfo.mComm.allgatherv(tData[1], tCountsMul, tDisplsMul);
-            IntArrayCache.returnArray(tCountsMul);
-            IntArrayCache.returnArray(tDisplsMul);
-            // 将在 buf 中的数据重新设回 Qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                Qlm.row(tBuf2Idx[i]).fill(rBuf.row(i));
-            }
-            // 归还临时数组
-            ComplexMatrixCache.returnMat(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(Qlm);
         
         return Qlm;
     }
@@ -1168,36 +1185,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexMatrixCache.returnMat(Qlm);
 
         // 收集所有进程将统计到的 qlm，现在可以直接一起同步保证效率
-        if (!aNoGather) {
-            int tMul = aL+aL+1;
-            // 先创建临时的同步数组
-            RowComplexMatrix rBuf = ComplexMatrixCache.getMatRow(mAtomNum, tMul);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.row(i).fill(qlm.row(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf，注意实际 tCounts 和 tDispls 需要增倍
-            int[] tCountsMul = IntArrayCache.getArray(aMPIInfo.mSize);
-            int[] tDisplsMul = IntArrayCache.getArray(aMPIInfo.mSize);
-            for (int i = 0; i < aMPIInfo.mSize; ++i) tCountsMul[i] = tCounts[i] * tMul;
-            for (int i = 0; i < aMPIInfo.mSize; ++i) tDisplsMul[i] = tDispls[i] * tMul;
-            double[][] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData[0], tCountsMul, tDisplsMul);
-            aMPIInfo.mComm.allgatherv(tData[1], tCountsMul, tDisplsMul);
-            IntArrayCache.returnArray(tCountsMul);
-            IntArrayCache.returnArray(tDisplsMul);
-            // 将在 buf 中的数据重新设回 qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                qlm.row(tBuf2Idx[i]).fill(rBuf.row(i));
-            }
-            // 归还临时数组
-            ComplexMatrixCache.returnMat(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(qlm);
         
         return qlm;
     }
@@ -1262,28 +1250,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexMatrixCache.returnMat(Qlm);
         
         // 收集所有进程将统计到的 Ql
-        if (!aNoGather) {
-            // 先创建临时的同步数组
-            Vector rBuf = VectorCache.getVec(mAtomNum);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.set(i, Ql.get(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf
-            double[] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData, tCounts, tDispls);
-            // 将在 buf 中的数据重新设回 qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                Ql.set(tBuf2Idx[i], rBuf.get(i));
-            }
-            // 归还临时数组
-            VectorCache.returnVec(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(Ql);
         
         // 返回最终计算结果
         return Ql;
@@ -1415,28 +1382,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexMatrixCache.returnMat(qlm);
         
         // 收集所有进程将统计到的 ql
-        if (!aNoGather) {
-            // 先创建临时的同步数组
-            Vector rBuf = VectorCache.getVec(mAtomNum);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.set(i, ql.get(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf
-            double[] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData, tCounts, tDispls);
-            // 将在 buf 中的数据重新设回 qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                ql.set(tBuf2Idx[i], rBuf.get(i));
-            }
-            // 归还临时数组
-            VectorCache.returnVec(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(ql);
         
         // 返回最终计算结果
         return ql;
@@ -1644,28 +1590,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexMatrixCache.returnMat(Qlm);
         
         // 收集所有进程将统计到的连接数
-        if (!aNoGather) {
-            // 先创建临时的同步数组
-            Vector rBuf = VectorCache.getVec(mAtomNum);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.set(i, tConnectCount.get(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf
-            double[] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData, tCounts, tDispls);
-            // 将在 buf 中的数据重新设回 qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                tConnectCount.set(tBuf2Idx[i], rBuf.get(i));
-            }
-            // 归还临时数组
-            VectorCache.returnVec(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(tConnectCount);
         
         // 返回最终计算结果
         return tConnectCount;
@@ -1810,28 +1735,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         ComplexMatrixCache.returnMat(qlm);
         
         // 收集所有进程将统计到的连接数
-        if (!aNoGather) {
-            // 先创建临时的同步数组
-            Vector rBuf = VectorCache.getVec(mAtomNum);
-            // 获取 buf2idx, counts 和 displs 来将需要的数据放入 rBuf 指定位置
-            int[] tBuf2Idx = aMPIInfo.buf2idx();
-            int[] tCounts = aMPIInfo.counts();
-            int[] tDispls = aMPIInfo.displs();
-            final int tStart = tDispls[aMPIInfo.mRank];
-            final int tEnd = tStart + tCounts[aMPIInfo.mRank];
-            for (int i = tStart; i < tEnd; ++i) {
-                rBuf.set(i, tConnectCount.get(tBuf2Idx[i]));
-            }
-            // 使用 allgatherv 收集所有 buf
-            double[] tData = rBuf.internalData();
-            aMPIInfo.mComm.allgatherv(tData, tCounts, tDispls);
-            // 将在 buf 中的数据重新设回 qlm
-            for (int i = 0; i < mAtomNum; ++i) {
-                tConnectCount.set(tBuf2Idx[i], rBuf.get(i));
-            }
-            // 归还临时数组
-            VectorCache.returnVec(rBuf);
-        }
+        if (!aNoGather) aMPIInfo.allgatherAll(tConnectCount);
         
         // 返回最终计算结果
         return tConnectCount;
@@ -2014,7 +1918,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double fc = dis>=aRCutOff ? 0.0 : Fast.powFast(1.0 - Fast.pow2(dis/aRCutOff), 4);
                 // 统一遍历一次计算 Rn
                 final double tX = 1.0 - 2.0*dis/aRCutOff;
-                IVector Rn = Vectors.from(aNMax+1, n -> Func.chebyshev_(n, tX));
+                IVector Rn = Vectors.from(aNMax+1, n -> Func.chebyshev(n, tX));
                 
                 // 遍历求 n，l 的情况
                 Func.sphericalHarmonicsFull2Dest(aLMax, theta, phi, tY);

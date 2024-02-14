@@ -248,6 +248,33 @@ public abstract class AbstractIntVector implements IIntVector {
     }
     
     /** 向量基本的运算操作 */
+    @Override public final IIntVector plus         (int aRHS) {return operation().plus    (aRHS);}
+    @Override public final IIntVector minus        (int aRHS) {return operation().minus   (aRHS);}
+    @Override public final IIntVector multiply     (int aRHS) {return operation().multiply(aRHS);}
+    @Override public final IIntVector div          (int aRHS) {return operation().div     (aRHS);}
+    @Override public final IIntVector mod          (int aRHS) {return operation().mod     (aRHS);}
+    
+    @Override public final IIntVector plus         (IIntVector aRHS) {return operation().plus    (aRHS);}
+    @Override public final IIntVector minus        (IIntVector aRHS) {return operation().minus   (aRHS);}
+    @Override public final IIntVector multiply     (IIntVector aRHS) {return operation().multiply(aRHS);}
+    @Override public final IIntVector div          (IIntVector aRHS) {return operation().div     (aRHS);}
+    @Override public final IIntVector mod          (IIntVector aRHS) {return operation().mod     (aRHS);}
+    
+    @Override public final void plus2this       (int aRHS) {operation().plus2this    (aRHS);}
+    @Override public final void minus2this      (int aRHS) {operation().minus2this   (aRHS);}
+    @Override public final void multiply2this   (int aRHS) {operation().multiply2this(aRHS);}
+    @Override public final void div2this        (int aRHS) {operation().div2this     (aRHS);}
+    @Override public final void mod2this        (int aRHS) {operation().mod2this     (aRHS);}
+    
+    @Override public final void plus2this       (IIntVector aRHS) {operation().plus2this    (aRHS);}
+    @Override public final void minus2this      (IIntVector aRHS) {operation().minus2this   (aRHS);}
+    @Override public final void multiply2this   (IIntVector aRHS) {operation().multiply2this(aRHS);}
+    @Override public final void div2this        (IIntVector aRHS) {operation().div2this     (aRHS);}
+    @Override public final void mod2this        (IIntVector aRHS) {operation().mod2this     (aRHS);}
+    
+    @Override public final IIntVector negative() {return operation().negative();}
+    @Override public final void negative2this() {operation().negative2this();}
+    
     @Override public final int    sum   () {return operation().sum  ();}
     @Override public final double mean  () {return operation().mean ();}
     @Override public final double prod  () {return operation().prod ();}

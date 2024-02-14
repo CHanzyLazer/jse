@@ -110,6 +110,36 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     IIntVectorOperation operation();
     @VisibleForTesting default IIntVectorOperation opt() {return operation();}
     
+    
+    /** Groovy 的部分，增加向量基本的运算操作，现在也归入内部使用 */
+    IIntVector plus     (int aRHS);
+    IIntVector minus    (int aRHS);
+    IIntVector multiply (int aRHS);
+    IIntVector div      (int aRHS);
+    IIntVector mod      (int aRHS);
+    
+    IIntVector plus     (IIntVector aRHS);
+    IIntVector minus    (IIntVector aRHS);
+    IIntVector multiply (IIntVector aRHS);
+    IIntVector div      (IIntVector aRHS);
+    IIntVector mod      (IIntVector aRHS);
+    
+    /** 注意这些 2this 操作并没有重载 groovy 中的 += 之类的运算符 */
+    void plus2this      (int aRHS);
+    void minus2this     (int aRHS);
+    void multiply2this  (int aRHS);
+    void div2this       (int aRHS);
+    void mod2this       (int aRHS);
+    
+    void plus2this      (IIntVector aRHS);
+    void minus2this     (IIntVector aRHS);
+    void multiply2this  (IIntVector aRHS);
+    void div2this       (IIntVector aRHS);
+    void mod2this       (IIntVector aRHS);
+    
+    IIntVector negative();
+    void negative2this();
+    
     /** 增加向量基本的运算操作以及 IntegerVector 特有的操作，现在也归入内部使用 */
     int    sum  ();
     double mean ();

@@ -277,6 +277,303 @@ public class ARRAY {
     public static void mapLMod2This     (double[] rThis, int rShift, double aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS % rThis[i];}
     
     
+    /** int stuffs */
+    public static void ebePlus2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] + aDataR[i];
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aDataL[i] + aDataR[k];
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] + aDataR[i];
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aDataL[j] + aDataR[k];
+        }
+    }
+    public static void ebeMinus2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] - aDataR[i];
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aDataL[i] - aDataR[k];
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] - aDataR[i];
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aDataL[j] - aDataR[k];
+        }
+    }
+    public static void ebeMultiply2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] * aDataR[i];
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aDataL[i] * aDataR[k];
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] * aDataR[i];
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aDataL[j] * aDataR[k];
+        }
+    }
+    public static void ebeDiv2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] / aDataR[i];
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aDataL[i] / aDataR[k];
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] / aDataR[i];
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aDataL[j] / aDataR[k];
+        }
+    }
+    public static void ebeMod2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] % aDataR[i];
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aDataL[i] % aDataR[k];
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] % aDataR[i];
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aDataL[j] % aDataR[k];
+        }
+    }
+    
+    
+    public static void mapPlus2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] + aRHS;
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] + aRHS;
+    }
+    public static void mapMinus2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] - aRHS;
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] - aRHS;
+    }
+    public static void mapLMinus2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aRHS - aDataL[i];
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aRHS - aDataL[j];
+    }
+    public static void mapMultiply2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] * aRHS;
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] * aRHS;
+    }
+    public static void mapDiv2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] / aRHS;
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] / aRHS;
+    }
+    public static void mapLDiv2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aRHS / aDataL[i];
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aRHS / aDataL[j];
+    }
+    public static void mapMod2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aDataL[i] % aRHS;
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aDataL[j] % aRHS;
+    }
+    public static void mapLMod2Dest(int[] aDataL, int aShiftL, int aRHS, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aRHS % aDataL[i];
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aRHS % aDataL[j];
+    }
+    
+    
+    public static void ebePlus2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] += aDataR[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] += aDataR[j];
+    }
+    public static void ebeMinus2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] -= aDataR[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] -= aDataR[j];
+    }
+    public static void ebeLMinus2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aDataR[i] - rThis[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aDataR[j] - rThis[i];
+    }
+    public static void ebeMultiply2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] *= aDataR[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] *= aDataR[j];
+    }
+    public static void ebeDiv2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] /= aDataR[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] /= aDataR[j];
+    }
+    public static void ebeLDiv2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aDataR[i] / rThis[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aDataR[j] / rThis[i];
+    }
+    public static void ebeMod2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] %= aDataR[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] %= aDataR[j];
+    }
+    public static void ebeLMod2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aDataR[i] % rThis[i];
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aDataR[j] % rThis[i];
+    }
+    
+    
+    public static void mapPlus2This     (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] += aRHS          ;}
+    public static void mapMinus2This    (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] -= aRHS          ;}
+    public static void mapLMinus2This   (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS - rThis[i];}
+    public static void mapMultiply2This (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] *= aRHS          ;}
+    public static void mapDiv2This      (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] /= aRHS          ;}
+    public static void mapLDiv2This     (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS / rThis[i];}
+    public static void mapMod2This      (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] %= aRHS          ;}
+    public static void mapLMod2This     (int[] rThis, int rShift, int aRHS, int aLength) {final int rEnd = aLength + rShift; for (int i = rShift; i < rEnd; ++i) rThis[i] = aRHS % rThis[i];}
+    
+    
+    /** do stuff */
+    public static void ebeDo2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) {
+                for (int i = rShift; i < rEnd; ++i) {
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            } else {
+                for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            }
+        } else {
+            if (rShift == aShiftR) {
+                for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            } else {
+                for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
+                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
+                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+                }
+            }
+        }
+    }
+    public static void mapDo2Dest(double[][] aDataL, int aShiftL, double[][] rDest, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
+        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            for (int i = rShift; i < rEnd; ++i) {
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]));
+                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+            }
+        } else {
+            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]));
+                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
+            }
+        }
+    }
+    public static void ebeDo2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
+        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) {
+            for (int i = rShift; i < rEnd; ++i) {
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
+                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+            }
+        } else {
+            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
+                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[j], tImagDataR[j]));
+                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+            }
+        }
+    }
+    public static void mapDo2This(double[][] rThis, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
+        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) {
+            IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]));
+            rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
+        }
+    }
+    
+    public static void ebeDo2Dest(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, double[] rDest, int rShift, int aLength, DoubleBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[i]);
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[k]);
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[i]);
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[k]);
+        }
+    }
+    public static void mapDo2Dest(double[] aDataL, int aShiftL, double[] rDest, int rShift, int aLength, DoubleUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i]);
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j]);
+    }
+    public static void ebeDo2This(double[] rThis, int rShift, double[] aDataR, int aShiftR, int aLength, DoubleBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[i]);
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[j]);
+    }
+    public static void mapDo2This(double[] rThis, int rShift, int aLength, DoubleUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i]);
+    }
+    
+    public static void ebeDo2Dest(boolean[] aDataL, int aShiftL, boolean[] aDataR, int aShiftR, boolean[] rDest, int rShift, int aLength, IBooleanBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[i]);
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[k]);
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[i]);
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[k]);
+        }
+    }
+    public static void mapDo2Dest(boolean[] aDataL, int aShiftL, boolean[] rDest, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i]);
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j]);
+    }
+    public static void ebeDo2This(boolean[] rThis, int rShift, boolean[] aDataR, int aShiftR, int aLength, IBooleanBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[i]);
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[j]);
+    }
+    public static void mapDo2This(boolean[] rThis, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i]);
+    }
+    
+    public static void ebeDo2Dest(int[] aDataL, int aShiftL, int[] aDataR, int aShiftR, int[] rDest, int rShift, int aLength, IntBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) {
+            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsInt(aDataL[i], aDataR[i]);
+            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsInt(aDataL[i], aDataR[k]);
+        } else {
+            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsInt(aDataL[j], aDataR[i]);
+            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsInt(aDataL[j], aDataR[k]);
+        }
+    }
+    public static void mapDo2Dest(int[] aDataL, int aShiftL, int[] rDest, int rShift, int aLength, IntUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsInt(aDataL[i]);
+        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsInt(aDataL[j]);
+    }
+    public static void ebeDo2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength, IntBinaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsInt(rThis[i], aDataR[i]);
+        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsInt(rThis[i], aDataR[j]);
+    }
+    public static void mapDo2This(int[] rThis, int rShift, int aLength, IntUnaryOperator aOpt) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsInt(rThis[i]);
+    }
+    
+    
+    /** negative stuffs */
     public static void mapNegative2Dest(double[] aData, int aShift, double[] rDest, int rShift, int aLength) {
         final int rEnd = aLength + rShift;
         if (rShift == aShift) for (int i = rShift; i < rEnd; ++i) rDest[i] = -aData[i];
@@ -293,6 +590,15 @@ public class ARRAY {
     public static void mapNegative2This(double[][] rThis, int rShift, int aLength) {
         mapNegative2This(rThis[0], rShift, aLength);
         mapNegative2This(rThis[1], rShift, aLength);
+    }
+    public static void mapNegative2Dest(int[] aData, int aShift, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShift) for (int i = rShift; i < rEnd; ++i) rDest[i] = -aData[i];
+        else for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) rDest[i] = -aData[j];
+    }
+    public static void mapNegative2This(int[] rThis, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = -rThis[i];
     }
     
     
@@ -634,130 +940,7 @@ public class ARRAY {
     
     
     
-    /** do stuff */
-    public static void ebeDo2Dest(double[][] aDataL, int aShiftL, double[][] aDataR, int aShiftR, double[][] rDest, int rShift, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
-        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
-        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
-        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) {
-            if (rShift == aShiftR) {
-                for (int i = rShift; i < rEnd; ++i) {
-                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
-                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-                }
-            } else {
-                for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) {
-                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
-                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-                }
-            }
-        } else {
-            if (rShift == aShiftR) {
-                for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
-                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
-                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-                }
-            } else {
-                for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) {
-                    IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]), new ComplexDouble(tRealDataR[k], tImagDataR[k]));
-                    rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-                }
-            }
-        }
-    }
-    public static void mapDo2Dest(double[][] aDataL, int aShiftL, double[][] rDest, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
-        final double[] tRealDataL = aDataL[0], tImagDataL = aDataL[1];
-        final double[] rRealDest  = rDest [0], rImagDest  = rDest [1];
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) {
-            for (int i = rShift; i < rEnd; ++i) {
-                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[i], tImagDataL[i]));
-                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-            }
-        } else {
-            for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) {
-                IComplexDouble tValue = aOpt.apply(new ComplexDouble(tRealDataL[j], tImagDataL[j]));
-                rRealDest[i] = tValue.real(); rImagDest[i] = tValue.imag();
-            }
-        }
-    }
-    public static void ebeDo2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
-        final double[] rRealThis  = rThis [0], rImagThis  = rThis [1];
-        final double[] tRealDataR = aDataR[0], tImagDataR = aDataR[1];
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftR) {
-            for (int i = rShift; i < rEnd; ++i) {
-                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[i], tImagDataR[i]));
-                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
-            }
-        } else {
-            for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) {
-                IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]), new ComplexDouble(tRealDataR[j], tImagDataR[j]));
-                rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
-            }
-        }
-    }
-    public static void mapDo2This(double[][] rThis, int rShift, int aLength, IUnaryFullOperator<? extends IComplexDouble, ? super ComplexDouble> aOpt) {
-        final double[] rRealThis = rThis[0], rImagThis = rThis[1];
-        final int rEnd = aLength + rShift;
-        for (int i = rShift; i < rEnd; ++i) {
-            IComplexDouble tValue = aOpt.apply(new ComplexDouble(rRealThis[i], rImagThis[i]));
-            rRealThis[i] = tValue.real(); rImagThis[i] = tValue.imag();
-        }
-    }
-    
-    public static void ebeDo2Dest(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, double[] rDest, int rShift, int aLength, DoubleBinaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) {
-            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[i]);
-            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[i], aDataR[k]);
-        } else {
-            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[i]);
-            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsDouble(aDataL[j], aDataR[k]);
-        }
-    }
-    public static void mapDo2Dest(double[] aDataL, int aShiftL, double[] rDest, int rShift, int aLength, DoubleUnaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsDouble(aDataL[i]);
-        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsDouble(aDataL[j]);
-    }
-    public static void ebeDo2This(double[] rThis, int rShift, double[] aDataR, int aShiftR, int aLength, DoubleBinaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[i]);
-        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsDouble(rThis[i], aDataR[j]);
-    }
-    public static void mapDo2This(double[] rThis, int rShift, int aLength, DoubleUnaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsDouble(rThis[i]);
-    }
-    
-    public static void ebeDo2Dest(boolean[] aDataL, int aShiftL, boolean[] aDataR, int aShiftR, boolean[] rDest, int rShift, int aLength, IBooleanBinaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) {
-            if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[i]);
-            else for (int i = rShift, k = aShiftR; i < rEnd; ++i, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[i], aDataR[k]);
-        } else {
-            if (rShift == aShiftR) for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[i]);
-            else for (int i = rShift, j = aShiftL, k = aShiftR; i < rEnd; ++i, ++j, ++k) rDest[i] = aOpt.applyAsBoolean(aDataL[j], aDataR[k]);
-        }
-    }
-    public static void mapDo2Dest(boolean[] aDataL, int aShiftL, boolean[] rDest, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftL) for (int i = rShift; i < rEnd; ++i) rDest[i] = aOpt.applyAsBoolean(aDataL[i]);
-        else for (int i = rShift, j = aShiftL; i < rEnd; ++i, ++j) rDest[i] = aOpt.applyAsBoolean(aDataL[j]);
-    }
-    public static void ebeDo2This(boolean[] rThis, int rShift, boolean[] aDataR, int aShiftR, int aLength, IBooleanBinaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        if (rShift == aShiftR) for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[i]);
-        else for (int i = rShift, j = aShiftR; i < rEnd; ++i, ++j) rThis[i] = aOpt.applyAsBoolean(rThis[i], aDataR[j]);
-    }
-    public static void mapDo2This(boolean[] rThis, int rShift, int aLength, IBooleanUnaryOperator aOpt) {
-        final int rEnd = aLength + rShift;
-        for (int i = rShift; i < rEnd; ++i) rThis[i] = aOpt.applyAsBoolean(rThis[i]);
-    }
-    
-    
+    /** fill, forEach, assign stuff */
     public static void mapFill2This(double[][] rThis, int rShift, IComplexDouble aRHS, int aLength) {
         mapFill2This(rThis[0], rShift, aRHS.real(), aLength);
         mapFill2This(rThis[1], rShift, aRHS.imag(), aLength);

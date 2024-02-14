@@ -10,6 +10,50 @@ import java.util.function.*;
  * @author liqa
  */
 public interface IIntVectorOperation {
+    /** 通用的一些运算 */
+    IIntVector plus     (IIntVector aRHS);
+    IIntVector minus    (IIntVector aRHS);
+    IIntVector lminus   (IIntVector aRHS);
+    IIntVector multiply (IIntVector aRHS);
+    IIntVector div      (IIntVector aRHS);
+    IIntVector ldiv     (IIntVector aRHS);
+    IIntVector mod      (IIntVector aRHS);
+    IIntVector lmod     (IIntVector aRHS);
+    IIntVector operate  (IIntVector aRHS, IntBinaryOperator aOpt);
+    
+    IIntVector plus     (int aRHS);
+    IIntVector minus    (int aRHS);
+    IIntVector lminus   (int aRHS);
+    IIntVector multiply (int aRHS);
+    IIntVector div      (int aRHS);
+    IIntVector ldiv     (int aRHS);
+    IIntVector mod      (int aRHS);
+    IIntVector lmod     (int aRHS);
+    IIntVector map      (IntUnaryOperator aOpt);
+    
+    void plus2this      (IIntVector aRHS);
+    void minus2this     (IIntVector aRHS);
+    void lminus2this    (IIntVector aRHS);
+    void multiply2this  (IIntVector aRHS);
+    void div2this       (IIntVector aRHS);
+    void ldiv2this      (IIntVector aRHS);
+    void mod2this       (IIntVector aRHS);
+    void lmod2this      (IIntVector aRHS);
+    void operate2this   (IIntVector aRHS, IntBinaryOperator aOpt);
+    
+    void plus2this      (int aRHS);
+    void minus2this     (int aRHS);
+    void lminus2this    (int aRHS);
+    void multiply2this  (int aRHS);
+    void div2this       (int aRHS);
+    void ldiv2this      (int aRHS);
+    void mod2this       (int aRHS);
+    void lmod2this      (int aRHS);
+    void map2this       (IntUnaryOperator aOpt);
+    
+    IIntVector negative();
+    void negative2this();
+    
     /** 这两个方法名默认是作用到自身的，这里为了保持 operation 的使用简洁不在函数名上特殊说明 */
     void fill               (int aRHS);
     void fill               (IIntVector aRHS);
