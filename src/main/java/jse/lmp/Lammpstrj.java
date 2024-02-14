@@ -368,12 +368,6 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         
         
         /// MPI stuffs
-        /** 用于 MPI 收发信息的 tags */
-        private final static int
-              LAMMPSTRJ_INFO = 210
-            , DATA_KEY = 212
-            , DATA = 211
-            ;
         /** [AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep] */
         private final static int LAMMPSTRJ_INFO_LEN = 8;
         /** 为了使用简单并且避免 double 转 long 造成的信息损耗，这里统一用 long[] 来传输信息 */
@@ -429,7 +423,6 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
                 LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
             }
         }
-        @SuppressWarnings("SameParameterValue")
         public static SubLammpstrj bcast(SubLammpstrj aSubLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
             if (aComm.rank() == aRoot) {
                 // 暂不支持周期边界以外的类型的发送
@@ -649,6 +642,100 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
         }
     }
     
+    
+    /// MPI stuffs
+    /** 用于 MPI 收发信息的 tags */
+    private final static int
+          LAMMPSTRJ_INFO = 210
+        , DATA_KEY = 212
+        , DATA = 211
+        , LAMMPSTRJ_SIZE = 219
+        ;
+    /** send recv bcast 做简单实现，将 Lammpstrj 看作一个整体 */
+    public static void send(Lammpstrj aLammpstrj, int aDest, MPI.Comm aComm) throws MPI.Error {
+        aComm.sendI(aLammpstrj.size(), aDest, LAMMPSTRJ_SIZE);
+        for (SubLammpstrj tSubLammpstrj : aLammpstrj) SubLammpstrj.send(tSubLammpstrj, aDest, aComm);
+    }
+    public static Lammpstrj recv(int aSource, MPI.Comm aComm) throws MPI.Error {
+        final int tSize = aComm.recvI(aSource, LAMMPSTRJ_SIZE);
+        List<SubLammpstrj> rLammpstrj = new ArrayList<>(tSize);
+        for (int i = 0; i < tSize; ++i) rLammpstrj.add(SubLammpstrj.recv(aSource, aComm));
+        return new Lammpstrj(rLammpstrj);
+    }
+    public static Lammpstrj bcast(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+        if (aComm.rank() == aRoot) {
+            aComm.bcastI(aLammpstrj.size(), aRoot);
+            for (SubLammpstrj tSubLammpstrj : aLammpstrj) SubLammpstrj.bcast(tSubLammpstrj, aRoot, aComm);
+            return aLammpstrj;
+        } else {
+            final int tSize = aComm.bcastI(-1, aRoot);
+            List<SubLammpstrj> rLammpstrj = new ArrayList<>(tSize);
+            for (int i = 0; i < tSize; ++i) rLammpstrj.add(SubLammpstrj.bcast(null, aRoot, aComm));
+            return new Lammpstrj(rLammpstrj);
+        }
+    }
+    /** 对于整个 Lammpstrj 还提供 gather 和 scatter 方法 */
+    public static Lammpstrj gather(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+        if (aComm.rank() != aRoot) {
+            aComm.sendI(aLammpstrj.size(), aRoot, LAMMPSTRJ_SIZE);
+            for (SubLammpstrj tSubLammpstrj : aLammpstrj) SubLammpstrj.send(tSubLammpstrj, aRoot, aComm);
+            return aLammpstrj;
+        } else {
+            final int tNP = aComm.size();
+            List<SubLammpstrj> rLammpstrj = new ArrayList<>(aLammpstrj.size() * tNP);
+            for (int i = 0; i < tNP; ++i) {
+                if (i != aRoot) {
+                    int tSize = aComm.recvI(i, LAMMPSTRJ_SIZE);
+                    for (int j = 0; j < tSize; ++j) rLammpstrj.add(SubLammpstrj.recv(i, aComm));
+                } else {
+                    rLammpstrj.addAll(aLammpstrj);
+                }
+            }
+            return new Lammpstrj(rLammpstrj);
+        }
+    }
+    public static Lammpstrj allgather(Lammpstrj aLammpstrj, MPI.Comm aComm) throws MPI.Error {
+        final int tMe = aComm.rank();
+        final int tNP = aComm.size();
+        List<SubLammpstrj> rLammpstrj = new ArrayList<>(aLammpstrj.size() * tNP);
+        for (int i = 0; i < tNP; ++i) {
+            if (i == tMe) {
+                int tSize = aComm.bcastI(aLammpstrj.size(), i);
+                for (int j = 0; j < tSize; ++j) SubLammpstrj.bcast(aLammpstrj.get(j), i, aComm);
+                rLammpstrj.addAll(aLammpstrj);
+            } else {
+                int tSize = aComm.bcastI(-1, i);
+                for (int j = 0; j < tSize; ++j) rLammpstrj.add(SubLammpstrj.bcast(null, i, aComm));
+            }
+        }
+        return new Lammpstrj(rLammpstrj);
+    }
+    public static Lammpstrj scatter(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+        if (aComm.rank() == aRoot) {
+            List<SubLammpstrj> rLammpstrj = null;
+            final int tNP = aComm.size();
+            final int tSize = aLammpstrj.size();
+            final int subSize = tSize / tNP;
+            final int tRest = tSize % tNP;
+            final Iterator<SubLammpstrj> it = aLammpstrj.iterator();
+            for (int i = 0; i < tNP; ++i) {
+                int tScatterSize = (i<tRest) ? subSize+1 : subSize;
+                if (i != aRoot) {
+                    aComm.sendI(tScatterSize, i, LAMMPSTRJ_SIZE);
+                    for (int j = 0; j < tScatterSize; ++j) SubLammpstrj.send(it.next(), i, aComm);
+                } else {
+                    rLammpstrj = new ArrayList<>(tScatterSize);
+                    for (int j = 0; j < tScatterSize; ++j) rLammpstrj.add(it.next());
+                }
+            }
+            return new Lammpstrj(rLammpstrj);
+        } else {
+            int tSize = aComm.recvI(aRoot, LAMMPSTRJ_SIZE);
+            List<SubLammpstrj> rLammpstrj = new ArrayList<>(tSize);
+            for (int j = 0; j < tSize; ++j) rLammpstrj.add(SubLammpstrj.recv(aRoot, aComm));
+            return new Lammpstrj(rLammpstrj);
+        }
+    }
     
     
     /// 实用功能，这里依旧保留这种写法

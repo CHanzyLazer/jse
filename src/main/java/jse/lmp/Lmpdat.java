@@ -552,7 +552,6 @@ public class Lmpdat extends AbstractSettableAtomData {
             LMP_INFO_CACHE.returnObject(tLmpdatInfo);
         }
     }
-    @SuppressWarnings("SameParameterValue")
     public static Lmpdat bcast(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPI.Error {
         if (aComm.rank() == aRoot) {
             // 暂不支持正交盒以外的类型的发送
