@@ -1,11 +1,13 @@
 package jse.math.table;
 
 
+import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
 import jse.math.matrix.IMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.IVectorGetter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -85,7 +87,28 @@ public abstract class AbstractTable implements ITable {
     @Override public void set(int aRow, String aHead, double aValue) {asMatrix().set(aRow, mHead2Idx.get(aHead), aValue);}
     @Override public List<? extends IVector> rows() {return asMatrix().rows();}
     @Override public IVector row(int aRow) {return asMatrix().row(aRow);}
-    @Override public List<? extends IVector> cols() {return asMatrix().cols();}
+    @Override public Map<String, ? extends IVector> cols() {
+        return new AbstractMap<String, IVector>() {
+            @NotNull @Override public Set<Entry<String, IVector>> entrySet() {
+                return new AbstractSet<Entry<String, IVector>>() {
+                    @Override public @NotNull Iterator<Entry<String, IVector>> iterator() {
+                        return AbstractCollections.map(mHeads.iterator(), head -> new Entry<String, IVector>(){
+                            @Override public String getKey() {return head;}
+                            @Override public IVector getValue() {return col(head);}
+                            @Override public IVector setValue(IVector value) {throw new UnsupportedOperationException("setValue");}
+                        });
+                    }
+                    @Override public int size() {return columnNumber();}
+                };
+            }
+            @Override public IVector get(Object key) {return asMatrix().col(mHead2Idx.get(key));}
+            @Override public boolean containsKey(Object key) {return mHead2Idx.containsKey(key);}
+            @Override public IVector remove(Object key) {throw new UnsupportedOperationException("remove");}
+            @Override public int size() {return columnNumber();}
+            @Override public void clear() {throw new UnsupportedOperationException("clear");}
+            @Override public IVector put(String key, IVector value) {throw new UnsupportedOperationException("put");}
+        };
+    }
     @Override public IVector col(String aHead) {return asMatrix().col(mHead2Idx.get(aHead));}
     @Override public int rowNumber() {return asMatrix().rowNumber();}
     @Override public int columnNumber() {return mHeads.size();}

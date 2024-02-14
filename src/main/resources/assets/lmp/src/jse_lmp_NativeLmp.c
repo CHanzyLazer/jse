@@ -3,7 +3,7 @@
 #include "jse_lmp_NativeLmp.h"
 
 
-/** utils */
+/** utils for lmp */
 #if defined(LAMMPS_BIGBIG)
 typedef int64_t intbig;
 #else

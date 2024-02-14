@@ -633,6 +633,7 @@ public class UT {
         
         public static byte[] str2bytes(String aStr) {return aStr.getBytes(StandardCharsets.UTF_8);}
         public static String bytes2str(byte[] aBytes) {return new String(aBytes, StandardCharsets.UTF_8);}
+        public static String bytes2str(byte[] aBytes, int aPos, int aLen) {return new String(aBytes, aPos, aLen, StandardCharsets.UTF_8);}
         
         
         public static byte[] int2bytes(int aI) {

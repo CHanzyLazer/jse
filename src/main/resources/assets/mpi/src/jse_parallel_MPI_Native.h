@@ -497,6 +497,70 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Allreduce0
 
 /*
  * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceB
+ * Signature: (BJJ)B
+ */
+JNIEXPORT jbyte JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceB
+  (JNIEnv *, jclass, jbyte, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceD
+ * Signature: (DJJ)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceD
+  (JNIEnv *, jclass, jdouble, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceZ
+ * Signature: (ZJJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceZ
+  (JNIEnv *, jclass, jboolean, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceC
+ * Signature: (CJJ)C
+ */
+JNIEXPORT jchar JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceC
+  (JNIEnv *, jclass, jchar, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceS
+ * Signature: (SJJ)S
+ */
+JNIEXPORT jshort JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceS
+  (JNIEnv *, jclass, jshort, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceI
+ * Signature: (IJJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceI
+  (JNIEnv *, jclass, jint, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceL
+ * Signature: (JJJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceL
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_AllreduceF
+ * Signature: (FJJ)F
+ */
+JNIEXPORT jfloat JNICALL Java_jse_parallel_MPI_00024Native_MPI_1AllreduceF
+  (JNIEnv *, jclass, jfloat, jlong, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
  * Method:    MPI_Barrier
  * Signature: (J)V
  */
@@ -510,6 +574,70 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Barrier
  */
 JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Bcast0
   (JNIEnv *, jclass, jobject, jint, jlong, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastB
+ * Signature: (BIJ)B
+ */
+JNIEXPORT jbyte JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastB
+  (JNIEnv *, jclass, jbyte, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastD
+ * Signature: (DIJ)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastD
+  (JNIEnv *, jclass, jdouble, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastZ
+ * Signature: (ZIJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastZ
+  (JNIEnv *, jclass, jboolean, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastC
+ * Signature: (CIJ)C
+ */
+JNIEXPORT jchar JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastC
+  (JNIEnv *, jclass, jchar, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastS
+ * Signature: (SIJ)S
+ */
+JNIEXPORT jshort JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastS
+  (JNIEnv *, jclass, jshort, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastI
+ * Signature: (IIJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastI
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastL
+ * Signature: (JIJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastL
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_BcastF
+ * Signature: (FIJ)F
+ */
+JNIEXPORT jfloat JNICALL Java_jse_parallel_MPI_00024Native_MPI_1BcastF
+  (JNIEnv *, jclass, jfloat, jint, jlong);
 
 /*
  * Class:     jse_parallel_MPI_Native
@@ -534,6 +662,70 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Gatherv0
  */
 JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Reduce0
   (JNIEnv *, jclass, jboolean, jobject, jobject, jint, jlong, jint, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceB
+ * Signature: (BJIJ)B
+ */
+JNIEXPORT jbyte JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceB
+  (JNIEnv *, jclass, jbyte, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceD
+ * Signature: (DJIJ)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceD
+  (JNIEnv *, jclass, jdouble, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceZ
+ * Signature: (ZJIJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceZ
+  (JNIEnv *, jclass, jboolean, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceC
+ * Signature: (CJIJ)C
+ */
+JNIEXPORT jchar JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceC
+  (JNIEnv *, jclass, jchar, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceS
+ * Signature: (SJIJ)S
+ */
+JNIEXPORT jshort JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceS
+  (JNIEnv *, jclass, jshort, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceI
+ * Signature: (IJIJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceI
+  (JNIEnv *, jclass, jint, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceL
+ * Signature: (JJIJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceL
+  (JNIEnv *, jclass, jlong, jlong, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_ReduceF
+ * Signature: (FJIJ)F
+ */
+JNIEXPORT jfloat JNICALL Java_jse_parallel_MPI_00024Native_MPI_1ReduceF
+  (JNIEnv *, jclass, jfloat, jlong, jint, jlong);
 
 /*
  * Class:     jse_parallel_MPI_Native
@@ -665,11 +857,139 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Send0
 
 /*
  * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendB
+ * Signature: (BIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendB
+  (JNIEnv *, jclass, jbyte, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendD
+ * Signature: (DIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendD
+  (JNIEnv *, jclass, jdouble, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendZ
+ * Signature: (ZIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendZ
+  (JNIEnv *, jclass, jboolean, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendC
+ * Signature: (CIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendC
+  (JNIEnv *, jclass, jchar, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendS
+ * Signature: (SIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendS
+  (JNIEnv *, jclass, jshort, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendI
+ * Signature: (IIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendI
+  (JNIEnv *, jclass, jint, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendL
+ * Signature: (JIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendL
+  (JNIEnv *, jclass, jlong, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_SendF
+ * Signature: (FIIJ)V
+ */
+JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1SendF
+  (JNIEnv *, jclass, jfloat, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
  * Method:    MPI_Recv0
  * Signature: (Ljava/lang/Object;IJIIIJ)V
  */
 JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Recv0
   (JNIEnv *, jclass, jobject, jint, jlong, jint, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvB
+ * Signature: (IIJ)B
+ */
+JNIEXPORT jbyte JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvB
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvD
+ * Signature: (IIJ)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvD
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvZ
+ * Signature: (IIJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvZ
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvC
+ * Signature: (IIJ)C
+ */
+JNIEXPORT jchar JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvC
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvS
+ * Signature: (IIJ)S
+ */
+JNIEXPORT jshort JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvS
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvI
+ * Signature: (IIJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvI
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvL
+ * Signature: (IIJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvL
+  (JNIEnv *, jclass, jint, jint, jlong);
+
+/*
+ * Class:     jse_parallel_MPI_Native
+ * Method:    MPI_RecvF
+ * Signature: (IIJ)F
+ */
+JNIEXPORT jfloat JNICALL Java_jse_parallel_MPI_00024Native_MPI_1RecvF
+  (JNIEnv *, jclass, jint, jint, jlong);
 
 /*
  * Class:     jse_parallel_MPI_Native

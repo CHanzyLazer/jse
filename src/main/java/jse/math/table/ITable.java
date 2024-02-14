@@ -7,6 +7,7 @@ import jse.math.vector.IVectorGetter;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 通用的列表类，不提供 get(int...) 以及 size() 之类的接口方便 {@link AbstractMultiFrameTable} 的使用，
@@ -43,7 +44,7 @@ public interface ITable {
     void set(int aRow, String aHead, double aValue);
     List<? extends IVector> rows();
     IVector row(int aRow);
-    List<? extends IVector> cols();
+    Map<String, ? extends IVector> cols();
     IVector col(String aHead);
     int rowNumber();
     int columnNumber();

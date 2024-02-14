@@ -14,6 +14,7 @@ import java.util.Collection;
 public class Tables {
     private Tables() {}
     
+    public static Table zeros(int aRowNum) {return Table.zeros(aRowNum);}
     public static Table zeros(int aRowNum, String... aHeads) {return Table.zeros(aRowNum, aHeads);}
     public static Table zeros(int aRowNum, int aColNum) {return Table.zeros(aRowNum, aColNum);}
     

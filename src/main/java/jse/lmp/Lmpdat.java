@@ -471,6 +471,8 @@ public class Lmpdat extends AbstractSettableAtomData {
     private final static ThreadLocalObjectCachePool<long[]> LMP_INFO_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new long[LMP_INFO_LEN]);
     /** 专门的方法用来收发 Lmpdat */
     public static void send(Lmpdat aLmpdat, int aDest, MPI.Comm aComm) throws MPI.Error {
+        // 暂不支持正交盒以外的类型的发送
+        if (aLmpdat.mBox.type() != Box.Type.NORMAL) throw new RuntimeException("send is temporarily support NORMAL Box only");
         // 获取必要信息
         final boolean tHasVelocities = (aLmpdat.mVelocities != null);
         final boolean tHasMass = (aLmpdat.mMasses != null);
@@ -480,12 +482,12 @@ public class Lmpdat extends AbstractSettableAtomData {
         long[] rLmpdatInfo = LMP_INFO_CACHE.getObject();
         try {
             rLmpdatInfo[0] = UT.Serial.combineI(aLmpdat.mAtomNum, aLmpdat.mAtomTypeNum);
-            rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
-            rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
-            rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
-            rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
-            rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
-            rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
+            rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.mBox.xlo());
+            rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.mBox.xhi());
+            rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.mBox.ylo());
+            rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.mBox.yhi());
+            rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.mBox.zlo());
+            rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.mBox.zhi());
             rLmpdatInfo[7] = UT.Serial.combineZ(tHasVelocities, tHasMass, tPositionsIsCol, tVelocitiesIsCol);
             aComm.send(rLmpdatInfo, LMP_INFO_LEN, aDest, LMPDAT_INFO);
         } finally {
@@ -548,28 +550,29 @@ public class Lmpdat extends AbstractSettableAtomData {
     }
     @SuppressWarnings("SameParameterValue")
     public static Lmpdat bcast(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPI.Error {
-        final int tMe = aComm.rank();
-        if (tMe == aRoot) {
+        if (aComm.rank() == aRoot) {
+            // 暂不支持正交盒以外的类型的发送
+            if (aLmpdat.mBox.type() != Box.Type.NORMAL) throw new RuntimeException("bcast is temporarily support NORMAL Box only");
             // 获取必要信息
             final boolean tHasVelocities = aLmpdat.mVelocities != null;
             final boolean tHasMass = aLmpdat.mMasses != null;
             final boolean tPositionsIsCol = (aLmpdat.mAtomXYZ instanceof ColumnMatrix);
             final boolean tVelocitiesIsCol = (aLmpdat.mVelocities instanceof ColumnMatrix);
             // 先发送 Lmpdat 的必要信息，[AtomNum | AtomTypeNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities | HasMass]
-            long[] rLmpdatInfo = LMP_INFO_CACHE.getObject();
+            long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
             try {
-                rLmpdatInfo[0] = UT.Serial.combineI(aLmpdat.mAtomNum, aLmpdat.mAtomTypeNum);
-                rLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.lmpBox().xlo());
-                rLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.lmpBox().xhi());
-                rLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.lmpBox().ylo());
-                rLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.lmpBox().yhi());
-                rLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.lmpBox().zlo());
-                rLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.lmpBox().zhi());
-                rLmpdatInfo[7] = UT.Serial.combineZ(tHasVelocities, tHasMass, tPositionsIsCol, tVelocitiesIsCol);
-                aComm.bcast(rLmpdatInfo, LMP_INFO_LEN, aRoot);
+                tLmpdatInfo[0] = UT.Serial.combineI(aLmpdat.mAtomNum, aLmpdat.mAtomTypeNum);
+                tLmpdatInfo[1] = Double.doubleToLongBits(aLmpdat.mBox.xlo());
+                tLmpdatInfo[2] = Double.doubleToLongBits(aLmpdat.mBox.xhi());
+                tLmpdatInfo[3] = Double.doubleToLongBits(aLmpdat.mBox.ylo());
+                tLmpdatInfo[4] = Double.doubleToLongBits(aLmpdat.mBox.yhi());
+                tLmpdatInfo[5] = Double.doubleToLongBits(aLmpdat.mBox.zlo());
+                tLmpdatInfo[6] = Double.doubleToLongBits(aLmpdat.mBox.zhi());
+                tLmpdatInfo[7] = UT.Serial.combineZ(tHasVelocities, tHasMass, tPositionsIsCol, tVelocitiesIsCol);
+                aComm.bcast(tLmpdatInfo, LMP_INFO_LEN, aRoot);
             } finally {
                 // 发送后归还临时数据
-                LMP_INFO_CACHE.returnObject(rLmpdatInfo);
+                LMP_INFO_CACHE.returnObject(tLmpdatInfo);
             }
             // 必要信息发送完成后分别发送 masses, atomData 和 velocities
             if (tHasMass) {

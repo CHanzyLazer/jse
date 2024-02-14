@@ -6,6 +6,7 @@ import jse.math.vector.IVector;
 import jse.math.vector.IVectorGetter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author liqa
@@ -33,7 +34,7 @@ public abstract class AbstractMultiFrameTable<T extends ITable> extends Abstract
     @Override public final IMatrix asMatrix() {return defaultFrame().asMatrix();}
     @Override public final List<? extends IVector> rows() {return defaultFrame().rows();}
     @Override public final IVector row(int aRow) {return defaultFrame().row(aRow);}
-    @Override public final List<? extends IVector> cols() {return defaultFrame().cols();}
+    @Override public final Map<String, ? extends IVector> cols() {return defaultFrame().cols();}
     @Override public final IVector col(String aHead) {return defaultFrame().col(aHead);}
     @Override public final int rowNumber() {return defaultFrame().rowNumber();}
     @Override public final int columnNumber() {return defaultFrame().columnNumber();}

@@ -3,7 +3,10 @@ package jse.parallel;
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
 import jse.code.UT;
-import jse.math.vector.*;
+import jse.math.vector.IIntVector;
+import jse.math.vector.IVector;
+import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -353,6 +356,15 @@ public class MPI {
         public void allreduce(int[]     rBuf, int aCount, Op aOp) throws Error {Native.MPI_Allreduce(rBuf, aCount, aOp.mPtr, mPtr);}
         public void allreduce(long[]    rBuf, int aCount, Op aOp) throws Error {Native.MPI_Allreduce(rBuf, aCount, aOp.mPtr, mPtr);}
         public void allreduce(float[]   rBuf, int aCount, Op aOp) throws Error {Native.MPI_Allreduce(rBuf, aCount, aOp.mPtr, mPtr);}
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public byte    allreduceB(byte    aB, Op aOp) throws Error {return Native.MPI_AllreduceB(aB, aOp.mPtr, mPtr);}
+        public double  allreduceD(double  aD, Op aOp) throws Error {return Native.MPI_AllreduceD(aD, aOp.mPtr, mPtr);}
+        public boolean allreduceZ(boolean aZ, Op aOp) throws Error {return Native.MPI_AllreduceZ(aZ, aOp.mPtr, mPtr);}
+        public char    allreduceC(char    aC, Op aOp) throws Error {return Native.MPI_AllreduceC(aC, aOp.mPtr, mPtr);}
+        public short   allreduceS(short   aS, Op aOp) throws Error {return Native.MPI_AllreduceS(aS, aOp.mPtr, mPtr);}
+        public int     allreduceI(int     aI, Op aOp) throws Error {return Native.MPI_AllreduceI(aI, aOp.mPtr, mPtr);}
+        public long    allreduceL(long    aL, Op aOp) throws Error {return Native.MPI_AllreduceL(aL, aOp.mPtr, mPtr);}
+        public float   allreduceF(float   aF, Op aOp) throws Error {return Native.MPI_AllreduceF(aF, aOp.mPtr, mPtr);}
         
         /**
          * Initiates barrier synchronization across all members of a group.
@@ -385,20 +397,48 @@ public class MPI {
         public void bcast(int[]     rBuf, int aCount, int aRoot) throws Error {Native.MPI_Bcast(rBuf, aCount, aRoot, mPtr);}
         public void bcast(long[]    rBuf, int aCount, int aRoot) throws Error {Native.MPI_Bcast(rBuf, aCount, aRoot, mPtr);}
         public void bcast(float[]   rBuf, int aCount, int aRoot) throws Error {Native.MPI_Bcast(rBuf, aCount, aRoot, mPtr);}
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public byte    bcastB(byte    aB, int aRoot) throws Error {return Native.MPI_BcastB(aB, aRoot, mPtr);}
+        public double  bcastD(double  aD, int aRoot) throws Error {return Native.MPI_BcastD(aD, aRoot, mPtr);}
+        public boolean bcastZ(boolean aZ, int aRoot) throws Error {return Native.MPI_BcastZ(aZ, aRoot, mPtr);}
+        public char    bcastC(char    aC, int aRoot) throws Error {return Native.MPI_BcastC(aC, aRoot, mPtr);}
+        public short   bcastS(short   aS, int aRoot) throws Error {return Native.MPI_BcastS(aS, aRoot, mPtr);}
+        public int     bcastI(int     aI, int aRoot) throws Error {return Native.MPI_BcastI(aI, aRoot, mPtr);}
+        public long    bcastL(long    aL, int aRoot) throws Error {return Native.MPI_BcastL(aL, aRoot, mPtr);}
+        public float   bcastF(float   aF, int aRoot) throws Error {return Native.MPI_BcastF(aF, aRoot, mPtr);}
+        public String bcastStr(String aStr, int aRoot) throws Error {
+            if (rank() == aRoot) {
+                // java 中至今没有提供将 String 内容输出到已有的 byte[] 中的方法，因此这里不能使用缓存加速；
+                // 当然这也让实现更加简洁了
+                byte[] tBytes = UT.Serial.str2bytes(aStr);
+                bcastI(tBytes.length, aRoot);
+                bcast(tBytes, tBytes.length, aRoot);
+                return aStr;
+            } else {
+                final int tLen = bcastI(-1, aRoot);
+                byte[] rBytes = ByteArrayCache.getArray(tLen);
+                try {
+                    bcast(rBytes, tLen, aRoot);
+                    return UT.Serial.bytes2str(rBytes, 0, tLen);
+                } finally {
+                    ByteArrayCache.returnArray(rBytes);
+                }
+            }
+        }
         /** 提供内部类型的支持，统一进行类型优化（例如后续对 shift 的支持）*/
         public void bcast(Vector rBuf, int aRoot) throws Error {bcast(rBuf.internalData(), rBuf.internalDataSize(), aRoot);}
         public void bcast(IVector rVector, int aRoot) throws Error {
             final boolean tIsRoot = (rank() == aRoot);
             Vector rBuf = rVector.toBuf(!tIsRoot); // 不是 root 则只需要写入，原本数据不用读取
-            bcast(rBuf, aRoot);
-            rVector.releaseBuf(rBuf, tIsRoot); // 是 root 则只需要读取，不用写入到原本数据
+            try {bcast(rBuf, aRoot);}
+            finally {rVector.releaseBuf(rBuf, tIsRoot);} // 是 root 则只需要读取，不用写入到原本数据
         }
         public void bcast(IntVector rBuf, int aRoot) throws Error {bcast(rBuf.internalData(), rBuf.internalDataSize(), aRoot);}
         public void bcast(IIntVector rVector, int aRoot) throws Error {
             final boolean tIsRoot = (rank() == aRoot);
             IntVector rBuf = rVector.toBuf(!tIsRoot); // 不是 root 则只需要写入，原本数据不用读取
-            bcast(rBuf, aRoot);
-            rVector.releaseBuf(rBuf, tIsRoot); // 是 root 则只需要读取，不用写入到原本数据
+            try {bcast(rBuf, aRoot);}
+            finally {rVector.releaseBuf(rBuf, tIsRoot);} // 是 root 则只需要读取，不用写入到原本数据
         }
         
         /**
@@ -527,6 +567,15 @@ public class MPI {
         public void reduce(int[]     rBuf, int aCount, Op aOp, int aRoot) throws Error {Native.MPI_Reduce(rBuf, aCount, aOp.mPtr, aRoot, mPtr);}
         public void reduce(long[]    rBuf, int aCount, Op aOp, int aRoot) throws Error {Native.MPI_Reduce(rBuf, aCount, aOp.mPtr, aRoot, mPtr);}
         public void reduce(float[]   rBuf, int aCount, Op aOp, int aRoot) throws Error {Native.MPI_Reduce(rBuf, aCount, aOp.mPtr, aRoot, mPtr);}
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public byte    reduceB(byte    aB, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceB(aB, aOp.mPtr, aRoot, mPtr);}
+        public double  reduceD(double  aD, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceD(aD, aOp.mPtr, aRoot, mPtr);}
+        public boolean reduceZ(boolean aZ, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceZ(aZ, aOp.mPtr, aRoot, mPtr);}
+        public char    reduceC(char    aC, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceC(aC, aOp.mPtr, aRoot, mPtr);}
+        public short   reduceS(short   aS, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceS(aS, aOp.mPtr, aRoot, mPtr);}
+        public int     reduceI(int     aI, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceI(aI, aOp.mPtr, aRoot, mPtr);}
+        public long    reduceL(long    aL, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceL(aL, aOp.mPtr, aRoot, mPtr);}
+        public float   reduceF(float   aF, Op aOp, int aRoot) throws Error {return Native.MPI_ReduceF(aF, aOp.mPtr, aRoot, mPtr);}
         
         /**
          * Scatters data from one member across all members of a group.
@@ -704,18 +753,43 @@ public class MPI {
         public void send(float[]   aBuf, int aCount, int aDest) throws Error {Native.MPI_Send(aBuf, aCount, aDest, 0, mPtr);}
         public void send(int aDest, int aTag) throws Error {Native.MPI_Send(aDest, aTag, mPtr);}
         public void send(int aDest) throws Error {Native.MPI_Send(aDest, 0, mPtr);}
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public void sendB(byte    aB, int aDest, int aTag) throws Error {Native.MPI_SendB(aB, aDest, aTag, mPtr);}
+        public void sendD(double  aD, int aDest, int aTag) throws Error {Native.MPI_SendD(aD, aDest, aTag, mPtr);}
+        public void sendZ(boolean aZ, int aDest, int aTag) throws Error {Native.MPI_SendZ(aZ, aDest, aTag, mPtr);}
+        public void sendC(char    aC, int aDest, int aTag) throws Error {Native.MPI_SendC(aC, aDest, aTag, mPtr);}
+        public void sendS(short   aS, int aDest, int aTag) throws Error {Native.MPI_SendS(aS, aDest, aTag, mPtr);}
+        public void sendI(int     aI, int aDest, int aTag) throws Error {Native.MPI_SendI(aI, aDest, aTag, mPtr);}
+        public void sendL(long    aL, int aDest, int aTag) throws Error {Native.MPI_SendL(aL, aDest, aTag, mPtr);}
+        public void sendF(float   aF, int aDest, int aTag) throws Error {Native.MPI_SendF(aF, aDest, aTag, mPtr);}
+        public void sendStr(String aStr, int aDest, int aTag) throws Error {
+            // java 中至今没有提供将 String 内容输出到已有的 byte[] 中的方法，因此这里不能使用缓存加速；
+            // 当然这也让实现更加简洁了
+            byte[] tBytes = UT.Serial.str2bytes(aStr);
+            sendI(tBytes.length, aDest, aTag);
+            send(tBytes, tBytes.length, aDest, aTag);
+        }
+        public void sendB(byte    aB, int aDest) throws Error {Native.MPI_SendB(aB, aDest, 0, mPtr);}
+        public void sendD(double  aD, int aDest) throws Error {Native.MPI_SendD(aD, aDest, 0, mPtr);}
+        public void sendZ(boolean aZ, int aDest) throws Error {Native.MPI_SendZ(aZ, aDest, 0, mPtr);}
+        public void sendC(char    aC, int aDest) throws Error {Native.MPI_SendC(aC, aDest, 0, mPtr);}
+        public void sendS(short   aS, int aDest) throws Error {Native.MPI_SendS(aS, aDest, 0, mPtr);}
+        public void sendI(int     aI, int aDest) throws Error {Native.MPI_SendI(aI, aDest, 0, mPtr);}
+        public void sendL(long    aL, int aDest) throws Error {Native.MPI_SendL(aL, aDest, 0, mPtr);}
+        public void sendF(float   aF, int aDest) throws Error {Native.MPI_SendF(aF, aDest, 0, mPtr);}
+        public void sendStr(String aStr, int aDest) throws Error {sendStr(aStr, aDest, 0);}
         /** 提供内部类型的支持，统一进行类型优化（例如后续对 shift 的支持）*/
         public void send(Vector aBuf, int aDest, int aTag) throws Error {send(aBuf.internalData(), aBuf.internalDataSize(), aDest, aTag);}
         public void send(IVector aVector, int aDest, int aTag) throws Error {
             Vector tBuf = aVector.toBuf();
-            send(tBuf, aDest, aTag);
-            aVector.releaseBuf(tBuf, true); // send 只需要读取数据
+            try {send(tBuf, aDest, aTag);}
+            finally {aVector.releaseBuf(tBuf, true);} // send 只需要读取数据
         }
         public void send(IntVector aBuf, int aDest, int aTag) throws Error {send(aBuf.internalData(), aBuf.internalDataSize(), aDest, aTag);}
         public void send(IIntVector aVector, int aDest, int aTag) throws Error {
             IntVector tBuf = aVector.toBuf();
-            send(tBuf, aDest, aTag);
-            aVector.releaseBuf(tBuf, true); // send 只需要读取数据
+            try {send(tBuf, aDest, aTag);}
+            finally {aVector.releaseBuf(tBuf, true);} // send 只需要读取数据
         }
         public void send(Vector aBuf, int aDest) throws Error {send(aBuf, aDest, 0);}
         public void send(IVector aVector, int aDest) throws Error {send(aVector, aDest, 0);}
@@ -758,18 +832,46 @@ public class MPI {
         public void recv(float[]   rBuf, int aCount, int aSource) throws Error {Native.MPI_Recv(rBuf, aCount, aSource, Tag.ANY, mPtr);}
         public void recv(int aSource, int aTag) throws Error {Native.MPI_Recv(aSource, aTag, mPtr);}
         public void recv(int aSource) throws Error {Native.MPI_Recv(aSource, Tag.ANY, mPtr);}
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public byte    recvB(int aSource, int aTag) throws Error {return Native.MPI_RecvB(aSource, aTag, mPtr);}
+        public double  recvD(int aSource, int aTag) throws Error {return Native.MPI_RecvD(aSource, aTag, mPtr);}
+        public boolean recvZ(int aSource, int aTag) throws Error {return Native.MPI_RecvZ(aSource, aTag, mPtr);}
+        public char    recvC(int aSource, int aTag) throws Error {return Native.MPI_RecvC(aSource, aTag, mPtr);}
+        public short   recvS(int aSource, int aTag) throws Error {return Native.MPI_RecvS(aSource, aTag, mPtr);}
+        public int     recvI(int aSource, int aTag) throws Error {return Native.MPI_RecvI(aSource, aTag, mPtr);}
+        public long    recvL(int aSource, int aTag) throws Error {return Native.MPI_RecvL(aSource, aTag, mPtr);}
+        public float   recvF(int aSource, int aTag) throws Error {return Native.MPI_RecvF(aSource, aTag, mPtr);}
+        public String recvStr(int aSource, int aTag) throws Error {
+            final int tLen = recvI(aSource, aTag);
+            byte[] rBytes = ByteArrayCache.getArray(tLen);
+            try {
+                recv(rBytes, tLen, aSource, aTag);
+                return UT.Serial.bytes2str(rBytes, 0, tLen);
+            } finally {
+                ByteArrayCache.returnArray(rBytes);
+            }
+        }
+        public byte    recvB(int aSource) throws Error {return Native.MPI_RecvB(aSource, Tag.ANY, mPtr);}
+        public double  recvD(int aSource) throws Error {return Native.MPI_RecvD(aSource, Tag.ANY, mPtr);}
+        public boolean recvZ(int aSource) throws Error {return Native.MPI_RecvZ(aSource, Tag.ANY, mPtr);}
+        public char    recvC(int aSource) throws Error {return Native.MPI_RecvC(aSource, Tag.ANY, mPtr);}
+        public short   recvS(int aSource) throws Error {return Native.MPI_RecvS(aSource, Tag.ANY, mPtr);}
+        public int     recvI(int aSource) throws Error {return Native.MPI_RecvI(aSource, Tag.ANY, mPtr);}
+        public long    recvL(int aSource) throws Error {return Native.MPI_RecvL(aSource, Tag.ANY, mPtr);}
+        public float   recvF(int aSource) throws Error {return Native.MPI_RecvF(aSource, Tag.ANY, mPtr);}
+        public String recvStr(int aSource) throws Error {return recvStr(aSource, Tag.ANY);}
         /** 提供内部类型的支持，统一进行类型优化（例如后续对 shift 的支持）*/
         public void recv(Vector rBuf, int aSource, int aTag) throws Error {recv(rBuf.internalData(), rBuf.internalDataSize(), aSource, aTag);}
         public void recv(IVector rVector, int aSource, int aTag) throws Error {
             Vector rBuf = rVector.toBuf(true); // recv 只需要写入
-            recv(rBuf, aSource, aTag);
-            rVector.releaseBuf(rBuf);
+            try {recv(rBuf, aSource, aTag);}
+            finally {rVector.releaseBuf(rBuf);}
         }
         public void recv(IntVector rBuf, int aSource, int aTag) throws Error {recv(rBuf.internalData(), rBuf.internalDataSize(), aSource, aTag);}
         public void recv(IIntVector rVector, int aSource, int aTag) throws Error {
             IntVector rBuf = rVector.toBuf(true); // recv 只需要写入
-            recv(rBuf, aSource, aTag);
-            rVector.releaseBuf(rBuf);
+            try {recv(rBuf, aSource, aTag);}
+            finally {rVector.releaseBuf(rBuf);}
         }
         public void recv(Vector rBuf, int aSource) throws Error {recv(rBuf, aSource, Tag.ANY);}
         public void recv(IVector rVector, int aSource) throws Error {recv(rVector, aSource, Tag.ANY);}
@@ -1462,6 +1564,15 @@ public class MPI {
         public static void MPI_Allreduce(long[]    rBuf, int aCount, long aOp, long aComm) throws Error {MPI_Allreduce0(true, null, rBuf, aCount, MPI_JLONG   , JTYPE_LONG   , aOp, aComm);}
         public static void MPI_Allreduce(float[]   rBuf, int aCount, long aOp, long aComm) throws Error {MPI_Allreduce0(true, null, rBuf, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aOp, aComm);}
         private native static void MPI_Allreduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, int aJDataType, long aOp, long aComm) throws Error;
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public native static byte    MPI_AllreduceB(byte    aB, long aOp, long aComm) throws Error;
+        public native static double  MPI_AllreduceD(double  aD, long aOp, long aComm) throws Error;
+        public native static boolean MPI_AllreduceZ(boolean aZ, long aOp, long aComm) throws Error;
+        public native static char    MPI_AllreduceC(char    aC, long aOp, long aComm) throws Error;
+        public native static short   MPI_AllreduceS(short   aS, long aOp, long aComm) throws Error;
+        public native static int     MPI_AllreduceI(int     aI, long aOp, long aComm) throws Error;
+        public native static long    MPI_AllreduceL(long    aL, long aOp, long aComm) throws Error;
+        public native static float   MPI_AllreduceF(float   aF, long aOp, long aComm) throws Error;
         
         /**
          * Initiates barrier synchronization across all members of a group.
@@ -1509,6 +1620,15 @@ public class MPI {
         public static void MPI_Bcast(long[]    rBuf, int aCount, int aRoot, long aComm) throws Error {MPI_Bcast0(rBuf, aCount, MPI_JLONG   , JTYPE_LONG   , aRoot, aComm);}
         public static void MPI_Bcast(float[]   rBuf, int aCount, int aRoot, long aComm) throws Error {MPI_Bcast0(rBuf, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aRoot, aComm);}
         private native static void MPI_Bcast0(Object rBuf, int aCount, long aDataType, int aJDataType, int aRoot, long aComm) throws Error;
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public native static byte    MPI_BcastB(byte    aB, int aRoot, long aComm) throws Error;
+        public native static double  MPI_BcastD(double  aD, int aRoot, long aComm) throws Error;
+        public native static boolean MPI_BcastZ(boolean aZ, int aRoot, long aComm) throws Error;
+        public native static char    MPI_BcastC(char    aC, int aRoot, long aComm) throws Error;
+        public native static short   MPI_BcastS(short   aS, int aRoot, long aComm) throws Error;
+        public native static int     MPI_BcastI(int     aI, int aRoot, long aComm) throws Error;
+        public native static long    MPI_BcastL(long    aL, int aRoot, long aComm) throws Error;
+        public native static float   MPI_BcastF(float   aF, int aRoot, long aComm) throws Error;
         
         /**
          * Gathers data from all members of a group to one member.
@@ -1637,6 +1757,15 @@ public class MPI {
         public static void MPI_Reduce(long[]    rBuf, int aCount, long aOp, int aRoot, long aComm) throws Error {if (MPI_Comm_rank(aComm) == aRoot) {MPI_Reduce0(true, null, rBuf, aCount, MPI_JLONG   , JTYPE_LONG   , aOp, aRoot, aComm);} else {MPI_Reduce0(false, rBuf, null, aCount, MPI_JLONG   , JTYPE_LONG   , aOp, aRoot, aComm);}}
         public static void MPI_Reduce(float[]   rBuf, int aCount, long aOp, int aRoot, long aComm) throws Error {if (MPI_Comm_rank(aComm) == aRoot) {MPI_Reduce0(true, null, rBuf, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aOp, aRoot, aComm);} else {MPI_Reduce0(false, rBuf, null, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aOp, aRoot, aComm);}}
         private native static void MPI_Reduce0(boolean aInPlace, Object aSendBuf, Object rRecvBuf, int aCount, long aDataType, int aJDataType, long aOp, int aRoot, long aComm) throws Error;
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public native static byte    MPI_ReduceB(byte    aB, long aOp, int aRoot, long aComm) throws Error;
+        public native static double  MPI_ReduceD(double  aD, long aOp, int aRoot, long aComm) throws Error;
+        public native static boolean MPI_ReduceZ(boolean aZ, long aOp, int aRoot, long aComm) throws Error;
+        public native static char    MPI_ReduceC(char    aC, long aOp, int aRoot, long aComm) throws Error;
+        public native static short   MPI_ReduceS(short   aS, long aOp, int aRoot, long aComm) throws Error;
+        public native static int     MPI_ReduceI(int     aI, long aOp, int aRoot, long aComm) throws Error;
+        public native static long    MPI_ReduceL(long    aL, long aOp, int aRoot, long aComm) throws Error;
+        public native static float   MPI_ReduceF(float   aF, long aOp, int aRoot, long aComm) throws Error;
         
         /**
          * Scatters data from one member across all members of a group.
@@ -1937,6 +2066,15 @@ public class MPI {
         public static void MPI_Send(float[]   aBuf, int aCount, int aDest, int aTag, long aComm) throws Error {MPI_Send0(aBuf, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aDest, aTag, aComm);}
         public static void MPI_Send(int aDest, int aTag, long aComm) throws Error {MPI_Send0(null, 0, MPI_BYTE, JTYPE_NULL, aDest, aTag, aComm);}
         private native static void MPI_Send0(Object aBuf, int aCount, long aDataType, int aJDataType, int aDest, int aTag, long aComm) throws Error;
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public native static void MPI_SendB(byte    aB, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendD(double  aD, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendZ(boolean aZ, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendC(char    aC, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendS(short   aS, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendI(int     aI, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendL(long    aL, int aDest, int aTag, long aComm) throws Error;
+        public native static void MPI_SendF(float   aF, int aDest, int aTag, long aComm) throws Error;
         
         /**
          * Performs a receive operation and does not return until a matching message is received.
@@ -1968,6 +2106,15 @@ public class MPI {
         public static void MPI_Recv(float[]   rBuf, int aCount, int aSource, int aTag, long aComm) throws Error {MPI_Recv0(rBuf, aCount, MPI_JFLOAT  , JTYPE_FLOAT  , aSource, aTag, aComm);}
         public static void MPI_Recv(int aSource, int aTag, long aComm) throws Error {MPI_Recv0(null, 0, MPI_BYTE, JTYPE_NULL, aSource, aTag, aComm);}
         private native static void MPI_Recv0(Object rBuf, int aCount, long aDataType, int aJDataType, int aSource, int aTag, long aComm) throws Error;
+        /** 常用操作提供一个基础类型的收发，可以避免冗余的数组创建 */
+        public native static byte    MPI_RecvB(int aSource, int aTag, long aComm) throws Error;
+        public native static double  MPI_RecvD(int aSource, int aTag, long aComm) throws Error;
+        public native static boolean MPI_RecvZ(int aSource, int aTag, long aComm) throws Error;
+        public native static char    MPI_RecvC(int aSource, int aTag, long aComm) throws Error;
+        public native static short   MPI_RecvS(int aSource, int aTag, long aComm) throws Error;
+        public native static int     MPI_RecvI(int aSource, int aTag, long aComm) throws Error;
+        public native static long    MPI_RecvL(int aSource, int aTag, long aComm) throws Error;
+        public native static float   MPI_RecvF(int aSource, int aTag, long aComm) throws Error;
         
         /**
          * Sends and receives a message.

@@ -1,16 +1,17 @@
 package jse.math.table;
 
 import jse.code.UT;
+import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.NewCollections;
 import jse.math.IDataShell;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RefMatrix;
 import jse.math.vector.Vector;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * 方便直接使用 csv 读取结果的数据格式
@@ -18,6 +19,9 @@ import java.util.List;
  */
 public final class Table extends AbstractTable implements IDataShell<List<Vector>> {
     /** 提供默认的创建 */
+    public static Table zeros(int aRowNum) {
+        return new Table(aRowNum);
+    }
     public static Table zeros(final int aRowNum, String... aHeads) {
         if (aHeads==null || aHeads.length==0) return new Table(aRowNum);
         else return new Table(aRowNum, aHeads, NewCollections.from(aHeads.length, col -> Vector.zeros(aRowNum)));
@@ -54,11 +58,26 @@ public final class Table extends AbstractTable implements IDataShell<List<Vector
     /** 重写这些接口避免过多的嵌套 */
     @Override public double get(int aRow, String aHead) {return mData.get(mHead2Idx.get(aHead)).get(aRow);}
     @Override public void set(int aRow, String aHead, double aValue) {mData.get(mHead2Idx.get(aHead)).set(aRow, aValue);}
-    @Override public List<Vector> cols() {
-        // 主要用于避免被意外修改
-        return new AbstractRandomAccessList<Vector>() {
+    @Override public Map<String, Vector> cols() {
+        return new AbstractMap<String, Vector>() {
+            @NotNull @Override public Set<Entry<String, Vector>> entrySet() {
+                return new AbstractSet<Entry<String, Vector>>() {
+                    @Override public @NotNull Iterator<Entry<String, Vector>> iterator() {
+                        return AbstractCollections.map(mHeads.iterator(), head -> new Entry<String, Vector>(){
+                            @Override public String getKey() {return head;}
+                            @Override public Vector getValue() {return col(head);}
+                            @Override public Vector setValue(Vector value) {throw new UnsupportedOperationException("setValue");}
+                        });
+                    }
+                    @Override public int size() {return mData.size();}
+                };
+            }
+            @Override public Vector get(Object key) {return mData.get(mHead2Idx.get(key));}
+            @Override public boolean containsKey(Object key) {return mHead2Idx.containsKey(key);}
+            @Override public Vector remove(Object key) {throw new UnsupportedOperationException("remove");}
             @Override public int size() {return mData.size();}
-            @Override public Vector get(int aCol) {return mData.get(aCol);}
+            @Override public void clear() {throw new UnsupportedOperationException("clear");}
+            @Override public Vector put(String key, Vector value) {throw new UnsupportedOperationException("put");}
         };
     }
     @Override public Vector col(String aHead) {return mData.get(mHead2Idx.get(aHead));}
@@ -81,7 +100,13 @@ public final class Table extends AbstractTable implements IDataShell<List<Vector
             @Override public int columnNumber() {return mData.size();}
             
             /** 重写这些接口来加速部分操作，为了避免意料外的问题这里不重写所有可以加速的操作 */
-            @Override public List<Vector> cols() {return Table.this.cols();}
+            @Override public List<Vector> cols() {
+                // 主要用于避免被意外修改
+                return new AbstractRandomAccessList<Vector>() {
+                    @Override public int size() {return mData.size();}
+                    @Override public Vector get(int aCol) {return mData.get(aCol);}
+                };
+            }
             @Override public Vector col(int aCol) {return mData.get(aCol);}
         };
     }
