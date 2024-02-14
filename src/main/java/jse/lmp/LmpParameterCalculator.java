@@ -9,7 +9,6 @@ import jse.math.function.IFunc1;
 import jse.math.vector.IVector;
 import jse.parallel.AbstractHasAutoShutdown;
 import jse.parallel.MPI;
-import jse.parallel.ThreadLocalObjectCachePool;
 import jse.system.ISystemExecutor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -99,18 +98,14 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
             return UT.Code.randID();
         }
     }
-    private final static ThreadLocalObjectCachePool<int[]> INT1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new int[1]);
     private void exceptionCheck(int aExitValue) {
         if (mComm != null) {
-            int[] tBuf = INT1_CACHE.getObject();
             try {
-                mComm.reduce(tBuf, 1, MPI.Op.BOR, mRoot);
-                if (mComm.rank()==mRoot && tBuf[0]!=0) throw new RuntimeException("LAMMPS run Failed, Exit Value: " + tBuf[0]);
+                int tExitValue = mComm.reduceI(aExitValue, MPI.Op.BOR, mRoot);
+                if (mComm.rank()==mRoot && tExitValue!=0) throw new RuntimeException("LAMMPS run Failed, Exit Value: " + tExitValue);
                 mComm.barrier();
             } catch (MPI.Error e) {
                 throw new RuntimeException(e);
-            } finally {
-                INT1_CACHE.returnObject(tBuf);
             }
         } else {
             if (aExitValue != 0) throw new RuntimeException("LAMMPS run Failed, Exit Value: "+aExitValue);

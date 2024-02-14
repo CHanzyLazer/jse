@@ -111,26 +111,11 @@ public class UT {
          * @author liqa
          */
         public static int randSeed(MPI.Comm aComm, int aRoot) throws MPI.Error {
-            int[] tSeedBuf = INT1_CACHE.getObject();
-            try {
-                if (aComm.rank() == aRoot) tSeedBuf[0] = UT.Code.randSeed();
-                aComm.bcast(tSeedBuf, 1, aRoot);
-                return tSeedBuf[0];
-            } finally {
-                INT1_CACHE.returnObject(tSeedBuf);
-            }
+            return aComm.bcastI(aComm.rank()==aRoot ? Code.randSeed() : -1, aRoot);
         }
         public static int randSeed(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
-            int[] tSeedBuf = INT1_CACHE.getObject();
-            try {
-                if (aComm.rank() == aRoot) tSeedBuf[0] = UT.Code.randSeed(aSeed);
-                aComm.bcast(tSeedBuf, 1, aRoot);
-                return tSeedBuf[0];
-            } finally {
-                INT1_CACHE.returnObject(tSeedBuf);
-            }
+            return aComm.bcastI(aComm.rank()==aRoot ? Code.randSeed(aSeed) : -1, aRoot);
         }
-        private final static ThreadLocalObjectCachePool<int[]> INT1_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new int[1]);
         
         
         /**
@@ -156,24 +141,10 @@ public class UT {
          * @author liqa
          */
         public static String randID(MPI.Comm aComm, int aRoot) throws MPI.Error {
-            int[] tBuf = INT1_CACHE.getObject();
-            try {
-                if (aComm.rank() == aRoot) tBuf[0] = RANDOM.nextInt();
-                aComm.bcast(tBuf, 1, aRoot);
-                return Integer.toHexString(tBuf[0]);
-            } finally {
-                INT1_CACHE.returnObject(tBuf);
-            }
+            return Integer.toHexString(aComm.bcastI(aComm.rank()==aRoot ? RANDOM.nextInt() : 0, aRoot));
         }
         public static String randID(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
-            int[] tBuf = INT1_CACHE.getObject();
-            try {
-                if (aComm.rank() == aRoot) tBuf[0] = new LocalRandom(aSeed).nextInt();
-                aComm.bcast(tBuf, 1, aRoot);
-                return Integer.toHexString(tBuf[0]);
-            } finally {
-                INT1_CACHE.returnObject(tBuf);
-            }
+            return Integer.toHexString(aComm.bcastI(aComm.rank()==aRoot ? new LocalRandom(aSeed).nextInt() : 0, aRoot));
         }
         
         /**
