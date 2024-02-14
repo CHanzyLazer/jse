@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'io.github.goooler.shadow' version '8.1.3'
 }
 
 group = 'com.jse'
@@ -42,11 +42,11 @@ compileJava {
 dependencies {
     implementation('org.jetbrains:annotations:24.1.0')              // debug
     
-    implementation('org.apache.groovy:groovy:4.0.16')               // 用于直接执行 groovy 脚本而不需要安装 groovy
-    implementation('org.apache.groovy:groovy-groovysh:4.0.16')      // 用于直接通过命令行交互试的操作
-    implementation('org.apache.groovy:groovy-json:4.0.16')          // 直接使用 groovy 的 json 包来支持 json，可以让 groovy 脚本使用原生的 json 功能
-    implementation('org.apache.groovy:groovy-xml:4.0.16')           // groovy 的 xml
-    implementation('org.apache.groovy:groovy-yaml:4.0.16')          // groovy 的 yaml，暂时没有用到，并且这个包有些复杂，所以不提供支持
+    implementation('org.apache.groovy:groovy:4.0.18')               // 用于直接执行 groovy 脚本而不需要安装 groovy
+    implementation('org.apache.groovy:groovy-groovysh:4.0.18')      // 用于直接通过命令行交互试的操作
+    implementation('org.apache.groovy:groovy-json:4.0.18')          // 直接使用 groovy 的 json 包来支持 json，可以让 groovy 脚本使用原生的 json 功能
+    implementation('org.apache.groovy:groovy-xml:4.0.18')           // groovy 的 xml
+    implementation('org.apache.groovy:groovy-yaml:4.0.18')          // groovy 的 yaml，暂时没有用到，并且这个包有些复杂，所以不提供支持
     implementation('jline:jline:2.14.6')                            // groovysh 前置，用来重写 sh 相关方法
     
 //  implementation('black.ninia:jep:4.2.0')                         // 调用 python 代码支持，需要系统有需要的 python 环境，并且需要初始化，因此这里不作为主要代码的使用；由于 PyObject 不能 groovy 原生调用，现在包含到项目中
@@ -102,7 +102,7 @@ tasks.register('sourceJar', Jar) {
 tasks.register('downloadSource') {
     mkdir('./release/src')
     // 直接硬编码下载第三方库的源码文件
-    if (!file('./release/src/groovy-4.0.16-sources.jar').exists()) ant.get(src: 'https://repo1.maven.org/maven2/org/apache/groovy/groovy/4.0.16/groovy-4.0.16-sources.jar', dest: './release/src')
+    if (!file('./release/src/groovy-4.0.18-sources.jar').exists()) ant.get(src: 'https://repo1.maven.org/maven2/org/apache/groovy/groovy/4.0.18/groovy-4.0.18-sources.jar', dest: './release/src')
 }
 
 
