@@ -1,8 +1,8 @@
 package jse.io;
 
+import groovy.yaml.YamlBuilder;
+import groovy.yaml.YamlSlurper;
 import jse.code.UT;
-import groovy.json.JsonBuilder;
-import groovy.json.JsonSlurper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.util.CharSequenceReader;
 
@@ -17,22 +17,23 @@ import static jse.code.CS.REMOVE;
 
 /**
  * @author liqa
- * <p> Json 格式的输入文件 </p>
+ * <p> Yaml 格式的输入文件 </p>
  */
-public abstract class AbstractInFileJson extends AbstractInFile {
+public abstract class AbstractInFileYaml extends AbstractInFile {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public final void writeTo_(UT.IO.IWriteln aWriteln) throws IOException {
-        Map tJson;
+        Map tYaml;
         try (Reader tInFile = getInFileReader()) {
-            tJson = (Map) (new JsonSlurper()).parse(tInFile);
+            tYaml = (Map) (new YamlSlurper()).parse(tInFile);
         }
         // 直接遍历修改
-        for (Map.Entry<String, Object> subSetting : entrySet()) if (subSetting.getValue()!=KEEP && tJson.containsKey(subSetting.getKey())) {
-            if (subSetting.getValue() == REMOVE) tJson.remove(subSetting.getKey());
-            else tJson.put(subSetting.getKey(), subSetting.getValue());
+        for (Entry<String, Object> subSetting : entrySet()) if (subSetting.getValue()!=KEEP && tYaml.containsKey(subSetting.getKey())) {
+            if (subSetting.getValue() == REMOVE) tYaml.remove(subSetting.getKey());
+            else tYaml.put(subSetting.getKey(), subSetting.getValue());
         }
-        String tJsonStr = (new JsonBuilder(tJson)).toString();
-        for (Iterator<String> it = IOGroovyMethods.iterator(new CharSequenceReader(tJsonStr)); it.hasNext(); ) {
+        YamlBuilder tBuilder = new YamlBuilder(); tBuilder.call(tYaml);
+        String tYamlStr = tBuilder.toString();
+        for (Iterator<String> it = IOGroovyMethods.iterator(new CharSequenceReader(tYamlStr)); it.hasNext(); ) {
             aWriteln.writeln(it.next());
         }
     }

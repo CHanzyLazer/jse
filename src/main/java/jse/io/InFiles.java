@@ -17,6 +17,7 @@ import java.io.Reader;
 public class InFiles {
     public static IInFile lmp(String aLmpInFilePath) {return LmpIn.custom(aLmpInFilePath);}
     public static IInFile json(final String aJsonFilePath) {return new AbstractInFileJson() {@Override protected Reader getInFileReader() throws IOException {return UT.IO.toReader(aJsonFilePath);}};}
+    public static IInFile yaml(final String aYamlFilePath) {return new AbstractInFileYaml() {@Override protected Reader getInFileReader() throws IOException {return UT.IO.toReader(aYamlFilePath);}};}
     public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {
         @Override public void writeTo_(UT.IO.IWriteln aWriteln) throws IOException {
             try (BufferedReader tReader = UT.IO.toReader(aInFilePath)) {
