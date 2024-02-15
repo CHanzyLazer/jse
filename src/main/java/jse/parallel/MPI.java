@@ -11,7 +11,6 @@ import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -1187,18 +1186,15 @@ public class MPI {
                 UT.IO.copy(UT.IO.getResource("mpi/src/"+tName), tWorkingDir+tName);
             }
             // 这里对 CMakeLists.txt 特殊处理
-            try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("mpi/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tWorkingDir+"CMakeLists.txt")) {
-                String tLine;
-                while ((tLine = tReader.readLine()) != null) {
-                    // 替换其中的 jniutil 库路径为设置好的路径
-                    tLine = tLine.replace("$ENV{JNIUTIL_HOME}", JNIUtil.JNIUTIL_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                    // 替换其中的 mimalloc 库路径为设置好的路径
-                    if (Conf.USE_MIMALLOC) {
-                    tLine = tLine.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                    }
-                    tWriter.writeln(tLine);
+            UT.IO.map(UT.IO.getResource("mpi/src/CMakeLists.txt"), tWorkingDir+"CMakeLists.txt", line -> {
+                // 替换其中的 jniutil 库路径为设置好的路径
+                line = line.replace("$ENV{JNIUTIL_HOME}", JNIUtil.JNIUTIL_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                // 替换其中的 mimalloc 库路径为设置好的路径
+                if (Conf.USE_MIMALLOC) {
+                line = line.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
                 }
-            }
+                return line;
+            });
             System.out.println("MPI INIT INFO: Building mpijni from source code...");
             String tBuildDir = tWorkingDir+"build/";
             UT.IO.makeDir(tBuildDir);

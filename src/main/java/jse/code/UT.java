@@ -32,7 +32,10 @@ import jse.math.table.Tables;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
-import jse.parallel.*;
+import jse.parallel.LocalRandom;
+import jse.parallel.MPI;
+import jse.parallel.MergedFuture;
+import jse.parallel.ParforThreadPool;
 import jse.plot.*;
 import jse.system.ISystemExecutor;
 import jse.vasp.IVaspCommonData;
@@ -1001,6 +1004,12 @@ public class UT {
             if (tList==null) throw new IOException("Fail to det list of \""+aDir+"\"");
             return tList;
         }
+        /** map (filterLines) */
+        public static void      map     (String        aSourcePath, String aTargetPath, IUnaryFullOperator<? extends CharSequence, ? super String> aOpt) throws IOException  {try (BufferedReader tReader = toReader(aSourcePath); IWriteln tWriter = toWriteln(aTargetPath)) {map(tReader, tWriter, aOpt);}}
+        public static void      map     (InputStream aSourceStream, String aTargetPath, IUnaryFullOperator<? extends CharSequence, ? super String> aOpt) throws IOException  {try (BufferedReader tReader = toReader(aSourceStream); IWriteln tWriter = toWriteln(aTargetPath)) {map(tReader, tWriter, aOpt);}}
+        public static void      map     (URL            aSourceURL, String aTargetPath, IUnaryFullOperator<? extends CharSequence, ? super String> aOpt) throws IOException  {try (BufferedReader tReader = toReader(aSourceURL); IWriteln tWriter = toWriteln(aTargetPath)) {map(tReader, tWriter, aOpt);}}
+        public static void      map     (BufferedReader    aReader, IWriteln   aWriter, IUnaryFullOperator<? extends CharSequence, ? super String> aOpt) throws IOException  {String tLine; while ((tLine = aReader.readLine()) != null) {aWriter.writeln(aOpt.apply(tLine));}}
+        
         
         /** only support writeln */
         @FunctionalInterface public interface IWriteln extends AutoCloseable {void writeln(CharSequence aLine) throws IOException; default void close() throws IOException {/**/}}

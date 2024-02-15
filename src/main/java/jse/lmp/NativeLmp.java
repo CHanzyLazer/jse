@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -286,20 +285,17 @@ public class NativeLmp implements IAutoShutdown {
                 UT.IO.copy(UT.IO.getResource("lmp/src/"+tName), tSrcDir+tName);
             }
             // 这里对 CMakeLists.txt 特殊处理
-            try (BufferedReader tReader = UT.IO.toReader(UT.IO.getResource("lmp/src/CMakeLists.txt")); UT.IO.IWriteln tWriter = UT.IO.toWriteln(tSrcDir+"CMakeLists.txt")) {
-                String tLine;
-                while ((tLine = tReader.readLine()) != null) {
-                    // 替换其中的 jniutil 库路径为设置好的路径
-                    tLine = tLine.replace("$ENV{JNIUTIL_HOME}", JNIUtil.JNIUTIL_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                    // 替换其中的 lammps 库路径为设置好的路径
-                    tLine = tLine.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                    // 替换其中的 mimalloc 库路径为设置好的路径
-                    if (Conf.USE_MIMALLOC) {
-                    tLine = tLine.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                    }
-                    tWriter.writeln(tLine);
+            UT.IO.map(UT.IO.getResource("lmp/src/CMakeLists.txt"), tSrcDir+"CMakeLists.txt", line -> {
+                // 替换其中的 jniutil 库路径为设置好的路径
+                line = line.replace("$ENV{JNIUTIL_HOME}", JNIUtil.JNIUTIL_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                // 替换其中的 lammps 库路径为设置好的路径
+                line = line.replace("$ENV{LAMMPS_HOME}", Conf.LMP_HOME.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                // 替换其中的 mimalloc 库路径为设置好的路径
+                if (Conf.USE_MIMALLOC) {
+                line = line.replace("$ENV{MIMALLOC_HOME}", MiMalloc.MIMALLOC_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
                 }
-            }
+                return line;
+            });
             System.out.println("NATIVE_LMP INIT INFO: Building lmpjni from source code...");
             String tBuildDir = tSrcDir+"build/";
             UT.IO.makeDir(tBuildDir);
