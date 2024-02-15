@@ -11,6 +11,7 @@ import jse.parallel.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.*;
 
@@ -68,14 +69,14 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
      * @param aSurfaces 分割相空间的分界面，有 {@code λ0 < λ1 < λ2 < ... < λn == B}
      * @param aN0 每个界面的统计数目
      */
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA,                      IVector aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA,                     double[] aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                 double aSurfaceA,                      IVector aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                 double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
-    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                 double aSurfaceA,                     double[] aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aSurfaceA,                      IVector aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aSurfaceA,                     double[] aSurfaces, int aN0) {this(true, aFullPathGenerator, aThreadNum, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                                                      double aSurfaceA,                      IVector aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                                                      double aSurfaceA, Collection<? extends Number> aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
+    public ForwardFluxSampling(IFullPathGenerator<T> aFullPathGenerator,                                                      double aSurfaceA,                     double[] aSurfaces, int aN0) {this(true, aFullPathGenerator, 1, aSurfaceA, Vectors.from(aSurfaces), aN0);}
     
-    ForwardFluxSampling(boolean aFlag, IFullPathGenerator<T> aFullPathGenerator, int aThreadNum, double aSurfaceA, IVector aSurfaces, int aN0) {
+    ForwardFluxSampling(boolean aFlag, IFullPathGenerator<T> aFullPathGenerator, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aSurfaceA, IVector aSurfaces, int aN0) {
         // FFS 这里固定采用非竞争的 ParforThreadPool，因为 parfor 都只有线程数的任务
         super(new ParforThreadPool(aThreadNum, true));
         

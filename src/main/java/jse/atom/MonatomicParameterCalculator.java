@@ -22,6 +22,7 @@ import jsex.voronoi.VoronoiBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.Collection;
 import java.util.List;
@@ -91,7 +92,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aThreadNum MPC 进行计算会使用的线程数
      * @param aCellStep 内部用于加速近邻搜索的 LinkedCell 不同 Cell 大小的步长
      */
-    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, int aThreadNum, double aCellStep) {
+    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aCellStep) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
@@ -109,11 +110,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mInitThreadID = Thread.currentThread().getId();
     }
     public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 1);}
-    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, int aThreadNum) {this(aAtomDataXYZ, aBox, aThreadNum, DEFAULT_CELL_STEP);}
+    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataXYZ, aBox, aThreadNum, DEFAULT_CELL_STEP);}
     
     public MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
-    public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum) {this(aAtomData, aThreadNum, DEFAULT_CELL_STEP);}
-    public MonatomicParameterCalculator(IAtomData aAtomData, int aThreadNum, double aCellStep) {this(aAtomData.asList(), aAtomData.box(), aThreadNum, aCellStep);}
+    public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomData, aThreadNum, DEFAULT_CELL_STEP);}
+    public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aCellStep) {this(aAtomData.asList(), aAtomData.box(), aThreadNum, aCellStep);}
     
     /** 主要用于内部使用 */
     MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
@@ -165,7 +166,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aThreadNum 线程数目
      * @return 返回自身用于链式调用
      */
-    public MonatomicParameterCalculator setThreadNumber(int aThreadNum)  {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
+    public MonatomicParameterCalculator setThreadNumber(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum)  {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     /**
      * 修改 LinkedCell 的步长，如果相同则不会进行任何操作
      * @param sCellStep 步长，默认为 2.0，需要大于 1.1，理论上越小速度会越快，同时会消耗更多的内存

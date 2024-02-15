@@ -1,6 +1,7 @@
 package jse.parallel;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,17 +32,17 @@ public class ParforThreadPool extends AbstractThreadPool<IExecutorEX> {
     @Override public boolean isShutdown() {return mDead;}
     @Override public boolean isTerminated() {return mDead;}
     
-    public ParforThreadPool(int aThreadNum, boolean aNoCompetitive) {
-        super(aThreadNum<=1 ? SERIAL_EXECUTOR : newPool(aThreadNum));
-        int tThreadNum = Math.max(aThreadNum, 1);
-        if (tThreadNum == 1) mLocks = null;
-        else {
-            mLocks = new Lock[tThreadNum];
-            for (int i = 0; i < tThreadNum; ++i) mLocks[i] = new ReentrantLock();
+    public ParforThreadPool(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, boolean aNoCompetitive) {
+        super(aThreadNum==1 ? SERIAL_EXECUTOR : newPool(aThreadNum));
+        if (aThreadNum == 1) {
+            mLocks = null;
+        } else {
+            mLocks = new Lock[aThreadNum];
+            for (int i = 0; i < aThreadNum; ++i) mLocks[i] = new ReentrantLock();
         }
         mNoCompetitive = aNoCompetitive;
     }
-    public ParforThreadPool(int aThreadNum) {this(aThreadNum, PARFOR_NO_COMPETITIVE);}
+    public ParforThreadPool(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aThreadNum, PARFOR_NO_COMPETITIVE);}
     
     
     /**

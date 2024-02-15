@@ -9,6 +9,7 @@ import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 import jse.parallel.AbstractThreadPool;
 import jse.parallel.ParforThreadPool;
+import org.jetbrains.annotations.Range;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,13 +38,13 @@ public class Ising2D extends AbstractThreadPool<ParforThreadPool> {
      * @param aRNG 可自定义的随机数生成器
      * @param aNoCompetitive 内部 parfor 是否是竞争的，默认为 false，在固定种子后为 true 来保证结果一致
      */
-    Ising2D(double aJ, double aH, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
+    Ising2D(double aJ, double aH, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, Random aRNG, boolean aNoCompetitive) {
         super(new ParforThreadPool(aThreadNum, aNoCompetitive));
         mJ = aJ; mH = aH;
         mRNG = aRNG;
     }
-    public Ising2D(double aJ, double aH, int aThreadNum, long aSeed) {this(aJ, aH, aThreadNum, new Random(aSeed), true);}
-    public Ising2D(double aJ, double aH, int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM, false);}
+    public Ising2D(double aJ, double aH, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, long aSeed) {this(aJ, aH, aThreadNum, new Random(aSeed), true);}
+    public Ising2D(double aJ, double aH, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aJ, aH, aThreadNum, RANDOM, false);}
     public Ising2D(double aJ, double aH) {this(aJ, aH, 1);}
     
     private long[] genSeeds_(int aSize) {

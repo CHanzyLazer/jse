@@ -1,6 +1,7 @@
 package jse.atom;
 
 import jse.math.table.Table;
+import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -48,12 +49,12 @@ public interface IAtomData {
      * @param aThreadNum 执行 MPC 的线程数目
      * @return 获取到的 MPC
      */
-    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
-    default MonatomicParameterCalculator getMonatomicParameterCalculator    (                         ) {return new MonatomicParameterCalculator(this                                     );}
-    default MonatomicParameterCalculator getMonatomicParameterCalculator    (           int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
-    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
-    @VisibleForTesting default MonatomicParameterCalculator getMPC          (                         ) {return new MonatomicParameterCalculator(this                                     );}
-    @VisibleForTesting default MonatomicParameterCalculator getMPC          (           int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
-    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType                ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
-    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType, int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
+    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
+    default MonatomicParameterCalculator getMonatomicParameterCalculator    (                                                              ) {return new MonatomicParameterCalculator(this                                     );}
+    default MonatomicParameterCalculator getMonatomicParameterCalculator    (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
+    default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                                                     ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
+    @VisibleForTesting default MonatomicParameterCalculator getMPC          (                                                              ) {return new MonatomicParameterCalculator(this                                     );}
+    @VisibleForTesting default MonatomicParameterCalculator getMPC          (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(this                         , aThreadNum);}
+    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType                                                     ) {return new MonatomicParameterCalculator(operation().filterType(aType)            );}
+    @VisibleForTesting default MonatomicParameterCalculator getTypeMPC      (int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(operation().filterType(aType), aThreadNum);}
 }

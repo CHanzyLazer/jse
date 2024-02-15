@@ -15,6 +15,7 @@ import jse.math.vector.Vectors;
 import jse.parallel.AbstractThreadPool;
 import jse.parallel.LocalRandom;
 import jse.parallel.ParforThreadPool;
+import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
@@ -31,7 +32,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     
     private final List<DecisionTree> mTrees;
     /** 构造一个空的随机森林，用于使用 put 手动构造 */
-    public RandomForest(int aThreadNum) {super(new ParforThreadPool(aThreadNum, true)); mTrees = new ArrayList<>();}
+    public RandomForest(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {super(new ParforThreadPool(aThreadNum, true)); mTrees = new ArrayList<>();}
     public RandomForest() {this(PARFOR_THREAD_NUMBER);} // 随机森林默认会开启并行
     public RandomForest put(DecisionTree aTree) {mTrees.add(aTree); return this;}
     
@@ -54,7 +55,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     
     
     /** 现在支持设置线程数 */
-    public RandomForest setThreadNumber(int aThreadNum)  {if (aThreadNum!= threadNumber()) setPool(new ParforThreadPool(aThreadNum, true)); return this;}
+    public RandomForest setThreadNumber(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum)  {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum, true)); return this;}
     
     /** 输入 x 进行进行决策判断 */
     public double predict(final IVector aInput) {
@@ -137,7 +138,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
      * @param aThreadNum 随机森林使用的线程数，默认为处理器线程数
      * @param aRNG 可自定义的随机数生成器，默认为 {@link CS#RANDOM}
      */
-    RandomForest(final boolean aNoPBar, final @Unmodifiable List<? extends IVector> aTrainDataInput, final ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, int aThreadNum, Random aRNG, boolean aNoCompetitive) {
+    RandomForest(final boolean aNoPBar, final @Unmodifiable List<? extends IVector> aTrainDataInput, final ILogicalVector aTrainDataOutput, int aTreeNum, double aTrainRatio, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, Random aRNG, boolean aNoCompetitive) {
         super(new ParforThreadPool(aThreadNum, aNoCompetitive));
         
         // 输入输出样本数应匹配

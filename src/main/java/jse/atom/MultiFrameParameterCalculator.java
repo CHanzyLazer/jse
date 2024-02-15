@@ -16,6 +16,7 @@ import jse.parallel.AbstractThreadPool;
 import jse.cache.MatrixCache;
 import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
      * @param aThreadNum MFPC 进行计算会使用的线程数
      * @param aMinAtomTypeNum 期望的最少原子种类数目
      */
-    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, int aThreadNum, int aMinAtomTypeNum) {
+    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒等数据
@@ -124,10 +125,10 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         mAllAtomDataXYZ = tXYZArray;
     }
     public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
-    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
+    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
     
     public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {this(aAtomDataList, aTimestep, 1);}
-    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::asList), AbstractCollections.map(aAtomDataList, IAtomData::box), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNum());}
+    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::asList), AbstractCollections.map(aAtomDataList, IAtomData::box), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNum());}
     
     
     /** 内部使用方法，处理精度问题造成的超出边界问题 */
@@ -155,7 +156,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
      * @param aThreadNum 线程数目
      * @return 返回自身用于链式调用
      */
-    public MultiFrameParameterCalculator setThreadNumber(int aThreadNum) {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
+    public MultiFrameParameterCalculator setThreadNumber(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     
     
     /// 获取信息
