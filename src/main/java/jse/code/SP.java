@@ -23,6 +23,7 @@ import jse.math.vector.Vectors;
 import jse.plot.Plotters;
 import org.apache.groovy.groovysh.Groovysh;
 import org.apache.groovy.groovysh.InteractiveShellRunner;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.IO;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,24 +73,24 @@ public class SP {
         
         private final static String GROOVY_SP_DIR = "script/groovy/";
         /** 将 aScriptPath 转换成 GroovyCodeSource，现在可以省略掉 script/groovy/ 以及后缀 */
-        private static GroovyCodeSource toSourceFile(String aScriptPath) throws IOException {
+        private static File toSourceFile(String aScriptPath) throws IOException {
             // 如果不是 .groovy 后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
             if (!aScriptPath.endsWith(".groovy")) {
-                @Nullable GroovyCodeSource tFile = toScriptFile_(aScriptPath+".groovy");
+                @Nullable File tFile = toScriptFile_(aScriptPath+".groovy");
                 if (tFile != null) return tFile;
             }
-            @Nullable GroovyCodeSource tFile = toScriptFile_(aScriptPath);
+            @Nullable File tFile = toScriptFile_(aScriptPath);
             if (tFile == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
             return tFile;
         }
         /** 返回 null 表示没有找到文件 */
-        private static @Nullable GroovyCodeSource toScriptFile_(String aScriptPath) throws IOException {
+        private static @Nullable File toScriptFile_(String aScriptPath) {
             // 首先如果此文件存在则直接返回
             File tFile = UT.IO.toFile(aScriptPath);
-            if (tFile.isFile()) return new GroovyCodeSource(tFile, "UTF-8"); // 文件统一使用 utf-8 编码
+            if (tFile.isFile()) return tFile;
             // 否则增加 script/groovy/ 后再次检测
             tFile = UT.IO.toFile(GROOVY_SP_DIR+aScriptPath);
-            if (tFile.isFile()) return new GroovyCodeSource(tFile, "UTF-8"); // 文件统一使用 utf-8 编码
+            if (tFile.isFile()) return tFile;
             // 否则返回 null
             return null;
         }
@@ -279,7 +281,9 @@ public class SP {
         /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
         private synchronized static void initClassLoader_() {
             // 重新指定 ClassLoader 为这个类的实际加载器
-            CLASS_LOADER = new GroovyClassLoader(SP.class.getClassLoader());
+            CompilerConfiguration rConfig = new CompilerConfiguration();
+            rConfig.setSourceEncoding(StandardCharsets.UTF_8.name()); // 文件统一使用 utf-8 编码
+            CLASS_LOADER = new GroovyClassLoader(SP.class.getClassLoader(), rConfig);
             // 指定默认的 Groovy 脚本的类路径
             CLASS_LOADER.addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
         }

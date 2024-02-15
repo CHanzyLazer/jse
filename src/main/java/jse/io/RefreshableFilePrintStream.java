@@ -4,6 +4,7 @@ import jse.code.UT;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 支持使用 \r 来 refresh 的 {@link PrintStream}，
@@ -33,7 +34,7 @@ public class RefreshableFilePrintStream extends PrintStream {
      * @since  2.3.8
      */
     public RefreshableFilePrintStream(@NotNull String aFilePath) throws IOException {
-        this(aFilePath, "UTF-8"); // 文件操作统一使用 utf-8
+        this(aFilePath, StandardCharsets.UTF_8.name()); // 文件操作统一使用 utf-8
     }
     public RefreshableFilePrintStream(@NotNull String aFilePath, @NotNull String aEncoding) throws IOException {
         super(new RefreshableFileOutputStream(aFilePath), false, aEncoding);

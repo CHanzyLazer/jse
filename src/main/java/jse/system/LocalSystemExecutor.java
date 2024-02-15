@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 
 import static jse.code.CS.*;
@@ -22,7 +21,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     
     /** stuff to override */
     protected String @NotNull[] programAndArgs_() {return ZL_STR;}
-    protected Charset charset_() {return StandardCharsets.UTF_8;}
+    protected Charset charset_() {return Charset.defaultCharset();}
     
     /** 本地则在本地创建目录即可 */
     @Override public final void validPath(String aPath) throws IOException {UT.IO.validPath(aPath);}
