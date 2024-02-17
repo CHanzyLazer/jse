@@ -46,6 +46,22 @@
   
   -----------------------------
   
+- **`UT.IO.readAllText`**
+  
+  描述：读取输入路径对应文件中的所有文本，作为一个 `String` 返回
+  
+  输入：`String`，字符串表示的文件路径
+  
+  输出：`String`，文件中所有字符串文本
+  
+  例子：`example/io/readwrite1`
+  [⤤](../release/script/groovy/example/io/readwrite1.groovy)
+  
+  > 注意：文件不存在或者触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
 - **`UT.IO.readAllBytes`**
   
   描述：读取输入路径对应二进制文件，作为一个 `byte[]` 返回
@@ -281,8 +297,8 @@ jse 直接基于 [`groovy-json`](https://www.groovy-lang.org/processing-json.htm
   
   输出：`Map<?, ?>`，解析 json 文件得到的 `Map`
   
-  例子：`example/io/datajson`
-  [⤤](../release/script/groovy/example/io/datajson.groovy)
+  例子：`example/io/datajsonyaml`
+  [⤤](../release/script/groovy/example/io/datajsonyaml.groovy)
   
   > 注意：文件不存在或触发权限不够时会抛出异常
   > 
@@ -297,8 +313,8 @@ jse 直接基于 [`groovy-json`](https://www.groovy-lang.org/processing-json.htm
   
   输入2：`String`，字符串表示的输出 json 文件的路径
   
-  例子：`example/io/datajson`
-  [⤤](../release/script/groovy/example/io/datajson.groovy)
+  例子：`example/io/datajsonyaml`
+  [⤤](../release/script/groovy/example/io/datajsonyaml.groovy)
   
   > 注意：会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
   > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
@@ -317,8 +333,8 @@ jse 直接基于 [`groovy-yaml`](https://www.groovy-lang.org/processing-yaml.htm
   
   输出：`Map<?, ?>`，解析 yaml 文件得到的 `Map`
   
-  例子：`example/io/datayaml`
-  [⤤](../release/script/groovy/example/io/datayaml.groovy)
+  例子：`example/io/datajsonyaml`
+  [⤤](../release/script/groovy/example/io/datajsonyaml.groovy)
   
   > 注意：文件不存在或触发权限不够时会抛出异常
   > 
@@ -333,8 +349,8 @@ jse 直接基于 [`groovy-yaml`](https://www.groovy-lang.org/processing-yaml.htm
   
   输入2：`String`，字符串表示的输出 yaml 文件的路径
   
-  例子：`example/io/datayaml`
-  [⤤](../release/script/groovy/example/io/datayaml.groovy)
+  例子：`example/io/datajsonyaml`
+  [⤤](../release/script/groovy/example/io/datajsonyaml.groovy)
   
   > 注意：会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
   > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常

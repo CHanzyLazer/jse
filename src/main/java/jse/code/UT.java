@@ -55,6 +55,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.groovy.json.internal.CharScanner;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.jetbrains.annotations.*;
 
@@ -937,7 +938,7 @@ public class UT {
          */
         public static byte[] readAllBytes(String aFilePath) throws IOException {return Files.readAllBytes(toAbsolutePath_(aFilePath));}
         /**
-         * read all lines of the File
+         * Wrapper of {@link Files#readAllLines}
          * @author liqa
          * @param aFilePath File to read
          * @return lines of String
@@ -967,6 +968,15 @@ public class UT {
             }
             return rLines;
         }
+        /**
+         * jdk8 version of {@link Files#readString}
+         * @author liqa
+         * @param aFilePath File to read
+         * @return lines of String
+         * @throws IOException when fail
+         */
+        public static String readAllText(String aFilePath) throws IOException {return IOGroovyMethods.getText(toReader(aFilePath));}
+        
         
         /**
          * remove the Directory, will remove the subdirectories recursively
