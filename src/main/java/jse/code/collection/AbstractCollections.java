@@ -10,6 +10,8 @@ import jse.code.iterator.IHasDoubleIterator;
 import jse.code.iterator.IHasIntIterator;
 import jse.code.iterator.IIntIterator;
 import jse.math.MathEX;
+import jse.math.vector.IIntVector;
+import jse.math.vector.IVector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -217,6 +219,66 @@ public class AbstractCollections {
             @Override public int size() {return aArray.length;}
         };
     }
+    public static <R> @Unmodifiable List<R> map(final double[] aData, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        return new AbstractRandomAccessList<R>() {
+            @Override public R get(int index) {return aOpt.apply(aData[index]);}
+            @Override public int size() {return aData.length;}
+        };
+    }
+    public static <R> @Unmodifiable List<R> map(final int[] aData, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        return new AbstractRandomAccessList<R>() {
+            @Override public R get(int index) {return aOpt.apply(aData[index]);}
+            @Override public int size() {return aData.length;}
+        };
+    }
+    public static <R> @Unmodifiable List<R> map(final IVector aVector, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        return new AbstractRandomAccessList<R>() {
+            @Override public R get(int index) {return aOpt.apply(aVector.get(index));}
+            @Override public int size() {return aVector.size();}
+        };
+    }
+    public static <R> @Unmodifiable Iterable<R> map(final IHasDoubleIterator aIterable, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        return () -> map(aIterable.iterator(), aOpt);
+    }
+    public static <R> @Unmodifiable Iterator<R> map(final IDoubleIterator aIterator, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        return new Iterator<R>() {
+            final IDoubleIterator mIt = aIterator;
+            @Override public boolean hasNext() {
+                return mIt.hasNext();
+            }
+            @Override public R next() {
+                if (hasNext()) {
+                    return aOpt.apply(mIt.next());
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
+    }
+    public static <R> @Unmodifiable List<R> map(final IIntVector aVector, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        return new AbstractRandomAccessList<R>() {
+            @Override public R get(int index) {return aOpt.apply(aVector.get(index));}
+            @Override public int size() {return aVector.size();}
+        };
+    }
+    public static <R> @Unmodifiable Iterable<R> map(final IHasIntIterator aIterable, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        return () -> map(aIterable.iterator(), aOpt);
+    }
+    public static <R> @Unmodifiable Iterator<R> map(final IIntIterator aIterator, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        return new Iterator<R>() {
+            final IIntIterator mIt = aIterator;
+            @Override public boolean hasNext() {
+                return mIt.hasNext();
+            }
+            @Override public R next() {
+                if (hasNext()) {
+                    return aOpt.apply(mIt.next());
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
+    }
     
     
     /**
@@ -251,7 +313,7 @@ public class AbstractCollections {
         };
     }
     public static <T> List<T> slice(final List<T> aList, IIndexFilter aIndices) {
-        return slice(aList, NewCollections.filterInteger(aList.size(), aIndices));
+        return slice(aList, NewCollections.filterInt(aList.size(), aIndices));
     }
     
     
@@ -292,10 +354,10 @@ public class AbstractCollections {
             }
         };
     }
-    public static @Unmodifiable Iterable<Integer> filterInteger(Iterable<Integer> aIndices, IIndexFilter aFilter) {
+    public static @Unmodifiable Iterable<Integer> filterInt(Iterable<Integer> aIndices, IIndexFilter aFilter) {
         return filter(aIndices, aFilter::accept);
     }
-    public static @Unmodifiable IHasIntIterator filterInteger(final IHasIntIterator aIndices, final IIndexFilter aFilter) {
+    public static @Unmodifiable IHasIntIterator filterInt(final IHasIntIterator aIndices, final IIndexFilter aFilter) {
         return () -> new IIntIterator() {
             private final IIntIterator mIt = aIndices.iterator();
             private boolean mNextValid = false;
@@ -326,7 +388,7 @@ public class AbstractCollections {
             }
         };
     }
-    public static @Unmodifiable IHasIntIterator filterInteger(final int aSize, final IIndexFilter aFilter) {
+    public static @Unmodifiable IHasIntIterator filterInt(final int aSize, final IIndexFilter aFilter) {
         return () -> new IIntIterator() {
             private int mIdx = 0, mNext = -1;
             

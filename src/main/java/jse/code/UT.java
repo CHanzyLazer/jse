@@ -222,11 +222,11 @@ public class UT {
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static <T> Iterable<T> filter(Iterable<? extends T> aIterable, IFilter<? super T> aFilter) {return AbstractCollections.filter(aIterable, aFilter);}
-        @VisibleForTesting public static Iterable<Integer> filterInteger(Iterable<Integer> aIndices, IIndexFilter aFilter) {return AbstractCollections.filterInteger(aIndices, aFilter);}
-        @VisibleForTesting public static IHasIntIterator filterInteger(IHasIntIterator aIndices, IIndexFilter aFilter) {return AbstractCollections.filterInteger(aIndices, aFilter);}
-        @VisibleForTesting public static IHasIntIterator filterInteger(int aSize, IIndexFilter aFilter) {return AbstractCollections.filterInteger(aSize, aFilter);}
+        @VisibleForTesting public static Iterable<Integer> filterInteger(Iterable<Integer> aIndices, IIndexFilter aFilter) {return AbstractCollections.filterInt(aIndices, aFilter);}
+        @VisibleForTesting public static IHasIntIterator filterInteger(IHasIntIterator aIndices, IIndexFilter aFilter) {return AbstractCollections.filterInt(aIndices, aFilter);}
+        @VisibleForTesting public static IHasIntIterator filterInteger(int aSize, IIndexFilter aFilter) {return AbstractCollections.filterInt(aSize, aFilter);}
         @VisibleForTesting public static Iterable<? extends Number> filterDouble(Iterable<? extends Number> aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
-        @VisibleForTesting public static IHasDoubleIterator filterDouble(final IHasDoubleIterator aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
+        @VisibleForTesting public static IHasDoubleIterator filterDouble(IHasDoubleIterator aIterable, final IDoubleFilter aFilter) {return AbstractCollections.filterDouble(aIterable, aFilter);}
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static <R, T> Iterable<R>   map(Iterable<T> aIterable,     IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aIterable, aOpt);}
@@ -236,9 +236,9 @@ public class UT {
         @VisibleForTesting public static <R, T> List<R>       map(T[] aArray,                IUnaryFullOperator<? extends R, ? super T> aOpt) {return AbstractCollections.map(aArray, aOpt);}
         
         /** 保留这些接口方便外部调用使用 */
-        @VisibleForTesting public static List<Double> asList(final double[] aData) {return AbstractCollections.from(aData);}
-        @VisibleForTesting public static List<Integer> asList(final int[] aData) {return AbstractCollections.from(aData);}
-        @VisibleForTesting public static List<Boolean> asList(final boolean[] aData) {return AbstractCollections.from(aData);}
+        @VisibleForTesting public static List<Double> asList(double[] aData) {return AbstractCollections.from(aData);}
+        @VisibleForTesting public static List<Integer> asList(int[] aData) {return AbstractCollections.from(aData);}
+        @VisibleForTesting public static List<Boolean> asList(boolean[] aData) {return AbstractCollections.from(aData);}
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static List<Integer> range_(            int aSize           ) {return AbstractCollections.range_(aSize);}
@@ -916,7 +916,7 @@ public class UT {
          * @param aLines Iterable String or String[]
          * @throws IOException when fail
          */
-        public static void write(String aFilePath, String[] aLines, OpenOption... aOptions)                         throws IOException  {write(aFilePath, Arrays.asList(aLines), aOptions);}
+        public static void write(String aFilePath, String[] aLines, OpenOption... aOptions)                         throws IOException  {write(aFilePath, AbstractCollections.from(aLines), aOptions);}
         public static void write(String aFilePath, String aText, OpenOption... aOptions)                            throws IOException  {write(aFilePath, Collections.singletonList(aText), aOptions);}
         public static void write(String aFilePath, byte[] aData, OpenOption... aOptions)                            throws IOException  {write(toAbsolutePath_(aFilePath), aData, aOptions);}
         public static void write(String aFilePath, Iterable<? extends CharSequence> aLines, OpenOption... aOptions) throws IOException  {write(toAbsolutePath_(aFilePath), aLines, aOptions);}
@@ -1192,31 +1192,48 @@ public class UT {
         /**
          * save matrix data to csv file
          * @author liqa
-         * @param aData the matrix form data to be saved
-         * @param aFilePath csv file path to be saved
-         * @param aHeads optional headers for the title
+         * @param aData the matrix form data to save
+         * @param aFilePath csv file path to save
+         * @param aHeads optional heads for the title
          */
         public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {
-            List<String> rLines = AbstractCollections.map(Arrays.asList(aData), subData -> String.join(",", AbstractCollections.map(AbstractCollections.from(subData), String::valueOf)));
+            List<String> rLines = AbstractCollections.map(AbstractCollections.from(aData), subData -> String.join(",", AbstractCollections.map(subData, Object::toString)));
+            if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
+            write(aFilePath, rLines);
+        }
+        public static void data2csv(double[] aData, String aFilePath) throws IOException {
+            write(aFilePath, AbstractCollections.map(aData, Object::toString));
+        }
+        public static void data2csv(double[] aData, String aFilePath, String aHead) throws IOException {
+            write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData, Object::toString)));
+        }
+        public static void data2csv(Iterable<?> aData, String aFilePath, String... aHeads) throws IOException {
+            Iterable<String> rLines = AbstractCollections.map(aData, subData -> {
+                if (subData instanceof IVector) {
+                    return String.join(",", AbstractCollections.map(((IVector)subData), Object::toString));
+                } else
+                if (subData instanceof double[]) {
+                    return String.join(",", AbstractCollections.map((double[])subData, Object::toString));
+                } else
+                if (subData instanceof Iterable) {
+                    return String.join(",", AbstractCollections.map((Iterable<?>)subData, String::valueOf));
+                } else {
+                    return String.valueOf(subData);
+                }
+            });
             if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
             write(aFilePath, rLines);
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
-            List<String> rLines = AbstractCollections.map(aData.rows(), subData -> String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
+            List<String> rLines = AbstractCollections.map(aData.rows(), subData -> String.join(",", AbstractCollections.map(subData, Object::toString)));
             if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
             write(aFilePath, rLines);
         }
-        public static void data2csv(Iterable<? extends Number> aData, String aFilePath) throws IOException {
-            write(aFilePath, AbstractCollections.map(aData, String::valueOf));
-        }
-        public static void data2csv(Iterable<? extends Number> aData, String aFilePath, String aHead) throws IOException {
-            write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData, String::valueOf)));
-        }
         public static void data2csv(IVector aData, String aFilePath) throws IOException {
-            write(aFilePath, AbstractCollections.map(aData.iterable(), String::valueOf));
+            write(aFilePath, AbstractCollections.map(aData, Object::toString));
         }
         public static void data2csv(IVector aData, String aFilePath, String aHead) throws IOException {
-            write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData.iterable(), String::valueOf)));
+            write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData, Object::toString)));
         }
         public static void data2csv(IFunc1 aFunc, String aFilePath, String... aHeads) throws IOException {
             List<String> rLines = AbstractCollections.map(AbstractCollections.range(aFunc.Nx()), i -> aFunc.get(i)+","+aFunc.getX(i));
@@ -1266,10 +1283,10 @@ public class UT {
          * save table to csv file
          * @author liqa
          * @param aTable the Table to be saved
-         * @param aFilePath csv file path to be saved
+         * @param aFilePath csv file path to save
          */
         public static void table2csv(ITable aTable, String aFilePath) throws IOException {
-            List<String> rLines = AbstractCollections.map(aTable.rows(), subData -> String.join(",", AbstractCollections.map(subData.iterable(), String::valueOf)));
+            List<String> rLines = AbstractCollections.map(aTable.rows(), subData -> String.join(",", AbstractCollections.map(subData, Object::toString)));
             rLines = AbstractCollections.merge(String.join(",", aTable.heads()), rLines);
             write(aFilePath, rLines);
         }
@@ -1277,7 +1294,7 @@ public class UT {
          * read table from csv file
          * @author liqa
          * @param aFilePath csv file path to read
-         * @return table with hand
+         * @return table with head
          */
         public static ITable csv2table(String aFilePath) throws IOException {
             // 现在直接全部读取
@@ -1313,9 +1330,10 @@ public class UT {
         
         /**
          * 保证兼容性的读取 csv 到 String，
-         * 不假设 csv 是纯数字的，并且不识别 hand
+         * 不假设 csv 是纯数字的，并且不识别 head
          * @author liqa
          * @param aFilePath csv file path to read
+         * @param aFormat 自定义 {@link CSVFormat}
          * @return split 后的行组成的 List
          */
         public static List<String[]> csv2str(String aFilePath, CSVFormat aFormat) throws IOException {
@@ -1325,6 +1343,14 @@ public class UT {
             }
             return rLines;
         }
+        /**
+         * 保证兼容性的保存 String 到 csv，
+         * 这里不提供额外 head 支持
+         * @author liqa
+         * @param aLines 需要保存的字符串数据，按行排列
+         * @param aFilePath csv file path to save
+         * @param aFormat 自定义 {@link CSVFormat}
+         */
         public static void str2csv(Iterable<?> aLines, String aFilePath, CSVFormat aFormat) throws IOException {
             try (CSVPrinter tPrinter = new CSVPrinter(toWriter(aFilePath), aFormat)) {
                 for (Object tLine : aLines) {
@@ -1578,9 +1604,9 @@ public class UT {
         @SuppressWarnings("unchecked")
         public static ILine[] plot(IAtomData aAtomData, Map<?, ?> aArgs) {
             List<?> aTypes = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.from((aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).atomTypes() : ZL_STR), "Types", "types", "t");
-            List<?> aColors = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.from(aTypes.size(), i -> COLOR.getOrDefault(String.valueOf(aTypes.get(i)), Colors.COLOR(i+1))), "Colors", "colors", "c");
-            List<?> aSizes = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.map(aTypes, type -> SIZE.getOrDefault(String.valueOf(type), 1.0)), "Sizes", "sizes", "s");
-            String aAxis = String.valueOf(Code.getWithDefault(aArgs, "z", "Axis", "axis", "a"));
+            List<?> aColors = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.from(aTypes.size(), i -> COLOR.getOrDefault(Code.toString(aTypes.get(i)), Colors.COLOR(i+1))), "Colors", "colors", "c");
+            List<?> aSizes = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.map(aTypes, type -> SIZE.getOrDefault(Code.toString(type), 1.0)), "Sizes", "sizes", "s");
+            String aAxis = Code.toString(Code.getWithDefault(aArgs, "z", "Axis", "axis", "a"));
             if (!aAxis.equals("x") && !aAxis.equals("y") && !aAxis.equals("z")) aAxis = "z";
             
             double tScale;
@@ -1595,9 +1621,9 @@ public class UT {
                 final int tType = i + 1;
                 Iterable<IAtom> tAtoms = AbstractCollections.filter(aAtomData.asList(), atom->atom.type()==tType);
                 switch (aAxis) {
-                case "x": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::y), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
-                case "y": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
-                case "z": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::y), aTypes.size()>i ? String.valueOf(aTypes.get(i)) : "type "+tType); break;}
+                case "x": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::y), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
+                case "y": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
+                case "z": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::y), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
                 }
                 rLines[i].lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE).filled();
                 if (aColors.size() <= i) {
@@ -1614,7 +1640,7 @@ public class UT {
                     if (tColor instanceof Paint) {
                         rLines[i].color((Paint)tColor);
                     } else {
-                        rLines[i].color(String.valueOf(tColor));
+                        rLines[i].color(Code.toString(tColor));
                     }
                 }
                 rLines[i].markerEdgeColor(0);

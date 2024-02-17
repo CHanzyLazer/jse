@@ -13,7 +13,10 @@ import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 获取固定容器的类，这里获取的结果统一都进行了一次值拷贝
@@ -121,6 +124,36 @@ public class NewCollections {
         for (T tValue : aArray) rOut.add(aOpt.apply(tValue));
         return rOut;
     }
+    public static <R> ArrayList<R> map(final double[] aData, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        ArrayList<R> rOut = new ArrayList<>(aData.length);
+        for (double tValue : aData) rOut.add(aOpt.apply(tValue));
+        return rOut;
+    }
+    public static <R> ArrayList<R> map(final int[] aData, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        ArrayList<R> rOut = new ArrayList<>(aData.length);
+        for (int tValue : aData) rOut.add(aOpt.apply(tValue));
+        return rOut;
+    }
+    public static <R> ArrayList<R> map(final IVector aVector, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        final ArrayList<R> rOut = new ArrayList<>(aVector.size());
+        aVector.forEach(v -> rOut.add(aOpt.apply(v)));
+        return rOut;
+    }
+    public static <R> ArrayList<R> map(final IHasDoubleIterator aIterable, final IUnaryFullOperator<? extends R, Double> aOpt) {
+        final ArrayList<R> rOut = new ArrayList<>();
+        aIterable.forEach(v -> rOut.add(aOpt.apply(v)));
+        return rOut;
+    }
+    public static <R> ArrayList<R> map(final IIntVector aVector, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        final ArrayList<R> rOut = new ArrayList<>(aVector.size());
+        aVector.forEach(v -> rOut.add(aOpt.apply(v)));
+        return rOut;
+    }
+    public static <R> ArrayList<R> map(final IHasIntIterator aIterable, final IUnaryFullOperator<? extends R, Integer> aOpt) {
+        final ArrayList<R> rOut = new ArrayList<>();
+        aIterable.forEach(v -> rOut.add(aOpt.apply(v)));
+        return rOut;
+    }
     
     
     /**
@@ -187,25 +220,25 @@ public class NewCollections {
         rList.trimToSize();
         return rList;
     }
-    public static IntVector filterInteger(Iterable<Integer> aIndices, final IIndexFilter aFilter) {
+    public static IntVector filterInt(Iterable<Integer> aIndices, final IIndexFilter aFilter) {
         IntVector.Builder rBuilder = IntVector.builder();
         for (int tValue : aIndices) if (aFilter.accept(tValue)) rBuilder.add(tValue);
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static IntVector filterInteger(Collection<Integer> aIndices, final IIndexFilter aFilter) {
+    public static IntVector filterInt(Collection<Integer> aIndices, final IIndexFilter aFilter) {
         IntVector.Builder rBuilder = IntVector.builder(aIndices.size());
         for (int tValue : aIndices) if (aFilter.accept(tValue)) rBuilder.add(tValue);
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static IntVector filterInteger(int aSize, IIndexFilter aFilter) {
+    public static IntVector filterInt(int aSize, IIndexFilter aFilter) {
         IntVector.Builder rBuilder = IntVector.builder(aSize);
         for (int i = 0; i < aSize; ++i) if (aFilter.accept(i)) rBuilder.add(i);
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static IntVector filterInteger(IHasIntIterator aIterable, IIndexFilter aFilter) {
+    public static IntVector filterInt(IHasIntIterator aIterable, IIndexFilter aFilter) {
         IntVector.Builder rBuilder = IntVector.builder();
         aIterable.forEach(i -> {
             if (aFilter.accept(i)) rBuilder.add(i);
@@ -213,7 +246,7 @@ public class NewCollections {
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static IntVector filterInteger(IIntVector aVector, IIndexFilter aFilter) {
+    public static IntVector filterInt(IIntVector aVector, IIndexFilter aFilter) {
         IntVector.Builder rBuilder = IntVector.builder(aVector.size());
         aVector.forEach(i -> {
             if (aFilter.accept(i)) rBuilder.add(i);

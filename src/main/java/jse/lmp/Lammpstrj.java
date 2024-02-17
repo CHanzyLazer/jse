@@ -636,7 +636,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
                 tWriteln.writeln(String.format("%f %f", tSubLammpstrj.mBox.zlo(), tSubLammpstrj.mBox.zhi()));
                 tWriteln.writeln(String.format("ITEM: ATOMS %s", String.join(" ", tSubLammpstrj.mAtomData.heads())));
                 for (IVector subAtomData : tSubLammpstrj.mAtomData.rows()) {
-                tWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData.iterable(), Object::toString)));
+                tWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData, Object::toString)));
                 }
             }
         }

@@ -16,7 +16,7 @@ public abstract class AbstractIntVectorSlicer implements IIntVectorSlicer {
     final static String MSG = "Slice Indices Must be a Filter or ISlice or int[] or List<Integer> or ALL";
     
     /** 支持过滤器输入，代替没有 {@code List<Boolean>} 的缺陷 */
-    @Override public final IIntVector get(IIndexFilter aIndices) {return get(NewCollections.filterInteger(thisSize_(), aIndices));}
+    @Override public final IIntVector get(IIndexFilter aIndices) {return get(NewCollections.filterInt(thisSize_(), aIndices));}
     
     
     /** stuff to override */
