@@ -2,6 +2,9 @@
     - [文件读写](#文件读写)
     - [文件操作](#文件操作)
     - [数据结构文本文件读写](#数据结构文本文件读写)
+        - [json 文件读写](#json-文件读写)
+        - [yaml 文件读写](#yaml-文件读写)
+        - [csv 文件读写](#csv-文件读写)
 - [**⟶ 目录**](contents.md)
 
 # 通用文件操作
@@ -21,7 +24,7 @@
   换行符统一为 `\n`（即 `LF`），因此不用考虑文件格式的问题。
 
 > `jse.code.UT.IO` 中的静态方法在 shell 模式下是默认导入的，
-> 因此在 shell 模式下可以直接执行 `copy()` 之类的方法而不需要导入。
+> 因此在 shell 模式下可以直接执行 `readAllLines()` 之类的方法而不需要导入。
 > 
 
 
@@ -247,7 +250,22 @@
   > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
   >
   
+  -----------------------------
   
+- **`UT.IO.samePath`**
+  
+  描述：判断输入的两个路径是否相同。
+  
+  输入1：`String`，字符串表示的路径1
+  
+  输入2：`String`，字符串表示的路径2
+  
+  输出：`boolean`，`true` 表示相同，`false` 表示不相同
+  
+  例子：`example/io/fileopt`
+  [⤤](../release/script/groovy/example/io/fileopt.groovy)
+
+
 ## 数据结构文本文件读写
 
 ### json 文件读写
@@ -329,6 +347,138 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
 [Apache Commons CSV](https://commons.apache.org/proper/commons-csv/)
 实现。
 
-
-
-
+- **`UT.IO.csv2data`**
+  
+  描述：读取输入 csv 文件路径并存储为 jse 矩阵 `IMatrix`。
+  
+  输入：`String`，字符串表示的 csv 文件路径
+  
+  输出：`IMatrix`，解析 csv 文件得到的矩阵数据
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：只接受用 `,` 分隔的纯数字 csv 文件，
+  > 这个文件的第一行可以是由字符串组成的头（不支持引号 `'` 包围的字符串），
+  > 如果检测到第一行是头则会自动跳过这一行的读取；
+  > 文件不存在或触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
+- **`UT.IO.data2csv`**
+  
+  描述：通过输入的数据创建 csv 文件。
+  
+  输入1：根据输入类型重载，具体为：
+  
+  - `double[][]`，按行分隔的浮点数组数据
+  - `double[]`，单列浮点数组数据
+  - `Iterable<?>`，按行分隔的数据或者单列数据，
+    `?` 可以是 `double[]`， `Iterable`， `IVecetor` 或任意单个数据 `Object`
+  - `IMatrix`，jse 的矩阵数据
+  - `IVecetor`，单列的 jse 向量数据
+  - `IFunc1`，jse 的单元函数数据，第一列为函数值第二列为变量值，
+    默认第一列会添加头 `f`，第二列会添加头 `x`
+  
+  输入2：`String`，字符串表示的输出 csv 文件的路径
+  
+  输入3（可选）：`String...`，自定义输出 csv 文件的头，
+  如果设置要求数目和数据列数相同
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：会使用 `,` 分隔数字，第一行可能是数据的头
+  > （保证 `csv2data`/`csv2table` 能直接读取）；
+  > 会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
+  > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
+- **`UT.IO.csv2table`**
+  
+  描述：读取输入 csv 文件路径并存储为 jse 表格 `ITable`。
+  
+  输入：`String`，字符串表示的 csv 文件路径
+  
+  输出：`ITable`，解析 csv 文件得到的表格数据
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：只接受用 `,` 分隔的纯数字 csv 文件，
+  > 这个文件的第一行可以是由字符串组成的头（不支持引号 `'` 包围的字符串），
+  > 如果检测到第一行是头则会将其设为表格 `ITable` 的头，
+  > 否则会自动生成头（`C0`, `C1`, `C2`, ...）；
+  > 文件不存在或触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
+- **`UT.IO.table2csv`**
+  
+  描述：通过输入的 jse 表格 `ITable` 创建 csv 文件。
+  
+  输入1：`ITable`，jse 表格数据
+  
+  输入2：`String`，字符串表示的输出 csv 文件的路径
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：会使用 `,` 分隔数字，第一行为表格数据的头
+  > （保证 `csv2data`/`csv2table` 能直接读取）；
+  > 会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
+  > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
+- **`UT.IO.csv2str`**
+  
+  描述：读取输入 csv 文件路径并按行分隔存储为 `List<String[]>`。
+  
+  输入1：`String`，字符串表示的 csv 文件路径
+  
+  输入2（可选）：`CSVFormat`，手动指定 csv 文件的格式，具体可以参考 
+  [Apache Commons CSV 文档](https://commons.apache.org/proper/commons-csv/user-guide.html#Parsing_files)
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：此方法基于 
+  > [Apache Commons CSV](https://commons.apache.org/proper/commons-csv/)
+  > 实现，旨在提供更加一般的 csv 文件读写；
+  > 默认情况下使用 `,` 分隔；
+  > 文件不存在或触发权限不够时会抛出异常
+  > 
+  
+  -----------------------------
+  
+  - **`UT.IO.str2csv`**
+  
+  描述：将输入的按行排列的字符串写入 csv 文件。
+  
+  输入1：`Iterable<?>`，按行排列的字符串，
+  `?` 可以是 `Iterable`， `Object[]` 或任意单个数据 `Object`
+  
+  输入2：`String`，字符串表示的输出 csv 文件的路径
+  
+  输入3（可选）：`CSVFormat`，手动指定 csv 文件的格式，具体可以参考 
+  [Apache Commons CSV 文档](https://commons.apache.org/proper/commons-csv/user-guide.html#Parsing_files)
+  
+  例子：`example/io/datacsv`
+  [⤤](../release/script/groovy/example/io/datacsv.groovy)
+  
+  > 注意：此方法基于 
+  > [Apache Commons CSV](https://commons.apache.org/proper/commons-csv/)
+  > 实现，旨在提供更加一般的 csv 文件读写；
+  > 默认情况下使用 `,` 分隔，并采用 `\n` 作为换行符（`LF`）；
+  > 会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
+  > 目标路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
+  > 
+  
+  
+  
