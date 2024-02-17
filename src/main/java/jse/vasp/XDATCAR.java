@@ -315,12 +315,28 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
     public static XDATCAR of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
     public static XDATCAR of(IAtomData aAtomData, String... aAtomTypes) {return fromAtomData(aAtomData, aAtomTypes);}
-    public static XDATCAR ofList(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
-    public static XDATCAR ofList(Iterable<? extends IAtomData> aAtomDataList, String... aAtomTypes) {return fromAtomDataList(aAtomDataList, aAtomTypes);}
-    public static XDATCAR ofList(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
-    public static XDATCAR ofList(Collection<? extends IAtomData> aAtomDataList, String... aAtomTypes) {return fromAtomDataList(aAtomDataList, aAtomTypes);}
+    public static XDATCAR of(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    public static XDATCAR of(Iterable<? extends IAtomData> aAtomDataList, String... aAtomTypes) {return fromAtomDataList(aAtomDataList, aAtomTypes);}
+    public static XDATCAR of(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    public static XDATCAR of(Collection<? extends IAtomData> aAtomDataList, String... aAtomTypes) {return fromAtomDataList(aAtomDataList, aAtomTypes);}
+    /** 直接提供一个 AbstractMultiFrameSettableAtomData 的接口就不用担心冲突问题了 */
+    public static XDATCAR of(AbstractMultiFrameSettableAtomData<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    public static XDATCAR of(AbstractMultiFrameSettableAtomData<? extends IAtomData> aAtomDataList, String... aAtomTypes) {return fromAtomDataList(aAtomDataList, aAtomTypes);}
+    /** matlab stuffs */
     public static XDATCAR of_compat(Object[] aAtomDataArray) {return fromAtomData_compat(aAtomDataArray);}
     public static XDATCAR of_compat(Object[] aAtomDataArray, String... aAtomTypes) {return fromAtomData_compat(aAtomDataArray, aAtomTypes);}
+    /** 这些接口用来覆盖同名的 jdk9 中同名的 {@link List#of} 方法 */
+    @VisibleForTesting @Deprecated public static XDATCAR of() {throw new IllegalArgumentException("XDATCAR must be initialized through at least ONE AtomData");}
+    @VisibleForTesting public static XDATCAR of(IAtomData... aAtomDataArray) {return of(AbstractCollections.from(aAtomDataArray));}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2                                                                                                                         ) {return of(new IAtomData[]{aD1, aD2});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3                                                                                                          ) {return of(new IAtomData[]{aD1, aD2, aD3});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4                                                                                           ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5                                                                            ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6                                                             ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7                                              ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8                               ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8, IAtomData aD9                ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8, aD9});}
+    @VisibleForTesting public static XDATCAR of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8, IAtomData aD9, IAtomData aD10) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8, aD9, aD10});}
     
     
     /// 文件读写

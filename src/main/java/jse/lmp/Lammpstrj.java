@@ -1,6 +1,7 @@
 package jse.lmp;
 
 import jse.atom.*;
+import jse.cache.ThreadLocalObjectCachePool;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.NewCollections;
@@ -10,7 +11,6 @@ import jse.math.table.ITable;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
 import jse.parallel.MPI;
-import jse.cache.ThreadLocalObjectCachePool;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
@@ -550,9 +550,24 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
     public static Lammpstrj zl() {return new Lammpstrj();}
     public static Lammpstrj of(IAtomData aAtomData, long aTimeStep) {return fromAtomData(aAtomData, aTimeStep);}
     public static Lammpstrj of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
-    public static Lammpstrj ofList(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
-    public static Lammpstrj ofList(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    public static Lammpstrj of(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    public static Lammpstrj of(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    /** 直接提供一个 AbstractMultiFrameSettableAtomData 的接口就不用担心冲突问题了 */
+    public static Lammpstrj of(AbstractMultiFrameSettableAtomData<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList);}
+    /** matlab stuffs */
     public static Lammpstrj of_compat(Object[] aAtomDataArray) {return fromAtomData_compat(aAtomDataArray);}
+    /** 这些接口用来覆盖同名的 jdk9 中同名的 {@link List#of} 方法 */
+    @VisibleForTesting public static Lammpstrj of() {return zl();}
+    @VisibleForTesting public static Lammpstrj of(IAtomData... aAtomDataArray) {return of(AbstractCollections.from(aAtomDataArray));}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2                                                                                                                         ) {return of(new IAtomData[]{aD1, aD2});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3                                                                                                          ) {return of(new IAtomData[]{aD1, aD2, aD3});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4                                                                                           ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5                                                                            ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6                                                             ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7                                              ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8                               ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8, IAtomData aD9                ) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8, aD9});}
+    @VisibleForTesting public static Lammpstrj of(IAtomData aD1, IAtomData aD2, IAtomData aD3, IAtomData aD4, IAtomData aD5, IAtomData aD6, IAtomData aD7, IAtomData aD8, IAtomData aD9, IAtomData aD10) {return of(new IAtomData[]{aD1, aD2, aD3, aD4, aD5, aD6, aD7, aD8, aD9, aD10});}
     
     
     /// 文件读写
