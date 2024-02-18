@@ -56,7 +56,7 @@ import jse.lmp.Dump
 ### a. 将 jse 作为软件使用
 
 - 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-中下载 `jse-${tag}.zip` 文件，解压到希望的目录作为此软件的位置。
+  中下载 `jse-${tag}.zip` 文件，解压到希望的目录作为此软件的位置。
 
 - 将解压到的目录添加到 `PATH` 环境变量中。
   
@@ -69,7 +69,7 @@ import jse.lmp.Dump
 ### b. 将 jse 作为独立项目使用
 
 - 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-中下载 `jse-full-${tag}.zip` 文件，解压到希望的目录作为项目目录。
+  中下载 `jse-full-${tag}.zip` 文件，解压到希望的目录作为项目目录。
 
 - **使用 VScode 管理项目：** 使用 vscode 打开解压后的文件夹，
   切换到希望运行的 groovy 脚本后，通过左侧栏的 `运行和调试` 选择 
@@ -77,23 +77,23 @@ import jse.lmp.Dump
 
 - **使用 [IntelliJ IDEA](https://www.jetbrains.com/idea/) 管理项目：** 
   使用 idea 打开解压后的文件夹，第一次打开可能需要设置 jdk 的路径：
-  
-  ```
-  左上角“文件” ⟶ 项目结构 ⟶ 左边栏选择“项目设置-项目” ⟶ SDK 选择本地安装的 JDK
-  ⟶ 语言级别：8 - lambda、类型注解等 ⟶ 右下角“确定”
-  ```
-  
-  <!-- $$\begin{align*} &
-  \text{左上角“文件”}\longrightarrow 
-  \text{项目结构}\longrightarrow 
-  \text{左边栏选择“项目设置-项目”}\longrightarrow 
-  \text{SDK 选择本地安装的 JDK} \\& \longrightarrow
-  \text{语言级别：8 - lambda、类型注解等}\longrightarrow
-  \text{右下角“确定”}
-  \end{align*}$$ -->
-  
-  切换到希望运行的 groovy 脚本后，通过右上角的 `选择运行/调试配置` 切换到
-  `jse-RunCurrentScript`，然后运行即可。
+    
+    ```
+    左上角“文件” ⟶ 项目结构 ⟶ 左边栏选择“项目设置-项目” ⟶ SDK 选择本地安装的 JDK
+    ⟶ 语言级别：8 - lambda、类型注解等 ⟶ 右下角“确定”
+    ```
+    
+    <!-- $$\begin{align*} &
+    \text{左上角“文件”}\longrightarrow 
+    \text{项目结构}\longrightarrow 
+    \text{左边栏选择“项目设置-项目”}\longrightarrow 
+    \text{SDK 选择本地安装的 JDK} \\& \longrightarrow
+    \text{语言级别：8 - lambda、类型注解等}\longrightarrow
+    \text{右下角“确定”}
+    \end{align*}$$ -->
+    
+    切换到希望运行的 groovy 脚本后，通过右上角的 `选择运行/调试配置` 切换到
+    `jse-RunCurrentScript`，然后运行即可。
 
 > 在 idea 中支持语法检查，代码补全提示，以及直接查看源码定义。
 > 
@@ -115,41 +115,41 @@ import jse.lmp.Dump
 - 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
   中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 python 项目目录中，
   最终结构大致如下：
-  
-  ```
-  └─pyproject
-      ├─jse
-      ├─jse.bat
-      ├─lib
-      │   └─jse-all.jar
-      ├─main.py
-      ...
-  ```
-  
-  > 对于使用 py4j 来调用 jse 的不需要 `jse` 和 `jse.bat` 两个运行脚本，
-  > 这里只是保留备用。
-  > 
-  
+    
+    ```
+    └─pyproject
+        ├─jse
+        ├─jse.bat
+        ├─lib
+        │   └─jse-all.jar
+        ├─main.py
+        ...
+    ```
+    
+    > 对于使用 py4j 来调用 jse 的不需要 `jse` 和 `jse.bat` 两个运行脚本，
+    > 这里只是保留备用。
+    > 
+    
 - 对于需要使用 jse 的 python 脚本（例如 `main.py`），
   通过类似下面的代码来导入 `jse-all.jar` 文件：
-  
-  ```python
-  from py4j.java_gateway import JavaGateway
-  GATEWAY = JavaGateway.launch_gateway(classpath='lib/jse-all.jar')
-  ```
-  
+    
+    ```python
+    from py4j.java_gateway import JavaGateway
+    GATEWAY = JavaGateway.launch_gateway(classpath='lib/jse-all.jar')
+    ```
+    
 - 而后通过这种方式来导入 jse 中定义的类：
-  
-  ```python
-  Data = GATEWAY.jvm.jse.lmp.Data
-  Dump = GATEWAY.jvm.jse.lmp.Dump
-  ```
-  
+    
+    ```python
+    Data = GATEWAY.jvm.jse.lmp.Data
+    Dump = GATEWAY.jvm.jse.lmp.Dump
+    ```
+    
 - 最后记得关闭 `GATEWAY`：
-  
-  ```python
-  GATEWAY.shutdown()
-  ```
+    
+    ```python
+    GATEWAY.shutdown()
+    ```
 
 > **注意**：默认情况下 py4j 不会输出 java 的信息到控制台，可以在创建 `GATEWAY` 时重新定向输出流来解决这个问题：
 > 
@@ -168,42 +168,42 @@ matlab 原生支持调用 java 程序，因此可以比较简单的使用 jse。
 - 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
   中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 matlab 项目目录中，
   最终结构大致如下：
-  
-  ```
-  └─matproject
-      ├─jse
-      ├─jse.bat
-      ├─lib
-      │   └─jse-all.jar
-      ├─main.m
-      ...
-  ```
-  
-  > 对于 matlab 来调用 jse 的不需要 `jse` 和 `jse.bat` 两个运行脚本，
-  > 这里只是保留备用。
-  > 
-
+    
+    ```
+    └─matproject
+        ├─jse
+        ├─jse.bat
+        ├─lib
+        │   └─jse-all.jar
+        ├─main.m
+        ...
+    ```
+    
+    > 对于 matlab 来调用 jse 的不需要 `jse` 和 `jse.bat` 两个运行脚本，
+    > 这里只是保留备用。
+    > 
+    
 - 对于需要使用 jse 的 matlab 脚本（例如 `main.m`），
   通过类似下面的代码来导入 `jse-all.jar` 文件：
-  
-  ```matlab
-  javaaddpath('lib/jse-all.jar');
-  ```
-
+    
+    ```matlab
+    javaaddpath('lib/jse-all.jar');
+    ```
+    
 - 然后类似导入其他 java 包一样，这样导入 jse 中的 lmp 包：
-  
-  ```matlab
-  import jse.lmp.*
-  ```
-  
-  > **注意**：matlab 似乎不能直接使用 `import jse.lmp.Data` 这种写法来导入单个类
-  
+    
+    ```matlab
+    import jse.lmp.*
+    ```
+    
+    > **注意**：matlab 似乎不能直接使用 `import jse.lmp.Data` 这种写法来导入单个类
+    
 - 最后记得移除 java 路径：
-  
-  ```matlab
-  clear;
-  javarmpath('lib/jse-all.jar');
-  ```
+    
+    ```matlab
+    clear;
+    javarmpath('lib/jse-all.jar');
+    ```
 
 > **注意**：不能重复导入同一个 java 路径，否则会出现报错（虽然目前看起来不影响使用），
 > 因此实际项目中一般会将此方法进行包装，检测避免重复导入。

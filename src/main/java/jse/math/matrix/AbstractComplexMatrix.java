@@ -12,10 +12,7 @@ import jse.code.iterator.IComplexDoubleSetIterator;
 import jse.code.iterator.IComplexDoubleSetOnlyIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
-import jse.math.vector.ComplexVector;
-import jse.math.vector.IComplexVector;
-import jse.math.vector.IVector;
-import jse.math.vector.RefComplexVector;
+import jse.math.vector.*;
 
 import java.util.Iterator;
 import java.util.List;
@@ -59,11 +56,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, oCol);
+                return AbstractComplexMatrix.this.getReal(oRow, oCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, oCol);
+                return AbstractComplexMatrix.this.getImag(oRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleIterator，虽然是一致的 */
@@ -88,11 +85,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, oCol);
+                return AbstractComplexMatrix.this.getReal(oRow, oCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, oCol);
+                return AbstractComplexMatrix.this.getImag(oRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleIterator，虽然是一致的 */
@@ -115,11 +112,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, aCol);
+                return AbstractComplexMatrix.this.getReal(oRow, aCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, aCol);
+                return AbstractComplexMatrix.this.getImag(oRow, aCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleIterator，虽然是一致的 */
@@ -142,11 +139,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oCol < 0) throw new IllegalStateException();
-                return getReal(aRow, oCol);
+                return AbstractComplexMatrix.this.getReal(aRow, oCol);
             }
             @Override public double imag() {
                 if (oCol < 0) throw new IllegalStateException();
-                return getImag(aRow, oCol);
+                return AbstractComplexMatrix.this.getImag(aRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleIterator，虽然是一致的 */
@@ -184,11 +181,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, oCol);
+                return AbstractComplexMatrix.this.getReal(oRow, oCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, oCol);
+                return AbstractComplexMatrix.this.getImag(oRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleSetIterator，虽然是一致的 */
@@ -237,11 +234,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, oCol);
+                return AbstractComplexMatrix.this.getReal(oRow, oCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, oCol);
+                return AbstractComplexMatrix.this.getImag(oRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleSetIterator，虽然是一致的 */
@@ -287,11 +284,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getReal(oRow, aCol);
+                return AbstractComplexMatrix.this.getReal(oRow, aCol);
             }
             @Override public double imag() {
                 if (oRow < 0) throw new IllegalStateException();
-                return getImag(oRow, aCol);
+                return AbstractComplexMatrix.this.getImag(oRow, aCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleSetIterator，虽然是一致的 */
@@ -337,11 +334,11 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             }
             @Override public double real() {
                 if (aRow < 0) throw new IllegalStateException();
-                return getReal(aRow, oCol);
+                return AbstractComplexMatrix.this.getReal(aRow, oCol);
             }
             @Override public double imag() {
                 if (aRow < 0) throw new IllegalStateException();
-                return getImag(aRow, oCol);
+                return AbstractComplexMatrix.this.getImag(aRow, oCol);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleSetIterator，虽然是一致的 */

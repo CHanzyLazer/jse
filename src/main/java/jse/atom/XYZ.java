@@ -43,6 +43,9 @@ public final class XYZ extends AbstractXYZ {
         mX = aXYZ.mX; mY = aXYZ.mY; mZ = aXYZ.mZ;
         return this;
     }
+    public XYZ setX(double aX) {mX = aX; return this;}
+    public XYZ setY(double aY) {mY = aY; return this;}
+    public XYZ setZ(double aZ) {mZ = aZ; return this;}
     
     
     @Override public double x() {return mX;}

@@ -58,11 +58,11 @@ public abstract class AbstractComplexVector implements IComplexVector {
             }
             @Override public double real() {
                 if (oIdx < 0) throw new IllegalStateException();
-                return getReal(oIdx);
+                return AbstractComplexVector.this.getReal(oIdx);
             }
             @Override public double imag() {
                 if (oIdx < 0) throw new IllegalStateException();
-                return getImag(oIdx);
+                return AbstractComplexVector.this.getImag(oIdx);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleIterator，虽然是一致的 */
@@ -96,11 +96,11 @@ public abstract class AbstractComplexVector implements IComplexVector {
             }
             @Override public double real() {
                 if (oIdx < 0) throw new IllegalStateException();
-                return getReal(oIdx);
+                return AbstractComplexVector.this.getReal(oIdx);
             }
             @Override public double imag() {
                 if (oIdx < 0) throw new IllegalStateException();
-                return getImag(oIdx);
+                return AbstractComplexVector.this.getImag(oIdx);
             }
             
             /** 重写保证使用此类中的逻辑而不是 IComplexDoubleSetIterator，虽然是一致的 */
