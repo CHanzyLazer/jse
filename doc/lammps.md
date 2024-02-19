@@ -765,10 +765,6 @@ jse 在 [`jse.lmp.NativeLmp.Conf`](../src/main/java/jse/lmp/NativeLmp.java)
     > **注意**：关闭后如果出现 lammps 的错误则不会重定向为 java 的错误，
     > 从而不会有 java 的栈信息，使得调试更加困难。
     > 
-    > 即使在较新的 lammps 版本中，存在 exception 相关接口，
-    > 因此可以顺利通过编译，但是实际出现错误进行调用时依旧会发生崩溃，
-    > 导致无法得到正确的报错信息，此时依旧建议将此选项关闭。
-    > 
     > 当然由于 lammps 部分依旧是 C/C++ 的程序，实际大部分错误并不会抛出，
     > 而是直接导致程序崩溃，因此这个选项的实际意义并不算大。
     > 
@@ -785,6 +781,13 @@ jse 在 [`jse.lmp.NativeLmp.Conf`](../src/main/java/jse/lmp/NativeLmp.java)
     默认值：`true`
     
     环境变量名称：`JSE_NATIVE_LMP_EXCEPTIONS_NULL_SUPPORT`
+    
+    > **注意**：即使在较新的 lammps 版本中，存在 exception 相关接口，
+    > 但是不支持 `null` 输入（即使这在最近 lammps 官方文档中已经明确支持，
+    > 并且没有给出支持的最小版本），
+    > 因此可以顺利通过编译，但是在调用 `shutdown()`
+    > 后会因为检测`null` 输入的错误导致崩溃，导致无法得到正确的报错信息。
+    > 
     
     -----------------------------
 
