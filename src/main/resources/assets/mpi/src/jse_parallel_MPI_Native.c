@@ -24,17 +24,6 @@ extern "C" {
 #endif
 
 /** utils for mpi */
-inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
-#ifdef __cplusplus
-    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
-    throwException(aEnv, "jse/parallel/MPI$Error", "(ILjava/lang/String;)V", aExitCode, tJErrStr);
-    aEnv->DeleteLocalRef(tJErrStr);
-#else
-    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
-    throwException(aEnv, "jse/parallel/MPI$Error", "(ILjava/lang/String;)V", aExitCode, tJErrStr);
-    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
-#endif
-}
 inline jboolean exceptionCheckMPI(JNIEnv *aEnv, int aExitCode) {
     if (aExitCode == MPI_SUCCESS) return JNI_FALSE;
     

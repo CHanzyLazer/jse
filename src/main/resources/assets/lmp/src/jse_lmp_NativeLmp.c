@@ -27,19 +27,8 @@ GEN_PARSE_ANY_TO_JANY_WITH_COUNT(intbig, jlong)
 GEN_PARSE_ANY_TO_JANY_WITH_COUNT(intbig, jdouble)
 
 
-#define LMP_MAX_ERROR_STRING 512
+#define LMP_MAX_ERROR_STRING (512)
 
-inline void throwExceptionLMP(JNIEnv *aEnv, const char *aErrStr) {
-#ifdef __cplusplus
-    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
-    throwException(aEnv, "jse/lmp/NativeLmp$Error", "(Ljava/lang/String;)V", tJErrStr);
-    aEnv->DeleteLocalRef(tJErrStr);
-#else
-    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
-    throwException(aEnv, "jse/lmp/NativeLmp$Error", "(Ljava/lang/String;)V", tJErrStr);
-    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
-#endif
-}
 inline jboolean exceptionCheckLMP(JNIEnv *aEnv, void *aLmpPtr) {
 #ifdef LAMMPS_EXCEPTIONS
 #ifndef LAMMPS_EXCEPTIONS_NULL_SUPPORT
@@ -57,17 +46,6 @@ inline jboolean exceptionCheckLMP(JNIEnv *aEnv, void *aLmpPtr) {
 #endif
 }
 #ifdef LAMMPS_LIB_MPI
-inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
-#ifdef __cplusplus
-    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
-    throwException(aEnv, "jse/parallel/MPI$Error", "(ILjava/lang/String;)V", aExitCode, tJErrStr);
-    aEnv->DeleteLocalRef(tJErrStr);
-#else
-    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
-    throwException(aEnv, "jse/parallel/MPI$Error", "(ILjava/lang/String;)V", aExitCode, tJErrStr);
-    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
-#endif
-}
 inline jboolean exceptionCheckMPI(JNIEnv *aEnv, int aExitCode) {
     if (aExitCode == MPI_SUCCESS) return JNI_FALSE;
     
@@ -245,7 +223,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv,
     // The implementation of `lammps_gather_concat` is just a piece of shit which actually causes memory leakage,
     // so I can only implement it myself, while also providing support for non MPI.
 #ifdef LAMMPS_BIGBIG
-    throwException(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
+    throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
 #endif
     void *tLmpPtr = (void *)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
@@ -340,7 +318,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aE
     // The implementation of `lammps_gather_concat` is just a piece of shit which actually causes memory leakage,
     // so I can only implement it myself, while also providing support for non MPI.
 #ifdef LAMMPS_BIGBIG
-    throwException(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
+    throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
 #endif
     void *tLmpPtr = (void *)aLmpPtr;
     char *tName = parseStr(aEnv, aName);

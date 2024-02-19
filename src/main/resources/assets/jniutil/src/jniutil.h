@@ -38,7 +38,6 @@
 #endif
 
 #include <stdint.h>
-#include <stdarg.h>
 
 
 /** jarray type stuffs */
@@ -399,44 +398,86 @@ inline void freeStrBuf(char **aStrBuf, int aLen) {
 
 
 /** exception stuffs */
-inline void throwException(JNIEnv *aEnv, const char *aClazzName, const char *aInitSig, ...) {
+inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
+    const char *tClazzName = "jse/parallel/MPI$Error";
+    const char *tInitSig = "(ILjava/lang/String;)V";
 #ifdef __cplusplus
     // find class runtime due to asm
-    jclass tClazz = aEnv->FindClass(aClazzName);
+    jclass tClazz = aEnv->FindClass(tClazzName);
     if (tClazz == NULL) {
-        fprintf(stderr, "Couldn't find %s\n", aClazzName);
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
         return;
     }
-    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", aInitSig);
+    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", tInitSig);
     if (tInit == NULL) {
-        fprintf(stderr, "Couldn't find %s.<init>%s\n", aClazzName, aInitSig);
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
         return;
     }
-    va_list aArgs;
-    va_start(aArgs, aInitSig);
-    jthrowable tException = (jthrowable)aEnv->NewObjectV(tClazz, tInit, aArgs);
-    va_end(aArgs);
+    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
+    jthrowable tException = (jthrowable)aEnv->NewObject(tClazz, tInit, aExitCode, tJErrStr);
     aEnv->Throw(tException);
     aEnv->DeleteLocalRef(tException);
+    aEnv->DeleteLocalRef(tJErrStr);
     aEnv->DeleteLocalRef(tClazz);
 #else
     // find class runtime due to asm
-    jclass tClazz = (*aEnv)->FindClass(aEnv, aClazzName);
+    jclass tClazz = (*aEnv)->FindClass(aEnv, tClazzName);
     if (tClazz == NULL) {
-        fprintf(stderr, "Couldn't find %s\n", aClazzName);
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
         return;
     }
-    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", aInitSig);
+    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", tInitSig);
     if (tInit == NULL) {
-        fprintf(stderr, "Couldn't find %s.<init>%s\n", aClazzName, aInitSig);
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
         return;
     }
-    va_list aArgs;
-    va_start(aArgs, aInitSig);
-    jthrowable tException = (jthrowable)(*aEnv)->NewObjectV(aEnv, tClazz, tInit, aArgs);
-    va_end(aArgs);
+    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
+    jthrowable tException = (jthrowable)(*aEnv)->NewObject(aEnv, tClazz, tInit, aExitCode, tJErrStr);
     (*aEnv)->Throw(aEnv, tException);
     (*aEnv)->DeleteLocalRef(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
+    (*aEnv)->DeleteLocalRef(aEnv, tClazz);
+#endif
+}
+
+inline void throwExceptionLMP(JNIEnv *aEnv, const char *aErrStr) {
+    const char *tClazzName = "jse/lmp/NativeLmp$Error";
+    const char *tInitSig = "(Ljava/lang/String;)V";
+#ifdef __cplusplus
+    // find class runtime due to asm
+    jclass tClazz = aEnv->FindClass(tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
+    jthrowable tException = (jthrowable)aEnv->NewObject(tClazz, tInit, tJErrStr);
+    aEnv->Throw(tException);
+    aEnv->DeleteLocalRef(tException);
+    aEnv->DeleteLocalRef(tJErrStr);
+    aEnv->DeleteLocalRef(tClazz);
+#else
+    // find class runtime due to asm
+    jclass tClazz = (*aEnv)->FindClass(aEnv, tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
+    jthrowable tException = (jthrowable)(*aEnv)->NewObject(aEnv, tClazz, tInit, tJErrStr);
+    (*aEnv)->Throw(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
     (*aEnv)->DeleteLocalRef(aEnv, tClazz);
 #endif
 }
