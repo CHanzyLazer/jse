@@ -295,6 +295,24 @@
     > jse 内部的文件操作由于会自动创建文件夹，因此不需要手动调用；
     > 触发权限不够时会抛出异常
     >
+    
+    -----------------------------
+    
+- **`UT.IO.toAbsolutePath`**
+    
+    描述：将输入的路径转为绝对路径。
+    
+    输入：`String`，字符串表示的路径
+    
+    输出：`String`，字符串表示的绝对路径
+    
+    例子：`def absPath = UT.IO.toAbsolutePath('path/to/something')`
+    
+    > 注意：尽量使用 `UT.IO.toAbsolutePath` 而不是 java 自带的
+    > `Path.toAbsolutePath` 之类的方法，jse 考虑了在 matlab
+    > 之类的环境下工作目录被修改的环境，使用 `UT.IO.toAbsolutePath`
+    > 可以确保获取到正确的绝对路径。
+    >
 
 
 ## 数据结构文本文件读写

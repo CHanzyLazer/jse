@@ -336,6 +336,16 @@ jse 中使用 [`jse.lmp.Thermo`](../src/main/java/jse/lmp/Thermo.java) /
 
 ### 环境要求
 
+- **C & C++ 编译器**
+    
+    当然需要系统拥有 C/C++ 编译器，这里需要两者都有。
+    
+    例如对于 windows 需要
+    [MSVC](https://visualstudio.microsoft.com/zh-hans/vs/features/cplusplus/)
+    ，对于 linux 需要
+    [GCC](https://gcc.gnu.org/)
+    （当然也可以选择其他的编译器）
+    
 - [**CMake**](https://cmake.org/) (`>= 3.14`)
     
     为了实现跨平台，jse 将调用动态库需要的 jni 源码直接包装到
@@ -788,8 +798,5 @@ jse 在 [`jse.lmp.NativeLmp.Conf`](../src/main/java/jse/lmp/NativeLmp.java)
     > 因此可以顺利通过编译，但是在调用 `shutdown()`
     > 后会因为检测`null` 输入的错误导致崩溃，导致无法得到正确的报错信息。
     > 
-    
-    -----------------------------
-
 
 
