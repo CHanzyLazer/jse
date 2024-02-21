@@ -1,6 +1,7 @@
 package jse.math.matrix;
 
 import groovy.lang.Closure;
+import jse.code.collection.AbstractRandomAccessList;
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.functional.IUnaryFullOperator;
 import jse.code.iterator.IComplexDoubleIterator;
@@ -13,6 +14,7 @@ import jse.math.vector.ShiftComplexVector;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -82,6 +84,12 @@ public class RowComplexMatrix extends BiDoubleArrayMatrix {
     
     
     /** Optimize stuffs，重写这个提高行向的索引速度 */
+    @Override public List<? extends ShiftComplexVector> rows() {
+        return new AbstractRandomAccessList<ShiftComplexVector>() {
+            @Override public int size() {return rowNumber();}
+            @Override public ShiftComplexVector get(int aRow) {return row(aRow);}
+        };
+    }
     @Override public ShiftComplexVector row(final int aRow) {
         rangeCheckRow(aRow, mRowNum);
         return new ShiftComplexVector(mColNum, aRow*mColNum, mData);

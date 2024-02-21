@@ -105,9 +105,9 @@ public interface IComplexMatrix extends IComplexMatrixGetter {
     double getAndUpdateReal(int aRow, int aCol, DoubleUnaryOperator aRealOpt);
     double getAndUpdateImag(int aRow, int aCol, DoubleUnaryOperator aImagOpt);
     
-    List<IComplexVector> rows();
+    List<? extends IComplexVector> rows();
     IComplexVector row(int aRow);
-    List<IComplexVector> cols();
+    List<? extends IComplexVector> cols();
     IComplexVector col(int aCol);
     
     

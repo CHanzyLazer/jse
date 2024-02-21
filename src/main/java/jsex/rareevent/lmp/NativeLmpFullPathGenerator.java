@@ -3,7 +3,6 @@ package jsex.rareevent.lmp;
 import jse.atom.IAtomData;
 import jse.cache.IntVectorCache;
 import jse.cache.MatrixCache;
-import jse.cache.VectorCache;
 import jse.code.collection.NewCollections;
 import jse.lmp.Lmpdat;
 import jse.lmp.NativeLmp;

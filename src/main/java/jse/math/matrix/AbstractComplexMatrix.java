@@ -559,7 +559,7 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
     }
     
     
-    @Override public List<IComplexVector> rows() {
+    @Override public List<? extends IComplexVector> rows() {
         return new AbstractRandomAccessList<IComplexVector>() {
             @Override public int size() {return rowNumber();}
             @Override public IComplexVector get(int aRow) {return row(aRow);}
@@ -582,7 +582,7 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
             @Override public IComplexDoubleSetIterator setIterator() {return setIteratorRowAt(aRow);}
         };
     }
-    @Override public List<IComplexVector> cols() {
+    @Override public List<? extends IComplexVector> cols() {
         return new AbstractRandomAccessList<IComplexVector>() {
             @Override public int size() {return columnNumber();}
             @Override public IComplexVector get(int aCol) {return col(aCol);}

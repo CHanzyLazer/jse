@@ -1,24 +1,25 @@
 package jse.math.matrix;
 
 import groovy.lang.Closure;
+import jse.code.collection.AbstractRandomAccessList;
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.functional.IUnaryFullOperator;
 import jse.code.iterator.IComplexDoubleIterator;
 import jse.code.iterator.IComplexDoubleSetIterator;
-import jse.code.iterator.IDoubleIterator;
-import jse.code.iterator.IDoubleSetIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
 import jse.math.operation.ARRAY;
 import jse.math.vector.ComplexVector;
 import jse.math.vector.ShiftComplexVector;
-import jse.math.vector.ShiftVector;
-import jse.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.*;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.Supplier;
 
 import static jse.math.matrix.AbstractMatrix.rangeCheckCol;
 import static jse.math.matrix.AbstractMatrix.rangeCheckRow;
@@ -83,6 +84,12 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
     
     
     /** Optimize stuffs，重写这个提高列向的索引速度 */
+    @Override public List<? extends ShiftComplexVector> cols() {
+        return new AbstractRandomAccessList<ShiftComplexVector>() {
+            @Override public int size() {return columnNumber();}
+            @Override public ShiftComplexVector get(int aCol) {return col(aCol);}
+        };
+    }
     @Override public ShiftComplexVector col(final int aCol) {
         rangeCheckCol(aCol, mColNum);
         return new ShiftComplexVector(mRowNum, aCol*mRowNum, mData);

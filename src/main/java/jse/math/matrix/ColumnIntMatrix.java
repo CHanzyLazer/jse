@@ -1,5 +1,6 @@
 package jse.math.matrix;
 
+import jse.code.collection.AbstractRandomAccessList;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
 import jse.math.vector.IntVector;
@@ -7,6 +8,7 @@ import jse.math.vector.ShiftIntVector;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -78,6 +80,12 @@ public class ColumnIntMatrix extends IntArrayMatrix {
     
     
     /** Optimize stuffs，重写这个提高列向的索引速度 */
+    @Override public List<? extends ShiftIntVector> cols() {
+        return new AbstractRandomAccessList<ShiftIntVector>() {
+            @Override public int size() {return mColNum;}
+            @Override public ShiftIntVector get(int aCol) {return col(aCol);}
+        };
+    }
     @Override public ShiftIntVector col(final int aCol) {
         rangeCheckCol(aCol, mColNum);
         return new ShiftIntVector(mRowNum, aCol*mRowNum, mData);

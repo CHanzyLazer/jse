@@ -385,7 +385,7 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     }
     
     
-    @Override public List<IIntVector> rows() {
+    @Override public List<? extends IIntVector> rows() {
         return new AbstractRandomAccessList<IIntVector>() {
             @Override public int size() {return rowNumber();}
             @Override public IIntVector get(int aRow) {return row(aRow);}
@@ -402,7 +402,7 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
             @Override public IIntSetIterator setIterator() {return setIteratorRowAt(aRow);}
         };
     }
-    @Override public List<IIntVector> cols() {
+    @Override public List<? extends IIntVector> cols() {
         return new AbstractRandomAccessList<IIntVector>() {
             @Override public int size() {return columnNumber();}
             @Override public IIntVector get(int aCol) {return col(aCol);}

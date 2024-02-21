@@ -74,9 +74,9 @@ public interface IIntMatrix extends IIntMatrixGetter {
     void update(int aRow, int aCol, IntUnaryOperator aOpt);
     int getAndUpdate(int aRow, int aCol, IntUnaryOperator aOpt);
     
-    List<IIntVector> rows();
+    List<? extends IIntVector> rows();
     IIntVector row(int aRow);
-    List<IIntVector> cols();
+    List<? extends IIntVector> cols();
     IIntVector col(int aCol);
     
     
