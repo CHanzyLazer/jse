@@ -20,7 +20,6 @@ public class BoxPrism extends Box {
     public final double yz() {return mYZ;}
     
     @Override public BoxPrism copy() {return new BoxPrism(this);}
-    @Override protected Type type() {return Type.PRISM;}
     
     @Override public String toString() {
         return String.format("{boxlo: (%.4g, %.4g, %.4g), boxhi: (%.4g, %.4g, %.4g), xy: %.4g, xz: %.4g, yz: %.4g}",

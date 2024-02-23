@@ -102,18 +102,11 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @return 返回自身来支持链式调用
      */
     public Lmpdat setBoxNormal() {
-        if (mBox.type() != Box.Type.NORMAL) mBox = new Box(mBox);
+        if (isPrism()) mBox = new Box(mBox);
         return this;
     }
     public Lmpdat setBoxPrism() {
-        if (mBox.type() != Box.Type.PRISM) {
-            if (mBox instanceof BoxPrism) {
-                BoxPrism oBox = (BoxPrism)mBox;
-                mBox = new BoxPrism(oBox);
-            } else {
-                mBox = new BoxPrism(mBox, 0.0, 0.0, 0.0);
-            }
-        }
+        if (!isPrism()) mBox = new BoxPrism(mBox, 0.0, 0.0, 0.0);
         return this;
     }
     /**
@@ -121,7 +114,7 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @return 返回自身来支持链式调用
      */
     public Lmpdat setDenseNormalized() {
-        if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("setDenseNormalized is temporarily support NORMAL Box only");
+        if (isPrism()) throw new RuntimeException("setDenseNormalized is temporarily NOT support Prism Lmpdat");
         
         XYZ oShiftedBox = XYZ.toXYZ(mBox.shiftedBox());
         double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / mAtomNum);
@@ -156,6 +149,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     
     /// 获取属性
+    public boolean isPrism() {return (mBox instanceof BoxPrism);}
     public Box lmpBox() {return mBox;}
     public IIntVector ids() {return mAtomID;}
     public IIntVector types() {return mAtomType;}
@@ -208,7 +202,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     @Override public boolean hasVelocities() {return mVelocities!=null;}
     @Override public ISettableAtom pickAtom(final int aIdx) {
         // 注意如果是斜方的模拟盒则不能获取到正交的原子数据
-        if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("atoms is temporarily support NORMAL Box only");
+        if (isPrism()) throw new RuntimeException("atoms is temporarily NOT support Prism Lmpdat");
         return new AbstractSettableAtom() {
             @Override public double x() {return mAtomXYZ.get(aIdx, XYZ_X_COL)-mBox.xlo();}
             @Override public double y() {return mAtomXYZ.get(aIdx, XYZ_Y_COL)-mBox.ylo();}
@@ -248,14 +242,14 @@ public class Lmpdat extends AbstractSettableAtomData {
     }
     @Override public IXYZ box() {
         // 注意如果是斜方的模拟盒则不能获取到正交的模拟盒数据
-        if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("box is temporarily support NORMAL Box only");
+        if (isPrism()) throw new RuntimeException("box is temporarily NOT support Prism Lmpdat");
         return mBox.shiftedBox();
     }
     @Override public int atomNumber() {return mAtomNum;}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public double volume() {
         // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
-        if (mBox.type() != Box.Type.NORMAL) throw new RuntimeException("volume is temporarily support NORMAL Box only");
+        if (isPrism()) throw new RuntimeException("volume is temporarily NOT support Prism Lmpdat");
         return mBox.shiftedBox().prod();
     }
     
@@ -498,7 +492,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     /** 专门的方法用来收发 Lmpdat */
     public static void send(Lmpdat aLmpdat, int aDest, MPI.Comm aComm) throws MPI.Error {
         // 暂不支持正交盒以外的类型的发送
-        if (aLmpdat.mBox.type() != Box.Type.NORMAL) throw new RuntimeException("send is temporarily support NORMAL Box only");
+        if (aLmpdat.isPrism()) throw new RuntimeException("send is temporarily NOT support Prism Lmpdat");
         // 获取必要信息
         final boolean tHasVelocities = (aLmpdat.mVelocities != null);
         final boolean tHasMass = (aLmpdat.mMasses != null);
@@ -577,7 +571,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     public static Lmpdat bcast(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPI.Error {
         if (aComm.rank() == aRoot) {
             // 暂不支持正交盒以外的类型的发送
-            if (aLmpdat.mBox.type() != Box.Type.NORMAL) throw new RuntimeException("bcast is temporarily support NORMAL Box only");
+            if (aLmpdat.isPrism()) throw new RuntimeException("bcast is temporarily NOT support Prism Lmpdat");
             // 获取必要信息
             final boolean tHasVelocities = aLmpdat.mVelocities != null;
             final boolean tHasMass = aLmpdat.mMasses != null;

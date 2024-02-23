@@ -36,15 +36,7 @@ public class Box {
     
     public Box copy() {return new Box(this);}
     
-    // stuff to override
-    protected Type type() {return Type.NORMAL;}
-    
     @Override public String toString() {
         return String.format("{boxlo: (%.4g, %.4g, %.4g), boxhi: (%.4g, %.4g, %.4g)}", mBoxLo.x(), mBoxLo.y(), mBoxLo.z(), mBoxHi.x(), mBoxHi.y(), mBoxHi.z());
-    }
-    
-    public enum Type {
-          NORMAL
-        , PRISM
     }
 }

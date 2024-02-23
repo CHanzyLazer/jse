@@ -606,10 +606,10 @@ public class NativeLmp implements IAutoShutdown {
         resetBox(aBoxPrism.xlo(), aBoxPrism.xhi(), aBoxPrism.ylo(), aBoxPrism.yhi(), aBoxPrism.zlo(), aBoxPrism.zhi(), aBoxPrism.xy(), aBoxPrism.xz(), aBoxPrism.yz());
     }
     public void resetBox(Box aBox) throws Error {
-        if (aBox.type() == Box.Type.NORMAL) {
-            resetBox(aBox.xlo(), aBox.xhi(), aBox.ylo(), aBox.yhi(), aBox.zlo(), aBox.zhi());
-        } else {
+        if (aBox instanceof BoxPrism) {
             resetBox((BoxPrism)aBox);
+        } else {
+            resetBox(aBox.xlo(), aBox.xhi(), aBox.ylo(), aBox.yhi(), aBox.zlo(), aBox.zhi());
         }
     }
     public void resetBox(IXYZ aBoxLo, IXYZ aBoxHi) throws Error {
@@ -889,12 +889,12 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void loadLmpdat(final Lmpdat aLmpdat) throws Error {
         checkThread();
-        Box tBox = aLmpdat.lmpBox();
-        if (tBox.type() == Box.Type.NORMAL) {
-        command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
+        if (aLmpdat.isPrism()) {
+        BoxPrism tBox = (BoxPrism)aLmpdat.lmpBox();
+        command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi(), tBox.xy(), tBox.xz(), tBox.yz()));
         } else {
-        BoxPrism pBox = (BoxPrism)tBox;
-        command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", pBox.xlo(), pBox.xhi(), pBox.ylo(), pBox.yhi(), pBox.zlo(), pBox.zhi(), pBox.xy(), pBox.xz(), pBox.yz()));
+        Box tBox = aLmpdat.lmpBox();
+        command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
         }
         int tAtomTypeNum = aLmpdat.atomTypeNumber();
         command(String.format("create_box      %d box", tAtomTypeNum));
