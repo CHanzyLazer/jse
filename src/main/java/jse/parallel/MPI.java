@@ -9,8 +9,10 @@ import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import static jse.clib.JNIUtil.*;
 import static jse.code.CS.Exec.*;
 import static jse.code.CS.VERSION;
 import static jse.code.CS.ZL_STR;
+import static jse.code.Conf.DYLIB_NAME_IN;
 import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
@@ -80,14 +83,14 @@ public class MPI {
          * 自定义构建 mpijni 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
          */
-        public static @Nullable String CMAKE_C_COMPILER   = UT.Exec.env("JSE_CMAKE_C_COMPILER");
-        public static @Nullable String CMAKE_CXX_COMPILER = UT.Exec.env("JSE_CMAKE_CXX_COMPILER");
+        public static @Nullable String CMAKE_C_COMPILER   = UT.Exec.env("JSE_CMAKE_C_COMPILER_MPI"  , jse.code.Conf.CMAKE_C_COMPILER  );
+        public static @Nullable String CMAKE_CXX_COMPILER = UT.Exec.env("JSE_CMAKE_CXX_COMPILER_MPI", jse.code.Conf.CMAKE_CXX_COMPILER);
         
         /**
          * 对于 mpijni，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
          * 这对于 java 数组和 c 数组的转换很有效
          */
-        public static boolean USE_MIMALLOC = UT.Exec.envZ("JSE_USE_MIMALLOC", true);
+        public static boolean USE_MIMALLOC = UT.Exec.envZ("JSE_USE_MIMALLOC_MPI", jse.code.Conf.USE_MIMALLOC);
     }
     
     public static String libraryVersion() throws Error {return MPI.Native.MPI_Get_library_version();}
@@ -1133,9 +1136,9 @@ public class MPI {
     public static class Native {
         private Native() {}
         
-        private final static String MPILIB_DIR = JAR_DIR+"mpi/" + UT.Code.uniqueID(VERSION, Conf.USE_MIMALLOC) + "/";
-        private final static String MPILIB_PATH = MPILIB_DIR + "mpijni"+JNILIB_EXTENSION;
-        private final static String[] MPISRC_NAME = {
+        private final static String MPIJNI_LIB_DIR = JAR_DIR+"mpi/" + UT.Code.uniqueID(VERSION, Conf.USE_MIMALLOC) + "/";
+        private final static String MPIJNI_LIB_PATH;
+        private final static String[] MPIJNI_SRC_NAME = {
               "jse_parallel_MPI_Native.c"
             , "jse_parallel_MPI_Native.h"
         };
@@ -1152,27 +1155,35 @@ public class MPI {
             rCommand.add("..");
             return String.join(" ", rCommand);
         }
-        private static String cmakeSettingCmd_(String aBuildDir) {
+        private static String cmakeSettingCmd_(String aBuildDir) throws IOException {
             // 设置参数，这里使用 List 来构造这个长指令
             List<String> rCommand = new ArrayList<>();
             rCommand.add("cd"); rCommand.add("\""+aBuildDir+"\""); rCommand.add(";");
             rCommand.add("cmake");
             rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(Conf.USE_MIMALLOC?"ON":"OFF"));
+            // 设置构建输出目录为 lib
+            UT.IO.makeDir(MPIJNI_LIB_DIR); // 初始化一下这个目录避免意料外的问题
+            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH=\""+ MPIJNI_LIB_DIR +"\"");
+            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH=\""+ MPIJNI_LIB_DIR +"\"");
+            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH=\""+ MPIJNI_LIB_DIR +"\"");
+            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=\""+ MPIJNI_LIB_DIR +"\"");
+            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH=\""+ MPIJNI_LIB_DIR +"\"");
+            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH=\""+ MPIJNI_LIB_DIR +"\"");
             rCommand.add(".");
             return String.join(" ", rCommand);
         }
         
-        private static void initMPI_() throws Exception {
+        private static @NotNull String initMPI_() throws Exception {
             // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
             EXE.setNoSTDOutput().setNoERROutput();
             boolean tNoCmake = EXE.system("cmake --version") != 0;
             EXE.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("MPI BUILD ERROR: No camke environment.");
             // 从内部资源解压到临时目录
-            String tWorkingDir = WORKING_DIR_OF("mpisrc");
+            String tWorkingDir = WORKING_DIR_OF("mpijni");
             // 如果已经存在则先删除
             UT.IO.removeDir(tWorkingDir);
-            for (String tName : MPISRC_NAME) {
+            for (String tName : MPIJNI_SRC_NAME) {
                 UT.IO.copy(UT.IO.getResource("mpi/src/"+tName), tWorkingDir+tName);
             }
             // 这里对 CMakeLists.txt 特殊处理
@@ -1197,21 +1208,14 @@ public class MPI {
             // 最后进行构造操作
             EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tBuildDir));
             EXE.setNoSTDOutput(false);
-            // 获取 build 目录下的 lib 文件
-            String tLibDir = tBuildDir+"lib/";
-            if (!UT.IO.isDir(tLibDir)) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in "+tBuildDir);
-            String[] tList = UT.IO.list(tLibDir);
-            String tLibPath = null;
-            for (String tName : tList) if (tName.contains("mpi") && (tName.endsWith(".dll") || tName.endsWith(".so") || tName.endsWith(".jnilib") || tName.endsWith(".dylib"))) {
-                tLibPath = tName;
-            }
-            if (tLibPath == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in "+tLibDir);
-            tLibPath = tLibDir+tLibPath;
-            // 将 build 的输出拷贝到 lib 目录下
-            UT.IO.copy(tLibPath, MPILIB_PATH);
+            // 简单检测一下是否编译成功
+            @Nullable String tLibName = DYLIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
+            if (tLibName == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in "+MPIJNI_LIB_DIR);
             // 完事后移除临时解压得到的源码
             UT.IO.removeDir(tWorkingDir);
             System.out.println("MPI INIT INFO: mpijni successfully installed.");
+            // 输出安装完成后的库名称
+            return tLibName;
         }
         
         // 直接进行初始化，虽然原则上会在 MPI_Init() 之前获取，
@@ -1224,14 +1228,15 @@ public class MPI {
             // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
             if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
             
+            @Nullable String tLibName = DYLIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
             // 如果不存在 jni lib 则需要重新通过源码编译
-            if (!UT.IO.isFile(MPILIB_PATH)) {
+            if (tLibName == null) {
                 System.out.println("MPI INIT INFO: mpijni libraries not found. Reinstalling...");
-                try {initMPI_();}
-                catch (Exception e) {throw new RuntimeException(e);}
+                try {tLibName = initMPI_();} catch (Exception e) {throw new RuntimeException(e);}
             }
+            MPIJNI_LIB_PATH = MPIJNI_LIB_DIR+tLibName;
             // 设置库路径
-            System.load(UT.IO.toAbsolutePath(MPILIB_PATH));
+            System.load(UT.IO.toAbsolutePath(MPIJNI_LIB_PATH));
             
             // 初始化 final 常量
             MPI_GROUP_NULL  = getMpiGroupNull_();

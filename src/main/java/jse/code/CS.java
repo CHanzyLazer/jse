@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  */
 public class CS {
     /** version of jse */
-    public final static String VERSION = "2.6.2d";
+    public final static String VERSION = "2.6.2e";
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
@@ -505,7 +505,6 @@ public class CS {
         public final static String NO_LOG_LINUX = "/dev/null";
         public final static String NO_LOG_WIN = "NUL";
         public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
-        public final static String JNILIB_EXTENSION = IS_WINDOWS ? ".dll" : (IS_MAC ? ".jnilib" : ".so");
         
         public final static ISystemExecutor EXE;
         public final static String JAR_PATH;

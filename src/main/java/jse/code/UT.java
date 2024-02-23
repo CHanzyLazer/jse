@@ -1420,7 +1420,7 @@ public class UT {
             catch (Throwable ignored) {} // 获取失败不抛出错误，在 jse 中获取环境变量都是非必要的
             return null;
         }
-        public static @NotNull String env(String aName, @NotNull String aDefault) {
+        public static @Contract("_, !null -> !null") String env(String aName, String aDefault) {
             String tEnv = env(aName);
             return tEnv==null ? aDefault : tEnv;
         }

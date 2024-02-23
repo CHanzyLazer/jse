@@ -1,5 +1,13 @@
 package jse.code;
 
+import jse.clib.MiMalloc;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+
+import static jse.code.CS.Exec.IS_MAC;
+import static jse.code.CS.Exec.IS_WINDOWS;
+
 /**
  * 全局的可以设置的常量值
  * @author liqa
@@ -23,4 +31,25 @@ public class Conf {
     
     /** 设置是否开启缓存，关闭后可以让内存管理全权交给 jvm，目前 jse 的内存效率和 jvm 基本类似 */
     public static boolean NO_CACHE = UT.Exec.envZ("JSE_NO_CACHE", false);
+    
+    /** 是否使用 {@link MiMalloc} 来加速 c 的内存分配，这对于 java 数组和 c 数组的转换很有效 */
+    public static boolean USE_MIMALLOC = UT.Exec.envZ("JSE_USE_MIMALLOC", true);
+    /** 设置 cmake 使用的 C/C++ 编译器 */
+    public static @Nullable String CMAKE_C_COMPILER   = UT.Exec.env("JSE_CMAKE_C_COMPILER"  );
+    public static @Nullable String CMAKE_CXX_COMPILER = UT.Exec.env("JSE_CMAKE_CXX_COMPILER");
+    /** 设置编译得到的 C/C++ 动态库的后缀，不同平台格式不同 */
+    public static String DYLIB_EXTENSION = IS_WINDOWS ? ".dll" : (IS_MAC ? ".dylib" : ".so");
+    /** 根据后缀在和项目名称，在指定文件夹中找到合适的动态库名称，这种写法考虑到了 可选的 `lib` 开头 */
+    public static @Nullable String DYLIB_NAME_IN(String aLibDir, String aProjectName) {
+        try {
+            for (String tName : UT.IO.list(aLibDir)) {
+                // 固定后缀保证不会加载到其他平台的动态库
+                if (tName.endsWith(DYLIB_EXTENSION) && tName.contains(aProjectName)) return tName;
+            }
+        } catch (IOException e) {
+            // 失败时返回 null 而不抛出错误
+            return null;
+        }
+        return null;
+    }
 }

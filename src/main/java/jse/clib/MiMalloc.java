@@ -1,6 +1,7 @@
 package jse.clib;
 
 import jse.code.UT;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.util.List;
 
 import static jse.code.CS.Exec.*;
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.WORKING_DIR_OF;
+import static jse.code.Conf.*;
 
 /**
  * 其他 jni 库或者此项目需要依赖的 c 库；
@@ -37,8 +38,8 @@ public class MiMalloc {
          * 自定义构建 mimalloc 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
          */
-        public static @Nullable String CMAKE_C_COMPILER   = UT.Exec.env("JSE_CMAKE_C_COMPILER");
-        public static @Nullable String CMAKE_CXX_COMPILER = UT.Exec.env("JSE_CMAKE_CXX_COMPILER");
+        public static @Nullable String CMAKE_C_COMPILER   = UT.Exec.env("JSE_CMAKE_C_COMPILER_MIMALLOC"  , jse.code.Conf.CMAKE_C_COMPILER  );
+        public static @Nullable String CMAKE_CXX_COMPILER = UT.Exec.env("JSE_CMAKE_CXX_COMPILER_MIMALLOC", jse.code.Conf.CMAKE_CXX_COMPILER);
     }
     
     
@@ -47,7 +48,7 @@ public class MiMalloc {
     public final static String MIMALLOC_DIR = JAR_DIR+"mimalloc/" + UT.Code.uniqueID(VERSION, MIMALLOC_VERSION) + "/";
     public final static String MIMALLOC_LIB_DIR = MIMALLOC_DIR+"lib/";
     public final static String MIMALLOC_INCLUDE_DIR = MIMALLOC_DIR+"include/";
-    public final static String MIMALLOC_LIB_PATH = MIMALLOC_LIB_DIR + (IS_WINDOWS ? "mimalloc.dll" : (IS_MAC ? "libmimalloc.dylib" : "libmimalloc.so"));
+    public final static String MIMALLOC_LIB_PATH;
     
     
     private static String cmakeInitCmd_(String aMiBuildDir) {
@@ -92,7 +93,7 @@ public class MiMalloc {
         rCommand.add(".");
         return String.join(" ", rCommand);
     }
-    private static void initMiMalloc_() throws Exception {
+    private static @NotNull String initMiMalloc_() throws Exception {
         // 检测 cmake，这里要求一定要有 cmake 环境
         EXE.setNoSTDOutput().setNoERROutput();
         boolean tNoCmake = EXE.system("cmake --version") != 0;
@@ -122,23 +123,27 @@ public class MiMalloc {
         EXE.system(String.format("cd \"%s\"; cmake --build . --config Release", tMiBuildDir));
         EXE.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
-        if (!UT.IO.isFile(MIMALLOC_LIB_PATH)) throw new Exception("MIMALLOC BUILD ERROR: No mimalloc lib in "+MIMALLOC_LIB_PATH);
+        @Nullable String tLibName = DYLIB_NAME_IN(MIMALLOC_LIB_DIR, "mimalloc");
+        if (tLibName == null) throw new Exception("MIMALLOC BUILD ERROR: No mimalloc lib in "+MIMALLOC_LIB_DIR);
         // 手动拷贝头文件到指定目录
         UT.IO.copy(tMiDir+"include/mimalloc.h", MIMALLOC_INCLUDE_DIR+"mimalloc.h");
         // 完事后移除临时解压得到的源码
         UT.IO.removeDir(tWorkingDir);
         System.out.println("MIMALLOC INIT INFO: mimalloc successfully installed.");
+        // 输出安装完成后的库名称
+        return tLibName;
     }
     
     static {
         InitHelper.INITIALIZED = true;
         
+        @Nullable String tLibName = DYLIB_NAME_IN(MIMALLOC_LIB_DIR, "mimalloc");
         // 如果不存在 mimalloc lib 则需要重新通过源码编译
-        if (!UT.IO.isFile(MIMALLOC_LIB_PATH)) {
+        if (tLibName == null) {
             System.out.println("MIMALLOC INIT INFO: mimalloc libraries not found. Reinstalling...");
-            try {initMiMalloc_();}
-            catch (Exception e) {throw new RuntimeException(e);}
+            try {tLibName = initMiMalloc_();} catch (Exception e) {throw new RuntimeException(e);}
         }
+        MIMALLOC_LIB_PATH = MIMALLOC_LIB_DIR+tLibName;
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(MIMALLOC_LIB_PATH));
     }
