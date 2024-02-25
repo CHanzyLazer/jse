@@ -1,7 +1,5 @@
 package jse.math;
 
-import org.jetbrains.annotations.VisibleForTesting;
-
 /**
  * 通用的复数接口，使用此接口还有一重含义时此复数值是不建议修改的
  * <p>
@@ -11,10 +9,6 @@ import org.jetbrains.annotations.VisibleForTesting;
 public interface IComplexDouble {
     double real();
     double imag();
-    
-    /** Groovy stuffs */
-    @VisibleForTesting default double getReal() {return real();}
-    @VisibleForTesting default double getImag() {return imag();}
     
     /** 提供一些常见的复数运算 */
     default ComplexDouble plus(IComplexDouble aComplex) {return new ComplexDouble(real() + aComplex.real(), imag() + aComplex.imag());}

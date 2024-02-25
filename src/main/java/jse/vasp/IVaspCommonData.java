@@ -5,7 +5,7 @@ import jse.math.vector.IIntVector;
 import org.jetbrains.annotations.Nullable;
 
 public interface IVaspCommonData {
-    String dataName();
+    @Nullable String dataName();
     String @Nullable[] atomTypes();
     IIntVector atomNumbers();
     IMatrix vaspBox();

@@ -15,6 +15,7 @@ import jse.math.vector.IntVector;
 import jse.math.vector.Vectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,13 +29,13 @@ import java.util.List;
  * <p> 暂时不支持边界条件设置 </p>
  */
 public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData {
-    public final static String DEFAULT_DATA_NAME = "VASP_POSCAR_FROM_jse";
+    public final static String DEFAULT_DATA_NAME = "VASP_POSCAR_FROM_JSE";
     
     /** POSCAR 只存储每个原子的 xyz 缩放后的矢量 */
     private final IMatrix mDirect;
     private boolean mIsCartesian; // 如果是 Cartesian 则是没有进行缩放的
     /** POSCAR 特有的属性，系统名称以及每个种类的原子名称 */
-    private final String mDataName;
+    private @Nullable String mDataName;
     private String @Nullable[] mAtomTypes;
     private IIntVector mAtomNumbers;
     /** POSCAR 使用晶格矢量组成的矩阵以及对应的晶格常数来作为边界 */
@@ -52,7 +53,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     /** 用于通过字符获取每个种类的粒子数，考虑了可能有相同 key 的情况 */
     private final @NotNull Multimap<String, Integer> mKey2Type;
     
-    POSCAR(String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect, boolean aIsCartesian, @Nullable IIntVector aIDs, boolean aIsRef) {
+    POSCAR(@Nullable String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect, boolean aIsCartesian, @Nullable IIntVector aIDs, boolean aIsRef) {
         mDirect = aDirect;
         mIsCartesian = aIsCartesian;
         mDataName = aDataName;
@@ -75,7 +76,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         mIsDiagBox = mBox.operation().isDiag();
         mIsRef = aIsRef;
     }
-    POSCAR(String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect, boolean aIsCartesian, @Nullable IIntVector aIDs) {
+    POSCAR(@Nullable String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, boolean aSelectiveDynamics, IMatrix aDirect, boolean aIsCartesian, @Nullable IIntVector aIDs) {
         this(aDataName, aBox, aBoxScale, aAtomTypes, aAtomNumbers, aSelectiveDynamics, aDirect, aIsCartesian, aIDs, false);
     }
     /** 用于方便构建，减少重复代码 */
@@ -98,7 +99,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     }
     public int atomNum(int aType) {return mAtomNumbers.get(aType-1);}
     
-    public @Override String dataName() {return mDataName;}
+    public @Override @Nullable String dataName() {return mDataName;}
     public @Override String @Nullable[] atomTypes() {return mAtomTypes;}
     public @Override IIntVector atomNumbers() {return mAtomNumbers;}
     public @Override IMatrix vaspBox() {return mBox;}
@@ -107,6 +108,11 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     public @Override boolean isCartesian() {return mIsCartesian;}
     public @Override boolean isDiagBox() {return mIsDiagBox;}
     public @Override @Nullable IIntVector ids() {return mIDs;}
+    
+    /** Groovy stuffs */
+    @VisibleForTesting public String getDataName() {return mDataName;}
+    @VisibleForTesting public double getBoxScale() {return mBoxScale;}
+    
     
     /** 支持直接修改 AtomTypes，只会增大种类数，不会减少 */
     public POSCAR setAtomTypes(String... aAtomTypes) {
@@ -136,6 +142,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         }
     }
     
+    public POSCAR setDataName(@Nullable String aDataName) {mDataName = aDataName; return this;}
     public POSCAR setBoxScale(double aBoxScale) {mBoxScale = aBoxScale; return this;}
     
     /** Cartesian 和 Direct 来回转换 */
@@ -341,7 +348,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 }
             }
             // 现在转换会直接转成 Cartesian 来避免计算中的浮点误差
-            return new POSCAR(DEFAULT_DATA_NAME, Matrices.diag(aAtomData.box().data()), 1.0, copyTypes(aAtomTypes), rAtomNumbers, aSelectiveDynamics, rDirect, true, rIDs);
+            return new POSCAR(null, Matrices.diag(aAtomData.box().data()), 1.0, copyTypes(aAtomTypes), rAtomNumbers, aSelectiveDynamics, rDirect, true, rIDs);
         }
     }
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
@@ -430,7 +437,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     public void write(String aFilePath) throws IOException {
         List<String> lines = new ArrayList<>();
         
-        lines.add(mDataName);
+        lines.add(mDataName==null ? DEFAULT_DATA_NAME : mDataName);
         lines.add(String.valueOf(mBoxScale));
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
         lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));

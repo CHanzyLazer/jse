@@ -19,11 +19,6 @@ public interface IXYZ {
     double y();
     double z();
     
-    /** Groovy stuffs */
-    @VisibleForTesting default double getX() {return x();}
-    @VisibleForTesting default double getY() {return y();}
-    @VisibleForTesting default double getZ() {return z();}
-    
     
     /** 提供一些运算，由于 XYZ 本身就很轻量，为了避免方法调用的损失，并且让实现起来比较简单，这里不增加中间层 operation */
     default double[] data() {return new double[] {x(), y(), z()};}

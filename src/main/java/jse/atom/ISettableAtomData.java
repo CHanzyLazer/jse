@@ -19,4 +19,7 @@ public interface ISettableAtomData extends IAtomData {
     ISettableAtom pickAtom(int aIdx);
     ISettableAtomDataOperation operation();
     @VisibleForTesting default ISettableAtomDataOperation opt() {return operation();}
+    
+    /** Groovy stuffs */
+    @VisibleForTesting default int getAtomTypeNumber() {return atomTypeNumber();}
 }

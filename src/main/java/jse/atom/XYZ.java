@@ -7,7 +7,7 @@ import jse.math.vector.IVector;
  * {@link IXYZ} 的一般实现，考虑到效率这里可以直接访问内部成员，从而避免多态函数调用的损失
  * @author liqa
  */
-public final class XYZ extends AbstractXYZ {
+public final class XYZ extends AbstractSettableXYZ {
     /**
      * Convert IXYZ to XYZ to optimise, result should be read only!
      * @author liqa
@@ -30,27 +30,14 @@ public final class XYZ extends AbstractXYZ {
         mX = aXYZ.get(0); mY = aXYZ.get(1); mZ = aXYZ.get(2);
     }
     
-    /** 批量设置的接口，返回自身方便链式调用 */
-    public XYZ setXYZ(double aX, double aY, double aZ) {
-        mX = aX; mY = aY; mZ = aZ;
-        return this;
-    }
-    public XYZ setXYZ(IXYZ aXYZ) {
-        mX = aXYZ.x(); mY = aXYZ.y(); mZ = aXYZ.z();
-        return this;
-    }
-    public XYZ setXYZ(XYZ aXYZ) {
-        mX = aXYZ.mX; mY = aXYZ.mY; mZ = aXYZ.mZ;
-        return this;
-    }
-    public XYZ setX(double aX) {mX = aX; return this;}
-    public XYZ setY(double aY) {mY = aY; return this;}
-    public XYZ setZ(double aZ) {mZ = aZ; return this;}
-    
-    
     @Override public double x() {return mX;}
     @Override public double y() {return mY;}
     @Override public double z() {return mZ;}
+    
+    /** 批量设置的接口，返回自身方便链式调用 */
+     @Override public XYZ setX(double aX) {mX = aX; return this;}
+     @Override public XYZ setY(double aY) {mY = aY; return this;}
+     @Override public XYZ setZ(double aZ) {mZ = aZ; return this;}
     
     /** 重写这些运算来优化多态调用的损失 */
     @Override public double prod() {return mX * mY * mZ;}

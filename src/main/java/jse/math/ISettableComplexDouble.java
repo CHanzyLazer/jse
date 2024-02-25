@@ -1,6 +1,8 @@
 package jse.math;
 
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 /**
  * 复数类，实际是类似结构体的设计，因此所有成员直接 public，
  * 为了使用方便这里不使用常规结构使用的命名规范
@@ -13,6 +15,9 @@ public interface ISettableComplexDouble extends IComplexDouble {
     default void setComplexDouble(double aReal, double aImag) {setReal(aReal); setImag(aImag);}
     default void setNormPhase(double aNorm, double aPhase) {setComplexDouble(aNorm * MathEX.Fast.cos(aPhase), aNorm * MathEX.Fast.sin(aPhase));}
     
+    /** Groovy stuffs */
+    @VisibleForTesting default double getReal() {return real();}
+    @VisibleForTesting default double getImag() {return imag();}
     
     default void plus2this(IComplexDouble aComplex) {setComplexDouble(real() + aComplex.real(), imag() + aComplex.imag());}
     default void plus2this(ComplexDouble aComplex ) {setComplexDouble(real() + aComplex.mReal , imag() + aComplex.mImag );}

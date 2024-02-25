@@ -34,12 +34,14 @@ import java.util.*;
  * <p> 返回的 {@link POSCAR} 共享原子位置但是不共享 mBoxScale 以及 mSelectiveDynamics（除了原子位置其余是否共享属于未定义）</p>
  */
 public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implements IVaspCommonData {
+    public final static String DEFAULT_DATA_NAME = "VASP_XDATCAR_FROM_JSE";
+    
     /** 这里统一存放通用数据保证所有帧这些一定是相同的 */
-    private final String mDataName;
+    private @Nullable String mDataName;
     private String @Nullable[] mAtomTypes;
     private IIntVector mAtomNumbers;
     private final IMatrix mBox;
-    private final double mBoxScale;
+    private double mBoxScale;
     private final boolean mIsDiagBox;
     /** 保存一份 id 列表，这样在 lmpdat 转为 poscar 时会继续保留 id 信息，XDATCAR 认为不能进行修改 */
     private final @Nullable IIntVector mIDs;
@@ -51,7 +53,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
     /** 用于通过字符获取每个种类的粒子数，考虑了可能有相同 key 的情况 */
     private final @NotNull Multimap<String, Integer> mKey2Type;
     
-    XDATCAR(String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, List<IMatrix> aDirects, boolean aIsCartesian, @Nullable IIntVector aIDs) {
+    XDATCAR(@Nullable String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, List<IMatrix> aDirects, boolean aIsCartesian, @Nullable IIntVector aIDs) {
         mDataName = aDataName;
         mAtomTypes = aAtomTypes;
         mAtomNumbers = aAtomNumbers;
@@ -80,7 +82,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
         
         mIsDiagBox = mBox.operation().isDiag();
     }
-    XDATCAR(String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, IMatrix aFirstDirect, int aInitSize, boolean aIsCartesian, @Nullable IIntVector aIDs) {
+    XDATCAR(@Nullable String aDataName, IMatrix aBox, double aBoxScale, String @Nullable[] aAtomTypes, IIntVector aAtomNumbers, IMatrix aFirstDirect, int aInitSize, boolean aIsCartesian, @Nullable IIntVector aIDs) {
         this(aDataName, aBox, aBoxScale, aAtomTypes, aAtomNumbers, new ArrayList<>(aInitSize), aIsCartesian, aIDs);
         mDirects.add(aFirstDirect);
     }
@@ -129,6 +131,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
         mDirects.set(aIdx, getDirect_(aAtomData));
     }
     @VisibleForTesting void putAt(int aIdx, IAtomData aAtomData) {set(aIdx, aAtomData);}
+    @VisibleForTesting XDATCAR leftShift(IAtomData aAtomData) {return append(aAtomData);}
     
     
     /** 对于 XDATCAR 提供额外的实用接口 */
@@ -138,7 +141,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
         return rAtomNum;
     }
     public int atomNum(int aType) {return mAtomNumbers.get(aType-1);}
-    public @Override String dataName() {return mDataName;}
+    public @Override @Nullable String dataName() {return mDataName;}
     public @Override String @Nullable[] atomTypes() {return mAtomTypes;}
     public @Override IIntVector atomNumbers() {return mAtomNumbers;}
     public @Override IMatrix vaspBox() {return mBox;}
@@ -147,6 +150,10 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
     public @Override boolean isCartesian() {return mIsCartesian;}
     public @Override boolean isDiagBox() {return mIsDiagBox;}
     public @Override @Nullable IIntVector ids() {return mIDs;}
+    
+    /** Groovy stuffs */
+    @VisibleForTesting public String getDataName() {return mDataName;}
+    @VisibleForTesting public double getBoxScale() {return mBoxScale;}
     
     
     /** 支持直接修改 AtomTypes，只会增大种类数，不会减少 */
@@ -172,6 +179,10 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
         return this;
     }
     
+    public XDATCAR setDataName(@Nullable String aDataName) {mDataName = aDataName; return this;}
+    public XDATCAR setBoxScale(double aBoxScale) {mBoxScale = aBoxScale; return this;}
+    
+    /** Cartesian 和 Direct 来回转换 */
     public XDATCAR setCartesian() {
         if (mIsCartesian) return this;
         // 注意如果是斜方的模拟盒则不能进行转换
@@ -257,7 +268,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
                     ++tIdx;
                 }
             }
-            return new XDATCAR(POSCAR.DEFAULT_DATA_NAME, Matrices.diag(aAtomData.box().data()), 1.0, POSCAR.copyTypes(aAtomTypes), rAtomNumbers, rDirect, aInitSize, true, rIDs);
+            return new XDATCAR(null, Matrices.diag(aAtomData.box().data()), 1.0, POSCAR.copyTypes(aAtomTypes), rAtomNumbers, rDirect, aInitSize, true, rIDs);
         }
     }
     static XDATCAR fromAtomDataList_(Iterable<? extends IAtomData> aAtomDataList, int aInitSize, String[] aAtomTypes) {
@@ -428,7 +439,7 @@ public class XDATCAR extends AbstractMultiFrameSettableAtomData<POSCAR> implemen
     public void write(String aFilePath) throws IOException {
         try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {
             // 先输出通用信息
-            tWriteln.writeln(mDataName);
+            tWriteln.writeln(mDataName==null ? DEFAULT_DATA_NAME : mDataName);
             tWriteln.writeln(String.valueOf(mBoxScale));
             tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
             tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));

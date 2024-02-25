@@ -62,6 +62,7 @@ public class Lammpstrj extends AbstractMultiFrameSettableAtomData<Lammpstrj.SubL
     /** Groovy stuffs，用于支持传入 IAtomData 来设置 */
     void set(int aIdx, IAtomData aAtomData) {mData.set(aIdx, fromAtomData_(aAtomData, getTimeStep(aAtomData, aIdx)));}
     @VisibleForTesting void putAt(int aIdx, IAtomData aAtomData) {set(aIdx, aAtomData);}
+    @VisibleForTesting Lammpstrj leftShift(IAtomData aAtomData) {return append(aAtomData);}
     
     // dump 额外的属性
     public long timeStep() {return defaultFrame().timeStep();}
