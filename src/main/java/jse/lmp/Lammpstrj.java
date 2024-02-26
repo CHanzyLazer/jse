@@ -44,22 +44,20 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
     @Override protected final SubLammpstrj toOutput_(SubLammpstrj aSubLammpstrj) {return aSubLammpstrj;}
     
     /** 提供更加易用的添加方法，返回自身支持链式调用 */
+    @Override public Lammpstrj append(IAtomData aAtomData) {return (Lammpstrj)super.append(aAtomData);}
+    @Override public Lammpstrj appendAll(Collection<? extends IAtomData> aAtomDataList) {return (Lammpstrj)super.appendAll(aAtomDataList);}
     public Lammpstrj append(IAtomData aAtomData, long aTimeStep) {
         mList.add(SubLammpstrj.fromAtomData(aAtomData, aTimeStep));
-        return this;
-    }
-    public Lammpstrj append(IAtomData aAtomData) {
-        mList.add(SubLammpstrj.fromAtomData(aAtomData, SubLammpstrj.getTimeStep(aAtomData, size())));
-        return this;
-    }
-    public Lammpstrj appendList(Iterable<? extends IAtomData> aAtomDataList) {
-        for (IAtomData tAtomData : aAtomDataList) mList.add(SubLammpstrj.fromAtomData(tAtomData, SubLammpstrj.getTimeStep(tAtomData, size())));
         return this;
     }
     public Lammpstrj appendFile(String aFilePath) throws IOException {
         mList.addAll(read(aFilePath).mList);
         return this;
     }
+    /** groovy stuffs */
+    @Override public Lammpstrj leftShift(IAtomData aAtomData) {return (Lammpstrj)super.leftShift(aAtomData);}
+    @Override public Lammpstrj leftShift(Collection<? extends IAtomData> aAtomDataList) {return (Lammpstrj)super.leftShift(aAtomDataList);}
+    
     
     // dump 额外的属性
     public ILongVector allTimeStep() {

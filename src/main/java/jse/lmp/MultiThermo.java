@@ -37,14 +37,8 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
     }
     
     /** 提供更加易用的添加方法，返回自身支持链式调用 */
-    public MultiThermo append(ITable aTable) {
-        mList.add(aTable.copy());
-        return this;
-    }
-    public MultiThermo appendList(Iterable<? extends ITable> aTableList) {
-        for (ITable tTable : aTableList) mList.add(tTable.copy());
-        return this;
-    }
+    public MultiThermo append(ITable aTable) {return (MultiThermo)super.append(aTable);}
+    public MultiThermo appendAll(Collection<? extends ITable> aTableList) {return (MultiThermo)super.appendAll(aTableList);}
     public MultiThermo appendFile(String aFilePath) throws IOException {
         mList.addAll(read(aFilePath).mList);
         return this;
@@ -53,6 +47,10 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
         mList.addAll(readCSV(aPath).mList);
         return this;
     }
+    /** groovy stuffs */
+    @Override public MultiThermo leftShift(ITable aTable) {return (MultiThermo)super.leftShift(aTable);}
+    @Override public MultiThermo leftShift(Collection<? extends ITable> aTableList) {return (MultiThermo)super.leftShift(aTableList);}
+    
     
     private static boolean headMatch(List<String> aSrcHeads, List<String> aNextHeads) {
         if (aNextHeads.size() < aSrcHeads.size()) return false;

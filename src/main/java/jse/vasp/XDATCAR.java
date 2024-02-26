@@ -103,14 +103,12 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     public XDATCAR append(IAtomData aAtomData) {
         // 只有正交的 XDATCAR 才能通过 AtomData 设置内部元素
         if (!mIsDiagBox) throw new RuntimeException("append is support Diagonal Box only");
-        mList.add(getDirect_(aAtomData));
-        return this;
+        return (XDATCAR)super.append(aAtomData);
     }
-    public XDATCAR appendList(Iterable<? extends IAtomData> aAtomDataList) {
+    public XDATCAR appendAll(Collection<? extends IAtomData> aAtomDataList) {
         // 只有正交的 XDATCAR 才能通过 AtomData 设置内部元素
-        if (!mIsDiagBox) throw new RuntimeException("appendList is support Diagonal Box only");
-        for (IAtomData tAtomData : aAtomDataList) mList.add(getDirect_(tAtomData));
-        return this;
+        if (!mIsDiagBox) throw new RuntimeException("appendAll is support Diagonal Box only");
+        return (XDATCAR)super.appendAll(aAtomDataList);
     }
     public XDATCAR appendFile(String aFilePath) throws IOException {
         // 原则上只有正交的或者 box 完全相同才可以添加，这里直接通过 refDirect_ 的内部进行判断，即使 box 不相同也会可以添加
@@ -118,6 +116,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         mList.addAll(AbstractCollections.map(tXDATCAR.mList, direct -> refDirect_(tXDATCAR.mBox, tXDATCAR.mBoxScale, mBoxScale, direct, tXDATCAR.mIsCartesian, mIsCartesian)));
         return this;
     }
+    /** groovy stuffs */
+    @Override public XDATCAR leftShift(IAtomData aAtomData) {return (XDATCAR)super.leftShift(aAtomData);}
+    @Override public XDATCAR leftShift(Collection<? extends IAtomData> aAtomDataList) {return (XDATCAR)super.leftShift(aAtomDataList);}
     
     
     /** 对于 XDATCAR 提供额外的实用接口 */

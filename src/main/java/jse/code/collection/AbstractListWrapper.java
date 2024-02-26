@@ -22,6 +22,7 @@ import java.util.List;
  * @param <E> 内部 List 存储的类型
  * @author liqa
  */
+@SuppressWarnings("UnusedReturnValue")
 public abstract class AbstractListWrapper<R, T, E> {
     protected List<E> mList;
     protected AbstractListWrapper(List<E> aList) {mList = aList;}
@@ -36,6 +37,8 @@ public abstract class AbstractListWrapper<R, T, E> {
     
     public final boolean add(T aValue) {return mList.add(toInternal_(aValue));}
     public final void add(int aIdx, T aValue) {mList.add(aIdx, toInternal_(aValue));}
+    public final boolean addAll(Collection<? extends T> aList) {return mList.addAll(AbstractCollections.map(aList, this::toInternal_));}
+    public final boolean addAll(int aIdx, Collection<? extends T> aList) {return mList.addAll(aIdx, AbstractCollections.map(aList, this::toInternal_));}
     public final R set(int aIdx, T aValue) {return toOutput_(mList.set(aIdx, toInternal_(aValue)));}
     public final R remove(int aIdx) {return toOutput_(mList.remove(aIdx));}
     public final void clear() {mList.clear();}
@@ -44,10 +47,11 @@ public abstract class AbstractListWrapper<R, T, E> {
     public final Iterator<R> iterator() {return AbstractCollections.map(mList.iterator(), this::toOutput_);}
     
     /** useful stuffs */
-    @SuppressWarnings("UnusedReturnValue")
     public final R removeLast() {return toOutput_(DefaultGroovyMethods.removeLast(mList));}
     public final R first() {return toOutput_(DefaultGroovyMethods.first(mList));}
     public final R last() {return toOutput_(DefaultGroovyMethods.last(mList));}
+    public AbstractListWrapper<R, T, E> append(T aValue) {add(aValue); return this;}
+    public AbstractListWrapper<R, T, E> appendAll(Collection<? extends T> aList) {addAll(aList); return this;}
     
     /** groovy stuffs */
     @VisibleForTesting public final R getAt(int aIdx) {return get(aIdx);}
@@ -55,7 +59,8 @@ public abstract class AbstractListWrapper<R, T, E> {
     @VisibleForTesting @SuppressWarnings("rawtypes") public final List<R> getAt(Range aRange) {return DefaultGroovyMethods.getAt(asList(), aRange);}
     @VisibleForTesting @SuppressWarnings("rawtypes") public final List<R> getAt(EmptyRange aRange) {return DefaultGroovyMethods.getAt(asList(), aRange);}
     @VisibleForTesting @SuppressWarnings("rawtypes") public final List<R> getAt(Collection aIndices) {return DefaultGroovyMethods.getAt(asList(), aIndices);}
-    @VisibleForTesting public final AbstractListWrapper<R, T, E> leftShift(T aValue) {add(aValue); return this;}
     @VisibleForTesting public final List<R> collect() {return DefaultGroovyMethods.collect(asList());}
     @VisibleForTesting public final <RR> List<RR> collect(@ClosureParams(FirstParam.FirstGenericType.class) Closure<RR> aTransform) {return DefaultGroovyMethods.collect(asList(), aTransform);}
+    @VisibleForTesting public AbstractListWrapper<R, T, E> leftShift(T aValue) {return append(aValue);}
+    @VisibleForTesting public AbstractListWrapper<R, T, E> leftShift(Collection<? extends T> aList) {return appendAll(aList);}
 }
