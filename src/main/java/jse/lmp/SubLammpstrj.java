@@ -229,7 +229,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     
     /** AbstractAtomData stuffs */
     @Override public boolean hasVelocities() {return mHasVelocities;}
-    @Override public ISettableAtom pickAtom(final int aIdx) {
+    @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom() {
             @Override public double x() {if (mKeyX==null) throw new RuntimeException("No X data in this Lammpstrj"); return getX_(aIdx);}
             @Override public double y() {if (mKeyY==null) throw new RuntimeException("No Y data in this Lammpstrj"); return getY_(aIdx);}

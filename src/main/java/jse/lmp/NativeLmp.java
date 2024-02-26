@@ -935,7 +935,7 @@ public class NativeLmp implements IAutoShutdown {
         if (tAtomTypes!=null && tAtomTypes.length>=tAtomTypeNum) for (int i = 0; i < tAtomTypeNum; ++i) {
         command(String.format("mass            %d %f", i+1, MASS.getOrDefault(tAtomTypes[i], -1.0)));
         }}
-        creatAtoms(aAtomData.asList());
+        creatAtoms(aAtomData.atoms());
     }
     public void loadData(Lmpdat aLmpdat) throws Error {loadLmpdat(aLmpdat);}
     

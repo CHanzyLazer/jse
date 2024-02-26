@@ -649,7 +649,7 @@ public class UT {
             double2bytes(tBox.y(), rBytes, tIdx); tIdx+=Double.BYTES;
             double2bytes(tBox.z(), rBytes, tIdx); tIdx+=Double.BYTES;
             // 原子数据
-            for (IAtom tAtom : aAtomData.asList()) {
+            for (IAtom tAtom : aAtomData.atoms()) {
                 double2bytes(tAtom.x(), rBytes, tIdx); tIdx+=Double.BYTES;
                 double2bytes(tAtom.y(), rBytes, tIdx); tIdx+=Double.BYTES;
                 double2bytes(tAtom.z(), rBytes, tIdx); tIdx+=Double.BYTES;
@@ -689,7 +689,7 @@ public class UT {
             // 原子种类数目信息
             int2bytes(aAtomData.atomTypeNumber(), rBytes, tIdx); tIdx+=Integer.BYTES;
             // 原子数据
-            for (IAtom tAtom : aAtomData.asList()) {
+            for (IAtom tAtom : aAtomData.atoms()) {
                 double2bytes(tAtom.x(), rBytes, tIdx); tIdx+=Double.BYTES;
                 double2bytes(tAtom.y(), rBytes, tIdx); tIdx+=Double.BYTES;
                 double2bytes(tAtom.z(), rBytes, tIdx); tIdx+=Double.BYTES;
@@ -1633,7 +1633,7 @@ public class UT {
             ILine[] rLines = new ILine[aAtomData.atomTypeNumber()];
             for (int i = 0; i < rLines.length; ++i) {
                 final int tType = i + 1;
-                Iterable<IAtom> tAtoms = AbstractCollections.filter(aAtomData.asList(), atom->atom.type()==tType);
+                Iterable<IAtom> tAtoms = AbstractCollections.filter(aAtomData.atoms(), atom->atom.type()==tType);
                 switch (aAxis) {
                 case "x": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::y), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
                 case "y": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}

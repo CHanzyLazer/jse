@@ -60,7 +60,7 @@ public class Generator extends AbstractThreadPool<ParforThreadPool> {
         
         List<IAtom> rAtoms = new ArrayList<>();
         
-        for (IAtom tAtom : aAtomData.asList()) if (aFilter.accept(tAtom)) {
+        for (IAtom tAtom : aAtomData.atoms()) if (aFilter.accept(tAtom)) {
             rAtoms.add(tAtom);
         }
         

@@ -11,11 +11,13 @@ import java.util.List;
  */
 public abstract class AbstractSettableAtomData extends AbstractAtomData implements ISettableAtomData {
     /** stuff to override */
-    public abstract ISettableAtom pickAtom(int aIdx);
+    public abstract ISettableAtom atom(int aIdx);
     public abstract AbstractSettableAtomData setAtomTypeNumber(int aAtomTypeNum);
     
+    
+    @Override @Deprecated @SuppressWarnings("deprecation") public List<? extends ISettableAtom> asList() {return atoms();}
     @Override public void setAtom(int aIdx, IAtom aAtom) {
-        ISettableAtom tAtom = pickAtom(aIdx);
+        ISettableAtom tAtom = this.atom(aIdx);
         try {tAtom.setX(aAtom.x());} catch (Exception ignored) {}
         try {tAtom.setY(aAtom.y());} catch (Exception ignored) {}
         try {tAtom.setZ(aAtom.z());} catch (Exception ignored) {}
@@ -26,14 +28,14 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         try {tAtom.setVz(aAtom.vz());} catch (Exception ignored) {}
     }
     
-    @Override public List<? extends ISettableAtom> asList() {
+    @Override public List<? extends ISettableAtom> atoms() {
         return new AbstractRandomAccessList<ISettableAtom>() {
-            @Override public ISettableAtom get(int index) {return pickAtom(index);}
+            @Override public ISettableAtom get(int index) {return AbstractSettableAtomData.this.atom(index);}
             @Override public ISettableAtom set(final int index, ISettableAtom element) {
                 ISettableAtom oAtom = hasVelocities() ?
-                    new AtomFull(pickAtom(index)) {
+                    new AtomFull(AbstractSettableAtomData.this.atom(index)) {
                     @Override public int index() {return index;}
-                } : new Atom(pickAtom(index)) {
+                } : new Atom(AbstractSettableAtomData.this.atom(index)) {
                     @Override public int index() {return index;}
                 };
                 setAtom(index, element);

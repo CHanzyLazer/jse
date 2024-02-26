@@ -196,7 +196,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     }
     
     /** AbstractAtomData stuffs */
-    @Override public ISettableAtom pickAtom(final int aIdx) {
+    @Override public ISettableAtom atom(final int aIdx) {
         // 暂时没功夫研究矩阵表示的晶格在斜方情况下原子坐标是怎么样的
         // 并且这里还需要将其转换成正交的情况，因为参数计算相关优化都需要在正交情况下实现
         if (!mIsDiagBox) throw new RuntimeException("atoms is temporarily support Diagonal Box only");
@@ -352,7 +352,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             IMatrix rDirect = Matrices.zeros(aAtomData.atomNumber(), 3);
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
-                for (IAtom tAtom : aAtomData.asList()) if (tAtom.type() == tTypeMM+1) {
+                for (IAtom tAtom : aAtomData.atoms()) if (tAtom.type() == tTypeMM+1) {
                     rAtomNumbers.increment(tTypeMM);
                     rDirect.set(tIdx, 0, tAtom.x());
                     rDirect.set(tIdx, 1, tAtom.y());

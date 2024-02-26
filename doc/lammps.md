@@ -34,7 +34,7 @@ jse 中使用 [`jse.lmp.Lmpdat`](../src/main/java/jse/lmp/Lmpdat.java) /
     
     println('atom number: ' + data.natoms())
     println('masses: ' + data.masses())
-    println('atom at 10: ' + data.pickAtom(10))
+    println('atom at 10: ' + data.atom(10))
     
     data.write('.temp/example/lmp/dataFCC')
     ```
@@ -66,7 +66,7 @@ jse 中使用 [`jse.lmp.Lmpdat`](../src/main/java/jse/lmp/Lmpdat.java) /
 -----------------------------
 
 对于 lammps 的原子数据，其中的模拟盒还会存在一个下边界（`xlo`, `ylo`, `zlo`），
-但是这对于计算是不必要的，因此这里通过 `pickAtom(index)` 获取到的原子坐标，
+但是这对于计算是不必要的，因此这里通过 `atom(index)` 获取到的原子坐标，
 以及通过 `box()` 获取到的模拟盒大小都是经过平移的（将 `xlo`, `ylo`, `zlo` 设为 0 ），
 因此可能会和文件中的数据有所不同。
 
@@ -97,7 +97,7 @@ jse 中使用 [`jse.lmp.Lammpstrj`](../src/main/java/jse/lmp/Lammpstrj.java) /
     def frame = dump[4]
     println('atom number: ' + frame.natoms())
     println('time step: ' + frame.timeStep())
-    println('atom at 10: ' + frame.pickAtom(10))
+    println('atom at 10: ' + frame.atom(10))
     
     dump.write('.temp/example/lmp/dumpFCC')
     ```
@@ -225,15 +225,15 @@ jse 中通用的可修改的原子数据接口
     
     def data = Data.read('lmp/data/CuFCC108.lmpdat')
     
-    // 使用 `pickAtom` 获取一个原子
-    def atom10 = data.pickAtom(10)
+    // 使用 `atom` 获取一个原子
+    def atom10 = data.atom(10)
     println('origin atom10: ' + atom10)
     atom10.type = 2
     atom10.x = 3.14
-    println('new atom at 10: ' + data.pickAtom(10))
+    println('new atom at 10: ' + data.atom(10))
     
-    // 使用 `asList` 转为 List 后遍历所有原子
-    for (atom in data.asList()) atom.y += 10
+    // 使用 `atoms` 转为 List<IAtom> 后遍历所有原子
+    for (atom in data.atoms()) atom.y += 10
     println('new atom10: ' + atom10)
     
     data.write('.temp/example/lmp/dataSet')
@@ -249,12 +249,12 @@ jse 中通用的可修改的原子数据接口
 
 > - **注意1:**
 >   
->   这里通过 `pickAtom(index)` 获取到的原子实际为 `data` 中原子数据的引用，
+>   这里通过 `atom(index)` 获取到的原子实际为 `data` 中原子数据的引用，
 >   对任意一方的修改都会同时反应在对方（实际只有一份原子数据）。
 >   
 > - **注意2:**
 >   
->   遍历所有原子需要先调用 `asList()` 方法将原子数据转为 `List`。
+>   遍历所有原子需要先调用 `atoms()` 方法将原子数据转为 `List<IAtom>`。
 >   
 > - **注意3:**
 >   

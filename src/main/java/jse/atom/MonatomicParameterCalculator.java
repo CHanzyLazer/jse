@@ -114,7 +114,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     public MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
     public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomData, aThreadNum, DEFAULT_CELL_STEP);}
-    public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aCellStep) {this(aAtomData.asList(), aAtomData.box(), aThreadNum, aCellStep);}
+    public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, double aCellStep) {this(aAtomData.atoms(), aAtomData.box(), aThreadNum, aCellStep);}
     
     /** 主要用于内部使用 */
     MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {

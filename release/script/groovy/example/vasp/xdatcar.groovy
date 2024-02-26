@@ -12,7 +12,7 @@ def frame = xdatcar[4]
 // 获取属性
 println('atom number: ' + frame.natoms())
 println('type names: ' + frame.typeNames())
-println('atom at 10: ' + frame.pickAtom(10))
+println('atom at 10: ' + frame.atom(10))
 
 // 写入文本
 xdatcar.write('.temp/example/vasp/xdatcarFCC')

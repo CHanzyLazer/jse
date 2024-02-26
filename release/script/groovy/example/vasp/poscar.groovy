@@ -8,7 +8,7 @@ def poscar = POSCAR.read('vasp/poscar/CuFCC108.poscar')
 // 获取属性
 println('atom number: ' + poscar.natoms())
 println('type names: ' + poscar.typeNames())
-println('atom at 10: ' + poscar.pickAtom(10))
+println('atom at 10: ' + poscar.atom(10))
 
 // 写入文本
 poscar.write('.temp/example/vasp/poscarFCC')

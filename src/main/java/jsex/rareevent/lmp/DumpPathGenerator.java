@@ -168,7 +168,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         final int tAtomNum = aPoint.atomNumber();
         final IMatrix rData = Matrices.zeros(tAtomNum, ATOM_DATA_KEYS_TYPE_XYZ.length);
         int row = 0;
-        for (IAtom tAtom : aPoint.asList()) {
+        for (IAtom tAtom : aPoint.atoms()) {
             rData.set(row, TYPE_XYZ_TYPE_COL, tAtom.type());
             rData.set(row, TYPE_XYZ_X_COL, tAtom.x());
             rData.set(row, TYPE_XYZ_Y_COL, tAtom.y());

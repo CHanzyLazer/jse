@@ -54,7 +54,7 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
         // 手动遍历过滤
         List<IntVector.Builder> tBuilder = NewCollections.from(tTypeNum, i -> IntVector.builder());
         for (int idx = 0; idx < tAtomNum; ++idx) {
-            tBuilder.get(aPoint.pickAtom(idx).type()-1).add(idx);
+            tBuilder.get(aPoint.atom(idx).type()-1).add(idx);
         }
         List<ISlice> tTypeIndices = NewCollections.map(tBuilder, IntVector.Builder::build);
         // 再判断某个种类的
@@ -67,8 +67,8 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
                     // 使用 refSlicer 来合并两者结果
                     rIsSolid.refSlicer().get(tTypeIndices.get(tTypeMM)).or2this(tTypeIsSolid);
                     // 周围中有一半的为 solid 则也要设为 solid
-                    for (int idx = 0; idx < tAtomNum; ++idx) if (!rIsSolid.get(idx) && aPoint.pickAtom(idx).type()!=tTypeMM+1) {
-                        IIntVector tNL = tMPC.getNeighborList(aPoint.pickAtom(idx));
+                    for (int idx = 0; idx < tAtomNum; ++idx) if (!rIsSolid.get(idx) && aPoint.atom(idx).type()!=tTypeMM+1) {
+                        IIntVector tNL = tMPC.getNeighborList(aPoint.atom(idx));
                         int rTypeSolidNum = tTypeIsSolid.refSlicer().get(tNL).count();
                         if (rTypeSolidNum!=0 && rTypeSolidNum+rTypeSolidNum>=tNL.size()) rIsSolid.set(idx, true);
                     }

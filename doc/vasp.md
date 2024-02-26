@@ -26,7 +26,7 @@ jse 中使用 [`jse.vasp.POSCAR`](../src/main/java/jse/vasp/POSCAR.java)
     
     println('atom number: ' + poscar.natoms())
     println('type names: ' + poscar.typeNames())
-    println('atom at 10: ' + poscar.pickAtom(10))
+    println('atom at 10: ' + poscar.atom(10))
     
     poscar.write('.temp/example/vasp/poscarFCC')
     ```
@@ -77,7 +77,7 @@ jse 中使用 [`jse.vasp.XDATCAR`](../src/main/java/jse/vasp/XDATCAR.java)
     def frame = xdatcar[4]
     println('atom number: ' + frame.natoms())
     println('type names: ' + frame.typeNames())
-    println('atom at 10: ' + frame.pickAtom(10))
+    println('atom at 10: ' + frame.atom(10))
     
     xdatcar.write('.temp/example/vasp/xdatcarFCC')
     ```

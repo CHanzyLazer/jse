@@ -204,7 +204,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     /** AbstractAtomData stuffs */
     @Override public boolean hasVelocities() {return mVelocities!=null;}
-    @Override public ISettableAtom pickAtom(final int aIdx) {
+    @Override public ISettableAtom atom(final int aIdx) {
         // 注意如果是斜方的模拟盒则不能获取到正交的原子数据
         if (isPrism()) throw new RuntimeException("atoms is temporarily NOT support Prism Lmpdat");
         return new AbstractSettableAtom() {
@@ -299,7 +299,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             RowMatrix rAtomXYZ = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_XYZ.length);
             @Nullable RowMatrix rVelocities = aAtomData.hasVelocities() ? RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length) : null;
             int row = 0;
-            for (IAtom tAtom : aAtomData.asList()) {
+            for (IAtom tAtom : aAtomData.atoms()) {
                 rAtomID.set(row, tAtom.id());
                 rAtomType.set(row, tAtom.type());
                 rAtomXYZ.set(row, XYZ_X_COL, tAtom.x());

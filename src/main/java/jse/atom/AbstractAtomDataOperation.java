@@ -22,17 +22,17 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     
     @Override public ISettableAtomData filter(IFilter<IAtom> aFilter) {
         IAtomData tThis = thisAtomData_();
-        List<IAtom> tFilterAtoms = NewCollections.filter(tThis.asList(), aFilter);
+        List<IAtom> tFilterAtoms = NewCollections.filter(tThis.atoms(), aFilter);
         ISettableAtomData rAtomData = newSettableAtomData_(tFilterAtoms.size());
         for (int i = 0; i < tFilterAtoms.size(); ++i) rAtomData.setAtom(i, tFilterAtoms.get(i));
         return rAtomData;
     }
     @Override public ISettableAtomData filterType(final int aType) {return filter(atom -> atom.type()==aType);}
     
-    @Override public IAtomData refSlice(ISlice aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public IAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public IAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public IAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public IAtomData refSlice(ISlice aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public IAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public IAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public IAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
     
     
     @Override public ISettableAtomData map(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {
@@ -41,7 +41,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         ISettableAtomData rAtomData = newSettableAtomData_(tAtomNum);
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
-            rAtomData.setAtom(i, aOperator.apply(tThis.pickAtom(i)));
+            rAtomData.setAtom(i, aOperator.apply(tThis.atom(i)));
         }
         // 这里不进行 try 包含，因为目前这里的实例都是支持的，并且手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (rAtomData.atomTypeNumber() < aMinTypeNum) rAtomData.setAtomTypeNumber(aMinTypeNum);
@@ -55,7 +55,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         ISettableAtomData rAtomData = newSameSettableAtomData_();
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
-            rAtomData.pickAtom(i).setType(aOperator.apply(tThis.pickAtom(i)));
+            rAtomData.atom(i).setType(aOperator.apply(tThis.atom(i)));
         }
         // 这里不进行 try 包含，因为目前这里的实例都是支持的，并且手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (rAtomData.atomTypeNumber() < aMinTypeNum) rAtomData.setAtomTypeNumber(aMinTypeNum);
@@ -90,8 +90,8 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         final int tAtomNum = tThis.atomNumber();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
         for (int i = 0; i < tAtomNum; ++i) {
-            IAtom oAtom = tThis.pickAtom(i);
-            rAtomData.pickAtom(i)
+            IAtom oAtom = tThis.atom(i);
+            rAtomData.atom(i)
                 .setX(oAtom.x() + aRandom.nextGaussian()*aSigma)
                 .setY(oAtom.y() + aRandom.nextGaussian()*aSigma)
                 .setZ(oAtom.z() + aRandom.nextGaussian()*aSigma);
@@ -107,7 +107,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         final int tAtomNum = tThis.atomNumber();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
         for (int i = 0; i < tAtomNum; ++i) {
-            IAtom oAtom = tThis.pickAtom(i);
+            IAtom oAtom = tThis.atom(i);
             double tX = oAtom.x();
             double tY = oAtom.y();
             double tZ = oAtom.z();
@@ -117,7 +117,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
             else if (tY >= tBox.mY) {tY -= tBox.mY; while (tY >= tBox.mY) tY -= tBox.mY;}
             if      (tZ <  0.0    ) {tZ += tBox.mZ; while (tZ <  0.0    ) tZ += tBox.mZ;}
             else if (tZ >= tBox.mZ) {tZ -= tBox.mZ; while (tZ >= tBox.mZ) tZ -= tBox.mZ;}
-            rAtomData.pickAtom(i).setX(tX).setY(tY).setZ(tZ);
+            rAtomData.atom(i).setX(tX).setY(tY).setZ(tZ);
         }
         return rAtomData;
     }

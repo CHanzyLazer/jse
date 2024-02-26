@@ -33,7 +33,7 @@ public final class SettableAtomData extends AbstractSettableAtomData {
     public SettableAtomData(List<? extends ISettableAtom> aAtoms, IXYZ aBox) {this(aAtoms, aBox, false);}
     public SettableAtomData(List<? extends ISettableAtom> aAtoms) {this(aAtoms, false);}
     
-    @Override public ISettableAtom pickAtom(int aIdx) {
+    @Override public ISettableAtom atom(int aIdx) {
         // 需要包装一层，用于在更新种类时自动更新整体的种类计数
         final ISettableAtom tAtom = mAtoms.get(aIdx);
         return new AbstractSettableAtom() {

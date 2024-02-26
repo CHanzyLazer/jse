@@ -15,17 +15,17 @@ import java.util.Random;
 
 public abstract class AbstractSettableAtomDataOperation extends AbstractAtomDataOperation implements ISettableAtomDataOperation {
     
-    @Override public ISettableAtomData refSlice(ISlice aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public ISettableAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public ISettableAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
-    @Override public ISettableAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().asList(), aIndices));}
+    @Override public ISettableAtomData refSlice(ISlice aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public ISettableAtomData refSlice(List<Integer> aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public ISettableAtomData refSlice(int[] aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
+    @Override public ISettableAtomData refSlice(IIndexFilter aIndices) {return refAtomData_(AbstractCollections.slice(thisAtomData_().atoms(), aIndices));}
     
     
     @Override public void map2this(int aMinTypeNum, IUnaryFullOperator<? extends IAtom, ? super IAtom> aOperator) {
         final ISettableAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNumber();
         for (int i = 0; i < tAtomNum; ++i) {
-            tThis.setAtom(i, aOperator.apply(tThis.pickAtom(i)));
+            tThis.setAtom(i, aOperator.apply(tThis.atom(i)));
         }
         // 这里不进行 try 包含，因为手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
         if (tThis.atomTypeNumber() < aMinTypeNum) tThis.setAtomTypeNumber(aMinTypeNum);
@@ -36,7 +36,7 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
         final int tAtomNum = tThis.atomNumber();
         for (int i = 0; i < tAtomNum; ++i) {
             // 保存修改后的原子，现在内部会自动更新种类计数
-            ISettableAtom tAtom = tThis.pickAtom(i);
+            ISettableAtom tAtom = tThis.atom(i);
             tAtom.setType(aOperator.apply(tAtom));
         }
         // 这里不进行 try 包含，因为手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
@@ -70,7 +70,7 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
         final ISettableAtomData tThis = thisAtomData_();
         final int tAtomNum = tThis.atomNumber();
         for (int i = 0; i < tAtomNum; ++i) {
-            ISettableAtom tAtom = tThis.pickAtom(i);
+            ISettableAtom tAtom = tThis.atom(i);
             tAtom.setX(tAtom.x() + aRandom.nextGaussian()*aSigma)
                  .setY(tAtom.y() + aRandom.nextGaussian()*aSigma)
                  .setZ(tAtom.z() + aRandom.nextGaussian()*aSigma);
@@ -84,7 +84,7 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
         final XYZ tBox = XYZ.toXYZ(tThis.box());
         final int tAtomNum = tThis.atomNumber();
         for (int i = 0; i < tAtomNum; ++i) {
-            ISettableAtom tAtom = tThis.pickAtom(i);
+            ISettableAtom tAtom = tThis.atom(i);
             double tX = tAtom.x();
             double tY = tAtom.y();
             double tZ = tAtom.z();

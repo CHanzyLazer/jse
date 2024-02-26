@@ -21,10 +21,13 @@ public interface IAtomData {
     Table dataVelocities();
     boolean hasVelocities();
     
-    /** 现在改为 asList，让其 set 接口更加合理 */
-    List<? extends IAtom> asList();
-    /** 现在统一提供随机访问获取一个原子的接口 */
-    IAtom pickAtom(int aIdx);
+    /** 现在改为 atoms 保证一致性 */
+    List<? extends IAtom> atoms();
+    /** 现在统一提供随机访问获取一个原子的接口；改为 atom 保证逻辑一致，旧名称由于外部使用较少不再保留 */
+    IAtom atom(int aIdx);
+
+    /** asList 接口保留兼容 */
+    @Deprecated default List<? extends IAtom> asList() {return atoms();}
     
     /** 保留获取原子总数的接口，但是特定种类的原子数目现在不能直接获取 */
     int atomNumber();

@@ -257,7 +257,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             IMatrix rDirect = Matrices.zeros(aAtomData.atomNumber(), 3);
             int tIdx = 0;
             for (int tTypeMM = 0; tTypeMM < tAtomTypeNum; ++tTypeMM) {
-                for (IAtom tAtom : aAtomData.asList()) if (tAtom.type() == tTypeMM+1) {
+                for (IAtom tAtom : aAtomData.atoms()) if (tAtom.type() == tTypeMM+1) {
                     rAtomNumbers.increment(tTypeMM);
                     rDirect.set(tIdx, 0, tAtom.x());
                     rDirect.set(tIdx, 1, tAtom.y());
@@ -286,7 +286,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         XYZ tBox = XYZ.toXYZ(aAtomData.box());
         int tAtomNum = aAtomData.atomNumber();
         IMatrix rDirect = Matrices.zeros(tAtomNum, 3);
-        for (IAtom tAtom : aAtomData.asList()) {
+        for (IAtom tAtom : aAtomData.atoms()) {
             int tIdx = mId2Index==null ? tAtom.id()-1 : mId2Index.get(tAtom.id());
             rDirect.set(tIdx, 0, mIsCartesian ? tAtom.x() : tAtom.x()/tBox.mX);
             rDirect.set(tIdx, 1, mIsCartesian ? tAtom.y() : tAtom.y()/tBox.mY);

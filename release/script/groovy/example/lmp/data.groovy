@@ -8,7 +8,7 @@ def data = Data.read('lmp/data/CuFCC108.lmpdat')
 // 获取属性
 println('atom number: ' + data.natoms())
 println('masses: ' + data.masses())
-println('atom at 10: ' + data.pickAtom(10))
+println('atom at 10: ' + data.atom(10))
 
 // 写入文本
 data.write('.temp/example/lmp/dataFCC')

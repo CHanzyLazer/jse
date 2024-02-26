@@ -16,15 +16,16 @@ import static jse.code.UT.Code.newBox;
  */
 public abstract class AbstractAtomData implements IAtomData {
     /** stuff to override */
-    public abstract IAtom pickAtom(int aIdx);
+    public abstract IAtom atom(int aIdx);
     public abstract IXYZ box();
     public abstract int atomNumber();
     public abstract int atomTypeNumber();
     
     
-    @Override public List<? extends IAtom> asList() {
+    @Override @Deprecated @SuppressWarnings("deprecation") public List<? extends IAtom> asList() {return atoms();}
+    @Override public List<? extends IAtom> atoms() {
         return new AbstractRandomAccessList<IAtom>() {
-            @Override public IAtom get(int index) {return pickAtom(index);}
+            @Override public IAtom get(int index) {return atom(index);}
             @Override public int size() {return atomNumber();}
         };
     }
@@ -43,7 +44,7 @@ public abstract class AbstractAtomData implements IAtomData {
         Table rData = Table.zeros(atomNumber(), ATOM_DATA_KEYS_XYZ);
         IMatrix rMat = rData.asMatrix();
         int row = 0;
-        for (IAtom tAtom : asList()) {
+        for (IAtom tAtom : atoms()) {
             rMat.set(row, XYZ_X_COL, tAtom.x());
             rMat.set(row, XYZ_Y_COL, tAtom.y());
             rMat.set(row, XYZ_Z_COL, tAtom.z());
@@ -55,7 +56,7 @@ public abstract class AbstractAtomData implements IAtomData {
         Table rData = Table.zeros(atomNumber(), ATOM_DATA_KEYS_XYZID);
         IMatrix rMat = rData.asMatrix();
         int row = 0;
-        for (IAtom tAtom : asList()) {
+        for (IAtom tAtom : atoms()) {
             rMat.set(row, XYZID_X_COL, tAtom.x());
             rMat.set(row, XYZID_Y_COL, tAtom.y());
             rMat.set(row, XYZID_Z_COL, tAtom.z());
@@ -68,7 +69,7 @@ public abstract class AbstractAtomData implements IAtomData {
         Table rData = Table.zeros(atomNumber(), STD_ATOM_DATA_KEYS);
         IMatrix rMat = rData.asMatrix();
         int row = 0;
-        for (IAtom tAtom : asList()) {
+        for (IAtom tAtom : atoms()) {
             rMat.set(row, STD_ID_COL, tAtom.id());
             rMat.set(row, STD_TYPE_COL, tAtom.type());
             rMat.set(row, STD_X_COL, tAtom.x());
@@ -82,7 +83,7 @@ public abstract class AbstractAtomData implements IAtomData {
         Table rData = Table.zeros(atomNumber(), ALL_ATOM_DATA_KEYS);
         IMatrix rMat = rData.asMatrix();
         int row = 0;
-        for (IAtom tAtom : asList()) {
+        for (IAtom tAtom : atoms()) {
             rMat.set(row, ALL_ID_COL, tAtom.id());
             rMat.set(row, ALL_TYPE_COL, tAtom.type());
             rMat.set(row, ALL_X_COL, tAtom.x());
@@ -99,7 +100,7 @@ public abstract class AbstractAtomData implements IAtomData {
         Table rData = Table.zeros(atomNumber(), ATOM_DATA_KEYS_VELOCITY);
         IMatrix rMat = rData.asMatrix();
         int row = 0;
-        for (IAtom tAtom : asList()) {
+        for (IAtom tAtom : atoms()) {
             rMat.set(row, STD_VX_COL, tAtom.vx());
             rMat.set(row, STD_VY_COL, tAtom.vy());
             rMat.set(row, STD_VZ_COL, tAtom.vz());
@@ -115,7 +116,7 @@ public abstract class AbstractAtomData implements IAtomData {
     @Override public ISettableAtomData copy() {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
-            NewCollections.map(asList(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
+            NewCollections.map(atoms(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
             atomTypeNumber(), newBox(box()), tHasVelocities
         );
     }
@@ -123,7 +124,7 @@ public abstract class AbstractAtomData implements IAtomData {
     protected ISettableAtomData newSame_() {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
-            NewCollections.map(asList(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
+            NewCollections.map(atoms(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
             atomTypeNumber(), newBox(box()), tHasVelocities
         );
     }

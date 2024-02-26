@@ -33,7 +33,7 @@ public final class AtomData extends AbstractAtomData {
     public AtomData(List<? extends IAtom> aAtoms,                   IXYZ aBox                        ) {this(aAtoms, aBox, false);}
     public AtomData(List<? extends IAtom> aAtoms                                                     ) {this(aAtoms, false);}
     
-    @Override public IAtom pickAtom(int aIdx) {
+    @Override public IAtom atom(int aIdx) {
         // 需要包装一层，用于自动复写内部原子的 index 信息
         final IAtom tAtom = mAtoms.get(aIdx);
         return new AbstractAtom() {

@@ -15,10 +15,12 @@ public interface ISettableAtomData extends IAtomData {
     @Deprecated default ISettableAtomData setAtomTypeNum(int aAtomTypeNum) {return setAtomTypeNumber(aAtomTypeNum);}
     
     /** IAtomData stuffs*/
-    List<? extends ISettableAtom> asList();
-    ISettableAtom pickAtom(int aIdx);
+    List<? extends ISettableAtom> atoms();
+    ISettableAtom atom(int aIdx);
     ISettableAtomDataOperation operation();
     @VisibleForTesting default ISettableAtomDataOperation opt() {return operation();}
+    /** asList 接口保留兼容 */
+    @Override @Deprecated @SuppressWarnings("deprecation") default List<? extends ISettableAtom> asList() {return atoms();}
     
     /** Groovy stuffs */
     @VisibleForTesting default int getAtomTypeNumber() {return atomTypeNumber();}
