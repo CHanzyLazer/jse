@@ -214,16 +214,14 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
     
     /**
      * 输出成 lammps 格式的 dump 文件，可以供 OVITO 等软件读取
-     * <p>
-     * 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用
      * @author liqa
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {
-        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {
-            for (SubLammpstrj tSubLammpstrj : mList) tSubLammpstrj.write_(tWriteln);
-        }
+    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+        for (SubLammpstrj tSubLammpstrj : mList) tSubLammpstrj.write_(aWriteln);
     }
     
     

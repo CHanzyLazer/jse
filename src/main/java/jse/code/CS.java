@@ -107,6 +107,7 @@ public class CS {
         ;
     
     /** Patterns */
+    public final static Pattern BLANKS_OR_EMPTY = Pattern.compile("\\s*");
     public final static Pattern BLANKS = Pattern.compile("\\s+");
     public final static Pattern COMMA = Pattern.compile(",");
     

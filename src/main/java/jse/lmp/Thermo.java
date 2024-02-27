@@ -6,6 +6,7 @@ import jse.math.table.Table;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,33 +65,30 @@ public class Thermo extends Table {
      * @return 读取得到的 Thermo 对象，如果有多个 thermo 会尝试自动合并
      * @throws IOException 如果读取失败
      */
-    public static Thermo read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
-    static Thermo read_(List<String> aLines) {
+    public static Thermo read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
+    static Thermo read_(BufferedReader aReader) throws IOException {
+        String tLine;
         String[] aHeads = null;
         List<IVector> rDataRows = new ArrayList<>();
         
-        int idx = 0, endIdx;
-        while (idx < aLines.size()) {
+        while (true) {
             // 跳转到 "Per MPI rank memory allocation" 后面的 "Step" 行，也就是需要 thermo 中包含 step 项
-            idx = UT.Text.findLineContaining(aLines, idx, "Per MPI rank memory allocation");
-            idx = UT.Text.findLineContaining(aLines, idx, "Step", true);
-            if (idx >= aLines.size()) break;
+            tLine = UT.Text.findLineContaining(aReader, "Per MPI rank memory allocation"); if (tLine == null) break;
+            tLine = UT.Text.findLineContaining(aReader, "Step", true); if (tLine == null) break;
             // 获取种类的 key
-            String[] tHeads = UT.Text.splitBlank(aLines.get(idx));
+            String[] tHeads = UT.Text.splitBlank(tLine);
             if (aHeads == null) {
                 aHeads = tHeads;
             } else {
                 // 如果不匹配则终止读取
                 if (headMatch(aHeads, tHeads)) break;
             }
-            ++idx;
-            // 获取结束的位置
-            endIdx = UT.Text.findLineContaining(aLines, idx, "Loop time of");
-            // 如果没有找到则跳过最后一行（不完整）
-            if (endIdx >= aLines.size()) endIdx = aLines.size()-1;
             // 直接遍历读取数据
-            for (; idx < endIdx; ++idx) {
-                rDataRows.add(UT.Text.str2data(aLines.get(idx), aHeads.length));
+            while ((tLine = aReader.readLine()) != null) {
+                // 这里直接读取到发生错误自动结束
+                try {rDataRows.add(UT.Text.str2data(tLine, aHeads.length));}
+                catch (Exception e) {break;}
             }
         }
         if (aHeads == null) return null;

@@ -791,6 +791,11 @@ public class UT {
         }
         
         /** useful methods, wrapper of {@link StringGroovyMethods} stuffs */
+        @Contract("null -> true")
+        public static boolean isBlank(final CharSequence self) {
+            if (self == null) return true;
+            return BLANKS_OR_EMPTY.matcher(self).matches();
+        }
         public static boolean containsIgnoreCase(final CharSequence self, final CharSequence searchString) {return StringGroovyMethods.containsIgnoreCase(self, searchString);}
         
         /**
@@ -816,7 +821,7 @@ public class UT {
         }
         public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr) {return findLineContaining(aLines, aStartIdx, aContainStr, false);}
         
-        public static String findLineContaining(BufferedReader aReader, String aContainStr, boolean aIgnoreCase) throws IOException {
+        public static @Nullable String findLineContaining(BufferedReader aReader, String aContainStr, boolean aIgnoreCase) throws IOException {
             String tLine;
             while ((tLine = aReader.readLine()) != null) {
                 if (aIgnoreCase) {
@@ -827,7 +832,8 @@ public class UT {
             }
             return null;
         }
-        public static String findLineContaining(BufferedReader aReader, String aContainStr) throws IOException {return findLineContaining(aReader, aContainStr, false);}
+        public static @Nullable String findLineContaining(BufferedReader aReader, String aContainStr) throws IOException {return findLineContaining(aReader, aContainStr, false);}
+        
         
         /**
          * Splits a string separated by blank characters into multiple strings
@@ -1424,7 +1430,8 @@ public class UT {
             catch (Throwable ignored) {} // 获取失败不抛出错误，在 jse 中获取环境变量都是非必要的
             return null;
         }
-        public static @Contract("_, !null -> !null") String env(String aName, String aDefault) {
+        @Contract("_, !null -> !null")
+        public static String env(String aName, String aDefault) {
             String tEnv = env(aName);
             return tEnv==null ? aDefault : tEnv;
         }

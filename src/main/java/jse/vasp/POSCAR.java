@@ -17,10 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static jse.code.CS.MASS;
 
@@ -378,9 +377,11 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
      * @return 读取得到的 POSCAR 对象，如果文件不完整会直接返回 null
      * @throws IOException 如果读取失败
      */
-    public static POSCAR read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
-    static POSCAR read_(List<String> aLines) {
-        if (aLines.isEmpty()) return null;
+    public static POSCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
+    static POSCAR read_(BufferedReader aReader) throws IOException {
+        String tLine;
+        String[] tTokens;
         
         String aComment;
         IMatrix aBox;
@@ -391,51 +392,52 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         IMatrix aDirect;
         boolean aIsCartesian;
         
-        int idx = 0;
-        String[] tTokens;
         // 第一行为 Comment
-        aComment = aLines.get(idx);
+        tLine = aReader.readLine();
+        aComment = tLine;
         // 读取模拟盒信息
-        ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         aBoxScale = Double.parseDouble(tTokens[0]);
         aBox = Matrices.zeros(3);
-        ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(0).fill(UT.Text.str2data(aLines.get(idx), 3));
-        ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(1).fill(UT.Text.str2data(aLines.get(idx), 3));
-        ++idx; if (idx >= aLines.size()) return null;
-        aBox.row(2).fill(UT.Text.str2data(aLines.get(idx), 3));
+        tLine = aReader.readLine(); if (tLine == null) return null;
+        aBox.row(0).fill(UT.Text.str2data(tLine, 3));
+        tLine = aReader.readLine(); if (tLine == null) return null;
+        aBox.row(1).fill(UT.Text.str2data(tLine, 3));
+        tLine = aReader.readLine(); if (tLine == null) return null;
+        aBox.row(2).fill(UT.Text.str2data(tLine, 3));
         // 读取原子种类（可选）和对应数目的信息
-        ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        boolean tNoAtomType = false;
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         aTypeNames = tTokens;
-        ++idx; if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         try {
         final String[] fTokens = tTokens;
         aAtomNumbers = Vectors.fromInteger(fTokens.length, i -> Integer.parseInt(fTokens[i]));
         } catch (Exception e) {
-        --idx;
+        tNoAtomType = true;
         final String[] fTokens = aTypeNames;
         aAtomNumbers = Vectors.fromInteger(fTokens.length, i -> Integer.parseInt(fTokens[i]));
         aTypeNames = null;
         }
-        // 可选的注释行
-        ++idx; if (idx >= aLines.size()) return null;
-        if (aLines.get(idx).equalsIgnoreCase("Selective dynamics")) {
-        aSelectiveDynamics = true; ++idx; if (idx >= aLines.size()) return null;
+        if (!tNoAtomType) {
+        tLine = aReader.readLine(); if (tLine == null) return null;
         }
-        // 只支持 Direct 和 Cartesian
-        aIsCartesian = aLines.get(idx).equalsIgnoreCase("Cartesian");
-        if (!aIsCartesian && !aLines.get(idx).equalsIgnoreCase("Direct")) {
+        // 可选的注释行
+        if (tLine.equalsIgnoreCase("Selective dynamics")) {
+        aSelectiveDynamics = true; tLine = aReader.readLine(); if (tLine == null) return null;
+        }
+        // 只支持 Direct 和 Cartesian，改为 contains 从而可以支持直接读取 XDATCAR
+        aIsCartesian = UT.Text.containsIgnoreCase(tLine, "Cartesian");
+        if (!aIsCartesian && !UT.Text.containsIgnoreCase(tLine, "Direct")) {
         throw new RuntimeException("Can ONLY read Direct or Cartesian POSCAR");
         }
         // 读取原子数据
-        ++idx; if (idx >= aLines.size()) return null;
         int tAtomNum = aAtomNumbers.sum();
-        if (idx+tAtomNum > aLines.size()) return null;
         aDirect = RowMatrix.zeros(tAtomNum, 3);
         for (IVector tRow : aDirect.rows()) {
-            tRow.fill(UT.Text.str2data(aLines.get(idx), 3));
-            ++idx;
+            tLine = aReader.readLine();
+            if (tLine == null) return null;
+            tRow.fill(UT.Text.str2data(tLine, 3));
         }
         
         // 返回 POSCAR
@@ -447,24 +449,24 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    @SuppressWarnings("SuspiciousIndentAfterControlStatement")
-    public void write(String aFilePath) throws IOException {
-        List<String> lines = new ArrayList<>();
-        
-        lines.add(mComment==null ? DEFAULT_COMMENT : mComment);
-        lines.add(String.valueOf(mBoxScale));
-        lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
-        lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
-        lines.add(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
-        if (mTypeNames!=null && mTypeNames.length!=0)
-        lines.add(String.join(" ", AbstractCollections.map(mTypeNames, type -> String.format("%6s", type))));
-        lines.add(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number))));
-        if (mSelectiveDynamics)
-        lines.add("Selective dynamics");
-        lines.add(mIsCartesian ? "Cartesian" : "Direct");
-        for (IVector subDirect : mDirect.rows())
-        lines.add(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
-        
-        UT.IO.write(aFilePath, lines);
+    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+        aWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
+        aWriteln.writeln(String.valueOf(mBoxScale));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
+        if (mTypeNames!=null && mTypeNames.length!=0) {
+        aWriteln.writeln(String.join(" ", AbstractCollections.map(mTypeNames, type -> String.format("%6s", type))));
+        }
+        aWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number))));
+        if (mSelectiveDynamics) {
+        aWriteln.writeln("Selective dynamics");
+        }
+        aWriteln.writeln(mIsCartesian ? "Cartesian" : "Direct");
+        for (IVector subDirect : mDirect.rows()) {
+        aWriteln.writeln(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
+        }
     }
 }

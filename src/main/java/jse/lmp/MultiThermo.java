@@ -7,6 +7,7 @@ import jse.math.table.ITable;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -136,33 +137,27 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
      * @return 读取得到的 Thermo 对象，如果文件不完整的帧会尝试读取已有的部分
      * @throws IOException 如果读取失败
      */
-    public static MultiThermo read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
-    static MultiThermo read_(List<String> aLines) {
+    public static MultiThermo read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
+    static MultiThermo read_(BufferedReader aReader) throws IOException {
+        String tLine;
         List<ITable> rThermo = new ArrayList<>();
         
-        int idx = 0, endIdx;
-        String[] tTokens;
-        while (idx < aLines.size()) {
+        while (true) {
             // 跳转到 "Per MPI rank memory allocation" 后面的 "Step" 行，也就是需要 thermo 中包含 step 项
-            idx = UT.Text.findLineContaining(aLines, idx, "Per MPI rank memory allocation");
-            idx = UT.Text.findLineContaining(aLines, idx, "Step", true);
-            if (idx >= aLines.size()) break;
+            tLine = UT.Text.findLineContaining(aReader, "Per MPI rank memory allocation"); if (tLine == null) break;
+            tLine = UT.Text.findLineContaining(aReader, "Step", true); if (tLine == null) break;
             // 获取种类的 key
-            tTokens = UT.Text.splitBlank(aLines.get(idx));
-            String[] tHeads = tTokens;
-            ++idx;
-            // 获取结束的位置
-            endIdx = UT.Text.findLineContaining(aLines, idx, "Loop time of");
-            // 如果没有找到则跳过最后一行（不完整）
-            if (endIdx >= aLines.size()) endIdx = aLines.size()-1;
-            ITable rTable = Tables.zeros(endIdx-idx, tHeads);
-            // 读取数据
-            for (IVector tRow : rTable.rows()) {
-                tRow.fill(UT.Text.str2data(aLines.get(idx), tHeads.length));
-                ++idx;
+            String[] tHeads = UT.Text.splitBlank(tLine);
+            // 直接遍历读取数据
+            List<IVector> rDataRows = new ArrayList<>();
+            while ((tLine = aReader.readLine()) != null) {
+                // 这里直接读取到发生错误自动结束
+                try {rDataRows.add(UT.Text.str2data(tLine, tHeads.length));}
+                catch (Exception e) {break;}
             }
             // 创建 Table 并附加到 rThermo 中
-            rThermo.add(rTable);
+            rThermo.add(Tables.fromRows(rDataRows, tHeads));
         }
         return new MultiThermo(rThermo);
     }

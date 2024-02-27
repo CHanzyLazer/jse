@@ -18,8 +18,11 @@ import jse.vasp.IVaspCommonData;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static jse.code.CS.*;
 
@@ -325,156 +328,171 @@ public class Lmpdat extends AbstractSettableAtomData {
     /// 文件读写
     /**
      * 从 lammps 输出的 data 文件中读取来实现初始化
+     * <p>
+     * 目前只支持单原子数据
      * @param aFilePath lammps 输出的 data 文件路径
      * @return 读取得到的 Lmpdat 对象，如果文件不完整会直接返回 null
      * @throws IOException 如果读取失败
      */
-    public static Lmpdat read(String aFilePath) throws IOException {return read_(UT.IO.readAllLines(aFilePath));}
-    static Lmpdat read_(List<String> aLines) {
-        if (aLines.isEmpty()) return null;
+    public static Lmpdat read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
+    static Lmpdat read_(BufferedReader aReader) throws IOException {
+        String tLine;
+        String[] tTokens;
         
         int tAtomNum;
         int aAtomTypeNum;
         Box aBox;
-        IVector aMasses;
-        IIntVector aAtomID;
-        IIntVector aAtomType;
-        IMatrix aAtomXYZ;
-        IMatrix aVelocities;
+        @Nullable IVector aMasses = null;
+        IIntVector aAtomID = null;
+        IIntVector aAtomType = null;
+        IMatrix aAtomXYZ = null;
+        @Nullable IMatrix aVelocities = null;
         
-        int idx = 0; int end;
-        int tIdx; String[] tTokens;
-        // 跳过第一行
-        ++idx;
-        // 读取原子数目
-        idx = UT.Text.findLineContaining(aLines, idx, "atoms", true); if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        // 跳过第一行描述
+        aReader.readLine();
+        // 读取原子数目（中间存在空行以及可能存在的不支持的信息）
+        tLine = UT.Text.findLineContaining(aReader, "atoms", true); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         tAtomNum = Integer.parseInt(tTokens[0]);
-        // 读取原子种类数目
-        idx = UT.Text.findLineContaining(aLines, idx, "atom types", true); if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        // 读取原子种类数目（中间存在可选空行以及可能存在的不支持的信息）
+        tLine = UT.Text.findLineContaining(aReader, "atom types", true); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         aAtomTypeNum = Integer.parseInt(tTokens[0]);
-        // 读取模拟盒信息
-        idx = UT.Text.findLineContaining(aLines, idx, "xlo xhi", true); if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        // 读取模拟盒信息（中间存在空行以及可能存在的不支持的信息）
+        tLine = UT.Text.findLineContaining(aReader, "xlo xhi", true); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         double aXlo = Double.parseDouble(tTokens[0]); double aXhi = Double.parseDouble(tTokens[1]);
-        idx = UT.Text.findLineContaining(aLines, idx, "ylo yhi", true); if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        tLine = UT.Text.findLineContaining(aReader, "ylo yhi", true); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         double aYlo = Double.parseDouble(tTokens[0]); double aYhi = Double.parseDouble(tTokens[1]);
-        idx = UT.Text.findLineContaining(aLines, idx, "zlo zhi", true); if (idx >= aLines.size()) return null; tTokens = UT.Text.splitBlank(aLines.get(idx));
+        tLine = UT.Text.findLineContaining(aReader, "zlo zhi", true); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
         double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]);
-        // 兼容可能的斜方模拟盒
-        tIdx = UT.Text.findLineContaining(aLines, idx, "xy xz yz", true);
-        if (tIdx < aLines.size()) {
-            idx = tIdx;
-            tTokens = UT.Text.splitBlank(aLines.get(idx));
+        // 兼容可能的斜方模拟盒，直接在下一行
+        tLine = aReader.readLine();
+        if (UT.Text.containsIgnoreCase(tLine, "xy xz yz")) {
+            tTokens = UT.Text.splitBlank(tLine);
             aBox = new BoxPrism(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi, Double.parseDouble(tTokens[0]), Double.parseDouble(tTokens[1]), Double.parseDouble(tTokens[2]));
+            aReader.readLine(); // 跳过空行
         } else {
             aBox = new Box(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
         }
-        
-        // 读取可能的质量信息
-        tIdx = UT.Text.findLineContaining(aLines, idx, "Masses", true); ++tIdx;
-        if (tIdx < aLines.size()) {
-            idx = tIdx;
-            ++idx; // 中间有一个空行
-            end = idx+aAtomTypeNum;
-            if (end > aLines.size()) return null;
-            aMasses = Vectors.zeros(aAtomTypeNum);
-            for (; idx < end; ++idx) {
-                tTokens = UT.Text.splitBlank(aLines.get(idx));
-                aMasses.set(Integer.parseInt(tTokens[0])-1, Double.parseDouble(tTokens[1]));
+        // 读取任意属性直到结束
+        while ((tLine = aReader.readLine()) != null) {
+            if (aMasses==null && UT.Text.containsIgnoreCase(tLine, "Masses")) {
+                aMasses = Vectors.zeros(aAtomTypeNum);
+                readMasses_(aReader, aMasses);
+            } else
+            if (aAtomID==null && UT.Text.containsIgnoreCase(tLine, "Atoms")) {
+                aAtomID = IntVector.zeros(tAtomNum);
+                aAtomType = IntVector.zeros(tAtomNum);
+                aAtomXYZ = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_XYZ.length);
+                readAtoms_(aReader, aAtomID, aAtomType, aAtomXYZ);
+            } else
+            if (aAtomID!=null && aVelocities==null && UT.Text.containsIgnoreCase(tLine, "Velocities")) {
+                aVelocities = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length);
+                readVelocities_(aReader, aAtomID, aVelocities);
+            } else {
+                readElse_(aReader);
             }
-        } else {
-            aMasses = null;
         }
-        
-        // 获取原子坐标信息
-        idx = UT.Text.findLineContaining(aLines, idx, "Atoms", true); ++idx;
-        ++idx; // 中间有一个空行
-        end = idx+tAtomNum;
-        if (end > aLines.size()) return null;
-        aAtomID = IntVector.zeros(tAtomNum);
-        aAtomType = IntVector.zeros(tAtomNum);
-        aAtomXYZ = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_XYZ.length);
-        // 和坐标排序一致的顺序来存储
-        for (int row = 0; row < tAtomNum; ++row) {
-            IVector tIDTypeXYZ = UT.Text.str2data(aLines.get(idx), STD_ATOM_DATA_KEYS.length);
-            aAtomID.set(row, (int)tIDTypeXYZ.get(STD_ID_COL));
-            aAtomType.set(row, (int)tIDTypeXYZ.get(STD_TYPE_COL));
-            aAtomXYZ.set(row, XYZ_X_COL, tIDTypeXYZ.get(STD_X_COL));
-            aAtomXYZ.set(row, XYZ_Y_COL, tIDTypeXYZ.get(STD_Y_COL));
-            aAtomXYZ.set(row, XYZ_Z_COL, tIDTypeXYZ.get(STD_Z_COL));
-            ++idx;
-        }
-        
-        // 读取可能的速度信息
-        tIdx = UT.Text.findLineContaining(aLines, idx, "Velocities", true); ++tIdx;
-        if (tIdx < aLines.size()) {
-            idx = tIdx;
-            // 统计 id 和对应行的映射，用于保证速度顺序和坐标排序一致
-            Map<Integer, Integer> tId2Row = new HashMap<>(tAtomNum);
-            for (int row = 0; row < tAtomNum; ++row) tId2Row.put(aAtomID.get(row), row);
-            // 读取速率
-            ++idx; // 中间有一个空行
-            end = idx+tAtomNum;
-            if (end > aLines.size()) return null;
-            aVelocities = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length);
-            // 和坐标排序一致的顺序来存储
-            for (; idx < end; ++idx) {
-                IVector tVelocity = UT.Text.str2data(aLines.get(idx), LMPDAT_VELOCITY_LENGTH);
-                int tRow = tId2Row.get((int)tVelocity.get(LMPDAT_ID_COL));
-                aVelocities.set(tRow, STD_VX_COL, tVelocity.get(LMPDAT_VX_COL));
-                aVelocities.set(tRow, STD_VY_COL, tVelocity.get(LMPDAT_VY_COL));
-                aVelocities.set(tRow, STD_VZ_COL, tVelocity.get(LMPDAT_VZ_COL));
-            }
-        } else {
-            aVelocities = null;
-        }
-        
+        if (aAtomID == null) return null;
         // 返回 lmpdat
         return new Lmpdat(aAtomTypeNum, aBox, aMasses, aAtomID, aAtomType, aAtomXYZ, aVelocities);
     }
+    /**
+     * 读取特定信息，此时的 aReader 应该在最开头，也就是 {@code aReader.readLine()} 会得到一个空行，并且下一行是数据；
+     * 读取完成后会跳过末尾的空行，也就是 {@code aReader.readLine()} 会得到下一个属性的字符串
+     */
+    private static void readMasses_(BufferedReader aReader, IVector rMasses) throws IOException {
+        aReader.readLine(); // 开头有一个空行
+        final int tAtomTypeNum = rMasses.size();
+        for (int i = 0; i < tAtomTypeNum; ++i) {
+            String tLine = aReader.readLine(); if (tLine == null) return;
+            String[] tTokens = UT.Text.splitBlank(tLine);
+            rMasses.set(Integer.parseInt(tTokens[0])-1, Double.parseDouble(tTokens[1]));
+        }
+        aReader.readLine(); // 跳过空行
+    }
+    private static void readAtoms_(BufferedReader aReader, IIntVector rAtomID, IIntVector rAtomType, IMatrix rAtomXYZ) throws IOException {
+        aReader.readLine(); // 开头有一个空行
+        final int tAtomNum = rAtomID.size();
+        // 和坐标排序一致的顺序来存储（不考虑 molecule-tag，q，nx，ny，nz）
+        for (int i = 0; i < tAtomNum; ++i) {
+            String tLine = aReader.readLine(); if (tLine == null) return;
+            IVector tIDTypeXYZ = UT.Text.str2data(tLine, STD_ATOM_DATA_KEYS.length);
+            rAtomID.set(i, (int)tIDTypeXYZ.get(STD_ID_COL));
+            rAtomType.set(i, (int)tIDTypeXYZ.get(STD_TYPE_COL));
+            rAtomXYZ.set(i, XYZ_X_COL, tIDTypeXYZ.get(STD_X_COL));
+            rAtomXYZ.set(i, XYZ_Y_COL, tIDTypeXYZ.get(STD_Y_COL));
+            rAtomXYZ.set(i, XYZ_Z_COL, tIDTypeXYZ.get(STD_Z_COL));
+        }
+        aReader.readLine(); // 跳过空行
+    }
+    private static void readVelocities_(BufferedReader aReader, IIntVector aAtomID, IMatrix rVelocities) throws IOException {
+        aReader.readLine(); // 开头有一个空行
+        final int tAtomNum = rVelocities.rowNumber();
+        // 统计 id 和对应行的映射，用于保证速度顺序和坐标排序一致
+        Map<Integer, Integer> tId2Row = new HashMap<>(tAtomNum);
+        for (int i = 0; i < tAtomNum; ++i) tId2Row.put(aAtomID.get(i), i);
+        // 和坐标排序一致的顺序来存储
+        for (int i = 0; i < tAtomNum; ++i) {
+            String tLine = aReader.readLine(); if (tLine == null) return;
+            IVector tVelocity = UT.Text.str2data(tLine, LMPDAT_VELOCITY_LENGTH);
+            int tRow = tId2Row.get((int)tVelocity.get(LMPDAT_ID_COL));
+            rVelocities.set(tRow, STD_VX_COL, tVelocity.get(LMPDAT_VX_COL));
+            rVelocities.set(tRow, STD_VY_COL, tVelocity.get(LMPDAT_VY_COL));
+            rVelocities.set(tRow, STD_VZ_COL, tVelocity.get(LMPDAT_VZ_COL));
+        }
+        aReader.readLine(); // 跳过空行
+    }
+    private static void readElse_(BufferedReader aReader) throws IOException {
+        aReader.readLine(); // 开头有一个空行
+        // 其余不支持的情况直接跳过中间的非空行即可
+        String tLine;
+        while ((tLine = aReader.readLine()) != null) {
+            if (UT.Text.isBlank(tLine)) return;
+        }
+    }
+    
     
     /**
      * 输出成 lammps 能够读取的 data 文件
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    @SuppressWarnings("SuspiciousIndentAfterControlStatement")
-    public void write(String aFilePath) throws IOException {
-        List<String> lines = new ArrayList<>();
-        
-        lines.add("LAMMPS data file generated by jse");
-        lines.add("");
-        lines.add(String.format("%6d atoms", mAtomNum));
-        lines.add("");
-        lines.add(String.format("%6d atom types", mAtomTypeNum));
-        lines.add("");
-        lines.add(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
-        lines.add(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
-        lines.add(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
+    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+        aWriteln.writeln("LAMMPS data file generated by jse");
+        aWriteln.writeln("");
+        aWriteln.writeln(String.format("%6d atoms", mAtomNum));
+        aWriteln.writeln("");
+        aWriteln.writeln(String.format("%6d atom types", mAtomTypeNum));
+        aWriteln.writeln("");
+        aWriteln.writeln(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
+        aWriteln.writeln(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
+        aWriteln.writeln(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
         if (mBox instanceof BoxPrism) {
         BoxPrism tBox = (BoxPrism)mBox;
-        lines.add(String.format("%15.10g %15.10g %15.10g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
+        aWriteln.writeln(String.format("%15.10g %15.10g %15.10g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
         }
         if (mMasses != null) {
-        lines.add("");
-        lines.add("Masses");
-        lines.add("");
-        for (int i = 0; i < mAtomTypeNum; ++i)
-        lines.add(String.format("%6d %15.10g", i+1, mMasses.get(i)));
+        aWriteln.writeln("");
+        aWriteln.writeln("Masses");
+        aWriteln.writeln("");
+        for (int i = 0; i < mAtomTypeNum; ++i) {
+        aWriteln.writeln(String.format("%6d %15.10g", i+1, mMasses.get(i)));
+        }}
+        aWriteln.writeln("");
+        aWriteln.writeln("Atoms # atomic");
+        aWriteln.writeln("");
+        for (int i = 0; i < atomNumber(); ++i) {
+        aWriteln.writeln(String.format("%6d %6d %15.10g %15.10g %15.10g", mAtomID.get(i), mAtomType.get(i), mAtomXYZ.get(i, XYZ_X_COL), mAtomXYZ.get(i, XYZ_Y_COL), mAtomXYZ.get(i, XYZ_Z_COL)));
         }
-        lines.add("");
-        lines.add("Atoms");
-        lines.add("");
-        for (int i = 0; i < atomNumber(); ++i)
-        lines.add(String.format("%6d %6d %15.10g %15.10g %15.10g", mAtomID.get(i), mAtomType.get(i), mAtomXYZ.get(i, XYZ_X_COL), mAtomXYZ.get(i, XYZ_Y_COL), mAtomXYZ.get(i, XYZ_Z_COL)));
         if (mVelocities != null) {
-        lines.add("");
-        lines.add("Velocities");
-        lines.add("");
-        for (int i = 0; i < atomNumber(); ++i)
-        lines.add(String.format("%6d %15.10g %15.10g %15.10g", mAtomID.get(i), mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL)));
-        }
-        
-        UT.IO.write(aFilePath, lines);
+        aWriteln.writeln("");
+        aWriteln.writeln("Velocities");
+        aWriteln.writeln("");
+        for (int i = 0; i < atomNumber(); ++i) {
+        aWriteln.writeln(String.format("%6d %15.10g %15.10g %15.10g", mAtomID.get(i), mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL)));
+        }}
     }
     
     

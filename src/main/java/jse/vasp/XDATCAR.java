@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -359,6 +358,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     public static XDATCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static XDATCAR read_(BufferedReader aReader) throws IOException {
+        String tLine;
+        String[] tTokens;
+        
         // 先读通用信息
         String aComment;
         IMatrix aBox;
@@ -367,8 +369,6 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         IIntVector aAtomNumbers;
         boolean aIsCartesian;
         
-        String tLine;
-        String[] tTokens;
         // 第一行为 Comment
         tLine = aReader.readLine();
         aComment = tLine;
@@ -428,31 +428,29 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     
     /**
      * 输出成 vasp 格式的 XDATCAR 文件，可以供 OVITO 等软件读取
-     * <p>
-     * 改为 {@link BufferedWriter} 而不是 {@code List<String>} 来避免过多内存占用
      * @author liqa
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {
-        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {
-            // 先输出通用信息
-            tWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
-            tWriteln.writeln(String.valueOf(mBoxScale));
-            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
-            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
-            tWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
-            if (mTypeNames!=null && mTypeNames.length!=0) {
-            tWriteln.writeln(String.join(" ", AbstractCollections.map(mTypeNames, type -> String.format("%6s", type))));
-            }
-            tWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number))));
-            // 再输出原子数据
-            for (int i = 0; i < mList.size(); ++i) {
-            tWriteln.writeln((mIsCartesian ? "Cartesian" : "Direct") + " configuration= " + (i+1));
-            for (IVector subDirect : mList.get(i).rows()) {
-            tWriteln.writeln(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
-            }}
+    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+        // 先输出通用信息
+        aWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
+        aWriteln.writeln(String.valueOf(mBoxScale));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(0, 0), mBox.get(0, 1), mBox.get(0, 2)));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(1, 0), mBox.get(1, 1), mBox.get(1, 2)));
+        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.get(2, 0), mBox.get(2, 1), mBox.get(2, 2)));
+        if (mTypeNames!=null && mTypeNames.length!=0) {
+        aWriteln.writeln(String.join(" ", AbstractCollections.map(mTypeNames, type -> String.format("%6s", type))));
         }
+        aWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number))));
+        // 再输出原子数据
+        for (int i = 0; i < mList.size(); ++i) {
+        aWriteln.writeln((mIsCartesian ? "Cartesian" : "Direct") + " configuration= " + (i+1));
+        for (IVector subDirect : mList.get(i).rows()) {
+        aWriteln.writeln(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
+        }}
     }
     
     
