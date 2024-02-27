@@ -54,7 +54,7 @@ public class Main {
                 // 默认执行脚本文件
                 String[] tArgs = new String[aArgs.length-2];
                 if (tArgs.length > 0) System.arraycopy(aArgs, 2, tArgs, 0, tArgs.length);
-                SP.Groovy.run(tValue, tArgs);
+                SP.runScript(tValue, tArgs);
                 return;
             }
             // 一般行为
@@ -79,7 +79,15 @@ public class Main {
                     return;
                 }
                 case "-f": case "-file": {
+                    SP.runScript(tValue, tArgs);
+                    return;
+                }
+                case "-groovy": {
                     SP.Groovy.runScript(tValue, tArgs);
+                    return;
+                }
+                case "-python": {
+                    SP.Python.runScript(tValue, tArgs);
                     return;
                 }
                 case "-i": case "-invoke": {
@@ -124,15 +132,17 @@ public class Main {
     
     private static void printHelp() {
         System.out.println("Usage:    jse [-option] value [args...]");
-        System.out.println("Such as:  jse path/to/script.groovy [argsOfGroovyScript...]");
+        System.out.println("Such as:  jse path/to/script.groovy [args...]");
         System.out.println("Or:       jse -t \"println('hello world')\"");
         System.out.println();
         System.out.println("The options can be:");
         System.out.println("    -t -text      Run the groovy text script");
-        System.out.println("    -f -file      Run the groovy file script (default behavior when left blank)");
+        System.out.println("    -f -file      Run the groovy/python file script (default behavior when left blank)");
         System.out.println("    -i -invoke    Invoke the internal java static method directly");
         System.out.println("    -v -version   Print version number");
         System.out.println("    -? -help      Print help message");
+        System.out.println("    -groovy       Run the groovy file script");
+        System.out.println("    -python       Run the python file script");
         System.out.println();
         System.out.println("You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar");
     }

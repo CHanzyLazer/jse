@@ -1418,6 +1418,8 @@ public class UT {
             }
             return WORKING_DIR_PATH.resolve(aPath);
         }
+        public static boolean isAbsolutePath(String aPath) {return isAbsolutePath(Paths.get(aPath));}
+        public static boolean isAbsolutePath(Path aPath) {return aPath.isAbsolute();}
         
         static {CS.Exec.InitHelper.init();}
     }

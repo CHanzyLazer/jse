@@ -38,6 +38,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,63 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 public class SP {
     private SP() {}
     
+    private final static String GROOVY_SP_DIR = "script/groovy/";
+    private final static String PYTHON_SP_DIR = "script/python/";
+    
+    /** 一般的 aScriptPath 合法化，返回 null 表示没有找到文件 */
+    static @Nullable String findValidScriptPath(String aScriptPath, String aExtension, String aScriptDir) {
+        aScriptDir = UT.IO.toInternalValidDir(aScriptDir);
+        // 如果不是指定后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
+        if (!aScriptPath.endsWith(aExtension)) {
+            @Nullable String tPath = findValidScriptPath_(aScriptPath+aExtension, aScriptDir);
+            if (tPath != null) return tPath;
+        }
+        @Nullable String tPath = findValidScriptPath_(aScriptPath, aScriptDir);
+        return tPath;
+    }
+    private static @Nullable String findValidScriptPath_(String aScriptPath, String aScriptDir) {
+        // 都转为绝对路径避免意料外的问题
+        String tPath = UT.IO.toAbsolutePath(aScriptPath);
+        // 首先如果此文件存在则直接返回
+        if (UT.IO.isFile(tPath)) return tPath;
+        // 如果是绝对路径则不再考虑增加 aScriptDir 的情况
+        if (UT.IO.isAbsolutePath(aScriptPath)) return null;
+        // 否则增加 aScriptDir 后再次检测
+        tPath = UT.IO.toAbsolutePath(aScriptDir+aScriptPath);
+        if (UT.IO.isFile(tPath)) return tPath;
+        // 否则返回 null
+        return null;
+    }
+    
+    
+    /** 运行任意的脚本，自动检测脚本类型（根据后缀） */
+    public static void run(String aScriptPath, String... aArgs) throws Exception {runScript(aScriptPath, aArgs);}
+    public static void runScript(String aScriptPath, String... aArgs) throws Exception {
+        // 有后缀的情况，直接执行
+        if (aScriptPath.endsWith(".groovy")) {
+            Groovy.runScript(aScriptPath, aArgs);
+            return;
+        } else
+        if (aScriptPath.endsWith(".py")) {
+            Python.runScript(aScriptPath, aArgs);
+            return;
+        }
+        // 没有后缀的情况，优先认为是 groovy 脚本
+        @Nullable String
+        tPath = findValidScriptPath(aScriptPath, ".groovy", GROOVY_SP_DIR);
+        if (tPath != null) {
+            Groovy.runScript(aScriptPath, aArgs);
+            return;
+        }
+        tPath = findValidScriptPath(aScriptPath, ".py", PYTHON_SP_DIR);
+        if (tPath != null) {
+            Python.runScript(aScriptPath, aArgs);
+            return;
+        }
+        throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+    }
+    
+    
     /** Groovy 脚本运行支持 */
     public static class Groovy {
         /** Wrapper of {@link GroovyObject} for matlab usage */
@@ -74,28 +132,11 @@ public class SP {
             public static Object of(Object aObj) {return (!(aObj instanceof GroovyObjectWrapper) && (aObj instanceof GroovyObject)) ? (new GroovyObjectWrapper((GroovyObject)aObj)) : aObj;}
         }
         
-        private final static String GROOVY_SP_DIR = "script/groovy/";
-        /** 将 aScriptPath 转换成 GroovyCodeSource，现在可以省略掉 script/groovy/ 以及后缀 */
+        /** 将 aScriptPath 转换成 File，现在可以省略掉 script/groovy/ 以及后缀 */
         private static File toSourceFile(String aScriptPath) throws IOException {
-            // 如果不是 .groovy 后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
-            if (!aScriptPath.endsWith(".groovy")) {
-                @Nullable File tFile = toScriptFile_(aScriptPath+".groovy");
-                if (tFile != null) return tFile;
-            }
-            @Nullable File tFile = toScriptFile_(aScriptPath);
-            if (tFile == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
-            return tFile;
-        }
-        /** 返回 null 表示没有找到文件 */
-        private static @Nullable File toScriptFile_(String aScriptPath) {
-            // 首先如果此文件存在则直接返回
-            File tFile = UT.IO.toFile(aScriptPath);
-            if (tFile.isFile()) return tFile;
-            // 否则增加 script/groovy/ 后再次检测
-            tFile = UT.IO.toFile(GROOVY_SP_DIR+aScriptPath);
-            if (tFile.isFile()) return tFile;
-            // 否则返回 null
-            return null;
+            @Nullable String tPath = findValidScriptPath(aScriptPath, ".groovy", GROOVY_SP_DIR);
+            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+            return UT.IO.toFile(tPath);
         }
         private static GroovyClassLoader CLASS_LOADER = null;
         
@@ -328,29 +369,11 @@ public class SP {
         private final static String PYLIB_DIR = JAR_DIR+"python/";
         private final static String JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(VERSION, JEP_VERSION) + "/";
         private final static String JEP_LIB_PATH;
-        private final static String PYTHON_SP_DIR = "script/python/";
         /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
         private static String validScriptPath(String aScriptPath) throws IOException {
-            // 如果不是 .py 后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
-            if (!aScriptPath.endsWith(".py")) {
-                @Nullable String tPath = validScriptPath_(aScriptPath+".py");
-                if (tPath != null) return tPath;
-            }
-            @Nullable String tPath = validScriptPath_(aScriptPath);
+            @Nullable String tPath = findValidScriptPath(aScriptPath, ".py", PYTHON_SP_DIR);
             if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
             return tPath;
-        }
-        /** 返回 null 表示没有找到文件 */
-        private static @Nullable String validScriptPath_(String aScriptPath) {
-            // 都转为绝对路径避免意料外的问题
-            String tPath = UT.IO.toAbsolutePath(aScriptPath);
-            // 首先如果此文件存在则直接返回
-            if (UT.IO.isFile(tPath)) return tPath;
-            // 否则增加 script/python/ 后再次检测
-            tPath = UT.IO.toAbsolutePath(PYTHON_SP_DIR+aScriptPath);
-            if (UT.IO.isFile(tPath)) return tPath;
-            // 否则返回 null
-            return null;
         }
         /** 一样这里统一使用全局的一个解释器 */
         private static Interpreter JEP_INTERP = null;
@@ -359,12 +382,16 @@ public class SP {
         public synchronized static void runText(String aText) throws JepException {JEP_INTERP.exec(aText);}
         /** Python 还可以使用 getValue 来获取变量以及 setValue 设置变量 */
         public synchronized static Object getValue(String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName);}
-        public synchronized static void setValue(String aValueName, Object aValue) throws JepException {JEP_INTERP.set(aValueName, aValue);}
+        public synchronized static void setValue(String aValueName, Object aValue) throws JepException {JEP_INTERP.set("_", aValue); JEP_INTERP.exec(aValueName + " = _");}
         public synchronized static Object get(String aValueName) throws JepException {return getValue(aValueName);}
         public synchronized static void set(String aValueName, Object aValue) throws JepException {setValue(aValueName, aValue);}
         /** 运行脚本文件 */
-        public synchronized static void run(String aScriptPath) throws JepException, IOException {runScript(aScriptPath);}
-        public synchronized static void runScript(String aScriptPath) throws JepException, IOException {JEP_INTERP.runScript(validScriptPath(aScriptPath));}
+        public synchronized static void run(String aScriptPath, String... aArgs) throws JepException, IOException {runScript(aScriptPath, aArgs);}
+        public synchronized static void runScript(String aScriptPath, String... aArgs) throws JepException, IOException {
+            if (aArgs==null || aArgs.length==0) setValue("sys.argv", Collections.singleton(aScriptPath));
+            else setValue("sys.argv", AbstractCollections.merge(aScriptPath, aArgs));
+            JEP_INTERP.runScript(validScriptPath(aScriptPath));
+        }
         /** 调用方法，python 中需要结合 import 使用 */
         @SuppressWarnings("unchecked")
         public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {
@@ -440,6 +467,7 @@ public class SP {
         private synchronized static void initInterpreter_() {
             JEP_INTERP = new SharedInterpreter();
             JEP_INTERP.exec("from importlib import import_module");
+            JEP_INTERP.exec("import sys");
         }
         
         
