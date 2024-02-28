@@ -1,12 +1,10 @@
 package jsex.rareevent.lmp;
 
 import jse.atom.IAtomData;
-import jse.cache.IntVectorCache;
-import jse.cache.MatrixCache;
 import jse.code.collection.NewCollections;
+import jse.lmp.LmpException;
 import jse.lmp.Lmpdat;
 import jse.lmp.NativeLmp;
-import jse.math.matrix.IMatrix;
 import jse.math.vector.IVector;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.LocalRandom;
@@ -66,7 +64,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
      * @param aTimestep 每步的实际时间步长，影响输入文件和统计使用的时间，默认为 0.002 (ps)
      * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 10
      */
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) throws NativeLmp.Error {
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) throws LmpException {
         // 基本参数存储
         mInitPoints = NewCollections.map(aInitAtomDataList, data -> Lmpdat.fromAtomData(data).setNoVelocities()); // 初始点也需要移除速度，保证会从不同路径开始
         mMesses = aMesses.copy();
@@ -127,19 +125,19 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
                         mLmp.command(String.format("velocity        all create %f %d dist gaussian mom yes rot yes", mTemperature, mRNG.nextInt(MAX_SEED)+1));
                     }
                     mLmp.command(String.format("fix             1 all npt temp %f %f 0.2 iso 0.0 0.0 2", mTemperature, mTemperature));
-                } catch (NativeLmp.Error e) {
+                } catch (LmpException e) {
                     throw new RuntimeException(e);
                 }
             }
             try {mLmp.command("run "+mDumpStep);}
-            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
+            catch (LmpException e) {throw new RuntimeException(e);}
             // 由于这里底层的 NativeLmp 获取的 Lmpdat 也是使用了缓存，因此对于上一步的 mNext 可以归还；
             // 当然一般情况下获取的 next 会在外部保存，不能归还，因此默认关闭
             if (mReturnLast && mNextIsFromNativeLmp) {
                 mNext.returnToCache();
             }
             try {mNext = mLmp.lmpdat(true); mNextIsFromNativeLmp = true;}
-            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
+            catch (LmpException e) {throw new RuntimeException(e);}
             return mNext;
         }
         
@@ -149,7 +147,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
             if (mIsFirst) throw new IllegalStateException();
             if (mLmpNeedInit) return 0.0;
             try {return mLmp.thermoOf("step") * mTimestep;}
-            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
+            catch (LmpException e) {throw new RuntimeException(e);}
         }
         
         /** 获取当前位置点的参数 λ */
@@ -166,7 +164,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
             if (!mDead) {
                 mDead = true;
                 try {mLmp.clear();}
-                catch (NativeLmp.Error ignored) {}
+                catch (LmpException ignored) {}
                 mUsing = false;
             }
         }
@@ -176,5 +174,5 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
     
     
     public boolean threadValid() {return mLmp.threadValid();}
-    public void checkThread() throws NativeLmp.Error {mLmp.checkThread();}
+    public void checkThread() throws LmpException {mLmp.checkThread();}
 }

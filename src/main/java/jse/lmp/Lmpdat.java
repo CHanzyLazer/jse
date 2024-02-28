@@ -14,6 +14,7 @@ import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vectors;
 import jse.parallel.MPI;
+import jse.parallel.MPIException;
 import jse.vasp.IVaspCommonData;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -512,7 +513,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     /** 为了使用简单并且避免 double 转 long 造成的信息损耗，这里统一用 long[] 来传输信息 */
     private final static ThreadLocalObjectCachePool<long[]> LMP_INFO_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new long[LMP_INFO_LEN]);
     /** 专门的方法用来收发 Lmpdat */
-    public static void send(Lmpdat aLmpdat, int aDest, MPI.Comm aComm) throws MPI.Error {
+    public static void send(Lmpdat aLmpdat, int aDest, MPI.Comm aComm) throws MPIException {
         // 暂不支持正交盒以外的类型的发送
         if (aLmpdat.isPrism()) throw new RuntimeException("send is temporarily NOT support Prism Lmpdat");
         // 获取必要信息
@@ -548,7 +549,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             aComm.send(tVelocitiesIsCol ? aLmpdat.mVelocities.asVecCol() : aLmpdat.mVelocities.asVecRow(), aDest, DATA_VELOCITIES);
         }
     }
-    public static Lmpdat recv(int aSource, MPI.Comm aComm) throws MPI.Error {
+    public static Lmpdat recv(int aSource, MPI.Comm aComm) throws MPIException {
         // 同样先接收必要信息，[AtomNum | AtomTypeNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, HasVelocities | HasMass]
         long[] tLmpdatInfo = LMP_INFO_CACHE.getObject();
         try {
@@ -590,7 +591,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             LMP_INFO_CACHE.returnObject(tLmpdatInfo);
         }
     }
-    public static Lmpdat bcast(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPI.Error {
+    public static Lmpdat bcast(Lmpdat aLmpdat, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
             // 暂不支持正交盒以外的类型的发送
             if (aLmpdat.isPrism()) throw new RuntimeException("bcast is temporarily NOT support Prism Lmpdat");

@@ -399,7 +399,7 @@ inline void freeStrBuf(char **aStrBuf, int aLen) {
 
 /** exception stuffs */
 inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
-    const char *tClazzName = "jse/parallel/MPI$Error";
+    const char *tClazzName = "jse/parallel/MPIException";
     const char *tInitSig = "(ILjava/lang/String;)V";
 #ifdef __cplusplus
     // find class runtime due to asm
@@ -441,7 +441,7 @@ inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) 
 }
 
 inline void throwExceptionLMP(JNIEnv *aEnv, const char *aErrStr) {
-    const char *tClazzName = "jse/lmp/NativeLmp$Error";
+    const char *tClazzName = "jse/lmp/LmpException";
     const char *tInitSig = "(Ljava/lang/String;)V";
 #ifdef __cplusplus
     // find class runtime due to asm

@@ -11,6 +11,7 @@ import jse.math.vector.ILongVector;
 import jse.math.vector.ILongVectorGetter;
 import jse.math.vector.RefLongVector;
 import jse.parallel.MPI;
+import jse.parallel.MPIException;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -234,17 +235,17 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
         , LAMMPSTRJ_SIZE = 219
         ;
     /** send recv bcast 做简单实现，将 Lammpstrj 看作一个整体 */
-    public static void send(Lammpstrj aLammpstrj, int aDest, MPI.Comm aComm) throws MPI.Error {
+    public static void send(Lammpstrj aLammpstrj, int aDest, MPI.Comm aComm) throws MPIException {
         aComm.sendI(aLammpstrj.size(), aDest, LAMMPSTRJ_SIZE);
         for (SubLammpstrj tSubLammpstrj : aLammpstrj.mList) SubLammpstrj.send(tSubLammpstrj, aDest, aComm);
     }
-    public static Lammpstrj recv(int aSource, MPI.Comm aComm) throws MPI.Error {
+    public static Lammpstrj recv(int aSource, MPI.Comm aComm) throws MPIException {
         final int tSize = aComm.recvI(aSource, LAMMPSTRJ_SIZE);
         List<SubLammpstrj> rLammpstrj = new ArrayList<>(tSize);
         for (int i = 0; i < tSize; ++i) rLammpstrj.add(SubLammpstrj.recv(aSource, aComm));
         return new Lammpstrj(rLammpstrj);
     }
-    public static Lammpstrj bcast(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+    public static Lammpstrj bcast(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
             aComm.bcastI(aLammpstrj.size(), aRoot);
             for (SubLammpstrj tSubLammpstrj : aLammpstrj.mList) SubLammpstrj.bcast(tSubLammpstrj, aRoot, aComm);
@@ -257,7 +258,7 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
         }
     }
     /** 对于整个 Lammpstrj 还提供 gather 和 scatter 方法 */
-    public static Lammpstrj gather(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+    public static Lammpstrj gather(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() != aRoot) {
             aComm.sendI(aLammpstrj.size(), aRoot, LAMMPSTRJ_SIZE);
             for (SubLammpstrj tSubLammpstrj : aLammpstrj.mList) SubLammpstrj.send(tSubLammpstrj, aRoot, aComm);
@@ -276,7 +277,7 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
             return new Lammpstrj(rLammpstrj);
         }
     }
-    public static Lammpstrj allgather(Lammpstrj aLammpstrj, MPI.Comm aComm) throws MPI.Error {
+    public static Lammpstrj allgather(Lammpstrj aLammpstrj, MPI.Comm aComm) throws MPIException {
         final int tMe = aComm.rank();
         final int tNP = aComm.size();
         List<SubLammpstrj> rLammpstrj = new ArrayList<>(aLammpstrj.size() * tNP);
@@ -292,7 +293,7 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
         }
         return new Lammpstrj(rLammpstrj);
     }
-    public static Lammpstrj scatter(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+    public static Lammpstrj scatter(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
             List<SubLammpstrj> rLammpstrj = null;
             final int tNP = aComm.size();

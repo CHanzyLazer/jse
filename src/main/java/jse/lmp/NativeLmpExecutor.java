@@ -22,9 +22,9 @@ public class NativeLmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
     private boolean mNoERROutput = false;
     
     public NativeLmpExecutor(NativeLmp aLmp) {mLmp = aLmp;}
-    public NativeLmpExecutor(String[] aArgs, @Nullable MPI.Comm aComm) throws NativeLmp.Error {this(new NativeLmp(aArgs, aComm));}
-    public NativeLmpExecutor(String[] aArgs) throws NativeLmp.Error {this(new NativeLmp(aArgs));}
-    public NativeLmpExecutor() throws NativeLmp.Error {this(new NativeLmp());}
+    public NativeLmpExecutor(String[] aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(new NativeLmp(aArgs, aComm));}
+    public NativeLmpExecutor(String[] aArgs) throws LmpException {this(new NativeLmp(aArgs));}
+    public NativeLmpExecutor() throws LmpException {this(new NativeLmp());}
     /** 是否在关闭此实例时顺便关闭内部 NativeLmp */
     @Override public NativeLmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     /** 是否输出详细的错误信息，这在 MPI 情况下会比较有用 */

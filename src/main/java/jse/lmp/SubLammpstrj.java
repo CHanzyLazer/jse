@@ -10,6 +10,7 @@ import jse.math.table.ITable;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
 import jse.parallel.MPI;
+import jse.parallel.MPIException;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
@@ -435,7 +436,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /** 为了使用简单并且避免 double 转 long 造成的信息损耗，这里统一用 long[] 来传输信息 */
     private final static ThreadLocalObjectCachePool<long[]> LAMMPSTRJ_INFO_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new long[LAMMPSTRJ_INFO_LEN]);
     /** 专门的方法用来收发 SubLammpstrj */
-    public static void send(SubLammpstrj aSubLammpstrj, int aDest, MPI.Comm aComm) throws MPI.Error {
+    public static void send(SubLammpstrj aSubLammpstrj, int aDest, MPI.Comm aComm) throws MPIException {
         // 暂不支持周期边界以外的类型的发送
         if (!aSubLammpstrj.mBoxBounds[0].equals("pp") || !aSubLammpstrj.mBoxBounds[1].equals("pp") || !aSubLammpstrj.mBoxBounds[2].equals("pp")) {
             throw new RuntimeException("send is temporarily support `pp pp pp` BoxBounds only");
@@ -460,7 +461,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         for (String subDataKey : aSubLammpstrj.mAtomData.heads()) aComm.sendStr(subDataKey, aDest, DATA_KEY);
         for (IVector subData : aSubLammpstrj.mAtomData.asMatrix().cols()) aComm.send(subData, aDest, DATA);
     }
-    public static SubLammpstrj recv(int aSource, MPI.Comm aComm) throws MPI.Error {
+    public static SubLammpstrj recv(int aSource, MPI.Comm aComm) throws MPIException {
         // 同样先接收必要信息，[AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep]
         long[] tLammpstrjInfo = LAMMPSTRJ_INFO_CACHE.getObject();
         try {
@@ -485,7 +486,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
             LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
         }
     }
-    public static SubLammpstrj bcast(SubLammpstrj aSubLammpstrj, int aRoot, MPI.Comm aComm) throws MPI.Error {
+    public static SubLammpstrj bcast(SubLammpstrj aSubLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
             // 暂不支持周期边界以外的类型的发送
             if (!aSubLammpstrj.mBoxBounds[0].equals("pp") || !aSubLammpstrj.mBoxBounds[1].equals("pp") || !aSubLammpstrj.mBoxBounds[2].equals("pp")) {

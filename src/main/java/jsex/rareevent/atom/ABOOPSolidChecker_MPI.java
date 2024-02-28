@@ -6,6 +6,7 @@ import jse.math.vector.ILogicalVector;
 import jse.math.vector.IVector;
 import jse.parallel.MPI;
 import jse.cache.VectorCache;
+import jse.parallel.MPIException;
 
 import static jse.code.CS.R_NEAREST_MUL;
 
@@ -37,7 +38,7 @@ public class ABOOPSolidChecker_MPI implements ISolidChecker {
             ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
             VectorCache.returnVec(tConnectCount);
             return tIsSolid;
-        } catch (MPI.Error e) {
+        } catch (MPIException e) {
             throw new RuntimeException(e);
         }
     }

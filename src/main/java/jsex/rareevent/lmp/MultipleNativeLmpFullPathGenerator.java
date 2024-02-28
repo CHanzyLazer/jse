@@ -4,6 +4,7 @@ import jse.atom.IAtomData;
 import jse.code.UT;
 import jse.code.timer.AccumulatedTimer;
 import jse.code.timer.FixedTimer;
+import jse.lmp.LmpException;
 import jse.lmp.Lmpdat;
 import jse.lmp.NativeLmp;
 import jse.math.vector.IVector;
@@ -11,6 +12,7 @@ import jse.math.vector.Vectors;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.MPI;
 import jse.cache.ThreadLocalObjectCachePool;
+import jse.parallel.MPIException;
 import jsex.rareevent.IFullPathGenerator;
 import jsex.rareevent.IParameterCalculator;
 import jsex.rareevent.ITimeAndParameterIterator;
@@ -75,7 +77,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
      * @param aTimestep 每步的实际时间步长，影响输入文件和统计使用的时间，默认为 0.002 (ps)
      * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 10
      */
-    private MultipleNativeLmpFullPathGenerator(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) throws MPI.Error, NativeLmp.Error {
+    private MultipleNativeLmpFullPathGenerator(MPI.Comm aWorldComm, int aWorldRoot, MPI.Comm aLmpComm, @Nullable List<Integer> aLmpRoots, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep) throws MPIException, LmpException {
         // MPI 相关参数
         mWorldComm = aWorldComm;
         mWorldRoot = aWorldRoot;
@@ -91,7 +93,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 mLmpRoots = new ConcurrentLinkedDeque<>(aLmpRoots);
             }
             mPathGen = new NativeLmpFullPathGenerator(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep).setReturnLast();
-        } catch (MPI.Error | NativeLmp.Error e) {
+        } catch (MPIException | LmpException e) {
             mLmpComm.shutdown();
             throw e;
         }
@@ -177,7 +179,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         private @Nullable FixedTimer mTotTimer = null;
         private @Nullable AccumulatedTimer mLmpTimer = null, mCalTimer = null, mWaitTimer = null;
         
-        private byte getJobID_() throws MPI.Error {
+        private byte getJobID_() throws MPIException {
             byte tJobID = JOBID_NULL;
             if (mLmpMe == 0) {
                 if (mWaitTimer != null) mWaitTimer.from();
@@ -186,7 +188,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             }
             return mLmpComm.bcastB(tJobID, 0);
         }
-        private long getSeed_() throws MPI.Error {
+        private long getSeed_() throws MPIException {
             long tSeed = 0;
             if (mLmpMe == 0) {
                 tSeed = mWorldComm.recvL(mWorldRoot, SEED);
@@ -196,7 +198,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         
         @Override public void run() {
             try {mPathGen.checkThread();}
-            catch (NativeLmp.Error e) {throw new RuntimeException(e);}
+            catch (LmpException e) {throw new RuntimeException(e);}
             try {while (true) {
                 // 获取任务种类，mLmpComm 主进程接收后使用 bcast 转发给所有进程
                 byte tJob = getJobID_();
@@ -339,7 +341,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 default: {
                     throw new IllegalArgumentException("job type: "+tJob);
                 }}
-            }} catch (MPI.Error e) {
+            }} catch (MPIException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -367,7 +369,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
     }
     
     /** 获取统计时间的接口 */
-    public void initTimer() throws MPI.Error {
+    public void initTimer() throws MPIException {
         if (mWorldMe != mWorldRoot) throw new RuntimeException("initTimer can ONLY be called from WorldRoot ("+mWorldRoot+")");
         if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
         for (int tLmpRoot : mLmpRoots) {
@@ -375,7 +377,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             mWorldComm.recv(tLmpRoot, TIMER_INIT_FINISHED);
         }
     }
-    public void resetTimer() throws MPI.Error {
+    public void resetTimer() throws MPIException {
         if (mWorldMe != mWorldRoot) throw new RuntimeException("resetTimer can ONLY be called from WorldRoot ("+mWorldRoot+")");
         if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
         for (int tLmpRoot : mLmpRoots) {
@@ -391,8 +393,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             this.other = this.total - this.lmp - this.lambda - this.wait;
         }
     }
-    public TimerInfo getTimerInfo() throws MPI.Error {return getTimerInfo(NO_LMP_IN_WORLD_ROOT);} // 如果关闭了 worldRoot 的 lammps 运行，则当然默认关闭其效率统计
-    public TimerInfo getTimerInfo(boolean aExcludeWorldRoot) throws MPI.Error {
+    public TimerInfo getTimerInfo() throws MPIException {return getTimerInfo(NO_LMP_IN_WORLD_ROOT);} // 如果关闭了 worldRoot 的 lammps 运行，则当然默认关闭其效率统计
+    public TimerInfo getTimerInfo(boolean aExcludeWorldRoot) throws MPIException {
         if (mWorldMe != mWorldRoot) throw new RuntimeException("getTimerInfo can ONLY be called from WorldRoot ("+mWorldRoot+")");
         if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
         double rTotal = 0.0, rLmp = 0.0, rLambda = 0.0, rWait = 0.0;
@@ -467,7 +469,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 // 接收任务完成信息
                 mWorldComm.recv(mLmpRoot, PATH_NEXT_FINISHED);
                 return tNext;
-            } catch (MPI.Error e) {
+            } catch (MPIException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -481,7 +483,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 // 接收任务完成信息
                 mWorldComm.recv(mLmpRoot, PATH_TIME_FINISHED);
                 return tTimeConsumed;
-            } catch (MPI.Error e) {
+            } catch (MPIException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -495,7 +497,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 // 接收任务完成信息
                 mWorldComm.recv(mLmpRoot, PATH_LAMBDA_FINISHED);
                 return tLambda;
-            } catch (MPI.Error e) {
+            } catch (MPIException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -508,7 +510,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 try {
                     mWorldComm.sendB(PATH_SHUTDOWN, mLmpRoot, JOB_TYPE);
                     mWorldComm.recv(mLmpRoot, PATH_SHUTDOWN_FINISHED);
-                } catch (MPI.Error e) {
+                } catch (MPIException e) {
                     e.printStackTrace(System.err);
                 }
                 mLmpRoots.addLast(mLmpRoot);
@@ -529,7 +531,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 try {
                     mWorldComm.sendB(SHUTDOWN, tLmpRoot, JOB_TYPE);
                     mWorldComm.recv(tLmpRoot, SHUTDOWN_FINISHED);
-                } catch (MPI.Error e) {
+                } catch (MPIException e) {
                     e.printStackTrace(System.err);
                 }
             }

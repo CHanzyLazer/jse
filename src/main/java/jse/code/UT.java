@@ -36,10 +36,7 @@ import jse.math.table.Table;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
-import jse.parallel.LocalRandom;
-import jse.parallel.MPI;
-import jse.parallel.MergedFuture;
-import jse.parallel.ParforThreadPool;
+import jse.parallel.*;
 import jse.plot.*;
 import jse.system.ISystemExecutor;
 import jse.vasp.IVaspCommonData;
@@ -119,10 +116,10 @@ public class UT {
          * will get the same rand seed for all process
          * @author liqa
          */
-        public static int randSeed(MPI.Comm aComm, int aRoot) throws MPI.Error {
+        public static int randSeed(MPI.Comm aComm, int aRoot) throws MPIException {
             return aComm.bcastI(aComm.rank()==aRoot ? Code.randSeed() : -1, aRoot);
         }
-        public static int randSeed(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
+        public static int randSeed(MPI.Comm aComm, int aRoot, long aSeed) throws MPIException {
             return aComm.bcastI(aComm.rank()==aRoot ? Code.randSeed(aSeed) : -1, aRoot);
         }
         
@@ -149,10 +146,10 @@ public class UT {
          * will get the same rand ID for all process
          * @author liqa
          */
-        public static String randID(MPI.Comm aComm, int aRoot) throws MPI.Error {
+        public static String randID(MPI.Comm aComm, int aRoot) throws MPIException {
             return Integer.toHexString(aComm.bcastI(aComm.rank()==aRoot ? RANDOM.nextInt() : 0, aRoot));
         }
-        public static String randID(MPI.Comm aComm, int aRoot, long aSeed) throws MPI.Error {
+        public static String randID(MPI.Comm aComm, int aRoot, long aSeed) throws MPIException {
             return Integer.toHexString(aComm.bcastI(aComm.rank()==aRoot ? new LocalRandom(aSeed).nextInt() : 0, aRoot));
         }
         

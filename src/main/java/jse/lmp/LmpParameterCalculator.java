@@ -9,6 +9,7 @@ import jse.math.function.IFunc1;
 import jse.math.vector.IVector;
 import jse.parallel.AbstractHasAutoShutdown;
 import jse.parallel.MPI;
+import jse.parallel.MPIException;
 import jse.system.ISystemExecutor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -77,7 +78,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
             try {
                 if (mComm.rank() == mRoot) aRunnable.run();
                 mComm.barrier();
-            } catch (MPI.Error e) {throw new RuntimeException(e);}
+            } catch (MPIException e) {throw new RuntimeException(e);}
         } else {
             aRunnable.run();
         }
@@ -85,7 +86,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     private int randSeed_() {
         if (mComm != null) {
             try {return UT.Code.randSeed(mComm, mRoot);}
-            catch (MPI.Error e) {throw new RuntimeException(e);}
+            catch (MPIException e) {throw new RuntimeException(e);}
         } else {
             return UT.Code.randSeed();
         }
@@ -93,7 +94,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     private String randID_() {
         if (mComm != null) {
             try {return UT.Code.randID(mComm, mRoot);}
-            catch (MPI.Error e) {throw new RuntimeException(e);}
+            catch (MPIException e) {throw new RuntimeException(e);}
         } else {
             return UT.Code.randID();
         }
@@ -104,7 +105,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
                 int tExitValue = mComm.reduceI(aExitValue, MPI.Op.BOR, mRoot);
                 if (mComm.rank()==mRoot && tExitValue!=0) throw new RuntimeException("LAMMPS run Failed, Exit Value: " + tExitValue);
                 mComm.barrier();
-            } catch (MPI.Error e) {
+            } catch (MPIException e) {
                 throw new RuntimeException(e);
             }
         } else {
