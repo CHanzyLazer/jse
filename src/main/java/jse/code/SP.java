@@ -388,9 +388,14 @@ public class SP {
         /** 运行脚本文件 */
         public synchronized static void run(String aScriptPath, String... aArgs) throws JepException, IOException {runScript(aScriptPath, aArgs);}
         public synchronized static void runScript(String aScriptPath, String... aArgs) throws JepException, IOException {
-            if (aArgs==null || aArgs.length==0) setValue("sys.argv", Collections.singletonList(aScriptPath));
-            else setValue("sys.argv", AbstractCollections.merge(aScriptPath, aArgs));
-            JEP_INTERP.runScript(validScriptPath(aScriptPath));
+            // 需要保存旧的 sys.argv 并在运行完成后设置回来，这样保证不会改变环境
+            Object oArgs = getValue("sys.argv");
+            try {
+                setValue("sys.argv", (aArgs==null || aArgs.length==0) ? Collections.singletonList(aScriptPath) : AbstractCollections.merge(aScriptPath, aArgs));
+                JEP_INTERP.runScript(validScriptPath(aScriptPath));
+            } finally {
+                setValue("sys.argv", oArgs); // 当然这样的话，对于在脚本中修改的结果也同样会被抹掉，不过这不重要就是
+            }
         }
         /** 调用方法，python 中需要结合 import 使用 */
         @SuppressWarnings("unchecked")
