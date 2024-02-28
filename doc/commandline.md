@@ -40,7 +40,7 @@ jse -t "println('hello world')"
     
 - **输出**
     ```
-    JSE Shell (2.6.0, Groovy: 4.0.16, JVM: 17.0.8.1)
+    JSE Shell (2.6.4, Groovy: 4.0.18, JVM: 17.0.8)
     Type ':help' or ':h' for help.
     --------------------------------------------------
     groovy:000>
@@ -160,7 +160,7 @@ groovy 版本以及 java 版本并退出。
     
 - **输出**
     ```
-    jse version: 2.6.0 (groovy: 4.0.16, java: 17.0.8.1)
+    jse version: 2.6.4 (java: 17.0.8)
     ```
 
 
@@ -177,15 +177,17 @@ groovy 版本以及 java 版本并退出。
 - **输出**
     ```
     Usage:    jse [-option] value [args...]
-    Such as:  jse path/to/script.groovy [argsOfGroovyScript...]
+    Such as:  jse path/to/script.groovy [args...]
     Or:       jse -t "println('hello world')"
     
     The options can be:
         -t -text      Run the groovy text script
-        -f -file      Run the groovy file script (default behavior when left blank)
+        -f -file      Run the groovy/python file script (default behavior when left blank)
         -i -invoke    Invoke the internal java static method directly
         -v -version   Print version number
         -? -help      Print help message
+        -groovy       Run the groovy file script
+        -python       Run the python file script
     
     You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar
     ```
