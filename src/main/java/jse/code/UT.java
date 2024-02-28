@@ -764,7 +764,7 @@ public class UT {
             // 先直接转 char[]，适配 groovy-json 的 CharScanner
             char[] tChar = aStr.toCharArray();
             // 直接遍历忽略空格（不可识别的也会跳过），获取开始和末尾，然后 parseDouble
-            IVector rData = Vectors.zeros(aLength);
+            IVector rData = Vectors.NaN(aLength); // 不足的数据现在默认为 NaN
             int tFrom = CharScanner.skipWhiteSpace(tChar, 0, tChar.length);
             int tIdx = 0;
             for (int i = tFrom; i < tChar.length; ++i) {

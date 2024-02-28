@@ -134,7 +134,7 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
      * 对于 log 只实现其的读取，而输出则会使用通用方法输出成 csv 文件
      * @author liqa
      * @param aFilePath lammps 输出的 log 文件路径
-     * @return 读取得到的 Thermo 对象，如果文件不完整的帧会尝试读取已有的部分
+     * @return 读取得到的 Thermo 对象，理论上文件不完整的帧会尝试读取已有的部分
      * @throws IOException 如果读取失败
      */
     public static MultiThermo read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
@@ -152,9 +152,9 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
             // 直接遍历读取数据
             List<IVector> rDataRows = new ArrayList<>();
             while ((tLine = aReader.readLine()) != null) {
-                // 这里直接读取到发生错误自动结束
-                try {rDataRows.add(UT.Text.str2data(tLine, tHeads.length));}
-                catch (Exception e) {break;}
+                // 现在改为字符串判断而不是靠不稳定的 str2data 来判断结束
+                if (UT.Text.containsIgnoreCase(tLine, "Loop time of")) break;
+                rDataRows.add(UT.Text.str2data(tLine, tHeads.length));
             }
             // 创建 Table 并附加到 rThermo 中
             rThermo.add(Tables.fromRows(rDataRows, tHeads));
