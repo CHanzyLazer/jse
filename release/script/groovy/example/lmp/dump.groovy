@@ -19,8 +19,8 @@ dump.write('.temp/example/lmp/dumpFCC')
 
 
 //OUTPUT:
-// frame number: 21
+// frame number: 51
 // atom number: 108
-// time step: 4000
-// atom at 10: {id: 50, type: 1, xyz: (2.623, 4.457, 2.003), vxvyvz: (-2.409, 0.3910, -0.5409)}
+// time step: 40000
+// atom at 10: {id: 47, type: 1, xyz: (10.65, 2.333, 0.9837), vxvyvz: (-3.044, -2.046, 3.698)}
 

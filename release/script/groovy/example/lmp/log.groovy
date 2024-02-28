@@ -15,6 +15,6 @@ log.write('.temp/example/lmp/logFCC.csv')
 
 //OUTPUT:
 // heads: [Step, Temp, Press, Volume, PotEng, KinEng, TotEng]
-// volume: 21-length Vector:
-//    1270   1503   1473   1481   1515   1468   1452   1499   1499   1509   1495   1508   1467   1511   1449   1492   1544   1510   1470   1507   1527
+// volume: 51-length Vector:
+//    1270   1464   1484   1546  ...  1507   1498   1508   1475
 

@@ -105,10 +105,10 @@ jse 中使用 [`jse.lmp.Lammpstrj`](../src/main/java/jse/lmp/Lammpstrj.java) /
 - 输出：
     
     ```
-    frame number: 21
+    frame number: 51
     atom number: 108
-    time step: 4000
-    atom at 10: {id: 50, type: 1, xyz: (2.623, 4.457, 2.003), vxvyvz: (-2.409, 0.3910, -0.5409)}
+    time step: 40000
+    atom at 10: {id: 47, type: 1, xyz: (10.65, 2.333, 0.9837), vxvyvz: (-3.044, -2.046, 3.698)}
     ```
 
 > 可以使用 `jse.lmp.Lammpstrj` 替换 `jse.lmp.Dump`，
@@ -147,9 +147,9 @@ jse 表格 `ITable`，从而使用表格的操作方式来处理 dump 数据：
     
     ```
     origin x: 108-length Vector:
-       4.930   10.31   2.890   3.056   4.018   4.987   9.465 ...
+       2.472   5.456   3.543   7.534  ...  1.653   2.865   1.121   8.152
     new x: 108-length Vector:
-       14.93   20.31   12.89   13.06   14.02   14.99   19.46 ...
+       12.47   15.46   13.54   17.53   ...   11.65   12.87   11.12   18.15
     origin heads: [id, type, x, y, z, vx, vy, vz]
     new heads: [id, type, x, y, z, vx, vy, vz, rand]
     ```
@@ -299,8 +299,8 @@ jse 中使用 [`jse.lmp.Thermo`](../src/main/java/jse/lmp/Thermo.java) /
     
     ```
     heads: [Step, Temp, Press, Volume, PotEng, KinEng, TotEng]
-    volume: 21-length Vector:
-       1270   1503   1473   1481   1515   1468   1452   1499 ...
+    volume: 51-length Vector:
+       1270   1464   1484   1546  ...  1507   1498   1508   1475
     ```
 
 > 可以使用 `jse.lmp.Thermo` 替换 `jse.lmp.Log`，
