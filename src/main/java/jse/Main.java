@@ -1,8 +1,10 @@
 package jse;
 
-import groovy.lang.GroovySystem;
 import jse.code.SP;
 import jse.code.UT;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import static jse.code.CS.VERSION;
+import static jse.code.Conf.DEBUG;
 
 /**
  * @author liqa
@@ -40,6 +43,7 @@ public class Main {
         }
     }
     
+    @SuppressWarnings("ThrowablePrintedToSystemOut")
     public static void main(String[] aArgs) throws Exception {
         try {
             // 完全没有输入时（双击运行）直接结束
@@ -61,7 +65,7 @@ public class Main {
             String tOption = tValue;
             switch (tOption) {
             case "-v": case "-version": {
-                System.out.println("jse version: "+VERSION+String.format(" (groovy: %s, java: %s)", GroovySystem.getVersion(), System.getProperty("java.version")));
+                System.out.println("jse version: "+VERSION+String.format(" (java: %s)", System.getProperty("java.version")));
                 return;
             }
             case "-?": case "-help": {
@@ -125,10 +129,65 @@ public class Main {
                     return;
                 }}
             }}
+        } catch (CompilationFailedException e) {
+            System.err.println(e);
+            System.exit(1);
+        } catch (Throwable e) {
+            Throwable ex = e;
+            if (ex instanceof InvokerInvocationException) {
+                InvokerInvocationException iie = (InvokerInvocationException) ex;
+                ex = iie.getCause();
+            }
+            if (!DEBUG) ex = deepSanitize(ex);
+            ex.printStackTrace(System.err);
+            System.exit(1);
         } finally {
             closeAllAutoCloseable();
         }
     }
+    
+    /** stuffs from {@link StackTraceUtils} */
+    private static Throwable deepSanitize(Throwable t) {
+        Throwable tCurrent = t;
+        while (tCurrent.getCause() != null) {
+            tCurrent = sanitize(tCurrent.getCause());
+        }
+        return sanitize(t);
+    }
+    private static Throwable sanitize(Throwable t) {
+        StackTraceElement[] tTrace = t.getStackTrace();
+        List<StackTraceElement> nTrace = new ArrayList<>();
+        for (StackTraceElement tElement : tTrace) if (isApplicationClass(tElement.getClassName())) {
+            nTrace.add(tElement);
+        }
+        StackTraceElement[] tClean = new StackTraceElement[nTrace.size()];
+        nTrace.toArray(tClean);
+        t.setStackTrace(tClean);
+        return t;
+    }
+    private static boolean isApplicationClass(String className) {
+        for (String tPackage : JSE_PACKAGES) if (className.startsWith(tPackage)) {
+            return false;
+        }
+        return true;
+    }
+    private static final String[] JSE_PACKAGES = {
+          "jse."
+        , "jsex."
+        , "jep."
+        , "me.tongfei.progressbar."
+        , "groovy."
+        , "org.codehaus.groovy."
+        , "java."
+        , "javax."
+        , "sun."
+        , "gjdk.groovy."
+        , "groovyjarjar"
+        , "com.sun."
+        , "org.apache.groovy."
+        , "jdk.internal."
+    };
+    
     
     private static void printHelp() {
         System.out.println("Usage:    jse [-option] value [args...]");
