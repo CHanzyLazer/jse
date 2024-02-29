@@ -89,4 +89,26 @@ public class Func1 {
         return rFunc1;
     }
     private final static int G_RANG = 6;
+    
+    
+    /**
+     * 根据指定数据生成此数据的分布，超出范围的值会忽略
+     * @author liqa
+     * @param aData 需要统计分布的数据
+     * @param aStart 分布的下界
+     * @param aEnd 分布的上界
+     * @param aN 分划的份数
+     * @return 得到的分布函数
+     */
+    public static IZeroBoundFunc1 distFrom(IVector aData, double aStart, double aEnd, int aN) {
+        final double tStep = (aEnd-aStart)/(double)(aN-1);
+        final double tLBound = aStart - tStep*0.5;
+        final double tUBound = aEnd + tStep*0.5;
+        final IZeroBoundFunc1 rFunc1 = ZeroBoundFunc1.zeros(aStart, tStep, aN);
+        aData.forEach(v -> {
+            if (v>=tLBound && v<tUBound) rFunc1.updateNear(v, f->f+1);
+        });
+        rFunc1.div2this(aData.size());
+        return rFunc1;
+    }
 }

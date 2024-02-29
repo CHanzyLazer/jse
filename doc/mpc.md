@@ -1,7 +1,7 @@
 - [原子结构参量计算](mpc.md)
     - [参量计算器初始化](#参量计算器初始化)
     - [RDF 和 SF 的计算](#rdf-和-sf-的计算)
-    - [计算 BOOP 和 ABOOP]()
+    - [键角序参量的计算](#键角序参量的计算)
     - [Voronoi 分析]()
     - [近邻列表获取]()
 - [**⟶ 目录**](contents.md)
@@ -23,11 +23,7 @@ jse 中可以通过构造函数 `<init>` 直接创建一个参数计算器，
     
     描述：`jse.atom.MPC` 的构造函数。
     
-    输入1：根据输入类型重载，具体为：
-    
-    - `IAtomData`，jse 使用的任意的原子数据
-    - `Collection<? extends IXYZ>, IXYZ`，原子坐标数据 `IXYZ`
-      组成的数组以及模拟盒的大小 `IXYZ`（实际为两个输入）
+    输入1：`IAtomData`，jse 使用的任意的原子数据
     
     输入2（可选）：`int`，计算器使用的线程数，默认为 1（不开启并行）
     
@@ -39,8 +35,8 @@ jse 中可以通过构造函数 `<init>` 直接创建一个参数计算器，
     
     例子：`example/mpc/rdf`
     [⤤](../release/script/groovy/example/mpc/rdf.groovy)，
-    `example/mpc/rdfmulti`
-    [⤤](../release/script/groovy/example/mpc/rdfmulti.groovy)
+    `example/mpc/boop`
+    [⤤](../release/script/groovy/example/mpc/boop.groovy)
     
     > 注意：创建后记得在使用完成后显式调用 `shutdown()` 关闭 MPC 回收资源，
     > 或者使用 [*try-with-resources*](https://www.baeldung.com/java-try-with-resources)
@@ -53,13 +49,9 @@ jse 中可以通过构造函数 `<init>` 直接创建一个参数计算器，
     
     描述：根据输入参数构造一个 `jse.atom.MPC`，
     并将其作为一个闭包的输入，在闭包内进行任意计算后自动关闭此 MPC；
-    相比直接使用构造函数，这种方法一般更加简洁。
+    对于只需要使用 MPC 计算单个参数的情况会更加简洁。
     
-    输入1：根据输入类型重载，具体为：
-    
-    - `IAtomData`，jse 使用的任意的原子数据
-    - `Collection<? extends IXYZ>, IXYZ`，原子坐标数据 `IXYZ`
-      组成的数组以及模拟盒的大小 `IXYZ`（实际为两个输入）
+    输入1：`IAtomData`，jse 使用的任意的原子数据
     
     输入2（可选）：`int`，计算器使用的线程数，默认为 1（不开启并行）
     
@@ -73,7 +65,9 @@ jse 中可以通过构造函数 `<init>` 直接创建一个参数计算器，
     输出：`T`，通过闭包定义的输出结果，一般是使用 MPC 计算的结果
     
     例子：`example/mpc/rdf`
-    [⤤](../release/script/groovy/example/mpc/rdf.groovy)
+    [⤤](../release/script/groovy/example/mpc/rdf.groovy)，
+    `example/mpc/rdfmulti`
+    [⤤](../release/script/groovy/example/mpc/rdfmulti.groovy)
 
     
 ## RDF 和 SF 的计算
@@ -285,4 +279,186 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     > 才能得到正确的结果。
     >
     
+
+## 键角序参量的计算
+
+MPC 可以计算每个原子的
+BOOP（local Bond Orientational Order Parameters），
+ABOOP（Averaged local Bond Orientational Order Parameters），
+以及基于此的原子连接数目和判断原子是否是“类固体”。
+
+具体定义和应用可以
+[参考文献 10.1039/FD9960400093](https://doi.org/10.1039/FD9960400093)
+和 [10.1063/1.2977970](https://doi.org/10.1063/1.2977970)。
+
+- **`calBOOP`**
+    
+    描述：计算所有粒子的原始的 BOOP（local Bond Orientational Order Parameters, Ql），
+    输出结果为按照输入原子顺序排列的向量；
+    结果应当和 [lammps 中 `compute orientorder/atom command`](https://docs.lammps.org/compute_orientorder_atom.html)
+    的结果一致。
+    
+    输入1：`int`，计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+    
+    输入2（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入3（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的 Ql，按照原子顺序排列
+    
+    例子：`example/mpc/boop`
+    [⤤](../release/script/groovy/example/mpc/boop.groovy)
+    
+    > 注意：如果指定了最后一个参数（`Nnn`，Number of Nearest Neighbor list）
+    > 则会限制最大的最近邻数目，一般会将此值设为 12 并设定一个足够大的最近邻半径
+    > （如 2 倍*单位长度*）来保证一般都会对最近的 12 个原子进行计算。
+    > 
+    > 但是指定 `Nnn` 会极大的增加近邻列表获取的难度，
+    > 并且会同时关闭遍历一半的优化，导致计算时间大大增加，
+    > 因此默认情况下选取了 1.5 倍*单位长度* 并且不限制 `Nnn`
+    > 从而选取大致 12 个近邻原子进行计算。
+    >
+    > *单位长度*定义：$\text{uintLen} = (\text{volume} / \text{natoms})^{1/3}$，
+    > 可以通过 `MPC.unitLen()` 获取。
+    >
+    
+    -----------------------------
+    
+- **`calBOOP3`**
+    
+    描述：计算所有粒子的三阶形式的 BOOP（Wl），
+    输出结果为按照输入原子顺序排列的向量；
+    结果应当和 [lammps 中 `compute orientorder/atom command`](https://docs.lammps.org/compute_orientorder_atom.html)
+    的结果一致。
+    
+    输入1：`int`，计算具体 W 值的下标，即 W4: l = 4, W6: l = 6
+    
+    输入2（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入3（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的 Wl，按照原子顺序排列
+    
+    例子：`example/mpc/boop`
+    [⤤](../release/script/groovy/example/mpc/boop.groovy)
+    
+    -----------------------------
+    
+- **`calABOOP`**
+    
+    描述：计算所有粒子的原始的 ABOOP（Averaged local Bond Orientational Order Parameters, ql），
+    输出结果为按照输入原子顺序排列的向量。
+    
+    输入1：`int`，计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+    
+    输入2（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入3（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的 ql，按照原子顺序排列
+    
+    例子：`example/mpc/aboop`
+    [⤤](../release/script/groovy/example/mpc/aboop.groovy)
+    
+    -----------------------------
+    
+- **`calABOOP3`**
+    
+    描述：计算所有粒子的三阶形式的 ABOOP（wl），
+    输出结果为按照输入原子顺序排列的向量。
+    
+    输入1：`int`，计算具体 w 值的下标，即 w4: l = 4, w6: l = 6
+    
+    输入2（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入3（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的 wl，按照原子顺序排列
+    
+    例子：`example/mpc/aboop`
+    [⤤](../release/script/groovy/example/mpc/aboop.groovy)
+    
+    -----------------------------
+    
+- **`calConnectCountBOOP`**
+    
+    描述：通过 BOOP（Ql）来计算结构中每个原子的连接数目，
+    输出结果为按照输入原子顺序排列的向量，数值为连接数目（整数）。
+    
+    输入1：`int`，计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+    
+    输入2（可选）：`double`，用来判断两个原子是否是相连接的阈值
+    
+    输入3（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入4（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的连接数目，按照原子顺序排列
+    
+    例子：`example/mpc/connectcount`
+    [⤤](../release/script/groovy/example/mpc/connectcount.groovy)
+    
+    -----------------------------
+    
+- **`calConnectCountABOOP`**
+    
+    描述：通过 ABOOP（ql）来计算结构中每个原子的连接数目，
+    输出结果为按照输入原子顺序排列的向量，数值为连接数目（整数）。
+    
+    输入1：`int`，计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+    
+    输入2（可选）：`double`，用来判断两个原子是否是相连接的阈值
+    
+    输入3（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入4（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`IVector`，计算得到的每个原子的连接数目，按照原子顺序排列
+    
+    例子：`example/mpc/connectcount`
+    [⤤](../release/script/groovy/example/mpc/connectcount.groovy)
+    
+    -----------------------------
+    
+- **`checkSolidQ6`**
+    
+    描述：具体通过 Q6 来检测结构中类似固体的部分，
+    输出结果为按照输入原子顺序排列的布尔向量，`true` 表示判断为类似固体；
+    参数选取可以 [参考文献 10.1063/1.2977970](https://doi.org/10.1063/1.2977970)。
+    
+    输入1（可选）：`double`，用来判断两个原子是否是相连接的阈值（默认为 0.5）
+    
+    输入2（可选）：`int`，用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值（默认为 7）
+    
+    输入3（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入4（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`ILogicalVector`，计算得到的每个原子是否是“类固体”原子的逻辑值，按照原子顺序排列
+    
+    例子：`example/mpc/connectcount`
+    [⤤](../release/script/groovy/example/mpc/connectcount.groovy)
+    
+    -----------------------------
+    
+- **`checkSolidQ4`**
+    
+    描述：具体通过 Q4 来检测结构中类似固体的部分，
+    输出结果为按照输入原子顺序排列的布尔向量，`true` 表示判断为类似固体；
+    参数选取可以 [参考文献 10.1063/1.1896348](https://doi.org/10.1063/1.1896348)。
+    
+    输入1（可选）：`double`，用来判断两个原子是否是相连接的阈值（默认为 0.35）
+    
+    输入2（可选）：`int`，用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值（默认为 6）
+    
+    输入3（可选）：`double`，用来搜索的最近邻半径（默认为 1.5 倍*单位长度*）
+    
+    输入4（可选）：`int`，限制最大的最近邻数目（默认不做限制）
+    
+    输出：`ILogicalVector`，计算得到的每个原子是否是“类固体”原子的逻辑值，按照原子顺序排列
+    
+    例子：`example/mpc/connectcount`
+    [⤤](../release/script/groovy/example/mpc/connectcount.groovy)
+
+
 

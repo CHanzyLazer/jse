@@ -86,6 +86,7 @@ public abstract class DoubleArrayFunc1 extends AbstractFunc1 implements IEqualIn
     /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
     @Override public final double get(int aI) {rangeCheck(aI, Nx()); return mData[aI];}
     @Override public final void set(int aI, double aV) {rangeCheck(aI, Nx()); mData[aI] = aV;}
+    @Override public int getINear(double aX) {return (int)MathEX.Code.round((aX-mX0)/mDx);}
     
     /** 索引和 x 相互转换的接口 */
     @Override public final int Nx() {return mData.length;}

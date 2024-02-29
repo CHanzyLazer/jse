@@ -1,6 +1,7 @@
 package jse.atom;
 
 import jse.cache.*;
+import jse.code.CS;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.IntList;
 import jse.code.functional.IIndexFilter;
@@ -942,7 +943,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 Qlm 值的下标，即 Q4m: l = 4, Q6m: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Qlm 组成的复向量数组
      */
@@ -1115,7 +1116,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 qlm 值的下标，即 q4m: l = 4, q6m: l = 6
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 的最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
@@ -1262,7 +1263,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Ql 组成的向量
      */
@@ -1333,7 +1334,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * @author liqa
      * @param aL 计算具体 W 值的下标，即 W4: l = 4, W6: l = 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Wl 组成的向量
      */
@@ -1391,7 +1392,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      * @author liqa
      * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
@@ -1469,7 +1470,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      * @author liqa
      * @param aL 计算具体 w 值的下标，即 w4: l = 4, w6: l = 6
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
@@ -1536,7 +1537,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
@@ -1680,7 +1681,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @author liqa
      * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
-     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
@@ -1823,7 +1824,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
      * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 7
-     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return 最后判断得到是否是固体组成的逻辑向量
      */
@@ -1844,7 +1845,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
      * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
-     * @param aRNearest 用来搜索的最近邻半径。默认为 R_NEAREST_MUL 倍单位长度
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return 最后判断得到是否是固体组成的逻辑向量
      */

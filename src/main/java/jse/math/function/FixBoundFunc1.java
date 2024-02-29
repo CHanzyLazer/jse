@@ -1,5 +1,7 @@
 package jse.math.function;
 
+import jse.math.MathEX;
+
 /**
  * @author liqa
  * <p> 一维数值函数的另一种实现，超出界限外使用固定的值 </p>
@@ -27,6 +29,7 @@ public final class FixBoundFunc1 extends DoubleArrayFunc1 {
     /** DoubleArrayFunc1 stuffs */
     @Override protected double getOutL_(int aI) {return mBoundL;}
     @Override protected double getOutR_(int aI) {return mBoundR;}
+    @Override public int getINear(double aX) {return MathEX.Code.toRange(0, Nx()-1, super.getINear(aX));}
     
     @Override public FixBoundFunc1 newShell() {return new FixBoundFunc1(mX0, mDx, null).setBound(mBoundL, mBoundR);}
     @Override protected FixBoundFunc1 newInstance_(double aX0, double aDx, double[] aData) {return new FixBoundFunc1(aX0, aDx, aData).setBound(mBoundL, mBoundR);}

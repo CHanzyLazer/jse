@@ -1,18 +1,10 @@
 package example.mpc
 
-import jse.atom.IAtomData
 import jse.atom.MPC
 import jse.code.UT
 import jse.lmp.Dump
 
 import static jse.code.UT.Plot.*
-
-// 这里这样定义一个函数更加方便
-static def calRDF(IAtomData data) {
-    try (def mpc = new MPC(data)) {
-        return mpc.calRDF()
-    }
-}
 
 
 // 导入 dump 文件
@@ -21,9 +13,9 @@ def dump = Dump.read('lmp/dump/CuFCC108.lammpstrj')
 dump.cutFront(1)
 
 // 对所有帧统计平均的 gr
-def gr = calRDF(dump.first())
+def gr = MPC.withOf(dump.first()) {it.calRDF()}
 for (i in 1..<dump.size()) {
-    gr.plus2this(calRDF(dump[i]))
+    gr.plus2this(MPC.withOf(dump[i]) {it.calRDF()})
 }
 gr.div2this(dump.size())
 

@@ -77,6 +77,21 @@ public final class UnequalIntervalFunc1 extends AbstractFunc1 implements IZeroBo
     /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
     @Override public double get(int aI) {rangeCheck(aI, Nx()); return mF[aI];}
     @Override public void set(int aI, double aV) {rangeCheck(aI, Nx()); mF[aI] = aV;}
+    @Override public int getINear(double aX) {
+        int tNx = Nx();
+        // 由于 X 是递增的，使用二分法查找
+        int tI = Arrays.binarySearch(mX, 0, tNx, aX);
+        // java 二分法查找库的约定，没有找到时索引为负，恰好找到时为正
+        if (tI >= 0) return tI;
+        tI = (-tI) - 1;
+        int tImm = tI-1;
+        // 超过边界直接为边界
+        if (tImm < 0) return 0;
+        if (tI >= tNx) return tNx-1;
+        // 距离哪边更近使用哪一个
+        double tMidX = (mX[tImm] + mX[tI]) * 0.5;
+        return aX<tMidX ? tImm : tI;
+    }
     
     /** 索引和 x 相互转换的接口 */
     @Override public int Nx() {return mF.length;}

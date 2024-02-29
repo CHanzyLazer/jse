@@ -1,5 +1,7 @@
 package jse.math.function;
 
+import jse.math.MathEX;
+
 /**
  * @author liqa
  * <p> 一维数值函数的另一种实现，超出界限外使用 0 值，可以加速一些运算 </p>
@@ -14,6 +16,7 @@ public final class ZeroBoundFunc1 extends DoubleArrayFunc1 implements IZeroBound
     /** DoubleArrayFunc1 stuffs */
     @Override protected double getOutL_(int aI) {return 0.0;}
     @Override protected double getOutR_(int aI) {return 0.0;}
+    @Override public int getINear(double aX) {return MathEX.Code.toRange(0, Nx()-1, super.getINear(aX));}
     
     /** 提供额外的接口用于检测两端 */
     @Override public double zeroBoundL() {return mX0 - mDx;}

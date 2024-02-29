@@ -1,5 +1,7 @@
 package jse.math.function;
 
+import jse.math.MathEX;
+
 /**
  * @author liqa
  * <p> 一维数值函数默认实现，超出界限外认为是周期边界条件 </p>
@@ -21,6 +23,13 @@ public final class PBCFunc1 extends DoubleArrayFunc1 {
         int tNx = Nx();
         while (aI >= tNx) aI -= tNx;
         return mData[aI];
+    }
+    @Override public int getINear(double aX) {
+        int tNx = Nx();
+        int tI = super.getINear(aX);
+        while (tI < 0) tI += tNx;
+        while (tI >= tNx) tI -= tNx;
+        return tI;
     }
     
     @Override public PBCFunc1 newShell() {return new PBCFunc1(mX0, mDx, null);}

@@ -17,6 +17,11 @@ public final class ZeroBoundSymmetryFunc1 extends DoubleArrayFunc1 implements IZ
         return (aI < Nx()) ? mData[aI] : 0.0;
     }
     @Override protected double getOutR_(int aI) {return 0.0;}
+    @Override public int getINear(double aX) {
+        int tI = super.getINear(aX);
+        if (tI < 0) tI = -tI;
+        return Math.min(tI, Nx()-1);
+    }
     
     /** 提供额外的接口用于检测两端 */
     @Override public double zeroBoundL() {return mX0 - Nx()*mDx;}

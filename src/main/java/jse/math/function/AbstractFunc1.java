@@ -36,8 +36,14 @@ public abstract class AbstractFunc1 implements IFunc1 {
         if (aIdx<0 || aIdx>=aSize) throw new IndexOutOfBoundsException("Index = " + aIdx + ", Size = " + aSize);
     }
     
+    /** near stuffs */
+    @Override public final double getNear(double aX) {return get(getINear(aX));}
+    @Override public final void setNear(double aX, double aV) {set(getINear(aX), aV);}
+    @Override public final void updateNear(double aX, DoubleUnaryOperator aOpt) {update(getINear(aX), aOpt);}
+    @Override public final double getAndUpdateNear(double aX, DoubleUnaryOperator aOpt) {return getAndUpdate(getINear(aX), aOpt);}
     
     /** stuff to override */
     public abstract double get(int aI);
     public abstract void set(int aI, double aV);
+    public abstract int getINear(double aX);
 }

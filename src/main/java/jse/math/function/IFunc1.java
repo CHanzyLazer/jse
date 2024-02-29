@@ -32,19 +32,24 @@ public interface IFunc1 extends IFunc1Subs {
     /** 获取结果，支持按照索引查找和按照 x 的值来查找 */
     double subs(double aX);
     double get(int aI);
+    double getNear(double aX);
     /** 设置结果，简单起见只允许按照索引来设置 */
     void set(int aI, double aV);
+    void setNear(double aX, double aV);
     
     /** 索引和 x 相互转换的接口 */
     int Nx();
     double x0();
     double dx(int aI);
     double getX(int aI);
+    int getINear(double aX);
     void setX0(double aNewX0);
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
     void update(int aI, DoubleUnaryOperator aOpt);
     double getAndUpdate(int aI, DoubleUnaryOperator aOpt);
+    void updateNear(double aX, DoubleUnaryOperator aOpt);
+    double getAndUpdateNear(double aX, DoubleUnaryOperator aOpt);
     
     /** 还提供一个给函数专用的运算 */
     IFunc1Operation operation();
