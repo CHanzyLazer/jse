@@ -398,7 +398,7 @@ jse 中使用 [`jse.lmp.Thermo`](../src/main/java/jse/lmp/Thermo.java) /
     例子：`example/lmp/native`
     [⤤](../release/script/groovy/example/lmp/native.groovy)
     
-    > 注意：创建后记得在使用完成后显示调用 `shutdown()` 关闭 lammps 回收资源，
+    > 注意：创建后记得在使用完成后显式调用 `shutdown()` 关闭 lammps 回收资源，
     > 或者使用 [*try-with-resources*](https://www.baeldung.com/java-try-with-resources)
     > 实现自动回收。
     > 

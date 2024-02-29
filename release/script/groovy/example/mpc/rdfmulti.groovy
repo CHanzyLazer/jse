@@ -33,7 +33,7 @@ println('g = ' + gr.f())
 // 获取峰值的位置
 println('maxR = ' + gr.opt().maxX())
 // 保存到 csv
-UT.IO.data2csv(gr, '.temp/example/mpc/rdf2.csv')
+UT.IO.data2csv(gr, '.temp/example/mpc/rdfmulti.csv')
 // 绘制
 plot(gr)
 
