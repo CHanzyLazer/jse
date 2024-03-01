@@ -45,20 +45,20 @@ try (def mpcF = new MPC(dataF)) {
 }
 
 // 输出平均值
-println('Mean of Q4 of glass: '   + Q4G.mean())
-println('Mean of Q4 of crystal: ' + Q4C.mean())
-println('Mean of Q4 of BCC: '     + Q4B.mean())
-println('Mean of Q4 of FCC: '     + Q4F.mean())
+println("Mean of Q4 of glass:   ${Q4G.mean()}")
+println("Mean of Q4 of crystal: ${Q4C.mean()}")
+println("Mean of Q4 of BCC:     ${Q4B.mean()}")
+println("Mean of Q4 of FCC:     ${Q4F.mean()}")
 println()
-println('Mean of Q6 of glass: '   + Q6G.mean())
-println('Mean of Q6 of crystal: ' + Q6C.mean())
-println('Mean of Q6 of BCC: '     + Q6B.mean())
-println('Mean of Q6 of FCC: '     + Q6F.mean())
+println("Mean of Q6 of glass:   ${Q6G.mean()}")
+println("Mean of Q6 of crystal: ${Q6C.mean()}")
+println("Mean of Q6 of BCC:     ${Q6B.mean()}")
+println("Mean of Q6 of FCC:     ${Q6F.mean()}")
 println()
-println('Mean of W4 of glass: '   + W4G.mean())
-println('Mean of W4 of crystal: ' + W4C.mean())
-println('Mean of W4 of BCC: '     + W4B.mean())
-println('Mean of W4 of FCC: '     + W4F.mean())
+println("Mean of W4 of glass:   ${W4G.mean()}")
+println("Mean of W4 of crystal: ${W4C.mean()}")
+println("Mean of W4 of BCC:     ${W4B.mean()}")
+println("Mean of W4 of FCC:     ${W4F.mean()}")
 
 
 // 统计分布，这里使用 Func1 提供的方法来直接获取分布，使用 _G 的版本可以让结果光滑
@@ -108,18 +108,18 @@ pltW4.show('distribution of W4')
 
 
 //OUTPUT:
-// Mean of Q4 of glass: 0.08728394247381817
+// Mean of Q4 of glass:   0.08728394247381817
 // Mean of Q4 of crystal: 0.07240307373895653
-// Mean of Q4 of BCC: 0.07485692305181178
-// Mean of Q4 of FCC: 0.15600087055713363
+// Mean of Q4 of BCC:     0.07485692305181178
+// Mean of Q4 of FCC:     0.15600087055713363
 //
-// Mean of Q6 of glass: 0.3661153576744139
+// Mean of Q6 of glass:   0.3661153576744139
 // Mean of Q6 of crystal: 0.42662427799188424
-// Mean of Q6 of BCC: 0.4589953178875175
-// Mean of Q6 of FCC: 0.49133802632044926
+// Mean of Q6 of BCC:     0.4589953178875175
+// Mean of Q6 of FCC:     0.49133802632044926
 //
-// Mean of W4 of glass: -0.025397134886252924
+// Mean of W4 of glass:   -0.025397134886252924
 // Mean of W4 of crystal: -0.010124805423113597
-// Mean of W4 of BCC: 0.021556528136214895
-// Mean of W4 of FCC: -0.1037359751956782
+// Mean of W4 of BCC:     0.021556528136214895
+// Mean of W4 of FCC:     -0.1037359751956782
 
