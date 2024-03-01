@@ -298,7 +298,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IZeroBoundFunc1[] tDeltaG = new IZeroBoundFunc1[threadNumber()];
         for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func1.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
         // 需要增加一个额外的偏移保证外部边界的统计正确性
-        final double tRShift = tDeltaG[0].zeroBoundR();
+        final double tRShift = -tDeltaG[0].zeroBoundL();
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(mAtomNum, (i, threadID) -> {
@@ -336,7 +336,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IZeroBoundFunc1[] tDeltaG = new IZeroBoundFunc1[threadNumber()];
         for (int i = 0; i < tDeltaG.length; ++i) tDeltaG[i] = Func1.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
         // 需要增加一个额外的偏移保证外部边界的统计正确性
-        final double tRShift = tDeltaG[0].zeroBoundR();
+        final double tRShift = -tDeltaG[0].zeroBoundL();
         
         // 使用 mNL 的专门获取近邻距离的方法
         pool().parfor(aAtomNum, (i, threadID) -> {

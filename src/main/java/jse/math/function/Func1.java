@@ -102,13 +102,45 @@ public class Func1 {
      */
     public static IZeroBoundFunc1 distFrom(IVector aData, double aStart, double aEnd, int aN) {
         final double tStep = (aEnd-aStart)/(double)(aN-1);
+        final IZeroBoundFunc1 rFunc1 = ZeroBoundFunc1.zeros(aStart, tStep, aN);
+        
         final double tLBound = aStart - tStep*0.5;
         final double tUBound = aEnd + tStep*0.5;
-        final IZeroBoundFunc1 rFunc1 = ZeroBoundFunc1.zeros(aStart, tStep, aN);
         aData.forEach(v -> {
             if (v>=tLBound && v<tUBound) rFunc1.updateNear(v, f->f+1);
         });
+        
+        rFunc1.div2this(aData.size() * tStep);
+        return rFunc1;
+    }
+    
+    /**
+     * 使用带有一定展宽的高斯分布代替直接计数来统计分布，超出范围的值会忽略
+     * @author liqa
+     * @param aData 需要统计分布的数据
+     * @param aStart 分布的下界
+     * @param aEnd 分布的上界
+     * @param aN 分划的份数
+     * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
+     * @return 得到的分布函数
+     */
+    public static IZeroBoundFunc1 distFrom_G(IVector aData, double aStart, double aEnd, int aN, int aSigmaMul) {
+        final double tStep = (aEnd-aStart)/(double)(aN-1);
+        final IZeroBoundFunc1 rFunc1 = ZeroBoundFunc1.zeros(aStart, tStep, aN);
+        // 用于累加的 DeltaG
+        final IZeroBoundFunc1 tDeltaG = deltaG(tStep*aSigmaMul, 0.0, aSigmaMul);
+        
+        final double tLBound = aStart - tDeltaG.zeroBoundR();
+        final double tUBound = aEnd - tDeltaG.zeroBoundL();
+        aData.forEach(v -> {
+            if (v>=tLBound && v<tUBound) {
+                tDeltaG.setX0(v);
+                rFunc1.plus2this(tDeltaG);
+            }
+        });
+        
         rFunc1.div2this(aData.size());
         return rFunc1;
     }
+    public static IZeroBoundFunc1 distFrom_G(IVector aData, double aStart, double aEnd, int aN) {return distFrom_G(aData, aStart, aEnd, aN, 4);}
 }

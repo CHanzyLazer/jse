@@ -61,21 +61,21 @@ println('Mean of W4 of BCC: '     + W4B.mean())
 println('Mean of W4 of FCC: '     + W4F.mean())
 
 
-// 统计分布，这里使用 Func1 提供的方法来直接获取分布
-def distQ4G = Func1.distFrom(Q4G, 0.0, 0.3, 100)
-def distQ4C = Func1.distFrom(Q4C, 0.0, 0.3, 100)
-def distQ4B = Func1.distFrom(Q4B, 0.0, 0.3, 100)
-def distQ4F = Func1.distFrom(Q4F, 0.0, 0.3, 100)
+// 统计分布，这里使用 Func1 提供的方法来直接获取分布，使用 _G 的版本可以让结果光滑
+def distQ4G = Func1.distFrom_G(Q4G, 0.0, 0.25, 500)
+def distQ4C = Func1.distFrom_G(Q4C, 0.0, 0.25, 500)
+def distQ4B = Func1.distFrom_G(Q4B, 0.0, 0.25, 500)
+def distQ4F = Func1.distFrom_G(Q4F, 0.0, 0.25, 500)
 
-def distQ6G = Func1.distFrom(Q6G, 0.0, 0.6, 100)
-def distQ6C = Func1.distFrom(Q6C, 0.0, 0.6, 100)
-def distQ6B = Func1.distFrom(Q6B, 0.0, 0.6, 100)
-def distQ6F = Func1.distFrom(Q6F, 0.0, 0.6, 100)
+def distQ6G = Func1.distFrom_G(Q6G, 0.0, 0.6, 500)
+def distQ6C = Func1.distFrom_G(Q6C, 0.0, 0.6, 500)
+def distQ6B = Func1.distFrom_G(Q6B, 0.0, 0.6, 500)
+def distQ6F = Func1.distFrom_G(Q6F, 0.0, 0.6, 500)
 
-def distW4G = Func1.distFrom(W4G, -0.2, 0.2, 100)
-def distW4C = Func1.distFrom(W4C, -0.2, 0.2, 100)
-def distW4B = Func1.distFrom(W4B, -0.2, 0.2, 100)
-def distW4F = Func1.distFrom(W4F, -0.2, 0.2, 100)
+def distW4G = Func1.distFrom_G(W4G, -0.2, 0.2, 500)
+def distW4C = Func1.distFrom_G(W4C, -0.2, 0.2, 500)
+def distW4B = Func1.distFrom_G(W4B, -0.2, 0.2, 500)
+def distW4F = Func1.distFrom_G(W4F, -0.2, 0.2, 500)
 
 
 // 绘制统计分布，多张图这样绘制
