@@ -29,7 +29,7 @@ public abstract class AbstractTable implements ITable {
         mHead2Idx = new HashMap<>(tSize);
         for (int i = 0; i < tSize; ++i) mHead2Idx.put(mHeads.get(i), i);
     }
-    public AbstractTable(String[] aHeads) {
+    public AbstractTable(String... aHeads) {
         this(NewCollections.from(aHeads));
     }
     public AbstractTable(int aColNum) {

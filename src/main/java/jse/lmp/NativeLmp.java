@@ -25,10 +25,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static jse.code.CS.Exec.*;
 import static jse.code.CS.*;
@@ -436,8 +433,11 @@ public class NativeLmp implements IAutoShutdown {
         mComm = aComm;
         mInitTheadID = Thread.currentThread().getId();
     }
-    public NativeLmp(String[] aArgs) throws LmpException {this(aArgs, null);}
-    public NativeLmp() throws LmpException {this(null);}
+    public NativeLmp(Collection<? extends CharSequence> aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(UT.Text.toArray(aArgs), aComm);}
+    public NativeLmp(String... aArgs) throws LmpException {this(aArgs, null);}
+    public NativeLmp(@Nullable MPI.Comm aComm, String... aArgs) throws LmpException {this(aArgs, aComm);}
+    public NativeLmp(@Nullable MPI.Comm aComm) throws LmpException {this((String[])null, aComm);}
+    public NativeLmp() throws LmpException {this((String[])null);}
     private native static long lammpsOpen_(String[] aArgs, long aComm) throws LmpException;
     private native static long lammpsOpen_(String[] aArgs) throws LmpException;
     
@@ -513,7 +513,7 @@ public class NativeLmp implements IAutoShutdown {
      * This is a wrapper around the {@code lammps_commands_list()} function of the C-library interface.
      * @param aCmds a list of lammps commands
      */
-    public void commands(String[] aCmds) throws LmpException {
+    public void commands(String... aCmds) throws LmpException {
         checkThread();
         lammpsCommandsList_(mLmpPtr, aCmds);
     }

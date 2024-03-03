@@ -24,35 +24,35 @@ public class Table extends AbstractTable implements IDataShell<List<Vector>> {
     }
     public static Table zeros(final int aRowNum, String... aHeads) {
         if (aHeads==null || aHeads.length==0) return new Table(aRowNum);
-        else return new Table(aRowNum, aHeads, NewCollections.from(aHeads.length, col -> Vector.zeros(aRowNum)));
+        else return new Table(aRowNum, NewCollections.from(aHeads.length, col -> Vector.zeros(aRowNum)), aHeads);
     }
     public static Table zeros(final int aRowNum, int aColNum) {
-        return new Table(aRowNum, aColNum, NewCollections.from(aColNum, col -> Vector.zeros(aRowNum)));
+        return new Table(aRowNum, NewCollections.from(aColNum, col -> Vector.zeros(aRowNum)), aColNum);
     }
     
     /** 内部数据为按列排序的 Vector，可以轻松实现扩展列 */
     private final int mRowNum;
     private List<Vector> mData;
     /** 这些构造函数主要用于避免重复值拷贝数据 */
-    protected Table(int aRowNum, List<String> aHeads, List<Vector> aData) {
+    protected Table(int aRowNum, List<Vector> aData, List<String> aHeads) {
         super(aHeads);
         mRowNum = aRowNum;
         mData = aData;
     }
-    public Table(int aRowNum, String[] aHeads, List<Vector> aData) {
+    public Table(int aRowNum, List<Vector> aData, String... aHeads) {
         super(aHeads);
         mRowNum = aRowNum;
         mData = aData;
     }
-    public Table(int aRowNum, int aColNum, List<Vector> aData) {
+    public Table(int aRowNum, List<Vector> aData, int aColNum) {
         super(aColNum);
         mRowNum = aRowNum;
         mData = aData;
     }
-    public Table(String[] aHeads, List<Vector> aData) {this(UT.Code.first(aData).size(), aHeads, aData);}
-    public Table(int aRowNum, List<Vector> aData) {this(aRowNum, aData.size(), aData);}
-    public Table(List<Vector> aData) {this(UT.Code.first(aData).size(), aData.size(), aData);}
-    public Table(int aRowNum) {this(aRowNum, 0, new ArrayList<>());}
+    public Table(List<Vector> aData, String... aHeads) {this(UT.Code.first(aData).size(), aData, aHeads);}
+    public Table(int aRowNum, List<Vector> aData) {this(aRowNum, aData, aData.size());}
+    public Table(List<Vector> aData) {this(UT.Code.first(aData).size(), aData, aData.size());}
+    public Table(int aRowNum) {this(aRowNum, new ArrayList<>(), 0);}
     
     
     /** 重写这些接口避免过多的嵌套 */
@@ -85,7 +85,7 @@ public class Table extends AbstractTable implements IDataShell<List<Vector>> {
     @Override public final int columnNumber() {return mData.size();}
     
     @Override public Table copy() {
-        return new Table(mRowNum, NewCollections.from(mHeads), NewCollections.from(columnNumber(), col -> mData.get(col).copy()));
+        return new Table(mRowNum, NewCollections.from(columnNumber(), col -> mData.get(col).copy()), NewCollections.from(mHeads));
     }
     
     /** AbstractTable stuffs */
@@ -121,7 +121,7 @@ public class Table extends AbstractTable implements IDataShell<List<Vector>> {
     @Override public final void setInternalData(List<Vector> aData) {mData = aData;}
     @Override public final List<Vector> internalData() {return mData;}
     @Override public final int internalDataSize() {return mRowNum;}
-    @Override public Table newShell() {return new Table(mRowNum, NewCollections.from(mHeads), null);}
+    @Override public Table newShell() {return new Table(mRowNum, null, NewCollections.from(mHeads));}
     @Override public @Nullable List<Vector> getIfHasSameOrderData(Object aObj) {
         // 简单处理，这里认为所有 Table 内部数据都不是相同 order 的
         return null;

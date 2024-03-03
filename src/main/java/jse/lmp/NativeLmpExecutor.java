@@ -8,6 +8,8 @@ import jse.system.ISystemExecutor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
+
 import static jse.code.CS.Exec.EXE;
 
 /**
@@ -23,7 +25,10 @@ public class NativeLmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
     
     public NativeLmpExecutor(NativeLmp aLmp) {mLmp = aLmp;}
     public NativeLmpExecutor(String[] aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(new NativeLmp(aArgs, aComm));}
-    public NativeLmpExecutor(String[] aArgs) throws LmpException {this(new NativeLmp(aArgs));}
+    public NativeLmpExecutor(Collection<? extends CharSequence> aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(new NativeLmp(aArgs, aComm));}
+    public NativeLmpExecutor(String... aArgs) throws LmpException {this(new NativeLmp(aArgs));}
+    public NativeLmpExecutor(@Nullable MPI.Comm aComm, String... aArgs) throws LmpException {this(new NativeLmp(aComm, aArgs));}
+    public NativeLmpExecutor(@Nullable MPI.Comm aComm) throws LmpException {this(new NativeLmp(aComm));}
     public NativeLmpExecutor() throws LmpException {this(new NativeLmp());}
     /** 是否在关闭此实例时顺便关闭内部 NativeLmp */
     @Override public NativeLmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}

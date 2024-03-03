@@ -722,6 +722,16 @@ public class UT {
     
     public static class Text {
         
+        public static String[] toArray(Collection<? extends CharSequence> aLines) {
+            String[] rArray = new String[aLines.size()];
+            int i = 0;
+            for (CharSequence tStr : aLines) {
+                rArray[i] = Code.toString(tStr);
+                ++i;
+            }
+            return rArray;
+        }
+        
         /**
          * Convert a prob value to percent String
          * @author liqa
