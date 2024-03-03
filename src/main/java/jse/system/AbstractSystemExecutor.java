@@ -176,7 +176,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         private volatile boolean mValidOut = false;
         /** 加入同步保证最终操作（下载文件）是串行执行的 */
         private void doFinal() {
-            if (mDoFinal != null && !isCancelled() && isDone()) synchronized (AbstractSystemExecutor.this) {
+            if (mDoFinal!=null && !isCancelled() && isDone()) synchronized (AbstractSystemExecutor.this) {
                 if (mDoFinal == null) return;
                 if (!mValidOut) {
                     try {mOut = mFuture.get();} catch (Exception ignored) {}
@@ -229,6 +229,9 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         } catch (Exception e) {
             printStackTrace(e);
         } finally {
+            // 如果还有正在执行的任务直接全部取消
+            for (SystemFuture<?> tSystem : mRunningSystem) tSystem.cancel(true);
+            mRunningSystem.clear();
             // 在这里执行最后的关闭
             shutdownFinal();
         }
@@ -254,11 +257,15 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return 0;
         int tExitValue;
+        Future<Integer> tSystemTask = null;
         try {
-            tExitValue = submitSystem_(aCommand, aWriteln).get();
+            tSystemTask = submitSystem_(aCommand, aWriteln);
+            tExitValue = tSystemTask.get();
         } catch (Exception e) {
             printStackTrace(e);
             tExitValue = -1;
+        } finally {
+            if (tSystemTask != null) tSystemTask.cancel(true);
         }
         return tExitValue;
     }
@@ -272,13 +279,17 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
             return 0;
         }
         int tExitValue = 0;
+        Future<Integer> tSystemTask = null;
         try {
             if (needSyncIOFiles()) synchronized (this) {putFiles(aIOFiles.getIFiles());}
-            tExitValue = submitSystem_(aCommand, aWriteln).get();
+            tSystemTask = submitSystem_(aCommand, aWriteln);
+            tExitValue = tSystemTask.get();
             if (needSyncIOFiles()) synchronized (this) {getFiles(aIOFiles.getOFiles());}
         } catch (Exception e) {
             printStackTrace(e);
             tExitValue = tExitValue==0 ? -1 : tExitValue;
+        } finally {
+            if (tSystemTask != null) tSystemTask.cancel(true);
         }
         return tExitValue;
     }

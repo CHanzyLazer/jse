@@ -1,19 +1,29 @@
 package jse;
 
+import io.github.spencerpark.jupyter.channels.JupyterConnection;
+import io.github.spencerpark.jupyter.channels.JupyterSocket;
+import io.github.spencerpark.jupyter.kernel.KernelConnectionProperties;
 import jse.code.SP;
 import jse.code.UT;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.StackTraceUtils;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
 
+import static jse.code.CS.Exec.EXE;
+import static jse.code.CS.Exec.JAR_PATH;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.DEBUG;
+import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * @author liqa
@@ -21,8 +31,10 @@ import static jse.code.Conf.DEBUG;
  */
 public class Main {
     /** 记录 jse 是通过何种方式运行的，null 表示通过将 jar 添加到 class-path 运行 */
-    private static @Nullable String RUN_FROM = null;
+    private volatile static @Nullable String RUN_FROM = null;
     public static @Nullable String RUN_FROM() {return RUN_FROM;}
+    private volatile static boolean IS_KERNEL = false;
+    public static boolean IS_KERNEL() {return IS_KERNEL;}
     
     /** 使用这个替代原本的 addShutdownHook 的使用，注意要求线程安全以及避免死锁 */
     private final static Set<AutoCloseable> GLOBAL_AUTO_CLOSEABLE = new HashSet<>();
@@ -43,7 +55,7 @@ public class Main {
         }
     }
     
-    @SuppressWarnings("ThrowablePrintedToSystemOut")
+    @SuppressWarnings({"ThrowablePrintedToSystemOut", "UnnecessaryReturnStatement"})
     public static void main(String[] aArgs) throws Exception {
         try {
             // 完全没有输入时（双击运行）直接结束
@@ -70,6 +82,44 @@ public class Main {
             }
             case "-?": case "-help": {
                 printHelp();
+                return;
+            }
+            case "-jupyter": {
+                // 使用写入到临时目录然后走 jupyter 的方法来安装，这样应该是符合规范的
+                String tWorkingDir = WORKING_DIR_OF("jupyterkernel");
+                UT.IO.removeDir(tWorkingDir);
+                // 构造 kernel.json 并写入指定位置
+                UT.IO.map2json(Maps.of(
+                      "argv", new String[]{"java", "-jar", JAR_PATH, "JUPYTER", "-jupyterkernel", "{connection_file}"}
+                    , "display_name", "jse"
+                    , "language", "groovy"), tWorkingDir+"kernel.json");
+                // 写入 logo
+                UT.IO.copy(UT.IO.getResource("jupyter/logo-32x32.png"), tWorkingDir+"logo-32x32.png");
+                UT.IO.copy(UT.IO.getResource("jupyter/logo-64x64.png"), tWorkingDir+"logo-64x64.png");
+                // 使用这种方法来安装，不走 jep 来避免安装失败的问题
+                // 这里改用 ProcessBuilder 直接调用 python 而不是 CS.Exec.EXE 来通过 shell 调用，因为 powershell 有双引号的问题
+                Process tProcess = new ProcessBuilder("python", "-c", "import sys;from jupyter_client.kernelspec import KernelSpecManager;KernelSpecManager().install_kernel_spec('"+tWorkingDir.replace("\\", "\\\\")+"', 'jse', prefix=sys.prefix)").start();
+                // 不需要读取输出，因为此指令没有输出
+                int tExitValue;
+                try {tExitValue = tProcess.waitFor();}
+                catch (Exception e) {tProcess.destroy(); throw e;}
+                if (tExitValue != 0) {System.exit(tExitValue); return;}
+                UT.IO.removeDir(tWorkingDir);
+                // 执行 jupyter 指令
+                String[] tArgs = new String[aArgs.length-2];
+                if (tArgs.length > 0) System.arraycopy(aArgs, 2, tArgs, 0, tArgs.length);
+                // 这样简单处理会让 tArgs 里的空格之类的文本也被当作分隔符截断，因为原本的双引号没有了；
+                // 当然这里不去统一增加双引号，因为内部可能还存在双引号转义的问题；
+                // 好在 jupyter 相关指令很简单，这里暂时不用考虑这些问题
+                System.err.println("NOTICE: YOU CAN ONLY CLOSE THE JUPYTER SERVER IN WEB!!!!");
+                Future<Integer> tJupyterTask = EXE.submitSystem("jupyter "+String.join(" ", tArgs));
+                try {
+                    Thread.sleep(10000);
+                    System.err.println("NOTICE: YOU CAN ONLY CLOSE THE JUPYTER SERVER IN WEB!!!!");
+                    tJupyterTask.get();
+                } finally {
+                    tJupyterTask.cancel(true);
+                }
                 return;
             }
             default: {
@@ -124,6 +174,20 @@ public class Main {
                     }
                     return;
                 }
+                case "-jupyterkernel": {
+                    IS_KERNEL = true;
+                    JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
+                    
+                    String tContents = UT.IO.readAllText(tValue);
+                    KernelConnectionProperties tConnProps = KernelConnectionProperties.parse(tContents);
+                    JupyterConnection tConnection = new JupyterConnection(tConnProps);
+                    
+                    SP.Groovy.JupyterKernel tKernel = new SP.Groovy.JupyterKernel();
+                    tKernel.becomeHandlerForConnection(tConnection);
+                    tConnection.connect();
+                    tConnection.waitUntilClose();
+                    return;
+                }
                 default: {
                     printHelp();
                     return;
@@ -132,6 +196,7 @@ public class Main {
         } catch (CompilationFailedException e) {
             System.err.println(e);
             System.exit(1);
+            return;
         } catch (Throwable e) {
             Throwable ex = e;
             if (ex instanceof InvokerInvocationException) {
@@ -141,20 +206,21 @@ public class Main {
             if (!DEBUG) ex = deepSanitize(ex);
             ex.printStackTrace(System.err);
             System.exit(1);
+            return;
         } finally {
             closeAllAutoCloseable();
         }
     }
     
     /** stuffs from {@link StackTraceUtils} */
-    private static Throwable deepSanitize(Throwable t) {
+    @ApiStatus.Internal public static <T extends Throwable> T deepSanitize(T t) {
         Throwable tCurrent = t;
         while (tCurrent.getCause() != null) {
             tCurrent = sanitize(tCurrent.getCause());
         }
         return sanitize(t);
     }
-    private static Throwable sanitize(Throwable t) {
+    @ApiStatus.Internal public static <T extends Throwable> T sanitize(T t) {
         StackTraceElement[] tTrace = t.getStackTrace();
         List<StackTraceElement> nTrace = new ArrayList<>();
         for (StackTraceElement tElement : tTrace) if (isApplicationClass(tElement.getClassName())) {
@@ -187,6 +253,7 @@ public class Main {
         , "org.apache.commons.csv."
         , "org.jfree.chart."
         , "org.jfree.data."
+        , "io.github.spencerpark.jupyter."
         , "groovy."
         , "org.codehaus.groovy."
         , "java."

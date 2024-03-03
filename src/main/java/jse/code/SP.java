@@ -1,6 +1,15 @@
 package jse.code;
 
+import com.google.common.collect.ImmutableList;
 import groovy.lang.*;
+import io.github.spencerpark.jupyter.kernel.BaseKernel;
+import io.github.spencerpark.jupyter.kernel.LanguageInfo;
+import io.github.spencerpark.jupyter.kernel.ReplacementOptions;
+import io.github.spencerpark.jupyter.kernel.display.DisplayData;
+import io.github.spencerpark.jupyter.kernel.util.CharPredicate;
+import io.github.spencerpark.jupyter.kernel.util.SimpleAutoCompleter;
+import io.github.spencerpark.jupyter.kernel.util.StringSearch;
+import io.github.spencerpark.jupyter.messages.Header;
 import jep.JepConfig;
 import jep.JepException;
 import jline.Terminal;
@@ -121,6 +130,93 @@ public class SP {
     /** Groovy 脚本运行支持 */
     @SuppressWarnings("RedundantThrows")
     public static class Groovy {
+        /** Jupyter Kernel for Groovy */
+        public static class JupyterKernel extends BaseKernel {
+            private static final SimpleAutoCompleter AUTO_COMPLETER = SimpleAutoCompleter.builder()
+                .preferLong()
+                //Keywords from https://groovy-lang.org/syntax.html
+                .withKeywords("abstract", "assert", "break", "case")
+                .withKeywords("catch", "class", "continue")
+                .withKeywords("def", "default", "do", "else")
+                .withKeywords("enum", "extends", "final", "finally")
+                .withKeywords("for", "if", "implements")
+                .withKeywords("import", "instanceof", "interface", "native")
+                .withKeywords("new", "null", "non-sealed", "package")
+                .withKeywords("public", "protected", "private", "return")
+                .withKeywords("static", "super", "switch")
+                .withKeywords("synchronized", "this", "throw")
+                .withKeywords("throws", "transient", "try", "while")
+                .withKeywords("as", "in", "permits", "record")
+                .withKeywords("sealed", "trait", "var", "yields")
+                .withKeywords("true", "false", "boolean")
+                .withKeywords("char", "byte", "short", "int")
+                .withKeywords("long", "float", "double")
+                .build();
+            private static final CharPredicate ID_CHAR = CharPredicate.builder()
+                .inRange('a', 'z')
+                .inRange('A', 'Z')
+                .inRange('0', '9')
+                .match('_')
+                .build();
+            private static String toDisplayString(Object aObj) {
+                if (aObj instanceof String) {
+                    return "'"+aObj+"'";
+                } else
+                if (aObj instanceof GString) {
+                    return "\""+aObj+"\"";
+                } else
+                if (aObj instanceof CharSequence) {
+                    return "'"+aObj+"'";
+                } else {
+                    return aObj.toString();
+                }
+            }
+            
+            private final LanguageInfo mLanguageInfo;
+            private final String mBanner;
+            private final List<LanguageInfo.Help> mHelpLinks;
+            public JupyterKernel() {
+                mLanguageInfo = new LanguageInfo.Builder("groovy")
+                    .version(GroovySystem.getVersion())
+                    .fileExtension(".groovy")
+                    .pygments("groovy")
+                    .codemirror("groovy")
+                    .build();
+                mBanner = "jse "+VERSION+String.format(" (groovy: %s, java: %s)", GroovySystem.getVersion(), System.getProperty("java.version"))+"\n"
+                         +"Protocol v"+Header.PROTOCOL_VERISON+" implementation by "+KERNEL_META.getOrDefault("project", "UNKNOWN")+" "+KERNEL_META.getOrDefault("version", "UNKNOWN");
+                mHelpLinks = ImmutableList.of(
+                    new LanguageInfo.Help("Groovy tutorial", "https://groovy-lang.org/learn.html"),
+                    new LanguageInfo.Help("JSE homepage", "https://github.com/CHanzyLazer/jse"));
+            }
+            @Override public LanguageInfo getLanguageInfo() {return mLanguageInfo;}
+            @Override public String getBanner() {return mBanner;}
+            @Override public List<LanguageInfo.Help> getHelpLinks() {return mHelpLinks;}
+            
+            @Override public DisplayData eval(String expr) throws Exception {
+                Object tOut = Groovy.eval(expr);
+                return tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
+            }
+            @Override public List<String> formatError(Exception e) {
+                return super.formatError(Main.deepSanitize(e));
+            }
+            
+            @Override public DisplayData inspect(String code, int at, boolean extraDetail) throws Exception {
+                StringSearch.Range tMatch = StringSearch.findLongestMatchingAt(code, at, ID_CHAR);
+                if (tMatch == null) return null;
+                String tID = tMatch.extractSubString(code);
+                if (!GROOVY_INTERP.getContext().hasVariable(tID)) return new DisplayData("No memory value for '"+tID+"'");
+                Object tVal = GROOVY_INTERP.getContext().getVariable(tID);
+                return new DisplayData(toDisplayString(tVal));
+            }
+            @Override public ReplacementOptions complete(String code, int at) throws Exception {
+                StringSearch.Range tMatch = StringSearch.findLongestMatchingAt(code, at, ID_CHAR);
+                if (tMatch == null) return null;
+                String tPrefix = tMatch.extractSubString(code);
+                return new ReplacementOptions(AUTO_COMPLETER.autocomplete(tPrefix), tMatch.getLow(), tMatch.getHigh());
+            }
+        }
+        
+        
         /** Wrapper of {@link GroovyObject} for matlab usage */
         public final static class GroovyObjectWrapper implements GroovyObject {
             private final GroovyObject mObj;
@@ -131,6 +227,9 @@ public class SP {
             @Override public void setProperty(String propertyName, Object newValue) {mObj.setProperty(propertyName, newValue);}
             @Override public MetaClass getMetaClass() {return mObj.getMetaClass();}
             @Override public void setMetaClass(MetaClass metaClass) {mObj.setMetaClass(metaClass);}
+            
+            @Override public String toString() {return mObj.toString();}
+            public GroovyObject unwrap() {return mObj;}
             
             /** 主要用来判断是否需要外包这一层 */
             public static Object of(Object aObj) {return (!(aObj instanceof GroovyObjectWrapper) && (aObj instanceof GroovyObject)) ? (new GroovyObjectWrapper((GroovyObject)aObj)) : aObj;}
@@ -219,13 +318,13 @@ public class SP {
         }
         
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
-        public synchronized static void exec(String aText) throws Exception {GROOVY_INTERP.getShell().evaluate(aText);}
+        public synchronized static void exec(String aText) throws Exception {GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
         public synchronized static void execFile(String aFilePath) throws Exception {GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath));}
-        public synchronized static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(aText));}
+        public synchronized static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy"));}
         public synchronized static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath)));}
         
         /** 直接运行文本的脚本 */
-        public synchronized static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(aText, "TextScriptFromJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
+        public synchronized static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
         /** Groovy 现在也可以使用 getValue 来获取变量以及 setValue 设置变量（仅限于 Context 变量，这样可以保证效率） */
         public synchronized static Object get(String aValueName) throws Exception {return getValue(aValueName);}
         public synchronized static void set(String aValueName, Object aValue) throws Exception {setValue(aValueName, aValue);}

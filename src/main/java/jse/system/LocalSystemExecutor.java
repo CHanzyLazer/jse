@@ -92,7 +92,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
         @Override public boolean cancel(boolean mayInterruptIfRunning) {
             if (mProcess == null) return false;
             if (mayInterruptIfRunning && mProcess.isAlive()) {
-                mProcess.destroyForcibly();
+                mProcess.destroyForcibly(); // anyway, 总之是没有办法在 java 中直接发送 ctrl-c 到指定进程的
                 for (int i = 0; i < TRY_TIMES; ++i) {
                     if (!mProcess.isAlive()) {mCancelled = true; return true;}
                     try {Thread.sleep(SYNC_SLEEP_TIME);}
