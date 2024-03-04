@@ -13,7 +13,7 @@ java {
 
 repositories {
     mavenCentral()
-    maven {url 'https://www.jitpack.io'}
+//  maven {url 'https://www.jitpack.io'}
 }
 
 sourceSets {

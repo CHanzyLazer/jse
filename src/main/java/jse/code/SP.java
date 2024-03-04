@@ -2,6 +2,7 @@ package jse.code;
 
 import com.google.common.collect.ImmutableList;
 import groovy.lang.*;
+import groovy.transform.ThreadInterrupt;
 import io.github.spencerpark.jupyter.kernel.BaseKernel;
 import io.github.spencerpark.jupyter.kernel.LanguageInfo;
 import io.github.spencerpark.jupyter.kernel.ReplacementOptions;
@@ -34,6 +35,7 @@ import org.apache.groovy.groovysh.Groovysh;
 import org.apache.groovy.groovysh.InteractiveShellRunner;
 import org.apache.groovy.groovysh.Interpreter;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.IO;
 import org.jetbrains.annotations.NotNull;
@@ -51,20 +53,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static jse.code.CS.Exec.EXE;
 import static jse.code.CS.Exec.JAR_DIR;
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.LIB_NAME_IN;
-import static jse.code.Conf.WORKING_DIR_OF;
+import static jse.code.Conf.*;
 
 /**
  * @author liqa
  * <p> 运行脚本（script）的通用类，目前支持运行 Groovy 脚本和 Python 脚本 </p>
  * <p> 为了方便调用这里使用纯静态的类来实现 </p>
- * <p> 根据底层实现，所有方法都是线程不安全的，这里加上 synchronized 表明这点 </p>
- * <p> 看起来似乎当底层中开启新线程来执行脚本时，再次调用会发生死锁，但是经过测试发现并不会这样 </p>
+ * <p> 根据底层实现，所有方法都是线程不安全的，这里不加上 synchronized 来避免死锁 </p>
+ * <p> 虽然经过测试一般情况不会发生死锁，但在尝试中断执行线程时会失败（具体原因未知） </p>
  */
 @SuppressWarnings("UnusedReturnValue")
 public class SP {
@@ -192,12 +195,27 @@ public class SP {
             @Override public String getBanner() {return mBanner;}
             @Override public List<LanguageInfo.Help> getHelpLinks() {return mHelpLinks;}
             
+            private volatile Future<?> mEvalTask = null;
             @Override public DisplayData eval(String expr) throws Exception {
-                Object tOut = Groovy.eval(expr);
-                return tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
+                mEvalTask = UT.Par.callAsync(() -> Groovy.eval(expr));
+                try {
+                    Object tOut = mEvalTask.get();
+                    mEvalTask = null;
+                    return tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
+                } catch (ExecutionException e) {
+                    Throwable t = e.getCause();
+                    if (t instanceof Exception) throw (Exception)t;
+                    else throw e;
+                }
             }
             @Override public List<String> formatError(Exception e) {
                 return super.formatError(Main.deepSanitize(e));
+            }
+            @Override public void interrupt() {
+                if (mEvalTask != null) {
+                    mEvalTask.cancel(true);
+                    mEvalTask = null;
+                }
             }
             
             @Override public DisplayData inspect(String code, int at, boolean extraDetail) throws Exception {
@@ -247,7 +265,7 @@ public class SP {
         private final static AtomicInteger COUNTER = new AtomicInteger(0);
         
         /** 获取 shell 的交互式运行 */
-        public synchronized static void runShell() throws Exception {
+        public static void runShell() throws Exception {
             // 使用这个方法来自动设置种类
             org.apache.groovy.groovysh.Main.setTerminalType("auto", false);
             // 这样手动指定 CLASS_LOADER
@@ -318,25 +336,25 @@ public class SP {
         }
         
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
-        public synchronized static void exec(String aText) throws Exception {GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
-        public synchronized static void execFile(String aFilePath) throws Exception {GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath));}
-        public synchronized static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy"));}
-        public synchronized static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath)));}
+        public static void exec(String aText) throws Exception {GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
+        public static void execFile(String aFilePath) throws Exception {GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath));}
+        public static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(aText, "Script"+COUNTER.incrementAndGet()+".groovy"));}
+        public static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath)));}
         
         /** 直接运行文本的脚本 */
-        public synchronized static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
+        public static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
         /** Groovy 现在也可以使用 getValue 来获取变量以及 setValue 设置变量（仅限于 Context 变量，这样可以保证效率） */
-        public synchronized static Object get(String aValueName) throws Exception {return getValue(aValueName);}
-        public synchronized static void set(String aValueName, Object aValue) throws Exception {setValue(aValueName, aValue);}
-        public synchronized static void remove(String aValueName) throws Exception {removeValue(aValueName);}
-        public synchronized static Object getValue(String aValueName) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getContext().getVariable(aValueName));}
-        public synchronized static void setValue(String aValueName, Object aValue) throws Exception {GROOVY_INTERP.getContext().setVariable(aValueName, aValue);}
-        public synchronized static void removeValue(String aValueName) throws Exception {GROOVY_INTERP.getContext().removeVariable(aValueName);}
+        public static Object get(String aValueName) throws Exception {return getValue(aValueName);}
+        public static void set(String aValueName, Object aValue) throws Exception {setValue(aValueName, aValue);}
+        public static void remove(String aValueName) throws Exception {removeValue(aValueName);}
+        public static Object getValue(String aValueName) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getContext().getVariable(aValueName));}
+        public static void setValue(String aValueName, Object aValue) throws Exception {GROOVY_INTERP.getContext().setVariable(aValueName, aValue);}
+        public static void removeValue(String aValueName) throws Exception {GROOVY_INTERP.getContext().removeVariable(aValueName);}
         /** 运行脚本文件 */
-        public synchronized static Object run(String aScriptPath, String... aArgs) throws Exception {return runScript(aScriptPath, aArgs);}
-        public synchronized static Object runScript(String aScriptPath, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(toSourceFile(aScriptPath), aArgs));}
+        public static Object run(String aScriptPath, String... aArgs) throws Exception {return runScript(aScriptPath, aArgs);}
+        public static Object runScript(String aScriptPath, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(toSourceFile(aScriptPath), aArgs));}
         /** 调用指定脚本中的方法 */
-        public synchronized static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {
+        public static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {
             // 获取脚本的类
             Class<?> tScriptClass = GROOVY_INTERP.getClassLoader().parseClass(toSourceFile(aScriptPath));
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
@@ -360,7 +378,7 @@ public class SP {
             return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(tScriptClass, aMethodName, fArgs));
         }
         /** 创建脚本类的实例 */
-        public synchronized static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
+        public static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类
             Class<?> tScriptClass = GROOVY_INTERP.getClassLoader().parseClass(toSourceFile(aScriptPath));
             // 获取 ScriptClass 的实例
@@ -372,10 +390,10 @@ public class SP {
         }
         
         /** 提供一个手动关闭 GROOVY_INTERP 的接口，似乎不需要手动关闭 Interpreter，但是这里还是关闭一下内部的 ClassLoader */
-        public synchronized static void close() throws IOException {if (GROOVY_INTERP != null) {GROOVY_INTERP.getClassLoader().close(); GROOVY_INTERP = null;}}
-        public synchronized static boolean isClosed() {return GROOVY_INTERP == null;}
+        public static void close() throws IOException {if (GROOVY_INTERP != null) {GROOVY_INTERP.getClassLoader().close(); GROOVY_INTERP = null;}}
+        public static boolean isClosed() {return GROOVY_INTERP == null;}
         /** 提供一个手动刷新 GROOVY_INTERP 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
-        public synchronized static void refresh() throws IOException {close(); initInterpreter_();}
+        public static void refresh() throws IOException {close(); initInterpreter_();}
         
         
         static {
@@ -386,6 +404,9 @@ public class SP {
             // 先初始化配置
             GROOVY_CONF = new CompilerConfiguration();
             GROOVY_CONF.setSourceEncoding(StandardCharsets.UTF_8.name()); // 文件统一使用 utf-8 编码
+            if (KERNEL_THREAD_INTERRUPT && Main.IS_KERNEL()) {
+            GROOVY_CONF.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
+            }
             // 初始化 CLASS_LOADER
             initInterpreter_();
         }
@@ -445,31 +466,31 @@ public class SP {
         
         
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
-        public synchronized static void exec(String aText) throws JepException {JEP_INTERP.exec(aText);}
-        public synchronized static void execFile(String aFilePath) throws JepException, IOException {JEP_INTERP.runScript(validScriptPath(aFilePath));}
+        public static void exec(String aText) throws JepException {JEP_INTERP.exec(aText);}
+        public static void execFile(String aFilePath) throws JepException, IOException {JEP_INTERP.runScript(validScriptPath(aFilePath));}
         /** 由于 jep 的特性，这里可以直接使用 getValue 指定 eval */
-        public synchronized static Object eval(String aText) throws JepException {return JEP_INTERP.getValue(aText);}
+        public static Object eval(String aText) throws JepException {return JEP_INTERP.getValue(aText);}
         // python 脚本文件不会有返回值
         
         /** 直接运行文本的脚本 */
-        public synchronized static void runText(String aText, String... aArgs) throws JepException {setArgs_("", aArgs); JEP_INTERP.exec(aText);}
+        public static void runText(String aText, String... aArgs) throws JepException {setArgs_("", aArgs); JEP_INTERP.exec(aText);}
         /** Python 还可以使用 getValue 来获取变量以及 setValue 设置变量（原则上同样仅限于 Context 变量，允许可以超出 Context 但是不保证支持） */
-        public synchronized static Object get(String aValueName) throws JepException {return getValue(aValueName);}
-        public synchronized static void set(String aValueName, Object aValue) throws JepException {setValue(aValueName, aValue);}
-        public synchronized static void remove(String aValueName) throws JepException {removeValue(aValueName);}
-        public synchronized static Object getValue(String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName);}
-        public synchronized static void setValue(String aValueName, Object aValue) throws JepException {JEP_INTERP.set(aValueName, aValue);}
-        public synchronized static void removeValue(String aValueName) throws JepException {JEP_INTERP.exec("del "+aValueName);}
+        public static Object get(String aValueName) throws JepException {return getValue(aValueName);}
+        public static void set(String aValueName, Object aValue) throws JepException {setValue(aValueName, aValue);}
+        public static void remove(String aValueName) throws JepException {removeValue(aValueName);}
+        public static Object getValue(String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName);}
+        public static void setValue(String aValueName, Object aValue) throws JepException {JEP_INTERP.set(aValueName, aValue);}
+        public static void removeValue(String aValueName) throws JepException {JEP_INTERP.exec("del "+aValueName);}
         /** 运行脚本文件 */
-        public synchronized static void run(String aScriptPath, String... aArgs) throws JepException, IOException {runScript(aScriptPath, aArgs);}
-        public synchronized static void runScript(String aScriptPath, String... aArgs) throws JepException, IOException {
+        public static void run(String aScriptPath, String... aArgs) throws JepException, IOException {runScript(aScriptPath, aArgs);}
+        public static void runScript(String aScriptPath, String... aArgs) throws JepException, IOException {
             // 现在不再保存旧的 sys.argv，如果需要可以在外部代码自行保存
             setArgs_(aScriptPath, aArgs);
             JEP_INTERP.runScript(validScriptPath(aScriptPath));
         }
         /** 调用方法，python 中需要结合 import 使用 */
         @SuppressWarnings("unchecked")
-        public synchronized static Object invoke(String aMethodName, Object... aArgs) throws JepException {
+        public static Object invoke(String aMethodName, Object... aArgs) throws JepException {
             if (aArgs == null || aArgs.length == 0) return JEP_INTERP.invoke(aMethodName);
             if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return JEP_INTERP.invoke(aMethodName, (Map<String, Object>)aArgs[0]);
             if (aArgs.length > 1 && (aArgs[aArgs.length-1] instanceof Map)) {
@@ -480,13 +501,13 @@ public class SP {
             return JEP_INTERP.invoke(aMethodName, aArgs);
         }
         /** 创建 Python 实例，这里可以直接将类名当作函数调用即可 */
-        public synchronized static Object newInstance(String aClassName, Object... aArgs) throws JepException {return invoke(aClassName, aArgs);}
+        public static Object newInstance(String aClassName, Object... aArgs) throws JepException {return invoke(aClassName, aArgs);}
         
         /** 提供一个手动关闭 JEP_INTERP 的接口 */
-        public synchronized static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null;}}
-        public synchronized static boolean isClosed() {return JEP_INTERP == null;}
+        public static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null;}}
+        public static boolean isClosed() {return JEP_INTERP == null;}
         /** 提供一个手动刷新 JEP_INTERP 的接口，可以将关闭的重新打开，会清空所有创建的 python 变量 */
-        public synchronized static void refresh() throws JepException {close(); initInterpreter_();}
+        public static void refresh() throws JepException {close(); initInterpreter_();}
         
         
         /** 提供一个方便 Groovy 中使用的直接访问类型的接口 */

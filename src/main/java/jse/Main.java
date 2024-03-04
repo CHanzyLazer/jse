@@ -16,10 +16,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-import static jse.code.CS.Exec.EXE;
 import static jse.code.CS.Exec.JAR_PATH;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.DEBUG;
@@ -92,7 +90,8 @@ public class Main {
                 UT.IO.map2json(Maps.of(
                       "argv", new String[]{"java", "-jar", JAR_PATH, "JUPYTER", "-jupyterkernel", "{connection_file}"}
                     , "display_name", "jse"
-                    , "language", "groovy"), tWorkingDir+"kernel.json");
+                    , "language", "groovy"
+                    , "interrupt_mode", "message"), tWorkingDir+"kernel.json");
                 // 写入 logo
                 UT.IO.copy(UT.IO.getResource("jupyter/logo-32x32.png"), tWorkingDir+"logo-32x32.png");
                 UT.IO.copy(UT.IO.getResource("jupyter/logo-64x64.png"), tWorkingDir+"logo-64x64.png");
@@ -105,21 +104,9 @@ public class Main {
                 catch (Exception e) {tProcess.destroy(); throw e;}
                 if (tExitValue != 0) {System.exit(tExitValue); return;}
                 UT.IO.removeDir(tWorkingDir);
-                // 执行 jupyter 指令
-                String[] tArgs = new String[aArgs.length-2];
-                if (tArgs.length > 0) System.arraycopy(aArgs, 2, tArgs, 0, tArgs.length);
-                // 这样简单处理会让 tArgs 里的空格之类的文本也被当作分隔符截断，因为原本的双引号没有了；
-                // 当然这里不去统一增加双引号，因为内部可能还存在双引号转义的问题；
-                // 好在 jupyter 相关指令很简单，这里暂时不用考虑这些问题
-                System.err.println("NOTICE: YOU CAN ONLY CLOSE THE JUPYTER SERVER IN WEB!!!!");
-                Future<Integer> tJupyterTask = EXE.submitSystem("jupyter "+String.join(" ", tArgs));
-                try {
-                    Thread.sleep(10000);
-                    System.err.println("NOTICE: YOU CAN ONLY CLOSE THE JUPYTER SERVER IN WEB!!!!");
-                    tJupyterTask.get();
-                } finally {
-                    tJupyterTask.cancel(true);
-                }
+                // 由于 java 中不能正常关闭 jupyter，因此不在这里运行 jupyter
+                System.out.println("The jupyter kernel for JSE has been initialized,");
+                System.out.println("now you can open the jupyter notebook through `jupyter notebook`");
                 return;
             }
             default: {

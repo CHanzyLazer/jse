@@ -333,6 +333,15 @@ public class UT {
          * 获取一个 Future 使用携程执行 aSupplier 获取结果；
          * 其中使用新建一个 Thread 而不是 {@link CompletableFuture} 中使用的 {@link ForkJoinPool}；
          * 这样可以避免线程数上限，主要用于执行需要长期监控但是不消耗资源的情况
+         * @param aCallable 计算返回值的函数
+         * @param <U> 函数的返回类型
+         * @return 新的 Future
+         */
+        public static <U> Future<U> callAsync(Callable<U> aCallable) {return new ThreadFuture<>(aCallable);}
+        /**
+         * 获取一个 Future 使用携程执行 aSupplier 获取结果；
+         * 其中使用新建一个 Thread 而不是 {@link CompletableFuture} 中使用的 {@link ForkJoinPool}；
+         * 这样可以避免线程数上限，主要用于执行需要长期监控但是不消耗资源的情况
          * @param aSupplier 计算返回值的函数
          * @param <U> 函数的返回类型
          * @return 新的 Future
@@ -352,19 +361,27 @@ public class UT {
             
             /** 使用 volatile 或 final 保证不同线程的可见性 */
             private volatile T mResult = null;
-            private volatile boolean mFinished = false, mCancelled = false;
+            private volatile boolean mCancelled = false;
+            private volatile Throwable mThrowable = null;
             private final Thread mThread;
+            private ThreadFuture(final Callable<T> aCallable) {
+                mThread = new Thread(() -> {
+                    try {mResult = aCallable.call();}
+                    catch (Throwable t) {mThrowable = t;}
+                });
+                mThread.start();
+            }
             private ThreadFuture(final Supplier<T> aSupplier) {
                 mThread = new Thread(() -> {
-                    mResult = aSupplier.get();
-                    mFinished = true;
+                    try {mResult = aSupplier.get();}
+                    catch (Throwable t) {mThrowable = t;}
                 });
                 mThread.start();
             }
             private ThreadFuture(final Runnable aRunnable) {
                 mThread = new Thread(() -> {
-                    aRunnable.run();
-                    mFinished = true;
+                    try {aRunnable.run();}
+                    catch (Throwable t) {mThrowable = t;}
                 });
                 mThread.start();
             }
@@ -373,7 +390,7 @@ public class UT {
                 if (mayInterruptIfRunning && mThread.isAlive()) {
                     mThread.interrupt();
                     for (int i = 0; i < TRY_TIMES; ++i) {
-                        if (!mThread.isAlive()) {mCancelled = true; mFinished = true; return true;}
+                        if (!mThread.isAlive()) {mCancelled = true; return true;}
                         try {Thread.sleep(SYNC_SLEEP_TIME);}
                         catch (InterruptedException e) {return false;}
                     }
@@ -381,21 +398,23 @@ public class UT {
                 return false;
             }
             @Override public boolean isCancelled() {return mCancelled;}
-            @Override public boolean isDone() {return mFinished;}
+            @Override public boolean isDone() {return !mThread.isAlive();}
             @SuppressWarnings("BusyWait")
-            @Override public T get() throws InterruptedException {
-                while (!mFinished) Thread.sleep(INTERNAL_SLEEP_TIME);
+            @Override public T get() throws InterruptedException, ExecutionException {
+                while (mThread.isAlive()) Thread.sleep(INTERNAL_SLEEP_TIME);
                 if (mCancelled) throw new CancellationException();
+                if (mThrowable != null) throw new ExecutionException(mThrowable);
                 return mResult;
             }
             @SuppressWarnings("BusyWait")
-            @Override public T get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, TimeoutException {
+            @Override public T get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
                 long tic = System.nanoTime();
-                while (!mFinished) {
+                while (mThread.isAlive()) {
                     Thread.sleep(INTERNAL_SLEEP_TIME);
                     if (System.nanoTime()-tic >= unit.toNanos(timeout)) throw new TimeoutException();
                 }
                 if (mCancelled) throw new CancellationException();
+                if (mThrowable != null) throw new ExecutionException(mThrowable);
                 return mResult;
             }
         }
