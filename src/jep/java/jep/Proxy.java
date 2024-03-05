@@ -32,6 +32,7 @@ import jep.python.PyObject;
  * 
  * @author Mike Johnson
  */
+@SuppressWarnings("NonSerializableClassWithSerialVersionUID")
 class Proxy {
 
     private static final long serialVersionUID = 1L;
@@ -39,13 +40,13 @@ class Proxy {
     protected static Object newDirectProxyInstance(Jep jep, long ltarget,
             Class<?> targetInterface) {
         ClassLoader loader = jep.getClassLoader();
-        InvocationHandler ih = null;
+        InvocationHandler ih;
         try {
             ih = new InvocationHandler(jep, ltarget, true);
         } catch (JepException e) {
             throw new IllegalArgumentException(e);
         }
-        Class<?> classes[] = { targetInterface };
+        Class<?>[] classes = {targetInterface};
         return java.lang.reflect.Proxy.newProxyInstance(loader, classes, ih);
     }
 
@@ -77,14 +78,14 @@ class Proxy {
     protected static Object newProxyInstance(Jep jep, long ltarget,
             String[] interfaces) {
         ClassLoader loader = jep.getClassLoader();
-        InvocationHandler ih = null;
+        InvocationHandler ih;
         try {
             ih = new InvocationHandler(jep, ltarget, false);
         } catch (JepException e) {
             throw new IllegalArgumentException(e);
         }
 
-        Class<?> classes[] = new Class<?>[interfaces.length];
+        Class<?>[] classes = new Class<?>[interfaces.length];
         try {
             for (int i = 0; i < interfaces.length; i++)
                 classes[i] = loader.loadClass(interfaces[i]);

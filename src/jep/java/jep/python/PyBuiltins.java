@@ -38,6 +38,7 @@ import jep.Interpreter;
  * PyBuiltins are not thread safe and have the same thread related restrictions as {@link PyObject}.
  * @since 4.2
  */
+@SuppressWarnings("UnnecessaryModifier")
 public interface PyBuiltins {
 
     public boolean callable(Object object);

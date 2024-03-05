@@ -35,6 +35,7 @@ package jep;
  * 
  * @since 3.3
  */
+@SuppressWarnings("UnnecessaryModifier")
 public interface ClassEnquirer {
 
     /*
@@ -77,7 +78,7 @@ public interface ClassEnquirer {
      * @param pkgName
      *            the name of a package the ClassEnquirer supports, such as
      *            java.util
-     * @return the list of classnames in the package, or null
+     * @return the array of classnames in the package, or null
      */
     public String[] getClassNames(String pkgName);
 
@@ -91,7 +92,7 @@ public interface ClassEnquirer {
      * @param pkgName
      *            the name of a package the ClassEnquirer supports, such as
      *            java.util
-     * @return the list of sub-packages in the package, or null
+     * @return the array of sub-packages in the package, or null
      */
     public String[] getSubPackages(String pkgName);
 

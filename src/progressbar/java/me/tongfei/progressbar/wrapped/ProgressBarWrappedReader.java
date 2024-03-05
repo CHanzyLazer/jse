@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FilterReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.nio.CharBuffer;
 
 /**
  * A reader whose progress is tracked by a progress bar.

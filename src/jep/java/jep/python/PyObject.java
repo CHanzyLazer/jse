@@ -239,8 +239,8 @@ public class PyObject extends JepAccess implements AutoCloseable, GroovyObject {
      */
     @Override
     public int hashCode() {
-        Long value = hashCode(tstate(), pointer.pyObject);
-        return value.hashCode();
+        long value = hashCode(tstate(), pointer.pyObject);
+        return Long.hashCode(value);
     }
 
     private native boolean equals(long tstate, long pyObject, Object obj);
@@ -277,7 +277,7 @@ public class PyObject extends JepAccess implements AutoCloseable, GroovyObject {
     public <T> T proxy(Class<T> primaryInterface, Class<?>... extraInterfaces)
             throws JepException {
         ClassLoader loader = pointer.memoryManager.getClassLoader();
-        Class<?>[] interfaces = null;
+        Class<?>[] interfaces;
         if (extraInterfaces == null || extraInterfaces.length == 0) {
             interfaces = new Class<?>[] { primaryInterface };
         } else {

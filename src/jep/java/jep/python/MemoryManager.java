@@ -62,16 +62,16 @@ public final class MemoryManager extends JepAccess{
         this.interpreterSet.add(jep);
     }
 
-    protected ReferenceQueue<PyObject> getReferenceQueue() throws JepException {
+    ReferenceQueue<PyObject> getReferenceQueue() throws JepException {
         cleanupWeakReferences();
         return refQueue;
     }
 
-    protected void addReference(PyPointer pointer) {
+    void addReference(PyPointer pointer) {
         pointers.add(pointer);
     }
 
-    protected void removeReference(PyPointer pyPtr) {
+    void removeReference(PyPointer pyPtr) {
         pointers.remove(pyPtr);
     }
 
@@ -125,11 +125,11 @@ public final class MemoryManager extends JepAccess{
         return jep;
     }
 
-    protected long getThreadState() throws JepException{
+    long getThreadState() throws JepException{
         return getThreadState(getThreadLocalJep());
     }
 
-    protected ClassLoader getClassLoader() {
+    ClassLoader getClassLoader() {
         return getClassLoader(getThreadLocalJep());
     }
 }

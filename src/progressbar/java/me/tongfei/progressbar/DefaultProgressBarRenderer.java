@@ -69,6 +69,7 @@ public class DefaultProgressBarRenderer implements ProgressBarRenderer {
         }
     }
 
+    @SuppressWarnings("UnnecessaryCallToStringValueOf")
     protected String percentage(ProgressState progress) {
         String res;
         if (progress.max <= 0 || progress.indefinite) res = "? %";

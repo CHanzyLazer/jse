@@ -50,7 +50,7 @@ import java.util.Arrays;
  * 
  * @since 3.3
  */
-public class NDArray<T extends Object> extends AbstractNDArray<T> {
+public class NDArray<T> extends AbstractNDArray<T> {
 
     /**
      * Constructor for a Java NDArray. Presumes the data is one dimensional.
@@ -190,7 +190,7 @@ public class NDArray<T extends Object> extends AbstractNDArray<T> {
         final int prime = 31;
         int result = 1;
         if (data == null) {
-            result = prime * result + 0;
+            result = prime * result;
         } else {
             Class<?> clz = data.getClass().getComponentType();
             if (clz == Boolean.TYPE) {

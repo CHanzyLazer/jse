@@ -71,7 +71,7 @@ public class Run {
                 jep.exec("console.prompt(jepInstance)");
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(System.err);
             return 1;
         }
 
@@ -94,26 +94,27 @@ public class Run {
      * @throws Exception
      *             if an error occurs
      */
-    public static void main(String args[]) throws Throwable {
-        String scriptArgs[] = new String[args.length];
+    public static void main(String[] args) throws Throwable {
+        String[] scriptArgs = new String[args.length];
         int argsi = 0;
-
-        for (int i = 0; i < args.length; i++) {
+        
+        for (String arg : args) {
             if (file != null)
-                scriptArgs[argsi++] = args[i];
-            else if (args[i].equals("-i"))
+                scriptArgs[argsi++] = arg;
+            else if (arg.equals("-i"))
                 interactive = true;
-            else if (args[i].equals("-s"))
+            else if (arg.equals("-s"))
                 swingApp = true;
-            else if (args[i].equals("-h")) {
+            else if (arg.equals("-h")) {
                 System.out.println(USAGE);
                 System.exit(1);
-            } else if (args[i].startsWith("-")) {
-                System.out.println("Run: Unknown option: " + args[i]);
+            } else if (arg.startsWith("-")) {
+                System.out.println("Run: Unknown option: " + arg);
                 System.out.println(USAGE);
                 System.exit(1);
-            } else if (!args[i].startsWith("-"))
-                file = args[i];
+            } else {
+                file = arg;
+            }
         }
 
         if (file == null) {
@@ -123,16 +124,16 @@ public class Run {
         }
 
         // setup argv
-        StringBuffer b = new StringBuffer("[");
+        StringBuilder b = new StringBuilder("[");
         // always the first arg
-        b.append("'" + file + "',");
+        b.append("'").append(file).append("',");
         // trailing comma is okay
         for (int i = 0; i < argsi; i++)
-            b.append("'" + scriptArgs[i] + "',");
+            b.append("'").append(scriptArgs[i]).append("',");
         b.append("]");
         scriptArgv = b.toString();
 
-        int ret = 1;
+        int ret;
         if (swingApp) {
             // run in the event-dispatching thread
             javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
@@ -142,8 +143,9 @@ public class Run {
                 }
             });
             ret = 0;
-        } else
+        } else {
             ret = run(swingApp);
+        }
 
         // in case we're run with -Xrs
         if (!swingApp)

@@ -158,7 +158,7 @@ public class DirectNDArray<T extends Buffer> extends AbstractNDArray<T> {
         final int prime = 31;
         int result = 1;
         if (data == null) {
-            result = prime * result + 0;
+            result = prime * result;
         } else {
             result = prime * result + data.hashCode();
         }

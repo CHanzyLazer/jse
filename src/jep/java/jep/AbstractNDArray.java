@@ -32,7 +32,7 @@ package jep;
  * object will <b>not</b> be wrapped as a PyJObject in the Python
  * sub-interpreter(s), it will instead be transformed into a numpy.ndarray
  * automatically (and vice versa).
- *
+ * <p>
  * This class provides a base implementation that can be subclassed for specifc
  * representations of the data in java (like primitive arrays or Buffers).
  *
@@ -53,7 +53,7 @@ abstract class AbstractNDArray<T> {
      *            a data object
      */
     protected AbstractNDArray(T data) {
-        this(data, false, null);
+        this(data, false, (int[])null);
     }
 
     /**
@@ -65,7 +65,7 @@ abstract class AbstractNDArray<T> {
      *            whether the data is to be interpreted as unsigned
      */
     protected AbstractNDArray(T data, boolean unsigned) {
-        this(data, unsigned, null);
+        this(data, unsigned, (int[])null);
     }
 
     /**
@@ -103,13 +103,13 @@ abstract class AbstractNDArray<T> {
 
         // validate data size matches dimensions size
         int dimSize = 1;
-        for (int i = 0; i < dimensions.length; i++) {
-            if (dimensions[i] < 0) {
+        for (int dimension : dimensions) {
+            if (dimension < 0) {
                 throw new IllegalArgumentException(
-                        "Dimensions cannot be negative, received "
-                                + dimensions[i]);
+                    "Dimensions cannot be negative, received "
+                    + dimension);
             }
-            dimSize *= dimensions[i];
+            dimSize *= dimension;
         }
 
         if (dimSize != dataLength) {

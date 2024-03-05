@@ -34,7 +34,7 @@ package jep;
  * isolation depends on if the CPython extension was written to support multiple
  * interpreters in the same process. In those cases you may want to consider
  * using the shared modules feature or a SharedInterpreter.
- *
+ * <p>
  * Within a single Java process it is valid to mix Interpreter instances that
  * use SubInterpreters with SharedInterpreters. The SubInterpreter instances
  * will remain isolated from other SubInterpreters and from any

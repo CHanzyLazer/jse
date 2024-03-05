@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * try to load the library using a simple {@link System#loadLibrary(String)}
  * however if that fails then this class will be used to try to find the
  * location of the library.
- * 
+ * <p>
  * The Jep library is typically distributed inside the jep Python module, so
  * this class attempts to find a jep module with the native library inside of
  * it. In order to find the module this class will attempt to mimic the process
@@ -139,7 +139,8 @@ final class LibraryLocator {
                 if (searchPackageDir(packagesDir)) {
                     return true;
                 }
-                for (File pythonDir : libDir.listFiles()) {
+                File[] files = libDir.listFiles();
+                if (files != null) for (File pythonDir : files) {
                     if (pythonDir.isDirectory()
                             && pythonDir.getName().matches("python\\d\\.\\d{1,2}")) {
                         packagesDir = new File(pythonDir, "site-packages");
@@ -168,7 +169,8 @@ final class LibraryLocator {
         if (appdata != null) {
             File libDir = new File(appdata, "Python");
             if (libDir.isDirectory()) {
-                for (File pythonDir : libDir.listFiles()) {
+                File[] files = libDir.listFiles();
+                if (files != null) for (File pythonDir : files) {
                     if (pythonDir.isDirectory()
                             && pythonDir.getName().matches("python\\d{2,3}")) {
                         File packagesDir = new File(pythonDir, "site-packages");
@@ -185,7 +187,8 @@ final class LibraryLocator {
             File localDir = new File(userHome, ".local");
             File libDir = new File(localDir, "lib");
             if (libDir.isDirectory()) {
-                for (File pythonDir : libDir.listFiles()) {
+                File[] files = libDir.listFiles();
+                if (files != null) for (File pythonDir : files) {
                     if (pythonDir.isDirectory()
                             && pythonDir.getName().matches("python\\d\\.\\d{1,2}")) {
                         File packagesDir = new File(pythonDir, "site-packages");
@@ -204,7 +207,8 @@ final class LibraryLocator {
             if (localDir.isDirectory()) {
                 File pythonMainDir = new File(localDir, "Python");
                 if (pythonMainDir.isDirectory()) {
-                    for (File versionDir : pythonMainDir.listFiles()) {
+                    File[] files = pythonMainDir.listFiles();
+                    if (files != null) for (File versionDir : files) {
                         if (versionDir.isDirectory() && versionDir.getName().matches("\\d\\.\\d{1,2}")) {
                             File libDir = new File(versionDir, "lib");
                             if (libDir.isDirectory()) {
@@ -248,7 +252,7 @@ final class LibraryLocator {
                          * is needed and look in PYTHONHOME. Otherwise look in PYTHONHOME for pythonXX.dll
                          * 
                          */
-                        Matcher m = Pattern.compile("libpython[\\w\\.]*")
+                        Matcher m = Pattern.compile("libpython[\\w.]*")
                                 .matcher(e.getMessage());
                         if (m.find() && findPythonLibrary(m.group(0))) {
                             System.load(libraryFile.getAbsolutePath());
@@ -297,7 +301,8 @@ final class LibraryLocator {
     private boolean findPythonLibraryWindows() {
         if (pythonHome != null) {
             Pattern re = Pattern.compile("^python\\d\\d+\\.dll$");
-            for (File file : new File(pythonHome).listFiles()) {
+            File[] files = new File(pythonHome).listFiles();
+            if (files != null) for (File file : files) {
                 if (!file.isFile()) {
                     continue;
                 }
@@ -317,6 +322,7 @@ final class LibraryLocator {
      *            configuration options for python, used to restrict search path
      *            if the config is restricted. This may be null.
      */
+    @SuppressWarnings("RedundantIfStatement")
     public static boolean findJepLibrary(PyConfig pyConfig) {
         /* An instance is used to hold temporary state. */
         LibraryLocator loc = new LibraryLocator(pyConfig);

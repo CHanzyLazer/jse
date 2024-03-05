@@ -33,9 +33,9 @@ import jep.python.MemoryManager;
  * using shared modules to share every Python package in Jep. Anything that
  * changes the way a module behaves will impact all SharedInterpreters so care
  * must be taken to ensure that different SharedInterpreters aren't conflicting.
- * For example sys.path, time.tzset(), and numpy.seterr() will change the
- * behavior of all SharedInterpreters.
- *
+ * For example {@code sys.path}, {@code time.tzset()}, and {@code numpy.seterr()}
+ * will change the behavior of all SharedInterpreters.
+ * <p>
  * Within a single Java process it is valid to mix Interpreter instances that
  * use SubInterpreters with SharedInterpreters. The SubInterpreter instances
  * will remain isolated from SubInterpreter instances and from any

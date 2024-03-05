@@ -58,10 +58,10 @@ public class ClassList implements ClassEnquirer {
     private static ClassList inst;
 
     // storage for package, member classes
-    private Map<String, List<String>> packageToClassMap = new HashMap<>();
+    private final Map<String, List<String>> packageToClassMap = new HashMap<>();
 
     // storage for package, sub-packages based on classes found
-    private Map<String, List<String>> packageToSubPackageMap = new HashMap<>();
+    private final Map<String, List<String>> packageToSubPackageMap = new HashMap<>();
 
     private ClassList() throws JepException {
         loadClassPath();
@@ -80,7 +80,7 @@ public class ClassList implements ClassEnquirer {
     private void loadClassPath() {
         StringTokenizer tok = new StringTokenizer(
                 System.getProperty("java.class.path"),
-                System.getProperty("path.separator"));
+                File.pathSeparator);
 
         Queue<String> queue = new LinkedList<>();
         Set<String> seen = new HashSet<>();
@@ -164,7 +164,7 @@ public class ClassList implements ClassEnquirer {
                 }
             } catch (IOException e) {
                 // debugging only
-                e.printStackTrace();
+                e.printStackTrace(System.err);
             }
         }
     }
@@ -186,7 +186,8 @@ public class ClassList implements ClassEnquirer {
         if (!folder.isDirectory()) {
             throw new IllegalArgumentException("folder is not a Directory");
         }
-        for (File file : folder.listFiles()) {
+        File[] files = folder.listFiles();
+        if (files != null) for (File file : files) {
             String entry = file.getName();
             if (file.isDirectory()) {
                 if (prefix != null && !prefix.isEmpty()) {
@@ -232,8 +233,9 @@ public class ClassList implements ClassEnquirer {
             } catch (java.net.URISyntaxException e) {
                 throw new JepException(e);
             }
-
-            for (File classfile : dir.listFiles(new ClassFilenameFilter()))
+            
+            File[] classfiles = dir.listFiles(new ClassFilenameFilter());
+            if (classfiles != null) for (File classfile : classfiles)
                 addClass(p.getName(), stripClassExt(classfile.getName()));
         }
     }
@@ -248,6 +250,7 @@ public class ClassList implements ClassEnquirer {
      * The jre keeps a list of classes in the lib folder. We don't have a better
      * way to figure out what's in the java package, so this is my little hack.
      */
+    @SuppressWarnings({"ExtractMethodRecommender", "ConstantValue"})
     private void loadClassList() throws JepException {
         String version = System.getProperty("java.version");
 
@@ -297,7 +300,7 @@ public class ClassList implements ClassEnquirer {
 
             reader = new BufferedReader(new InputStreamReader(in));
 
-            String line = "";
+            String line;
             while ((line = reader.readLine()) != null) {
                 // ignore any class with $
                 if (line.indexOf('$') > -1)
@@ -305,7 +308,7 @@ public class ClassList implements ClassEnquirer {
 
                 // lines in the file look like: java/lang/String
                 // split on /
-                String[] parts = line.split("\\/");
+                String[] parts = line.split("/");
                 StringBuilder pname = new StringBuilder();
                 String cname = parts[parts.length - 1];
 
@@ -331,11 +334,7 @@ public class ClassList implements ClassEnquirer {
 
     // add a class with given package name
     private void addClass(String pname, String cname) {
-        List<String> el = packageToClassMap.get(pname);
-        if (el == null) {
-            el = new ArrayList<>();
-            packageToClassMap.put(pname, el);
-        }
+        List<String> el = packageToClassMap.computeIfAbsent(pname, k -> new ArrayList<>());
 
         // convert to style we need in C code
         String fqname = pname + "." + cname;
@@ -350,17 +349,13 @@ public class ClassList implements ClassEnquirer {
         while (dotIdx > -1) {
             String pkgStart = pname.substring(0, dotIdx);
             int nextDot = pname.indexOf(".", dotIdx + 1);
-            String subPkg = null;
+            String subPkg;
             if (nextDot > -1) {
                 subPkg = pname.substring(dotIdx + 1, nextDot);
             } else {
                 subPkg = pname.substring(dotIdx + 1);
             }
-            List<String> pl = packageToSubPackageMap.get(pkgStart);
-            if (pl == null) {
-                pl = new ArrayList<>();
-                packageToSubPackageMap.put(pkgStart, pl);
-            }
+            List<String> pl = packageToSubPackageMap.computeIfAbsent(pkgStart, k -> new ArrayList<>());
             if (!pl.contains(subPkg)) {
                 pl.add(subPkg);
             }
@@ -431,7 +426,7 @@ public class ClassList implements ClassEnquirer {
      * @throws Throwable
      *             if an error occurs
      */
-    public static void main(String argv[]) throws Throwable {
+    public static void main(String[] argv) throws Throwable {
         if (argv.length > 0) {
             for (String arg : argv) {
                 for (String c : ClassList.getInstance().getClassNames(arg))

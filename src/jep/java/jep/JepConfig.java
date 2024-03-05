@@ -160,7 +160,7 @@ public class JepConfig {
      * that use the c-api. For a complete discussion of the types of problems
      * that can require shared modules see the documentation on
      * shared_modules_hook.py.
-     *
+     * <p>
      * Note that shared modules cannot be used in a sub-interpreter that has its
      * own allocation state which also means shared modules cannot be used in a
      * sub-interpreter with its own GIL.

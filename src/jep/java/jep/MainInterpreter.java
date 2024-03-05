@@ -33,7 +33,7 @@ import java.util.concurrent.SynchronousQueue;
  * used and all would be good. However, since Jep supports multithreading with
  * multiple sub-interpreters, we need the MainInterpreter to work around some
  * issues.
- * 
+ * <p>
  * The MainInterpreter is used to avoid potential deadlocks. Python can deadlock
  * when trying to acquire the GIL through methods such as <a href=
  * "https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure">PyGILState_*</a>.
@@ -43,7 +43,7 @@ import java.util.concurrent.SynchronousQueue;
  * Python and keeps this thread around forever. This ensures that any new
  * sub-interpreters cannot be created on the same thread as the main Python
  * interpreter.
- * 
+ * <p>
  * The MainInterpreter is also used to support shared modules. While each
  * sub-interpreter is fairly sandboxed, in practice this does not always work
  * well with CPython extensions. In particular, disposing of a sub-interpreter
@@ -51,7 +51,7 @@ import java.util.concurrent.SynchronousQueue;
  * extension's objects to be garbage collected. To get around this, shared
  * modules import on the main interpreter's thread so they can be shared amongst
  * sub-interpreters and will never be garbage collected.
- * 
+ * <p>
  * For more information about why the MainInterpreter class exists, see <a href=
  * "https://docs.python.org/3/c-api/init.html#bugs-and-caveats">Sub-interpreter
  * bugs and caveats</a>.
@@ -73,9 +73,9 @@ public final class MainInterpreter implements AutoCloseable {
 
     private Thread thread;
 
-    private BlockingQueue<String> importQueue = new SynchronousQueue<>();
+    private final BlockingQueue<String> importQueue = new SynchronousQueue<>();
 
-    private BlockingQueue<Object> importResults = new SynchronousQueue<>();
+    private final BlockingQueue<Object> importResults = new SynchronousQueue<>();
 
     private Throwable error;
 
@@ -93,13 +93,14 @@ public final class MainInterpreter implements AutoCloseable {
      * @throws Error
      *             if an error occurs
      */
-    protected static synchronized MainInterpreter getMainInterpreter()
+    static synchronized MainInterpreter getMainInterpreter()
             throws Error {
         if (null == instance) {
             try {
                 instance = new MainInterpreter();
                 instance.initialize();
             } catch (Error e) {
+                assert instance != null;
                 instance.close();
                 instance.error = e;
                 throw e;
@@ -121,7 +122,7 @@ public final class MainInterpreter implements AutoCloseable {
      * @throws Error
      *             if an error occurs
      */
-    protected void initialize() throws Error {
+    void initialize() throws Error {
         if (jepLibraryPath != null) {
             System.load(jepLibraryPath);
         } else {
@@ -162,6 +163,7 @@ public final class MainInterpreter implements AutoCloseable {
                  * messed up leading to stability/GIL issues.
                  */
                 try {
+                    //noinspection InfiniteLoopStatement
                     while (true) {
                         String nextImport = importQueue.take();
                         Object result = nextImport;

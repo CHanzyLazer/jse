@@ -53,6 +53,7 @@ import jep.python.PyObject;
  * 
  * @since 3.9
  */
+@SuppressWarnings("UnnecessaryModifier")
 public interface Interpreter extends AutoCloseable {
 
     /**

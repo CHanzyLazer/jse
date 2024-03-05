@@ -35,6 +35,7 @@ import java.lang.annotation.Target;
  *
  * @since 4.2
  */
+@SuppressWarnings("UnnecessaryModifier")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface PyMethod {

@@ -133,11 +133,11 @@ public abstract class Jep implements Interpreter {
         MainInterpreter mainInterpreter = MainInterpreter.getMainInterpreter();
         if (threadUsed.get()) {
             Thread current = Thread.currentThread();
-            StringBuilder warning = new StringBuilder(THREAD_WARN)
-                    .append("Unsafe reuse of thread ").append(current.getName())
-                    .append(" for another Python Interpreter.\n")
-                    .append("Please close() the previous Interpreter to ensure stability.");
-            throw new JepException(warning.toString());
+            String warning = THREAD_WARN +
+                "Unsafe reuse of thread " + current.getName() +
+                " for another Python Interpreter.\n" +
+                "Please close() the previous Interpreter to ensure stability.";
+            throw new JepException(warning);
         }
 
         this.isSubInterpreter = useSubInterpreter;
@@ -236,6 +236,7 @@ public abstract class Jep implements Interpreter {
      * @throws JepException
      *             if an error occurs
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     public void isValidThread() throws JepException {
         if (this.thread != Thread.currentThread())
@@ -264,7 +265,7 @@ public abstract class Jep implements Interpreter {
     @Override
     public Object invoke(String name, Object... args) throws JepException {
         isValidThread();
-        if (name == null || name.trim().equals("")) {
+        if (name == null || name.trim().isEmpty()) {
             throw new JepException("Invalid function name.");
         }
 
@@ -275,7 +276,7 @@ public abstract class Jep implements Interpreter {
     public Object invoke(String name, Map<String, Object> kwargs)
             throws JepException {
         isValidThread();
-        if (name == null || name.trim().equals("")) {
+        if (name == null || name.trim().isEmpty()) {
             throw new JepException("Invalid function name.");
         }
 
@@ -286,7 +287,7 @@ public abstract class Jep implements Interpreter {
     public Object invoke(String name, Object[] args, Map<String, Object> kwargs)
             throws JepException {
         isValidThread();
-        if (name == null || name.trim().equals("")) {
+        if (name == null || name.trim().isEmpty()) {
             throw new JepException("Invalid function name.");
         }
 
@@ -306,7 +307,7 @@ public abstract class Jep implements Interpreter {
                 str = str.replaceAll("\r", "");
             }
 
-            if (str == null || str.trim().equals("")) {
+            if (str == null || str.trim().isEmpty()) {
                 if (!this.interactive) {
                     return false;
                 }
@@ -430,22 +431,22 @@ public abstract class Jep implements Interpreter {
              * crashes.
              */
             Thread current = Thread.currentThread();
-            StringBuilder warning = new StringBuilder(THREAD_WARN).append(
-                    "Unsafe close() of Python sub-interpreter by thread ")
-                    .append(current.getName())
-                    .append(".\nPlease close() from the creating thread to ensure stability.");
-            throw new JepException(warning.toString());
+            String warning = THREAD_WARN +
+                "Unsafe close() of Python sub-interpreter by thread " +
+                current.getName() +
+                ".\nPlease close() from the creating thread to ensure stability.";
+            throw new JepException(warning);
         }
 
         if (isSubInterpreter) {
             exec("import sys");
             Boolean hasThreads = getValue("'threading' in sys.modules",
                     Boolean.class);
-            if (hasThreads.booleanValue()) {
+            if (hasThreads) {
                 Integer count = getValue(
                         "sys.modules['threading'].active_count()",
                         Integer.class);
-                if (count.intValue() > 1) {
+                if (count > 1) {
                     throw new JepException(
                             "All threads must be stopped before closing Jep.");
                 }
