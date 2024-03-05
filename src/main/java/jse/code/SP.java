@@ -201,17 +201,17 @@ public class SP {
                 try {
                     Object tOut = mEvalTask.get();
                     mEvalTask = null;
-                    DisplayData tDisplayData = tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
                     // 附加输出图像
                     if (!KERNEL_SHOW_FIGURE && !IPlotter.SHOWED_PLOTTERS.isEmpty()) {
-                        if (tDisplayData == null) tDisplayData = new DisplayData();
                         for (IPlotter tPlt : IPlotter.SHOWED_PLOTTERS) {
+                            DisplayData tDisplayData = new DisplayData();
                             tDisplayData.putData(MIMEType.IMAGE_PNG, Base64.getMimeEncoder().encodeToString(tPlt.encode()));
+                            display(tDisplayData);
                         }
                         // 绘制完成清空存储
                         IPlotter.SHOWED_PLOTTERS.clear();
                     }
-                    return tDisplayData;
+                    return tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
                 } catch (ExecutionException e) {
                     Throwable t = e.getCause();
                     if (t instanceof Exception) throw (Exception)t;
