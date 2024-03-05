@@ -241,6 +241,8 @@ public class Main {
         , "org.jfree.chart."
         , "org.jfree.data."
         , "io.github.spencerpark.jupyter."
+        , "com.google.gson."
+        , "zmq."
         , "groovy."
         , "org.codehaus.groovy."
         , "java."
@@ -267,6 +269,7 @@ public class Main {
         System.out.println("    -? -help      Print help message");
         System.out.println("    -groovy       Run the groovy file script");
         System.out.println("    -python       Run the python file script");
+        System.out.println("    -jupyter      Install current jse to the jupyter kernel");
         System.out.println();
         System.out.println("You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar");
     }
