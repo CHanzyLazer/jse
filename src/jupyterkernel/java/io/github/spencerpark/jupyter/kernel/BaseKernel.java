@@ -1,7 +1,5 @@
 package io.github.spencerpark.jupyter.kernel;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.github.spencerpark.jupyter.channels.JupyterConnection;
 import io.github.spencerpark.jupyter.channels.JupyterSocket;
 import io.github.spencerpark.jupyter.channels.ShellReplyEnvironment;
@@ -23,41 +21,19 @@ import io.github.spencerpark.jupyter.messages.publish.PublishExecuteInput;
 import io.github.spencerpark.jupyter.messages.publish.PublishExecuteResult;
 import io.github.spencerpark.jupyter.messages.reply.*;
 import io.github.spencerpark.jupyter.messages.request.*;
+import org.apache.groovy.util.Maps;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 public abstract class BaseKernel {
     protected final AtomicInteger executionCount = new AtomicInteger(1);
-    protected static final Map<String, String> KERNEL_META = ((Supplier<Map<String, String>>) () -> {
-        Map<String, String> meta = null;
-
-        InputStream metaStream = BaseKernel.class.getClassLoader().getResourceAsStream("kernel-metadata.json");
-        if (metaStream != null) {
-            Reader metaReader = new InputStreamReader(metaStream);
-            try {
-                meta = new Gson().fromJson(metaReader, new TypeToken<Map<String, String>>() {
-                }.getType());
-            } finally {
-                try {
-                    metaReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        if (meta == null) {
-            meta = new HashMap<>(2);
-            meta.put("version", "unknown");
-            meta.put("project", "unknown");
-        }
-
-        return meta;
-    }).get();
+    protected static final Map<String, String> KERNEL_META = Maps.of("version", "2.3.0", "project", "jupyter-jvm-basekernel");
 
     private final JupyterIO io;
     private boolean shouldReplaceStdStreams;
