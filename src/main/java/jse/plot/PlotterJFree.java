@@ -1,5 +1,6 @@
 package jse.plot;
 
+import jse.Main;
 import jse.code.UT;
 import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +22,7 @@ import org.jfree.data.general.DatasetUtils;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.graphics2d.svg.SVGGraphics2D;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,6 +33,7 @@ import java.util.*;
 import java.util.List;
 
 
+import static jse.code.Conf.KERNEL_SHOW_FIGURE;
 import static jse.plot.Colors.COLOR;
 import static jse.plot.Shapes.*;
 import static jse.plot.Strokes.*;
@@ -458,8 +461,15 @@ public final class PlotterJFree implements IPlotter {
         // 有限走 mCurrentFigure 的 save，避免锁出现问题
         if (mCurrentFigure!=null) {mCurrentFigure.save(aFilePath); return;}
         // 默认保存的大小
-        save(aFilePath, WIDTH, HEIGHT);
+        save(aFilePath, mWidth, mHeight);
     }
+    @Override public String toSVG(int aWidth, int aHeight) {
+        final SVGGraphics2D tSVG = new SVGGraphics2D(aWidth, aHeight);
+        mChart.draw(tSVG, new Rectangle(0, 0, aWidth, aHeight));
+        return tSVG.getSVGElement();
+    }
+    @Override public String toSVG() {return toSVG(mWidth, mHeight);}
+    
     
     /** 添加绘制数据 */
     @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
@@ -557,7 +567,18 @@ public final class PlotterJFree implements IPlotter {
     
     private @Nullable IFigure mCurrentFigure = null;
     
+    
+    private int mWidth = WIDTH, mHeight = HEIGHT;
+    /** 设置绘制的大小（和 {@link IFigure#size} 一致） */
+    @Override public IPlotter size(int aWidth, int aHeight) {
+        mWidth = aWidth; mHeight = aHeight;
+        return this;
+    }
+    
     @Override public IFigure show(String aName) {
+        // 如果是 kernel 默认不进行显示，这里简单处理直接不返回 IFigure
+        if (!KERNEL_SHOW_FIGURE && Main.IS_KERNEL()) {return IPlotter.super.show(aName);}
+        
         // 如果已经有窗口则不再显示
         if (mCurrentFigure != null) {
             // 无论怎样都需要设置名称
@@ -570,7 +591,7 @@ public final class PlotterJFree implements IPlotter {
         final JFrame tFrame = new JFrame(aName);
         tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         final Insets tInset = new Insets(20, 20, 20, 20);
-        final JPanel tPanel = new ChartPanel(mChart, WIDTH, HEIGHT, ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_MAXIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MAXIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_BUFFER_USED, true, true, true, true, true) {
+        final JPanel tPanel = new ChartPanel(mChart, mWidth, mHeight, ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_MAXIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MAXIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_BUFFER_USED, true, true, true, true, true) {
             @Override public Insets getInsets() {return tInset;}
         };
         tPanel.setBackground(WHITE);

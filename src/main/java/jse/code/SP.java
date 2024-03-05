@@ -30,6 +30,7 @@ import jse.math.function.Func1;
 import jse.math.matrix.Matrices;
 import jse.math.table.Tables;
 import jse.math.vector.Vectors;
+import jse.plot.IPlotter;
 import jse.plot.Plotters;
 import org.apache.groovy.groovysh.Groovysh;
 import org.apache.groovy.groovysh.InteractiveShellRunner;
@@ -201,7 +202,17 @@ public class SP {
                 try {
                     Object tOut = mEvalTask.get();
                     mEvalTask = null;
-                    return tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
+                    DisplayData tDisplayData = tOut==null ? null : (tOut instanceof DisplayData) ? (DisplayData)tOut : getRenderer().render(tOut);
+                    // 附加输出图像
+                    if (!KERNEL_SHOW_FIGURE) {
+                        for (IPlotter tPlt : IPlotter.SHOWED_PLOTTERS) {
+                            if (tDisplayData == null) tDisplayData = new DisplayData();
+                            tDisplayData.putSVG(tPlt.toSVG());
+                        }
+                        // 绘制完成清空存储
+                        IPlotter.SHOWED_PLOTTERS.clear();
+                    }
+                    return tDisplayData;
                 } catch (ExecutionException e) {
                     Throwable t = e.getCause();
                     if (t instanceof Exception) throw (Exception)t;

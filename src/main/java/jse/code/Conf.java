@@ -19,6 +19,8 @@ public class Conf {
     public static boolean DEBUG = UT.Exec.envZ("JSE_DEBUG", false);
     /** 是否在 kernel 模式下开启 ThreadInterrupt，会在所有循环检测是否中断从而让中断总是有效，当然会影响性能 */
     public static boolean KERNEL_THREAD_INTERRUPT = UT.Exec.envZ("JSE_KERNEL_THREAD_INTERRUPT", true);
+    /** 是否在 kernel 模式下显示 figure 窗口，关闭后则会在 jupyter notebook 上渲染 */
+    public static boolean KERNEL_SHOW_FIGURE = UT.Exec.envZ("JSE_KERNEL_SHOW_FIGURE", false);
     
     /** 设置 jse 许多类工作的临时目录，一般来说使用 .jse/ 目录应该会更加合适，这里为了兼容并减少目录数还是默认保持使用 .temp */
     public static String TEMP_WORKING_DIR = UT.Exec.env("JSE_TEMP_WORKING_DIR", ".temp/%n/");
