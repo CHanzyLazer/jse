@@ -44,11 +44,6 @@ sourceSets {
             srcDirs = ['src/progressbar/java']
         }
     }
-    jupyterkernel {
-        java {
-            srcDirs = ['src/jupyterkernel/java']
-        }
-    }
 }
 
 
@@ -61,7 +56,6 @@ static void applyCommonCompileOptions(CompileOptions options) {
 }
 compileJepJava {applyCommonCompileOptions(options)}
 compileProgressbarJava {applyCommonCompileOptions(options)}
-compileJupyterkernelJava {applyCommonCompileOptions(options)}
 compileJava {
     dependsOn(compileJepJava, compileProgressbarJava)
     applyCommonCompileOptions(options)
@@ -73,7 +67,6 @@ dependencies {
     // 源码依赖
     implementation(sourceSets.jep.output)
     implementation(sourceSets.progressbar.output)
-    implementation(sourceSets.jupyterkernel.output)
     
     // groovy
     implementation('org.apache.groovy:groovy:4.0.18')               // 用于直接执行 groovy 脚本而不需要安装 groovy
@@ -87,12 +80,12 @@ dependencies {
 //  implementation('black.ninia:jep:4.2.0')                         // 调用 python 代码支持，需要系统有需要的 python 环境，并且需要初始化，因此这里不作为主要代码的使用；由于 PyObject 不能 groovy 原生调用，现在包含到项目中
     implementation('com.google.code.gson:gson:2.10.1')              // 使用新版的 gson，避免漏洞警告
     implementation('org.zeromq:jeromq:0.5.4')                       // 跨 JVM 并行库，可以支持超算上跨节点并行；虽然 java 标准库也有类似功能，但是这个更加易用；现在直接使用 mpi
-//  implementation('io.github.spencerpark:jupyter-jvm-basekernel:2.3.0') {transitive = false} // jupyter 的通用 kernel，关闭传递手动使用新版本的 ZeroMQ 和 Gson；现在改为直接包含源码，实现额外的功能
+    implementation('io.github.spencerpark:jupyter-jvm-basekernel:2.3.0') {transitive = false} // jupyter 的通用 kernel，关闭传递手动使用新版本的 ZeroMQ 和 Gson；现在改为直接包含源码，实现额外的功能
     
     // 实用工具
     implementation('com.mastfrog:sort:2.9.7')                       // 实用的多排序功能，因此现在不再支持支持性不好的 Compare 排序
 //  implementation('org.apache.commons:commons-rng-sampling:1.5')   // 只使用随机数生成器，还是太复杂了
-//  implementation('me.tongfei:progressbar:0.9.5')                  // 简单的进度条实现（最新版需要 jdk9）；由于字符问题这里直接把源码包含到项目中
+//  implementation('me.tongfei:progressbar:0.10.0')                 // 简单的进度条实现（最新版需要 jdk9）；由于字符问题这里直接把源码包含到项目中
     implementation('org.jfree:jfreechart:1.5.4')                    // 简单的绘图支持
 //  implementation('org.jfree:jfreesvg:3.4.3')                      // 保存为 SVG 支持，目前没有需求，为了接口一致性这里关掉
 //  implementation('org.apache.commons:commons-pool2:2.11.1')       // 对象池, bad ideal，即使需要也应该自己实现一个简单的实例
@@ -111,12 +104,6 @@ dependencies {
     
     // progressbar 依赖
     progressbarImplementation('org.jetbrains:annotations:24.1.0')   // idea 调试支持
-    
-    // jupyterkernel 依赖
-    jupyterkernelImplementation('org.jetbrains:annotations:24.1.0') // idea 调试支持
-    jupyterkernelImplementation('org.apache.groovy:groovy:4.0.18')  // 会使用一些 groovy 的方法
-    jupyterkernelImplementation('com.google.code.gson:gson:2.10.1') // gson，依旧使用 gson 而不是 groovy-json，因为 jupyterkernel 使用了 gson 中的高级功能，完全修改相当于直接重构
-    jupyterkernelImplementation('org.zeromq:jeromq:0.5.4')          // zeroMQ
 }
 
 shadowJar {

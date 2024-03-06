@@ -1,9 +1,0 @@
-package io.github.spencerpark.jupyter.kernel.magic.registry;
-
-import java.util.List;
-
-@SuppressWarnings("UnnecessaryModifier")
-@FunctionalInterface
-public interface CellMagicFunction<T> {
-    public T execute(List<String> args, String body) throws Exception;
-}
