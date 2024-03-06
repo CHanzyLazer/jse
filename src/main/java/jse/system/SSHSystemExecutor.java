@@ -148,7 +148,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     private final class SSHSystemFuture implements Future<Integer> {
         private final @Nullable ChannelExec mChannelExec;
         private volatile boolean mCancelled = false;
-        private final Future<Void> mOutTask;
+        private final @Nullable Future<Void> mOutTask;
         private SSHSystemFuture(String aCommand, final @NotNull AbstractSystemExecutor.IWritelnSupplier aPrintln) {
             // 执行指令
             ChannelExec tChannelExec;
@@ -209,7 +209,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         @Override public Integer get() throws InterruptedException, ExecutionException {
             if (mChannelExec == null) return -1;
             while (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) Thread.sleep(SSH_SLEEP_TIME);
-            mOutTask.get();
+            if (mOutTask != null) mOutTask.get();
             if (mCancelled) throw new CancellationException();
             int tExitValue = mChannelExec.getExitStatus();
             mChannelExec.disconnect();
@@ -227,7 +227,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
                 tic = toc;
                 if (tRestTime <= 0) throw new TimeoutException();
             }
-            mOutTask.get(tRestTime, TimeUnit.NANOSECONDS);
+            if (mOutTask != null) mOutTask.get(tRestTime, TimeUnit.NANOSECONDS);
             if (mCancelled) throw new CancellationException();
             int tExitValue = mChannelExec.getExitStatus();
             mChannelExec.disconnect();
