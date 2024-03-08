@@ -14,8 +14,6 @@ import io.github.spencerpark.jupyter.kernel.util.StringSearch;
 import io.github.spencerpark.jupyter.messages.Header;
 import jep.JepConfig;
 import jep.JepException;
-import jline.Terminal;
-import jline.WindowsTerminal;
 import jse.Main;
 import jse.atom.AbstractAtoms;
 import jse.atom.Structures;
@@ -34,8 +32,6 @@ import jse.math.vector.Vectors;
 import jse.plot.IPlotter;
 import jse.plot.Plotters;
 import org.apache.groovy.groovysh.Groovysh;
-import org.apache.groovy.groovysh.InteractiveShellRunner;
-import org.apache.groovy.groovysh.Interpreter;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -50,7 +46,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -232,8 +227,8 @@ public class SP {
                 StringSearch.Range tMatch = StringSearch.findLongestMatchingAt(code, at, ID_CHAR);
                 if (tMatch == null) return null;
                 String tID = tMatch.extractSubString(code);
-                if (!GROOVY_INTERP.getContext().hasVariable(tID)) return new DisplayData("No memory value for '"+tID+"'");
-                Object tVal = GROOVY_INTERP.getContext().getVariable(tID);
+                if (!GROOVY_SHELL.getContext().hasVariable(tID)) return new DisplayData("No memory value for '"+tID+"'");
+                Object tVal = GROOVY_SHELL.getContext().getVariable(tID);
                 return new DisplayData(toDisplayString(tVal));
             }
             @Override public ReplacementOptions complete(String code, int at) throws Exception {
@@ -270,7 +265,7 @@ public class SP {
             return UT.IO.toFile(tPath);
         }
         /** 现在 groovy 也一样统一使用全局的一个解释器 */
-        private static Interpreter GROOVY_INTERP = null;
+        private static GroovyShell GROOVY_SHELL = null;
         private final static CompilerConfiguration GROOVY_CONF;
         private final static AtomicInteger COUNTER = new AtomicInteger(0);
         
@@ -279,44 +274,7 @@ public class SP {
             // 使用这个方法来自动设置种类
             org.apache.groovy.groovysh.Main.setTerminalType("auto", false);
             // 这样手动指定 CLASS_LOADER
-            Groovysh tGroovysh = new Groovysh(GROOVY_INTERP.getClassLoader(), GROOVY_INTERP.getContext(), new IO(), null, GROOVY_CONF, GROOVY_INTERP) {
-                /** 直接重写 displayWelcomeBanner 来将 jse 的版本添加进去 */
-                @Override public void displayWelcomeBanner(InteractiveShellRunner runner) {
-                    IO io = getIo();
-                    if (!log.isDebug() && io.isQuiet()) {
-                        // nothing to do here
-                        return;
-                    }
-                    
-                    Terminal term = runner.getReader().getTerminal();
-                    if (log.isDebug()) {
-                        log.debug("Terminal ("+term+")");
-                        log.debug("    Supported:  "+term.isSupported());
-                        log.debug("    ECHO:       (enabled: "+term.isEchoEnabled()+")");
-                        log.debug("    H x W:      "+term.getHeight()+" x "+term.getWidth());
-                        log.debug("    ANSI:       "+term.isAnsiSupported());
-                        
-                        if (term instanceof WindowsTerminal) {
-                            WindowsTerminal winterm = (WindowsTerminal) term;
-                            log.debug("    Direct:     "+winterm.getDirectConsole());
-                        }
-                    }
-                    
-                    // Display the welcome banner
-                    if (!io.isQuiet()) {
-                        int width = term.getWidth();
-                        
-                        // If we can't tell, or have something bogus then use a reasonable default
-                        if (width < 1) {
-                            width = 80;
-                        }
-                        
-                        io.out.println(MessageFormat.format("@|green JSE Shell|@ ({0}, Groovy: {1}, JVM: {2})", VERSION, GroovySystem.getVersion(), System.getProperty("java.version")));
-                        io.out.println("Type '@|bold :help|@' or '@|bold :h|@' for help.");
-                        io.out.println(UT.Text.repeat('-', width-1));
-                    }
-                }
-            };
+            Groovysh tGroovysh = new Groovysh(GROOVY_SHELL.getClassLoader(), GROOVY_SHELL.getContext(), new IO(), null, GROOVY_CONF);
             // 这样直接添加默认 import，shell 会默认导入这些方便使用
             tGroovysh.getImports().add(AbstractAtoms.class.getName());
             tGroovysh.getImports().add(Structures.class.getName());
@@ -346,27 +304,27 @@ public class SP {
         }
         
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
-        public static void exec(String aText) throws Exception {GROOVY_INTERP.getShell().evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
-        public static void execFile(String aFilePath) throws Exception {GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath));}
-        public static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(aText, "Script"+COUNTER.incrementAndGet()+".groovy"));}
-        public static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().evaluate(toSourceFile(aFilePath)));}
+        public static void exec(String aText) throws Exception {GROOVY_SHELL.evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
+        public static void execFile(String aFilePath) throws Exception {GROOVY_SHELL.evaluate(toSourceFile(aFilePath));}
+        public static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.evaluate(aText, "Script"+COUNTER.incrementAndGet()+".groovy"));}
+        public static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.evaluate(toSourceFile(aFilePath)));}
         
         /** 直接运行文本的脚本 */
-        public static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
+        public static Object runText(String aText, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.run(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy", aArgs));}
         /** Groovy 现在也可以使用 getValue 来获取变量以及 setValue 设置变量（仅限于 Context 变量，这样可以保证效率） */
         public static Object get(String aValueName) throws Exception {return getValue(aValueName);}
         public static void set(String aValueName, Object aValue) throws Exception {setValue(aValueName, aValue);}
         public static void remove(String aValueName) throws Exception {removeValue(aValueName);}
-        public static Object getValue(String aValueName) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getContext().getVariable(aValueName));}
-        public static void setValue(String aValueName, Object aValue) throws Exception {GROOVY_INTERP.getContext().setVariable(aValueName, aValue);}
-        public static void removeValue(String aValueName) throws Exception {GROOVY_INTERP.getContext().removeVariable(aValueName);}
+        public static Object getValue(String aValueName) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.getContext().getVariable(aValueName));}
+        public static void setValue(String aValueName, Object aValue) throws Exception {GROOVY_SHELL.getContext().setVariable(aValueName, aValue);}
+        public static void removeValue(String aValueName) throws Exception {GROOVY_SHELL.getContext().removeVariable(aValueName);}
         /** 运行脚本文件 */
         public static Object run(String aScriptPath, String... aArgs) throws Exception {return runScript(aScriptPath, aArgs);}
-        public static Object runScript(String aScriptPath, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_INTERP.getShell().run(toSourceFile(aScriptPath), aArgs));}
+        public static Object runScript(String aScriptPath, String... aArgs) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.run(toSourceFile(aScriptPath), aArgs));}
         /** 调用指定脚本中的方法 */
         public static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {
             // 获取脚本的类
-            Class<?> tScriptClass = GROOVY_INTERP.getClassLoader().parseClass(toSourceFile(aScriptPath));
+            Class<?> tScriptClass = GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath));
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             // 如果是脚本则使用脚本的调用方法的方式
             if (Script.class.isAssignableFrom(tScriptClass)) {
@@ -390,7 +348,7 @@ public class SP {
         /** 创建脚本类的实例 */
         public static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类
-            Class<?> tScriptClass = GROOVY_INTERP.getClassLoader().parseClass(toSourceFile(aScriptPath));
+            Class<?> tScriptClass = GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath));
             // 获取 ScriptClass 的实例
             final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
             // 获取兼容输入参数的构造函数来创建实例
@@ -400,8 +358,8 @@ public class SP {
         }
         
         /** 提供一个手动关闭 GROOVY_INTERP 的接口，似乎不需要手动关闭 Interpreter，但是这里还是关闭一下内部的 ClassLoader */
-        public static void close() throws IOException {if (GROOVY_INTERP != null) {GROOVY_INTERP.getClassLoader().close(); GROOVY_INTERP = null;}}
-        public static boolean isClosed() {return GROOVY_INTERP == null;}
+        public static void close() throws IOException {if (GROOVY_SHELL != null) {GROOVY_SHELL.getClassLoader().close(); GROOVY_SHELL = null;}}
+        public static boolean isClosed() {return GROOVY_SHELL == null;}
         /** 提供一个手动刷新 GROOVY_INTERP 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
         public static void refresh() throws IOException {close(); initInterpreter_();}
         
@@ -423,9 +381,9 @@ public class SP {
         /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
         private static void initInterpreter_() {
             // 重新指定 ClassLoader 为这个类的实际加载器
-            GROOVY_INTERP = new Interpreter(SP.class.getClassLoader(), new Binding(), GROOVY_CONF);
+            GROOVY_SHELL = new GroovyShell(SP.class.getClassLoader(), new Binding(), GROOVY_CONF);
             // 指定默认的 Groovy 脚本的类路径
-            GROOVY_INTERP.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
+            GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
         }
     }
     
