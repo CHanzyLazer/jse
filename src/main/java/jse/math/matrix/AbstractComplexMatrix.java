@@ -552,7 +552,7 @@ public abstract class AbstractComplexMatrix implements IComplexMatrix {
     
     
     @Override public IMatrix.ISize size() {
-        return new IMatrix.ISize() {
+        return new AbstractMatrix.AbstractSize() {
             @Override public int row() {return rowNumber();}
             @Override public int col() {return columnNumber();}
         };

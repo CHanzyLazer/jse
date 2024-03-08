@@ -14,6 +14,7 @@ import jse.Main;
 import jse.atom.*;
 import jse.cache.ByteArrayCache;
 import jse.code.collection.AbstractCollections;
+import jse.code.collection.NewCollections;
 import jse.code.functional.IDoubleFilter;
 import jse.code.functional.IFilter;
 import jse.code.functional.IIndexFilter;
@@ -1259,8 +1260,14 @@ public class UT {
          * @param aFilePath csv file path to save
          * @param aHeads optional heads for the title
          */
-        public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {
-            List<String> rLines = AbstractCollections.map(AbstractCollections.from(aData), subData -> String.join(",", AbstractCollections.map(subData, Object::toString)));
+        public static void data2csv(double[][] aData, String aFilePath, String... aHeads) throws IOException {rows2csv(aData, aFilePath, aHeads);}
+        public static void rows2csv(double[][] aRows, String aFilePath, String... aHeads) throws IOException {
+            List<String> rLines = AbstractCollections.map(AbstractCollections.from(aRows), row -> String.join(",", AbstractCollections.map(row, Object::toString)));
+            if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
+            write(aFilePath, rLines);
+        }
+        public static void cols2csv(double[][] aCols, String aFilePath, String... aHeads) throws IOException {
+            List<String> rLines = AbstractCollections.from(aCols[0].length, i ->  String.join(",", AbstractCollections.from(aCols.length, j -> String.valueOf(aCols[j][i]))));
             if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
             write(aFilePath, rLines);
         }
@@ -1270,22 +1277,53 @@ public class UT {
         public static void data2csv(double[] aData, String aFilePath, String aHead) throws IOException {
             write(aFilePath, AbstractCollections.merge(aHead, AbstractCollections.map(aData, Object::toString)));
         }
-        public static void data2csv(Iterable<?> aData, String aFilePath, String... aHeads) throws IOException {
-            Iterable<String> rLines = AbstractCollections.map(aData, subData -> {
-                if (subData instanceof IVector) {
-                    return String.join(",", AbstractCollections.map(((IVector)subData), Object::toString));
+        public static void data2csv(Iterable<?> aData, String aFilePath, String... aHeads) throws IOException {rows2csv(aData, aFilePath, aHeads);}
+        public static void rows2csv(Iterable<?> aRows, String aFilePath, String... aHeads) throws IOException {
+            Iterable<String> rLines = AbstractCollections.map(aRows, row -> {
+                if (row instanceof IVector) {
+                    return String.join(",", AbstractCollections.map(((IVector)row), Object::toString));
                 } else
-                if (subData instanceof double[]) {
-                    return String.join(",", AbstractCollections.map((double[])subData, Object::toString));
+                if (row instanceof double[]) {
+                    return String.join(",", AbstractCollections.map((double[])row, Object::toString));
                 } else
-                if (subData instanceof Iterable) {
-                    return String.join(",", AbstractCollections.map((Iterable<?>)subData, String::valueOf));
+                if (row instanceof Iterable) {
+                    return String.join(",", AbstractCollections.map((Iterable<?>)row, String::valueOf));
                 } else {
-                    return String.valueOf(subData);
+                    return String.valueOf(row);
                 }
             });
             if (aHeads!=null && aHeads.length>0) rLines = AbstractCollections.merge(String.join(",", aHeads), rLines);
             write(aFilePath, rLines);
+        }
+        public static void cols2csv(Iterable<?> aCols, String aFilePath, String... aHeads) throws IOException {
+            List<Iterator<String>> its = NewCollections.map(aCols, col -> {
+                if (col instanceof IVector) {
+                    return AbstractCollections.map((IVector)col, Object::toString).iterator();
+                } else
+                if (col instanceof double[]) {
+                    return AbstractCollections.map((double[])col, Object::toString).iterator();
+                } else
+                if (col instanceof Iterable) {
+                    return AbstractCollections.map((Iterable<?>)col, String::valueOf).iterator();
+                } else {
+                    return Collections.singletonList(String.valueOf(col)).iterator();
+                }
+            });
+            validPath(aFilePath);
+            try (IWriteln tWriteln = toWriteln(aFilePath)) {
+                if (aHeads!=null && aHeads.length>0) tWriteln.writeln(String.join(",", aHeads));
+                List<String> tTokens = new ArrayList<>(its.size());
+                boolean tHasNext = true;
+                while (true) {
+                    for (Iterator<String> it : its) {
+                        if (!it.hasNext()) {tHasNext = false; break;}
+                        tTokens.add(it.next());
+                    }
+                    if (!tHasNext) break;
+                    tWriteln.writeln(String.join(",", tTokens));
+                    tTokens.clear();
+                }
+            }
         }
         public static void data2csv(IMatrix aData, String aFilePath, String... aHeads) throws IOException {
             List<String> rLines = AbstractCollections.map(aData.rows(), subData -> String.join(",", AbstractCollections.map(subData, Object::toString)));

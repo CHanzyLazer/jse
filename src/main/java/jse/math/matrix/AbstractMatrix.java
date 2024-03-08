@@ -371,9 +371,11 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public final void forEachCol(DoubleConsumer aCon) {operation().forEachCol(aCon);}
     @Override public final void forEachRow(DoubleConsumer aCon) {operation().forEachRow(aCon);}
     
-    
+    static abstract class AbstractSize implements ISize {
+        @Override public String toString() {return String.format("{nrows: %d, ncols: %d}", row(), col());}
+    }
     @Override public ISize size() {
-        return new ISize() {
+        return new AbstractSize() {
             @Override public int row() {return rowNumber();}
             @Override public int col() {return columnNumber();}
         };
