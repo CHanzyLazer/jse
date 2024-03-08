@@ -1484,6 +1484,18 @@ public class UT {
          */
         public static boolean samePath(String aPath1, String aPath2) {return WORKING_DIR_PATH.resolve(aPath1).normalize().equals(WORKING_DIR_PATH.resolve(aPath2).normalize());}
         
+        
+        /**
+         * 将输入路径转为相对路径，顺便会将 {@link File#separator}
+         * 转换为 {@code `/`}，保证可以用于 ssh 的文件路径；
+         * 此项目依旧认为所有路径风格符都为 {@code `/`} 并要求至少兼容此种路径分隔符
+         * @author liqa
+         * @param aPath 字符串路径
+         * @return 合理的相对路径
+         */
+        public static String toRelativePath(String aPath) {return toRelativePath_(aPath).toString().replace(File.separator, "/");}
+        public static Path toRelativePath_(String aPath) {return WORKING_DIR_PATH.relativize(Paths.get(aPath));}
+        
         /**
          * Right `toAbsolutePath` method,
          * because `toAbsolutePath` in `Paths` will still not work even used `setProperty`
@@ -1491,7 +1503,13 @@ public class UT {
          * @param aPath string path, can be relative or absolute
          * @return the Right absolute path
          */
-        public static String toAbsolutePath(String aPath) {return toAbsolutePath_(aPath).toString();}
+        public static String toAbsolutePath(String aPath) {
+            if (aPath.startsWith("~")) {
+                // 默认不支持 ~
+                return USER_HOME + aPath.substring(1); // user.home 这里统一认为 user.home 就是绝对路径
+            }
+            return WORKING_DIR_PATH.resolve(aPath).toString();
+        }
         public static Path toAbsolutePath_(String aPath) {
             if (aPath.startsWith("~")) {
                 // 默认不支持 ~

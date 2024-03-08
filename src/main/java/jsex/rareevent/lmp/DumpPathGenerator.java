@@ -84,8 +84,8 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
         mTimestep = aTimestep;
         mMesses = aMesses;
         mGenDumpIn = aGenDumpIn;
-        // 最后设置一下工作目录
-        mWorkingDir = WORKING_DIR_OF("DUMP_GEN@"+UT.Code.randID());
+        // 最后设置一下工作目录，这里一定要求相对路径
+        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("DUMP_GEN@"+UT.Code.randID()));
     }
     
     private static LmpIn getGenDumpIn(double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, int aPathLength) {

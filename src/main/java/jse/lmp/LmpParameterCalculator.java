@@ -69,8 +69,8 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         mIsTempLmp = aIsTempLmp;
         mPairStyle = aPairStyle;
         mPairCoeff = aPairCoeff;
-        // 最后设置一下工作目录
-        mWorkingDir = WORKING_DIR_OF("LPC@"+UT.Code.randID());
+        // 最后设置一下工作目录，这里一定要求相对路径
+        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("LPC@"+UT.Code.randID()));
     }
     
     private void runRoot_(Runnable aRunnable) {
@@ -280,7 +280,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         // 这里失败直接报错
         exceptionCheck(tExitValue);
     }
-    public void runMelt_(Lmpdat aLmpdat, String aOutRestartPath, double aTemperature, double aTimestep, int aRunStep) throws IOException {
+    public void runMelt_(Lmpdat aLmpdat, String aOutRestartPath, double aTemperature, double aTimestep, int aRunStep) {
         // 由于可能存在外部并行，data 需要一个独立的名称
         String tInDataPath = mWorkingDir+"data@"+randID_();
         runRoot_(() -> {
