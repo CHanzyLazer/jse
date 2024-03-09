@@ -7,11 +7,9 @@ import jse.math.IComplexDouble;
 import jse.math.IDataShell;
 import jse.math.vector.ComplexVector;
 import jse.math.vector.IComplexVector;
-import jse.math.vector.RefComplexVector;
 import jse.math.vector.ShiftComplexVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -69,6 +67,7 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
+    @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
         if (tSize > mData[0].length) grow_(tSize);
@@ -140,33 +139,9 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
             @Override public boolean add(ComplexDouble element) {ComplexDoubleList.this.add(element); return true;}
         };
     }
-    @ApiStatus.Experimental
-    public @Unmodifiable List<ComplexDouble> asConstList() {
-        return new AbstractRandomAccessList<ComplexDouble>() {
-            @Override public ComplexDouble get(int index) {return ComplexDoubleList.this.get(index);}
-            @Override public int size() {return mSize;}
-            @Override public boolean add(ComplexDouble element) {ComplexDoubleList.this.add(element); return true;}
-        };
-    }
     public IComplexVector asVec() {
-        return new RefComplexVector() {
-            @Override public double getReal(int aIdx) {return ComplexDoubleList.this.getReal(aIdx);}
-            @Override public double getImag(int aIdx) {return ComplexDoubleList.this.getImag(aIdx);}
-            @Override public void set(int aIdx, double aReal, double aImag) {ComplexDoubleList.this.set(aIdx, aReal, aImag);}
-            @Override public void setReal(int aIdx, double aReal) {ComplexDoubleList.this.setReal(aIdx, aReal);}
-            @Override public void setImag(int aIdx, double aImag) {ComplexDoubleList.this.setImag(aIdx, aImag);}
-            @Override public int size() {return mSize;}
-        };
+        return new ComplexVector(mSize, mData);
     }
-    @ApiStatus.Experimental
-    public IComplexVector asConstVec() {
-        return new RefComplexVector() {
-            @Override public double getReal(int aIdx) {return ComplexDoubleList.this.getReal(aIdx);}
-            @Override public double getImag(int aIdx) {return ComplexDoubleList.this.getImag(aIdx);}
-            @Override public int size() {return mSize;}
-        };
-    }
-    @ApiStatus.Experimental
     public ComplexVector copy2vec() {
         ComplexVector rVector = ComplexVector.zeros(mSize);
         double[][] rData = rVector.internalData();

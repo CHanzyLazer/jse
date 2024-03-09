@@ -33,7 +33,9 @@ public class Vector extends DoubleArrayVector {
         private Builder(int aInitSize) {super(aInitSize);}
         
         public Vector build() {
-            return new Vector(mSize, mData);
+            double[] tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new Vector(mSize, tData);
         }
     }
     

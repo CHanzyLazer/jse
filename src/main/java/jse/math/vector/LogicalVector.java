@@ -34,7 +34,9 @@ public class LogicalVector extends BooleanArrayVector {
         private Builder(int aInitSize) {super(aInitSize);}
         
         public LogicalVector build() {
-            return new LogicalVector(mSize, mData);
+            boolean[] tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new LogicalVector(mSize, tData);
         }
     }
     

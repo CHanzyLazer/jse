@@ -5,11 +5,9 @@ import jse.code.iterator.IBooleanIterator;
 import jse.math.IDataShell;
 import jse.math.vector.ILogicalVector;
 import jse.math.vector.LogicalVector;
-import jse.math.vector.RefLogicalVector;
 import jse.math.vector.ShiftLogicalVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -57,6 +55,7 @@ public class BooleanList implements IDataShell<boolean[]> {
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
+    @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
         if (tSize > mData.length) grow_(tSize);
@@ -104,28 +103,9 @@ public class BooleanList implements IDataShell<boolean[]> {
             @Override public boolean add(Boolean element) {BooleanList.this.add(element); return true;}
         };
     }
-    @ApiStatus.Experimental
-    public @Unmodifiable List<Boolean> asConstList() {
-        return new AbstractRandomAccessList<Boolean>() {
-            @Override public Boolean get(int index) {return BooleanList.this.get(index);}
-            @Override public int size() {return mSize;}
-        };
-    }
     public ILogicalVector asVec() {
-        return new RefLogicalVector() {
-            @Override public boolean get(int aIdx) {return BooleanList.this.get(aIdx);}
-            @Override public void set(int aIdx, boolean aValue) {BooleanList.this.set(aIdx, aValue);}
-            @Override public int size() {return mSize;}
-        };
+        return new LogicalVector(mSize, mData);
     }
-    @ApiStatus.Experimental
-    public ILogicalVector asConstVec() {
-        return new RefLogicalVector() {
-            @Override public boolean get(int aIdx) {return BooleanList.this.get(aIdx);}
-            @Override public int size() {return mSize;}
-        };
-    }
-    @ApiStatus.Experimental
     public LogicalVector copy2vec() {
         LogicalVector rVector = LogicalVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);

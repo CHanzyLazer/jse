@@ -4,11 +4,9 @@ import jse.code.iterator.ILongIterator;
 import jse.math.IDataShell;
 import jse.math.vector.ILongVector;
 import jse.math.vector.LongVector;
-import jse.math.vector.RefLongVector;
 import jse.math.vector.ShiftLongVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -57,6 +55,7 @@ public class LongList implements IDataShell<long[]> {
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
+    @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
         if (tSize > mData.length) grow_(tSize);
@@ -104,28 +103,9 @@ public class LongList implements IDataShell<long[]> {
             @Override public boolean add(Long element) {LongList.this.add(element); return true;}
         };
     }
-    @ApiStatus.Experimental
-    public @Unmodifiable List<Long> asConstList() {
-        return new AbstractRandomAccessList<Long>() {
-            @Override public Long get(int index) {return LongList.this.get(index);}
-            @Override public int size() {return mSize;}
-        };
-    }
     public ILongVector asVec() {
-        return new RefLongVector() {
-            @Override public long get(int aIdx) {return LongList.this.get(aIdx);}
-            @Override public void set(int aIdx, long aValue) {LongList.this.set(aIdx, aValue);}
-            @Override public int size() {return mSize;}
-        };
+        return new LongVector(mSize, mData);
     }
-    @ApiStatus.Experimental
-    public ILongVector asConstVec() {
-        return new RefLongVector() {
-            @Override public long get(int aIdx) {return LongList.this.get(aIdx);}
-            @Override public int size() {return mSize;}
-        };
-    }
-    @ApiStatus.Experimental
     public LongVector copy2vec() {
         LongVector rVector = LongVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);

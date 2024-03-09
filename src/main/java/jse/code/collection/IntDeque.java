@@ -3,7 +3,6 @@ package jse.code.collection;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.RefIntVector;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -177,7 +176,6 @@ public class IntDeque {
             @Override public int size() {return IntDeque.this.size();}
         };
     }
-    @ApiStatus.Experimental
     public IntVector copy2vec() {
         boolean tCross;
         int tSize = mEnd-mStart;

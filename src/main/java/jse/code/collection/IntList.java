@@ -4,11 +4,9 @@ import jse.code.iterator.IIntIterator;
 import jse.math.IDataShell;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IntVector;
-import jse.math.vector.RefIntVector;
 import jse.math.vector.ShiftIntVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -57,6 +55,7 @@ public class IntList implements ISlice, IDataShell<int[]> {
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
+    @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
         if (tSize > mData.length) grow_(tSize);
@@ -104,28 +103,9 @@ public class IntList implements ISlice, IDataShell<int[]> {
             @Override public boolean add(Integer element) {IntList.this.add(element); return true;}
         };
     }
-    @ApiStatus.Experimental
-    public @Unmodifiable List<Integer> asConstList() {
-        return new AbstractRandomAccessList<Integer>() {
-            @Override public Integer get(int index) {return IntList.this.get(index);}
-            @Override public int size() {return mSize;}
-        };
-    }
     public IIntVector asVec() {
-        return new RefIntVector() {
-            @Override public int get(int aIdx) {return IntList.this.get(aIdx);}
-            @Override public void set(int aIdx, int aValue) {IntList.this.set(aIdx, aValue);}
-            @Override public int size() {return mSize;}
-        };
+        return new IntVector(mSize, mData);
     }
-    @ApiStatus.Experimental
-    public IIntVector asConstVec() {
-        return new RefIntVector() {
-            @Override public int get(int aIdx) {return IntList.this.get(aIdx);}
-            @Override public int size() {return mSize;}
-        };
-    }
-    @ApiStatus.Experimental
     public IntVector copy2vec() {
         IntVector rVector = IntVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);

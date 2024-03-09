@@ -35,7 +35,9 @@ public final class LongVector extends LongArrayVector {
         private Builder(int aInitSize) {super(aInitSize);}
 
         public LongVector build() {
-            return new LongVector(mSize, mData);
+            long[] tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new LongVector(mSize, tData);
         }
     }
     

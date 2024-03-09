@@ -2,10 +2,12 @@ package jse.code.collection;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.math.IDataShell;
-import jse.math.vector.*;
+import jse.math.vector.IVector;
+import jse.math.vector.ShiftVector;
+import jse.math.vector.Vector;
+import jse.math.vector.Vectors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -57,6 +59,7 @@ public class DoubleList implements IDataShell<double[]> {
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
+    @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
         if (tSize > mData.length) grow_(tSize);
@@ -104,28 +107,9 @@ public class DoubleList implements IDataShell<double[]> {
             @Override public boolean add(Double element) {DoubleList.this.add(element); return true;}
         };
     }
-    @ApiStatus.Experimental
-    public @Unmodifiable List<Double> asConstList() {
-        return new AbstractRandomAccessList<Double>() {
-            @Override public Double get(int index) {return DoubleList.this.get(index);}
-            @Override public int size() {return DoubleList.this.size();}
-        };
-    }
     public IVector asVec() {
-        return new RefVector() {
-            @Override public double get(int aIdx) {return DoubleList.this.get(aIdx);}
-            @Override public void set(int aIdx, double aValue) {DoubleList.this.set(aIdx, aValue);}
-            @Override public int size() {return mSize;}
-        };
+        return new Vector(mSize, mData);
     }
-    @ApiStatus.Experimental
-    public IVector asConstVec() {
-        return new RefVector() {
-            @Override public double get(int aIdx) {return DoubleList.this.get(aIdx);}
-            @Override public int size() {return mSize;}
-        };
-    }
-    @ApiStatus.Experimental
     public Vector copy2vec() {
         Vector rVector = Vectors.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
