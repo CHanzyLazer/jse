@@ -103,13 +103,19 @@ public class IntList implements ISlice, IDataShell<int[]> {
             @Override public boolean add(Integer element) {IntList.this.add(element); return true;}
         };
     }
-    public IIntVector asVec() {
+    public IntVector asVec() {
         return new IntVector(mSize, mData);
     }
     public IntVector copy2vec() {
         IntVector rVector = IntVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
         return rVector;
+    }
+    @ApiStatus.Experimental
+    public IntList copy() {
+        int[] tData = new int[mSize];
+        System.arraycopy(mData, 0, tData, 0, mSize);
+        return new IntList(mSize, tData);
     }
     
     

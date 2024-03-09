@@ -107,13 +107,19 @@ public class DoubleList implements IDataShell<double[]> {
             @Override public boolean add(Double element) {DoubleList.this.add(element); return true;}
         };
     }
-    public IVector asVec() {
+    public Vector asVec() {
         return new Vector(mSize, mData);
     }
     public Vector copy2vec() {
         Vector rVector = Vectors.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
         return rVector;
+    }
+    @ApiStatus.Experimental
+    public DoubleList copy() {
+        double[] tData = new double[mSize];
+        System.arraycopy(mData, 0, tData, 0, mSize);
+        return new DoubleList(mSize, tData);
     }
     
     

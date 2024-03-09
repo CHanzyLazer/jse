@@ -103,13 +103,19 @@ public class LongList implements IDataShell<long[]> {
             @Override public boolean add(Long element) {LongList.this.add(element); return true;}
         };
     }
-    public ILongVector asVec() {
+    public LongVector asVec() {
         return new LongVector(mSize, mData);
     }
     public LongVector copy2vec() {
         LongVector rVector = LongVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
         return rVector;
+    }
+    @ApiStatus.Experimental
+    public LongList copy() {
+        long[] tData = new long[mSize];
+        System.arraycopy(mData, 0, tData, 0, mSize);
+        return new LongList(mSize, tData);
     }
     
     

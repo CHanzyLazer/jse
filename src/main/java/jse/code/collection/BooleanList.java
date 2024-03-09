@@ -103,13 +103,19 @@ public class BooleanList implements IDataShell<boolean[]> {
             @Override public boolean add(Boolean element) {BooleanList.this.add(element); return true;}
         };
     }
-    public ILogicalVector asVec() {
+    public LogicalVector asVec() {
         return new LogicalVector(mSize, mData);
     }
     public LogicalVector copy2vec() {
         LogicalVector rVector = LogicalVector.zeros(mSize);
         System.arraycopy(mData, 0, rVector.internalData(), rVector.internalDataShift(), mSize);
         return rVector;
+    }
+    @ApiStatus.Experimental
+    public BooleanList copy() {
+        boolean[] tData = new boolean[mSize];
+        System.arraycopy(mData, 0, tData, 0, mSize);
+        return new BooleanList(mSize, tData);
     }
     
     

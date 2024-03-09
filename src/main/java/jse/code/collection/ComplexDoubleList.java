@@ -139,7 +139,7 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
             @Override public boolean add(ComplexDouble element) {ComplexDoubleList.this.add(element); return true;}
         };
     }
-    public IComplexVector asVec() {
+    public ComplexVector asVec() {
         return new ComplexVector(mSize, mData);
     }
     public ComplexVector copy2vec() {
@@ -149,6 +149,13 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
         System.arraycopy(mData[0], 0, rData[0], tShift, mSize);
         System.arraycopy(mData[1], 0, rData[1], tShift, mSize);
         return rVector;
+    }
+    @ApiStatus.Experimental
+    public ComplexDoubleList copy() {
+        double[][] tData = new double[2][mSize];
+        System.arraycopy(mData[0], 0, tData[0], 0, mSize);
+        System.arraycopy(mData[1], 0, tData[1], 0, mSize);
+        return new ComplexDoubleList(mSize, tData);
     }
     
     
