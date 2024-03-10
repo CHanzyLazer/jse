@@ -3,9 +3,7 @@ package jse.code.collection;
 import jse.code.functional.IBooleanConsumer;
 import jse.code.iterator.IBooleanIterator;
 import jse.math.IDataShell;
-import jse.math.vector.ILogicalVector;
-import jse.math.vector.LogicalVector;
-import jse.math.vector.ShiftLogicalVector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,6 +71,12 @@ public class BooleanList implements IDataShell<boolean[]> {
             IBooleanIterator it = aVector.iterator();
             for (int i = mSize; i < tSize; ++i) mData[i] = it.next();
         }
+        mSize = tSize;
+    }
+    public void addAll(int aSize, ILogicalVectorGetter aVectorGetter) {
+        final int tSize = mSize+aSize;
+        if (tSize > mData.length) grow_(tSize);
+        for (int i = mSize, j = 0; i < tSize; ++i, ++j) mData[i] = aVectorGetter.get(j);
         mSize = tSize;
     }
     

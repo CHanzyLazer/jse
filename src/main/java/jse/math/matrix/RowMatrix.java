@@ -1,8 +1,11 @@
 package jse.math.matrix;
 
 import jse.code.collection.AbstractRandomAccessList;
+import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
+import jse.math.vector.IVector;
+import jse.math.vector.IVectorGetter;
 import jse.math.vector.ShiftVector;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +32,26 @@ public class RowMatrix extends DoubleArrayMatrix {
     public static RowMatrix zeros(int aSize) {return zeros(aSize, aSize);}
     public static RowMatrix zeros(int aRowNum, int aColNum) {return new RowMatrix(aRowNum, aColNum, new double[aRowNum*aColNum]);}
     
+    /** 也提供 builder 方式的构建 */
+    public static Builder builder(int aColNum) {return new Builder(aColNum);}
+    public static Builder builder(int aColNum, int aInitSize) {return new Builder(aColNum, aInitSize);}
+    public final static class Builder {
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private DoubleList mData;
+        private final int mColNum;
+        private Builder(int aColNum) {mColNum = aColNum; mData = new DoubleList(Math.max(aColNum, DEFAULT_INIT_SIZE));}
+        private Builder(int aColNum, int aInitSize) {mColNum = aColNum; mData = new DoubleList(Math.max(aColNum, aInitSize));}
+        
+        public void addRow(IVector aRow) {mData.addAll(aRow);}
+        public void addRow(IVectorGetter aRowGetter) {mData.addAll(mColNum, aRowGetter);}
+        public void trimToSize() {mData.trimToSize();}
+        
+        public RowMatrix build() {
+            DoubleList tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new RowMatrix(tData.size()/mColNum, mColNum, tData.internalData());
+        }
+    }
     
     private final int mRowNum;
     private final int mColNum;

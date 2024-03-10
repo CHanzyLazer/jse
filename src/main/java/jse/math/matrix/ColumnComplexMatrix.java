@@ -2,6 +2,7 @@ package jse.math.matrix;
 
 import groovy.lang.Closure;
 import jse.code.collection.AbstractRandomAccessList;
+import jse.code.collection.ComplexDoubleList;
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.functional.IUnaryFullOperator;
 import jse.code.iterator.IComplexDoubleIterator;
@@ -9,8 +10,7 @@ import jse.code.iterator.IComplexDoubleSetIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
 import jse.math.operation.ARRAY;
-import jse.math.vector.ComplexVector;
-import jse.math.vector.ShiftComplexVector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -40,6 +40,28 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
     public static ColumnComplexMatrix zeros(int aSize) {return zeros(aSize, aSize);}
     public static ColumnComplexMatrix zeros(int aRowNum, int aColNum) {return new ColumnComplexMatrix(aRowNum, aColNum, new double[2][aRowNum*aColNum]);}
     
+    /** 也提供 builder 方式的构建 */
+    public static Builder builder(int aRowNum) {return new Builder(aRowNum);}
+    public static Builder builder(int aRowNum, int aInitSize) {return new Builder(aRowNum, aInitSize);}
+    public final static class Builder {
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private ComplexDoubleList mData;
+        private final int mRowNum;
+        private Builder(int aRowNum) {mRowNum = aRowNum; mData = new ComplexDoubleList(Math.max(aRowNum, DEFAULT_INIT_SIZE));}
+        private Builder(int aRowNum, int aInitSize) {mRowNum = aRowNum; mData = new ComplexDoubleList(Math.max(aRowNum, aInitSize));}
+        
+        public void addCol(IComplexVector aCol) {mData.addAll(aCol);}
+        public void addCol(IVector aCol) {mData.addAll(aCol);}
+        public void addCol(IComplexVectorGetter aColGetter) {mData.addAll(mRowNum, aColGetter);}
+        public void addCol(IVectorGetter aColGetter) {mData.addAll(mRowNum, aColGetter);}
+        public void trimToSize() {mData.trimToSize();}
+        
+        public ColumnComplexMatrix build() {
+            ComplexDoubleList tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new ColumnComplexMatrix(mRowNum, tData.size()/mRowNum, tData.internalData());
+        }
+    }
     
     private final int mRowNum;
     private final int mColNum;

@@ -2,9 +2,7 @@ package jse.code.collection;
 
 import jse.code.iterator.ILongIterator;
 import jse.math.IDataShell;
-import jse.math.vector.ILongVector;
-import jse.math.vector.LongVector;
-import jse.math.vector.ShiftLongVector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,6 +71,12 @@ public class LongList implements IDataShell<long[]> {
             ILongIterator it = aVector.iterator();
             for (int i = mSize; i < tSize; ++i) mData[i] = it.next();
         }
+        mSize = tSize;
+    }
+    public void addAll(int aSize, ILongVectorGetter aVectorGetter) {
+        final int tSize = mSize+aSize;
+        if (tSize > mData.length) grow_(tSize);
+        for (int i = mSize, j = 0; i < tSize; ++i, ++j) mData[i] = aVectorGetter.get(j);
         mSize = tSize;
     }
     

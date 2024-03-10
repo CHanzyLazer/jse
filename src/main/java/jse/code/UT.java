@@ -798,7 +798,8 @@ public class UT {
          * @author liqa
          */
         public static Vector str2data(String aStr, int aLength) {
-            Vector rData = Vectors.zeros(aLength);
+            // 不足的数据现在默认为 NaN
+            Vector rData = Vectors.NaN(aLength);
             // 先直接转 char[]，适配 groovy-json 的 CharScanner
             char[] tChar = aStr.toCharArray();
             // 直接遍历忽略空格，获取开始和末尾，然后 parseDouble
@@ -811,7 +812,6 @@ public class UT {
                     if (tCharCode > 32) {
                         if (tCharCode == 44) {
                             if (tHasComma) {
-                                rData.set(tIdx, Double.NaN);
                                 ++tIdx;
                                 if (tIdx == aLength) return rData;
                             } else {
@@ -825,9 +825,8 @@ public class UT {
                 } else {
                     if (tCharCode<=32 || tCharCode==44) {
                         if (tCharCode == 44) tHasComma = true;
-                        double tValue = Double.NaN;
-                        try {tValue = CharScanner.parseDouble(tChar, tFrom, i);} catch (Exception ignored) {}
-                        rData.set(tIdx, tValue);
+                        try {rData.set(tIdx, CharScanner.parseDouble(tChar, tFrom, i));}
+                        catch (Exception ignored) {}
                         tFrom = -1;
                         ++tIdx;
                         if (tIdx == aLength) return rData;
@@ -836,13 +835,9 @@ public class UT {
             }
             // 最后一个数据
             if (tFrom >= 0 && tFrom < tChar.length) {
-                double tValue = Double.NaN;
-                try {tValue = CharScanner.parseDouble(tChar, tFrom, tChar.length);} catch (Exception ignored) {}
-                rData.set(tIdx, tValue);
-                ++tIdx;
+                try {rData.set(tIdx, CharScanner.parseDouble(tChar, tFrom, tChar.length));}
+                catch (Exception ignored) {}
             }
-            // 不足的数据现在默认为 NaN
-            for (; tIdx < aLength; ++tIdx) rData.set(tIdx, Double.NaN);
             return rData;
         }
         
@@ -921,6 +916,7 @@ public class UT {
          * @param aStr input string
          * @return the split sting in array
          */
+        @ApiStatus.Experimental
         public static String[] splitStr(String aStr) {
             return COMMA_OR_BLANKS.split(aStr.trim(), -1);
         }
@@ -1392,28 +1388,27 @@ public class UT {
         public static RowMatrix csv2data(String aFilePath) throws IOException {
             try (BufferedReader tReader = toReader(aFilePath)) {
                 // 需要的参数
-                DoubleList rData = new DoubleList();
+                RowMatrix.Builder rBuilder;
                 String tLine;
                 int tColNum;
-                int rRowNum = 0;
                 // 读取第一行来判断列数
                 tLine = tReader.readLine();
                 String[] tTokens = Text.splitStr(tLine);
                 tColNum = tTokens.length;
+                rBuilder = RowMatrix.builder(tColNum);
                 // 读取第一行检测是否有头，直接看能否成功粘贴
                 IVector tRow = null;
                 try {tRow = Vectors.from(AbstractCollections.map(tTokens, Double::parseDouble));} catch (Exception ignored) {} // 直接看能否成功粘贴
                 if (tRow != null) {
-                    rData.addAll(tRow);
-                    ++rRowNum;
+                    rBuilder.addRow(tRow);
                 }
                 // 遍历读取后续数据
                 while ((tLine = tReader.readLine()) != null) {
-                    rData.addAll(Text.str2data(tLine, tColNum));
-                    ++rRowNum;
+                    rBuilder.addRow(Text.str2data(tLine, tColNum));
                 }
                 // 返回结果
-                return new RowMatrix(rRowNum, tColNum, rData.internalData());
+                rBuilder.trimToSize();
+                return rBuilder.build();
             }
         }
         

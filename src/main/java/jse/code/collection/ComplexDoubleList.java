@@ -2,12 +2,11 @@ package jse.code.collection;
 
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.iterator.IComplexDoubleIterator;
+import jse.code.iterator.IDoubleIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
 import jse.math.IDataShell;
-import jse.math.vector.ComplexVector;
-import jse.math.vector.IComplexVector;
-import jse.math.vector.ShiftComplexVector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -92,6 +91,42 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
                 tReal[i] = it.real();
                 tImag[i] = it.imag();
             }
+        }
+        mSize = tSize;
+    }
+    public void addAll(IVector aVector) {
+        final int aSize = aVector.size();
+        final int tSize = mSize+aSize;
+        if (tSize > mData[0].length) grow_(tSize);
+        final double[] tReal = mData[0];
+        final double[] tImag = mData[1];
+        IDoubleIterator it = aVector.iterator();
+        for (int i = mSize; i < tSize; ++i) {
+            tReal[i] = it.next();
+            tImag[i] = 0.0; // 虽然说理论不用设置，但是保证 setInternalData 后也能正常这里也同样设置
+        }
+        mSize = tSize;
+    }
+    public void addAll(int aSize, IComplexVectorGetter aVectorGetter) {
+        final int tSize = mSize+aSize;
+        if (tSize > mData[0].length) grow_(tSize);
+        final double[] tReal = mData[0];
+        final double[] tImag = mData[1];
+        for (int i = mSize, j = 0; i < tSize; ++i, ++j) {
+            IComplexDouble tValue = aVectorGetter.get(j);
+            tReal[i] = tValue.real();
+            tImag[i] = tValue.imag();
+        }
+        mSize = tSize;
+    }
+    public void addAll(int aSize, IVectorGetter aVectorGetter) {
+        final int tSize = mSize+aSize;
+        if (tSize > mData[0].length) grow_(tSize);
+        final double[] tReal = mData[0];
+        final double[] tImag = mData[1];
+        for (int i = mSize, j = 0; i < tSize; ++i, ++j) {
+            tReal[i] = aVectorGetter.get(j);
+            tImag[i] = 0.0; // 虽然说理论不用设置，但是保证 setInternalData 后也能正常这里也同样设置
         }
         mSize = tSize;
     }

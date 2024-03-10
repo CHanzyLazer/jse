@@ -1,8 +1,11 @@
 package jse.math.matrix;
 
 import jse.code.collection.AbstractRandomAccessList;
+import jse.code.collection.IntList;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
+import jse.math.vector.IIntVector;
+import jse.math.vector.IIntVectorGetter;
 import jse.math.vector.IntVector;
 import jse.math.vector.ShiftIntVector;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +36,26 @@ public class RowIntMatrix extends IntArrayMatrix {
     public static RowIntMatrix zeros(int aSize) {return zeros(aSize, aSize);}
     public static RowIntMatrix zeros(int aRowNum, int aColNum) {return new RowIntMatrix(aRowNum, aColNum, new int[aRowNum*aColNum]);}
     
+    /** 也提供 builder 方式的构建 */
+    public static Builder builder(int aColNum) {return new Builder(aColNum);}
+    public static Builder builder(int aColNum, int aInitSize) {return new Builder(aColNum, aInitSize);}
+    public final static class Builder {
+        private final static int DEFAULT_INIT_SIZE = 8;
+        private IntList mData;
+        private final int mColNum;
+        private Builder(int aColNum) {mColNum = aColNum; mData = new IntList(Math.max(aColNum, DEFAULT_INIT_SIZE));}
+        private Builder(int aColNum, int aInitSize) {mColNum = aColNum; mData = new IntList(Math.max(aColNum, aInitSize));}
+        
+        public void addRow(IIntVector aRow) {mData.addAll(aRow);}
+        public void addRow(IIntVectorGetter aRowGetter) {mData.addAll(mColNum, aRowGetter);}
+        public void trimToSize() {mData.trimToSize();}
+        
+        public RowIntMatrix build() {
+            IntList tData = mData;
+            mData = null; // 设为 null 防止再通过 Builder 来修改此数据
+            return new RowIntMatrix(tData.size()/mColNum, mColNum, tData.internalData());
+        }
+    }
     
     private final int mRowNum;
     private final int mColNum;

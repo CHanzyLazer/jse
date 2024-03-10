@@ -2,10 +2,7 @@ package jse.code.collection;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.math.IDataShell;
-import jse.math.vector.IVector;
-import jse.math.vector.ShiftVector;
-import jse.math.vector.Vector;
-import jse.math.vector.Vectors;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,6 +74,12 @@ public class DoubleList implements IDataShell<double[]> {
             IDoubleIterator it = aVector.iterator();
             for (int i = mSize; i < tSize; ++i) mData[i] = it.next();
         }
+        mSize = tSize;
+    }
+    public void addAll(int aSize, IVectorGetter aVectorGetter) {
+        final int tSize = mSize+aSize;
+        if (tSize > mData.length) grow_(tSize);
+        for (int i = mSize, j = 0; i < tSize; ++i, ++j) mData[i] = aVectorGetter.get(j);
         mSize = tSize;
     }
     
