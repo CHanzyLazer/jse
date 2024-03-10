@@ -1,7 +1,6 @@
 package jse.lmp;
 
 import jse.atom.*;
-import jse.cache.ThreadLocalObjectCachePool;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
@@ -433,8 +432,6 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /// MPI stuffs
     /** [AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep] */
     private final static int LAMMPSTRJ_INFO_LEN = 8;
-    /** 为了使用简单并且避免 double 转 long 造成的信息损耗，这里统一用 long[] 来传输信息 */
-    private final static ThreadLocalObjectCachePool<long[]> LAMMPSTRJ_INFO_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new long[LAMMPSTRJ_INFO_LEN]);
     /** 专门的方法用来收发 SubLammpstrj */
     public static void send(SubLammpstrj aSubLammpstrj, int aDest, MPI.Comm aComm) throws MPIException {
         // 暂不支持周期边界以外的类型的发送
@@ -442,49 +439,40 @@ public class SubLammpstrj extends AbstractSettableAtomData {
             throw new RuntimeException("send is temporarily support `pp pp pp` BoxBounds only");
         }
         // 先发送 SubLammpstrj 的必要信息，[AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep]
-        long[] tLammpstrjInfo = LAMMPSTRJ_INFO_CACHE.getObject();
-        try {
-            tLammpstrjInfo[0] = UT.Serial.combineI(aSubLammpstrj.atomNumber(), aSubLammpstrj.mAtomData.columnNumber());
-            tLammpstrjInfo[1] = Double.doubleToLongBits(aSubLammpstrj.mBox.xlo());
-            tLammpstrjInfo[2] = Double.doubleToLongBits(aSubLammpstrj.mBox.xhi());
-            tLammpstrjInfo[3] = Double.doubleToLongBits(aSubLammpstrj.mBox.ylo());
-            tLammpstrjInfo[4] = Double.doubleToLongBits(aSubLammpstrj.mBox.yhi());
-            tLammpstrjInfo[5] = Double.doubleToLongBits(aSubLammpstrj.mBox.zlo());
-            tLammpstrjInfo[6] = Double.doubleToLongBits(aSubLammpstrj.mBox.zhi());
-            tLammpstrjInfo[7] = aSubLammpstrj.mTimeStep;
-            aComm.send(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aDest, LAMMPSTRJ_INFO);
-        } finally {
-            // 发送后归还临时数据
-            LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
-        }
+        // 为了使用简单并且避免 double 转 long 造成的信息损耗，这里统一用 long[] 来传输信息
+        aComm.send(new long[] {
+              UT.Serial.combineI(aSubLammpstrj.atomNumber(), aSubLammpstrj.mAtomData.columnNumber())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.xlo())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.xhi())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.ylo())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.yhi())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.zlo())
+            , Double.doubleToLongBits(aSubLammpstrj.mBox.zhi())
+            , aSubLammpstrj.mTimeStep
+        }, LAMMPSTRJ_INFO_LEN, aDest, LAMMPSTRJ_INFO);
         // 必要信息发送完成后分别发送 atomDataKeys 和 atomData，这里按列发送，先统一发送 key 再统一发送数据
         for (String subDataKey : aSubLammpstrj.mAtomData.heads()) aComm.sendStr(subDataKey, aDest, DATA_KEY);
         for (IVector subData : aSubLammpstrj.mAtomData.asMatrix().cols()) aComm.send(subData, aDest, DATA);
     }
     public static SubLammpstrj recv(int aSource, MPI.Comm aComm) throws MPIException {
         // 同样先接收必要信息，[AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep]
-        long[] tLammpstrjInfo = LAMMPSTRJ_INFO_CACHE.getObject();
-        try {
-            aComm.recv(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aSource, LAMMPSTRJ_INFO);
-            long tData = tLammpstrjInfo[0];
-            final int tAtomNum = UT.Serial.toIntL(tData, 0);
-            final int tAtomDataKeyNum = UT.Serial.toIntL(tData, 1);
-            final long tTimeStep = tLammpstrjInfo[7];
-            // 由于 Table 可以扩容，并且要和和 read 保持一致，不使用缓存的数据
-            String[] tAtomDataKeys = new String[tAtomDataKeyNum];
-            for (int i = 0; i < tAtomDataKeyNum; ++i) tAtomDataKeys[i] = aComm.recvStr(aSource, DATA_KEY);
-            ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
-            for (IVector subData : rAtomData.asMatrix().cols()) aComm.recv(subData, aSource, DATA);
-            // 创建 SubLammpstrj
-            return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
-                Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
-                Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
-                Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
-            ), rAtomData);
-        } finally {
-            // 完事归还临时数据
-            LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
-        }
+        long[] tLammpstrjInfo = new long[LAMMPSTRJ_INFO_LEN];
+        aComm.recv(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aSource, LAMMPSTRJ_INFO);
+        long tData = tLammpstrjInfo[0];
+        final int tAtomNum = UT.Serial.toIntL(tData, 0);
+        final int tAtomDataKeyNum = UT.Serial.toIntL(tData, 1);
+        final long tTimeStep = tLammpstrjInfo[7];
+        // 由于 Table 可以扩容，并且要和和 read 保持一致，不使用缓存的数据
+        String[] tAtomDataKeys = new String[tAtomDataKeyNum];
+        for (int i = 0; i < tAtomDataKeyNum; ++i) tAtomDataKeys[i] = aComm.recvStr(aSource, DATA_KEY);
+        ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
+        for (IVector subData : rAtomData.asMatrix().cols()) aComm.recv(subData, aSource, DATA);
+        // 创建 SubLammpstrj
+        return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
+            Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
+            Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
+            Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
+        ), rAtomData);
     }
     public static SubLammpstrj bcast(SubLammpstrj aSubLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
@@ -493,49 +481,39 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                 throw new RuntimeException("bcast is temporarily support `pp pp pp` BoxBounds only");
             }
             // 先发送 SubLammpstrj 的必要信息，[AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep]
-            long[] tLammpstrjInfo = LAMMPSTRJ_INFO_CACHE.getObject();
-            try {
-                tLammpstrjInfo[0] = UT.Serial.combineI(aSubLammpstrj.atomNumber(), aSubLammpstrj.mAtomData.columnNumber());
-                tLammpstrjInfo[1] = Double.doubleToLongBits(aSubLammpstrj.mBox.xlo());
-                tLammpstrjInfo[2] = Double.doubleToLongBits(aSubLammpstrj.mBox.xhi());
-                tLammpstrjInfo[3] = Double.doubleToLongBits(aSubLammpstrj.mBox.ylo());
-                tLammpstrjInfo[4] = Double.doubleToLongBits(aSubLammpstrj.mBox.yhi());
-                tLammpstrjInfo[5] = Double.doubleToLongBits(aSubLammpstrj.mBox.zlo());
-                tLammpstrjInfo[6] = Double.doubleToLongBits(aSubLammpstrj.mBox.zhi());
-                tLammpstrjInfo[7] = aSubLammpstrj.mTimeStep;
-                aComm.bcast(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aRoot);
-            } finally {
-                // 发送后归还临时数据
-                LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
-            }
+            aComm.bcast(new long[] {
+                  UT.Serial.combineI(aSubLammpstrj.atomNumber(), aSubLammpstrj.mAtomData.columnNumber())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.xlo())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.xhi())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.ylo())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.yhi())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.zlo())
+                , Double.doubleToLongBits(aSubLammpstrj.mBox.zhi())
+                , aSubLammpstrj.mTimeStep
+            }, LAMMPSTRJ_INFO_LEN, aRoot);
             // 必要信息发送完成后分别发送 atomDataKeys 和 atomData，这里按列发送，先统一发送 key 再统一发送数据
             for (String subDataKey : aSubLammpstrj.mAtomData.heads()) aComm.bcastStr(subDataKey, aRoot);
             for (IVector subData : aSubLammpstrj.mAtomData.asMatrix().cols()) aComm.bcast(subData, aRoot);
             return aSubLammpstrj;
         } else {
             // 同样先接收必要信息，[AtomNum | AtomDataKeyNum, Box.xlo, Box.xhi, Box.ylo, Box.yhi, Box.zlo, Box.zhi, TimeStep]
-            long[] tLammpstrjInfo = LAMMPSTRJ_INFO_CACHE.getObject();
-            try {
-                aComm.bcast(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aRoot);
-                long tData = tLammpstrjInfo[0];
-                final int tAtomNum = UT.Serial.toIntL(tData, 0);
-                final int tAtomDataKeyNum = UT.Serial.toIntL(tData, 1);
-                final long tTimeStep = tLammpstrjInfo[7];
-                // 由于 Table 可以扩容，并且要和和 read 保持一致，不使用缓存的数据
-                String[] tAtomDataKeys = new String[tAtomDataKeyNum];
-                for (int i = 0; i < tAtomDataKeyNum; ++i) tAtomDataKeys[i] = aComm.bcastStr(null, aRoot);
-                ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
-                for (IVector subData : rAtomData.asMatrix().cols()) aComm.bcast(subData, aRoot);
-                // 创建 SubLammpstrj
-                return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
-                    Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
-                    Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
-                    Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
-                ), rAtomData);
-            } finally {
-                // 完事归还临时数据
-                LAMMPSTRJ_INFO_CACHE.returnObject(tLammpstrjInfo);
-            }
+            long[] tLammpstrjInfo = new long[LAMMPSTRJ_INFO_LEN];
+            aComm.bcast(tLammpstrjInfo, LAMMPSTRJ_INFO_LEN, aRoot);
+            long tData = tLammpstrjInfo[0];
+            final int tAtomNum = UT.Serial.toIntL(tData, 0);
+            final int tAtomDataKeyNum = UT.Serial.toIntL(tData, 1);
+            final long tTimeStep = tLammpstrjInfo[7];
+            // 由于 Table 可以扩容，并且要和和 read 保持一致，不使用缓存的数据
+            String[] tAtomDataKeys = new String[tAtomDataKeyNum];
+            for (int i = 0; i < tAtomDataKeyNum; ++i) tAtomDataKeys[i] = aComm.bcastStr(null, aRoot);
+            ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
+            for (IVector subData : rAtomData.asMatrix().cols()) aComm.bcast(subData, aRoot);
+            // 创建 SubLammpstrj
+            return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
+                Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
+                Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
+                Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
+            ), rAtomData);
         }
     }
 }

@@ -11,7 +11,6 @@ import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.MPI;
-import jse.cache.ThreadLocalObjectCachePool;
 import jse.parallel.MPIException;
 import jsex.rareevent.IFullPathGenerator;
 import jsex.rareevent.IParameterCalculator;
@@ -146,7 +145,6 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         return new RemotePathIterator(null, aSeed);
     }
     
-    private final static ThreadLocalObjectCachePool<double[]> TIMER_CACHE = ThreadLocalObjectCachePool.withInitial(() -> new double[4]);
     /** 用于 MPI 收发信息的 tags */
     private final static int
           JOB_TYPE = 109
@@ -307,16 +305,12 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                 case TIMER_GET: {
                     if (mLmpMe == 0) {
                         assert mTotTimer!=null && mLmpTimer!=null && mCalTimer!=null && mWaitTimer!=null;
-                        double[] tTimeBuf = TIMER_CACHE.getObject();
-                        try {
-                            tTimeBuf[0] = mTotTimer.get();
-                            tTimeBuf[1] = mLmpTimer.get();
-                            tTimeBuf[2] = mCalTimer.get();
-                            tTimeBuf[3] = mWaitTimer.get();
-                            mWorldComm.send(tTimeBuf, 4, mWorldRoot, TIMER_INFO);
-                        } finally {
-                            TIMER_CACHE.returnObject(tTimeBuf);
-                        }
+                        mWorldComm.send(new double[] {
+                              mTotTimer.get()
+                            , mLmpTimer.get()
+                            , mCalTimer.get()
+                            , mWaitTimer.get()
+                        }, 4, mWorldRoot, TIMER_INFO);
                     }
                     if (mLmpMe == 0) {
                         mWorldComm.send(mWorldRoot, TIMER_GET_FINISHED);
@@ -394,26 +388,23 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
         }
     }
     public TimerInfo getTimerInfo() throws MPIException {return getTimerInfo(NO_LMP_IN_WORLD_ROOT);} // 如果关闭了 worldRoot 的 lammps 运行，则当然默认关闭其效率统计
+    @SuppressWarnings("RedundantCast")
     public TimerInfo getTimerInfo(boolean aExcludeWorldRoot) throws MPIException {
         if (mWorldMe != mWorldRoot) throw new RuntimeException("getTimerInfo can ONLY be called from WorldRoot ("+mWorldRoot+")");
         if (mDead) throw new RuntimeException("This MultipleNativeLmpFullPathGenerator is dead");
         double rTotal = 0.0, rLmp = 0.0, rLambda = 0.0, rWait = 0.0;
         int tStatTimes = 0;
-        double[] rTimeBuf = TIMER_CACHE.getObject();
-        try {
-            for (int tLmpRoot : mLmpRoots) {
-                if (aExcludeWorldRoot && tLmpRoot==mWorldRoot) continue;
-                mWorldComm.sendB(TIMER_GET, tLmpRoot, JOB_TYPE);
-                mWorldComm.recv(rTimeBuf, 4, tLmpRoot, TIMER_INFO);
-                mWorldComm.recv(tLmpRoot, TIMER_GET_FINISHED);
-                rTotal  += rTimeBuf[0];
-                rLmp    += rTimeBuf[1];
-                rLambda += rTimeBuf[2];
-                rWait   += rTimeBuf[3];
-                ++tStatTimes;
-            }
-        } finally {
-            TIMER_CACHE.returnObject(rTimeBuf);
+        double[] rTimeBuf = new double[4];
+        for (int tLmpRoot : mLmpRoots) {
+            if (aExcludeWorldRoot && tLmpRoot==mWorldRoot) continue;
+            mWorldComm.sendB(TIMER_GET, tLmpRoot, JOB_TYPE);
+            mWorldComm.recv(rTimeBuf, 4, tLmpRoot, TIMER_INFO);
+            mWorldComm.recv(tLmpRoot, TIMER_GET_FINISHED);
+            rTotal  += rTimeBuf[0];
+            rLmp    += rTimeBuf[1];
+            rLambda += rTimeBuf[2];
+            rWait   += rTimeBuf[3];
+            ++tStatTimes;
         }
         rTotal  /= (double)tStatTimes;
         rLmp    /= (double)tStatTimes;

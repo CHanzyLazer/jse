@@ -194,6 +194,7 @@ public class SP {
             Object tVal = Groovy.getValue(tID);
             return new DisplayData(toDisplayString(tVal));
         }
+        @SuppressWarnings("RedundantThrows")
         @Override public ReplacementOptions complete(String code, int at) throws Exception {
             StringSearch.Range tMatch = StringSearch.findLongestMatchingAt(code, at, ID_CHAR);
             if (tMatch == null) return null;
