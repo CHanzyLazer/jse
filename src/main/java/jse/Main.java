@@ -12,10 +12,13 @@ import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static jse.code.CS.Exec.JAR_PATH;
@@ -83,6 +86,9 @@ public class Main {
                 return;
             }
             case "-jupyter": {
+                // 获取可选参数
+                StringBuilder rArgs = new StringBuilder();
+                for (int i = 2; i < aArgs.length; ++i) rArgs.append(", ").append(aArgs[i]);
                 // 使用写入到临时目录然后走 jupyter 的方法来安装，这样应该是符合规范的
                 String tWorkingDir = WORKING_DIR_OF("jupyterkernel");
                 UT.IO.removeDir(tWorkingDir);
@@ -97,10 +103,20 @@ public class Main {
                 UT.IO.copy(UT.IO.getResource("jupyter/logo-64x64.png"), tWorkingDir+"logo-64x64.png");
                 // 使用这种方法来安装，不走 jep 来避免安装失败的问题
                 // 这里改用 ProcessBuilder 直接调用 python 而不是 CS.Exec.EXE 来通过 shell 调用，因为 powershell 有双引号的问题
-                Process tProcess = new ProcessBuilder("python", "-c", "import sys;from jupyter_client.kernelspec import KernelSpecManager;KernelSpecManager().install_kernel_spec('"+tWorkingDir.replace("\\", "\\\\")+"', 'jse', prefix=sys.prefix)").start();
-                // 不需要读取输出，因为此指令没有输出
+                Process tProcess = new ProcessBuilder("python", "-c", "import sys;from jupyter_client.kernelspec import KernelSpecManager;KernelSpecManager().install_kernel_spec('"+tWorkingDir.replace("\\", "\\\\")+"', 'jse'"+rArgs+")").start();
+                // 只读取错误输出
+                Future<Void> tErrStream = UT.Par.runAsync(() -> {
+                    try (BufferedReader tReader = UT.IO.toReader(tProcess.getErrorStream())) {
+                        String tLine;
+                        while ((tLine = tReader.readLine()) != null) {
+                            System.err.println(tLine);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 int tExitValue;
-                try {tExitValue = tProcess.waitFor();}
+                try {tErrStream.get(); tExitValue = tProcess.waitFor();}
                 catch (Exception e) {tProcess.destroy(); throw e;}
                 if (tExitValue != 0) {System.exit(tExitValue); return;}
                 UT.IO.removeDir(tWorkingDir);
