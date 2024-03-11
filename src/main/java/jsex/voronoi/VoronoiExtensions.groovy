@@ -76,9 +76,9 @@ class VoronoiExtensions {
             @Override VoronoiBuilder.IVertex get(int aIdx) {return mBuilder.getVertex(idx2voronoi[aIdx])}
         }
     }
-    static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, aAreaThreshold, (double)0.0)}
-    static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, (double)0.0)}
+    static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, aAreaThreshold, 0.0D)}
+    static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, 0.0D)}
     static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning) {return calVoronoi(self, aRCutOff, aNoWarning, 9)}
     static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff) {return calVoronoi(self, aRCutOff, false)}
-    static ICalculator calVoronoi(MonatomicParameterCalculator self) {return calVoronoi(self, (double)(self.unitLen()*3.0))}
+    static ICalculator calVoronoi(MonatomicParameterCalculator self) {return calVoronoi(self, self.unitLen()*3.0D)}
 }
