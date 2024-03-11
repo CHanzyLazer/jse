@@ -87,8 +87,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jse.code.CS.*;
 import static jse.code.CS.Exec.USER_HOME;
 import static jse.code.CS.Exec.WORKING_DIR_PATH;
-import static jse.code.Conf.PARFOR_THREAD_NUMBER;
-import static jse.code.Conf.UNICODE_SUPPORT;
+import static jse.code.Conf.*;
 
 /**
  * @author liqa
@@ -571,9 +570,9 @@ public class UT {
         }
         public static synchronized void progressBar(Map<?, ?> aArgs) {
             progressBar_(UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "TaskName", "taskname", "Name", "name")),
-                         ((Number)UT.Code.get(aArgs, "InitialMax", "initialmax", "Max", "max", "N", "n")).intValue(),
+                         ((Number)UT.Code.get(aArgs, "InitialMax", "initialmax", "Max", "max", "N", "n")).longValue(),
                          (ProgressBarStyle)UT.Code.getWithDefault(aArgs, UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII, "Style", "style", "s"),
-                         (PrintStream)UT.Code.getWithDefault(aArgs, System.out, "Consumer", "consumer", "c"),
+                         (PrintStream)UT.Code.getWithDefault(aArgs, PBAR_ERR_STREAM ? System.err : System.out, "Consumer", "consumer", "c"),
                          ((Number)UT.Code.getWithDefault(aArgs, (int)FILE_SYSTEM_SLEEP_TIME_2, "UpdateIntervalMillis", "updateintervalmills", "Update", "update")).intValue(),
                          UT.Code.toString(UT.Code.getWithDefault(aArgs, "", "UnitName", "unitname", "uname")),
                          ((Number)UT.Code.getWithDefault(aArgs, 1, "UnitSize", "unitsize", "usize")).longValue(),
@@ -585,7 +584,7 @@ public class UT {
         public static synchronized void progressBar(String aName, long aN) {
             progressBar_(aName, aN,
                          UNICODE_SUPPORT ? ProgressBarStyle.COLORFUL_UNICODE_BLOCK : ProgressBarStyle.ASCII,
-                         System.out, // 一般来说 pbar 都是 err 流来保证 ssh 环境下及时更新，这里改为默认 out 从而可以有意避开扰乱
+                         PBAR_ERR_STREAM ? System.err : System.out, // 现在统一默认使用 err 流
                          (int)FILE_SYSTEM_SLEEP_TIME_2,
                          "", 1,
                          -1,

@@ -30,6 +30,8 @@ public class Conf {
     
     /** {@link System#out} 和 {@link System#err} 是否支持复杂的 unicode 字符，禁用后可以避免乱码问题 */
     public static boolean UNICODE_SUPPORT = UT.Exec.envZ("JSE_UNICODE_SUPPORT", true);
+    /** {@link UT.Timer#pbar} 默认情况下是否使用 {@link System#err} 流输出，这是一般的行为，在 {@code jse 2.7.4} 以及更早的版本下默认会使用 {@link System#out} 流输出 */
+    public static boolean PBAR_ERR_STREAM = UT.Exec.envZ("JSE_PBAR_ERR_STREAM", true);
     
     /** 控制 parfor 的模式，在竞争模式下不同线程分配到的任务是不一定的，而关闭后是一定的，有时需要保证重复运行结果一致 */
     public static boolean PARFOR_NO_COMPETITIVE = UT.Exec.envZ("JSE_PARFOR_NO_COMPETITIVE", false);
