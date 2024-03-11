@@ -134,7 +134,7 @@ public class MiMalloc {
         EXE.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "mimalloc");
-        if (tLibName == null) throw new Exception("MIMALLOC BUILD ERROR: No mimalloc lib in "+LIB_DIR);
+        if (tLibName == null) throw new Exception("MIMALLOC BUILD ERROR: No mimalloc lib in '"+LIB_DIR+"'");
         // 手动拷贝头文件到指定目录
         UT.IO.copy(tMiDir+"include/mimalloc.h", INCLUDE_DIR+"mimalloc.h");
         // 完事后移除临时解压得到的源码

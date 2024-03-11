@@ -1209,7 +1209,7 @@ public class MPI {
             EXE.setNoSTDOutput(false);
             // 简单检测一下是否编译成功
             @Nullable String tLibName = LIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
-            if (tLibName == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in "+MPIJNI_LIB_DIR);
+            if (tLibName == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in '"+MPIJNI_LIB_DIR+"'");
             // 完事后移除临时解压得到的源码
             UT.IO.removeDir(tWorkingDir);
             System.out.println("MPI INIT INFO: mpijni successfully installed.");

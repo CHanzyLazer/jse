@@ -289,7 +289,7 @@ public class NativeLmp implements IAutoShutdown {
         EXE.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(NATIVELMP_LIB_DIR, "lammps");
-        if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: Lammps build Failed, No lammps lib in "+NATIVELMP_LIB_DIR);
+        if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: Lammps build Failed, No lammps lib in '"+NATIVELMP_LIB_DIR+"'");
         // 完事后移除临时解压得到的源码（以及可能存在的临时下载的 lammps 源码压缩包）
         UT.IO.removeDir(tWorkingDir);
         System.out.println("NATIVE_LMP INIT INFO: lammps libraries successfully installed.");
@@ -339,7 +339,7 @@ public class NativeLmp implements IAutoShutdown {
         EXE.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(LMPJNI_LIB_DIR, "lmpjni");
-        if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in "+ LMPJNI_LIB_DIR);
+        if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in '"+ LMPJNI_LIB_DIR+"'");
         // 完事后移除临时解压得到的源码
         UT.IO.removeDir(tWorkingDir);
         System.out.println("NATIVE_LMP INIT INFO: lmpjni libraries successfully installed.");
