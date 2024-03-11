@@ -24,15 +24,9 @@
     #define FREE(ptr) (free(ptr))
     
     #include <string.h>
-    #ifdef WIN32
+    #if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
     #define STRDUP(str) (_strdup(str))
-    #elif _WIN64
-    #define STRDUP(str) (_strdup(str))
-    #elif _WIN32
-    #define STRDUP(str) (_strdup(str))
-    #elif __unix__
-    #define STRDUP(str) (strdup(str))
-    #elif __linux__
+    #else
     #define STRDUP(str) (strdup(str))
     #endif
 #endif
