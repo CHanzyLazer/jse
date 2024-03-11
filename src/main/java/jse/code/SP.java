@@ -19,6 +19,8 @@ import jep.JepException;
 import jse.Main;
 import jse.atom.AbstractAtoms;
 import jse.atom.Structures;
+import jse.clib.JNIUtil;
+import jse.clib.MiMalloc;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.ArrayLists;
 import jse.code.collection.Iterables;
@@ -524,6 +526,12 @@ public class SP {
             public static @Nullable String CMAKE_C_COMPILER = UT.Exec.env("JSE_CMAKE_C_COMPILER_JEP", jse.code.Conf.CMAKE_C_COMPILER);
             public static @Nullable String CMAKE_C_FLAGS    = UT.Exec.env("JSE_CMAKE_C_FLAGS_JEP"   , jse.code.Conf.CMAKE_C_FLAGS   );
             
+            /**
+             * 对于 jep，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
+             * 这对于 java 数组和 c 数组的转换很有效
+             */
+            public static boolean USE_MIMALLOC = UT.Exec.envZ("JSE_USE_MIMALLOC_JEP", jse.code.Conf.USE_MIMALLOC);
+            
             /** 重定向 jep 动态库的路径 */
             public static @Nullable String REDIRECT_JEP_LIB = UT.Exec.env("JSE_REDIRECT_JEP_LIB");
         }
@@ -619,11 +627,15 @@ public class SP {
         
         static {
             InitHelper.INITIALIZED = true;
-            
             // 手动加载 CS.Exec，会自动重新设置工作目录，保证 jep 读取到的工作目录是正确的
             CS.Exec.InitHelper.init();
             // 在 JVM 关闭时关闭 JEP_INTERP，最先添加来避免一些问题
             Main.addGlobalAutoCloseable(Python::close);
+            
+            // 依赖 jniutil
+            JNIUtil.InitHelper.init();
+            // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
+            if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
             
             if (Conf.REDIRECT_JEP_LIB == null) {
                 // 设置 Jep 非 java 库的路径，考虑到 WSL，windows 和 linux 使用不同的名称
@@ -783,6 +795,19 @@ public class SP {
             String tJepDir = tWorkingDir+"jep/";
             UT.IO.removeDir(tJepDir);
             UT.IO.zip2dir(tJepZipPath, tJepDir);
+            // 这里对 CMakeLists.txt 特殊处理，注意要输出到不同的文件
+            UT.IO.map(tJepDir+"CMakeLists.txt", tJepDir+"CMakeLists1.txt", line -> {
+                // 替换其中的 jniutil 库路径为设置好的路径
+                line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                // 替换其中的 mimalloc 库路径为设置好的路径
+                if (Conf.USE_MIMALLOC) {
+                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
+                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                }
+                return line;
+            });
+            // 覆盖旧的 CMakeLists.txt
+            UT.IO.move(tJepDir+"CMakeLists1.txt", tJepDir+"CMakeLists.txt");
             // 安装 jep 包，这里通过 cmake 来安装
             System.out.println("JEP INIT INFO: Installing jep from source code...");
             String tJepBuildDir = tJepDir+"build/";
