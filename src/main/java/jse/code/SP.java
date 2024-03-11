@@ -51,8 +51,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static jse.code.CS.Exec.EXE;
@@ -181,7 +179,7 @@ public class SP {
             "Available cell magics:\n" +
             "%%python  %%groovy  %%writefile";
         
-        private volatile Future<?> mEvalTask = null;
+        private volatile Thread mEvalThread = null;
         @Override public DisplayData eval(String expr) throws Exception {
             // 先处理 cell magics
             @Nullable CellMagicParseContext tCellCTX = mMagicParser.parseCellMagic(expr);
@@ -214,10 +212,26 @@ public class SP {
                 return ""; // just replace to empty string
             });
             if (expr.isEmpty()) return null;
-            // 根据 tIsPython 决定运行器
-            if (tIsPython) {
-                // python 下保持线程一致（当然也意味着不能中断）
-                Python.exec(expr);
+            Object tOut;
+            // 需要保持线程一致，从而保证各种运算正常
+            mEvalThread = Thread.currentThread();
+            // 即使 python 原本就不支持中断，这里还是提供一样的逻辑
+            try {
+                // 根据 tIsPython 决定运行器
+                if (tIsPython) {
+                    Python.exec(expr);
+                    tOut = null; // jep 限制目前没有方法获得最后的输出
+                } else {
+                    tOut = Groovy.eval(expr);
+                }
+            } finally {
+                mEvalThread = null;
+                //noinspection ResultOfMethodCallIgnored
+                Thread.interrupted(); // 仅用于让线程重新复活
+            }
+            // 附加输出图像，现在会同时绘制 python 和 groovy 两个，保证相互调用时能正常工作
+            // 先绘制 python，如果完全没有初始化（纯 groovy 环境）则不去绘制
+            if (Python.InitHelper.initialized()) {
                 // 简单的 matplotlab 支持
                 if (!KERNEL_SHOW_FIGURE) {
                     //noinspection ConcatenationWithEmptyString
@@ -239,37 +253,28 @@ public class SP {
                     }
                     Python.exec("__jse_images__.clear()");
                 }
-                return null; // jep 限制目前没有方法获得最后的输出
             }
-            final String fExpr = expr;
-            mEvalTask = UT.Par.callAsync(() -> Groovy.eval(fExpr));
-            try {
-                Object tOut = mEvalTask.get();
-                mEvalTask = null;
-                // 附加输出图像
-                if (!KERNEL_SHOW_FIGURE && !IPlotter.SHOWED_PLOTTERS.isEmpty()) {
-                    for (IPlotter tPlt : IPlotter.SHOWED_PLOTTERS) {
-                        DisplayData tDisplayData = new DisplayData();
-                        tDisplayData.putData(MIMEType.IMAGE_PNG, Base64.getMimeEncoder().encodeToString(tPlt.encode()));
-                        display(tDisplayData);
-                    }
-                    // 绘制完成清空存储
-                    IPlotter.SHOWED_PLOTTERS.clear();
+            // 再绘制 groovy 的图像
+            if (!KERNEL_SHOW_FIGURE && !IPlotter.SHOWED_PLOTTERS.isEmpty()) {
+                for (IPlotter tPlt : IPlotter.SHOWED_PLOTTERS) {
+                    DisplayData tDisplayData = new DisplayData();
+                    tDisplayData.putData(MIMEType.IMAGE_PNG, Base64.getMimeEncoder().encodeToString(tPlt.encode()));
+                    display(tDisplayData);
                 }
-                return tOut==null ? null : new DisplayData(toDisplayString(tOut));
-            } catch (ExecutionException e) {
-                Throwable t = e.getCause();
-                if (t instanceof Exception) throw (Exception)t;
-                else throw e;
+                // 绘制完成清空存储
+                IPlotter.SHOWED_PLOTTERS.clear();
             }
+            // 最后输出
+            return tOut==null ? null : new DisplayData(toDisplayString(tOut));
         }
         @Override public List<String> formatError(Exception e) {
             return super.formatError(Main.deepSanitize(e));
         }
         @Override public void interrupt() {
-            if (mEvalTask != null) {
-                mEvalTask.cancel(true);
-                mEvalTask = null;
+            // 只支持中断 groovy，python 原生就没有对中断提供支持
+            if (mEvalThread != null) {
+                mEvalThread.interrupt();
+                mEvalThread = null;
             }
         }
         
