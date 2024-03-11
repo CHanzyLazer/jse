@@ -12,8 +12,6 @@ import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,18 +103,9 @@ public class Main {
                 // 这里改用 ProcessBuilder 直接调用 python 而不是 CS.Exec.EXE 来通过 shell 调用，因为 powershell 有双引号的问题
                 Process tProcess = new ProcessBuilder("python", "-c", "import sys;from jupyter_client.kernelspec import KernelSpecManager;KernelSpecManager().install_kernel_spec('"+tWorkingDir.replace("\\", "\\\\")+"', 'jse'"+rArgs+")").start();
                 // 只读取错误输出
-                Future<Void> tErrStream = UT.Par.runAsync(() -> {
-                    try (BufferedReader tReader = UT.IO.toReader(tProcess.getErrorStream())) {
-                        String tLine;
-                        while ((tLine = tReader.readLine()) != null) {
-                            System.err.println(tLine);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                Future<Void> tErrTask = UT.Par.redirectStream(tProcess.getErrorStream(), true, System.err);
                 int tExitValue;
-                try {tErrStream.get(); tExitValue = tProcess.waitFor();}
+                try {tErrTask.get(); tExitValue = tProcess.waitFor();}
                 catch (Exception e) {tProcess.destroy(); throw e;}
                 if (tExitValue != 0) {System.exit(tExitValue); return;}
                 UT.IO.removeDir(tWorkingDir);

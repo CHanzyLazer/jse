@@ -31,7 +31,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     @Override public final boolean isFile(String aFilePath) {return UT.IO.isFile(aFilePath);}
     @Override public final boolean isDir(String aDir) {return UT.IO.isDir(aDir);}
     
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         
@@ -44,7 +44,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
         private final @Nullable Process mProcess;
         private final Future<Void> mErrTask, mOutTask;
         private volatile boolean mCancelled = false;
-        private LocalSystemFuture(String aCommand, final @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
+        private LocalSystemFuture(String aCommand, final @NotNull UT.IO.IWriteln aWriteln) {
             // 执行指令
             Process tProcess;
             try {
@@ -62,37 +62,25 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
                 return;
             }
             // 使用另外两个线程读取错误流和输出流（由于内部会对输出自动 buffer，获取 stream 和执行的顺序不重要）
-            mErrTask = UT.Par.runAsync(() -> {
-                boolean tERROutPut = !noERROutput();
-                try (BufferedReader tErrReader = UT.IO.toReader(mProcess.getErrorStream(), charset_())) {
-                    // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
-                    String tLine;
-                    while ((tLine = tErrReader.readLine()) != null) {
-                        if (tERROutPut) System.err.println(tLine);
-                    }
-                } catch (Exception e) {
-                    printStackTrace(e);
-                }
-            });
-            // 读取执行的输出
-            mOutTask = UT.Par.runAsync(() -> {
-                boolean tSTDOutPut = !noSTDOutput();
-                try (BufferedReader tOutReader = UT.IO.toReader(mProcess.getInputStream(), charset_()); UT.IO.IWriteln tWriteln = tSTDOutPut ? aWriteln.get() : NUL_PRINTLN) {
-                    // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
-                    String tLine;
-                    while ((tLine = tOutReader.readLine()) != null) {
-                        if (tSTDOutPut) tWriteln.writeln(tLine);
-                    }
-                } catch (Exception e) {
-                    printStackTrace(e);
-                }
-            });
+            mErrTask = UT.Par.redirectStream(mProcess.getErrorStream(), true, noERROutput() ? NUL_PRINT_STREAM : System.err);
+            // 读取执行的输出，如果是标准输出则直接重定向
+            if (aWriteln == STD_OUT_WRITELN) {
+                mOutTask = UT.Par.redirectStream(mProcess.getInputStream(), true, noSTDOutput() ? NUL_PRINT_STREAM : System.out);
+            } else {
+                mOutTask = UT.Par.runAsync(() -> {
+                    try (BufferedReader tOutReader = UT.IO.toReader(mProcess.getInputStream(), charset_()); UT.IO.IWriteln tWriteln = (noSTDOutput() ? NUL_WRITELN: aWriteln)) {
+                        // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
+                        String tLine;
+                        while ((tLine = tOutReader.readLine()) != null) tWriteln.writeln(tLine);
+                    } catch (Exception e) {printStackTrace(e);}
+                });
+            }
         }
         
         @Override public boolean cancel(boolean mayInterruptIfRunning) {
             if (mProcess == null) return false;
             if (mayInterruptIfRunning && mProcess.isAlive()) {
-                mProcess.destroyForcibly(); // anyway, 总之是没有办法在 java 中直接发送 ctrl-c 到指定进程的
+                mProcess.destroy(); // anyway, 总之是没有办法在 java 中直接发送 ctrl-c 到指定进程的
                 for (int i = 0; i < TRY_TIMES; ++i) {
                     if (!mProcess.isAlive()) {mCancelled = true; return true;}
                     try {Thread.sleep(SYNC_SLEEP_TIME);}

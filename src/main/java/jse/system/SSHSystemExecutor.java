@@ -138,7 +138,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     @Override public final boolean isDir(String aDir) throws Exception {return mSSH.isDir(aDir);}
     
     /** 通过 ssh 直接执行命令 */
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
         final SSHSystemFuture tFuture = new SSHSystemFuture(aCommand, aWriteln);
         // 增加结束时都断开连接的任务
         return toSystemFuture(tFuture, () -> {if (tFuture.mChannelExec != null) tFuture.mChannelExec.disconnect();});
@@ -149,7 +149,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         private final @Nullable ChannelExec mChannelExec;
         private volatile boolean mCancelled = false;
         private final @Nullable Future<Void> mOutTask;
-        private SSHSystemFuture(String aCommand, final @NotNull AbstractSystemExecutor.IWritelnSupplier aPrintln) {
+        private SSHSystemFuture(String aCommand, final @NotNull UT.IO.IWriteln aWriteln) {
             // 执行指令
             ChannelExec tChannelExec;
             try {tChannelExec = mSSH.systemChannel(aCommand, noERROutput());}
@@ -161,32 +161,19 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
             }
             
             // 由于 jsch 的输入流是临时创建的，因此可以不去获取输入流来避免流死锁
-            if (noSTDOutput()) {
-                try {
-                    mChannelExec.connect();
-                } catch (Exception e) {
-                    printStackTrace(e);
-                    // 发生错误则断开连接
-                    if (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
-                        try {mChannelExec.sendSignal("2");} catch (Exception ignored) {}
-                    }
-                    mChannelExec.disconnect();
-                }
+            final boolean tNoSTDOutput = noSTDOutput();
+            if (aWriteln==STD_OUT_WRITELN || tNoSTDOutput) {
+                if (!tNoSTDOutput) mChannelExec.setOutputStream(System.out, true);
+                try {mChannelExec.connect();}
+                catch (Exception e) {printStackTrace(e);}
                 mOutTask = null;
             } else {
                 mOutTask = UT.Par.runAsync(() -> {
-                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream()); UT.IO.IWriteln tPrintln = aPrintln.get()) {
+                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream()); UT.IO.IWriteln tWriteln = aWriteln) {
                         mChannelExec.connect();
                         String tLine;
-                        while ((tLine = tReader.readLine()) != null) tPrintln.writeln(tLine);
-                    } catch (Exception e) {
-                        printStackTrace(e);
-                        // 发生错误则断开连接
-                        if (mChannelExec.isConnected() && !mChannelExec.isClosed() && !mChannelExec.isEOF()) {
-                            try {mChannelExec.sendSignal("2");} catch (Exception ignored) {}
-                        }
-                        mChannelExec.disconnect();
-                    }
+                        while ((tLine = tReader.readLine()) != null) tWriteln.writeln(tLine);
+                    } catch (Exception e) {printStackTrace(e);}
                 });
             }
         }

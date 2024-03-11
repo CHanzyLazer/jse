@@ -66,7 +66,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         mAssignedResources.put(aResource, false);
     }
     
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull AbstractSystemExecutor.IWritelnSupplier aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln  aWriteln) {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         // 先尝试获取节点

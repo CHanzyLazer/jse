@@ -421,6 +421,36 @@ public class UT {
                 return mResult;
             }
         }
+        
+        private final static int BUFFER_SIZE = 1024;
+        /**
+         * 重定向一个输入流的输出到需要的输出流中，
+         * 例如将程序的错误输出重定向到 {@link System#err}
+         * @param aFrom 输入流
+         * @param aAutoCloseFrom 是否在结束后自动关闭输入流，默认不关闭
+         * @param aTo 需要重定向的输出流
+         * @param aAutoCloseTo 是否在结束后自动关闭输出流，默认不关闭
+         * @return 管理此重定向任务的 {@link Future}
+         */
+        public static Future<Void> redirectStream(final InputStream aFrom, final boolean aAutoCloseFrom, final OutputStream aTo, final boolean aAutoCloseTo) {
+            return callAsync(() -> {
+                byte[] tBuffer = ByteArrayCache.getArray(BUFFER_SIZE);
+                try {
+                    int tLen;
+                    while ((tLen = aFrom.read(tBuffer)) != -1) {
+                        aTo.write(tBuffer, 0, tLen);
+                    }
+                } finally {
+                    ByteArrayCache.returnArray(tBuffer);
+                    if (aAutoCloseFrom) aFrom.close();
+                    if (aAutoCloseTo) aTo.close();
+                }
+                return null;
+            });
+        }
+        public static Future<Void> redirectStream(InputStream aFrom, boolean aAutoCloseFrom, OutputStream aTo) {return redirectStream(aFrom, aAutoCloseFrom, aTo, false);}
+        public static Future<Void> redirectStream(InputStream aFrom, OutputStream aTo, boolean aAutoCloseTo) {return redirectStream(aFrom, false, aTo, aAutoCloseTo);}
+        public static Future<Void> redirectStream(InputStream aFrom, OutputStream aTo) {return redirectStream(aFrom, false, aTo, false);}
     }
     
     public static class Hack {
