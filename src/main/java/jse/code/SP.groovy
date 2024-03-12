@@ -592,7 +592,7 @@ if __JSE_HAS_MATPLOTLIB__:
         /** 调用方法，python 中需要结合 import 使用 */
         static Object invoke(String aMethodName, Object... aArgs) throws JepException {
             if (aArgs == null || aArgs.length == 0) return JEP_INTERP.invoke(aMethodName)
-            if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return JEP_INTERP.invoke(aMethodName, (Map<String, Object>)aArgs[0])
+            if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return JEP_INTERP.invoke(aMethodName, aArgs[0] as Map)
             if (aArgs.length > 1 && (aArgs.last() instanceof Map)) {
                 Object[] tArgs = new Object[aArgs.length-1]
                 System.arraycopy(aArgs, 0, tArgs, 0, aArgs.length-1)
@@ -609,22 +609,25 @@ if __JSE_HAS_MATPLOTLIB__:
         /** 提供一个手动刷新 JEP_INTERP 的接口，可以将关闭的重新打开，会清空所有创建的 python 变量 */
         static void refresh() throws JepException {close(); initInterpreter_()}
         
-        
         /** 提供一个方便 Groovy 中使用的直接访问类型的接口 */
-        static Object getClass(final String aClassName) throws JepException {
-            return new GroovyObject() {
-                @Override Object invokeMethod(String name, Object args) throws JepException {return invoke("$aClassName.$name", (Object[])args)}
-                @Override Object getProperty(String propertyName) throws JepException {return eval("$aClassName.$propertyName")}
-                @Override void setProperty(String propertyName, Object newValue) throws JepException {setValue('_', newValue); exec("$aClassName.$propertyName = _")}
-                
-                private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass())
-                @Override MetaClass getMetaClass() {return mDelegate}
-                @Override void setMetaClass(MetaClass metaClass) {mDelegate = metaClass}
-                
-                /** 对于一般的类，call 直接调用构造函数而不是重载运算符 */
-                Object call(Object... aArgs) throws JepException {return newInstance(aClassName, aArgs)}
-            }
+        @CompileStatic
+        static class PyClass implements GroovyObject {
+            private final String mClassName;
+            PyClass(String aClassName) {mClassName = aClassName;}
+            
+            @Override Object invokeMethod(String name, Object args) throws JepException {return invoke("$mClassName.$name", args as Object[])}
+            @Override Object getProperty(String propertyName) throws JepException {return eval("$mClassName.$propertyName")}
+            @Override void setProperty(String propertyName, Object newValue) throws JepException {setValue('_', newValue); exec("$mClassName.$propertyName = _")}
+            
+            private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass())
+            @Override MetaClass getMetaClass() {return mDelegate}
+            @Override void setMetaClass(MetaClass metaClass) {mDelegate = metaClass}
+            
+            /** 对于一般的类，call 直接调用构造函数而不是重载运算符 */
+            Object call(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs)}
         }
+        static PyClass getClass(final String aClassName) throws JepException {return new PyClass(aClassName);}
+        
         /** 现在和 Groovy 逻辑保持一致，调用任何 run 都会全局重置 args 值 */
         private static void setArgs_(String aFirst, String[] aArgs) {
             List<String> tArgs = (aArgs==null || aArgs.length==0) ? Collections.singletonList(aFirst) : AbstractCollections.merge(aFirst, aArgs)

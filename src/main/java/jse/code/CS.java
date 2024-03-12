@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.awt.*;
 import java.io.*;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -531,7 +533,10 @@ public class CS {
                 try (BufferedReader tReader = new BufferedReader(new InputStreamReader(tProcess.getInputStream()))) {
                     tProcess.waitFor();
                     wd = tReader.readLine().trim();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                } finally {
+                    tProcess.destroy();
+                }
             }
             // 全局修改工作目录为正确的目录
             System.setProperty("user.dir", wd);
@@ -540,9 +545,17 @@ public class CS {
             WORKING_DIR_PATH = Paths.get(WORKING_DIR);
             
             // 获取此 jar 的路径
-            // 注意此属性在 linux 上有时不是绝对路径，这可能会造成一些问题；
-            // 现在应该可以随意使用 UT.IO 而不会循环初始化
-            Path tJarPath = UT.IO.toAbsolutePath_(new File(CS.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getPath());
+            // 默认这样获取而不是通过 System.getProperty("java.class.path")，为了避免此属性有多个 jar
+            Path tJarPath;
+            try {
+                String tURLPath = CS.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+                tURLPath = URLDecoder.decode(tURLPath, StandardCharsets.UTF_8.name());
+                // 现在应该可以随意使用 UT.IO 而不会循环初始化
+                tJarPath = UT.IO.toAbsolutePath_(new File(tURLPath).getPath());
+            } catch (Exception e) {
+                // 现在应该可以随意使用 UT.IO 而不会循环初始化
+                tJarPath = UT.IO.toAbsolutePath_(System.getProperty("java.class.path"));
+            }
             JAR_PATH = tJarPath.toString();
             Path tJarDirPath = tJarPath.getParent();
             String tJarDir = tJarDirPath==null ? "" : tJarDirPath.toString();
