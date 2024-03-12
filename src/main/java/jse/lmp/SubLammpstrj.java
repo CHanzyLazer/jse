@@ -424,8 +424,14 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         aWriteln.writeln(String.format("%f %f", mBox.zlo(), mBox.zhi()));
         aWriteln.writeln(String.format("ITEM: ATOMS %s", String.join(" ", mAtomData.heads())));
         for (IVector subAtomData : mAtomData.rows()) {
-        aWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData, Object::toString)));
+        aWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData, SubLammpstrj::toString_)));
         }
+    }
+    /** 保证整数时直接输出整数 */
+    private static String toString_(double aValue) {
+        String tStr = Double.toString(aValue);
+        if (tStr.endsWith(".0")) tStr = tStr.substring(0, tStr.length()-2);
+        return tStr;
     }
     
     
