@@ -18,8 +18,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.awt.*;
 import java.io.*;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -34,7 +33,7 @@ import java.util.regex.Pattern;
  */
 public class CS {
     /** version of jse */
-    public final static String VERSION = "2.7.5";
+    public final static String VERSION = "2.7.5b";
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
@@ -548,11 +547,10 @@ public class CS {
             // 默认这样获取而不是通过 System.getProperty("java.class.path")，为了避免此属性有多个 jar
             Path tJarPath;
             try {
-                String tURLPath = CS.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-                tURLPath = URLDecoder.decode(tURLPath, StandardCharsets.UTF_8.name());
-                // 现在应该可以随意使用 UT.IO 而不会循环初始化
-                tJarPath = UT.IO.toAbsolutePath_(new File(tURLPath).getPath());
+                URI tJarURI = CS.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+                tJarPath = WORKING_DIR_PATH.resolve(Paths.get(tJarURI));
             } catch (Exception e) {
+                // 在 linux 中这个路径可能是相对路径，为了避免库安装错误这里统一获取一下绝对路径
                 // 现在应该可以随意使用 UT.IO 而不会循环初始化
                 tJarPath = UT.IO.toAbsolutePath_(System.getProperty("java.class.path"));
             }
