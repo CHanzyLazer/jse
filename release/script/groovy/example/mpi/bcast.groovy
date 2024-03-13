@@ -3,6 +3,7 @@ package example.mpi
 import jse.parallel.MPI
 import static jse.code.UT.Math.*
 
+
 // 固定随机流
 rng(123456789)
 

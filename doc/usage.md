@@ -55,28 +55,31 @@ import jse.lmp.Dump
 
 ### a. 将 jse 作为软件使用
 
-- 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-  中下载 `jse-${tag}.zip` 文件，解压到希望的目录作为此软件的位置。
+-   从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
+    中下载 `jse-${tag}.zip` 文件，解压到希望的目录作为此软件的位置。
 
-- 将解压到的目录添加到 `PATH` 环境变量中。
+-   将解压到的目录添加到 `PATH` 环境变量中。
   
-- 在书写好 groovy 脚本后，直接在终端执行 `jse path/to/script`
-  即可运行此脚本。
+-   在书写好 groovy 脚本后，直接在终端执行 `jse path/to/script`
+    即可运行此脚本。
 
 > 在终端中执行 `jse -v` 后输出版本信息表示安装成功。
 > 
 
 ### b. 将 jse 作为独立项目使用
 
-- 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-  中下载 `jse-full-${tag}.zip` 文件，解压到希望的目录作为项目目录。
+-   从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
+    中下载 `jse-full-${tag}.zip` 文件，解压到希望的目录作为项目目录。
 
-- **使用 VScode 管理项目：** 使用 vscode 打开解压后的文件夹，
-  切换到希望运行的 groovy 脚本后，通过左侧栏的 `运行和调试` 选择 
-  `jse-RunCurrentScript` 选项后运行即可。
+- **a. 使用 VScode 管理项目：** 
+    
+    使用 vscode 打开解压后的文件夹，
+    切换到希望运行的 groovy 脚本后，通过左侧栏的 `运行和调试` 选择 
+    `jse-RunCurrentScript` 选项后运行即可。
 
-- **使用 [IntelliJ IDEA](https://www.jetbrains.com/idea/) 管理项目：** 
-  使用 idea 打开解压后的文件夹，第一次打开可能需要设置 jdk 的路径：
+- **b. 使用 [IntelliJ IDEA](https://www.jetbrains.com/idea/) 管理项目：** 
+    
+    使用 idea 打开解压后的文件夹，第一次打开可能需要设置 jdk 的路径：
     
     ```
     左上角“文件” ⟶ 项目结构 ⟶ 左边栏选择“项目设置-项目” ⟶ SDK 选择本地安装的 JDK
@@ -116,11 +119,11 @@ import jse.lmp.Dump
 通过在 python 中使用 py4j 库直接导入 `jse-all.jar`
 文件的方式来使用 jse 提供的方法。
 
-- 确保已经安装了 [py4j](https://www.py4j.org/)
+-   确保已经安装了 [py4j](https://www.py4j.org/)
 
-- 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-  中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 python 项目目录中，
-  最终结构大致如下：
+-   从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
+    中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 python 项目目录中，
+    最终结构大致如下：
     
     ```
     └─pyproject
@@ -136,28 +139,29 @@ import jse.lmp.Dump
     > 这里只是保留备用。
     > 
     
-- 对于需要使用 jse 的 python 脚本（例如 `main.py`），
-  通过类似下面的代码来导入 `jse-all.jar` 文件：
+-   对于需要使用 jse 的 python 脚本（例如 `main.py`），
+    通过类似下面的代码来导入 `jse-all.jar` 文件：
     
     ```python
     from py4j.java_gateway import JavaGateway
     GATEWAY = JavaGateway.launch_gateway(classpath='lib/jse-all.jar')
     ```
     
-- 而后通过这种方式来导入 jse 中定义的类：
+-   而后通过这种方式来导入 jse 中定义的类：
     
     ```python
     Data = GATEWAY.jvm.jse.lmp.Data
     Dump = GATEWAY.jvm.jse.lmp.Dump
     ```
     
-- 最后记得关闭 `GATEWAY`：
+-   最后记得关闭 `GATEWAY`：
     
     ```python
     GATEWAY.shutdown()
     ```
 
-> **注意**：默认情况下 py4j 不会输出 java 的信息到控制台，可以在创建 `GATEWAY` 时重新定向输出流来解决这个问题：
+> **注意**：默认情况下 py4j 不会输出 java 的信息到控制台，
+> 可以在创建 `GATEWAY` 时重新定向输出流来解决这个问题：
 > 
 > ```python
 > import sys
@@ -200,9 +204,9 @@ import jse.lmp.Dump
 
 matlab 原生支持调用 java 程序，因此可以比较简单的使用 jse。
 
-- 从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
-  中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 matlab 项目目录中，
-  最终结构大致如下：
+-   从 [**Release**](https://github.com/CHanzyLazer/jse/releases/latest) 
+    中下载 `jse-${tag}.zip` 文件，解压到需要使用 jse 的 matlab 项目目录中，
+    最终结构大致如下：
     
     ```
     └─matproject
@@ -218,14 +222,14 @@ matlab 原生支持调用 java 程序，因此可以比较简单的使用 jse。
     > 这里只是保留备用。
     > 
     
-- 对于需要使用 jse 的 matlab 脚本（例如 `main.m`），
-  通过类似下面的代码来导入 `jse-all.jar` 文件：
+-   对于需要使用 jse 的 matlab 脚本（例如 `main.m`），
+    通过类似下面的代码来导入 `jse-all.jar` 文件：
     
     ```matlab
     javaaddpath('lib/jse-all.jar');
     ```
     
-- 然后类似导入其他 java 包一样，这样导入 jse 中的 lmp 包：
+-   然后类似导入其他 java 包一样，这样导入 jse 中的 lmp 包：
     
     ```matlab
     import jse.lmp.*
@@ -233,7 +237,7 @@ matlab 原生支持调用 java 程序，因此可以比较简单的使用 jse。
     
     > **注意**：matlab 似乎不能直接使用 `import jse.lmp.Data` 这种写法来导入单个类
     
-- 最后记得移除 java 路径：
+-   最后记得移除 java 路径：
     
     ```matlab
     clear;
