@@ -68,7 +68,7 @@ println('Hi from <'+me+'>')
 MPI_Finalize()
 ```
 
-另一种则直接位于 [`jse.parallel.MPI`]，为一套更加面向对象的接口：
+另一种则直接位于 `jse.parallel.MPI`，为一套更加面向对象的接口：
 
 ```groovy
 import jse.parallel.MPI

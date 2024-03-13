@@ -91,7 +91,7 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
-    return (intptr_t)tLmpPtr;
+    return (jlong)tLmpPtr;
 }
 
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs) {
@@ -124,45 +124,45 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
-    return (intptr_t)tLmpPtr;
+    return (jlong)tLmpPtr;
 }
 
 JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsVersion_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
-    return lammps_version((void *)aLmpPtr);
+    return lammps_version((void *)(intptr_t)aLmpPtr);
 }
 
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsFile_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aPath) {
     char *tPath = parseStr(aEnv, aPath);
-    lammps_file((void *)aLmpPtr, tPath);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_file((void *)(intptr_t)aLmpPtr, tPath);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tPath);
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCommand_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aCmd) {
     char *tCmd = parseStr(aEnv, aCmd);
-    lammps_command((void *)aLmpPtr, tCmd);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_command((void *)(intptr_t)aLmpPtr, tCmd);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tCmd);
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCommandsList_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jobjectArray aCmds) {
     int tLen;
     char **tCmds = parseStrBuf(aEnv, aCmds, &tLen);
 #ifdef LAMMPS_OLD
-    lammps_commands_list((void *)aLmpPtr, tLen, tCmds);
+    lammps_commands_list((void *)(intptr_t)aLmpPtr, tLen, tCmds);
 #else
-    lammps_commands_list((void *)aLmpPtr, tLen, (const char **)tCmds);
+    lammps_commands_list((void *)(intptr_t)aLmpPtr, tLen, (const char **)tCmds);
 #endif
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     freeStrBuf(tCmds, tLen);
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCommandsString_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aMultiCmd) {
     char *tMultiCmd = parseStr(aEnv, aMultiCmd);
-    lammps_commands_string((void *)aLmpPtr, tMultiCmd);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_commands_string((void *)(intptr_t)aLmpPtr, tMultiCmd);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tMultiCmd);
 }
 JNIEXPORT jdouble JNICALL Java_jse_lmp_NativeLmp_lammpsGetNatoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
-    double tAtomNum = lammps_get_natoms((void *)aLmpPtr);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    double tAtomNum = lammps_get_natoms((void *)(intptr_t)aLmpPtr);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     return tAtomNum;
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdoubleArray rBox) {
@@ -171,8 +171,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv, j
     double rXY, rYZ, rXZ;
     int rPflags[3];
     int rBoxflag[3];
-    lammps_extract_box((void *)aLmpPtr, rBoxlo, rBoxhi, &rXY, &rYZ, &rXZ, rPflags, rBoxflag);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_extract_box((void *)(intptr_t)aLmpPtr, rBoxlo, rBoxhi, &rXY, &rYZ, &rXZ, rPflags, rBoxflag);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
 #ifdef __cplusplus
     jdouble *rBoxBuf = (jdouble *)aEnv->GetPrimitiveArrayCritical(rBox, NULL);
 #else
@@ -202,20 +202,20 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv, j
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsResetBox_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdouble aXlo, jdouble aYlo, jdouble aZlo, jdouble aXhi, jdouble aYhi, jdouble aZhi, jdouble aXY, jdouble aYZ, jdouble aXZ) {
     double tBoxLo[] = {aXlo, aYlo, aZlo};
     double tBoxHi[] = {aXhi, aYhi, aZhi};
-    lammps_reset_box((void *)aLmpPtr, tBoxLo, tBoxHi, aXY, aYZ, aXZ);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_reset_box((void *)(intptr_t)aLmpPtr, tBoxLo, tBoxHi, aXY, aYZ, aXZ);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
 }
 JNIEXPORT jdouble JNICALL Java_jse_lmp_NativeLmp_lammpsGetThermo_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName) {
     char *tName = parseStr(aEnv, aName);
-    double tThermo = lammps_get_thermo((void *)aLmpPtr, tName);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    double tThermo = lammps_get_thermo((void *)(intptr_t)aLmpPtr, tName);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     return tThermo;
 }
 JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsExtractSetting_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName) {
     char *tName = parseStr(aEnv, aName);
-    int tSetting = lammps_extract_setting((void *)aLmpPtr, tName);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    int tSetting = lammps_extract_setting((void *)(intptr_t)aLmpPtr, tName);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     return tSetting;
 }
@@ -225,7 +225,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv,
 #ifdef LAMMPS_BIGBIG
     throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
 #endif
-    void *tLmpPtr = (void *)aLmpPtr;
+    void *tLmpPtr = (void *)(intptr_t)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, tLmpPtr);
@@ -320,7 +320,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aE
 #ifdef LAMMPS_BIGBIG
     throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
 #endif
-    void *tLmpPtr = (void *)aLmpPtr;
+    void *tLmpPtr = (void *)(intptr_t)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, tLmpPtr);
@@ -379,8 +379,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aE
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtom_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jdoubleArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
-    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     if (tHasException || tRef==NULL) return;
     switch (aDataType) {
@@ -407,8 +407,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtom_1(JNIEnv *aEnv, 
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomInt_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jintArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
-    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     if (tHasException || tRef==NULL) return;
     switch (aDataType) {
@@ -435,8 +435,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomInt_1(JNIEnv *aEn
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomLong_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jlongArray rData) {
     char *tName = parseStr(aEnv, aName);
-    void *tRef = lammps_extract_atom((void *)aLmpPtr, tName); // NO need to free due to it is lammps internal data
-    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     if (tHasException || tRef==NULL) return;
     switch (aDataType) {
@@ -474,11 +474,11 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jcla
     }
     char *tName = parseStr(aEnv, aName);
 #ifdef LAMMPS_OLD
-    lammps_scatter_atoms((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+    lammps_scatter_atoms((void *)(intptr_t)aLmpPtr, tName, 1, aCount, tDataBuf);
 #else
-    lammps_scatter((void *)aLmpPtr, tName, 1, aCount, tDataBuf);
+    lammps_scatter((void *)(intptr_t)aLmpPtr, tName, 1, aCount, tDataBuf);
 #endif
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
     if (tDataBuf != NULL) FREE(tDataBuf);
 }
@@ -494,8 +494,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, 
     intbig  *tImage = aImage==NULL ? NULL : MALLOCN(intbig , aAtomNum ); parsejint2intbig   (aEnv, aImage, tImage, aAtomNum );
     jdouble *tXYZ   = aXYZ  ==NULL ? NULL : MALLOCN(jdouble, tAtomNum3); parsejdouble2double(aEnv, aXYZ  , tXYZ  , tAtomNum3);
     jdouble *tVel   = aVel  ==NULL ? NULL : MALLOCN(jdouble, tAtomNum3); parsejdouble2double(aEnv, aVel  , tVel  , tAtomNum3);
-    lammps_create_atoms((void *)aLmpPtr, tN, tID, tType, tXYZ, tVel, tImage, aShrinkExceed);
-    exceptionCheckLMP(aEnv, (void *)aLmpPtr);
+    lammps_create_atoms((void *)(intptr_t)aLmpPtr, tN, tID, tType, tXYZ, tVel, tImage, aShrinkExceed);
+    exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     if (tID    != NULL) FREE(tID   );
     if (tType  != NULL) FREE(tType );
     if (tImage != NULL) FREE(tImage);
@@ -504,7 +504,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, 
 }
 
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsClose_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
-    lammps_close((void *)aLmpPtr);
+    lammps_close((void *)(intptr_t)aLmpPtr);
     exceptionCheckLMP(aEnv, NULL);
 }
 
