@@ -46,9 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -422,7 +420,7 @@ public class SP {
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
         public static void exec(String aText) throws Exception {GROOVY_SHELL.evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy");}
         public static void execFile(String aFilePath) throws Exception {GROOVY_SHELL.evaluate(toSourceFile(aFilePath));}
-        public static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.evaluate(aText, "Script"+COUNTER.incrementAndGet()+".groovy"));}
+        public static Object eval(String aText) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.evaluate(aText, "ScriptJSE"+COUNTER.incrementAndGet()+".groovy"));}
         public static Object evalFile(String aFilePath) throws Exception {return GroovyObjectWrapper.of(GROOVY_SHELL.evaluate(toSourceFile(aFilePath)));}
         
         /** 直接运行文本的脚本 */
@@ -442,36 +440,37 @@ public class SP {
         public static Object invoke(String aScriptPath, String aMethodName, Object... aArgs) throws Exception {
             // 获取脚本的类
             Class<?> tScriptClass = GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath));
-            final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
-            // 如果是脚本则使用脚本的调用方法的方式
+            // 如果是脚本则使用脚本的调用方法的方式，调用方法的参数是方法输入，因此不能设置脚本的输入参数
             if (Script.class.isAssignableFrom(tScriptClass)) {
                 // treat it just like a script if it is one
                 try {
                     @SuppressWarnings({"unchecked", "CastCanBeRemovedNarrowingVariableType"})
-                    final Script tScript = InvokerHelper.newScript((Class<? extends Script>) tScriptClass, new Binding()); // 这样保证 tContext 是干净的
-                    return GroovyObjectWrapper.of(tScript.invokeMethod(aMethodName, fArgs)); // 脚本的方法原则上不需要考虑类型兼容的问题
+                    final Script tScript = InvokerHelper.newScript((Class<? extends Script>)tScriptClass, GROOVY_SHELL.getContext()); // 统一上下文
+                    return GroovyObjectWrapper.of(tScript.invokeMethod(aMethodName, aArgs)); // 脚本的方法原则上不需要考虑类型兼容的问题
                 } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                     // ignore instantiation errors, try to run the static method in class
                 }
             }
-            // 获取兼容输入的类
-            Method m = UT.Hack.findMethod_(tScriptClass, aMethodName, fArgs);
-            // 如果有找到则需要转换参数到兼容的方法的参数类型上，避免无法转换的错误
-            if (m == null) throw new GroovyRuntimeException("Cannot find method with compatible args: " + aMethodName);
-            UT.Hack.convertArgs_(fArgs, m.getParameterTypes());
-            // 注意使用 Groovy 的 InvokerHelper 来调用，避免意外的问题
-            return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(tScriptClass, aMethodName, fArgs));
+            // 现在统一使用使用 Groovy 的 InvokerHelper 来调用，更加通用，如果需要类型转换可以借助 setValue 走 groovy 的接口
+            return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(tScriptClass, aMethodName, aArgs));
         }
         /** 创建脚本类的实例 */
+        @SuppressWarnings("unchecked")
         public static Object newInstance(String aScriptPath, Object... aArgs) throws Exception {
             // 获取脚本的类
             Class<?> tScriptClass = GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath));
-            // 获取 ScriptClass 的实例
-            final Object[] fArgs = (aArgs == null) ? new Object[0] : aArgs;
-            // 获取兼容输入参数的构造函数来创建实例
-            Constructor<?> tConstructor = UT.Hack.findConstructor_(tScriptClass, fArgs);
-            if (tConstructor == null) throw new GroovyRuntimeException("Cannot find constructor with compatible args: " + tScriptClass.getName());
-            return GroovyObjectWrapper.of(tConstructor.newInstance(aArgs));
+            // 如果是脚本则使用脚本的调用方法的方式，这里和 invoke 统一不去设置上下文中的 args，因为认为输入参数一定是构造函数的输入，因此不能设置脚本的输入参数
+            if (Script.class.isAssignableFrom(tScriptClass)) {
+                // treat it just like a script if it is one
+                try {
+                    //noinspection CastCanBeRemovedNarrowingVariableType
+                    return InvokerHelper.newScript((Class<? extends Script>)tScriptClass, GROOVY_SHELL.getContext()); // 统一上下文
+                } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+                    // ignore instantiation errors, try to run the static method in class
+                }
+            }
+            // 现在统一使用使用 Groovy 的 InvokerHelper 来调用，更加通用
+            return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(tScriptClass, aArgs));
         }
         
         /** 提供一个手动关闭 GROOVY_INTERP 的接口，似乎不需要手动关闭 Interpreter，但是这里还是关闭一下内部的 ClassLoader */
@@ -479,6 +478,31 @@ public class SP {
         public static boolean isClosed() {return GROOVY_SHELL == null;}
         /** 提供一个手动刷新 GROOVY_INTERP 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
         public static void refresh() throws IOException {close(); initInterpreter_();}
+        
+        /**
+         * 也提供一个获取 Groovy 脚本类型的方法，和 Python 中的接口保持一致；
+         * 理论上性能要比通过上述方法更高，因为借助了反射技术不用反复编译
+         */
+        public final static class GroovyClass implements GroovyObject {
+            private final Class<?> mClazz;
+            public GroovyClass(Class<?> aClazz) {mClazz = aClazz;}
+            
+            @Override public Object invokeMethod(String name, Object args) {return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(mClazz, name, args));}
+            @Override public Object getProperty(String propertyName) {return GroovyObjectWrapper.of(InvokerHelper.getProperty(mClazz, propertyName));}
+            @Override public void setProperty(String propertyName, Object newValue) {InvokerHelper.setProperty(mClazz, propertyName, newValue);}
+            
+            // 注意 GroovyClass 并不是一个 `Class`，只是为了能像调用类中静态方法和函数一样使用，因此类型还是保持 GroovyClass
+            private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass());
+            @Override public MetaClass getMetaClass() {return mDelegate;}
+            @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
+            
+            /** 现在同时支持规范中的 of 构造以及类似 python 的 call 构造 */
+            public Object of(Object... aArgs) throws Exception {return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(mClazz, aArgs));}
+            public Object call(Object... aArgs) throws Exception {return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(mClazz, aArgs));}
+        }
+        public static GroovyClass getClass(String aScriptPath) throws IOException {
+            return new GroovyClass(GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath)));
+        }
         
         
         static {
@@ -619,10 +643,11 @@ public class SP {
             @Override public MetaClass getMetaClass() {return mDelegate;}
             @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
             
-            /** 对于一般的类，call 直接调用构造函数而不是重载运算符 */
+            /** 现在同时支持规范中的 of 构造以及类似 python 的 call 构造 */
+            public Object of(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs);}
             public Object call(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs);}
         }
-        public static PyClass getClass(final String aClassName) throws JepException {return new PyClass(aClassName);}
+        public static PyClass getClass(String aClassName) throws JepException {return new PyClass(aClassName);}
         
         /** 现在和 Groovy 逻辑保持一致，调用任何 run 都会全局重置 args 值 */
         private static void setArgs_(String aFirst, String[] aArgs) {
