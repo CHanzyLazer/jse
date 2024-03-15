@@ -16,6 +16,7 @@ import io.github.spencerpark.jupyter.kernel.util.StringSearch;
 import io.github.spencerpark.jupyter.messages.Header;
 import jep.JepConfig;
 import jep.JepException;
+import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.Main;
 import jse.atom.AbstractAtoms;
@@ -357,13 +358,13 @@ public class SP {
         
         /** jep support */
         private final Object funcUnwrap = new Object() {public GroovyObject __call__() {return unwrap();}};
-        private final static class PyCallable {
+        private final static class PyCallable_ {
             private final IUnaryFullOperator<Object, Object[]> mOpt;
-            PyCallable(IUnaryFullOperator<Object, Object[]> aOpt) {mOpt = aOpt;}
-            public Object __call__() {return __call__(ZL_OBJ);}
+            PyCallable_(IUnaryFullOperator<Object, Object[]> aOpt) {mOpt = aOpt;}
+            public Object __call__()               {return __call__(ZL_OBJ);}
             public Object __call__(Object... args) {return mOpt.apply(args);}
         }
-        public Object __getattribute__(String attrName) {
+        public Object __getattribute__(final String attrName) {
             if (!Python.InitHelper.initialized()) return getProperty(attrName);
             switch(attrName) {
             case "_to_python": {throw EXCEPTION;} // 需要考虑 _to_python，在初始化时的特殊处理（具体为何并不清楚）
@@ -375,10 +376,20 @@ public class SP {
                     System.out.println("DEBUG: "+tAttr.getClass().getName());
                     return of(tAttr);
                 }
-                return of(mObj.getProperty(attrName));
+                try {
+                    return of(mObj.getProperty(attrName));
+                } catch (Exception e) {
+                    return new PyCallable_(args -> of(mObj.invokeMethod(attrName, args)));
+                }
             }}
         }
         public void __setattr__(String attrName, Object newAttr) {mObj.setProperty(attrName, newAttr);}
+        
+        /** python 运算符重载 */
+        public Object __call__()               {return __call__(ZL_OBJ);}
+        public Object __call__(Object... args) {return of(mObj.invokeMethod("call", args));}
+        public Object __getitem__(int aIdx) {return of(mObj.invokeMethod("getAt", aIdx));}
+        public void __setitem__(int aIdx, Object aValue) {mObj.invokeMethod("putAt", new Object[]{aIdx, aValue});}
     }
     
     
@@ -527,31 +538,9 @@ public class SP {
         /** 提供一个手动刷新 GROOVY_INTERP 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
         public static void refresh() throws IOException {close(); initInterpreter_();}
         
-        /**
-         * 也提供一个获取 Groovy 脚本类型的方法，和 Python 中的接口保持一致；
-         * 理论上性能要比通过上述方法更高，因为借助了反射技术不用反复编译
-         */
-        public final static class GroovyClass implements GroovyObject {
-            private final Class<?> mClazz;
-            GroovyClass(Class<?> aClazz) {mClazz = aClazz;}
-            
-            @Override public Object invokeMethod(String name, Object args) {return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(mClazz, name, args));}
-            @Override public Object getProperty(String propertyName) {return GroovyObjectWrapper.of(InvokerHelper.getProperty(mClazz, propertyName));}
-            @Override public void setProperty(String propertyName, Object newValue) {InvokerHelper.setProperty(mClazz, propertyName, newValue);}
-            
-            // 注意 GroovyClass 并不是一个 `Class`，只是为了能像调用类中静态方法和函数一样使用，因此类型还是保持 GroovyClass
-            private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass());
-            @Override public MetaClass getMetaClass() {return mDelegate;}
-            @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
-            
-            /** 支持 python 的 call 构造 */
-            public Object call(Object... aArgs) throws Exception {return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(mClazz, aArgs));}
-            
-            /** 统一再增加一层 Wrapper，让 python 中的直接调用生效 */
-            public static GroovyObjectWrapper of(Class<?> aClazz) {return new GroovyObjectWrapper(new GroovyClass(aClazz));}
-        }
-        public static GroovyObjectWrapper getClass(String aScriptPath) throws IOException {
-            return GroovyClass.of(GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath)));
+        /** 现在这里也不进行包装，如果需要更加通用的调用可以借助 {@link InvokerHelper} */
+        public static Class<?> getClass(String aScriptPath) throws IOException {
+            return GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath));
         }
         
         
@@ -690,40 +679,8 @@ public class SP {
         /** 提供一个手动刷新 JEP_INTERP 的接口，可以将关闭的重新打开，会清空所有创建的 python 变量 */
         public static void refresh() throws JepException {close(); initInterpreter_();}
         
-        
-        /** 提供一个方便 Groovy 中使用的直接访问类型的接口 */
-        public final static class PyClass implements GroovyObject {
-            private final String mClassName;
-            PyClass(String aClassName) {mClassName = aClassName;}
-            
-            @Override public Object invokeMethod(String name, Object args) throws JepException {
-                if (args == null) {
-                    return invoke(mClassName+"."+name, ZL_OBJ);
-                } else
-                if (args instanceof Tuple) {
-                    return invoke(mClassName+"."+name, (Object[])((Tuple<?>)args).toArray());
-                } else
-                if (args instanceof Object[]) {
-                    return invoke(mClassName+"."+name, (Object[])args);
-                } else {
-                    return invoke(mClassName+"."+name, args);
-                }
-            }
-            @Override public Object getProperty(String propertyName) throws JepException {return eval(mClassName+"."+propertyName);}
-            @Override public void setProperty(String propertyName, Object newValue) throws JepException {setValue("_", newValue); exec(mClassName+"."+propertyName+" = _");}
-            
-            private MetaClass mDelegate = InvokerHelper.getMetaClass(getClass());
-            @Override public MetaClass getMetaClass() {return mDelegate;}
-            @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
-            
-            /** 支持 python 的 call 构造 */
-            public Object call()                throws JepException {return call(ZL_OBJ);}
-            public Object call(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs);}
-            
-            /** 统一再增加一层 Wrapper，让 python 中的直接调用生效 */
-            public static GroovyObjectWrapper of(String aClassName) {return new GroovyObjectWrapper(new PyClass(aClassName));}
-        }
-        public static GroovyObjectWrapper getClass(String aClassName) throws JepException {return PyClass.of(aClassName);}
+        /** 似乎是不再需要这层包装了 */
+        public static PyObject getClass(String aClassName) throws JepException {return JEP_INTERP.getValue(aClassName, PyObject.class);}
         
         /** 现在和 Groovy 逻辑保持一致，调用任何 run 都会全局重置 args 值 */
         private static void setArgs_(String aFirst, String[] aArgs) {
