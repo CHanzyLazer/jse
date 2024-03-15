@@ -4,9 +4,9 @@ import jse.atom.MPC
 import jse.atom.Structures
 import jse.lmp.Data
 import jse.math.function.Func1
-import jse.plot.Plotters
 
 import static jse.code.UT.Math.rng
+import static jse.code.UT.Plot.*
 
 // 这样设置种子来固定随机流
 rng(123456789)
@@ -79,32 +79,29 @@ def distW4F = Func1.distFrom_G(W4F, -0.2, 0.2, 500)
 
 
 // 绘制统计分布，多张图这样绘制
-def pltQ4 = Plotters.get()
-pltQ4.plot(distQ4G, 'glass'  )
-pltQ4.plot(distQ4C, 'crystal')
-pltQ4.plot(distQ4B, 'BCC'    )
-pltQ4.plot(distQ4F, 'FCC'    )
-pltQ4.xlabel('Q4')
-pltQ4.xrange(distQ4G.x().first(), distQ4G.x().last())
-pltQ4.show('distribution of Q4')
+figure().name('distribution of Q4')
+plot(distQ4G, 'glass'  )
+plot(distQ4C, 'crystal')
+plot(distQ4B, 'BCC'    )
+plot(distQ4F, 'FCC'    )
+xlabel('Q4')
+xrange(distQ4G.x().first(), distQ4G.x().last())
 
-def pltQ6 = Plotters.get()
-pltQ6.plot(distQ6G, 'glass'  )
-pltQ6.plot(distQ6C, 'crystal')
-pltQ6.plot(distQ6B, 'BCC'    )
-pltQ6.plot(distQ6F, 'FCC'    )
-pltQ6.xlabel('Q6')
-pltQ6.xrange(distQ6G.x().first(), distQ6G.x().last())
-pltQ6.show('distribution of Q6')
+figure().name('distribution of Q6')
+plot(distQ6G, 'glass'  )
+plot(distQ6C, 'crystal')
+plot(distQ6B, 'BCC'    )
+plot(distQ6F, 'FCC'    )
+xlabel('Q6')
+xrange(distQ6G.x().first(), distQ6G.x().last())
 
-def pltW4 = Plotters.get()
-pltW4.plot(distW4G, 'glass'  )
-pltW4.plot(distW4C, 'crystal')
-pltW4.plot(distW4B, 'BCC'    )
-pltW4.plot(distW4F, 'FCC'    )
-pltW4.xlabel('W4')
-pltW4.xrange(distW4G.x().first(), distW4G.x().last())
-pltW4.show('distribution of W4')
+figure().name('distribution of W4')
+plot(distW4G, 'glass'  )
+plot(distW4C, 'crystal')
+plot(distW4B, 'BCC'    )
+plot(distW4F, 'FCC'    )
+xlabel('W4')
+xrange(distW4G.x().first(), distW4G.x().last())
 
 
 //OUTPUT:

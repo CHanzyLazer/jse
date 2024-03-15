@@ -44,7 +44,7 @@ import static java.awt.Color.*;
  * <p> 基于 JFreeChart 实现的 plot 类 </p>
  * <p> 暂不考虑对数坐标的情况 </p>
  */
-public final class PlotterJFree implements IPlotter {
+public class PlotterJFree implements IPlotter {
     protected class LineJFree extends AbstractLine {
         final int mID;
         final String mName;
@@ -355,7 +355,6 @@ public final class PlotterJFree implements IPlotter {
         return this;
     }
     @Override public IPlotter axis(double aXMin, double aXMax, double aYMin, double aYMax) {
-        // TODO: 未来需要加锁
         // 先进行设置范围，非法返回会自动报错
         mXAxis.setRange(aXMin, aXMax);
         mYAxis.setRange(aYMin, aYMax);
@@ -365,10 +364,20 @@ public final class PlotterJFree implements IPlotter {
     }
     /** 内部使用，根据输入的 box 边界来更新数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题 */
     private void updateSeries_() {
-        // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
-        mLinesData.removeAllSeries();
-        // 添加修改绘制数据后的序列
-        for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
+        // 如果已经进行了绘制，则获取锁，避免同步问题
+        if (mCurrentFigure != null) {
+            synchronized (mCurrentFigure.lock()) {
+                // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
+                mLinesData.removeAllSeries();
+                // 添加修改绘制数据后的序列
+                for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
+            }
+        } else {
+            // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
+            mLinesData.removeAllSeries();
+            // 添加修改绘制数据后的序列
+            for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
+        }
     }
     private XYSeries getValidXYSeries_(Iterable<? extends Number> aX, Iterable<? extends Number> aY, String aName) {
         double tBoxXMin, tBoxXMax;
@@ -478,7 +487,16 @@ public final class PlotterJFree implements IPlotter {
     
     /** 添加绘制数据 */
     @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
-        // TODO: 未来需要加锁
+        // 如果已经进行了绘制，则获取锁，避免同步问题
+        if (mCurrentFigure != null) {
+            synchronized (mCurrentFigure.lock()) {
+                return plot_(aX, aY, aName);
+            }
+        } else {
+            return plot_(aX, aY, aName);
+        }
+    }
+    protected ILine plot_(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
         @NotNull String tName = aName==null ? defaultLineName_() : aName;
         LineJFree tLine;
         // 先检测是否有相同名称的，如果有则进行更新数据
@@ -570,7 +588,75 @@ public final class PlotterJFree implements IPlotter {
         return this;
     }
     
-    private @Nullable IFigure mCurrentFigure = null;
+    
+    private @Nullable FigureJFree mCurrentFigure = null;
+    protected abstract class FigureJFree implements IFigure {
+        private final JFrame mFrame;
+        private final Insets mInset;
+        private final JPanel mPanel;
+        /** stuff to override */
+        @Override public abstract IPlotter plotter();
+        protected FigureJFree(JFrame aFrame, Insets aInset, JPanel aPanel) {
+            mFrame = aFrame;
+            mInset = aInset;
+            mPanel = aPanel;
+        }
+        protected FigureJFree(@NotNull String aName) {
+            mFrame = new JFrame(aName);
+            mFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            mInset = new Insets(20, 20, 20, 20);
+            mPanel = new ChartPanel(mChart, mWidth, mHeight, ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_MAXIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MAXIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_BUFFER_USED, true, true, true, true, true) {
+                @Override public Insets getInsets() {return mInset;}
+            };
+            mPanel.setBackground(WHITE);
+            mFrame.setContentPane(mPanel);
+            mFrame.setMinimumSize(new Dimension(300, 300));
+            mFrame.pack();
+            mFrame.setVisible(true);
+        }
+        protected Object lock() {return mFrame.getTreeLock();}
+        
+        
+        @Override public boolean isShowing() {return mFrame.isShowing();}
+        @Override public void dispose() {mFrame.dispose();}
+        
+        @Override public IFigure name(String aName) {mFrame.setTitle(aName); return this;}
+        @Override public IFigure size(int aWidth, int aHeight) {synchronized (lock()) {mPanel.setSize(aWidth, aHeight); mFrame.setSize(aWidth+mInset.left+mInset.right, aHeight+mInset.top+mInset.bottom);} return this;}
+        @Override public IFigure location(int aX, int aY) {mFrame.setLocation(aX, aY); return this;}
+        @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
+            synchronized (lock()) {
+                mInset.top = (int)Math.round(aTop);
+                mInset.left = (int)Math.round(aLeft);
+                mInset.bottom = (int)Math.round(aBottom);
+                mInset.right = (int)Math.round(aRight);
+            }
+            return this;
+        }
+        @Override public IFigure insetsTop(double aTop) {synchronized (lock()) {mInset.top = (int)Math.round(aTop);} return this;}
+        @Override public IFigure insetsLeft(double aLeft) {synchronized (lock()) {mInset.left = (int)Math.round(aLeft);} return this;}
+        @Override public IFigure insetsBottom(double aBottom) {synchronized (lock()) {mInset.bottom = (int)Math.round(aBottom);} return this;}
+        @Override public IFigure insetsRight(double aRight) {synchronized (lock()) {mInset.right = (int)Math.round(aRight);} return this;}
+        
+        @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
+            synchronized (lock()) {
+                if (aFilePath==null || aFilePath.isEmpty()) aFilePath = mFrame.getTitle();
+                if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
+                UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
+                ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
+            }
+        }
+        @Override public void save(@Nullable String aFilePath) throws IOException {
+            save(aFilePath, mPanel.getWidth(), mPanel.getHeight());
+        }
+        @Override public byte[] encode(int aWidth, int aHeight) throws IOException {
+            synchronized (lock()) {
+                return ChartUtils.encodeAsPNG(mChart.createBufferedImage(aWidth, aHeight, null));
+            }
+        }
+        @Override public byte[] encode() throws IOException {
+            return encode(mWidth, mHeight);
+        }
+    }
     
     
     private int mWidth = WIDTH, mHeight = HEIGHT;
@@ -582,72 +668,22 @@ public final class PlotterJFree implements IPlotter {
         return this;
     }
     
-    @Override public IFigure show(String aName) {
-        // 如果是 kernel 默认不进行显示，这里简单处理直接不返回 IFigure
+    @Override public IFigure show(@Nullable String aName) {
+        // 如果是 kernel 默认不进行显示，这里简单处理直接不创建真实的 IFigure
         if (!KERNEL_SHOW_FIGURE && Main.IS_KERNEL()) {return IPlotter.super.show(aName);}
         
         // 如果已经有窗口则不再显示
         if (mCurrentFigure != null) {
-            // 无论怎样都需要设置名称
-            mCurrentFigure.name(aName);
+            // 只有输入了名字时才设置名称
+            if (aName != null) mCurrentFigure.name(aName);
             // 如果没有被关闭则直接结束
             if (mCurrentFigure.isShowing()) return mCurrentFigure;
         }
         
-        // 显示图像
-        final JFrame tFrame = new JFrame(aName);
-        tFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        final Insets tInset = new Insets(20, 20, 20, 20);
-        final JPanel tPanel = new ChartPanel(mChart, mWidth, mHeight, ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_MAXIMUM_DRAW_WIDTH, ChartPanel.DEFAULT_MAXIMUM_DRAW_HEIGHT, ChartPanel.DEFAULT_BUFFER_USED, true, true, true, true, true) {
-            @Override public Insets getInsets() {return tInset;}
-        };
-        tPanel.setBackground(WHITE);
-        tFrame.setContentPane(tPanel);
-        tFrame.setMinimumSize(new Dimension(300, 300));
-        tFrame.pack();
-        tFrame.setVisible(true);
-        
         // 返回 IFigure
-        mCurrentFigure = new IFigure() {
-            @Override public boolean isShowing() {return tFrame.isShowing();}
-            @Override public void dispose() {tFrame.dispose();}
-            
-            @Override public IFigure name(String aName) {tFrame.setTitle(aName); return this;}
-            @Override public IFigure size(int aWidth, int aHeight) {synchronized (tFrame.getTreeLock()) {tPanel.setSize(aWidth, aHeight); tFrame.setSize(aWidth+tInset.left+tInset.right, aHeight+tInset.top+tInset.bottom);} return this;}
-            @Override public IFigure location(int aX, int aY) {tFrame.setLocation(aX, aY); return this;}
-            @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
-                synchronized (tFrame.getTreeLock()) {
-                    tInset.top = (int) Math.round(aTop);
-                    tInset.left = (int) Math.round(aLeft);
-                    tInset.bottom = (int) Math.round(aBottom);
-                    tInset.right = (int) Math.round(aRight);
-                }
-                return this;
-            }
-            @Override public IFigure insetsTop(double aTop) {synchronized (tFrame.getTreeLock()) {tInset.top = (int)Math.round(aTop);} return this;}
-            @Override public IFigure insetsLeft(double aLeft) {synchronized (tFrame.getTreeLock()) {tInset.left = (int)Math.round(aLeft);} return this;}
-            @Override public IFigure insetsBottom(double aBottom) {synchronized (tFrame.getTreeLock()) {tInset.bottom = (int)Math.round(aBottom);} return this;}
-            @Override public IFigure insetsRight(double aRight) {synchronized (tFrame.getTreeLock()) {tInset.right = (int)Math.round(aRight);} return this;}
-            
-            @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
-                synchronized (tFrame.getTreeLock()) {
-                    if (aFilePath==null || aFilePath.isEmpty()) aFilePath = tFrame.getTitle();
-                    if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
-                    UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
-                    ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
-                }
-            }
-            @Override public void save(@Nullable String aFilePath) throws IOException {
-                save(aFilePath, tPanel.getWidth(), tPanel.getHeight());
-            }
-            @Override public byte[] encode(int aWidth, int aHeight) throws IOException {
-                return ChartUtils.encodeAsPNG(mChart.createBufferedImage(aWidth, aHeight, null));
-            }
-            @Override public byte[] encode() throws IOException {
-                return encode(mWidth, mHeight);
-            }
+        mCurrentFigure = new FigureJFree(aName==null ? DEFAULT_FIGURE_NAME : aName) {
+            @Override public IPlotter plotter() {return PlotterJFree.this;}
         };
-        
         return mCurrentFigure;
     }
 }

@@ -3,7 +3,8 @@ package example.mpc
 import jse.atom.MPC
 import jse.lmp.Data
 import jse.math.function.Func1
-import jse.plot.Plotters
+
+import static jse.code.UT.Plot.*
 
 
 // 导入 data 文件
@@ -55,26 +56,23 @@ def distCavityRadiusC = Func1.distFrom_G(cavityRadiusC, 1.7, 2.5, 400)
 
 
 // 绘制统计分布，多张图这样绘制
-def plt1 = Plotters.get()
-plt1.plot(distCoordinationG, 'glass'  )
-plt1.plot(distCoordinationC, 'crystal')
-plt1.xlabel('coordination')
-plt1.xrange(distCoordinationG.x().first(), distCoordinationG.x().last())
-plt1.show('distribution of coordination')
+figure().name('distribution of coordination')
+plot(distCoordinationG, 'glass'  )
+plot(distCoordinationC, 'crystal')
+xlabel('coordination')
+xrange(distCoordinationG.x().first(), distCoordinationG.x().last())
 
-def plt2 = Plotters.get()
-plt2.plot(distAtomicVolumeG, 'glass'  )
-plt2.plot(distAtomicVolumeC, 'crystal')
-plt2.xlabel('atomic volume')
-plt2.xrange(distAtomicVolumeG.x().first(), distAtomicVolumeG.x().last())
-plt2.show('distribution of atomic volume')
+figure().name('distribution of atomic volume')
+plot(distAtomicVolumeG, 'glass'  )
+plot(distAtomicVolumeC, 'crystal')
+xlabel('atomic volume')
+xrange(distAtomicVolumeG.x().first(), distAtomicVolumeG.x().last())
 
-def plt3 = Plotters.get()
-plt3.plot(distCavityRadiusG, 'glass'  )
-plt3.plot(distCavityRadiusC, 'crystal')
-plt3.xlabel('cavity radius')
-plt3.xrange(distCavityRadiusG.x().first(), distCavityRadiusG.x().last())
-plt3.show('distribution of cavity radius')
+figure().name('distribution of cavity radius')
+plot(distCavityRadiusG, 'glass'  )
+plot(distCavityRadiusC, 'crystal')
+xlabel('cavity radius')
+xrange(distCavityRadiusG.x().first(), distCavityRadiusG.x().last())
 
 
 //OUTPUT:

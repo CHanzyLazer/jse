@@ -4,9 +4,9 @@ import jse.atom.MPC
 import jse.atom.Structures
 import jse.lmp.Data
 import jse.math.function.Func1
-import jse.plot.Plotters
 
 import static jse.code.UT.Math.rng
+import static jse.code.UT.Plot.*
 
 // 这样设置种子来固定随机流
 rng(123456789)
@@ -84,23 +84,21 @@ def distCountq6F = Func1.distFrom(countq6F, 0, 16, 17)
 
 
 // 绘制统计分布，多张图这样绘制
-def plt1 = Plotters.get()
-plt1.plot(distCountQ6G, 'glass'  )
-plt1.plot(distCountQ6C, 'crystal')
-plt1.plot(distCountQ6B, 'BCC'    )
-plt1.plot(distCountQ6F, 'FCC'    )
-plt1.xlabel('connect count Q6')
-plt1.xrange(distCountQ6G.x().first(), distCountQ6G.x().last())
-plt1.show('distribution of connect count Q6')
+figure().name('distribution of connect count Q6')
+plot(distCountQ6G, 'glass'  )
+plot(distCountQ6C, 'crystal')
+plot(distCountQ6B, 'BCC'    )
+plot(distCountQ6F, 'FCC'    )
+xlabel('connect count Q6')
+xrange(distCountQ6G.x().first(), distCountQ6G.x().last())
 
-def plt2 = Plotters.get()
-plt2.plot(distCountq6G, 'glass'  )
-plt2.plot(distCountq6C, 'crystal')
-plt2.plot(distCountq6B, 'BCC'    )
-plt2.plot(distCountq6F, 'FCC'    )
-plt2.xlabel('connect count q6')
-plt2.xrange(distCountq6G.x().first(), distCountq6G.x().last())
-plt2.show('distribution of connect count q6')
+figure().name('distribution of connect count q6')
+plot(distCountq6G, 'glass'  )
+plot(distCountq6C, 'crystal')
+plot(distCountq6B, 'BCC'    )
+plot(distCountq6F, 'FCC'    )
+xlabel('connect count q6')
+xrange(distCountq6G.x().first(), distCountq6G.x().last())
 
 
 //OUTPUT:

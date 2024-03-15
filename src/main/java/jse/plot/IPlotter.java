@@ -159,8 +159,8 @@ public interface IPlotter {
     String DEFAULT_FIGURE_NAME = "figure";
     Set<IPlotter> SHOWED_PLOTTERS = new LinkedHashSet<>();
     /** 显示结果 */
-    default IFigure show() {return show(DEFAULT_FIGURE_NAME);}
-    default IFigure show(String aName) {SHOWED_PLOTTERS.add(this); return null;}
+    default IFigure show() {return show(null);}
+    default IFigure show(@Nullable String aName) {SHOWED_PLOTTERS.add(this); return IFigure.of(this);}
     /** 设置绘制的大小（和 {@link IFigure#size} 一致） */
     IPlotter size(int aWidth, int aHeight);
     
