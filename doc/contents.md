@@ -67,6 +67,7 @@
     3. [绘图支持](jupyter.ipynb#绘图支持)
     4. [magic 支持](jupyter.ipynb#magic-支持)
     5. [python 交叉编程支持](jupyter.ipynb#python-交叉编程支持)
+    6. [可选配置](jupyter.ipynb#可选配置)
     
 13. [交叉编程]()
     - TODO

@@ -143,7 +143,7 @@ MPI.shutdown() // `finalize()` has been used in java
 [⤤](../release/script/groovy/example/mpi/split.groovy)。
 
 
-### 可选配置
+## 可选配置
 
 jse 在 [`jse.parallel.MPI.Conf`](../src/main/java/jse/parallel/MPI.java)
 中提供了一些可选的配置来适应更加复杂的情况。
