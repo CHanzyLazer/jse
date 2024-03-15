@@ -14,6 +14,7 @@ import jse.Main;
 import jse.atom.*;
 import jse.cache.ByteArrayCache;
 import jse.code.collection.AbstractCollections;
+import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.NewCollections;
 import jse.code.functional.IDoubleFilter;
 import jse.code.functional.IFilter;
@@ -1648,40 +1649,79 @@ public class UT {
      * @author liqa
      */
     @VisibleForTesting public static class Plot {
-        private static IPlotter PLT = Plotters.get();
+        private static final List<IPlotter> PLTS = new ArrayList<>();
+        private static IPlotter PLT = null;
         
-        public static ILine plot(                                                   double[] aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                                                    IVector aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                                                     IFunc1 aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                               Collection<? extends Number> aY) {ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
-        public static ILine plot(                                                   double[] aY, @Nullable String aName) {ILine tLine = PLT.plot( aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                     double[] aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                     double[] aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                                                    IVector aY, @Nullable String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                      IVector aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                      IVector aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                                                     IFunc1 aY, @Nullable String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                               Collection<? extends Number> aY, @Nullable String aName) {ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
-        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName) {ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        /** 增加多图片支持 */
+        public static IPlotter plotter() {PLT = Plotters.get(); PLTS.add(PLT); return PLT;}
+        public static IPlotter plotter(int aIdx) {return PLTS.get((aIdx < 0) ? (PLTS.size()+aIdx) : aIdx);}
+        public static int plotterNumber() {return PLTS.size();}
+        public static int nplotters() {return plotterNumber();}
+        public static List<IPlotter> plotters() {
+            return new AbstractRandomAccessList<IPlotter>() {
+                @Override public int size() {return PLTS.size();}
+                @Override public IPlotter get(int index) {return PLTS.get(index);}
+                @Override public void clear() {
+                    PLTS.forEach(IPlotter::dispose);
+                    PLTS.clear(); PLT = null;
+                }
+            };
+        }
+        public static IFigure figure() {PLT = Plotters.get(); PLTS.add(PLT); return PLT.show();}
+        public static IFigure figure(int aIdx) {return PLTS.get((aIdx < 0) ? (PLTS.size()+aIdx) : aIdx).show();}
+        public static int figureNumber() {return PLTS.size();}
+        public static int nfigures() {return figureNumber();}
+        public static List<IFigure> figures() {
+            return new AbstractRandomAccessList<IFigure>() {
+                @Override public int size() {return PLTS.size();}
+                @Override public IFigure get(int index) {return PLTS.get(index).show();}
+                @Override public void clear() {
+                    PLTS.forEach(IPlotter::dispose);
+                    PLTS.clear(); PLT = null;
+                }
+            };
+        }
+        public static void cla() {if (PLT != null) {PLT.clear();}}
+        public static void clf() {if (PLT != null) {PLT.dispose(); PLT = null;}}
+        private static void validPlotter_() {
+            if (PLT != null) return;
+            if (PLTS.isEmpty()) {PLT = Plotters.get(); PLTS.add(PLT); return;}
+            PLT = Code.last(PLTS);
+        }
+        
+        
+        public static ILine plot(                                                   double[] aY) {validPlotter_(); ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                     double[] aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                     double[] aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                    IVector aY) {validPlotter_(); ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                      IVector aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                      IVector aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                     IFunc1 aY) {validPlotter_(); ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                   IFunc1Subs aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                   IFunc1Subs aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                               Collection<? extends Number> aY) {validPlotter_(); ILine tLine = PLT.plot(aY); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY) {validPlotter_(); ILine tLine = PLT.plot(aX, aY); PLT.show(); return tLine;}
+        public static ILine plot(                                                   double[] aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot( aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                     double[] aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                     double[] aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                     double[] aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                                                    IVector aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                      IVector aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                      IVector aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                      IVector aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                                                     IFunc1 aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX,                   IFunc1Subs aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX,                   IFunc1Subs aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX,                   IFunc1Subs aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                               Collection<? extends Number> aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                  double[] aX, Iterable  <? extends Number> aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(                   IVector aX, Iterable  <? extends Number> aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
+        public static ILine plot(Iterable<? extends Number> aX, Iterable  <? extends Number> aY, @Nullable String aName) {validPlotter_(); ILine tLine = PLT.plot(aX, aY, aName); PLT.show(); return tLine;}
         
         public static ILine loglog(                                                   double[] aY) {xScaleLog(); yScaleLog(); return plot(aY);}
         public static ILine loglog(                  double[] aX,                     double[] aY) {xScaleLog(); yScaleLog(); return plot(aX, aY);}
@@ -1799,6 +1839,7 @@ public class UT {
          */
         @SuppressWarnings("unchecked")
         public static ILine[] plot(IAtomData aAtomData, Map<?, ?> aArgs) {
+            validPlotter_();
             List<?> aTypes = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.from((aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : ZL_STR), "Types", "types", "t");
             List<?> aColors = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.from(aTypes.size(), i -> COLOR.getOrDefault(Code.toString(aTypes.get(i)), Colors.COLOR(i+1))), "Colors", "colors", "c");
             List<?> aSizes = (List<?>)Code.getWithDefault(aArgs, AbstractCollections.map(aTypes, type -> SIZE.getOrDefault(Code.toString(type), 1.0)), "Sizes", "sizes", "s");
@@ -1855,47 +1896,44 @@ public class UT {
         public static ILine[] plot(IAtomData aAtomData) {return plot(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : ZL_STR);}
         
         
-        public static void xScaleLog() {PLT.xScaleLog();}
-        public static void yScaleLog() {PLT.yScaleLog();}
-        public static void xScaleLinear() {PLT.xScaleLinear();}
-        public static void yScaleLinear() {PLT.yScaleLinear();}
+        public static void xScaleLog() {validPlotter_(); PLT.xScaleLog();}
+        public static void yScaleLog() {validPlotter_(); PLT.yScaleLog();}
+        public static void xScaleLinear() {validPlotter_(); PLT.xScaleLinear();}
+        public static void yScaleLinear() {validPlotter_(); PLT.yScaleLinear();}
         
-        public static void title(String aTitle) {PLT.title(aTitle);}
-        public static void xLabel(String aXLabel) {PLT.xLabel(aXLabel);}
-        public static void yLabel(String aYLabel) {PLT.yLabel(aYLabel);}
-        public static void xlabel(String aXLabel) {PLT.xlabel(aXLabel);}
-        public static void ylabel(String aYLabel) {PLT.ylabel(aYLabel);}
+        public static void title(String aTitle) {validPlotter_(); PLT.title(aTitle);}
+        public static void xLabel(String aXLabel) {validPlotter_(); PLT.xLabel(aXLabel);}
+        public static void yLabel(String aYLabel) {validPlotter_(); PLT.yLabel(aYLabel);}
+        public static void xlabel(String aXLabel) {validPlotter_(); PLT.xlabel(aXLabel);}
+        public static void ylabel(String aYLabel) {validPlotter_(); PLT.ylabel(aYLabel);}
         
-        public static void xRange(double aMin, double aMax) {PLT.xRange(aMin, aMax);}
-        public static void yRange(double aMin, double aMax) {PLT.yRange(aMin, aMax);}
-        public static void xrange(double aMin, double aMax) {PLT.xrange(aMin, aMax);}
-        public static void yrange(double aMin, double aMax) {PLT.yrange(aMin, aMax);}
-        public static void axis(double aMin, double aMax) {PLT.axis(aMin, aMax);}
-        public static void axis(double aXMin, double aXMax, double aYMin, double aYMax) {PLT.axis(aXMin, aXMax, aYMin, aYMax);}
-        public static void axis(double[] aAxis) {PLT.axis(aAxis);}
+        public static void xRange(double aMin, double aMax) {validPlotter_(); PLT.xRange(aMin, aMax);}
+        public static void yRange(double aMin, double aMax) {validPlotter_(); PLT.yRange(aMin, aMax);}
+        public static void xrange(double aMin, double aMax) {validPlotter_(); PLT.xrange(aMin, aMax);}
+        public static void yrange(double aMin, double aMax) {validPlotter_(); PLT.yrange(aMin, aMax);}
+        public static void axis(double aMin, double aMax) {validPlotter_(); PLT.axis(aMin, aMax);}
+        public static void axis(double aXMin, double aXMax, double aYMin, double aYMax) {validPlotter_(); PLT.axis(aXMin, aXMax, aYMin, aYMax);}
+        public static void axis(double[] aAxis) {validPlotter_(); PLT.axis(aAxis);}
         
-        public static void xTick(double aTick) {PLT.xTick(aTick);}
-        public static void yTick(double aTick) {PLT.yTick(aTick);}
-        public static void xtick(double aTick) {PLT.xtick(aTick);}
-        public static void ytick(double aTick) {PLT.ytick(aTick);}
-        public static void tick(double aTick) {PLT.tick(aTick);}
-        public static void tick(double aXTick, double aYTick) {PLT.tick(aXTick, aYTick);}
+        public static void xTick(double aTick) {validPlotter_(); PLT.xTick(aTick);}
+        public static void yTick(double aTick) {validPlotter_(); PLT.yTick(aTick);}
+        public static void xtick(double aTick) {validPlotter_(); PLT.xtick(aTick);}
+        public static void ytick(double aTick) {validPlotter_(); PLT.ytick(aTick);}
+        public static void tick(double aTick) {validPlotter_(); PLT.tick(aTick);}
+        public static void tick(double aXTick, double aYTick) {validPlotter_(); PLT.tick(aXTick, aYTick);}
         
-        public static void figureSize(int aWidth, int aHeight) {PLT.size(aWidth, aHeight);}
-        public static void saveFigure(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {PLT.save(aFilePath, aWidth, aHeight);}
-        public static void saveFigure(@Nullable String aFilePath) throws IOException {PLT.save(aFilePath);}
-        public static void saveFigure() throws IOException {PLT.save();}
-        public static byte[] encodeFigure(int aWidth, int aHeight) throws IOException {return PLT.encode(aWidth, aHeight);}
-        public static byte[] encodeFigure() throws IOException {return PLT.encode();}
+        public static void figureSize(int aWidth, int aHeight) {validPlotter_(); PLT.size(aWidth, aHeight);}
+        public static void saveFigure(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {validPlotter_(); PLT.save(aFilePath, aWidth, aHeight);}
+        public static void saveFigure(@Nullable String aFilePath) throws IOException {validPlotter_(); PLT.save(aFilePath);}
+        public static void saveFigure() throws IOException {validPlotter_(); PLT.save();}
+        public static byte[] encodeFigure(int aWidth, int aHeight) throws IOException {validPlotter_(); return PLT.encode(aWidth, aHeight);}
+        public static byte[] encodeFigure() throws IOException {validPlotter_(); return PLT.encode();}
         public static void figsize(int aWidth, int aHeight) {figureSize(aWidth, aHeight);}
         public static void savefig(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {saveFigure(aFilePath, aWidth, aHeight);}
         public static void savefig(@Nullable String aFilePath) throws IOException {saveFigure(aFilePath);}
         public static void savefig() throws IOException {saveFigure();}
         public static byte[] encodefig(int aWidth, int aHeight) throws IOException {return encodeFigure(aWidth, aHeight);}
         public static byte[] encodefig() throws IOException {return encodeFigure();}
-        
-        public static void cla() {PLT.clear();}
-        public static void clf() {PLT.dispose(); PLT = Plotters.get();}
     }
     
     
