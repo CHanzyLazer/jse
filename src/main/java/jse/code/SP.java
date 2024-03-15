@@ -74,11 +74,23 @@ public class SP {
     /** groovy 库的路径，这里采用 jar 包所在的绝对路径 */
     private final static String GROOVY_LIB_DIR = JAR_DIR+"groovy/";
     private final static String JAR_LIB_DIR = JAR_DIR+"jar/";
+    private final static List<String> JAR_LIB_PATHS;
     /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
     private final static String PYTHON_PKG_DIR = JAR_DIR+".pypkg/";
     private final static String PYTHON_LIB_DIR = JAR_DIR+"python/";
-    /** 这个用来让 jep 变量初始化 */
-    private final static RuntimeException EXCEPTION = new RuntimeException();
+    
+    static {
+        JAR_LIB_PATHS = new ArrayList<>();
+        if (UT.IO.isDir(JAR_LIB_DIR)) {
+            try {
+                for (String tName : UT.IO.list(JAR_LIB_DIR)) if (tName.endsWith(".jar")) {
+                    JAR_LIB_PATHS.add(UT.IO.toAbsolutePath(JAR_LIB_DIR+tName));
+                }
+            } catch (IOException e) {
+                e.printStackTrace(System.err);
+            }
+        }
+    }
     
     
     /**
@@ -424,7 +436,7 @@ public class SP {
             return UT.IO.toFile(tPath);
         }
         /** 现在 groovy 也一样统一使用全局的一个解释器 */
-        private static GroovyShell GROOVY_SHELL = null;
+        private final static GroovyShell GROOVY_SHELL;
         private final static CompilerConfiguration GROOVY_CONF;
         private final static AtomicInteger COUNTER = new AtomicInteger(0);
         
@@ -504,12 +516,7 @@ public class SP {
         public static Object newInstance(String aClassName, Object... aArgs) throws Exception {
             return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(getClass(aClassName), aArgs));
         }
-        
-        /** 提供一个手动关闭 GROOVY_INTERP 的接口，似乎不需要手动关闭 Interpreter，但是这里还是关闭一下内部的 ClassLoader */
-        public static void close() throws IOException {if (GROOVY_SHELL != null) {GROOVY_SHELL.getClassLoader().close(); GROOVY_SHELL = null;}}
-        public static boolean isClosed() {return GROOVY_SHELL == null;}
-        /** 提供一个手动刷新 GROOVY_INTERP 的接口，可以将关闭的重新打开，清除缓存和文件的依赖 */
-        public static void refresh() throws IOException {close(); initInterpreter_();}
+        // 现在不再支持关闭 GROOVY_SHELL 了，也没有必要关闭
         
         /** 现在这里也不进行包装，如果需要更加通用的调用可以借助 {@link InvokerHelper} */
         public static Class<?> getClass(String aClassName) throws Exception {
@@ -523,8 +530,6 @@ public class SP {
         static {
             // 手动加载 CS.Exec，会自动重新设置工作目录，保证 Groovy 读取到的工作目录是正确的
             CS.Exec.InitHelper.init();
-            // 在程序结束时关闭 CLASS_LOADER，最先添加来避免一些问题
-            Main.addGlobalAutoCloseable(Groovy::close);
             // 先初始化配置
             GROOVY_CONF = new CompilerConfiguration();
             GROOVY_CONF.setSourceEncoding(StandardCharsets.UTF_8.name()); // 文件统一使用 utf-8 编码
@@ -532,10 +537,6 @@ public class SP {
             GROOVY_CONF.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
             }
             // 初始化 CLASS_LOADER
-            initInterpreter_();
-        }
-        /** 初始化内部的 CLASS_LOADER，主要用于减少重复代码 */
-        private static void initInterpreter_() {
             // 重新指定 ClassLoader 为这个类的实际加载器
             GROOVY_SHELL = new GroovyShell(SP.class.getClassLoader(), new Binding(), GROOVY_CONF);
             // 指定默认的 Groovy 脚本的类路径
@@ -543,13 +544,7 @@ public class SP {
             // 增加一个 Groovy 的库的路径
             GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
             // 增加 jar 文件夹下的所有 jar 文件到类路径中
-            try {
-                for (String tName : UT.IO.list(JAR_LIB_DIR)) if (tName.endsWith(".jar")) {
-                    GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(JAR_LIB_DIR+tName));
-                }
-            } catch (IOException e) {
-                e.printStackTrace(System.err);
-            }
+            JAR_LIB_PATHS.forEach(path -> GROOVY_SHELL.getClassLoader().addClasspath(path));
         }
     }
     
@@ -709,9 +704,14 @@ public class SP {
                 .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_SP_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_LIB_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(JEP_LIB_DIR))
-                .setClassLoader(SP.class.getClassLoader())
+                .setClassLoader(Groovy.GROOVY_SHELL.getClassLoader()) // 指定 Groovy 的 ClassLoader 从而可以直接导入 groovy 的类
                 .redirectStdout(System.out)
                 .redirectStdErr(System.err));
+            // 把 groovy 的类路径也加进去
+            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
+            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
+            jep.ClassList.ADDITIONAL_CLASS_PATHS.addAll(JAR_LIB_PATHS);
+            jep.ClassList.ADDITIONAL_CLASS_FILE_EXTENSION.add(".groovy");
             // 初始化 JEP_INTERP
             initInterpreter_();
         }

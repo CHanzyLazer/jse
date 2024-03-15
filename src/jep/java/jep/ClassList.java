@@ -30,16 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -54,7 +45,14 @@ import java.util.jar.Manifest;
  * @author Mike Johnson
  */
 public class ClassList implements ClassEnquirer {
-
+    /// jse stuffs, 通过这些变量来直接注入 groovy 包，这样可以直接基于 ClassList 现有的读 jar 方法
+    /** 附加的 {@code java.class.path} */
+    public final static List<String> ADDITIONAL_CLASS_PATHS = new ArrayList<>();
+    /** 附加的遍历文件时，认为是类文件的后缀，默认只有 {@code .class} */
+    public final static List<String> ADDITIONAL_CLASS_FILE_EXTENSION = new ArrayList<>();
+    /// jse stuff end
+    
+    
     private static ClassList inst;
 
     // storage for package, member classes
@@ -90,7 +88,14 @@ public class ClassList implements ClassEnquirer {
             queue.add(el);
             seen.add(el);
         }
-
+        
+        /// jse stuffs, add ADDITIONAL_CLASS_PATHS
+        for (String el : ADDITIONAL_CLASS_PATHS) {
+            queue.add(el);
+            seen.add(el);
+        }
+        /// jse stuff end
+        
         while (!queue.isEmpty()) {
             String el = queue.remove();
 
@@ -203,10 +208,19 @@ public class ClassList implements ClassEnquirer {
                      */
                     addClassFilesInTree(file, entry);
                 }
-            } else if (file.exists() && file.canRead()
-                    && entry.toLowerCase().endsWith(".class")) {
-                // We've found a .class file on the file system. Add it.
-                addClass(prefix, entry.replaceAll(".class$", ""));
+            } else if (file.exists() && file.canRead()) {
+                if (entry.toLowerCase().endsWith(".class")) {
+                    // We've found a .class file on the file system. Add it.
+                    addClass(prefix, entry.substring(0, entry.length() - 6));
+                } else {
+                    /// jse stuffs, add ADDITIONAL_CLASS_FILE_EXTENSION
+                    for (String ext : ADDITIONAL_CLASS_FILE_EXTENSION) {
+                        if (entry.toLowerCase().endsWith(ext)) {
+                            addClass(prefix, entry.substring(0, entry.length() - ext.length()));
+                        }
+                    }
+                    /// jse stuff end
+                }
             }
         }
     }
