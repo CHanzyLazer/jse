@@ -29,6 +29,7 @@ import java.util.Map;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import groovy.lang.Tuple;
 import jep.Jep;
 import jep.JepAccess;
 import jep.JepException;
@@ -46,7 +47,18 @@ public class PyObject extends JepAccess implements AutoCloseable, GroovyObject {
     /** 通过直接修改 PyObject 来避免嵌套的情况不能包装，以及作为输入时需要解包装的情况 */
     @SuppressWarnings("unchecked")
     @Override public Object invokeMethod(String name, Object args) throws JepException {
-        Object[] aArgs = (Object[])args;
+        Object[] aArgs;
+        if (args == null) {
+            aArgs = null;
+        } else
+        if (args instanceof Tuple) {
+            aArgs = ((Tuple<?>)args).toArray();
+        } else
+        if (args instanceof Object[]) {
+            aArgs = (Object[])args;
+        } else {
+            aArgs = new Object[]{args};
+        }
         if (aArgs == null || aArgs.length == 0) return getAttr(name, PyCallable.class).call();
         if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return getAttr(name, PyCallable.class).call((Map<String, Object>)aArgs[0]);
         if (aArgs.length > 1 && (aArgs[aArgs.length-1] instanceof Map)) {

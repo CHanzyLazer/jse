@@ -16,6 +16,7 @@ import io.github.spencerpark.jupyter.kernel.util.StringSearch;
 import io.github.spencerpark.jupyter.messages.Header;
 import jep.JepConfig;
 import jep.JepException;
+import jep.python.PyObject;
 import jse.Main;
 import jse.atom.AbstractAtoms;
 import jse.atom.Structures;
@@ -25,6 +26,8 @@ import jse.code.collection.AbstractCollections;
 import jse.code.collection.ArrayLists;
 import jse.code.collection.Iterables;
 import jse.code.collection.NewCollections;
+import jse.code.functional.IBinaryFullOperator;
+import jse.code.functional.IUnaryFullOperator;
 import jse.io.IOFiles;
 import jse.io.InFiles;
 import jse.math.ComplexDouble;
@@ -51,9 +54,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static jse.code.CS.*;
 import static jse.code.CS.Exec.EXE;
 import static jse.code.CS.Exec.JAR_DIR;
+import static jse.code.CS.*;
 import static jse.code.Conf.*;
 
 /**
@@ -69,6 +72,14 @@ public class SP {
     
     private final static String GROOVY_SP_DIR = "script/groovy/";
     private final static String PYTHON_SP_DIR = "script/python/";
+    /** groovy 库的路径，这里采用 jar 包所在的绝对路径 */
+    private final static String GROOVY_LIB_DIR = JAR_DIR+"groovy/";
+    /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
+    private final static String PYTHON_PKG_DIR = JAR_DIR+".pypkg/";
+    private final static String PYTHON_LIB_DIR = JAR_DIR+"python/";
+    /** 这个用来让 jep 变量初始化 */
+    private final static RuntimeException EXCEPTION = new RuntimeException();
+    
     
     /**
      * Jupyter Kernel for JSE，
@@ -234,7 +245,7 @@ public class SP {
                 // 简单的 matplotlab 支持
                 if (!KERNEL_SHOW_FIGURE) {
                     //noinspection ConcatenationWithEmptyString
-                    Python.exec(""+
+                    Python.exec("" +
                     "__jse_images__ = []\n" +
                     "if __JSE_HAS_MATPLOTLIB__:\n" +
                     "    for __jse_fig_num__ in __JSE_PYPLOT__.get_fignums():\n" +
@@ -323,6 +334,53 @@ public class SP {
         return null;
     }
     
+    /** Wrapper of {@link GroovyObject} for matlab and jep usage */
+    public final static class GroovyObjectWrapper implements GroovyObject {
+        private final GroovyObject mObj;
+        GroovyObjectWrapper(GroovyObject aObj) {mObj = aObj;}
+        
+        @Override public Object invokeMethod(String name, Object args) {return of(mObj.invokeMethod(name, args));}
+        @Override public Object getProperty(String propertyName) {return of(mObj.getProperty(propertyName));}
+        @Override public void setProperty(String propertyName, Object newValue) {mObj.setProperty(propertyName, newValue);}
+        @Override public MetaClass getMetaClass() {return mObj.getMetaClass();}
+        @Override public void setMetaClass(MetaClass metaClass) {mObj.setMetaClass(metaClass);}
+        
+        @Override public String toString() {return mObj.toString();}
+        public GroovyObject unwrap() {return mObj;}
+        
+        /** 主要用来判断是否需要外包这一层 */
+        public static Object of(Object aObj) {
+            if ((aObj instanceof GroovyObjectWrapper) || (aObj instanceof PyObject)) return aObj;
+            else if (aObj instanceof GroovyObject) return new GroovyObjectWrapper((GroovyObject)aObj);
+            else return aObj;
+        }
+        
+        /** jep support */
+        private final Object funcUnwrap = new Object() {public GroovyObject __call__() {return unwrap();}};
+        private final static class PyCallable {
+            private final IUnaryFullOperator<Object, Object[]> mOpt;
+            PyCallable(IUnaryFullOperator<Object, Object[]> aOpt) {mOpt = aOpt;}
+            public Object __call__() {return __call__(ZL_OBJ);}
+            public Object __call__(Object... args) {return mOpt.apply(args);}
+        }
+        public Object __getattribute__(String attrName) {
+            if (!Python.InitHelper.initialized()) return getProperty(attrName);
+            switch(attrName) {
+            case "_to_python": {throw EXCEPTION;} // 需要考虑 _to_python，在初始化时的特殊处理（具体为何并不清楚）
+            case "unwrap": {return funcUnwrap;} // wrapper 带有的特有的函数
+            default: {
+                // 这时 Wrapper 还有个用途，可以通过内部的 mObj 来检测通用的属性并直接获取
+                @Nullable Object tAttr = Python.GET_ATTRIBUTE_SAFE.apply(mObj, attrName);
+                if (tAttr != null) {
+                    System.out.println("DEBUG: "+tAttr.getClass().getName());
+                    return of(tAttr);
+                }
+                return of(mObj.getProperty(attrName));
+            }}
+        }
+        public void __setattr__(String attrName, Object newAttr) {mObj.setProperty(attrName, newAttr);}
+    }
+    
     
     /** 运行任意的脚本，自动检测脚本类型（根据后缀） */
     public static void run(String aScriptPath)                  throws Exception {run(aScriptPath, ZL_STR);}
@@ -357,24 +415,6 @@ public class SP {
     /** Groovy 脚本运行支持 */
     @SuppressWarnings("RedundantThrows")
     public static class Groovy {
-        /** Wrapper of {@link GroovyObject} for matlab usage */
-        public final static class GroovyObjectWrapper implements GroovyObject {
-            private final GroovyObject mObj;
-            GroovyObjectWrapper(GroovyObject aObj) {mObj = aObj;}
-            
-            @Override public Object invokeMethod(String name, Object args) {return of(mObj.invokeMethod(name, args));}
-            @Override public Object getProperty(String propertyName) {return of(mObj.getProperty(propertyName));}
-            @Override public void setProperty(String propertyName, Object newValue) {mObj.setProperty(propertyName, newValue);}
-            @Override public MetaClass getMetaClass() {return mObj.getMetaClass();}
-            @Override public void setMetaClass(MetaClass metaClass) {mObj.setMetaClass(metaClass);}
-            
-            @Override public String toString() {return mObj.toString();}
-            public GroovyObject unwrap() {return mObj;}
-            
-            /** 主要用来判断是否需要外包这一层 */
-            public static Object of(Object aObj) {return (!(aObj instanceof GroovyObjectWrapper) && (aObj instanceof GroovyObject)) ? (new GroovyObjectWrapper((GroovyObject)aObj)) : aObj;}
-        }
-        
         /** 将 aScriptPath 转换成 File，现在可以省略掉 script/groovy/ 以及后缀 */
         private static File toSourceFile(String aScriptPath) throws IOException {
             @Nullable String tPath = findValidScriptPath(aScriptPath, ".groovy", GROOVY_SP_DIR);
@@ -493,7 +533,7 @@ public class SP {
          */
         public final static class GroovyClass implements GroovyObject {
             private final Class<?> mClazz;
-            public GroovyClass(Class<?> aClazz) {mClazz = aClazz;}
+            GroovyClass(Class<?> aClazz) {mClazz = aClazz;}
             
             @Override public Object invokeMethod(String name, Object args) {return GroovyObjectWrapper.of(InvokerHelper.invokeMethod(mClazz, name, args));}
             @Override public Object getProperty(String propertyName) {return GroovyObjectWrapper.of(InvokerHelper.getProperty(mClazz, propertyName));}
@@ -504,12 +544,14 @@ public class SP {
             @Override public MetaClass getMetaClass() {return mDelegate;}
             @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
             
-            /** 现在同时支持规范中的 of 构造以及类似 python 的 call 构造 */
-            public Object of(Object... aArgs) throws Exception {return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(mClazz, aArgs));}
+            /** 支持 python 的 call 构造 */
             public Object call(Object... aArgs) throws Exception {return GroovyObjectWrapper.of(InvokerHelper.invokeConstructorOf(mClazz, aArgs));}
+            
+            /** 统一再增加一层 Wrapper，让 python 中的直接调用生效 */
+            public static GroovyObjectWrapper of(Class<?> aClazz) {return new GroovyObjectWrapper(new GroovyClass(aClazz));}
         }
-        public static GroovyClass getClass(String aScriptPath) throws IOException {
-            return new GroovyClass(GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath)));
+        public static GroovyObjectWrapper getClass(String aScriptPath) throws IOException {
+            return GroovyClass.of(GROOVY_SHELL.getClassLoader().parseClass(toSourceFile(aScriptPath)));
         }
         
         
@@ -533,6 +575,8 @@ public class SP {
             GROOVY_SHELL = new GroovyShell(SP.class.getClassLoader(), new Binding(), GROOVY_CONF);
             // 指定默认的 Groovy 脚本的类路径
             GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
+            // 增加一个 Groovy 的库的路径
+            GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
         }
     }
     
@@ -576,9 +620,7 @@ public class SP {
         
         /** 包的版本 */
         private final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.22.1";
-        /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
-        private final static String PYPKG_DIR = JAR_DIR+".pypkg/";
-        private final static String PYLIB_DIR = JAR_DIR+"python/";
+        /** jep 二进制库路径 */
         private final static String JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(VERSION, JEP_VERSION) + "/";
         private final static String JEP_LIB_PATH;
         /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
@@ -589,6 +631,8 @@ public class SP {
         }
         /** 一样这里统一使用全局的一个解释器 */
         private static jep.Interpreter JEP_INTERP = null;
+        /** 用于内部使用的 python 函数 */
+        private static IBinaryFullOperator<@Nullable Object, Object, String> GET_ATTRIBUTE_SAFE = null;
         
         
         /** python like stuffs，exec 不会获取返回值，eval 获取返回值 */
@@ -641,7 +685,7 @@ public class SP {
         public static Object newInstance(String aClassName, Object... aArgs) throws JepException {return invoke(aClassName, aArgs);}
         
         /** 提供一个手动关闭 JEP_INTERP 的接口 */
-        public static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null;}}
+        public static void close() throws JepException {if (JEP_INTERP != null) {JEP_INTERP.close(); JEP_INTERP = null; GET_ATTRIBUTE_SAFE = null;}}
         public static boolean isClosed() {return JEP_INTERP == null;}
         /** 提供一个手动刷新 JEP_INTERP 的接口，可以将关闭的重新打开，会清空所有创建的 python 变量 */
         public static void refresh() throws JepException {close(); initInterpreter_();}
@@ -650,9 +694,21 @@ public class SP {
         /** 提供一个方便 Groovy 中使用的直接访问类型的接口 */
         public final static class PyClass implements GroovyObject {
             private final String mClassName;
-            public PyClass(String aClassName) {mClassName = aClassName;}
+            PyClass(String aClassName) {mClassName = aClassName;}
             
-            @Override public Object invokeMethod(String name, Object args) throws JepException {return invoke(mClassName+"."+name, (Object[])args);}
+            @Override public Object invokeMethod(String name, Object args) throws JepException {
+                if (args == null) {
+                    return invoke(mClassName+"."+name, ZL_OBJ);
+                } else
+                if (args instanceof Tuple) {
+                    return invoke(mClassName+"."+name, (Object[])((Tuple<?>)args).toArray());
+                } else
+                if (args instanceof Object[]) {
+                    return invoke(mClassName+"."+name, (Object[])args);
+                } else {
+                    return invoke(mClassName+"."+name, args);
+                }
+            }
             @Override public Object getProperty(String propertyName) throws JepException {return eval(mClassName+"."+propertyName);}
             @Override public void setProperty(String propertyName, Object newValue) throws JepException {setValue("_", newValue); exec(mClassName+"."+propertyName+" = _");}
             
@@ -660,13 +716,14 @@ public class SP {
             @Override public MetaClass getMetaClass() {return mDelegate;}
             @Override public void setMetaClass(MetaClass metaClass) {mDelegate = metaClass;}
             
-            /** 现在同时支持规范中的 of 构造以及类似 python 的 call 构造 */
-            public Object of()                throws JepException {return of(ZL_OBJ);}
-            public Object of(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs);}
+            /** 支持 python 的 call 构造 */
             public Object call()                throws JepException {return call(ZL_OBJ);}
             public Object call(Object... aArgs) throws JepException {return newInstance(mClassName, aArgs);}
+            
+            /** 统一再增加一层 Wrapper，让 python 中的直接调用生效 */
+            public static GroovyObjectWrapper of(String aClassName) {return new GroovyObjectWrapper(new PyClass(aClassName));}
         }
-        public static PyClass getClass(String aClassName) throws JepException {return new PyClass(aClassName);}
+        public static GroovyObjectWrapper getClass(String aClassName) throws JepException {return PyClass.of(aClassName);}
         
         /** 现在和 Groovy 逻辑保持一致，调用任何 run 都会全局重置 args 值 */
         private static void setArgs_(String aFirst, String[] aArgs) {
@@ -708,7 +765,7 @@ public class SP {
             // 配置 Jep，这里只能配置一次
             jep.SharedInterpreter.setConfig(new JepConfig()
                 .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_SP_DIR))
-                .addIncludePaths(UT.IO.toAbsolutePath(PYLIB_DIR))
+                .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_LIB_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(JEP_LIB_DIR))
                 .setClassLoader(SP.class.getClassLoader())
                 .redirectStdout(System.out)
@@ -717,13 +774,24 @@ public class SP {
             initInterpreter_();
         }
         /** 初始化内部的 JEP_INTERP，主要用于减少重复代码 */
+        @SuppressWarnings("unchecked")
         private static void initInterpreter_() {
             JEP_INTERP = new jep.SharedInterpreter();
             JEP_INTERP.exec("import sys");
+            // python 函数获取
+            //noinspection ConcatenationWithEmptyString
+            JEP_INTERP.exec("" +
+            "def __JSE_GET_ATTRIBUTE_SAFE__(obj, name):\n" +
+            "    try:\n" +
+            "        return obj.__getattribute__(name)\n" +
+            "    except AttributeError:\n" +
+            "        return None"
+            );
+            GET_ATTRIBUTE_SAFE = (IBinaryFullOperator<@Nullable Object, Object, String>)JEP_INTERP.getValue("__JSE_GET_ATTRIBUTE_SAFE__", IBinaryFullOperator.class);
             // 简单的 matplotlab 支持
             if (!KERNEL_SHOW_FIGURE && Main.IS_KERNEL()) {
                 //noinspection ConcatenationWithEmptyString
-                JEP_INTERP.exec(""+
+                JEP_INTERP.exec("" +
                 "try:\n" +
                 "    import matplotlib\n" +
                 "    import matplotlib.pyplot as __JSE_PYPLOT__\n" +
@@ -763,9 +831,9 @@ public class SP {
             }
             // 不提供强制仅下载源码的选项，因为很多下载的源码都不能编译成功
             // 设置目标路径
-            rCommand.add("--dest"); rCommand.add(String.format("'%s'", PYPKG_DIR));
+            rCommand.add("--dest"); rCommand.add("'"+PYTHON_PKG_DIR+"'");
             // 设置需要的包名
-            rCommand.add(String.format("'%s'", aRequirement));
+            rCommand.add("'"+aRequirement+"'");
             
             // 直接通过系统指令执行 pip 来下载
             EXE.system(String.join(" ", rCommand));
@@ -786,13 +854,13 @@ public class SP {
             // 是否开启联网，这里默认不开启联网，因为标准下会使用 downloadPackage 来下载包
             if (!aIncludeIndex) rCommand.add("--no-index");
             // 添加 .pypkg 到搜索路径
-            rCommand.add("--find-links"); rCommand.add(String.format("'file:%s'", PYPKG_DIR));
+            rCommand.add("--find-links"); rCommand.add("'file:"+PYTHON_PKG_DIR+"'");
             // 设置目标路径
-            rCommand.add("--target"); rCommand.add(String.format("'%s'", PYLIB_DIR));
+            rCommand.add("--target"); rCommand.add("'"+PYTHON_LIB_DIR+"'");
             // 强制开启更新，替换已有的包
             rCommand.add("--upgrade");
             // 设置需要的包名
-            rCommand.add(String.format("'%s'", aRequirement));
+            rCommand.add("'"+aRequirement+"'");
             
             // 直接通过系统指令执行 pip 来下载
             EXE.system(String.join(" ", rCommand));
@@ -891,14 +959,14 @@ public class SP {
         /** 一些内置的 python 库安装，主要用于内部使用 */
         public static void installAse() throws IOException {
             // 首先获取源码路径，这里直接检测是否是 ase-$ASE_VERSION 开头
-            String[] tList = UT.IO.list(PYPKG_DIR);
+            String[] tList = UT.IO.list(PYTHON_PKG_DIR);
             boolean tHasAsePkg = false;
             for (String tName : tList) if (tName.startsWith("ase-"+ASE_VERSION)) {
                 tHasAsePkg = true; break;
             }
             // 如果没有 ase 包则直接下载，指定版本 ASE_VERSION 避免因为更新造成的问题
             if (!tHasAsePkg) {
-                System.out.printf("ASE INIT INFO: No ase package in %s, downloading...\n", PYPKG_DIR);
+                System.out.printf("ASE INIT INFO: No ase package in %s, downloading...\n", PYTHON_PKG_DIR);
                 downloadPackage("ase=="+ASE_VERSION);
                 System.out.println("ASE INIT INFO: ase package downloading finished");
             }
