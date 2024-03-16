@@ -891,31 +891,31 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 根据参数获取合适的 NL 用于缓存，
      * 此时 null 表示关闭了近邻列表缓存或者没有合适的缓存的近邻列表
      */
-    private IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+    IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
         initBufferNL_();
         if (mBufferedNL == null) return null;
         return mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize);
     }
-    private IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf) {
+    IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf) {
         return getValidBufferedNL_(aRMax, aNnn, aHalf, 1);
     }
     /**
      * 根据参数获取合适的 NL 用于缓存，
      * 此时 null 表示已经有了缓存或者关闭了近邻列表缓存或者参数非法（近邻半径过大）
      */
-    private IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+    IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
         initBufferNL_();
         if (mBufferedNL == null) return null;
         if (aRMax > BUFFER_NL_RMAX*mUnitLen) return null;
         if (mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize) != null) return null;
         return mBufferedNL.getValidNLToBuffer(aRMax, aNnn, aHalf, aMPISize);
     }
-    private IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf) {
+    IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf) {
         return getNLWhichNeedBuffer_(aRMax, aNnn, aHalf, 1);
     }
     
     /** 会自动使用缓存的近邻列表遍历，用于减少重复代码 */
-    private void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IntConsumer aIdxDo) {
+    void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
@@ -924,7 +924,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, (x, y, z, idx, dis2) -> aIdxDo.accept(idx));
         }
     }
-    private void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IntConsumer aIdxDo) {
+    void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
