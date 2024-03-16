@@ -165,6 +165,9 @@ public class NativeLmp implements IAutoShutdown {
     private final static String NATIVELMP_LLIB_PATH;
     private final static String NATIVE_DIR_NAME = "native", BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     
+    private final static String EXECUTABLE_NAME;
+    private final static String[] DEFAULT_ARGS;
+    
     private static String cmakeInitCmdNativeLmp_() {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
@@ -416,11 +419,15 @@ public class NativeLmp implements IAutoShutdown {
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(NATIVELMP_LIB_PATH));
         System.load(UT.IO.toAbsolutePath(LMPJNI_LIB_PATH));
+        
+        // 设置 EXECUTABLE_NAME
+        String tExecutableName = UT.IO.toFileName(NATIVELMP_LIB_PATH);
+        int tFirstDot = tExecutableName.indexOf(".");
+        EXECUTABLE_NAME = tFirstDot>=0 ? tExecutableName.substring(0, tFirstDot) : tExecutableName;
+        DEFAULT_ARGS = new String[] {EXECUTABLE_NAME, "-log", "none"};
     }
     
     
-    private final static String EXECUTABLE_NAME = "liblammps"; // TODO: 需要动态获取到这个名称，还要注意考虑到重定向的情况
-    private final static String[] DEFAULT_ARGS = {EXECUTABLE_NAME, "-log", "none"};
     private final long mLmpPtr;
     private final long mInitTheadID; // lammps 需要保证初始化时的线程和调用时的是相同的
     private boolean mDead = false;

@@ -1561,6 +1561,22 @@ public class UT {
         
         
         /**
+         * @author liqa
+         * @param aPath 字符串路径
+         * @return 给定路径的父路径
+         */
+        public static String toParentPath(String aPath) {return Objects.requireNonNull(toFileName_(aPath)).toString();}
+        public static Path toParentPath_(String aPath) {return Paths.get(aPath).getParent();}
+        
+        /**
+         * @author liqa
+         * @param aPath 字符串路径
+         * @return 给定路径的最后一项文件名（或目录名）
+         */
+        public static String toFileName(String aPath) {return toFileName_(aPath).toString();}
+        public static Path toFileName_(String aPath) {return Paths.get(aPath).getFileName();}
+        
+        /**
          * 将输入路径转为相对路径，顺便会将 {@link File#separator}
          * 转换为 {@code `/`}，保证可以用于 ssh 的文件路径；
          * 此项目依旧认为所有路径风格符都为 {@code `/`} 并要求至少兼容此种路径分隔符
