@@ -418,10 +418,10 @@ public class NativeLmp implements IAutoShutdown {
     }
     
     
-    private final static String EXECUTABLE_NAME = "liblammps";
+    private final static String EXECUTABLE_NAME = "liblammps"; // TODO: 需要动态获取到这个名称，还要注意考虑到重定向的情况
     private final static String[] DEFAULT_ARGS = {EXECUTABLE_NAME, "-log", "none"};
     private final long mLmpPtr;
-    private final @Nullable MPI.Comm mComm;
+    private final @Nullable MPI.Comm mComm; // TODO: 需要移除，然后使用原生方法获取 lammps 真正的 Comm
     private final long mInitTheadID; // lammps 需要保证初始化时的线程和调用时的是相同的
     private boolean mDead = false;
     /**

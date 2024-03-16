@@ -61,66 +61,36 @@ inline jboolean exceptionCheckMPI(JNIEnv *aEnv, int aExitCode) {
 
 
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2J(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs, jlong aComm) {
+    // Now, if no LAMMPS_LIB_MPI, input aComm will simply throw an exception,
+    // because in theory it should have been thrown at the time of the mpijni initialization
+    // in jse and should not have arrived here.
+#ifndef LAMMPS_LIB_MPI
+    throwExceptionLMP(aEnv, "Input an MPI_Comm when NO LAMMPS_LIB_MPI");
+    return 0;
+#else
     int tLen;
     char **sArgs = parseStrBuf(aEnv, aArgs, &tLen);
-#ifdef LAMMPS_LIB_MPI
     void *tLmpPtr;
-    int tMpiInit;
-    MPI_Initialized(&tMpiInit);
-    if (tMpiInit) {
-        MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
 #ifdef LAMMPS_OLD
-        lammps_open(tLen, sArgs, tComm, &tLmpPtr);
+    lammps_open(tLen, sArgs, tComm, &tLmpPtr);
 #else
-        tLmpPtr = lammps_open(tLen, sArgs, tComm, NULL);
-#endif
-    } else {
-#ifdef LAMMPS_OLD
-        lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
-#else
-        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
-#endif
-    }
-#else
-#ifdef LAMMPS_OLD
-    void *tLmpPtr;
-    lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
-#else
-    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
-#endif
+    tLmpPtr = lammps_open(tLen, sArgs, tComm, NULL);
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
     return (jlong)tLmpPtr;
+#endif
 }
 
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String_2(JNIEnv *aEnv, jclass aClazz, jobjectArray aArgs) {
     int tLen;
     char **sArgs = parseStrBuf(aEnv, aArgs, &tLen);
-#ifdef LAMMPS_LIB_MPI
     void *tLmpPtr;
-    int tMpiInit;
-    MPI_Initialized(&tMpiInit);
-    if (tMpiInit) {
 #ifdef LAMMPS_OLD
-        lammps_open(tLen, sArgs, MPI_COMM_WORLD, &tLmpPtr);
-#else
-        tLmpPtr = lammps_open(tLen, sArgs, MPI_COMM_WORLD, NULL);
-#endif
-    } else {
-#ifdef LAMMPS_OLD
-        lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
-#else
-        tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
-#endif
-    }
-#else
-#ifdef LAMMPS_OLD
-    void *tLmpPtr;
     lammps_open_no_mpi(tLen, sArgs, &tLmpPtr);
 #else
-    void *tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
-#endif
+    tLmpPtr = lammps_open_no_mpi(tLen, sArgs, NULL);
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
@@ -224,7 +194,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv,
     // so I can only implement it myself, while also providing support for non MPI.
 #ifdef LAMMPS_BIGBIG
     throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
-#endif
+#else
     void *tLmpPtr = (void *)(intptr_t)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
@@ -313,13 +283,14 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv,
         parseint2jdoubleWithCount(aEnv, rData, tRef, tLocalAtomNum, aCount);
     }
 #endif
+#endif
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aCount, jintArray rData) {
     // The implementation of `lammps_gather_concat` is just a piece of shit which actually causes memory leakage,
     // so I can only implement it myself, while also providing support for non MPI.
 #ifdef LAMMPS_BIGBIG
     throwExceptionLMP(aEnv, "Library function lammps_gather_concat() is not compatible with -DLAMMPS_BIGBIG");
-#endif
+#else
     void *tLmpPtr = (void *)(intptr_t)aLmpPtr;
     char *tName = parseStr(aEnv, aName);
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
@@ -375,6 +346,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aE
     FREE(rDataBuf);
 #else
     parseint2jintWithCount(aEnv, rData, tRef, tLocalAtomNum, aCount);
+#endif
 #endif
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtom_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataType, jint aAtomNum, jint aCount, jdoubleArray rData) {
