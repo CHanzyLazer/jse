@@ -440,6 +440,11 @@ public class SP {
         private final static CompilerConfiguration GROOVY_CONF;
         private final static AtomicInteger COUNTER = new AtomicInteger(0);
         
+        /** groovy 特有的一些属性访问 */
+        public static Binding context() {return GROOVY_SHELL.getContext();}
+        public static Binding binding() {return GROOVY_SHELL.getContext();}
+        public static GroovyClassLoader classLoader() {return GROOVY_SHELL.getClassLoader();}
+        
         /** 获取 shell 的交互式运行 */
         public static void runShell() throws Exception {
             // 使用这个方法来自动设置种类
@@ -704,7 +709,7 @@ public class SP {
                 .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_SP_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(PYTHON_LIB_DIR))
                 .addIncludePaths(UT.IO.toAbsolutePath(JEP_LIB_DIR))
-                .setClassLoader(Groovy.GROOVY_SHELL.getClassLoader()) // 指定 Groovy 的 ClassLoader 从而可以直接导入 groovy 的类
+                .setClassLoader(Groovy.classLoader()) // 指定 Groovy 的 ClassLoader 从而可以直接导入 groovy 的类
                 .redirectStdout(System.out)
                 .redirectStdErr(System.err));
             // 把 groovy 的类路径也加进去
