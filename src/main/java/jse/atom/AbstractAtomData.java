@@ -37,6 +37,14 @@ public abstract class AbstractAtomData implements IAtomData {
     
     
     /** 会利用 atomNumber() 来得到初始的容量 */
+    @Override public double[][] data() {
+        final int tAtomNum = atomNumber();
+        double[][] rData = new double[tAtomNum][];
+        for (int i = 0; i < tAtomNum; ++i) {
+            rData[i] = atom(i).data();
+        }
+        return rData;
+    }
     @Override public double[][] dataXYZ() {
         final int tAtomNum = atomNumber();
         double[][] rData = new double[tAtomNum][];

@@ -70,6 +70,7 @@ public class CS {
     
     
     /** AtomData stuffs */
+    public final static String[] ATOM_DATA_KEYS = {"x", "y", "z", "id", "type", "vx", "vy", "vz"};
     public final static String[] ATOM_DATA_KEYS_VELOCITY = {"vx", "vy", "vz"};
     public final static String[] ATOM_DATA_KEYS_XYZ = {"x", "y", "z"};
     public final static String[] ATOM_DATA_KEYS_XYZID = {"x", "y", "z", "id"};
@@ -77,6 +78,7 @@ public class CS {
     public final static String[] ATOM_DATA_KEYS_ID_TYPE_XYZ = {"id", "type", "x", "y", "z"};
     public final static String[] ALL_ATOM_DATA_KEYS = {"id", "type", "x", "y", "z", "vx", "vy", "vz"};
     public final static String[] STD_ATOM_DATA_KEYS = ATOM_DATA_KEYS_ID_TYPE_XYZ; // 标准 AtomData 包含信息格式为 id type x y z
+    public final static int DATA_X_COL = 0, DATA_Y_COL = 1, DATA_Z_COL = 2, DATA_ID_COL = 3, DATA_TYPE_COL = 4, DATA_VX_COL = 5, DATA_VY_COL = 6, DATA_VZ_COL = 7;
     public final static int XYZ_X_COL = 0, XYZ_Y_COL = 1, XYZ_Z_COL = 2;
     public final static int XYZID_X_COL = 0, XYZID_Y_COL = 1, XYZID_Z_COL = 2, XYZID_ID_COL = 3;
     public final static int TYPE_XYZ_TYPE_COL = 0, TYPE_XYZ_X_COL = 1, TYPE_XYZ_Y_COL = 2, TYPE_XYZ_Z_COL = 3;

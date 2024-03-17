@@ -1,12 +1,10 @@
 package jse.atom;
 
-import jse.code.collection.AbstractRandomAccessList;
+import jse.code.collection.NewCollections;
 import jse.math.MathEX;
-import jse.math.vector.IVector;
-import jse.math.vector.RefVector;
-import org.jetbrains.annotations.VisibleForTesting;
+import jse.math.vector.Vector;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 通用的 XYZ 坐标接口，使用此接口还有一重含义时此 XYZ 是不建议修改的
@@ -19,36 +17,13 @@ public interface IXYZ {
     double y();
     double z();
     
+    /** 转为兼容性更高的 double[] */
+    default double[] data() {return new double[] {x(), y(), z()};}
+    /** 转为 vector 和 list，由于 xyz 本身很小，这里直接进行值拷贝转换，不再提供 as 方法 */
+    default Vector toVec() {return new Vector(data());}
+    default ArrayList<Double> toList() {return NewCollections.from(data());}
     
     /** 提供一些运算，由于 XYZ 本身就很轻量，为了避免方法调用的损失，并且让实现起来比较简单，这里不增加中间层 operation */
-    default double[] data() {return new double[] {x(), y(), z()};}
-    default IVector asVec() {
-        return new RefVector() {
-            @Override public double get(int aIdx) {
-                switch(aIdx) {
-                case 0: return x();
-                case 1: return y();
-                case 2: return z();
-                default: throw new RuntimeException();
-                }
-            }
-            @Override public int size() {return 3;}
-        };
-    }
-    default List<Double> asList() {
-        return new AbstractRandomAccessList<Double>() {
-            @Override public Double get(int index) {
-                switch(index) {
-                case 0: return x();
-                case 1: return y();
-                case 2: return z();
-                default: throw new IndexOutOfBoundsException(String.format("Index: %d", index));
-                }
-            }
-            @Override public int size() {return 3;}
-        };
-    }
-    
     default double prod() {return x() * y() * z();}
     default double min() {return Math.min(Math.min(x(), y()), z());}
     default double max() {return Math.max(Math.max(x(), y()), z());}

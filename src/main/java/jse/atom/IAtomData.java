@@ -12,8 +12,8 @@ import java.util.List;
  * <p> 移除过多的无用的接口，只保留实际使用会用到的部分 </p>
  */
 public interface IAtomData {
-    /** 转为兼容性更高的 double[][]，约定数据按行排列，每行一个原子 */
-    default double[][] data() {return dataSTD();}
+    /** 转为兼容性更高的 double[][]，约定数据按行排列，每行一个原子；现在默认 data() 顺序调整，改为 x, y, z, id, type, vx, vy, vz，将最基础的放在最前面可以保证最好的兼容性 */
+    double[][] data();
     double[][] dataXYZ();
     double[][] dataXYZID();
     double[][] dataSTD();
