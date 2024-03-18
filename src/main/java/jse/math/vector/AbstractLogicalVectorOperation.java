@@ -8,6 +8,7 @@ import jse.math.operation.DATA;
 import java.util.function.BooleanSupplier;
 
 import static jse.math.vector.AbstractVector.rangeCheck;
+import static jse.math.vector.AbstractVectorOperation.ebeCheck;
 
 /**
  * 一般的实向量运算的实现，默认没有做任何优化
@@ -15,20 +16,20 @@ import static jse.math.vector.AbstractVector.rangeCheck;
  */
 public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOperation {
     /** 通用的一些运算 */
-    @Override public ILogicalVector and     (ILogicalVector aRHS) {ILogicalVector rVector = newVector_(); DATA.ebeAnd2Dest(thisVector_(), aRHS, rVector); return rVector;}
-    @Override public ILogicalVector or      (ILogicalVector aRHS) {ILogicalVector rVector = newVector_(); DATA.ebeOr2Dest (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public ILogicalVector xor     (ILogicalVector aRHS) {ILogicalVector rVector = newVector_(); DATA.ebeXor2Dest(thisVector_(), aRHS, rVector); return rVector;}
-    @Override public ILogicalVector operate (ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {ILogicalVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
+    @Override public ILogicalVector and     (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); ILogicalVector rVector = newVector_(); DATA.ebeAnd2Dest(thisVector_(), aRHS, rVector); return rVector;}
+    @Override public ILogicalVector or      (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); ILogicalVector rVector = newVector_(); DATA.ebeOr2Dest (thisVector_(), aRHS, rVector); return rVector;}
+    @Override public ILogicalVector xor     (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); ILogicalVector rVector = newVector_(); DATA.ebeXor2Dest(thisVector_(), aRHS, rVector); return rVector;}
+    @Override public ILogicalVector operate (ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {ebeCheck(thisVector_().size(), aRHS.size()); ILogicalVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
     
     @Override public ILogicalVector and     (boolean aRHS) {ILogicalVector rVector = newVector_(); DATA.mapAnd2Dest(thisVector_(), aRHS, rVector); return rVector;}
     @Override public ILogicalVector or      (boolean aRHS) {ILogicalVector rVector = newVector_(); DATA.mapOr2Dest (thisVector_(), aRHS, rVector); return rVector;}
     @Override public ILogicalVector xor     (boolean aRHS) {ILogicalVector rVector = newVector_(); DATA.mapXor2Dest(thisVector_(), aRHS, rVector); return rVector;}
     @Override public ILogicalVector map     (IBooleanUnaryOperator aOpt) {ILogicalVector rVector = newVector_(); DATA.mapDo2Dest(thisVector_(), rVector, aOpt); return rVector;}
     
-    @Override public void and2this          (ILogicalVector aRHS) {DATA.ebeAnd2This(thisVector_(), aRHS);}
-    @Override public void or2this           (ILogicalVector aRHS) {DATA.ebeOr2This (thisVector_(), aRHS);}
-    @Override public void xor2this          (ILogicalVector aRHS) {DATA.ebeXor2This(thisVector_(), aRHS);}
-    @Override public void operate2this      (ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
+    @Override public void and2this          (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeAnd2This(thisVector_(), aRHS);}
+    @Override public void or2this           (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeOr2This (thisVector_(), aRHS);}
+    @Override public void xor2this          (ILogicalVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeXor2This(thisVector_(), aRHS);}
+    @Override public void operate2this      (ILogicalVector aRHS, IBooleanBinaryOperator aOpt) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
     
     @Override public void and2this          (boolean aRHS) {DATA.mapAnd2This(thisVector_(), aRHS);}
     @Override public void or2this           (boolean aRHS) {DATA.mapOr2This (thisVector_(), aRHS);}
@@ -39,7 +40,7 @@ public abstract class AbstractLogicalVectorOperation implements ILogicalVectorOp
     @Override public void not2this          () {DATA.not2This(thisVector_());}
     
     @Override public void fill              (boolean              aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
-    @Override public void fill              (ILogicalVector       aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void fill              (ILogicalVector       aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeFill2This (thisVector_(), aRHS);}
     @Override public void assign            (BooleanSupplier      aSup) {DATA.assign2This  (thisVector_(), aSup);}
     @Override public void forEach           (IBooleanConsumer     aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill              (ILogicalVectorGetter aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}

@@ -6,10 +6,11 @@ import jse.math.operation.DATA;
 import java.util.function.*;
 
 import static jse.math.vector.AbstractVector.rangeCheck;
+import static jse.math.vector.AbstractVectorOperation.ebeCheck;
 
 public abstract class AbstractLongVectorOperation implements ILongVectorOperation {
     @Override public void fill          (long               aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
-    @Override public void fill          (ILongVector        aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (ILongVector        aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeFill2This (thisVector_(), aRHS);}
     @Override public void assign        (LongSupplier       aSup) {DATA.assign2This  (thisVector_(), aSup);}
     @Override public void forEach       (LongConsumer       aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill          (ILongVectorGetter  aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}

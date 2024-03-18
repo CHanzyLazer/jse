@@ -11,13 +11,14 @@ import java.util.function.IntSupplier;
 
 import static jse.math.matrix.AbstractMatrix.rangeCheckCol;
 import static jse.math.matrix.AbstractMatrix.rangeCheckRow;
+import static jse.math.matrix.AbstractMatrixOperation.ebeCheck;
 
 /**
  * 一般的整数矩阵运算的实现，默认没有做任何优化
  */
 public abstract class AbstractIntMatrixOperation implements IIntMatrixOperation {
     @Override public void fill          (int aRHS) {DATA.mapFill2This(thisMatrix_()::setIteratorCol, aRHS);}
-    @Override public void fill          (IIntMatrix aRHS) {DATA.ebeFill2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
+    @Override public void fill          (IIntMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); DATA.ebeFill2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
     @Override public void assignCol     (IntSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorCol, aSup);}
     @Override public void assignRow     (IntSupplier aSup) {DATA.assign2This(thisMatrix_()::setIteratorRow, aSup);}
     @Override public void forEachCol    (IntConsumer aCon) {DATA.forEachOfThis(thisMatrix_()::iteratorCol, aCon);}

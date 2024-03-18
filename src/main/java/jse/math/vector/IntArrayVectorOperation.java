@@ -7,10 +7,13 @@ import jse.math.operation.DATA;
 
 import java.util.function.*;
 
+import static jse.math.vector.AbstractVectorOperation.ebeCheck;
+
 public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation {
     /** 通用的一些运算 */
     @Override public IIntVector plus(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -20,6 +23,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector minus(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -29,6 +33,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector lminus(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -38,6 +43,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector multiply(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -47,6 +53,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector div(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -56,6 +63,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector ldiv(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -65,6 +73,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector mod(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -74,6 +83,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector lmod(IIntVector aRHS) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -83,6 +93,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     }
     @Override public IIntVector operate(IIntVector aRHS, IntBinaryOperator aOpt) {
         IntArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         IntArrayVector rVector = newVector_();
         int[] tDataL = rVector.getIfHasSameOrderData(tThis);
         int[] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -166,54 +177,63 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     
     @Override public void plus2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebePlus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebePlus2This(rThis, aRHS);
     }
     @Override public void minus2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMinus2This(rThis, aRHS);
     }
     @Override public void lminus2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMinus2This(rThis, aRHS);
     }
     @Override public void multiply2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMultiply2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMultiply2This(rThis, aRHS);
     }
     @Override public void div2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeDiv2This(rThis, aRHS);
     }
     @Override public void ldiv2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLDiv2This(rThis, aRHS);
     }
     @Override public void mod2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMod2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMod2This(rThis, aRHS);
     }
     @Override public void lmod2this(IIntVector aRHS) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLMod2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMod2This(rThis, aRHS);
     }
     @Override public void operate2this(IIntVector aRHS, IntBinaryOperator aOpt) {
         IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
         else DATA.ebeDo2This(rThis, aRHS, aOpt);
@@ -242,6 +262,7 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     @Override public void fill          (int aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void fill          (IIntVector aRHS) {
         final IntArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         int[] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);

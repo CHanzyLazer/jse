@@ -3,9 +3,9 @@ package jse.math.vector;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
+import jse.code.functional.IBinaryFullOperator;
 import jse.code.functional.IDoubleBinaryConsumer;
 import jse.code.functional.IUnaryFullOperator;
-import jse.code.functional.IBinaryFullOperator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
 import jse.math.IDataShell;
@@ -13,9 +13,10 @@ import jse.math.operation.ARRAY;
 import jse.math.operation.DATA;
 
 import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+
+import static jse.math.vector.AbstractVectorOperation.ebeCheck;
 
 /**
  * 对于内部含有 double[][] 的复向量的运算使用专门优化后的函数
@@ -27,6 +28,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     /** 通用的一些运算 */
     @Override public IComplexVector plus(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -36,6 +38,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector minus(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -45,6 +48,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector lminus(IComplexVector aRHS) {
         final BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -54,6 +58,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector multiply(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -63,6 +68,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector div(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -72,6 +78,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector ldiv(IComplexVector aRHS) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -81,6 +88,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     }
     @Override public IComplexVector operate(IComplexVector aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         BiDoubleArrayVector rVector = newVector_();
         double[][] tDataL = rVector.getIfHasSameOrderData(tThis);
         double[][] tDataR = rVector.getIfHasSameOrderData(aRHS);
@@ -196,42 +204,49 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     
     @Override public void plus2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebePlus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebePlus2This(rThis, aRHS);
     }
     @Override public void minus2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMinus2This(rThis, aRHS);
     }
     @Override public void lminus2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMinus2This(rThis, aRHS);
     }
     @Override public void multiply2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMultiply2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMultiply2This(rThis, aRHS);
     }
     @Override public void div2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeDiv2This(rThis, aRHS);
     }
     @Override public void ldiv2this(IComplexVector aRHS) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLDiv2This(rThis, aRHS);
     }
     @Override public void operate2this(IComplexVector aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
         else DATA.ebeDo2This(rThis, aRHS, aOpt);
@@ -265,6 +280,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     @Override public void fill          (double aRHS) {BiDoubleArrayVector rThis = thisVector_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void fill          (IComplexVector aRHS) {
         final BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
@@ -288,6 +304,7 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     /** 向量的一些额外的运算 */
     @Override public ComplexDouble dot(IComplexVector aRHS) {
         final BiDoubleArrayVector tThis = thisVector_();
+        ebeCheck(tThis.size(), aRHS.size());
         final double[][] tDataR = tThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) {
             final double[][] tDataL = tThis.internalData();
@@ -347,12 +364,14 @@ public abstract class BiDoubleArrayVectorOperation extends AbstractComplexVector
     
     @Override public void mplus2this(IComplexVector aRHS, double aMul) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.mapMultiplyThenEbePlus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), aMul, rThis.internalDataSize());
         else DATA.mapMultiplyThenEbePlus2This(rThis, aRHS, aMul);
     }
     @Override public void mplus2this(IComplexVector aRHS, IComplexDouble aMul) {
         BiDoubleArrayVector rThis = thisVector_();
+        ebeCheck(rThis.size(), aRHS.size());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.mapMultiplyThenEbePlus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), aMul, rThis.internalDataSize());
         else DATA.mapMultiplyThenEbePlus2This(rThis, aRHS, aMul);

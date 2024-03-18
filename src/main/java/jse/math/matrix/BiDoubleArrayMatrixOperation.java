@@ -8,10 +8,13 @@ import jse.math.IDataShell;
 import jse.math.operation.ARRAY;
 import jse.math.operation.DATA;
 
+import static jse.math.matrix.AbstractMatrixOperation.ebeCheck;
+
 public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrixOperation {
     /** 通用的一些运算 */
     @Override public IComplexMatrix plus(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -21,6 +24,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix minus(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -30,6 +34,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix lminus(IComplexMatrix aRHS) {
         final BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -39,6 +44,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix multiply(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -48,6 +54,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix div(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -57,6 +64,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix ldiv(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -66,6 +74,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     }
     @Override public IComplexMatrix operate(IComplexMatrix aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayMatrix tThis = thisMatrix_();
+        ebeCheck(tThis.rowNumber(), tThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         BiDoubleArrayMatrix rMatrix = newMatrix_();
         double[][] tDataL = rMatrix.getIfHasSameOrderData(tThis);
         double[][] tDataR = rMatrix.getIfHasSameOrderData(aRHS);
@@ -181,42 +190,49 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     
     @Override public void plus2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebePlus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebePlus2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void minus2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMinus2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void lminus2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLMinus2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLMinus2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void multiply2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeMultiply2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeMultiply2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void div2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeDiv2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void ldiv2this(IComplexMatrix aRHS) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeLDiv2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeLDiv2This(rThis::setIteratorCol, aRHS::iteratorCol);
     }
     @Override public void operate2this(IComplexMatrix aRHS, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeDo2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize(), aOpt);
         else DATA.ebeDo2This(rThis::setIteratorCol, aRHS::iteratorCol, aOpt);
@@ -250,6 +266,7 @@ public abstract class BiDoubleArrayMatrixOperation extends AbstractComplexMatrix
     @Override public void fill          (double aRHS) {BiDoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapFill2This(rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void fill          (IComplexMatrix aRHS) {
         final BiDoubleArrayMatrix rThis = thisMatrix_();
+        ebeCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         double[][] tDataR = rThis.getIfHasSameOrderData(aRHS);
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis::setIteratorCol, aRHS::iteratorCol);

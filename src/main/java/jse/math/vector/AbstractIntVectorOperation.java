@@ -7,18 +7,19 @@ import java.util.function.*;
 
 import static jse.code.CS.RANDOM;
 import static jse.math.vector.AbstractVector.rangeCheck;
+import static jse.math.vector.AbstractVectorOperation.ebeCheck;
 
 public abstract class AbstractIntVectorOperation implements IIntVectorOperation {
     /** 通用的一些运算 */
-    @Override public IIntVector plus       (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebePlus2Dest    (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IIntVector minus      (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeMinus2Dest   (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IIntVector lminus     (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeMinus2Dest   (aRHS, thisVector_(), rVector); return rVector;}
-    @Override public IIntVector multiply   (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeMultiply2Dest(thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IIntVector div        (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeDiv2Dest     (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IIntVector ldiv       (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeDiv2Dest     (aRHS, thisVector_(), rVector); return rVector;}
-    @Override public IIntVector mod        (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeMod2Dest     (thisVector_(), aRHS, rVector); return rVector;}
-    @Override public IIntVector lmod       (IIntVector aRHS) {IIntVector rVector = newVector_(); DATA.ebeMod2Dest     (aRHS, thisVector_(), rVector); return rVector;}
-    @Override public IIntVector operate    (IIntVector aRHS, IntBinaryOperator aOpt) {IIntVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
+    @Override public IIntVector plus       (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebePlus2Dest    (thisVector_(), aRHS, rVector); return rVector;}
+    @Override public IIntVector minus      (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeMinus2Dest   (thisVector_(), aRHS, rVector); return rVector;}
+    @Override public IIntVector lminus     (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeMinus2Dest   (aRHS, thisVector_(), rVector); return rVector;}
+    @Override public IIntVector multiply   (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeMultiply2Dest(thisVector_(), aRHS, rVector); return rVector;}
+    @Override public IIntVector div        (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeDiv2Dest     (thisVector_(), aRHS, rVector); return rVector;}
+    @Override public IIntVector ldiv       (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeDiv2Dest     (aRHS, thisVector_(), rVector); return rVector;}
+    @Override public IIntVector mod        (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeMod2Dest     (thisVector_(), aRHS, rVector); return rVector;}
+    @Override public IIntVector lmod       (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeMod2Dest     (aRHS, thisVector_(), rVector); return rVector;}
+    @Override public IIntVector operate    (IIntVector aRHS, IntBinaryOperator aOpt) {ebeCheck(thisVector_().size(), aRHS.size()); IIntVector rVector = newVector_(); DATA.ebeDo2Dest(thisVector_(), aRHS, rVector, aOpt); return rVector;}
     
     @Override public IIntVector plus       (int aRHS) {IIntVector rVector = newVector_(); DATA.mapPlus2Dest    (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IIntVector minus      (int aRHS) {IIntVector rVector = newVector_(); DATA.mapMinus2Dest   (thisVector_(), aRHS, rVector); return rVector;}
@@ -30,15 +31,15 @@ public abstract class AbstractIntVectorOperation implements IIntVectorOperation 
     @Override public IIntVector lmod       (int aRHS) {IIntVector rVector = newVector_(); DATA.mapLMod2Dest    (thisVector_(), aRHS, rVector); return rVector;}
     @Override public IIntVector map        (IntUnaryOperator aOpt) {IIntVector rVector = newVector_(); DATA.mapDo2Dest(thisVector_(), rVector, aOpt); return rVector;}
     
-    @Override public void plus2this     (IIntVector aRHS) {DATA.ebePlus2This    (thisVector_(), aRHS);}
-    @Override public void minus2this    (IIntVector aRHS) {DATA.ebeMinus2This   (thisVector_(), aRHS);}
-    @Override public void lminus2this   (IIntVector aRHS) {DATA.ebeLMinus2This  (thisVector_(), aRHS);}
-    @Override public void multiply2this (IIntVector aRHS) {DATA.ebeMultiply2This(thisVector_(), aRHS);}
-    @Override public void div2this      (IIntVector aRHS) {DATA.ebeDiv2This     (thisVector_(), aRHS);}
-    @Override public void ldiv2this     (IIntVector aRHS) {DATA.ebeLDiv2This    (thisVector_(), aRHS);}
-    @Override public void mod2this      (IIntVector aRHS) {DATA.ebeMod2This     (thisVector_(), aRHS);}
-    @Override public void lmod2this     (IIntVector aRHS) {DATA.ebeLMod2This    (thisVector_(), aRHS);}
-    @Override public void operate2this  (IIntVector aRHS, IntBinaryOperator aOpt) {DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
+    @Override public void plus2this     (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebePlus2This    (thisVector_(), aRHS);}
+    @Override public void minus2this    (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeMinus2This   (thisVector_(), aRHS);}
+    @Override public void lminus2this   (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeLMinus2This  (thisVector_(), aRHS);}
+    @Override public void multiply2this (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeMultiply2This(thisVector_(), aRHS);}
+    @Override public void div2this      (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeDiv2This     (thisVector_(), aRHS);}
+    @Override public void ldiv2this     (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeLDiv2This    (thisVector_(), aRHS);}
+    @Override public void mod2this      (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeMod2This     (thisVector_(), aRHS);}
+    @Override public void lmod2this     (IIntVector aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeLMod2This    (thisVector_(), aRHS);}
+    @Override public void operate2this  (IIntVector aRHS, IntBinaryOperator aOpt) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeDo2This(thisVector_(), aRHS, aOpt);}
     
     @Override public void plus2this     (int aRHS) {DATA.mapPlus2This    (thisVector_(), aRHS);}
     @Override public void minus2this    (int aRHS) {DATA.mapMinus2This   (thisVector_(), aRHS);}
@@ -54,7 +55,7 @@ public abstract class AbstractIntVectorOperation implements IIntVectorOperation 
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     
     @Override public void fill          (int                aRHS) {DATA.mapFill2This (thisVector_(), aRHS);}
-    @Override public void fill          (IIntVector         aRHS) {DATA.ebeFill2This (thisVector_(), aRHS);}
+    @Override public void fill          (IIntVector         aRHS) {ebeCheck(thisVector_().size(), aRHS.size()); DATA.ebeFill2This (thisVector_(), aRHS);}
     @Override public void assign        (IntSupplier        aSup) {DATA.assign2This  (thisVector_(), aSup);}
     @Override public void forEach       (IntConsumer        aCon) {DATA.forEachOfThis(thisVector_(), aCon);}
     @Override public void fill          (IIntVectorGetter   aRHS) {DATA.vecFill2This (thisVector_(), aRHS);}
