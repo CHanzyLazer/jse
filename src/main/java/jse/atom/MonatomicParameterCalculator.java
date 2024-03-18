@@ -44,14 +44,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public static int BUFFER_NL_NUM = 8; // 缓存近邻列表从而避免重复计算距离，这里设置缓存的大小，设置为 0 关闭缓存；即使现在优化了近邻列表获取，缓存依旧能大幅加速近邻遍历
     public static double BUFFER_NL_RMAX = 4.0; // 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难
     
-    IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
-    final IXYZ mBox;
+    private IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
+    private final IXYZ mBox;
     
     private final int mAtomNum;
     private final double mRou; // 粒子数密度
     private final double mUnitLen; // 平均单个原子的距离
     
-    final NeighborListGetter mNL;
+    private final NeighborListGetter mNL;
     private final long mInitThreadID;
     
     /** IThreadPoolContainer stuffs */
@@ -182,6 +182,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public double rou(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRou*aMPC.mRou);}
     /** 保留旧名称兼容，当时起名太随意了，居然这么久都没发现 */
     @Deprecated public final int atomNum() {return atomNumber();}
+    /** 补充运算时使用 */
+    @ApiStatus.Internal public NeighborListGetter NL_() {return mNL;}
+    @ApiStatus.Internal public IMatrix atomDataXYZ_() {return mAtomDataXYZ;}
     
     
     /// 计算方法
@@ -895,31 +898,31 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 根据参数获取合适的 NL 用于缓存，
      * 此时 null 表示关闭了近邻列表缓存或者没有合适的缓存的近邻列表
      */
-    IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+    @ApiStatus.Internal public IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
         initBufferNL_();
         if (mBufferedNL == null) return null;
         return mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize);
     }
-    IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf) {
+    @ApiStatus.Internal public IntList @Nullable[] getValidBufferedNL_(double aRMax, int aNnn, boolean aHalf) {
         return getValidBufferedNL_(aRMax, aNnn, aHalf, 1);
     }
     /**
      * 根据参数获取合适的 NL 用于缓存，
      * 此时 null 表示已经有了缓存或者关闭了近邻列表缓存或者参数非法（近邻半径过大）
      */
-    IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
+    @ApiStatus.Internal public IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf, int aMPISize) {
         initBufferNL_();
         if (mBufferedNL == null) return null;
         if (aRMax > BUFFER_NL_RMAX*mUnitLen) return null;
         if (mBufferedNL.getValidBufferedNL(aRMax, aNnn, aHalf, aMPISize) != null) return null;
         return mBufferedNL.getValidNLToBuffer(aRMax, aNnn, aHalf, aMPISize);
     }
-    IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf) {
+    @ApiStatus.Internal public IntList @Nullable[] getNLWhichNeedBuffer_(double aRMax, int aNnn, boolean aHalf) {
         return getNLWhichNeedBuffer_(aRMax, aNnn, aHalf, 1);
     }
     
     /** 会自动使用缓存的近邻列表遍历，用于减少重复代码 */
-    void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IntConsumer aIdxDo) {
+    @ApiStatus.Internal public void forEachNeighbor_(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
@@ -928,7 +931,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             mNL.forEachNeighbor(aIdx, aRMax, aNnn, aHalf, (x, y, z, idx, dis2) -> aIdxDo.accept(idx));
         }
     }
-    void forEachNeighbor(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IntConsumer aIdxDo) {
+    @ApiStatus.Internal public void forEachNeighbor_(IntList @Nullable[] aNL, int aIdx, double aRMax, int aNnn, boolean aHalf, IIndexFilter aRegion, IntConsumer aIdxDo) {
         if (aNL != null) {
             // 如果 aNL 不为 null，则直接使用 aNL 遍历
             aNL[aIdx].forEach(aIdxDo);
@@ -1157,7 +1160,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             qlmi.fill(Qlmi);
             // 再累加近邻
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestQ, aNnnQ, aHalf, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestQ, aNnnQ, aHalf, idx -> {
                 // 直接按行累加即可
                 qlmi.plus2this(Qlm.row(idx));
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要进行累加
@@ -1220,7 +1223,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             qlmi.fill(Qlmi);
             // 再累加近邻
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestQ, aNnnQ, aHalf, aMPIInfo::inRegin, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestQ, aNnnQ, aHalf, aMPIInfo::inRegin, idx -> {
                 // 直接按行累加即可
                 qlmi.plus2this(Qlm.row(idx));
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
@@ -1576,7 +1579,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestS, aNnnS, aHalf, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestS, aNnnS, aHalf, idx -> {
                 // 统一获取行向量
                 IComplexVector Qlmj = Qlm.row(idx);
                 // 计算复向量的点乘
@@ -1633,7 +1636,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestS, aNnnS, aHalf, aMPIInfo::inRegin, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestS, aNnnS, aHalf, aMPIInfo::inRegin, idx -> {
                 // 统一获取行向量
                 IComplexVector Qlmj = Qlm.row(idx);
                 // 计算复向量的点乘
@@ -1722,7 +1725,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestS, aNnnS, aHalf, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestS, aNnnS, aHalf, idx -> {
                 // 统一获取行向量
                 IComplexVector qlmj = qlm.row(idx);
                 // 计算复向量的点乘
@@ -1779,7 +1782,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
-            forEachNeighbor(tNL, fI, aRNearestS, aNnnS, aHalf, aMPIInfo::inRegin, idx -> {
+            forEachNeighbor_(tNL, fI, aRNearestS, aNnnS, aHalf, aMPIInfo::inRegin, idx -> {
                 // 统一获取行向量
                 IComplexVector qlmj = qlm.row(idx);
                 // 计算复向量的点乘
