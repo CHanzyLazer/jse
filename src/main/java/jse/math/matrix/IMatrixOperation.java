@@ -69,6 +69,12 @@ public interface IMatrixOperation {
     
     
     /** 矩阵的一些额外的运算 */
+    IMatrix matmul (IMatrix aRHS);
+    IMatrix lmatmul(IMatrix aRHS);
+    // 矩阵乘法不提供 2this 的接口，因为为了避免计算时修改需要进行缓存，而这需要专门的实现，过于繁琐
+    void matmul2dest (IMatrix aRHS, IMatrix rDest);
+    void lmatmul2dest(IMatrix aRHS, IMatrix rDest);
+    
     IVector sumOfCols   ();
     IVector sumOfRows   ();
     IVector meanOfCols  ();

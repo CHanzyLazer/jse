@@ -1,12 +1,18 @@
 package jse.math.matrix;
 
+import jse.cache.MatrixCache;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetOnlyIterator;
 import jse.math.operation.DATA;
 import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
 
-import java.util.function.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
+
+import static jse.code.Conf.OPERATION_CHECK;
 
 /**
  * 一般的实矩阵运算的实现，默认没有做任何优化
@@ -77,6 +83,88 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public double max () {return DATA.maxOfThis (thisMatrix_()::iteratorCol);}
     @Override public double min () {return DATA.minOfThis (thisMatrix_()::iteratorCol);}
     
+    
+    @Override public IMatrix matmul (IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(tThis.rowNumber(), aRHS.columnNumber()); matmul2dest (aRHS, rMatrix); return rMatrix;}
+    @Override public IMatrix lmatmul(IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(aRHS.rowNumber(), tThis.columnNumber()); lmatmul2dest(aRHS, rMatrix); return rMatrix;}
+    @Override public void matmul2dest (IMatrix aRHS, IMatrix rDest) {matmul2dest_(thisMatrix_(), aRHS, rDest);}
+    @Override public void lmatmul2dest(IMatrix aRHS, IMatrix rDest) {matmul2dest_(aRHS, thisMatrix_(), rDest);}
+    
+    private final static int BLOCK_SIZE = 64; // 64 x 64 = 4096，这个值应该是最快的
+    static void matmulCheck(int lRowNum, int lColNum, int rRowNum, int rColNum) {
+        if (lColNum != rRowNum) throw new IllegalArgumentException(
+            "The dimension used for matrix multiplication is incorrect ("+lRowNum+" x "+lColNum+") x ("+rRowNum+" x "+rColNum+").\n" +
+            "Please ensure that the ncols in the first matrix ("+lColNum+") matches the nrows in the second matrix ("+rRowNum+")."
+        );
+    }
+    /**
+     * 计算矩阵乘法实现，这里使用分块缓存的方法来进行优化，
+     * 不使用复杂度更低的神奇算法，因为实现麻烦且会降低精度
+     */
+    private static void matmul2dest_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest) {
+        // 先判断大小是否合适
+        int tRowNum = aLHS.rowNumber();
+        int tColNum = aRHS.columnNumber();
+        int tMidNum = aLHS.columnNumber();
+        if (OPERATION_CHECK) matmulCheck(tRowNum, tMidNum, aRHS.rowNumber(), tColNum);
+        // 不用分块的情况
+        if (tRowNum<BLOCK_SIZE+BLOCK_SIZE && tColNum<BLOCK_SIZE+BLOCK_SIZE) {
+            // 直接获取行列向量来做点积
+            for (int row = 0; row < tRowNum; ++row) {
+                final IVector lRow = aLHS.row(row);
+                for (int col = 0; col < tColNum; ++col) {
+                    rDest.set(row, col, lRow.operation().dot(aRHS.col(col)));
+                }
+            }
+            return;
+        }
+        // 获取分块数目和剩余数目（需要考虑非整除的情况）
+        final int blockRowNum = tRowNum / BLOCK_SIZE;
+        final int blockColNum = tColNum / BLOCK_SIZE;
+        final int blockMidNum = tMidNum / BLOCK_SIZE;
+        final int restRowNum = tRowNum % BLOCK_SIZE;
+        final int restColNum = tColNum % BLOCK_SIZE;
+        final int restMidNum = tMidNum % BLOCK_SIZE;
+        // 获取缓存块矩阵
+        RowMatrix    lBlock = MatrixCache.getMatRow(BLOCK_SIZE, BLOCK_SIZE);
+        ColumnMatrix rBlock = MatrixCache.getMatCol(BLOCK_SIZE, BLOCK_SIZE);
+        try {
+            // 先遍历 block
+            for (int rowB = 0; rowB <= blockRowNum; ++rowB) for (int colB = 0; colB <= blockColNum; ++colB) {
+                final int rowS = rowB*BLOCK_SIZE, colS = colB*BLOCK_SIZE;
+                final int blockSizeRow = rowB==blockRowNum ? restRowNum : BLOCK_SIZE;
+                final int blockSizeCol = colB==blockColNum ? restColNum : BLOCK_SIZE;
+                // 需要遍历行列的 block 将结果累加
+                for (int midB = 0; midB <= blockMidNum; ++midB) {
+                    final int minS = midB*BLOCK_SIZE;
+                    final int blockSizeMid = midB==blockMidNum ? restMidNum : BLOCK_SIZE;
+                    // 手动拷贝数据到 block 中，这里直接随机访问（几乎不占用整体时间）
+                    for (int i = 0; i < blockSizeRow; ++i) for (int j = 0; j < blockSizeMid; ++j) {
+                        lBlock.set(i, j, aLHS.get(rowS+i, minS+j));
+                    }
+                    for (int i = 0; i < blockSizeMid; ++i) for (int j = 0; j < blockSizeCol; ++j) {
+                        rBlock.set(i, j, aRHS.get(minS+i, colS+j));
+                    }
+                    // 计算块矩阵的乘法并累加
+                    addBlockMatmul2Dest_(blockSizeMid, lBlock.internalData(), blockSizeRow, rBlock.internalData(), blockSizeCol, rDest, rowS, colS);
+                }
+            }
+        } finally {
+            MatrixCache.returnMat(rBlock);
+            MatrixCache.returnMat(lBlock);
+        }
+    }
+    private static void addBlockMatmul2Dest_(int aBlockSizeMid, double[] aLHS, int aBlockSizeRow, double[] aRHS, int aBlockSizeCol, IMatrix rDest, int aRowStart, int aColStart) {
+        // 可以直接获取到 double[] 来计算，消除频繁转换的损耗
+        // 虽然实际测试似乎没有可见的损耗，这里暂时保留这种写法
+        for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
+            double rSum = 0.0;
+            for (int i = 0; i < aBlockSizeMid; ++i) {
+                rSum += aLHS[ls+i] * aRHS[rs+i];
+            }
+            final double fSum = rSum;
+            rDest.update(aRowStart+row, aColStart+col, v -> v+fSum);
+        }
+    }
     
     /** 这里直接调用对应向量的运算，现在可以利用上所有的优化 */
     @Override public IVector sumOfCols() {

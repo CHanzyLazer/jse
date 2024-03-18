@@ -17,6 +17,9 @@ public class Conf {
     
     /** 是否开启 debug 模式，一般这会有更加完整的错误信息（当然也会让阅读更加困难） */
     public static boolean DEBUG = UT.Exec.envZ("JSE_DEBUG", false);
+    /** 运算是否开启边界检测，在 {@code jse 2.7.7} 以及更早的版本下不会直接检测 */
+    public static boolean OPERATION_CHECK = UT.Exec.envZ("JSE_OPERATION_CHECK", true);
+    
     /** 是否在 kernel 模式下开启 ThreadInterrupt，会在所有循环检测是否中断从而让中断总是有效，当然会影响性能 */
     public static boolean KERNEL_THREAD_INTERRUPT = UT.Exec.envZ("JSE_KERNEL_THREAD_INTERRUPT", true);
     /** 是否在 kernel 模式下显示 figure 窗口，关闭后则会在 jupyter notebook 上渲染 */
