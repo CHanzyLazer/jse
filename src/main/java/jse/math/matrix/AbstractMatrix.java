@@ -342,7 +342,7 @@ public abstract class AbstractMatrix implements IMatrix {
             if (tRow instanceof double[]) {
                 row.fill((double[])tRow);
             } else {
-                row.fill(Double.NaN);
+                throw new IllegalArgumentException("Type of Row Must be Collection<? extends Number>, IVector or double[]");
             }
         }
     }
@@ -361,7 +361,7 @@ public abstract class AbstractMatrix implements IMatrix {
             if (tCol instanceof double[]) {
                 col.fill((double[])tCol);
             } else {
-                col.fill(Double.NaN);
+                throw new IllegalArgumentException("Type of Column Must be Collection<? extends Number>, IVector or double[]");
             }
         }
     }
