@@ -66,15 +66,8 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     @ApiStatus.Internal @Override public void close() {shutdown();}
     
     
-    /**
-     * 根据输入数据直接创建 MFPC
-     * @param aAtomDataList 原子数据列表
-     * @param aBoxList 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
-     * @param aTimestep 每帧原子数据的时间步长，这里认为是等间距的
-     * @param aThreadNum MFPC 进行计算会使用的线程数
-     * @param aMinAtomTypeNum 期望的最少原子种类数目
-     */
-    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {
+    /** 保留兼容 */
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒等数据
@@ -126,11 +119,24 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         }
         mAllAtomDataXYZ = tXYZArray;
     }
-    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
-    public MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
+    MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {this(aAtomDataList, aTimestep, 1);}
+    MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::atoms), AbstractCollections.map(aAtomDataList, IAtomData::box), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNumber());}
     
-    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {this(aAtomDataList, aTimestep, 1);}
-    public MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(AbstractCollections.map(aAtomDataList, IAtomData::atoms), AbstractCollections.map(aAtomDataList, IAtomData::box), aTimestep, aThreadNum, UT.Code.first(aAtomDataList).atomTypeNumber());}
+    /**
+     * 根据输入数据直接创建 MFPC
+     * @param aAtomDataList 原子数据列表
+     * @param aBoxList 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
+     * @param aTimestep 每帧原子数据的时间步长，这里认为是等间距的
+     * @param aThreadNum MFPC 进行计算会使用的线程数
+     * @param aMinAtomTypeNum 期望的最少原子种类数目
+     */
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum, aMinAtomTypeNum);}
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum);}
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep);}
+    public static MultiFrameParameterCalculator of(Collection<? extends IAtomData> aAtomDataList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MultiFrameParameterCalculator(aAtomDataList, aTimestep, aThreadNum);}
+    public static MultiFrameParameterCalculator of(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {return new MultiFrameParameterCalculator(aAtomDataList, aTimestep);}
     
     
     /** 内部使用方法，处理精度问题造成的超出边界问题 */

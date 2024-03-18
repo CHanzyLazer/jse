@@ -20,28 +20,28 @@ def dataF = Structures.FCC(3.0,  8).opt().perturbXYZ(0.1)
 
 // 计算 ConnectCount, isSolidQ6, isSolidQ4
 def countQ6G, countq6G, isSolidQ6G, isSolidQ4G
-try (def mpcG = new MPC(dataG)) {
+try (def mpcG = MPC.of(dataG)) {
     countQ6G = mpcG.calConnectCountBOOP(6, 0.5)
     countq6G = mpcG.calConnectCountABOOP(6, 0.9)
     isSolidQ6G = mpcG.checkSolidQ6()
     isSolidQ4G = mpcG.checkSolidQ4()
 }
 def countQ6C, countq6C, isSolidQ6C, isSolidQ4C
-try (def mpcC = new MPC(dataC)) {
+try (def mpcC = MPC.of(dataC)) {
     countQ6C = mpcC.calConnectCountBOOP(6, 0.5)
     countq6C = mpcC.calConnectCountABOOP(6, 0.9)
     isSolidQ6C = mpcC.checkSolidQ6()
     isSolidQ4C = mpcC.checkSolidQ4()
 }
 def countQ6B, countq6B, isSolidQ6B, isSolidQ4B
-try (def mpcB = new MPC(dataB)) {
+try (def mpcB = MPC.of(dataB)) {
     countQ6B = mpcB.calConnectCountBOOP(6, 0.5)
     countq6B = mpcB.calConnectCountABOOP(6, 0.9)
     isSolidQ6B = mpcB.checkSolidQ6()
     isSolidQ4B = mpcB.checkSolidQ4()
 }
 def countQ6F, countq6F, isSolidQ6F, isSolidQ4F
-try (def mpcF = new MPC(dataF)) {
+try (def mpcF = MPC.of(dataF)) {
     countQ6F = mpcF.calConnectCountBOOP(6, 0.5)
     countq6F = mpcF.calConnectCountABOOP(6, 0.9)
     isSolidQ6F = mpcF.checkSolidQ6()

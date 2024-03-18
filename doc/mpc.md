@@ -15,12 +15,12 @@ jse 中使用 [`jse.atom.MPC`](../src/main/java/jse/atom/MPC.java) /
 
 ## 参量计算器初始化
 
-jse 中可以通过构造函数 `<init>` 直接创建一个参数计算器，
+jse 中可以通过静态方法 `of` 直接创建一个参数计算器，
 也可以通过静态方法 `withOf` 来使用一个自动关闭的参数计算器。
 
-- **`<init>`**
+- **`of`**
     
-    描述：`jse.atom.MPC` 的构造函数。
+    描述：根据输入参数构造一个 `jse.atom.MPC`。
     
     输入1：`IAtomData`，jse 使用的任意的原子数据
     

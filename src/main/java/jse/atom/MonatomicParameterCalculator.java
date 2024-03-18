@@ -83,14 +83,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /** ParforThreadPool close 时不需要 awaitTermination */
     @ApiStatus.Internal @Override public void close() {shutdown();}
     
-    
-    /**
-     * 根据输入数据直接创建 MPC
-     * @param aAtomDataXYZ 粒子数据，这里只需要知道 xyz 坐标即可
-     * @param aBox 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
-     * @param aThreadNum MPC 进行计算会使用的线程数
-     */
-    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
+    /** 保留兼容 */
+    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
@@ -107,13 +101,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox);
         mInitThreadID = Thread.currentThread().getId();
     }
-    public MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 1);}
-    
-    public MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
-    public MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomData.atoms(), aAtomData.box(), aThreadNum);}
-    
+    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 1);}
+    MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
+    MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomData.atoms(), aAtomData.box(), aThreadNum);}
     /** 主要用于内部使用 */
-    MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
+    @ApiStatus.Internal MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
         super(new ParforThreadPool(aThreadNum));
         mAtomNum = aAtomNum;
         mBox = aBox;
@@ -125,11 +117,23 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mInitThreadID = Thread.currentThread().getId();
     }
     
-    /** 自动关闭，主要用于 groovy 中使用 */
-    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, IUnaryFullOperator<T, MPC> aDoLater) {try (MPC tMPC = new MPC(aAtomDataXYZ, aBox)) {return aDoLater.apply(tMPC);}}
-    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<T, MPC> aDoLater) {try (MPC tMPC = new MPC(aAtomDataXYZ, aBox, aThreadNum)) {return aDoLater.apply(tMPC);}}
-    public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<T, MPC> aDoLater) {try (MPC tMPC = new MPC(aAtomData)) {return aDoLater.apply(tMPC);}}
-    public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<T, MPC> aDoLater) {try (MPC tMPC = new MPC(aAtomData, aThreadNum)) {return aDoLater.apply(tMPC);}}
+    
+    /**
+     * 根据输入数据直接创建 MPC
+     * @param aAtomDataXYZ 粒子数据，这里只需要知道 xyz 坐标即可
+     * @param aBox 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
+     * @param aThreadNum MPC 进行计算会使用的线程数
+     */
+    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum);}
+    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox);}
+    public static MonatomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomData, aThreadNum);}
+    public static MonatomicParameterCalculator of(IAtomData aAtomData) {return new MonatomicParameterCalculator(aAtomData);}
+    
+    /** 自动关闭接口 */
+    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData, aThreadNum)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData)) {return aDoLater.apply(tMPC);}}
     
     
     /** 内部使用方法，用来将 aAtomDataXYZ 转换成内部存储的格式，并且处理精度问题造成的超出边界问题 */

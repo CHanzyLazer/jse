@@ -20,25 +20,25 @@ def dataF = Structures.FCC(3.0,  8).opt().perturbXYZ(0.1)
 
 // 计算 Q4，Q6，W4
 def Q4G, Q6G, W4G
-try (def mpcG = new MPC(dataG)) {
+try (def mpcG = MPC.of(dataG)) {
     Q4G = mpcG.calBOOP(4)
     Q6G = mpcG.calBOOP(6)
     W4G = mpcG.calBOOP3(4)
 }
 def Q4C, Q6C, W4C
-try (def mpcC = new MPC(dataC)) {
+try (def mpcC = MPC.of(dataC)) {
     Q4C = mpcC.calBOOP(4)
     Q6C = mpcC.calBOOP(6)
     W4C = mpcC.calBOOP3(4)
 }
 def Q4B, Q6B, W4B
-try (def mpcB = new MPC(dataB)) {
+try (def mpcB = MPC.of(dataB)) {
     Q4B = mpcB.calBOOP(4)
     Q6B = mpcB.calBOOP(6)
     W4B = mpcB.calBOOP3(4)
 }
 def Q4F, Q6F, W4F
-try (def mpcF = new MPC(dataF)) {
+try (def mpcF = MPC.of(dataF)) {
     Q4F = mpcF.calBOOP(4)
     Q6F = mpcF.calBOOP(6)
     W4F = mpcF.calBOOP3(4)

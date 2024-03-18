@@ -11,7 +11,7 @@ def data = Data.read('lmp/data/data-glass')
 // 根据 data 创建参数计算器 mpc 并计算 gr 和 Sq
 def gr, Sq
 def grFT, SqFT
-try (def mpc = new MPC(data)) {
+try (def mpc = MPC.of(data)) {
     gr = mpc.calRDF()
     Sq = mpc.calSF()
     SqFT = mpc.RDF2SF(gr)
