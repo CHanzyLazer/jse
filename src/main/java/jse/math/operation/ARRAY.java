@@ -1571,6 +1571,86 @@ public class ARRAY {
         Sort.multiSort(rData, rShift, aLength+rShift, aSwapper);
     }
     
+    public static double dot(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, int aLength) {
+        switch(aLength) {
+        case 0:  {return 0.0;}
+        case 1:  {return dot1(aDataL, aShiftL, aDataR, aShiftR);}
+        case 2:  {return dot2(aDataL, aShiftL, aDataR, aShiftR);}
+        case 3:  {return dot3(aDataL, aShiftL, aDataR, aShiftR);}
+        case 4:  {return dot4(aDataL, aShiftL, aDataR, aShiftR);}
+        default: {return dotN(aDataL, aShiftL, aDataR, aShiftR, aLength);}
+        }
+    }
+    public static double dot1(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR) {
+        return aDataL[aShiftL]*aDataR[aShiftR];
+    }
+    public static double dot2(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR) {
+        return aDataL[aShiftL  ]*aDataR[aShiftR  ]
+             + aDataL[aShiftL+1]*aDataR[aShiftR+1]
+             ;
+    }
+    public static double dot3(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR) {
+        return aDataL[aShiftL  ]*aDataR[aShiftR  ]
+             + aDataL[aShiftL+1]*aDataR[aShiftR+1]
+             + aDataL[aShiftL+2]*aDataR[aShiftR+2]
+             ;
+    }
+    public static double dot4(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR) {
+        return aDataL[aShiftL  ]*aDataR[aShiftR  ]
+             + aDataL[aShiftL+1]*aDataR[aShiftR+1]
+             + aDataL[aShiftL+2]*aDataR[aShiftR+2]
+             + aDataL[aShiftL+3]*aDataR[aShiftR+3]
+             ;
+    }
+    public static double dotN(double[] aDataL, int aShiftL, double[] aDataR, int aShiftR, int aLength) {
+        // 对于求和类型运算，JIT 不会自动做 SIMD 优化，因此这里需要手动做
+        final int tRest = aLength % 4;
+        double rDot0 = 0.0;
+        // 先做 rest 的计算
+        switch(tRest) {
+        case 0: {
+            break;
+        }
+        case 1: {
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            break;
+        }
+        case 2: {
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            break;
+        }
+        case 3: {
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            rDot0 += aDataL[aShiftL]*aDataR[aShiftR]; ++aShiftL; ++aShiftR;
+            break;
+        }}
+        // 再做 simd 的计算
+        aLength -= tRest;
+        if (aLength==0) return rDot0;
+        final int tEndL = aShiftL + aLength;
+        double rDot1 = 0.0;
+        double rDot2 = 0.0;
+        double rDot3 = 0.0;
+        double rDot4 = 0.0;
+        if (aShiftL == aShiftR) {
+            for (int i = aShiftL; i < tEndL; i+=4) {
+                rDot1 += aDataL[i  ]*aDataR[i  ];
+                rDot2 += aDataL[i+1]*aDataR[i+1];
+                rDot3 += aDataL[i+2]*aDataR[i+2];
+                rDot4 += aDataL[i+3]*aDataR[i+3];
+            }
+        } else {
+            for (int i = aShiftL, j = aShiftR; i < tEndL; i+=4, j+=4) {
+                rDot1 += aDataL[i  ]*aDataR[j  ];
+                rDot2 += aDataL[i+1]*aDataR[j+1];
+                rDot3 += aDataL[i+2]*aDataR[j+2];
+                rDot4 += aDataL[i+3]*aDataR[j+3];
+            }
+        }
+        return rDot0+rDot1+rDot2+rDot3+rDot4;
+    }
     
     /** 较为复杂的运算，只有遇到时专门增加，主要避免 IOperator2 使用需要新建 ComplexDouble */
     public static void mapMultiplyThenEbePlus2This(double[][] rThis, int rShift, double[][] aDataR, int aShiftR, double aMul, int aLength) {

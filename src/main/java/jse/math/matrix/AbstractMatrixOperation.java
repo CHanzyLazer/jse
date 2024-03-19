@@ -3,6 +3,7 @@ package jse.math.matrix;
 import jse.cache.MatrixCache;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetOnlyIterator;
+import jse.math.operation.ARRAY;
 import jse.math.operation.DATA;
 import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
@@ -12,6 +13,7 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
+import static jse.code.Conf.MATMUL_BLOCK;
 import static jse.code.Conf.OPERATION_CHECK;
 
 /**
@@ -84,17 +86,18 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public double min () {return DATA.minOfThis (thisMatrix_()::iteratorCol);}
     
     
-    @Override public IMatrix matmul (IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(tThis.rowNumber(), aRHS.columnNumber()); matmul2dest (aRHS, rMatrix); return rMatrix;}
-    @Override public IMatrix lmatmul(IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(aRHS.rowNumber(), tThis.columnNumber()); lmatmul2dest(aRHS, rMatrix); return rMatrix;}
-    @Override public void matmul2dest (IMatrix aRHS, IMatrix rDest) {matmul2dest_(thisMatrix_(), aRHS, rDest);}
-    @Override public void lmatmul2dest(IMatrix aRHS, IMatrix rDest) {matmul2dest_(aRHS, thisMatrix_(), rDest);}
+    @Override public IMatrix matmul (IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(tThis.rowNumber(), aRHS.columnNumber()); addMatmul2dest_(tThis, aRHS, rMatrix); return rMatrix;}
+    @Override public IMatrix lmatmul(IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(aRHS.rowNumber(), tThis.columnNumber()); addMatmul2dest_(aRHS, tThis, rMatrix); return rMatrix;}
+    @Override public void matmul2dest (IMatrix aRHS, IMatrix rDest) {rDest.fill(0.0); addMatmul2dest_(thisMatrix_(), aRHS, rDest);}
+    @Override public void lmatmul2dest(IMatrix aRHS, IMatrix rDest) {rDest.fill(0.0); addMatmul2dest_(aRHS, thisMatrix_(), rDest);}
     
     private final static int BLOCK_SIZE = 64; // 64 x 64 = 4096，这个值应该是最快的
+    private final static int BLOCK_SIZE_MIN = 8; // 长宽以及中间层需要都超过此值才会进行 block（简单处理，没有效率最优，除了内存应当不怎么影响）
     /**
      * 计算矩阵乘法实现，这里使用分块缓存的方法来进行优化，
      * 不使用复杂度更低的神奇算法，因为实现麻烦且会降低精度
      */
-    private static void matmul2dest_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest) {
+    private static void addMatmul2dest_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest) {
         // 先判断大小是否合适
         matmulCheck(aLHS.rowNumber(), aLHS.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber());
         // 获取必要数据
@@ -102,13 +105,30 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         int tColNum = aRHS.columnNumber();
         int tMidNum = aLHS.columnNumber();
         // 不用分块的情况
-        if (tRowNum<BLOCK_SIZE+BLOCK_SIZE && tColNum<BLOCK_SIZE+BLOCK_SIZE) {
-            // 直接获取行列向量来做点积
-            for (int row = 0; row < tRowNum; ++row) {
-                final IVector lRow = aLHS.row(row);
-                for (int col = 0; col < tColNum; ++col) {
-                    rDest.set(row, col, lRow.operation().dot(aRHS.col(col)));
+        if (!MATMUL_BLOCK || tRowNum<BLOCK_SIZE_MIN || tColNum<BLOCK_SIZE_MIN || tMidNum<BLOCK_SIZE_MIN || (tRowNum<BLOCK_SIZE+BLOCK_SIZE && tColNum<BLOCK_SIZE+BLOCK_SIZE && tMidNum<BLOCK_SIZE+BLOCK_SIZE)) {
+            // 还是会先转为行列的形式，这样永远都最快
+            RowMatrix tLHS;
+            if (aLHS instanceof RowMatrix) {
+                tLHS = (RowMatrix)aLHS;
+            } else {
+                tLHS = MatrixCache.getMatRow(tRowNum, tMidNum);
+                tLHS.fill(aLHS);
+            }
+            ColumnMatrix tRHS;
+            if (aRHS instanceof ColumnMatrix) {
+                tRHS = (ColumnMatrix)aRHS;
+            } else {
+                tRHS = MatrixCache.getMatCol(tMidNum, tColNum);
+                tRHS.fill(aRHS);
+            }
+            try {
+                for (int row = 0, ls = 0; row < tRowNum; ++row, ls+=tMidNum) for (int col = 0, rs = 0; col < tColNum; ++col, rs+=tMidNum) {
+                    final double tDot = ARRAY.dotN(tLHS.internalData(), ls, tRHS.internalData(), rs, tMidNum);
+                    rDest.update(row, col, v -> v+tDot);
                 }
+            } finally {
+                if (!(aLHS instanceof RowMatrix   )) MatrixCache.returnMat(tLHS);
+                if (!(aRHS instanceof ColumnMatrix)) MatrixCache.returnMat(tRHS);
             }
             return;
         }
@@ -136,7 +156,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
                     for (int i = 0; i < blockSizeRow; ++i) for (int j = 0; j < blockSizeMid; ++j) {
                         lBlock.set(i, j, aLHS.get(rowS+i, minS+j));
                     }
-                    for (int i = 0; i < blockSizeMid; ++i) for (int j = 0; j < blockSizeCol; ++j) {
+                    for (int j = 0; j < blockSizeCol; ++j) for (int i = 0; i < blockSizeMid; ++i) {
                         rBlock.set(i, j, aRHS.get(minS+i, colS+j));
                     }
                     // 计算块矩阵的乘法并累加
@@ -149,15 +169,27 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         }
     }
     private static void addBlockMatmul2Dest_(int aBlockSizeMid, double[] aLHS, int aBlockSizeRow, double[] aRHS, int aBlockSizeCol, IMatrix rDest, int aRowStart, int aColStart) {
-        // 可以直接获取到 double[] 来计算，消除频繁转换的损耗
-        // 虽然实际测试似乎没有可见的损耗，这里暂时保留这种写法
-        for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
-            double rSum = 0.0;
-            for (int i = 0; i < aBlockSizeMid; ++i) {
-                rSum += aLHS[ls+i] * aRHS[rs+i];
+        if (aBlockSizeMid == BLOCK_SIZE) {
+            for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
+                double rSum1 = 0.0;
+                double rSum2 = 0.0;
+                double rSum3 = 0.0;
+                double rSum4 = 0.0;
+                // 定长循环更快，因此这里手动实现一下这个点乘
+                for (int i = 0; i < BLOCK_SIZE; i+=4) {
+                    rSum1 += aLHS[ls+i  ]*aRHS[rs+i  ];
+                    rSum2 += aLHS[ls+i+1]*aRHS[rs+i+1];
+                    rSum3 += aLHS[ls+i+2]*aRHS[rs+i+2];
+                    rSum4 += aLHS[ls+i+3]*aRHS[rs+i+3];
+                }
+                final double fSum = rSum1+rSum2+rSum3+rSum4;
+                rDest.update(aRowStart+row, aColStart+col, v -> v+fSum);
             }
-            final double fSum = rSum;
-            rDest.update(aRowStart+row, aColStart+col, v -> v+fSum);
+        } else {
+            for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
+                final double tDot = ARRAY.dotN(aLHS, ls, aRHS, rs, aBlockSizeMid);
+                rDest.update(aRowStart+row, aColStart+col, v -> v+tDot);
+            }
         }
     }
     
@@ -244,7 +276,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     }
     static void ebeCheck(int lRowNum, int lColNum, int rRowNum, int rColNum) {
         if (!OPERATION_CHECK) return;
-        if (lRowNum!=rRowNum || rRowNum!=rColNum) throw new IllegalArgumentException(
+        if (lRowNum!=rRowNum || lColNum!=rColNum) throw new IllegalArgumentException(
             "The dimensions of two matrices are not match: ("+lRowNum+" x "+lColNum+") vs ("+rRowNum+" x "+rColNum+")"
         );
     }

@@ -267,19 +267,8 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
         final DoubleArrayVector tThis = thisVector_();
         ebeCheck(tThis.size(), aRHS.size());
         final double[] tDataR = tThis.getIfHasSameOrderData(aRHS);
-        if (tDataR != null) {
-            final double[] tDataL = tThis.internalData();
-            final int tShiftL = tThis.internalDataShift();
-            final int tEndL = tThis.internalDataSize() + tShiftL;
-            final int tShiftR = IDataShell.internalDataShift(aRHS);
-            
-            double rDot = 0.0;
-            if (tShiftL == tShiftR) for (int i = tShiftL; i < tEndL; ++i) rDot += tDataL[i]*tDataR[i];
-            else for (int i = tShiftL, j = tShiftR; i < tEndL; ++i, ++j) rDot += tDataL[i]*tDataR[j];
-            return rDot;
-        } else {
-            return super.dot(aRHS);
-        }
+        if (tDataR != null) return ARRAY.dot(tThis.internalData(), tThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), tThis.internalDataSize());
+        else return super.dot(aRHS);
     }
     @Override public double dot() {
         final DoubleArrayVector tThis = thisVector_();
