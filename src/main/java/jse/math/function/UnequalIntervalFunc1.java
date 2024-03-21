@@ -1,10 +1,7 @@
 package jse.math.function;
 
 import jse.math.MathEX;
-import jse.math.vector.IVector;
-import jse.math.vector.IVectorGetter;
-import jse.math.vector.RefVector;
-import jse.math.vector.Vector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Arrays;
@@ -46,7 +43,7 @@ public final class UnequalIntervalFunc1 extends AbstractFunc1 implements IZeroBo
     @Override public IVector x() {
         // 这样防止外部修改
         return new RefVector() {
-            @Override public double get(int aIdx) {return mX[aIdx];}
+            @Override public double get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return mX[aIdx];}
             @Override public int size() {return Nx();}
         };
     }

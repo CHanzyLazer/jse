@@ -11,6 +11,7 @@ import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
 import jse.code.iterator.IHasDoubleIterator;
 import jse.code.iterator.IHasDoubleSetIterator;
+import jse.math.matrix.IMatrix;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -32,6 +33,9 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     
     default Iterable<Double> iterable() {return () -> iterator().toIterator();}
     List<Double> asList();
+    
+    IMatrix asMatCol();
+    IMatrix asMatRow();
     
     /** 转为兼容性更好的 double[] */
     double[] data();

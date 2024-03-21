@@ -1,12 +1,15 @@
 package jse.math.vector;
 
+import jse.cache.VectorCache;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
 import jse.math.SliceType;
-import jse.cache.VectorCache;
+import jse.math.matrix.AbstractMatrix;
+import jse.math.matrix.IMatrix;
+import jse.math.matrix.RefMatrix;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -84,6 +87,32 @@ public abstract class AbstractVector implements IVector {
             @Override public Double set(int index, Double element) {return getAndSet(index, element);}
             @Override public int size() {return AbstractVector.this.size();}
             @Override public @NotNull Iterator<Double> iterator() {return AbstractVector.this.iterator().toIterator();}
+        };
+    }
+    @Override public IMatrix asMatCol() {
+        return new RefMatrix() {
+            @Override public double get(int aRow, int aCol) {AbstractMatrix.rangeCheckRow(aRow, rowNumber()); AbstractMatrix.rangeCheckCol(aCol, 1); return AbstractVector.this.get(aRow);}
+            @Override public void set(int aRow, int aCol, double aValue) {AbstractMatrix.rangeCheckRow(aRow, rowNumber()); AbstractMatrix.rangeCheckCol(aCol, 1); AbstractVector.this.set(aRow, aValue);}
+            @Override public double getAndSet(int aRow, int aCol, double aValue) {AbstractMatrix.rangeCheckRow(aRow, rowNumber()); AbstractMatrix.rangeCheckCol(aCol, 1); return AbstractVector.this.getAndSet(aRow, aValue);}
+            @Override public int rowNumber() {return AbstractVector.this.size();}
+            @Override public int columnNumber() {return 1;}
+            @Override public IDoubleIterator iteratorCol() {return AbstractVector.this.iterator();}
+            @Override public IDoubleIterator iteratorColAt(int aCol) {AbstractMatrix.rangeCheckCol(aCol, 1); return AbstractVector.this.iterator();}
+            @Override public IDoubleSetIterator setIteratorCol() {return AbstractVector.this.setIterator();}
+            @Override public IDoubleSetIterator setIteratorColAt(int aCol) {AbstractMatrix.rangeCheckCol(aCol, 1); return AbstractVector.this.setIterator();}
+        };
+    }
+    @Override public IMatrix asMatRow() {
+        return new RefMatrix() {
+            @Override public double get(int aRow, int aCol) {AbstractMatrix.rangeCheckRow(aRow, 1); AbstractMatrix.rangeCheckCol(aCol, columnNumber()); return AbstractVector.this.get(aCol);}
+            @Override public void set(int aRow, int aCol, double aValue) {AbstractMatrix.rangeCheckRow(aRow, 1); AbstractMatrix.rangeCheckCol(aCol, columnNumber()); AbstractVector.this.set(aCol, aValue);}
+            @Override public double getAndSet(int aRow, int aCol, double aValue) {AbstractMatrix.rangeCheckRow(aRow, 1); AbstractMatrix.rangeCheckCol(aCol, columnNumber()); return AbstractVector.this.getAndSet(aCol, aValue);}
+            @Override public int rowNumber() {return 1;}
+            @Override public int columnNumber() {return AbstractVector.this.size();}
+            @Override public IDoubleIterator iteratorRow() {return AbstractVector.this.iterator();}
+            @Override public IDoubleIterator iteratorRowAt(int aRow) {AbstractMatrix.rangeCheckRow(aRow, 1); return AbstractVector.this.iterator();}
+            @Override public IDoubleSetIterator setIteratorRow() {return AbstractVector.this.setIterator();}
+            @Override public IDoubleSetIterator setIteratorRowAt(int aRow) {AbstractMatrix.rangeCheckRow(aRow, 1); return AbstractVector.this.setIterator();}
         };
     }
     
@@ -186,7 +215,7 @@ public abstract class AbstractVector implements IVector {
         set(aIdx, aOpt.applyAsDouble(tValue));
         return tValue;
     }
-    static void rangeCheck(int aIdx, int aSize) {
+    protected static void rangeCheck(int aIdx, int aSize) {
         if (aIdx<0 || aIdx>=aSize) throw new IndexOutOfBoundsException("Index = " + aIdx + ", Size = " + aSize);
     }
     
@@ -211,9 +240,9 @@ public abstract class AbstractVector implements IVector {
         return new AbstractVectorSlicer() {
             @Override protected IVector getL(final ISlice aIndices) {
                 return new RefVector() {
-                    @Override public double get(int aIdx) {return AbstractVector.this.get(aIndices.get(aIdx));}
-                    @Override public void set(int aIdx, double aValue) {AbstractVector.this.set(aIndices.get(aIdx), aValue);}
-                    @Override public double getAndSet(int aIdx, double aValue) {return AbstractVector.this.getAndSet(aIndices.get(aIdx), aValue);}
+                    @Override public double get(int aIdx) {rangeCheck(aIdx, size()); return AbstractVector.this.get(aIndices.get(aIdx));}
+                    @Override public void set(int aIdx, double aValue) {rangeCheck(aIdx, size()); AbstractVector.this.set(aIndices.get(aIdx), aValue);}
+                    @Override public double getAndSet(int aIdx, double aValue) {rangeCheck(aIdx, size()); return AbstractVector.this.getAndSet(aIndices.get(aIdx), aValue);}
                     @Override public int size() {return aIndices.size();}
                 };
             }

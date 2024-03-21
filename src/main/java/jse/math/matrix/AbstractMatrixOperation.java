@@ -276,6 +276,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
             // 注意 mid == row，可以直接展开
             switch(tRowNum) {
             case 1: {
+                // 可以直接这样处理，因为两个 double 相乘满足交换律
                 rThis.multiply2this(rData[0]);
                 break;
             }

@@ -2,6 +2,7 @@ package jse.math.function;
 
 import jse.math.IDataShell;
 import jse.math.MathEX;
+import jse.math.vector.AbstractVector;
 import jse.math.vector.IVector;
 import jse.math.vector.RefVector;
 import jse.math.vector.Vector;
@@ -58,7 +59,7 @@ public abstract class VectorFunc1 extends AbstractFunc1 implements IEqualInterva
     /** IFunc1 stuffs */
     @Override public final IVector x() {
         return new RefVector() {
-            @Override public double get(int aIdx) {return getX(aIdx);}
+            @Override public double get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return getX(aIdx);}
             @Override public int size() {return Nx();}
         };
     }

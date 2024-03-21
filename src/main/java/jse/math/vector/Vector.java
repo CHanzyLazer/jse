@@ -4,12 +4,14 @@ import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
 import jse.math.MathEX;
+import jse.math.matrix.ColumnMatrix;
+import jse.math.matrix.RowMatrix;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.function.*;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * @author liqa
@@ -74,6 +76,14 @@ public class Vector extends DoubleArrayVector {
     @Override public final Vector toBuf(boolean aAbort) {return this;}
     @Override public final void releaseBuf(@NotNull IVector aBuf, boolean aAbort) {if (aBuf != this) super.releaseBuf(aBuf, aAbort);}
     
+    
+    /** Optimize stuffs，asMat 直接返回  {@link ColumnMatrix} */
+    @Override public ColumnMatrix asMatCol() {
+        return new ColumnMatrix(mSize, 1, mData);
+    }
+    @Override public RowMatrix asMatRow() {
+        return new RowMatrix(1, mSize, mData);
+    }
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftVector} */
     @Override public final DoubleArrayVector subVec(final int aFromIdx, final int aToIdx) {
