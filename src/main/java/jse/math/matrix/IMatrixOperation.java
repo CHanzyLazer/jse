@@ -74,7 +74,7 @@ public interface IMatrixOperation {
     IMatrix  matmul(IMatrix aRHS);
     IMatrix lmatmul(IMatrix aRHS);
     void  matmul2this(IMatrix aRHS);
-//    void lmatmul2this(IMatrix aRHS);
+    void lmatmul2this(IMatrix aRHS);
     void  matmul2dest(IMatrix aRHS, IMatrix rDest);
     void lmatmul2dest(IMatrix aRHS, IMatrix rDest);
     // 并行的接口

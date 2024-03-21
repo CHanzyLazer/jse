@@ -93,7 +93,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public IMatrix  matmul(IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(tThis.rowNumber(), aRHS.columnNumber()); matmul2Dest_(tThis, aRHS, rMatrix); return rMatrix;}
     @Override public IMatrix lmatmul(IMatrix aRHS) {IMatrix tThis = thisMatrix_(); IMatrix rMatrix = newMatrix_(aRHS.rowNumber(), tThis.columnNumber()); matmul2Dest_(aRHS, tThis, rMatrix); return rMatrix;}
     @Override public void  matmul2this(IMatrix aRHS) {matmul2This_(thisMatrix_(), aRHS);}
-//    @Override public void lmatmul2this(IMatrix aRHS) {lmatmul2This_(thisMatrix_(), aRHS);}
+    @Override public void lmatmul2this(IMatrix aRHS) {lmatmul2This_(thisMatrix_(), aRHS);}
     @Override public void  matmul2dest(IMatrix aRHS, IMatrix rDest) {matmul2Dest_(thisMatrix_(), aRHS, rDest);}
     @Override public void lmatmul2dest(IMatrix aRHS, IMatrix rDest) {matmul2Dest_(aRHS, thisMatrix_(), rDest);}
     
@@ -120,7 +120,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     private static void matmul2This_(IMatrix rThis, IMatrix aRHS) {
         // 由于逻辑存在些许不同，这里简单起见重新实现，不去考虑重复代码的问题
         // 先判断大小是否合适
-        matmulCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rThis.rowNumber(), rThis.columnNumber());
+        matmul2thisCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
         // 获取必要数据（mid == col）
         final int tRowNum = rThis.rowNumber();
         final int tColNum = rThis.columnNumber();
@@ -260,9 +260,152 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
             aRHS.releaseBuf(tRHS, true);
         }
     }
+    private static void lmatmul2This_(IMatrix rThis, IMatrix aRHS) {
+        // 由于逻辑存在些许不同，这里简单起见重新实现，不去考虑重复代码的问题
+        // 先判断大小是否合适
+        lmatmul2thisCheck(rThis.rowNumber(), rThis.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber());
+        // 获取必要数据（mid == row）
+        final int tRowNum = rThis.rowNumber();
+        final int tColNum = rThis.columnNumber();
+        // 特殊情况，这里是不去处理
+        if (tRowNum == 0) return;
+        // 这里简单处理，强制行优先遍历，让逻辑一致
+        RowMatrix tRHS = aRHS.toBufRow();
+        double[] rData = tRHS.internalData();
+        try {
+            // 注意 mid == row，可以直接展开
+            switch(tRowNum) {
+            case 1: {
+                rThis.multiply2this(rData[0]);
+                break;
+            }
+            case 2: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    rThis.set(0, col, rData[0]*tCol0 + rData[1]*tCol1);
+                    rThis.set(1, col, rData[2]*tCol0 + rData[3]*tCol1);
+                }
+                break;
+            }
+            case 3: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    rThis.set(0, col, rData[0]*tCol0 + rData[1]*tCol1 + rData[2]*tCol2);
+                    rThis.set(1, col, rData[3]*tCol0 + rData[4]*tCol1 + rData[5]*tCol2);
+                    rThis.set(2, col, rData[6]*tCol0 + rData[7]*tCol1 + rData[8]*tCol2);
+                }
+                break;
+            }
+            case 4: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    double tCol3 = rThis.get(3, col);
+                    rThis.set(0, col, rData[ 0]*tCol0 + rData[ 1]*tCol1 + rData[ 2]*tCol2 + rData[ 3]*tCol3);
+                    rThis.set(1, col, rData[ 4]*tCol0 + rData[ 5]*tCol1 + rData[ 6]*tCol2 + rData[ 7]*tCol3);
+                    rThis.set(2, col, rData[ 8]*tCol0 + rData[ 9]*tCol1 + rData[10]*tCol2 + rData[11]*tCol3);
+                    rThis.set(3, col, rData[12]*tCol0 + rData[13]*tCol1 + rData[14]*tCol2 + rData[16]*tCol3);
+                }
+                break;
+            }
+            case 5: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    double tCol3 = rThis.get(3, col);
+                    double tCol4 = rThis.get(4, col);
+                    rThis.set(0, col, rData[ 0]*tCol0 + rData[ 1]*tCol1 + rData[ 2]*tCol2 + rData[ 3]*tCol3 + rData[ 4]*tCol4);
+                    rThis.set(1, col, rData[ 5]*tCol0 + rData[ 6]*tCol1 + rData[ 7]*tCol2 + rData[ 8]*tCol3 + rData[ 9]*tCol4);
+                    rThis.set(2, col, rData[10]*tCol0 + rData[11]*tCol1 + rData[12]*tCol2 + rData[13]*tCol3 + rData[14]*tCol4);
+                    rThis.set(3, col, rData[15]*tCol0 + rData[16]*tCol1 + rData[17]*tCol2 + rData[18]*tCol3 + rData[19]*tCol4);
+                    rThis.set(4, col, rData[20]*tCol0 + rData[21]*tCol1 + rData[22]*tCol2 + rData[23]*tCol3 + rData[24]*tCol4);
+                }
+                break;
+            }
+            case 6: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    double tCol3 = rThis.get(3, col);
+                    double tCol4 = rThis.get(4, col);
+                    double tCol5 = rThis.get(5, col);
+                    rThis.set(0, col, rData[ 0]*tCol0 + rData[ 1]*tCol1 + rData[ 2]*tCol2 + rData[ 3]*tCol3 + rData[ 4]*tCol4 + rData[ 5]*tCol5);
+                    rThis.set(1, col, rData[ 6]*tCol0 + rData[ 7]*tCol1 + rData[ 8]*tCol2 + rData[ 9]*tCol3 + rData[10]*tCol4 + rData[11]*tCol5);
+                    rThis.set(2, col, rData[12]*tCol0 + rData[13]*tCol1 + rData[14]*tCol2 + rData[15]*tCol3 + rData[16]*tCol4 + rData[17]*tCol5);
+                    rThis.set(3, col, rData[18]*tCol0 + rData[19]*tCol1 + rData[20]*tCol2 + rData[21]*tCol3 + rData[22]*tCol4 + rData[23]*tCol5);
+                    rThis.set(4, col, rData[24]*tCol0 + rData[25]*tCol1 + rData[26]*tCol2 + rData[27]*tCol3 + rData[28]*tCol4 + rData[29]*tCol5);
+                    rThis.set(5, col, rData[30]*tCol0 + rData[31]*tCol1 + rData[32]*tCol2 + rData[33]*tCol3 + rData[34]*tCol4 + rData[35]*tCol5);
+                }
+                break;
+            }
+            case 7: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    double tCol3 = rThis.get(3, col);
+                    double tCol4 = rThis.get(4, col);
+                    double tCol5 = rThis.get(5, col);
+                    double tCol6 = rThis.get(6, col);
+                    rThis.set(0, col, rData[ 0]*tCol0 + rData[ 1]*tCol1 + rData[ 2]*tCol2 + rData[ 3]*tCol3 + rData[ 4]*tCol4 + rData[ 5]*tCol5 + rData[ 6]*tCol6);
+                    rThis.set(1, col, rData[ 7]*tCol0 + rData[ 8]*tCol1 + rData[ 9]*tCol2 + rData[10]*tCol3 + rData[11]*tCol4 + rData[12]*tCol5 + rData[13]*tCol6);
+                    rThis.set(2, col, rData[14]*tCol0 + rData[15]*tCol1 + rData[16]*tCol2 + rData[17]*tCol3 + rData[18]*tCol4 + rData[19]*tCol5 + rData[20]*tCol6);
+                    rThis.set(3, col, rData[21]*tCol0 + rData[22]*tCol1 + rData[23]*tCol2 + rData[24]*tCol3 + rData[25]*tCol4 + rData[26]*tCol5 + rData[27]*tCol6);
+                    rThis.set(4, col, rData[28]*tCol0 + rData[29]*tCol1 + rData[30]*tCol2 + rData[31]*tCol3 + rData[32]*tCol4 + rData[33]*tCol5 + rData[34]*tCol6);
+                    rThis.set(5, col, rData[35]*tCol0 + rData[36]*tCol1 + rData[37]*tCol2 + rData[38]*tCol3 + rData[39]*tCol4 + rData[40]*tCol5 + rData[41]*tCol6);
+                    rThis.set(6, col, rData[42]*tCol0 + rData[43]*tCol1 + rData[44]*tCol2 + rData[45]*tCol3 + rData[46]*tCol4 + rData[47]*tCol5 + rData[48]*tCol6);
+                }
+                break;
+            }
+            case 8: {
+                for (int col = 0; col < tColNum; ++col) {
+                    double tCol0 = rThis.get(0, col);
+                    double tCol1 = rThis.get(1, col);
+                    double tCol2 = rThis.get(2, col);
+                    double tCol3 = rThis.get(3, col);
+                    double tCol4 = rThis.get(4, col);
+                    double tCol5 = rThis.get(5, col);
+                    double tCol6 = rThis.get(6, col);
+                    double tCol7 = rThis.get(7, col);
+                    rThis.set(0, col, rData[ 0]*tCol0 + rData[ 1]*tCol1 + rData[ 2]*tCol2 + rData[ 3]*tCol3 + rData[ 4]*tCol4 + rData[ 5]*tCol5 + rData[ 6]*tCol6 + rData[ 7]*tCol7);
+                    rThis.set(1, col, rData[ 8]*tCol0 + rData[ 9]*tCol1 + rData[10]*tCol2 + rData[11]*tCol3 + rData[12]*tCol4 + rData[13]*tCol5 + rData[14]*tCol6 + rData[15]*tCol7);
+                    rThis.set(2, col, rData[16]*tCol0 + rData[17]*tCol1 + rData[18]*tCol2 + rData[19]*tCol3 + rData[20]*tCol4 + rData[21]*tCol5 + rData[22]*tCol6 + rData[23]*tCol7);
+                    rThis.set(3, col, rData[24]*tCol0 + rData[25]*tCol1 + rData[26]*tCol2 + rData[27]*tCol3 + rData[28]*tCol4 + rData[29]*tCol5 + rData[30]*tCol6 + rData[31]*tCol7);
+                    rThis.set(4, col, rData[32]*tCol0 + rData[33]*tCol1 + rData[34]*tCol2 + rData[35]*tCol3 + rData[36]*tCol4 + rData[37]*tCol5 + rData[38]*tCol6 + rData[39]*tCol7);
+                    rThis.set(5, col, rData[40]*tCol0 + rData[41]*tCol1 + rData[42]*tCol2 + rData[43]*tCol3 + rData[44]*tCol4 + rData[45]*tCol5 + rData[46]*tCol6 + rData[47]*tCol7);
+                    rThis.set(6, col, rData[48]*tCol0 + rData[49]*tCol1 + rData[50]*tCol2 + rData[51]*tCol3 + rData[52]*tCol4 + rData[53]*tCol5 + rData[54]*tCol6 + rData[55]*tCol7);
+                    rThis.set(7, col, rData[56]*tCol0 + rData[57]*tCol1 + rData[58]*tCol2 + rData[59]*tCol3 + rData[60]*tCol4 + rData[61]*tCol5 + rData[62]*tCol6 + rData[63]*tCol7);
+                }
+                break;
+            }
+            default: {
+                Vector tCol = VectorCache.getVec(tRowNum);
+                double[] colData = tCol.internalData();
+                try {
+                    for (int col = 0; col < tColNum; ++col) {
+                        tCol.fill(rThis.col(col));
+                        for (int row = 0, rs = 0; row < tRowNum; ++row, rs+=tRowNum) {
+                            rThis.set(row, col, ARRAY.dot(rData, rs, colData, 0, tRowNum));
+                        }
+                    }
+                } finally {
+                    VectorCache.returnVec(tCol);
+                }
+                break;
+            }}
+        } finally {
+            aRHS.releaseBuf(tRHS, true);
+        }
+    }
     private static void matmul2Dest_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest) {
         // 先判断大小是否合适
-        matmulCheck(aLHS.rowNumber(), aLHS.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber());
+        matmul2destCheck(aLHS.rowNumber(), aLHS.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber());
         // 获取必要数据
         final int tRowNum = aLHS.rowNumber();
         final int tColNum = aRHS.columnNumber();
@@ -529,7 +672,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     private static void matmul2Dest_par_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest, ParforThreadPool aPool) {matmul2Dest_par_(false, aLHS, aRHS, rDest, aPool);}
     private static void matmul2Dest_par_(boolean aDestIsZeros, IMatrix aLHS, IMatrix aRHS, IMatrix rDest, ParforThreadPool aPool) {
         // 先判断大小是否合适
-        matmulCheck(aLHS.rowNumber(), aLHS.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber());
+        matmul2destCheck(aLHS.rowNumber(), aLHS.columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber());
         // 获取必要数据
         int tRowNum = aLHS.rowNumber();
         int tColNum = aRHS.columnNumber();
@@ -710,12 +853,23 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
             "Please ensure that the ncols in the first matrix ("+lColNum+") matches the nrows in the second matrix ("+rRowNum+")"
         );
     }
-    static void matmulCheck(int lRowNum, int lColNum, int rRowNum, int rColNum, int dRowNum, int dColNum) {
+    static void matmul2thisCheck(int lRowNum, int lColNum, int rRowNum, int rColNum) {
         if (!OPERATION_CHECK) return;
-        if (lColNum != rRowNum) throw new IllegalArgumentException(
-            "The dimension used for matrix multiplication is incorrect: ("+lRowNum+" x "+lColNum+") vs ("+rRowNum+" x "+rColNum+").\n" +
-            "Please ensure that the ncols in the first matrix ("+lColNum+") matches the nrows in the second matrix ("+rRowNum+")"
+        matmulCheck(lRowNum, lColNum, rRowNum, rColNum);
+        if (rRowNum != rColNum) throw new IllegalArgumentException(
+            "Input matrix for `matmul2this` MUST be square: ("+rRowNum+" x "+rColNum+")"
         );
+    }
+    static void lmatmul2thisCheck(int lRowNum, int lColNum, int rRowNum, int rColNum) {
+        if (!OPERATION_CHECK) return;
+        matmulCheck(rRowNum, rColNum, lRowNum, lColNum);
+        if (rRowNum != rColNum) throw new IllegalArgumentException(
+            "Input matrix for `lmatmul2this` MUST be square: ("+rRowNum+" x "+rColNum+")"
+        );
+    }
+    static void matmul2destCheck(int lRowNum, int lColNum, int rRowNum, int rColNum, int dRowNum, int dColNum) {
+        if (!OPERATION_CHECK) return;
+        matmulCheck(lRowNum, lColNum, rRowNum, rColNum);
         if (lRowNum!=dRowNum || rColNum!=dColNum) throw new IllegalArgumentException(
             "The dimensions of input and output matrix are not match: ("+lRowNum+" x "+rColNum+") vs ("+dRowNum+" x "+dColNum+")"
         );
