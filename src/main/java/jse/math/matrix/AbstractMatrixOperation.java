@@ -734,7 +734,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
                 double rSum = 0.0;
                 // 定长循环更快，因此这里手动实现一下这个点乘
                 for (int i = 0; i < BLOCK_SIZE; i+=8) {
-                    // 这样分两批计算更快，可以在支持 avx512 的机器上再测试
+                    // 这样分两批计算更快，即使在支持 avx512 的机器上也是如此（支持的是否这样做影响都不大）
                     rSum += (
                           aLHS[ls+i  ]*aRHS[rs+i  ]
                         + aLHS[ls+i+1]*aRHS[rs+i+1]

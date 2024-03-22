@@ -1877,7 +1877,7 @@ public class ARRAY {
         final int tEndL = aShiftL + aLength;
         if (aShiftL == aShiftR) {
             for (int i = aShiftL; i < tEndL; i+=8) {
-                // 这样分两批计算更快，可以在支持 avx512 的机器上再测试
+                // 这样分两批计算更快，即使在支持 avx512 的机器上也是如此（支持的是否这样做影响都不大）
                 rDot += (
                       aDataL[i  ]*aDataR[i  ]
                     + aDataL[i+1]*aDataR[i+1]
@@ -1894,7 +1894,7 @@ public class ARRAY {
             }
         } else {
             for (int i = aShiftL, j = aShiftR; i < tEndL; i+=8, j+=8) {
-                // 这样分两批计算更快，可以在支持 avx512 的机器上再测试
+                // 这样分两批计算更快，即使在支持 avx512 的机器上也是如此（支持的是否这样做影响都不大）
                 rDot += (
                       aDataL[i  ]*aDataR[j  ]
                     + aDataL[i+1]*aDataR[j+1]
@@ -2072,7 +2072,7 @@ public class ARRAY {
             double tData5 = aThis[i+5];
             double tData6 = aThis[i+6];
             double tData7 = aThis[i+7];
-            // 这样分两批计算更快，可以在支持 avx512 的机器上再测试
+            // 这样分两批计算更快，即使在支持 avx512 的机器上也是如此（支持的是否这样做影响都不大）
             rDot += (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3);
             rDot += (tData4*tData4 + tData5*tData5 + tData6*tData6 + tData7*tData7);
         }
