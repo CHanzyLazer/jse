@@ -111,7 +111,6 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void lmatmul2dest_par(IMatrix aRHS, IMatrix rDest, ParforThreadPool aPool) {matmul2Dest_par_(aRHS, thisMatrix_(), rDest, aPool);}
     
     
-    private final static int BLOCK_SIZE = 128; // 现在是并行分块的大小，大一些可以排除并行的损耗
     /**
      * 计算矩阵乘法实现；
      * 现在对于串行版本不进行分块，因为大部分情况效率更低；
@@ -670,6 +669,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
             }
         }
     }
+    private final static int BLOCK_SIZE = 64; // 现在优化了并行损耗，可以设置更小的值了
     private static void matmul2Dest_par_(IMatrix aLHS, IMatrix aRHS, IMatrix rDest, ParforThreadPool aPool) {matmul2Dest_par_(false, aLHS, aRHS, rDest, aPool);}
     private static void matmul2Dest_par_(boolean aDestIsZeros, IMatrix aLHS, IMatrix aRHS, IMatrix rDest, ParforThreadPool aPool) {
         // 先判断大小是否合适
@@ -695,12 +695,14 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         // 获取缓存块矩阵
         final List<RowMatrix>    lBlockPar = MatrixCache.getMatRow(BLOCK_SIZE, BLOCK_SIZE, aPool.threadNumber());
         final List<ColumnMatrix> rBlockPar = MatrixCache.getMatCol(BLOCK_SIZE, BLOCK_SIZE, aPool.threadNumber());
+        final List<RowMatrix>    dBlockPar = MatrixCache.getMatRow(BLOCK_SIZE, BLOCK_SIZE, aPool.threadNumber());
         try {
             // 先遍历 block
             aPool.parfor((blockRowNum+1) * (blockColNum+1), (k, threadID) -> {
                 // 获取此线程的 block
                 RowMatrix    lBlock = lBlockPar.get(threadID);
                 ColumnMatrix rBlock = rBlockPar.get(threadID);
+                RowMatrix    dBlock = dBlockPar.get(threadID);
                 // 获取 rowB 和 colB
                 int rowB = k / (blockColNum+1);
                 int colB = k % (blockColNum+1);
@@ -709,6 +711,7 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
                 final int blockSizeRow = rowB==blockRowNum ? restRowNum : BLOCK_SIZE;
                 final int blockSizeCol = colB==blockColNum ? restColNum : BLOCK_SIZE;
                 // 需要遍历行列的 block 将结果累加
+                dBlock.fill(0.0);
                 for (int midB = 0; midB <= blockMidNum; ++midB) {
                     final int minS = midB*BLOCK_SIZE;
                     final int blockSizeMid = midB==blockMidNum ? restMidNum : BLOCK_SIZE;
@@ -720,15 +723,23 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
                         rBlock.set(i, j, aRHS.get(minS+i, colS+j));
                     }
                     // 计算块矩阵的乘法并累加
-                    addBlockMatmul2Dest_(blockSizeMid, lBlock.internalData(), blockSizeRow, rBlock.internalData(), blockSizeCol, rDest, rowS, colS);
+                    addBlockMatmul2Dest_(blockSizeMid, lBlock, blockSizeRow, rBlock, blockSizeCol, dBlock);
+                }
+                // 统一将结果设置回到目标矩阵中
+                for (int i = 0; i < blockSizeRow; ++i) for (int j = 0; j < blockSizeCol; ++j) {
+                    rDest.set(rowS+i, colS+j, dBlock.get(i, j));
                 }
             });
         } finally {
+            MatrixCache.returnMat(dBlockPar);
             MatrixCache.returnMat(rBlockPar);
             MatrixCache.returnMat(lBlockPar);
         }
     }
-    private static void addBlockMatmul2Dest_(int aBlockSizeMid, double[] aLHS, int aBlockSizeRow, double[] aRHS, int aBlockSizeCol, IMatrix rDest, int aRowStart, int aColStart) {
+    private static void addBlockMatmul2Dest_(int aBlockSizeMid, RowMatrix aLHS, int aBlockSizeRow, ColumnMatrix aRHS, int aBlockSizeCol, RowMatrix rDest) {
+        double[] lData = aLHS.internalData();
+        double[] rData = aRHS.internalData();
+        double[] dData = rDest.internalData();
         if (aBlockSizeMid == BLOCK_SIZE) {
             for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
                 double rSum = 0.0;
@@ -736,26 +747,24 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
                 for (int i = 0; i < BLOCK_SIZE; i+=8) {
                     // 这样分两批计算更快，即使在支持 avx512 的机器上也是如此（支持的是否这样做影响都不大）
                     rSum += (
-                          aLHS[ls+i  ]*aRHS[rs+i  ]
-                        + aLHS[ls+i+1]*aRHS[rs+i+1]
-                        + aLHS[ls+i+2]*aRHS[rs+i+2]
-                        + aLHS[ls+i+3]*aRHS[rs+i+3]
+                          lData[ls+i  ]*rData[rs+i  ]
+                        + lData[ls+i+1]*rData[rs+i+1]
+                        + lData[ls+i+2]*rData[rs+i+2]
+                        + lData[ls+i+3]*rData[rs+i+3]
                     );
                     // 不使用两个 sum 尽量保证逻辑一致性
                     rSum += (
-                          aLHS[ls+i+4]*aRHS[rs+i+4]
-                        + aLHS[ls+i+5]*aRHS[rs+i+5]
-                        + aLHS[ls+i+6]*aRHS[rs+i+6]
-                        + aLHS[ls+i+7]*aRHS[rs+i+7]
+                          lData[ls+i+4]*rData[rs+i+4]
+                        + lData[ls+i+5]*rData[rs+i+5]
+                        + lData[ls+i+6]*rData[rs+i+6]
+                        + lData[ls+i+7]*rData[rs+i+7]
                     );
                 }
-                final double fSum = rSum;
-                rDest.update(aRowStart+row, aColStart+col, v -> v+fSum);
+                dData[ls+col] += rSum;
             }
         } else {
             for (int row = 0, ls = 0; row < aBlockSizeRow; ++row, ls+=BLOCK_SIZE) for (int col = 0, rs = 0; col < aBlockSizeCol; ++col, rs+=BLOCK_SIZE) {
-                final double tDot = ARRAY.dot(aLHS, ls, aRHS, rs, aBlockSizeMid);
-                rDest.update(aRowStart+row, aColStart+col, v -> v+tDot);
+                dData[ls+col] += ARRAY.dot(lData, ls, rData, rs, aBlockSizeMid);
             }
         }
     }
