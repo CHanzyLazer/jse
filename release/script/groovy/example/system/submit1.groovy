@@ -1,6 +1,6 @@
 package example.system
 
-import static jse.code.UT.Exec.*
+import static jse.code.OS.*
 
 submitSystem('echo 111111') // 异步执行，会在 222222 后输出
 println('222222')

@@ -19,7 +19,7 @@ jse 通过提交系统指令的方式来提交任务，类似
 
 ## 基本功能
 
-一般使用需要导入 [`jse.code.UT.Exec`](../src/main/java/jse/code/UT.java)
+一般使用需要导入 [`jse.code.OS`](../src/main/java/jse/code/OS.java)
 中的静态方法，然后通过 `system()` 方法来执行系统指令。
 
 在 linux 系统下会将指令解释为 [bash 指令](https://wiki.archlinux.org/title/Bash)，
@@ -30,7 +30,7 @@ jse 通过提交系统指令的方式来提交任务，类似
   [⤤](../release/script/groovy/example/system/basic.groovy)）：
     
     ```groovy
-    import static jse.code.UT.Exec.*
+    import static jse.code.OS.*
     
     def exitCode = system('echo 123456')
     println("exitCode: $exitCode")
@@ -43,7 +43,7 @@ jse 通过提交系统指令的方式来提交任务，类似
     exitCode: 0
     ```
 
-> `jse.code.UT.Exec` 中的静态方法在 shell 模式下是默认导入的，
+> `jse.code.OS` 中的静态方法在 shell 模式下是默认导入的，
 > 因此在 shell 模式下可以直接执行 `system()` 方法而不需要导入。
 > 
 
@@ -80,14 +80,14 @@ lines = system_str('echo 123456')
 
 ### 关闭输出
 
-有时不希望保留指令的输出，首先需要通过 `exec()` 
+有时不希望保留指令的输出，首先需要通过 `EXEC` 
 获取到内部的指令执行器，然后调用 `setNoSTDOutput()` 和
 `setNoERROutput()` 来分别关闭标准输出和错误输出：
 
 ```groovy
-exec().setNoSTDOutput() // 关闭标准输出
-exec().setNoERROutput() // 关闭错误输出
-exec().setNoSTDOutput(false).setNoERROutput(false) // 重新打开标准输出和错误输出
+EXEC.setNoSTDOutput() // 关闭标准输出
+EXEC.setNoERROutput() // 关闭错误输出
+EXEC.setNoSTDOutput(false).setNoERROutput(false) // 重新打开标准输出和错误输出
 ```
 
 --------------------------------
@@ -105,7 +105,7 @@ jse 支持将任务提交到后台运行，而后继续进行后续运算（异�
   [⤤](../release/script/groovy/example/system/submit1.groovy)）：
     
     ```groovy
-    import static jse.code.UT.Exec.*
+    import static jse.code.OS.*
     
     submitSystem('echo 111111') // 异步执行，会在 222222 后输出
     println('222222')

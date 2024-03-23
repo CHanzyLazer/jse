@@ -1,6 +1,6 @@
 package example.system
 
-import static jse.code.UT.Exec.*
+import static jse.code.OS.*
 
 
 // OUTPUT TO FILE
@@ -28,18 +28,18 @@ println('normal:')
 system('echo 111111')
 
 println('no std:')
-exec().setNoSTDOutput()
+EXEC.setNoSTDOutput()
 system('echo 222222')
 system('echoecho 333333') // error
 
 
 println('no err:')
-exec().setNoSTDOutput(false).setNoERROutput()
+EXEC.setNoSTDOutput(false).setNoERROutput()
 system('echo 444444')
 system('echoecho 555555') // error
 
 // set back
-exec().setNoSTDOutput(false).setNoERROutput(false)
+EXEC.setNoSTDOutput(false).setNoERROutput(false)
 
 //OUTPUT:
 // normal:

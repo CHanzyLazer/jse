@@ -1,6 +1,6 @@
 package example.system
 
-import static jse.code.UT.Exec.*
+import static jse.code.OS.*
 
 // 接收到 Future<Integer> 异步任务
 def task1 = submitSystem('echo 111111')
