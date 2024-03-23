@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-import static jse.code.CS.RNGSUS;
+import static jse.code.CS.RANDOM;
 
 /**
  * @author liqa
@@ -23,7 +23,7 @@ public class RandomStartList<T> implements Iterable<T> {
     
     public RandomStartList(List<T> aList) {
         if (aList.isEmpty()) throw new IllegalArgumentException("input List cannot be empty");
-        mList = aList; mStart = RNGSUS.nextInt(mList.size());
+        mList = aList; mStart = RANDOM.nextInt(mList.size());
     }
     public RandomStartList(List<T> aList, long aStart) {
         if (aList.isEmpty()) throw new IllegalArgumentException("input List cannot be empty");

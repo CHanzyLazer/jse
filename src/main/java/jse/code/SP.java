@@ -53,7 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.CS.*;
 import static jse.code.Conf.*;
@@ -777,7 +777,7 @@ public class SP {
             rCommand.add("'"+aRequirement+"'");
             
             // 直接通过系统指令执行 pip 来下载
-            EXE.system(String.join(" ", rCommand));
+            EXEC.system(String.join(" ", rCommand));
         }
         public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion) {downloadPackage(aRequirement, false, aPlatform, aPythonVersion);}
         public static void downloadPackage(String aRequirement, String aPlatform) {downloadPackage(aRequirement, aPlatform, null);}
@@ -804,7 +804,7 @@ public class SP {
             rCommand.add("'"+aRequirement+"'");
             
             // 直接通过系统指令执行 pip 来下载
-            EXE.system(String.join(" ", rCommand));
+            EXEC.system(String.join(" ", rCommand));
         }
         public static void installPackage(String aRequirement, boolean aIncludeDep) {installPackage(aRequirement, aIncludeDep, false);}
         public static void installPackage(String aRequirement) {installPackage(aRequirement, false);}
@@ -842,9 +842,9 @@ public class SP {
         /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
         private static @NotNull String installJep_() throws Exception {
             // 检测 cmake，这里要求一定要有 cmake 环境
-            EXE.setNoSTDOutput().setNoERROutput();
-            boolean tNoCmake = EXE.system("cmake --version") != 0;
-            EXE.setNoSTDOutput(false).setNoERROutput(false);
+            EXEC.setNoSTDOutput().setNoERROutput();
+            boolean tNoCmake = EXEC.system("cmake --version") != 0;
+            EXEC.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("JEP BUILD ERROR: No cmake environment.");
             String tWorkingDir = WORKING_DIR_OF("jep");
             // 如果已经存在则先删除
@@ -874,14 +874,14 @@ public class SP {
             String tJepBuildDir = tJepDir+"build/";
             UT.IO.makeDir(tJepBuildDir);
             // 直接通过系统指令来编译 Jep 的库，关闭输出
-            EXE.setNoSTDOutput();
+            EXEC.setNoSTDOutput();
             // 初始化 cmake
-            EXE.system(cmakeInitCmdJep_(tJepBuildDir));
+            EXEC.system(cmakeInitCmdJep_(tJepBuildDir));
             // 设置参数
-            EXE.system(cmakeSettingCmdJep_(tJepBuildDir));
+            EXEC.system(cmakeSettingCmdJep_(tJepBuildDir));
             // 最后进行构造操作
-            EXE.system(String.format("cd '%s'; cmake --build . --config Release", tJepBuildDir));
-            EXE.setNoSTDOutput(false);
+            EXEC.system(String.format("cd '%s'; cmake --build . --config Release", tJepBuildDir));
+            EXEC.setNoSTDOutput(false);
             // 简单检测一下是否编译成功
             @Nullable String tJepLibName = LIB_NAME_IN(JEP_LIB_DIR, "jep");
             if (tJepLibName == null) throw new Exception("JEP BUILD ERROR: No jep lib in "+JEP_LIB_DIR);

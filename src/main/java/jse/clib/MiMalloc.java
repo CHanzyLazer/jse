@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.Conf.*;
 
@@ -106,9 +106,9 @@ public class MiMalloc {
     }
     private static @NotNull String initMiMalloc_() throws Exception {
         // 检测 cmake，这里要求一定要有 cmake 环境
-        EXE.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXE.system("cmake --version") != 0;
-        EXE.setNoSTDOutput(false).setNoERROutput(false);
+        EXEC.setNoSTDOutput().setNoERROutput();
+        boolean tNoCmake = EXEC.system("cmake --version") != 0;
+        EXEC.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("MIMALLOC BUILD ERROR: No cmake environment.");
         String tWorkingDir = WORKING_DIR_OF("mimalloc");
         // 如果已经存在则先删除
@@ -125,14 +125,14 @@ public class MiMalloc {
         String tMiBuildDir = tMiDir+"build/";
         UT.IO.makeDir(tMiBuildDir);
         // 直接通过系统指令来编译 mimalloc 的库，关闭输出
-        EXE.setNoSTDOutput();
+        EXEC.setNoSTDOutput();
         // 初始化 cmake
-        EXE.system(cmakeInitCmd_(tMiBuildDir));
+        EXEC.system(cmakeInitCmd_(tMiBuildDir));
         // 设置参数
-        EXE.system(cmakeSettingCmd_(tMiBuildDir));
+        EXEC.system(cmakeSettingCmd_(tMiBuildDir));
         // 最后进行构造操作
-        EXE.system(String.format("cd '%s'; cmake --build . --config Release", tMiBuildDir));
-        EXE.setNoSTDOutput(false);
+        EXEC.system(String.format("cd '%s'; cmake --build . --config Release", tMiBuildDir));
+        EXEC.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "mimalloc");
         if (tLibName == null) throw new Exception("MIMALLOC BUILD ERROR: No mimalloc lib in '"+LIB_DIR+"'");

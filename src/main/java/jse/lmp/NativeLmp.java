@@ -246,9 +246,9 @@ public class NativeLmp implements IAutoShutdown {
     
     private static @NotNull String initNativeLmp_() throws Exception {
         // 检测 cmake，这里要求一定要有 cmake 环境
-        EXE.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXE.system("cmake --version") != 0;
-        EXE.setNoSTDOutput(false).setNoERROutput(false);
+        EXEC.setNoSTDOutput().setNoERROutput();
+        boolean tNoCmake = EXEC.system("cmake --version") != 0;
+        EXEC.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("NATIVE_LMP BUILD ERROR: No cmake environment.");
         String tWorkingDir = WORKING_DIR_OF("nativelmp");
         // 如果已经存在则先删除
@@ -282,16 +282,16 @@ public class NativeLmp implements IAutoShutdown {
         // 创建一下 LMP_HOME 文件夹（构建目录）
         UT.IO.makeDir(Conf.LMP_HOME);
         // 编译 lammps，直接通过系统指令来编译，关闭输出
-        EXE.setNoSTDOutput();
+        EXEC.setNoSTDOutput();
         // 初始化 cmake
-        EXE.system(cmakeInitCmdNativeLmp_());
+        EXEC.system(cmakeInitCmdNativeLmp_());
         // 设置参数
-        EXE.system(cmakeSettingCmdNativeLmp_());
+        EXEC.system(cmakeSettingCmdNativeLmp_());
         // 如果设置 CLEAN 则进行 clean 操作
-        if (Conf.CLEAN) EXE.system(String.format("cd '%s'; cmake --build . --target clean", Conf.LMP_HOME));
+        if (Conf.CLEAN) EXEC.system(String.format("cd '%s'; cmake --build . --target clean", Conf.LMP_HOME));
         // 最后进行构造操作
-        EXE.system(String.format("cd '%s'; cmake --build . --config Release", Conf.LMP_HOME));
-        EXE.setNoSTDOutput(false);
+        EXEC.system(String.format("cd '%s'; cmake --build . --config Release", Conf.LMP_HOME));
+        EXEC.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(NATIVELMP_LIB_DIR, "lammps");
         if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: Lammps build Failed, No lammps lib in '"+NATIVELMP_LIB_DIR+"'");
@@ -303,9 +303,9 @@ public class NativeLmp implements IAutoShutdown {
     }
     private static @NotNull String initLmpJni_() throws Exception {
         // 检测 cmake，这里要求一定要有 cmake 环境
-        EXE.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXE.system("cmake --version") != 0;
-        EXE.setNoSTDOutput(false).setNoERROutput(false);
+        EXEC.setNoSTDOutput().setNoERROutput();
+        boolean tNoCmake = EXEC.system("cmake --version") != 0;
+        EXEC.setNoSTDOutput(false).setNoERROutput(false);
         if (tNoCmake) throw new Exception("NATIVE_LMP BUILD ERROR: No cmake environment.");
         String tWorkingDir = WORKING_DIR_OF("lmpjni");
         // 如果已经存在则先删除
@@ -334,14 +334,14 @@ public class NativeLmp implements IAutoShutdown {
         String tBuildDir = tSrcDir+"build/";
         UT.IO.makeDir(tBuildDir);
         // 直接通过系统指令来编译 lmpjni 的库，关闭输出
-        EXE.setNoSTDOutput();
+        EXEC.setNoSTDOutput();
         // 初始化 cmake
-        EXE.system(cmakeInitCmdLmpJni_(tBuildDir));
+        EXEC.system(cmakeInitCmdLmpJni_(tBuildDir));
         // 设置参数
-        EXE.system(cmakeSettingCmdLmpJni_(tBuildDir));
+        EXEC.system(cmakeSettingCmdLmpJni_(tBuildDir));
         // 最后进行构造操作
-        EXE.system(String.format("cd '%s'; cmake --build . --config Release", tBuildDir));
-        EXE.setNoSTDOutput(false);
+        EXEC.system(String.format("cd '%s'; cmake --build . --config Release", tBuildDir));
+        EXEC.setNoSTDOutput(false);
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(LMPJNI_LIB_DIR, "lmpjni");
         if (tLibName == null) throw new Exception("NATIVE_LMP BUILD ERROR: lmpjni build Failed, No lmpjni lib in '"+ LMPJNI_LIB_DIR+"'");

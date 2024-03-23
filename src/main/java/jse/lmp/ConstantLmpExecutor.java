@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
 import static jse.code.CS.FILE_SYSTEM_TIMEOUT;
 import static jse.code.Conf.WORKING_DIR_OF;
@@ -76,7 +76,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     public ConstantLmpExecutor(ISystemExecutor aEXE, String aLmpExe,                  int aMaxParallelNum) throws Exception {this(aEXE, aLmpExe, DEFAULT_OUTFILE_PATH, aMaxParallelNum);}
     public ConstantLmpExecutor(ISystemExecutor aEXE, String aLmpExe, String aLogPath                     ) throws Exception {this(aEXE, aLmpExe, aLogPath, 1);}
     public ConstantLmpExecutor(ISystemExecutor aEXE, String aLmpExe                                      ) throws Exception {this(aEXE, aLmpExe, DEFAULT_OUTFILE_PATH);}
-    public ConstantLmpExecutor(                      String aLmpExe, String aLogPath, int aMaxParallelNum) throws Exception {this(EXE, true, aLmpExe, aLogPath, aMaxParallelNum);}
+    public ConstantLmpExecutor(                      String aLmpExe, String aLogPath, int aMaxParallelNum) throws Exception {this(EXEC, true, aLmpExe, aLogPath, aMaxParallelNum);}
     public ConstantLmpExecutor(                      String aLmpExe,                  int aMaxParallelNum) throws Exception {this(aLmpExe, DEFAULT_OUTFILE_PATH, aMaxParallelNum);}
     public ConstantLmpExecutor(                      String aLmpExe, String aLogPath                     ) throws Exception {this(aLmpExe, aLogPath, 1);}
     public ConstantLmpExecutor(                      String aLmpExe                                      ) throws Exception {this(aLmpExe, DEFAULT_OUTFILE_PATH);}

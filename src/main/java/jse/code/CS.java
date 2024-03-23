@@ -34,7 +34,7 @@ public class CS {
     public final static String VERSION = "2.7.x";
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
-    public final static Random RNGSUS = new Random(), RANDOM = RNGSUS;
+    public final static Random RANDOM = new Random();
     public final static int MAX_SEED = 2147483647;
     
     public final static Object NULL = null;
@@ -499,7 +499,7 @@ public class CS {
         public final static String NO_LOG_WIN = OS.NO_LOG_WIN;
         public final static String NO_LOG = OS.NO_LOG;
         
-        public final static ISystemExecutor EXE = OS.EXE;
+        public final static ISystemExecutor EXE = OS.EXEC;
         public final static String JAR_PATH = OS.JAR_PATH;
         public final static String JAR_DIR = OS.JAR_DIR;
         public final static String USER_HOME = OS.USER_HOME;

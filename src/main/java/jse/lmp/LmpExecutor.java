@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
@@ -31,7 +31,7 @@ public final class LmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
         // 最后设置一下工作目录，这里一定要求相对路径
         mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("LMP@"+UT.Code.randID()));
     }
-    public LmpExecutor(String aLmpExe, @Nullable String aLogPath) {this(EXE, aLmpExe, aLogPath); setDoNotShutdown_(true);}
+    public LmpExecutor(String aLmpExe, @Nullable String aLogPath) {this(EXEC, aLmpExe, aLogPath); setDoNotShutdown_(true);}
     public LmpExecutor(String aLmpExe) {this(aLmpExe, null);}
     public LmpExecutor(ISystemExecutor aEXE, String aLmpExe) {this(aEXE, aLmpExe, null);}
     

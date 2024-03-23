@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
@@ -45,12 +45,12 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     
     /** 保留兼容 */
     LmpParameterCalculator(ILmpExecutor aLMP, String aPairStyle, String aPairCoeff) {this(aLMP, false, aPairStyle, aPairCoeff);}
-    LmpParameterCalculator(String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(new LmpExecutor(EXE, aLmpExe, aLogPath).setDoNotShutdown(true), true, aPairStyle, aPairCoeff);}
+    LmpParameterCalculator(String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(new LmpExecutor(EXEC, aLmpExe, aLogPath).setDoNotShutdown(true), true, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(String aLmpExe, String aPairStyle, String aPairCoeff) {this(aLmpExe, null, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(ISystemExecutor aEXE, String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(new LmpExecutor(aEXE, aLmpExe, aLogPath), true, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(ISystemExecutor aEXE, String aLmpExe, String aPairStyle, String aPairCoeff) {this(aEXE, aLmpExe, null, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, ILmpExecutor aLMP, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, aLMP, false, aPairStyle, aPairCoeff);}
-    LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, new LmpExecutor(EXE, aLmpExe, aLogPath).setDoNotShutdown(true), true, aPairStyle, aPairCoeff);}
+    LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, new LmpExecutor(EXEC, aLmpExe, aLogPath).setDoNotShutdown(true), true, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, String aLmpExe, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, aLmpExe, null, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, ISystemExecutor aEXE, String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, new LmpExecutor(aEXE, aLmpExe, aLogPath), true, aPairStyle, aPairCoeff);}
     LmpParameterCalculator(@Nullable MPI.Comm aComm, int aRoot, ISystemExecutor aEXE, String aLmpExe, String aPairStyle, String aPairCoeff) {this(aComm, aRoot, aEXE, aLmpExe, null, aPairStyle, aPairCoeff);}

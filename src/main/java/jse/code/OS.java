@@ -41,7 +41,8 @@ public class OS {
     public final static String NO_LOG_WIN = "NUL";
     public final static String NO_LOG = IS_WINDOWS ? NO_LOG_WIN : NO_LOG_LINUX;
     
-    public final static ISystemExecutor EXE;
+    public final static ISystemExecutor EXEC;
+    /** @deprecated use {@link #EXEC} */ @Deprecated public final static ISystemExecutor EXE;
     public final static String JAR_PATH;
     public final static String JAR_DIR;
     public final static String USER_HOME;
@@ -93,9 +94,10 @@ public class OS {
         JAR_DIR = tJarDir;
         // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令；
         // 这种选择可以保证指令使用统一，即使这些终端不一定所有平台都有
-        EXE = IS_WINDOWS ? new PowerShellSystemExecutor() : new BashSystemExecutor();
+        EXEC = IS_WINDOWS ? new PowerShellSystemExecutor() : new BashSystemExecutor();
+        EXE = EXEC;
         // 在程序结束时关闭 EXE
-        Main.addGlobalAutoCloseable(EXE);
+        Main.addGlobalAutoCloseable(EXEC);
     }
     
     
@@ -130,11 +132,11 @@ public class OS {
     }
     
     /** 提供这些接口方便外部调用使用 */
-    @VisibleForTesting public static ISystemExecutor exec() {return jse.code.OS.EXE;}
-    @VisibleForTesting public static int system(String aCommand) {return exec().system(aCommand);}
-    @VisibleForTesting public static int system(String aCommand, String aOutFilePath) {return exec().system(aCommand, aOutFilePath);}
-    @VisibleForTesting public static Future<Integer> submitSystem(String aCommand) {return exec().submitSystem(aCommand);}
-    @VisibleForTesting public static Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return exec().submitSystem(aCommand, aOutFilePath);}
-    @VisibleForTesting public static List<String> system_str(String aCommand) {return exec().system_str(aCommand);}
-    @VisibleForTesting public static Future<List<String>> submitSystem_str(String aCommand) {return exec().submitSystem_str(aCommand);}
+    @VisibleForTesting public static int system(String aCommand) {return EXEC.system(aCommand);}
+    @VisibleForTesting public static int system(String aCommand, String aOutFilePath) {return EXEC.system(aCommand, aOutFilePath);}
+    @VisibleForTesting public static Future<Integer> submitSystem(String aCommand) {return EXEC.submitSystem(aCommand);}
+    @VisibleForTesting public static Future<Integer> submitSystem(String aCommand, String aOutFilePath) {return EXEC.submitSystem(aCommand, aOutFilePath);}
+    @VisibleForTesting public static List<String> system_str(String aCommand) {return EXEC.system_str(aCommand);}
+    @VisibleForTesting public static Future<List<String>> submitSystem_str(String aCommand) {return EXEC.submitSystem_str(aCommand);}
+    /** @deprecated use {@link #EXEC} */  @VisibleForTesting @Deprecated public static ISystemExecutor exec() {return EXEC;}
 }

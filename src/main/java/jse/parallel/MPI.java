@@ -1175,9 +1175,9 @@ public class MPI {
         
         private static @NotNull String initMPI_() throws Exception {
             // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-            EXE.setNoSTDOutput().setNoERROutput();
-            boolean tNoCmake = EXE.system("cmake --version") != 0;
-            EXE.setNoSTDOutput(false).setNoERROutput(false);
+            EXEC.setNoSTDOutput().setNoERROutput();
+            boolean tNoCmake = EXEC.system("cmake --version") != 0;
+            EXEC.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoCmake) throw new Exception("MPI BUILD ERROR: No cmake environment.");
             // 从内部资源解压到临时目录
             String tWorkingDir = WORKING_DIR_OF("mpijni");
@@ -1201,14 +1201,14 @@ public class MPI {
             String tBuildDir = tWorkingDir+"build/";
             UT.IO.makeDir(tBuildDir);
             // 直接通过系统指令来编译 mpijni 的库，关闭输出
-            EXE.setNoSTDOutput();
+            EXEC.setNoSTDOutput();
             // 初始化 cmake
-            EXE.system(cmakeInitCmd_(tBuildDir));
+            EXEC.system(cmakeInitCmd_(tBuildDir));
             // 设置参数
-            EXE.system(cmakeSettingCmd_(tBuildDir));
+            EXEC.system(cmakeSettingCmd_(tBuildDir));
             // 最后进行构造操作
-            EXE.system(String.format("cd '%s'; cmake --build . --config Release", tBuildDir));
-            EXE.setNoSTDOutput(false);
+            EXEC.system(String.format("cd '%s'; cmake --build . --config Release", tBuildDir));
+            EXEC.setNoSTDOutput(false);
             // 简单检测一下是否编译成功
             @Nullable String tLibName = LIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
             if (tLibName == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in '"+MPIJNI_LIB_DIR+"'");

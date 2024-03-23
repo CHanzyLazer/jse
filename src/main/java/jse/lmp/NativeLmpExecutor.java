@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
-import static jse.code.OS.EXE;
+import static jse.code.OS.EXEC;
 
 /**
  * 基于 {@link NativeLmp} 的 lammps 运行器实现
@@ -18,7 +18,7 @@ import static jse.code.OS.EXE;
  */
 @ApiStatus.Experimental
 public class NativeLmpExecutor extends AbstractHasAutoShutdown implements ILmpExecutor {
-    @Override public ISystemExecutor exec() {return EXE;}
+    @Override public ISystemExecutor exec() {return EXEC;}
     
     protected final NativeLmp mLmp;
     private boolean mNoERROutput = false;
