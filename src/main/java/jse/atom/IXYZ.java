@@ -16,6 +16,7 @@ public interface IXYZ {
     double x();
     double y();
     double z();
+    IXYZ copy();
     
     /** 转为兼容性更高的 double[] */
     default double[] data() {return new double[] {x(), y(), z()};}
@@ -28,6 +29,9 @@ public interface IXYZ {
     default double min() {return Math.min(Math.min(x(), y()), z());}
     default double max() {return Math.max(Math.max(x(), y()), z());}
     
+    default double dot(IXYZ aRHS) {return dot(aRHS.x(), aRHS.y(), aRHS.z());}
+    default double dot(double aX, double aY, double aZ) {return x()*aX + y()*aY + z()*aZ;}
+    
     default XYZ cross(IXYZ aRHS) {return cross(aRHS.x(), aRHS.y(), aRHS.z());}
     default XYZ cross(double aX, double aY, double aZ) {
         double tX = x();
@@ -35,6 +39,15 @@ public interface IXYZ {
         double tZ = z();
         return new XYZ(tY*aZ - aY*tZ, tZ*aX - aZ*tX, tX*aY - aX*tY);
     }
+    
+    default double mixed(IXYZ aCross, IXYZ aDot) {return mixed(aCross.x(), aCross.y(), aCross.z(), aDot.x(), aDot.y(), aDot.z());}
+    default double mixed(double aCX, double aCY, double aCZ, double aDX, double aDY, double aDZ) {
+        double tX = x();
+        double tY = y();
+        double tZ = z();
+        return (tY*aCZ - aCY*tZ)*aDX + (tZ*aCX - aCZ*tX)*aDY + (tX*aCY - aCX*tY)*aDZ;
+    }
+    
     default XYZ negative() {return new XYZ(-x(), -y(), -z());}
     default double norm() {return MathEX.Fast.hypot(x(), y(), z());}
     

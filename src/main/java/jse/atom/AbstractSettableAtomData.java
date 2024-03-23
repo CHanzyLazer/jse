@@ -32,12 +32,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         return new AbstractRandomAccessList<ISettableAtom>() {
             @Override public ISettableAtom get(int index) {return AbstractSettableAtomData.this.atom(index);}
             @Override public ISettableAtom set(final int index, ISettableAtom element) {
-                ISettableAtom oAtom = hasVelocities() ?
-                    new AtomFull(AbstractSettableAtomData.this.atom(index)) {
-                    @Override public int index() {return index;}
-                } : new Atom(AbstractSettableAtomData.this.atom(index)) {
-                    @Override public int index() {return index;}
-                };
+                ISettableAtom oAtom = AbstractSettableAtomData.this.atom(index).copy();
                 setAtom(index, element);
                 return oAtom;
             }

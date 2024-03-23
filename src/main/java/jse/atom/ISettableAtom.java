@@ -3,6 +3,7 @@ package jse.atom;
 import org.jetbrains.annotations.VisibleForTesting;
 
 public interface ISettableAtom extends IAtom, ISettableXYZ {
+    ISettableAtom copy();
     /** 返回自身用于链式调用 */
     ISettableAtom setX(double aX);
     ISettableAtom setY(double aY);

@@ -12,4 +12,5 @@ public abstract class AbstractAtom implements IAtom {
             String.format("{id: %d, type: %d, xyz: (%.4g, %.4g, %.4g)}", id(), type(), x(), y(), z())
             ;
     }
+    public Atom copy() {return hasVelocities() ? new AtomFull(this) : new Atom(this);}
 }

@@ -4,8 +4,6 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-import static jse.code.CS.*;
-
 
 /**
  * @author liqa
@@ -15,23 +13,19 @@ import static jse.code.CS.*;
  */
 public final class AtomData extends AbstractAtomData {
     private final @Unmodifiable List<? extends IAtom> mAtoms;
-    private final IXYZ mBox;
+    private final IBox mBox;
     private final int mAtomTypeNum;
     private final boolean mHasVelocities;
     
-    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IXYZ aBox, boolean aHasVelocities) {
+    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IBox aBox, boolean aHasVelocities) {
         mAtoms = aAtoms;
         mBox = aBox;
         mAtomTypeNum = aAtomTypeNum;
         mHasVelocities = aHasVelocities;
     }
-    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum,            boolean aHasVelocities) {this(aAtoms, aAtomTypeNum, BOX_ONE, aHasVelocities);}
-    public AtomData(List<? extends IAtom> aAtoms,                   IXYZ aBox, boolean aHasVelocities) {this(aAtoms, 1, aBox, aHasVelocities);}
-    public AtomData(List<? extends IAtom> aAtoms,                              boolean aHasVelocities) {this(aAtoms, 1, aHasVelocities);}
-    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IXYZ aBox                        ) {this(aAtoms, aAtomTypeNum, aBox, false);}
-    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum                                   ) {this(aAtoms, aAtomTypeNum, false);}
-    public AtomData(List<? extends IAtom> aAtoms,                   IXYZ aBox                        ) {this(aAtoms, aBox, false);}
-    public AtomData(List<? extends IAtom> aAtoms                                                     ) {this(aAtoms, false);}
+    public AtomData(List<? extends IAtom> aAtoms,                   IBox aBox, boolean aHasVelocities) {this(aAtoms, 1, aBox, aHasVelocities);}
+    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IBox aBox                        ) {this(aAtoms, aAtomTypeNum, aBox, false);}
+    public AtomData(List<? extends IAtom> aAtoms,                   IBox aBox                        ) {this(aAtoms, aBox, false);}
     
     @Override public IAtom atom(int aIdx) {
         // 需要包装一层，用于自动复写内部原子的 index 信息
@@ -52,7 +46,7 @@ public final class AtomData extends AbstractAtomData {
             @Override public boolean hasVelocities() {return mHasVelocities;}
         };
     }
-    @Override public IXYZ box() {return mBox;}
+    @Override public IBox box() {return mBox;}
     @Override public int atomNumber() {return mAtoms.size();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public boolean hasVelocities() {return mHasVelocities;}

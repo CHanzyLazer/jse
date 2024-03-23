@@ -44,6 +44,9 @@ public final class XYZ extends AbstractSettableXYZ {
     @Override public double min() {return Math.min(Math.min(mX, mY), mZ);}
     @Override public double max() {return Math.max(Math.max(mX, mY), mZ);}
     
+    @Override public double dot(double aX, double aY, double aZ) {return mX*aX + mY*aY + mZ*aZ;}
+    public double dot(XYZ aRHS) {return dot(aRHS.mX, aRHS.mY, aRHS.mZ);}
+    
     @Override public XYZ cross(double aX, double aY, double aZ) {return new XYZ(mY*aZ - aY*mZ, mZ*aX - aZ*mX, mX*aY - aX*mY);}
     public XYZ cross(XYZ aRHS) {return cross(aRHS.mX, aRHS.mY, aRHS.mZ);}
     public void cross2this(IXYZ aRHS) {cross2this(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -56,6 +59,10 @@ public final class XYZ extends AbstractSettableXYZ {
         mY = tZ*aX - aZ*tX;
         mZ = tX*aY - aX*tY;
     }
+    
+    @Override public double mixed(double aCX, double aCY, double aCZ, double aDX, double aDY, double aDZ) {return (mY*aCZ - aCY*mZ)*aDX + (mZ*aCX - aCZ*mX)*aDY + (mX*aCY - aCX*mY)*aDZ;}
+    public double mixed(XYZ aCross, XYZ aDot) {return mixed(aCross.mX, aCross.mY, aCross.mZ, aDot.mX, aDot.mY, aDot.mZ);}
+    
     @Override public XYZ negative() {return new XYZ(-mX, -mY, -mZ);}
     public void negative2this() {mX = -mX; mY = -mY; mZ = -mZ;}
     @Override public double norm() {return MathEX.Fast.hypot(mX, mY, mZ);}
@@ -65,14 +72,19 @@ public final class XYZ extends AbstractSettableXYZ {
     @Override public XYZ plus(double aRHS) {return new XYZ(mX+aRHS, mY+aRHS, mZ+aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
     public XYZ plus(XYZ aRHS) {return new XYZ(mX+aRHS.mX, mY+aRHS.mY, mZ+aRHS.mZ);}
+    public void plus2this(IXYZ aRHS) {mX += aRHS.x(); mY += aRHS.y(); mZ += aRHS.z();}
     public void plus2this(XYZ aRHS) {mX += aRHS.mX; mY += aRHS.mY; mZ += aRHS.mZ;}
     public void plus2this(double aRHS) {mX += aRHS; mY += aRHS; mZ += aRHS;}
+    /** 也增加这个运算方便使用 */
+    public void mplus2this(IXYZ aRHS, double aMul) {mX += aMul*aRHS.x(); mY += aMul*aRHS.y(); mZ += aMul*aRHS.z();}
+    public void mplus2this(XYZ aRHS, double aMul) {mX += aMul*aRHS.mX; mY += aMul*aRHS.mY; mZ += aMul*aRHS.mZ;}
     
     @Override public XYZ minus(IXYZ aRHS) {return new XYZ(mX-aRHS.x(), mY-aRHS.y(), mZ-aRHS.z());}
     @Override public XYZ minus(double aX, double aY, double aZ) {return new XYZ(mX-aX, mY-aY, mZ-aZ);}
     @Override public XYZ minus(double aRHS) {return new XYZ(mX-aRHS, mY-aRHS, mZ-aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
     public XYZ minus(XYZ aRHS) {return new XYZ(mX-aRHS.mX, mY-aRHS.mY, mZ-aRHS.mZ);}
+    public void minus2this(IXYZ aRHS) {mX -= aRHS.x(); mY -= aRHS.y(); mZ -= aRHS.z();}
     public void minus2this(XYZ aRHS) {mX -= aRHS.mX; mY -= aRHS.mY; mZ -= aRHS.mZ;}
     public void minus2this(double aRHS) {mX -= aRHS; mY -= aRHS; mZ -= aRHS;}
     
@@ -81,6 +93,7 @@ public final class XYZ extends AbstractSettableXYZ {
     @Override public XYZ multiply(double aRHS) {return new XYZ(mX*aRHS, mY*aRHS, mZ*aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
     public XYZ multiply(XYZ aRHS) {return new XYZ(mX*aRHS.mX, mY*aRHS.mY, mZ*aRHS.mZ);}
+    public void multiply2this(IXYZ aRHS) {mX *= aRHS.x(); mY *= aRHS.y(); mZ *= aRHS.z();}
     public void multiply2this(XYZ aRHS) {mX *= aRHS.mX; mY *= aRHS.mY; mZ *= aRHS.mZ;}
     public void multiply2this(double aRHS) {mX *= aRHS; mY *= aRHS; mZ *= aRHS;}
     
@@ -89,6 +102,7 @@ public final class XYZ extends AbstractSettableXYZ {
     @Override public XYZ div(double aRHS) {return new XYZ(mX/aRHS, mY/aRHS, mZ/aRHS);}
     /** 使用重载而不是 instanceof，即只优化可以在编译期间判断的情况 */
     public XYZ div(XYZ aRHS) {return new XYZ(mX/aRHS.mX, mY/aRHS.mY, mZ/aRHS.mZ);}
+    public void div2this(IXYZ aRHS) {mX /= aRHS.x(); mY /= aRHS.y(); mZ /= aRHS.z();}
     public void div2this(XYZ aRHS) {mX /= aRHS.mX; mY /= aRHS.mY; mZ /= aRHS.mZ;}
     public void div2this(double aRHS) {mX /= aRHS; mY /= aRHS; mZ /= aRHS;}
     

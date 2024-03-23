@@ -16,9 +16,9 @@ public class Box {
     
     public Box() {this(BOX_ONE);}
     public Box(double aSize) {this(aSize, aSize, aSize);}
-    public Box(double aX, double aY, double aZ) {this(BOX_ZERO, new XYZ(aX, aY, aZ));}
+    public Box(double aX, double aY, double aZ) {this(XYZ_ZERO, new XYZ(aX, aY, aZ));}
     public Box(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi) {this(new XYZ(aXlo, aYlo, aZlo), new XYZ(aXhi, aYhi, aZhi));}
-    public Box(@NotNull IXYZ aBox) {this(BOX_ZERO, aBox);}
+    public Box(@NotNull IXYZ aBox) {this(XYZ_ZERO, aBox);}
     public Box(Box aBox) {this(aBox.mBoxLo, aBox.mBoxHi);}
     public Box(@NotNull IXYZ aBoxLo, @NotNull IXYZ aBoxHi) {mBoxLo = newBox(aBoxLo); mBoxHi = newBox(aBoxHi);}
     
@@ -31,8 +31,8 @@ public class Box {
     public final double zhi() {return mBoxHi.z();}
     public final IXYZ boxLo() {return mBoxLo;}
     public final IXYZ boxHi() {return mBoxHi;}
-    public final boolean isShifted() {return mBoxLo==BOX_ZERO;}
-    public final @NotNull IXYZ shiftedBox() {return mBoxLo==BOX_ZERO ? mBoxHi : mBoxHi.minus(mBoxLo);}
+    public final boolean isShifted() {return mBoxLo== XYZ_ZERO;}
+    public final @NotNull IXYZ shiftedBox() {return mBoxLo== XYZ_ZERO ? mBoxHi : mBoxHi.minus(mBoxLo);}
     
     public Box copy() {return new Box(this);}
     

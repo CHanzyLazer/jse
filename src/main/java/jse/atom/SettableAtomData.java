@@ -4,8 +4,6 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-import static jse.code.CS.BOX_ONE;
-
 
 /**
  * @author liqa
@@ -15,23 +13,19 @@ import static jse.code.CS.BOX_ONE;
  */
 public final class SettableAtomData extends AbstractSettableAtomData {
     private final @Unmodifiable List<? extends ISettableAtom> mAtoms;
-    private final IXYZ mBox;
+    private final IBox mBox;
     private int mAtomTypeNum;
     private final boolean mHasVelocities;
     
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum, IXYZ aBox, boolean aHasVelocities) {
+    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum, IBox aBox, boolean aHasVelocities) {
         mAtoms = aAtoms;
         mBox = aBox;
         mAtomTypeNum = aAtomTypeNum;
         mHasVelocities = aHasVelocities;
     }
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum, boolean aHasVelocities) {this(aAtoms, aAtomTypeNum, BOX_ONE, aHasVelocities);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, IXYZ aBox, boolean aHasVelocities) {this(aAtoms, 1, aBox, aHasVelocities);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, boolean aHasVelocities) {this(aAtoms, 1, aHasVelocities);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum, IXYZ aBox) {this(aAtoms, aAtomTypeNum, aBox, false);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum) {this(aAtoms, aAtomTypeNum, false);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms, IXYZ aBox) {this(aAtoms, aBox, false);}
-    public SettableAtomData(List<? extends ISettableAtom> aAtoms) {this(aAtoms, false);}
+    public SettableAtomData(List<? extends ISettableAtom> aAtoms,                   IBox aBox, boolean aHasVelocities) {this(aAtoms, 1, aBox, aHasVelocities);}
+    public SettableAtomData(List<? extends ISettableAtom> aAtoms, int aAtomTypeNum, IBox aBox                        ) {this(aAtoms, aAtomTypeNum, aBox, false);}
+    public SettableAtomData(List<? extends ISettableAtom> aAtoms,                   IBox aBox                        ) {this(aAtoms, aBox, false);}
     
     @Override public ISettableAtom atom(int aIdx) {
         // 需要包装一层，用于在更新种类时自动更新整体的种类计数
@@ -69,7 +63,7 @@ public final class SettableAtomData extends AbstractSettableAtomData {
             @Override public ISettableAtom setVz(double aVz) {if (!mHasVelocities) throw new UnsupportedOperationException("setVz"); tAtom.setVz(aVz); return this;}
         };
     }
-    @Override public IXYZ box() {return mBox;}
+    @Override public IBox box() {return mBox;}
     @Override public int atomNumber() {return mAtoms.size();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public SettableAtomData setAtomTypeNumber(int aAtomTypeNum) {mAtomTypeNum = aAtomTypeNum; return this;}

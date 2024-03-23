@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static jse.code.CS.*;
-import static jse.code.UT.Code.newBox;
 
 /**
  * 多帧的单原子参数计算器，自动根据 ID 来进行排序，
@@ -40,7 +39,7 @@ import static jse.code.UT.Code.newBox;
 public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
     private List<? extends IMatrix> mAllAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
     private final double mTimestep;
-    private final List<IXYZ> mBoxList;
+    private final List<IBox> mBoxList;
     
     private final int mFrameNum;
     private final int mAtomNum;
@@ -67,11 +66,11 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     
     
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed")
-    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒等数据
-        mBoxList = NewCollections.map(aBoxList, UT.Code::newBox);
+        mBoxList = NewCollections.map(aBoxList, IBox::copy);
         mTimestep = aTimestep;
         int tAtomTypeNum = aMinAtomTypeNum;
         
@@ -120,9 +119,9 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         mAllAtomDataXYZ = tXYZArray;
     }
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed")
-    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep) {this(aAtomDataList, aBoxList, aTimestep, 1);}
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed")
-    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
+    MultiFrameParameterCalculator(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomDataList, aBoxList, aTimestep, aThreadNum, 1);}
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed")
     MultiFrameParameterCalculator(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {this(aAtomDataList, aTimestep, 1);}
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed")
@@ -136,9 +135,9 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
      * @param aThreadNum MFPC 进行计算会使用的线程数
      * @param aMinAtomTypeNum 期望的最少原子种类数目
      */
-    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum, aMinAtomTypeNum);}
-    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum);}
-    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IXYZ> aBoxList, double aTimestep) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep);}
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, int aMinAtomTypeNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum, aMinAtomTypeNum);}
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep, aThreadNum);}
+    public static MultiFrameParameterCalculator of(Collection<? extends Collection<? extends IAtom>> aAtomDataList, Collection<? extends IBox> aBoxList, double aTimestep) {return new MultiFrameParameterCalculator(aAtomDataList, aBoxList, aTimestep);}
     public static MultiFrameParameterCalculator of(Collection<? extends IAtomData> aAtomDataList, double aTimestep, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MultiFrameParameterCalculator(aAtomDataList, aTimestep, aThreadNum);}
     public static MultiFrameParameterCalculator of(Collection<? extends IAtomData> aAtomDataList, double aTimestep) {return new MultiFrameParameterCalculator(aAtomDataList, aTimestep);}
     
@@ -182,7 +181,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
     /// 计算方法
     
     /** 通过给定矩阵获取可以进行修改的原子数据 */
-    private ISettableAtomData getAtomData_(final IMatrix aData, IXYZ aBox) {
+    private ISettableAtomData getAtomData_(final IMatrix aData, IBox aBox) {
         return new SettableAtomData(new AbstractRandomAccessList<ISettableAtom>() {
             private final @Unmodifiable BiMap<Integer, Integer> mIndex2Id = mId2Index.inverse();
             @Override public ISettableAtom get(final int index) {
@@ -202,7 +201,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
                 };
             }
             @Override public int size() {return mAtomNum;}
-        }, mAtomTypeNum, newBox(aBox));
+        }, mAtomTypeNum, aBox.copy());
     }
     
     /**

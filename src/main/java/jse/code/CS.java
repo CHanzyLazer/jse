@@ -39,12 +39,7 @@ public class CS {
     
     public final static Object NULL = null;
     
-    public final static IXYZ BOX_ONE  = new AbstractXYZ() {
-        @Override public double x() {return 1.0;}
-        @Override public double y() {return 1.0;}
-        @Override public double z() {return 1.0;}
-    };
-    public final static IXYZ BOX_ZERO = new AbstractXYZ() {
+    public final static IXYZ XYZ_ZERO = new AbstractXYZ() {
         @Override public double x() {return 0.0;}
         @Override public double y() {return 0.0;}
         @Override public double z() {return 0.0;}

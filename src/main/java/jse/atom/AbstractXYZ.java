@@ -7,4 +7,6 @@ package jse.atom;
 public abstract class AbstractXYZ implements IXYZ {
     /** print */
     @Override public String toString() {return String.format("(%.4g, %.4g, %.4g)", x(), y(), z());}
+    /** copy */
+    @Override public XYZ copy() {return new XYZ(this);}
 }

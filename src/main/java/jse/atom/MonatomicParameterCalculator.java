@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.function.IntConsumer;
 
 import static jse.code.CS.R_NEAREST_MUL;
-import static jse.code.UT.Code.newBox;
 import static jse.math.MathEX.*;
 
 /**
@@ -45,7 +44,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public static double BUFFER_NL_RMAX = 4.0; // 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难
     
     private IMatrix mAtomDataXYZ; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
-    private final IXYZ mBox;
+    private final IBox mBox;
     
     private final int mAtomNum;
     private final double mRou; // 粒子数密度
@@ -84,11 +83,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     @ApiStatus.Internal @Override public void close() {shutdown();}
     
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
+    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
-        mBox = newBox(aBox);
+        mBox = aBox.copy();
         
         // 获取合适的 XYZ 数据
         mAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ);
@@ -102,13 +101,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mInitThreadID = Thread.currentThread().getId();
     }
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {this(aAtomDataXYZ, aBox, 1);}
+    MonatomicParameterCalculator(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox) {this(aAtomDataXYZ, aBox, 1);}
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
     MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
     /** @deprecated use {@link #of} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
     MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {this(aAtomData.atoms(), aAtomData.box(), aThreadNum);}
     /** 主要用于内部使用 */
-    @ApiStatus.Internal MonatomicParameterCalculator(int aAtomNum, IXYZ aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
+    @ApiStatus.Internal MonatomicParameterCalculator(int aAtomNum, IBox aBox, int aThreadNum, IUnaryFullOperator<IMatrix, IMatrix> aXYZValidOpt) {
         super(new ParforThreadPool(aThreadNum));
         mAtomNum = aAtomNum;
         mBox = aBox;
@@ -127,14 +126,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aBox 模拟盒大小；现在也统一认为所有输入的原子坐标都经过了 shift
      * @param aThreadNum MPC 进行计算会使用的线程数
      */
-    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum);}
-    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox);}
+    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum);}
+    public static MonatomicParameterCalculator of(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox) {return new MonatomicParameterCalculator(aAtomDataXYZ, aBox);}
     public static MonatomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomData, aThreadNum);}
     public static MonatomicParameterCalculator of(IAtomData aAtomData) {return new MonatomicParameterCalculator(aAtomData);}
     
     /** 自动关闭接口 */
-    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum)) {return aDoLater.apply(tMPC);}}
-    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IXYZ aBox, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox, aThreadNum)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(Collection<? extends IXYZ> aAtomDataXYZ, IBox aBox, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomDataXYZ, aBox)) {return aDoLater.apply(tMPC);}}
     public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData, aThreadNum)) {return aDoLater.apply(tMPC);}}
     public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData)) {return aDoLater.apply(tMPC);}}
     

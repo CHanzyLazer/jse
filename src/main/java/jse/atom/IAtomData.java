@@ -25,7 +25,7 @@ public interface IAtomData {
     List<? extends IAtom> atoms();
     /** 现在统一提供随机访问获取一个原子的接口；改为 atom 保证逻辑一致，旧名称由于外部使用较少不再保留 */
     IAtom atom(int aIdx);
-
+    
     /** @deprecated use {@link #atoms} */
     @Deprecated default List<? extends IAtom> asList() {return atoms();}
     
@@ -39,8 +39,10 @@ public interface IAtomData {
     @VisibleForTesting default int ntypes() {return atomTypeNumber();}
     
     /** 获取模拟盒信息的接口，现在为了使用方便，移除了 boxLo 的设定 */
-    IXYZ box();
-    double volume();
+    IBox box();
+    default double volume() {return box().volume();}
+    default boolean isPrism() {return box().isPrism();}
+    default boolean isLmpStyle() {return box().isLmpStyle();}
     
     /** 统一提供拷贝接口 */
     ISettableAtomData copy();

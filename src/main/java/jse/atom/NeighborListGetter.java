@@ -35,10 +35,10 @@ public class NeighborListGetter implements IShutdownable {
     private final long mInitThreadID;
     
     /** NL 只支持已经经过平移的数据，目前暂不支持外部创建 */
-    NeighborListGetter(IMatrix aAtomDataXYZ, int aAtomNum, IXYZ aBox) {
+    NeighborListGetter(IMatrix aAtomDataXYZ, int aAtomNum, IBox aBox) {
         mAtomDataXYZ = aAtomDataXYZ;
         mAtomNum = aAtomNum;
-        mBox = XYZ.toXYZ(aBox); // 仅用于计算，直接转为 XYZ 即可
+        mBox = XYZ.toXYZ(aBox); // 仅用于计算，直接转为 XYZ 即可 // TODO: 需要支持斜方
         mMinBox = mBox.min();
         mAllCellsAlloc = sAllCellsAllocCache.getObject();
         mInitThreadID = Thread.currentThread().getId();

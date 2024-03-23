@@ -58,7 +58,7 @@ public class AbstractAtoms {
             @Override public int size() {
                 return 4*aReplicateX*aReplicateY*aReplicateZ;
             }
-        }, new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ));
+        }, new NormalBox(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ));
     }
     public static IAtomData FCC(double aCellSize, int aReplicate) {return FCC(aCellSize, aReplicate, aReplicate, aReplicate);}
     
@@ -86,7 +86,7 @@ public class AbstractAtoms {
             @Override public int size() {
                 return 2*aReplicateX*aReplicateY*aReplicateZ;
             }
-        }, new XYZ(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ));
+        }, new NormalBox(aCellSize*aReplicateX, aCellSize*aReplicateY, aCellSize*aReplicateZ));
     }
     public static IAtomData BCC(double aCellSize, int aReplicate) {return BCC(aCellSize, aReplicate, aReplicate, aReplicate);}
     
@@ -139,7 +139,7 @@ public class AbstractAtoms {
             @Override public int size() {
                 return 4*aReplicateX*aReplicateY*aReplicateZ;
             }
-        }, new XYZ(aCellSize*aReplicateX, tCellSizeY*aReplicateY, aCellHeight*aReplicateZ));
+        }, new NormalBox(aCellSize*aReplicateX, tCellSizeY*aReplicateY, aCellHeight*aReplicateZ));
     }
     public static IAtomData HCP(double aCellSize,                     int aReplicateX, int aReplicateY, int aReplicateZ) {return HCP(aCellSize, aCellSize*SQRT83, aReplicateX, aReplicateY, aReplicateZ);}
     public static IAtomData HCP(double aCellSize, double aCellHeight, int aReplicate                                   ) {return HCP(aCellSize, aCellHeight, aReplicate, aReplicate, aReplicate);}
@@ -157,28 +157,43 @@ public class AbstractAtoms {
      * @return 返回由此创建的 atomData
      */
     public static IAtomData from(final IAtomData aLattice, final int aReplicateX, final int aReplicateY, final int aReplicateZ) {
+        final IBox aBox = aLattice.box();
+        final IBox tBox = aLattice.isPrism() ? new PrismBox(
+            aBox.a().multiply(aReplicateX),
+            aBox.b().multiply(aReplicateY),
+            aBox.c().multiply(aReplicateZ)
+        ) : new NormalBox(aBox.multiply(aReplicateX, aReplicateY, aReplicateZ));
+        final int tLatticeNum = aLattice.atomNumber();
         return new AtomData(new AbstractRandomAccessList<IAtom>() {
             @Override public IAtom get(final int index) {
-                final int tLatticeNum = aLattice.atomNumber();
                 final IAtom tAtom = aLattice.atom(index%tLatticeNum);
                 final int tRepTotal = index/tLatticeNum;
+                // 获取平移次数
+                int i = tRepTotal/aReplicateZ/aReplicateY;
+                int j = tRepTotal/aReplicateZ%aReplicateY;
+                int k = tRepTotal%aReplicateZ            ;
+                final XYZ tSXYZ;
+                if (aBox.isPrism()) {
+                    tSXYZ = new XYZ(0.0, 0.0, 0.0);
+                    tSXYZ.mplus2this(aBox.a(), i);
+                    tSXYZ.mplus2this(aBox.b(), j);
+                    tSXYZ.mplus2this(aBox.c(), k);
+                } else {
+                    tSXYZ = aBox.multiply(i, j, k);
+                }
                 return new AbstractAtom() {
-                    @Override public double x() {int i = tRepTotal/aReplicateZ/aReplicateY; double tX = aLattice.box().x() * i; return tX + tAtom.x();}
-                    @Override public double y() {int j = tRepTotal/aReplicateZ%aReplicateY; double tY = aLattice.box().y() * j; return tY + tAtom.y();}
-                    @Override public double z() {int k = tRepTotal%aReplicateZ            ; double tZ = aLattice.box().z() * k; return tZ + tAtom.z();}
+                    @Override public double x() {return tSXYZ.mX + tAtom.x();}
+                    @Override public double y() {return tSXYZ.mY + tAtom.y();}
+                    @Override public double z() {return tSXYZ.mZ + tAtom.z();}
                     @Override public int id() {return tRepTotal*tLatticeNum + tAtom.id();} // 现在会基于原本的 id 进行扩展，这里不考虑特殊的 id 分布问题
                     @Override public int type() {return tAtom.type();}
                     @Override public int index() {return index;}
                 };
             }
             @Override public int size() {
-                return aLattice.atomNumber()*aReplicateX*aReplicateY*aReplicateZ;
+                return tLatticeNum*aReplicateX*aReplicateY*aReplicateZ;
             }
-        }, aLattice.atomTypeNumber(), new AbstractXYZ() {
-            @Override public double x() {return aLattice.box().x() * aReplicateX;}
-            @Override public double y() {return aLattice.box().y() * aReplicateY;}
-            @Override public double z() {return aLattice.box().z() * aReplicateZ;}
-        });
+        }, aLattice.atomTypeNumber(), tBox);
     }
     public static IAtomData from(IAtomData aLattice, int aReplicate) {return from(aLattice, aReplicate, aReplicate, aReplicate);}
 }

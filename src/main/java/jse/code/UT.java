@@ -255,15 +255,6 @@ public class UT {
          */
         @VisibleForTesting public static XYZ toXYZ(IXYZ aXYZ) {return XYZ.toXYZ(aXYZ);}
         /**
-         * Return new IXYZ for Box usage, consider the constant
-         * @author liqa
-         */
-        public static IXYZ newBox(IXYZ aXYZ) {
-            if (aXYZ == BOX_ONE) return BOX_ONE;
-            if (aXYZ == BOX_ZERO) return BOX_ZERO;
-            return new XYZ(aXYZ);
-        }
-        /**
          * Convert IComplexDouble to ComplexDouble to optimise, result should be read only!
          * @author liqa
          */
@@ -688,7 +679,7 @@ public class UT {
         public static double bytes2double(byte[] aBytes) {return Double.longBitsToDouble(bytes2long(aBytes));}
         
         /** {@link IAtomData} 的序列化和反序列化 */
-        public static byte[] atomDataXYZ2bytes(IAtomData aAtomData) {
+        @Deprecated public static byte[] atomDataXYZ2bytes(IAtomData aAtomData) {
             byte[] rBytes = new byte[Double.BYTES*3 + Double.BYTES*3*aAtomData.atomNumber()];
             int tIdx = 0;
             // 模拟盒数据
@@ -704,7 +695,7 @@ public class UT {
             }
             return rBytes;
         }
-        public static IAtomData bytes2atomDataXYZ(byte[] aBytes) {
+        @Deprecated public static IAtomData bytes2atomDataXYZ(byte[] aBytes) {
             double tX, tY, tZ;
             int tIdx = 0;
             // 获取模拟盒数据
@@ -722,11 +713,11 @@ public class UT {
                 rAtoms.add(new Atom(tX, tY, tZ, tID, 1));
             }
             // 返回结果
-            return new AtomData(rAtoms, tBox);
+            return new AtomData(rAtoms, new NormalBox(tBox));
         }
         
         /** {@link IAtomData} 的序列化和反序列化 */
-        public static byte[] atomDataXYZType2bytes(IAtomData aAtomData) {
+        @Deprecated public static byte[] atomDataXYZType2bytes(IAtomData aAtomData) {
             byte[] rBytes = new byte[Double.BYTES*3 + Integer.BYTES + (Double.BYTES*3 + Integer.BYTES)*aAtomData.atomNumber()];
             int tIdx = 0;
             // 模拟盒数据
@@ -745,7 +736,7 @@ public class UT {
             }
             return rBytes;
         }
-        public static IAtomData bytes2atomDataXYZType(byte[] aBytes) {
+        @Deprecated public static IAtomData bytes2atomDataXYZType(byte[] aBytes) {
             double tX, tY, tZ;
             int tType;
             int tIdx = 0;
@@ -767,7 +758,7 @@ public class UT {
                 rAtoms.add(new Atom(tX, tY, tZ, tID, tType));
             }
             // 返回结果
-            return new AtomData(rAtoms, tAtomTypeNum, tBox);
+            return new AtomData(rAtoms, tAtomTypeNum, new NormalBox(tBox));
         }
     }
     

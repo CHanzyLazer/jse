@@ -5,7 +5,6 @@ import jse.code.collection.NewCollections;
 
 import java.util.List;
 
-import static jse.code.UT.Code.newBox;
 
 /**
  * @author liqa
@@ -14,7 +13,7 @@ import static jse.code.UT.Code.newBox;
 public abstract class AbstractAtomData implements IAtomData {
     /** stuff to override */
     public abstract IAtom atom(int aIdx);
-    public abstract IXYZ box();
+    public abstract IBox box();
     public abstract int atomNumber();
     public abstract int atomTypeNumber();
     
@@ -94,7 +93,7 @@ public abstract class AbstractAtomData implements IAtomData {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
             NewCollections.map(atoms(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
-            atomTypeNumber(), newBox(box()), tHasVelocities
+            atomTypeNumber(), box().copy(), tHasVelocities
         );
     }
     /** 这两个方法返回结果要保证一定可以进行修改 */
@@ -102,14 +101,14 @@ public abstract class AbstractAtomData implements IAtomData {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
             NewCollections.map(atoms(), tHasVelocities ? (AtomFull::new) : (Atom::new)),
-            atomTypeNumber(), newBox(box()), tHasVelocities
+            atomTypeNumber(), box().copy(), tHasVelocities
         );
     }
     protected ISettableAtomData newZeros_(int aAtomNum) {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
             NewCollections.from(aAtomNum, tHasVelocities ? (i -> new AtomFull()) : (i -> new Atom())),
-            atomTypeNumber(), newBox(box()), tHasVelocities
+            atomTypeNumber(), box().copy(), tHasVelocities
         );
     }
 }
