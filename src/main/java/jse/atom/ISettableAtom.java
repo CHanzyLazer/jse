@@ -8,6 +8,8 @@ public interface ISettableAtom extends IAtom, ISettableXYZ {
     ISettableAtom setX(double aX);
     ISettableAtom setY(double aY);
     ISettableAtom setZ(double aZ);
+    ISettableAtom setXYZ(double aX, double aY, double aZ);
+    default ISettableAtom setXYZ(IXYZ aXYZ) {return setXYZ(aXYZ.x(), aXYZ.y(), aXYZ.z());}
     ISettableAtom setID(int aID);
     ISettableAtom setType(int aType);
     

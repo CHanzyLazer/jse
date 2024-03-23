@@ -19,4 +19,8 @@ public class NormalBox implements IBox {
     
     @Override public XYZ toCartesian(IXYZ aDirect) {return aDirect.multiply(mBox);}
     @Override public XYZ toDirect(IXYZ aCartesian) {return aCartesian.div(mBox);}
+    
+    @Override public String toString() {
+        return String.format("(%.4g, %.4g, %.4g)", mBox.x(), mBox.y(), mBox.z());
+    }
 }

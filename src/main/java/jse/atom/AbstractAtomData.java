@@ -26,8 +26,6 @@ public abstract class AbstractAtomData implements IAtomData {
         };
     }
     
-    @Override public double volume() {return box().prod();}
-    
     @Override public IAtomDataOperation operation() {return new AbstractAtomDataOperation() {
         @Override protected IAtomData thisAtomData_() {return AbstractAtomData.this;}
         @Override protected ISettableAtomData newSameSettableAtomData_() {return newSame_();}

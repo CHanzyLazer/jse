@@ -94,7 +94,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mAtomNum = aAtomDataXYZ.size();
         
         // 计算单位长度供内部使用
-        mRou = mAtomNum / mBox.prod();
+        mRou = mAtomNum / mBox.volume();
         mUnitLen = Fast.cbrt(1.0/mRou);
         
         mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox);
@@ -113,7 +113,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mBox = aBox;
         mAtomDataXYZ = aXYZValidOpt.apply(MatrixCache.getMatRow(aAtomNum, 3));
         // 计算单位长度供内部使用
-        mRou = mAtomNum / mBox.prod();
+        mRou = mAtomNum / mBox.volume();
         mUnitLen = Fast.cbrt(1.0/mRou);
         mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox);
         mInitThreadID = Thread.currentThread().getId();

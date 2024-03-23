@@ -5,22 +5,21 @@ import jse.atom.XYZ;
 import org.jetbrains.annotations.NotNull;
 
 import static jse.code.CS.*;
-import static jse.code.UT.Code.newBox;
 
 /**
  * lammps 格式的模拟盒信息
  * @author liqa
  */
-public class Box {
+public class LmpBox {
     private final @NotNull IXYZ mBoxLo, mBoxHi;
     
-    public Box() {this(BOX_ONE);}
-    public Box(double aSize) {this(aSize, aSize, aSize);}
-    public Box(double aX, double aY, double aZ) {this(XYZ_ZERO, new XYZ(aX, aY, aZ));}
-    public Box(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi) {this(new XYZ(aXlo, aYlo, aZlo), new XYZ(aXhi, aYhi, aZhi));}
-    public Box(@NotNull IXYZ aBox) {this(XYZ_ZERO, aBox);}
-    public Box(Box aBox) {this(aBox.mBoxLo, aBox.mBoxHi);}
-    public Box(@NotNull IXYZ aBoxLo, @NotNull IXYZ aBoxHi) {mBoxLo = newBox(aBoxLo); mBoxHi = newBox(aBoxHi);}
+    public LmpBox() {this(BOX_ONE);}
+    public LmpBox(double aSize) {this(aSize, aSize, aSize);}
+    public LmpBox(double aX, double aY, double aZ) {this(XYZ_ZERO, new XYZ(aX, aY, aZ));}
+    public LmpBox(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi) {this(new XYZ(aXlo, aYlo, aZlo), new XYZ(aXhi, aYhi, aZhi));}
+    public LmpBox(@NotNull IXYZ aBox) {this(XYZ_ZERO, aBox);}
+    public LmpBox(LmpBox aBox) {this(aBox.mBoxLo, aBox.mBoxHi);}
+    public LmpBox(@NotNull IXYZ aBoxLo, @NotNull IXYZ aBoxHi) {mBoxLo = newBox(aBoxLo); mBoxHi = newBox(aBoxHi);}
     
     /// 获取属性
     public final double xlo() {return mBoxLo.x();}
@@ -34,7 +33,7 @@ public class Box {
     public final boolean isShifted() {return mBoxLo== XYZ_ZERO;}
     public final @NotNull IXYZ shiftedBox() {return mBoxLo== XYZ_ZERO ? mBoxHi : mBoxHi.minus(mBoxLo);}
     
-    public Box copy() {return new Box(this);}
+    public LmpBox copy() {return new LmpBox(this);}
     
     @Override public String toString() {
         return String.format("{boxlo: (%.4g, %.4g, %.4g), boxhi: (%.4g, %.4g, %.4g)}", mBoxLo.x(), mBoxLo.y(), mBoxLo.z(), mBoxHi.x(), mBoxHi.y(), mBoxHi.z());

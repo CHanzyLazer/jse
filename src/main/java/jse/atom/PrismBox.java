@@ -14,4 +14,10 @@ public class PrismBox implements IBox {
     @Override public IBox copy() {return new PrismBox(mA.copy(), mB.copy(), mC.copy());}
     
     @Override public boolean isLmpStyle() {return false;}
+    
+    @Override public String toString() {
+        return String.format("a: (%.4g, %.4g, %.4g)\n", mA.x(), mA.y(), mA.z())
+             + String.format("b: (%.4g, %.4g, %.4g)\n", mB.x(), mB.y(), mB.z())
+             + String.format("c: (%.4g, %.4g, %.4g)"  , mC.x(), mC.y(), mC.z());
+    }
 }

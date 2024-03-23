@@ -32,6 +32,8 @@ public class Atom extends AbstractSettableAtom {
     @Override public Atom setX(double aX) {mX = aX; return this;}
     @Override public Atom setY(double aY) {mY = aY; return this;}
     @Override public Atom setZ(double aZ) {mZ = aZ; return this;}
+    @Override public Atom setXYZ(double aX, double aY, double aZ) {mX = aX; mY = aY; mZ = aZ; return this;}
+    @Override public Atom setXYZ(IXYZ aXYZ) {return setXYZ(aXYZ.x(), aXYZ.y(), aXYZ.z());}
     @Override public Atom setID(int aID) {mID = aID; return this;}
     @Override public Atom setType(int aType) {mType = aType; return this;}
 }

@@ -7,6 +7,8 @@ public interface ISettableXYZ extends IXYZ {
     ISettableXYZ setX(double aX);
     ISettableXYZ setY(double aY);
     ISettableXYZ setZ(double aZ);
+    ISettableXYZ setXYZ(double aX, double aY, double aZ);
+    default ISettableXYZ setXYZ(IXYZ aXYZ) {return setXYZ(aXYZ.x(), aXYZ.y(), aXYZ.z());}
     
     /** Groovy stuffs */
     @VisibleForTesting default double getX() {return x();}

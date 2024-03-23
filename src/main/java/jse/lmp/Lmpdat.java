@@ -41,7 +41,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     private final int mAtomNum;
     private int mAtomTypeNum;
-    private Box mBox;
+    private LmpBox mBox;
     private @Nullable IVector mMasses;
     private final IIntVector mAtomID;
     private final IIntVector mAtomType;
@@ -58,7 +58,7 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @param aAtomXYZ 原子数据组成的矩阵（必须）
      * @param aVelocities 原子速度组成的矩阵
      */
-    Lmpdat(int aAtomTypeNum, Box aBox, @Nullable IVector aMasses, IIntVector aAtomID, IIntVector aAtomType, IMatrix aAtomXYZ, @Nullable IMatrix aVelocities) {
+    Lmpdat(int aAtomTypeNum, LmpBox aBox, @Nullable IVector aMasses, IIntVector aAtomID, IIntVector aAtomType, IMatrix aAtomXYZ, @Nullable IMatrix aVelocities) {
         mBox = aBox;
         mMasses = aMasses;
         mAtomID = aAtomID;
@@ -109,11 +109,11 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @return 返回自身来支持链式调用
      */
     public Lmpdat setBoxNormal() {
-        if (isPrism()) mBox = new Box(mBox);
+        if (isPrism()) mBox = new LmpBox(mBox);
         return this;
     }
     public Lmpdat setBoxPrism() {
-        if (!isPrism()) mBox = new BoxPrism(mBox, 0.0, 0.0, 0.0);
+        if (!isPrism()) mBox = new LmpBoxPrism(mBox, 0.0, 0.0, 0.0);
         return this;
     }
     /**
@@ -149,15 +149,14 @@ public class Lmpdat extends AbstractSettableAtomData {
         }
         
         // box 还是会重新创建，因为 box 的值这里约定是严格的常量，可以避免一些问题
-        mBox = new Box(oShiftedBox.multiply(tScale));
+        mBox = new LmpBox(oShiftedBox.multiply(tScale));
         
         return this;
     }
     
     
     /// 获取属性
-    public boolean isPrism() {return (mBox instanceof BoxPrism);}
-    public Box lmpBox() {return mBox;}
+    public LmpBox lmpBox() {return mBox;}
     public IIntVector ids() {return mAtomID;}
     public IIntVector types() {return mAtomType;}
     public IMatrix positions() {return mAtomXYZ;}
@@ -254,11 +253,6 @@ public class Lmpdat extends AbstractSettableAtomData {
     }
     @Override public int atomNumber() {return mAtomNum;}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
-    @Override public double volume() {
-        // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
-        if (isPrism()) throw new RuntimeException("volume is temporarily NOT support Prism Lmpdat");
-        return mBox.shiftedBox().prod();
-    }
     
     
     /// 创建 Lmpdat
@@ -315,7 +309,7 @@ public class Lmpdat extends AbstractSettableAtomData {
                 }
                 ++row;
             }
-            return new Lmpdat(aAtomData.atomTypeNumber(), new Box(aAtomData.box()), aMasses, rAtomID, rAtomType, rAtomXYZ, rVelocities);
+            return new Lmpdat(aAtomData.atomTypeNumber(), new LmpBox(aAtomData.box()), aMasses, rAtomID, rAtomType, rAtomXYZ, rVelocities);
         }
     }
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
@@ -342,7 +336,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         
         int tAtomNum;
         int aAtomTypeNum;
-        Box aBox;
+        LmpBox aBox;
         @Nullable IVector aMasses = null;
         IIntVector aAtomID = null;
         IIntVector aAtomType = null;
@@ -368,10 +362,10 @@ public class Lmpdat extends AbstractSettableAtomData {
         tLine = aReader.readLine();
         if (UT.Text.containsIgnoreCase(tLine, "xy xz yz")) {
             tTokens = UT.Text.splitBlank(tLine);
-            aBox = new BoxPrism(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi, Double.parseDouble(tTokens[0]), Double.parseDouble(tTokens[1]), Double.parseDouble(tTokens[2]));
+            aBox = new LmpBoxPrism(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi, Double.parseDouble(tTokens[0]), Double.parseDouble(tTokens[1]), Double.parseDouble(tTokens[2]));
             aReader.readLine(); // 跳过空行
         } else {
-            aBox = new Box(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
+            aBox = new LmpBox(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
         }
         // 读取任意属性直到结束
         while ((tLine = aReader.readLine()) != null) {
@@ -469,8 +463,8 @@ public class Lmpdat extends AbstractSettableAtomData {
         aWriteln.writeln(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
         aWriteln.writeln(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
         aWriteln.writeln(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
-        if (mBox instanceof BoxPrism) {
-        BoxPrism tBox = (BoxPrism)mBox;
+        if (mBox instanceof LmpBoxPrism) {
+        LmpBoxPrism tBox = (LmpBoxPrism)mBox;
         aWriteln.writeln(String.format("%15.10g %15.10g %15.10g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
         }
         if (mMasses != null) {
@@ -573,7 +567,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             aComm.recv(tVelocitiesIsCol ? tVelocities.asVecCol() : tVelocities.asVecRow(), aSource, DATA_VELOCITIES);
         }
         // 创建 Lmpdat
-        return new Lmpdat(tAtomTypeNum, new Box(
+        return new Lmpdat(tAtomTypeNum, new LmpBox(
             Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
             Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
             Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])
@@ -642,7 +636,7 @@ public class Lmpdat extends AbstractSettableAtomData {
                 aComm.bcast(tVelocitiesIsCol ? tVelocities.asVecCol() : tVelocities.asVecRow(), aRoot);
             }
             // 创建 Lmpdat
-            return new Lmpdat(tAtomTypeNum, new Box(
+            return new Lmpdat(tAtomTypeNum, new LmpBox(
                 Double.longBitsToDouble(tLmpdatInfo[1]), Double.longBitsToDouble(tLmpdatInfo[2]),
                 Double.longBitsToDouble(tLmpdatInfo[3]), Double.longBitsToDouble(tLmpdatInfo[4]),
                 Double.longBitsToDouble(tLmpdatInfo[5]), Double.longBitsToDouble(tLmpdatInfo[6])

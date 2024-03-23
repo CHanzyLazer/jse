@@ -319,11 +319,6 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     @Override public int atomNumber() {return mDirect.rowNumber();}
     @Override public int atomTypeNumber() {return mAtomNumbers.size();}
     @Override public POSCAR setAtomTypeNumber(int aAtomTypeNum) {throw new UnsupportedOperationException("setAtomTypeNum");}
-    @Override public double volume() {
-        // 注意如果是斜方的模拟盒则不能获取到模拟盒体积
-        if (!mIsDiagBox) throw new RuntimeException("volume is temporarily support Diagonal Box only");
-        return mBox.refSlicer().diag().prod() * MathEX.Fast.pow3(mBoxScale);
-    }
     
     
     /** 拷贝一份 POSCAR */

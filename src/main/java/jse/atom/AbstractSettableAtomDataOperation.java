@@ -71,9 +71,11 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
         final int tAtomNum = tThis.atomNumber();
         for (int i = 0; i < tAtomNum; ++i) {
             ISettableAtom tAtom = tThis.atom(i);
-            tAtom.setX(tAtom.x() + aRandom.nextGaussian()*aSigma)
-                 .setY(tAtom.y() + aRandom.nextGaussian()*aSigma)
-                 .setZ(tAtom.z() + aRandom.nextGaussian()*aSigma);
+            tAtom.setXYZ(
+                tAtom.x() + aRandom.nextGaussian()*aSigma,
+                tAtom.y() + aRandom.nextGaussian()*aSigma,
+                tAtom.z() + aRandom.nextGaussian()*aSigma
+            );
         }
         // 注意周期边界条件的处理
         wrapPBC2this();
@@ -81,20 +83,38 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
     
     @Override public void wrapPBC2this() {
         final ISettableAtomData tThis = thisAtomData_();
-        final XYZ tBox = XYZ.toXYZ(tThis.box());
         final int tAtomNum = tThis.atomNumber();
-        for (int i = 0; i < tAtomNum; ++i) {
-            ISettableAtom tAtom = tThis.atom(i);
-            double tX = tAtom.x();
-            double tY = tAtom.y();
-            double tZ = tAtom.z();
-            if      (tX <  0.0    ) {tX += tBox.mX; while (tX <  0.0    ) tX += tBox.mX;}
-            else if (tX >= tBox.mX) {tX -= tBox.mX; while (tX >= tBox.mX) tX -= tBox.mX;}
-            if      (tY <  0.0    ) {tY += tBox.mY; while (tY <  0.0    ) tY += tBox.mY;}
-            else if (tY >= tBox.mY) {tY -= tBox.mY; while (tY >= tBox.mY) tY -= tBox.mY;}
-            if      (tZ <  0.0    ) {tZ += tBox.mZ; while (tZ <  0.0    ) tZ += tBox.mZ;}
-            else if (tZ >= tBox.mZ) {tZ -= tBox.mZ; while (tZ >= tBox.mZ) tZ -= tBox.mZ;}
-            tAtom.setX(tX).setY(tY).setZ(tZ);
+        if (tThis.isPrism()) {
+            // 斜方情况需要转为 Direct 再 wrap，
+            // 完事后再转回 Cartesian
+            final IBox tBox = tThis.box();
+            for (int i = 0; i < tAtomNum; ++i) {
+                ISettableAtom tAtom = tThis.atom(i);
+                XYZ tDirect = tBox.toDirect(tAtom);
+                if      (tDirect.mX <  0.0) {++tDirect.mX; while (tDirect.mX <  0.0) ++tDirect.mX;}
+                else if (tDirect.mX >= 1.0) {--tDirect.mX; while (tDirect.mX >= 1.0) --tDirect.mX;}
+                if      (tDirect.mY <  0.0) {++tDirect.mY; while (tDirect.mY <  0.0) ++tDirect.mY;}
+                else if (tDirect.mY >= 1.0) {--tDirect.mY; while (tDirect.mY >= 1.0) --tDirect.mY;}
+                if      (tDirect.mZ <  0.0) {++tDirect.mZ; while (tDirect.mZ <  0.0) ++tDirect.mZ;}
+                else if (tDirect.mZ >= 1.0) {--tDirect.mZ; while (tDirect.mZ >= 1.0) --tDirect.mZ;}
+                XYZ tCartesian = tBox.toCartesian(tDirect);
+                tAtom.setXYZ(tCartesian);
+            }
+        } else {
+            final XYZ tBox = XYZ.toXYZ(tThis.box());
+            for (int i = 0; i < tAtomNum; ++i) {
+                ISettableAtom tAtom = tThis.atom(i);
+                double tX = tAtom.x();
+                double tY = tAtom.y();
+                double tZ = tAtom.z();
+                if      (tX <  0.0    ) {tX += tBox.mX; while (tX <  0.0    ) tX += tBox.mX;}
+                else if (tX >= tBox.mX) {tX -= tBox.mX; while (tX >= tBox.mX) tX -= tBox.mX;}
+                if      (tY <  0.0    ) {tY += tBox.mY; while (tY <  0.0    ) tY += tBox.mY;}
+                else if (tY >= tBox.mY) {tY -= tBox.mY; while (tY >= tBox.mY) tY -= tBox.mY;}
+                if      (tZ <  0.0    ) {tZ += tBox.mZ; while (tZ <  0.0    ) tZ += tBox.mZ;}
+                else if (tZ >= tBox.mZ) {tZ -= tBox.mZ; while (tZ >= tBox.mZ) tZ -= tBox.mZ;}
+                tAtom.setXYZ(tX, tY, tZ);
+            }
         }
     }
     

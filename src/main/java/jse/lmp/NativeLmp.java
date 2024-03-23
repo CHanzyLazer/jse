@@ -603,18 +603,18 @@ public class NativeLmp implements IAutoShutdown {
      * Extract simulation box parameters
      * <p>
      * This is a wrapper around the lammps_extract_box() function of the C-library interface.
-     * Unlike in the C function, the result is returned a {@link Box} object.
-     * @return a {@link Box} object.
+     * Unlike in the C function, the result is returned a {@link LmpBox} object.
+     * @return a {@link LmpBox} object.
      */
-    public Box box() throws LmpException {
+    public LmpBox box() throws LmpException {
         checkThread();
         double[] rBox = DoubleArrayCache.getArray(15);
         lammpsExtractBox_(mLmpPtr, rBox);
-        Box tOut;
+        LmpBox tOut;
         if (settingOf("triclinic")==1) {
-            tOut = new BoxPrism(rBox[0], rBox[3], rBox[1], rBox[4], rBox[2], rBox[5], rBox[6], rBox[8], rBox[7]);
+            tOut = new LmpBoxPrism(rBox[0], rBox[3], rBox[1], rBox[4], rBox[2], rBox[5], rBox[6], rBox[8], rBox[7]);
         } else {
-            tOut = new Box(rBox[0], rBox[3], rBox[1], rBox[4], rBox[2], rBox[5]);
+            tOut = new LmpBox(rBox[0], rBox[3], rBox[1], rBox[4], rBox[2], rBox[5]);
         }
         DoubleArrayCache.returnArray(rBox);
         return tOut;
@@ -630,7 +630,7 @@ public class NativeLmp implements IAutoShutdown {
      * Reset simulation box parameters
      * <p>
      * This is a wrapper around the {@code lammps_reset_box()} function of the C-library interface,
-     * but in {@link BoxPrism} order.
+     * but in {@link LmpBoxPrism} order.
      */
     public void resetBox(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi, double aXY, double aXZ, double aYZ) throws LmpException {
         checkThread();
@@ -642,12 +642,12 @@ public class NativeLmp implements IAutoShutdown {
     public void resetBox(double aXhi, double aYhi, double aZhi) throws LmpException {
         resetBox(0.0, aXhi, 0.0, aYhi, 0.0, aZhi);
     }
-    public void resetBox(BoxPrism aBoxPrism) throws LmpException {
+    public void resetBox(LmpBoxPrism aBoxPrism) throws LmpException {
         resetBox(aBoxPrism.xlo(), aBoxPrism.xhi(), aBoxPrism.ylo(), aBoxPrism.yhi(), aBoxPrism.zlo(), aBoxPrism.zhi(), aBoxPrism.xy(), aBoxPrism.xz(), aBoxPrism.yz());
     }
-    public void resetBox(Box aBox) throws LmpException {
-        if (aBox instanceof BoxPrism) {
-            resetBox((BoxPrism)aBox);
+    public void resetBox(LmpBox aBox) throws LmpException {
+        if (aBox instanceof LmpBoxPrism) {
+            resetBox((LmpBoxPrism)aBox);
         } else {
             resetBox(aBox.xlo(), aBox.xhi(), aBox.ylo(), aBox.yhi(), aBox.zlo(), aBox.zhi());
         }
@@ -927,10 +927,10 @@ public class NativeLmp implements IAutoShutdown {
     public void loadLmpdat(final Lmpdat aLmpdat) throws LmpException {
         checkThread();
         if (aLmpdat.isPrism()) {
-        BoxPrism tBox = (BoxPrism)aLmpdat.lmpBox();
+        LmpBoxPrism tBox = (LmpBoxPrism)aLmpdat.lmpBox();
         command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi(), tBox.xy(), tBox.xz(), tBox.yz()));
         } else {
-        Box tBox = aLmpdat.lmpBox();
+        LmpBox tBox = aLmpdat.lmpBox();
         command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
         }
         int tAtomTypeNum = aLmpdat.atomTypeNumber();

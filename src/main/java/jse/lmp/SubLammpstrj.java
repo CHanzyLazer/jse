@@ -25,7 +25,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     private final String[] mBoxBounds;
     private final ITable mAtomData;
     private int mAtomTypeNum;
-    private Box mBox;
+    private LmpBox mBox;
     
     String mKeyX = null, mKeyY = null, mKeyZ = null;
     private final boolean mHasVelocities;
@@ -33,7 +33,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /** 提供直接转为表格的接口 */
     public ITable asTable() {return mAtomData;}
     
-    SubLammpstrj(long aTimeStep, String[] aBoxBounds, Box aBox, ITable aAtomData) {
+    SubLammpstrj(long aTimeStep, String[] aBoxBounds, LmpBox aBox, ITable aAtomData) {
         mTimeStep = aTimeStep;
         mBoxBounds = aBoxBounds;
         mBox = aBox;
@@ -58,7 +58,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     // dump 额外的属性
     public long timeStep() {return mTimeStep;}
     public String[] boxBounds() {return mBoxBounds;}
-    public Box lmpBox() {return mBox;}
+    public LmpBox lmpBox() {return mBox;}
     
     public SubLammpstrj setTimeStep(long aTimeStep) {mTimeStep = aTimeStep; return this;}
     /** Groovy stuffs */
@@ -111,7 +111,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         if (mAtomData.containsHead("vz")) mAtomData.col("vz").multiply2this(tScale);
         
         // box 还是会重新创建，因为 box 的值这里约定是严格的常量，可以避免一些问题
-        mBox = new Box(oShiftedBox.multiply(tScale));
+        mBox = new LmpBox(oShiftedBox.multiply(tScale));
         
         return this;
     }
@@ -282,8 +282,6 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public SubLammpstrj setAtomTypeNumber(int aAtomTypeNum) {mAtomTypeNum = aAtomTypeNum; return this;}
     
-    @Override public double volume() {return mBox.shiftedBox().prod();}
-    
     @Override public SubLammpstrj copy() {return new SubLammpstrj(mTimeStep, Arrays.copyOf(mBoxBounds, mBoxBounds.length), mBox.copy(), mAtomData.copy());}
     // 由于 SubLammpstrj 不一定全都可以修改，因此不重写另外两个
     
@@ -328,7 +326,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                     rMat.set(i, STD_Z_COL, tAtom.z());
                 }
             }
-            return new SubLammpstrj(aTimeStep, BOX_BOUND, new Box(aAtomData.box()), rAtomData);
+            return new SubLammpstrj(aTimeStep, BOX_BOUND, new LmpBox(aAtomData.box()), rAtomData);
         }
     }
     static long getTimeStep(IAtomData aAtomData, long aDefault) {
@@ -357,7 +355,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         long aTimeStep;
         int tAtomNum;
         String[] aBoxBounds;
-        Box aBox;
+        LmpBox aBox;
         final ITable aAtomData;
         
         // 读取时间步数
@@ -382,7 +380,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
         double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]);
         // 这里暂不考虑斜方模拟盒
-        aBox = new Box(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
+        aBox = new LmpBox(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
         
         // 读取原子信息
         tLine = UT.Text.findLineContaining(aReader, "ITEM: ATOMS", true);
@@ -474,7 +472,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
         for (IVector subData : rAtomData.asMatrix().cols()) aComm.recv(subData, aSource, DATA);
         // 创建 SubLammpstrj
-        return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
+        return new SubLammpstrj(tTimeStep, BOX_BOUND, new LmpBox(
             Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
             Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
             Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
@@ -515,7 +513,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
             ITable rAtomData = Tables.zeros(tAtomNum, tAtomDataKeys);
             for (IVector subData : rAtomData.asMatrix().cols()) aComm.bcast(subData, aRoot);
             // 创建 SubLammpstrj
-            return new SubLammpstrj(tTimeStep, BOX_BOUND, new Box(
+            return new SubLammpstrj(tTimeStep, BOX_BOUND, new LmpBox(
                 Double.longBitsToDouble(tLammpstrjInfo[1]), Double.longBitsToDouble(tLammpstrjInfo[2]),
                 Double.longBitsToDouble(tLammpstrjInfo[3]), Double.longBitsToDouble(tLammpstrjInfo[4]),
                 Double.longBitsToDouble(tLammpstrjInfo[5]), Double.longBitsToDouble(tLammpstrjInfo[6])
