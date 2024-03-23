@@ -1,6 +1,5 @@
 package jse.atom;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -57,13 +56,14 @@ public interface IAtomData {
      * @param aType 指定此值来获取只有这个种类的原子的单原子计算器，用于计算只考虑一种元素的一些参数
      * @param aThreadNum 执行 MPC 的线程数目
      * @return 获取到的 MPC
+     * @deprecated use {@link MonatomicParameterCalculator#of} or {@link MPC#of}
      */
-    @ApiStatus.Obsolete default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(operation().filterType(aType), aThreadNum);}
-    @ApiStatus.Obsolete default MonatomicParameterCalculator getMonatomicParameterCalculator    (                                                              ) {return MonatomicParameterCalculator.of(this                                     );}
-    @ApiStatus.Obsolete default MonatomicParameterCalculator getMonatomicParameterCalculator    (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(this                         , aThreadNum);}
-    @ApiStatus.Obsolete default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                                                     ) {return MonatomicParameterCalculator.of(operation().filterType(aType)            );}
-    @ApiStatus.Obsolete @VisibleForTesting default MonatomicParameterCalculator       getMPC    (                                                              ) {return MPC.of(this                                     );}
-    @ApiStatus.Obsolete @VisibleForTesting default MonatomicParameterCalculator       getMPC    (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(this                         , aThreadNum);}
-    @ApiStatus.Obsolete @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC(int aType                                                     ) {return MPC.of(operation().filterType(aType)            );}
-    @ApiStatus.Obsolete @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(operation().filterType(aType), aThreadNum);}
+    @Deprecated default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(operation().filterType(aType), aThreadNum);}
+    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getMonatomicParameterCalculator    (                                                              ) {return MonatomicParameterCalculator.of(this                                     );}
+    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getMonatomicParameterCalculator    (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(this                         , aThreadNum);}
+    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                                                     ) {return MonatomicParameterCalculator.of(operation().filterType(aType)            );}
+    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getMPC                             (                                                              ) {return MPC.of(this                                     );}
+    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getMPC                             (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(this                         , aThreadNum);}
+    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC                         (int aType                                                     ) {return MPC.of(operation().filterType(aType)            );}
+    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC                         (int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(operation().filterType(aType), aThreadNum);}
 }

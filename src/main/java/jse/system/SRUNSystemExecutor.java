@@ -2,6 +2,7 @@ package jse.system;
 
 import jse.code.CS.Slurm.Resource;
 import jse.code.UT;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +21,7 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * 在提交的 jse 任务中提交子任务；因此认为此时已经有了 SLURM 的任务环境 </p>
  * <p> 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务 </p>
  */
+@ApiStatus.Obsolete
 public class SRUNSystemExecutor extends LocalSystemExecutor {
     private final String mWorkingDir;
     private final Map<Resource, Boolean> mAssignedResources;

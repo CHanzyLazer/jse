@@ -9,7 +9,7 @@ import java.util.function.DoubleBinaryOperator;
  * <p> 数值函数，二维输入（f(x,y)），内部使用向量存储，对于中间值使用线性插值给出结果 </p>
  * <p> 要求 x，y 是等间距排列的，主要是为了加速查找过程 </p>
  */
-@ApiStatus.Obsolete
+@Deprecated
 public class Func2 {
     private final double mX0, mY0;
     private final double mDx, mDy;

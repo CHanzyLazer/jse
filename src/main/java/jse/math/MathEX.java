@@ -98,7 +98,7 @@ public class MathEX {
     }
     
     
-    @ApiStatus.Obsolete
+    @Deprecated @ApiStatus.ScheduledForRemoval
     @SuppressWarnings("UnusedReturnValue")
     public static class Vec {
         /// Vector Merge
@@ -582,7 +582,7 @@ public class MathEX {
     
     
     /// a Parfor ThreadPool for MathEX usage
-    @ApiStatus.Obsolete
+    @Deprecated @ApiStatus.ScheduledForRemoval
     public static class Par {
         private static ParforThreadPool POOL = new ParforThreadPool(1);
         public static void setThreadNum(int aThreadNum) {POOL.shutdown(); POOL = new ParforThreadPool(aThreadNum);}
@@ -1144,9 +1144,9 @@ public class MathEX {
          * @param aFunc2 input numerical function, can be double[], Func1, aFunc2 or aFunc3
          * @return the numerical laplacian of the function (in PBC)
          */
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func2 laplacian(Func2 aFunc2) {return laplacian2Dest(aFunc2, aFunc2.shell().setData(new double[aFunc2.data().length]));}
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func2 laplacian2Dest(Func2 aFunc2, Func2 rDest) {
             int tNx = aFunc2.Nx();
             int tNy = aFunc2.Ny();
@@ -1163,9 +1163,9 @@ public class MathEX {
             }
             return rDest;
         }
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func3 laplacian(Func3 aFunc3) {return laplacian2Dest(aFunc3, aFunc3.shell().setData(new double[aFunc3.data().length]));}
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func3 laplacian2Dest(final Func3 aFunc3, final Func3 rDest) {
             final int tNx = aFunc3.Nx();
             final int tNy = aFunc3.Ny();
@@ -1189,9 +1189,9 @@ public class MathEX {
         }
         
         /** parallel support for 3d laplacian */
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func3 parlaplacian2Dest(final Func3 aFunc3, final Func3 rDest) {return parlaplacian2Dest(Par.POOL, aFunc3, rDest);}
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static Func3 parlaplacian2Dest(ParforThreadPool aPool, final Func3 aFunc3, final Func3 rDest) {
             final int tNx = aFunc3.Nx();
             final int tNy = aFunc3.Ny();
@@ -1230,7 +1230,7 @@ public class MathEX {
          * @param aSteps the step number of this iteration
          * @return the array of solution y(x) in default, or the single value of y(last) = y(aStartX+aDx*aSteps) if use "odeLast"
          */
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static double[] odeEuler(DoubleBinaryOperator aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
             double[] tResult = new double[aSteps+1];
             tResult[0] = aStartY;
@@ -1241,7 +1241,7 @@ public class MathEX {
             }
             return tResult;
         }
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static double odeLastEuler(DoubleBinaryOperator aFunc2, double aStartY, double aStartX, double aDx, int aSteps) {
             double tResult = aStartY;
             double tX = aStartX;
@@ -1251,7 +1251,7 @@ public class MathEX {
             }
             return tResult;
         }
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static double[][] odeEuler(IBinaryFullOperator<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[][] tResult = new double[aSteps+1][];
             tResult[0] = aStartY;
@@ -1263,7 +1263,7 @@ public class MathEX {
             return tResult;
         }
         /** 利用上 aDestFunc2 产生的临时变量 */
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static double[][] ode2DestEuler(IBinaryFullOperator<double[], double[], Double> aDestFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[][] tResult = new double[aSteps+1][];
             tResult[0] = aStartY;
@@ -1274,7 +1274,7 @@ public class MathEX {
             }
             return tResult;
         }
-        @ApiStatus.Obsolete
+        @Deprecated @ApiStatus.ScheduledForRemoval
         public static double[] odeLastEuler(IBinaryFullOperator<double[], double[], Double> aFunc2, double[] aStartY, double aStartX, final double aDx, int aSteps) {
             double[] tResult = Vec.copy(aStartY);
             double tX = aStartX;
@@ -1284,11 +1284,11 @@ public class MathEX {
             }
             return tResult;
         }
-        @ApiStatus.Obsolete public static double[]   odeEuler         (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeEuler    (aFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double     odeLastEuler     (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[][] odeEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[][] ode2DestEuler(IBinaryFullOperator<double[], double[], Double> aDestFunc2, double[] aStartY, double aDx, int aSteps) {return ode2DestEuler(aDestFunc2, aStartY, 0.0, aDx, aSteps);}
-        @ApiStatus.Obsolete public static double[]   odeLastEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
+        @Deprecated @ApiStatus.ScheduledForRemoval public static double[]   odeEuler         (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeEuler    (aFunc2, aStartY, 0.0, aDx, aSteps);}
+        @Deprecated @ApiStatus.ScheduledForRemoval public static double     odeLastEuler     (DoubleBinaryOperator aFunc2, double aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2, aStartY, 0.0, aDx, aSteps);}
+        @Deprecated @ApiStatus.ScheduledForRemoval public static double[][] odeEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
+        @Deprecated @ApiStatus.ScheduledForRemoval public static double[][] ode2DestEuler(IBinaryFullOperator<double[], double[], Double> aDestFunc2, double[] aStartY, double aDx, int aSteps) {return ode2DestEuler(aDestFunc2, aStartY, 0.0, aDx, aSteps);}
+        @Deprecated @ApiStatus.ScheduledForRemoval public static double[]   odeLastEuler(IBinaryFullOperator<double[], double[], Double> aFunc2    , double[] aStartY, double aDx, int aSteps) {return odeLastEuler(aFunc2    , aStartY, 0.0, aDx, aSteps);}
     }
     
     

@@ -1,10 +1,11 @@
 package jse.lmp;
 
 import jse.system.ISystemExecutor;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-@VisibleForTesting
+@VisibleForTesting @ApiStatus.Obsolete
 public final class LPC extends LmpParameterCalculator {
     private LPC(ILmpExecutor aLMP, String aPairStyle, String aPairCoeff) {super(aLMP, aPairStyle, aPairCoeff);}
     private LPC(String aLmpExe, @Nullable String aLogPath, String aPairStyle, String aPairCoeff) {super(aLmpExe, aLogPath, aPairStyle, aPairCoeff);}

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
  * <p> 数值函数，三维输入（f(x,y,z)），内部使用向量存储，对于中间值使用线性插值给出结果 </p>
  * <p> 要求 x，y，z 是等间距排列的，主要是为了加速查找过程 </p>
  */
-@ApiStatus.Obsolete
+@Deprecated
 public class Func3 {
     private final double mX0, mY0, mZ0;
     private final double mDx, mDy, mDz;

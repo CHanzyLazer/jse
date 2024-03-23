@@ -1,10 +1,9 @@
 package jse.lmp;
 
 import jse.atom.IAtomData;
-import jse.atom.IXYZ;
-import jse.atom.MonatomicParameterCalculator;
 import jse.atom.MultiFrameParameterCalculator;
 import jse.code.UT;
+import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
 import jse.math.function.Func1;
 import jse.math.function.IFunc1;
@@ -16,7 +15,6 @@ import jse.system.ISystemExecutor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Range;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,7 +31,7 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * 可以减少各种类型文件的排列组合的接口
  * @author liqa
  */
-@ApiStatus.Experimental
+@ApiStatus.Obsolete
 public class LmpParameterCalculator extends AbstractHasAutoShutdown {
     private final String mWorkingDir;
     
@@ -469,10 +467,10 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
                 return this;
             }
             @Override public IFunc1 calType(final int aType, final int aThreadNum) {
-                return calMSD_(fShortLammpstrj==null ? null : ()->fShortLammpstrj.getTypeMultiFrameParameterCalculator(aTimestep, aType, aThreadNum), ()->fLongLammpstrj.getTypeMultiFrameParameterCalculator(aTimestep, aType, aThreadNum));
+                return calMSD_(fShortLammpstrj==null ? null : ()->MultiFrameParameterCalculator.of(AbstractCollections.map(fShortLammpstrj.asList(), atomData -> atomData.operation().filterType(aType)), fShortLammpstrj.size()>1 ? aTimestep*(fShortLammpstrj.get(1).timeStep()-fShortLammpstrj.get(0).timeStep()) : aTimestep, aThreadNum), ()->MultiFrameParameterCalculator.of(AbstractCollections.map(fLongLammpstrj.asList(), atomData -> atomData.operation().filterType(aType)), fLongLammpstrj.size()>1 ? aTimestep*(fLongLammpstrj.get(1).timeStep()-fLongLammpstrj.get(0).timeStep()) : aTimestep, aThreadNum));
             }
             @Override public IFunc1 cal(final int aThreadNum) {
-                return calMSD_(fShortLammpstrj==null ? null : ()->fShortLammpstrj.getMultiFrameParameterCalculator(aTimestep, aThreadNum), ()->fLongLammpstrj.getMultiFrameParameterCalculator(aTimestep, aThreadNum));
+                return calMSD_(fShortLammpstrj==null ? null : ()->MultiFrameParameterCalculator.of(fShortLammpstrj.asList(), fShortLammpstrj.size()>1 ? aTimestep*(fShortLammpstrj.get(1).timeStep()-fShortLammpstrj.get(0).timeStep()) : aTimestep, aThreadNum), ()->MultiFrameParameterCalculator.of(fLongLammpstrj.asList(), fLongLammpstrj.size()>1 ? aTimestep*(fLongLammpstrj.get(1).timeStep()-fLongLammpstrj.get(0).timeStep()) : aTimestep, aThreadNum));
             }
         };
     }

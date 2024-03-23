@@ -21,6 +21,7 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * <p> 一般的 SLURM 实现，基于 SSH 的远程 Executor，因此针对的是使用 SSH 连接的远程 SLURM 服务器 </p>
  * <p> 由于实现起来较为复杂，这里不考虑执行后再次展开的情况，以及运行 jse 本身的使用 -c 指定单任务多核的情况 </p>
  */
+@ApiStatus.Obsolete
 public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSystemExecutor> {
     /** 一些目录设定， %n: unique job name, %i: index of job，注意只有 OUTFILE_PATH 支持 %i */
     private final static String SPLIT_NODE_SCRIPT_NAME = "splitNodeList.sh";

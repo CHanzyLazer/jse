@@ -13,6 +13,7 @@ import jse.math.MathEX;
 import jse.math.SliceType;
 import jse.parallel.CompletedFuture;
 import jse.system.*;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -583,11 +584,11 @@ public class CS {
         public final static int NODEID;
         public final static String NODENAME;
         public final static List<String> NODE_LIST;
-        public final static ResourcesManager RESOURCES_MANAGER;
+        @ApiStatus.Obsolete public final static ResourcesManager RESOURCES_MANAGER;
         
         
         /** slurm 的资源分配器，所有 slurm 资源申请统一先走这层防止资源分配失败 */
-        public final static class ResourcesManager {
+        @ApiStatus.Obsolete public final static class ResourcesManager {
             private final Map<String, Integer> mAllResources;
             private int mRestStepCount;
             private ResourcesManager() {
@@ -651,7 +652,7 @@ public class CS {
             }
             
             /** 不指定时会分配目前最大核数的节点，保持不跨节点 */
-            public synchronized @Nullable Resource assignResource() {
+            @ApiStatus.Obsolete public synchronized @Nullable Resource assignResource() {
                 int tNTasks = 0;
                 String tNode = null;
                 for (Map.Entry<String, Integer> tEntry : mAllResources.entrySet()) {
@@ -672,7 +673,7 @@ public class CS {
             }
             
             /** 返回分配的资源 */
-            public synchronized void returnResource(Resource aResource) {
+            @ApiStatus.Obsolete public synchronized void returnResource(Resource aResource) {
                 int tIdx = 0;
                 for (String tNode : aResource.nodelist) {
                     final int tThisNodeNTasks = aResource.ntasksPerNodeList[tIdx];
@@ -682,7 +683,7 @@ public class CS {
             }
             
             /** 获取提交作业步的指令 */
-            public synchronized @Nullable String creatJobStep(Resource aResource, String aCommand) {
+            @ApiStatus.Obsolete public synchronized @Nullable String creatJobStep(Resource aResource, String aCommand) {
                 // 超过作业步限制直接禁止分配
                 --mRestStepCount;
                 if (mRestStepCount < 0) {mRestStepCount = 0; return null;}
@@ -699,7 +700,7 @@ public class CS {
             }
         }
         /** slurm 的资源结构，限制很多已经尽力 */
-        public final static class Resource {
+        @ApiStatus.Obsolete public final static class Resource {
             private final @Unmodifiable List<String> nodelist;
             private final int nodes;
             private final int ntasks;

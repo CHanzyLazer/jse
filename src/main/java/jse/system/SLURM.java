@@ -5,8 +5,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Map;
 
-@VisibleForTesting
-@ApiStatus.Obsolete
+@VisibleForTesting @ApiStatus.Obsolete
 public final class SLURM extends SLURMSystemExecutor {
     public SLURM(Map<?, ?> aArgs) throws Exception {super(aArgs);}
 }
