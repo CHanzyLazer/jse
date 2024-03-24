@@ -51,7 +51,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     /**
      * 直接根据数据创建 Lmpdat
      * @param aAtomTypeNum 原子类型数目（必须）
-     * @param aBox 模拟盒，可以接收 double[] 的模拟盒，则认为所有数据已经经过了 shift
+     * @param aBox lammps 模拟盒
      * @param aMasses 原子的质量
      * @param aAtomID 原子数据组成的矩阵（必须）
      * @param aAtomType 原子数据组成的矩阵（必须）
@@ -109,25 +109,68 @@ public class Lmpdat extends AbstractSettableAtomData {
      * @return 返回自身来支持链式调用
      */
     public Lmpdat setBoxNormal() {
-        if (isPrism()) mBox = new LmpBox(mBox);
+        if (!isPrism()) return this;
+        LmpBox oBox = mBox;
+        mBox = new LmpBox(mBox);
+        // 如果原本的斜方模拟盒不存在斜方数据则直接返回
+        if (MathEX.Code.numericEqual(oBox.xy(), 0.0) && MathEX.Code.numericEqual(oBox.xz(), 0.0) && MathEX.Code.numericEqual(oBox.yz(), 0.0)) return this;
+        // 否则将原子进行线性变换
+        XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+        for (int i = 0; i < mAtomNum; ++i) {
+            ISettableAtom tAtom = atom(i);
+            tBuf.setXYZ(tAtom);
+            // 这样转换两次即可实现线性变换
+            oBox.toDirect(tBuf);
+            mBox.toCartesian(tBuf);
+            tAtom.setXYZ(tBuf);
+            // 如果存在速度，则速度也需要做一次这样的变换
+            if (mVelocities != null) {
+                tBuf.setXYZ(tAtom.vx(), tAtom.vy(), tAtom.vz());
+                oBox.toDirect(tBuf);
+                mBox.toCartesian(tBuf);
+                tAtom.setVxyz(tBuf);
+            }
+        }
         return this;
     }
-    public Lmpdat setBoxPrism() {
-        if (!isPrism()) mBox = new LmpBoxPrism(mBox, 0.0, 0.0, 0.0);
+    public Lmpdat setBoxPrism() {return setBoxPrism(0.0, 0.0, 0.0);}
+    public Lmpdat setBoxPrism(double aXY, double aXZ, double aYZ) {
+        if (isPrism()) return this;
+        LmpBox oBox = mBox;
+        mBox = new LmpBoxPrism(mBox, aXY, aXZ, aYZ);
+        // 如果如果需要设置的斜方模拟盒不存在斜方数据则直接返回
+        if (MathEX.Code.numericEqual(aXY, 0.0) && MathEX.Code.numericEqual(aXZ, 0.0) && MathEX.Code.numericEqual(aYZ, 0.0)) return this;
+        // 否则将原子进行线性变换
+        XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+        for (int i = 0; i < mAtomNum; ++i) {
+            ISettableAtom tAtom = atom(i);
+            tBuf.setXYZ(tAtom);
+            // 这样转换两次即可实现线性变换
+            oBox.toDirect(tBuf);
+            mBox.toCartesian(tBuf);
+            tAtom.setXYZ(tBuf);
+            // 如果存在速度，则速度也需要做一次这样的变换
+            if (mVelocities != null) {
+                tBuf.setXYZ(tAtom.vx(), tAtom.vy(), tAtom.vz());
+                oBox.toDirect(tBuf);
+                mBox.toCartesian(tBuf);
+                tAtom.setVxyz(tBuf);
+            }
+        }
         return this;
     }
+    
     /**
      * 密度归一化
      * @return 返回自身来支持链式调用
      */
     public Lmpdat setDenseNormalized() {
-        if (isPrism()) throw new RuntimeException("setDenseNormalized is temporarily NOT support Prism Lmpdat");
-        
-        XYZ oShiftedBox = XYZ.toXYZ(mBox.shiftedBox());
-        double tScale = MathEX.Fast.cbrt(oShiftedBox.prod() / mAtomNum);
+        double tScale = MathEX.Fast.cbrt(volume() / mAtomNum);
         tScale = 1.0 / tScale;
         
-        // 从逻辑上考虑，这里不对原本数据做值拷贝
+        // 从逻辑上考虑，这里不对原本数据做值拷贝，
+        // 即使是斜方的也可以直接像这样进行缩放，
+        // 这里顺便也会移除掉 boxlo 的数据，因此不使用 atom 修改
         double tXlo = mBox.xlo(), tYlo = mBox.ylo(), tZlo = mBox.zlo();
         IVector
         tCol = mAtomXYZ.col(XYZ_X_COL);
@@ -149,14 +192,16 @@ public class Lmpdat extends AbstractSettableAtomData {
         }
         
         // box 还是会重新创建，因为 box 的值这里约定是严格的常量，可以避免一些问题
-        mBox = new LmpBox(oShiftedBox.multiply(tScale));
+        mBox = isPrism() ?
+            new LmpBoxPrism(mBox.multiply(tScale), mBox.xy()*tScale, mBox.xz()*tScale, mBox.yz()*tScale) :
+            new LmpBox(mBox.multiply(tScale));
         
         return this;
     }
     
     
     /// 获取属性
-    public LmpBox lmpBox() {return mBox;}
+    /** @deprecated use {@link #box} */ @Deprecated public LmpBox lmpBox() {return mBox;}
     public IIntVector ids() {return mAtomID;}
     public IIntVector types() {return mAtomType;}
     public IMatrix positions() {return mAtomXYZ;}
@@ -164,7 +209,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     public boolean hasMasses() {return mMasses!=null;}
     public @Nullable IVector masses() {return mMasses;}
     public double mass(int aType) {return mMasses==null ? Double.NaN : mMasses.get(aType-1);}
-    public ISettableAtom pickAtomInternal(final int aIdx) {
+    public ISettableAtom atomInternal(final int aIdx) {
         return new AbstractSettableAtom() {
             @Override public double x() {return mAtomXYZ.get(aIdx, XYZ_X_COL);}
             @Override public double y() {return mAtomXYZ.get(aIdx, XYZ_Y_COL);}
@@ -205,7 +250,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     
     
     /** AbstractAtomData stuffs */
-    @Override public boolean hasVelocities() {return mVelocities!=null;}
+    @Override public boolean hasVelocities() {return mVelocities != null;}
     @Override public ISettableAtom atom(final int aIdx) {
         // 注意如果是斜方的模拟盒则不能获取到正交的原子数据
         if (isPrism()) throw new RuntimeException("atoms is temporarily NOT support Prism Lmpdat");
@@ -220,7 +265,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             @Override public double vx() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VX_COL);}
             @Override public double vy() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VY_COL);}
             @Override public double vz() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VZ_COL);}
-            @Override public boolean hasVelocities() {return mVelocities!=null;}
+            @Override public boolean hasVelocities() {return mVelocities != null;}
             
             @Override public ISettableAtom setX(double aX) {mAtomXYZ.set(aIdx, XYZ_X_COL, aX+mBox.xlo()); return this;}
             @Override public ISettableAtom setY(double aY) {mAtomXYZ.set(aIdx, XYZ_Y_COL, aY+mBox.ylo()); return this;}
@@ -246,11 +291,7 @@ public class Lmpdat extends AbstractSettableAtomData {
             }
         };
     }
-    @Override public IXYZ box() {
-        // 注意如果是斜方的模拟盒则不能获取到正交的模拟盒数据
-        if (isPrism()) throw new RuntimeException("box is temporarily NOT support Prism Lmpdat");
-        return mBox.shiftedBox();
-    }
+    @Override public LmpBox box() {return mBox;}
     @Override public int atomNumber() {return mAtomNum;}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     
@@ -289,27 +330,67 @@ public class Lmpdat extends AbstractSettableAtomData {
             Lmpdat tLmpdat = (Lmpdat)aAtomData;
             return new Lmpdat(tLmpdat.atomTypeNumber(), tLmpdat.mBox.copy(), aMasses, tLmpdat.mAtomID.copy(), tLmpdat.mAtomType.copy(), tLmpdat.mAtomXYZ.copy(), tLmpdat.mVelocities==null?null:tLmpdat.mVelocities.copy());
         } else {
-            // 一般的情况
             int tAtomNum = aAtomData.atomNumber();
             IntVector rAtomID = IntVector.zeros(tAtomNum);
             IntVector rAtomType = IntVector.zeros(tAtomNum);
             RowMatrix rAtomXYZ = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_XYZ.length);
             @Nullable RowMatrix rVelocities = aAtomData.hasVelocities() ? RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length) : null;
-            int row = 0;
-            for (IAtom tAtom : aAtomData.atoms()) {
-                rAtomID.set(row, tAtom.id());
-                rAtomType.set(row, tAtom.type());
-                rAtomXYZ.set(row, XYZ_X_COL, tAtom.x());
-                rAtomXYZ.set(row, XYZ_Y_COL, tAtom.y());
-                rAtomXYZ.set(row, XYZ_Z_COL, tAtom.z());
-                if (rVelocities != null) {
-                    rVelocities.set(row, STD_VX_COL, tAtom.vx());
-                    rVelocities.set(row, STD_VY_COL, tAtom.vy());
-                    rVelocities.set(row, STD_VZ_COL, tAtom.vz());
+            LmpBox rBox;
+            // 一般的情况，需要考虑斜方的模拟盒的情况
+            IBox tBox = aAtomData.box();
+            if (tBox.isLmpStyle()) {
+                rBox = tBox.isPrism() ? new LmpBoxPrism(tBox, tBox.xy(), tBox.xz(), tBox.yz()) : new LmpBox(tBox);
+                // 模拟盒满足 lammps 种类下可以直接拷贝过来
+                for (int i = 0; i < tAtomNum; ++i) {
+                    IAtom tAtom = aAtomData.atom(i);
+                    rAtomID.set(i, tAtom.id());
+                    rAtomType.set(i, tAtom.type());
+                    rAtomXYZ.set(i, XYZ_X_COL, tAtom.x());
+                    rAtomXYZ.set(i, XYZ_Y_COL, tAtom.y());
+                    rAtomXYZ.set(i, XYZ_Z_COL, tAtom.z());
+                    if (rVelocities != null) {
+                        rVelocities.set(i, STD_VX_COL, tAtom.vx());
+                        rVelocities.set(i, STD_VY_COL, tAtom.vy());
+                        rVelocities.set(i, STD_VZ_COL, tAtom.vz());
+                    }
                 }
-                ++row;
+            } else {
+                // 否则需要转换成 lammps 的种类，先转换模拟盒，
+                // 公式参考 lammps 官方文档：https://docs.lammps.org/Howto_triclinic.html
+                XYZ tA = XYZ.toXYZ(tBox.a());
+                XYZ tB = XYZ.toXYZ(tBox.b());
+                XYZ tC = XYZ.toXYZ(tBox.c());
+                double tX = tA.norm();
+                double tXY = tB.dot(tA) / tX;
+                double tY = MathEX.Fast.sqrt(tB.dot() - tXY*tXY);
+                double tXZ = tC.dot(tA) / tX;
+                double tYZ = (tB.dot(tC) - tXY*tXZ) / tY;
+                double tZ = MathEX.Fast.sqrt(tC.dot() - tXZ*tXZ - tYZ*tYZ);
+                rBox = new LmpBoxPrism(tX, tY, tZ, tXY, tXZ, tYZ);
+                // 再转换原子坐标
+                XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+                for (int i = 0; i < tAtomNum; ++i) {
+                    IAtom tAtom = aAtomData.atom(i);
+                    rAtomID.set(i, tAtom.id());
+                    rAtomType.set(i, tAtom.type());
+                    tBuf.setXYZ(tAtom);
+                    tBox.toDirect(tBuf);
+                    rBox.toCartesian(tBuf);
+                    rAtomXYZ.set(i, XYZ_X_COL, tBuf.mX);
+                    rAtomXYZ.set(i, XYZ_Y_COL, tBuf.mY);
+                    rAtomXYZ.set(i, XYZ_Z_COL, tBuf.mZ);
+                    // 对于速度也使用同样的变换
+                    if (rVelocities != null) {
+                        tBuf.setXYZ(tAtom.vx(), tAtom.vy(), tAtom.vz());
+                        tBox.toDirect(tBuf);
+                        rBox.toCartesian(tBuf);
+                        rVelocities.set(i, STD_VX_COL, tBuf.mX);
+                        rVelocities.set(i, STD_VY_COL, tBuf.mY);
+                        rVelocities.set(i, STD_VZ_COL, tBuf.mZ);
+                    }
+                }
             }
-            return new Lmpdat(aAtomData.atomTypeNumber(), new LmpBox(aAtomData.box()), aMasses, rAtomID, rAtomType, rAtomXYZ, rVelocities);
+            return new Lmpdat(aAtomData.atomTypeNumber(), rBox, aMasses, rAtomID, rAtomType, rAtomXYZ, rVelocities);
         }
     }
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
@@ -463,9 +544,8 @@ public class Lmpdat extends AbstractSettableAtomData {
         aWriteln.writeln(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
         aWriteln.writeln(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
         aWriteln.writeln(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
-        if (mBox instanceof LmpBoxPrism) {
-        LmpBoxPrism tBox = (LmpBoxPrism)mBox;
-        aWriteln.writeln(String.format("%15.10g %15.10g %15.10g xy xz yz", tBox.xy(), tBox.xz(), tBox.yz()));
+        if (isPrism()) {
+        aWriteln.writeln(String.format("%15.10g %15.10g %15.10g xy xz yz", mBox.xy(), mBox.xz(), mBox.yz()));
         }
         if (mMasses != null) {
         aWriteln.writeln("");

@@ -8,7 +8,7 @@ public interface ISettableAtom extends IAtom, ISettableXYZ {
     ISettableAtom setX(double aX);
     ISettableAtom setY(double aY);
     ISettableAtom setZ(double aZ);
-    ISettableAtom setXYZ(double aX, double aY, double aZ);
+    default ISettableAtom setXYZ(double aX, double aY, double aZ) {return setX(aX).setY(aY).setZ(aZ);}
     default ISettableAtom setXYZ(IXYZ aXYZ) {return setXYZ(aXYZ.x(), aXYZ.y(), aXYZ.z());}
     ISettableAtom setID(int aID);
     ISettableAtom setType(int aType);
@@ -16,6 +16,8 @@ public interface ISettableAtom extends IAtom, ISettableXYZ {
     default ISettableAtom setVx(double aVx) {throw new UnsupportedOperationException("setVx");}
     default ISettableAtom setVy(double aVy) {throw new UnsupportedOperationException("setVy");}
     default ISettableAtom setVz(double aVz) {throw new UnsupportedOperationException("setVz");}
+    default ISettableAtom setVxyz(double aVx, double aVy, double aVz) {return setVx(aVx).setVy(aVy).setVz(aVz);}
+    default ISettableAtom setVxyz(IXYZ aVxyz) {return setVxyz(aVxyz.x(), aVxyz.y(), aVxyz.z());}
     
     /**
      * Groovy stuffs

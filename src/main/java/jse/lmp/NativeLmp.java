@@ -926,11 +926,10 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void loadLmpdat(final Lmpdat aLmpdat) throws LmpException {
         checkThread();
+        LmpBox tBox = aLmpdat.box();
         if (aLmpdat.isPrism()) {
-        LmpBoxPrism tBox = (LmpBoxPrism)aLmpdat.lmpBox();
         command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi(), tBox.xy(), tBox.xz(), tBox.yz()));
         } else {
-        LmpBox tBox = aLmpdat.lmpBox();
         command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
         }
         int tAtomTypeNum = aLmpdat.atomTypeNumber();

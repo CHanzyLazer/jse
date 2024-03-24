@@ -2,19 +2,31 @@ package jse.atom;
 
 import org.jetbrains.annotations.NotNull;
 
-public class BoxPrism implements IBox {
+public final class BoxPrism implements IBox {
     private final @NotNull XYZ mA, mB, mC;
     public BoxPrism(@NotNull IXYZ aA, @NotNull IXYZ aB, @NotNull IXYZ aC) {mA = new XYZ(aA); mB = new XYZ(aB); mC = new XYZ(aC);}
     
+    @Override public boolean isLmpStyle() {return false;}
     @Override public boolean isPrism() {return true;}
+    
+    @Override public double x() {return mA.mX;}
+    @Override public double y() {return mB.mY;}
+    @Override public double z() {return mC.mZ;}
+    
     @Override public IXYZ a() {return mA;}
     @Override public IXYZ b() {return mB;}
     @Override public IXYZ c() {return mC;}
+    
+    @Override public BoxPrism copy() {return new BoxPrism(mA, mB, mC);}
+    
+    @Override public String toString() {
+        return String.format("a: (%.4g, %.4g, %.4g)\n", mA.mX, mA.mY, mA.mZ)
+             + String.format("b: (%.4g, %.4g, %.4g)\n", mB.mX, mB.mY, mB.mZ)
+             + String.format("c: (%.4g, %.4g, %.4g)"  , mC.mX, mC.mY, mC.mZ);
+    }
+    
+    /** optimize stuffs */
     @Override public double volume() {return mA.mixed(mB, mC);}
-    
-    @Override public IBox copy() {return new BoxPrism(mA, mB, mC);}
-    
-    @Override public boolean isLmpStyle() {return false;}
     
     /** 为了加速运算，内部会缓存中间变量，因此原则上 mA，mB，mC 都是不能修改的，虽然为了性能这里没有那么严格 */
     @Override public void toCartesian(XYZ rDirect) {
@@ -38,11 +50,5 @@ public class BoxPrism implements IBox {
             mCA.dot(rCartesian) / mV,
             mAB.dot(rCartesian) / mV
         );
-    }
-    
-    @Override public String toString() {
-        return String.format("a: (%.4g, %.4g, %.4g)\n", mA.mX, mA.mY, mA.mZ)
-             + String.format("b: (%.4g, %.4g, %.4g)\n", mB.mX, mB.mY, mB.mZ)
-             + String.format("c: (%.4g, %.4g, %.4g)"  , mC.mX, mC.mY, mC.mZ);
     }
 }

@@ -5,8 +5,6 @@ import jse.code.CS;
 import jse.code.collection.IntList;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
-import jse.code.iterator.IDoubleIterator;
-import jse.code.iterator.IDoubleSetIterator;
 import jse.math.ComplexDouble;
 import jse.math.MathEX;
 import jse.math.function.FixBoundFunc1;
@@ -149,7 +147,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             // 斜方情况需要转为 Direct 再 wrap，
             // 完事后再转回 Cartesian
             XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
-            IDoubleSetIterator si = tXYZMat.setIteratorRow();
+            int row = 0;
             for (IXYZ tXYZ : aAtomDataXYZ) {
                 tBuf.setXYZ(tXYZ);
                 mBox.toDirect(tBuf);
@@ -160,13 +158,14 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 if      (tBuf.mZ <  0.0) {++tBuf.mZ; while (tBuf.mZ <  0.0) ++tBuf.mZ;}
                 else if (tBuf.mZ >= 1.0) {--tBuf.mZ; while (tBuf.mZ >= 1.0) --tBuf.mZ;}
                 mBox.toCartesian(tBuf);
-                si.nextAndSet(tBuf.mX);
-                si.nextAndSet(tBuf.mY);
-                si.nextAndSet(tBuf.mZ);
+                tXYZMat.set(row, 0, tBuf.mX);
+                tXYZMat.set(row, 1, tBuf.mY);
+                tXYZMat.set(row, 2, tBuf.mZ);
+                ++row;
             }
         } else {
             XYZ tBox = XYZ.toXYZ(mBox);
-            IDoubleSetIterator si = tXYZMat.setIteratorRow();
+            int row = 0;
             for (IXYZ tXYZ : aAtomDataXYZ) {
                 double tX = tXYZ.x(), tY = tXYZ.y(), tZ = tXYZ.z();
                 if      (tX <  0.0    ) {tX += tBox.mX; while (tX <  0.0    ) tX += tBox.mX;}
@@ -175,9 +174,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 else if (tY >= tBox.mY) {tY -= tBox.mY; while (tY >= tBox.mY) tY -= tBox.mY;}
                 if      (tZ <  0.0    ) {tZ += tBox.mZ; while (tZ <  0.0    ) tZ += tBox.mZ;}
                 else if (tZ >= tBox.mZ) {tZ -= tBox.mZ; while (tZ >= tBox.mZ) tZ -= tBox.mZ;}
-                si.nextAndSet(tX);
-                si.nextAndSet(tY);
-                si.nextAndSet(tZ);
+                tXYZMat.set(row, 0, tX);
+                tXYZMat.set(row, 1, tY);
+                tXYZMat.set(row, 2, tZ);
+                ++row;
             }
         }
         
@@ -712,11 +712,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             final int[][] rBuf2Idx = new int[mSize][];
             IntArrayCache.getArrayTo(mAtomNum, mSize, (i, array) -> rBuf2Idx[i] = array);
             // 遍历所有的原子统计位置
-            IDoubleIterator it = mAtomDataXYZ.iteratorRow();
             for (int i = 0; i < mAtomNum; ++i) {
-                double tX = it.next();
-                double tY = it.next();
-                double tZ = it.next();
+                double tX = mAtomDataXYZ.get(i, 0);
+                double tY = mAtomDataXYZ.get(i, 1);
+                double tZ = mAtomDataXYZ.get(i, 2);
                 // 如果设置了 aRMax 则跳过在中间的原子即可
                 if (!tInitAll && !inEdge_(tX, tY, tZ, aRMax)) continue;
                 int tI = (int) MathEX.Code.floor(tX / mCellSize.mX);

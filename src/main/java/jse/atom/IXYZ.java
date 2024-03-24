@@ -29,6 +29,12 @@ public interface IXYZ {
     default double min() {return Math.min(Math.min(x(), y()), z());}
     default double max() {return Math.max(Math.max(x(), y()), z());}
     
+    default double dot() {
+        double tX = x();
+        double tY = y();
+        double tZ = z();
+        return tX*tX + tY*tY + tZ*tZ;
+    }
     default double dot(IXYZ aRHS) {return dot(aRHS.x(), aRHS.y(), aRHS.z());}
     default double dot(double aX, double aY, double aZ) {return x()*aX + y()*aY + z()*aZ;}
     

@@ -25,4 +25,6 @@ public class AtomFull extends Atom {
     @Override public AtomFull setVx(double aVx) {mVx = aVx; return this;}
     @Override public AtomFull setVy(double aVy) {mVy = aVy; return this;}
     @Override public AtomFull setVz(double aVz) {mVz = aVz; return this;}
+    @Override public AtomFull setVxyz(double aVx, double aVy, double aVz) {mVx = aVx; mVy = aVy; mVz = aVz; return this;}
+    @Override public AtomFull setVxyz(IXYZ aVxyz) {return setVxyz(aVxyz.x(), aVxyz.y(), aVxyz.z());}
 }

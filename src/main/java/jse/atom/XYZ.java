@@ -44,6 +44,12 @@ public final class XYZ extends AbstractSettableXYZ {
     @Override public double min() {return Math.min(Math.min(mX, mY), mZ);}
     @Override public double max() {return Math.max(Math.max(mX, mY), mZ);}
     
+    @Override public double dot() {
+        double tX = mX;
+        double tY = mY;
+        double tZ = mZ;
+        return tX*tX + tY*tY + tZ*tZ;
+    }
     @Override public double dot(double aX, double aY, double aZ) {return mX*aX + mY*aY + mZ*aZ;}
     public double dot(XYZ aRHS) {return dot(aRHS.mX, aRHS.mY, aRHS.mZ);}
     
@@ -74,6 +80,7 @@ public final class XYZ extends AbstractSettableXYZ {
     public XYZ plus(XYZ aRHS) {return new XYZ(mX+aRHS.mX, mY+aRHS.mY, mZ+aRHS.mZ);}
     public void plus2this(IXYZ aRHS) {mX += aRHS.x(); mY += aRHS.y(); mZ += aRHS.z();}
     public void plus2this(XYZ aRHS) {mX += aRHS.mX; mY += aRHS.mY; mZ += aRHS.mZ;}
+    public void plus2this(double aX, double aY, double aZ) {mX += aX; mY += aY; mZ += aZ;}
     public void plus2this(double aRHS) {mX += aRHS; mY += aRHS; mZ += aRHS;}
     /** 也增加这个运算方便使用 */
     public void mplus2this(IXYZ aRHS, double aMul) {mX += aMul*aRHS.x(); mY += aMul*aRHS.y(); mZ += aMul*aRHS.z();}
@@ -86,6 +93,7 @@ public final class XYZ extends AbstractSettableXYZ {
     public XYZ minus(XYZ aRHS) {return new XYZ(mX-aRHS.mX, mY-aRHS.mY, mZ-aRHS.mZ);}
     public void minus2this(IXYZ aRHS) {mX -= aRHS.x(); mY -= aRHS.y(); mZ -= aRHS.z();}
     public void minus2this(XYZ aRHS) {mX -= aRHS.mX; mY -= aRHS.mY; mZ -= aRHS.mZ;}
+    public void minus2this(double aX, double aY, double aZ) {mX -= aX; mY -= aY; mZ -= aZ;}
     public void minus2this(double aRHS) {mX -= aRHS; mY -= aRHS; mZ -= aRHS;}
     
     @Override public XYZ multiply(IXYZ aRHS) {return new XYZ(mX*aRHS.x(), mY*aRHS.y(), mZ*aRHS.z());}
@@ -95,6 +103,7 @@ public final class XYZ extends AbstractSettableXYZ {
     public XYZ multiply(XYZ aRHS) {return new XYZ(mX*aRHS.mX, mY*aRHS.mY, mZ*aRHS.mZ);}
     public void multiply2this(IXYZ aRHS) {mX *= aRHS.x(); mY *= aRHS.y(); mZ *= aRHS.z();}
     public void multiply2this(XYZ aRHS) {mX *= aRHS.mX; mY *= aRHS.mY; mZ *= aRHS.mZ;}
+    public void multiply2this(double aX, double aY, double aZ) {mX *= aX; mY *= aY; mZ *= aZ;}
     public void multiply2this(double aRHS) {mX *= aRHS; mY *= aRHS; mZ *= aRHS;}
     
     @Override public XYZ div(IXYZ aRHS) {return new XYZ(mX/aRHS.x(), mY/aRHS.y(), mZ/aRHS.z());}
@@ -104,6 +113,7 @@ public final class XYZ extends AbstractSettableXYZ {
     public XYZ div(XYZ aRHS) {return new XYZ(mX/aRHS.mX, mY/aRHS.mY, mZ/aRHS.mZ);}
     public void div2this(IXYZ aRHS) {mX /= aRHS.x(); mY /= aRHS.y(); mZ /= aRHS.z();}
     public void div2this(XYZ aRHS) {mX /= aRHS.mX; mY /= aRHS.mY; mZ /= aRHS.mZ;}
+    public void div2this(double aX, double aY, double aZ) {mX /= aX; mY /= aY; mZ /= aZ;}
     public void div2this(double aRHS) {mX /= aRHS; mY /= aRHS; mZ /= aRHS;}
     
     
