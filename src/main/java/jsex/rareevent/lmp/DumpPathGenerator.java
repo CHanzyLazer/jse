@@ -29,7 +29,6 @@ import java.util.List;
 
 import static jse.code.CS.*;
 import static jse.code.Conf.WORKING_DIR_OF;
-import static jse.code.UT.Code.newBox;
 
 
 /**
@@ -187,7 +186,7 @@ public class DumpPathGenerator extends AbstractHasAutoShutdown implements IPathG
                 };
             }
             @Override public int size() {return tAtomNum;}
-        }, aPoint.atomTypeNumber(), newBox(aPoint.box()));
+        }, aPoint.atomTypeNumber(), aPoint.box().copy());
     }
     
     

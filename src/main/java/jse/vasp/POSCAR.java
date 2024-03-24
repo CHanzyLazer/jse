@@ -158,18 +158,28 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     public POSCAR setCartesian() {
         if (mIsCartesian) return this;
         if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
-        // 这里绕过 scale 直接处理，
-        // 由于按照列乘没有专门的优化，因此可能反而比矩阵乘法还要慢，因此这里统一这样处理
-        mDirect.operation().matmul2this(mBox.iabc());
+        // 这里绕过 scale 直接处理
+        if (isPrism()) {
+            mDirect.operation().matmul2this(mBox.iabc());
+        } else {
+            mDirect.col(0).multiply2this(mBox.iax());
+            mDirect.col(1).multiply2this(mBox.iby());
+            mDirect.col(2).multiply2this(mBox.icz());
+        }
         mIsCartesian = true;
         return this;
     }
     public POSCAR setDirect() {
         if (!mIsCartesian) return this;
         if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
-        // 这里绕过 scale 直接处理，
-        // 由于按照列乘没有专门的优化，因此可能反而比矩阵乘法还要慢，因此这里统一这样处理
-        mDirect.operation().matmul2this(mBox.inviabc());
+        // 这里绕过 scale 直接处理
+        if (isPrism()) {
+            mDirect.operation().matmul2this(mBox.inviabc());
+        } else {
+            mDirect.col(0).div2this(mBox.iax());
+            mDirect.col(1).div2this(mBox.iby());
+            mDirect.col(2).div2this(mBox.icz());
+        }
         mIsCartesian = false;
         return this;
     }
@@ -190,7 +200,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     return mDirect.get(mIdx, 0)*mBox.scale();
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     return mBox.x()*mDirect.get(mIdx, 0);
                 } else {
                     return (mBox.iax()*mDirect.get(mIdx, 0) + mBox.ibx()*mDirect.get(mIdx, 1) + mBox.icx()*mDirect.get(mIdx, 2))*mBox.scale();
@@ -200,7 +210,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     return mDirect.get(mIdx, 1)*mBox.scale();
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     return mBox.y()*mDirect.get(mIdx, 1);
                 } else {
                     return (mBox.iay()*mDirect.get(mIdx, 0) + mBox.iby()*mDirect.get(mIdx, 1) + mBox.icy()*mDirect.get(mIdx, 2))*mBox.scale();
@@ -210,7 +220,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     return mDirect.get(mIdx, 2)*mBox.scale();
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     return mBox.z()*mDirect.get(mIdx, 2);
                 } else {
                     return (mBox.iaz()*mDirect.get(mIdx, 0) + mBox.ibz()*mDirect.get(mIdx, 1) + mBox.icz()*mDirect.get(mIdx, 2))*mBox.scale();
@@ -239,7 +249,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 0, aX/mBox.scale());
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     mDirect.set(mIdx, 0, aX/mBox.x());
                 } else {
                     // 这种情况下性能开销较大，因此需要 setXYZ 这种方法
@@ -255,7 +265,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 1, aY/mBox.scale());
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     mDirect.set(mIdx, 1, aY/mBox.y());
                 } else {
                     // 这种情况下性能开销较大，因此需要 setXYZ 这种方法
@@ -271,7 +281,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 2, aZ/mBox.scale());
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     mDirect.set(mIdx, 2, aZ/mBox.z());
                 } else {
                     // 这种情况下性能开销较大，因此需要 setXYZ 这种方法
@@ -289,7 +299,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     mDirect.set(mIdx, 1, aY/mBox.scale());
                     mDirect.set(mIdx, 2, aZ/mBox.scale());
                 } else
-                if (!mBox.isPrism()) {
+                if (!isPrism()) {
                     mDirect.set(mIdx, 0, aX/mBox.x());
                     mDirect.set(mIdx, 1, aY/mBox.y());
                     mDirect.set(mIdx, 2, aZ/mBox.z());

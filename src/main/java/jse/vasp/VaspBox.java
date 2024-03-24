@@ -56,18 +56,24 @@ public class VaspBox implements IBox {
     }
     /** 返回 internal 的 a, b, c 按行排列组成的矩阵的逆矩阵，主要用于方便 Cartesian 转为 Direct */
     public final IMatrix inviabc() {
-        XYZ tA = XYZ.toXYZ(ia());
-        XYZ tB = XYZ.toXYZ(ib());
-        XYZ tC = XYZ.toXYZ(ic());
-        XYZ tBC = tB.cross(tC);
-        XYZ tCA = tC.cross(tA);
-        XYZ tAB = tA.cross(tB);
-        double tV = tA.mixed(tB, tC);
-        
         IMatrix rMat = Matrices.zeros(3);
-        rMat.set(0, 0, tBC.mX/tV); rMat.set(0, 1, tCA.mX/tV); rMat.set(0, 2, tAB.mX/tV);
-        rMat.set(1, 0, tBC.mY/tV); rMat.set(1, 1, tCA.mY/tV); rMat.set(1, 2, tAB.mY/tV);
-        rMat.set(2, 0, tBC.mZ/tV); rMat.set(0, 1, tCA.mZ/tV); rMat.set(2, 2, tAB.mZ/tV);
+        if (!isPrism()) {
+            rMat.set(0, 0, 1.0/iax());
+            rMat.set(1, 1, 1.0/iby());
+            rMat.set(2, 2, 1.0/icz());
+        } else {
+            XYZ tA = XYZ.toXYZ(ia());
+            XYZ tB = XYZ.toXYZ(ib());
+            XYZ tC = XYZ.toXYZ(ic());
+            XYZ tBC = tB.cross(tC);
+            XYZ tCA = tC.cross(tA);
+            XYZ tAB = tA.cross(tB);
+            double tV = tA.mixed(tB, tC);
+            
+            rMat.set(0, 0, tBC.mX/tV); rMat.set(0, 1, tCA.mX/tV); rMat.set(0, 2, tAB.mX/tV);
+            rMat.set(1, 0, tBC.mY/tV); rMat.set(1, 1, tCA.mY/tV); rMat.set(1, 2, tAB.mY/tV);
+            rMat.set(2, 0, tBC.mZ/tV); rMat.set(0, 1, tCA.mZ/tV); rMat.set(2, 2, tAB.mZ/tV);
+        }
         return rMat;
     }
     

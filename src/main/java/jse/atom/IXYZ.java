@@ -16,7 +16,8 @@ public interface IXYZ {
     double x();
     double y();
     double z();
-    IXYZ copy();
+    /** 由于继承 IXYZ 的对象很多，不能保证所有的 copy 都是希望的结果，因此默认直接抛出错误，避免此接口滥用 */
+    default IXYZ copy() {throw new UnsupportedOperationException("copy");}
     
     /** 转为兼容性更高的 double[] */
     default double[] data() {return new double[] {x(), y(), z()};}

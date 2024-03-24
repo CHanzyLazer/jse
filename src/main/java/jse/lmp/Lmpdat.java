@@ -209,51 +209,11 @@ public class Lmpdat extends AbstractSettableAtomData {
     public boolean hasMasses() {return mMasses!=null;}
     public @Nullable IVector masses() {return mMasses;}
     public double mass(int aType) {return mMasses==null ? Double.NaN : mMasses.get(aType-1);}
-    public ISettableAtom atomInternal(final int aIdx) {
-        return new AbstractSettableAtom() {
-            @Override public double x() {return mAtomXYZ.get(aIdx, XYZ_X_COL);}
-            @Override public double y() {return mAtomXYZ.get(aIdx, XYZ_Y_COL);}
-            @Override public double z() {return mAtomXYZ.get(aIdx, XYZ_Z_COL);}
-            @Override public int id() {return mAtomID.get(aIdx);}
-            @Override public int type() {return mAtomType.get(aIdx);}
-            @Override public int index() {return aIdx;}
-            
-            @Override public double vx() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VX_COL);}
-            @Override public double vy() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VY_COL);}
-            @Override public double vz() {return mVelocities==null?0.0:mVelocities.get(aIdx, STD_VZ_COL);}
-            @Override public boolean hasVelocities() {return mVelocities!=null;}
-            
-            @Override public ISettableAtom setX(double aX) {mAtomXYZ.set(aIdx, XYZ_X_COL, aX); return this;}
-            @Override public ISettableAtom setY(double aY) {mAtomXYZ.set(aIdx, XYZ_Y_COL, aY); return this;}
-            @Override public ISettableAtom setZ(double aZ) {mAtomXYZ.set(aIdx, XYZ_Z_COL, aZ); return this;}
-            @Override public ISettableAtom setID(int aID) {mAtomID.set(aIdx, aID); return this;}
-            @Override public ISettableAtom setType(int aType) {
-                // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
-                mAtomType.set(aIdx, aType);
-                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
-                return this;
-            }
-            @Override public ISettableAtom setVx(double aVx) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVx");
-                mVelocities.set(aIdx, STD_VX_COL, aVx); return this;
-            }
-            @Override public ISettableAtom setVy(double aVy) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVy");
-                mVelocities.set(aIdx, STD_VY_COL, aVy); return this;
-            }
-            @Override public ISettableAtom setVz(double aVz) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVz");
-                mVelocities.set(aIdx, STD_VZ_COL, aVz); return this;
-            }
-        };
-    }
     
     
     /** AbstractAtomData stuffs */
     @Override public boolean hasVelocities() {return mVelocities != null;}
     @Override public ISettableAtom atom(final int aIdx) {
-        // 注意如果是斜方的模拟盒则不能获取到正交的原子数据
-        if (isPrism()) throw new RuntimeException("atoms is temporarily NOT support Prism Lmpdat");
         return new AbstractSettableAtom() {
             @Override public double x() {return mAtomXYZ.get(aIdx, XYZ_X_COL)-mBox.xlo();}
             @Override public double y() {return mAtomXYZ.get(aIdx, XYZ_Y_COL)-mBox.ylo();}

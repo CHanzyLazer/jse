@@ -173,14 +173,14 @@ public class AbstractAtoms {
                 int j = tRepTotal/aReplicateZ%aReplicateY;
                 int k = tRepTotal%aReplicateZ            ;
                 final XYZ tSXYZ;
-                if (aBox.isPrism()) {
+                if (!aBox.isPrism()) {
+                    tSXYZ = aBox.multiply(i, j, k);
+                } else {
                     tSXYZ = new XYZ(
                         aBox.ax()*i + aBox.bx()*j + aBox.cx()*k,
                         aBox.ay()*i + aBox.by()*j + aBox.cy()*k,
                         aBox.az()*i + aBox.bz()*j + aBox.cz()*k
                     );
-                } else {
-                    tSXYZ = aBox.multiply(i, j, k);
                 }
                 return new AbstractAtom() {
                     @Override public double x() {return tSXYZ.mX + tAtom.x();}
