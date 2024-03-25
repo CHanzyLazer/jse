@@ -456,6 +456,29 @@ public class MathEX {
                 int tStartCDE = (aL+1)*aL/2;
                 double tPll = SH_Elm.get(tStartCDE + aL);
                 tPll *= Fast.powFast(aY, aL);
+                
+                // 特殊处理 aY == 0.0 的情况，避免出现 NaN，此时除了 Pl0 全部都会是 0.0，
+                // 顺便也处理 aY ≈ 0 的情况，保证至少结果不会偏离太远，
+                // 当然这样会导致结果出现较大误差，如果需要更高精度可以使用 Full 版本的算法
+                if (Code.numericEqual(tPll, 0.0)) {
+                    // 这里需要从 l 方向从 0 开始遍历，使用 rDest 暂存中间结果
+                    double tP00 = 0.28209479177387814347403972578039;
+                    rDest.set(0, tP00);
+                    rDest.set(1, SQRT3 * aX * tP00);
+                    int tLmm = 1, tLm2 = 0;
+                    int tIdxAB = 3;
+                    for (int tL = 2; tL <= aL; ++tL) {
+                        double tPl0 = SH_Alm.get(tIdxAB) * (aX*rDest.getReal(tLmm) + SH_Blm.get(tIdxAB)*rDest.getReal(tLm2));
+                        rDest.set(tL, tPl0);
+                        tLm2 = tLmm;
+                        tLmm = tL;
+                        tIdxAB += tL+1;
+                    }
+                    // 然后清空前面暂存结果即可
+                    for (int tM = 1; tM <= aL; ++tM) setY_(rDest, aL, tM, 0.0);
+                    return;
+                }
+                
                 if ((aL&1)==1) tPll = -tPll;
                 tPll *= SH_FACTORIAL2_2L_PLUS_1.get(aL);
                 
@@ -508,6 +531,7 @@ public class MathEX {
                 sphericalHarmonics2Dest_(aL, -aM, aTheta, aPhi, rDest);
                 rDest.conj2this();
                 if ((aM&1)==1) rDest.negative2this();
+                return;
             }
             // 计算前系数（实数部分）
             double rFront = SH_Elm.get((aL+1)*aL/2 + aM);
