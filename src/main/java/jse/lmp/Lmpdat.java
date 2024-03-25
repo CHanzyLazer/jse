@@ -138,7 +138,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         LmpBox oBox = mBox;
         mBox = new LmpBoxPrism(mBox, aXY, aXZ, aYZ);
         // 现在必须要求三个倾斜因子相同才可以跳过设置
-        if (MathEX.Code.numericEqual(aXY, mBox.xy()) && MathEX.Code.numericEqual(aXZ, mBox.xz()) && MathEX.Code.numericEqual(aYZ, mBox.yz())) return this;
+        if (MathEX.Code.numericEqual(oBox.xy(), aXY) && MathEX.Code.numericEqual(oBox.xz(), aXZ) && MathEX.Code.numericEqual(oBox.yz(), aYZ)) return this;
         // 否则将原子进行线性变换
         XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
         for (int i = 0; i < mAtomNum; ++i) {

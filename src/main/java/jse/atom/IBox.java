@@ -1,5 +1,7 @@
 package jse.atom;
 
+import jse.math.MathEX;
+
 /**
  * 通用的模拟盒类，现在包含更多信息，支持斜方的模拟盒；
  * 只支持右手系的基组
@@ -74,6 +76,10 @@ public interface IBox extends IXYZ {
                 rCartesian.mY/tY - tYZ*rCartesian.mZ/(tY*tZ),
                 rCartesian.mZ/tZ
             );
+            // direct 需要考虑计算误差带来的出边界的问题
+            if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
+            if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
+            if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
         } else {
             // 默认实现简单处理，不缓存中间结果
             XYZ tA = XYZ.toXYZ(a());
@@ -85,6 +91,10 @@ public interface IBox extends IXYZ {
                 tC.mixed(tA, rCartesian) / tV,
                 tA.mixed(tB, rCartesian) / tV
             );
+            // direct 需要考虑计算误差带来的出边界的问题
+            if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
+            if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
+            if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
         }
     }
 }

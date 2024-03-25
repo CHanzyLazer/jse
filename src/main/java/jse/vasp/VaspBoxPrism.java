@@ -1,6 +1,7 @@
 package jse.vasp;
 
 import jse.atom.XYZ;
+import jse.math.MathEX;
 
 public final class VaspBoxPrism extends VaspBox {
     private final double mAy, mAz;
@@ -66,6 +67,10 @@ public final class VaspBoxPrism extends VaspBox {
             mCA.dot(rCartesian) / mV,
             mAB.dot(rCartesian) / mV
         );
+        // direct 需要考虑计算误差带来的出边界的问题
+        if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
+        if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
+        if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
     }
     @Override protected void onAnyChange_() {mBC = null;}
 }

@@ -180,6 +180,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         // 这里绕过 scale 直接处理
         if (isPrism()) {
             mDirect.operation().matmul2this(mBox.inviabc());
+            // direct 需要考虑计算误差带来的出边界的问题
+            mDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
         } else {
             mDirect.col(0).div2this(mBox.iax());
             mDirect.col(1).div2this(mBox.iby());
