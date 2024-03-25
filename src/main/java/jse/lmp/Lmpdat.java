@@ -135,11 +135,10 @@ public class Lmpdat extends AbstractSettableAtomData {
     }
     public Lmpdat setBoxPrism() {return setBoxPrism(0.0, 0.0, 0.0);}
     public Lmpdat setBoxPrism(double aXY, double aXZ, double aYZ) {
-        if (isPrism()) return this;
         LmpBox oBox = mBox;
         mBox = new LmpBoxPrism(mBox, aXY, aXZ, aYZ);
-        // 如果如果需要设置的斜方模拟盒不存在斜方数据则直接返回
-        if (MathEX.Code.numericEqual(aXY, 0.0) && MathEX.Code.numericEqual(aXZ, 0.0) && MathEX.Code.numericEqual(aYZ, 0.0)) return this;
+        // 现在必须要求三个倾斜因子相同才可以跳过设置
+        if (MathEX.Code.numericEqual(aXY, mBox.xy()) && MathEX.Code.numericEqual(aXZ, mBox.xz()) && MathEX.Code.numericEqual(aYZ, mBox.yz())) return this;
         // 否则将原子进行线性变换
         XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
         for (int i = 0; i < mAtomNum; ++i) {
