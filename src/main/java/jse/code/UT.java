@@ -649,7 +649,7 @@ public class UT {
             }
             return rL;
         }
-        public static void double2bytes(double aD, byte[] rBytes, final int aPos) {long2bytes(Double.doubleToRawLongBits(aD), rBytes, aPos);}
+        public static void double2bytes(double aD, byte[] rBytes, final int aPos) {long2bytes(Double.doubleToLongBits(aD), rBytes, aPos);}
         public static double bytes2double(byte[] aBytes, final int aPos) {return Double.longBitsToDouble(bytes2long(aBytes, aPos));}
         
         
@@ -675,7 +675,7 @@ public class UT {
         public static long bytes2long(byte[] aBytes) {
             return bytes2long(aBytes, 0);
         }
-        public static byte[] double2bytes(double aD) {return long2bytes(Double.doubleToRawLongBits(aD));}
+        public static byte[] double2bytes(double aD) {return long2bytes(Double.doubleToLongBits(aD));}
         public static double bytes2double(byte[] aBytes) {return Double.longBitsToDouble(bytes2long(aBytes));}
         
         /** {@link IAtomData} 的序列化和反序列化 */

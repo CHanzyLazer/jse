@@ -113,6 +113,11 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     @VisibleForTesting default IVectorOperation opt() {return operation();}
     
     
+    /** {@link Double} stuffs，不做特殊优化 */
+    ILogicalVector isNaN();
+    ILogicalVector isInfinite();
+    ILogicalVector isFinite();
+    
     /** Groovy 的部分，增加向量基本的运算操作，现在也归入内部使用 */
     IVector plus     (double aRHS);
     IVector minus    (double aRHS);

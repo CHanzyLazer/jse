@@ -283,6 +283,10 @@ public abstract class AbstractVector implements IVector {
         };
     }
     
+    /** {@link Double} stuffs，不做特殊优化 */
+    @Override public ILogicalVector isNaN() {return operation().check(Double::isNaN);}
+    @Override public ILogicalVector isInfinite() {return operation().check(Double::isInfinite);}
+    @Override public ILogicalVector isFinite() {return operation().check(Double::isFinite);}
     
     /** Groovy 的部分，增加向量基本的运算操作 */
     @Override public final IVector plus         (double aRHS) {return operation().plus    (aRHS);}
