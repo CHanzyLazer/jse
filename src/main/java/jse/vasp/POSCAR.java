@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static jse.code.CS.MASS;
+import static jse.code.CS.ZL_STR;
 
 /**
  * @author liqa
@@ -114,13 +115,13 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     
     /** @deprecated use {@link #box} */ @Deprecated public VaspBox vaspBox() {return box();}
     /** @deprecated use {@link VaspBox#scale} */ @Deprecated public double vaspBoxScale() {return mBox.scale();}
-    /** @deprecated use {@link VaspBox#scale} */ @Deprecated public double boxScale() {return mBox.scale();}
     /** @deprecated use {@code !}{@link #isPrism} */ @Deprecated public boolean isDiagBox() {return !isPrism();}
     
+    /** boxScale stuffs */
+    public double boxScale() {return mBox.scale();}
+    public POSCAR setBoxScale(double aBoxScale) {mBox.setScale(aBoxScale); return this;}
     /** Groovy stuffs */
-    @VisibleForTesting public String @Nullable[] getTypeNames() {return mTypeNames;}
-    @VisibleForTesting public String getComment() {return mComment;}
-    /** @deprecated use {@link VaspBox#getScale} */ @Deprecated @VisibleForTesting public double getBoxScale() {return mBox.getScale();}
+    @VisibleForTesting public double getBoxScale() {return mBox.getScale();}
     
     
     /** 支持直接修改 TypeNames，只会增大种类数，不会减少 */
@@ -152,7 +153,11 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     }
     
     public POSCAR setComment(@Nullable String aComment) {mComment = aComment; return this;}
-    /** @deprecated use {@link VaspBox#setScale} */ public POSCAR setBoxScale(double aBoxScale) {mBox.setScale(aBoxScale); return this;}
+    
+    /** Groovy stuffs */
+    @VisibleForTesting public String @Nullable[] getTypeNames() {return mTypeNames;}
+    @VisibleForTesting public String getComment() {return mComment;}
+    
     
     /** Cartesian 和 Direct 来回转换 */
     public POSCAR setCartesian() {
@@ -410,9 +415,10 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     // 由于 POSCAR 不是全都可以修改，因此不重写另外两个
     
     /** 从 IAtomData 来创建，POSCAR 需要额外的原子种类字符串以及额外的是否开启 SelectiveDynamics */
-    public static POSCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : null);}
+    public static POSCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : ZL_STR);}
     public static POSCAR fromAtomData(IAtomData aAtomData, String... aTypeNames) {return fromAtomData(aAtomData, (aAtomData instanceof POSCAR) && ((POSCAR)aAtomData).mSelectiveDynamics, aTypeNames);}
     public static POSCAR fromAtomData(IAtomData aAtomData, boolean aSelectiveDynamics, String... aTypeNames) {
+        if (aTypeNames==null) aTypeNames = ZL_STR;
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
@@ -523,18 +529,19 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         }
         
         // 判断是否是 prism 并据此创建 VaspBox
-        boolean tIsPrism =
+        boolean tNotPrism =
                MathEX.Code.numericEqual(aBoxA.get(1), 0.0) && MathEX.Code.numericEqual(aBoxA.get(2), 0.0)
             && MathEX.Code.numericEqual(aBoxB.get(0), 0.0) && MathEX.Code.numericEqual(aBoxB.get(2), 0.0)
             && MathEX.Code.numericEqual(aBoxC.get(0), 0.0) && MathEX.Code.numericEqual(aBoxC.get(1), 0.0)
             ;
-        aBox = tIsPrism ? new VaspBoxPrism(
-            aBoxA.get(0), aBoxA.get(1), aBoxA.get(2),
-            aBoxB.get(0), aBoxB.get(1), aBoxB.get(2),
-            aBoxC.get(0), aBoxC.get(1), aBoxC.get(2),
-            aBoxScale) :
-            new VaspBox(aBoxA.get(0), aBoxB.get(1), aBoxC.get(2));
-        
+        aBox = tNotPrism ?
+            new VaspBox(aBoxA.get(0), aBoxB.get(1), aBoxC.get(2)) :
+            new VaspBoxPrism(
+                aBoxA.get(0), aBoxA.get(1), aBoxA.get(2),
+                aBoxB.get(0), aBoxB.get(1), aBoxB.get(2),
+                aBoxC.get(0), aBoxC.get(1), aBoxC.get(2),
+                aBoxScale
+            );
         // 返回 POSCAR
         return new POSCAR(aComment, aBox, aTypeNames, aAtomNumbers, aSelectiveDynamics, aDirect, aIsCartesian, null);
     }

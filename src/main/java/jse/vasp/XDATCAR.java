@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static jse.code.CS.MASS;
+import static jse.code.CS.ZL_STR;
 
 
 /**
@@ -154,8 +155,13 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     
     /** @deprecated use {@link #box} */ @Deprecated public VaspBox vaspBox() {return box();}
     /** @deprecated use {@link VaspBox#scale} */ @Deprecated public double vaspBoxScale() {return mBox.scale();}
-    /** @deprecated use {@link VaspBox#scale} */ @Deprecated public double boxScale() {return mBox.scale();}
     /** @deprecated use {@code !}{@link #isPrism} */ @Deprecated public boolean isDiagBox() {return !isPrism();}
+    
+    /** boxScale stuffs */
+    public double boxScale() {return mBox.scale();}
+    public XDATCAR setBoxScale(double aBoxScale) {mBox.setScale(aBoxScale); return this;}
+    /** Groovy stuffs */
+    @VisibleForTesting public double getBoxScale() {return mBox.getScale();}
     
     /** 对于 XDATCAR 这些接口也同样可以获取到 */
     public VaspBox box() {return mBox;}
@@ -169,11 +175,6 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     /** 提供简写版本 */
     @VisibleForTesting public final int natoms() {return atomNumber();}
     @VisibleForTesting public final int ntypes() {return atomTypeNumber();}
-    
-    /** Groovy stuffs */
-    @VisibleForTesting public String @Nullable[] getTypeNames() {return mTypeNames;}
-    @VisibleForTesting public String getComment() {return mComment;}
-    /** @deprecated use {@link VaspBox#getScale} */ @Deprecated @VisibleForTesting public double getBoxScale() {return mBox.getScale();}
     
     
     /** 支持直接修改 TypeNames，只会增大种类数，不会减少 */
@@ -200,7 +201,10 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     }
     
     public XDATCAR setComment(@Nullable String aComment) {mComment = aComment; return this;}
-    /** @deprecated use {@link VaspBox#setScale} */ public XDATCAR setBoxScale(double aBoxScale) {mBox.setScale(aBoxScale); return this;}
+    
+    /** Groovy stuffs */
+    @VisibleForTesting public String @Nullable[] getTypeNames() {return mTypeNames;}
+    @VisibleForTesting public String getComment() {return mComment;}
     
     /** Cartesian 和 Direct 来回转换 */
     public XDATCAR setCartesian() {
@@ -251,13 +255,14 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     
     /// 创建 XDATCAR
     /** 从 IAtomData 来创建，对于 XDATCAR 可以支持容器的 aAtomData */
-    public static XDATCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : null);}
+    public static XDATCAR fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : ZL_STR);}
     public static XDATCAR fromAtomData(IAtomData aAtomData, String... aTypeNames) {return fromAtomData_(aAtomData, 1, aTypeNames);}
-    public static XDATCAR fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList, (aAtomDataList instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomDataList).typeNames() : null);}
+    public static XDATCAR fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList, (aAtomDataList instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomDataList).typeNames() : ZL_STR);}
     public static XDATCAR fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList, String... aTypeNames) {return fromAtomDataList_(aAtomDataList, 1, aTypeNames);}
-    public static XDATCAR fromAtomDataList(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList, (aAtomDataList instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomDataList).typeNames() : null);}
+    public static XDATCAR fromAtomDataList(Collection<? extends IAtomData> aAtomDataList) {return fromAtomDataList(aAtomDataList, (aAtomDataList instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomDataList).typeNames() : ZL_STR);}
     public static XDATCAR fromAtomDataList(Collection<? extends IAtomData> aAtomDataList, String... aTypeNames) {return fromAtomDataList_(aAtomDataList, aAtomDataList.size(), aTypeNames);}
     static XDATCAR fromAtomData_(IAtomData aAtomData, int aInitSize, String[] aTypeNames) {
+        if (aTypeNames==null) aTypeNames = ZL_STR;
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 Direct
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
@@ -297,7 +302,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         Iterator<? extends IAtomData> it = aAtomDataList.iterator();
         if (!it.hasNext()) throw new IllegalArgumentException("XDATCAR do NOT support empty AtomDataList");
         IAtomData first = it.next();
-        final XDATCAR rXDATCAR = fromAtomData_(first, aInitSize, ((aTypeNames==null || aTypeNames.length==0) && (first instanceof IVaspCommonData)) ? ((IVaspCommonData)first).typeNames() : aTypeNames);
+        final XDATCAR rXDATCAR = fromAtomData_(first, aInitSize, ((aTypeNames==null || aTypeNames==ZL_STR) && (first instanceof IVaspCommonData)) ? ((IVaspCommonData)first).typeNames() : aTypeNames);
         it.forEachRemaining(rXDATCAR::append);
         return rXDATCAR;
     }
@@ -431,18 +436,19 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         }
         
         // 判断是否是 prism 并据此创建 VaspBox
-        boolean tIsPrism =
+        boolean tNotPrism =
                MathEX.Code.numericEqual(aBoxA.get(1), 0.0) && MathEX.Code.numericEqual(aBoxA.get(2), 0.0)
             && MathEX.Code.numericEqual(aBoxB.get(0), 0.0) && MathEX.Code.numericEqual(aBoxB.get(2), 0.0)
             && MathEX.Code.numericEqual(aBoxC.get(0), 0.0) && MathEX.Code.numericEqual(aBoxC.get(1), 0.0)
             ;
-        aBox = tIsPrism ? new VaspBoxPrism(
-            aBoxA.get(0), aBoxA.get(1), aBoxA.get(2),
-            aBoxB.get(0), aBoxB.get(1), aBoxB.get(2),
-            aBoxC.get(0), aBoxC.get(1), aBoxC.get(2),
-            aBoxScale) :
-            new VaspBox(aBoxA.get(0), aBoxB.get(1), aBoxC.get(2));
-        
+        aBox = tNotPrism ?
+            new VaspBox(aBoxA.get(0), aBoxB.get(1), aBoxC.get(2)) :
+            new VaspBoxPrism(
+                aBoxA.get(0), aBoxA.get(1), aBoxA.get(2),
+                aBoxB.get(0), aBoxB.get(1), aBoxB.get(2),
+                aBoxC.get(0), aBoxC.get(1), aBoxC.get(2),
+                aBoxScale
+            );
         return new XDATCAR(aComment, aBox, aTypeNames, aAtomNumbers, rDirects, aIsCartesian, null);
     }
     

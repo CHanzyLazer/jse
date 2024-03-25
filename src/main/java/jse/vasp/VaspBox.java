@@ -72,7 +72,7 @@ public class VaspBox implements IBox {
             
             rMat.set(0, 0, tBC.mX/tV); rMat.set(0, 1, tCA.mX/tV); rMat.set(0, 2, tAB.mX/tV);
             rMat.set(1, 0, tBC.mY/tV); rMat.set(1, 1, tCA.mY/tV); rMat.set(1, 2, tAB.mY/tV);
-            rMat.set(2, 0, tBC.mZ/tV); rMat.set(0, 1, tCA.mZ/tV); rMat.set(2, 2, tAB.mZ/tV);
+            rMat.set(2, 0, tBC.mZ/tV); rMat.set(2, 1, tCA.mZ/tV); rMat.set(2, 2, tAB.mZ/tV);
         }
         return rMat;
     }
