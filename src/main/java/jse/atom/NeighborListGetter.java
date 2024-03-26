@@ -172,7 +172,7 @@ public class NeighborListGetter implements IShutdownable {
             // 遍历添加 XYZ
             if (mBox.isPrism()) {
                 mCellBoxXYZ = null;
-                XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+                XYZ tBuf = new XYZ();
                 for (int idx = 0; idx < mAtomNum; ++idx) {
                     tBuf.setXYZ(mAtomDataXYZ.get(idx, 0), mAtomDataXYZ.get(idx, 1), mAtomDataXYZ.get(idx, 2));
                     mBox.toDirect(tBuf);

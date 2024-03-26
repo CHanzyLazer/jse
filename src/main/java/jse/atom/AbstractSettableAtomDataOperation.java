@@ -88,7 +88,7 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
             // 斜方情况需要转为 Direct 再 wrap，
             // 完事后再转回 Cartesian
             final IBox tBox = tThis.box();
-            XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+            XYZ tBuf = new XYZ();
             for (int i = 0; i < tAtomNum; ++i) {
                 ISettableAtom tAtom = tThis.atom(i);
                 tBuf.setXYZ(tAtom);

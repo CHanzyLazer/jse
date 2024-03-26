@@ -44,7 +44,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     private @Nullable String mComment;
     private String @Nullable[] mTypeNames;
     private IIntVector mAtomNumbers;
-    private final VaspBox mBox;
+    private VaspBox mBox;
     /** 保存一份 id 列表，这样在 lmpdat 转为 poscar 时会继续保留 id 信息，XDATCAR 认为不能进行修改 */
     private final @Nullable IIntVector mIDs;
     private final @Nullable @Unmodifiable Map<Integer, Integer> mId2Index; // 原子的 id 转为存储在 AtomDataXYZ 的指标 index
@@ -209,24 +209,94 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     /** Cartesian 和 Direct 来回转换 */
     public XDATCAR setCartesian() {
         if (mIsCartesian) return this;
-        // 这里绕过 scale 直接处理，
-        // 由于按照列乘没有专门的优化，因此可能反而比矩阵乘法还要慢，因此这里统一这样处理
+        // 这里绕过 scale 直接处理
         for (IMatrix tDirect : mList) {
-            tDirect.operation().matmul2this(mBox.iabc());
+            if (isPrism()) {
+                tDirect.operation().matmul2this(mBox.iabc());
+            } else {
+                tDirect.col(0).multiply2this(mBox.iax());
+                tDirect.col(1).multiply2this(mBox.iby());
+                tDirect.col(2).multiply2this(mBox.icz());
+            }
         }
         mIsCartesian = true;
         return this;
     }
     public XDATCAR setDirect() {
         if (!mIsCartesian) return this;
-        // 这里绕过 scale 直接处理，
-        // 由于按照列乘没有专门的优化，因此可能反而比矩阵乘法还要慢，因此这里统一这样处理
+        // 这里绕过 scale 直接处理
         for (IMatrix tDirect : mList) {
-            tDirect.operation().matmul2this(mBox.inviabc());
+            if (isPrism()) {
+                tDirect.operation().matmul2this(mBox.inviabc());
+                // direct 需要考虑计算误差带来的出边界的问题
+                tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+            } else {
+                tDirect.col(0).div2this(mBox.iax());
+                tDirect.col(1).div2this(mBox.iby());
+                tDirect.col(2).div2this(mBox.icz());
+            }
         }
         mIsCartesian = false;
         return this;
     }
+    /** 修改模拟盒类型 */
+    public XDATCAR setBoxNormal() {
+        if (!isPrism()) return this;
+        VaspBox oBox = mBox;
+        mBox = new VaspBox(mBox);
+        // 如果是 direct 则不用转换数据
+        if (!mIsCartesian) return this;
+        // 如果原本的斜方模拟盒不存在斜方数据则直接返回
+        if (MathEX.Code.numericEqual(oBox.iay(), 0.0) && MathEX.Code.numericEqual(oBox.iaz(), 0.0)
+         && MathEX.Code.numericEqual(oBox.ibx(), 0.0) && MathEX.Code.numericEqual(oBox.ibz(), 0.0)
+         && MathEX.Code.numericEqual(oBox.icx(), 0.0) && MathEX.Code.numericEqual(oBox.icy(), 0.0)) return this;
+        // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        for (IMatrix tDirect : mList) {
+            tDirect.operation().matmul2this(oBox.inviabc());
+            // 考虑计算误差带来的出边界的问题
+            tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+            // 手动转换回到 cartesian
+            tDirect.col(0).multiply2this(mBox.iax());
+            tDirect.col(1).multiply2this(mBox.iby());
+            tDirect.col(2).multiply2this(mBox.icz());
+        }
+        return this;
+    }
+    public XDATCAR setBoxPrism() {return setBoxPrism(0.0, 0.0, 0.0);}
+    public XDATCAR setBoxPrism(double aIXY, double aIXZ, double aIYZ) {return setBoxPrism(0.0, 0.0, aIXY, 0.0, aIXZ, aIYZ);}
+    public XDATCAR setBoxPrism(double aIAy, double aIAz, double aIBx, double aIBz, double aICx, double aICy) {
+        VaspBox oBox = mBox;
+        mBox = new VaspBoxPrism(mBox, aIAy, aIAz, aIBx, aIBz, aICx, aICy);
+        // 如果是 direct 则不用转换数据
+        if (!mIsCartesian) return this;
+        // 现在必须要求倾斜因子相同才可以跳过设置
+        if (MathEX.Code.numericEqual(oBox.iay(), aIAy) && MathEX.Code.numericEqual(oBox.iaz(), aIAz)
+         && MathEX.Code.numericEqual(oBox.ibx(), aIBx) && MathEX.Code.numericEqual(oBox.ibz(), aIBz)
+         && MathEX.Code.numericEqual(oBox.icx(), aICx) && MathEX.Code.numericEqual(oBox.icy(), aICy)) return this;
+        // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        for (IMatrix tDirect : mList) {
+            if (oBox.isPrism()) {
+                tDirect.operation().matmul2this(oBox.inviabc());
+                // 考虑计算误差带来的出边界的问题
+                tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+            } else {
+                tDirect.col(0).div2this(oBox.iax());
+                tDirect.col(1).div2this(oBox.iby());
+                tDirect.col(2).div2this(oBox.icz());
+            }
+            // 手动转换回到 cartesian
+            tDirect.operation().matmul2this(mBox.iabc());
+        }
+        return this;
+    }
+    /** 密度归一化 */
+    public XDATCAR setDenseNormalized() {
+        double tScale = MathEX.Fast.cbrt(volume() / atomNumber());
+        // 直接通过调整 boxScale 来实现
+        mBox.setScale(mBox.scale() / tScale);
+        return this;
+    }
+    
     
     /** 截断开头一部分, 返回自身来支持链式调用 */
     public XDATCAR cutFront(int aLength) {
@@ -313,7 +383,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         IBox tBox = aAtomData.box();
         int tAtomNum = aAtomData.atomNumber();
         IMatrix rDirect = Matrices.zeros(tAtomNum, 3);
-        XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+        XYZ tBuf = new XYZ();
         for (IAtom tAtom : aAtomData.atoms()) {
             int tIdx = mId2Index==null ? tAtom.id()-1 : mId2Index.get(tAtom.id());
             if (mIsCartesian) {

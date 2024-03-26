@@ -4,43 +4,43 @@ import jse.atom.XYZ;
 import jse.math.MathEX;
 
 public final class VaspBoxPrism extends VaspBox {
-    private final double mAy, mAz;
-    private final double mBx, mBz;
-    private final double mCx, mCy;
+    private final double mIAy, mIAz;
+    private final double mIBx, mIBz;
+    private final double mICx, mICy;
     
-    public VaspBoxPrism(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz, double aScale) {
-        super(aAx, aBy, aCz, aScale);
-        mAy = aAy; mAz = aAz;
-        mBx = aBx; mBz = aBz;
-        mCx = aCx; mCy = aCy;
+    public VaspBoxPrism(double aIAx, double aIAy, double aIAz, double aIBx, double aIBy, double aIBz, double aICx, double aICy, double aICz, double aScale) {
+        super(aIAx, aIBy, aICz, aScale);
+        mIAy = aIAy; mIAz = aIAz;
+        mIBx = aIBx; mIBz = aIBz;
+        mICx = aICx; mICy = aICy;
     }
-    public VaspBoxPrism(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {
-        super(aAx, aBy, aCz);
-        mAy = aAy; mAz = aAz;
-        mBx = aBx; mBz = aBz;
-        mCx = aCx; mCy = aCy;
+    public VaspBoxPrism(double aIAx, double aIAy, double aIAz, double aIBx, double aIBy, double aIBz, double aICx, double aICy, double aICz) {
+        super(aIAx, aIBy, aICz);
+        mIAy = aIAy; mIAz = aIAz;
+        mIBx = aIBx; mIBz = aIBz;
+        mICx = aICx; mICy = aICy;
     }
-    VaspBoxPrism(VaspBox aVaspBox, double aAy, double aAz, double aBx, double aBz, double aCx, double aCy) {
+    VaspBoxPrism(VaspBox aVaspBox, double aIAy, double aIAz, double aIBx, double aIBz, double aICx, double aICy) {
         super(aVaspBox);
-        mAy = aAy; mAz = aAz;
-        mBx = aBx; mBz = aBz;
-        mCx = aCx; mCy = aCy;
+        mIAy = aIAy; mIAz = aIAz;
+        mIBx = aIBx; mIBz = aIBz;
+        mICx = aICx; mICy = aICy;
     }
     @SuppressWarnings("CopyConstructorMissesField")
     VaspBoxPrism(VaspBoxPrism aVaspBoxPrism) {
         super(aVaspBoxPrism);
-        mAy = aVaspBoxPrism.mAy; mAz = aVaspBoxPrism.mAz;
-        mBx = aVaspBoxPrism.mBx; mBz = aVaspBoxPrism.mBz;
-        mCx = aVaspBoxPrism.mCx; mCy = aVaspBoxPrism.mCy;
+        mIAy = aVaspBoxPrism.mIAy; mIAz = aVaspBoxPrism.mIAz;
+        mIBx = aVaspBoxPrism.mIBx; mIBz = aVaspBoxPrism.mIBz;
+        mICx = aVaspBoxPrism.mICx; mICy = aVaspBoxPrism.mICy;
     }
     
     /** VaspBox stuffs */
-    @Override public double iay() {return mAy;}
-    @Override public double iaz() {return mAz;}
-    @Override public double ibx() {return mBx;}
-    @Override public double ibz() {return mBz;}
-    @Override public double icx() {return mCx;}
-    @Override public double icy() {return mCy;}
+    @Override public double iay() {return mIAy;}
+    @Override public double iaz() {return mIAz;}
+    @Override public double ibx() {return mIBx;}
+    @Override public double ibz() {return mIBz;}
+    @Override public double icx() {return mICx;}
+    @Override public double icy() {return mICy;}
     
     /** IBox stuffs */
     @Override public boolean isLmpStyle() {return false;}

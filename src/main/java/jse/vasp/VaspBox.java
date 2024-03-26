@@ -8,11 +8,11 @@ import jse.math.matrix.Matrices;
 import org.jetbrains.annotations.VisibleForTesting;
 
 public class VaspBox implements IBox {
-    private final double mAx, mBy, mCz;
+    private final double mIAx, mIBy, mICz;
     private double mScale;
-    public VaspBox(double aAx, double aBy, double aCz, double aScale) {mAx = aAx; mBy = aBy; mCz = aCz; mScale = aScale;}
-    public VaspBox(double aAx, double aBy, double aCz) {this(aAx, aBy, aCz, 1.0);}
-    VaspBox(VaspBox aVaspBox) {mAx = aVaspBox.mAx; mBy = aVaspBox.mBy; mCz = aVaspBox.mCz; mScale = aVaspBox.mScale;}
+    public VaspBox(double aIAx, double aIBy, double aICz, double aScale) {mIAx = aIAx; mIBy = aIBy; mICz = aICz; mScale = aScale;}
+    public VaspBox(double aIAx, double aIBy, double aICz) {this(aIAx, aIBy, aICz, 1.0);}
+    VaspBox(VaspBox aVaspBox) {mIAx = aVaspBox.mIAx; mIBy = aVaspBox.mIBy; mICz = aVaspBox.mICz; mScale = aVaspBox.mScale;}
     
     @Override public VaspBox copy() {return new VaspBox(this);}
     
@@ -34,15 +34,15 @@ public class VaspBox implements IBox {
     }
     
     /** VaspBox 特有属性，i 代表 internal */
-    public final double iax() {return mAx;}
+    public final double iax() {return mIAx;}
     public double iay() {return 0.0;}
     public double iaz() {return 0.0;}
     public double ibx() {return 0.0;}
-    public final double iby() {return mBy;}
+    public final double iby() {return mIBy;}
     public double ibz() {return 0.0;}
     public double icx() {return 0.0;}
     public double icy() {return 0.0;}
-    public final double icz() {return mCz;}
+    public final double icz() {return mICz;}
     public final IXYZ ia() {return new XYZ(iax(), iay(), iaz());}
     public final IXYZ ib() {return new XYZ(ibx(), iby(), ibz());}
     public final IXYZ ic() {return new XYZ(icx(), icy(), icz());}
@@ -51,7 +51,7 @@ public class VaspBox implements IBox {
         IMatrix rMat = Matrices.zeros(3);
         rMat.set(0, 0, iax()); rMat.set(0, 1, iay()); rMat.set(0, 2, iaz());
         rMat.set(1, 0, ibx()); rMat.set(1, 1, iby()); rMat.set(1, 2, ibz());
-        rMat.set(2, 0, icx()); rMat.set(0, 1, icy()); rMat.set(2, 2, icz());
+        rMat.set(2, 0, icx()); rMat.set(2, 1, icy()); rMat.set(2, 2, icz());
         return rMat;
     }
     /** 返回 internal 的 a, b, c 按行排列组成的矩阵的逆矩阵，主要用于方便 Cartesian 转为 Direct */

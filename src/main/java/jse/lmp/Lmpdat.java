@@ -115,7 +115,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         // 如果原本的斜方模拟盒不存在斜方数据则直接返回
         if (MathEX.Code.numericEqual(oBox.xy(), 0.0) && MathEX.Code.numericEqual(oBox.xz(), 0.0) && MathEX.Code.numericEqual(oBox.yz(), 0.0)) return this;
         // 否则将原子进行线性变换
-        XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+        XYZ tBuf = new XYZ();
         for (int i = 0; i < mAtomNum; ++i) {
             ISettableAtom tAtom = atom(i);
             tBuf.setXYZ(tAtom);
@@ -140,7 +140,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         // 现在必须要求三个倾斜因子相同才可以跳过设置
         if (MathEX.Code.numericEqual(oBox.xy(), aXY) && MathEX.Code.numericEqual(oBox.xz(), aXZ) && MathEX.Code.numericEqual(oBox.yz(), aYZ)) return this;
         // 否则将原子进行线性变换
-        XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+        XYZ tBuf = new XYZ();
         for (int i = 0; i < mAtomNum; ++i) {
             ISettableAtom tAtom = atom(i);
             tBuf.setXYZ(tAtom);
@@ -327,7 +327,7 @@ public class Lmpdat extends AbstractSettableAtomData {
                 double tZ = MathEX.Fast.sqrt(tC.dot() - tXZ*tXZ - tYZ*tYZ);
                 rBox = new LmpBoxPrism(tX, tY, tZ, tXY, tXZ, tYZ);
                 // 再转换原子坐标
-                XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+                XYZ tBuf = new XYZ();
                 for (int i = 0; i < tAtomNum; ++i) {
                     IAtom tAtom = aAtomData.atom(i);
                     rAtomID.set(i, tAtom.id());

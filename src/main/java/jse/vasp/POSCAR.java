@@ -41,9 +41,9 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     private String @Nullable[] mTypeNames;
     private IIntVector mAtomNumbers;
     /** POSCAR 使用晶格矢量组成的矩阵以及对应的晶格常数来作为边界，现在这里直接转为内置的 Box 来存储 */
-    private final VaspBox mBox;
+    private VaspBox mBox;
     /** 是否有 Selective dynamics 关键字 */
-    public final boolean mSelectiveDynamics;
+    private boolean mSelectiveDynamics;
     /** 保存一份 id 列表，这样在 lmpdat 转为 poscar 时会继续保留 id 信息 */
     private @Nullable IIntVector mIDs;
     
@@ -112,6 +112,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     public IMatrix direct() {return mDirect;}
     public @Override boolean isCartesian() {return mIsCartesian;}
     public @Override @Nullable IIntVector ids() {return mIDs;}
+    public boolean isSelectiveDynamics() {return mSelectiveDynamics;}
+    public POSCAR setSelectiveDynamics(boolean aSelectiveDynamics) {mSelectiveDynamics = aSelectiveDynamics; return this;}
     
     /** @deprecated use {@link #box} */ @Deprecated public VaspBox vaspBox() {return box();}
     /** @deprecated use {@link VaspBox#scale} */ @Deprecated public double vaspBoxScale() {return mBox.scale();}
@@ -161,8 +163,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     
     /** Cartesian 和 Direct 来回转换 */
     public POSCAR setCartesian() {
-        if (mIsCartesian) return this;
         if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+        if (mIsCartesian) return this;
         // 这里绕过 scale 直接处理
         if (isPrism()) {
             mDirect.operation().matmul2this(mBox.iabc());
@@ -175,8 +177,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         return this;
     }
     public POSCAR setDirect() {
-        if (!mIsCartesian) return this;
         if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+        if (!mIsCartesian) return this;
         // 这里绕过 scale 直接处理
         if (isPrism()) {
             mDirect.operation().matmul2this(mBox.inviabc());
@@ -190,6 +192,56 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         mIsCartesian = false;
         return this;
     }
+    
+    /** 修改模拟盒类型 */
+    public POSCAR setBoxNormal() {
+        if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+        if (!isPrism()) return this;
+        VaspBox oBox = mBox;
+        mBox = new VaspBox(mBox);
+        // 如果是 direct 则不用转换数据
+        if (!mIsCartesian) return this;
+        // 如果原本的斜方模拟盒不存在斜方数据则直接返回
+        if (MathEX.Code.numericEqual(oBox.iay(), 0.0) && MathEX.Code.numericEqual(oBox.iaz(), 0.0)
+         && MathEX.Code.numericEqual(oBox.ibx(), 0.0) && MathEX.Code.numericEqual(oBox.ibz(), 0.0)
+         && MathEX.Code.numericEqual(oBox.icx(), 0.0) && MathEX.Code.numericEqual(oBox.icy(), 0.0)) return this;
+        // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        mDirect.operation().matmul2this(oBox.inviabc());
+        // 考虑计算误差带来的出边界的问题
+        mDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+        // 手动转换回到 cartesian
+        mDirect.col(0).multiply2this(mBox.iax());
+        mDirect.col(1).multiply2this(mBox.iby());
+        mDirect.col(2).multiply2this(mBox.icz());
+        return this;
+    }
+    public POSCAR setBoxPrism() {return setBoxPrism(0.0, 0.0, 0.0);}
+    public POSCAR setBoxPrism(double aIXY, double aIXZ, double aIYZ) {return setBoxPrism(0.0, 0.0, aIXY, 0.0, aIXZ, aIYZ);}
+    public POSCAR setBoxPrism(double aIAy, double aIAz, double aIBx, double aIBz, double aICx, double aICy) {
+        if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+        VaspBox oBox = mBox;
+        mBox = new VaspBoxPrism(mBox, aIAy, aIAz, aIBx, aIBz, aICx, aICy);
+        // 如果是 direct 则不用转换数据
+        if (!mIsCartesian) return this;
+        // 现在必须要求倾斜因子相同才可以跳过设置
+        if (MathEX.Code.numericEqual(oBox.iay(), aIAy) && MathEX.Code.numericEqual(oBox.iaz(), aIAz)
+         && MathEX.Code.numericEqual(oBox.ibx(), aIBx) && MathEX.Code.numericEqual(oBox.ibz(), aIBz)
+         && MathEX.Code.numericEqual(oBox.icx(), aICx) && MathEX.Code.numericEqual(oBox.icy(), aICy)) return this;
+        // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        if (oBox.isPrism()) {
+            mDirect.operation().matmul2this(oBox.inviabc());
+            // 考虑计算误差带来的出边界的问题
+            mDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+        } else {
+            mDirect.col(0).div2this(oBox.iax());
+            mDirect.col(1).div2this(oBox.iby());
+            mDirect.col(2).div2this(oBox.icz());
+        }
+        // 手动转换回到 cartesian
+        mDirect.operation().matmul2this(mBox.iabc());
+        return this;
+    }
+    
     /** 密度归一化 */
     public POSCAR setDenseNormalized() {
         if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
@@ -251,7 +303,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             /** poscar 的 atom 在 setType 后会改变位置 */
             @Override public int index() {return mIdx;}
             
-            private final XYZ mBuf = new XYZ(0.0, 0.0, 0.0);
+            private final XYZ mBuf = new XYZ();
             @Override public ISettableAtom setX(double aX) {
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 0, aX/mBox.scale());
@@ -321,17 +373,17 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 return this;
             }
             @Override public ISettableAtom setID(int aID) {
-                if (id() == aID) return this;
                 if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+                if (id() == aID) return this;
                 if (mIDs==null) mIDs = Vectors.range(1, atomNumber()+1);
                 mIDs.set(mIdx, aID);
                 return this;
             }
             /** poscar 的 atom 在 setType 后会改变位置，并且也会影响其他原子的位置，这里只同步当前原子的位置 */
             @Override public ISettableAtom setType(int aType) {
+                if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
                 int oType = type();
                 if (oType == aType) return this;
-                if (mIsRef) throw new RuntimeException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
                 // 超过原子种类数目则需要重新设置
                 if (aType > mAtomNumbers.size()) {
                     String[] rTypeNames = new String[aType];

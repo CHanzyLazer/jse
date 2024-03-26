@@ -146,7 +146,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         if (mBox.isPrism()) {
             // 斜方情况需要转为 Direct 再 wrap，
             // 完事后再转回 Cartesian
-            XYZ tBuf = new XYZ(0.0, 0.0, 0.0);
+            XYZ tBuf = new XYZ();
             int row = 0;
             for (IXYZ tXYZ : aAtomDataXYZ) {
                 tBuf.setXYZ(tXYZ);

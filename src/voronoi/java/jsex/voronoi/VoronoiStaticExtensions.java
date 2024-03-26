@@ -40,7 +40,7 @@ public class VoronoiStaticExtensions {
      * @return 球心 XYZ 坐标
      */
     public static XYZ centerSphere(MathEX.Graph self, IXYZ aA, IXYZ aB, IXYZ aC, IXYZ aD) {
-        XYZ rCenter = new XYZ(0.0, 0.0, 0.0);
+        XYZ rCenter = new XYZ();
         Geometry.centerSphere(
               aA.x(), aA.y(), aA.z()
             , aB.x(), aB.y(), aB.z()

@@ -17,6 +17,7 @@ public final class XYZ extends AbstractSettableXYZ {
     }
     
     public double mX, mY, mZ;
+    public XYZ() {this(0.0, 0.0, 0.0);}
     public XYZ(double aX, double aY, double aZ) {
         mX = aX; mY = aY; mZ = aZ;
     }
