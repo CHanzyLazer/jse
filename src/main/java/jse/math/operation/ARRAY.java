@@ -1583,10 +1583,10 @@ public class ARRAY {
     public static double maxOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
-        double rMax = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) {
+        double rMax = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
             double tValue = aThis[i];
-            if (Double.isNaN(rMax) || tValue > rMax) rMax = tValue;
+            if (tValue > rMax) rMax = tValue;
         }
         return rMax;
     }
@@ -1614,10 +1614,10 @@ public class ARRAY {
     public static double minOfThis(double[] aThis, int aShift, int aLength) {
         final int tEnd = aLength + aShift;
         
-        double rMin = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) {
+        double rMin = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) {
             double tValue = aThis[i];
-            if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
+            if (tValue < rMin) rMin = tValue;
         }
         return rMin;
     }
@@ -1645,30 +1645,30 @@ public class ARRAY {
     public static double statOfThis(double[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
         final int tEnd = aLength + aShift;
         
-        double rStat = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
+        double rStat = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
         return rStat;
     }
     public static ComplexDouble statOfThis(double[][] aThis, int aShift, int aLength, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final double[] tRealThis = aThis[0], tImagThis = aThis[1];
         final int tEnd = aLength + aShift;
         
-        ComplexDouble rStat = null;
-        for (int i = aShift; i < tEnd; ++i) rStat = toComplexDouble(aOpt.apply(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
+        ComplexDouble rStat = new ComplexDouble(tRealThis[aShift], tImagThis[aShift]);
+        for (int i = aShift+1; i < tEnd; ++i) rStat = toComplexDouble(aOpt.apply(rStat, new ComplexDouble(tRealThis[i], tImagThis[i])));
         return rStat;
     }
     public static double statOfThis(int[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
         final int tEnd = aLength + aShift;
         
-        double rStat = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
+        double rStat = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
         return rStat;
     }
     public static double statOfThis(long[] aThis, int aShift, int aLength, DoubleBinaryOperator aOpt) {
         final int tEnd = aLength + aShift;
         
-        double rStat = Double.NaN;
-        for (int i = aShift; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
+        double rStat = aThis[aShift];
+        for (int i = aShift+1; i < tEnd; ++i) rStat = aOpt.applyAsDouble(rStat, aThis[i]);
         return rStat;
     }
     

@@ -1039,19 +1039,19 @@ public class DATA {
     }
     public static double maxOfThis(IHasDoubleIterator aThis) {
         final IDoubleIterator it = aThis.iterator();
-        double rMax = Double.NaN;
+        double rMax = it.next();
         while (it.hasNext()) {
             double tValue = it.next();
-            if (Double.isNaN(rMax) || tValue > rMax) rMax = tValue;
+            if (tValue > rMax) rMax = tValue;
         }
         return rMax;
     }
     public static double minOfThis(IHasDoubleIterator aThis) {
         final IDoubleIterator it = aThis.iterator();
-        double rMin = Double.NaN;
+        double rMin = it.next();
         while (it.hasNext()) {
             double tValue = it.next();
-            if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
+            if (tValue < rMin) rMin = tValue;
         }
         return rMin;
     }
@@ -1093,13 +1093,13 @@ public class DATA {
     }
     public static double statOfThis(IHasDoubleIterator aThis, DoubleBinaryOperator aOpt) {
         final IDoubleIterator it = aThis.iterator();
-        double rStat = Double.NaN;
+        double rStat = it.next();
         while (it.hasNext()) rStat = aOpt.applyAsDouble(rStat, it.next());
         return rStat;
     }
     public static ComplexDouble statOfThis(IHasComplexDoubleIterator aThis, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleIterator it = aThis.iterator();
-        ComplexDouble rStat = null;
+        ComplexDouble rStat = it.next();
         while (it.hasNext()) rStat = toComplexDouble(aOpt.apply(rStat, it.next()));
         return rStat;
     }
@@ -1168,27 +1168,30 @@ public class DATA {
     public static void cummax2Dest(IHasDoubleIterator aThis, IHasDoubleSetOnlyIterator rDest) {
         final IDoubleSetOnlyIterator si = rDest.setIterator();
         final IDoubleIterator it = aThis.iterator();
-        double rMax = Double.NaN;
+        double rMax = it.next();
+        si.nextAndSet(rMax);
         while (it.hasNext()) {
             double tValue = it.next();
-            if (Double.isNaN(rMax) || tValue > rMax) rMax = tValue;
+            if (tValue > rMax) rMax = tValue;
             si.nextAndSet(rMax);
         }
     }
     public static void cummin2Dest(IHasDoubleIterator aThis, IHasDoubleSetOnlyIterator rDest) {
         final IDoubleSetOnlyIterator si = rDest.setIterator();
         final IDoubleIterator it = aThis.iterator();
-        double rMin = Double.NaN;
+        double rMin = it.next();
+        si.nextAndSet(rMin);
         while (it.hasNext()) {
             double tValue = it.next();
-            if (Double.isNaN(rMin) || tValue < rMin) rMin = tValue;
+            if (tValue < rMin) rMin = tValue;
             si.nextAndSet(rMin);
         }
     }
     public static void cumstat2Dest(IHasDoubleIterator aThis, IHasDoubleSetOnlyIterator rDest, DoubleBinaryOperator aOpt) {
         final IDoubleSetOnlyIterator si = rDest.setIterator();
         final IDoubleIterator it = aThis.iterator();
-        double rStat = Double.NaN;
+        double rStat = it.next();
+        si.nextAndSet(rStat);
         while (it.hasNext()) {
             rStat = aOpt.applyAsDouble(rStat, it.next());
             si.nextAndSet(rStat);
@@ -1197,7 +1200,8 @@ public class DATA {
     public static void cumstat2Dest(IHasComplexDoubleIterator aThis, IHasComplexDoubleSetOnlyIterator rDest, IBinaryFullOperator<? extends IComplexDouble, ? super ComplexDouble, ? super ComplexDouble> aOpt) {
         final IComplexDoubleSetOnlyIterator si = rDest.setIterator();
         final IComplexDoubleIterator it = aThis.iterator();
-        ComplexDouble rStat = null;
+        ComplexDouble rStat = it.next();
+        si.nextAndSet(rStat);
         while (it.hasNext()) {
             rStat = toComplexDouble(aOpt.apply(rStat, it.next()));
             si.nextAndSet(rStat);
