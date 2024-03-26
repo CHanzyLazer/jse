@@ -51,17 +51,35 @@ public interface IBox extends IXYZ {
             rDirect.multiply2this(this);
         } else
         if (isLmpStyle()) {
+            double tX  =  x(), tY  =  y(), tZ  =  z();
+            double tXY = xy(), tXZ = xz(), tYZ = yz();
             rDirect.setXYZ(
-                x()*rDirect.mX + xy()*rDirect.mY + xz()*rDirect.mZ,
-                y()*rDirect.mY + yz()*rDirect.mZ,
-                z()*rDirect.mZ
+                tX*rDirect.mX + tXY*rDirect.mY + tXZ*rDirect.mZ,
+                tY*rDirect.mY + tYZ*rDirect.mZ,
+                tZ*rDirect.mZ
             );
+            // cartesian 其实也需要考虑计算误差带来的出边界的问题
+            double tNorm = Math.abs(tX)  + Math.abs(tY)  + Math.abs(tZ)
+                         + Math.abs(tXY) + Math.abs(tXZ) + Math.abs(tYZ);
+            if (Math.abs(rDirect.mX) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mX = 0.0;
+            if (Math.abs(rDirect.mY) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mY = 0.0;
+            if (Math.abs(rDirect.mZ) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mZ = 0.0;
         } else {
+            double tAx = ax(), tAy = ay(), tAz = az();
+            double tBx = bx(), tBy = by(), tBz = bz();
+            double tCx = cx(), tCy = cy(), tCz = cz();
             rDirect.setXYZ(
-                ax()*rDirect.mX + bx()*rDirect.mY + cx()*rDirect.mZ,
-                ay()*rDirect.mX + by()*rDirect.mY + cy()*rDirect.mZ,
-                az()*rDirect.mX + bz()*rDirect.mY + cz()*rDirect.mZ
+                tAx*rDirect.mX + tBx*rDirect.mY + tCx*rDirect.mZ,
+                tAy*rDirect.mX + tBy*rDirect.mY + tCy*rDirect.mZ,
+                tAz*rDirect.mX + tBz*rDirect.mY + tCz*rDirect.mZ
             );
+            // cartesian 其实也需要考虑计算误差带来的出边界的问题
+            double tNorm = Math.abs(tAx) + Math.abs(tAy) + Math.abs(tAz)
+                         + Math.abs(tBx) + Math.abs(tBy) + Math.abs(tBz)
+                         + Math.abs(tCx) + Math.abs(tCy) + Math.abs(tCz);
+            if (Math.abs(rDirect.mX) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mX = 0.0;
+            if (Math.abs(rDirect.mY) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mY = 0.0;
+            if (Math.abs(rDirect.mZ) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mZ = 0.0;
         }
     }
     default void toDirect(XYZ rCartesian) {

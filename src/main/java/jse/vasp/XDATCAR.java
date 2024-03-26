@@ -212,7 +212,11 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         // 这里绕过 scale 直接处理
         for (IMatrix tDirect : mList) {
             if (isPrism()) {
-                tDirect.operation().matmul2this(mBox.iabc());
+                IMatrix tIABC = mBox.iabc();
+                tDirect.operation().matmul2this(tIABC);
+                // cartesian 其实也需要考虑计算误差带来的出边界的问题
+                final double tNorm = tIABC.asVecCol().operation().stat((norm, v) -> norm+Math.abs(v));
+                tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON*tNorm ? 0.0 : v);
             } else {
                 tDirect.col(0).multiply2this(mBox.iax());
                 tDirect.col(1).multiply2this(mBox.iby());
@@ -225,9 +229,10 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     public XDATCAR setDirect() {
         if (!mIsCartesian) return this;
         // 这里绕过 scale 直接处理
+        IMatrix tInvIABC = mBox.inviabc();
         for (IMatrix tDirect : mList) {
             if (isPrism()) {
-                tDirect.operation().matmul2this(mBox.inviabc());
+                tDirect.operation().matmul2this(tInvIABC);
                 // direct 需要考虑计算误差带来的出边界的问题
                 tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
             } else {
@@ -251,8 +256,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
          && MathEX.Code.numericEqual(oBox.ibx(), 0.0) && MathEX.Code.numericEqual(oBox.ibz(), 0.0)
          && MathEX.Code.numericEqual(oBox.icx(), 0.0) && MathEX.Code.numericEqual(oBox.icy(), 0.0)) return this;
         // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        IMatrix oInvIABC = oBox.inviabc();
         for (IMatrix tDirect : mList) {
-            tDirect.operation().matmul2this(oBox.inviabc());
+            tDirect.operation().matmul2this(oInvIABC);
             // 考虑计算误差带来的出边界的问题
             tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
             // 手动转换回到 cartesian
@@ -274,9 +280,12 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
          && MathEX.Code.numericEqual(oBox.ibx(), aIBx) && MathEX.Code.numericEqual(oBox.ibz(), aIBz)
          && MathEX.Code.numericEqual(oBox.icx(), aICx) && MathEX.Code.numericEqual(oBox.icy(), aICy)) return this;
         // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        IMatrix oInvIABC = oBox.inviabc();
+        IMatrix tIABC = mBox.iabc();
+        final double tNorm = tIABC.asVecCol().operation().stat((norm, v) -> norm+Math.abs(v));
         for (IMatrix tDirect : mList) {
             if (oBox.isPrism()) {
-                tDirect.operation().matmul2this(oBox.inviabc());
+                tDirect.operation().matmul2this(oInvIABC);
                 // 考虑计算误差带来的出边界的问题
                 tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
             } else {
@@ -285,7 +294,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
                 tDirect.col(2).div2this(oBox.icz());
             }
             // 手动转换回到 cartesian
-            tDirect.operation().matmul2this(mBox.iabc());
+            tDirect.operation().matmul2this(tIABC);
+            // cartesian 其实也需要考虑计算误差带来的出边界的问题
+            tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON*tNorm ? 0.0 : v);
         }
         return this;
     }

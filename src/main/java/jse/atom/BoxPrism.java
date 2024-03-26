@@ -37,13 +37,6 @@ public final class BoxPrism implements IBox {
     @Override public double volume() {return mA.mixed(mB, mC);}
     
     /** 为了加速运算，内部会缓存中间变量，因此这个实现的 mA，mB，mC 都是不能修改的 */
-    @Override public void toCartesian(XYZ rDirect) {
-        rDirect.setXYZ(
-            mA.mX*rDirect.mX + mB.mX*rDirect.mY + mC.mX*rDirect.mZ,
-            mA.mY*rDirect.mX + mB.mY*rDirect.mY + mC.mY*rDirect.mZ,
-            mA.mZ*rDirect.mX + mB.mZ*rDirect.mY + mC.mZ*rDirect.mZ
-        );
-    }
     private XYZ mBC = null, mCA = null, mAB = null;
     private double mV = Double.NaN;
     @Override public void toDirect(XYZ rCartesian) {
