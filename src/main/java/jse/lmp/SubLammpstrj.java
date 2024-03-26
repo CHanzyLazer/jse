@@ -747,7 +747,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /** 专门的方法用来收发 SubLammpstrj */
     public static void send(SubLammpstrj aSubLammpstrj, int aDest, MPI.Comm aComm) throws MPIException {
         // 暂不支持周期边界以外的类型的发送
-        if (!aSubLammpstrj.mBoxBounds[0].equals("pp") || !aSubLammpstrj.mBoxBounds[1].equals("pp") || !aSubLammpstrj.mBoxBounds[2].equals("pp")) {
+        if (!aSubLammpstrj.mBoxBounds[0].equalsIgnoreCase("pp") || !aSubLammpstrj.mBoxBounds[1].equalsIgnoreCase("pp") || !aSubLammpstrj.mBoxBounds[2].equalsIgnoreCase("pp")) {
             throw new UnsupportedOperationException("send is temporarily support `pp pp pp` BoxBounds only");
         }
         // 暂不支持正交盒以外的类型的发送
@@ -793,7 +793,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     public static SubLammpstrj bcast(SubLammpstrj aSubLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() == aRoot) {
             // 暂不支持周期边界以外的类型的发送
-            if (!aSubLammpstrj.mBoxBounds[0].equals("pp") || !aSubLammpstrj.mBoxBounds[1].equals("pp") || !aSubLammpstrj.mBoxBounds[2].equals("pp")) {
+            if (!aSubLammpstrj.mBoxBounds[0].equalsIgnoreCase("pp") || !aSubLammpstrj.mBoxBounds[1].equalsIgnoreCase("pp") || !aSubLammpstrj.mBoxBounds[2].equalsIgnoreCase("pp")) {
                 throw new UnsupportedOperationException("bcast is temporarily support `pp pp pp` BoxBounds only");
             }
             // 暂不支持正交盒以外的类型的发送
