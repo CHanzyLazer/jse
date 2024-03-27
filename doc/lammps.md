@@ -344,7 +344,7 @@ jse 中使用 [`jse.lmp.Thermo`](../src/main/java/jse/lmp/Thermo.java) /
     这里借助了 cmake 的 `find_package` 方法来自动找到 jni 和 mpi 依赖，
     此功能至少需要 cmake 版本为 `3.14`。
     
-- **MPI**（可选）
+- [**MPI**](mpi.md)（可选，建议）
     
     一般来说，为了实现高性能的 lammps 计算，都会使用 mpi 版本的 lammps，
     这里和 lammps 一样提供串行版本的支持。
@@ -352,7 +352,13 @@ jse 中使用 [`jse.lmp.Thermo`](../src/main/java/jse/lmp/Thermo.java) /
     jse 会通过 cmake 的 `find_package(MPI)` 来自动检测是否存在 MPI 环境，
     并在成功检测到 MPI 时自动开启 MPI。
     
-- **网络环境或编译好的 lammps 动态库**
+    例如对于 windows 可以使用
+    [Microsoft MPI](https://www.microsoft.com/download/details.aspx?id=105289)
+    （`msmpisdk.msi` 和 `msmpisetup.exe` 都需要安装），对于 linux 可以使用
+    [MPICH](https://www.mpich.org/)
+    （建议直接通过 `apt-get install mpich` 安装）
+    
+- **网络环境或已编译的 lammps 动态库**
     
     jse 会自动检测 `lib/lmp/native/build` 目录是否存在 lammps 动态库环境，
     并在检测失败后自动从网络下载 
