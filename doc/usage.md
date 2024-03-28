@@ -87,15 +87,6 @@ import jse.lmp.Dump
     ⟶ 语言级别：8 - lambda、类型注解等 ⟶ 右下角“确定”
     ```
     
-    <!-- $$\begin{align*} &
-    \text{左上角“文件”}\longrightarrow 
-    \text{项目结构}\longrightarrow 
-    \text{左边栏选择“项目设置-项目”}\longrightarrow 
-    \text{SDK 选择本地安装的 JDK} \\& \longrightarrow
-    \text{语言级别：8 - lambda、类型注解等}\longrightarrow
-    \text{右下角“确定”}
-    \end{align*}$$ -->
-    
     切换到希望运行的 groovy 脚本后，通过右上角的 `选择运行/调试配置` 切换到
     `jse-RunCurrentScript`，然后运行即可。
 

@@ -16,16 +16,21 @@
 可以使用指令方法来运行：
 
 ```shell
-jse -t "println('hello world')"
+jse -t 'println(/hello world/)'
 ```
 
 对于项目中独立安装，则可以在项目目录中运行：
 
 ```shell
-./jse -t "println('hello world')"
+./jse -t 'println(/hello world/)'
 ```
 
+> 这里采用 [groovy 的斜杠字符串](https://groovy-lang.org/syntax.html#_slashy_string)
+> 来避免命令行中烦人的引号转义问题。
+> 
+
 后续介绍统一采用软件安装作为例子，对于独立安装将 `jse` 替换成 `./jse` 即可。
+
 
 ## *None*
 
@@ -61,7 +66,7 @@ jse -t "println('hello world')"
 - **执行**
     
     ```shell
-    jse -t "println('hello world')"
+    jse -t 'println(/hello world/)'
     ```
     
 - **输出**
@@ -73,13 +78,44 @@ jse -t "println('hello world')"
 > 如：
 >
 > ```shell
-> jse -t "println(jse.code.CS.VERSION)"
+> jse -t 'println(jse.code.CS.VERSION)'
 > ```
 >
 > 或：
 >
 > ```shell
-> jse -t "import static jse.code.CS.*; println(VERSION)"
+> jse -t 'import static jse.code.CS.*; println(VERSION)'
+> ```
+> 
+> 可以通过 groovy 的 [斜杠字符串](https://groovy-lang.org/syntax.html#_slashy_string)
+> 或者 [美元斜杠字符串](https://groovy-lang.org/syntax.html#_dollar_slashy_string)
+> 来避免命令行中以及 [使用 `system` 提交任务](system.md) 
+> 时烦人的引号转义问题，如：
+>
+> ```groovy
+> import static jse.code.OS.*
+> 
+> if (IS_WINDOWS) {
+>     system("jse -t 'println(''hello world'')'")
+> } else {
+>     system("jse -t \"println('hello world')\"")
+> }
+> ```
+> 
+> 可以改为：
+> 
+> ```groovy
+> import static jse.code.OS.*
+> 
+> system("jse -t 'println(/hello world/)'")
+> ```
+>
+> 或：
+>
+> ```groovy
+> import static jse.code.OS.*
+> 
+> system("jse -t 'println(\$/hello world/\$)'")
 > ```
 >
 
@@ -137,7 +173,7 @@ jse -t "println('hello world')"
 - **执行**
     
     ```shell
-    jse -i java.lang.System.out.println "hello world"
+    jse -i java.lang.System.out.println 'hello world'
     ```
     
 - **输出**
@@ -161,7 +197,7 @@ groovy 版本以及 java 版本并退出。
     
 - **输出**
     ```
-    jse version: 2.7.4 (java: 17.0.8)
+    jse version: 2.8.0 (java: 17.0.8)
     ```
 
 
@@ -179,7 +215,7 @@ groovy 版本以及 java 版本并退出。
     ```
     Usage:    jse [-option] value [args...]
     Such as:  jse path/to/script.groovy [args...]
-    Or:       jse -t "println('hello world')"
+    Or:       jse -t 'println(/hello world/)'
     
     The options can be:
         -t -text      Run the groovy text script
@@ -246,6 +282,5 @@ jse -jupyter prefix=sys.prefix
 ```
 
 表示设置 `prefix` 为 `sys.prefix`，详细可参考
-[jupyter 官方文档](https://jupyter-client.readthedocs.io/en/latest/api/jupyter_client.html#jupyter_client.kernelspec.KernelSpecManager.install_kernel_spec)
-。
+[jupyter 官方文档](https://jupyter-client.readthedocs.io/en/latest/api/jupyter_client.html#jupyter_client.kernelspec.KernelSpecManager.install_kernel_spec) 。
 
