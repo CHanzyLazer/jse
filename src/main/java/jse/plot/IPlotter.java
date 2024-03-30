@@ -11,6 +11,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -219,4 +220,10 @@ public interface IPlotter {
     
     /** 获取图例 */
     ILegend legend();
+    /** 获取已经绘制的线条 */
+    List<? extends ILine> lines();
+    ILine line(String aName);
+    ILine line(int aIdx);
+    int lineNumber();
+    @VisibleForTesting default int nlines() {return lineNumber();}
 }

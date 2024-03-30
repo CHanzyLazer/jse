@@ -1629,9 +1629,9 @@ public class UT {
         public static IPlotter plotter(int aIdx) {return PLTS.get((aIdx < 0) ? (PLTS.size()+aIdx) : aIdx);}
         public static int plotterNumber() {return PLTS.size();}
         public static int nplotters() {return plotterNumber();}
-        public static List<IPlotter> plotters() {
+        public static List<? extends IPlotter> plotters() {
             return new AbstractRandomAccessList<IPlotter>() {
-                @Override public int size() {return PLTS.size();}
+                @Override public int size() {return plotterNumber();}
                 @Override public IPlotter get(int index) {return PLTS.get(index);}
                 @Override public void clear() {
                     PLTS.forEach(IPlotter::dispose);
@@ -1643,9 +1643,9 @@ public class UT {
         public static IFigure figure(int aIdx) {return PLTS.get((aIdx < 0) ? (PLTS.size()+aIdx) : aIdx).show();}
         public static int figureNumber() {return PLTS.size();}
         public static int nfigures() {return figureNumber();}
-        public static List<IFigure> figures() {
+        public static List<? extends IFigure> figures() {
             return new AbstractRandomAccessList<IFigure>() {
-                @Override public int size() {return PLTS.size();}
+                @Override public int size() {return figureNumber();}
                 @Override public IFigure get(int index) {return PLTS.get(index).show();}
                 @Override public void clear() {
                     PLTS.forEach(IPlotter::dispose);
@@ -1908,6 +1908,11 @@ public class UT {
         public static byte[] encodefig() throws IOException {return encodeFigure();}
         
         public static ILegend legend() {validPlotter_(); return PLT.legend();}
+        public static List<? extends ILine> lines() {validPlotter_(); return PLT.lines();}
+        public static ILine line(String aName) {validPlotter_(); return PLT.line(aName);}
+        public static ILine line(int aIdx) {validPlotter_(); return PLT.line(aIdx);}
+        public static int lineNumber() {validPlotter_(); return PLT.lineNumber();}
+        @VisibleForTesting public static int nlines()  {validPlotter_(); return PLT.nlines();}
     }
     
     

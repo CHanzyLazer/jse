@@ -2,6 +2,7 @@ package jse.plot;
 
 import jse.Main;
 import jse.code.UT;
+import jse.code.collection.AbstractRandomAccessList;
 import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -561,6 +562,22 @@ public class PlotterJFree implements IPlotter {
         });
     }
     
+    /** 获取已经绘制的线条 */
+    @Override public ILine line(String aName) {return syncSup(() -> mLines.get(mName2ID.get(aName)));}
+    @Override public ILine line(int aIdx) {return syncSup(() -> mLines.get((aIdx < 0) ? (mLines.size()+aIdx) : aIdx));}
+    @Override public int lineNumber() {return syncSup(mLines::size);}
+    @Override public List<? extends ILine> lines() {
+        return new AbstractRandomAccessList<ILine>() {
+            @Override public int size() {return lineNumber();}
+            @Override public ILine get(int index) {return syncSup(() -> mLines.get(index));}
+            @Override public void clear() {
+                mLinesData.removeAllSeries();
+                mName2ID.clear();
+                mLines.clear();
+            }
+        };
+    }
+    
     
     /** 设置轴的类型 */
     @Override public IPlotter xScaleLog() {
@@ -762,7 +779,7 @@ public class PlotterJFree implements IPlotter {
                 if (!mIsShowing) {
                     mIsShowing = true;
                     if (mTitleAnnotation == null) mChart.addLegend(mChartLegendTitle);
-                    else mPlot.removeAnnotation(mTitleAnnotation);
+                    else mPlot.addAnnotation(mTitleAnnotation);
                 }
             });
             return this;
