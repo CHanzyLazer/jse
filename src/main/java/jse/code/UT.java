@@ -1906,6 +1906,8 @@ public class UT {
         public static void savefig() throws IOException {saveFigure();}
         public static byte[] encodefig(int aWidth, int aHeight) throws IOException {return encodeFigure(aWidth, aHeight);}
         public static byte[] encodefig() throws IOException {return encodeFigure();}
+        
+        public static ILegend legend() {validPlotter_(); return PLT.legend();}
     }
     
     

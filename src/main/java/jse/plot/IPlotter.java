@@ -216,4 +216,7 @@ public interface IPlotter {
     /** 清空数据 */
     IPlotter clear();
     void dispose();
+    
+    /** 获取图例 */
+    ILegend legend();
 }

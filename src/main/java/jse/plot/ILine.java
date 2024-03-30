@@ -11,11 +11,13 @@ import static jse.plot.Colors.*;
 
 /**
  * @author liqa
- * <p> {@link IPlotter}.plot 得到的线的对象 </p>
+ * <p> {@link IPlotter#plot} 得到的线的对象 </p>
  * <p> 主要用于方便的设置具体某个线的参数 </p>
  */
 @SuppressWarnings("UnusedReturnValue")
 public interface ILine {
+    IPlotter plotter();
+    
     /** 设置线的各种属性，返回自身方便链式调用 */
     default ILine color(int aIdx) {return color(COLOR(aIdx));}
     default ILine color(double aR, double aG, double aB) {return color(new Color((int)Math.round(aR*255), (int)Math.round(aG*255), (int)Math.round(aB*255)));}
@@ -70,6 +72,7 @@ public interface ILine {
     ILine markerShape(Shape aMarkerShape);
     
     /** 是否显示 legend */
-    ILine noLegend();
+    boolean isShowingLegend();
+    ILine hideLegend();
     ILine showLegend();
 }

@@ -6,7 +6,9 @@ import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.*;
+import org.jfree.chart.annotations.XYTitleAnnotation;
 import org.jfree.chart.axis.*;
+import org.jfree.chart.block.BlockBorder;
 import org.jfree.chart.event.RendererChangeEvent;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.*;
@@ -14,7 +16,9 @@ import org.jfree.chart.renderer.RendererUtils;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
+import org.jfree.chart.ui.RectangleAnchor;
 import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.Range;
@@ -28,15 +32,16 @@ import java.awt.*;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
+import java.util.function.Supplier;
 
-
-import static jse.code.Conf.KERNEL_SHOW_FIGURE;
-import static jse.plot.Colors.COLOR;
-import static jse.plot.Shapes.*;
-import static jse.plot.Strokes.*;
 import static java.awt.Color.*;
+import static jse.code.Conf.KERNEL_SHOW_FIGURE;
+import static jse.plot.Anchors.AnchorType;
+import static jse.plot.Colors.COLOR;
+import static jse.plot.Shapes.MarkerType;
+import static jse.plot.Strokes.LineType;
 
 
 /**
@@ -51,7 +56,7 @@ public class PlotterJFree implements IPlotter {
         Iterable<? extends Number> mX, mY;
         Shape mLegendLine;
         
-        LineJFree(int aID, Iterable<? extends Number> aX, Iterable  <? extends Number> aY, String aName) {
+        LineJFree(int aID, Iterable<? extends Number> aX, Iterable<? extends Number> aY, String aName) {
             mID = aID;
             mName = aName;
             mX = aX;
@@ -71,36 +76,49 @@ public class PlotterJFree implements IPlotter {
             mLineRender.setSeriesShapesVisible(mID, mMarkerType!=MarkerType.NULL);
         }
         
-        @Override public ILine filled(boolean aFilled) {mLineRender.setSeriesShapesFilled(mID, aFilled); return this;}
+        @Override public IPlotter plotter() {return PlotterJFree.this;}
         
-        @Override public ILine color(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); mLineRender.setSeriesOutlinePaint(mID, aPaint); return this;} // 会覆盖掉 markerColor 的颜色设置
-        @Override public ILine lineColor(Paint aPaint) {mLineRender.setSeriesPaint(mID, aPaint); return this;} // 不会覆盖掉 markerColor 的颜色设置
-        @Override public ILine markerColor(Paint aPaint) {mLineRender.setSeriesOutlinePaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); return this;} // 会覆盖掉 markerFaceColor 的颜色设置
-        @Override public ILine markerFaceColor(Paint aPaint) {filled(); mLineRender.setSeriesFillPaint(mID, aPaint); return this;}
-        @Override public ILine markerEdgeColor(Paint aPaint) {mLineRender.setSeriesOutlinePaint(mID, aPaint); return this;}
+        @Override public ILine filled(boolean aFilled) {syncRun(() -> mLineRender.setSeriesShapesFilled(mID, aFilled)); return this;}
+        
+        @Override public ILine color(Paint aPaint) {syncRun(() -> {mLineRender.setSeriesPaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); mLineRender.setSeriesOutlinePaint(mID, aPaint);}); return this;} // 会覆盖掉 markerColor 的颜色设置
+        @Override public ILine lineColor(Paint aPaint) {syncRun(() -> mLineRender.setSeriesPaint(mID, aPaint)); return this;} // 不会覆盖掉 markerColor 的颜色设置
+        @Override public ILine markerColor(Paint aPaint) {syncRun(() -> {mLineRender.setSeriesOutlinePaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint);}); return this;} // 会覆盖掉 markerFaceColor 的颜色设置
+        @Override public ILine markerFaceColor(Paint aPaint) {syncRun(() -> {filled(); mLineRender.setSeriesFillPaint(mID, aPaint);}); return this;}
+        @Override public ILine markerEdgeColor(Paint aPaint) {syncRun(() -> mLineRender.setSeriesOutlinePaint(mID, aPaint)); return this;}
         
         @Override protected void onLineTypeChange(LineType aOldLineType, LineType aNewLineType) {
-            mLineRender.setSeriesStroke(mID, super.mLineStroke);
-            mLineRender.setSeriesLinesVisible(mID, aNewLineType!=LineType.NULL);
+            syncRun(() -> {
+                mLineRender.setSeriesStroke(mID, super.mLineStroke);
+                mLineRender.setSeriesLinesVisible(mID, aNewLineType!=LineType.NULL);
+            });
         }
         @Override protected void onMarkerTypeChange(MarkerType aOldMarkerType, MarkerType aNewMarkerType) {
-            mLineRender.setSeriesShape(mID, super.mMarkerShape);
-            mLineRender.setSeriesShapesVisible(mID, aNewMarkerType!=MarkerType.NULL);
+            syncRun(() -> {
+                mLineRender.setSeriesShape(mID, super.mMarkerShape);
+                mLineRender.setSeriesShapesVisible(mID, aNewMarkerType!=MarkerType.NULL);
+            });
         }
         @Override protected void onLineWidthChange(double aOldLineWidth, double aNewLineWidth) {
-            // 线宽变化时需要同步调整 Legend 的长度
-            mLegendLine = new Line2D.Double(-MathEX.Code.toRange(1.5, 2.5, aNewLineWidth)*LEGEND_SIZE, 0.0, MathEX.Code.toRange(1.5, 2.5, aNewLineWidth)*LEGEND_SIZE, 0.0);
-            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            syncRun(() -> {
+                // 线宽变化时需要同步调整 Legend 的长度
+                mLegendLine = new Line2D.Double(-MathEX.Code.toRange(1.5, 2.5, aNewLineWidth)*LEGEND_SIZE, 0.0, MathEX.Code.toRange(1.5, 2.5, aNewLineWidth)*LEGEND_SIZE, 0.0);
+                mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            });
         }
         @Override protected void onMarkerSizeChange(double aOldMarkerSize, double aNewMarkerSize) {
-            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            syncRun(() -> {
+                mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            });
         }
         @Override protected void onMarkerEdgeWidthChange(double aOldEdgeWidth, double aNewEdgeWidth) {
-            mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            syncRun(() -> {
+                mLineRender.notifyListeners(new RendererChangeEvent(mLineRender));
+            });
         }
         
-        @Override public ILine noLegend() {mLineRender.setSeriesVisibleInLegend(mID, false); return this;}
-        @Override public ILine showLegend() {mLineRender.setSeriesVisibleInLegend(mID, true); return this;}
+        @Override public boolean isShowingLegend() {return syncSup(() -> mLineRender.getSeriesVisibleInLegend(mID));}
+        @Override public ILine hideLegend() {syncRun(() -> mLineRender.setSeriesVisibleInLegend(mID, false)); return this;}
+        @Override public ILine showLegend() {syncRun(() -> mLineRender.setSeriesVisibleInLegend(mID, true)); return this;}
     }
     
     /** 重写 NumberAxis 的方式修改默认的 tick 间距 */
@@ -183,6 +201,7 @@ public class PlotterJFree implements IPlotter {
     private final XYLineAndShapeRenderer mLineRender;
     private final List<LineJFree> mLines;
     private final Map<String, Integer> mName2ID;
+    private final LegendJFree mLegend;
     
     /** 一些默认的初始设定 */
     public PlotterJFree() {
@@ -289,6 +308,8 @@ public class PlotterJFree implements IPlotter {
         mLineRender.setDefaultToolTipGenerator(new StandardXYToolTipGenerator());
         // 整个图表
         mChart = new JFreeChart(TITLE, TITLE_FONT, mPlot, true);
+        // 图例
+        mLegend = new LegendJFree();
         
         // 目前是在默认的主题上直接修改
         ChartFactory.getChartTheme().apply(mChart);
@@ -307,6 +328,25 @@ public class PlotterJFree implements IPlotter {
         fontTick(TICK_FONT);
     }
     
+    /** 通用的考虑绘制窗口后同步问题的方法，用于减少重复代码 */
+   void syncRun(Runnable aRun) {
+       if (mCurrentFigure == null) {aRun.run(); return;}
+       synchronized (mCurrentFigure.lock()) {aRun.run();}
+   }
+    <T> T syncSup(Supplier<T> aSup) {
+        if (mCurrentFigure == null) {return aSup.get();}
+        synchronized (mCurrentFigure.lock()) {return aSup.get();}
+    }
+    @FunctionalInterface interface RunnableEx<E extends Exception> {void run() throws E;}
+    <E extends Exception> void syncRunEx(RunnableEx<E> aRun) throws E {
+        if (mCurrentFigure == null) {aRun.run(); return;}
+        synchronized (mCurrentFigure.lock()) {aRun.run();}
+    }
+    @FunctionalInterface interface SupplierEx<T, E extends Exception> {T get() throws E;}
+    <T, E extends Exception> T syncSupEx(SupplierEx<T, E> aSup) throws E {
+        if (mCurrentFigure == null) {return aSup.get();}
+        synchronized (mCurrentFigure.lock()) {return aSup.get();}
+    }
     
     /** IPlotter stuffs */
     @Override public String defaultLineName_() {return "data-"+mLines.size();}
@@ -314,70 +354,72 @@ public class PlotterJFree implements IPlotter {
     /** 字体设置，由于 mChart 不一定会存这些信息，需要手动存这些 */
     public Font mTitleFont;
     @Override public IPlotter fontTitle(Font aFont) {
-        mTitleFont = aFont;
-        TextTitle tTitle = mChart.getTitle();
-        if (tTitle != null) tTitle.setFont(mTitleFont);
+        syncRun(() -> {
+            mTitleFont = aFont;
+            TextTitle tTitle = mChart.getTitle();
+            if (tTitle != null) tTitle.setFont(mTitleFont);
+        });
         return this;
     }
     @Override public IPlotter fontLabel(Font aFont) {
-        mXAxis.setLabelFont(aFont);
-        mYAxis.setLabelFont(aFont);
+        syncRun(() -> {
+            mXAxis.setLabelFont(aFont);
+            mYAxis.setLabelFont(aFont);
+        });
         return this;
     }
     @Override public IPlotter fontLegend(Font aFont) {
-        mLineRender.setDefaultLegendTextFont(aFont);
+        mLegend.font(aFont);
         return this;
     }
     @Override public IPlotter fontTick(Font aFont) {
-        mXAxis.setTickLabelFont(aFont);
-        mYAxis.setTickLabelFont(aFont);
+        syncRun(() -> {
+            mXAxis.setTickLabelFont(aFont);
+            mYAxis.setTickLabelFont(aFont);
+        });
         return this;
     }
     
     /** 设置标题等 */
-    @Override public IPlotter title(String aTitle) {mChart.setTitle(aTitle); fontTitle(mTitleFont); return this;}
-    @Override public IPlotter xLabel(String aXLabel) {mXAxis.setLabel(aXLabel); return this;}
-    @Override public IPlotter yLabel(String aYLabel) {mYAxis.setLabel(aYLabel); return this;}
+    @Override public IPlotter title(String aTitle) {syncRun(() -> {mChart.setTitle(aTitle); fontTitle(mTitleFont);}); return this;}
+    @Override public IPlotter xLabel(String aXLabel) {syncRun(() -> mXAxis.setLabel(aXLabel)); return this;}
+    @Override public IPlotter yLabel(String aYLabel) {syncRun(() -> mYAxis.setLabel(aYLabel)); return this;}
     
     /** 设置绘制范围 */
     @Override public IPlotter xRange(double aMin, double aMax) {
-        // 先进行设置范围，非法返回会自动报错
-        mXAxis.setRange(aMin, aMax);
-        // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
-        updateSeries_();
+        syncRun(() -> {
+            // 先进行设置范围，非法返回会自动报错
+            mXAxis.setRange(aMin, aMax);
+            // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
+            updateSeries_();
+        });
         return this;
     }
     @Override public IPlotter yRange(double aMin, double aMax) {
-        // 先进行设置范围，非法返回会自动报错
-        mYAxis.setRange(aMin, aMax);
-        // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
-        updateSeries_();
+        syncRun(() -> {
+            // 先进行设置范围，非法返回会自动报错
+            mYAxis.setRange(aMin, aMax);
+            // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
+            updateSeries_();
+        });
         return this;
     }
     @Override public IPlotter axis(double aXMin, double aXMax, double aYMin, double aYMax) {
-        // 先进行设置范围，非法返回会自动报错
-        mXAxis.setRange(aXMin, aXMax);
-        mYAxis.setRange(aYMin, aYMax);
-        // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
-        updateSeries_();
+        syncRun(() -> {
+            // 先进行设置范围，非法返回会自动报错
+            mXAxis.setRange(aXMin, aXMax);
+            mYAxis.setRange(aYMin, aYMax);
+            // 设置绘制范围后，需要手动调整绘制区域外的数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题
+            updateSeries_();
+        });
         return this;
     }
     /** 内部使用，根据输入的 box 边界来更新数据，因为 JFree 不会对此优化，从而可能会导致卡死的问题 */
     private void updateSeries_() {
-        // 如果已经进行了绘制，则获取锁，避免同步问题
-        if (mCurrentFigure != null) {
-            synchronized (mCurrentFigure.lock()) {
-                // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
-                mLinesData.removeAllSeries();
-                // 添加修改绘制数据后的序列
-                for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
-            }
-        } else {
-            // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
-            mLinesData.removeAllSeries();
-            // 添加修改绘制数据后的序列
-            for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
-        }
+        // 直接遍历全部重设数据，因为可能会有多次调整范围的问题；直接清空旧的序列然后重新覆盖，操作会比较直接
+        mLinesData.removeAllSeries();
+        // 添加修改绘制数据后的序列
+        for (LineJFree tLine : mLines) mLinesData.addSeries(getValidXYSeries_(tLine.mX, tLine.mY, tLine.mName));
     }
     private XYSeries getValidXYSeries_(Iterable<? extends Number> aX, Iterable<? extends Number> aY, String aName) {
         double tBoxXMin, tBoxXMax;
@@ -445,157 +487,147 @@ public class PlotterJFree implements IPlotter {
     
     
     /** 设置 tick 间隔 */
-    @Override public IPlotter xTick(double aTick) {mXAxis.setTickUnit(new NumberTickUnit(aTick)); return this;}
-    @Override public IPlotter yTick(double aTick) {mYAxis.setTickUnit(new NumberTickUnit(aTick)); return this;}
+    @Override public IPlotter xTick(double aTick) {syncRun(() -> mXAxis.setTickUnit(new NumberTickUnit(aTick))); return this;}
+    @Override public IPlotter yTick(double aTick) {syncRun(() -> mYAxis.setTickUnit(new NumberTickUnit(aTick))); return this;}
     
     /** 设置绘图的边距 */
-    @Override public IPlotter insets(double aTop, double aLeft, double aBottom, double aRight) {mPlot.setInsets(new RectangleInsets(aTop, aLeft, aBottom, aRight)); return this;}
-    @Override public IPlotter insetsTop(double aTop) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(aTop, oInsets.getLeft(), oInsets.getBottom(), oInsets.getRight())); return this;}
-    @Override public IPlotter insetsLeft(double aLeft) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), aLeft, oInsets.getBottom(), oInsets.getRight())); return this;}
-    @Override public IPlotter insetsBottom(double aBottom) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), aBottom, oInsets.getRight())); return this;}
-    @Override public IPlotter insetsRight(double aRight) {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight)); return this;}
+    @Override public IPlotter insets(double aTop, double aLeft, double aBottom, double aRight) {syncRun(() -> mPlot.setInsets(new RectangleInsets(aTop, aLeft, aBottom, aRight))); return this;}
+    @Override public IPlotter insetsTop(double aTop) {syncRun(() -> {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(aTop, oInsets.getLeft(), oInsets.getBottom(), oInsets.getRight()));}); return this;}
+    @Override public IPlotter insetsLeft(double aLeft) {syncRun(() -> {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), aLeft, oInsets.getBottom(), oInsets.getRight()));}); return this;}
+    @Override public IPlotter insetsBottom(double aBottom) {syncRun(() -> {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), aBottom, oInsets.getRight()));}); return this;}
+    @Override public IPlotter insetsRight(double aRight) {syncRun(() -> {RectangleInsets oInsets = mPlot.getInsets(); mPlot.setInsets(new RectangleInsets(oInsets.getTop(), oInsets.getLeft(), oInsets.getBottom(), aRight));}); return this;}
     
     /** 直接保存结果 */
     @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
-        // 优先走 mCurrentFigure 的 save，避免锁出现问题
-        if (mCurrentFigure!=null) {mCurrentFigure.save(aFilePath, aWidth, aHeight); return;}
-        // 如果没有 show，则直接保存
-        if (aFilePath==null || aFilePath.isEmpty()) aFilePath = IPlotter.DEFAULT_FIGURE_NAME;
-        if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
-        UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
-        ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
+        syncRunEx(() -> {
+            @Nullable String tFilePath = aFilePath;
+            if (tFilePath==null || tFilePath.isEmpty()) tFilePath = IPlotter.DEFAULT_FIGURE_NAME;
+            if (!tFilePath.endsWith(".png")) tFilePath = tFilePath+".png";
+            UT.IO.validPath(tFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
+            ChartUtils.saveChartAsPNG(UT.IO.toFile(tFilePath), mChart, aWidth, aHeight);
+        });
     }
-    @Override public void save(@Nullable String aFilePath) throws IOException {
-        // 优先走 mCurrentFigure 的 save，避免锁出现问题
-        if (mCurrentFigure!=null) {mCurrentFigure.save(aFilePath); return;}
-        // 默认保存的大小
-        save(aFilePath, mWidth, mHeight);
-    }
+    @Override public void save(@Nullable String aFilePath) throws IOException {save(aFilePath, mWidth, mHeight);}
+    
     @Override public byte[] encode(int aWidth, int aHeight) throws IOException {
-        // 优先走 mCurrentFigure 的 encode，避免锁出现问题
-        if (mCurrentFigure!=null) return mCurrentFigure.encode(aWidth, aHeight);
-        // 如果没有 show，则直接输出
-        return ChartUtils.encodeAsPNG(mChart.createBufferedImage(aWidth, aHeight, null));
+        return syncSupEx(() -> ChartUtils.encodeAsPNG(mChart.createBufferedImage(aWidth, aHeight, null)));
     }
-    @Override public byte[] encode() throws IOException {
-        // 优先走 mCurrentFigure 的 encode，避免锁出现问题
-        if (mCurrentFigure!=null) return mCurrentFigure.encode();
-        // 默认保存的大小
-        return encode(mWidth, mHeight);
-    }
+    @Override public byte[] encode() throws IOException {return encode(mWidth, mHeight);}
     
     
     /** 添加绘制数据 */
     @Override public ILine plot(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
-        // 如果已经进行了绘制，则获取锁，避免同步问题
-        if (mCurrentFigure != null) {
-            synchronized (mCurrentFigure.lock()) {
-                return plot_(aX, aY, aName);
+        return syncSup(() -> {
+            @NotNull String tName = aName==null ? defaultLineName_() : aName;
+            LineJFree tLine;
+            // 先检测是否有相同名称的，如果有则进行更新数据
+            if (mName2ID.containsKey(tName)) {
+                int tID = mName2ID.get(tName);
+                // 更新数据
+                mLinesData.removeSeries(tID);
+                mLinesData.addSeries(getValidXYSeries_(aX, aY, tName));
+                // 更新曲线
+                tLine = mLines.get(tID);
+                tLine.mX = aX;
+                tLine.mY = aY;
+            } else {
+                int tID = mLines.size();
+                // 添加数据
+                mLinesData.addSeries(getValidXYSeries_(aX, aY, tName));
+                // 创建曲线
+                tLine = new LineJFree(tID, aX, aY, tName);
+                mLines.add(tLine);
+                mName2ID.put(tName, tID);
+                // 如果输入名字为 null 则不显示 legend
+                if (aName == null) tLine.hideLegend();
             }
-        } else {
-            return plot_(aX, aY, aName);
-        }
-    }
-    protected ILine plot_(Iterable<? extends Number> aX, Iterable<? extends Number> aY, @Nullable String aName) {
-        @NotNull String tName = aName==null ? defaultLineName_() : aName;
-        LineJFree tLine;
-        // 先检测是否有相同名称的，如果有则进行更新数据
-        if (mName2ID.containsKey(tName)) {
-            int tID = mName2ID.get(tName);
-            // 更新数据
-            mLinesData.removeSeries(tID);
-            mLinesData.addSeries(getValidXYSeries_(aX, aY, tName));
-            // 更新曲线
-            tLine = mLines.get(tID);
-            tLine.mX = aX;
-            tLine.mY = aY;
-        } else {
-            int tID = mLines.size();
-            // 添加数据
-            mLinesData.addSeries(getValidXYSeries_(aX, aY, tName));
-            // 创建曲线
-            tLine = new LineJFree(tID, aX, aY, tName);
-            mLines.add(tLine);
-            mName2ID.put(tName, tID);
-            // 如果输入名字为 null 则不显示 legend
-            if (aName == null) tLine.noLegend();
-        }
-        // 返回 LineJFree
-        return tLine;
+            // 返回 LineJFree
+            return tLine;
+        });
     }
     
     @Override public IPlotter clear() {
-        mLinesData.removeAllSeries();
-        mName2ID.clear();
-        mLines.clear();
+        syncRun(() -> {
+            mLinesData.removeAllSeries();
+            mName2ID.clear();
+            mLines.clear();
+        });
         return this;
     }
     @Override public void dispose() {
-        if (mCurrentFigure != null) mCurrentFigure.dispose();
-        clear();
+        syncRun(() -> {
+            if (mCurrentFigure != null) mCurrentFigure.dispose();
+            clear();
+        });
     }
     
     
     /** 设置轴的类型 */
     @Override public IPlotter xScaleLog() {
-        if (!(mXAxis instanceof LogarithmicAxis)) {
-            NumberAxis oXAxis = mXAxis;
-            mXAxis = new LogarithmicAxis(oXAxis.getLabel()); // log 轴的默认 tick 逻辑有点复杂，修改麻烦，这里懒得去弄了
-            mXAxis.setAutoRangeIncludesZero(false);
-            mXAxis.setLabelFont(oXAxis.getLabelFont());
-            mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
-            if (!oXAxis.isAutoRange()) mXAxis.setRange(oXAxis.getRange());
-            mPlot.setDomainAxis(mXAxis);
-        }
+        syncRun(() -> {
+            if (!(mXAxis instanceof LogarithmicAxis)) {
+                NumberAxis oXAxis = mXAxis;
+                mXAxis = new LogarithmicAxis(oXAxis.getLabel()); // log 轴的默认 tick 逻辑有点复杂，修改麻烦，这里懒得去弄了
+                mXAxis.setAutoRangeIncludesZero(false);
+                mXAxis.setLabelFont(oXAxis.getLabelFont());
+                mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
+                if (!oXAxis.isAutoRange()) mXAxis.setRange(oXAxis.getRange());
+                mPlot.setDomainAxis(mXAxis);
+            }
+        });
         return this;
     }
     @Override public IPlotter yScaleLog() {
-        if (!(mYAxis instanceof LogarithmicAxis)) {
-            NumberAxis oYAxis = mYAxis;
-            mYAxis = new LogarithmicAxis(oYAxis.getLabel()); // log 轴的默认 tick 逻辑有点复杂，修改麻烦，这里懒得去弄了
-            mYAxis.setAutoRangeIncludesZero(false);
-            mYAxis.setLabelFont(oYAxis.getLabelFont());
-            mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
-            if (!oYAxis.isAutoRange()) mYAxis.setRange(oYAxis.getRange());
-            mPlot.setRangeAxis(mYAxis);
-        }
+        syncRun(() -> {
+            if (!(mYAxis instanceof LogarithmicAxis)) {
+                NumberAxis oYAxis = mYAxis;
+                mYAxis = new LogarithmicAxis(oYAxis.getLabel()); // log 轴的默认 tick 逻辑有点复杂，修改麻烦，这里懒得去弄了
+                mYAxis.setAutoRangeIncludesZero(false);
+                mYAxis.setLabelFont(oYAxis.getLabelFont());
+                mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
+                if (!oYAxis.isAutoRange()) mYAxis.setRange(oYAxis.getRange());
+                mPlot.setRangeAxis(mYAxis);
+            }
+        });
         return this;
     }
     @Override public IPlotter xScaleLinear() {
-        if (!(mXAxis instanceof LargerTickUnitNumberAxis)) {
-            NumberAxis oXAxis = mXAxis;
-            mXAxis = new LargerTickUnitNumberAxis(oXAxis.getLabel());
-            mXAxis.setAutoRangeIncludesZero(false);
-            mXAxis.setLabelFont(oXAxis.getLabelFont());
-            mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
-            if (!oXAxis.isAutoTickUnitSelection()) mXAxis.setTickUnit(oXAxis.getTickUnit()); // 一般轴可以有 tickUnit
-            if (!oXAxis.isAutoRange()) mXAxis.setRange(oXAxis.getRange());
-            mPlot.setDomainAxis(mXAxis);
-        }
+        syncRun(() -> {
+            if (!(mXAxis instanceof LargerTickUnitNumberAxis)) {
+                NumberAxis oXAxis = mXAxis;
+                mXAxis = new LargerTickUnitNumberAxis(oXAxis.getLabel());
+                mXAxis.setAutoRangeIncludesZero(false);
+                mXAxis.setLabelFont(oXAxis.getLabelFont());
+                mXAxis.setTickLabelFont(oXAxis.getTickLabelFont());
+                if (!oXAxis.isAutoTickUnitSelection()) mXAxis.setTickUnit(oXAxis.getTickUnit()); // 一般轴可以有 tickUnit
+                if (!oXAxis.isAutoRange()) mXAxis.setRange(oXAxis.getRange());
+                mPlot.setDomainAxis(mXAxis);
+            }
+        });
         return this;
     }
     @Override public IPlotter yScaleLinear() {
-        if (!(mYAxis instanceof LargerTickUnitNumberAxis)) {
-            NumberAxis oYAxis = mYAxis;
-            mYAxis = new LargerTickUnitNumberAxis(oYAxis.getLabel());
-            mYAxis.setAutoRangeIncludesZero(false);
-            mYAxis.setLabelFont(oYAxis.getLabelFont());
-            mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
-            if (!oYAxis.isAutoTickUnitSelection()) mYAxis.setTickUnit(oYAxis.getTickUnit()); // 一般轴可以有 tickUnit
-            if (!oYAxis.isAutoRange()) mYAxis.setRange(oYAxis.getRange());
-            mPlot.setRangeAxis(mYAxis);
-        }
+        syncRun(() -> {
+            if (!(mYAxis instanceof LargerTickUnitNumberAxis)) {
+                NumberAxis oYAxis = mYAxis;
+                mYAxis = new LargerTickUnitNumberAxis(oYAxis.getLabel());
+                mYAxis.setAutoRangeIncludesZero(false);
+                mYAxis.setLabelFont(oYAxis.getLabelFont());
+                mYAxis.setTickLabelFont(oYAxis.getTickLabelFont());
+                if (!oYAxis.isAutoTickUnitSelection()) mYAxis.setTickUnit(oYAxis.getTickUnit()); // 一般轴可以有 tickUnit
+                if (!oYAxis.isAutoRange()) mYAxis.setRange(oYAxis.getRange());
+                mPlot.setRangeAxis(mYAxis);
+            }
+        });
         return this;
     }
     
     
     private @Nullable FigureJFree mCurrentFigure = null;
-    protected abstract class FigureJFree implements IFigure {
+    protected class FigureJFree implements IFigure {
         private final JFrame mFrame;
         private final Insets mInset;
         private final JPanel mPanel;
-        /** stuff to override */
-        @Override public abstract IPlotter plotter();
         protected FigureJFree(JFrame aFrame, Insets aInset, JPanel aPanel) {
             mFrame = aFrame;
             mInset = aInset;
@@ -616,74 +648,201 @@ public class PlotterJFree implements IPlotter {
         }
         protected Object lock() {return mFrame.getTreeLock();}
         
+        @Override public IPlotter plotter() {return PlotterJFree.this;}
         
-        @Override public boolean isShowing() {return mFrame.isShowing();}
-        @Override public void dispose() {mFrame.dispose();}
+        @Override public boolean isShowing() {return syncSup(mFrame::isShowing);}
+        @Override public void dispose() {syncRun(mFrame::dispose);}
         
-        @Override public IFigure name(String aName) {mFrame.setTitle(aName); return this;}
-        @Override public IFigure size(int aWidth, int aHeight) {synchronized (lock()) {mPanel.setSize(aWidth, aHeight); mFrame.setSize(aWidth+mInset.left+mInset.right, aHeight+mInset.top+mInset.bottom);} return this;}
-        @Override public IFigure location(int aX, int aY) {mFrame.setLocation(aX, aY); return this;}
+        @Override public IFigure name(String aName) {syncRun(() -> mFrame.setTitle(aName)); return this;}
+        @Override public IFigure size(int aWidth, int aHeight) {syncRun(() -> {mPanel.setSize(aWidth, aHeight); mFrame.setSize(aWidth+mInset.left+mInset.right, aHeight+mInset.top+mInset.bottom);}); return this;}
+        @Override public IFigure location(int aX, int aY) {syncRun(() -> mFrame.setLocation(aX, aY)); return this;}
         @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
-            synchronized (lock()) {
+            syncRun(() -> {
                 mInset.top = (int)Math.round(aTop);
                 mInset.left = (int)Math.round(aLeft);
                 mInset.bottom = (int)Math.round(aBottom);
                 mInset.right = (int)Math.round(aRight);
-            }
+            });
             return this;
         }
-        @Override public IFigure insetsTop(double aTop) {synchronized (lock()) {mInset.top = (int)Math.round(aTop);} return this;}
-        @Override public IFigure insetsLeft(double aLeft) {synchronized (lock()) {mInset.left = (int)Math.round(aLeft);} return this;}
-        @Override public IFigure insetsBottom(double aBottom) {synchronized (lock()) {mInset.bottom = (int)Math.round(aBottom);} return this;}
-        @Override public IFigure insetsRight(double aRight) {synchronized (lock()) {mInset.right = (int)Math.round(aRight);} return this;}
+        @Override public IFigure insetsTop(double aTop) {syncRun(() -> mInset.top = (int)Math.round(aTop)); return this;}
+        @Override public IFigure insetsLeft(double aLeft) {syncRun(() -> mInset.left = (int)Math.round(aLeft)); return this;}
+        @Override public IFigure insetsBottom(double aBottom) {syncRun(() -> mInset.bottom = (int)Math.round(aBottom)); return this;}
+        @Override public IFigure insetsRight(double aRight) {syncRun(() -> mInset.right = (int)Math.round(aRight)); return this;}
         
-        @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {
-            synchronized (lock()) {
-                if (aFilePath==null || aFilePath.isEmpty()) aFilePath = mFrame.getTitle();
-                if (!aFilePath.endsWith(".png")) aFilePath = aFilePath+".png";
-                UT.IO.validPath(aFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
-                ChartUtils.saveChartAsPNG(UT.IO.toFile(aFilePath), mChart, aWidth, aHeight);
-            }
-        }
-        @Override public void save(@Nullable String aFilePath) throws IOException {
-            save(aFilePath, mPanel.getWidth(), mPanel.getHeight());
-        }
-        @Override public byte[] encode(int aWidth, int aHeight) throws IOException {
-            synchronized (lock()) {
-                return ChartUtils.encodeAsPNG(mChart.createBufferedImage(aWidth, aHeight, null));
-            }
-        }
-        @Override public byte[] encode() throws IOException {
-            return encode(mWidth, mHeight);
-        }
+        @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {PlotterJFree.this.save(aFilePath, aWidth, aHeight);}
+        @Override public void save(@Nullable String aFilePath) throws IOException {save(aFilePath, mPanel.getWidth(), mPanel.getHeight());}
+        @Override public byte[] encode(int aWidth, int aHeight) throws IOException {return PlotterJFree.this.encode(aWidth, aHeight);}
+        @Override public byte[] encode() throws IOException {return encode(mPanel.getWidth(), mPanel.getHeight());}
     }
     
     
     private int mWidth = WIDTH, mHeight = HEIGHT;
     /** 设置绘制的大小（和 {@link IFigure#size} 一致） */
     @Override public IPlotter size(int aWidth, int aHeight) {
-        mWidth = aWidth; mHeight = aHeight;
-        // 同样也会执行 mCurrentFigure 的 size
-        if (mCurrentFigure!=null) mCurrentFigure.size(aWidth, aHeight);
+        syncRun(() -> {
+            mWidth = aWidth; mHeight = aHeight;
+            // 同样也会执行 mCurrentFigure 的 size
+            if (mCurrentFigure!=null) mCurrentFigure.size(aWidth, aHeight);
+        });
         return this;
     }
     
     @Override public IFigure show(@Nullable String aName) {
-        // 如果是 kernel 默认不进行显示，这里简单处理直接不创建真实的 IFigure
-        if (!KERNEL_SHOW_FIGURE && Main.IS_KERNEL()) {return IPlotter.super.show(aName);}
-        
-        // 如果已经有窗口则不再显示
-        if (mCurrentFigure != null) {
-            // 只有输入了名字时才设置名称
-            if (aName != null) mCurrentFigure.name(aName);
-            // 如果没有被关闭则直接结束
-            if (mCurrentFigure.isShowing()) return mCurrentFigure;
+        return syncSup(() -> {
+            // 如果是 kernel 默认不进行显示，这里简单处理直接不创建真实的 IFigure
+            if (!KERNEL_SHOW_FIGURE && Main.IS_KERNEL()) {return IPlotter.super.show(aName);}
+            
+            // 如果已经有窗口则不再显示
+            if (mCurrentFigure != null) {
+                // 只有输入了名字时才设置名称
+                if (aName != null) mCurrentFigure.name(aName);
+                // 如果没有被关闭则直接结束
+                if (mCurrentFigure.isShowing()) return mCurrentFigure;
+            }
+            
+            // 返回 IFigure
+            mCurrentFigure = new FigureJFree(aName==null ? DEFAULT_FIGURE_NAME : aName);
+            return mCurrentFigure;
+        });
+    }
+    
+    
+    @Override public ILegend legend() {return mLegend;}
+    /** 图例的 JFree 实现 */
+    protected class LegendJFree implements ILegend {
+        private final LegendTitle mLegendTitle;
+        private final LegendTitle mChartLegendTitle;
+        private @Nullable XYTitleAnnotation mTitleAnnotation = null;
+        private boolean mIsShowing = true;
+        private double mMaxWidth = Double.NaN, mMaxHeight = Double.NaN;
+        protected LegendJFree(LegendTitle aLegendTitle) {
+            mChartLegendTitle = mChart.getLegend();
+            mLegendTitle = aLegendTitle;
+        }
+        protected LegendJFree() {
+            mChartLegendTitle = mChart.getLegend();
+            mLegendTitle = new LegendTitle(mPlot);
+            mLegendTitle.setBackgroundPaint(WHITE);
+            mLegendTitle.setFrame(new BlockBorder(BLACK));
+            mLegendTitle.setPosition(RectangleEdge.RIGHT);
         }
         
-        // 返回 IFigure
-        mCurrentFigure = new FigureJFree(aName==null ? DEFAULT_FIGURE_NAME : aName) {
-            @Override public IPlotter plotter() {return PlotterJFree.this;}
-        };
-        return mCurrentFigure;
+        private @NotNull RectangleAnchor toRectangleAnchor_(AnchorType aAnchor) {
+            switch(aAnchor) {
+            case CENTER:        return RectangleAnchor.CENTER;
+            case TOP:           return RectangleAnchor.TOP;
+            case TOP_LEFT:      return RectangleAnchor.TOP_LEFT;
+            case TOP_RIGHT:     return RectangleAnchor.TOP_RIGHT;
+            case BOTTOM:        return RectangleAnchor.BOTTOM;
+            case BOTTOM_LEFT:   return RectangleAnchor.BOTTOM_LEFT;
+            case BOTTOM_RIGHT:  return RectangleAnchor.BOTTOM_RIGHT;
+            case LEFT:          return RectangleAnchor.LEFT;
+            case RIGHT:         return RectangleAnchor.RIGHT;
+            case NULL: default: throw new RuntimeException();
+            }
+        }
+        
+        
+        @Override public IPlotter plotter() {return PlotterJFree.this;}
+        
+        @Override public boolean isShowing() {return syncSup(() -> mIsShowing);}
+        @Override public ILegend hide() {
+            syncRun(() -> {
+                if (mIsShowing) {
+                    mIsShowing = false;
+                    if (mTitleAnnotation == null) mChart.removeLegend();
+                    else mPlot.removeAnnotation(mTitleAnnotation);
+                }
+            });
+            return this;
+        }
+        @Override public ILegend show() {
+            syncRun(() -> {
+                if (!mIsShowing) {
+                    mIsShowing = true;
+                    if (mTitleAnnotation == null) mChart.addLegend(mChartLegendTitle);
+                    else mPlot.removeAnnotation(mTitleAnnotation);
+                }
+            });
+            return this;
+        }
+        
+        @Override public ILegend font(Font aFont) {
+            syncRun(() -> {
+                mLineRender.setDefaultLegendTextFont(aFont);
+                mLegendTitle.setItemFont(aFont);
+            });
+            return this;
+        }
+        @Override public ILegend maxWidth(double aMax) {syncRun(() -> mMaxWidth = aMax); return this;}
+        @Override public ILegend maxHeight(double aMax) {syncRun(() -> mMaxHeight = aMax); return this;}
+        @Override public ILegend vertical() {
+            syncRun(() -> {
+                mChartLegendTitle.setPosition(RectangleEdge.RIGHT);
+                mLegendTitle.setPosition(RectangleEdge.RIGHT);
+            });
+            return this;
+        }
+        @Override public ILegend horizontal() {
+            syncRun(() -> {
+                mChartLegendTitle.setPosition(RectangleEdge.BOTTOM);
+                mLegendTitle.setPosition(RectangleEdge.BOTTOM);
+            });
+            return this;
+        }
+        
+        @Override public ILegend location(AnchorType aLocation) {
+            if (aLocation == AnchorType.NULL) {
+                syncRun(() -> {
+                    if (mIsShowing) mChart.addLegend(mChartLegendTitle);
+                    if (mTitleAnnotation != null) mPlot.removeAnnotation(mTitleAnnotation);
+                    mTitleAnnotation = null;
+                });
+                return this;
+            }
+            double tX, tY;
+            switch(aLocation) {
+            case CENTER:        {tX = 0.5 ; tY = 0.5 ; break;}
+            case TOP:           {tX = 0.5 ; tY = 0.98; break;}
+            case TOP_LEFT:      {tX = 0.02; tY = 0.98; break;}
+            case TOP_RIGHT:     {tX = 0.98; tY = 0.98; break;}
+            case BOTTOM:        {tX = 0.5 ; tY = 0.02; break;}
+            case BOTTOM_LEFT:   {tX = 0.02; tY = 0.02; break;}
+            case BOTTOM_RIGHT:  {tX = 0.98; tY = 0.02; break;}
+            case LEFT:          {tX = 0.02; tY = 0.5 ; break;}
+            case RIGHT:         {tX = 0.98; tY = 0.5 ; break;}
+            default: throw new RuntimeException();
+            }
+            syncRun(() -> {
+                mChart.removeLegend();
+                if (mTitleAnnotation != null) mPlot.removeAnnotation(mTitleAnnotation);
+                mTitleAnnotation = new XYTitleAnnotation(tX, tY, mLegendTitle, toRectangleAnchor_(aLocation));
+                if (!Double.isNaN(mMaxWidth)) mTitleAnnotation.setMaxWidth(mMaxWidth);
+                if (!Double.isNaN(mMaxHeight)) mTitleAnnotation.setMaxHeight(mMaxHeight);
+                if (mIsShowing) mPlot.addAnnotation(mTitleAnnotation);
+            });
+            return this;
+        }
+        
+        @Override public ILegend location(double aX, double aY, AnchorType aAnchor) {
+            if (aAnchor == AnchorType.NULL) {
+                syncRun(() -> {
+                    if (mIsShowing) mChart.addLegend(mChartLegendTitle);
+                    if (mTitleAnnotation != null) mPlot.removeAnnotation(mTitleAnnotation);
+                    mTitleAnnotation = null;
+                });
+                return this;
+            }
+            syncRun(() -> {
+                mChart.removeLegend();
+                if (mTitleAnnotation != null) mPlot.removeAnnotation(mTitleAnnotation);
+                mTitleAnnotation = new XYTitleAnnotation(aX, aY, mLegendTitle, toRectangleAnchor_(aAnchor));
+                if (!Double.isNaN(mMaxWidth)) mTitleAnnotation.setMaxWidth(mMaxWidth);
+                if (!Double.isNaN(mMaxHeight)) mTitleAnnotation.setMaxHeight(mMaxHeight);
+                if (mIsShowing) mPlot.addAnnotation(mTitleAnnotation);
+            });
+            return this;
+        }
     }
 }
