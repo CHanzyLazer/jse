@@ -29,7 +29,7 @@ UT.IO.data2csv(Sq, '.temp/example/mpc/sf.csv')
 
 // 计算单个种类的 Sq
 def SqCu, SqZr, SqCuZr
-try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = new MPC(data.opt().filterType(2))) {
+try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = MPC.of(data.opt().filterType(2))) {
     SqCu = mpcCu.calSF(qMax, N)
     SqZr = mpcZr.calSF(qMax, N)
     SqCuZr = mpcCu.calSF_AB(mpcZr, qMax, N)

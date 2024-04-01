@@ -31,7 +31,7 @@ UT.IO.data2csv(gr, '.temp/example/mpc/rdf.csv')
 // 计算单个种类的 gr
 def grCu, grZr, grCuZr
 def grCu_G, grZr_G, grCuZr_G
-try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = new MPC(data.opt().filterType(2))) {
+try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = MPC.of(data.opt().filterType(2))) {
     grCu = mpcCu.calRDF(N, rMax)
     grZr = mpcZr.calRDF(N, rMax)
     grCuZr = mpcCu.calRDF_AB(mpcZr, N, rMax)
