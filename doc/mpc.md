@@ -15,8 +15,60 @@ jse 中使用 [`jse.atom.MPC`](../src/main/java/jse/atom/MPC.java) /
 
 ## 参量计算器初始化
 
-jse 中可以通过静态方法 `of` 直接创建一个参数计算器，
-也可以通过静态方法 `withOf` 来使用一个自动关闭的参数计算器。
+jse 中可以通过静态方法 `MPC.of` 直接创建一个参数计算器，
+注意在使用完成后手动调用 `shutdown()` 关闭 MPC 回收资源：
+
+```groovy
+import jse.atom.MPC
+import jse.lmp.Data
+
+def data = Data.read('path/to/lmp/data')
+
+def mpc = MPC.of(data)
+// use mpc here
+mpc.shutdown()
+```
+
+也可以使用 [*try-with-resources*](https://www.baeldung.com/java-try-with-resources)
+来实现自动资源回收：
+
+```groovy
+try (def mpc = MPC.of(data)) {
+    // use mpc here
+}
+```
+
+由于在代码块 `{}` 中定义的临时变量不能在外面使用，
+因此需要先统一在外部定义然后在内部赋值：
+
+```groovy
+def gr
+try (def mpc = MPC.of(data)) {
+    gr = mpc.calRDF()
+}
+// use gr here
+```
+
+很多情况下一个 MPC 只需要计算一个参数，导致上述写法有些啰嗦，
+此时可以通过静态方法 `MPC.withOf` 同时实现自动关闭和获取计算结果：
+
+```groovy
+def gr = MPC.withOf(data) {mpc ->
+    mpc.calRDF()
+}
+// use gr here
+```
+
+其中 `mpc ->` 可以省略，并使用 `it` 来代指 MPC：
+
+```groovy
+def gr = MPC.withOf(data) {
+    it.calRDF()
+}
+// use gr here
+```
+
+关于 `MPC.of` 和 `MPC.withOf` 方法的详细用法如下：
 
 - **`of`**
     
