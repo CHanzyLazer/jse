@@ -77,7 +77,7 @@ public class NeighborListGetter implements IShutdownable {
     }
     
     /** 专用的 Cell 类，内部只存储下标来减少内存占用 */
-    private interface ICell {
+    interface ICell {
         void forEach(IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
         void forEach(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IMatrix aAtomDataXYZ, IXYZIdxDo aXYZIdxDo);
     }
@@ -151,7 +151,7 @@ public class NeighborListGetter implements IShutdownable {
     }
     
     /** 现在 Linked 直接放在内部 */
-    private interface ILinkedCell {
+    interface ILinkedCell {
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
         void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo);
         void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo);
@@ -403,7 +403,7 @@ public class NeighborListGetter implements IShutdownable {
             if (aIdx >= mAtomNum) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
             // 先统一处理一般情况
             final int tEnd = aHalf ? aIdx : mAtomNum;
-            for (int idx = 0; idx < tEnd; ++idx) {
+            for (int idx = 0; idx < tEnd; ++idx) if (idx != aIdx) {
                 final double tX = mAtomDataXYZ.get(idx, 0);
                 final double tY = mAtomDataXYZ.get(idx, 1);
                 final double tZ = mAtomDataXYZ.get(idx, 2);
@@ -671,7 +671,7 @@ public class NeighborListGetter implements IShutdownable {
             if (aIdx >= mAtomNum) throw new IndexOutOfBoundsException(String.format("Index: %d", aIdx));
             // 先统一处理一般情况
             final int tEnd = aHalf ? aIdx : mAtomNum;
-            for (int idx = 0; idx < tEnd; ++idx) {
+            for (int idx = 0; idx < tEnd; ++idx) if (idx != aIdx) {
                 final double tX = mAtomDataXYZ.get(idx, 0);
                 final double tY = mAtomDataXYZ.get(idx, 1);
                 final double tZ = mAtomDataXYZ.get(idx, 2);

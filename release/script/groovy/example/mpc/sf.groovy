@@ -15,7 +15,7 @@ def data = Data.read('lmp/data/data-glass')
 
 // 根据 data 创建参数计算器 mpc 并计算 Sq
 def Sq = MPC.withOf(data) {mpc ->
-    mpc.calSF(qMax, N)
+    mpc.calSF(N, qMax)
 }
 
 // 获取 q 值和 S 值
@@ -30,9 +30,9 @@ UT.IO.data2csv(Sq, '.temp/example/mpc/sf.csv')
 // 计算单个种类的 Sq
 def SqCu, SqZr, SqCuZr
 try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = MPC.of(data.opt().filterType(2))) {
-    SqCu = mpcCu.calSF(qMax, N)
-    SqZr = mpcZr.calSF(qMax, N)
-    SqCuZr = mpcCu.calSF_AB(mpcZr, qMax, N)
+    SqCu = mpcCu.calSF(N, qMax)
+    SqZr = mpcZr.calSF(N, qMax)
+    SqCuZr = mpcCu.calSF_AB(mpcZr, N, qMax)
 }
 // 获取峰值的位置
 println('maxQ_CuCu = ' + SqCu.opt().maxX())

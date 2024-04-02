@@ -416,7 +416,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IFunc1[] HqPar = new IFunc1[threadNumber()];
         for (int i = 0; i < HqPar.length; ++i) HqPar[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         
-        // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
+        // 需要这样遍历才能得到正确结果
         pool().parfor(mAtomNum, (i, threadID) -> {
             XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
             IFunc1 Hq = HqPar[threadID];
@@ -450,7 +450,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         final IFunc1[] HqPar = new IFunc1[threadNumber()];
         for (int i = 0; i < HqPar.length; ++i) HqPar[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         
-        // 使用 mNL 的通用获取近邻的方法，因为 SF 需要使用方形半径内的所有距离（曼哈顿距离）
+        // 需要这样遍历才能得到正确结果
         pool().parfor(aAtomNum, (i, threadID) -> {
             XYZ cXYZ = new XYZ(aAtomDataXYZ.row(i));
             IFunc1 Hq = HqPar[threadID];
