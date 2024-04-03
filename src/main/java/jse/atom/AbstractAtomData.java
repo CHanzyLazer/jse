@@ -30,6 +30,7 @@ public abstract class AbstractAtomData implements IAtomData {
         @Override protected IAtomData thisAtomData_() {return AbstractAtomData.this;}
         @Override protected ISettableAtomData newSameSettableAtomData_() {return newSame_();}
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum) {return newZeros_(aAtomNum);}
+        @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum, IBox aBox) {return newZeros_(aAtomNum, aBox);}
     };}
     
     
@@ -102,11 +103,12 @@ public abstract class AbstractAtomData implements IAtomData {
             atomTypeNumber(), box().copy(), tHasVelocities
         );
     }
-    protected ISettableAtomData newZeros_(int aAtomNum) {
+    protected ISettableAtomData newZeros_(int aAtomNum) {return newZeros_(aAtomNum, box().copy());}
+    protected ISettableAtomData newZeros_(int aAtomNum, IBox aBox) {
         final boolean tHasVelocities = hasVelocities();
         return new SettableAtomData(
             NewCollections.from(aAtomNum, tHasVelocities ? (i -> new AtomFull()) : (i -> new Atom())),
-            atomTypeNumber(), box().copy(), tHasVelocities
+            atomTypeNumber(), aBox, tHasVelocities
         );
     }
 }

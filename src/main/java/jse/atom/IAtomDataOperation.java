@@ -105,4 +105,44 @@ public interface IAtomDataOperation {
      */
     ISettableAtomData wrapPBC();
     @VisibleForTesting default ISettableAtomData wrap() {return wrapPBC();}
+    
+    
+    /**
+     * 将结构重复指定次数，不会对出边界的原子作特殊处理
+     * @author liqa
+     * @param aNx x 方向的重复次数
+     * @param aNy Y 方向的重复次数
+     * @param aNz Z 方向的重复次数
+     * @return 新创建的重复后的 atomData
+     */
+    ISettableAtomData repeat(int aNx, int aNy, int aNz);
+    default ISettableAtomData repeat(int aN) {return repeat(aN, aN, aN);}
+    
+    /**
+     * 将结构切分成小块，会直接移除掉出边界的原子
+     * <p>
+     * 结果按照 {@code x, y, z (i, j, k)}
+     * 的顺序依次遍历，也就是说，如果需要访问给定 {@code (i, j, k)}
+     * 位置的切片结果，需要使用：
+     * <pre> {@code
+     * def list = data.opt().slice(Nx, Ny, Nz)
+     * int idx = i + j*Nx + k*Nx*Ny
+     * def subData = list[idx]
+     * } </pre>
+     * 来获取，同理对于给定的列表位置 {@code idx}，
+     * 需要使用：
+     * <pre> {@code
+     * int i = idx % Nx
+     * int j = idx / Nx % Ny
+     * int k = idx / Nx / Ny
+     * } </pre>
+     * 来获取相应的空间位置 {@code (i, j, k)}
+     * @author liqa
+     * @param aNx x 方向的切片次数
+     * @param aNy Y 方向的切片次数
+     * @param aNz Z 方向的切片次数
+     * @return 新创建的切片后的 atomData 组成的列表
+     */
+    List<? extends ISettableAtomData> slice(int aNx, int aNy, int aNz);
+    default List<? extends ISettableAtomData> slice(int aN) {return slice(aN, aN, aN);}
 }

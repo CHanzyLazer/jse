@@ -18,14 +18,8 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
     @Override @Deprecated @SuppressWarnings("deprecation") public List<? extends ISettableAtom> asList() {return atoms();}
     @Override public void setAtom(int aIdx, IAtom aAtom) {
         ISettableAtom tAtom = this.atom(aIdx);
-        try {tAtom.setX(aAtom.x());} catch (Exception ignored) {}
-        try {tAtom.setY(aAtom.y());} catch (Exception ignored) {}
-        try {tAtom.setZ(aAtom.z());} catch (Exception ignored) {}
-        try {tAtom.setID(aAtom.id());} catch (Exception ignored) {}
-        try {tAtom.setType(aAtom.type());} catch (Exception ignored) {}
-        try {tAtom.setVx(aAtom.vx());} catch (Exception ignored) {}
-        try {tAtom.setVy(aAtom.vy());} catch (Exception ignored) {}
-        try {tAtom.setVz(aAtom.vz());} catch (Exception ignored) {}
+        tAtom.setXYZ(aAtom).setID(aAtom.id()).setType(aAtom.type());
+        if (aAtom.hasVelocities()) tAtom.setVxyz(aAtom.vx(), aAtom.vy(), aAtom.vz());
     }
     
     @Override public List<? extends ISettableAtom> atoms() {
@@ -44,6 +38,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         @Override protected ISettableAtomData thisAtomData_() {return AbstractSettableAtomData.this;}
         @Override protected ISettableAtomData newSameSettableAtomData_() {return newSame_();}
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum) {return newZeros_(aAtomNum);}
+        @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum, IBox aBox) {return newZeros_(aAtomNum, aBox);}
     };}
     @VisibleForTesting @Override public ISettableAtomDataOperation opt() {return operation();}
 }

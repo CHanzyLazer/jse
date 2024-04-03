@@ -176,17 +176,17 @@ public class NeighborListGetter implements IShutdownable {
                 for (int idx = 0; idx < mAtomNum; ++idx) {
                     tBuf.setXYZ(mAtomDataXYZ.get(idx, 0), mAtomDataXYZ.get(idx, 1), mAtomDataXYZ.get(idx, 2));
                     mBox.toDirect(tBuf);
-                    int i = (int) MathEX.Code.floor(tBuf.mX * mSizeX); if (i >= mSizeX) continue;
-                    int j = (int) MathEX.Code.floor(tBuf.mY * mSizeY); if (j >= mSizeY) continue;
-                    int k = (int) MathEX.Code.floor(tBuf.mZ * mSizeZ); if (k >= mSizeZ) continue;
+                    int i = (int) MathEX.Code.floor(tBuf.mX * mSizeX);
+                    int j = (int) MathEX.Code.floor(tBuf.mY * mSizeY);
+                    int k = (int) MathEX.Code.floor(tBuf.mZ * mSizeZ);
                     mCells.get(idx(i, j, k)).add(idx);
                 }
             } else {
                 mCellBoxXYZ = mBoxXYZ.div(mSizeX, mSizeY, mSizeZ);
                 for (int idx = 0; idx < mAtomNum; ++idx) {
-                    int i = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 0) / mCellBoxXYZ.mX); if (i >= mSizeX) continue;
-                    int j = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 1) / mCellBoxXYZ.mY); if (j >= mSizeY) continue;
-                    int k = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 2) / mCellBoxXYZ.mZ); if (k >= mSizeZ) continue;
+                    int i = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 0) / mCellBoxXYZ.mX);
+                    int j = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 1) / mCellBoxXYZ.mY);
+                    int k = (int) MathEX.Code.floor(mAtomDataXYZ.get(idx, 2) / mCellBoxXYZ.mZ);
                     mCells.get(idx(i, j, k)).add(idx);
                 }
             }

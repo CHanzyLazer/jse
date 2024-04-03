@@ -260,6 +260,7 @@ public class Lmpdat extends AbstractSettableAtomData {
     @Override public Lmpdat copy() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomID.copy(), mAtomType.copy(), mAtomXYZ.copy(), mVelocities==null?null:mVelocities.copy());}
     @Override protected Lmpdat newSame_() {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), mAtomID.copy(), mAtomType.copy(), mAtomXYZ.copy(), mVelocities==null?null:mVelocities.copy());}
     @Override protected Lmpdat newZeros_(int aAtomNum) {return new Lmpdat(mAtomTypeNum, mBox.copy(), mMasses==null?null:mMasses.copy(), IntVector.zeros(aAtomNum), IntVector.zeros(aAtomNum), RowMatrix.zeros(aAtomNum, mAtomXYZ.columnNumber()), mVelocities==null?null:RowMatrix.zeros(aAtomNum, mVelocities.columnNumber()));}
+    @Override protected Lmpdat newZeros_(int aAtomNum, IBox aBox) {return new Lmpdat(mAtomTypeNum, LmpBox.of(aBox), mMasses==null?null:mMasses.copy(), IntVector.zeros(aAtomNum), IntVector.zeros(aAtomNum), RowMatrix.zeros(aAtomNum, mAtomXYZ.columnNumber()), mVelocities==null?null:RowMatrix.zeros(aAtomNum, mVelocities.columnNumber()));}
     
     /** 从 IAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
     public static Lmpdat fromAtomData(IAtomData aAtomData) {
@@ -294,11 +295,10 @@ public class Lmpdat extends AbstractSettableAtomData {
             IntVector rAtomType = IntVector.zeros(tAtomNum);
             RowMatrix rAtomXYZ = RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_XYZ.length);
             @Nullable RowMatrix rVelocities = aAtomData.hasVelocities() ? RowMatrix.zeros(tAtomNum, ATOM_DATA_KEYS_VELOCITY.length) : null;
-            LmpBox rBox;
             // 一般的情况，需要考虑斜方的模拟盒的情况
             IBox tBox = aAtomData.box();
+            LmpBox rBox = LmpBox.of(tBox);
             if (tBox.isLmpStyle()) {
-                rBox = tBox.isPrism() ? new LmpBoxPrism(tBox, tBox.xy(), tBox.xz(), tBox.yz()) : new LmpBox(tBox);
                 // 模拟盒满足 lammps 种类下可以直接拷贝过来
                 for (int i = 0; i < tAtomNum; ++i) {
                     IAtom tAtom = aAtomData.atom(i);
@@ -314,19 +314,7 @@ public class Lmpdat extends AbstractSettableAtomData {
                     }
                 }
             } else {
-                // 否则需要转换成 lammps 的种类，先转换模拟盒，
-                // 公式参考 lammps 官方文档：https://docs.lammps.org/Howto_triclinic.html
-                XYZ tA = XYZ.toXYZ(tBox.a());
-                XYZ tB = XYZ.toXYZ(tBox.b());
-                XYZ tC = XYZ.toXYZ(tBox.c());
-                double tX = tA.norm();
-                double tXY = tB.dot(tA) / tX;
-                double tY = MathEX.Fast.sqrt(tB.dot() - tXY*tXY);
-                double tXZ = tC.dot(tA) / tX;
-                double tYZ = (tB.dot(tC) - tXY*tXZ) / tY;
-                double tZ = MathEX.Fast.sqrt(tC.dot() - tXZ*tXZ - tYZ*tYZ);
-                rBox = new LmpBoxPrism(tX, tY, tZ, tXY, tXZ, tYZ);
-                // 再转换原子坐标
+                // 否则需要转换成 lammps 的种类
                 XYZ tBuf = new XYZ();
                 for (int i = 0; i < tAtomNum; ++i) {
                     IAtom tAtom = aAtomData.atom(i);

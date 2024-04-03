@@ -856,6 +856,10 @@ public class MathEX {
         public static double ceil(double aValue) {return FastMath.ceil(aValue);}
         public static long round(double aValue) {return FastMath.round(aValue);}
         
+        public static int floor2int(double aValue) {return FastMath.floorToInt(aValue);}
+        public static int ceil2int(double aValue) {return FastMath.ceilToInt(aValue);}
+        public static int round2int(double aValue) {return FastMath.roundToInt(aValue);}
+        
         public static double toRange(double aMin, double aMax, double aValue) {return FastMath.toRange(aMin, aMax, aValue);}
         public static int toRange(int aMin, int aMax, int aValue) {return FastMath.toRange(aMin, aMax, aValue);}
         public static long toRange(long aMin, long aMax, long aValue) {return FastMath.toRange(aMin, aMax, aValue);}

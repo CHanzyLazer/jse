@@ -2,11 +2,13 @@ package jse.atom;
 
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
+import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
 import jse.code.functional.IFilter;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
 import jse.code.iterator.IIntIterator;
+import jse.math.MathEX;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
@@ -140,6 +142,112 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         return rAtomData;
     }
     
+    @Override public ISettableAtomData repeat(int aNx, int aNy, int aNz) {
+        final IAtomData tThis = thisAtomData_();
+        final int tAtomNum = tThis.atomNumber();
+        final IBox tBox = tThis.box();
+        final double tAx = tBox.ax(), tAy = tBox.ay(), tAz = tBox.az();
+        final double tBx = tBox.bx(), tBy = tBox.by(), tBz = tBox.bz();
+        final double tCx = tBox.cx(), tCy = tBox.cy(), tCz = tBox.cz();
+        ISettableAtomData rAtomData = newSettableAtomData_(
+            tAtomNum*aNx*aNy*aNz,
+            tThis.isPrism() ? new BoxPrism(
+                tAx*aNx, tAy*aNx, tAz*aNx,
+                tBx*aNy, tBy*aNy, tBz*aNy,
+                tCx*aNz, tCy*aNz, tCz*aNz
+            ) : new Box(tAx*aNx, tBy*aNy, tCz*aNz)
+        );
+        for (int idx = 0; idx < tAtomNum; ++idx) {
+            IAtom tAtom = tThis.atom(idx);
+            double tX  = tAtom.x() , tY  = tAtom.y() , tZ  = tAtom.z() ;
+            double tVx = tAtom.vx(), tVy = tAtom.vy(), tVz = tAtom.vz();
+            int tID = tAtom.id(); int tType = tAtom.type();
+            if (tThis.isPrism()) {
+                for (int i = 0; i < aNx; ++i) {
+                double tDirAX = tAx*i, tDirAY = tAy*i, tDirAZ = tAz*i;
+                for (int j = 0; j < aNy; ++j) {
+                double tDirBX = tBx*j, tDirBY = tBy*j, tDirBZ = tBz*j;
+                for (int k = 0; k < aNz; ++k) {
+                    int tShift = (i + j*aNx + k*aNx*aNy) * tAtomNum;
+                    ISettableAtom rAtom = rAtomData.atom(tShift + idx);
+                    rAtom.setXYZ(
+                        tX + tDirAX + tDirBX + tCx*k,
+                        tY + tDirAY + tDirBY + tCy*k,
+                        tZ + tDirAZ + tDirBZ + tCz*k
+                    ).setID(tShift + tID).setType(tType);
+                    if (tAtom.hasVelocities()) rAtom.setVxyz(tVx, tVy, tVz);
+                }}}
+            } else {
+                for (int i = 0; i < aNx; ++i) {
+                double tDirX = tAx*i;
+                for (int j = 0; j < aNy; ++j) {
+                double tDirY = tBy*j;
+                for (int k = 0; k < aNz; ++k) {
+                    int tShift = (i + j*aNx + k*aNx*aNy) * tAtomNum;
+                    ISettableAtom rAtom = rAtomData.atom(tShift + idx);
+                    rAtom.setXYZ(
+                        tX + tDirX,
+                        tY + tDirY,
+                        tZ + tCz*k
+                    ).setID(tShift + tID).setType(tType);
+                    if (tAtom.hasVelocities()) rAtom.setVxyz(tVx, tVy, tVz);
+                }}}
+            }
+        }
+        return rAtomData;
+    }
+    
+    @Override public List<? extends ISettableAtomData> slice(int aNx, int aNy, int aNz) {
+        final IAtomData tThis = thisAtomData_();
+        final int tAtomNum = tThis.atomNumber();
+        final IBox tBox = tThis.box();
+        final IBox rBox = tThis.isPrism() ? new BoxPrism(
+            tBox.ax()/aNx, tBox.ay()/aNx, tBox.az()/aNx,
+            tBox.bx()/aNy, tBox.by()/aNy, tBox.bz()/aNy,
+            tBox.cx()/aNz, tBox.cy()/aNz, tBox.cz()/aNz
+        ) : new Box(tBox.x()/aNx, tBox.y()/aNy, tBox.z()/aNz);
+        // 先遍历添加对应的 idx，然后根据此来创建 ISettableAtomData
+        int tSliceNum = aNx*aNy*aNz;
+        List<IntList> rIndices = NewCollections.from(tSliceNum, i -> new IntList());
+        XYZ tBuf = new XYZ();
+        for (int idx = 0; idx < tAtomNum; ++idx) {
+            tBuf.setXYZ(tThis.atom(idx));
+            rBox.toDirect(tBuf);
+            int i = (int) MathEX.Code.floor(tBuf.mX); if (i<0 || i>=aNx) continue;
+            int j = (int) MathEX.Code.floor(tBuf.mY); if (j<0 || j>=aNy) continue;
+            int k = (int) MathEX.Code.floor(tBuf.mZ); if (k<0 || k>=aNz) continue;
+            rIndices.get(i + j*aNx + k*aNx*aNy).add(idx);
+        }
+        List<ISettableAtomData> rSlice = new ArrayList<>(tSliceNum);
+        for (int i = 0; i < tSliceNum; ++i) {
+            IntList subIndices = rIndices.get(i);
+            ISettableAtomData subAtomData = newSettableAtomData_(rIndices.get(i).size(), rBox.copy());
+            int subAtomNum = subAtomData.atomNumber();
+            for (int j = 0; j < subAtomNum; ++j) {
+                ISettableAtom subAtom = subAtomData.atom(j);
+                IAtom tAtom = tThis.atom(subIndices.get(j));
+                if (tThis.isPrism()) {
+                    tBuf.setXYZ(tAtom);
+                    rBox.toDirect(tBuf);
+                    tBuf.mX -= MathEX.Code.floor(tBuf.mX);
+                    tBuf.mY -= MathEX.Code.floor(tBuf.mY);
+                    tBuf.mZ -= MathEX.Code.floor(tBuf.mZ);
+                    rBox.toCartesian(tBuf);
+                    subAtom.setXYZ(tBuf).setID(tAtom.id()).setType(tAtom.type());
+                } else {
+                    subAtom.setXYZ(
+                        tAtom.x() % rBox.x(),
+                        tAtom.y() % rBox.y(),
+                        tAtom.z() % rBox.z()
+                    ).setID(tAtom.id()).setType(tAtom.type());
+                }
+                if (tAtom.hasVelocities()) subAtom.setVxyz(tAtom.vx(), tAtom.vy(), tAtom.vz());
+            }
+            rSlice.add(subAtomData);
+        }
+        return rSlice;
+    }
+    
     
     /** 用于方便内部使用 */
     private IAtomData refAtomData_(List<? extends IAtom> aAtoms) {
@@ -151,4 +259,5 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     protected abstract IAtomData thisAtomData_();
     protected abstract ISettableAtomData newSameSettableAtomData_();
     protected abstract ISettableAtomData newSettableAtomData_(int aAtomNum);
+    protected abstract ISettableAtomData newSettableAtomData_(int aAtomNum, IBox aBox);
 }
