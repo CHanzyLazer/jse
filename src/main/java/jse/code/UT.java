@@ -1361,6 +1361,9 @@ public class UT {
                 } else
                 if (row instanceof Iterable) {
                     return String.join(",", AbstractCollections.map((Iterable<?>)row, String::valueOf));
+                } else
+                if (row instanceof Object[]) {
+                    return String.join(",", AbstractCollections.map((Object[])row, String::valueOf));
                 } else {
                     return String.valueOf(row);
                 }
@@ -1379,6 +1382,9 @@ public class UT {
                 } else
                 if (col instanceof Iterable) {
                     return AbstractCollections.map((Iterable<?>)col, String::valueOf).iterator();
+                } else
+                if (col instanceof Object[]) {
+                    return AbstractCollections.map((Object[])col, String::valueOf).iterator();
                 } else {
                     return Collections.singletonList(String.valueOf(col)).iterator();
                 }
