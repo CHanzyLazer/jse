@@ -27,7 +27,7 @@ public class AbstractAtoms {
             @Override public IAtom get(final int index) {
                 return new AbstractAtom() {
                     @Override public double x() {
-                        int i = index/4/aReplicateZ/aReplicateY; double tX = aCellSize*i;
+                        int i = index/4%aReplicateX; double tX = aCellSize*i;
                         switch (index%4) {
                         case 0: case 3: return tX;
                         case 1: case 2: return tX + aCellSize*0.5;
@@ -35,7 +35,7 @@ public class AbstractAtoms {
                         }
                     }
                     @Override public double y() {
-                        int j = index/4/aReplicateZ%aReplicateY; double tY = aCellSize*j;
+                        int j = index/4/aReplicateX%aReplicateY; double tY = aCellSize*j;
                         switch (index%4) {
                         case 0: case 2: return tY;
                         case 1: case 3: return tY + aCellSize*0.5;
@@ -43,7 +43,7 @@ public class AbstractAtoms {
                         }
                     }
                     @Override public double z() {
-                        int k = index/4%aReplicateZ            ; double tZ = aCellSize*k;
+                        int k = index/4/aReplicateX/aReplicateY; double tZ = aCellSize*k;
                         switch (index%4) {
                         case 0: case 1: return tZ;
                         case 2: case 3: return tZ + aCellSize*0.5;
@@ -75,9 +75,9 @@ public class AbstractAtoms {
         return new AtomData(new AbstractRandomAccessList<IAtom>() {
             @Override public IAtom get(final int index) {
                 return new AbstractAtom() {
-                    @Override public double x() {int i = index/2/aReplicateZ/aReplicateY; double tX = aCellSize*i; return (index%2==1) ? tX + aCellSize*0.5 : tX;}
-                    @Override public double y() {int j = index/2/aReplicateZ%aReplicateY; double tY = aCellSize*j; return (index%2==1) ? tY + aCellSize*0.5 : tY;}
-                    @Override public double z() {int k = index/2%aReplicateZ            ; double tZ = aCellSize*k; return (index%2==1) ? tZ + aCellSize*0.5 : tZ;}
+                    @Override public double x() {int i = index/2%aReplicateX            ; double tX = aCellSize*i; return (index%2==1) ? tX + aCellSize*0.5 : tX;}
+                    @Override public double y() {int j = index/2/aReplicateX%aReplicateY; double tY = aCellSize*j; return (index%2==1) ? tY + aCellSize*0.5 : tY;}
+                    @Override public double z() {int k = index/2/aReplicateX/aReplicateY; double tZ = aCellSize*k; return (index%2==1) ? tZ + aCellSize*0.5 : tZ;}
                     @Override public int id() {return index+1;}
                     @Override public int type() {return 1;}
                     @Override public int index() {return index;}
@@ -106,7 +106,7 @@ public class AbstractAtoms {
             @Override public IAtom get(final int index) {
                 return new AbstractAtom() {
                     @Override public double x() {
-                        int i = index/4/aReplicateZ/aReplicateY; double tX = aCellSize  *i;
+                        int i = index/4%aReplicateX; double tX = aCellSize  *i;
                         switch (index%4) {
                         case 0: case 2: return tX;
                         case 1: case 3: return tX + aCellSize*0.5;
@@ -114,7 +114,7 @@ public class AbstractAtoms {
                         }
                     }
                     @Override public double y() {
-                        int j = index/4/aReplicateZ%aReplicateY; double tY = tCellSizeY *j;
+                        int j = index/4/aReplicateX%aReplicateY; double tY = tCellSizeY *j;
                         switch (index%4) {
                         case 0: return tY;
                         case 1: return tY + tCellSizeY*0.5;
@@ -124,7 +124,7 @@ public class AbstractAtoms {
                         }
                     }
                     @Override public double z() {
-                        int k = index/4%aReplicateZ            ; double tZ = aCellHeight*k;
+                        int k = index/4/aReplicateX/aReplicateY; double tZ = aCellHeight*k;
                         switch (index%4) {
                         case 0: case 1: return tZ;
                         case 2: case 3: return tZ + aCellHeight*0.5;
@@ -169,9 +169,9 @@ public class AbstractAtoms {
                 final IAtom tAtom = aLattice.atom(index%tLatticeNum);
                 final int tRepTotal = index/tLatticeNum;
                 // 获取平移次数
-                int i = tRepTotal/aReplicateZ/aReplicateY;
-                int j = tRepTotal/aReplicateZ%aReplicateY;
-                int k = tRepTotal%aReplicateZ            ;
+                int i = tRepTotal%aReplicateX            ;
+                int j = tRepTotal/aReplicateX%aReplicateY;
+                int k = tRepTotal/aReplicateX/aReplicateY;
                 final XYZ tSXYZ;
                 if (!aBox.isPrism()) {
                     tSXYZ = aBox.multiply(i, j, k);

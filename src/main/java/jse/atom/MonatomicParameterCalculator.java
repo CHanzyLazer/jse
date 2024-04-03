@@ -643,9 +643,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             }
             mSizeX = rSizeX; mSizeY = rSizeY; mSizeZ = rSizeZ;
             // 根据分划数获取对应的 mXLo, mXhi, mYLo, mYHi, mZLo, mZHi
-            int tI = mRank/mSizeZ/mSizeY;
-            int tJ = mRank/mSizeZ%mSizeY;
-            int tK = mRank%mSizeZ;
+            int tI = mRank%mSizeX;
+            int tJ = mRank/mSizeX%mSizeY;
+            int tK = mRank/mSizeX/mSizeY;
             mCellSize = mBox.div(mSizeX, mSizeY, mSizeZ);
             mXLo = tI * mCellSize.mX; mXHi = mXLo + mCellSize.mX;
             mYLo = tJ * mCellSize.mY; mYHi = mYLo + mCellSize.mY;
@@ -724,8 +724,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 int tI = (int) MathEX.Code.floor(tX / mCellSize.mX);
                 int tJ = (int) MathEX.Code.floor(tY / mCellSize.mY);
                 int tK = (int) MathEX.Code.floor(tZ / mCellSize.mZ);
-                // 这里的排序和 LinkedCell 不同，但是和新的 AbstractAtoms 的一直，为了避免问题这里暂时不去改 LinkedCell 的排序
-                int tRank = (tI*mSizeY*mSizeZ + tJ*mSizeZ + tK);
+                // 现在排序和 LinkedCell 保持相同了
+                int tRank = (tI + tJ*mSizeX + tK*mSizeX*mSizeY);
                 int tCount = mCounts.get(tRank);
                 rBuf2Idx[tRank][tCount] = i;
                 mCounts.increment(tRank);
