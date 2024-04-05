@@ -79,12 +79,12 @@ public class PlotterJFree implements IPlotter {
         
         @Override public IPlotter plotter() {return PlotterJFree.this;}
         
-        @Override public ILine filled(boolean aFilled) {syncRun(() -> mLineRender.setSeriesShapesFilled(mID, aFilled)); return this;}
+        @Override public ILine fill(boolean aFilled) {syncRun(() -> mLineRender.setSeriesShapesFilled(mID, aFilled)); return this;}
         
         @Override public ILine color(Paint aPaint) {syncRun(() -> {mLineRender.setSeriesPaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint); mLineRender.setSeriesOutlinePaint(mID, aPaint);}); return this;} // 会覆盖掉 markerColor 的颜色设置
         @Override public ILine lineColor(Paint aPaint) {syncRun(() -> mLineRender.setSeriesPaint(mID, aPaint)); return this;} // 不会覆盖掉 markerColor 的颜色设置
         @Override public ILine markerColor(Paint aPaint) {syncRun(() -> {mLineRender.setSeriesOutlinePaint(mID, aPaint); mLineRender.setSeriesFillPaint(mID, aPaint);}); return this;} // 会覆盖掉 markerFaceColor 的颜色设置
-        @Override public ILine markerFaceColor(Paint aPaint) {syncRun(() -> {filled(); mLineRender.setSeriesFillPaint(mID, aPaint);}); return this;}
+        @Override public ILine markerFaceColor(Paint aPaint) {syncRun(() -> {fill(); mLineRender.setSeriesFillPaint(mID, aPaint);}); return this;}
         @Override public ILine markerEdgeColor(Paint aPaint) {syncRun(() -> mLineRender.setSeriesOutlinePaint(mID, aPaint)); return this;}
         
         @Override protected void onLineTypeChange(LineType aOldLineType, LineType aNewLineType) {

@@ -1651,8 +1651,24 @@ public class UT {
                 @Override public IFigure get(int index) {return figure(index);}
             };
         }
-        public static void cla() {if (PLT != null) {PLT.clear();}}
-        public static void clf() {if (PLT != null) {PLT.dispose(); PLT = null;}}
+        public static void cla() {cla(false);}
+        public static void clf() {clf(false);}
+        public static void cla(boolean aAll) {
+            if (aAll) {
+                for (IPlotter tPlt : PLTS) tPlt.clear();
+            } else {
+                if (PLT != null) PLT.clear();
+            }
+        }
+        public static void clf(boolean aAll) {
+            if (aAll) {
+                for (IPlotter tPlt : PLTS) tPlt.dispose();
+                PLTS.clear();
+                PLT = null;
+            } else {
+                if (PLT != null) {PLTS.remove(PLT); PLT.dispose(); PLT = null;}
+            }
+        }
         private static void validPlotter_() {
             if (PLT != null) return;
             if (PLTS.isEmpty()) {PLT = Plotters.get(); PLTS.add(PLT); return;}
@@ -1832,7 +1848,7 @@ public class UT {
                 case "y": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::z), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
                 case "z": {rLines[i] = PLT.plot(AbstractCollections.map(tAtoms, IAtom::x), AbstractCollections.map(tAtoms, IAtom::y), aTypes.size()>i ? Code.toString(aTypes.get(i)) : "type "+tType); break;}
                 }
-                rLines[i].lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE).filled();
+                rLines[i].lineType(Strokes.LineType.NULL).markerType(Shapes.MarkerType.CIRCLE).fill();
                 if (aColors.size() <= i) {
                     rLines[i].color(tType);
                 } else {

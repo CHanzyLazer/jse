@@ -39,8 +39,8 @@ public interface ILine {
     ILine lineType(LineType aLineType);
     ILine lineStroke(Stroke aLineStroke);
     
-    default ILine filled() {return filled(true);}
-    ILine filled(boolean aFilled);
+    default ILine fill() {return fill(true);}
+    ILine fill(boolean aFill);
     
     default ILine markerColor(int aIdx) {return markerColor(COLOR(aIdx));}
     default ILine markerColor(double aR, double aG, double aB) {return markerColor(new Color(Math.round(aR*255), Math.round(aG*255), Math.round(aB*255)));}
