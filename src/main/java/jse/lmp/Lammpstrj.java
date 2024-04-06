@@ -272,8 +272,7 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
     /** 对于整个 Lammpstrj 还提供 gather 和 scatter 方法 */
     public static Lammpstrj gather(Lammpstrj aLammpstrj, int aRoot, MPI.Comm aComm) throws MPIException {
         if (aComm.rank() != aRoot) {
-            aComm.sendI(aLammpstrj.size(), aRoot, LAMMPSTRJ_SIZE);
-            for (SubLammpstrj tSubLammpstrj : aLammpstrj.mList) SubLammpstrj.send(tSubLammpstrj, aRoot, aComm);
+            send(aLammpstrj, aRoot, aComm);
             return aLammpstrj;
         } else {
             final int tNP = aComm.size();

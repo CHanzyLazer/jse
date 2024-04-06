@@ -5,6 +5,7 @@ import jse.math.IDataShell;
 import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -124,7 +125,7 @@ public class IntList implements ISlice, IDataShell<int[]> {
     
     
     /** IDataShell stuffs */
-    @Override  public int internalDataSize() {return size();}
+    @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(int[] aData) {mData = aData;}
     @Override public IntList newShell() {return new IntList(mSize, null);}
     @Override public int[] internalData() {return mData;}
@@ -135,4 +136,13 @@ public class IntList implements ISlice, IDataShell<int[]> {
         if (aObj instanceof int[]) return (int[])aObj;
         return null;
     }
+    
+    
+    /** Groovy stuffs */
+    public IntList append(int aValue) {add(aValue); return this;}
+    public IntList appendAll(IIntVector aVector) {addAll(aVector); return this;}
+    @VisibleForTesting public IntList leftShift(int aValue) {return append(aValue);}
+    @VisibleForTesting public IntList leftShift(IIntVector aVector) {return appendAll(aVector);}
+    @VisibleForTesting public final int getAt(int aIdx) {return get(aIdx);}
+    @VisibleForTesting public final void putAt(int aIdx, int aValue) {set(aIdx, aValue);}
 }

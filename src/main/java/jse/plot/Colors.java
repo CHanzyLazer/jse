@@ -23,7 +23,7 @@ public class Colors {
         new Color(255, 0  , 132),
         new Color(243, 85 , 0  ),
         new Color(116, 23 , 255),
-        };
+    };
     public static final Color COLOR_NULL = new Color(255, 255, 255, 0);
     
     public static Color COLOR(int aIdx) {return COLORS[aIdx%COLORS.length];}

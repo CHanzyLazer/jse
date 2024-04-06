@@ -6,6 +6,7 @@ import jse.code.iterator.IBooleanIterator;
 import jse.code.iterator.IBooleanSetIterator;
 import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -38,6 +39,12 @@ public class LogicalVector extends BooleanArrayVector {
             mData = null; // 设为 null 防止再通过 Builder 来修改此数据
             return new LogicalVector(mSize, tData);
         }
+        
+        /** Groovy stuffs */
+        public Builder append(boolean aValue) {return (Builder)super.append(aValue);}
+        public Builder appendAll(ILogicalVector aVector) {return (Builder)super.appendAll(aVector);}
+        @VisibleForTesting public Builder leftShift(boolean aValue) {return (Builder)super.leftShift(aValue);}
+        @VisibleForTesting public Builder leftShift(ILogicalVector aVector) {return (Builder)super.leftShift(aVector);}
     }
     
     private int mSize;

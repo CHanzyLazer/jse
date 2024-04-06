@@ -5,6 +5,7 @@ import jse.math.IDataShell;
 import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -127,7 +128,7 @@ public class DoubleList implements IDataShell<double[]> {
     
     
     /** IDataShell stuffs */
-    @Override  public int internalDataSize() {return size();}
+    @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(double[] aData) {mData = aData;}
     @Override public DoubleList newShell() {return new DoubleList(mSize, null);}
     @Override public double[] internalData() {return mData;}
@@ -138,4 +139,12 @@ public class DoubleList implements IDataShell<double[]> {
         if (aObj instanceof double[]) return (double[])aObj;
         return null;
     }
+    
+    /** Groovy stuffs */
+    public DoubleList append(double aValue) {add(aValue); return this;}
+    public DoubleList appendAll(IVector aVector) {addAll(aVector); return this;}
+    @VisibleForTesting public DoubleList leftShift(double aValue) {return append(aValue);}
+    @VisibleForTesting public DoubleList leftShift(IVector aVector) {return appendAll(aVector);}
+    @VisibleForTesting public final double getAt(int aIdx) {return get(aIdx);}
+    @VisibleForTesting public final void putAt(int aIdx, double aValue) {set(aIdx, aValue);}
 }

@@ -5,6 +5,7 @@ import jse.math.IDataShell;
 import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -135,4 +136,12 @@ public class LongList implements IDataShell<long[]> {
         if (aObj instanceof long[]) return (long[])aObj;
         return null;
     }
+    
+    /** Groovy stuffs */
+    public LongList append(long aValue) {add(aValue); return this;}
+    public LongList appendAll(ILongVector aVector) {addAll(aVector); return this;}
+    @VisibleForTesting public LongList leftShift(long aValue) {return append(aValue);}
+    @VisibleForTesting public LongList leftShift(ILongVector aVector) {return appendAll(aVector);}
+    @VisibleForTesting public final long getAt(int aIdx) {return get(aIdx);}
+    @VisibleForTesting public final void putAt(int aIdx, long aValue) {set(aIdx, aValue);}
 }

@@ -6,6 +6,7 @@ import jse.math.IDataShell;
 import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -124,7 +125,7 @@ public class BooleanList implements IDataShell<boolean[]> {
     
     
     /** IDataShell stuffs */
-    @Override  public int internalDataSize() {return size();}
+    @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(boolean[] aData) {mData = aData;}
     @Override public BooleanList newShell() {return new BooleanList(mSize, null);}
     @Override public boolean[] internalData() {return mData;}
@@ -135,4 +136,12 @@ public class BooleanList implements IDataShell<boolean[]> {
         if (aObj instanceof boolean[]) return (boolean[])aObj;
         return null;
     }
+    
+    /** Groovy stuffs */
+    public BooleanList append(boolean aValue) {add(aValue); return this;}
+    public BooleanList appendAll(ILogicalVector aVector) {addAll(aVector); return this;}
+    @VisibleForTesting public BooleanList leftShift(boolean aValue) {return append(aValue);}
+    @VisibleForTesting public BooleanList leftShift(ILogicalVector aVector) {return appendAll(aVector);}
+    @VisibleForTesting public final boolean getAt(int aIdx) {return get(aIdx);}
+    @VisibleForTesting public final void putAt(int aIdx, boolean aValue) {set(aIdx, aValue);}
 }

@@ -9,6 +9,7 @@ import jse.math.IDataShell;
 import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -195,7 +196,7 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     
     
     /** IDataShell stuffs */
-    @Override  public int internalDataSize() {return size();}
+    @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(double[][] aData) {mData = aData;}
     @Override public ComplexDoubleList newShell() {return new ComplexDoubleList(mSize, null);}
     @Override public double[][] internalData() {return mData;}
@@ -209,4 +210,12 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
         }
         return null;
     }
+    
+    /** Groovy stuffs */
+    public ComplexDoubleList append(IComplexDouble aValue) {add(aValue); return this;}
+    public ComplexDoubleList appendAll(IComplexVector aVector) {addAll(aVector); return this;}
+    @VisibleForTesting public ComplexDoubleList leftShift(IComplexDouble aValue) {return append(aValue);}
+    @VisibleForTesting public ComplexDoubleList leftShift(IComplexVector aVector) {return appendAll(aVector);}
+    @VisibleForTesting public final ComplexDouble getAt(int aIdx) {return get(aIdx);}
+    @VisibleForTesting public final void putAt(int aIdx, IComplexDouble aValue) {set(aIdx, aValue);}
 }

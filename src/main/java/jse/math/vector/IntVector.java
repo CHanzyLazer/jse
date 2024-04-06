@@ -6,6 +6,7 @@ import jse.code.iterator.IIntSetIterator;
 import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -40,6 +41,12 @@ public class IntVector extends IntArrayVector {
             mData = null; // 设为 null 防止再通过 Builder 来修改此数据
             return new IntVector(mSize, tData);
         }
+        
+        /** Groovy stuffs */
+        public Builder append(int aValue) {return (Builder)super.append(aValue);}
+        public Builder appendAll(IIntVector aVector) {return (Builder)super.appendAll(aVector);}
+        @VisibleForTesting public Builder leftShift(int aValue) {return (Builder)super.leftShift(aValue);}
+        @VisibleForTesting public Builder leftShift(IIntVector aVector) {return (Builder)super.leftShift(aVector);}
     }
     
     private int mSize;
