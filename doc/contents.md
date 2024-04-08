@@ -41,30 +41,33 @@
     3. [原子数据类型转换](vasp.md#原子数据类型转换)
     4. [原子数据修改](vasp.md#原子数据修改)
     
-7. [原子结构参量计算](mpc.md)
+7. [通用原子结构操作](atomdata.md)
+    1. [结构创建](atomdata.md#结构创建)
+
+8. [原子结构参量计算](mpc.md)
     1. [参量计算器初始化](mpc.md#参量计算器初始化)
     2. [RDF 和 SF 的计算](mpc.md#rdf-和-sf-的计算)
     3. [键角序参量的计算](mpc.md#键角序参量的计算)
     4. [Voronoi 分析](mpc.md#voronoi-分析)
     
-8. [MPI 支持](mpi.md)
+9.  [MPI 支持](mpi.md)
     1. [环境要求](mpi.md#环境要求)
     2. [使用方法](mpi.md#使用方法)
     3. [可选配置](mpi.md#可选配置)
 
-9.  [简单的数学库](math.md)
+10. [简单的数学库](math.md)
     1. [基本使用方法](math.md#基本使用方法)
     2. [进阶运算](math.md#进阶运算)
     3. [其他功能](math.md#其他功能)
     4. [性能](math.md#性能)
     
-10. [简单的绘图]()
+11. [简单的绘图]()
     - TODO
     
-11. [其他实用方法和技巧]()
+12. [其他实用方法和技巧]()
     - TODO
 
-12. [jupyter 支持](jupyter.ipynb)
+13. [jupyter 支持](jupyter.ipynb)
     1. [分段执行和上下文](jupyter.ipynb#分段执行和上下文)
     2. [查看变量值](jupyter.ipynb#查看变量值)
     3. [绘图支持](jupyter.ipynb#绘图支持)
@@ -72,12 +75,12 @@
     5. [python 交叉编程支持](jupyter.ipynb#python-交叉编程支持)
     6. [可选配置](jupyter.ipynb#可选配置)
     
-13. 交叉编程
+14. 交叉编程
     1. [groovy 中调用 python](pythoningroovy.md)
     2. [python 中调用 jse（jep）]()
     3. [python 中调用 jse（py4j）]()
     4. [matlab 中调用 jse]()
     
-14. [代码部分]()
+15. [代码部分]()
     - TODO
 
