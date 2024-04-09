@@ -14,7 +14,7 @@ public class AbstractAtoms {
     protected AbstractAtoms() {}
     
     /**
-     * 根据给定数据创建 FCC 的 atomData
+     * 根据给定数据创建 FCC (Face Center Cubic) 的 atomData
      * @author liqa
      * @param aCellSize FCC 晶胞的晶格常数 a
      * @param aRepeatX x 方向的重复次数
@@ -63,7 +63,7 @@ public class AbstractAtoms {
     public static IAtomData FCC(double aCellSize, int aRepeat) {return FCC(aCellSize, aRepeat, aRepeat, aRepeat);}
     
     /**
-     * 根据给定数据创建 BCC 的 atomData
+     * 根据给定数据创建 BCC (Body Center Cubic) 的 atomData
      * @author liqa
      * @param aCellSize BCC 晶胞的晶格常数 a
      * @param aRepeatX x 方向的重复次数
@@ -91,7 +91,36 @@ public class AbstractAtoms {
     public static IAtomData BCC(double aCellSize, int aRepeat) {return BCC(aCellSize, aRepeat, aRepeat, aRepeat);}
     
     /**
-     * 根据给定数据创建 HCP 的 atomData，为了方便使用这里直接返回正交的晶胞
+     * 根据给定数据创建 SC (Simple Cubic) 的 atomData
+     * @author liqa
+     * @param aCellSize SC 晶胞的晶格常数 a
+     * @param aRepeatX x 方向的重复次数
+     * @param aRepeatY Y 方向的重复次数
+     * @param aRepeatZ Z 方向的重复次数
+     * @return 返回由此创建的 atomData
+     */
+    public static IAtomData SC(final double aCellSize, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
+        return new AtomData(new AbstractRandomAccessList<IAtom>() {
+            @Override public IAtom get(final int index) {
+                return new AbstractAtom() {
+                    @Override public double x() {int i = index%aRepeatX         ; return aCellSize*i;}
+                    @Override public double y() {int j = index/aRepeatX%aRepeatY; return aCellSize*j;}
+                    @Override public double z() {int k = index/aRepeatX/aRepeatY; return aCellSize*k;}
+                    @Override public int id() {return index+1;}
+                    @Override public int type() {return 1;}
+                    @Override public int index() {return index;}
+                };
+            }
+            @Override public int size() {
+                return aRepeatX*aRepeatY*aRepeatZ;
+            }
+        }, new Box(aCellSize*aRepeatX, aCellSize*aRepeatY, aCellSize*aRepeatZ));
+    }
+    public static IAtomData SC(double aCellSize, int aRepeat) {return SC(aCellSize, aRepeat, aRepeat, aRepeat);}
+    
+    /**
+     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 atomData，
+     * 为了方便使用这里直接返回正交的晶胞
      * @author liqa
      * @param aCellSize HCP 晶胞底边六边形的边长 a
      * @param aCellHeight HCP 晶胞的高度 c（默认为 sqrt(8/3)）
