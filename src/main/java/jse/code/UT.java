@@ -1435,7 +1435,9 @@ public class UT {
         /**
          * read matrix data from csv file
          * <p>
-         * 现在也可以直接读取泛滥的空格分割的数据
+         * 现在也可以直接读取泛滥的空格分割的数据；
+         * 现在也可以处理泛滥的 {@code #} 注释的情况，
+         * 这里简单处理只考虑其在行首的情况
          * @author liqa
          * @param aFilePath csv file path to read
          * @return a matrix
@@ -1446,8 +1448,12 @@ public class UT {
                 RowMatrix.Builder rBuilder;
                 String tLine;
                 int tColNum;
+                // 跳过开头可能的注释行
+                while ((tLine = tReader.readLine()) != null) {
+                    if (!tLine.startsWith("#")) break;
+                }
+                if (tLine == null) return null;
                 // 读取第一行来判断列数
-                tLine = tReader.readLine();
                 String[] tTokens = Text.splitStr(tLine);
                 tColNum = tTokens.length;
                 rBuilder = RowMatrix.builder(tColNum);
@@ -1459,6 +1465,8 @@ public class UT {
                 }
                 // 遍历读取后续数据
                 while ((tLine = tReader.readLine()) != null) {
+                    // 跳过注释行
+                    if (tLine.startsWith("#")) continue;
                     rBuilder.addRow(Text.str2data(tLine, tColNum));
                 }
                 // 返回结果
@@ -1470,8 +1478,6 @@ public class UT {
         
         /**
          * save table to csv file
-         * <p>
-         * 现在也可以直接读取泛滥的空格分割的数据
          * @author liqa
          * @param aTable the Table to be saved
          * @param aFilePath csv file path to save
@@ -1483,6 +1489,10 @@ public class UT {
         }
         /**
          * read table from csv file
+         * <p>
+         * 现在也可以直接读取泛滥的空格分割的数据；
+         * 现在也可以处理泛滥的 {@code #} 注释的情况，
+         * 这里简单处理只考虑其在行首的情况
          * @author liqa
          * @param aFilePath csv file path to read
          * @return table with head
@@ -1494,8 +1504,12 @@ public class UT {
                 String tLine;
                 int tColNum;
                 String[] tHeads = ZL_STR;
+                // 跳过开头可能的注释行
+                while ((tLine = tReader.readLine()) != null) {
+                    if (!tLine.startsWith("#")) break;
+                }
+                if (tLine == null) return null;
                 // 读取第一行来判断列数
-                tLine = tReader.readLine();
                 String[] tTokens = Text.splitStr(tLine);
                 tColNum = tTokens.length;
                 // 读取第一行检测是否有头，直接看能否成功粘贴
@@ -1508,6 +1522,8 @@ public class UT {
                 }
                 // 遍历读取后续数据
                 while ((tLine = tReader.readLine()) != null) {
+                    // 跳过注释行
+                    if (tLine.startsWith("#")) continue;
                     rRows.add(Text.str2data(tLine, tColNum));
                 }
                 // 返回结果
