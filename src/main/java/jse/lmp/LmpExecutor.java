@@ -29,7 +29,7 @@ public final class LmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
         mLmpExe = aLmpExe;
         mLogPath = aLogPath;
         // 最后设置一下工作目录，这里一定要求相对路径
-        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("LMP@"+UT.Code.randID()));
+        mWorkingDir = WORKING_DIR_OF("LMP@"+UT.Code.randID(), true);
     }
     public LmpExecutor(String aLmpExe, @Nullable String aLogPath) {this(EXEC, aLmpExe, aLogPath); setDoNotShutdown_(true);}
     public LmpExecutor(String aLmpExe) {this(aLmpExe, null);}

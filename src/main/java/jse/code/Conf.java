@@ -27,8 +27,11 @@ public class Conf {
     
     /** 设置 jse 许多类工作的临时目录，一般来说使用 .jse/ 目录应该会更加合适，这里为了兼容并减少目录数还是默认保持使用 .temp */
     public static String TEMP_WORKING_DIR = OS.env("JSE_TEMP_WORKING_DIR", ".temp/%n/");
-    public static String WORKING_DIR_OF(String aUniqueName) {
-        return UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(TEMP_WORKING_DIR.replaceAll("%n", aUniqueName)));
+    public static String WORKING_DIR_OF(String aUniqueName) {return WORKING_DIR_OF(aUniqueName, false);}
+    public static String WORKING_DIR_OF(String aUniqueName, boolean aRelative) {
+        String tRelativeWD = TEMP_WORKING_DIR.replaceAll("%n", aUniqueName);
+        if (aRelative) return tRelativeWD;
+        return UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(tRelativeWD));
     }
     
     /** {@link System#out} 和 {@link System#err} 是否支持复杂的 unicode 字符，禁用后可以避免乱码问题 */

@@ -53,7 +53,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         mSleepTime = FILE_SYSTEM_SLEEP_TIME;
         // 设置一下工作目录，这里一定要求相对路径
         String tUniqueJobName = "CLMP@"+UT.Code.randID();
-        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF(tUniqueJobName));
+        mWorkingDir = WORKING_DIR_OF(tUniqueJobName, true);
         mLogPath = aLogPath.replaceAll("%n", tUniqueJobName);
         // 提交长时的 lammps 任务
         IInFile tConstantInFile = LmpIn.CONSTANT();

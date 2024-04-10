@@ -48,7 +48,7 @@ public class SLURMSystemExecutor extends AbstractLongTimeSystemExecutor<SSHSyste
         mMaxTaskNumPerNode = aMaxTaskNumPerNode;
         mMaxNodeNum = aMaxNodeNum;
         // 需要初始化输出的文件夹，这里一定要求相对路径
-        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF(mUniqueJobName));
+        mWorkingDir = WORKING_DIR_OF(mUniqueJobName, true);
         mSplitNodeScriptPath = mWorkingDir + SPLIT_NODE_SCRIPT_NAME;
         mBatchedScriptDir = mWorkingDir + BATCHED_SCRIPT_DIR_NAME + "/";
         // 从资源文件中创建已经准备好的 SplitNodeScript

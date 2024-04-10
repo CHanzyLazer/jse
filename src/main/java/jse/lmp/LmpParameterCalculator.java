@@ -65,7 +65,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
         mPairStyle = aPairStyle;
         mPairCoeff = aPairCoeff;
         // 最后设置一下工作目录，这里一定要求相对路径
-        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("LPC@"+UT.Code.randID()));
+        mWorkingDir = WORKING_DIR_OF("LPC@"+UT.Code.randID(), true);
     }
     
     /**

@@ -30,7 +30,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         
         mAssignedResources = new HashMap<>();
         // 设置一下工作目录；虽然非强制，这里还是使用相对路径保证 if (needSyncIOFiles()) removeDir(mWorkingDir); 合法
-        mWorkingDir = UT.IO.toRelativePath(WORKING_DIR_OF("SRUN@"+UT.Code.randID()));
+        mWorkingDir = WORKING_DIR_OF("SRUN@"+UT.Code.randID(), true);
         // 由于是本地的，这里不需要创建文件夹
         // 仅 slurm 可用
         if (!IS_SLURM) {
