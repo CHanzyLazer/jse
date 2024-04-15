@@ -93,12 +93,12 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
                 ISettableAtom tAtom = tThis.atom(i);
                 tBuf.setXYZ(tAtom);
                 tBox.toDirect(tBuf);
-                if      (tBuf.mX <  0.0) {++tBuf.mX; while (tBuf.mX <  0.0) ++tBuf.mX;}
-                else if (tBuf.mX >= 1.0) {--tBuf.mX; while (tBuf.mX >= 1.0) --tBuf.mX;}
-                if      (tBuf.mY <  0.0) {++tBuf.mY; while (tBuf.mY <  0.0) ++tBuf.mY;}
-                else if (tBuf.mY >= 1.0) {--tBuf.mY; while (tBuf.mY >= 1.0) --tBuf.mY;}
-                if      (tBuf.mZ <  0.0) {++tBuf.mZ; while (tBuf.mZ <  0.0) ++tBuf.mZ;}
-                else if (tBuf.mZ >= 1.0) {--tBuf.mZ; while (tBuf.mZ >= 1.0) --tBuf.mZ;}
+                if      (tBuf.mX <  0.0) {do {++tBuf.mX;} while (tBuf.mX <  0.0);}
+                else if (tBuf.mX >= 1.0) {do {--tBuf.mX;} while (tBuf.mX >= 1.0);}
+                if      (tBuf.mY <  0.0) {do {++tBuf.mY;} while (tBuf.mY <  0.0);}
+                else if (tBuf.mY >= 1.0) {do {--tBuf.mY;} while (tBuf.mY >= 1.0);}
+                if      (tBuf.mZ <  0.0) {do {++tBuf.mZ;} while (tBuf.mZ <  0.0);}
+                else if (tBuf.mZ >= 1.0) {do {--tBuf.mZ;} while (tBuf.mZ >= 1.0);}
                 tBox.toCartesian(tBuf);
                 tAtom.setXYZ(tBuf);
             }
@@ -109,12 +109,12 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
                 double tX = tAtom.x();
                 double tY = tAtom.y();
                 double tZ = tAtom.z();
-                if      (tX <  0.0    ) {tX += tBox.mX; while (tX <  0.0    ) tX += tBox.mX;}
-                else if (tX >= tBox.mX) {tX -= tBox.mX; while (tX >= tBox.mX) tX -= tBox.mX;}
-                if      (tY <  0.0    ) {tY += tBox.mY; while (tY <  0.0    ) tY += tBox.mY;}
-                else if (tY >= tBox.mY) {tY -= tBox.mY; while (tY >= tBox.mY) tY -= tBox.mY;}
-                if      (tZ <  0.0    ) {tZ += tBox.mZ; while (tZ <  0.0    ) tZ += tBox.mZ;}
-                else if (tZ >= tBox.mZ) {tZ -= tBox.mZ; while (tZ >= tBox.mZ) tZ -= tBox.mZ;}
+                if      (tX <  0.0    ) {do {tX += tBox.mX;} while (tX <  0.0    );}
+                else if (tX >= tBox.mX) {do {tX -= tBox.mX;} while (tX >= tBox.mX);}
+                if      (tY <  0.0    ) {do {tY += tBox.mY;} while (tY <  0.0    );}
+                else if (tY >= tBox.mY) {do {tY -= tBox.mY;} while (tY >= tBox.mY);}
+                if      (tZ <  0.0    ) {do {tZ += tBox.mZ;} while (tZ <  0.0    );}
+                else if (tZ >= tBox.mZ) {do {tZ -= tBox.mZ;} while (tZ >= tBox.mZ);}
                 tAtom.setXYZ(tX, tY, tZ);
             }
         }
