@@ -681,7 +681,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     
     /**
-     * 计算 SF（structural factor，即 S(q)），结构参数，只计算一个固定结构的值，因此不包含温度信息
+     * 计算 SF（structural factor，即 S(q)），只计算一个固定结构的值，因此不包含温度信息
      * @author liqa
      * @param aN 指定分划的份数（默认为 160）
      * @param aQMax 额外指定最大计算的 q 的位置（默认为 6 倍单位长度）
@@ -759,7 +759,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     /**
      * 计算自身与输入的 aAtomDataXYZ 之间的 SF，只计算一个固定结构的值，因此不包含温度信息
-     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aMPC 即计算两个 MPC 之间的 RDF，如果初始化使用的 Box 则认为 aAtomDataXYZ 未经过平移，否则认为 aAtomDataXYZ 已经经过了平移。对于 MPC 没有这个问题
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aMPC 即计算两个 MPC 之间的 RDF
      * @param aN 指定分划的份数（默认为 160）
      * @param aQMax 额外指定最大计算的 q 的位置
      * @param aQMin 手动指定最小的截断的 q
@@ -778,6 +778,133 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN, double aQMax              ) {return calSF_AB(aMPC, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN                            ) {return calSF_AB(aMPC, aN, 2.0*PI/mUnitLen * 6.0);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC                                    ) {return calSF_AB(aMPC, 160);}
+    
+    /**
+     * 计算两种种类之间的 SF，只计算一个固定结构的值，因此不包含温度信息
+     * @author liqa
+     * @param aTypeA 种类 A
+     * @param aTypeB 种类 B
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aQMax 额外指定最大计算的 q 的位置
+     * @param aQMin 手动指定最小的截断的 q
+     * @return Sq 函数
+     */
+    public IFunc1 calSF_AB(final int aTypeA, final int aTypeB, int aN, double aQMax, double aQMin) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dq = (aQMax-aQMin)/aN;
+        // 这里的 parfor 支持不同线程直接写入不同位置而不需要加锁
+        final IFunc1[] HqPar = new IFunc1[threadNumber()];
+        for (int i = 0; i < HqPar.length; ++i) HqPar[i] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
+        
+        // 需要这样遍历才能得到正确结果
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            int tTypeI = mTypeVec.get(i);
+            if (tTypeI==aTypeA || tTypeI==aTypeB) {
+                int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
+                XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
+                IFunc1 Hq = HqPar[threadID];
+                for (int j = 0; j < i; ++j) if (mTypeVec.get(j) == tTypeJ) {
+                    final double dis = cXYZ.distance(mAtomDataXYZ.get(j, 0), mAtomDataXYZ.get(j, 1), mAtomDataXYZ.get(j, 2));
+                    Hq.operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                }
+            }
+        });
+        
+        // 获取结果
+        IFunc1 Sq = HqPar[0];
+        for (int i = 1; i < HqPar.length; ++i) Sq.plus2this(HqPar[i]);
+        double tDiv = Fast.sqrt(mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1));
+        if (aTypeA == aTypeB) tDiv *= 0.5;
+        Sq.div2this(tDiv);
+        Sq.plus2this(1.0);
+        
+        // 修复截断数据
+        Sq.set(0, 0.0);
+        // 输出
+        return Sq;
+    }
+    public IFunc1 calSF_AB(int aTypeA, int aTypeB, int aN, double aQMax) {return calSF_AB(aTypeA, aTypeB, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(int aTypeA, int aTypeB, int aN              ) {return calSF_AB(aTypeA, aTypeB, aN, 2.0*PI/mUnitLen * 6);}
+    public IFunc1 calSF_AB(int aTypeA, int aTypeB                      ) {return calSF_AB(aTypeA, aTypeB, 160);}
+    
+    
+    /**
+     * 计算所有种类之间的 SF（structural factor，即 S(q)），
+     * 只计算一个固定结构的值，因此不包含温度信息。
+     * <p>
+     * 所有的 {@code S_AB(q)} 直接排列成一个列表，
+     * 先遍历 {@code typeB} 后遍历 {@code typeA}，且保持
+     * {@code typeB <= typeA}，也就是说，如果需要访问给定 {@code (typeA, typeB)}
+     * 的 {@code S_AB(q)}，需要使用：
+     * <pre> {@code
+     * def SqAll = mpc.calAllSF(...)
+     * int idx = (typeA*(typeA-1)).intdiv(2) + typeB
+     * def SqAB = SqAll[idx]
+     * } </pre>
+     * 来获取（注意到 {@code idx == 0} 对应所有种类都考虑的
+     * S(q)，并且这里认为所有的种类都是从 1 开始的）。
+     * <p>
+     * 当只有一个种类时不进行单独种类的计算，即此时返回的向量长度一定为 1
+     * @author liqa
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aQMax 额外指定最大计算的 q 的位置（默认为 6 倍单位长度）
+     * @param aQMin 可以手动指定最小的截断的 q（由于 pbc 的原因，过小的结果发散）
+     * @return 所有 Sq 函数组成的列表
+     */
+    public List<? extends IFunc1> calAllSF(int aN, double aQMax, double aQMin) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        // 当只有一个种类时不进行单独种类的计算
+        if (mAtomTypeNum == 1) return Collections.singletonList(calSF(aN, aQMax, aQMin));
+        
+        final double dq = (aQMax-aQMin)/aN;
+        // 这里需要使用 IFunc 来进行函数的相关运算操作
+        final List<IFunc1[]> HqAllPar = NewCollections.from(threadNumber(), i -> {
+            IFunc1[] HqAll = new IFunc1[(mAtomTypeNum*(mAtomTypeNum+1))/2 + 1];
+            for (int j = 0; j < HqAll.length; ++j) {
+                HqAll[j] = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
+            }
+            return HqAll;
+        });
+        
+        // 需要这样遍历才能得到正确结果
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
+            int tTypeA = mTypeVec.get(i);
+            IFunc1[] HqAll = HqAllPar.get(threadID);
+            for (int j = 0; j < i; ++j) {
+                final double dis = cXYZ.distance(mAtomDataXYZ.get(j, 0), mAtomDataXYZ.get(j, 1), mAtomDataXYZ.get(j, 2));
+                HqAll[0].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                int tTypeB = mTypeVec.get(j);
+                HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+            }
+        });
+        
+        // 获取结果
+        Iterator<IFunc1[]> it = HqAllPar.iterator();
+        IFunc1[] SqAll = it.next();
+        it.forEachRemaining(HqAll -> {
+            for (int i = 0; i < HqAll.length; ++i) SqAll[i].plus2this(HqAll[i]);
+        });
+        SqAll[0].div2this(mAtomNum*0.5);
+        int idx = 1;
+        for (int typeAmm = 0; typeAmm < mAtomTypeNum; ++typeAmm) for (int typeBmm = 0; typeBmm <= typeAmm; ++typeBmm) {
+            double tDiv = Fast.sqrt(mAtomNumType.get(typeAmm) * mAtomNumType.get(typeBmm));
+            if (typeAmm == typeBmm) tDiv *= 0.5;
+            SqAll[idx].div2this(tDiv);
+            ++idx;
+        }
+        for (IFunc1 Sq : SqAll) Sq.plus2this(1.0);
+        
+        // 修复截断数据
+        for (IFunc1 Sq : SqAll) Sq.set(0, 0.0);
+        // 输出
+        return AbstractCollections.from(SqAll);
+    }
+    public List<? extends IFunc1> calAllSF(int aN, double aQMax) {return calAllSF(aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
+    public List<? extends IFunc1> calAllSF(int aN              ) {return calAllSF(aN, 2.0*PI/mUnitLen * 6);}
+    public List<? extends IFunc1> calAllSF(                    ) {return calAllSF(160);}
     
     
     
