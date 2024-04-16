@@ -1311,7 +1311,7 @@ public class DATA {
         while (si.hasNext()) {
             ri.nextOnly();
             si.nextOnly();
-            si.setComplexDouble(si.real() + aMul*ri.real(), si.imag() + aMul*ri.imag());
+            si.setRealImag(si.real() + aMul*ri.real(), si.imag() + aMul*ri.imag());
         }
     }
     public static void mapMultiplyThenEbePlus2This(IHasComplexDoubleSetIterator rThis, IHasComplexDoubleIterator aRHS, IComplexDouble aMul) {
@@ -1322,7 +1322,7 @@ public class DATA {
             ri.nextOnly();
             si.nextOnly();
             final double rReal = ri.real(),   rImag = ri.imag();
-            si.setComplexDouble(si.real() + (lReal*rReal - lImag*rImag), si.imag() + (lImag*rReal + lReal*rImag));
+            si.setRealImag(si.real() + (lReal*rReal - lImag*rImag), si.imag() + (lImag*rReal + lReal*rImag));
         }
     }
 }

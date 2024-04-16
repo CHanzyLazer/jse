@@ -424,7 +424,7 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
                 mData[0][oIdx] = aValue;
                 mData[1][oIdx] = 0.0;
             }
-            @Override public void setComplexDouble(double aReal, double aImag) {
+            @Override public void setRealImag(double aReal, double aImag) {
                 if (oIdx < 0) throw new IllegalStateException();
                 mData[0][oIdx] = aReal;
                 mData[1][oIdx] = aImag;
@@ -538,7 +538,7 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
                 mData[0][oIdx] = aValue;
                 mData[1][oIdx] = 0.0;
             }
-            @Override public void setComplexDouble(double aReal, double aImag) {
+            @Override public void setRealImag(double aReal, double aImag) {
                 if (oIdx < 0) throw new IllegalStateException();
                 mData[0][oIdx] = aReal;
                 mData[1][oIdx] = aImag;
@@ -656,7 +656,7 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
                 mData[0][oIdx] = aValue;
                 mData[1][oIdx] = 0.0;
             }
-            @Override public void setComplexDouble(double aReal, double aImag) {
+            @Override public void setRealImag(double aReal, double aImag) {
                 if (oIdx < 0) throw new IllegalStateException();
                 mData[0][oIdx] = aReal;
                 mData[1][oIdx] = aImag;
@@ -769,7 +769,7 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
                 mData[0][oIdx] = aValue;
                 mData[1][oIdx] = 0.0;
             }
-            @Override public void setComplexDouble(double aReal, double aImag) {
+            @Override public void setRealImag(double aReal, double aImag) {
                 if (oIdx < 0) throw new IllegalStateException();
                 mData[0][oIdx] = aReal;
                 mData[1][oIdx] = aImag;
