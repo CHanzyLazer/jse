@@ -199,7 +199,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public double unitLen() {return mUnitLen;}
     public double volume() {return mVolume;}
     public double rou() {return mRou;}
-    public double rou(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRou*aMPC.mRou);}
+    public double rou(int aType) {return mAtomNumType.get(aType-1) / mVolume;}
+    public double birou(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRou*aMPC.mRou);}
     /** @deprecated use {@link #atomNumber} */
     @Deprecated public final int atomNum() {return atomNumber();}
     /** 补充运算时使用 */
@@ -285,17 +286,65 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @return gr 函数
      */
-    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ> aAtomDataXYZ, int aN, final double aRMax) {
         IMatrix tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ);
         IFunc1 tOut = calRDF_AB_(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax);
         MatrixCache.returnMat(tAtomDataXYZ);
         return tOut;
     }
-    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB(aAtomDataXYZ, aN, mUnitLen*6);}
-    public IFunc1 calRDF_AB(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB(aAtomDataXYZ, 160);}
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ> aAtomDataXYZ, int aN) {return calRDF_AB(aAtomDataXYZ, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB(Collection<? extends IXYZ> aAtomDataXYZ        ) {return calRDF_AB(aAtomDataXYZ, 160);}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC, int aN, final double aRMax) {return calRDF_AB_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC, int aN                    ) {return calRDF_AB(aMPC, aN, mUnitLen*6);}
     public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC                            ) {return calRDF_AB(aMPC, 160);}
+    
+    
+    /**
+     * 计算两种种类之间的 RDF，只计算一个固定结构的值，因此不包含温度信息
+     * @author liqa
+     * @param aTypeA 种类 A
+     * @param aTypeB 种类 B
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @return gr 函数
+     */
+    public IFunc1 calRDF_AB(final int aTypeA, final int aTypeB, int aN, final double aRMax) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里需要使用 IFunc 来进行函数的相关运算操作
+        final IFunc1[] dnPar = new IFunc1[threadNumber()];
+        for (int i = 0; i < dnPar.length; ++i) dnPar[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            int tTypeI = mTypeVec.get(i);
+            if (tTypeI==aTypeA || tTypeI==aTypeB) {
+                final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
+                final IFunc1 dn = dnPar[threadID];
+                mNL.forEachNeighbor(i, aRMax - dr*0.5, true, (x, y, z, idx, dis2) -> {
+                    if (mTypeVec.get(idx) == tTypeJ) {
+                        dn.updateNear(Fast.sqrt(dis2), g->g+1);
+                    }
+                });
+            }
+        });
+        
+        // 获取结果
+        IFunc1 gr = dnPar[0];
+        for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
+        double rou = dr * mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
+        if (aTypeA == aTypeB) rou *= 0.5;
+        final double fRou = rou;
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        
+        // 修复截断数据
+        gr.set(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF_AB(int aTypeA, int aTypeB, int aN) {return calRDF_AB(aTypeA, aTypeB, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB(int aTypeA, int aTypeB        ) {return calRDF_AB(aTypeA, aTypeB, 160);}
     
     
     /**
@@ -471,19 +520,77 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
      * @return gr 函数
      */
-    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax, int aSigmaMul) {
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ> aAtomDataXYZ, int aN, double aRMax, int aSigmaMul) {
         IMatrix tAtomDataXYZ = getValidAtomDataXYZ_(aAtomDataXYZ);
         IFunc1 tOut = calRDF_AB_G_(tAtomDataXYZ, aAtomDataXYZ.size(), aN, aRMax, aSigmaMul);
         MatrixCache.returnMat(tAtomDataXYZ);
         return tOut;
     }
-    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, final double aRMax) {return calRDF_AB_G(aAtomDataXYZ, aN, aRMax, 4);}
-    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ, int aN) {return calRDF_AB_G(aAtomDataXYZ, aN, mUnitLen*6);}
-    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ>  aAtomDataXYZ) {return calRDF_AB_G(aAtomDataXYZ, 1000);}
-    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, final double aRMax, int aSigmaMul) {return calRDF_AB_G_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
-    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, final double aRMax               ) {return calRDF_AB_G(aMPC, aN, aRMax, 4);}
-    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN                                   ) {return calRDF_AB_G(aMPC, aN, mUnitLen*6);}
-    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC                                           ) {return calRDF_AB_G(aMPC, 1000);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ> aAtomDataXYZ, int aN, double aRMax) {return calRDF_AB_G(aAtomDataXYZ, aN, aRMax, 4);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ> aAtomDataXYZ, int aN              ) {return calRDF_AB_G(aAtomDataXYZ, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB_G(Collection<? extends IXYZ> aAtomDataXYZ                      ) {return calRDF_AB_G(aAtomDataXYZ, 1000);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, double aRMax, int aSigmaMul) {return calRDF_AB_G_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, double aRMax               ) {return calRDF_AB_G(aMPC, aN, aRMax, 4);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN                             ) {return calRDF_AB_G(aMPC, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC                                     ) {return calRDF_AB_G(aMPC, 1000);}
+    
+    
+    /**
+     * 使用带有一定展宽的高斯分布代替直接计数来计算两种种类之间的 RDF
+     * @author liqa
+     * @param aTypeA 种类 A
+     * @param aTypeB 种类 B
+     * @param aN 指定分划的份数（默认为 160）
+     * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
+     * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
+     * @return gr 函数
+     */
+    public IFunc1 calRDF_AB_G(final int aTypeA, final int aTypeB, int aN, final double aRMax, int aSigmaMul) {
+        if (mDead) throw new RuntimeException("This Calculator is dead");
+        
+        final double dr = aRMax/aN;
+        // 这里需要使用 IFunc 来进行函数的相关运算操作
+        final IFunc1[] dnPar = new IFunc1[threadNumber()];
+        for (int i = 0; i < dnPar.length; ++i) dnPar[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
+        
+        // 并行需要线程数个独立的 DeltaG
+        final IZeroBoundFunc1[] tDeltaGPar = new IZeroBoundFunc1[threadNumber()];
+        for (int i = 0; i < tDeltaGPar.length; ++i) tDeltaGPar[i] = Func1.deltaG(dr*aSigmaMul, 0.0, aSigmaMul);
+        // 需要增加一个额外的偏移保证外部边界的统计正确性
+        final double tRShift = -tDeltaGPar[0].zeroBoundL();
+        
+        // 使用 mNL 的专门获取近邻距离的方法
+        pool().parfor(mAtomNum, (i, threadID) -> {
+            int tTypeI = mTypeVec.get(i);
+            if (tTypeI==aTypeA || tTypeI==aTypeB) {
+                final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
+                final IFunc1 dn = dnPar[threadID];
+                final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
+                mNL.forEachNeighbor(i, aRMax+tRShift, true, (x, y, z, idx, dis2) -> {
+                    if (mTypeVec.get(idx) == tTypeJ) {
+                        tDeltaG.setX0(Fast.sqrt(dis2));
+                        dn.plus2this(tDeltaG);
+                    }
+                });
+            }
+        });
+        
+        // 获取结果
+        IFunc1 gr = dnPar[0];
+        for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
+        double rou = mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
+        if (aTypeA == aTypeB) rou *= 0.5;
+        final double fRou = rou;
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        
+        // 修复截断数据
+        gr.set(0, 0.0);
+        // 输出
+        return gr;
+    }
+    public IFunc1 calRDF_AB_G(int aTypeA, int aTypeB, int aN, double aRMax) {return calRDF_AB_G(aTypeA, aTypeB, aN, aRMax, 4);}
+    public IFunc1 calRDF_AB_G(int aTypeA, int aTypeB, int aN              ) {return calRDF_AB_G(aTypeA, aTypeB, aN, mUnitLen*6);}
+    public IFunc1 calRDF_AB_G(int aTypeA, int aTypeB                      ) {return calRDF_AB_G(aTypeA, aTypeB, 160);}
     
     
     /**
@@ -664,9 +771,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         MatrixCache.returnMat(tAtomDataXYZ);
         return tOut;
     }
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN, double aQMax) {return calSF_AB(aAtomDataXYZ, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ, int aN              ) {return calSF_AB(aAtomDataXYZ, aN, 2.0*PI/mUnitLen * 6.0);}
-    public IFunc1 calSF_AB(Collection<? extends IXYZ>  aAtomDataXYZ                      ) {return calSF_AB(aAtomDataXYZ, 160);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ> aAtomDataXYZ, int aN, double aQMax) {return calSF_AB(aAtomDataXYZ, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ> aAtomDataXYZ, int aN              ) {return calSF_AB(aAtomDataXYZ, aN, 2.0*PI/mUnitLen * 6.0);}
+    public IFunc1 calSF_AB(Collection<? extends IXYZ> aAtomDataXYZ                      ) {return calSF_AB(aAtomDataXYZ, 160);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN, double aQMax, double aQMin) {return calSF_AB_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aQMax, aQMin);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN, double aQMax              ) {return calSF_AB(aMPC, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
     public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN                            ) {return calSF_AB(aMPC, aN, 2.0*PI/mUnitLen * 6.0);}
