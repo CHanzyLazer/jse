@@ -12,6 +12,7 @@ import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -115,7 +116,7 @@ public class Main {
                 return;
             }
             default: {
-                if (aArgs.length < 3) {printHelp(); return;}
+                if (aArgs.length < 3) {printHelp(System.err); return;}
                 tValue = aArgs[2];
                 String[] tArgs = new String[aArgs.length-3];
                 if (tArgs.length > 0) System.arraycopy(aArgs, 3, tArgs, 0, tArgs.length);
@@ -181,7 +182,7 @@ public class Main {
                     return;
                 }
                 default: {
-                    printHelp();
+                    printHelp(System.err);
                     return;
                 }}
             }}
@@ -261,21 +262,22 @@ public class Main {
     };
     
     
-    private static void printHelp() {
-        System.out.println("Usage:    jse [-option] value [args...]");
-        System.out.println("Such as:  jse path/to/script.groovy [args...]");
-        System.out.println("Or:       jse -t 'println(/hello world/)'");
-        System.out.println();
-        System.out.println("The options can be:");
-        System.out.println("    -t -text      Run the groovy text script");
-        System.out.println("    -f -file      Run the groovy/python file script (default behavior when left blank)");
-        System.out.println("    -i -invoke    Invoke the internal java static method directly");
-        System.out.println("    -v -version   Print version number");
-        System.out.println("    -? -help      Print help message");
-        System.out.println("    -groovy       Run the groovy file script");
-        System.out.println("    -python       Run the python file script");
-        System.out.println("    -jupyter      Install current jse to the jupyter kernel");
-        System.out.println();
-        System.out.println("You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar");
+    private static void printHelp(PrintStream aPrinter) {
+        aPrinter.println("Usage:    jse [-option] value [args...]");
+        aPrinter.println("Such as:  jse path/to/script.groovy [args...]");
+        aPrinter.println("Or:       jse -t 'println(/hello world/)'");
+        aPrinter.println();
+        aPrinter.println("The options can be:");
+        aPrinter.println("    -t -text      Run the groovy text script");
+        aPrinter.println("    -f -file      Run the groovy/python file script (default behavior when left blank)");
+        aPrinter.println("    -i -invoke    Invoke the internal java static method directly");
+        aPrinter.println("    -v -version   Print version number");
+        aPrinter.println("    -? -help      Print help message");
+        aPrinter.println("    -groovy       Run the groovy file script");
+        aPrinter.println("    -python       Run the python file script");
+        aPrinter.println("    -jupyter      Install current jse to the jupyter kernel");
+        aPrinter.println();
+        aPrinter.println("You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar");
     }
+    private static void printHelp() {printHelp(System.out);}
 }
