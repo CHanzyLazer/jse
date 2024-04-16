@@ -867,17 +867,21 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             }
             return HqAll;
         });
+        // 累加量缓存，可以避免重复计算
+        final List<? extends IVector> tDeltaPar = VectorCache.getVec(aN+1, threadNumber());
         
         // 需要这样遍历才能得到正确结果
         pool().parfor(mAtomNum, (i, threadID) -> {
             XYZ cXYZ = new XYZ(mAtomDataXYZ.row(i));
             int tTypeA = mTypeVec.get(i);
             IFunc1[] HqAll = HqAllPar.get(threadID);
+            IVector tDelta = tDeltaPar.get(threadID);
             for (int j = 0; j < i; ++j) {
                 final double dis = cXYZ.distance(mAtomDataXYZ.get(j, 0), mAtomDataXYZ.get(j, 1), mAtomDataXYZ.get(j, 2));
-                HqAll[0].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                tDelta.operation().operate2this(HqAll[0].x(), (any, q) -> Fast.sin(q*dis)/(q*dis));
+                HqAll[0].f().plus2this(tDelta);
                 int tTypeB = mTypeVec.get(j);
-                HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].f().plus2this(tDelta);
             }
         });
         
@@ -896,6 +900,9 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             ++idx;
         }
         for (IFunc1 Sq : SqAll) Sq.plus2this(1.0);
+        
+        // 归还临时变量
+        VectorCache.returnVec(tDeltaPar);
         
         // 修复截断数据
         for (IFunc1 Sq : SqAll) Sq.set(0, 0.0);
