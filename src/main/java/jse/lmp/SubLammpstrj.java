@@ -194,6 +194,78 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         }
         return this;
     }
+    /** 调整模拟盒的 xyz 长度 */
+    public SubLammpstrj setBoxXYZ(double aX, double aY, double aZ) {
+        if (mKeyX == null) throw new UnsupportedOperationException("`setDenseNormalized` for Lammpstrj without x data");
+        if (mKeyY == null) throw new UnsupportedOperationException("`setDenseNormalized` for Lammpstrj without y data");
+        if (mKeyZ == null) throw new UnsupportedOperationException("`setDenseNormalized` for Lammpstrj without z data");
+        
+        LmpBox oBox = mBox;
+        mBox = oBox.isPrism() ?
+            new LmpBoxPrism(aX, aY, aZ, oBox.xy(), oBox.xz(), oBox.yz()) :
+            new LmpBox(aX, aY, aZ);
+        // 现在必须要求 xyz 长度相同才可以跳过设置，需要注意 lo 之类的也要为 0，这里通过比较 hi 也相等来实现，可以包含更多情况
+        if (MathEX.Code.numericEqual(oBox.x(), aX) && MathEX.Code.numericEqual(oBox.y(), aY) && MathEX.Code.numericEqual(oBox.z(), aZ)
+         && MathEX.Code.numericEqual(oBox.xhi(), aX) && MathEX.Code.numericEqual(oBox.yhi(), aY) && MathEX.Code.numericEqual(oBox.zhi(), aZ)) return this;
+        // 这里顺便也会移除掉 boxlo 的数据，因此不使用 atom 修改
+        switch (mXType) {
+        case NORMAL: case UNWRAPPED: {
+            IVector tCol = mAtomData.col(mKeyX);
+            tCol.minus2this(mBox.xlo());
+            break;
+        }
+        case SCALED: case SCALED_UNWRAPPED: {break;}
+        default: throw new RuntimeException();
+        }
+        switch (mYType) {
+        case NORMAL: case UNWRAPPED: {
+            IVector tCol = mAtomData.col(mKeyY);
+            tCol.minus2this(mBox.ylo());
+            break;
+        }
+        case SCALED: case SCALED_UNWRAPPED: {break;}
+        default: throw new RuntimeException();
+        }
+        switch (mZType) {
+        case NORMAL: case UNWRAPPED: {
+            IVector tCol = mAtomData.col(mKeyZ);
+            tCol.minus2this(mBox.zlo());
+            break;
+        }
+        case SCALED: case SCALED_UNWRAPPED: {break;}
+        default: throw new RuntimeException();
+        }
+        if (oBox.isPrism()) {
+            // 这里依旧使用 atom 来方便获取和修改数据
+            XYZ tBuf = new XYZ();
+            final int tAtomNum = atomNumber();
+            for (int i = 0; i < tAtomNum; ++i) {
+                ISettableAtom tAtom = atom(i);
+                tBuf.setXYZ(tAtom);
+                // 这样转换两次即可实现线性变换
+                oBox.toDirect(tBuf);
+                mBox.toCartesian(tBuf);
+                tAtom.setXYZ(tBuf);
+                // 如果存在速度，则速度也需要做一次这样的变换
+                if (mHasVelocities) {
+                    tBuf.setXYZ(tAtom.vx(), tAtom.vy(), tAtom.vz());
+                    oBox.toDirect(tBuf);
+                    mBox.toCartesian(tBuf);
+                    if (mKeyVx != null) tAtom.setVx(tBuf.mX);
+                    if (mKeyVy != null) tAtom.setVy(tBuf.mY);
+                    if (mKeyVz != null) tAtom.setVz(tBuf.mZ);
+                }
+            }
+        } else {
+            mAtomData.col(mKeyX).div2this(oBox.x());
+            mAtomData.col(mKeyY).div2this(oBox.y());
+            mAtomData.col(mKeyZ).div2this(oBox.z());
+            mAtomData.col(mKeyX).multiply2this(mBox.x());
+            mAtomData.col(mKeyY).multiply2this(mBox.y());
+            mAtomData.col(mKeyZ).multiply2this(mBox.z());
+        }
+        return this;
+    }
     
     /** 密度归一化, 返回自身来支持链式调用 */
     public SubLammpstrj setDenseNormalized() {

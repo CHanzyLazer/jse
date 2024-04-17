@@ -158,6 +158,49 @@ public class Lmpdat extends AbstractSettableAtomData {
         }
         return this;
     }
+    /** 调整模拟盒的 xyz 长度 */
+    public Lmpdat setBoxXYZ(double aX, double aY, double aZ) {
+        LmpBox oBox = mBox;
+        mBox = oBox.isPrism() ?
+            new LmpBoxPrism(aX, aY, aZ, oBox.xy(), oBox.xz(), oBox.yz()) :
+            new LmpBox(aX, aY, aZ);
+        // 现在必须要求 xyz 长度相同才可以跳过设置，需要注意 lo 之类的也要为 0，这里通过比较 hi 也相等来实现，可以包含更多情况
+        if (MathEX.Code.numericEqual(oBox.x(), aX) && MathEX.Code.numericEqual(oBox.y(), aY) && MathEX.Code.numericEqual(oBox.z(), aZ)
+        && MathEX.Code.numericEqual(oBox.xhi(), aX) && MathEX.Code.numericEqual(oBox.yhi(), aY) && MathEX.Code.numericEqual(oBox.zhi(), aZ)) return this;
+        // 这里顺便也会移除掉 boxlo 的数据，因此不使用 atom 修改
+        mAtomXYZ.col(XYZ_X_COL).minus2this(oBox.xlo());
+        mAtomXYZ.col(XYZ_Y_COL).minus2this(oBox.ylo());
+        mAtomXYZ.col(XYZ_Z_COL).minus2this(oBox.zlo());
+        if (oBox.isPrism()) {
+            XYZ tBuf = new XYZ();
+            for (int i = 0; i < mAtomNum; ++i) {
+                tBuf.setXYZ(mAtomXYZ.get(i, XYZ_X_COL), mAtomXYZ.get(i, XYZ_Y_COL), mAtomXYZ.get(i, XYZ_Z_COL));
+                // 这样转换两次即可实现线性变换
+                oBox.toDirect(tBuf);
+                mBox.toCartesian(tBuf);
+                mAtomXYZ.set(i, XYZ_X_COL, tBuf.mX);
+                mAtomXYZ.set(i, XYZ_Y_COL, tBuf.mY);
+                mAtomXYZ.set(i, XYZ_Z_COL, tBuf.mZ);
+                // 如果存在速度，则速度也需要做一次这样的变换
+                if (mVelocities != null) {
+                    tBuf.setXYZ(mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL));
+                    oBox.toDirect(tBuf);
+                    mBox.toCartesian(tBuf);
+                    mVelocities.set(i, STD_VX_COL, tBuf.mX);
+                    mVelocities.set(i, STD_VY_COL, tBuf.mY);
+                    mVelocities.set(i, STD_VZ_COL, tBuf.mZ);
+                }
+            }
+        } else {
+            mAtomXYZ.col(XYZ_X_COL).div2this(oBox.x());
+            mAtomXYZ.col(XYZ_Y_COL).div2this(oBox.y());
+            mAtomXYZ.col(XYZ_Z_COL).div2this(oBox.z());
+            mAtomXYZ.col(XYZ_X_COL).multiply2this(mBox.x());
+            mAtomXYZ.col(XYZ_Y_COL).multiply2this(mBox.y());
+            mAtomXYZ.col(XYZ_Z_COL).multiply2this(mBox.z());
+        }
+        return this;
+    }
     
     /**
      * 密度归一化
@@ -170,16 +213,15 @@ public class Lmpdat extends AbstractSettableAtomData {
         // 从逻辑上考虑，这里不对原本数据做值拷贝，
         // 即使是斜方的也可以直接像这样进行缩放，
         // 这里顺便也会移除掉 boxlo 的数据，因此不使用 atom 修改
-        double tXlo = mBox.xlo(), tYlo = mBox.ylo(), tZlo = mBox.zlo();
         IVector
         tCol = mAtomXYZ.col(XYZ_X_COL);
-        tCol.minus2this(tXlo);
+        tCol.minus2this(mBox.xlo());
         tCol.multiply2this(tScale);
         tCol = mAtomXYZ.col(XYZ_Y_COL);
-        tCol.minus2this(tYlo);
+        tCol.minus2this(mBox.ylo());
         tCol.multiply2this(tScale);
         tCol = mAtomXYZ.col(XYZ_Z_COL);
-        tCol.minus2this(tZlo);
+        tCol.minus2this(mBox.zlo());
         tCol.multiply2this(tScale);
         if (mVelocities != null) {
         tCol = mVelocities.col(STD_VX_COL);

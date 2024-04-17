@@ -300,6 +300,43 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         }
         return this;
     }
+    /** 调整模拟盒的 xyz 长度 */
+    public XDATCAR setBoxXYZ(double aIX, double aIY, double aIZ) {
+        VaspBox oBox = mBox;
+        mBox = oBox.isPrism() ?
+            new VaspBoxPrism(aIX, oBox.iay(), oBox.iaz(), oBox.ibx(), aIY, oBox.ibz(), oBox.icx(), oBox.icy(), aIZ, oBox.scale()) :
+            new VaspBox(aIX, aIY, aIZ, oBox.scale());
+        // 如果是 direct 则不用转换数据
+        if (!mIsCartesian) return this;
+        // 现在必须要求 xyz 长度相同才可以跳过设置
+        if (MathEX.Code.numericEqual(oBox.iax(), aIX) && MathEX.Code.numericEqual(oBox.iby(), aIY) && MathEX.Code.numericEqual(oBox.icz(), aIZ)) return this;
+        // 否则将原子进行线性变换，这里绕过 scale 直接处理
+        if (oBox.isPrism()) {
+            IMatrix oInvIABC = oBox.inviabc();
+            IMatrix tIABC = mBox.iabc();
+            final double tNorm = tIABC.asVecCol().operation().stat((norm, v) -> norm+Math.abs(v));
+            for (IMatrix tDirect : mList) {
+                tDirect.operation().matmul2this(oInvIABC);
+                // 考虑计算误差带来的出边界的问题
+                tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+                // 手动转换回到 cartesian
+                tDirect.operation().matmul2this(tIABC);
+                // cartesian 其实也需要考虑计算误差带来的出边界的问题
+                tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON*tNorm ? 0.0 : v);
+            }
+        } else {
+            for (IMatrix tDirect : mList) {
+                tDirect.col(0).div2this(oBox.iax());
+                tDirect.col(1).div2this(oBox.iby());
+                tDirect.col(2).div2this(oBox.icz());
+                // 手动转换回到 cartesian
+                tDirect.col(0).multiply2this(mBox.iax());
+                tDirect.col(1).multiply2this(mBox.iby());
+                tDirect.col(2).multiply2this(mBox.icz());
+            }
+        }
+        return this;
+    }
     /** 密度归一化 */
     public XDATCAR setDenseNormalized() {
         double tScale = MathEX.Fast.cbrt(volume() / atomNumber());
