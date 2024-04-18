@@ -1,6 +1,5 @@
 package jse.io;
 
-
 import com.google.common.collect.ImmutableMap;
 import jse.code.UT;
 import jse.lmp.LmpIn;
@@ -8,7 +7,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
+import java.util.Map;
+
 
 /**
  * @author liqa
@@ -16,8 +16,10 @@ import java.io.Reader;
  */
 public class InFiles {
     public static IInFile lmp(String aLmpInFilePath) {return LmpIn.custom(aLmpInFilePath);}
-    public static IInFile json(final String aJsonFilePath) {return new AbstractInFileJson() {@Override protected Reader getInFileReader() throws IOException {return UT.IO.toReader(aJsonFilePath);}};}
-    public static IInFile yaml(final String aYamlFilePath) {return new AbstractInFileYaml() {@Override protected Reader getInFileReader() throws IOException {return UT.IO.toReader(aYamlFilePath);}};}
+    public static IInFile json(final String aJsonFilePath) {return new AbstractInFileJson() {@Override protected Map<?, ?> getJsonMap() throws IOException {return UT.IO.json2map(aJsonFilePath);}};}
+    public static IInFile yaml(final String aYamlFilePath) {return new AbstractInFileYaml() {@Override protected Map<?, ?> getYamlMap() throws IOException {return UT.IO.yaml2map(aYamlFilePath);}};}
+    public static IInFile json(final Map<?, ?>   aJsonMap) {return new AbstractInFileJson() {@Override protected Map<?, ?> getJsonMap() {return aJsonMap;}};}
+    public static IInFile yaml(final Map<?, ?>   aYamlMap) {return new AbstractInFileYaml() {@Override protected Map<?, ?> getYamlMap() {return aYamlMap;}};}
     public static IInFile immutable(final String aInFilePath) {return new AbstractInFile(ImmutableMap.of()) {
         @Override public void writeTo_(UT.IO.IWriteln aWriteln) throws IOException {
             try (BufferedReader tReader = UT.IO.toReader(aInFilePath)) {
