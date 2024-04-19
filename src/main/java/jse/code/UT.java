@@ -2045,6 +2045,7 @@ public class UT {
         public static double min(double aLHS, double aRHS) {return java.lang.Math.min(aLHS, aRHS);}
         public static double max(double aLHS, double aRHS) {return java.lang.Math.max(aLHS, aRHS);}
         public static double rand() {return RANDOM.nextDouble();}
+        public static double randn() {return RANDOM.nextGaussian();}
         public static int randi(int aBound) {return RANDOM.nextInt(aBound);}
         public static Random rng(long aSeed) {RANDOM.setSeed(aSeed); return RANDOM;}
         public static Random rng() {return RANDOM;}
@@ -2120,6 +2121,7 @@ public class UT {
         public static Vector NaN(int aSize) {return Vectors.NaN(aSize);}
         public static Vector nan(int aSize) {return NaN(aSize);}
         public static Vector rand(int aSize) {Vector rVec = zeros(aSize); rVec.assign(Math::rand); return rVec;}
+        public static Vector randn(int aSize) {Vector rVec = zeros(aSize); rVec.assign(Math::randn); return rVec;}
         public static Vector randi(final int aBound, int aSize) {Vector rVec = zeros(aSize); rVec.assign(()->randi(aBound)); return rVec;}
         public static Vector linsequence(double aStart, double aStep, int aN) {return Vectors.linsequence(aStart, aStep, aN);}
         public static Vector linspace(double aStart, double aEnd, int aN) {return Vectors.linspace(aStart, aEnd, aN);}
@@ -2191,6 +2193,7 @@ public class UT {
         public static ColumnMatrix NaN(int aRowNum, int ColNum) {return Matrices.NaN(aRowNum, ColNum);}
         public static ColumnMatrix nan(int aRowNum, int ColNum) {return NaN(aRowNum, ColNum);}
         public static ColumnMatrix rand(int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::rand); return rMat;}
+        public static ColumnMatrix randn(int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::randn); return rMat;}
         public static ColumnMatrix randi(final int aBound, int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(()->randi(aBound)); return rMat;}
         public static ColumnMatrix diag(IVector aVec) {return Matrices.diag(aVec);}
         public static IVector diag(IMatrix aMat) {return aMat.slicer().diag();}
