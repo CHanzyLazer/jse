@@ -684,6 +684,8 @@ public class SP {
             setValue("_", tArgs);
             exec("sys.argv = _");
         }
+        /** Python 提供额外的接口 */
+        public static <T> T getAs(Class<T> aExpectedType, String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName, aExpectedType);}
         
         
         static {
