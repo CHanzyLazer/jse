@@ -14,6 +14,7 @@ public class Atom extends AbstractSettableAtom {
     }
     public Atom(IXYZ aXYZ, int aID, int aType) {
         mX = aXYZ.x(); mY = aXYZ.y(); mZ = aXYZ.z();
+        mID = aID; mType = aType;
     }
     public Atom(IAtom aAtom) {
         mX = aAtom.x(); mY = aAtom.y(); mZ = aAtom.z();
