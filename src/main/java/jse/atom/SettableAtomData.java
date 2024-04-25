@@ -66,6 +66,10 @@ public final class SettableAtomData extends AbstractSettableAtomData {
     @Override public IBox box() {return mBox;}
     @Override public int atomNumber() {return mAtoms.size();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
-    @Override public SettableAtomData setAtomTypeNumber(int aAtomTypeNum) {mAtomTypeNum = aAtomTypeNum; return this;}
+    @Override public SettableAtomData setAtomTypeNumber(int aAtomTypeNum) {
+        if (aAtomTypeNum < mAtomTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + mAtomTypeNum + ")");
+        mAtomTypeNum = aAtomTypeNum;
+        return this;
+    }
     @Override public boolean hasVelocities() {return mHasVelocities;}
 }

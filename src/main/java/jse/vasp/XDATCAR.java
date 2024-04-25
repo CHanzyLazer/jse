@@ -184,7 +184,12 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             mKey2Type.clear();
             return this;
         }
-        if (mTypeNames==null || aTypeNames.length>mTypeNames.length) mTypeNames = Arrays.copyOf(aTypeNames, aTypeNames.length);
+        setTypeNames_(aTypeNames, true);
+        return this;
+    }
+    public XDATCAR setNoTypeName() {return setTypeNames(ZL_STR);}
+    void setTypeNames_(String @NotNull[] aTypeNames, boolean aCopy) {
+        if (mTypeNames==null || aTypeNames.length>mTypeNames.length) mTypeNames = aCopy ? Arrays.copyOf(aTypeNames, aTypeNames.length) : aTypeNames;
         else System.arraycopy(aTypeNames, 0, mTypeNames, 0, aTypeNames.length);
         if (aTypeNames.length > mAtomNumbers.size()) {
             IIntVector oAtomNumbers = mAtomNumbers;
@@ -197,6 +202,15 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             ++rType;
             mKey2Type.put(tKey, rType);
         }
+    }
+    public XDATCAR setAtomTypeNumber(int aAtomTypeNum) {
+        int oTypeNum = mAtomNumbers.size();
+        if (aAtomTypeNum < oTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + oTypeNum + ")");
+        if (aAtomTypeNum == oTypeNum) return this;
+        String[] rTypeNames = new String[aAtomTypeNum];
+        if (mTypeNames != null) System.arraycopy(mTypeNames, 0, rTypeNames, 0, mTypeNames.length);
+        for (int tType = mAtomNumbers.size()+1; tType <= aAtomTypeNum; ++tType) rTypeNames[tType-1] = "T"+tType;
+        setTypeNames_(rTypeNames, false);
         return this;
     }
     

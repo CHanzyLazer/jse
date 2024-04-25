@@ -137,9 +137,10 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         setTypeNames_(aTypeNames, true);
         return this;
     }
+    public POSCAR setNoTypeName() {return setTypeNames(ZL_STR);}
     void setTypeNames_(String @NotNull[] aTypeNames, boolean aCopy) {
         if (mIsRef) throw new UnsupportedOperationException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
-        if (mTypeNames ==null || aTypeNames.length> mTypeNames.length) mTypeNames = aCopy ? Arrays.copyOf(aTypeNames, aTypeNames.length) : aTypeNames;
+        if (mTypeNames==null || aTypeNames.length>mTypeNames.length) mTypeNames = aCopy ? Arrays.copyOf(aTypeNames, aTypeNames.length) : aTypeNames;
         else System.arraycopy(aTypeNames, 0, mTypeNames, 0, aTypeNames.length);
         if (aTypeNames.length > mAtomNumbers.size()) {
             IIntVector oAtomNumbers = mAtomNumbers;
@@ -152,6 +153,17 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             ++rType;
             mKey2Type.put(tKey, rType);
         }
+    }
+    @Override public POSCAR setAtomTypeNumber(int aAtomTypeNum) {
+        if (mIsRef) throw new UnsupportedOperationException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
+        int oTypeNum = mAtomNumbers.size();
+        if (aAtomTypeNum < oTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + oTypeNum + ")");
+        if (aAtomTypeNum == oTypeNum) return this;
+        String[] rTypeNames = new String[aAtomTypeNum];
+        if (mTypeNames != null) System.arraycopy(mTypeNames, 0, rTypeNames, 0, mTypeNames.length);
+        for (int tType = mAtomNumbers.size()+1; tType <= aAtomTypeNum; ++tType) rTypeNames[tType-1] = "T"+tType;
+        setTypeNames_(rTypeNames, false);
+        return this;
     }
     
     public POSCAR setComment(@Nullable String aComment) {mComment = aComment; return this;}
@@ -426,12 +438,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 int oType = type();
                 if (oType == aType) return this;
                 // 超过原子种类数目则需要重新设置
-                if (aType > mAtomNumbers.size()) {
-                    String[] rTypeNames = new String[aType];
-                    if (mTypeNames != null) System.arraycopy(mTypeNames, 0, rTypeNames, 0, mTypeNames.length);
-                    for (int tType = mAtomNumbers.size()+1; tType <= aType; ++tType) rTypeNames[tType-1] = "T"+tType;
-                    setTypeNames_(rTypeNames, false);
-                }
+                if (aType > mAtomNumbers.size()) setAtomTypeNumber(aType);
                 //noinspection IfStatementWithIdenticalBranches
                 if (oType < aType) {
                     // 增大 type 的情况，这里使用高效的方式，
@@ -502,7 +509,6 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     @Override public VaspBox box() {return mBox;}
     @Override public int atomNumber() {return mDirect.rowNumber();}
     @Override public int atomTypeNumber() {return mAtomNumbers.size();}
-    @Override public POSCAR setAtomTypeNumber(int aAtomTypeNum) {throw new UnsupportedOperationException("setAtomTypeNum");}
     
     
     /** 拷贝一份 POSCAR */

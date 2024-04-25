@@ -581,7 +581,11 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     @Override public LmpBox box() {return mBox;}
     @Override public int atomNumber() {return mAtomData.rowNumber();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
-    @Override public SubLammpstrj setAtomTypeNumber(int aAtomTypeNum) {mAtomTypeNum = aAtomTypeNum; return this;}
+    @Override public SubLammpstrj setAtomTypeNumber(int aAtomTypeNum) {
+        if (aAtomTypeNum < mAtomTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + mAtomTypeNum + ")");
+        mAtomTypeNum = aAtomTypeNum;
+        return this;
+    }
     
     @Override public SubLammpstrj copy() {return new SubLammpstrj(mTimeStep, Arrays.copyOf(mBoxBounds, mBoxBounds.length), mBox.copy(), mAtomData.copy());}
     // 由于 SubLammpstrj 不一定全都可以修改，因此不重写另外两个
