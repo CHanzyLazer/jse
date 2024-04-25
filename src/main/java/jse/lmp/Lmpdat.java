@@ -95,8 +95,14 @@ public class Lmpdat extends AbstractSettableAtomData {
      * 修改一些属性来方便调整最终输出的 data 文件
      * @return 返回自身来支持链式调用
      */
-    public Lmpdat setMasses(double... aMasses) {setMasses_(Vectors.from(aMasses), false); return this;}
-    public Lmpdat setMasses(Collection<? extends Number> aMasses) {setMasses_(Vectors.from(aMasses), false); return this;}
+    public Lmpdat setMasses(double... aMasses) {
+        setMasses_(Vectors.from(aMasses), false);
+        return this;
+    }
+    public Lmpdat setMasses(Collection<? extends Number> aMasses) {
+        setMasses_(Vectors.from(aMasses), false);
+        return this;
+    }
     public Lmpdat setMasses(@Nullable IVector aMasses) {
         if (aMasses==null || aMasses.isEmpty()) {
             mMasses = null;
@@ -105,21 +111,29 @@ public class Lmpdat extends AbstractSettableAtomData {
         setMasses_(aMasses, true);
         return this;
     }
-    public Lmpdat setNoMass() {return setMasses((IVector)null);}
+    public Lmpdat setNoMass() {
+        return setMasses((IVector)null);
+    }
     void setMasses_(@NotNull IVector aMasses, boolean aCopy) {
         if (mMasses==null || aMasses.size()>mMasses.size()) mMasses = aCopy ? aMasses.copy() : aMasses;
         else mMasses.subVec(0, aMasses.size()).fill(aMasses);
         mAtomTypeNum = Math.max(mAtomTypeNum, aMasses.size());
     }
+    /** 设置原子种类数目 */
     @Override public Lmpdat setAtomTypeNumber(int aAtomTypeNum) {
-        if (aAtomTypeNum < mAtomTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + mAtomTypeNum + ")");
-        if (aAtomTypeNum == mAtomTypeNum) return this;
+        int oTypeNum = mAtomTypeNum;
+        if (aAtomTypeNum == oTypeNum) return this;
         mAtomTypeNum = aAtomTypeNum;
+        if (aAtomTypeNum < oTypeNum) {
+            // 现在支持设置更小的值，更大的种类会直接截断
+            mAtomType.opt().map2this(v -> Math.min(v, aAtomTypeNum));
+            return this;
+        }
         // 还需要更新 Masses 长度
         if (mMasses!=null && mMasses.size()<aAtomTypeNum) {
-            IVector oMasses = mMasses;
-            mMasses = Vectors.NaN(aAtomTypeNum);
-            mMasses.subVec(0, oMasses.size()).fill(oMasses);
+            IVector rMasses = Vectors.NaN(aAtomTypeNum);
+            rMasses.subVec(0, mMasses.size()).fill(mMasses);
+            mMasses = rMasses;
         }
         return this;
     }

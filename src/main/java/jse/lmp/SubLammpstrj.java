@@ -582,8 +582,14 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     @Override public int atomNumber() {return mAtomData.rowNumber();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public SubLammpstrj setAtomTypeNumber(int aAtomTypeNum) {
-        if (aAtomTypeNum < mAtomTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + mAtomTypeNum + ")");
+        int oTypeNum = mAtomTypeNum;
+        if (aAtomTypeNum == oTypeNum) return this;
         mAtomTypeNum = aAtomTypeNum;
+        if (aAtomTypeNum<oTypeNum && mKeyType!=null) {
+            // 现在支持设置更小的值，更大的种类会直接截断
+            mAtomData.col(mKeyType).opt().map2this(v -> Math.min(v, aAtomTypeNum));
+            return this;
+        }
         return this;
     }
     

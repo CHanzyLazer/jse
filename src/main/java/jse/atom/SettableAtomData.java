@@ -67,8 +67,16 @@ public final class SettableAtomData extends AbstractSettableAtomData {
     @Override public int atomNumber() {return mAtoms.size();}
     @Override public int atomTypeNumber() {return mAtomTypeNum;}
     @Override public SettableAtomData setAtomTypeNumber(int aAtomTypeNum) {
-        if (aAtomTypeNum < mAtomTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + mAtomTypeNum + ")");
+        int oTypeNum = mAtomTypeNum;
+        if (aAtomTypeNum == oTypeNum) return this;
         mAtomTypeNum = aAtomTypeNum;
+        if (aAtomTypeNum < oTypeNum) {
+            // 现在支持设置更小的值，更大的种类会直接截断
+            for (ISettableAtom tAtom : mAtoms) if (tAtom.type() > aAtomTypeNum){
+                tAtom.setType(aAtomTypeNum);
+            }
+            return this;
+        }
         return this;
     }
     @Override public boolean hasVelocities() {return mHasVelocities;}

@@ -181,37 +181,53 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     public XDATCAR setTypeNames(String... aTypeNames) {
         if (aTypeNames==null || aTypeNames.length==0) {
             mTypeNames = null;
-            mKey2Type.clear();
+            validKey2Type_();
             return this;
         }
-        setTypeNames_(aTypeNames, true);
-        return this;
-    }
-    public XDATCAR setNoTypeName() {return setTypeNames(ZL_STR);}
-    void setTypeNames_(String @NotNull[] aTypeNames, boolean aCopy) {
-        if (mTypeNames==null || aTypeNames.length>mTypeNames.length) mTypeNames = aCopy ? Arrays.copyOf(aTypeNames, aTypeNames.length) : aTypeNames;
+        if (mTypeNames==null || aTypeNames.length>mTypeNames.length) mTypeNames = Arrays.copyOf(aTypeNames, aTypeNames.length);
         else System.arraycopy(aTypeNames, 0, mTypeNames, 0, aTypeNames.length);
         if (aTypeNames.length > mAtomNumbers.size()) {
             IIntVector oAtomNumbers = mAtomNumbers;
             mAtomNumbers = IntVector.zeros(aTypeNames.length);
             mAtomNumbers.subVec(0, oAtomNumbers.size()).fill(oAtomNumbers);
         }
-        mKey2Type.clear();
-        int rType = 0;
-        for (String tKey : mTypeNames) {
-            ++rType;
-            mKey2Type.put(tKey, rType);
-        }
+        validKey2Type_();
+        return this;
     }
+    public XDATCAR setNoTypeName() {return setTypeNames(ZL_STR);}
+    /** 设置原子种类数目 */
     public XDATCAR setAtomTypeNumber(int aAtomTypeNum) {
         int oTypeNum = mAtomNumbers.size();
-        if (aAtomTypeNum < oTypeNum) throw new IllegalArgumentException("New atom type number must >= old one (" + oTypeNum + ")");
         if (aAtomTypeNum == oTypeNum) return this;
-        String[] rTypeNames = new String[aAtomTypeNum];
-        if (mTypeNames != null) System.arraycopy(mTypeNames, 0, rTypeNames, 0, mTypeNames.length);
-        for (int tType = mAtomNumbers.size()+1; tType <= aAtomTypeNum; ++tType) rTypeNames[tType-1] = "T"+tType;
-        setTypeNames_(rTypeNames, false);
+        if (aAtomTypeNum < oTypeNum) {
+            // 现在支持设置更小的值，更大的种类会直接截断
+            mAtomNumbers.set(aAtomTypeNum-1, mAtomNumbers.subVec(aAtomTypeNum-1, mAtomNumbers.size()).sum());
+            mAtomNumbers = mAtomNumbers.subVec(0, aAtomTypeNum).copy();
+            validKey2Type_();
+            return this;
+        }
+        if (mTypeNames!=null && mTypeNames.length<aAtomTypeNum) {
+            String[] rTypeNames = new String[aAtomTypeNum];
+            System.arraycopy(mTypeNames, 0, rTypeNames, 0, mTypeNames.length);
+            for (int tType = mTypeNames.length+1; tType <= aAtomTypeNum; ++tType) rTypeNames[tType-1] = "T" + tType;
+            mTypeNames = rTypeNames;
+        }
+        IIntVector oAtomNumbers = mAtomNumbers;
+        mAtomNumbers = IntVector.zeros(aAtomTypeNum);
+        mAtomNumbers.subVec(0, oTypeNum).fill(oAtomNumbers);
+        validKey2Type_();
         return this;
+    }
+    
+    void validKey2Type_() {
+        mKey2Type.clear();
+        if (mTypeNames != null) {
+            int rType = 0;
+            for (String tKey : mTypeNames) {
+                ++rType;
+                mKey2Type.put(tKey, rType);
+            }
+        }
     }
     
     public XDATCAR setComment(@Nullable String aComment) {mComment = aComment; return this;}
@@ -600,7 +616,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.ibx(), mBox.iby(), mBox.ibz()));
         aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.icx(), mBox.icy(), mBox.icz()));
         if (mTypeNames!=null && mTypeNames.length!=0) {
-        aWriteln.writeln(String.join(" ", AbstractCollections.map(mTypeNames, type -> String.format("%6s", type))));
+        aWriteln.writeln(String.join(" ", AbstractCollections.slice(AbstractCollections.map(mTypeNames, type -> String.format("%6s", type)), AbstractCollections.range(mAtomNumbers.size()))));
         }
         aWriteln.writeln(String.join(" ", AbstractCollections.map(mAtomNumbers.iterable(), number -> String.format("%6d", number))));
         // 再输出原子数据
