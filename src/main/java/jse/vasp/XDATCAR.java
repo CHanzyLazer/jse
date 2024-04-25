@@ -415,10 +415,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         if (aAtomData instanceof POSCAR) {
             // POSCAR 则直接获取即可（专门优化，保留完整模拟盒信息等）
             POSCAR tPOSCAR = (POSCAR)aAtomData;
-            int tAtomTypeNum = Math.max(tPOSCAR.atomNumbers().size(), aTypeNames.length);
-            IIntVector tAtomNumbers = IntVector.zeros(tAtomTypeNum);
-            tAtomNumbers.subVec(0, tPOSCAR.atomNumbers().size()).fill(tPOSCAR.atomNumbers());
-            return new XDATCAR(tPOSCAR.comment(), tPOSCAR.box().copy(), POSCAR.copyTypeNames(aTypeNames), tAtomNumbers, tPOSCAR.direct().copy(), aInitSize, tPOSCAR.isCartesian(), POSCAR.copyIDs(tPOSCAR.ids()));
+            return new XDATCAR(tPOSCAR.comment(), tPOSCAR.box().copy(), POSCAR.copyTypeNames(tPOSCAR.typeNames()), tPOSCAR.atomNumbers().copy(), tPOSCAR.direct().copy(), aInitSize, tPOSCAR.isCartesian(), POSCAR.copyIDs(tPOSCAR.ids())).setTypeNames(aTypeNames);
         } else {
             // 一般的情况，这里直接遍历 atoms 来创建，这里需要按照 type 来排序
             IIntVector rIDs = IntVector.zeros(aAtomData.atomNumber());
@@ -441,6 +438,12 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             VaspBox rBox = tBox.isPrism() ?
                 new VaspBoxPrism(tBox.ax(), tBox.ay(), tBox.az(), tBox.bx(), tBox.by(), tBox.bz(), tBox.cx(), tBox.cy(), tBox.cz()) :
                 new VaspBox(tBox.x(), tBox.y(), tBox.z());
+            if (aTypeNames.length!=0 && aTypeNames.length<tAtomTypeNum) {
+                String[] rTypeNames = new String[tAtomTypeNum];
+                System.arraycopy(aTypeNames, 0, rTypeNames, 0, aTypeNames.length);
+                for (int tType = aTypeNames.length+1; tType <= tAtomTypeNum; ++tType) rTypeNames[tType-1] = "T" + tType;
+                aTypeNames = rTypeNames;
+            }
             return new XDATCAR(null, rBox, POSCAR.copyTypeNames(aTypeNames), rAtomNumbers, rDirect, aInitSize, true, rIDs);
         }
     }

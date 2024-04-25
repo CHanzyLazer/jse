@@ -15,7 +15,6 @@ import jse.math.vector.Vectors;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
 import jse.vasp.IVaspCommonData;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -95,29 +94,18 @@ public class Lmpdat extends AbstractSettableAtomData {
      * 修改一些属性来方便调整最终输出的 data 文件
      * @return 返回自身来支持链式调用
      */
-    public Lmpdat setMasses(double... aMasses) {
-        setMasses_(Vectors.from(aMasses), false);
-        return this;
-    }
-    public Lmpdat setMasses(Collection<? extends Number> aMasses) {
-        setMasses_(Vectors.from(aMasses), false);
-        return this;
-    }
-    public Lmpdat setMasses(@Nullable IVector aMasses) {
+    public Lmpdat setMasses(double... aMasses) {return setMasses_(Vectors.from(aMasses), false);}
+    public Lmpdat setMasses(Collection<? extends Number> aMasses) {return setMasses_(Vectors.from(aMasses), false);}
+    public Lmpdat setMasses(@Nullable IVector aMasses) {return setMasses_(aMasses, true);}
+    public Lmpdat setNoMass() {return setMasses((IVector)null);}
+    Lmpdat setMasses_(@Nullable IVector aMasses, boolean aCopy) {
         if (aMasses==null || aMasses.isEmpty()) {
-            mMasses = null;
-            return this;
+            mMasses = null; return this;
         }
-        setMasses_(aMasses, true);
-        return this;
-    }
-    public Lmpdat setNoMass() {
-        return setMasses((IVector)null);
-    }
-    void setMasses_(@NotNull IVector aMasses, boolean aCopy) {
         if (mMasses==null || aMasses.size()>mMasses.size()) mMasses = aCopy ? aMasses.copy() : aMasses;
         else mMasses.subVec(0, aMasses.size()).fill(aMasses);
         mAtomTypeNum = Math.max(mAtomTypeNum, aMasses.size());
+        return this;
     }
     /** 设置原子种类数目 */
     @Override public Lmpdat setAtomTypeNumber(int aAtomTypeNum) {
@@ -349,16 +337,19 @@ public class Lmpdat extends AbstractSettableAtomData {
     /** 从 IAtomData 来创建，一般来说 Lmpdat 需要一个额外的质量信息 */
     public static Lmpdat fromAtomData(IAtomData aAtomData) {
         @Nullable IVector aMasses = null;
+        int tTypeNum = aAtomData.atomTypeNumber();
         if (aAtomData instanceof Lmpdat) {
             aMasses = ((Lmpdat)aAtomData).mMasses;
-            if (aMasses != null) aMasses = aMasses.copy();
+            if (aMasses != null) {
+                if (aMasses.size() > tTypeNum) aMasses = aMasses.subVec(0, tTypeNum);
+                aMasses = aMasses.copy();
+            }
         } else
         if (aAtomData instanceof IVaspCommonData) {
             String[] tAtomTypes = ((IVaspCommonData)aAtomData).typeNames();
-            int tAtomTypeNum = aAtomData.atomTypeNumber();
-            if (tAtomTypes!=null && tAtomTypes.length>=tAtomTypeNum) {
-                aMasses = Vectors.zeros(tAtomTypeNum);
-                for (int i = 0; i < tAtomTypeNum; ++i) aMasses.set(i, MASS.getOrDefault(tAtomTypes[i], -1.0));
+            if (tAtomTypes!=null && tAtomTypes.length>=tTypeNum) {
+                aMasses = Vectors.zeros(tTypeNum);
+                for (int i = 0; i < tTypeNum; ++i) aMasses.set(i, MASS.getOrDefault(tAtomTypes[i], -1.0));
             }
         }
         return fromAtomData_(aAtomData, aMasses);
@@ -371,9 +362,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof Lmpdat) {
             // Lmpdat 则直接获取即可（专门优化，保留完整模拟盒信息）
-            Lmpdat tLmpdat = (Lmpdat)aAtomData;
-            int tAtomTypeNum = aMasses!=null ? Math.max(tLmpdat.atomTypeNumber(), aMasses.size()) : tLmpdat.atomTypeNumber();
-            return new Lmpdat(tAtomTypeNum, tLmpdat.mBox.copy(), aMasses, tLmpdat.mAtomID.copy(), tLmpdat.mAtomType.copy(), tLmpdat.mAtomXYZ.copy(), tLmpdat.mVelocities==null?null:tLmpdat.mVelocities.copy());
+            return ((Lmpdat)aAtomData).copy().setMasses_(aMasses, false);
         } else {
             int tAtomNum = aAtomData.atomNumber();
             IntVector rAtomID = IntVector.zeros(tAtomNum);
@@ -422,7 +411,18 @@ public class Lmpdat extends AbstractSettableAtomData {
                     }
                 }
             }
-            int tAtomTypeNum = aMasses!=null ? Math.max(aAtomData.atomTypeNumber(), aMasses.size()) : aAtomData.atomTypeNumber();
+            int tAtomTypeNum = aAtomData.atomTypeNumber();
+            if (aMasses != null && aMasses.isEmpty()) aMasses = null;
+            if (aMasses != null) {
+                if (aMasses.size() > tAtomTypeNum) {
+                    tAtomTypeNum = aMasses.size();
+                } else
+                if (aMasses.size() < tAtomTypeNum) {
+                    IVector rMasses = Vectors.NaN(tAtomTypeNum);
+                    rMasses.subVec(0, aMasses.size()).fill(aMasses);
+                    aMasses = rMasses;
+                }
+            }
             return new Lmpdat(tAtomTypeNum, rBox, aMasses, rAtomID, rAtomType, rAtomXYZ, rVelocities);
         }
     }
