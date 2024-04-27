@@ -48,17 +48,21 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     /** 用来限制统计时间，（第二个过程）每步统计的最大路径数目，默认为 100 * N0 */
     private long mMaxPathNum;
-    /** 用来将过低权重的点截断，将更多的资源用于统计高权重的点 */
-    private double mCutoff;
     /** 用于限制对高权重的点多次统计的次数，避免统计点过多 */
     private int mMaxStatTimes;
     
+    /** 用来将过低权重的点截断，将更多的资源用于统计高权重的点，默认为 0.01 */
+    private double mCutoff;
+    
+    public static final byte FIXED = 0, SIMPLE_GUESS = 1, CONSERVATIVE_GUESS = 2;
     /** 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径 */
     private double mPruningProb;
     /** 开始进行裁剪的阈值，用来消除噪声的影响，默认为 1（即不添加阈值） */
     private int mPruningThreshold;
     /** 是否开启第一个过程的剪枝，对于某些特殊情况第一过程剪枝会导致统计出现系统偏差，默认开启 */
     private boolean mStep1Pruning;
+    /** 控制剪枝概率策略，默认采用最为保守的 CONSERVATIVE_GUESS */
+    private byte mPruningPolicy;
     
     /**
      * 创建一个通用的 FFS 运算器
@@ -101,6 +105,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         mMaxStatTimes = DEFAULT_MAX_STAT_TIMES;
         mPruningProb = 0.0;
         mPruningThreshold = 1;
+        mPruningPolicy = CONSERVATIVE_GUESS;
         mStep1Pruning = true;
         
         // 计算过程需要的量的初始化
@@ -125,6 +130,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(1, aPruningThreshold); return this;}
     public ForwardFluxSampling<T> setStep1Pruning(boolean aStep1Pruning) {mStep1Pruning = aStep1Pruning; return this;}
     public ForwardFluxSampling<T> disableStep1Pruning() {return setStep1Pruning(false);}
+    public ForwardFluxSampling<T> setPruningPolicy(byte aPruningPolicy) {mPruningPolicy = aPruningPolicy; return this;}
     public ForwardFluxSampling<T> setNoCompetitive(boolean aNoCompetitive) {mNoCompetitive = aNoCompetitive; return this;}
     public ForwardFluxSampling<T> setNoCompetitive() {return setNoCompetitive(true);}
     public ForwardFluxSampling<T> setProgressBar(boolean aProgressBar) {mProgressBar = aProgressBar; return this;}
@@ -479,7 +485,20 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 }
                 // 修剪，如果向前则有概率直接中断，现在第二个过程的修剪概率存在一个上限
                 if (mPruningProb > 0.0 && mPruningIndex >= 0 && tLambda <= mSurfaces.get(mPruningIndex)) {
-                    double tPruningProb = Math.min(mPruningProb, 1.0-getProb(mPruningIndex));
+                    double tPruningProb;
+                    switch(mPruningPolicy) {
+                    case SIMPLE_GUESS: {
+                        tPruningProb = Math.min(mPruningProb, 1.0 - getProb(mPruningIndex));
+                        break;
+                    }
+                    case CONSERVATIVE_GUESS: {
+                        tPruningProb = Math.min(mPruningProb, 1.0 - MathEX.Fast.sqrt(getProb(mPruningIndex)));
+                        break;
+                    }
+                    case FIXED: default: {
+                        tPruningProb = mPruningProb;
+                        break;
+                    }}
                     // 无论如何先减少 mPruningIndex
                     --mPruningIndex;
                     if (tPruningProb > 0.0) {
@@ -654,13 +673,15 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         // 第二个过程会从 λi 上的点随机选取运行直到到达 λi+1 或者返回 A，注意依旧需要将耗时增加到 mTotTime 中
         if (mStep < mN) {
             mStepFinished = false;
-            // 截断过小的值，这里简单起见直接将其按照 multiple 降序排序然后进行截断
-            mPointsOnLambda.sort(Comparator.comparingDouble((Point p) -> p.multiple).reversed());
-            double rCutoffValue = 0.0;
-            while (mPointsOnLambda.size()*3 > mN0*2) {
-                rCutoffValue += UT.Code.last(mPointsOnLambda).multiple;
-                if (rCutoffValue > mCutoff*mN0) break;
-                UT.Code.removeLast(mPointsOnLambda);
+            if (mCutoff > 0.0) {
+                // 截断过小的值，这里简单起见直接将其按照 multiple 降序排序然后进行截断
+                mPointsOnLambda.sort(Comparator.comparingDouble((Point p) -> p.multiple).reversed());
+                double rCutoffValue = 0.0;
+                while (mPointsOnLambda.size()*3 > mN0*2) {
+                    rCutoffValue += UT.Code.last(mPointsOnLambda).multiple;
+                    if (rCutoffValue > mCutoff*mN0) break;
+                    UT.Code.removeLast(mPointsOnLambda);
+                }
             }
             // 遍历添加到 oPointsOnLambda，现在顺便统一将下一步会开始的点的高权重的点进行拆分，拥有更多次数的统计来得到更好的统计效果
             oPointsOnLambda.clear();
@@ -685,6 +706,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 mMovedPoints = LogicalVector.zeros(oPointsOnLambda.size()+ threadNumber());
             }
             mMovedPoints.fill(false);
+            // 目前界面的点数目可能小于 mN0，为了避免死循环，下一个界面需要的点的数目也要相应调整
+            final int tNipp = Math.min(mN0, oPointsOnLambda.size());
             
             int tThreadNum = pool().threadNumber();
             // 每个线程独立的返回值
@@ -694,13 +717,13 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 // 竞争的写法，每个线程共用 mPointsOnLambda 并同步检测容量是否达标
                 final long subMaxPathNum = MathEX.Code.divup(mMaxPathNum, tThreadNum);
                 // 在竞争的情况下不需要统一生成种子
-                if (mProgressBar) UT.Timer.progressBar("step2, i="+mStep, mN0);
+                if (mProgressBar) UT.Timer.progressBar("step2, i="+mStep, tNipp);
                 pool().parfor(tThreadNum, i -> {
-                    tStep2ReturnBuffer[i] = doStep2(mN0, mPointsOnLambda, subMaxPathNum, mRNG.nextLong());
+                    tStep2ReturnBuffer[i] = doStep2(tNipp, mPointsOnLambda, subMaxPathNum, mRNG.nextLong());
                 });
             } else {
                 // 非竞争的方式，每个线程都分别采集到 mN0/nThreads 才算结束
-                final int subNipp = MathEX.Code.divup(mN0, tThreadNum);
+                final int subNipp = MathEX.Code.divup(tNipp, tThreadNum);
                 final long subMaxPathNum = MathEX.Code.divup(mMaxPathNum, tThreadNum);
                 // 每个线程存放到独立的点 List 上
                 final List<Point>[] tPointsOnLambdaBuffer = (List<Point>[]) new List[tThreadNum];
