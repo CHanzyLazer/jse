@@ -34,6 +34,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     @Override public final void delete(String aPath) throws IOException {UT.IO.delete(aPath);}
     @Override public final boolean isFile(String aFilePath) {return UT.IO.isFile(aFilePath);}
     @Override public final boolean isDir(String aDir) {return UT.IO.isDir(aDir);}
+    @Override public final String @NotNull[] list(String aDir) throws IOException {return UT.IO.list(aDir);}
     
     @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
         // 对于空指令专门优化，不执行操作

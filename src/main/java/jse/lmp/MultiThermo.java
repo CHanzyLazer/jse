@@ -3,6 +3,7 @@ package jse.lmp;
 import jse.code.UT;
 import jse.code.collection.AbstractListWrapper;
 import jse.code.collection.NewCollections;
+import jse.code.functional.IFilter;
 import jse.math.table.ITable;
 import jse.math.table.Tables;
 import jse.math.vector.IVector;
@@ -111,17 +112,16 @@ public class MultiThermo extends AbstractListWrapper<ITable, ITable, ITable> {
      * @throws IOException 如果读取失败
      */
     public static MultiThermo readCSV(String aPath) throws IOException {
+        return readCSV(aPath, name -> name.endsWith(".csv"));
+    }
+    public static MultiThermo readCSV(String aPath, IFilter<String> aFilter) throws IOException {
         if (UT.IO.isDir(aPath)) {
             if (aPath.equals(".")) aPath = "";
             aPath = UT.IO.toInternalValidDir(aPath);
             String[] tFiles = UT.IO.list(aPath);
             List<ITable> rThermo = new ArrayList<>(tFiles.length);
-            for (String tName : tFiles) {
-                if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
-                String tFileOrDir = aPath+tName;
-                if (UT.IO.isFile(tFileOrDir)) {
-                    rThermo.add(UT.IO.csv2table(tFileOrDir));
-                }
+            for (String tName : tFiles) if (aFilter.accept(tName)) {
+                rThermo.add(UT.IO.csv2table(aPath+tName));
             }
             return new MultiThermo(rThermo);
         } else {

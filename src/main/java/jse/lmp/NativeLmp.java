@@ -261,12 +261,10 @@ public class NativeLmp implements IAutoShutdown {
             UT.IO.zip2dir(tNativeLmpZipPath, tNativeLmpTempSrcDir);
             String tNativeLmpTempSrcDir2 = null;
             for (String tName : UT.IO.list(tNativeLmpTempSrcDir)) {
-                if (tName!=null && !tName.isEmpty() && !tName.equals(".") && !tName.equals("..")) {
-                    String tNativeLmpTempDir1 = tNativeLmpTempSrcDir + tName + "/";
-                    if (UT.IO.isDir(tNativeLmpTempDir1)) {
-                        tNativeLmpTempSrcDir2 = tNativeLmpTempDir1;
-                        break;
-                    }
+                String tNativeLmpTempDir1 = tNativeLmpTempSrcDir + tName + "/";
+                if (UT.IO.isDir(tNativeLmpTempDir1)) {
+                    tNativeLmpTempSrcDir2 = tNativeLmpTempDir1;
+                    break;
                 }
             }
             if (tNativeLmpTempSrcDir2 == null) throw new Exception("NATIVE_LMP INIT ERROR: No lammps in "+tNativeLmpTempSrcDir);

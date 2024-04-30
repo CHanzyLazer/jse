@@ -137,6 +137,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     @Override public final void delete(String aPath) throws Exception {mSSH.delete(aPath);}
     @Override public final boolean isFile(String aFilePath) throws Exception {return mSSH.isFile(aFilePath);}
     @Override public final boolean isDir(String aDir) throws Exception {return mSSH.isDir(aDir);}
+    @Override public final String @NotNull[] list(String aDir) throws Exception {return mSSH.list(aDir);}
     
     /** 通过 ssh 直接执行命令 */
     @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {

@@ -3,6 +3,7 @@ package jse.system;
 import jse.io.IIOFiles;
 import jse.parallel.IThreadPool;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -27,6 +28,7 @@ public interface ISystemExecutor extends IThreadPool {
     void delete(String aPath) throws Exception;
     boolean isFile(String aFilePath) throws Exception;
     boolean isDir(String aDir) throws Exception;
+    String @NotNull[] list(String aDir) throws Exception;
     /** 单独的上传和下载的操作，用于方便使用 */
     void putFiles(Iterable<? extends CharSequence> aFiles) throws Exception;
     void getFiles(Iterable<? extends CharSequence> aFiles) throws Exception;

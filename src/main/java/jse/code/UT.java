@@ -1160,8 +1160,7 @@ public class UT {
             removeDir_(aDir);
         }
         private static void removeDir_(String aDir) throws IOException {
-            String[] tFiles = list(aDir);
-            for (String tName : tFiles) {
+            for (String tName : list(aDir)) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
                 String tFileOrDir = aDir+tName;
                 if (isDir(tFileOrDir)) {removeDir_(tFileOrDir+"/");}
@@ -1185,8 +1184,7 @@ public class UT {
         }
         private static void copyDir_(String aSourceDir, String aTargetDir) throws IOException {
             makeDir(aTargetDir);
-            String[] tFiles = list(aSourceDir);
-            for (String tName : tFiles) {
+            for (String tName : list(aSourceDir)) {
                 if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
                 String tSourceFileOrDir = aSourceDir+tName;
                 String tTargetFileOrDir = aTargetDir+tName;

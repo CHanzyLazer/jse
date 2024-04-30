@@ -6,13 +6,13 @@ import jse.code.UT;
 import jse.parallel.ExecutorsEX;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.IExecutorEX;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
-import java.util.Vector;
+import java.io.IOException;
+import java.util.*;
 
+import static jse.code.CS.ZL_STR;
 import static jse.code.OS.USER_HOME_DIR;
 import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
 
@@ -349,6 +349,27 @@ final class SSHCore implements IAutoShutdown {
             if (tChannelSftp != null) tChannelSftp.disconnect();
         }
     }
+    /** 列出目录下所有的文件名称 */
+    public String @NotNull[] list(String aDir) throws Exception {
+        if (mDead) throw new RuntimeException("Can NOT rmdir from a Dead SSH.");
+        // 会尝试一次重新连接
+        if (!isConnecting()) connect();
+        // 获取文件传输通道
+        ChannelSftp tChannelSftp = null;
+        try {
+            tChannelSftp = (ChannelSftp) session().openChannel("sftp");
+            tChannelSftp.connect();
+            if (aDir.equals(".")) aDir = "";
+            aDir = UT.IO.toInternalValidDir(aDir);
+            String tRemoteDir = mRemoteWorkingDir+aDir;
+            String[] tList = list_(tChannelSftp, tRemoteDir);
+            if (tList == null) throw new IOException("Fail to det list of \""+aDir+"\"");
+            return tList;
+        } finally {
+            // 最后关闭通道
+            if (tChannelSftp != null) tChannelSftp.disconnect();
+        }
+    }
     
     
     /**
@@ -482,19 +503,19 @@ final class SSHCore implements IAutoShutdown {
         // 空目录永远存在
         if (aDir.isEmpty()) return true;
         try {tAttrs = aChannelSftp.stat(aDir);} catch (SftpException ignored) {}
-        return tAttrs != null && tAttrs.isDir();
+        return tAttrs!=null && tAttrs.isDir();
     }
     /** 判断是否是文件，无论是什么情况报错都返回 false */
     private static boolean isFile_(ChannelSftp aChannelSftp, String aPath) {
         SftpATTRS tAttrs = null;
         try {tAttrs = aChannelSftp.stat(aPath);} catch (SftpException ignored) {}
-        return tAttrs != null && !tAttrs.isDir();
+        return tAttrs!=null && !tAttrs.isDir();
     }
-    /** 判断是否是文件，无论是什么情况报错都返回 false */
+    /** 判断是否是文件 */
     private static void delete_(ChannelSftp aChannelSftp, String aPath) throws Exception {
         SftpATTRS tAttrs = null;
         try {tAttrs = aChannelSftp.stat(aPath);} catch (SftpException ignored) {}
-        if (tAttrs != null && !tAttrs.isDir()) aChannelSftp.rm(aPath);
+        if (tAttrs != null) aChannelSftp.rm(aPath);
     }
     /** 在远程服务器创建文件夹，实现跨文件夹创建文件夹 */
     private static void makeDir_(ChannelSftp aChannelSftp, String aDir) throws Exception {
@@ -522,6 +543,19 @@ final class SSHCore implements IAutoShutdown {
             else {aChannelSftp.rm(aDir+tName);}
         }
         aChannelSftp.rmdir(aDir);
+    }
+    /** 列出目录下所有的文件名称 */
+    @SuppressWarnings("unchecked")
+    private static String @Nullable[] list_(ChannelSftp aChannelSftp, String aDir) throws Exception {
+        Vector<ChannelSftp.LsEntry> tFiles = aChannelSftp.ls(aDir);
+        if (tFiles == null) return null;
+        List<String> rNames = new ArrayList<>(tFiles.size());
+        for (ChannelSftp.LsEntry tFile : tFiles) {
+            String tName = tFile.getFilename();
+            if (tName==null || tName.isEmpty() || tName.equals(".") || tName.equals("..")) continue;
+            rNames.add(tName);
+        }
+        return rNames.toArray(ZL_STR);
     }
     
     
