@@ -5,11 +5,17 @@ import org.jetbrains.annotations.NotNull;
 
 public final class BoxPrism implements IBox {
     private final @NotNull XYZ mA, mB, mC;
-    public BoxPrism(@NotNull IXYZ aA, @NotNull IXYZ aB, @NotNull IXYZ aC) {mA = new XYZ(aA); mB = new XYZ(aB); mC = new XYZ(aC);}
+    public BoxPrism(@NotNull IXYZ aA, @NotNull IXYZ aB, @NotNull IXYZ aC) {
+        mA = new XYZ(aA); mB = new XYZ(aB); mC = new XYZ(aC);
+        // 现在直接在创建时初始化缓存，从根本上杜绝线程读取不安全的问题
+        initCache_();
+    }
     public BoxPrism(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {
         mA = new XYZ(aAx, aAy, aAz);
         mB = new XYZ(aBx, aBy, aBz);
         mC = new XYZ(aCx, aCy, aCz);
+        // 现在直接在创建时初始化缓存，从根本上杜绝线程读取不安全的问题
+        initCache_();
     }
     
     @Override public boolean isLmpStyle() {return false;}
@@ -39,13 +45,13 @@ public final class BoxPrism implements IBox {
     /** 为了加速运算，内部会缓存中间变量，因此这个实现的 mA，mB，mC 都是不能修改的 */
     private XYZ mBC = null, mCA = null, mAB = null;
     private double mV = Double.NaN;
+    private void initCache_() {
+        mBC = mB.cross(mC);
+        mCA = mC.cross(mA);
+        mAB = mA.cross(mB);
+        mV = mA.mixed(mB, mC);
+    }
     @Override public void toDirect(XYZ rCartesian) {
-        if (mBC == null) {
-            mBC = mB.cross(mC);
-            mCA = mC.cross(mA);
-            mAB = mA.cross(mB);
-            mV = mA.mixed(mB, mC);
-        }
         rCartesian.setXYZ(
             mBC.dot(rCartesian) / mV,
             mCA.dot(rCartesian) / mV,
