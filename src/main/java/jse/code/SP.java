@@ -297,7 +297,8 @@ public class SP {
             return tOut==null ? null : new DisplayData(toDisplayString(tOut));
         }
         @Override public List<String> formatError(Exception e) {
-            return super.formatError(Main.deepSanitize(e));
+            if (!DEBUG) e = Main.deepSanitize(e);
+            return super.formatError(e);
         }
         @Override public void interrupt() {
             // 只支持中断 groovy，python 原生就没有对中断提供支持
