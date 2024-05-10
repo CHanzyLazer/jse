@@ -556,7 +556,7 @@ public class UT {
             }
             ProgressBarBuilder rBuilder = new ProgressBarBuilder()
                 .setTaskName(aName).setInitialMax(aN)
-                .setConsumer(new ConsoleProgressBarConsumer(aConsumer)) // 这里总是需要重写一下避免乱码问题
+                .setConsumer(new ConsoleProgressBarConsumer(aConsumer, aMaxRenderedLength)) // 这里总是需要重写一下避免乱码问题
                 .setUpdateIntervalMillis(aUpdateIntervalMillis)
                 .setStyle(aStyle)
                 .setUnit(aUnitName, aUnitSize)
