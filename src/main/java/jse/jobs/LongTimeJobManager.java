@@ -3,6 +3,7 @@ package jse.jobs;
 import jse.code.UT;
 import jse.io.ILoader;
 import jse.parallel.IShutdownable;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,6 +18,7 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * @author liqa
  * <p> 长时任务的管理器，可以规范化超长时间的，可以中断的，任务的写法 </p>
  */
+@ApiStatus.Obsolete
 public class LongTimeJobManager<T extends ILongTimeJobPool> implements IShutdownable {
     private final String mStepFile;
     private final String mJobPoolFile;

@@ -2,6 +2,7 @@ package jse.jobs;
 
 
 import jse.parallel.IAutoShutdown;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
 /**
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * <p> 不进行实现因此不强制要求采用这些写法，因此原本的 SystemExecutor
  * 也不需要扩展功能（毕竟错误码基本都不需要，长时任务下错误码也不好获取）</p>
  */
+@ApiStatus.Obsolete
 public interface IJobPool extends IAutoShutdown {
     /** 这些现在也是 IHasJobPool 的东西 */
     void waitUntilDone() throws InterruptedException;

@@ -2,6 +2,7 @@ package jse.jobs;
 
 
 import jse.code.UT;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * <p> 每部分任务都需要是“独立”的，不能有变量关联，可以通过读写文件的方式来交流数据 </p>
  * <p> 每次运行都会执行个 then() 和其下一个 doJob()，然后会在下一个 then() 之前停止 </p>
  */
+@ApiStatus.Obsolete
 public class StepJobManager {
     private final String mStepFile;
     private final List<Runnable> mJobList;

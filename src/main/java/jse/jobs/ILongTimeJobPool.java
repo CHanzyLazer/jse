@@ -2,11 +2,13 @@ package jse.jobs;
 
 
 import jse.io.ISavable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * @author liqa
  * <p> 长时任务专用的任务池，提供一些专门需要的方法来支持任务的中断和继续 </p>
  */
+@ApiStatus.Obsolete
 public interface ILongTimeJobPool extends IJobPool, ISavable {
     /** 建议此时终止的接口 */
     boolean killRecommended();
