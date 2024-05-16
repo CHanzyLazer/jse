@@ -46,5 +46,10 @@ if [ -n "$SLURM_PROCID" ] && [ "$SLURM_PROCID" -ne 0 ]; then
 JAVA_OPTS="$JAVA_OPTS -Xmx1g"
 fi
 
+# Set headless for SLURM in default
+if [ -n "$SLURM_NODELIST" ]; then
+JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true"
+fi
+
 # Execute jse.jar
 java $JAVA_OPTS -jar "$JAR_LOCATION" BASH "$@"

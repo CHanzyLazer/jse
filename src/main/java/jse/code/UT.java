@@ -879,7 +879,6 @@ public class UT {
             return null;
         }
         
-        
         /**
          * 针对 lammps 等软件输出文件中存在的使用空格分割的数据专门优化的读取操作，
          * 使用 groovy-json 中现成的 parseDouble 等方法，总体比直接 split 并用 java 的 parseDouble 快一倍以上；
