@@ -53,6 +53,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     
     /** 用来将过低权重的点截断，将更多的资源用于统计高权重的点，默认为 0.01 */
     private double mCutoff;
+    /** 用来控制是否开启传统的 Jumpy FFS，这里直接通过跳过一些界面来实现，默认关闭 */
+    private boolean mJumpy = false;
     
     public static final byte FIXED = 0, SIMPLE_GUESS = 1, CONSERVATIVE_GUESS = 2;
     /** 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径 */
@@ -135,6 +137,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling<T> setNoCompetitive() {return setNoCompetitive(true);}
     public ForwardFluxSampling<T> setProgressBar(boolean aProgressBar) {mProgressBar = aProgressBar; return this;}
     public ForwardFluxSampling<T> setProgressBar() {return setProgressBar(true);}
+    public ForwardFluxSampling<T> setJumpy(boolean aJumpy) {mJumpy = aJumpy; return this;}
+    public ForwardFluxSampling<T> setJumpy() {return setJumpy(true);}
     /** 是否在关闭此实例时顺便关闭输入的生成器和计算器 */
     private boolean mDoNotShutdown = false;
     @Override public ForwardFluxSampling<T> setDoNotShutdown(boolean aDoNotShutdown) {mDoNotShutdown = aDoNotShutdown; return this;}
@@ -686,9 +690,21 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     UT.Code.removeLast(mPointsOnLambda);
                 }
             }
+            // 开始 jumpy，这里直接推进 mStep
+            double oLambda = mSurfaces.get(mStep);
+            double tLambdaNext = mSurfaces.get(mStep+1);
+            if (mJumpy) {
+                for (Point tPoint : mPointsOnLambda) {
+                    while ((mStep+1)<mN && tPoint.lambda>tLambdaNext) {
+                        // 直接暴力跳过此界面，统计上认为概率为 1 即可
+                        mPi.set(mStep, 1.0);
+                        ++mStep;
+                        tLambdaNext = mSurfaces.get(mStep+1);
+                    }
+                }
+            }
             // 遍历添加到 oPointsOnLambda，现在顺便统一将下一步会开始的点的高权重的点进行拆分，拥有更多次数的统计来得到更好的统计效果
             oPointsOnLambda.clear();
-            double tLambdaNext = mSurfaces.get(mStep+1);
             for (Point tPoint : mPointsOnLambda) {
                 if (tPoint.lambda<tLambdaNext && tPoint.multiple>2.0) {
                     // 减少倍率并增加拷贝样本
@@ -720,7 +736,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 // 竞争的写法，每个线程共用 mPointsOnLambda 并同步检测容量是否达标
                 final long subMaxPathNum = MathEX.Code.divup(mMaxPathNum, tThreadNum);
                 // 在竞争的情况下不需要统一生成种子
-                if (mProgressBar) UT.Timer.progressBar(double2str_(mSurfaces.get(mStep))+" -> "+double2str_(tLambdaNext), tNipp);
+                if (mProgressBar) UT.Timer.progressBar(double2str_(oLambda)+" -> "+double2str_(tLambdaNext), tNipp);
                 pool().parfor(tThreadNum, i -> {
                     tStep2ReturnBuffer[i] = doStep2(tNipp, mPointsOnLambda, subMaxPathNum, mRNG.nextLong());
                 });
@@ -734,7 +750,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 for (int i = 1; i < tThreadNum; ++i) tPointsOnLambdaBuffer[i] = new ArrayList<>(subNipp);
                 // 为了保证结果可重复，这里统一为每个线程生成一个种子，用于内部创建 LocalRandom
                 final long[] tSeeds = genSeeds_(tThreadNum);
-                if (mProgressBar) UT.Timer.progressBar(double2str_(mSurfaces.get(mStep))+" -> "+double2str_(tLambdaNext), (long)subNipp*tThreadNum);
+                if (mProgressBar) UT.Timer.progressBar(double2str_(oLambda)+" -> "+double2str_(tLambdaNext), (long)subNipp*tThreadNum);
                 pool().parfor(tThreadNum, i -> {
                     tStep2ReturnBuffer[i] = doStep2(subNipp, tPointsOnLambdaBuffer[i], subMaxPathNum, tSeeds[i]);
                 });
@@ -772,6 +788,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     }
     public boolean finished() {return mFinished;}
     public boolean stepFinished() {return mStepFinished;}
+    public int step() {return mStep;}
     
     /** 获取结果的接口 */
     public double getProb(int aIdx) {return mPi.get(aIdx);}
