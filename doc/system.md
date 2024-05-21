@@ -455,7 +455,7 @@ jse 对于在 slurm 环境中提交任务做了专门适配，
     `sbatch` 的提交脚本（`job.groovy`，提交指令 `sbatch -p test -N 1 job.groovy`）：
     
     ```groovy
-    #!/bin/env jse
+    #!/usr/bin/env jse
     import static jse.code.OS.*
     
     system('srun -n 4 lmp_mpi -in path/to/lmp/in/file')
@@ -472,7 +472,7 @@ jse 对于在 slurm 环境中提交任务做了专门适配，
 来省略指令中的 `srun` / `srun -n 4` 部分：
 
 ```groovy
-#!/bin/env jse
+#!/usr/bin/env jse
 import jse.system.SRUN
 
 try (def srun = new SRUN(4)) { // #1. #2.
@@ -516,7 +516,7 @@ jse 的 `srun` 任务提交器 `jse.system.SRUN` 内部自动处理好了上述�
 因此只需要通过 `submitSystem` 提交后台任务即可实现多个并行的 `srun` 子任务的提交：
 
 ```groovy
-#!/bin/env jse
+#!/usr/bin/env jse
 import jse.system.SRUN
 
 try (def srun = new SRUN(20, 4)) { // #1. #2.
@@ -548,7 +548,7 @@ println('ALL JOBS FINISHED')
 （当然此时首先会通过 jse 检测能否分配资源，因此不会是致命的）：
 
 ```groovy
-#!/bin/env jse
+#!/usr/bin/env jse
 import jse.system.SRUN
 import static jse.code.OS.*
 

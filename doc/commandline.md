@@ -295,7 +295,7 @@ groovy 版本以及 java 版本并退出。
 例如：
 
 ```shell
-jse -jupyter user=Ture
+jse -jupyter user=True
 ```
 
 表示为当前用户安装；
