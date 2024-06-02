@@ -28,6 +28,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     private final static long DEFAULT_MAX_PATH_MUL = 100;
     private final static double DEFAULT_CUTOFF = 0.01;
     private final static int DEFAULT_MAX_STAT_TIMES = 10;
+    private final static long DEFAULT_TIME_DEPENDENCE_PRUNING_THRESHOLD = 1000;
     
     private final IFullPathGenerator<T> mFullPathGenerator;
     
@@ -56,14 +57,14 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     /** 用来控制是否开启传统的 Jumpy FFS，这里直接通过跳过一些界面来实现，默认关闭 */
     private boolean mJumpy = false;
     
-    public static final byte FIXED = 0, SIMPLE_GUESS = 1, CONSERVATIVE_GUESS = 2;
+    public static final byte FIXED = 0, SIMPLE_GUESS = 1, CONSERVATIVE_GUESS = 2, TIME_DEPENDENCE = -1;
     /** 路径演化到上一界面后进行裁剪的概率，默认为 0.0（关闭），用于优化从中间界面回到 A 的长期路径 */
     private double mPruningProb;
-    /** 开始进行裁剪的阈值，用来消除噪声的影响，默认为 1（即不添加阈值） */
-    private int mPruningThreshold;
+    /** 开始进行裁剪的阈值，对于经典的情况为界面的阈值（默认为 1），对于时间依赖的为路径的步骤阈值（默认为 1000 步）*/
+    private long mPruningThreshold;
     /** 是否开启第一个过程的剪枝，对于某些特殊情况第一过程剪枝会导致统计出现系统偏差，默认开启 */
     private boolean mStep1Pruning;
-    /** 控制剪枝概率策略，默认采用最为保守的 CONSERVATIVE_GUESS */
+    /** 控制剪枝概率策略，默认采用较为先进的 TIME_DEPENDENCE */
     private byte mPruningPolicy;
     
     /**
@@ -106,8 +107,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         mCutoff = DEFAULT_CUTOFF;
         mMaxStatTimes = DEFAULT_MAX_STAT_TIMES;
         mPruningProb = 0.0;
-        mPruningThreshold = 1;
-        mPruningPolicy = CONSERVATIVE_GUESS;
+        mPruningThreshold = -1;
+        mPruningPolicy = TIME_DEPENDENCE;
         mStep1Pruning = true;
         
         // 计算过程需要的量的初始化
@@ -129,7 +130,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
     public ForwardFluxSampling<T> setCutoff(double aCutoff) {mCutoff = MathEX.Code.toRange(0.0, 0.5, aCutoff); return this;}
     public ForwardFluxSampling<T> setMaxStatTimes(int aMaxStatTimes) {mMaxStatTimes = Math.max(1, aMaxStatTimes); return this;}
     public ForwardFluxSampling<T> setPruningProb(double aPruningProb) {mPruningProb = MathEX.Code.toRange(0.0, 1.0, aPruningProb); return this;}
-    public ForwardFluxSampling<T> setPruningThreshold(int aPruningThreshold) {mPruningThreshold = Math.max(1, aPruningThreshold); return this;}
+    public ForwardFluxSampling<T> setPruningThreshold(long aPruningThreshold) {mPruningThreshold = aPruningThreshold; return this;}
     public ForwardFluxSampling<T> setStep1Pruning(boolean aStep1Pruning) {mStep1Pruning = aStep1Pruning; return this;}
     public ForwardFluxSampling<T> disableStep1Pruning() {return setStep1Pruning(false);}
     public ForwardFluxSampling<T> setPruningPolicy(byte aPruningPolicy) {mPruningPolicy = aPruningPolicy; return this;}
@@ -262,7 +263,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         private double mTimeConsumed = 0.0;
         private long mPointNum = 0;
         /** pruning stuffs */
-        private int mPruningIndex = mPruningThreshold;
+        private int mPruningIndex = mPruningPolicy==TIME_DEPENDENCE ? 0 : (mPruningThreshold<=0 ? 1 : (int)mPruningThreshold);
         private double mPruningMul = 1.0;
         
         private boolean mDead = false;
@@ -324,23 +325,34 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     return null;
                 }
                 // pruning，如果向前则有概率直接中断，这里直接 return null 来标记 pruning 的情况
-                if (mStep1Pruning && mPruningProb > 0.0 && mPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get(mPruningIndex)) {
-                    // 无论如何先增加 mPruningIndex
-                    ++mPruningIndex;
-                    // 并且更新耗时
-                    if (aStatTime) {
-                        double tTimeConsumed = mPath.timeConsumed();
-                        mTimeConsumed += (tTimeConsumed - oTimeConsumed) * mPruningMul;
-                        oTimeConsumed = tTimeConsumed;
+                if (mStep1Pruning && mPruningProb > 0.0) {
+                    boolean tPruning;
+                    if (mPruningPolicy == TIME_DEPENDENCE) {
+                        // 时间依赖的 pruning
+                        long tPruningThreshold = mPruningThreshold<=0 ? DEFAULT_TIME_DEPENDENCE_PRUNING_THRESHOLD : mPruningThreshold;
+                        tPruning = tPruningThreshold*(long)mPruningIndex < mPointNum;
+                    } else {
+                        // 经典 pruning
+                        tPruning = mPruningIndex < mSurfaces.size() && tLambda >= mSurfaces.get(mPruningIndex);
                     }
-                    // 有 mPruningProb 中断，由 pruning 中断的情况直接返回 null
-                    if (mRNG_.nextDouble() < mPruningProb) {
-                        mCurrentPoint = null;
-                        shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
-                        return null;
+                    if (tPruning) {
+                        // 无论如何先增加 mPruningIndex
+                        ++mPruningIndex;
+                        // 并且更新耗时
+                        if (aStatTime) {
+                            double tTimeConsumed = mPath.timeConsumed();
+                            mTimeConsumed += (tTimeConsumed - oTimeConsumed) * mPruningMul;
+                            oTimeConsumed = tTimeConsumed;
+                        }
+                        // 有 mPruningProb 中断，由 pruning 中断的情况直接返回 null
+                        if (mRNG_.nextDouble() < mPruningProb) {
+                            mCurrentPoint = null;
+                            shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
+                            return null;
+                        }
+                        // 否则增加权重
+                        mPruningMul /= (1.0 - mPruningProb);
                     }
-                    // 否则增加权重
-                    mPruningMul /= (1.0 - mPruningProb);
                 }
             }
         }
@@ -448,7 +460,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         private final Point mStart;
         private long mPointNum = 0;
         /** pruning stuffs */
-        private int mPruningIndex = mStep-mPruningThreshold;
+        private int mPruningIndex = mPruningPolicy==TIME_DEPENDENCE ? 0 : (mPruningThreshold<=0 ? (mStep-1) : (mStep-(int)mPruningThreshold));
         private double mPruningMul = 1.0;
         
         private boolean mDead = false;
@@ -488,31 +500,42 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     return null;
                 }
                 // 修剪，如果向前则有概率直接中断，现在第二个过程的修剪概率存在一个上限
-                if (mPruningProb > 0.0 && mPruningIndex >= 0 && tLambda <= mSurfaces.get(mPruningIndex)) {
-                    double tPruningProb;
-                    switch(mPruningPolicy) {
-                    case SIMPLE_GUESS: {
-                        tPruningProb = Math.min(mPruningProb, 1.0 - getProb(mPruningIndex));
-                        break;
+                if (mPruningProb > 0.0) {
+                    boolean tPruning;
+                    if (mPruningPolicy == TIME_DEPENDENCE) {
+                        // 时间依赖的 pruning
+                        long tPruningThreshold = mPruningThreshold<=0 ? DEFAULT_TIME_DEPENDENCE_PRUNING_THRESHOLD : mPruningThreshold;
+                        tPruning = tPruningThreshold*(long)(-mPruningIndex) < mPointNum;
+                    } else {
+                        // 经典 pruning
+                        tPruning = mPruningIndex >= 0 && tLambda <= mSurfaces.get(mPruningIndex);
                     }
-                    case CONSERVATIVE_GUESS: {
-                        tPruningProb = Math.min(mPruningProb, 1.0 - MathEX.Fast.sqrt(getProb(mPruningIndex)));
-                        break;
-                    }
-                    case FIXED: default: {
-                        tPruningProb = mPruningProb;
-                        break;
-                    }}
-                    // 无论如何先减少 mPruningIndex
-                    --mPruningIndex;
-                    if (tPruningProb > 0.0) {
-                        if (mRNG_.nextDouble() < tPruningProb) {
-                            // 有 mPruningProb 中断，直接返回 null
-                            shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
-                            return null;
-                        } else {
-                            // 否则需要增加权重
-                            mPruningMul /= (1.0 - tPruningProb);
+                    if (tPruning) {
+                        double tPruningProb;
+                        switch(mPruningPolicy) {
+                        case SIMPLE_GUESS: {
+                            tPruningProb = Math.min(mPruningProb, 1.0 - getProb(mPruningIndex));
+                            break;
+                        }
+                        case CONSERVATIVE_GUESS: {
+                            tPruningProb = Math.min(mPruningProb, 1.0 - MathEX.Fast.sqrt(getProb(mPruningIndex)));
+                            break;
+                        }
+                        case FIXED: case TIME_DEPENDENCE: default: {
+                            tPruningProb = mPruningProb;
+                            break;
+                        }}
+                        // 无论如何先减少 mPruningIndex
+                        --mPruningIndex;
+                        if (tPruningProb > 0.0) {
+                            if (mRNG_.nextDouble() < tPruningProb) {
+                                // 有 mPruningProb 中断，直接返回 null
+                                shutdown(); // 中断后不再有 path，从而让 next 相关操作非法
+                                return null;
+                            } else {
+                                // 否则需要增加权重
+                                mPruningMul /= (1.0 - tPruningProb);
+                            }
                         }
                     }
                 }
