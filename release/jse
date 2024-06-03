@@ -33,8 +33,8 @@ fi
 
 # Check if jse.jar has been found
 if [ -z "$JAR_LOCATION" ]; then
-echo "Error: jse-*.jar not found"
-exit 1
+    echo "Error: jse-*.jar not found"
+    exit 1
 fi
 
 
@@ -43,12 +43,12 @@ JAVA_OPTS="$JAVA_OPTS -Djava.util.prefs.syncInterval=1000000"
 
 # Restrict memory size when the SLURM_PROCID environment variable exists and is not 0
 if [ -n "$SLURM_PROCID" ] && [ "$SLURM_PROCID" -ne 0 ]; then
-JAVA_OPTS="$JAVA_OPTS -Xmx1g"
+    JAVA_OPTS="$JAVA_OPTS -Xmx1g"
 fi
 
 # Set headless for SLURM in default
-if [ -n "$SLURM_NODELIST" ]; then
-JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true"
+if [ -n "$SLURM_NODELIST" ] || { [ -n "$JSE_HEADLESS" ] && [ "$JSE_HEADLESS" -ne 0 ]; }; then
+    JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true"
 fi
 
 # Execute jse.jar

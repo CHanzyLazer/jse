@@ -18,8 +18,8 @@ for %%i in (%SCRIPT_DIR%lib\jse-*.jar) do (
 
 @REM Check if jse.jar has been found
 if not defined JAR_LOCATION (
-  echo Error: jse-*.jar not found
-  exit /b 1
+    echo Error: jse-*.jar not found
+    exit /b 1
 )
 
 
@@ -28,6 +28,13 @@ set JAVA_OPTS=%JAVA_OPTS% -Djava.util.prefs.syncInterval=1000000
 
 @REM GROOVY-6453: groovysh in Windows 7/8/10 doesn't support arrow keys and Del
 set JAVA_OPTS=%JAVA_OPTS% -Djline.terminal=none
+
+@REM Set headless when JSE_HEADLESS
+if defined JSE_HEADLESS (
+    if not "%JSE_HEADLESS%"=="0" (
+        set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true
+    )
+)
 
 @REM Execute jse.jar
 java %JAVA_OPTS% -jar "%JAR_LOCATION%" CMD %*
