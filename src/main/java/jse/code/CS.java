@@ -29,7 +29,8 @@ public class CS {
     
     /** a Random generator so I don't need to instantiate a new one all the time. */
     public final static Random RANDOM = new Random();
-    public final static int MAX_SEED = 2147483647;
+    /** Marsaglia random # generator need lower one */
+    public final static int MAX_SEED = 900000000;
     
     public final static Object NULL = null;
     
