@@ -244,7 +244,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             if (isPrism()) {
                 IMatrix tIABC = mBox.iabc();
                 tDirect.operation().matmul2this(tIABC);
-                // cartesian 其实也需要考虑计算误差带来的出边界的问题
+                // cartesian 其实也需要考虑计算误差带来的出边界的问题（当然此时在另一端的就不好修复了）
                 final double tNorm = tIABC.asVecCol().operation().stat((norm, v) -> norm+Math.abs(v));
                 tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON*tNorm ? 0.0 : v);
             } else {
@@ -265,6 +265,8 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
                 tDirect.operation().matmul2this(tInvIABC);
                 // direct 需要考虑计算误差带来的出边界的问题
                 tDirect.operation().map2this(v -> Math.abs(v)<MathEX.Code.DBL_EPSILON ? 0.0 : v);
+                // 同理在 1.0 周围的也要设为 1.0
+                tDirect.operation().map2this(v -> MathEX.Code.numericEqual(v, 1.0) ? 1.0 : v);
             } else {
                 tDirect.col(0).div2this(mBox.iax());
                 tDirect.col(1).div2this(mBox.iby());

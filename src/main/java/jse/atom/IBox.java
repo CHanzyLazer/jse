@@ -58,7 +58,7 @@ public interface IBox extends IXYZ {
                 tY*rDirect.mY + tYZ*rDirect.mZ,
                 tZ*rDirect.mZ
             );
-            // cartesian 其实也需要考虑计算误差带来的出边界的问题
+            // cartesian 其实也需要考虑计算误差带来的出边界的问题（当然此时在另一端的就不好修复了）
             double tNorm = Math.abs(tX)  + Math.abs(tY)  + Math.abs(tZ)
                          + Math.abs(tXY) + Math.abs(tXZ) + Math.abs(tYZ);
             if (Math.abs(rDirect.mX) < MathEX.Code.DBL_EPSILON*tNorm) rDirect.mX = 0.0;
@@ -73,7 +73,7 @@ public interface IBox extends IXYZ {
                 tAy*rDirect.mX + tBy*rDirect.mY + tCy*rDirect.mZ,
                 tAz*rDirect.mX + tBz*rDirect.mY + tCz*rDirect.mZ
             );
-            // cartesian 其实也需要考虑计算误差带来的出边界的问题
+            // cartesian 其实也需要考虑计算误差带来的出边界的问题（当然此时在另一端的就不好修复了）
             double tNorm = Math.abs(tAx) + Math.abs(tAy) + Math.abs(tAz)
                          + Math.abs(tBx) + Math.abs(tBy) + Math.abs(tBz)
                          + Math.abs(tCx) + Math.abs(tCy) + Math.abs(tCz);
@@ -98,6 +98,10 @@ public interface IBox extends IXYZ {
             if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
             if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
             if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
+            // 同理在 1.0 周围的也要设为 1.0
+            if (MathEX.Code.numericEqual(rCartesian.mX, 1.0)) rCartesian.mX = 1.0;
+            if (MathEX.Code.numericEqual(rCartesian.mY, 1.0)) rCartesian.mY = 1.0;
+            if (MathEX.Code.numericEqual(rCartesian.mZ, 1.0)) rCartesian.mZ = 1.0;
         } else {
             // 默认实现简单处理，不缓存中间结果
             XYZ tA = XYZ.toXYZ(a());
@@ -113,6 +117,10 @@ public interface IBox extends IXYZ {
             if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
             if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
             if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
+            // 同理在 1.0 周围的也要设为 1.0
+            if (MathEX.Code.numericEqual(rCartesian.mX, 1.0)) rCartesian.mX = 1.0;
+            if (MathEX.Code.numericEqual(rCartesian.mY, 1.0)) rCartesian.mY = 1.0;
+            if (MathEX.Code.numericEqual(rCartesian.mZ, 1.0)) rCartesian.mZ = 1.0;
         }
     }
 }

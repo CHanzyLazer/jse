@@ -78,5 +78,9 @@ public final class VaspBoxPrism extends VaspBox {
         if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
         if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
         if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
+        // 同理在 1.0 周围的也要设为 1.0
+        if (MathEX.Code.numericEqual(rCartesian.mX, 1.0)) rCartesian.mX = 1.0;
+        if (MathEX.Code.numericEqual(rCartesian.mY, 1.0)) rCartesian.mY = 1.0;
+        if (MathEX.Code.numericEqual(rCartesian.mZ, 1.0)) rCartesian.mZ = 1.0;
     }
 }
