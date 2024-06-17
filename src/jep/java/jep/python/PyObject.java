@@ -59,14 +59,14 @@ public class PyObject extends JepAccess implements AutoCloseable, GroovyObject {
         } else {
             aArgs = new Object[]{args};
         }
-        if (aArgs == null || aArgs.length == 0) return getAttr(name, PyCallable.class).call();
-        if (aArgs.length == 1 && (aArgs[0] instanceof Map)) return getAttr(name, PyCallable.class).call((Map<String, Object>)aArgs[0]);
+        if (aArgs == null || aArgs.length == 0) {try (PyCallable tCallable = getAttr(name, PyCallable.class)) {return tCallable.call();}}
+        if (aArgs.length == 1 && (aArgs[0] instanceof Map)) {try (PyCallable tCallable = getAttr(name, PyCallable.class)) {return tCallable.call((Map<String, Object>)aArgs[0]);}}
         if (aArgs.length > 1 && (aArgs[aArgs.length-1] instanceof Map)) {
             Object[] tArgs = new Object[aArgs.length-1];
             System.arraycopy(aArgs, 0, tArgs, 0, aArgs.length-1);
-            return getAttr(name, PyCallable.class).call(tArgs, (Map<String, Object>)aArgs[aArgs.length-1]);
+            try (PyCallable tCallable = getAttr(name, PyCallable.class)) {return tCallable.call(tArgs, (Map<String, Object>)aArgs[aArgs.length-1]);}
         }
-        return getAttr(name, PyCallable.class).call(aArgs);
+        try (PyCallable tCallable = getAttr(name, PyCallable.class)) {return tCallable.call(aArgs);}
     }
     @Override public Object getProperty(String propertyName) throws JepException {return getAttr(propertyName);}
     @Override public void setProperty(String propertyName, Object newValue) throws JepException {setAttr(propertyName, newValue);}
