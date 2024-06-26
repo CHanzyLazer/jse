@@ -305,7 +305,7 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     private DoubleArrayVector newVector_() {return newVector_(thisVector_().size());}
     private static double @Nullable[] getIfHasSameOrderData_(IVector aThis, IVector aData) {
         if (aThis instanceof IDataShell) {
-            Object tData = ((IDataShell<?>) aThis).getIfHasSameOrderData(aData);
+            Object tData = ((IDataShell<?>)aThis).getIfHasSameOrderData(aData);
             return (tData instanceof double[]) ? (double[])tData : null;
         } else {
             return null;

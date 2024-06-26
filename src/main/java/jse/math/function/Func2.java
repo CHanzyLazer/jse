@@ -2,6 +2,9 @@ package jse.math.function;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IHasDoubleIterator;
+import jse.math.MathEX;
+
+import static jse.math.MathEX.PI;
 
 /**
  * @author liqa
@@ -12,6 +15,35 @@ public class Func2 {
     
     public static PBCFunc2 zeros(double aX0, double aDx, int aNx) {return PBCFunc2.zeros(aX0, aDx, aNx);}
     public static PBCFunc2 zeros(double aX0, double aY0, double aDx, double aDy, int aNx, int aNy) {return PBCFunc2.zeros(aX0, aY0, aDx, aDy, aNx, aNy);}
+    
+    
+    /**
+     * Get the Dirac Delta function δ(x-mu) in the Gaussian form,
+     * result will in [-aDx*aN, aDx*aN], so out.length == 2*N+1
+     * <p>
+     * Optimized for vector operations
+     * <p>
+     * 为了保证 MathEX.Func 中都为直接返回函数值的特殊函数，直接获取数值函数的方法统一移动到这里
+     * @author liqa
+     * @param aSigma the standard deviation of the Gaussian distribution
+     * @param aMu the mean value of the Gaussian distribution
+     * @param aResolution the Resolution of the Function1, dx == aSigma/aResolution
+     * @return the Dirac Delta function δ(x-mu) in the Gaussian form
+     */
+    public static IZeroBoundFunc2 deltaG(double aSigma, final double aMu, double aResolution) {
+        final double tMul = -1.0 / (2.0*aSigma*aSigma);
+        final double tFMul =  1.0 / (MathEX.Fast.sqrt(2.0*PI) * aSigma * aSigma);
+        
+        IZeroBoundFunc2 rFunc1 = ZeroBoundFunc2.zeros(aMu, aSigma/aResolution, (int)Math.round(aResolution*G_RANG));
+        rFunc1.fill((x, y) -> {
+            x -= aMu;
+            y -= aMu;
+            return MathEX.Fast.exp(x*x*tMul + y*y*tMul) * tFMul;
+        });
+        return rFunc1;
+    }
+    private final static int G_RANG = 6;
+    
     
     /**
      * 根据指定数据生成此数据的分布，超出范围的值会忽略
@@ -46,7 +78,7 @@ public class Func2 {
                 rFunc2.updateNear(tX, tY, f->f+1);
             }
         }
-        rFunc2.f().div2this(rSize * tStepX * tStepY);
+        rFunc2.div2this(rSize * tStepX * tStepY);
         return rFunc2;
     }
     public static IZeroBoundFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(aDataX, IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}

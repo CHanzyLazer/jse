@@ -55,6 +55,27 @@ public interface IMatrixOperation {
     IMatrix negative();
     void negative2this();
     
+    /** 补充的一些运算 */
+    void plus2dest      (IMatrix aRHS, IMatrix rDest);
+    void minus2dest     (IMatrix aRHS, IMatrix rDest);
+    void lminus2dest    (IMatrix aRHS, IMatrix rDest);
+    void multiply2dest  (IMatrix aRHS, IMatrix rDest);
+    void div2dest       (IMatrix aRHS, IMatrix rDest);
+    void ldiv2dest      (IMatrix aRHS, IMatrix rDest);
+    void mod2dest       (IMatrix aRHS, IMatrix rDest);
+    void lmod2dest      (IMatrix aRHS, IMatrix rDest);
+    void operate2dest   (IMatrix aRHS, IMatrix rDest, DoubleBinaryOperator aOpt);
+    
+    void plus2dest      (double aRHS, IMatrix rDest);
+    void minus2dest     (double aRHS, IMatrix rDest);
+    void lminus2dest    (double aRHS, IMatrix rDest);
+    void multiply2dest  (double aRHS, IMatrix rDest);
+    void div2dest       (double aRHS, IMatrix rDest);
+    void ldiv2dest      (double aRHS, IMatrix rDest);
+    void mod2dest       (double aRHS, IMatrix rDest);
+    void lmod2dest      (double aRHS, IMatrix rDest);
+    void map2dest       (IMatrix rDest, DoubleUnaryOperator aOpt);
+    
     /** 这两个方法名默认是作用到自身的，这里为了保持 operation 的使用简洁不在函数名上特殊说明 */
     void fill           (double aRHS);
     void fill           (IMatrix aRHS);

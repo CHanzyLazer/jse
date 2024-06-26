@@ -168,9 +168,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     }
     static void ebeCheck(int lSize, int rSize, int dSize) {
         if (!OPERATION_CHECK) return;
-        if (lSize != rSize) throw new IllegalArgumentException(
-            "The dimensions of two vectors are not match: "+lSize+" vs "+rSize
-        );
+        ebeCheck(lSize, rSize);
         if (lSize != dSize) throw new IllegalArgumentException(
             "The dimensions of input and output vector are not match: "+lSize+" vs "+dSize
         );

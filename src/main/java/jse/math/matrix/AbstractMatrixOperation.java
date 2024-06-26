@@ -25,25 +25,25 @@ import static jse.code.Conf.PARFOR_THREAD_NUMBER;
  */
 public abstract class AbstractMatrixOperation implements IMatrixOperation {
     /** 通用的一些运算 */
-    @Override public IMatrix plus       (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebePlus2Dest    (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix minus      (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeMinus2Dest   (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix lminus     (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeMinus2Dest   (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix multiply   (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeMultiply2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix div        (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeDiv2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix ldiv       (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeDiv2Dest     (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix mod        (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeMod2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix lmod       (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeMod2Dest     (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix operate    (IMatrix aRHS, DoubleBinaryOperator aOpt) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); IMatrix rMatrix = newMatrix_(); DATA.ebeDo2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
+    @Override public final IMatrix plus       (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); plus2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix minus      (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); minus2dest   (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix lminus     (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); lminus2dest  (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix multiply   (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); multiply2dest(aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix div        (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); div2dest     (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix ldiv       (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); ldiv2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix mod        (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); mod2dest     (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix lmod       (IMatrix aRHS) {IMatrix rMatrix = newMatrix_(); lmod2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix operate    (IMatrix aRHS, DoubleBinaryOperator aOpt) {IMatrix rMatrix = newMatrix_(); operate2dest(aRHS, rMatrix, aOpt); return rMatrix;}
     
-    @Override public IMatrix plus       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapPlus2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix minus      (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapMinus2Dest    (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix lminus     (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapLMinus2Dest   (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix multiply   (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapMultiply2Dest (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix div        (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapDiv2Dest      (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix ldiv       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapLDiv2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix mod        (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapMod2Dest      (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix lmod       (double aRHS) {IMatrix rMatrix = newMatrix_(); DATA.mapLMod2Dest     (thisMatrix_()::iteratorCol, aRHS, rMatrix::setIteratorCol); return rMatrix;}
-    @Override public IMatrix map        (DoubleUnaryOperator aOpt) {IMatrix rMatrix = newMatrix_(); DATA.mapDo2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol, aOpt); return rMatrix;}
+    @Override public final IMatrix plus       (double aRHS) {IMatrix rMatrix = newMatrix_(); plus2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix minus      (double aRHS) {IMatrix rMatrix = newMatrix_(); minus2dest   (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix lminus     (double aRHS) {IMatrix rMatrix = newMatrix_(); lminus2dest  (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix multiply   (double aRHS) {IMatrix rMatrix = newMatrix_(); multiply2dest(aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix div        (double aRHS) {IMatrix rMatrix = newMatrix_(); div2dest     (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix ldiv       (double aRHS) {IMatrix rMatrix = newMatrix_(); ldiv2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix mod        (double aRHS) {IMatrix rMatrix = newMatrix_(); mod2dest     (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix lmod       (double aRHS) {IMatrix rMatrix = newMatrix_(); lmod2dest    (aRHS, rMatrix); return rMatrix;}
+    @Override public final IMatrix map        (DoubleUnaryOperator aOpt) {IMatrix rMatrix = newMatrix_(); map2dest(rMatrix, aOpt); return rMatrix;}
     
     @Override public void plus2this     (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); DATA.ebePlus2This    (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
     @Override public void minus2this    (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); DATA.ebeMinus2This   (thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
@@ -67,6 +67,27 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     
     @Override public IMatrix negative() {IMatrix rMatrix = newMatrix_(); DATA.mapNegative2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
     @Override public void negative2this() {DATA.mapNegative2This(thisMatrix_()::setIteratorCol);}
+    
+    /** 补充的一些运算 */
+    @Override public void plus2dest     (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebePlus2Dest    (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol);}
+    @Override public void minus2dest    (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeMinus2Dest   (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol);}
+    @Override public void lminus2dest   (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeMinus2Dest   (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rDest::setIteratorCol);}
+    @Override public void multiply2dest (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeMultiply2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol);}
+    @Override public void div2dest      (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeDiv2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol);}
+    @Override public void ldiv2dest     (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeDiv2Dest     (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rDest::setIteratorCol);}
+    @Override public void mod2dest      (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeMod2Dest     (thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol);}
+    @Override public void lmod2dest     (IMatrix aRHS, IMatrix rDest) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeMod2Dest     (aRHS::iteratorCol, thisMatrix_()::iteratorCol, rDest::setIteratorCol);}
+    @Override public void operate2dest  (IMatrix aRHS, IMatrix rDest, DoubleBinaryOperator aOpt) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.ebeDo2Dest(thisMatrix_()::iteratorCol, aRHS::iteratorCol, rDest::setIteratorCol, aOpt);}
+    
+    @Override public void plus2dest     (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapPlus2Dest     (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void minus2dest    (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapMinus2Dest    (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void lminus2dest   (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapLMinus2Dest   (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void multiply2dest (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapMultiply2Dest (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void div2dest      (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapDiv2Dest      (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void ldiv2dest     (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapLDiv2Dest     (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void mod2dest      (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapMod2Dest      (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void lmod2dest     (double aRHS, IMatrix rDest) {mapCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), rDest.rowNumber(), rDest.columnNumber()); DATA.mapLMod2Dest     (thisMatrix_()::iteratorCol, aRHS, rDest::setIteratorCol);}
+    @Override public void map2dest      (IMatrix rDest, DoubleUnaryOperator aOpt) {DATA.mapDo2Dest(thisMatrix_()::iteratorCol, rDest::setIteratorCol, aOpt);}
     
     @Override public void fill          (double aRHS) {DATA.mapFill2This(thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void fill          (IMatrix aRHS) {ebeCheck(thisMatrix_().rowNumber(), thisMatrix_().columnNumber(), aRHS.rowNumber(), aRHS.columnNumber()); DATA.ebeFill2This(thisMatrix_()::setIteratorCol, aRHS::iteratorCol);}
@@ -854,6 +875,19 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         if (!OPERATION_CHECK) return;
         if (lRowNum!=rRowNum || lColNum!=rColNum) throw new IllegalArgumentException(
             "The dimensions of two matrices are not match: ("+lRowNum+" x "+lColNum+") vs ("+rRowNum+" x "+rColNum+")"
+        );
+    }
+    static void ebeCheck(int lRowNum, int lColNum, int rRowNum, int rColNum, int dRowNum, int dColNum) {
+        if (!OPERATION_CHECK) return;
+        ebeCheck(lRowNum, lColNum, rRowNum, rColNum);
+        if (lRowNum!=dRowNum || lColNum!=dColNum) throw new IllegalArgumentException(
+            "The dimensions of input and output matrices are not match: ("+lRowNum+" x "+lColNum+") vs ("+dRowNum+" x "+dColNum+")"
+        );
+    }
+    static void mapCheck(int lRowNum, int lColNum, int dRowNum, int dColNum) {
+        if (!OPERATION_CHECK) return;
+        if (lRowNum!=dRowNum || lColNum!=dColNum) throw new IllegalArgumentException(
+            "The dimensions of input and output matrices are not match: ("+lRowNum+" x "+lColNum+") vs ("+dRowNum+" x "+dColNum+")"
         );
     }
     static void matmulCheck(int lRowNum, int lColNum, int rRowNum, int rColNum) {

@@ -85,11 +85,17 @@ public abstract class ColumnMatrixFunc2 extends AbstractFunc2 implements IEqualI
         return mData.getAndUpdate(aI, aJ, aOpt);
     }
     
-    
     @Override public final ColumnMatrixFunc2 copy() {
         return newInstance_(mX0, mY0, mDx, mDy, mData.copy());
     }
     
+    /** 还提供一个给函数专用的运算 */
+    protected class ColumnMatrixFunc2Operation_ extends ColumnMatrixFunc2Operation {
+        @Override protected ColumnMatrixFunc2 thisFunc2_() {return ColumnMatrixFunc2.this;}
+        /** 边界外的结果不保证正确性，这里简单起见统一都使用 ZeroBoundFunc2 来作为返回类型 */
+        @Override protected ColumnMatrixFunc2 newFunc2_() {return ZeroBoundFunc2.zeros(x0(), y0(), dx(), dy(), Nx(), Ny());}
+    }
+    @Override public IFunc2Operation operation() {return new ColumnMatrixFunc2Operation_();}
     
     /** stuff to override，重写表明 x, y 超出了界限的情况下如何处理 */
     public abstract double subs(double aX, double aY);

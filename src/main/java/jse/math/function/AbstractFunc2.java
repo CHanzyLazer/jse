@@ -1,8 +1,15 @@
 package jse.math.function;
 
+import jse.math.matrix.IMatrix;
+
 import java.util.function.DoubleUnaryOperator;
 
 public abstract class AbstractFunc2 implements IFunc2 {
+    /** 批量修改的接口 */
+    @Override public final void fill(double aValue) {operation().fill(aValue);}
+    @Override public final void fill(IMatrix aMatrix) {operation().fill(aMatrix);}
+    @Override public final void fill(IFunc2 aFunc2) {operation().fill(aFunc2);}
+    @Override public final void fill(IFunc2Subs aFunc2Subs) {operation().fill(aFunc2Subs);}
     
     /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
     @Override public void update(int aI, int aJ, DoubleUnaryOperator aOpt) {

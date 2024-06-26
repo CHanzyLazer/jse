@@ -61,9 +61,9 @@ public interface IFunc1Operation {
     void forEach        (DoubleConsumer aCon);
     
     /** 函数特有的运算，最后增加一项 x 的值传入 */
-    IFunc1 operateFull(IFunc1 aRHS, IDoubleTernaryOperator aOpt);
+    IFunc1 operateFull      (IFunc1 aRHS, IDoubleTernaryOperator aOpt);
     IFunc1 mapFull          (DoubleBinaryOperator aOpt);
-    void operateFull2this(IFunc1 aRHS, IDoubleTernaryOperator aOpt);
+    void operateFull2this   (IFunc1 aRHS, IDoubleTernaryOperator aOpt);
     void mapFull2this       (DoubleBinaryOperator aOpt);
     
     /** 微分积分运算 */

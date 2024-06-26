@@ -114,7 +114,6 @@ public abstract class VectorFunc1 extends AbstractFunc1 implements IEqualInterva
         /** 边界外的结果不保证正确性，这里简单起见统一都使用 ZeroBoundFunc1 来作为返回类型 */
         @Override protected VectorFunc1 newFunc1_() {return ZeroBoundFunc1.zeros(x0(), dx(), Nx());}
     }
-    
     @Override public IFunc1Operation operation() {return new VectorFunc1Operation_();}
     
     
