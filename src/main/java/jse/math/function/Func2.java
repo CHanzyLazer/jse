@@ -49,7 +49,7 @@ public class Func2 {
                 rFunc2.updateNear(tX, tY, f->f+1);
             }
         }
-        rFunc2.div2this(rSize * tStepX * tStepY);
+        rFunc2.f().div2this(rSize * tStepX * tStepY);
         return rFunc2;
     }
     public static PBCFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(aDataX, IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}

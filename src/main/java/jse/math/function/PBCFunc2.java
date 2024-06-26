@@ -43,6 +43,21 @@ public final class PBCFunc2 extends ColumnMatrixFunc2 {
                                    aY);
     }
     
+    @Override public int getINear(double aX) {
+        int tNx = Nx();
+        int tI = super.getINear(aX);
+        while (tI < 0) tI += tNx;
+        while (tI >= tNx) tI -= tNx;
+        return tI;
+    }
+    @Override public int getJNear(double aY) {
+        int tNy = Ny();
+        int tJ = super.getJNear(aY);
+        while (tJ < 0) tJ += tNy;
+        while (tJ >= tNy) tJ -= tNy;
+        return tJ;
+    }
+    
     @Override public PBCFunc2 newShell() {return new PBCFunc2(mX0, mY0, mDx, mDy, null);}
     @Override protected PBCFunc2 newInstance_(double aX0, double aY0, double aDx, double aDy, ColumnMatrix aData) {return new PBCFunc2(aX0, aY0, aDx, aDy, aData);}
 }

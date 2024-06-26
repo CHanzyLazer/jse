@@ -9,6 +9,8 @@ import jse.math.vector.RefVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.DoubleUnaryOperator;
+
 
 /**
  * @author liqa
@@ -60,6 +62,8 @@ public abstract class ColumnMatrixFunc2 extends AbstractFunc2 implements IEqualI
     /** 不进行边界检测的版本，带入 x 的情况永远不会超过边界（周期边界或者固定值），因此只提供索引的情况 */
     @Override public final double get(int aI, int aJ) {return mData.get(aI, aJ);}
     @Override public final void set(int aI, int aJ, double aV) {mData.set(aI, aJ, aV);}
+    @Override public int getINear(double aX) {return MathEX.Code.round2int((aX-mX0)/mDx);}
+    @Override public int getJNear(double aY) {return MathEX.Code.round2int((aY-mY0)/mDy);}
     
     /** 索引和 x 相互转换的接口 */
     @Override public final int Nx() {return mData.rowNumber();}
@@ -72,6 +76,14 @@ public abstract class ColumnMatrixFunc2 extends AbstractFunc2 implements IEqualI
     @Override public final double getY(int aJ) {return mY0 + aJ*mDy;}
     @Override public final void setX0(double aNewX0) {mX0 = aNewX0;}
     @Override public final void setY0(double aNewY0) {mY0 = aNewY0;}
+    
+    /** 附加一些额外的单元素操作，对于一般的只提供一个 update 的接口 */
+    @Override public final void update(int aI, int aJ, DoubleUnaryOperator aOpt) {
+        mData.update(aI, aJ, aOpt);
+    }
+    @Override public final double getAndUpdate(int aI, int aJ, DoubleUnaryOperator aOpt) {
+        return mData.getAndUpdate(aI, aJ, aOpt);
+    }
     
     
     @Override public final ColumnMatrixFunc2 copy() {
