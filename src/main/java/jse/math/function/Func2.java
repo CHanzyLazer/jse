@@ -2,9 +2,6 @@ package jse.math.function;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IHasDoubleIterator;
-import jse.math.MathEX;
-
-import static jse.math.MathEX.PI;
 
 /**
  * @author liqa
@@ -29,10 +26,10 @@ public class Func2 {
      * @param aNy 分划的 y 份数
      * @return 得到的二维分布函数
      */
-    public static PBCFunc2 distFrom(IHasDoubleIterator aDataX, IHasDoubleIterator aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {
+    public static IZeroBoundFunc2 distFrom(IHasDoubleIterator aDataX, IHasDoubleIterator aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {
         double tStepX = (aEndX-aStartX)/(double)(aNx-1);
         double tStepY = (aEndY-aStartY)/(double)(aNy-1);
-        PBCFunc2 rFunc2 = zeros(aStartX, aStartY, tStepX, tStepY, aNx, aNy);
+        IZeroBoundFunc2 rFunc2 = ZeroBoundFunc2.zeros(aStartX, aStartY, tStepX, tStepY, aNx, aNy);
         
         double tLBoundX = aStartX - tStepX*0.5;
         double tLBoundY = aStartY - tStepY*0.5;
@@ -52,12 +49,12 @@ public class Func2 {
         rFunc2.f().div2this(rSize * tStepX * tStepY);
         return rFunc2;
     }
-    public static PBCFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(aDataX, IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
-    public static PBCFunc2 distFrom(Iterable<? extends Number> aDataX, IHasDoubleIterator aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(IHasDoubleIterator.of(aDataX), aDataY, aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
-    public static PBCFunc2 distFrom(Iterable<? extends Number> aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(IHasDoubleIterator.of(aDataX), IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
+    public static IZeroBoundFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(aDataX, IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
+    public static IZeroBoundFunc2 distFrom(Iterable<? extends Number> aDataX, IHasDoubleIterator aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(IHasDoubleIterator.of(aDataX), aDataY, aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
+    public static IZeroBoundFunc2 distFrom(Iterable<? extends Number> aDataX, Iterable<? extends Number> aDataY, double aStartX, double aStartY, double aEndX, double aEndY, int aNx, int aNy) {return distFrom(IHasDoubleIterator.of(aDataX), IHasDoubleIterator.of(aDataY), aStartX, aStartY, aEndX, aEndY, aNx, aNy);}
     
-    public static PBCFunc2 distFrom(IHasDoubleIterator aDataX, IHasDoubleIterator aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
-    public static PBCFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
-    public static PBCFunc2 distFrom(Iterable<? extends Number> aDataX, IHasDoubleIterator aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
-    public static PBCFunc2 distFrom(Iterable<? extends Number> aDataX, Iterable<? extends Number> aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
+    public static IZeroBoundFunc2 distFrom(IHasDoubleIterator aDataX, IHasDoubleIterator aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
+    public static IZeroBoundFunc2 distFrom(IHasDoubleIterator aDataX, Iterable<? extends Number> aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
+    public static IZeroBoundFunc2 distFrom(Iterable<? extends Number> aDataX, IHasDoubleIterator aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
+    public static IZeroBoundFunc2 distFrom(Iterable<? extends Number> aDataX, Iterable<? extends Number> aDataY, double aStart, double aEnd, int aN) {return distFrom(aDataX, aDataY, aStart, aStart, aEnd, aEnd, aN, aN);}
 }
