@@ -1708,7 +1708,7 @@ public class UT {
                 }
             }
         }
-        private final static CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT.builder().setRecordSeparator('\n').build();
+        private final static CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT.builder().setRecordSeparator('\n').setCommentMarker('#').setTrim(true).build();
         public static List<String[]> csv2str(String aFilePath) throws IOException {return csv2str(aFilePath, DEFAULT_CSV_FORMAT);}
         public static void str2csv(Iterable<?> aLines, String aFilePath) throws IOException {str2csv(aLines, aFilePath, DEFAULT_CSV_FORMAT);}
         
