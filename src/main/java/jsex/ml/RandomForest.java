@@ -40,7 +40,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
     public static DecisionTree.Builder treeBuilder(@Unmodifiable List<? extends IVector> aTrainDataInput, ILogicalVector aTrainDataOutput) {
         return new DecisionTree.Builder(aTrainDataInput, aTrainDataOutput) {
             @Override protected int getConsiderCharaNumber(int aAllCharaNum) {
-                return Math.max(1, (int)Math.round(MathEX.Fast.sqrt(aAllCharaNum)));
+                return Math.max(1, MathEX.Code.round2int(MathEX.Fast.sqrt(aAllCharaNum)));
             }
         }.setMaxDepth(8);
     }
@@ -146,7 +146,7 @@ public class RandomForest extends AbstractThreadPool<ParforThreadPool> implement
         if (tSampleNum != aTrainDataOutput.size()) throw new IllegalArgumentException("Sample Number of Input and Output should be same, input: "+tSampleNum+", output: "+aTrainDataOutput.size());
         
         // 获取训练需要的样本数
-        final int tTrainSampleNum = Math.max(1, (int)Math.round(tSampleNum * aTrainRatio));
+        final int tTrainSampleNum = Math.max(1, MathEX.Code.round2int(tSampleNum * aTrainRatio));
         
         // 为了保证结果可重复，这里统一为每个线程生成一个种子，用于创建 LocalRandom
         final long[] tSeeds = genSeeds_(threadNumber(), aRNG);

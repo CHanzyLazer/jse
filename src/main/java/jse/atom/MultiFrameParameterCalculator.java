@@ -4,6 +4,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import jse.code.UT;
 import jse.code.collection.NewCollections;
+import jse.math.MathEX;
 import jse.math.function.Func1;
 import jse.math.function.IFunc1;
 import jse.math.matrix.IMatrix;
@@ -170,7 +171,7 @@ public class MultiFrameParameterCalculator extends AbstractThreadPool<ParforThre
         final IFunc1 rMSD = Func1.zeros(aN, i -> (tFrames.get(i) * mTimestep));
         
         // 获取需要间隔的帧数值
-        final int tFrameGap = Math.max(1, (int)Math.round(aTimeGap / mTimestep));
+        final int tFrameGap = Math.max(1, MathEX.Code.round2int(aTimeGap / mTimestep));
         
         // 根据帧数值来计算 MSD
         pool().parfor(aN, i -> {

@@ -82,7 +82,7 @@ public class Func1 {
         final double tXMul = -1.0 / (2.0*aSigma*aSigma);
         final double tYMul =  1.0 / (MathEX.Fast.sqrt(2.0*PI) * aSigma);
         
-        ZeroBoundSymmetryFunc1 rFunc1 = ZeroBoundSymmetryFunc1.zeros(aMu, aSigma/aResolution, (int)Math.round(aResolution*G_RANG));
+        ZeroBoundSymmetryFunc1 rFunc1 = ZeroBoundSymmetryFunc1.zeros(aMu, aSigma/aResolution, MathEX.Code.round2int(aResolution*G_RANG));
         rFunc1.fill(x -> {
             x -= aMu;
             return MathEX.Fast.exp(x * x * tXMul) * tYMul;

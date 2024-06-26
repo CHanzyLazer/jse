@@ -671,17 +671,17 @@ public class PlotterJFree implements IPlotter {
         @Override public IFigure location(int aX, int aY) {syncRun(() -> mFrame.setLocation(aX, aY)); return this;}
         @Override public IFigure insets(double aTop, double aLeft, double aBottom, double aRight) {
             syncRun(() -> {
-                mInset.top = (int)Math.round(aTop);
-                mInset.left = (int)Math.round(aLeft);
-                mInset.bottom = (int)Math.round(aBottom);
-                mInset.right = (int)Math.round(aRight);
+                mInset.top = MathEX.Code.round2int(aTop);
+                mInset.left = MathEX.Code.round2int(aLeft);
+                mInset.bottom = MathEX.Code.round2int(aBottom);
+                mInset.right = MathEX.Code.round2int(aRight);
             });
             return this;
         }
-        @Override public IFigure insetsTop(double aTop) {syncRun(() -> mInset.top = (int)Math.round(aTop)); return this;}
-        @Override public IFigure insetsLeft(double aLeft) {syncRun(() -> mInset.left = (int)Math.round(aLeft)); return this;}
-        @Override public IFigure insetsBottom(double aBottom) {syncRun(() -> mInset.bottom = (int)Math.round(aBottom)); return this;}
-        @Override public IFigure insetsRight(double aRight) {syncRun(() -> mInset.right = (int)Math.round(aRight)); return this;}
+        @Override public IFigure insetsTop(double aTop) {syncRun(() -> mInset.top = MathEX.Code.round2int(aTop)); return this;}
+        @Override public IFigure insetsLeft(double aLeft) {syncRun(() -> mInset.left = MathEX.Code.round2int(aLeft)); return this;}
+        @Override public IFigure insetsBottom(double aBottom) {syncRun(() -> mInset.bottom = MathEX.Code.round2int(aBottom)); return this;}
+        @Override public IFigure insetsRight(double aRight) {syncRun(() -> mInset.right = MathEX.Code.round2int(aRight)); return this;}
         
         @Override public void save(@Nullable String aFilePath, int aWidth, int aHeight) throws IOException {PlotterJFree.this.save(aFilePath, aWidth, aHeight);}
         @Override public void save(@Nullable String aFilePath) throws IOException {save(aFilePath, mPanel.getWidth(), mPanel.getHeight());}

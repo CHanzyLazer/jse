@@ -412,7 +412,7 @@ public class LmpParameterCalculator extends AbstractHasAutoShutdown {
             // 固定最小间距为 10
             if (tShortDumpStep < 10) tShortDumpStep = 10;
             // 计算短时需要的分点
-            tShortN = (int)Math.round(MathEX.Fast.log(tLongDumpStep*0.2) / MathEX.Fast.log(aMaxStepNum*0.08) * (aN-1));
+            tShortN = MathEX.Code.round2int(MathEX.Fast.log(tLongDumpStep*0.2) / MathEX.Fast.log(aMaxStepNum*0.08) * (aN-1));
             if (tShortN > 0) {
                 aN -= tShortN; ++tShortN;
                 // 进行短时分段的统计，这里要保证能“刚好”接上

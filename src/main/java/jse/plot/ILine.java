@@ -1,5 +1,6 @@
 package jse.plot;
 
+import jse.math.MathEX;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.awt.*;
@@ -20,12 +21,12 @@ public interface ILine {
     
     /** 设置线的各种属性，返回自身方便链式调用 */
     default ILine color(int aIdx) {return color(COLOR(aIdx));}
-    default ILine color(double aR, double aG, double aB) {return color(new Color((int)Math.round(aR*255), (int)Math.round(aG*255), (int)Math.round(aB*255)));}
+    default ILine color(double aR, double aG, double aB) {return color(new Color(MathEX.Code.round2int(aR*255), MathEX.Code.round2int(aG*255), MathEX.Code.round2int(aB*255)));}
     default ILine color(String aColor) {return color(toColor(aColor));}
     ILine color(Paint aPaint);
     
     default ILine lineColor(int aIdx) {return lineColor(COLOR(aIdx));}
-    default ILine lineColor(double aR, double aG, double aB) {return lineColor(new Color((int)Math.round(aR*255), (int)Math.round(aG*255), (int)Math.round(aB*255)));}
+    default ILine lineColor(double aR, double aG, double aB) {return lineColor(new Color(MathEX.Code.round2int(aR*255), MathEX.Code.round2int(aG*255), MathEX.Code.round2int(aB*255)));}
     default ILine lineColor(String aColor) {return lineColor(toColor(aColor));}
     ILine lineColor(Paint aPaint);
     
