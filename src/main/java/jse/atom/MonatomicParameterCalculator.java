@@ -50,7 +50,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     private IIntVector mTypeVec; // 统计所有的原子种类
     private final int mAtomTypeNum; // 统计所有的原子种类数目
     private final double mVolume; // 模拟盒体积
-    private final double mRou; // 粒子数密度
+    private final double mRho; // 粒子数密度
     private final double mUnitLen; // 平均单个原子的距离
     
     private final NeighborListGetter mNL;
@@ -115,8 +115,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         
         // 计算单位长度供内部使用
         mVolume = mBox.volume();
-        mRou = mAtomNum / mVolume;
-        mUnitLen = Fast.cbrt(1.0/mRou);
+        mRho = mAtomNum / mVolume;
+        mUnitLen = Fast.cbrt(1.0/ mRho);
         
         mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox);
         mInitThreadID = Thread.currentThread().getId();
@@ -198,11 +198,20 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public int atomNumber() {return mAtomNum;}
     public double unitLen() {return mUnitLen;}
     public double volume() {return mVolume;}
-    public double rou() {return mRou;}
-    public double rou(int aType) {return mAtomNumType.get(aType-1) / mVolume;}
-    public double birou(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRou*aMPC.mRou);}
+    public double rho() {return mRho;}
+    public double rho(int aType) {return mAtomNumType.get(aType-1) / mVolume;}
+    public double birho(int aTypeA, int aTypeB) {return Fast.sqrt(rho(aTypeA)*rho(aTypeB));}
+    public double birho(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRho*aMPC.mRho);}
     /** @deprecated use {@link #atomNumber} */
     @Deprecated public final int atomNum() {return atomNumber();}
+    /** @deprecated use {@link #rho} */
+    @Deprecated public final double rou() {return rho();}
+    /** @deprecated use {@link #rho} */
+    @Deprecated public final double rou(int aType) {return rho(aType);}
+    /** @deprecated use {@link #birho} */
+    public final double birou(int aTypeA, int aTypeB) {return birho(aTypeA, aTypeB);}
+    /** @deprecated use {@link #birho} */
+    public final double birou(MonatomicParameterCalculator aMPC) {return birho(aMPC);}
     /** 补充运算时使用 */
     @ApiStatus.Internal public NeighborListGetter nl_() {return mNL;}
     @ApiStatus.Internal public IMatrix atomDataXYZ_() {return mAtomDataXYZ;}
@@ -235,8 +244,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        final double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        final double rho = dr * mAtomNum*0.5 * mRho; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -270,8 +279,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        final double rou = dr * aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        final double rho = dr * aAtomNum * mRho; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -333,10 +342,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        double rou = dr * mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
-        if (aTypeA == aTypeB) rou *= 0.5;
-        final double fRou = rou;
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        double rho = dr * mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
+        if (aTypeA == aTypeB) rho *= 0.5;
+        final double fRho = rho;
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -403,15 +412,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         it.forEachRemaining(dnAll -> {
             for (int i = 0; i < grAll.length; ++i) grAll[i].plus2this(dnAll[i]);
         });
-        double rou = dr * mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        final double fRou = rou;
-        grAll[0].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        double rho = dr * mAtomNum*0.5 * mRho; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        final double fRho = rho;
+        grAll[0].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRho)));
         int idx = 1;
         for (int typeAmm = 0; typeAmm < mAtomTypeNum; ++typeAmm) for (int typeBmm = 0; typeBmm <= typeAmm; ++typeBmm) {
-            rou = dr * mAtomNumType.get(typeAmm) * mAtomNumType.get(typeBmm) / mVolume;
-            if (typeAmm == typeBmm) rou *= 0.5;
-            final double fRouAB = rou;
-            grAll[idx].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRouAB)));
+            rho = dr * mAtomNumType.get(typeAmm) * mAtomNumType.get(typeBmm) / mVolume;
+            if (typeAmm == typeBmm) rho *= 0.5;
+            final double fRhoAB = rho;
+            grAll[idx].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRhoAB)));
             ++idx;
         }
         
@@ -459,8 +468,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        final double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        final double rho = mAtomNum*0.5 * mRho; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -503,8 +512,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        final double rou = aAtomNum * mRou; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rou)));
+        final double rho = aAtomNum * mRho; // aAtomDataXYZ.size() 为对所有原子求和需要进行的平均
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*rho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -578,10 +587,10 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         // 获取结果
         IFunc1 gr = dnPar[0];
         for (int i = 1; i < dnPar.length; ++i) gr.plus2this(dnPar[i]);
-        double rou = mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
-        if (aTypeA == aTypeB) rou *= 0.5;
-        final double fRou = rou;
-        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        double rho = mAtomNumType.get(aTypeA-1) * mAtomNumType.get(aTypeB-1) / mVolume;
+        if (aTypeA == aTypeB) rho *= 0.5;
+        final double fRho = rho;
+        gr.operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRho)));
         
         // 修复截断数据
         gr.set(0, 0.0);
@@ -657,15 +666,15 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         it.forEachRemaining(dnAll -> {
             for (int i = 0; i < grAll.length; ++i) grAll[i].plus2this(dnAll[i]);
         });
-        double rou = mAtomNum*0.5 * mRou; // mAtomNum*0.5 为对所有原子求和需要进行的平均
-        final double fRou = rou;
-        grAll[0].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRou)));
+        double rho = mAtomNum*0.5 * mRho; // mAtomNum*0.5 为对所有原子求和需要进行的平均
+        final double fRho = rho;
+        grAll[0].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRho)));
         int idx = 1;
         for (int typeAmm = 0; typeAmm < mAtomTypeNum; ++typeAmm) for (int typeBmm = 0; typeBmm <= typeAmm; ++typeBmm) {
-            rou = mAtomNumType.get(typeAmm) * mAtomNumType.get(typeBmm) / mVolume;
-            if (typeAmm == typeBmm) rou *= 0.5;
-            final double fRouAB = rou;
-            grAll[idx].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRouAB)));
+            rho = mAtomNumType.get(typeAmm) * mAtomNumType.get(typeBmm) / mVolume;
+            if (typeAmm == typeBmm) rho *= 0.5;
+            final double fRhoAB = rho;
+            grAll[idx].operation().mapFull2this((g, r) -> (g / (r*r*4.0*PI*fRhoAB)));
             ++idx;
         }
         
@@ -920,54 +929,54 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 转换 g(r) 到 S(q)，这是主要计算 S(q) 的方法
      * @author liqa
      * @param aGr the matrix form of g(r)
-     * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aRho the atom number density（默认会选择本 MPC 得到的密度）
      * @param aN the split number of output（默认为 160）
      * @param aQMax the max q of output S(q)（默认为 7.6 倍 gr 第一峰对应的距离）
      * @param aQMin the min q of output S(q)（默认为 0.5 倍 gr 第一峰对应的距离）
      * @return the structural factor, S(q)
      */
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax, double aQMin) {
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRho, int aN, double aQMax, double aQMin) {
         double dq = (aQMax-aQMin)/aN;
         
         IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN+1).setBound(0.0, 1.0);
         Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Fast.sin(q*r) / q)));
-        Sq.multiply2this(4.0*PI*aRou);
+        Sq.multiply2this(4.0*PI*aRho);
         Sq.plus2this(1.0);
         
         Sq.set(0, 0.0);
         return Sq;
     }
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN, double aQMax) {return RDF2SF(aGr, aRou, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou, int aN              ) {return RDF2SF(aGr, aRou, aN, 2.0*PI/aGr.operation().maxX()* 7.6, 2.0*PI/aGr.operation().maxX() * 0.5);}
-    public static IFunc1 RDF2SF(IFunc1 aGr, double aRou                      ) {return RDF2SF(aGr, aRou, 160);}
-    public        IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRou);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRho, int aN, double aQMax) {return RDF2SF(aGr, aRho, aN, aQMax, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRho, int aN              ) {return RDF2SF(aGr, aRho, aN, 2.0*PI/aGr.operation().maxX()* 7.6, 2.0*PI/aGr.operation().maxX() * 0.5);}
+    public static IFunc1 RDF2SF(IFunc1 aGr, double aRho                      ) {return RDF2SF(aGr, aRho, 160);}
+    public        IFunc1 RDF2SF(IFunc1 aGr                                   ) {return RDF2SF(aGr, mRho);}
     
     
     /**
      * 转换 S(q) 到 g(r)
      * @author liqa
      * @param aSq the matrix form of S(q)
-     * @param aRou the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aRho the atom number density（默认会选择本 MPC 得到的密度）
      * @param aN the split number of output（默认为 160）
      * @param aRMax the max r of output g(r)（默认为 7.6 倍 Sq 第一峰对应的距离）
      * @param aRMin the min r of output g(r)（默认为 0.5 倍 Sq 第一峰对应的距离）
      * @return the radial distribution function, g(r)
      */
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax, double aRMin) {
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRho, int aN, double aRMax, double aRMin) {
         double dr = (aRMax-aRMin)/aN;
         
         IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN+1).setBound(0.0, 1.0);
         gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Fast.sin(q*r) / r)));
-        gr.multiply2this(1.0/(2.0*PI*PI*aRou));
+        gr.multiply2this(1.0/(2.0*PI*PI*aRho));
         gr.plus2this(1.0);
         
         gr.set(0, 0.0);
         return gr;
     }
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN, double aRMax) {return SF2RDF(aSq, aRou, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou, int aN              ) {return SF2RDF(aSq, aRou, aN, 2.0*PI/aSq.operation().maxX() * 7.6, 2.0*PI/aSq.operation().maxX() * 0.5);}
-    public static IFunc1 SF2RDF(IFunc1 aSq, double aRou                      ) {return SF2RDF(aSq, aRou, 160);}
-    public        IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRou);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRho, int aN, double aRMax) {return SF2RDF(aSq, aRho, aN, aRMax, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRho, int aN              ) {return SF2RDF(aSq, aRho, aN, 2.0*PI/aSq.operation().maxX() * 7.6, 2.0*PI/aSq.operation().maxX() * 0.5);}
+    public static IFunc1 SF2RDF(IFunc1 aSq, double aRho                      ) {return SF2RDF(aSq, aRho, 160);}
+    public        IFunc1 SF2RDF(IFunc1 aSq                                   ) {return SF2RDF(aSq, mRho);}
     
     
     
