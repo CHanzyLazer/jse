@@ -283,7 +283,7 @@ public class MathEX {
         }
         
         /**
-         * 输出 Chebyshev 多项式函数，参见：
+         * 输出第一类 Chebyshev 多项式函数（Tn），参见：
          * <a href="https://en.wikipedia.org/wiki/Chebyshev_polynomials">
          * Chebyshev polynomials </a>
          * @author liqa
@@ -296,6 +296,23 @@ public class MathEX {
             case 0: {return 1.0;}
             case 1: {return aX;}
             default: {return 2.0 * aX * chebyshev(aN - 1, aX) - chebyshev(aN - 2, aX);}
+            }
+        }
+        
+        /**
+         * 输出第二类 Chebyshev 多项式函数（Un），参见：
+         * <a href="https://en.wikipedia.org/wiki/Chebyshev_polynomials">
+         * Chebyshev polynomials </a>
+         * @author liqa
+         * @param aN Chebyshev 多项式阶数，有 {@code n >= 0}
+         * @return 计算结果，实数
+         */
+        public static double chebyshev2(@Range(from = 0, to = Integer.MAX_VALUE) int aN, double aX) {
+            // 直接采用递推关系递归计算
+            switch(aN) {
+            case 0: {return 1.0;}
+            case 1: {return 2.0 * aX;}
+            default: {return 2.0 * aX * chebyshev2(aN - 1, aX) - chebyshev2(aN - 2, aX);}
             }
         }
         

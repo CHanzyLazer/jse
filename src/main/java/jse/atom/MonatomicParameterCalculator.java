@@ -1456,11 +1456,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double dy = y - cXYZ.mY;
                 double dz = z - cXYZ.mZ;
                 double theta = Fast.acos(dz / Fast.sqrt(dis2));
-                double cosPhi = dx / Fast.hypot(dx, dy);
-                // 注意避免 NaN 以及由于精度越界的情况
-                if (Double.isNaN(cosPhi)) cosPhi = 1.0;
-                cosPhi = Code.toRange(-1.0, 1.0, cosPhi);
-                double phi = (dy > 0) ? Fast.acos(cosPhi) : (2.0*PI - Fast.acos(cosPhi));
+                // 使用 atan2 避免 NaN 以及由于精度越界的情况
+                double phi = Fast.atan2(dy, dx);
                 
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计
                 IComplexVector Qlmj = null;
@@ -1537,11 +1534,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double dy = y - cXYZ.mY;
                 double dz = z - cXYZ.mZ;
                 double theta = Fast.acos(dz / Fast.sqrt(dis2));
-                double cosPhi = dx / Fast.hypot(dx, dy);
-                // 注意避免 NaN 以及由于精度越界的情况
-                if (Double.isNaN(cosPhi)) cosPhi = 1.0;
-                cosPhi = Code.toRange(-1.0, 1.0, cosPhi);
-                double phi = (dy > 0) ? Fast.acos(cosPhi) : (2.0*PI - Fast.acos(cosPhi));
+                // 使用 atan2 避免 NaN 以及由于精度越界的情况
+                double phi = Fast.atan2(dy, dx);
                 
                 // 如果开启 half 遍历的优化，对称的对面的粒子也要增加这个统计，但如果不在区域内则不需要统计
                 boolean tHalfStat = aHalf && aMPIInfo.inRegin(idx);
@@ -2787,11 +2781,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
                 double dy = y - cXYZ.mY;
                 double dz = z - cXYZ.mZ;
                 double theta = Fast.acos(dz / dis);
-                double cosPhi = dx / Fast.hypot(dx, dy);
-                // 注意避免 NaN 以及由于精度越界的情况
-                if (Double.isNaN(cosPhi)) cosPhi = 1.0;
-                cosPhi = Code.toRange(-1.0, 1.0, cosPhi);
-                double phi = (dy > 0) ? Fast.acos(cosPhi) : (2.0*PI - Fast.acos(cosPhi));
+                // 使用 atan2 避免 NaN 以及由于精度越界的情况
+                double phi = Fast.atan2(dy, dx);
                 
                 // 计算种类的权重
                 int type = mTypeVec.get(idx);
