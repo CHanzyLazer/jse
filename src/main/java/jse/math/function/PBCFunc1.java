@@ -35,4 +35,17 @@ public final class PBCFunc1 extends VectorFunc1 {
     
     @Override public PBCFunc1 newShell() {return new PBCFunc1(mX0, mDx, null);}
     @Override protected PBCFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new PBCFunc1(aX0, aDx, aData);}
+    
+    
+    /** 对于 PBC 函数，这些运算需要重新考虑 */
+    @Override public VectorFunc1Operation operation() {
+        return new VectorFunc1Operation_() {
+            /** PBC 函数积分考虑右侧边界 */
+            @Override public double integral() {return integral(false, true);}
+            @Override public IFunc1 convolve(IFunc2Subs aConv) {return convolve(aConv, false, true);}
+            @Override public IFunc1Subs refConvolve(IFunc2Subs aConv) {return refConvolve(aConv, false, true);}
+            @Override public IFunc1 convolveFull(IFunc3Subs aConv) {return convolveFull(aConv, false, true);}
+            @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv) {return refConvolveFull(aConv, false, true);}
+        };
+    }
 }

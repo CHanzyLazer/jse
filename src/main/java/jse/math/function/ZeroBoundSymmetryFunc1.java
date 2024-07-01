@@ -38,18 +38,18 @@ public final class ZeroBoundSymmetryFunc1 extends VectorFunc1 implements IZeroBo
     @Override public VectorFunc1Operation operation() {
         return new VectorFunc1Operation_() {
             /** 对称函数的 laplacian 依旧是对称的，可以直接用 */
-            @Override public IFunc1 laplacian() {
+            @Override public IFunc1 laplacian(boolean aConsiderBound) {
                 IFunc1 rFunc1 = ZeroBoundSymmetryFunc1.zeros(mX0, mDx, Nx());
-                laplacian2Dest_(rFunc1);
+                laplacian2Dest_(rFunc1, aConsiderBound);
                 return rFunc1;
             }
             
             /** 积分考虑对称性需要结果乘以 2 */
-            @Override public double integral() {return super.integral() * 2.0;}
+            @Override public double integral(boolean aConsiderBoundL, boolean aConsiderBoundR) {return super.integral(aConsiderBoundL, aConsiderBoundR) * 2.0;}
             
             /** 卷积考虑对称性需要结果乘以 2 */
-            @Override public IFunc1Subs refConvolve(final IFunc2Subs aConv) {return k -> super.refConvolve(aConv).subs(k) * 2.0;}
-            @Override public IFunc1Subs refConvolveFull(final IFunc3Subs aConv) {return k -> super.refConvolveFull(aConv).subs(k) * 2.0;}
+            @Override public IFunc1Subs refConvolve(final IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {return k -> super.refConvolve(aConv, aConsiderBoundL, aConsiderBoundR).subs(k) * 2.0;}
+            @Override public IFunc1Subs refConvolveFull(final IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {return k -> super.refConvolveFull(aConv, aConsiderBoundL, aConsiderBoundR).subs(k) * 2.0;}
         };
     }
 }

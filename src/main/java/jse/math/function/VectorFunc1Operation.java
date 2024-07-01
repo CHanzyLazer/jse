@@ -417,108 +417,139 @@ public abstract class VectorFunc1Operation extends AbstractFunc1Operation {
     }
     
     
-    
-    @Override protected void gradient2Dest_(IFunc1 rDest) {
+    @Override protected void gradient2Dest_(IFunc1 rDest, boolean aConsiderBound) {
         VectorFunc1 tFunc1 = thisFunc1_();
         int tNx = tFunc1.Nx();
         double tDx = tFunc1.dx();
-        for (int i = 0; i < tNx; ++i) {
-            double tF = tFunc1.get(i);
-            int imm = i - 1;
-            double tFmm = (imm < 0) ? tFunc1.getOutL_(imm) : tFunc1.get(imm);
-            int ipp = i + 1;
-            double tFpp = (ipp >= tNx) ? tFunc1.getOutR_(ipp) : tFunc1.get(ipp);
-            rDest.set(i, 0.5*((tF-tFmm) + (tFpp-tF))/tDx);
+        if (aConsiderBound) {
+            for (int i = 0; i < tNx; ++i) {
+                double tF = tFunc1.get(i);
+                int imm = i - 1;
+                double tFmm = (imm < 0) ? tFunc1.getOutL_(imm) : tFunc1.get(imm);
+                int ipp = i + 1;
+                double tFpp = (ipp >= tNx) ? tFunc1.getOutR_(ipp) : tFunc1.get(ipp);
+                rDest.set(i, 0.5*((tF-tFmm) + (tFpp-tF))/tDx);
+            }
+        } else {
+            for (int i = 0; i < tNx; ++i) {
+                double tF = tFunc1.get(i);
+                int imm = i - 1;
+                double gFl = (imm < 0) ? Double.NaN : (tF - tFunc1.get(imm)) / tDx;
+                int ipp = i + 1;
+                double gFr = (ipp >= tNx) ? Double.NaN : (tFunc1.get(ipp) - tF) / tDx;
+                if (imm < 0) {
+                    if (ipp >= tNx) {
+                        rDest.set(i, 0.0);
+                    } else {
+                        rDest.set(i, gFr);
+                    }
+                } else if (ipp >= tNx) {
+                    rDest.set(i, gFl);
+                } else {
+                    rDest.set(i, 0.5*(gFl + gFr));
+                }
+            }
         }
     }
     
     /** 边界外的结果不保证正确性 */
-    @Override public IFunc1 laplacian() {
+    @Override public IFunc1 laplacian(boolean aConsiderBound) {
         IFunc1 rFunc1 = newFunc1_();
-        laplacian2Dest_(rFunc1);
+        laplacian2Dest_(rFunc1, aConsiderBound);
         return rFunc1;
     }
     /** 严格来说获取到的 data 顺序没有相关性，因此不能根据这个来做 laplacian */
-    protected void laplacian2Dest_(IFunc1 rDest) {
+    protected void laplacian2Dest_(IFunc1 rDest, boolean aConsiderBound) {
         VectorFunc1 tFunc1 = thisFunc1_();
         int tNx = tFunc1.Nx();
         double tDx2 = tFunc1.dx() * tFunc1.dx();
-        for (int i = 0; i < tNx; ++i) {
-            int imm = i - 1;
-            double tFmm = (imm < 0) ? tFunc1.getOutL_(imm) : tFunc1.get(imm);
-            int ipp = i + 1;
-            double tFpp = (ipp >= tNx) ? tFunc1.getOutR_(ipp) : tFunc1.get(ipp);
-            
-            rDest.set(i, (tFmm + tFpp - 2*tFunc1.get(i)) / tDx2);
+        if (aConsiderBound) {
+            for (int i = 0; i < tNx; ++i) {
+                int imm = i - 1;
+                double tFmm = (imm < 0) ? tFunc1.getOutL_(imm) : tFunc1.get(imm);
+                int ipp = i + 1;
+                double tFpp = (ipp >= tNx) ? tFunc1.getOutR_(ipp) : tFunc1.get(ipp);
+                rDest.set(i, (tFmm + tFpp - 2*tFunc1.get(i)) / tDx2);
+            }
+        } else {
+            for (int i = 0; i < tNx; ++i) {
+                int imm = i - 1;
+                if (imm < 0) {rDest.set(i, 0.0); continue;}
+                double tFmm = tFunc1.get(imm);
+                int ipp = i + 1;
+                if (ipp >= tNx) {rDest.set(i, 0.0); continue;}
+                double tFpp = tFunc1.get(ipp);
+                rDest.set(i, (tFmm + tFpp - 2*tFunc1.get(i)) / tDx2);
+            }
         }
     }
     
-    @Override public double integral() {
+    @Override public double integral(boolean aConsiderBoundL, boolean aConsiderBoundR) {
         VectorFunc1 tThis = thisFunc1_();
         double pF = tThis.get(0);
         double tDx2 = tThis.dx()/2.0;
         double tResult = 0.0;
+        if (aConsiderBoundL) {
+            double tF = tThis.getOutL_(-1);
+            tResult += tDx2*(tF + pF);
+        }
         int tNx = tThis.Nx();
         for (int i = 1; i < tNx; ++i) {
             double tF = tThis.get(i);
             tResult += tDx2*(tF + pF);
             pF = tF;
         }
-        // 还需要增加 i == tNx 的一项，这样对于周期边界条件会全部都积分
-        double tF = tThis.getOutR_(tNx);
-        tResult += tDx2*(tF + pF);
-        
+        if (aConsiderBoundR) {
+            double tF = tThis.getOutR_(tNx);
+            tResult += tDx2*(tF + pF);
+        }
         return tResult;
     }
     
     /** 对于卷积以 refConvolve 为主 */
-    @Override public IFunc1 convolve(IFunc2Subs aConv) {
-        VectorFunc1 tThis = thisFunc1_();
-        IFunc1 rFunc1 = ZeroBoundFunc1.zeros(tThis.x0(), tThis.dx(), tThis.Nx());
-        rFunc1.fill(refConvolve(aConv));
-        return rFunc1;
-    }
-    @Override public IFunc1Subs refConvolve(IFunc2Subs aConv) {
+    @Override public IFunc1Subs refConvolve(IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
         final VectorFunc1 tThis = thisFunc1_();
         return k -> {
             double pC = aConv.subs(tThis.x0(), k) * tThis.get(0);
             double tResult = 0.0;
             double tDx2 = tThis.dx()/2.0;
+            if (aConsiderBoundL) {
+                double tC = aConv.subs(tThis.getX(-1), k) * tThis.getOutL_(-1);
+                tResult += tDx2*(tC + pC);
+            }
             int tNx = tThis.Nx();
             for (int i = 1; i < tNx; ++i) {
                 double tC = aConv.subs(tThis.getX(i), k) * tThis.get(i);
                 tResult += tDx2*(tC + pC);
                 pC = tC;
             }
-            // 还需要增加 i == tNx 的一项，这样对于周期边界条件会全部都积分
-            double tC = aConv.subs(tThis.getX(tNx), k) * tThis.getOutR_(tNx);
-            tResult += tDx2*(tC + pC);
-            
+            if (aConsiderBoundR) {
+                double tC = aConv.subs(tThis.getX(tNx), k) * tThis.getOutR_(tNx);
+                tResult += tDx2*(tC + pC);
+            }
             return tResult;
         };
     }
-    @Override public IFunc1 convolveFull(IFunc3Subs aConv) {
-        VectorFunc1 tThis = thisFunc1_();
-        IFunc1 rFunc1 = ZeroBoundFunc1.zeros(tThis.x0(), tThis.dx(), tThis.Nx());
-        rFunc1.fill(refConvolveFull(aConv));
-        return rFunc1;
-    }
-    @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv) {
+    @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
         final VectorFunc1 tThis = thisFunc1_();
         return k -> {
             double pC = aConv.subs(tThis.get(0), tThis.x0(), k);
             double tResult = 0.0;
             double tDx2 = tThis.dx()/2.0;
+            if (aConsiderBoundL) {
+                double tC = aConv.subs(tThis.getOutL_(-1), tThis.getX(-1), k);
+                tResult += tDx2*(tC + pC);
+            }
             int tNx = tThis.Nx();
             for (int i = 1; i < tNx; ++i) {
                 double tC = aConv.subs(tThis.get(i), tThis.getX(i), k);
                 tResult += tDx2*(tC + pC);
                 pC = tC;
             }
-            // 还需要增加 i == tNx 的一项，这样对于周期边界条件会全部都积分
-            double tC = aConv.subs(tThis.getOutR_(tNx), tThis.getX(tNx), k);
-            tResult += tDx2*(tC + pC);
-            
+            if (aConsiderBoundR) {
+                double tC = aConv.subs(tThis.getOutR_(tNx), tThis.getX(tNx), k);
+                tResult += tDx2*(tC + pC);
+            }
             return tResult;
         };
     }

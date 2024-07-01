@@ -115,12 +115,14 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     }
     
     
-    @Override public IFunc1 gradient() {
+    @Override public IFunc1 gradient() {return gradient(false);}
+    @Override public IFunc1 gradient(boolean aConsiderBound) {
         IFunc1 rFunc1 = newFunc1_();
-        gradient2Dest_(rFunc1);
+        gradient2Dest_(rFunc1, aConsiderBound);
         return rFunc1;
     }
-    protected void gradient2Dest_(IFunc1 rDest) {
+    protected void gradient2Dest_(IFunc1 rDest, boolean aConsiderBound) {
+        if (aConsiderBound) throw new UnsupportedOperationException("ConsiderBound on No Bound Func1");
         IFunc1 tFunc1 = thisFunc1_();
         int tNx = tFunc1.Nx();
         for (int i = 0; i < tNx; ++i) {
@@ -129,14 +131,27 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
             double gFl = (imm < 0) ? Double.NaN : (tF - tFunc1.get(imm)) / tFunc1.dx(imm);
             int ipp = i + 1;
             double gFr = (ipp >= tNx) ? Double.NaN : (tFunc1.get(ipp) - tF) / tFunc1.dx(i);
-            rDest.set(i, Double.isNaN(gFl) ? (Double.isNaN(gFr) ? 0.0 : gFr) : (Double.isNaN(gFr) ? gFl : 0.5*(gFl+gFr)));
+            if (imm < 0) {
+                if (ipp >= tNx) {
+                    rDest.set(i, 0.0);
+                } else {
+                    rDest.set(i, gFr);
+                }
+            } else if (ipp >= tNx) {
+                rDest.set(i, gFl);
+            } else {
+                rDest.set(i, 0.5*(gFl + gFr));
+            }
         }
     }
     
     /** 简单起见，对于一般非均匀的直接不支持此操作 */
-    @Override public IFunc1 laplacian() {throw new UnsupportedOperationException("laplacian");}
+    @Override public IFunc1 laplacian() {return laplacian(false);}
+    @Override public IFunc1 laplacian(boolean aConsiderBound) {throw new UnsupportedOperationException("laplacian");}
     
-    @Override public double integral() {
+    @Override public double integral() {return integral(false, false);}
+    @Override public double integral(boolean aConsiderBoundL, boolean aConsiderBoundR) {
+        if (aConsiderBoundL || aConsiderBoundR) throw new UnsupportedOperationException("ConsiderBound on No Bound Func1");
         final IFunc1 tThis = thisFunc1_();
         double pF = tThis.get(0);
         double tResult = 0.0;
@@ -150,12 +165,15 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
     }
     
     /** 对于卷积以 refConvolve 为主 */
-    @Override public IFunc1 convolve(IFunc2Subs aConv) {
+    @Override public IFunc1 convolve(IFunc2Subs aConv) {return convolve(aConv, false, false);}
+    @Override public IFunc1 convolve(IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
         IFunc1 rFunc1 = newFunc1_();
-        rFunc1.fill(refConvolve(aConv));
+        rFunc1.fill(refConvolve(aConv, aConsiderBoundL, aConsiderBoundR));
         return rFunc1;
     }
-    @Override public IFunc1Subs refConvolve(IFunc2Subs aConv) {
+    @Override public IFunc1Subs refConvolve(IFunc2Subs aConv) {return refConvolve(aConv, false, false);}
+    @Override public IFunc1Subs refConvolve(IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
+        if (aConsiderBoundL || aConsiderBoundR) throw new UnsupportedOperationException("ConsiderBound on No Bound Func1");
         final IFunc1 tThis = thisFunc1_();
         return k -> {
             double pC = aConv.subs(tThis.x0(), k) * tThis.get(0);
@@ -171,12 +189,15 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         };
     }
     
-    @Override public IFunc1 convolveFull(IFunc3Subs aConv) {
+    @Override public IFunc1 convolveFull(IFunc3Subs aConv) {return convolveFull(aConv, false, false);}
+    @Override public IFunc1 convolveFull(IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
         IFunc1 rFunc1 = newFunc1_();
-        rFunc1.fill(refConvolveFull(aConv));
+        rFunc1.fill(refConvolveFull(aConv, aConsiderBoundL, aConsiderBoundR));
         return rFunc1;
     }
-    @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv) {
+    @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv) {return refConvolveFull(aConv, false, false);}
+    @Override public IFunc1Subs refConvolveFull(IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR) {
+        if (aConsiderBoundL || aConsiderBoundR) throw new UnsupportedOperationException("ConsiderBound on No Bound Func1");
         final IFunc1 tThis = thisFunc1_();
         return k -> {
             double pC = aConv.subs(tThis.get(0), tThis.x0(), k);

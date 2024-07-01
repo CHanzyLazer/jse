@@ -68,10 +68,13 @@ public interface IFunc1Operation {
     
     /** 微分积分运算 */
     IFunc1 gradient();
+    IFunc1 gradient(boolean aConsiderBound);
     IFunc1 laplacian();
+    IFunc1 laplacian(boolean aConsiderBound);
     
     /** 积分运算 */
     double integral();
+    double integral(boolean aConsiderBoundL, boolean aConsiderBoundR);
     
     /**
      * 卷积运算，通过输入的卷积核来对自身函数进行卷积运算，输出得到的结果
@@ -81,7 +84,9 @@ public interface IFunc1Operation {
      * 执行的卷积运算为：{@code g(k) = int(conv(x, k) * f(x), x)};
      */
     IFunc1 convolve(IFunc2Subs aConv);
+    IFunc1 convolve(IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR);
     IFunc1Subs refConvolve(IFunc2Subs aConv);
+    IFunc1Subs refConvolve(IFunc2Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR);
     
     /**
      * 完整的卷积运算，通过输入的卷积核来对自身函数进行卷积运算，输出得到的结果
@@ -91,7 +96,9 @@ public interface IFunc1Operation {
      * 执行的卷积运算为：{@code g(k) = int(conv(f(x), x, k), x)};
      */
     IFunc1 convolveFull(IFunc3Subs aConv);
+    IFunc1 convolveFull(IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR);
     IFunc1Subs refConvolveFull(IFunc3Subs aConv);
+    IFunc1Subs refConvolveFull(IFunc3Subs aConv, boolean aConsiderBoundL, boolean aConsiderBoundR);
     
     /** 返回峰值所在的 x 坐标 */
     double maxX();
