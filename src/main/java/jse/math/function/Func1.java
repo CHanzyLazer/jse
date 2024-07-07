@@ -11,38 +11,38 @@ import static jse.math.MathEX.PI;
 
 /**
  * @author liqa
- * <p> 现在修改为专门获取一维函数的类，默认获取 {@link PBCFunc1} </p>
+ * <p> 现在修改为专门获取一维函数的类，默认获取 {@link ZeroBoundFunc1} </p>
  */
 public class Func1 {
     private Func1() {}
     
-    public static PBCFunc1 ones(double aX0, double aDx, int aNx) {PBCFunc1 rFunc = zeros(aX0, aDx, aNx); rFunc.fill(1.0); return rFunc;}
-    public static PBCFunc1 zeros(double aX0, double aDx, int aNx) {return PBCFunc1.zeros(aX0, aDx, aNx);}
+    public static ZeroBoundFunc1 ones(double aX0, double aDx, int aNx) {ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aNx); rFunc.fill(1.0); return rFunc;}
+    public static ZeroBoundFunc1 zeros(double aX0, double aDx, int aNx) {return ZeroBoundFunc1.zeros(aX0, aDx, aNx);}
     public static UnequalIntervalFunc1 zeros(int aNx, IVectorGetter aXGetter) {return UnequalIntervalFunc1.zeros(aNx, aXGetter);}
     public static UnequalIntervalFunc1 zeros(IVector aX) {return zeros(aX.size(), aX);}
     
-    public static PBCFunc1 from(double aX0, double aDx, int aNx, IFunc1Subs aFunc1Subs) {
-        PBCFunc1 rFunc = zeros(aX0, aDx, aNx);
+    public static ZeroBoundFunc1 from(double aX0, double aDx, int aNx, IFunc1Subs aFunc1Subs) {
+        ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aNx);
         rFunc.fill(aFunc1Subs);
         return rFunc;
     }
-    public static PBCFunc1 from(double aX0, double aDx, int aNx, Iterable<? extends Number> aList) {
-        PBCFunc1 rFunc = zeros(aX0, aDx, aNx);
+    public static ZeroBoundFunc1 from(double aX0, double aDx, int aNx, Iterable<? extends Number> aList) {
+        ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aNx);
         rFunc.fill(aList);
         return rFunc;
     }
-    public static PBCFunc1 from(double aX0, double aDx, Collection<? extends Number> aList) {
-        PBCFunc1 rFunc = zeros(aX0, aDx, aList.size());
+    public static ZeroBoundFunc1 from(double aX0, double aDx, Collection<? extends Number> aList) {
+        ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aList.size());
         rFunc.fill(aList);
         return rFunc;
     }
-    public static PBCFunc1 from(double aX0, double aDx, double[] aData) {
-        PBCFunc1 rFunc = zeros(aX0, aDx, aData.length);
+    public static ZeroBoundFunc1 from(double aX0, double aDx, double[] aData) {
+        ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aData.length);
         rFunc.fill(aData);
         return rFunc;
     }
-    public static PBCFunc1 from(double aX0, double aDx, IVector aVector) {
-        PBCFunc1 rFunc = zeros(aX0, aDx, aVector.size());
+    public static ZeroBoundFunc1 from(double aX0, double aDx, IVector aVector) {
+        ZeroBoundFunc1 rFunc = zeros(aX0, aDx, aVector.size());
         rFunc.fill(aVector);
         return rFunc;
     }
