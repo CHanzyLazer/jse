@@ -305,11 +305,11 @@ public class OS {
         }
         /** slurm 的资源结构，限制很多已经尽力 */
         public final static class Resource {
-            private final @Unmodifiable List<String> nodelist;
-            private final int nodes;
-            private final int ntasks;
-            private final int ntasksPerNode;
-            private final int[] ntasksPerNodeList; // internal usage
+            public final @Unmodifiable List<String> nodelist;
+            public final int nodes;
+            public final int ntasks;
+            public final int ntasksPerNode;
+            public final int[] ntasksPerNodeList; // internal usage
             
             private Resource(@Unmodifiable List<String> nodelist, int nodes, int ntasks, int ntasksPerNode, int[] ntasksPerNodeList) {
                 this.nodelist = nodelist;
