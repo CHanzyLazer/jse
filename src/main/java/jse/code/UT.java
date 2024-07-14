@@ -201,6 +201,12 @@ public class UT {
         public static <T> T first(List<T> self) {return DefaultGroovyMethods.first(self);}
         public static <T> T first(Iterable<T> self) {return DefaultGroovyMethods.first(self);}
         public static <T> T first(T[] self) {return DefaultGroovyMethods.first(self);}
+        public static <T> T max(Iterable<T> self) {return DefaultGroovyMethods.max(self);}
+        public static <T> T max(T[] self) {return DefaultGroovyMethods.max(self);}
+        public static <T> T min(Iterable<T> self) {return DefaultGroovyMethods.min(self);}
+        public static <T> T min(T[] self) {return DefaultGroovyMethods.min(self);}
+        public static <T> Object sum(Iterable<T> self) {return DefaultGroovyMethods.sum(self);}
+        public static Object sum(Object[] self) {return DefaultGroovyMethods.sum(self);}
         
         
         /** 保留这些接口方便外部调用使用 */

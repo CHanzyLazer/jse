@@ -458,6 +458,7 @@ public class SP {
         public static Binding context() {return GROOVY_SHELL.getContext();}
         public static Binding binding() {return GROOVY_SHELL.getContext();}
         public static GroovyClassLoader classLoader() {return GROOVY_SHELL.getClassLoader();}
+        public static GroovyShell shell() {return GROOVY_SHELL;}
         
         /** 获取 shell 的交互式运行 */
         public static void runShell() throws Exception {
@@ -694,6 +695,8 @@ public class SP {
         
         /** Python 提供额外的接口，获取同时做类型检查并转换 */
         public static <T> T getAs(Class<T> aExpectedType, String aValueName) throws JepException {return JEP_INTERP.getValue(aValueName, aExpectedType);}
+        /** 直接获取底层的 Interpreter */
+        public static jep.Interpreter interpreter() {return JEP_INTERP;}
         
         /** Python 提供额外的接口，提供专门的 parfor 带有线程独立的 Interpreter，这种写法可以保证 jse 的 python 环境一定成功初始化 */
         public static void parforWithInterpreter(int aSize, @ClosureParams(value= FromString.class, options={"jep.Interpreter", "jep.Interpreter,int", "jep.Interpreter,int,int"}) final Closure<?> aGroovyTask) {parforWithInterpreter(aSize, PARFOR_THREAD_NUMBER, aGroovyTask);}
