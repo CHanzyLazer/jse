@@ -193,7 +193,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     
     /** Groovy stuffs */
     @VisibleForTesting public String @Nullable[] getTypeNames() {return mTypeNames;}
-    @VisibleForTesting public String getComment() {return mComment;}
+    @VisibleForTesting public @Nullable String getComment() {return mComment;}
     
     
     /** Cartesian 和 Direct 来回转换 */

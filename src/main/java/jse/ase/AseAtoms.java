@@ -6,7 +6,6 @@ import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.atom.*;
 import jse.code.SP;
-import jse.code.UT;
 import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RowMatrix;
@@ -35,38 +34,41 @@ import static jse.code.CS.STD_VZ_COL;
  * @author liqa
  */
 public class AseAtoms extends AbstractSettableAtomData {
-    
-    private IBox mBox;
+    private final IBox mBox;
     private final IIntVector mAtomicNumbers;
     private final IMatrix mPositions;
     private @Nullable IMatrix mMomenta = null;
     /** 用于通过原子序数获取每个种类的粒子数 */
     private final @NotNull Map<Integer, Integer> mAtomicNumber2Type;
-    private final @NotNull IIntVector mType2AtomicNumber; // 第 0 个直接制空
+    private @NotNull IIntVector mType2AtomicNumber; // 第 0 个直接制空
     
-    AseAtoms(IBox aBox, IIntVector aAtomicNumbers, IMatrix aPositions) {this(aBox, aAtomicNumbers, aPositions, null);}
-    AseAtoms(IBox aBox, IIntVector aAtomicNumbers, IMatrix aPositions, @Nullable Map<Integer, Integer> aAtomicNumber2Type) {this(aBox, aAtomicNumbers, aPositions, aAtomicNumber2Type==null ? null : new HashMap<>(aAtomicNumber2Type), null);}
-    private AseAtoms(IBox aBox, IIntVector aAtomicNumbers, IMatrix aPositions, @Nullable Map<Integer, Integer> aAtomicNumber2Type, @Nullable IIntVector aType2AtomicNumber) {
+    AseAtoms(IBox aBox, IIntVector aAtomicNumbers, IMatrix aPositions) {
         mBox = aBox;
         mAtomicNumbers = aAtomicNumbers;
         mPositions = aPositions;
         
-        if (aAtomicNumber2Type != null) {
-            mAtomicNumber2Type = aAtomicNumber2Type;
-        } else {
-            mAtomicNumber2Type = new HashMap<>();
-            mAtomicNumbers.forEach(atomicNumber -> {
+        mAtomicNumber2Type = new HashMap<>();
+        mAtomicNumbers.forEach(atomicNumber -> {
+            if (!mAtomicNumber2Type.containsKey(atomicNumber)) {
                 int tType = mAtomicNumber2Type.size() + 1;
                 mAtomicNumber2Type.put(atomicNumber, tType);
-            });
-        }
-        if (aType2AtomicNumber != null) {
-            mType2AtomicNumber = aType2AtomicNumber;
-        } else {
-            mType2AtomicNumber = Vectors.range(UT.Code.max(mAtomicNumber2Type.values())+1);
-            for (Map.Entry<Integer, Integer> tEntry : mAtomicNumber2Type.entrySet()) {
-                mType2AtomicNumber.set(tEntry.getValue(), tEntry.getKey());
             }
+        });
+        mType2AtomicNumber = Vectors.range(mAtomicNumber2Type.size()+1);
+        for (Map.Entry<Integer, Integer> tEntry : mAtomicNumber2Type.entrySet()) {
+            mType2AtomicNumber.set(tEntry.getValue(), tEntry.getKey());
+        }
+    }
+    private AseAtoms(IBox aBox, IIntVector aAtomicNumbers, IMatrix aPositions, @NotNull IIntVector aType2AtomicNumber) {
+        mBox = aBox;
+        mAtomicNumbers = aAtomicNumbers;
+        mPositions = aPositions;
+        
+        mType2AtomicNumber = aType2AtomicNumber;
+        mAtomicNumber2Type = new HashMap<>();
+        int tAtomTypeNumber = mType2AtomicNumber.size()-1;
+        for (int tType = 1; tType <= tAtomTypeNumber; ++tType) {
+            mAtomicNumber2Type.put(mType2AtomicNumber.get(tType), tType);
         }
     }
     
@@ -76,6 +78,53 @@ public class AseAtoms extends AbstractSettableAtomData {
     public IIntVector atomicNumbers() {return mAtomicNumbers;}
     public IMatrix positions() {return mPositions;}
     public @Nullable IMatrix momenta() {return mMomenta;}
+    
+    /** 支持直接修改 symbols，只会增大种类数，不会减少 */
+    public AseAtoms setSymbols(String... aSymbols) {
+        if (aSymbols==null || aSymbols.length==0) {
+            mAtomicNumbers.opt().map2this(mAtomicNumber2Type::get);
+            mType2AtomicNumber.fill(i -> i);
+            validAtomicNumber2Type_();
+            return this;
+        }
+        if (aSymbols.length > atomTypeNumber()) mType2AtomicNumber = IntVector.zeros(aSymbols.length+1);
+        mType2AtomicNumber.fill(i -> i);
+        for (int tType = 1; tType <= aSymbols.length; ++tType) {
+            @Nullable Integer tAtomicNumber = SYMBOL_TO_ATOMIC_NUMBER.get(aSymbols[tType-1]);
+            if (tAtomicNumber != null) mType2AtomicNumber.set(tType, tAtomicNumber);
+        }
+        // 更新 mAtomicNumbers，此时需要旧的 mAtomicNumber2Type
+        mAtomicNumbers.opt().map2this(i -> mType2AtomicNumber.get(mAtomicNumber2Type.get(i)));
+        validAtomicNumber2Type_();
+        return this;
+    }
+    /** 设置原子种类数目 */
+    @Override public AseAtoms setAtomTypeNumber(int aAtomTypeNum) {
+        int oTypeNum = atomTypeNumber();
+        if (aAtomTypeNum == oTypeNum) return this;
+        if (aAtomTypeNum < oTypeNum) {
+            // 现在支持设置更小的值，更大的种类会直接截断
+            mAtomicNumbers.opt().map2this(i -> {
+                int tType = mAtomicNumber2Type.get(i);
+                return tType>aAtomTypeNum ? mType2AtomicNumber.get(aAtomTypeNum) : i;
+            });
+            mType2AtomicNumber = mType2AtomicNumber.subVec(0, aAtomTypeNum+1).copy();
+            validAtomicNumber2Type_();
+            return this;
+        }
+        IIntVector oType2AtomicNumber = mType2AtomicNumber;
+        mType2AtomicNumber = Vectors.range(aAtomTypeNum+1);
+        mType2AtomicNumber.subVec(0, oTypeNum).fill(oType2AtomicNumber);
+        validAtomicNumber2Type_();
+        return this;
+    }
+    void validAtomicNumber2Type_() {
+        mAtomicNumber2Type.clear();
+        int tAtomTypeNumber = atomTypeNumber();
+        for (int tType = 1; tType <= tAtomTypeNumber; ++tType) {
+            mAtomicNumber2Type.put(mType2AtomicNumber.get(tType), tType);
+        }
+    }
     
     /** AbstractAtomData stuffs */
     @Override public boolean hasVelocities() {return mMomenta != null;}
@@ -98,8 +147,8 @@ public class AseAtoms extends AbstractSettableAtomData {
             @Override public ISettableAtom setZ(double aZ) {mPositions.set(aIdx, XYZ_Z_COL, aZ); return this;}
             @Override public ISettableAtom setID(int aID) {throw new UnsupportedOperationException("setID");}
             @Override public ISettableAtom setType(int aType) {
-                // 这里超过原子种类数目直接抛出错误
-                if (aType >= mType2AtomicNumber.size()) throw new UnsupportedOperationException("setType when type > ntypes, type: " + aType);
+                // 超过原子种类数目则需要重新设置
+                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
                 mAtomicNumbers.set(aIdx, mType2AtomicNumber.get(aType));
                 return this;
             }
@@ -120,7 +169,6 @@ public class AseAtoms extends AbstractSettableAtomData {
     @Override public IBox box() {return mBox;}
     @Override public int atomNumber() {return mAtomicNumbers.size();}
     @Override public int atomTypeNumber() {return mType2AtomicNumber.size()-1;}
-    @Override public AseAtoms setAtomTypeNumber(int aAtomTypeNum) {throw new UnsupportedOperationException("setAtomTypeNumber");}
     
     /** 转换为 python 中的 ase 的 Atoms */
     public PyObject toPyObject() throws JepException {return toPyObject(SP.Python.interpreter());}
@@ -137,9 +185,8 @@ public class AseAtoms extends AbstractSettableAtomData {
     }
     
     /** 拷贝一份 AseAtoms */
-    @Override public AseAtoms copy() {return copy_(null);}
-    private AseAtoms copy_(@Nullable Map<Integer, Integer> aAtomicNumber2Type) {
-        AseAtoms rAseAtoms = new AseAtoms(mBox.copy(), mAtomicNumbers.copy(), mPositions.copy(), aAtomicNumber2Type==null ? mAtomicNumber2Type : aAtomicNumber2Type);
+    @Override public AseAtoms copy() {
+        AseAtoms rAseAtoms = new AseAtoms(mBox.copy(), mAtomicNumbers.copy(), mPositions.copy(), mType2AtomicNumber);
         if (mMomenta != null) rAseAtoms.mMomenta = mMomenta.copy();
         return rAseAtoms;
     }
@@ -177,35 +224,30 @@ public class AseAtoms extends AbstractSettableAtomData {
     }
     
     /** 从 IAtomData 来创建，一般来说 AseAtoms 需要一个额外的 aTypeNames 信息 */
-    public static AseAtoms fromAtomData(IAtomData aAtomData) {return fromAtomData(aAtomData, (aAtomData instanceof IVaspCommonData) ? ((IVaspCommonData)aAtomData).typeNames() : ZL_STR);}
-    public static AseAtoms fromAtomData(IAtomData aAtomData, String... aTypeNames) {
-        Map<Integer, Integer> rAtomicNumber2Type = null;
-        if (aTypeNames!=null && aTypeNames.length>0) {
-            rAtomicNumber2Type = new HashMap<>();
-            for (int i = 0; i < aTypeNames.length; ++i) {
-                @Nullable Integer tAtomicNumber = SYMBOL_TO_ATOMIC_NUMBER.get(aTypeNames[i]);
-                if (tAtomicNumber != null) rAtomicNumber2Type.put(tAtomicNumber, i+1);
+    public static AseAtoms fromAtomData(IAtomData aAtomData) {
+        String[] aSymbols = ZL_STR;
+        if (aAtomData instanceof AseAtoms) {
+            aSymbols = new String[aAtomData.atomTypeNumber()];
+            for (int tType = 1; tType <= aSymbols.length; ++tType) {
+                aSymbols[tType-1] = ATOMIC_NUMBER_TO_SYMBOL.get(((AseAtoms)aAtomData).mType2AtomicNumber.get(tType));
             }
+        } else
+        if (aAtomData instanceof IVaspCommonData) {
+            aSymbols = ((IVaspCommonData)aAtomData).typeNames();
         }
+        return fromAtomData(aAtomData, aSymbols);
+    }
+    public static AseAtoms fromAtomData(IAtomData aAtomData, String... aSymbols) {
+        if (aSymbols == null) aSymbols = ZL_STR;
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
         if (aAtomData instanceof AseAtoms) {
             // AseAtoms 则直接获取即可（专门优化，保留完整模拟盒信息）
-            return ((AseAtoms)aAtomData).copy_(rAtomicNumber2Type);
+            return ((AseAtoms)aAtomData).copy().setSymbols(aSymbols);
         } else {
-            int tAtomTypeNumber = aAtomData.atomTypeNumber();
-            // 先统一获取元素种类，如果没有元素种类输入则使用 type 作为种类
-            IIntVector rType2AtomicNumber;
-            if (rAtomicNumber2Type == null) {
-                rType2AtomicNumber = Vectors.range(tAtomTypeNumber+1);
-                rAtomicNumber2Type = new HashMap<>();
-                for (int tType = 1; tType < tAtomTypeNumber; ++tType) {
-                    rAtomicNumber2Type.put(tType, tType);
-                }
-            } else {
-                rType2AtomicNumber = Vectors.range(Math.max(tAtomTypeNumber, aTypeNames.length)+1);
-                for (Map.Entry<Integer, Integer> tEntry : rAtomicNumber2Type.entrySet()) {
-                    rType2AtomicNumber.set(tEntry.getValue(), tEntry.getKey());
-                }
+            IIntVector rType2AtomicNumber = Vectors.range(Math.max(aSymbols.length, aAtomData.atomTypeNumber()));
+            for (int tType = 1; tType <= aSymbols.length; ++tType) {
+                @Nullable Integer tAtomicNumber = SYMBOL_TO_ATOMIC_NUMBER.get(aSymbols[tType-1]);
+                if (tAtomicNumber != null) rType2AtomicNumber.set(tType, tAtomicNumber);
             }
             // 直接遍历拷贝数据
             int tAtomNum = aAtomData.atomNumber();
@@ -225,7 +267,7 @@ public class AseAtoms extends AbstractSettableAtomData {
                     rMomenta.set(i, STD_VZ_COL, tAtom.vz()*tMass);
                 }
             }
-            AseAtoms rAseAtoms =  new AseAtoms(aAtomData.box().copy(), rAtomicNumbers, rPositions, rAtomicNumber2Type, rType2AtomicNumber);
+            AseAtoms rAseAtoms =  new AseAtoms(aAtomData.box().copy(), rAtomicNumbers, rPositions, rType2AtomicNumber);
             rAseAtoms.mMomenta = rMomenta;
             return rAseAtoms;
         }
