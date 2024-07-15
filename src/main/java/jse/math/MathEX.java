@@ -12,6 +12,7 @@ import jse.code.iterator.IHasIntIterator;
 import jse.math.vector.*;
 import net.jafama.DoubleWrapper;
 import net.jafama.FastMath;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 
 import java.util.ArrayList;
@@ -346,9 +347,9 @@ public class MathEX {
             sphericalHarmonicsFull2Dest_(aLMax, aTheta, aPhi, rY);
             return rY;
         }
-        public static ComplexVector sphericalHarmonicsFull4(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi) {
+        public static ComplexVector sphericalHarmonicsFull3(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ) {
             ComplexVector rY = ComplexVector.zeros((aLMax+1)*(aLMax+1));
-            sphericalHarmonicsFull2Dest4_(aLMax, aCosTheta, aSinTheta, aCosPhi, aSinPhi, rY);
+            sphericalHarmonicsFull2Dest3_(aLMax, aX, aY, aZ, rY);
             return rY;
         }
         public static void sphericalHarmonicsFull2Dest(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aTheta, double aPhi, IComplexVector rDest) {
@@ -356,10 +357,10 @@ public class MathEX {
             if (rDest.size() < (aLMax+1)*(aLMax+1)) throw new IllegalArgumentException("Size of rDest MUST be GreaterOrEqual to (L+1)^2 ("+((aLMax+1)*(aLMax+1))+"), input: "+rDest.size());
             sphericalHarmonicsFull2Dest_(aLMax, aTheta, aPhi, rDest);
         }
-        public static void sphericalHarmonicsFull2Dest4(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
+        public static void sphericalHarmonicsFull2Dest3(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, IComplexVector rDest) {
             // 判断输入是否合法
             if (rDest.size() < (aLMax+1)*(aLMax+1)) throw new IllegalArgumentException("Size of rDest MUST be GreaterOrEqual to (L+1)^2 ("+((aLMax+1)*(aLMax+1))+"), input: "+rDest.size());
-            sphericalHarmonicsFull2Dest4_(aLMax, aCosTheta, aSinTheta, aCosPhi, aSinPhi, rDest);
+            sphericalHarmonicsFull2Dest3_(aLMax, aX, aY, aZ, rDest);
         }
         private static void sphericalHarmonicsFull2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aTheta, double aPhi, IComplexVector rDest) {
             DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
@@ -369,7 +370,28 @@ public class MathEX {
             double tCosPhi = tJafamaDoubleWrapper.value;
             sphericalHarmonicsFull2Dest4_(aLMax, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
         }
-        private static void sphericalHarmonicsFull2Dest4_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
+        private static void sphericalHarmonicsFull2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, IComplexVector rDest) {
+            sphericalHarmonicsFull2DestXYZDis_(aLMax, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+        }
+        @ApiStatus.Internal
+        public static void sphericalHarmonicsFull2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, double aDis, IComplexVector rDest) {
+            double tXY = Fast.hypot(aX, aY);
+            double tCosTheta = aZ / aDis;
+            double tSinTheta = tXY / aDis;
+            double tCosPhi;
+            double tSinPhi;
+            // 注意避免 NaN 的情况
+            if (Code.numericEqual(tXY, 0.0)) {
+                tCosPhi = 1.0;
+                tSinPhi = 0.0;
+            } else {
+                tCosPhi = aX / tXY;
+                tSinPhi = aY / tXY;
+            }
+            sphericalHarmonicsFull2Dest4_(aLMax, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+        }
+        @ApiStatus.Internal
+        public static void sphericalHarmonicsFull2Dest4_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
             normalizedLegendreFull2Dest_(aLMax, aCosTheta, aSinTheta, rDest);
             // 现在 m = 0 的情况不需要设置了
             double tSinMmmPhi = 0.0;
@@ -453,9 +475,9 @@ public class MathEX {
             sphericalHarmonics2Dest_(aL, aTheta, aPhi, rY);
             return rY;
         }
-        public static ComplexVector sphericalHarmonics4(@Range(from = 0, to = SH_LARGEST_L) int aL, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi) {
+        public static ComplexVector sphericalHarmonics3(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ) {
             ComplexVector rY = ComplexVector.zeros(aL+aL+1);
-            sphericalHarmonics2Dest4_(aL, aCosTheta, aSinTheta, aCosPhi, aSinPhi, rY);
+            sphericalHarmonics2Dest3_(aL, aX, aY, aZ, rY);
             return rY;
         }
         public static void sphericalHarmonics2Dest(@Range(from = 0, to = SH_LARGEST_L) int aL, double aTheta, double aPhi, IComplexVector rDest) {
@@ -463,10 +485,10 @@ public class MathEX {
             if (rDest.size() < aL+aL+1) throw new IllegalArgumentException("Size of rY MUST be GreaterOrEqual to 2l+1 ("+(aL+aL+1)+"), input: "+rDest.size());
             sphericalHarmonics2Dest_(aL, aTheta, aPhi, rDest);
         }
-        public static void sphericalHarmonics2Dest4(@Range(from = 0, to = SH_LARGEST_L) int aL, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
+        public static void sphericalHarmonics2Dest3(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, IComplexVector rDest) {
             // 判断输入是否合法
             if (rDest.size() < aL+aL+1) throw new IllegalArgumentException("Size of rY MUST be GreaterOrEqual to 2l+1 ("+(aL+aL+1)+"), input: "+rDest.size());
-            sphericalHarmonics2Dest4_(aL, aCosTheta, aSinTheta, aCosPhi, aSinPhi, rDest);
+            sphericalHarmonics2Dest3_(aL, aX, aY, aZ, rDest);
         }
         private static void sphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aTheta, double aPhi, IComplexVector rDest) {
             DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
@@ -476,7 +498,28 @@ public class MathEX {
             double tCosPhi = tJafamaDoubleWrapper.value;
             sphericalHarmonics2Dest4_(aL, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
         }
-        private static void sphericalHarmonics2Dest4_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
+        private static void sphericalHarmonics2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, IComplexVector rDest) {
+            sphericalHarmonics2DestXYZDis_(aL, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+        }
+        @ApiStatus.Internal
+        public static void sphericalHarmonics2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, double aDis, IComplexVector rDest) {
+            double tXY = Fast.hypot(aX, aY);
+            double tCosTheta = aZ / aDis;
+            double tSinTheta = tXY / aDis;
+            double tCosPhi;
+            double tSinPhi;
+            // 注意避免 NaN 的情况
+            if (Code.numericEqual(tXY, 0.0)) {
+                tCosPhi = 1.0;
+                tSinPhi = 0.0;
+            } else {
+                tCosPhi = aX / tXY;
+                tSinPhi = aY / tXY;
+            }
+            sphericalHarmonics2Dest4_(aL, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+        }
+        @ApiStatus.Internal
+        public static void sphericalHarmonics2Dest4_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, IComplexVector rDest) {
             normalizedLegendre2Dest_(aL, aCosTheta, aSinTheta, rDest);
             // 现在 m = 0 的情况不需要设置了
             double tSinMmmPhi = 0.0;
@@ -576,19 +619,39 @@ public class MathEX {
             if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
             return sphericalHarmonics_(aL, aM, aTheta, aPhi);
         }
+        public static ComplexDouble sphericalHarmonics3(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ) {
+            // 判断输入是否合法
+            if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
+            return sphericalHarmonics3_(aL, aM, aX, aY, aZ);
+        }
         public static void sphericalHarmonics2Dest(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aTheta, double aPhi, ISettableComplexDouble rDest) {
             // 判断输入是否合法
             if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
-            sphericalHarmonics2Dest_(aL, aM, aTheta, aPhi, rDest);
+            sphericalHarmonics2Dest_(aL, aM, Fast.cos(aTheta), aPhi, rDest);
+        }
+        public static void sphericalHarmonics2Dest3(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ, ISettableComplexDouble rDest) {
+            // 判断输入是否合法
+            if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
+            sphericalHarmonics2Dest3_(aL, aM, aX, aY, aZ, rDest);
         }
         private static ComplexDouble sphericalHarmonics_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aTheta, double aPhi) {
             ComplexDouble rY = new ComplexDouble();
-            sphericalHarmonics2Dest_(aL, aM, aTheta, aPhi, rY);
+            sphericalHarmonics2Dest_(aL, aM, Fast.cos(aTheta), aPhi, rY);
             return rY;
         }
-        private static void sphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aTheta, double aPhi, ISettableComplexDouble rDest) {
+        private static ComplexDouble sphericalHarmonics3_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ) {
+            ComplexDouble rY = new ComplexDouble();
+            sphericalHarmonics2Dest3_(aL, aM, aX, aY, aZ, rY);
+            return rY;
+        }
+        private static void sphericalHarmonics2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ, ISettableComplexDouble rDest) {
+            double tCosTheta = aZ / Fast.hypot(aX, aY, aZ);
+            double tPhi = Fast.atan2(aY, aX);
+            sphericalHarmonics2Dest_(aL, aM, tCosTheta, tPhi, rDest);
+        }
+        private static void sphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aCosTheta, double aPhi, ISettableComplexDouble rDest) {
             if (aM < 0) {
-                sphericalHarmonics2Dest_(aL, -aM, aTheta, aPhi, rDest);
+                sphericalHarmonics2Dest_(aL, -aM, aCosTheta, aPhi, rDest);
                 rDest.conj2this();
                 if ((aM&1)==1) rDest.negative2this();
                 return;
@@ -596,7 +659,7 @@ public class MathEX {
             // 计算前系数（实数部分）
             double rFront = SH_Elm.get((aL+1)*aL/2 + aM);
             // 计算连带 Legendre 多项式部分
-            rFront *= legendre_(aL, aM, Fast.cos(aTheta));
+            rFront *= legendre_(aL, aM, aCosTheta);
             // 返回结果，实部虚部分开计算
             rDest.setReal(rFront*Fast.cos(aM*aPhi));
             rDest.setImag(rFront*Fast.sin(aM*aPhi));
