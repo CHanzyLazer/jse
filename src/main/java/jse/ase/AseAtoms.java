@@ -1,5 +1,6 @@
 package jse.ase;
 
+import jep.JepException;
 import jep.NDArray;
 import jep.python.PyCallable;
 import jep.python.PyObject;
@@ -122,8 +123,8 @@ public class AseAtoms extends AbstractSettableAtomData {
     @Override public AseAtoms setAtomTypeNumber(int aAtomTypeNum) {throw new UnsupportedOperationException("setAtomTypeNumber");}
     
     /** 转换为 python 中的 ase 的 Atoms */
-    public PyObject toPyObject() {return toPyObject(SP.Python.interpreter());}
-    public PyObject toPyObject(@NotNull jep.Interpreter aInterpreter) {
+    public PyObject toPyObject() throws JepException {return toPyObject(SP.Python.interpreter());}
+    public PyObject toPyObject(@NotNull jep.Interpreter aInterpreter) throws JepException {
         aInterpreter.exec("from ase import Atoms");
         try (PyCallable tPyAtoms = aInterpreter.getValue("Atoms", PyCallable.class)) {
             return tPyAtoms.callAs(PyObject.class, Maps.of(
@@ -144,7 +145,7 @@ public class AseAtoms extends AbstractSettableAtomData {
     }
     
     /** 从 PyObject 来创建 */
-    public static AseAtoms fromPyObject(PyObject aPyAtoms) {
+    public static AseAtoms fromPyObject(PyObject aPyAtoms) throws JepException {
         NDArray<?> tPyCellArray;
         try (PyObject tPyCell = aPyAtoms.getAttr("cell", PyObject.class)) {
             tPyCellArray = tPyCell.getAttr("array", NDArray.class);
@@ -232,5 +233,35 @@ public class AseAtoms extends AbstractSettableAtomData {
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
     public static AseAtoms of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
     public static AseAtoms of(IAtomData aAtomData, String... aTypeNames) {return fromAtomData(aAtomData, aTypeNames);}
-    public static AseAtoms of(PyObject aPyAtoms) {return fromPyObject(aPyAtoms);}
+    public static AseAtoms of(PyObject aPyAtoms) throws JepException {return fromPyObject(aPyAtoms);}
+    
+    
+    /** 直接基于 ase 的读写 */
+    public static AseAtoms read(String aFilePath) throws JepException {return read(SP.Python.interpreter(), aFilePath);}
+    public static AseAtoms read(@NotNull jep.Interpreter aInterpreter, String aFilePath) throws JepException {
+        aInterpreter.exec("from ase.io import read");
+        try (PyCallable tPyRead = aInterpreter.getValue("read", PyCallable.class)) {
+            return fromPyObject(tPyRead.callAs(PyObject.class, aFilePath));
+        }
+    }
+    public static AseAtoms read(String aFilePath, Map<String, Object> aKWArgs) throws JepException {return read(SP.Python.interpreter(), aFilePath, aKWArgs);}
+    public static AseAtoms read(@NotNull jep.Interpreter aInterpreter, String aFilePath, Map<String, Object> aKWArgs) throws JepException {
+        aInterpreter.exec("from ase.io import read");
+        try (PyCallable tPyRead = aInterpreter.getValue("read", PyCallable.class)) {
+            return fromPyObject(tPyRead.callAs(PyObject.class, new Object[]{aFilePath}, aKWArgs));
+        }
+    }
+    
+    public void write(String aFilePath) throws JepException {write(SP.Python.interpreter(), aFilePath);}
+    public void write(@NotNull jep.Interpreter aInterpreter, String aFilePath) throws JepException {
+        try (PyCallable tPyWrite = toPyObject(aInterpreter).getAttr("write", PyCallable.class)) {
+            tPyWrite.call(aFilePath);
+        }
+    }
+    public void write(String aFilePath, Map<String, Object> aKWArgs) throws JepException {write(SP.Python.interpreter(), aFilePath, aKWArgs);}
+    public void write(@NotNull jep.Interpreter aInterpreter, String aFilePath, Map<String, Object> aKWArgs) throws JepException {
+        try (PyCallable tPyWrite = toPyObject(aInterpreter).getAttr("write", PyCallable.class)) {
+            tPyWrite.call(new Object[]{aFilePath}, aKWArgs);
+        }
+    }
 }
