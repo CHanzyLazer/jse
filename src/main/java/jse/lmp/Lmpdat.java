@@ -574,31 +574,31 @@ public class Lmpdat extends AbstractSettableAtomData {
         aWriteln.writeln("");
         aWriteln.writeln(String.format("%6d atom types", mAtomTypeNum));
         aWriteln.writeln("");
-        aWriteln.writeln(String.format("%15.10g %15.10g xlo xhi", mBox.xlo(), mBox.xhi()));
-        aWriteln.writeln(String.format("%15.10g %15.10g ylo yhi", mBox.ylo(), mBox.yhi()));
-        aWriteln.writeln(String.format("%15.10g %15.10g zlo zhi", mBox.zlo(), mBox.zhi()));
+        aWriteln.writeln(String.format("%24.18g  %24.18g xlo xhi", mBox.xlo(), mBox.xhi()));
+        aWriteln.writeln(String.format("%24.18g  %24.18g ylo yhi", mBox.ylo(), mBox.yhi()));
+        aWriteln.writeln(String.format("%24.18g  %24.18g zlo zhi", mBox.zlo(), mBox.zhi()));
         if (isPrism()) {
-        aWriteln.writeln(String.format("%15.10g %15.10g %15.10g xy xz yz", mBox.xy(), mBox.xz(), mBox.yz()));
+        aWriteln.writeln(String.format("%24.18g  %24.18g  %24.18g xy xz yz", mBox.xy(), mBox.xz(), mBox.yz()));
         }
         if (mMasses != null) {
         aWriteln.writeln("");
         aWriteln.writeln("Masses");
         aWriteln.writeln("");
         for (int i = 0; i < mAtomTypeNum; ++i) {
-        aWriteln.writeln(String.format("%6d %15.10g", i+1, mMasses.get(i)));
+        aWriteln.writeln(String.format("%6d  %24.18g", i+1, mMasses.get(i)));
         }}
         aWriteln.writeln("");
         aWriteln.writeln("Atoms # atomic");
         aWriteln.writeln("");
         for (int i = 0; i < atomNumber(); ++i) {
-        aWriteln.writeln(String.format("%6d %6d %15.10g %15.10g %15.10g", mAtomID.get(i), mAtomType.get(i), mAtomXYZ.get(i, XYZ_X_COL), mAtomXYZ.get(i, XYZ_Y_COL), mAtomXYZ.get(i, XYZ_Z_COL)));
+        aWriteln.writeln(String.format("%6d  %6d  %24.18g  %24.18g  %24.18g", mAtomID.get(i), mAtomType.get(i), mAtomXYZ.get(i, XYZ_X_COL), mAtomXYZ.get(i, XYZ_Y_COL), mAtomXYZ.get(i, XYZ_Z_COL)));
         }
         if (mVelocities != null) {
         aWriteln.writeln("");
         aWriteln.writeln("Velocities");
         aWriteln.writeln("");
         for (int i = 0; i < atomNumber(); ++i) {
-        aWriteln.writeln(String.format("%6d %15.10g %15.10g %15.10g", mAtomID.get(i), mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL)));
+        aWriteln.writeln(String.format("%6d  %24.18g  %24.18g  %24.18g", mAtomID.get(i), mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL)));
         }}
     }
     

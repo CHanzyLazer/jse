@@ -617,9 +617,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         // 先输出通用信息
         aWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
         aWriteln.writeln(String.valueOf(mBox.scale()));
-        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.iax(), mBox.iay(), mBox.iaz()));
-        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.ibx(), mBox.iby(), mBox.ibz()));
-        aWriteln.writeln(String.format("    %16.10g    %16.10g    %16.10g", mBox.icx(), mBox.icy(), mBox.icz()));
+        aWriteln.writeln(String.format("  %24.18g  %24.18g  %24.18g", mBox.iax(), mBox.iay(), mBox.iaz()));
+        aWriteln.writeln(String.format("  %24.18g  %24.18g  %24.18g", mBox.ibx(), mBox.iby(), mBox.ibz()));
+        aWriteln.writeln(String.format("  %24.18g  %24.18g  %24.18g", mBox.icx(), mBox.icy(), mBox.icz()));
         if (mTypeNames!=null && mTypeNames.length!=0) {
         aWriteln.writeln(String.join(" ", AbstractCollections.slice(AbstractCollections.map(mTypeNames, type -> String.format("%6s", type)), AbstractCollections.range(mAtomNumbers.size()))));
         }
@@ -628,7 +628,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         for (int i = 0; i < mList.size(); ++i) {
         aWriteln.writeln((mIsCartesian ? "Cartesian" : "Direct") + " configuration= " + (i+1));
         for (IVector subDirect : mList.get(i).rows()) {
-        aWriteln.writeln(String.format("%16.10g    %16.10g    %16.10g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
+        aWriteln.writeln(String.format("%24.18g  %24.18g  %24.18g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
         }}
     }
     
