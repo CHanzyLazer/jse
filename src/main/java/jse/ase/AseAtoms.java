@@ -182,6 +182,7 @@ public class AseAtoms extends AbstractSettableAtomData {
         try (PyCallable tPyAtoms = aInterpreter.getValue("Atoms", PyCallable.class)) {
             return tPyAtoms.callAs(PyObject.class, Maps.of(
                 "cell"     , new double[][] {{mBox.ax(), mBox.ay(), mBox.az()}, {mBox.bx(), mBox.by(), mBox.bz()}, {mBox.cx(), mBox.cy(), mBox.cz()}},
+                "pbc"      , true,
                 "numbers"  , mAtomicNumbers.asList(),
                 "positions", mPositions.asListRows(),
                 "momenta"  , mMomenta==null ? null : mMomenta.asListRows()
