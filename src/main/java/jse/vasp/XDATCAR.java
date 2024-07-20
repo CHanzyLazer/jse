@@ -2,7 +2,10 @@ package jse.vasp;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import jse.atom.*;
+import jse.atom.IAtom;
+import jse.atom.IAtomData;
+import jse.atom.IBox;
+import jse.atom.XYZ;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractListWrapper;
@@ -653,24 +656,4 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         aWriteln.writeln(String.format("%24.18g  %24.18g  %24.18g", subDirect.get(0), subDirect.get(1), subDirect.get(2)));
         }}
     }
-    
-    
-    
-    /// 实用功能，这里依旧保留这种写法
-    /**
-     * 获取多帧原子参数的计算器，支持使用 MFPC 的简写来调用
-     * @param aTimestep 实际两帧之间的时间步长
-     * @param aType 指定此值来获取只有这个种类的原子的单原子计算器，用于计算只考虑一种元素的一些参数
-     * @param aThreadNum 执行 MFPC 的线程数目
-     * @return 获取到的 MFPC
-     * @deprecated use {@link MultiFrameParameterCalculator#of} or {@link MFPC#of}
-     */
-    @Deprecated public MultiFrameParameterCalculator getTypeMultiFrameParameterCalculator(double aTimestep, int aType, int aThreadNum) {return MultiFrameParameterCalculator.of(AbstractCollections.map(asList(), atomData -> atomData.operation().filterType(aType)), aTimestep, aThreadNum);}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getMultiFrameParameterCalculator    (double aTimestep                           ) {return MultiFrameParameterCalculator.of(asList()                                                                             , aTimestep            );}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getMultiFrameParameterCalculator    (double aTimestep,            int aThreadNum) {return MultiFrameParameterCalculator.of(asList()                                                                             , aTimestep, aThreadNum);}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getTypeMultiFrameParameterCalculator(double aTimestep, int aType                ) {return MultiFrameParameterCalculator.of(AbstractCollections.map(asList(), atomData -> atomData.operation().filterType(aType)), aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getMFPC                             (double aTimestep                           ) {return MFPC.of(asList()                                                                             , aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getMFPC                             (double aTimestep,            int aThreadNum) {return MFPC.of(asList()                                                                             , aTimestep, aThreadNum);}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getTypeMFPC                         (double aTimestep, int aType                ) {return MFPC.of(AbstractCollections.map(asList(), atomData -> atomData.operation().filterType(aType)), aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getTypeMFPC                         (double aTimestep, int aType, int aThreadNum) {return MFPC.of(AbstractCollections.map(asList(), atomData -> atomData.operation().filterType(aType)), aTimestep, aThreadNum);}
 }

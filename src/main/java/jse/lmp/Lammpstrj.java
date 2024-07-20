@@ -1,8 +1,6 @@
 package jse.lmp;
 
 import jse.atom.IAtomData;
-import jse.atom.MFPC;
-import jse.atom.MultiFrameParameterCalculator;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractListWrapper;
@@ -342,23 +340,4 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
             return new Lammpstrj(rLammpstrj);
         }
     }
-    
-    
-    /// 实用功能，这里依旧保留这种写法
-    /**
-     * 获取多帧原子参数的计算器，支持使用 MFPC 的简写来调用
-     * @param aTimestep 每一个 step 之间的时间步长，实际每帧之间的时间步长会考虑 SubLammpstrj 的时间步；只考虑第一帧和第二帧之间的间距
-     * @param aType 指定此值来获取只有这个种类的原子的单原子计算器，用于计算只考虑一种元素的一些参数
-     * @param aThreadNum 执行 MFPC 的线程数目
-     * @return 获取到的 MFPC
-     * @deprecated use {@link MultiFrameParameterCalculator#of} or {@link MFPC#of}
-     */
-    @Deprecated public MultiFrameParameterCalculator getTypeMultiFrameParameterCalculator(double aTimestep, int aType, int aThreadNum) {return MultiFrameParameterCalculator.of(AbstractCollections.map(mList, atomData -> atomData.operation().filterType(aType)), size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep, aThreadNum);}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getMultiFrameParameterCalculator    (double aTimestep                           ) {return MultiFrameParameterCalculator.of(mList                                                                             , size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep            );}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getMultiFrameParameterCalculator    (double aTimestep,            int aThreadNum) {return MultiFrameParameterCalculator.of(mList                                                                             , size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep, aThreadNum);}
-    /** @deprecated use {@link MultiFrameParameterCalculator#of}*/ @Deprecated public MultiFrameParameterCalculator getTypeMultiFrameParameterCalculator(double aTimestep, int aType                ) {return MultiFrameParameterCalculator.of(AbstractCollections.map(mList, atomData -> atomData.operation().filterType(aType)), size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getMFPC                             (double aTimestep                           ) {return MFPC.of(mList                                                                             , size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getMFPC                             (double aTimestep,            int aThreadNum) {return MFPC.of(mList                                                                             , size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep, aThreadNum);}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getTypeMFPC                         (double aTimestep, int aType                ) {return MFPC.of(AbstractCollections.map(mList, atomData -> atomData.operation().filterType(aType)), size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep            );}
-    /** @deprecated use {@link MFPC#of}*/ @Deprecated @VisibleForTesting public MultiFrameParameterCalculator       getTypeMFPC                         (double aTimestep, int aType, int aThreadNum) {return MFPC.of(AbstractCollections.map(mList, atomData -> atomData.operation().filterType(aType)), size()>1 ? aTimestep*(get(1).timeStep()-get(0).timeStep()) : aTimestep, aThreadNum);}
 }
