@@ -34,6 +34,9 @@ import static jse.code.CS.STD_VZ_COL;
  * @author liqa
  */
 public class AseAtoms extends AbstractSettableAtomData {
+    /** 注意 ase 的值是带有单位的，而不是直接和文件保持一致，这其实很自作聪明；为了尽量保持一致，这里统一对速度做一个转换，保证默认情况下会一致 */
+    public final static double ASE_VEL_MUL = MathEX.Fast.sqrt(1.660539040e-27 / 1.6021766208e-19) * 1.0e2;
+    
     private final IBox mBox;
     private final IIntVector mAtomicNumbers;
     private final IMatrix mPositions;
@@ -80,7 +83,7 @@ public class AseAtoms extends AbstractSettableAtomData {
     public @Nullable IMatrix momenta() {return mMomenta;}
     @Override public boolean hasVelocity() {return mMomenta != null;}
     @Override public boolean hasSymbol() {return true;}
-    @Override public @Nullable String symbol(int aType) {return ATOMIC_NUMBER_TO_SYMBOL.get(mType2AtomicNumber.get(aType));}
+    @Override public String symbol(int aType) {return ATOMIC_NUMBER_TO_SYMBOL.get(mType2AtomicNumber.get(aType));}
     @Override public boolean hasMasse() {return true;}
     @Override public double mass(int aType) {return MASS.get(symbol(aType));}
     
@@ -163,7 +166,7 @@ public class AseAtoms extends AbstractSettableAtomData {
     @Override public AseAtoms setHasVelocity() {if (mMomenta == null) {mMomenta = RowMatrix.zeros(atomNumber(), ATOM_DATA_KEYS_VELOCITY.length);} return this;}
     
     /** AbstractAtomData stuffs */
-    @Override public ISettableAtom atom(int aIdx) {
+    @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
             @Override public double x() {return mPositions.get(aIdx, XYZ_X_COL);}
             @Override public double y() {return mPositions.get(aIdx, XYZ_Y_COL);}
@@ -172,9 +175,9 @@ public class AseAtoms extends AbstractSettableAtomData {
             @Override public int type() {return mAtomicNumber2Type.get(mAtomicNumbers.get(aIdx));}
             @Override public int index() {return aIdx;}
             
-            @Override public double vx() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VX_COL)/MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx))));}
-            @Override public double vy() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VY_COL)/MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx))));}
-            @Override public double vz() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VZ_COL)/MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx))));}
+            @Override public double vx() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VX_COL)/mass()/ASE_VEL_MUL);}
+            @Override public double vy() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VY_COL)/mass()/ASE_VEL_MUL);}
+            @Override public double vz() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VZ_COL)/mass()/ASE_VEL_MUL);}
             
             @Override public ISettableAtom setX(double aX) {mPositions.set(aIdx, XYZ_X_COL, aX); return this;}
             @Override public ISettableAtom setY(double aY) {mPositions.set(aIdx, XYZ_Y_COL, aY); return this;}
@@ -188,16 +191,19 @@ public class AseAtoms extends AbstractSettableAtomData {
             }
             @Override public ISettableAtom setVx(double aVx) {
                 if (mMomenta == null) throw new UnsupportedOperationException("setVx");
-                mMomenta.set(aIdx, STD_VX_COL, aVx*MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx)))); return this;
+                mMomenta.set(aIdx, STD_VX_COL, aVx*mass()*ASE_VEL_MUL); return this;
             }
             @Override public ISettableAtom setVy(double aVy) {
                 if (mMomenta == null) throw new UnsupportedOperationException("setVy");
-                mMomenta.set(aIdx, STD_VY_COL, aVy*MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx)))); return this;
+                mMomenta.set(aIdx, STD_VY_COL, aVy*mass()*ASE_VEL_MUL); return this;
             }
             @Override public ISettableAtom setVz(double aVz) {
                 if (mMomenta == null) throw new UnsupportedOperationException("setVz");
-                mMomenta.set(aIdx, STD_VZ_COL, aVz*MASS.get(ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx)))); return this;
+                mMomenta.set(aIdx, STD_VZ_COL, aVz*mass()*ASE_VEL_MUL); return this;
             }
+            
+            @Override public String symbol() {return ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx));}
+            @Override public double mass() {return MASS.get(symbol());}
         };
     }
     @Override public IBox box() {return mBox;}
@@ -293,6 +299,7 @@ public class AseAtoms extends AbstractSettableAtomData {
                     rMomenta.set(i, STD_VZ_COL, tAtom.vz()*tMass);
                 }
             }
+            if (rMomenta != null) rMomenta.multiply2this(ASE_VEL_MUL);
             AseAtoms rAseAtoms =  new AseAtoms(aAtomData.box().copy(), rAtomicNumbers, rPositions, rType2AtomicNumber);
             rAseAtoms.mMomenta = rMomenta;
             return rAseAtoms;
