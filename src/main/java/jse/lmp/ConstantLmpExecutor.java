@@ -88,7 +88,7 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
     public ConstantLmpExecutor setSleepTime(long aSleepTime) {mSleepTime = aSleepTime; return this;}
     
     @Override public ISystemExecutor exec() {return mEXE;}
-    private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) aThrowable.printStackTrace(System.err);}
+    private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) UT.Code.printStackTrace(aThrowable);}
     
     private synchronized Future<Integer> submitConstantLmp(IInFile aConstantInFile, String aConstantLmpDir) throws IOException {
         ++mLmpIndex;
@@ -125,8 +125,8 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
         // 先尝试获取资源
         Pair<String, Future<Integer>> tLmp = assignLmp_();
         if (tLmp == null && !mEXE.noERROutput()) {
-            System.err.println("WARNING: Can NOT to assign resource for this Long-Time Lammps Executor temporarily, this exec blocks until there are any free resource.");
-            System.err.println("It may be caused by too large number of parallels.");
+            UT.Code.warning("Can NOT to assign resource for this Long-Time Lammps Executor temporarily, this exec blocks until there are any free resource.\n" +
+                            "It may be caused by too large number of parallels.");
         }
         while (tLmp == null) {
             Thread.sleep(FILE_SYSTEM_SLEEP_TIME);
@@ -194,8 +194,8 @@ public final class ConstantLmpExecutor extends AbstractHasAutoShutdown implement
                     if (!mEXE.noERROutput()) {
                         int tExitValue;
                         try {tExitValue = aLmp.mSecond.get();} catch (Exception e) {tExitValue = -1;}
-                        System.err.println("WARNING: Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly, exit value: "+tExitValue+", try to run again...");
-                        if (tTolerant < 0) System.err.println("ERROR: Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly more than "+TOLERANT+" times");
+                        if (tTolerant < 0) UT.Code.warning("Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly more than "+TOLERANT+" times");
+                        else UT.Code.warning("Long-Time Lammps in '"+aLmp.mFirst+"' Dead Unexpectedly, exit value: "+tExitValue+", try to run again...");
                     }
                     if (tTolerant < 0) {
                         // 无法重启的 lammps 依旧直接归还，下次运行依旧会再次尝试重启，只是这个运行会失败

@@ -425,8 +425,8 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
             @Nullable Integer tLmpRoot = mLmpRoots.pollLast();
             if (NO_LMP_IN_WORLD_ROOT && tLmpRoot!=null && tLmpRoot==mWorldRoot) {mLmpRoots.addLast(tLmpRoot); tLmpRoot = null;}
             if (tLmpRoot == null) {
-                System.err.println("WARNING: Can NOT to get LmpRoot for this path gen temporarily, this path gen blocks until there are any free LmpRoot.");
-                System.err.println("It may be caused by too large number of parallels.");
+                UT.Code.warning("Can NOT to get LmpRoot for this path gen temporarily, this path gen blocks until there are any free LmpRoot.\n" +
+                                "It may be caused by too large number of parallels.");
             }
             while (tLmpRoot == null) {
                 try {Thread.sleep(FILE_SYSTEM_SLEEP_TIME);}
@@ -505,7 +505,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     mWorldComm.sendB(PATH_SHUTDOWN, mLmpRoot, JOB_TYPE);
                     mWorldComm.recv(mLmpRoot, PATH_SHUTDOWN_FINISHED);
                 } catch (MPIException e) {
-                    e.printStackTrace(System.err);
+                    UT.Code.printStackTrace(e);
                 }
                 mLmpRoots.addLast(mLmpRoot);
                 mLmpRoot = -1;
@@ -526,7 +526,7 @@ public class MultipleNativeLmpFullPathGenerator implements IFullPathGenerator<IA
                     mWorldComm.sendB(SHUTDOWN, tLmpRoot, JOB_TYPE);
                     mWorldComm.recv(tLmpRoot, SHUTDOWN_FINISHED);
                 } catch (MPIException e) {
-                    e.printStackTrace(System.err);
+                    UT.Code.printStackTrace(e);
                 }
             }
             mLmpRoots.clear();

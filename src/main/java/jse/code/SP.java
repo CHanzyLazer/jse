@@ -303,7 +303,7 @@ public class SP {
             return tOut==null ? null : new DisplayData(toDisplayString(tOut));
         }
         @Override public List<String> formatError(Exception e) {
-            if (!DEBUG) e = Main.deepSanitize(e);
+            if (!DEBUG) Main.deepSanitize(e);
             return super.formatError(e);
         }
         @Override public void interrupt() {

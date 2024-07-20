@@ -38,7 +38,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     @Override public final ISystemExecutor setNoERROutput(boolean aNoERROutput) {mNoERROutput = aNoERROutput; return this;}
     @Override public final boolean noERROutput() {return mNoERROutput;}
     
-    protected final void printStackTrace(Throwable aThrowable) {if (!mNoERROutput) aThrowable.printStackTrace(System.err);}
+    protected final void printStackTrace(Throwable aThrowable) {if (!mNoERROutput) UT.Code.printStackTrace(aThrowable);}
     
     
     @Override public final int system(String aCommand                                              ) {return system_(aCommand, STD_OUT_WRITELN);}

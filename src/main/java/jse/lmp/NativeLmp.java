@@ -1026,7 +1026,7 @@ public class NativeLmp implements IAutoShutdown {
                 checkThread();
                 try {lammpsClose_(mLmpPtr);} catch (LmpException ignored) {}
             } catch (LmpException e) {
-                e.printStackTrace(System.err);
+                UT.Code.printStackTrace(e);
             }
         }
     }

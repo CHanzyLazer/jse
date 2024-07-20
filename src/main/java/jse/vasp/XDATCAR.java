@@ -106,7 +106,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         else tXDATCAR.setDirect();
         // 检测 box 是否完全一致，如果不一致则输出警告
         if (mBox.isPrism() != tXDATCAR.mBox.isPrism()) {
-            System.err.println("WARNING: Box type of appended XDATCAR ("+(tXDATCAR.mBox.isPrism() ? "prism" : "orthogonal")+") is different from the original box type ("+(mBox.isPrism() ? "prism" : "orthogonal")+")");
+            UT.Code.warning("Box type of appended XDATCAR ("+(tXDATCAR.mBox.isPrism() ? "prism" : "orthogonal")+") is different from the original box type ("+(mBox.isPrism() ? "prism" : "orthogonal")+")");
         } else
         if (!MathEX.Code.numericEqual(mBox.scale(), tXDATCAR.mBox.scale())
             || !MathEX.Code.numericEqual(mBox.iax(), tXDATCAR.mBox.iax())
@@ -118,11 +118,11 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             || !MathEX.Code.numericEqual(mBox.icx(), tXDATCAR.mBox.icx())
             || !MathEX.Code.numericEqual(mBox.icy(), tXDATCAR.mBox.icy())
             || !MathEX.Code.numericEqual(mBox.icz(), tXDATCAR.mBox.icz())) {
-            System.err.println("WARNING: Box of appended XDATCAR is different from the original box");
-            System.err.println("Appended:");
-            System.err.println(tXDATCAR.mBox);
-            System.err.println("Original:");
-            System.err.println(mBox);
+            UT.Code.warning("Box of appended XDATCAR is different from the original box\n" +
+                            "Appended:\n" +
+                            tXDATCAR.mBox + "\n" +
+                            "Original:\n" +
+                            mBox);
         }
         mList.addAll(tXDATCAR.mList);
         return this;

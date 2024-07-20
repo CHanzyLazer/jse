@@ -154,7 +154,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         if (aRestData.containsKey("surfaceA")) {
             double tSurfaceA = ((Number)aRestData.get("surfaceA")).doubleValue();
             if (!MathEX.Code.numericEqual(mSurfaceA, tSurfaceA)) {
-                System.err.println("WARNING: surfaceA from restData("+tSurfaceA+") is not equal to the value from this instance("+mSurfaceA+")!!!");
+                UT.Code.warning("surfaceA from restData("+tSurfaceA+") is not equal to the value from this instance("+mSurfaceA+")!");
                 tSurfaceCompat = false;
             }
         } else {
@@ -180,7 +180,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     if (MathEX.Code.numericLess(tSurface, tLambda0) && pi.hasNext()) {
                         tP0 *= UT.Code.doubleValue((Number)pi.next());
                     } else {
-                        System.err.println("WARNING: surfaces from restData is NOT compatible with the surfaces from this instance!!!");
+                        UT.Code.warning("surfaces from restData is NOT compatible with the surfaces from this instance!");
                         tSurfaceCompat = false;
                         break;
                     }
@@ -196,7 +196,7 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                     if (MathEX.Code.numericEqual(((Number)si.next()).doubleValue(), mSurfaces.get(i+1))) {
                         mPi.set(i, UT.Code.doubleValue((Number)pi.next()));
                     } else {
-                        System.err.println("WARNING: surfaces from restData is NOT compatible with the surfaces from this instance!!!");
+                        UT.Code.warning("surfaces from restData is NOT compatible with the surfaces from this instance!");
                         //noinspection UnusedAssignment
                         tSurfaceCompat = false;
                         break;
@@ -790,8 +790,8 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
                 mStep2PointNum.add(mStep, tStep2Return.pointNum);
                 // 如果使用的路径数超过设定则直接退出
                 if (tStep2Return.reachMaxPathNum && !mFinished) {
-                    System.err.println("ERROR: MaxPathNum("+mMaxPathNum+") reached, so the FFS is stopped.");
-                    System.err.println("Try larger N0 or smaller surface distance.");
+                    UT.Code.warning("MaxPathNum("+mMaxPathNum+") reached, so the FFS is stopped.\n" +
+                                    "Try larger N0 or smaller surface distance.");
                     mFinished = true;
                 }
             }

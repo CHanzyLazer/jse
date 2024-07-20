@@ -1,5 +1,6 @@
 package jse.lmp;
 
+import jse.code.UT;
 import jse.io.IIOFiles;
 import jse.io.IInFile;
 import jse.parallel.AbstractHasAutoShutdown;
@@ -38,7 +39,7 @@ public class NativeLmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
     public boolean noERROutput() {return mNoERROutput;}
     
     protected void printStackTrace_(Exception aException) {
-        if (!mNoERROutput) aException.printStackTrace(System.err);
+        if (!mNoERROutput) UT.Code.printStackTrace(aException);
     }
     
     

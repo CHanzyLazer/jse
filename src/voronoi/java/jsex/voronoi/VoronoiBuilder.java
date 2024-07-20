@@ -25,6 +25,7 @@ package jsex.voronoi;
 import jse.atom.AbstractXYZ;
 import jse.atom.XYZ;
 import jse.atom.IXYZ;
+import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
@@ -834,7 +835,7 @@ public final class VoronoiBuilder {
         /** 返回此四面体外接球的球心，这个值是恒定的，但是不需要总是计算 */
         XYZ centerSphere_() {
             if (mCenterSphere == null) {
-                if (!mNoWarning && isUniverse(this)) System.err.println("WARNING: This Tetrahedron is Universe, centerSphere may be wrong.");
+                if (!mNoWarning && isUniverse(this)) UT.Code.warning("This Tetrahedron is Universe, centerSphere may be wrong.");
                 mCenterSphere = VoronoiStaticExtensions.centerSphere(null, mA.mXYZ, mB.mXYZ, mC.mXYZ, mD.mXYZ);
             }
             return mCenterSphere;
@@ -956,7 +957,7 @@ public final class VoronoiBuilder {
                 }
                 // 非常奇异的情况，此棱全由边界四面体构成，直接跳过即可
                 if (tTet0==null || tA==null) {
-                    if (!mNoWarning) System.err.println("WARNING: Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
+                    if (!mNoWarning) UT.Code.warning("Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
                     continue;
                 }
                 // 绕棱方向计算面积并统计四面体数目
@@ -967,7 +968,7 @@ public final class VoronoiBuilder {
                 XYZ tB = (tTet2!=null && !isUniverse(tTet2) && mNeighborTet.contains(tTet2)) ? tTet2.centerSphere_() : null;
                 // 如果没有获取到（没有近邻，不包含在近邻中，边界四面体），则输出警告，结束环绕
                 if (tB == null) {
-                    if (!mNoWarning) System.err.println("WARNING: Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
+                    if (!mNoWarning) UT.Code.warning("Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
                     continue;
                 }
                 // 如果 AB 距离过小需要进行截断
@@ -979,7 +980,7 @@ public final class VoronoiBuilder {
                     XYZ tC = (tTet3!=null && !isUniverse(tTet3) && mNeighborTet.contains(tTet3)) ? tTet3.centerSphere_() : null;
                     // 如果没有获取到（没有近邻，不包含在近邻中，边界四面体），则输出警告，结束环绕
                     if (tC == null) {
-                        if (!mNoWarning) System.err.println("WARNING: Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
+                        if (!mNoWarning) UT.Code.warning("Voronoi of this node is Incomplete, voronoi parameters may be wrong.");
                         break;
                     }
                     // 如果为初始四面体同样结束环绕
@@ -1038,7 +1039,7 @@ public final class VoronoiBuilder {
             for (@Nullable VertexInfo tInfo : mNeighborVertex.values()) if (tInfo!=null && tInfo.mTetNum>=3) {
                 int tIndex = tInfo.mTetNum;
                 if (tIndex > mIndexLength) {
-                    if (!mNoWarning) System.err.println("WARNING: Voronoi index out of boundary: "+tIndex);
+                    if (!mNoWarning) UT.Code.warning("Voronoi index out of boundary: "+tIndex);
                     tIndex = mIndexLength;
                 }
                 ++rIndex[tIndex-1];

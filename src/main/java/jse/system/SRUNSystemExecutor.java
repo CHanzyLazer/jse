@@ -72,8 +72,8 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         // 先尝试获取节点
         Slurm.Resource tResource = assignResource();
         if (tResource == null && !noERROutput()) {
-            System.err.println("WARNING: Can NOT to assign resource for this job temporarily, this job blocks until there are any free resource.");
-            System.err.println("It may be caused by too large number of parallels.");
+            UT.Code.warning("Can NOT to assign resource for this job temporarily, this job blocks until there are any free resource.\n" +
+                            "It may be caused by too large number of parallels.");
         }
         while (tResource == null) {
             try {Thread.sleep(FILE_SYSTEM_SLEEP_TIME);}
@@ -87,7 +87,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         // 获取提交指令
         String tCommand = RESOURCES_MANAGER.creatJobStep(tResource, "bash "+tTempScriptPath); // 使用 bash 执行不需要考虑权限的问题
         // 获取指令失败直接输出错误
-        if (tCommand == null) {System.err.println("ERROR: Create SLURM job step Failed"); returnResource(tResource); return ERR_FUTURE;}
+        if (tCommand == null) {UT.Code.warning("Create SLURM job step Failed"); returnResource(tResource); return ERR_FUTURE;}
         // 任务完成后需要归还任务
         final Slurm.Resource fResource = tResource;
         return toSystemFuture(super.submitSystem__(tCommand, aWriteln), () -> returnResource(fResource));

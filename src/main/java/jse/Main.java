@@ -11,6 +11,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
@@ -22,7 +23,6 @@ import java.util.logging.Level;
 
 import static jse.code.OS.JAR_PATH;
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.DEBUG;
 import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
@@ -51,7 +51,7 @@ public class Main {
             tGlobalAutoCloseable = new ArrayList<>(GLOBAL_AUTO_CLOSEABLE);
         }
         for (AutoCloseable tAutoCloseable : tGlobalAutoCloseable) {
-            try {tAutoCloseable.close();} catch (Exception e) {e.printStackTrace(System.err);}
+            try {tAutoCloseable.close();} catch (Exception e) {UT.Code.printStackTrace(e);}
         }
     }
     
@@ -201,8 +201,7 @@ public class Main {
                 InvokerInvocationException iie = (InvokerInvocationException) ex;
                 ex = iie.getCause();
             }
-            if (!DEBUG) ex = deepSanitize(ex);
-            ex.printStackTrace(System.err);
+            UT.Code.printStackTrace(ex);
             System.exit(1);
             return;
         } finally {
@@ -211,6 +210,8 @@ public class Main {
     }
     
     /** stuffs from {@link StackTraceUtils} */
+    @SuppressWarnings("UnusedReturnValue")
+    @Contract("_ -> param1")
     @ApiStatus.Internal public static <T extends Throwable> T deepSanitize(T t) {
         Throwable tCurrent = t;
         while (tCurrent.getCause() != null) {
@@ -218,6 +219,7 @@ public class Main {
         }
         return sanitize(t);
     }
+    @Contract("_ -> param1")
     @ApiStatus.Internal public static <T extends Throwable> T sanitize(T t) {
         StackTraceElement[] tTrace = t.getStackTrace();
         List<StackTraceElement> nTrace = new ArrayList<>();

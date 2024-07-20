@@ -195,8 +195,8 @@ public class OS {
             public synchronized @Nullable Resource assignResource(final int aTaskNum) {
                 if (mWarning) {
                     mWarning = false; // 只警告一次
-                    System.err.println("WARNING: It is UNSAFE to run jse using `srun` and then assignResource. You should run jse directly in the `sbatch` script.");
-                    System.err.println("If this jse needs special resources, please specified core number required by `-c`.");
+                    UT.Code.warning("It is UNSAFE to run jse using `srun` and then assignResource. You should run jse directly in the `sbatch` script.\n" +
+                                    "If this jse needs special resources, please specified core number required by `-c`.");
                 }
                 // 计算至少需要的节点数目
                 int tMinNodes = MathEX.Code.divup(aTaskNum, CORES_PER_NODE);
@@ -252,8 +252,8 @@ public class OS {
             public synchronized @Nullable Resource assignResource() {
                 if (mWarning) {
                     mWarning = false; // 只警告一次
-                    System.err.println("WARNING: It is UNSAFE to run jse using `srun` and then assignResource. You should run jse directly in the `sbatch` script.");
-                    System.err.println("If this jse needs special resources, please specified core number required by `-c`.");
+                    UT.Code.warning("It is UNSAFE to run jse using `srun` and then assignResource. You should run jse directly in the `sbatch` script.\n" +
+                                    "If this jse needs special resources, please specified core number required by `-c`.");
                 }
                 int tNTasks = 0;
                 String tNode = null;

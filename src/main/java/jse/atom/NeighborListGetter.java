@@ -2,6 +2,7 @@ package jse.atom;
 
 import jse.cache.IObjectPool;
 import jse.cache.ThreadLocalObjectCachePool;
+import jse.code.UT;
 import jse.code.collection.IntList;
 import jse.code.functional.IIndexFilter;
 import jse.math.MathEX;
@@ -854,7 +855,7 @@ public class NeighborListGetter implements IShutdownable {
             mAllCellsAlloc = null;
             sAllCellsAllocCache.returnObject(oAllCellsAlloc);
         } else {
-            System.err.println("WARNING: ThreadID of shutdown() and init should be SAME in NeighborListGetter");
+            UT.Code.warning("ThreadID of shutdown() and init should be SAME in NeighborListGetter");
         }
     }
     
@@ -1084,7 +1085,7 @@ public class NeighborListGetter implements IShutdownable {
             return;
         }
         // 如果有限制 aNnn 则 aHalf 会有意外的结果，因此会警告建议关闭
-        if (aHalf) System.err.println("WARNING: Half will cause Unexpected Results when Nnn>0, although it remains open here to avoid excessive deviation in the results");
+        if (aHalf) UT.Code.warning("Half will cause Unexpected Results when Nnn>0, although it remains open here to avoid excessive deviation in the results");
         
         // 先遍历所有经历统计出最近的列表
         final NearestNeighborList rNN = new NearestNeighborList(aNnn);

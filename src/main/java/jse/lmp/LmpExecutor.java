@@ -39,7 +39,7 @@ public final class LmpExecutor extends AbstractHasAutoShutdown implements ILmpEx
     @Override public LmpExecutor setDoNotShutdown(boolean aDoNotShutdown) {setDoNotShutdown_(aDoNotShutdown); return this;}
     
     @Override public ISystemExecutor exec() {return mEXE;}
-    private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) aThrowable.printStackTrace(System.err);}
+    private void printStackTrace(Throwable aThrowable) {if (!mEXE.noERROutput()) UT.Code.printStackTrace(aThrowable);}
     
     
     @Override public int run(String aInFile, IIOFiles aIOFiles) {

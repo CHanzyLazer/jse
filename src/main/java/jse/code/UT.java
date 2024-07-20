@@ -96,6 +96,24 @@ public class UT {
     public static class Code {
         
         /**
+         * 打印警告以及栈信息
+         * @author liqa
+         */
+        public static void warning(String aMsg) {
+            Warning w = new Warning(aMsg);
+            if (!DEBUG) Main.sanitize(w);
+            w.printStackTrace(System.err);
+        }
+        /**
+         * 打印简化后的栈信息
+         * @author liqa
+         */
+        public static void printStackTrace(Throwable t) {
+            if (!DEBUG) Main.deepSanitize(t);
+            t.printStackTrace(System.err);
+        }
+        
+        /**
          * 保留 null 的转换 String
          * @author liqa
          */

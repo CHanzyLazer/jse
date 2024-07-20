@@ -2,6 +2,7 @@ package jse.atom;
 
 import jse.cache.*;
 import jse.code.CS;
+import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
@@ -76,7 +77,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             IntVectorCache.returnVec(oAtomNumType);
             IntVectorCache.returnVec(oTypeVec);
         } else {
-            System.err.println("WARNING: ThreadID of shutdown() and init should be SAME in MonatomicParameterCalculator");
+            UT.Code.warning("ThreadID of shutdown() and init should be SAME in MonatomicParameterCalculator");
         }
         if (tThreadID == mInitBufferNLThreadID) {
             if (mBufferedNL != null) {
@@ -1348,7 +1349,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             mBufferedNL.reset();
         }
         mInitBufferNLThreadID = Thread.currentThread().getId();
-        if (mInitBufferNLThreadID != mInitThreadID) System.err.println("WARNING: ThreadID of initBufferNL() and init should be SAME in MonatomicParameterCalculator");
+        if (mInitBufferNLThreadID != mInitThreadID) UT.Code.warning("ThreadID of initBufferNL() and init should be SAME in MonatomicParameterCalculator");
     }
     
     /**
