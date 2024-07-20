@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static jse.code.Conf.UNICODE_SUPPORT;
 import static jse.code.OS.JAR_PATH;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.WORKING_DIR_OF;
@@ -77,7 +78,7 @@ public class Main {
             String tOption = tValue;
             switch (tOption) {
             case "-v": case "-version": {
-                System.out.println("jse version: "+VERSION+String.format(" (java: %s)", System.getProperty("java.version")));
+                printLogo();
                 return;
             }
             case "-?": case "-help": {
@@ -269,7 +270,26 @@ public class Main {
     };
     
     
+    private static void printLogo(PrintStream aPrinter) {
+        aPrinter.println("jse version: "+VERSION+String.format(" (java: %s)", System.getProperty("java.version"))+", Java Simulation Environment");
+        aPrinter.println("Copyright (C) 2023-present, Li Qing'an");
+        aPrinter.println("       __  ____  ____ ");
+        aPrinter.println("     _(  )/ ___)(  __)");
+        aPrinter.println("    / \\) \\\\___ \\ ) _) ");
+        aPrinter.println("    \\____/(____/(____)");
+        aPrinter.println("        by liqa, CHanzyLazer");
+        aPrinter.println();
+        String tURL = "https://github.com/CHanzyLazer/jse";
+        if (UNICODE_SUPPORT) {
+            tURL = "\u001b[4m"+tURL+"\u001b[0m";
+        }
+        aPrinter.println("    GitHub: "+tURL);
+    }
+    private static void printLogo() {printLogo(System.out);}
+    
     private static void printHelp(PrintStream aPrinter) {
+        printLogo(aPrinter);
+        aPrinter.println();
         aPrinter.println("Usage:    jse [-option] value [args...]");
         aPrinter.println("Such as:  jse path/to/script.groovy [args...]");
         aPrinter.println("Or:       jse -t 'println(/hello world/)'");
