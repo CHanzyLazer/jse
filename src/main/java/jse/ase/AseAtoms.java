@@ -178,6 +178,11 @@ public class AseAtoms extends AbstractSettableAtomData {
             @Override public double vx() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VX_COL)/mass()/ASE_VEL_MUL);}
             @Override public double vy() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VY_COL)/mass()/ASE_VEL_MUL);}
             @Override public double vz() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VZ_COL)/mass()/ASE_VEL_MUL);}
+            @Override public IXYZ vxyz() {
+                if (mMomenta==null) return new XYZ(0.0, 0.0, 0.0);
+                double tDiv = mass()*ASE_VEL_MUL;
+                return new XYZ(mMomenta.get(aIdx, STD_VX_COL)/tDiv, mMomenta.get(aIdx, STD_VY_COL)/tDiv, mMomenta.get(aIdx, STD_VZ_COL)/tDiv);
+            }
             
             @Override public ISettableAtom setX(double aX) {mPositions.set(aIdx, XYZ_X_COL, aX); return this;}
             @Override public ISettableAtom setY(double aY) {mPositions.set(aIdx, XYZ_Y_COL, aY); return this;}
@@ -200,6 +205,14 @@ public class AseAtoms extends AbstractSettableAtomData {
             @Override public ISettableAtom setVz(double aVz) {
                 if (mMomenta == null) throw new UnsupportedOperationException("setVz");
                 mMomenta.set(aIdx, STD_VZ_COL, aVz*mass()*ASE_VEL_MUL); return this;
+            }
+            @Override public ISettableAtom setVxyz(double aVx, double aVy, double aVz) {
+                if (mMomenta == null) throw new UnsupportedOperationException("setVxyz");
+                double tMul = mass()*ASE_VEL_MUL;
+                mMomenta.set(aIdx, STD_VX_COL, aVx*tMul);
+                mMomenta.set(aIdx, STD_VY_COL, aVy*tMul);
+                mMomenta.set(aIdx, STD_VZ_COL, aVz*tMul);
+                return this;
             }
             
             @Override public String symbol() {return ATOMIC_NUMBER_TO_SYMBOL.get(mAtomicNumbers.get(aIdx));}

@@ -38,4 +38,5 @@ public interface ISettableAtom extends IAtom, ISettableXYZ {
     @VisibleForTesting default double getVx() {return vx();}
     @VisibleForTesting default double getVy() {return vy();}
     @VisibleForTesting default double getVz() {return vz();}
+    @VisibleForTesting default IXYZ getVxyz() {return vxyz();}
 }
