@@ -707,15 +707,17 @@ public final class VoronoiBuilder {
      * 按照几何的顺序来进行插入可以更快的找到对应的四面体；
      * 为了避免位置被外部意外修改，需要统一进行一次值拷贝
      */
-    public void insert(IXYZ aXYZ) {insert_(new XYZ(aXYZ));}
-    public void insert(double aX, double aY, double aZ) {insert_(new XYZ(aX, aY, aZ));}
+    public void insert(IXYZ aXYZ) {insert(aXYZ, -1);}
+    public void insert(double aX, double aY, double aZ) {insert(aX, aY, aZ, -1);}
+    public void insert(IXYZ aXYZ, int atomIndex) {insert_(new XYZ(aXYZ), atomIndex);}
+    public void insert(double aX, double aY, double aZ, int atomIndex) {insert_(new XYZ(aX, aY, aZ), atomIndex);}
     
-    private void insert_(XYZ aXYZ) {
+    private void insert_(XYZ aXYZ, int atomIndex) {
         mCheck = mRNG.nextInt();
         // 先使用这个寻路算法找到包围输入位置的四面体
         mLast = locate_(aXYZ, mLast);
         // 指定此 XYZ 对应的 adj，并且创建节点
-        Vertex tVertex = new Vertex(aXYZ, mLast);
+        Vertex tVertex = new Vertex(aXYZ, mLast, atomIndex);
         // 然后将其分成四份，并存储需要考虑翻转的面
         Deque<OrientedFace> tEars = new ArrayDeque<>();
         mLast = mLast.flip1to4(tVertex, tEars);
@@ -764,6 +766,7 @@ public final class VoronoiBuilder {
         double cavityRadius();
         int[] index();
         /** 其他可能有用信息 */
+        int atomIndex();
         double x();
         double y();
         double z();
@@ -868,8 +871,9 @@ public final class VoronoiBuilder {
     
     /** 带有统计信息的完整节点，会自动更新统计信息 */
     class Vertex extends AbstractVertex {
-        Vertex(XYZ aXYZ, Tetrahedron aAdj) {super(aXYZ, aAdj);}
-        Vertex(double aX, double aY, double aZ) {super(new XYZ(aX, aY, aZ), null);}
+        final int mAtomIndex;
+        Vertex(XYZ aXYZ, Tetrahedron aAdj, int atomIndex) {super(aXYZ, aAdj); mAtomIndex = atomIndex;}
+        Vertex(double aX, double aY, double aZ) {super(new XYZ(aX, aY, aZ), null); mAtomIndex = -1;}
         
         /** 此值用于验证是否需要更新统计信息 */
         private int oCheck = -1;
@@ -1047,6 +1051,7 @@ public final class VoronoiBuilder {
             return rIndex;
         }
         /** 其他可能有用信息 */
+        @Override public int atomIndex() {return mAtomIndex;}
         @Override public double x() {return mXYZ.mX;}
         @Override public double y() {return mXYZ.mY;}
         @Override public double z() {return mXYZ.mZ;}

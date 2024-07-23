@@ -63,12 +63,10 @@ public class VoronoiExtensions {
         self.nl_().forEachCell(aRCutOff, idx -> {
             idx2voronoi[idx] = rBuilder.sizeVertex();
             // 原则上 VoronoiBuilder.insert 内部也会进行一次拷贝避免坐标被意外修改，但是旧版本没有，这样写可以兼顾效率和旧版兼容
-            rBuilder.insert(self.atomDataXYZ_().get(idx, 0), self.atomDataXYZ_().get(idx, 1), self.atomDataXYZ_().get(idx, 2));
+            rBuilder.insert(self.atomDataXYZ_().get(idx, 0), self.atomDataXYZ_().get(idx, 1), self.atomDataXYZ_().get(idx, 2), idx);
         });
         // 然后增加一些镜像粒子保证 PBC 下的准确性
-        self.nl_().forEachMirrorCell(aRCutOff, (x, y, z, idx) -> {
-            rBuilder.insert(x, y, z);
-        });
+        self.nl_().forEachMirrorCell(aRCutOff, rBuilder::insert);
         // 注意需要进行一次重新排序保证顺序和原子的顺序相同
         return new AbstractCalculator(rBuilder) {
             @Override public int size() {return self.atomNumber();}
