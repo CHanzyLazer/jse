@@ -82,7 +82,7 @@ public class Thermo extends Table {
                 aHeads = tHeads;
             } else {
                 // 如果不匹配则终止读取
-                if (headMatch(aHeads, tHeads)) break;
+                if (!headMatch(aHeads, tHeads)) break;
             }
             // 直接遍历读取数据
             while ((tLine = aReader.readLine()) != null) {
