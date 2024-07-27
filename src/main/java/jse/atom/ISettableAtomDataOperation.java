@@ -4,6 +4,7 @@ import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
 import jse.math.vector.IVector;
+import jse.math.vector.IntVector;
 import jse.math.vector.Vectors;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -45,4 +46,7 @@ public interface ISettableAtomDataOperation extends IAtomDataOperation {
     
     void wrapPBC2this();
     @VisibleForTesting default void wrap2this() {wrapPBC2this();}
+    
+    List<IntVector> clusterAnalyze(double aRCut, boolean aUnwrapByCluster2this);
+    void unwrapByCluster2this(double aRCut);
 }

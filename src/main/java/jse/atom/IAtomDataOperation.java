@@ -6,6 +6,7 @@ import jse.code.functional.IFilter;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
 import jse.math.vector.IVector;
+import jse.math.vector.IntVector;
 import jse.math.vector.Vectors;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -145,4 +146,21 @@ public interface IAtomDataOperation {
      */
     List<? extends ISettableAtomData> slice(int aNx, int aNy, int aNz);
     default List<? extends ISettableAtomData> slice(int aN) {return slice(aN, aN, aN);}
+    
+    
+    /**
+     * 通用的团簇分析
+     * @author liqa
+     * @param aRCut 用于判断团簇链接的截断半径
+     * @return 每个团簇对应的原子索引列表
+     */
+    List<IntVector> clusterAnalyze(double aRCut);
+    
+    /**
+     * 仅执行通过团簇来 unwrap 操作，这在很多时候会比较有用
+     * @author liqa
+     * @param aRCut 用于判断团簇链接的截断半径
+     * @return 新创建的重复后的 atomData
+     */
+    ISettableAtomData unwrapByCluster(double aRCut);
 }

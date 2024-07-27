@@ -120,6 +120,13 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
         }
     }
     
+    @Override public List<IntVector> clusterAnalyze(double aRCut, boolean aUnwrapByCluster2this) {
+        return clusterAnalyze_(aRCut, aUnwrapByCluster2this, true);
+    }
+    @Override public void unwrapByCluster2this(double aRCut) {
+        clusterAnalyze_(aRCut, true, false);
+    }
+    
     
     /** 用于方便内部使用 */
     private ISettableAtomData refAtomData_(List<? extends ISettableAtom> aAtoms) {

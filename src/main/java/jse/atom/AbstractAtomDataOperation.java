@@ -1,15 +1,12 @@
 package jse.atom;
 
-import jse.code.collection.AbstractCollections;
-import jse.code.collection.ISlice;
-import jse.code.collection.IntList;
-import jse.code.collection.NewCollections;
+import jse.cache.LogicalVectorCache;
+import jse.code.collection.*;
 import jse.code.functional.IFilter;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
-import jse.code.iterator.IIntIterator;
 import jse.math.MathEX;
-import jse.math.vector.IIntVector;
+import jse.math.vector.ILogicalVector;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 
@@ -52,93 +49,26 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
     
     
     @Override public ISettableAtomData mapType(int aMinTypeNum, IUnaryFullOperator<Integer, ? super IAtom> aOperator) {
-        final IAtomData tThis = thisAtomData_();
-        final int tAtomNum = tThis.atomNumber();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
-        for (int i = 0; i < tAtomNum; ++i) {
-            // 保存修改后的原子，现在内部会自动更新种类计数
-            rAtomData.atom(i).setType(aOperator.apply(tThis.atom(i)));
-        }
-        // 这里不进行 try 包含，因为目前这里的实例都是支持的，并且手动指定了 aMinTypeNum 后才会调用，此时设置失败会希望抛出错误
-        if (rAtomData.atomTypeNumber() < aMinTypeNum) rAtomData.setAtomTypeNumber(aMinTypeNum);
+        rAtomData.operation().mapType2this(aMinTypeNum, aOperator);
         return rAtomData;
     }
     
     @Override public ISettableAtomData mapTypeRandom(Random aRandom, IVector aTypeWeights) {
-        double tTotWeight = aTypeWeights.sum();
-        if (tTotWeight <= 0.0) throw new RuntimeException("TypeWeights Must be Positive");
-        
-        int tAtomNum = thisAtomData_().atomNumber();
-        int tMaxType = aTypeWeights.size();
-        // 获得对应原子种类的 List
-        final IntVector.Builder tBuilder = IntVector.builder(tAtomNum+tMaxType);
-        for (int tType = 1; tType <= tMaxType; ++tType) {
-            // 计算这种种类的粒子数目
-            long tSteps = Math.round((aTypeWeights.get(tType-1) / tTotWeight) * tAtomNum);
-            for (int i = 0; i < tSteps; ++i) tBuilder.add(tType);
-        }
-        // 简单处理，如果数量不够则添加最后一种种类
-        while (tBuilder.size() < tAtomNum) tBuilder.add(tMaxType);
-        IIntVector tTypeList = tBuilder.build();
-        // 随机打乱这些种类标记
-        tTypeList.shuffle(aRandom);
-        final IIntIterator it = tTypeList.iterator();
-        // 使用 mapType 获取种类修改后的 AtomData
-        return mapType(tMaxType, atom -> it.next());
+        ISettableAtomData rAtomData = newSameSettableAtomData_();
+        rAtomData.operation().mapTypeRandom2this(aRandom, aTypeWeights);
+        return rAtomData;
     }
     
     @Override public ISettableAtomData perturbXYZGaussian(Random aRandom, double aSigma) {
-        final IAtomData tThis = thisAtomData_();
-        final int tAtomNum = tThis.atomNumber();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
-        for (int i = 0; i < tAtomNum; ++i) {
-            IAtom oAtom = tThis.atom(i);
-            rAtomData.atom(i).setXYZ(
-                oAtom.x() + aRandom.nextGaussian()*aSigma,
-                oAtom.y() + aRandom.nextGaussian()*aSigma,
-                oAtom.z() + aRandom.nextGaussian()*aSigma
-            );
-        }
-        // 注意周期边界条件的处理
-        rAtomData.operation().wrapPBC2this();
+        rAtomData.operation().perturbXYZGaussian2this(aRandom, aSigma);
         return rAtomData;
     }
     
     @Override public ISettableAtomData wrapPBC() {
-        final IAtomData tThis = thisAtomData_();
-        final int tAtomNum = tThis.atomNumber();
         ISettableAtomData rAtomData = newSameSettableAtomData_();
-        if (tThis.isPrism()) {
-            // 斜方情况需要转为 Direct 再 wrap，
-            // 完事后再转回 Cartesian
-            IBox tBox = tThis.box();
-            XYZ tBuf = new XYZ();
-            for (int i = 0; i < tAtomNum; ++i) {
-                tBuf.setXYZ(tThis.atom(i));
-                tBox.toDirect(tBuf);
-                if      (tBuf.mX <  0.0) {do {++tBuf.mX;} while (tBuf.mX <  0.0);}
-                else if (tBuf.mX >= 1.0) {do {--tBuf.mX;} while (tBuf.mX >= 1.0);}
-                if      (tBuf.mY <  0.0) {do {++tBuf.mY;} while (tBuf.mY <  0.0);}
-                else if (tBuf.mY >= 1.0) {do {--tBuf.mY;} while (tBuf.mY >= 1.0);}
-                if      (tBuf.mZ <  0.0) {do {++tBuf.mZ;} while (tBuf.mZ <  0.0);}
-                else if (tBuf.mZ >= 1.0) {do {--tBuf.mZ;} while (tBuf.mZ >= 1.0);}
-                tBox.toCartesian(tBuf);
-                rAtomData.atom(i).setXYZ(tBuf);
-            }
-        } else {
-            final XYZ tBox = XYZ.toXYZ(tThis.box());
-            for (int i = 0; i < tAtomNum; ++i) {
-                IAtom oAtom = tThis.atom(i);
-                double tX = oAtom.x(), tY = oAtom.y(), tZ = oAtom.z();
-                if      (tX <  0.0    ) {do {tX += tBox.mX;} while (tX <  0.0    );}
-                else if (tX >= tBox.mX) {do {tX -= tBox.mX;} while (tX >= tBox.mX);}
-                if      (tY <  0.0    ) {do {tY += tBox.mY;} while (tY <  0.0    );}
-                else if (tY >= tBox.mY) {do {tY -= tBox.mY;} while (tY >= tBox.mY);}
-                if      (tZ <  0.0    ) {do {tZ += tBox.mZ;} while (tZ <  0.0    );}
-                else if (tZ >= tBox.mZ) {do {tZ -= tBox.mZ;} while (tZ >= tBox.mZ);}
-                rAtomData.atom(i).setXYZ(tX, tY, tZ);
-            }
-        }
+        rAtomData.operation().wrapPBC2this();
         return rAtomData;
     }
     
@@ -248,6 +178,56 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         return NewCollections.from(rSlice);
     }
     
+    
+    protected List<IntVector> clusterAnalyze_(double aRCut, final boolean aUnwrapByCluster2this, boolean aOutputIndex) {
+        final IAtomData tThis = thisAtomData_();
+        assert !aUnwrapByCluster2this || (tThis instanceof ISettableAtomData);
+        
+        final int tAtomNum = tThis.atomNumber();
+        // 使用 mpc 来获取近邻列表
+        try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(tThis)) {
+            final List<IntVector> rClusters = aOutputIndex ? new ArrayList<>() : null;
+            final ILogicalVector tVisited = LogicalVectorCache.getZeros(tAtomNum);
+            // 采用深度有限搜索算法来获取团簇
+            final IntDeque tStack = new IntDeque();
+            final XYZ tBuf = new XYZ();
+            for (int point = 0; point < tAtomNum; ++point) if (!tVisited.get(point)) {
+                IntVector.Builder subCluster = aOutputIndex ? IntVector.builder() : null;
+//              tStack.clear(); // 由于后面会遍历移除，因此此时 tStack 永远为空
+                
+                tStack.push(point);
+                tVisited.set(point, true);
+                
+                while (!tStack.isEmpty()) {
+                    int currentPoint = tStack.pop();
+                    if (aOutputIndex) subCluster.add(currentPoint);
+                    
+                    if (aUnwrapByCluster2this) tBuf.setXYZ(tThis.atom(currentPoint));
+                    tMPC.nl_().forEachNeighbor(currentPoint, aRCut, (x, y, z, neighbor, dx, dy, dz) -> {
+                        if (!tVisited.get(neighbor)) {
+                            tStack.push(neighbor);
+                            tVisited.set(neighbor, true);
+                            if (aUnwrapByCluster2this) {
+                                ((ISettableAtomData)tThis).atom(neighbor).setXYZ(tBuf.mX+dx, tBuf.mY+dy, tBuf.mZ+dz);
+                            }
+                        }
+                    });
+                }
+                if (aOutputIndex) rClusters.add(subCluster.build());
+            }
+            LogicalVectorCache.returnVec(tVisited);
+            return rClusters;
+        }
+    }
+    
+    @Override public List<IntVector> clusterAnalyze(double aRCut) {
+        return clusterAnalyze_(aRCut, false, true);
+    }
+    @Override public ISettableAtomData unwrapByCluster(double aRCut) {
+        ISettableAtomData rAtomData = newSameSettableAtomData_();
+        rAtomData.operation().unwrapByCluster2this(aRCut);
+        return rAtomData;
+    }
     
     /** 用于方便内部使用 */
     private IAtomData refAtomData_(List<? extends IAtom> aAtoms) {
