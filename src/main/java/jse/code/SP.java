@@ -467,21 +467,15 @@ public class SP {
             // 这样手动指定 CLASS_LOADER
             Groovysh tGroovysh = new Groovysh(GROOVY_SHELL.getClassLoader(), GROOVY_SHELL.getContext(), new IO(), null, GROOVY_CONF);
             // 这样直接添加默认 import，shell 会默认导入这些方便使用
-            tGroovysh.getImports().add(AbstractAtoms.class.getName());
-            tGroovysh.getImports().add(Structures.class.getName());
-            tGroovysh.getImports().add(AbstractCollections.class.getName());
-            tGroovysh.getImports().add(Iterables.class.getName());
-            tGroovysh.getImports().add(NewCollections.class.getName());
-            tGroovysh.getImports().add(ArrayLists.class.getName());
-            tGroovysh.getImports().add(InFiles.class.getName());
-            tGroovysh.getImports().add(IOFiles.class.getName());
             tGroovysh.getImports().add(MathEX.class.getName());
             tGroovysh.getImports().add(ComplexDouble.class.getName());
             tGroovysh.getImports().add(Func1.class.getName());
             tGroovysh.getImports().add(Matrices.class.getName());
             tGroovysh.getImports().add(Tables.class.getName());
             tGroovysh.getImports().add(Vectors.class.getName());
-            tGroovysh.getImports().add(Plotters.class.getName());
+            tGroovysh.getImports().add(UT.class.getName());
+            tGroovysh.getImports().add(SP.class.getName());
+            tGroovysh.getImports().add(Conf.class.getName());
             tGroovysh.getImports().add("static "+UT.Timer.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Par.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.IO.class.getName()+".*");
