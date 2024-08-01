@@ -32,4 +32,17 @@ public interface IBooleanIterator {
             @Override public void forEachRemaining(Consumer<? super Boolean> action) {IBooleanIterator.this.forEachRemaining(action::accept);}
         };
     }
+    
+    default IDoubleIterator asDouble() {
+        return new IDoubleIterator() {
+            @Override public boolean hasNext() {return IBooleanIterator.this.hasNext();}
+            @Override public double next() {return IBooleanIterator.this.next() ? 1.0 : 0.0;}
+        };
+    }
+    default IIntIterator asInt() {
+        return new IIntIterator() {
+            @Override public boolean hasNext() {return IBooleanIterator.this.hasNext();}
+            @Override public int next() {return IBooleanIterator.this.next() ? 1 : 0;}
+        };
+    }
 }

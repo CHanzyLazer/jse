@@ -91,6 +91,16 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
             @Override public void set(int aIdx, double aValue) {AbstractLogicalVector.this.set(aIdx, aValue!=0.0);}
             @Override public double getAndSet(int aIdx, double aValue) {return AbstractLogicalVector.this.getAndSet(aIdx, aValue!=0.0) ? 1.0 : 0.0;}
             @Override public int size() {return AbstractLogicalVector.this.size();}
+            @Override public IDoubleIterator iterator() {return AbstractLogicalVector.this.iterator().asDouble();}
+        };
+    }
+    @Override public IIntVector asIntVec() {
+        return new RefIntVector() {
+            @Override public int get(int aIdx) {return AbstractLogicalVector.this.get(aIdx) ? 1 : 0;}
+            @Override public void set(int aIdx, int aValue) {AbstractLogicalVector.this.set(aIdx, aValue!=0);}
+            @Override public int getAndSet(int aIdx, int aValue) {return AbstractLogicalVector.this.getAndSet(aIdx, aValue!=0) ? 1 : 0;}
+            @Override public int size() {return AbstractLogicalVector.this.size();}
+            @Override public IIntIterator iterator() {return AbstractLogicalVector.this.iterator().asInt();}
         };
     }
     

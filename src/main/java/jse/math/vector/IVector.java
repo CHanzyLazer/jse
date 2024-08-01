@@ -34,6 +34,7 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     
     default Iterable<Double> iterable() {return () -> iterator().toIterator();}
     List<Double> asList();
+    IIntVector asIntVec();
     
     IMatrix asMatCol();
     IMatrix asMatRow();

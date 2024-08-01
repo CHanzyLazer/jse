@@ -35,6 +35,13 @@ public interface IDoubleIterator {
         };
     }
     
+    default IIntIterator asInt() {
+        return new IIntIterator() {
+            @Override public boolean hasNext() {return IDoubleIterator.this.hasNext();}
+            @Override public int next() {return (int)IDoubleIterator.this.next();}
+        };
+    }
+    
     /** 通过 {@code Iterator<? extends Number>} 得到 */
     static IDoubleIterator of(final Iterator<? extends Number> aIterator) {
         return new IDoubleIterator() {

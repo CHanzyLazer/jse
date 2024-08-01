@@ -7,6 +7,7 @@ import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
+import jse.code.iterator.IIntIterator;
 import jse.math.SliceType;
 import jse.math.matrix.AbstractMatrix;
 import jse.math.matrix.IMatrix;
@@ -90,6 +91,16 @@ public abstract class AbstractVector implements IVector {
             @Override public @NotNull Iterator<Double> iterator() {return AbstractVector.this.iterator().toIterator();}
         };
     }
+    @Override public IIntVector asIntVec() {
+        return new RefIntVector() {
+            @Override public int get(int aIdx) {return (int)AbstractVector.this.get(aIdx);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.this.set(aIdx, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {return (int)AbstractVector.this.getAndSet(aIdx, aValue);}
+            @Override public int size() {return AbstractVector.this.size();}
+            @Override public IIntIterator iterator() {return AbstractVector.this.iterator().asInt();}
+        };
+    }
+    
     @Override public IMatrix asMatCol() {
         return new RefMatrix() {
             @Override public double get(int aRow, int aCol) {AbstractMatrix.rangeCheckRow(aRow, rowNumber()); AbstractMatrix.rangeCheckCol(aCol, 1); return AbstractVector.this.get(aRow);}

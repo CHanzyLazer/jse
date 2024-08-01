@@ -31,6 +31,7 @@ public interface ILongVector extends ISwapper, IHasLongIterator, IHasLongSetIter
     default Iterable<Long> iterable() {return () -> iterator().toIterator();}
     List<Long> asList();
     IVector asVec();
+    IIntVector asIntVec();
     
     /** 转为兼容性更好的 long[] */
     long[] data();

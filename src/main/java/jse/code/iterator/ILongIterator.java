@@ -21,7 +21,7 @@ public interface ILongIterator {
         while (hasNext()) aCon.accept(next());
     }
     
-    /** convert to Integer */
+    /** convert to Long */
     default Iterator<Long> toIterator() {
         return new Iterator<Long>() {
             @Override public boolean hasNext() {return ILongIterator.this.hasNext();}
@@ -36,6 +36,12 @@ public interface ILongIterator {
         return new IDoubleIterator() {
             @Override public boolean hasNext() {return ILongIterator.this.hasNext();}
             @Override public double next() {return ILongIterator.this.next();}
+        };
+    }
+    default IIntIterator asInt() {
+        return new IIntIterator() {
+            @Override public boolean hasNext() {return ILongIterator.this.hasNext();}
+            @Override public int next() {return (int)ILongIterator.this.next();}
         };
     }
 }

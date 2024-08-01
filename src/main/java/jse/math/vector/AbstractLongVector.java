@@ -89,6 +89,15 @@ public abstract class AbstractLongVector implements ILongVector {
             @Override public IDoubleIterator iterator() {return AbstractLongVector.this.iterator().asDouble();}
         };
     }
+    @Override public IIntVector asIntVec() {
+        return new RefIntVector() {
+            @Override public int get(int aIdx) {return (int)AbstractLongVector.this.get(aIdx);}
+            @Override public void set(int aIdx, int aValue) {AbstractLongVector.this.set(aIdx, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {return (int)AbstractLongVector.this.getAndSet(aIdx, aValue);}
+            @Override public int size() {return AbstractLongVector.this.size();}
+            @Override public IIntIterator iterator() {return AbstractLongVector.this.iterator().asInt();}
+        };
+    }
     
     /** 转为兼容性更好的 long[] */
     @Override public long[] data() {

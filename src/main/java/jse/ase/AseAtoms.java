@@ -272,24 +272,22 @@ public class AseAtoms extends AbstractSettableAtomData {
                 tCellMat.get(1, 0), tCellMat.get(1, 1), tCellMat.get(1, 2),
                 tCellMat.get(2, 0), tCellMat.get(2, 1), tCellMat.get(2, 2)
             );
-        // numpy 的整数 ndarray 实际上不确定是 long[] 还是 int[]，因此要这样处理，当然这会很烦
-        final int tSize = tPyNumbers.getDimensions()[0];
+        // numpy 的整数 ndarray 实际上不确定是 long[] 还是 int[]，因此要这样处理，当然这会很烦；
+        // 实际上，一般来说，在 linux 上为 long[] 而 windows 上为 int[]，而在 numpy2 中则统一为了 long[]
+        IIntVector tNumbers;
         Object tPyNumbersData = tPyNumbers.getData();
-        int[] tNumbersData;
         if (tPyNumbersData instanceof int[]) {
-            tNumbersData = (int[])tPyNumbersData;
+            tNumbers = new IntVector(tPyNumbers.getDimensions()[0], (int[])tPyNumbersData);
         } else
         if (tPyNumbersData instanceof long[]) {
-            tNumbersData = new int[tSize];
-            for (int i = 0; i < tSize; ++i) tNumbersData[i] = (int) ((long[])tPyNumbersData)[i];
+            tNumbers = new LongVector(tPyNumbers.getDimensions()[0], (long[])tPyNumbersData).asIntVec();
         } else
         if (tPyNumbersData instanceof double[]) {
-            tNumbersData = new int[tSize];
-            for (int i = 0; i < tSize; ++i) tNumbersData[i] = (int) ((double[])tPyNumbersData)[i];
+            tNumbers = new Vector(tPyNumbers.getDimensions()[0], (double[])tPyNumbersData).asIntVec();
         } else {
             throw new RuntimeException();
         }
-        AseAtoms rAseAtoms = new AseAtoms(rBox, new IntVector(tSize, tNumbersData), new RowMatrix(tPyPositions.getDimensions()[0], tPyPositions.getDimensions()[1], (double[])tPyPositions.getData()));
+        AseAtoms rAseAtoms = new AseAtoms(rBox, tNumbers, new RowMatrix(tPyPositions.getDimensions()[0], tPyPositions.getDimensions()[1], (double[])tPyPositions.getData()));
         if (tPyMomenta != null) rAseAtoms.mMomenta = new RowMatrix(tPyMomenta.getDimensions()[0], tPyMomenta.getDimensions()[1], (double[])tPyMomenta.getData());
         return rAseAtoms;
     }

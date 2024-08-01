@@ -24,6 +24,7 @@ public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBoole
     default Iterable<Boolean> iterable() {return () -> iterator().toIterator();}
     List<Boolean> asList();
     IVector asVec();
+    IIntVector asIntVec();
     
     /** 转为兼容性更好的 boolean[] */
     boolean[] data();
