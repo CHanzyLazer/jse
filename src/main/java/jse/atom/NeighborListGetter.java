@@ -161,7 +161,7 @@ public class NeighborListGetter implements IShutdownable {
     /** 现在 Linked 直接放在内部 */
     interface ILinkedCell {
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
-        void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo);
+        void forEachNeighbor(double aX, double aY, double aZ, IXYZIdxDo aXYZIdxDo);
         void forEachNeighbor(int aIdx, boolean aHalf, @Nullable IIndexFilter aRegion, IXYZIdxDo aXYZIdxDo);
         void forEachCell(IntConsumer aIdxDo);
         void forEachMirrorCell(IXYZIdxDo aXYZIdxDo);
@@ -269,19 +269,19 @@ public class NeighborListGetter implements IShutdownable {
             return tIsMirror ? new MirrorCell(mCells.get(idx(i, j, k)), tDirX, tDirY, tDirZ) : mCells.get(idx(i, j, k));
         }
         /** 现在改为 for-each 的形式来避免单一返回值的问题 */
-        @Override public void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(double aX, double aY, double aZ, IXYZIdxDo aXYZIdxDo) {
             final int i, j, k;
             if (mBox.isPrism()) {
-                XYZ tBuf = new XYZ(aXYZ);
+                XYZ tBuf = new XYZ(aX, aY, aZ);
                 mBox.toDirect(tBuf);
                 i = MathEX.Code.floor2int(tBuf.mX * mSizeX);
                 j = MathEX.Code.floor2int(tBuf.mY * mSizeY);
                 k = MathEX.Code.floor2int(tBuf.mZ * mSizeZ);
             } else {
                 assert mCellBoxXYZ != null;
-                i = MathEX.Code.floor2int(aXYZ.x() / mCellBoxXYZ.mX);
-                j = MathEX.Code.floor2int(aXYZ.y() / mCellBoxXYZ.mY);
-                k = MathEX.Code.floor2int(aXYZ.z() / mCellBoxXYZ.mZ);
+                i = MathEX.Code.floor2int(aX / mCellBoxXYZ.mX);
+                j = MathEX.Code.floor2int(aY / mCellBoxXYZ.mY);
+                k = MathEX.Code.floor2int(aZ / mCellBoxXYZ.mZ);
             }
             cell(i  , j  , k  ).forEach(mAtomDataXYZ, aXYZIdxDo);
             cell(i+1, j  , k  ).forEach(mAtomDataXYZ, aXYZIdxDo);
@@ -385,7 +385,7 @@ public class NeighborListGetter implements IShutdownable {
     /** 为了保证 LinkedCell 内部的简洁和一致，对于恰好不需要分割以及需要扩展的情况单独讨论 */
     private final class SingleLinkedCell implements ILinkedCell {
         /** 调整了遍历顺序让速度更快 */
-        @Override public void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(double aX, double aY, double aZ, IXYZIdxDo aXYZIdxDo) {
             for (int idx = 0; idx < mAtomNum; ++idx) {
                 final double tX = mAtomDataXYZ.get(idx, 0);
                 final double tY = mAtomDataXYZ.get(idx, 1);
@@ -685,7 +685,7 @@ public class NeighborListGetter implements IShutdownable {
         private final int mMulX, mMulY, mMulZ;
         private ExpandLinkedCell(int aMulX, int aMulY, int aMulZ) {mMulX = aMulX; mMulY = aMulY; mMulZ = aMulZ;}
         /** 调整了遍历顺序让速度更快 */
-        @Override public void forEachNeighbor(IXYZ aXYZ, IXYZIdxDo aXYZIdxDo) {
+        @Override public void forEachNeighbor(double aX, double aY, double aZ, IXYZIdxDo aXYZIdxDo) {
             for (int idx = 0; idx < mAtomNum; ++idx) {
                 final double tX = mAtomDataXYZ.get(idx, 0);
                 final double tY = mAtomDataXYZ.get(idx, 1);
@@ -995,13 +995,13 @@ public class NeighborListGetter implements IShutdownable {
      void forEachNeighbor_(final int aIDX, final double aRMax, boolean aHalf, boolean aMHT, @Nullable IIndexFilter aRegion, final IXYZIdxDxyzDo aXYZIdxDxyzDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
-        final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(aIDX));
+        final double cX = mAtomDataXYZ.get(aIDX, 0), cY = mAtomDataXYZ.get(aIDX, 1), cZ = mAtomDataXYZ.get(aIDX, 2);
         if (aMHT) {
             getProperLinkedCell(aRMax).forEachNeighbor(aIDX, aHalf, aRegion, (x, y, z, idx) -> {
                 // 内部会自动处理 idx 相同以及 half 的情况
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+                double tDx = x - cX;
+                double tDy = y - cY;
+                double tDz = z - cZ;
                 double tDisMHT = Math.abs(tDx) + Math.abs(tDy) + Math.abs(tDz);
                 if (tDisMHT < aRMax) aXYZIdxDxyzDo.run(x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1009,9 +1009,9 @@ public class NeighborListGetter implements IShutdownable {
             final double tRMax2 = aRMax*aRMax;
             getProperLinkedCell(aRMax).forEachNeighbor(aIDX, aHalf, aRegion, (x, y, z, idx) -> {
                 // 内部会自动处理 idx 相同以及 half 的情况
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+                double tDx = x - cX;
+                double tDy = y - cY;
+                double tDz = z - cZ;
                 double tDis2 = tDx*tDx + tDy*tDy + tDz*tDz;
                 if (tDis2 < tRMax2) aXYZIdxDxyzDo.run(x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1025,29 +1025,30 @@ public class NeighborListGetter implements IShutdownable {
      * 现在统一改为 for-each 的形式，提供两个通用的方法遍历所有的近邻；
      * 这里输入的 aRMax 会保证完全遍历所有在这个距离内的粒子，并且不会遍历到超过此距离的粒子
      * @author liqa
-     * @param aXYZ 中心粒子的位置
+     * @param aX 中心粒子 x 位置
+     * @param aY 中心粒子 y 位置
+     * @param aZ 中心粒子 z 位置
      * @param aRMax 最大的近邻半径
      * @param aMHT 是否采用曼哈顿距离（MHT: ManHaTtan distance）来作为距离的判据；
      *             开启后会直接输出 MHT 距离，默认则会输出几何距离的平方
      */
-    void forEachNeighbor_(IXYZ aXYZ, final double aRMax, boolean aMHT, final IXYZIdxDxyzDo aXYZIdxDxyzDo) {
+    void forEachNeighbor_(double aX, double aY, double aZ, final double aRMax, boolean aMHT, final IXYZIdxDxyzDo aXYZIdxDxyzDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
-        final XYZ cXYZ = XYZ.toXYZ(aXYZ);
         if (aMHT) {
-            getProperLinkedCell(aRMax).forEachNeighbor(cXYZ, (x, y, z, idx) -> {
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+            getProperLinkedCell(aRMax).forEachNeighbor(aX, aY, aZ, (x, y, z, idx) -> {
+                double tDx = x - aX;
+                double tDy = y - aY;
+                double tDz = z - aZ;
                 double tDisMHT = Math.abs(tDx) + Math.abs(tDy) + Math.abs(tDz);
                 if (tDisMHT < aRMax) aXYZIdxDxyzDo.run(x, y, z, idx, tDx, tDy, tDz);
             });
         } else {
             final double tRMax2 = aRMax*aRMax;
-            getProperLinkedCell(aRMax).forEachNeighbor(cXYZ, (x, y, z, idx) -> {
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+            getProperLinkedCell(aRMax).forEachNeighbor(aX, aY, aZ, (x, y, z, idx) -> {
+                double tDx = x - aX;
+                double tDy = y - aY;
+                double tDz = z - aZ;
                 double tDis2 = tDx*tDx + tDy*tDy + tDz*tDz;
                 if (tDis2 < tRMax2) aXYZIdxDxyzDo.run(x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1139,14 +1140,14 @@ public class NeighborListGetter implements IShutdownable {
         
         // 先遍历所有经历统计出最近的列表
         final NearestNeighborList rNN = new NearestNeighborList(aNnn);
-        final XYZ cXYZ = new XYZ(mAtomDataXYZ.row(aIDX));
+        final double cX = mAtomDataXYZ.get(aIDX, 0), cY = mAtomDataXYZ.get(aIDX, 1), cZ = mAtomDataXYZ.get(aIDX, 2);
         // 这里需要先强制关闭 half 来获取限制最近邻数目的列表
         if (aMHT) {
             getProperLinkedCell(aRMax).forEachNeighbor(aIDX, false, aRegion, (x, y, z, idx) -> {
                 // 内部会自动处理 idx 相同的情况
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+                double tDx = x - cX;
+                double tDy = y - cY;
+                double tDz = z - cZ;
                 double tDisMHT = Math.abs(tDx) + Math.abs(tDy) + Math.abs(tDz);
                 if (tDisMHT < aRMax) rNN.put(tDisMHT, x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1154,9 +1155,9 @@ public class NeighborListGetter implements IShutdownable {
             final double tRMax2 = aRMax*aRMax;
             getProperLinkedCell(aRMax).forEachNeighbor(aIDX, false, aRegion, (x, y, z, idx) -> {
                 // 内部会自动处理 idx 相同的情况
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+                double tDx = x - cX;
+                double tDy = y - cY;
+                double tDz = z - cZ;
                 double tDis2 = tDx*tDx + tDy*tDy + tDz*tDz;
                 if (tDis2 < tRMax2) rNN.put(tDis2, x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1175,38 +1176,39 @@ public class NeighborListGetter implements IShutdownable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * @author liqa
-     * @param aXYZ 中心粒子的位置
+     * @param aX 中心粒子 x 位置
+     * @param aY 中心粒子 y 位置
+     * @param aZ 中心粒子 z 位置
      * @param aRMax 最大的近邻半径
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）
      * @param aMHT 是否采用曼哈顿距离（MHT: ManHaTtan distance）来作为距离的判据；
      *             开启后会直接输出 MHT 距离，默认则会输出几何距离的平方
      */
-    void forEachNeighbor_(IXYZ aXYZ, final double aRMax, int aNnn, boolean aMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {
+    void forEachNeighbor_(double aX, double aY, double aZ, final double aRMax, int aNnn, boolean aMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {
         if (mDead) throw new RuntimeException("This NeighborListGetter is dead");
         
         // 特殊输入处理，直接回到没有限制的情况
         if (aNnn <= 0) {
-            forEachNeighbor_(aXYZ, aRMax, aMHT, aXYZIdxDxyzDo);
+            forEachNeighbor_(aX, aY, aZ, aRMax, aMHT, aXYZIdxDxyzDo);
             return;
         }
         
         // 先遍历所有经历统计出最近的列表
         final NearestNeighborList rNN = new NearestNeighborList(aNnn);
-        final XYZ cXYZ = XYZ.toXYZ(aXYZ);
         if (aMHT) {
-            getProperLinkedCell(aRMax).forEachNeighbor(cXYZ, (x, y, z, idx) -> {
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+            getProperLinkedCell(aRMax).forEachNeighbor(aX, aY, aZ, (x, y, z, idx) -> {
+                double tDx = x - aX;
+                double tDy = y - aY;
+                double tDz = z - aZ;
                 double tDisMHT = Math.abs(tDx) + Math.abs(tDy) + Math.abs(tDz);
                 if (tDisMHT < aRMax) rNN.put(tDisMHT, x, y, z, idx, tDx, tDy, tDz);
             });
         } else {
             final double tRMax2 = aRMax*aRMax;
-            getProperLinkedCell(aRMax).forEachNeighbor(cXYZ, (x, y, z, idx) -> {
-                double tDx = x - cXYZ.mX;
-                double tDy = y - cXYZ.mY;
-                double tDz = z - cXYZ.mZ;
+            getProperLinkedCell(aRMax).forEachNeighbor(aX, aY, aZ, (x, y, z, idx) -> {
+                double tDx = x - aX;
+                double tDy = y - aY;
+                double tDz = z - aZ;
                 double tDis2 = tDx*tDx + tDy*tDy + tDz*tDz;
                 if (tDis2 < tRMax2) rNN.put(tDis2, x, y, z, idx, tDx, tDy, tDz);
             });
@@ -1226,14 +1228,16 @@ public class NeighborListGetter implements IShutdownable {
      */
     public void forEachNeighbor(int  aIDX, double aRMax, boolean aHalf, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aIDX, aRMax, aHalf, false, aXYZIdxDxyzDo);}
     public void forEachNeighbor(int  aIDX, double aRMax, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor(aIDX, aRMax, false, aXYZIdxDxyzDo);}
-    public void forEachNeighbor(IXYZ aXYZ, double aRMax, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aXYZ, aRMax, false, aXYZIdxDxyzDo);}
+    public void forEachNeighbor(double aX, double aY, double aZ, double aRMax, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aX, aY, aZ, aRMax, false, aXYZIdxDxyzDo);}
+    public void forEachNeighbor(IXYZ aXYZ, double aRMax, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor(aXYZ.x(), aXYZ.y(), aXYZ.z(), aRMax, aXYZIdxDxyzDo);}
     /**
      * 增加的限制最大近邻数目的遍历方法
      * @author liqa
      */
     public void forEachNeighbor(int  aIDX, double aRMax, int aNnn, boolean aHalf, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aIDX, aRMax, aNnn, aHalf, false, aXYZIdxDxyzDo);}
     public void forEachNeighbor(int  aIDX, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor(aIDX, aRMax, aNnn, false, aXYZIdxDxyzDo);}
-    public void forEachNeighbor(IXYZ aXYZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aXYZ, aRMax, aNnn, false, aXYZIdxDxyzDo);}
+    public void forEachNeighbor(double aX, double aY, double aZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aX, aY, aZ, aRMax, aNnn, false, aXYZIdxDxyzDo);}
+    public void forEachNeighbor(IXYZ aXYZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor(aXYZ.x(), aXYZ.y(), aXYZ.z(), aRMax, aNnn, aXYZIdxDxyzDo);}
     /**
      * 使用给定区域限制下遍历时，合法 half 遍历的方法
      * @author liqa
@@ -1253,14 +1257,16 @@ public class NeighborListGetter implements IShutdownable {
      */
     public void forEachNeighborMHT(int  aIDX, double aRMaxMHT, boolean aHalf, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aIDX, aRMaxMHT, aHalf, true, aXYZIdxDxyzDo);}
     public void forEachNeighborMHT(int  aIDX, double aRMaxMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighborMHT(aIDX, aRMaxMHT, false, aXYZIdxDxyzDo);}
-    public void forEachNeighborMHT(IXYZ aXYZ, double aRMaxMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aXYZ, aRMaxMHT, true, aXYZIdxDxyzDo);}
+    public void forEachNeighborMHT(double aX, double aY, double aZ, double aRMaxMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aX, aY, aZ, aRMaxMHT, true, aXYZIdxDxyzDo);}
+    public void forEachNeighborMHT(IXYZ aXYZ, double aRMaxMHT, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighborMHT(aXYZ.x(), aXYZ.y(), aXYZ.z(), aRMaxMHT, aXYZIdxDxyzDo);}
     /**
      * 增加的限制最大近邻数目的遍历方法
      * @author liqa
      */
     public void forEachNeighborMHT(int  aIDX, double aRMax, int aNnn, boolean aHalf, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aIDX, aRMax, aNnn, aHalf, true, aXYZIdxDxyzDo);}
     public void forEachNeighborMHT(int  aIDX, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighborMHT(aIDX, aRMax, aNnn, false, aXYZIdxDxyzDo);}
-    public void forEachNeighborMHT(IXYZ aXYZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aXYZ, aRMax, aNnn, true, aXYZIdxDxyzDo);}
+    public void forEachNeighborMHT(double aX, double aY, double aZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighbor_(aX, aY, aZ, aRMax, aNnn, true, aXYZIdxDxyzDo);}
+    public void forEachNeighborMHT(IXYZ aXYZ, double aRMax, int aNnn, IXYZIdxDxyzDo aXYZIdxDxyzDo) {forEachNeighborMHT(aXYZ.x(), aXYZ.y(), aXYZ.z(), aRMax, aNnn, aXYZIdxDxyzDo);}
     
     
     /**
