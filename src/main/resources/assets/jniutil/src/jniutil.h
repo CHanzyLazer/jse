@@ -13,14 +13,18 @@
 /** mimalloc stuffs */
 #ifdef USE_MIMALLOC
     #include "mimalloc.h"
-    #define MALLOCN(tp, n) ((tp*)mi_mallocn(n, sizeof(tp)))
-    #define CALLOC(tp, n) ((tp*)mi_calloc(n, sizeof(tp)))
+    #define MALLOCN(count, size) (mi_mallocn(count, size))
+    #define CALLOC(count, size) (mi_calloc(count, size))
+    #define MALLOCN_TP(tp, n) ((tp*)mi_mallocn(n, sizeof(tp)))
+    #define CALLOC_TP(tp, n) ((tp*)mi_calloc(n, sizeof(tp)))
     #define FREE(ptr) (mi_free(ptr))
     #define STRDUP(str) (mi_strdup(str))
 #else
     #include <stdlib.h>
-    #define MALLOCN(tp, n) ((tp*)malloc((n) * sizeof(tp)))
-    #define CALLOC(tp, n) ((tp*)calloc(n, sizeof(tp)))
+    #define MALLOCN(count, size) (malloc((count) * (size)))
+    #define CALLOC(count, size) (calloc(count, size))
+    #define MALLOCN_TP(tp, n) ((tp*)malloc((n) * sizeof(tp)))
+    #define CALLOC_TP(tp, n) ((tp*)calloc(n, sizeof(tp)))
     #define FREE(ptr) (free(ptr))
     
     #include <string.h>
@@ -107,14 +111,14 @@ inline void parseJArray2Buf(JNIEnv *aEnv, jobject aJArray, jint aJArrayType, voi
 inline void *allocBuf(jint aJArrayType, jsize aSize) {
     if (aSize <= 0) return NULL;
     switch (aJArrayType) {
-        case JTYPE_BYTE:    {return MALLOCN(jbyte   , aSize);}
-        case JTYPE_DOUBLE:  {return MALLOCN(jdouble , aSize);}
-        case JTYPE_BOOLEAN: {return MALLOCN(jboolean, aSize);}
-        case JTYPE_CHAR:    {return MALLOCN(jchar   , aSize);}
-        case JTYPE_SHORT:   {return MALLOCN(jshort  , aSize);}
-        case JTYPE_INT:     {return MALLOCN(jint    , aSize);}
-        case JTYPE_LONG:    {return MALLOCN(jlong   , aSize);}
-        case JTYPE_FLOAT:   {return MALLOCN(jfloat  , aSize);}
+        case JTYPE_BYTE:    {return MALLOCN_TP(jbyte   , aSize);}
+        case JTYPE_DOUBLE:  {return MALLOCN_TP(jdouble , aSize);}
+        case JTYPE_BOOLEAN: {return MALLOCN_TP(jboolean, aSize);}
+        case JTYPE_CHAR:    {return MALLOCN_TP(jchar   , aSize);}
+        case JTYPE_SHORT:   {return MALLOCN_TP(jshort  , aSize);}
+        case JTYPE_INT:     {return MALLOCN_TP(jint    , aSize);}
+        case JTYPE_LONG:    {return MALLOCN_TP(jlong   , aSize);}
+        case JTYPE_FLOAT:   {return MALLOCN_TP(jfloat  , aSize);}
         default:            {return NULL;}
     }
 }
@@ -365,7 +369,7 @@ inline char *parseStr(JNIEnv *aEnv, jstring aStr) {
 inline char **parseStrBuf(JNIEnv *aEnv, jobjectArray aStrBuf, int *rLen) {
 #ifdef __cplusplus
     jsize tLen = aEnv->GetArrayLength(aStrBuf);
-    char **rStrBuf = CALLOC(char*, tLen+1);
+    char **rStrBuf = CALLOC_TP(char*, tLen+1);
     
     for (jsize i = 0; i < tLen; ++i) {
         jstring jc = (jstring)aEnv->GetObjectArrayElement(aStrBuf, i);
@@ -374,7 +378,7 @@ inline char **parseStrBuf(JNIEnv *aEnv, jobjectArray aStrBuf, int *rLen) {
     }
 #else
     jsize tLen = (*aEnv)->GetArrayLength(aEnv, aStrBuf);
-    char **rStrBuf = CALLOC(char*, tLen+1);
+    char **rStrBuf = CALLOC_TP(char*, tLen+1);
     
     for (jsize i = 0; i < tLen; ++i) {
         jstring jc = (jstring)(*aEnv)->GetObjectArrayElement(aEnv, aStrBuf, i);

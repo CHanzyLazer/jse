@@ -422,7 +422,7 @@ static jobject pyfloat_as_jobject(JNIEnv *env, PyObject *pyobject,
  * jytpe corresponds to the NativeType and Type corresponds to <PrimitiveType>.
  */
 #define pyfastsequence_as_primitive_array(jtype, Type) \
-    jtype *buf = MALLOCN(jtype, size);\
+    jtype *buf = MALLOCN_TP(jtype, size);\
     jtype##Array jarray = (*env)->New##Type##Array(env, (jsize) size);\
     if (jarray == NULL) {\
         FREE(buf);\

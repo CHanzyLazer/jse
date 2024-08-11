@@ -194,8 +194,8 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Allgatherv0(JNIEnv
     int tSize, tRank;
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheckMPI(aEnv, tExitCode)) return;
-    int *tRecvCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aRecvCounts, tRecvCounts, tSize);
-    int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
+    int *tRecvCounts = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aRecvCounts, tRecvCounts, tSize);
+    int *tDispls     = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
     jsize tTotSize = 0;
     for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tRecvCounts[i];
     void *rRecvBuf = allocBuf(aRecvJType, tTotSize);
@@ -321,8 +321,8 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Gatherv0(JNIEnv *a
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheckMPI(aEnv, tExitCode)) return;
     if (tRank == aRoot) {
-        int *tRecvCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aRecvCounts, tRecvCounts, tSize);
-        int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
+        int *tRecvCounts = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aRecvCounts, tRecvCounts, tSize);
+        int *tDispls     = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
         jsize tTotSize = 0;
         for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tRecvCounts[i];
         void *rRecvBuf = allocBuf(aRecvJType, tTotSize);
@@ -442,8 +442,8 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Scatterv0(JNIEnv *
     int tExitCode = getSizeAndRank(tComm, &tSize, &tRank);
     if (exceptionCheckMPI(aEnv, tExitCode)) return;
     if (tRank == aRoot) {
-        int *tSendCounts = MALLOCN(int, tSize); parsejint2int(aEnv, aSendCounts, tSendCounts, tSize);
-        int *tDispls     = MALLOCN(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
+        int *tSendCounts = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aSendCounts, tSendCounts, tSize);
+        int *tDispls     = MALLOCN_TP(int, tSize); parsejint2int(aEnv, aDispls    , tDispls    , tSize);
         jsize tTotSize = 0;
         for (int i = 0; i < tSize; ++i) tTotSize += (jsize)tSendCounts[i];
         void *tSendBuf = allocBuf(aSendJType, tTotSize);
@@ -520,7 +520,7 @@ JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1difference
 }
 JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1excl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jint aN, jintArray aRanks) {
     MPI_Group tGroup = (MPI_Group)(intptr_t)aGroup;
-    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN(int, aN); parsejint2int(aEnv, aRanks, tRanks, aN);
+    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN_TP(int, aN); parsejint2int(aEnv, aRanks, tRanks, aN);
     MPI_Group nGroup;
     int tExitCode = MPI_Group_excl(tGroup, aN, tRanks, &nGroup);
     exceptionCheckMPI(aEnv, tExitCode);
@@ -534,7 +534,7 @@ JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1free(JNIEnv
 }
 JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1incl(JNIEnv *aEnv, jclass aClazz, jlong aGroup, jint aN, jintArray aRanks) {
     MPI_Group tGroup = (MPI_Group)(intptr_t)aGroup;
-    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN(int, aN); parsejint2int(aEnv, aRanks, tRanks, aN);
+    int *tRanks = (aRanks==NULL || aN<=0) ? NULL : MALLOCN_TP(int, aN); parsejint2int(aEnv, aRanks, tRanks, aN);
     MPI_Group nGroup;
     int tExitCode = MPI_Group_incl(tGroup, aN, tRanks, &nGroup);
     exceptionCheckMPI(aEnv, tExitCode);

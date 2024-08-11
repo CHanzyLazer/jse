@@ -371,7 +371,7 @@ static jobject convert_pyndarray_jndarray(JNIEnv *env, PyObject *pyobj)
     // setup the int[] constructor arg
     ndims = PyArray_NDIM(pyarray);
     dims = PyArray_DIMS(pyarray);
-    jdims = MALLOCN(jint, ndims);
+    jdims = MALLOCN_TP(jint, ndims);
     for (i = 0; i < ndims; i++) {
         jdims[i] = (jint) dims[i];
     }
@@ -562,7 +562,7 @@ static PyObject* convert_jdndarray_pyndarray(PyObject* pyobj, PyObject* Py_UNUSE
         return NULL;
     }
 
-    dims = MALLOCN(npy_intp, ndims);
+    dims = MALLOCN_TP(npy_intp, ndims);
     for (i = 0; i < ndims; i++) {
         dims[i] = jdims[i];
     }
@@ -715,7 +715,7 @@ static PyObject* convert_jndarray_pyndarray(PyObject* self, PyObject* Py_UNUSED(
         return NULL;
     }
 
-    dims = MALLOCN(npy_intp, ndims);
+    dims = MALLOCN_TP(npy_intp, ndims);
     for (i = 0; i < ndims; i++) {
         dims[i] = jdims[i];
     }

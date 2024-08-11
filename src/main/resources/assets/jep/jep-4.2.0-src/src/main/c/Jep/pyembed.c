@@ -433,7 +433,7 @@ void pyembed_startup(JNIEnv *env, jobjectArray sharedModulesArgv)
 
         count = (*env)->GetArrayLength(env, sharedModulesArgv);
         (*env)->PushLocalFrame(env, count * 2);
-        argv = MALLOCN(wchar_t*, count);
+        argv = MALLOCN_TP(wchar_t*, count);
         for (i = 0; i < count; i++) {
             char* arg     = NULL;
             wchar_t* argt = NULL;
@@ -450,7 +450,7 @@ void pyembed_startup(JNIEnv *env, jobjectArray sharedModulesArgv)
                 return;
             }
             arg = (char*) (*env)->GetStringUTFChars(env, jarg, NULL);
-            argt = MALLOCN(wchar_t, strlen(arg) + 1);
+            argt = MALLOCN_TP(wchar_t, strlen(arg) + 1);
             mbstowcs(argt, arg, strlen(arg) + 1);
             (*env)->ReleaseStringUTFChars(env, jarg, arg);
             argv[i] = argt;
@@ -484,7 +484,7 @@ int pyembed_is_version_unsafe(void)
     int         i         = 0;
 
     pyversion = Py_GetVersion();
-    version = MALLOCN(char, strlen(pyversion) + 1);
+    version = MALLOCN_TP(char, strlen(pyversion) + 1);
     strcpy(version, pyversion);
     major = version;
 
@@ -502,7 +502,7 @@ int pyembed_is_version_unsafe(void)
         char *msg;
         JNIEnv *env = pyembed_get_env();
 
-        msg = MALLOCN(char, 200);
+        msg = MALLOCN_TP(char, 200);
         memset(msg, '\0', 200);
         sprintf(msg,
                 "Jep will not initialize because it was compiled against Python %i.%i but is running against Python %s.%s",
@@ -578,7 +578,7 @@ intptr_t pyembed_thread_init(JNIEnv *env, jobject cl, jobject caller,
      * the mainThreadState was created on a different thread. When python is
      * compiled with debug it checks the state and fails.
      */
-    jepThread = MALLOCN(JepThread, 1);
+    jepThread = MALLOCN_TP(JepThread, 1);
     if (!jepThread) {
         THROW_JEP(env, "Out of memory.");
         return 0;

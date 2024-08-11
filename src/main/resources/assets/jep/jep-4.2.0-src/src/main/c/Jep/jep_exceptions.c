@@ -277,7 +277,7 @@ int process_py_exception(JNIEnv *env)
 
                         // remove the .py to look more like a Java StackTraceElement
                         namelen = (int) strlen(charPyFile);
-                        charPyFileNoExt = MALLOCN(char, namelen + 1);
+                        charPyFileNoExt = MALLOCN_TP(char, namelen + 1);
                         strcpy(charPyFileNoExt, charPyFile);
                         lastDot = strrchr(charPyFileNoExt, '.');
                         if (lastDot != NULL) {
@@ -285,7 +285,7 @@ int process_py_exception(JNIEnv *env)
                         }
 
                         // remove the dir path to look more like a Java StackTraceElement
-                        charPyFileNoDir = MALLOCN(char, namelen + 1);
+                        charPyFileNoDir = MALLOCN_TP(char, namelen + 1);
                         lastBackslash = strrchr(charPyFile, FILE_SEP);
                         if (lastBackslash != NULL) {
                             strcpy(charPyFileNoDir, lastBackslash + 1);

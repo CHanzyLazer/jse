@@ -2205,43 +2205,5 @@ public class MPI {
          * @see <a href="https://learn.microsoft.com/message-passing-interface/mpi-init-thread-function"> MPI_Init_thread function </a>
          */
         public native static int MPI_Init_thread(String[] aArgs, int aRequired) throws MPIException;
-        
-        
-        
-//        /// MPI Caching Functions
-//        @FunctionalInterface public interface MPI_Comm_copy_attr_function {
-//            /**
-//             * a placeholder for the application-defined function name.
-//             * @param aOldComm Original communicator.
-//             * @param aCommKeyval Key value.
-//             * @param aExtraState Extra state.
-//             * @param aAttributeValIn Source attribute value.
-//             * @param aAttributeValOut Destination attribute value.
-//             * @return if false, then the attribute is deleted in the duplicated communicator.
-//             * Otherwise (true), the new attribute value is set to the value returned in
-//             * aAttributeValOut.
-//             */
-//            boolean call(MPI_Comm aOldComm, int aCommKeyval, Object aExtraState, Object aAttributeValIn, Object aAttributeValOut);
-//        }
-//
-//        @FunctionalInterface public interface MPI_Comm_delete_attr_function {
-//            /**
-//             * a placeholder for the application-defined function name.
-//             * @param aComm Communicator.
-//             * @param aCommKeyval Key value.
-//             * @param aAttributeVal Attribute value.
-//             * @param aExtraState Extra state.
-//             */
-//            void call(MPI_Comm aComm, int aCommKeyval, Object aAttributeVal, Object aExtraState);
-//        }
-//
-//        /**
-//         * Creates a new attribute key.
-//         * @param aCommCopyAttrFn Copy callback function for keyval.
-//         * @param aCommDeleteAttrFn Delete callback function for keyval.
-//         * @param aExtraState Extra state for callback functions.
-//         * @return Key value for future access.
-//         */
-//        public native static int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function aCommCopyAttrFn, MPI_Comm_delete_attr_function aCommDeleteAttrFn, Object aExtraState);
     }
 }
