@@ -10,7 +10,7 @@ endif()
 
 
 set(SOURCE_FILES
-        jse_parallel_MPI_Native.c)
+    jse_parallel_MPI_Native.c)
 add_library(mpijni SHARED ${SOURCE_FILES})
 
 option(JSE_USE_CXX "Use CXX compiler" OFF)

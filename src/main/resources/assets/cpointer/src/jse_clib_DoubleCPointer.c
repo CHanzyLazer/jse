@@ -1,3 +1,8 @@
+#if defined(__cplusplus) && defined(__CLION_IDE__)
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "modernize-use-auto"
+#endif
+
 #include "jniutil.h"
 #include "jse_clib_DoubleCPointer.h"
 
@@ -46,4 +51,8 @@ JNIEXPORT jlong JNICALL Java_jse_clib_DoubleCPointer_leftShift_1(JNIEnv *aEnv, j
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(__cplusplus) && defined(__CLION_IDE__)
+#pragma clang diagnostic pop
 #endif

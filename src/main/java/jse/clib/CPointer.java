@@ -61,6 +61,8 @@ public class CPointer {
         , "jse_clib_CPointer.h"
         , "jse_clib_DoubleCPointer.c"
         , "jse_clib_DoubleCPointer.h"
+        , "jse_clib_NestedCPointer.c"
+        , "jse_clib_NestedCPointer.h"
     };
     
     private static String cmakeInitCmd_() {
@@ -165,7 +167,7 @@ public class CPointer {
     
     protected long mPtr;
     protected CPointer(long aPtr) {mPtr = aPtr;}
-    @ApiStatus.Internal public long ptr_() {return mPtr;}
+    @ApiStatus.Internal public final long ptr_() {return mPtr;}
     
     public static CPointer malloc(int aCount) {
         return new CPointer(malloc_(aCount));
@@ -188,10 +190,8 @@ public class CPointer {
         return new CPointer(mPtr);
     }
     
-    public DoubleCPointer asDoubleCPointer() {
-        return new DoubleCPointer(mPtr);
-    }
-    
+    public DoubleCPointer asDoubleCPointer() {return new DoubleCPointer(mPtr);}
+    public NestedCPointer asNestedCPointer() {return new NestedCPointer(mPtr);}
     
     static void rangeCheck(int jArraySize, int aCount) {
         if (!OPERATION_CHECK) return;

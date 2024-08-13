@@ -24,6 +24,7 @@ public class DoubleCPointer extends CPointer {
     public void parse2dest(double[] rDest) {parse2dest(rDest, 0, rDest.length);}
     private native static void parse2dest_(long aPtr, double[] rDest, int aStart, int aCount);
     
+    
     public double get() {return get_(mPtr);}
     private native static double get_(long aPtr);
     

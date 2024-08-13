@@ -10,8 +10,9 @@ endif()
 
 
 set(SOURCE_FILES
-        jse_clib_CPointer.c
-        jse_clib_DoubleCPointer.c)
+    jse_clib_CPointer.c
+    jse_clib_DoubleCPointer.c
+    jse_clib_NestedCPointer.c)
 add_library(cpointer SHARED ${SOURCE_FILES})
 
 option(JSE_USE_CXX "Use CXX compiler" OFF)
