@@ -71,7 +71,7 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
     int tLen;
     char **sArgs = parseStrBuf(aEnv, aArgs, &tLen);
     void *tLmpPtr;
-    MPI_Comm tComm = (MPI_Comm) (intptr_t) aComm;
+    MPI_Comm tComm = (MPI_Comm)aComm;
 #ifdef LAMMPS_OLD
     lammps_open(tLen, sArgs, tComm, &tLmpPtr);
 #else
@@ -79,7 +79,7 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
-    return (jlong)tLmpPtr;
+    return (jlong)(intptr_t)tLmpPtr;
 #endif
 }
 
@@ -94,7 +94,7 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
 #endif
     exceptionCheckLMP(aEnv, tLmpPtr);
     freeStrBuf(sArgs, tLen);
-    return (jlong)tLmpPtr;
+    return (jlong)(intptr_t)tLmpPtr;
 }
 
 JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsVersion_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
