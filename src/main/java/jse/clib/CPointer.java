@@ -59,6 +59,8 @@ public class CPointer {
     private final static String[] SRC_NAME = {
           "jse_clib_CPointer.c"
         , "jse_clib_CPointer.h"
+        , "jse_clib_IntCPointer.c"
+        , "jse_clib_IntCPointer.h"
         , "jse_clib_DoubleCPointer.c"
         , "jse_clib_DoubleCPointer.h"
         , "jse_clib_NestedCPointer.c"
