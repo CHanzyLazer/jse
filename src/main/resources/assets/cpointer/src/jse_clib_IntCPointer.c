@@ -11,16 +11,16 @@ extern "C" {
 #endif
 
 JNIEXPORT jint JNICALL Java_jse_clib_IntCPointer_typeSize(JNIEnv *aEnv, jclass aClazz) {
-    return sizeof(int);
+    return (jint)sizeof(int);
 }
 JNIEXPORT void JNICALL Java_jse_clib_IntCPointer_parse2dest_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jintArray rJArray, jint aStart, jint aCount) {
     parseint2jintV(aEnv, rJArray, aStart, (int *)(intptr_t)aPtr, 0, aCount);
 }
 JNIEXPORT jint JNICALL Java_jse_clib_IntCPointer_get_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr) {
-    return *(int *)(intptr_t)aPtr;
+    return (jint) *(int *)(intptr_t)aPtr;
 }
 JNIEXPORT jint JNICALL Java_jse_clib_IntCPointer_getAt_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jint aIdx) {
-    return ((int *)(intptr_t)aPtr)[aIdx];
+    return (jint) ((int *)(intptr_t)aPtr)[aIdx];
 }
 JNIEXPORT void JNICALL Java_jse_clib_IntCPointer_set_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jint aValue) {
     *(int *)(intptr_t)aPtr = aValue;

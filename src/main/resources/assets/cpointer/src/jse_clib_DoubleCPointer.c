@@ -11,16 +11,16 @@ extern "C" {
 #endif
 
 JNIEXPORT jint JNICALL Java_jse_clib_DoubleCPointer_typeSize(JNIEnv *aEnv, jclass aClazz) {
-    return sizeof(double);
+    return (jint)sizeof(double);
 }
 JNIEXPORT void JNICALL Java_jse_clib_DoubleCPointer_parse2dest_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jdoubleArray rJArray, jint aStart, jint aCount) {
     parsedouble2jdoubleV(aEnv, rJArray, aStart, (double *)(intptr_t)aPtr, 0, aCount);
 }
 JNIEXPORT jdouble JNICALL Java_jse_clib_DoubleCPointer_get_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr) {
-    return *(double *)(intptr_t)aPtr;
+    return (jdouble) *(double *)(intptr_t)aPtr;
 }
 JNIEXPORT jdouble JNICALL Java_jse_clib_DoubleCPointer_getAt_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jint aIdx) {
-    return ((double *)(intptr_t)aPtr)[aIdx];
+    return (jdouble) ((double *)(intptr_t)aPtr)[aIdx];
 }
 JNIEXPORT void JNICALL Java_jse_clib_DoubleCPointer_set_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jdouble aValue) {
     *(double *)(intptr_t)aPtr = aValue;

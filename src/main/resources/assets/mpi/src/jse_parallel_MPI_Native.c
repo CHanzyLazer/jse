@@ -90,18 +90,18 @@ JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_getMpiUint16T_1       
 JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_getMpiUint32T_1         (JNIEnv *aEnv, jclass aClazz) {return (jlong)MPI_UINT32_T          ;}
 JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_getMpiUint64T_1         (JNIEnv *aEnv, jclass aClazz) {return (jlong)MPI_UINT64_T          ;}
 
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadSingle_1    (JNIEnv *aEnv, jclass aClazz) {return MPI_THREAD_SINGLE    ;}
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadFunneled_1  (JNIEnv *aEnv, jclass aClazz) {return MPI_THREAD_FUNNELED  ;}
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadSerialized_1(JNIEnv *aEnv, jclass aClazz) {return MPI_THREAD_SERIALIZED;}
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadMultiple_1  (JNIEnv *aEnv, jclass aClazz) {return MPI_THREAD_MULTIPLE  ;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadSingle_1    (JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_THREAD_SINGLE    ;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadFunneled_1  (JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_THREAD_FUNNELED  ;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadSerialized_1(JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_THREAD_SERIALIZED;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiThreadMultiple_1  (JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_THREAD_MULTIPLE  ;}
 
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiProcNull_1 (JNIEnv *aEnv, jclass aClazz) {return MPI_PROC_NULL ;}
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiAnySource_1(JNIEnv *aEnv, jclass aClazz) {return MPI_ANY_SOURCE;}
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiRoot_1     (JNIEnv *aEnv, jclass aClazz) {return MPI_ROOT      ;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiProcNull_1 (JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_PROC_NULL ;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiAnySource_1(JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_ANY_SOURCE;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiRoot_1     (JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_ROOT      ;}
 
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiAnyTag_1(JNIEnv *aEnv, jclass aClazz) {return MPI_ANY_TAG;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiAnyTag_1(JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_ANY_TAG;}
 
-JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiUndefined_1(JNIEnv *aEnv, jclass aClazz) {return MPI_UNDEFINED;}
+JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_getMpiUndefined_1(JNIEnv *aEnv, jclass aClazz) {return (jint)MPI_UNDEFINED;}
 
 
 
@@ -140,14 +140,14 @@ JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Comm_1rank(JNIEnv 
     int tRank;
     int tExitCode = MPI_Comm_rank(tComm, &tRank);
     exceptionCheckMPI(aEnv, tExitCode);
-    return tRank;
+    return (jint)tRank;
 }
 JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Comm_1size(JNIEnv *aEnv, jclass aClazz, jlong aComm) {
     MPI_Comm tComm = (MPI_Comm)aComm;
     int tSize;
     int tExitCode = MPI_Comm_size(tComm, &tSize);
     exceptionCheckMPI(aEnv, tExitCode);
-    return tSize;
+    return (jint)tSize;
 }
 
 JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Finalize(JNIEnv *aEnv, jclass aClazz) {
@@ -554,14 +554,14 @@ JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1rank(JNIEnv
     int tRank;
     int tExitCode = MPI_Group_rank(tGroup, &tRank);
     exceptionCheckMPI(aEnv, tExitCode);
-    return tRank;
+    return (jint)tRank;
 }
 JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1size(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
     MPI_Comm tGroup = (MPI_Comm)aGroup;
     int tSize;
     int tExitCode = MPI_Group_size(tGroup, &tSize);
     exceptionCheckMPI(aEnv, tExitCode);
-    return tSize;
+    return (jint)tSize;
 }
 JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1union(JNIEnv *aEnv, jclass aClazz, jlong aGroup1, jlong aGroup2) {
     MPI_Group tGroup1 = (MPI_Group)aGroup1;
@@ -634,7 +634,7 @@ JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Init_1thread(JNIEn
     tExitCode = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     exceptionCheckMPI(aEnv, tExitCode);
     
-    return tProvided;
+    return (jint)tProvided;
 }
 
 #ifdef __cplusplus

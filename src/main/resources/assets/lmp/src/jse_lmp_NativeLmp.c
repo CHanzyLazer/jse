@@ -98,7 +98,7 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsOpen_1___3Ljava_lang_String
 }
 
 JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsVersion_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
-    return lammps_version((void *)(intptr_t)aLmpPtr);
+    return (jint)lammps_version((void *)(intptr_t)aLmpPtr);
 }
 
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsComm_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
@@ -204,7 +204,7 @@ JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsExtractSetting_1(JNIEnv *aEn
     int tSetting = lammps_extract_setting((void *)(intptr_t)aLmpPtr, tName);
     exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
-    return tSetting;
+    return (jint)tSetting;
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jboolean aIsDouble, jint aCount, jdoubleArray rData) {
     // The implementation of `lammps_gather_concat` is just a piece of shit which actually causes memory leakage,
