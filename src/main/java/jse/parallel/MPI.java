@@ -15,7 +15,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static jse.clib.JNIUtil.*;
 import static jse.code.OS.*;
@@ -79,6 +81,12 @@ public class MPI {
     }
     
     public final static class Conf {
+        /**
+         * 自定义构建 lammps 的 cmake 参数设置，
+         * 会在构建时使用 -D ${key}=${value} 传入
+         */
+        public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        
         /**
          * 自定义构建 mpijni 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
@@ -1167,6 +1175,10 @@ public class MPI {
             rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
             rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
             rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
+            // 添加额外的设置参数
+            for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
+            rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
+            }
             rCommand.add(".");
             return String.join(" ", rCommand);
         }

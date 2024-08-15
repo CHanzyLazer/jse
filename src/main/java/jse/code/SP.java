@@ -577,6 +577,12 @@ public class SP {
         
         public final static class Conf {
             /**
+             * 自定义构建 lammps 的 cmake 参数设置，
+             * 会在构建时使用 -D ${key}=${value} 传入
+             */
+            public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+            
+            /**
              * 自定义构建 jep 时使用的编译器，
              * cmake 有时不能自动检测到希望使用的编译器；
              * <p>
@@ -912,6 +918,10 @@ public class SP {
             rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
             rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
             rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
+            // 添加额外的设置参数
+            for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
+            rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
+            }
             rCommand.add(".");
             return String.join(" ", rCommand);
         }

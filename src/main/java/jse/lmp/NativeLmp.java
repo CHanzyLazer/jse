@@ -215,7 +215,7 @@ public class NativeLmp implements IAutoShutdown {
         rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ NATIVELMP_LIB_DIR +"'");
         // 添加额外的设置参数
         for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-            rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
+        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
         }
         rCommand.add(".");
         return String.join(" ", rCommand);
