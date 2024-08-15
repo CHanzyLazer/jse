@@ -120,27 +120,27 @@ endif()
 
 
 # add python
-find_package(Python COMPONENTS Development)
-if (Python_Development_FOUND)
-    add_definitions(-DPYTHON_LDLIBRARY="${Python_LIBRARIES}")
+find_package(Python3 COMPONENTS Development)
+if (Python3_Development_FOUND)
+    add_definitions(-DPYTHON_LDLIBRARY="${Python3_LIBRARIES}")
     
-    include_directories(${Python_INCLUDE_DIRS})
-    target_link_libraries(jep Python::Python)
+    include_directories(${Python3_INCLUDE_DIRS})
+    target_link_libraries(jep Python3::Python)
     
     # add numpy
-    find_package(Python COMPONENTS Development NumPy)
-    if (Python_NumPy_FOUND)
+    find_package(Python3 COMPONENTS Development NumPy)
+    if (Python3_NumPy_FOUND)
         add_definitions(-DJEP_NUMPY_ENABLED=1)
         
-        include_directories(${Python_NumPy_INCLUDE_DIRS})
-        target_link_libraries(jep Python::NumPy)
+        include_directories(${Python3_NumPy_INCLUDE_DIRS})
+        target_link_libraries(jep Python3::NumPy)
     else ()
         message(NOTICE "numpy not found, running without numpy support")
         add_definitions(-DJEP_NUMPY_ENABLED=0)
-    endif(Python_NumPy_FOUND)
+    endif(Python3_NumPy_FOUND)
 else ()
-    message(FATAL_ERROR "No Python Development Environment Found")
-endif(Python_Development_FOUND)
+    message(FATAL_ERROR "No Python3 Development Environment Found")
+endif(Python3_Development_FOUND)
 
 
 # jep defines
