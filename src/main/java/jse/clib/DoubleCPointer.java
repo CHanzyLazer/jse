@@ -1,6 +1,13 @@
 package jse.clib;
 
+import jse.code.collection.AbstractRandomAccessList;
+import jse.math.vector.AbstractVector;
+import jse.math.vector.IVector;
+import jse.math.vector.RefVector;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * 当作 C 中的 {@code double *} 处理的指针，
@@ -87,5 +94,28 @@ public class DoubleCPointer extends CPointer {
     
     @Override public DoubleCPointer copy() {
         return new DoubleCPointer(mPtr);
+    }
+    
+    public IVector asVec(final int aSize) {
+        return new RefVector() {
+            @Override public double get(int aIdx) {AbstractVector.rangeCheck(aIdx, aSize); return getAt(aIdx);}
+            @Override public void set(int aIdx, double aValue) {AbstractVector.rangeCheck(aIdx, aSize); putAt(aIdx, aValue);}
+            @Override public int size() {return aSize;}
+        };
+    }
+    public List<Double> asList(final int aSize) {
+        return new AbstractRandomAccessList<Double>() {
+            @Override public Double get(int index) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                return getAt(index);
+            }
+            @Override public Double set(int index, @NotNull Double element) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                double oValue = getAt(index);
+                putAt(index, element);
+                return oValue;
+            }
+            @Override public int size() {return aSize;}
+        };
     }
 }

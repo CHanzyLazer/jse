@@ -1,6 +1,10 @@
 package jse.clib;
 
+import jse.code.collection.AbstractRandomAccessList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * 当作 C 中的 {@code void **} 处理的指针，
@@ -30,13 +34,13 @@ public class NestedCPointer extends CPointer {
     }
     private native static long getAt_(long aPtr, int aIdx);
     
-    public void set(CPointer aValue) {
+    public void set(@NotNull CPointer aValue) {
         if (isNull()) throw new NullPointerException();
         set_(mPtr, aValue.mPtr);
     }
     private native static void set_(long aPtr, long aValue);
     
-    public void putAt(int aIdx, CPointer aValue) {
+    public void putAt(int aIdx, @NotNull CPointer aValue) {
         if (isNull()) throw new NullPointerException();
         putAt_(mPtr, aIdx, aValue.mPtr);
     }
@@ -77,5 +81,21 @@ public class NestedCPointer extends CPointer {
     
     @Override public NestedCPointer copy() {
         return new NestedCPointer(mPtr);
+    }
+    
+    public List<CPointer> asList(final int aSize) {
+        return new AbstractRandomAccessList<CPointer>() {
+            @Override public CPointer get(int index) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                return getAt(index);
+            }
+            @Override public CPointer set(int index, @NotNull CPointer element) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                CPointer oValue = getAt(index);
+                putAt(index, element);
+                return oValue;
+            }
+            @Override public int size() {return aSize;}
+        };
     }
 }

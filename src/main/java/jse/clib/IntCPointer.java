@@ -1,6 +1,11 @@
 package jse.clib;
 
+import jse.code.collection.AbstractRandomAccessList;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * 当作 C 中的 {@code int *} 处理的指针，
@@ -88,5 +93,28 @@ public class IntCPointer extends CPointer {
     
     @Override public IntCPointer copy() {
         return new IntCPointer(mPtr);
+    }
+    
+    public IIntVector asVec(final int aSize) {
+        return new RefIntVector() {
+            @Override public int get(int aIdx) {AbstractVector.rangeCheck(aIdx, aSize); return getAt(aIdx);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, aSize); putAt(aIdx, aValue);}
+            @Override public int size() {return aSize;}
+        };
+    }
+    public List<Integer> asList(final int aSize) {
+        return new AbstractRandomAccessList<Integer>() {
+            @Override public Integer get(int index) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                return getAt(index);
+            }
+            @Override public Integer set(int index, @NotNull Integer element) {
+                if (index >= aSize) throw new IndexOutOfBoundsException("Index: "+index+", Size: "+aSize);
+                int oValue = getAt(index);
+                putAt(index, element);
+                return oValue;
+            }
+            @Override public int size() {return aSize;}
+        };
     }
 }

@@ -6,6 +6,7 @@ import jse.code.collection.AbstractRandomAccessList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
+import jse.math.vector.AbstractVector;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.RefIntVector;
@@ -285,9 +286,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector asVecCol() {
         return new RefIntVector() {
             private final int mRowNum = rowNumber(), mColNum = columnNumber();
-            @Override public int get(int aIdx) {return AbstractIntMatrix.this.get(aIdx%mRowNum, aIdx/mRowNum);}
-            @Override public void set(int aIdx, int aValue) {AbstractIntMatrix.this.set(aIdx%mRowNum, aIdx/mRowNum, aValue);}
-            @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet(aIdx%mRowNum, aIdx/mRowNum, aValue);}
+            @Override public int get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.get(aIdx%mRowNum, aIdx/mRowNum);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); AbstractIntMatrix.this.set(aIdx%mRowNum, aIdx/mRowNum, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.getAndSet(aIdx%mRowNum, aIdx/mRowNum, aValue);}
             @Override public int size() {return mRowNum * mColNum;}
             @Override public IIntIterator iterator() {return iteratorCol();}
             @Override public IIntSetIterator setIterator() {return setIteratorCol();}
@@ -296,9 +297,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector asVecRow() {
         return new RefIntVector() {
             private final int mRowNum = rowNumber(), mColNum = columnNumber();
-            @Override public int get(int aIdx) {return AbstractIntMatrix.this.get(aIdx/mColNum, aIdx%mColNum);}
-            @Override public void set(int aIdx, int aValue) {AbstractIntMatrix.this.set(aIdx/mColNum, aIdx%mColNum, aValue);}
-            @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet(aIdx/mColNum, aIdx%mColNum, aValue);}
+            @Override public int get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.get(aIdx/mColNum, aIdx%mColNum);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); AbstractIntMatrix.this.set(aIdx/mColNum, aIdx%mColNum, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.getAndSet(aIdx/mColNum, aIdx%mColNum, aValue);}
             @Override public int size() {return mRowNum * mColNum;}
             @Override public IIntIterator iterator() {return iteratorRow();}
             @Override public IIntSetIterator setIterator() {return setIteratorRow();}
@@ -412,9 +413,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector row(final int aRow) {
         rangeCheckRow(aRow, rowNumber());
         return new RefIntVector() {
-            @Override public int get(int aIdx) {return AbstractIntMatrix.this.get(aRow, aIdx);}
-            @Override public void set(int aIdx, int aValue) {AbstractIntMatrix.this.set(aRow, aIdx, aValue);}
-            @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet(aRow, aIdx, aValue);}
+            @Override public int get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.get(aRow, aIdx);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); AbstractIntMatrix.this.set(aRow, aIdx, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.getAndSet(aRow, aIdx, aValue);}
             @Override public int size() {return columnNumber();}
             @Override public IIntIterator iterator() {return iteratorRowAt(aRow);}
             @Override public IIntSetIterator setIterator() {return setIteratorRowAt(aRow);}
@@ -429,9 +430,9 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     @Override public IIntVector col(final int aCol) {
         rangeCheckCol(aCol, columnNumber());
         return new RefIntVector() {
-            @Override public int get(int aIdx) {return AbstractIntMatrix.this.get(aIdx, aCol);}
-            @Override public void set(int aIdx, int aValue) {AbstractIntMatrix.this.set(aIdx, aCol, aValue);}
-            @Override public int getAndSet(int aIdx, int aValue) {return AbstractIntMatrix.this.getAndSet(aIdx, aCol, aValue);}
+            @Override public int get(int aIdx) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.get(aIdx, aCol);}
+            @Override public void set(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); AbstractIntMatrix.this.set(aIdx, aCol, aValue);}
+            @Override public int getAndSet(int aIdx, int aValue) {AbstractVector.rangeCheck(aIdx, size()); return AbstractIntMatrix.this.getAndSet(aIdx, aCol, aValue);}
             @Override public int size() {return rowNumber();}
             @Override public IIntIterator iterator() {return iteratorColAt(aCol);}
             @Override public IIntSetIterator setIterator() {return setIteratorColAt(aCol);}

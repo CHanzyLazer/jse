@@ -12,6 +12,7 @@ import jse.math.SliceType;
 import jse.math.matrix.AbstractMatrix;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RefMatrix;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -227,7 +228,7 @@ public abstract class AbstractVector implements IVector {
         set(aIdx, aOpt.applyAsDouble(tValue));
         return tValue;
     }
-    protected static void rangeCheck(int aIdx, int aSize) {
+    @ApiStatus.Internal public static void rangeCheck(int aIdx, int aSize) {
         if (aIdx<0 || aIdx>=aSize) throw new IndexOutOfBoundsException("Index = " + aIdx + ", Size = " + aSize);
     }
     
