@@ -62,7 +62,7 @@ public class CPointer {
         public static @Nullable String REDIRECT_CPOINTER_LIB = OS.env("JSE_REDIRECT_CPOINTER_LIB");
     }
     
-    private final static String LIB_DIR = JAR_DIR+"cpointer/" + UT.Code.uniqueID(VERSION, Conf.USE_MIMALLOC) + "/";
+    private final static String LIB_DIR = JAR_DIR+"cpointer/" + UT.Code.uniqueID(VERSION, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     private final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "jse_clib_CPointer.c"

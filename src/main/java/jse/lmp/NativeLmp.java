@@ -100,6 +100,12 @@ public class NativeLmp implements IAutoShutdown {
         public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_LMP"   , jse.code.Conf.CMAKE_CXX_FLAGS);
         
         /**
+         * 自定义构建 lmpjni 的 cmake 参数设置，
+         * 会在构建时使用 -D ${key}=${value} 传入
+         */
+        public final static Map<String, String> CMAKE_SETTING_LMPJNI = new HashMap<>();
+        
+        /**
          * 自定义构建 lmpjni 时使用的编译器，会覆盖上面的设置，
          * cmake 有时不能自动检测到希望使用的编译器
          */
@@ -236,6 +242,10 @@ public class NativeLmp implements IAutoShutdown {
         rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LMPJNI_LIB_DIR +"'");
         rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LMPJNI_LIB_DIR +"'");
         rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LMPJNI_LIB_DIR +"'");
+        // 添加额外的设置参数
+        for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING_LMPJNI.entrySet()) {
+        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
+        }
         rCommand.add(".");
         return String.join(" ", rCommand);
     }
@@ -402,7 +412,7 @@ public class NativeLmp implements IAutoShutdown {
         
         // 现在 uniqueID 不再包含这个 tag（确实当时也想到了），因为已经包含到了 LMP_HOME 中
         // 在这里初始化保证顺序合理
-        LMPJNI_LIB_DIR = LMP_ROOT + UT.Code.uniqueID(VERSION, Conf.LMP_HOME, Conf.USE_MIMALLOC, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT) + "/";
+        LMPJNI_LIB_DIR = LMP_ROOT + UT.Code.uniqueID(VERSION, Conf.LMP_HOME, Conf.USE_MIMALLOC, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT, Conf.CMAKE_C_COMPILER_LMPJNI, Conf.CMAKE_CXX_COMPILER_LMPJNI, Conf.CMAKE_C_FLAGS_LMPJNI, Conf.CMAKE_CXX_FLAGS_LMPJNI, Conf.CMAKE_SETTING_LMPJNI) + "/";
         if (Conf.REDIRECT_LMPJNI_LIB == null) {
             @Nullable String tLmpJniLibName = LIB_NAME_IN(LMPJNI_LIB_DIR, "lmpjni");
             // 如果不存在 jni lib 则需要重新通过源码编译
