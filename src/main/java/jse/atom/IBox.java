@@ -49,7 +49,8 @@ public interface IBox extends IXYZ {
     default void toCartesian(XYZ rDirect) {
         if (!isPrism()) {
             rDirect.multiply2this(this);
-        } else
+            return;
+        }
         if (isLmpStyle()) {
             double tX  =  x(), tY  =  y(), tZ  =  z();
             double tXY = xy(), tXZ = xz(), tYZ = yz();
@@ -85,7 +86,8 @@ public interface IBox extends IXYZ {
     default void toDirect(XYZ rCartesian) {
         if (!isPrism()) {
             rCartesian.div2this(this);
-        } else
+            return;
+        }
         if (isLmpStyle()) {
             double tX  =  x(), tY  =  y(), tZ  =  z();
             double tXY = xy(), tXZ = xz(), tYZ = yz();
@@ -94,14 +96,6 @@ public interface IBox extends IXYZ {
                 rCartesian.mY/tY - tYZ*rCartesian.mZ/(tY*tZ),
                 rCartesian.mZ/tZ
             );
-            // direct 需要考虑计算误差带来的出边界的问题
-            if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
-            if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
-            if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
-            // 同理在 1.0 周围的也要设为 1.0
-            if (MathEX.Code.numericEqual(rCartesian.mX, 1.0)) rCartesian.mX = 1.0;
-            if (MathEX.Code.numericEqual(rCartesian.mY, 1.0)) rCartesian.mY = 1.0;
-            if (MathEX.Code.numericEqual(rCartesian.mZ, 1.0)) rCartesian.mZ = 1.0;
         } else {
             // 默认实现简单处理，不缓存中间结果
             XYZ tA = XYZ.toXYZ(a());
@@ -113,14 +107,25 @@ public interface IBox extends IXYZ {
                 tC.mixed(tA, rCartesian) / tV,
                 tA.mixed(tB, rCartesian) / tV
             );
-            // direct 需要考虑计算误差带来的出边界的问题
-            if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = 0.0;
-            if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = 0.0;
-            if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = 0.0;
-            // 同理在 1.0 周围的也要设为 1.0
-            if (MathEX.Code.numericEqual(rCartesian.mX, 1.0)) rCartesian.mX = 1.0;
-            if (MathEX.Code.numericEqual(rCartesian.mY, 1.0)) rCartesian.mY = 1.0;
-            if (MathEX.Code.numericEqual(rCartesian.mZ, 1.0)) rCartesian.mZ = 1.0;
+        }
+        // direct 需要考虑计算误差带来的出边界的问题，现在支持自动靠近所有整数值
+        if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) {
+            rCartesian.mX = 0.0;
+        } else {
+            int tIntX = MathEX.Code.round2int(rCartesian.mX);
+            if (MathEX.Code.numericEqual(rCartesian.mX, tIntX)) rCartesian.mX = tIntX;
+        }
+        if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) {
+            rCartesian.mY = 0.0;
+        } else {
+            int tIntY = MathEX.Code.round2int(rCartesian.mY);
+            if (MathEX.Code.numericEqual(rCartesian.mY, tIntY)) rCartesian.mY = tIntY;
+        }
+        if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) {
+            rCartesian.mZ = 0.0;
+        } else {
+            int tIntZ = MathEX.Code.round2int(rCartesian.mZ);
+            if (MathEX.Code.numericEqual(rCartesian.mZ, tIntZ)) rCartesian.mZ = tIntZ;
         }
     }
 }
