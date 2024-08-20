@@ -30,7 +30,7 @@ public final class AtomData extends AbstractAtomData {
         mSymbols = (aSymbols==null || aSymbols.length==0) ? null : aSymbols;
     }
     public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IBox aBox, boolean aHasVelocity) {
-        this(aAtoms, aAtomTypeNum, aBox, aHasVelocity, aAtoms.get(0).hasSymbol() ? new String[aAtomTypeNum] : ZL_STR);
+        this(aAtoms, aAtomTypeNum, aBox, aHasVelocity, (!aAtoms.isEmpty() && aAtoms.get(0).hasSymbol()) ? new String[aAtomTypeNum] : ZL_STR);
         if (mSymbols != null) for (IAtom tAtom : aAtoms) {
             int tTypeMM = Math.min(tAtom.type(), mAtomTypeNum) - 1;
             if (mSymbols[tTypeMM] == null) mSymbols[tTypeMM] = tAtom.symbol();
@@ -45,14 +45,14 @@ public final class AtomData extends AbstractAtomData {
             tAtomTypeNum = Math.max(tAtom.type(), tAtomTypeNum);
         }
         mAtomTypeNum = tAtomTypeNum;
-        mSymbols = aAtoms.get(0).hasSymbol() ? new String[mAtomTypeNum] : null;
+        mSymbols = (!aAtoms.isEmpty() && aAtoms.get(0).hasSymbol()) ? new String[mAtomTypeNum] : null;
         if (mSymbols != null) for (IAtom tAtom : aAtoms) {
             int tTypeMM = tAtom.type() - 1;
             if (mSymbols[tTypeMM] == null) mSymbols[tTypeMM] = tAtom.symbol();
         }
     }
-    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IBox aBox) {this(aAtoms, aAtomTypeNum, aBox, aAtoms.get(0).hasVelocity());}
-    public AtomData(List<? extends IAtom> aAtoms,                   IBox aBox) {this(aAtoms, aBox, aAtoms.get(0).hasVelocity());}
+    public AtomData(List<? extends IAtom> aAtoms, int aAtomTypeNum, IBox aBox) {this(aAtoms, aAtomTypeNum, aBox, !aAtoms.isEmpty() && aAtoms.get(0).hasVelocity());}
+    public AtomData(List<? extends IAtom> aAtoms,                   IBox aBox) {this(aAtoms, aBox, !aAtoms.isEmpty() && aAtoms.get(0).hasVelocity());}
     
     
     @Override public boolean hasSymbol() {return mSymbols!=null;}
