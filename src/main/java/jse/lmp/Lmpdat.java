@@ -484,12 +484,12 @@ public class Lmpdat extends AbstractSettableAtomData {
         if (UT.Text.containsIgnoreCase(tLine, "xy xz yz")) {
             tTokens = UT.Text.splitBlank(tLine);
             aBox = new LmpBoxPrism(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi, Double.parseDouble(tTokens[0]), Double.parseDouble(tTokens[1]), Double.parseDouble(tTokens[2]));
-            aReader.readLine(); // 跳过空行
         } else {
             aBox = new LmpBox(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
         }
         // 读取任意属性直到结束
-        while ((tLine = aReader.readLine()) != null) {
+        while ((tLine = findLineNonBlank_(aReader)) != null) {
+            // 各种情况分别处理
             if (aMasses==null && UT.Text.containsIgnoreCase(tLine, "Masses")) {
                 aMasses = Vectors.zeros(aAtomTypeNum);
                 readMasses_(aReader, aMasses);
@@ -511,56 +511,61 @@ public class Lmpdat extends AbstractSettableAtomData {
         // 返回 lmpdat
         return new Lmpdat(aAtomTypeNum, aBox, aMasses, aAtomID, aAtomType, aAtomXYZ, aVelocities);
     }
+    
+    /** 跳过空行的通用方法，这样可以处理神奇的各种空行数目的情况 */
+    private static String findLineNonBlank_(BufferedReader aReader) throws IOException {
+        String tLine;
+        while ((tLine = aReader.readLine()) != null) {
+            if (!UT.Text.isBlank(tLine)) return tLine;
+        }
+        return null;
+    }
     /**
      * 读取特定信息，此时的 aReader 应该在最开头，也就是 {@code aReader.readLine()} 会得到一个空行，并且下一行是数据；
      * 读取完成后会跳过末尾的空行，也就是 {@code aReader.readLine()} 会得到下一个属性的字符串
      */
     private static void readMasses_(BufferedReader aReader, IVector rMasses) throws IOException {
-        aReader.readLine(); // 开头有一个空行
+        String tLine = findLineNonBlank_(aReader); if (tLine == null) return; // 跳过开头空行
         final int tAtomTypeNum = rMasses.size();
         for (int i = 0; i < tAtomTypeNum; ++i) {
-            String tLine = aReader.readLine(); if (tLine == null) return;
             String[] tTokens = UT.Text.splitBlank(tLine);
             rMasses.set(Integer.parseInt(tTokens[0])-1, Double.parseDouble(tTokens[1]));
+            tLine = aReader.readLine(); if (tLine == null) return;
         }
-        aReader.readLine(); // 跳过空行
     }
     private static void readAtoms_(BufferedReader aReader, IIntVector rAtomID, IIntVector rAtomType, IMatrix rAtomXYZ) throws IOException {
-        aReader.readLine(); // 开头有一个空行
+        String tLine = findLineNonBlank_(aReader); if (tLine == null) return; // 跳过开头空行
         final int tAtomNum = rAtomID.size();
         // 和坐标排序一致的顺序来存储（不考虑 molecule-tag，q，nx，ny，nz）
         for (int i = 0; i < tAtomNum; ++i) {
-            String tLine = aReader.readLine(); if (tLine == null) return;
             IVector tIDTypeXYZ = UT.Text.str2data(tLine, STD_ATOM_DATA_KEYS.length);
             rAtomID.set(i, (int)tIDTypeXYZ.get(STD_ID_COL));
             rAtomType.set(i, (int)tIDTypeXYZ.get(STD_TYPE_COL));
             rAtomXYZ.set(i, XYZ_X_COL, tIDTypeXYZ.get(STD_X_COL));
             rAtomXYZ.set(i, XYZ_Y_COL, tIDTypeXYZ.get(STD_Y_COL));
             rAtomXYZ.set(i, XYZ_Z_COL, tIDTypeXYZ.get(STD_Z_COL));
+            tLine = aReader.readLine(); if (tLine == null) return;
         }
-        aReader.readLine(); // 跳过空行
     }
     private static void readVelocities_(BufferedReader aReader, IIntVector aAtomID, IMatrix rVelocities) throws IOException {
-        aReader.readLine(); // 开头有一个空行
+        String tLine = findLineNonBlank_(aReader); if (tLine == null) return; // 跳过开头空行
         final int tAtomNum = rVelocities.rowNumber();
         // 统计 id 和对应行的映射，用于保证速度顺序和坐标排序一致
         Map<Integer, Integer> tId2Row = new HashMap<>(tAtomNum);
         for (int i = 0; i < tAtomNum; ++i) tId2Row.put(aAtomID.get(i), i);
         // 和坐标排序一致的顺序来存储
         for (int i = 0; i < tAtomNum; ++i) {
-            String tLine = aReader.readLine(); if (tLine == null) return;
             IVector tVelocity = UT.Text.str2data(tLine, LMPDAT_VELOCITY_LENGTH);
             int tRow = tId2Row.get((int)tVelocity.get(LMPDAT_ID_COL));
             rVelocities.set(tRow, STD_VX_COL, tVelocity.get(LMPDAT_VX_COL));
             rVelocities.set(tRow, STD_VY_COL, tVelocity.get(LMPDAT_VY_COL));
             rVelocities.set(tRow, STD_VZ_COL, tVelocity.get(LMPDAT_VZ_COL));
+            tLine = aReader.readLine(); if (tLine == null) return;
         }
-        aReader.readLine(); // 跳过空行
     }
     private static void readElse_(BufferedReader aReader) throws IOException {
-        aReader.readLine(); // 开头有一个空行
+        String tLine = findLineNonBlank_(aReader); if (tLine == null) return; // 跳过开头空行
         // 其余不支持的情况直接跳过中间的非空行即可
-        String tLine;
         while ((tLine = aReader.readLine()) != null) {
             if (UT.Text.isBlank(tLine)) return;
         }
