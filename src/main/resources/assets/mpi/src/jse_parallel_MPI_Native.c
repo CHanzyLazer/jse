@@ -527,7 +527,7 @@ JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1excl(JNIEn
     return (jlong)nGroup;
 }
 JNIEXPORT void JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1free(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
-    MPI_Comm tGroup = (MPI_Comm)aGroup;
+    MPI_Group tGroup = (MPI_Group)aGroup;
     int tExitCode = MPI_Group_free(&tGroup);
     exceptionCheckMPI(aEnv, tExitCode);
 }
@@ -549,14 +549,14 @@ JNIEXPORT jlong JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1intersecti
     return (jlong)nGroup;
 }
 JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1rank(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
-    MPI_Comm tGroup = (MPI_Comm)aGroup;
+    MPI_Group tGroup = (MPI_Group)aGroup;
     int tRank;
     int tExitCode = MPI_Group_rank(tGroup, &tRank);
     exceptionCheckMPI(aEnv, tExitCode);
     return (jint)tRank;
 }
 JNIEXPORT jint JNICALL Java_jse_parallel_MPI_00024Native_MPI_1Group_1size(JNIEnv *aEnv, jclass aClazz, jlong aGroup) {
-    MPI_Comm tGroup = (MPI_Comm)aGroup;
+    MPI_Group tGroup = (MPI_Group)aGroup;
     int tSize;
     int tExitCode = MPI_Group_size(tGroup, &tSize);
     exceptionCheckMPI(aEnv, tExitCode);
