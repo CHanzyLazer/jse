@@ -11,6 +11,7 @@ public class AccumulatedTimer implements ITimer {
     public void from() {mStart = System.nanoTime();}
     public void to() {mTime += (System.nanoTime() - mStart);}
     
+    @Override public long getNanos() {return mTime;}
     @Override public long getMillis() {return Math.round(mTime / 1.0e6);}
     @Override public double get() {return mTime / 1.0e9;}
     @Override public void reset() {mTime = 0;}
