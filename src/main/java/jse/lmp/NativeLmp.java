@@ -8,6 +8,7 @@ import jse.cache.IntArrayCache;
 import jse.cache.IntMatrixCache;
 import jse.cache.MatrixCache;
 import jse.clib.CPointer;
+import jse.clib.Dlfcn;
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
 import jse.code.OS;
@@ -156,6 +157,12 @@ public class NativeLmp implements IAutoShutdown {
          * 对于较旧的版本并不支持这个
          */
         public static boolean EXCEPTIONS_NULL_SUPPORT = OS.envZ("JSE_LMP_EXCEPTIONS_NULL_SUPPORT", true);
+        
+        /**
+         * 是否将 lammps 动态库提升到全局，这会保证一些 lammps 的模块能找到 lammps 库；
+         * 一般只有在 unix 上会遇到这个问题
+         */
+        public static boolean DLOPEN = OS.envZ("JSE_LMP_DLOPEN", !IS_WINDOWS);
     }
     
     private final static String LMP_ROOT = JAR_DIR+"lmp/";
@@ -429,6 +436,8 @@ public class NativeLmp implements IAutoShutdown {
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(NATIVELMP_LIB_PATH));
         System.load(UT.IO.toAbsolutePath(LMPJNI_LIB_PATH));
+        // 部分情况需要将 lammps 库提升到全局范围，主要用于保证部分 lammps 的插件总是能找到 lammps 库本身
+        if (Conf.DLOPEN) Dlfcn.dlopen(NATIVELMP_LIB_PATH);
         
         // 设置 EXECUTABLE_NAME
         String tExecutableName = UT.IO.toFileName(NATIVELMP_LIB_PATH);

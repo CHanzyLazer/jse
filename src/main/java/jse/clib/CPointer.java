@@ -38,7 +38,7 @@ public class CPointer {
     
     public final static class Conf {
         /**
-         * 自定义构建 lammps 的 cmake 参数设置，
+         * 自定义构建 cpointer 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
         public final static Map<String, String> CMAKE_SETTING = new HashMap<>();

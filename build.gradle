@@ -24,9 +24,12 @@ sourceSets {
         resources {
             srcDirs = ['src/main/resources']
             exclude(
+                'assets/cpointer/src/.*/', 'assets/cpointer/src/build/', 'assets/cpointer/src/*build*/',
                 'assets/jniutil/src/.*/', 'assets/jniutil/src/build/', 'assets/jniutil/src/*build*/',
+                'assets/dlfcn/src/.*/', 'assets/dlfcn/src/build/', 'assets/dlfcn/src/*build*/',
                 'assets/mpi/src/.*/', 'assets/mpi/src/build/', 'assets/mpi/src/*build*/',
                 'assets/lmp/src/.*/', 'assets/lmp/src/build/', 'assets/lmp/src/*build*/',
+                'assets/lmpplugin/src/.*/', 'assets/lmpplugin/src/build/', 'assets/lmpplugin/src/*build*/',
                 'assets/jep/jep*-src/'
             )
         }
