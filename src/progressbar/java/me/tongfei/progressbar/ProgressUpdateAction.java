@@ -42,17 +42,18 @@ class ProgressUpdateAction implements Runnable {
     }
 
     public void run() {
+        if (!progress.alive) {
+            forceRefresh();
+            if (clearDisplayOnFinish) consumer.clear();
+            consumer.close();
+            return;
+        }
         if (first) {
             forceRefresh();
             first = false;
         }
         else {
             if (!progress.paused) refresh();
-            if (!progress.alive) {
-                forceRefresh();
-                if (clearDisplayOnFinish) consumer.clear();
-                consumer.close();
-            }
         }
     }
 
