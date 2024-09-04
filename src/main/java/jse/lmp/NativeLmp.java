@@ -173,10 +173,10 @@ public class NativeLmp implements IAutoShutdown {
         , "jse_lmp_NativeLmp.h"
     };
     private final static @Nullable String NATIVELMP_SRC_DIR; // 记录自动下载的 lammps 的目录，包含可以重新编译的 lammps 源码，和 Conf.LMP_HOME 的 null 恰好相反
-    private final static String NATIVELMP_INCLUDE_DIR;
-    private final static String NATIVELMP_LIB_DIR;
-    private final static String NATIVELMP_LIB_PATH;
-    private final static String NATIVELMP_LLIB_PATH;
+    public final static String NATIVELMP_INCLUDE_DIR;
+    public final static String NATIVELMP_LIB_DIR;
+    public final static String NATIVELMP_LIB_PATH;
+    public final static String NATIVELMP_LLIB_PATH;
     private final static String NATIVE_DIR_NAME = "native", BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     
     private final static String EXECUTABLE_NAME;
@@ -314,6 +314,7 @@ public class NativeLmp implements IAutoShutdown {
         // 完事后移除临时解压得到的源码（以及可能存在的临时下载的 lammps 源码压缩包）
         UT.IO.removeDir(tWorkingDir);
         System.out.println("NATIVE_LMP INIT INFO: lammps libraries successfully installed.");
+        System.out.println("NATIVE_LMP DIR: " + NATIVELMP_LIB_DIR);
         // 输出安装完成后的库名称
         return tLibName;
     }

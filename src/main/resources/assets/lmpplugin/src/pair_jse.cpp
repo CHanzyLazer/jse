@@ -16,11 +16,8 @@ using namespace LAMMPS_NS;
 PairJSE::PairJSE(LAMMPS *lmp) : Pair(lmp) {
     single_enable = 0;
     restartinfo = 0;
-    one_coeff = 1;
     manybody_flag = 1;
 }
-
-/* ---------------------------------------------------------------------- */
 
 PairJSE::~PairJSE() {
     if (allocated) {
@@ -29,101 +26,33 @@ PairJSE::~PairJSE() {
     }
     if (core!=NULL && env!=NULL) {
         env->DeleteGlobalRef(core);
+        JSE_LMPPAIR::uncacheJClass(env);
     }
 }
 
 /* ---------------------------------------------------------------------- */
 
 void PairJSE::compute(int eflag, int vflag) {
-    int i, j, ii, jj, inum, jnum, itype, jtype;
-    double xtmp, ytmp, ztmp, delx, dely, delz, evdwl, fpair;
-    double rsq, r2inv, r6inv, forcelj, factor_lj;
-    int *ilist, *jlist, *numneigh, **firstneigh;
-
-    evdwl = 0.0;
-    ev_init(eflag, vflag);
-
-    double **x = atom->x;
-    double **f = atom->f;
-    int *type = atom->type;
-    int nlocal = atom->nlocal;
-    double *special_lj = force->special_lj;
-    int newton_pair = force->newton_pair;
-
-    inum = list->inum;
-    ilist = list->ilist;
-    numneigh = list->numneigh;
-    firstneigh = list->firstneigh;
-
-    // loop over neighbors of my atoms
-
-    for (ii = 0; ii < inum; ii++) {
-        i = ilist[ii];
-        xtmp = x[i][0];
-        ytmp = x[i][1];
-        ztmp = x[i][2];
-        itype = type[i];
-        jlist = firstneigh[i];
-        jnum = numneigh[i];
-
-        for (jj = 0; jj < jnum; jj++) {
-            j = jlist[jj];
-            factor_lj = special_lj[sbmask(j)];
-            j &= NEIGHMASK;
-
-            delx = xtmp - x[j][0];
-            dely = ytmp - x[j][1];
-            delz = ztmp - x[j][2];
-            rsq = delx * delx + dely * dely + delz * delz;
-            jtype = type[j];
-
-            if (rsq < cutsq[itype][jtype]) {
-                r2inv = 1.0 / rsq;
-                r6inv = r2inv * r2inv * r2inv;
-                forcelj = r6inv * (lj1[itype][jtype] * r6inv - lj2[itype][jtype]);
-                fpair = factor_lj * forcelj * r2inv;
-
-                f[i][0] += delx * fpair;
-                f[i][1] += dely * fpair;
-                f[i][2] += delz * fpair;
-                if (newton_pair || j < nlocal) {
-                    f[j][0] -= delx * fpair;
-                    f[j][1] -= dely * fpair;
-                    f[j][2] -= delz * fpair;
-                }
-
-                if (eflag) {
-                    evdwl = r6inv * (lj3[itype][jtype] * r6inv - lj4[itype][jtype]) - offset[itype][jtype];
-                    evdwl *= factor_lj;
-                }
-
-                if (evflag) ev_tally(i, j, nlocal, newton_pair, evdwl, 0.0, fpair, delx, dely, delz);
-            }
-        }
+    JSE_LMPPAIR::compute(env, core, eflag, vflag);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to compute");
     }
-
-    if (vflag_fdotr) virial_fdotr_compute();
 }
-
-
-/* ----------------------------------------------------------------------
-   allocate all arrays
-------------------------------------------------------------------------- */
 
 void PairJSE::allocate() {
     allocated = 1;
     int n = atom->ntypes + 1;
     
     memory->create(setflag, n, n, "pair:setflag");
-    for (int i = 1; i < n; i++) for (int j = i; j < n; j++) setflag[i][j] = 0;
+    for (int i = 1; i < n; ++i) for (int j = i; j < n; ++j) setflag[i][j] = 1;
     
     memory->create(cutsq, n, n, "pair:cutsq");
 }
 
-/* ----------------------------------------------------------------------
-   global settings
-------------------------------------------------------------------------- */
 
+/** global settings, init LmpPair here */
 void PairJSE::settings(int narg, char **arg) {
     if (narg != 1) error->all(FLERR, "Illegal pair_style command");
     
@@ -137,39 +66,105 @@ void PairJSE::settings(int narg, char **arg) {
         if (env == NULL) error->all(FLERR, "Fail to get jni env");
     }
     // init java LmpPair object
-    if (core != NULL) env->DeleteGlobalRef(core);
+    if (!JSE_LMPPAIR::cacheJClass(env)) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to cache class of java LmpPair");
+    }
     jobject obj = JSE_LMPPAIR::newJObject(env, arg[0], this);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to create java LmpPair object");
+    }
     if (obj == NULL) error->all(FLERR, "Fail to create java LmpPair object");
+    if (core != NULL) env->DeleteGlobalRef(core);
     core = env->NewGlobalRef(obj);
     env->DeleteLocalRef(obj);
 }
 
-/* ----------------------------------------------------------------------
-   set coeffs for one or more type pairs
-------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------- */
 
 void PairJSE::coeff(int narg, char **arg) {
-    JSE_LMPPAIR::coeff(env, core, narg, arg);
-    if (env->ExceptionCheck()) error->all(FLERR, "Fail to set coeff");
     if (!allocated) allocate();
+    JSE_LMPPAIR::coeff(env, core, narg, arg);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to set coeff");
+    }
 }
-
-/* ----------------------------------------------------------------------
-   init specific to this pair style
-------------------------------------------------------------------------- */
 
 void PairJSE::init_style() {
-//    neighbor->add_request(this, NeighConst::REQ_DEFAULT);
     JSE_LMPPAIR::initStyle(env, core);
-    if (env->ExceptionCheck()) error->all(FLERR, "Fail to init_style");
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to init_style");
+    }
 }
-
-/* ----------------------------------------------------------------------
-   init for one type pair i,j and corresponding j,i
-------------------------------------------------------------------------- */
 
 double PairJSE::init_one(int i, int j) {
     double cutij = JSE_LMPPAIR::initOne(env, core, i, j);
-    if (cutij<=0.0 || env->ExceptionCheck()) error->all(FLERR, "Fail to init_one");
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        error->all(FLERR, "Fail to init_one");
+    }
+    if (cutij <= 0.0) error->all(FLERR, "Fail to init_one");
     return cutij;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void PairJSE::neighborRequestDefault() {
+    neighbor->add_request(this, NeighConst::REQ_DEFAULT);
+}
+void PairJSE::neighborRequestFull() {
+    neighbor->add_request(this, NeighConst::REQ_FULL);
+}
+void PairJSE::evInit(jboolean eflag, jboolean vflag) {
+    ev_init((int)eflag, (int)vflag);
+}
+jlong PairJSE::atomX() {
+    return (jlong)(intptr_t) atom->x;
+}
+jlong PairJSE::atomF() {
+    return (jlong)(intptr_t) atom->f;
+}
+jlong PairJSE::atomType() {
+    return (jlong)(intptr_t) atom->type;
+}
+jint PairJSE::atomNlocal() {
+    return (jint) atom->nlocal;
+}
+jlong PairJSE::forceSpecialLj() {
+    return (jlong)(intptr_t) force->special_lj;
+}
+jboolean PairJSE::forceNewtonPair() {
+    return force->newton_pair ? JNI_TRUE : JNI_FALSE;
+}
+jint PairJSE::listInum() {
+    return (jint) list->inum;
+}
+jlong PairJSE::listIlist() {
+    return (jlong)(intptr_t) list->ilist;
+}
+jlong PairJSE::listNumneigh() {
+    return (jlong)(intptr_t) list->numneigh;
+}
+jlong PairJSE::listFirstneigh() {
+    return (jlong)(intptr_t) list->firstneigh;
+}
+jdouble PairJSE::cutsq_(jint i, jint j) {
+    return (jdouble) cutsq[i][j];
+}
+void PairJSE::evTally(jint i, jint j, jint nlocal, jboolean newtonPair, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
+    ev_tally((int)i, (int)j, (int)nlocal, (int)newtonPair, (double)evdwl, (double)ecoul, (double)fpair, (double)delx, (double)dely, (double)delz);
+}
+jboolean PairJSE::vflagFdotr() {
+    return vflag_fdotr ? JNI_TRUE : JNI_FALSE;
+}
+void PairJSE::virialFdotrCompute() {
+    virial_fdotr_compute();
 }

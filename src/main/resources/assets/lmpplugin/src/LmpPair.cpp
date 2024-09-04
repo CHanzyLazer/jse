@@ -7,7 +7,7 @@ jclass JSE_LMPPAIR::STRING_CLAZZ = NULL;
 
 int JSE_LMPPAIR::cacheJClass(JNIEnv *env) {
     if (LMPPAIR_CLAZZ == NULL) {
-        jclass clazz = env->FindClass("jse/lmp/LmpPair");
+        jclass clazz = env->FindClass("jse/lmp/LmpPlugin$LmpPair");
         if(env->ExceptionCheck()) return 0;
         LMPPAIR_CLAZZ = (jclass)env->NewGlobalRef(clazz);
         env->DeleteLocalRef(clazz);
@@ -32,6 +32,7 @@ void JSE_LMPPAIR::uncacheJClass(JNIEnv *env) {
 }
 
 static jmethodID _of = 0;
+static jmethodID _compute = 0;
 static jmethodID _coeff = 0;
 static jmethodID _initStyle = 0;
 static jmethodID _initOne = 0;
@@ -40,12 +41,18 @@ jobject JSE_LMPPAIR::newJObject(JNIEnv *env, char *arg, void *cPtr) {
     jobject result = NULL;
 
     jstring jarg = env->NewStringUTF(arg);
-    if (_of || (_of = env->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;)Ljse/lmp/LmpPair;J"))) {
+    if (_of || (_of = env->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;J)Ljse/lmp/LmpPlugin$LmpPair;"))) {
         result = env->CallStaticObjectMethod(LMPPAIR_CLAZZ, _of, jarg, (jlong)(intptr_t)cPtr);
     }
     env->DeleteLocalRef(jarg);
     
     return result;
+}
+
+void JSE_LMPPAIR::compute(JNIEnv *env, jobject self, int eflag, int vflag) {
+    if (_compute || (_compute = env->GetMethodID(LMPPAIR_CLAZZ, "compute", "(ZZ)V"))) {
+        env->CallVoidMethod(self, _compute, eflag ? JNI_TRUE : JNI_FALSE, vflag ? JNI_TRUE : JNI_FALSE);
+    }
 }
 void JSE_LMPPAIR::coeff(JNIEnv *env, jobject self, int nargs, char **args) {
     jobjectArray jargs = env->NewObjectArray(nargs, STRING_CLAZZ, NULL);
@@ -59,14 +66,13 @@ void JSE_LMPPAIR::coeff(JNIEnv *env, jobject self, int nargs, char **args) {
     }
     env->DeleteLocalRef(jargs);
 }
-
 void JSE_LMPPAIR::initStyle(JNIEnv *env, jobject self) {
     if (_initStyle || (_initStyle = env->GetMethodID(LMPPAIR_CLAZZ, "initStyle", "()V"))) {
         env->CallVoidMethod(self, _initStyle);
     }
 }
 double JSE_LMPPAIR::initOne(JNIEnv *env, jobject self, int i, int j) {
-    if (_initOne || (_initOne = env->GetMethodID(LMPPAIR_CLAZZ, "initOne", "(II)V"))) {
+    if (_initOne || (_initOne = env->GetMethodID(LMPPAIR_CLAZZ, "initOne", "(II)D"))) {
         return env->CallDoubleMethod(self, _initOne, i, j);
     }
     return -1.0;

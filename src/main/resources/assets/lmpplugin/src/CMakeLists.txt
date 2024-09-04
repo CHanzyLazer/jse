@@ -2,6 +2,24 @@ cmake_minimum_required(VERSION 3.14)
 project(lmpplugin CXX)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# MSVC hacks for lammps
+if(MSVC)
+    if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Intel"))
+        add_compile_options(/Zc:__cplusplus)
+        add_compile_options(/wd4244)
+        add_compile_options(/wd4267)
+        add_compile_options(/wd4250)
+        add_compile_options(/EHsc)
+    endif()
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
+
+# Need -restrict with Intel compilers
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict")
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -9,8 +27,10 @@ endif()
 
 
 set(SOURCE_FILES
+    jseplugin.cpp
     pair_jse.cpp
-    LmpPair.cpp)
+    LmpPair.cpp
+    jse_lmp_LmpPlugin_LmpPair.cpp)
 add_library(lmpplugin SHARED ${SOURCE_FILES})
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")

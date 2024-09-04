@@ -27,6 +27,25 @@ protected:
     jobject core = NULL;
     
     virtual void allocate();
+    
+public:
+    void neighborRequestDefault();
+    void neighborRequestFull();
+    void evInit(jboolean, jboolean);
+    jlong atomX();
+    jlong atomF();
+    jlong atomType();
+    jint atomNlocal();
+    jlong forceSpecialLj();
+    jboolean forceNewtonPair();
+    jint listInum();
+    jlong listIlist();
+    jlong listNumneigh();
+    jlong listFirstneigh();
+    jdouble cutsq_(jint, jint);
+    void evTally(jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+    jboolean vflagFdotr();
+    void virialFdotrCompute();
 };
 
 }    // namespace LAMMPS_NS
