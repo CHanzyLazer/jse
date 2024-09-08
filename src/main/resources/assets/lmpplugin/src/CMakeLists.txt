@@ -30,7 +30,7 @@ set(SOURCE_FILES
     jseplugin.cpp
     pair_jse.cpp
     LmpPair.cpp
-    jse_lmp_LmpPlugin_LmpPair.cpp)
+    jse_lmp_LmpPlugin_Pair.cpp)
 add_library(lmpplugin SHARED ${SOURCE_FILES})
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")

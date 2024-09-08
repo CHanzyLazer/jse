@@ -7,7 +7,7 @@ jclass JSE_LMPPAIR::STRING_CLAZZ = NULL;
 
 int JSE_LMPPAIR::cacheJClass(JNIEnv *env) {
     if (LMPPAIR_CLAZZ == NULL) {
-        jclass clazz = env->FindClass("jse/lmp/LmpPlugin$LmpPair");
+        jclass clazz = env->FindClass("jse/lmp/LmpPlugin$Pair");
         if(env->ExceptionCheck()) return 0;
         LMPPAIR_CLAZZ = (jclass)env->NewGlobalRef(clazz);
         env->DeleteLocalRef(clazz);
@@ -41,7 +41,7 @@ jobject JSE_LMPPAIR::newJObject(JNIEnv *env, char *arg, void *cPtr) {
     jobject result = NULL;
 
     jstring jarg = env->NewStringUTF(arg);
-    if (_of || (_of = env->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;J)Ljse/lmp/LmpPlugin$LmpPair;"))) {
+    if (_of || (_of = env->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;J)Ljse/lmp/LmpPlugin$Pair;"))) {
         result = env->CallStaticObjectMethod(LMPPAIR_CLAZZ, _of, jarg, (jlong)(intptr_t)cPtr);
     }
     env->DeleteLocalRef(jarg);

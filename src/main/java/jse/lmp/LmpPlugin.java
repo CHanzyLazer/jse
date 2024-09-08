@@ -68,8 +68,8 @@ public class LmpPlugin {
     private final static String LIB_DIR = JAR_DIR+"lmpplugin/" + UT.Code.uniqueID(VERSION, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     private final static String LIB_PATH;
     private final static String[] SRC_NAME = {
-          "jse_lmp_LmpPlugin_LmpPair.cpp"
-        , "jse_lmp_LmpPlugin_LmpPair.h"
+          "jse_lmp_LmpPlugin_Pair.cpp"
+        , "jse_lmp_LmpPlugin_Pair.h"
         , "jseplugin.cpp"
         , "LmpPair.cpp"
         , "LmpPair.h"
@@ -190,7 +190,7 @@ public class LmpPlugin {
     }
     
     
-    public static class LmpPair {
+    public static class Pair {
         static {
             // 确保 LmpPlugin 已经确实初始化
             LmpPlugin.InitHelper.init();
@@ -205,7 +205,7 @@ public class LmpPlugin {
          * @return 需要的对象
          * @author liqa
          */
-        public static LmpPair of(String aClassNameOrPath, long aPairPtr) throws Exception {
+        public static Pair of(String aClassNameOrPath, long aPairPtr) throws Exception {
             Class<?> tClazz;
             try {
                 tClazz = SP.Groovy.parseClass(aClassNameOrPath);
@@ -218,7 +218,7 @@ public class LmpPlugin {
                     else throw ex;
                 }
             }
-            return (LmpPair)InvokerHelper.invokeConstructorOf(tClazz, aPairPtr);
+            return (Pair)InvokerHelper.invokeConstructorOf(tClazz, aPairPtr);
         }
         
         
@@ -227,7 +227,7 @@ public class LmpPlugin {
          * @param aPairPtr lammps jse pair 对应类的指针
          * @author liqa
          */
-        protected LmpPair(long aPairPtr) {mPairPtr = aPairPtr;}
+        protected Pair(long aPairPtr) {mPairPtr = aPairPtr;}
         
         /**
          * 在这里执行主要的 pair 的计算部分
