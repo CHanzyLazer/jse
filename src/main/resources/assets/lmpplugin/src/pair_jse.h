@@ -35,7 +35,9 @@ public:
     jlong atomX();
     jlong atomF();
     jlong atomType();
+    jint atomNtypes();
     jint atomNlocal();
+    jint atomNghost();
     jlong forceSpecialLj();
     jboolean forceNewtonPair();
     jint listInum();

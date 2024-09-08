@@ -57,10 +57,26 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024LmpPair_atomType_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_LmpPair
+ * Method:    atomNtypes_
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024LmpPair_atomNtypes_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_LmpPair
  * Method:    atomNlocal_
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024LmpPair_atomNlocal_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_LmpPair
+ * Method:    atomNghost_
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024LmpPair_atomNghost_1
   (JNIEnv *, jclass, jlong);
 
 /*

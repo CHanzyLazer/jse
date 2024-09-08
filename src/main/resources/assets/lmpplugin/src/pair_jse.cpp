@@ -135,8 +135,14 @@ jlong PairJSE::atomF() {
 jlong PairJSE::atomType() {
     return (jlong)(intptr_t) atom->type;
 }
+jint PairJSE::atomNtypes() {
+    return (jint) atom->ntypes;
+}
 jint PairJSE::atomNlocal() {
     return (jint) atom->nlocal;
+}
+jint PairJSE::atomNghost() {
+    return (jint) atom->nghost;
 }
 jlong PairJSE::forceSpecialLj() {
     return (jlong)(intptr_t) force->special_lj;

@@ -1,12 +1,10 @@
 package jse.lmp;
 
-import jse.cache.MatrixCache;
 import jse.clib.*;
 import jse.code.OS;
 import jse.code.SP;
 import jse.code.UT;
 import jse.math.MathEX;
-import jse.math.matrix.RowMatrix;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -233,12 +231,12 @@ public class LmpPlugin {
         
         /**
          * 在这里执行主要的 pair 的计算部分
-         * @param aEFlag 是否需要计算能量的 flag，一般只需要直接传递给 lammps 相关接口即可
-         * @param aVFlag 是否需要计算位力（virial）的 flag，一般只需要直接传递给 lammps 相关接口即可
+         * @param eflag 是否需要计算能量的 flag，一般只需要直接传递给 lammps 相关接口即可
+         * @param vflag 是否需要计算位力（virial）的 flag，一般只需要直接传递给 lammps 相关接口即可
          */
-        public void compute(boolean aEFlag, boolean aVFlag) {
+        public void compute(boolean eflag, boolean vflag) {
             double evdwl = 0.0;
-            evInit(aEFlag, aVFlag);
+            evInit(eflag, vflag);
             
             NestedDoubleCPointer x = atomX();
             NestedDoubleCPointer f = atomF();
@@ -290,11 +288,11 @@ public class LmpPlugin {
                         }
                         
                         // ev stuffs
-                        if (aEFlag) {
+                        if (eflag) {
                             evdwl = r6inv * (lj3 * r6inv - lj4);
                             evdwl *= factor_lj;
                         }
-                        if (aVFlag) evTally(i, j, nlocal, newton_pair, evdwl, 0.0, fpair, delx, dely, delz);
+                        if (vflag) evTally(i, j, nlocal, newton_pair, evdwl, 0.0, fpair, delx, dely, delz);
                     }
                 }
             }
@@ -360,8 +358,14 @@ public class LmpPlugin {
         protected final IntCPointer atomType() {return new IntCPointer(atomType_(mPairPtr));}
         private native static long atomType_(long aPairPtr);
         
+        protected final int atomNtypes() {return atomNtypes_(mPairPtr);}
+        private native static int atomNtypes_(long aPairPtr);
+        
         protected final int atomNlocal() {return atomNlocal_(mPairPtr);}
         private native static int atomNlocal_(long aPairPtr);
+        
+        protected final int atomNghost() {return atomNghost_(mPairPtr);}
+        private native static int atomNghost_(long aPairPtr);
         
         protected final DoubleCPointer forceSpecialLj() {return new DoubleCPointer(forceSpecialLj_(mPairPtr));}
         private native static long forceSpecialLj_(long aPairPtr);
