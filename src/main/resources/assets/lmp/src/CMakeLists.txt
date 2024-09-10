@@ -40,7 +40,7 @@ endif()
 
 
 # add jniutil
-include_directories($ENV{JSE_JNIUTIL_INCLUDE_DIR})
+include_directories("$ENV{JSE_JNIUTIL_INCLUDE_DIR}")
 
 
 # add mpi
@@ -67,8 +67,8 @@ option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
 if(JSE_USE_MIMALLOC)
     add_definitions(-DUSE_MIMALLOC)
     
-    include_directories($ENV{JSE_MIMALLOC_INCLUDE_DIR})
-    target_link_libraries(lmpjni $ENV{JSE_MIMALLOC_LIB_PATH})
+    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
+    target_link_libraries(lmpjni "$ENV{JSE_MIMALLOC_LIB_PATH}")
 endif()
 
 
@@ -89,6 +89,6 @@ if(JSE_LAMMPS_EXCEPTIONS_NULL_SUPPORT)
     add_definitions(-DLAMMPS_EXCEPTIONS_NULL_SUPPORT)
 endif()
 
-include_directories($ENV{JSE_LMP_INCLUDE_DIR})
-target_link_libraries(lmpjni $ENV{JSE_LMP_LIB_PATH})
+include_directories("$ENV{JSE_LMP_INCLUDE_DIR}")
+target_link_libraries(lmpjni "$ENV{JSE_LMP_LIB_PATH}")
 

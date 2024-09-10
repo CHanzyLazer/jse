@@ -59,6 +59,9 @@ void PairJSE::settings(int aArgc, char **aArgv) {
     
     // init jni env
     if (mEnv == NULL) {
+#ifdef JVM_DLL_PATH
+        platform::dlopen(JVM_DLL_PATH);
+#endif
         JavaVM *tJVM;
         jsize tNVMs;
         JNI_GetCreatedJavaVMs(&tJVM, 1, &tNVMs);

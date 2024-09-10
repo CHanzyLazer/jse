@@ -42,7 +42,7 @@ option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
 if(JSE_USE_MIMALLOC)
     add_definitions(-DUSE_MIMALLOC)
     
-    include_directories($ENV{JSE_MIMALLOC_INCLUDE_DIR})
-    target_link_libraries(jniutil $ENV{JSE_MIMALLOC_LIB_PATH})
+    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
+    target_link_libraries(jniutil "$ENV{JSE_MIMALLOC_LIB_PATH}")
 endif()
 

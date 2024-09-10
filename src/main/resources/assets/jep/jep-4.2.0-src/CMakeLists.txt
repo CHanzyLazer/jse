@@ -106,7 +106,7 @@ endif(JNI_FOUND)
 
 
 # add jniutil (jstring to char *, fopen)
-include_directories($ENV{JSE_JNIUTIL_INCLUDE_DIR})
+include_directories("$ENV{JSE_JNIUTIL_INCLUDE_DIR}")
 
 
 # add mimalloc
@@ -114,8 +114,8 @@ option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
 if(JSE_USE_MIMALLOC)
     add_definitions(-DUSE_MIMALLOC)
     
-    include_directories($ENV{JSE_MIMALLOC_INCLUDE_DIR})
-    target_link_libraries(jep $ENV{JSE_MIMALLOC_LIB_PATH})
+    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
+    target_link_libraries(jep "$ENV{JSE_MIMALLOC_LIB_PATH}")
 endif()
 
 
