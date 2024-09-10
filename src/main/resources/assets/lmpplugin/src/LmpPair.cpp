@@ -5,75 +5,75 @@
 jclass JSE_LMPPAIR::LMPPAIR_CLAZZ = NULL;
 jclass JSE_LMPPAIR::STRING_CLAZZ = NULL;
 
-int JSE_LMPPAIR::cacheJClass(JNIEnv *env) {
+int JSE_LMPPAIR::cacheJClass(JNIEnv *aEnv) {
     if (LMPPAIR_CLAZZ == NULL) {
-        jclass clazz = env->FindClass("jse/lmp/LmpPlugin$Pair");
-        if(env->ExceptionCheck()) return 0;
-        LMPPAIR_CLAZZ = (jclass)env->NewGlobalRef(clazz);
-        env->DeleteLocalRef(clazz);
+        jclass clazz = aEnv->FindClass("jse/lmp/LmpPlugin$Pair");
+        if(aEnv->ExceptionCheck()) return 0;
+        LMPPAIR_CLAZZ = (jclass)aEnv->NewGlobalRef(clazz);
+        aEnv->DeleteLocalRef(clazz);
     }
     if (STRING_CLAZZ == NULL) {
-        jclass clazz = env->FindClass("java/lang/String");
-        if(env->ExceptionCheck()) return 0;
-        STRING_CLAZZ = (jclass)env->NewGlobalRef(clazz);
-        env->DeleteLocalRef(clazz);
+        jclass clazz = aEnv->FindClass("java/lang/String");
+        if(aEnv->ExceptionCheck()) return 0;
+        STRING_CLAZZ = (jclass)aEnv->NewGlobalRef(clazz);
+        aEnv->DeleteLocalRef(clazz);
     }
     return 1;
 }
-void JSE_LMPPAIR::uncacheJClass(JNIEnv *env) {
+void JSE_LMPPAIR::uncacheJClass(JNIEnv *aEnv) {
     if (LMPPAIR_CLAZZ != NULL) {
-        env->DeleteGlobalRef(LMPPAIR_CLAZZ);
+        aEnv->DeleteGlobalRef(LMPPAIR_CLAZZ);
         LMPPAIR_CLAZZ = NULL;
     }
     if (STRING_CLAZZ != NULL) {
-        env->DeleteGlobalRef(STRING_CLAZZ);
+        aEnv->DeleteGlobalRef(STRING_CLAZZ);
         STRING_CLAZZ = NULL;
     }
 }
 
-static jmethodID _of = 0;
-static jmethodID _compute = 0;
-static jmethodID _coeff = 0;
-static jmethodID _initStyle = 0;
-static jmethodID _initOne = 0;
+static jmethodID sOf = 0;
+static jmethodID sCompute = 0;
+static jmethodID sCoeff = 0;
+static jmethodID sInitStyle = 0;
+static jmethodID sInitOne = 0;
 
-jobject JSE_LMPPAIR::newJObject(JNIEnv *env, char *arg, void *cPtr) {
-    jobject result = NULL;
+jobject JSE_LMPPAIR::newJObject(JNIEnv *aEnv, char *aArg, void *aPtr) {
+    jobject rOut = NULL;
 
-    jstring jarg = env->NewStringUTF(arg);
-    if (_of || (_of = env->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;J)Ljse/lmp/LmpPlugin$Pair;"))) {
-        result = env->CallStaticObjectMethod(LMPPAIR_CLAZZ, _of, jarg, (jlong)(intptr_t)cPtr);
+    jstring tJArg = aEnv->NewStringUTF(aArg);
+    if (sOf || (sOf = aEnv->GetStaticMethodID(LMPPAIR_CLAZZ, "of", "(Ljava/lang/String;J)Ljse/lmp/LmpPlugin$Pair;"))) {
+        rOut = aEnv->CallStaticObjectMethod(LMPPAIR_CLAZZ, sOf, tJArg, (jlong)(intptr_t)aPtr);
     }
-    env->DeleteLocalRef(jarg);
+    aEnv->DeleteLocalRef(tJArg);
     
-    return result;
+    return rOut;
 }
 
-void JSE_LMPPAIR::compute(JNIEnv *env, jobject self, int eflag, int vflag) {
-    if (_compute || (_compute = env->GetMethodID(LMPPAIR_CLAZZ, "compute", "(ZZ)V"))) {
-        env->CallVoidMethod(self, _compute, eflag ? JNI_TRUE : JNI_FALSE, vflag ? JNI_TRUE : JNI_FALSE);
+void JSE_LMPPAIR::compute(JNIEnv *aEnv, jobject aSelf, int eflag, int vflag) {
+    if (sCompute || (sCompute = aEnv->GetMethodID(LMPPAIR_CLAZZ, "compute", "(ZZ)V"))) {
+        aEnv->CallVoidMethod(aSelf, sCompute, eflag ? JNI_TRUE : JNI_FALSE, vflag ? JNI_TRUE : JNI_FALSE);
     }
 }
-void JSE_LMPPAIR::coeff(JNIEnv *env, jobject self, int nargs, char **args) {
-    jobjectArray jargs = env->NewObjectArray(nargs, STRING_CLAZZ, NULL);
-    for (int i = 0; i < nargs; ++i) {
-        jstring str = env->NewStringUTF(args[i]);
-        env->SetObjectArrayElement(jargs, i, str);
-        env->DeleteLocalRef(str);
+void JSE_LMPPAIR::coeff(JNIEnv *aEnv, jobject aSelf, int aArgc, char **aArgv) {
+    jobjectArray tJArgs = aEnv->NewObjectArray(aArgc, STRING_CLAZZ, NULL);
+    for (int i = 0; i < aArgc; ++i) {
+        jstring tStr = aEnv->NewStringUTF(aArgv[i]);
+        aEnv->SetObjectArrayElement(tJArgs, i, tStr);
+        aEnv->DeleteLocalRef(tStr);
     }
-    if (_coeff || (_coeff = env->GetMethodID(LMPPAIR_CLAZZ, "coeff", "([Ljava/lang/String;)V"))) {
-        env->CallVoidMethod(self, _coeff, jargs);
+    if (sCoeff || (sCoeff = aEnv->GetMethodID(LMPPAIR_CLAZZ, "coeff", "([Ljava/lang/String;)V"))) {
+        aEnv->CallVoidMethod(aSelf, sCoeff, tJArgs);
     }
-    env->DeleteLocalRef(jargs);
+    aEnv->DeleteLocalRef(tJArgs);
 }
-void JSE_LMPPAIR::initStyle(JNIEnv *env, jobject self) {
-    if (_initStyle || (_initStyle = env->GetMethodID(LMPPAIR_CLAZZ, "initStyle", "()V"))) {
-        env->CallVoidMethod(self, _initStyle);
+void JSE_LMPPAIR::initStyle(JNIEnv *aEnv, jobject aSelf) {
+    if (sInitStyle || (sInitStyle = aEnv->GetMethodID(LMPPAIR_CLAZZ, "initStyle", "()V"))) {
+        aEnv->CallVoidMethod(aSelf, sInitStyle);
     }
 }
-double JSE_LMPPAIR::initOne(JNIEnv *env, jobject self, int i, int j) {
-    if (_initOne || (_initOne = env->GetMethodID(LMPPAIR_CLAZZ, "initOne", "(II)D"))) {
-        return env->CallDoubleMethod(self, _initOne, i, j);
+double JSE_LMPPAIR::initOne(JNIEnv *aEnv, jobject aSelf, int i, int j) {
+    if (sInitOne || (sInitOne = aEnv->GetMethodID(LMPPAIR_CLAZZ, "initOne", "(II)D"))) {
+        return aEnv->CallDoubleMethod(aSelf, sInitOne, i, j);
     }
     return -1.0;
 }

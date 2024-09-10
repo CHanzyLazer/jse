@@ -1,13 +1,9 @@
 package jse.lmp;
 
-import jse.cache.IntVectorCache;
-import jse.cache.MatrixCache;
 import jse.clib.*;
 import jse.code.OS;
 import jse.code.SP;
 import jse.code.UT;
-import jse.math.matrix.RowMatrix;
-import jse.math.vector.IntVector;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,8 +64,8 @@ public class LmpPlugin {
         public static @Nullable String REDIRECT_LMPPLUGIN_LIB = OS.env("JSE_REDIRECT_LMPPLUGIN_LIB");
     }
     
-    private final static String LIB_DIR = JAR_DIR+"lmpplugin/" + UT.Code.uniqueID(VERSION, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
-    private final static String LIB_PATH;
+    public final static String LIB_DIR = JAR_DIR+"lmpplugin/" + UT.Code.uniqueID(VERSION, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "jse_lmp_LmpPlugin_Pair.cpp"
         , "jse_lmp_LmpPlugin_Pair.h"
@@ -193,7 +189,7 @@ public class LmpPlugin {
     }
     
     
-    public static class Pair {
+    public static abstract class Pair {
         static {
             // 确保 LmpPlugin 已经确实初始化
             LmpPlugin.InitHelper.init();
@@ -237,116 +233,20 @@ public class LmpPlugin {
          * @param eflag 是否需要计算能量的 flag，一般只需要直接传递给 lammps 相关接口即可
          * @param vflag 是否需要计算位力（virial）的 flag，一般只需要直接传递给 lammps 相关接口即可
          */
-        public void compute(boolean eflag, boolean vflag) {
-            double evdwl = 0.0;
-            evInit(eflag, vflag);
-            boolean evflag = evflag();
-            
-            NestedDoubleCPointer x = atomX();
-            NestedDoubleCPointer f = atomF();
-            
-            IntCPointer type = atomType();
-            int nlocal = atomNlocal(); // 用于判断是否是 ghost 原子
-            DoubleCPointer special_lj = forceSpecialLj();
-            boolean newton_pair = forceNewtonPair();
-            
-            int inum = listInum();
-            IntCPointer ilist = listIlist();
-            IntCPointer numneigh = listNumneigh();
-            NestedIntCPointer firstneigh = listFirstneigh();
-            
-            // 优化部分，将这些经常访问的数据全部缓存来加速遍历
-            int nghost = atomNghost();
-            RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-            RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-            IntVector typeVec = IntVectorCache.getVec(nlocal+nghost);
-            x.parse2dest(xMat.internalData(), xMat.nrows(), xMat.ncols());
-            f.parse2dest(fMat.internalData(), fMat.nrows(), fMat.ncols());
-            type.parse2dest(typeVec.internalData(), typeVec.size());
-            double[] special_lj_arr = {special_lj.getAt(0), special_lj.getAt(1), special_lj.getAt(2), special_lj.getAt(3)};
-            
-            // loop over neighbors of atoms
-            for (int ii = 0; ii < inum; ++ii) {
-                int i = ilist.getAt(ii);
-                double xtmp = xMat.get(i, 0);
-                double ytmp = xMat.get(i, 1);
-                double ztmp = xMat.get(i, 2);
-                int itype = typeVec.get(i);
-                IntCPointer jlist = firstneigh.getAt(i);
-                int jnum = numneigh.getAt(i);
-                
-                for (int jj = 0; jj < jnum; ++jj) {
-                    int j = jlist.getAt(jj);
-                    double factor_lj = special_lj_arr[sbmask(j)];
-                    j &= NEIGHMASK;
-                    
-                    double delx = xtmp - xMat.get(j, 0);
-                    double dely = ytmp - xMat.get(j, 1);
-                    double delz = ztmp - xMat.get(j, 2);
-                    double rsq = delx * delx + dely * dely + delz * delz;
-                    int jtype = typeVec.get(j);
-                    
-                    if (rsq < cutsq[itype][jtype]) {
-                        double r2inv = 1.0 / rsq;
-                        double r6inv = r2inv * r2inv * r2inv;
-                        double forcelj = r6inv * (lj1 * r6inv - lj2);
-                        double fpair = factor_lj * forcelj * r2inv;
-                        
-                        fMat.update(i, 0, v -> v + delx*fpair);
-                        fMat.update(i, 1, v -> v + dely*fpair);
-                        fMat.update(i, 2, v -> v + delz*fpair);
-                        if (newton_pair || j < nlocal) {
-                            fMat.update(j, 0, v -> v - delx*fpair);
-                            fMat.update(j, 1, v -> v - dely*fpair);
-                            fMat.update(j, 2, v -> v - delz*fpair);
-                        }
-                        
-                        // ev stuffs
-                        if (eflag) {
-                            evdwl = r6inv * (lj3 * r6inv - lj4);
-                            evdwl *= factor_lj;
-                        }
-                        if (evflag) evTally(i, j, nlocal, newton_pair, evdwl, 0.0, fpair, delx, dely, delz);
-                    }
-                }
-            }
-            
-            f.fill(fMat.internalData(), fMat.nrows(), fMat.ncols());
-            IntVectorCache.returnVec(typeVec);
-            MatrixCache.returnMat(fMat);
-            MatrixCache.returnMat(xMat);
-            
-            // ev stuffs
-            if (vflagFdotr()) virialFdotrCompute();
-        }
-        
+        public abstract void compute(boolean eflag, boolean vflag);
         
         /**
          * lammps {@code pair_coeff} 会调用的方法，用于设置参数
          * @param aArgs 参数的字符串数组
          * @author liqa
          */
-        public void coeff(String... aArgs) {
-            double epsilon = Double.parseDouble(aArgs[0]);
-            double sigma = Double.parseDouble(aArgs[1]);
-            cutoff = Double.parseDouble(aArgs[2]);
-            lj1 = 48.0 * epsilon * Math.pow(sigma, 12);
-            lj2 = 24.0 * epsilon * Math.pow(sigma,  6);
-            lj3 =  4.0 * epsilon * Math.pow(sigma, 12);
-            lj4 =  4.0 * epsilon * Math.pow(sigma,  6);
-        }
-        private double cutoff = 0.0;
-        private double[][] cutsq = new double[2][2];
-        private double lj1 = Double.NaN, lj2 = Double.NaN, lj3 = Double.NaN, lj4 = Double.NaN;
+        public abstract void coeff(String... aArgs);
         
         /**
          * lammps pair 初始化调用，主要用于在这里设置需要的近邻列表样式
          * @author liqa
          */
-        public void initStyle() {
-            neighborRequestDefault();
-            cutsq[1][1] = cutoff*cutoff;
-        }
+        public void initStyle() {neighborRequestDefault();}
         
         /**
          * lammps pair 初始化某两个种类 {@code i} {@code j}，用于获取这两个种类间的截断半径值
@@ -355,9 +255,7 @@ public class LmpPlugin {
          * @return 种类 {@code i} {@code j} 之间的截断半径
          * @author liqa
          */
-        public double initOne(int i, int j) {
-            return cutoff;
-        }
+        public abstract double initOne(int i, int j);
         
         
         /// lammps pair 提供的接口

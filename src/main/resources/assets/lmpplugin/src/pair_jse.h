@@ -23,8 +23,8 @@ public:
     double init_one(int, int) override;
 
 protected:
-    JNIEnv *env = NULL;
-    jobject core = NULL;
+    JNIEnv *mEnv = NULL;
+    jobject mCore = NULL;
     
     virtual void allocate();
     
