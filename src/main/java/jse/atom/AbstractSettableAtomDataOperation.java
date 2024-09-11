@@ -5,6 +5,7 @@ import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
 import jse.code.functional.IUnaryFullOperator;
 import jse.code.iterator.IIntIterator;
+import jse.math.MathEX;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
@@ -47,19 +48,25 @@ public abstract class AbstractSettableAtomDataOperation extends AbstractAtomData
     }
     
     @Override public void mapTypeRandom2this(Random aRandom, IVector aTypeWeights) {
-        double tTotWeight = aTypeWeights.sum();
-        if (tTotWeight <= 0.0) throw new RuntimeException("TypeWeights Must be Positive");
-        
         int tAtomNum = thisAtomData_().atomNumber();
         int tMaxType = aTypeWeights.size();
+        for (int i = 0; i < tMaxType; ++i) {
+            if (aTypeWeights.get(i) < 0.0) throw new RuntimeException("TypeWeights Must be Positive");
+        }
+        double tTotWeight = aTypeWeights.sum();
+        
         // 获得对应原子种类的 List
+        double tRest = 0.0;
         final IntVector.Builder tBuilder = IntVector.builder(tAtomNum+tMaxType);
         for (int tType = 1; tType <= tMaxType; ++tType) {
-            // 计算这种种类的粒子数目
-            long tSteps = Math.round((aTypeWeights.get(tType-1) / tTotWeight) * tAtomNum);
+            // 计算这种种类的粒子数目，超出部分随机处理
+            double tLen = (aTypeWeights.get(tType-1) / tTotWeight) * tAtomNum + tRest;
+            int tSteps = MathEX.Code.floor2int(tLen);
+            if (aRandom.nextDouble() < tLen-tSteps) ++tSteps;
+            tRest = tLen-tSteps;
             for (int i = 0; i < tSteps; ++i) tBuilder.add(tType);
         }
-        // 简单处理，如果数量不够则添加最后一种种类
+        // 简单处理，如果数量不够则添加最后一种种类；理论上应该不可能出现这个情况
         while (tBuilder.size() < tAtomNum) tBuilder.add(tMaxType);
         IIntVector tTypeList = tBuilder.build();
         // 随机打乱这些种类标记
