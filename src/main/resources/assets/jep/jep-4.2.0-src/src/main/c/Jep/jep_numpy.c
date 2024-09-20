@@ -80,7 +80,7 @@ int npy_scalar_check(PyObject *obj)
         PyErr_Clear();
         return 0;
     }
-    return PyArray_IsScalar(obj, Number);
+    return PyArray_IsScalar(obj, Bool) || PyArray_IsScalar(obj, Number);
 }
 
 jobject convert_npy_scalar_jobject(JNIEnv* env, PyObject *pyobject,
@@ -89,6 +89,12 @@ jobject convert_npy_scalar_jobject(JNIEnv* env, PyObject *pyobject,
     jobject result = NULL;
     if (!init_numpy()) {
         return NULL;
+    } else if (PyArray_IsScalar(pyobject, Bool)) {
+        npy_bool b;
+        if ((*env)->IsAssignableFrom(env, JBOOL_OBJ_TYPE, expectedType)) {
+            PyArray_ScalarAsCtype(pyobject, &b);
+            result = java_lang_Boolean_new_Z(env, b ? JNI_TRUE : JNI_FALSE);
+        }
     } else if (!PyArray_IsScalar(pyobject, Number)) {
         return NULL;
     } else if (PyArray_IsScalar(pyobject, Float64)) {
