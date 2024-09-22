@@ -19,7 +19,7 @@ repositories {
 sourceSets {
     main {
         java {
-            srcDirs = ['src/main/java', 'src/voronoi/java']
+            srcDirs = ['src/main/java', 'src/rareevent/java', 'src/voronoi/java', 'src/nnap/java']
         }
         resources {
             srcDirs = ['src/main/resources']
