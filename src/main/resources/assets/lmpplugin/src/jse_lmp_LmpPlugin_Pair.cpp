@@ -11,9 +11,6 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestDefault_1
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestFull_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     ((PairJSE *)(intptr_t)aPairPtr)->neighborRequestFull();
 }
-JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evInit_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jboolean eflag, jboolean vflag) {
-    ((PairJSE *)(intptr_t)aPairPtr)->evInit(eflag, vflag);
-}
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomX_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomX();
 }

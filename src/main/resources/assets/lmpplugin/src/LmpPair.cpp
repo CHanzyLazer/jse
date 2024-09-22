@@ -49,9 +49,9 @@ jobject JSE_LMPPAIR::newJObject(JNIEnv *aEnv, char *aArg, void *aPtr) {
     return rOut;
 }
 
-void JSE_LMPPAIR::compute(JNIEnv *aEnv, jobject aSelf, int eflag, int vflag) {
-    if (sCompute || (sCompute = aEnv->GetMethodID(LMPPAIR_CLAZZ, "compute", "(ZZ)V"))) {
-        aEnv->CallVoidMethod(aSelf, sCompute, eflag ? JNI_TRUE : JNI_FALSE, vflag ? JNI_TRUE : JNI_FALSE);
+void JSE_LMPPAIR::compute(JNIEnv *aEnv, jobject aSelf) {
+    if (sCompute || (sCompute = aEnv->GetMethodID(LMPPAIR_CLAZZ, "compute", "()V"))) {
+        aEnv->CallVoidMethod(aSelf, sCompute);
     }
 }
 void JSE_LMPPAIR::coeff(JNIEnv *aEnv, jobject aSelf, int aArgc, char **aArgv) {
@@ -73,7 +73,7 @@ void JSE_LMPPAIR::initStyle(JNIEnv *aEnv, jobject aSelf) {
 }
 double JSE_LMPPAIR::initOne(JNIEnv *aEnv, jobject aSelf, int i, int j) {
     if (sInitOne || (sInitOne = aEnv->GetMethodID(LMPPAIR_CLAZZ, "initOne", "(II)D"))) {
-        return aEnv->CallDoubleMethod(aSelf, sInitOne, i, j);
+        return aEnv->CallDoubleMethod(aSelf, sInitOne, (jint)i, (jint)j);
     }
     return -1.0;
 }

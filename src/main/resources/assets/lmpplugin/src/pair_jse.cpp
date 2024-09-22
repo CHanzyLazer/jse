@@ -37,7 +37,8 @@ PairJSE::~PairJSE() {
 /* ---------------------------------------------------------------------- */
 
 void PairJSE::compute(int eflag, int vflag) {
-    JSE_LMPPAIR::compute(mEnv, mCore, eflag, vflag);
+    ev_init(eflag, vflag);
+    JSE_LMPPAIR::compute(mEnv, mCore);
     if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to compute");
 }
 
@@ -98,9 +99,6 @@ void PairJSE::neighborRequestDefault() {
 void PairJSE::neighborRequestFull() {
     neighbor->add_request(this, NeighConst::REQ_FULL);
 }
-void PairJSE::evInit(jboolean eflag, jboolean vflag) {
-    ev_init((int)eflag, (int)vflag);
-}
 jlong PairJSE::atomX() {
     return (jlong)(intptr_t) atom->x;
 }
@@ -143,8 +141,29 @@ jdouble PairJSE::cutsq_(jint i, jint j) {
 void PairJSE::evTally(jint i, jint j, jint nlocal, jboolean newtonPair, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
     ev_tally((int)i, (int)j, (int)nlocal, (int)newtonPair, (double)evdwl, (double)ecoul, (double)fpair, (double)delx, (double)dely, (double)delz);
 }
+void PairJSE::evTallyFull(jint i, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
+    ev_tally_full((int)i, (double)evdwl, (double)ecoul, (double)fpair, (double)delx, (double)dely, (double)delz);
+}
 jboolean PairJSE::evflag_() {
     return evflag ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::vflagEither() {
+    return vflag_either ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::vflagGlobal() {
+    return vflag_global ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::vflagAtom() {
+    return vflag_atom ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::eflagEither() {
+    return eflag_either ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::eflagGlobal() {
+    return eflag_global ? JNI_TRUE : JNI_FALSE;
+}
+jboolean PairJSE::eflagAtom() {
+    return eflag_atom ? JNI_TRUE : JNI_FALSE;
 }
 jboolean PairJSE::vflagFdotr() {
     return vflag_fdotr ? JNI_TRUE : JNI_FALSE;
