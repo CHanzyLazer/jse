@@ -57,6 +57,7 @@ public class VoronoiExtensions {
      * @return Voronoi 分析的参数
      */
     public static ICalculator calVoronoi(final MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold, double aLengthThreshold) {
+        if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
         final VoronoiBuilder rBuilder = new VoronoiBuilder().setNoWarning(aNoWarning).setIndexLength(aIndexLength).setAreaThreshold(aAreaThreshold).setLengthThreshold(aLengthThreshold);
         // 先增加内部原本的粒子，根据 cell 的顺序添加可以加速 voronoi 的构造
         final int[] idx2voronoi = new int[self.atomNumber()];

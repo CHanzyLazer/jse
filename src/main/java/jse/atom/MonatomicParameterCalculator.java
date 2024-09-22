@@ -17,7 +17,6 @@ import jse.math.function.IZeroBoundFunc1;
 import jse.math.matrix.IComplexMatrix;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RowComplexMatrix;
-import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import jse.parallel.*;
 import org.jetbrains.annotations.*;
@@ -176,6 +175,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     /// 获取信息
     public int atomNumber() {return mAtomNum;}
+    public int atomTypeNumber() {return mAtomTypeNum;}
     public double unitLen() {return mUnitLen;}
     public double volume() {return mVolume;}
     public double rho() {return mRho;}
@@ -184,6 +184,8 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     public double birho(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRho*aMPC.mRho);}
     /** @deprecated use {@link #atomNumber} */
     @Deprecated public final int atomNum() {return atomNumber();}
+    /** @deprecated use {@link #atomTypeNumber} */
+    @Deprecated public final int atomTypeNum() {return atomTypeNumber();}
     /** @deprecated use {@link #rho} */
     @Deprecated public final double rou() {return rho();}
     /** @deprecated use {@link #rho} */
@@ -214,6 +216,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         return this;
     }
     /** 补充运算时使用 */
+    @ApiStatus.Internal public ParforThreadPool pool_() {return pool();}
     @ApiStatus.Internal public NeighborListGetter nl_() {return mNL;}
     @ApiStatus.Internal public IMatrix atomDataXYZ_() {return mAtomDataXYZ;}
     @ApiStatus.Internal public IIntVector atomType_() {return mTypeVec;}
@@ -2662,7 +2665,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * Reference:
      * <a href="https://doi.org/10.1063/1.1896348">
-     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     * Rate of homogeneous crystal nucleation in molten NaCl </a>
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
      * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
@@ -2700,92 +2703,4 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold, double aRNearest          ) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest);}
     @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold                            ) {return checkSolidConnectRatio4(aConnectThreshold);}
     @VisibleForTesting public ILogicalVector checkSolidS4(                                                    ) {return checkSolidConnectRatio4();}
-    
-    
-    /**
-     * 一种基于 Chebyshev 多项式和球谐函数将原子局域环境展开成一个基组的方法，
-     * 主要用于作为机器学习的输入向量；这是 NNAP 中默认使用的原子基组。
-     * <p>
-     * References:
-     * <a href="https://arxiv.org/abs/2211.03350v3">
-     * Computing the 3D Voronoi Diagram Robustly: An Easy Explanation </a>
-     * <p>
-     * @author Su Rui, liqa
-     * @param aNMax Chebyshev 多项式选取的最大阶数
-     * @param aLMax 球谐函数中 l 选取的最大阶数
-     * @param aRCutOff 截断半径
-     * @return 原子指纹矩阵组成的数组，n 为行，l 为列，因此 asVecRow 即为原本定义的基；如果存在超过一个种类则输出行数翻倍
-     */
-    public List<RowMatrix> calBasisNNAP(final int aNMax, final int aLMax, final double aRCutOff) {
-        if (mDead) throw new RuntimeException("This Calculator is dead");
-        if (aNMax < 0) throw new IllegalArgumentException("Input n_max MUST be Non-Negative, input: "+aNMax);
-        if (aLMax < 0) throw new IllegalArgumentException("Input l_max MUST be Non-Negative, input: "+aLMax);
-        
-        final int tSizeN = mAtomTypeNum>1 ? aNMax+aNMax+2 : aNMax+1;
-        final List<RowMatrix> rFingerPrints = MatrixCache.getMatRow(tSizeN, aLMax+1, mAtomNum);
-        
-        // 需要存储所有的 l，n，m 的值来统一进行近邻求和
-        final IComplexVector[][] cnlmPar = new IComplexVector[threadNumber()][tSizeN];
-        for (IComplexVector[] cnlm : cnlmPar) for (int tN = 0; tN < tSizeN; ++tN) {
-            cnlm[tN] = ComplexVectorCache.getVec((aLMax+1)*(aLMax+1));
-        }
-        // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
-        final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec((aLMax+1)*(aLMax+1), threadNumber());
-        
-        // 获取需要缓存的近邻列表
-        final IntList @Nullable[] tNLToBuffer = getNLWhichNeedBuffer_(aRCutOff, -1, false);
-        
-        // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存（所有近邻的 Ylm, Rn, fc 都要存，会随着截断半径增加爆炸增涨），这里不考虑
-        pool().parfor(mAtomNum, (i, threadID) -> {
-            // 获取线程独立的变量
-            final IComplexVector[] cnlm = cnlmPar[threadID];
-            for (int tN = 0; tN < tSizeN; ++tN) {
-                cnlm[tN].fill(0.0); // 需要手动置为 0，后面直接对近邻进行累加
-            }
-            final IComplexVector tY = tYPar.get(threadID);
-            
-            // 遍历近邻计算 Ylm, Rn, fc
-            mNL.forEachNeighbor(i, aRCutOff, false, (x, y, z, idx, dx, dy, dz) -> {
-                double dis = Fast.hypot(dx, dy, dz);
-                
-                // 计算种类的权重
-                int type = mTypeVec.get(idx);
-                double wt = ((type&1)==1) ? type : -type;
-                // 计算截断函数 fc
-                double fc = dis>=aRCutOff ? 0.0 : Fast.powFast(1.0 - Fast.pow2(dis/aRCutOff), 4);
-                // 统一遍历一次计算 Rn
-                final double tX = 1.0 - 2.0*dis/aRCutOff;
-                IVector Rn = Vectors.from(aNMax+1, n -> Func.chebyshev(n, tX));
-                
-                // 遍历求 n，l 的情况
-                Func.sphericalHarmonicsFull2DestXYZDis_(aLMax, dx, dy, dz, dis, tY);
-                for (int tN = 0; tN <= aNMax; ++tN) {
-                    // 现在提供了 mplus2this 支持将数乘到 tY 中后再加到 cijm，可以不用中间变量；
-                    // 虽然看起来和使用 operate2this 效率基本一致，即使后者理论上应该还会创建一些 DoubleComplex；
-                    // 总之至少没有反向优化，并且这样包装后更加不吃编译器的优化，也不存在一大坨 lambda 表达式，以及传入的 DoubleComplex 一定不是引用等这种约定
-                    double tMul = fc * Rn.get(tN);
-                    cnlm[tN].operation().mplus2this(tY, tMul);
-                    if (mAtomTypeNum > 1) cnlm[tN+aNMax+1].operation().mplus2this(tY, wt*tMul);
-                }
-                // 统计近邻
-                if (tNLToBuffer != null) {tNLToBuffer[i].add(idx);}
-            });
-            // 做标量积消去 m 项，得到此原子的 FP
-            IMatrix tFP = rFingerPrints.get(i);
-            for (int tN = 0; tN < tSizeN; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-                // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
-                int tStart = tL*tL;
-                int tLen = tL+tL+1;
-                tFP.set(tN, tL, (4.0*PI/(double)tLen) * cnlm[tN].subVec(tStart, tStart+tLen).operation().dot());
-            }
-        });
-        
-        // 归还临时变量
-        for (IComplexVector[] cnlm : cnlmPar) for (IComplexVector cilm : cnlm) {
-            ComplexVectorCache.returnVec(cilm);
-        }
-        ComplexVectorCache.returnVec(tYPar);
-        
-        return rFingerPrints;
-    }
 }
