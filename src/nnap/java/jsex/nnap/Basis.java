@@ -121,7 +121,7 @@ public class Basis {
      * {@code [fpPx, fpPy, fpPz, fp]}；如果关闭则只输出 {@code [fpPx, fpPy, fpPz]}
      * @author liqa
      */
-    public static List<RowMatrix> sphericalChebyshevPartialXYZ(final int aTypeNum, final int aNMax, final int aLMax, final double aRCutOff, final boolean aCalBasis, IDxyzTypeIterable aNL) {
+    public static List<RowMatrix> sphericalChebyshevPartial(final int aTypeNum, final int aNMax, final int aLMax, final double aRCutOff, final boolean aCalBasis, IDxyzTypeIterable aNL) {
         if (aNMax < 0) throw new IllegalArgumentException("Input n_max MUST be Non-Negative, input: "+aNMax);
         if (aLMax < 0) throw new IllegalArgumentException("Input l_max MUST be Non-Negative, input: "+aLMax);
         
@@ -322,6 +322,6 @@ public class Basis {
             Lists.newArrayList(rFingerPrintPx, rFingerPrintPy, rFingerPrintPz, rFingerPrint) :
             Lists.newArrayList(rFingerPrintPx, rFingerPrintPy, rFingerPrintPz);
     }
-    public static List<RowMatrix> sphericalChebyshevPartialXYZ(int aTypeNum, int aNMax, int aLMax, double aRCutOff, IDxyzTypeIterable aNL) {return sphericalChebyshevPartialXYZ(aTypeNum, aNMax, aLMax, aRCutOff, true, aNL);}
-    public static List<RowMatrix> sphericalChebyshevPartialXYZ(int aNMax, int aLMax, double aRCutOff, IDxyzTypeIterable aNL) {return sphericalChebyshevPartialXYZ(1, aNMax, aLMax, aRCutOff, aNL);}
+    public static List<RowMatrix> sphericalChebyshevPartial(int aTypeNum, int aNMax, int aLMax, double aRCutOff, IDxyzTypeIterable aNL) {return sphericalChebyshevPartial(aTypeNum, aNMax, aLMax, aRCutOff, true, aNL);}
+    public static List<RowMatrix> sphericalChebyshevPartial(int aNMax, int aLMax, double aRCutOff, IDxyzTypeIterable aNL) {return sphericalChebyshevPartial(1, aNMax, aLMax, aRCutOff, aNL);}
 }
