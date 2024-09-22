@@ -46,7 +46,7 @@ public class MathEX {
     private final static IVector SH_Elm; // Ylm 相对于原始的 Plm 归一化前系数，计算所有值
     private final static IVector SH_FACTORIAL2_2L_PLUS_1; // (2l+1)!!
     private final static IVector SH_SQRT_2L; // sqrt(2l)
-    private final static int SH_LARGEST_L = 1000;
+    public final static int SH_LARGEST_L = 1000;
     
     static {
         SH_FACTORIAL2_2L_PLUS_1 = Vectors.zeros(SH_LARGEST_L+1);
