@@ -514,7 +514,11 @@ public class NativeLmp implements IAutoShutdown {
      * It will return {@code null} if the LAMMPS library was compiled without MPI support.
      * @return the {@link MPI.Comm} of this NativeLmp
      */
-    public MPI.Comm comm() throws LmpException {return MPI.Comm.of(lammpsComm_(mLmpPtr));}
+    public MPI.Comm comm() throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        checkThread();
+        return MPI.Comm.of(lammpsComm_(mLmpPtr));
+    }
     private native static long lammpsComm_(long aLmpPtr) throws LmpException;
     
     /**
@@ -535,6 +539,7 @@ public class NativeLmp implements IAutoShutdown {
      * @param aPath Name of the file/path with LAMMPS commands
      */
     public void file(String aPath) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         lammpsFile_(mLmpPtr, UT.IO.toAbsolutePath(aPath));
     }
@@ -548,6 +553,7 @@ public class NativeLmp implements IAutoShutdown {
      * @author liqa
      */
     public void file(IInFile aLmpIn) throws IOException, LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         commands(aLmpIn.toLines().toArray(ZL_STR));
     }
@@ -559,6 +565,7 @@ public class NativeLmp implements IAutoShutdown {
      * @param aCmd a single lammps command
      */
     public void command(String aCmd) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         lammpsCommand_(mLmpPtr, aCmd);
     }
@@ -571,6 +578,7 @@ public class NativeLmp implements IAutoShutdown {
      * @param aCmds a list of lammps commands
      */
     public void commands(String... aCmds) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         lammpsCommandsList_(mLmpPtr, aCmds);
     }
@@ -583,6 +591,7 @@ public class NativeLmp implements IAutoShutdown {
      * @param aMultiCmd text block of lammps commands
      */
     public void commands(String aMultiCmd) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         lammpsCommandsString_(mLmpPtr, aMultiCmd);
     }
@@ -626,6 +635,7 @@ public class NativeLmp implements IAutoShutdown {
      * @return a {@link LmpBox} object.
      */
     public LmpBox box() throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         double[] rBox = DoubleArrayCache.getArray(15);
         lammpsExtractBox_(mLmpPtr, rBox);
@@ -652,6 +662,7 @@ public class NativeLmp implements IAutoShutdown {
      * but in {@link LmpBoxPrism} order.
      */
     public void resetBox(double aXlo, double aXhi, double aYlo, double aYhi, double aZlo, double aZhi, double aXY, double aXZ, double aYZ) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         lammpsResetBox_(mLmpPtr, aXlo, aYlo, aZlo, aXhi, aYhi, aZhi, aXY, aYZ, aXZ);
     }
@@ -687,6 +698,7 @@ public class NativeLmp implements IAutoShutdown {
      * @return value of thermo keyword
      */
     public double thermoOf(String aName) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         return lammpsGetThermo_(mLmpPtr, aName);
     }
@@ -702,6 +714,7 @@ public class NativeLmp implements IAutoShutdown {
      * @return value of the setting
      */
     public int settingOf(String aName) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         return lammpsExtractSetting_(mLmpPtr, aName);
     }
@@ -723,6 +736,7 @@ public class NativeLmp implements IAutoShutdown {
      */
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public RowMatrix atomDataOf(String aName) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         switch(aName) {
         case "mass":        {return localAtomDataOf(aName, 1, atomTypeNumber()+1, 1);}
         case "id":          {return fullAtomDataOf(aName, false, 1);}
@@ -760,6 +774,7 @@ public class NativeLmp implements IAutoShutdown {
     }
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public RowIntMatrix atomIntDataOf(String aName) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         switch(aName) {
         case "id":          {return fullAtomIntDataOf(aName, 1);}
         case "type":        {return fullAtomIntDataOf(aName, 1);}
@@ -806,12 +821,14 @@ public class NativeLmp implements IAutoShutdown {
      * @return RowMatrix of requested data, row number is always atomNum.
      */
     public RowMatrix fullAtomDataOf(String aName, boolean aIsDouble, int aColNum) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         RowMatrix rData = MatrixCache.getMatRow(atomNumber(), aColNum);
         lammpsGatherConcat_(mLmpPtr, aName, aIsDouble, aColNum, rData.internalData());
         return rData;
     }
     public RowIntMatrix fullAtomIntDataOf(String aName, int aColNum) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         RowIntMatrix rData = IntMatrixCache.getMatRow(atomNumber(), aColNum);
         lammpsGatherConcatInt_(mLmpPtr, aName, aColNum, rData.internalData());
@@ -830,12 +847,14 @@ public class NativeLmp implements IAutoShutdown {
      * @return RowMatrix of requested data
      */
     public RowMatrix localAtomDataOf(String aName, int aDataType, int aRowNum, int aColNum) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         RowMatrix rData = MatrixCache.getMatRow(aRowNum, aColNum);
         lammpsExtractAtom_(mLmpPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
         return rData;
     }
     public RowIntMatrix localAtomIntDataOf(String aName, int aDataType, int aRowNum, int aColNum) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         RowIntMatrix rData = IntMatrixCache.getMatRow(aRowNum, aColNum);
         lammpsExtractAtomInt_(mLmpPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
@@ -849,6 +868,8 @@ public class NativeLmp implements IAutoShutdown {
      * @return {@link CPointer} of lammps internal atom data
      */
     public CPointer localAtomCPointerDataOf(String aName) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        checkThread();
         return new CPointer(lammpsExtractAtomCPointer_(mLmpPtr, aName));
     }
     private native static void lammpsGatherConcat_(long aLmpPtr, String aName, boolean aIsDouble, int aCount, double[] rData) throws LmpException, MPIException;
@@ -874,6 +895,7 @@ public class NativeLmp implements IAutoShutdown {
      */
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public void setAtomDataOf(String aName, IMatrix aData) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         switch(aName) {
         case "id":          {setAtomDataOf(aName, aData, false); return;}
         case "type":        {setAtomDataOf(aName, aData, false); return;}
@@ -909,6 +931,7 @@ public class NativeLmp implements IAutoShutdown {
         }}
     }
     public void setAtomDataOf(String aName, IMatrix aData, boolean aIsDouble) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         if ((aData instanceof RowMatrix) || ((aData instanceof ColumnMatrix) && aData.columnNumber()==1)) {
             lammpsScatter_(mLmpPtr, aName, aIsDouble, aData.rowNumber(), aData.columnNumber(), ((DoubleArrayMatrix)aData).internalData());
@@ -920,6 +943,7 @@ public class NativeLmp implements IAutoShutdown {
     
     /** 提供 {@link Lmpdat} 格式的获取质量 */
     public IVector masses() throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         IVector tMasses = localAtomDataOf("mass", 1, atomTypeNumber()+1, 1).asVecRow();
         return tMasses.subVec(1, tMasses.size());
     }
@@ -933,6 +957,7 @@ public class NativeLmp implements IAutoShutdown {
      * @author liqa
      */
     public Lmpdat lmpdat(boolean aNoVelocities) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         // 获取数据
         RowIntMatrix tID = atomIntDataOf("id");
         RowIntMatrix tType = atomIntDataOf("type");
@@ -955,6 +980,7 @@ public class NativeLmp implements IAutoShutdown {
      * @author liqa
      */
     public void loadLmpdat(final Lmpdat aLmpdat) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         LmpBox tBox = aLmpdat.box();
         if (aLmpdat.isPrism()) {
@@ -984,6 +1010,7 @@ public class NativeLmp implements IAutoShutdown {
         }
     }
     public void loadData(IAtomData aAtomData) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         if (aAtomData instanceof Lmpdat) {loadLmpdat((Lmpdat)aAtomData); return;}
         IXYZ tBox = aAtomData.box();
@@ -1007,6 +1034,7 @@ public class NativeLmp implements IAutoShutdown {
      * @param aShrinkExceed whether to expand shrink-wrap boundaries if atoms are outside the box (false in default)
      */
     public void creatAtoms(List<? extends IAtom> aAtoms, boolean aShrinkExceed) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         final boolean tHasVelocities = UT.Code.first(aAtoms).hasVelocity();
         final int tAtomNum = aAtoms.size();
@@ -1043,6 +1071,7 @@ public class NativeLmp implements IAutoShutdown {
      * lammps clear 指令
      */
     public void clear() throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         command("clear");
     }
     
