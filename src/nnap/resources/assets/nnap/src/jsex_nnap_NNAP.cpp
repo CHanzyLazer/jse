@@ -3,6 +3,7 @@
 
 #include <torch/torch.h>
 #include <torch/script.h>
+#include <strstream>
 
 
 extern "C" {
@@ -28,6 +29,24 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load0(JNIEnv *aEnv, jclass aClazz, j
     FREE(tModelPath);
     return (jlong)(intptr_t)tModulePtr;
 }
+
+JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load1(JNIEnv *aEnv, jclass aClazz, jbyteArray aModelBytes, jint aSize) {
+    void *tBuf = aEnv->GetPrimitiveArrayCritical(aModelBytes, NULL);
+    torch::jit::Module *tModulePtr = NULL;
+    try {
+        // This is the only way I have found to use buf input, but this happens to be deprecated, which is c++
+        // Note: std::istringstream is no use
+        std::strstreambuf tBufStream((char *)tBuf, aSize*sizeof(jbyte));
+        std::istream tInStream(&tBufStream);
+        tModulePtr = new torch::jit::Module(torch::jit::load(tInStream, at::kCPU));
+        tModulePtr->eval();
+    } catch (const std::exception &e) {
+        throwExceptionTorch(aEnv, e.what());
+    }
+    aEnv->ReleasePrimitiveArrayCritical(aModelBytes, tBuf, JNI_ABORT);
+    return (jlong)(intptr_t)tModulePtr;
+}
+
 JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_shutdown0(JNIEnv *aEnv, jclass aClazz, jlong aModelPtr) {
     delete (torch::jit::Module *)(intptr_t)aModelPtr;
 }

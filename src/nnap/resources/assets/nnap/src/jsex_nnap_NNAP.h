@@ -25,6 +25,14 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load0
 
 /*
  * Class:     jsex_nnap_NNAP
+ * Method:    load1
+ * Signature: ([BI)J
+ */
+JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load1
+  (JNIEnv *, jclass, jbyteArray, jint);
+
+/*
+ * Class:     jsex_nnap_NNAP
  * Method:    shutdown0
  * Signature: (J)V
  */

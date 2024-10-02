@@ -2,7 +2,12 @@ package jsex.nnap;
 
 import jse.clib.DoubleCPointer;
 import jse.clib.TorchException;
+import jse.code.UT;
 import jse.parallel.IAutoShutdown;
+
+import java.io.IOException;
+import java.util.Base64;
+import java.util.Map;
 
 /**
  * jse 实现的 nnap 计算器，所有
@@ -30,11 +35,18 @@ public class NNAP implements IAutoShutdown {
     
     private final long mModelPtr;
     private boolean mDead = false;
-    public NNAP(String aModelPath) throws TorchException {
-        mModelPtr = load0(aModelPath);
+    public NNAP(Map<?, ?> aModelInfo) throws TorchException {
+        Object tModel = aModelInfo.get("model");
+        if (tModel == null) throw new IllegalArgumentException("No model data in ModelInfo");
+        byte[] tModelBytes = Base64.getDecoder().decode(tModel.toString());
+        mModelPtr = load1(tModelBytes, tModelBytes.length);
         if (mModelPtr==0 || mModelPtr==-1) throw new TorchException("Failed to load Torch Model");
     }
+    public NNAP(String aModelPath) throws TorchException, IOException {
+        this(aModelPath.endsWith(".yaml") || aModelPath.endsWith(".yml") ? UT.IO.yaml2map(aModelPath) : UT.IO.json2map(aModelPath));
+    }
     private static native long load0(String aModelPath) throws TorchException;
+    private static native long load1(byte[] aModelBytes, int aSize) throws TorchException;
     
     @Override public void shutdown() {
         if (!mDead) {
