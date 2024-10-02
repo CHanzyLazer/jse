@@ -239,10 +239,9 @@ public class LmpPlugin {
         
         /**
          * 在这里执行主要的 pair 的计算部分
-         * @param eflag 是否需要计算能量的 flag，一般只需要直接传递给 lammps 相关接口即可
-         * @param vflag 是否需要计算位力（virial）的 flag，一般只需要直接传递给 lammps 相关接口即可
+         * @author liqa
          */
-        public abstract void compute(boolean eflag, boolean vflag);
+        public abstract void compute();
         
         /**
          * lammps {@code pair_coeff} 会调用的方法，用于设置参数
@@ -315,12 +314,35 @@ public class LmpPlugin {
         
         protected static int sbmask(int j) {return (j >> SBBITS) & 3;}
         
-        @SuppressWarnings("SameParameterValue")
+        protected final double cutsq(int i, int j) {return cutsq_(mPairPtr, i, j);}
+        private native static double cutsq_(long aPairPtr, int i, int j);
+        
         protected final void evTally(int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fpair, double delx, double dely, double delz) {evTally_(mPairPtr, i, j, nlocal, newtonPair, evdwl, ecoul, fpair, delx, dely, delz);}
         private native static void evTally_(long aPairPtr, int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fpair, double delx, double dely, double delz);
         
+        protected final void evTallyFull(int i, double evdwl, double ecoul, double fpair, double delx, double dely, double delz) {evTallyFull_(mPairPtr, i, evdwl, ecoul, fpair, delx, dely, delz);}
+        private native static void evTallyFull_(long aPairPtr, int i, double evdwl, double ecoul, double fpair, double delx, double dely, double delz);
+        
         protected final boolean evflag() {return evflag_(mPairPtr);}
         private native static boolean evflag_(long aPairPtr);
+        
+        protected final boolean vflagEither() {return vflagEither_(mPairPtr);}
+        private native static boolean vflagEither_(long aPairPtr);
+        
+        protected final boolean vflagGlobal() {return vflagGlobal_(mPairPtr);}
+        private native static boolean vflagGlobal_(long aPairPtr);
+        
+        protected final boolean vflagAtom() {return vflagAtom_(mPairPtr);}
+        private native static boolean vflagAtom_(long aPairPtr);
+        
+        protected final boolean eflagEither() {return eflagEither_(mPairPtr);}
+        private native static boolean eflagEither_(long aPairPtr);
+        
+        protected final boolean eflagGlobal() {return eflagGlobal_(mPairPtr);}
+        private native static boolean eflagGlobal_(long aPairPtr);
+        
+        protected final boolean eflagAtom() {return eflagAtom_(mPairPtr);}
+        private native static boolean eflagAtom_(long aPairPtr);
         
         protected final boolean vflagFdotr() {return vflagFdotr_(mPairPtr);}
         private native static boolean vflagFdotr_(long aPairPtr);

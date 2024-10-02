@@ -129,6 +129,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_listFirstneigh_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    cutsq_
+ * Signature: (JII)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Pair_cutsq_1
+  (JNIEnv *, jclass, jlong, jint, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
  * Method:    evTally_
  * Signature: (JIIIZDDDDDD)V
  */
@@ -137,10 +145,66 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTally_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    evTallyFull_
+ * Signature: (JIDDDDDD)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyFull_1
+  (JNIEnv *, jclass, jlong, jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
  * Method:    evflag_
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evflag_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    vflagEither_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_vflagEither_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    vflagGlobal_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_vflagGlobal_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    vflagAtom_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_vflagAtom_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    eflagEither_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_eflagEither_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    eflagGlobal_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_eflagGlobal_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    eflagAtom_
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_eflagAtom_1
   (JNIEnv *, jclass, jlong);
 
 /*
