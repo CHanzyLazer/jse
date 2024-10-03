@@ -1,5 +1,6 @@
 package jsex.nnap;
 
+import com.google.common.collect.Lists;
 import jse.atom.IAtomData;
 import jse.atom.MonatomicParameterCalculator;
 import jse.cache.MatrixCache;
@@ -10,9 +11,11 @@ import jse.code.UT;
 import jse.code.collection.IntList;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
+import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 import jse.parallel.IAutoShutdown;
 import org.apache.groovy.util.Maps;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -130,10 +133,10 @@ public class NNAP implements IAutoShutdown {
      * @return 每个原子能量组成的向量
      * @author liqa
      */
-    public IVector calEnergies(final MonatomicParameterCalculator aMPC) throws TorchException {
+    public Vector calEnergies(final MonatomicParameterCalculator aMPC) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mElems.size() != aMPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of MPC: " + aMPC.atomTypeNumber() + ", model: " + mElems.size());
-        IVector rEngs = VectorCache.getVec(aMPC.atomNumber());
+        Vector rEngs = VectorCache.getVec(aMPC.atomNumber());
         // 获取需要缓存的近邻列表
         final IntList @Nullable[] tNLToBuffer = aMPC.getNLWhichNeedBuffer_(mBasis.rcut(), -1, false);
         aMPC.pool_().parfor(rEngs.size(), i -> {
@@ -154,7 +157,8 @@ public class NNAP implements IAutoShutdown {
         });
         return rEngs;
     }
-    public IVector calEnergies(IAtomData aAtomData) throws TorchException {
+    public Vector calEnergies(IAtomData aAtomData) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
         aAtomData = reorderSymbols(aAtomData);
         try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData)) {return calEnergies(tMPC);}
     }
@@ -165,14 +169,92 @@ public class NNAP implements IAutoShutdown {
      * @author liqa
      */
     public double calEnergy(MonatomicParameterCalculator aMPC) throws TorchException {
-        IVector tEngs = calEnergies(aMPC);
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        Vector tEngs = calEnergies(aMPC);
         double tTotEng = tEngs.sum();
         VectorCache.returnVec(tEngs);
         return tTotEng;
     }
     public double calEnergy(IAtomData aAtomData) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
         aAtomData = reorderSymbols(aAtomData);
         try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData)) {return calEnergy(tMPC);}
+    }
+    
+    /**
+     * 使用 nnap 计算给定原子结构每个原子和受力
+     * @param aMPC 此原子的 mpc 或者原子结构本身
+     * @return 每个原子力组成的矩阵，按行排列
+     * @author liqa
+     */
+    public RowMatrix calForces(MonatomicParameterCalculator aMPC) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        RowMatrix rForces = MatrixCache.getMatRow(aMPC.atomNumber(), 3);
+        calEnergyForces_(aMPC, null, rForces.col(0), rForces.col(1), rForces.col(2));
+        return rForces;
+    }
+    public RowMatrix calForces(IAtomData aAtomData) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        aAtomData = reorderSymbols(aAtomData);
+        try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData)) {return calForces(tMPC);}
+    }
+    
+    /**
+     * 使用 nnap 同时计算给定原子结构每个原子的能量和受力
+     * @param aMPC 此原子的 mpc 或者原子结构本身
+     * @return 按照 {@code [eng, fx, fy, fz]} 的顺序返回结果
+     * @author liqa
+     */
+    public List<Vector> calEnergyForces(MonatomicParameterCalculator aMPC) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        Vector rEngs = VectorCache.getVec(aMPC.atomNumber());
+        Vector rForcesX = VectorCache.getVec(aMPC.atomNumber());
+        Vector rForcesY = VectorCache.getVec(aMPC.atomNumber());
+        Vector rForcesZ = VectorCache.getVec(aMPC.atomNumber());
+        calEnergyForces_(aMPC, rEngs, rForcesX, rForcesY, rForcesZ);
+        return Lists.newArrayList(rEngs, rForcesX, rForcesY, rForcesZ);
+    }
+    public List<Vector> calEnergyForces(IAtomData aAtomData) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        aAtomData = reorderSymbols(aAtomData);
+        try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData)) {return calEnergyForces(tMPC);}
+    }
+    protected void calEnergyForces_(final MonatomicParameterCalculator aMPC, final @Nullable IVector rEnergies, final @NotNull IVector rForcesX, final @NotNull IVector rForcesY, final @NotNull IVector rForcesZ) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        if (mElems.size() != aMPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of MPC: " + aMPC.atomTypeNumber() + ", model: " + mElems.size());
+        // 获取需要缓存的近邻列表
+        final IntList @Nullable[] tNLToBuffer = aMPC.getNLWhichNeedBuffer_(mBasis.rcut(), -1, false);
+        aMPC.pool_().parfor(rForcesX.size(), i -> {
+            List<@NotNull RowMatrix> tOut = mBasis.evalPartial(aMPC.atomTypeNumber(), dxyzTypeDo -> {
+                aMPC.nl_().forEachNeighbor(i, mBasis.rcut(), false, (x, y, z, idx, dx, dy, dz) -> {
+                    dxyzTypeDo.run(dx, dy, dz, aMPC.atomType_().get(idx));
+                    // 还是需要顺便统计近邻进行缓存
+                    if (tNLToBuffer != null) {tNLToBuffer[i].add(idx);}
+                });
+            });
+            RowMatrix tBasisPx = tOut.get(0); tBasisPx.asVecRow().div2this(mNormVec);
+            RowMatrix tBasisPy = tOut.get(1); tBasisPy.asVecRow().div2this(mNormVec);
+            RowMatrix tBasisPz = tOut.get(2); tBasisPz.asVecRow().div2this(mNormVec);
+            RowMatrix tBasis = tOut.get(3); tBasis.asVecRow().div2this(mNormVec);
+            
+            double tPred;
+            Vector tPredPartial = VectorCache.getVec(tBasis.rowNumber()*tBasis.columnNumber());
+            try {tPred = backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());}
+            catch (TorchException e) {throw new RuntimeException(e);}
+            if (rEnergies != null) {
+                tPred += mRefEngs.get(aMPC.atomType_().get(i)-1);
+                rEnergies.set(i, tPred);
+            }
+            rForcesX.set(i, -2.0 * tPredPartial.opt().dot(tBasisPx.asVecRow()));
+            rForcesY.set(i, -2.0 * tPredPartial.opt().dot(tBasisPy.asVecRow()));
+            rForcesZ.set(i, -2.0 * tPredPartial.opt().dot(tBasisPz.asVecRow()));
+            VectorCache.returnVec(tPredPartial);
+            
+            MatrixCache.returnMat(tBasis);
+            MatrixCache.returnMat(tBasisPx);
+            MatrixCache.returnMat(tBasisPy);
+            MatrixCache.returnMat(tBasisPz);
+        });
     }
     
     

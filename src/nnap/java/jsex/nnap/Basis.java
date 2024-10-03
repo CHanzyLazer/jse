@@ -10,6 +10,7 @@ import jse.math.vector.IComplexVector;
 import jse.math.vector.IComplexVectorOperation;
 import jse.math.vector.IVector;
 import jse.math.vector.Vectors;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -26,7 +27,8 @@ public class Basis {
     public interface IBasis {
         double rcut();
         RowMatrix eval(int aTypeNum, IDxyzTypeIterable aNL);
-        List<RowMatrix> evalPartial(int aTypeNum, boolean aCalBasis, IDxyzTypeIterable aNL);
+        List<@NotNull RowMatrix> evalPartial(int aTypeNum, boolean aCalBasis, IDxyzTypeIterable aNL);
+        default List<@NotNull RowMatrix> evalPartial(int aTypeNum, IDxyzTypeIterable aNL) {return evalPartial(aTypeNum, true, aNL);}
     }
     
     public static class SphericalChebyshev implements IBasis {
@@ -46,7 +48,7 @@ public class Basis {
         @Override public RowMatrix eval(int aTypeNum, IDxyzTypeIterable aNL) {
             return sphericalChebyshev(aTypeNum, mNMax, mLMax, mRCut, aNL);
         }
-        @Override public List<RowMatrix> evalPartial(int aTypeNum, boolean aCalBasis, IDxyzTypeIterable aNL) {
+        @Override public List<@NotNull RowMatrix> evalPartial(int aTypeNum, boolean aCalBasis, IDxyzTypeIterable aNL) {
             return sphericalChebyshevPartial(aTypeNum, mNMax, mLMax, mRCut, aCalBasis, aNL);
         }
     }
@@ -149,7 +151,7 @@ public class Basis {
      * {@code [fpPx, fpPy, fpPz, fp]}；如果关闭则只输出 {@code [fpPx, fpPy, fpPz]}
      * @author liqa
      */
-    public static List<RowMatrix> sphericalChebyshevPartial(final int aTypeNum, final int aNMax, final int aLMax, final double aRCutOff, final boolean aCalBasis, IDxyzTypeIterable aNL) {
+    public static List<@NotNull RowMatrix> sphericalChebyshevPartial(final int aTypeNum, final int aNMax, final int aLMax, final double aRCutOff, final boolean aCalBasis, IDxyzTypeIterable aNL) {
         if (aNMax < 0) throw new IllegalArgumentException("Input n_max MUST be Non-Negative, input: "+aNMax);
         if (aLMax < 0) throw new IllegalArgumentException("Input l_max MUST be Non-Negative, input: "+aLMax);
         
