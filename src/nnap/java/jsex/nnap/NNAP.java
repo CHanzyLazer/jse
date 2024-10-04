@@ -231,37 +231,50 @@ public class NNAP implements IAutoShutdown {
     protected void calEnergyForces_(final MonatomicParameterCalculator aMPC, final @Nullable IVector rEnergies, final @NotNull IVector rForcesX, final @NotNull IVector rForcesY, final @NotNull IVector rForcesZ) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mElems.size() != aMPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of MPC: " + aMPC.atomTypeNumber() + ", model: " + mElems.size());
+        // 需要手动管理一下临时的近邻列表
+        final IntList[] tNLPar = new IntList[aMPC.threadNumber()];
+        for (int i = 0; i < aMPC.threadNumber(); i++) tNLPar[i] = new IntList();
+        // 力需要累加统计，所以统一设置为 0
+        rForcesX.fill(0.0);
+        rForcesY.fill(0.0);
+        rForcesZ.fill(0.0);
         // 获取需要缓存的近邻列表
         final IntList @Nullable[] tNLToBuffer = aMPC.getNLWhichNeedBuffer_(mBasis.rcut(), -1, false);
         try {
             aMPC.pool_().parforWithException(rForcesX.size(), null, null, (i, threadID) -> {
-                List<@NotNull RowMatrix> tOut = mBasis.evalPartial(aMPC.atomTypeNumber(), dxyzTypeDo -> {
+                final IntList tNL = tNLPar[threadID]; tNL.clear();
+                List<@NotNull RowMatrix> tOut = mBasis.evalPartial(aMPC.atomTypeNumber(), true, true, dxyzTypeDo -> {
                     aMPC.nl_().forEachNeighbor(i, mBasis.rcut(), false, (x, y, z, idx, dx, dy, dz) -> {
                         dxyzTypeDo.run(dx, dy, dz, aMPC.atomType_().get(idx));
+                        // 手动统计近邻列表，这样可以保证顺序一致
+                        tNL.add(idx);
                         // 还是需要顺便统计近邻进行缓存
                         if (tNLToBuffer != null) {tNLToBuffer[i].add(idx);}
                     });
                 });
-                RowMatrix tBasisPx = tOut.get(0); tBasisPx.asVecRow().div2this(mNormVec);
-                RowMatrix tBasisPy = tOut.get(1); tBasisPy.asVecRow().div2this(mNormVec);
-                RowMatrix tBasisPz = tOut.get(2); tBasisPz.asVecRow().div2this(mNormVec);
-                RowMatrix tBasis = tOut.get(3); tBasis.asVecRow().div2this(mNormVec);
+                RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(mNormVec);
                 
                 Vector tPredPartial = VectorCache.getVec(tBasis.rowNumber()*tBasis.columnNumber());
                 double tPred = backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
+                tPredPartial.div2this(mNormVec);
                 if (rEnergies != null) {
                     tPred += mRefEngs.get(aMPC.atomType_().get(i)-1);
                     rEnergies.set(i, tPred);
                 }
-                rForcesX.set(i, -2.0 * tPredPartial.opt().dot(tBasisPx.asVecRow()));
-                rForcesY.set(i, -2.0 * tPredPartial.opt().dot(tBasisPy.asVecRow()));
-                rForcesZ.set(i, -2.0 * tPredPartial.opt().dot(tBasisPz.asVecRow()));
-                VectorCache.returnVec(tPredPartial);
+                rForcesX.add(i, -tPredPartial.opt().dot(tOut.get(1).asVecRow()));
+                rForcesY.add(i, -tPredPartial.opt().dot(tOut.get(2).asVecRow()));
+                rForcesZ.add(i, -tPredPartial.opt().dot(tOut.get(3).asVecRow()));
+                // 累加交叉项到近邻
+                final int tNN = tNL.size();
+                for (int j = 0; j < tNN; ++j) {
+                    int tIdx = tNL.get(j);
+                    rForcesX.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+j).asVecRow()));
+                    rForcesY.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+j).asVecRow()));
+                    rForcesZ.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+tNN+j).asVecRow()));
+                }
                 
-                MatrixCache.returnMat(tBasis);
-                MatrixCache.returnMat(tBasisPx);
-                MatrixCache.returnMat(tBasisPy);
-                MatrixCache.returnMat(tBasisPz);
+                VectorCache.returnVec(tPredPartial);
+                MatrixCache.returnMat(tOut);
             });
         } catch (TorchException e) {
             throw e;
