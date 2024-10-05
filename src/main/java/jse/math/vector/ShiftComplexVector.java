@@ -6,7 +6,6 @@ import jse.code.iterator.IComplexDoubleIterator;
 import jse.code.iterator.IComplexDoubleSetIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -27,8 +26,8 @@ public final class ShiftComplexVector extends BiDoubleArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftComplexVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, dataLength()-mShift, aSize); return this;}
-    public ShiftComplexVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, dataLength()-mSize, aShift); return this;}
+    public ShiftComplexVector setSize(int aSize) {mSize = aSize; return this;}
+    public ShiftComplexVector setShift(int aShift) {mShift = aShift; return this;}
     public int dataLength() {return Math.min(mData[0].length, mData[1].length);}
     
     /** IComplexVector stuffs */

@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -22,8 +21,8 @@ public final class ShiftVector extends DoubleArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); return this;}
-    public ShiftVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); return this;}
+    public ShiftVector setSize(int aSize) {mSize = aSize; return this;}
+    public ShiftVector setShift(int aShift) {mShift = aShift; return this;}
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */

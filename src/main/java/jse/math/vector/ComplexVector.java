@@ -6,7 +6,6 @@ import jse.code.iterator.IComplexDoubleIterator;
 import jse.code.iterator.IComplexDoubleSetIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -56,7 +55,7 @@ public class ComplexVector extends BiDoubleArrayVector {
     public ComplexVector(double[][] aData) {this(Math.min(aData[0].length, aData[1].length), aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public final ComplexVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, dataLength(), aSize); return this;}
+    public final ComplexVector setSize(int aSize) {mSize = aSize; return this;}
     public final int dataLength() {return Math.min(mData[0].length, mData[1].length);}
     
     /** IComplexVector stuffs */

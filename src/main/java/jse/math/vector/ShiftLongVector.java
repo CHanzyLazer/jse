@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.LongList;
 import jse.code.iterator.ILongIterator;
 import jse.code.iterator.ILongSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -24,8 +23,8 @@ public final class ShiftLongVector extends LongArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftLongVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); return this;}
-    public ShiftLongVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); return this;}
+    public ShiftLongVector setSize(int aSize) {mSize = aSize; return this;}
+    public ShiftLongVector setShift(int aShift) {mShift = aShift; return this;}
     public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */

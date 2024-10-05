@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
-import jse.math.MathEX;
 import jse.math.matrix.ColumnMatrix;
 import jse.math.matrix.RowMatrix;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +53,7 @@ public class Vector extends DoubleArrayVector {
     public Vector(double[] aData) {this(aData.length, aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public Vector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public Vector setSize(int aSize) {mSize = aSize; return this;}
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */

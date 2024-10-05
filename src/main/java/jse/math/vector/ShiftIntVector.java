@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.IntList;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -24,8 +23,8 @@ public final class ShiftIntVector extends IntArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftIntVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); return this;}
-    public ShiftIntVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); return this;}
+    public ShiftIntVector setSize(int aSize) {mSize = aSize; return this;}
+    public ShiftIntVector setShift(int aShift) {mShift = aShift; return this;}
     public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */

@@ -2,7 +2,6 @@ package jse.math.vector;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -30,7 +29,7 @@ public final class ReverseVector extends DoubleArrayVector {
     public ReverseVector(double[] aData) {this(aData.length, aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public ReverseVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); mSizeMM = mSize-1; return this;}
+    public ReverseVector setSize(int aSize) {mSize = aSize; mSizeMM = mSize-1; return this;}
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */

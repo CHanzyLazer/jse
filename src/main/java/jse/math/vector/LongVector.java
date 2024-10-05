@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.LongList;
 import jse.code.iterator.ILongIterator;
 import jse.code.iterator.ILongSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -53,7 +52,7 @@ public final class LongVector extends LongArrayVector {
     public LongVector(long[] aData) {this(aData.length, aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public LongVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public LongVector setSize(int aSize) {mSize = aSize; return this;}
     public int dataLength() {return mData.length;}
     
     /** IIntegerVector stuffs */

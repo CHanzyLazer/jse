@@ -1278,7 +1278,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         }
         
         int size() {return mSize;}
-        void setSize(int aSize) {mSize = MathEX.Code.toRange(0, mBufferedNL.length, aSize);}
+        void setSize(int aSize) {mSize = aSize;}
         int dataLength() {return mBufferedNL.length;}
         void reset() {mIdx = 0; mBufferedNLRMax.fill(Double.NaN);}
         void setAtomNum(int aAtomNum) {mAtomNum = aAtomNum;}

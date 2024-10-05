@@ -4,7 +4,6 @@ import jse.code.collection.BooleanList;
 import jse.code.functional.IBooleanUnaryOperator;
 import jse.code.iterator.IBooleanIterator;
 import jse.code.iterator.IBooleanSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -24,8 +23,8 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftLogicalVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); return this;}
-    public ShiftLogicalVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); return this;}
+    public ShiftLogicalVector setSize(int aSize) {mSize = aSize; return this;}
+    public ShiftLogicalVector setShift(int aShift) {mShift = aShift; return this;}
     public int dataLength() {return mData.length;}
     
     /** ILogicalVector stuffs */

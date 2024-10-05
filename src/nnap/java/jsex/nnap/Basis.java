@@ -1,15 +1,13 @@
 package jsex.nnap;
 
 import com.google.common.collect.Lists;
+import jse.cache.ComplexMatrixCache;
 import jse.cache.ComplexVectorCache;
 import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
 import jse.math.MathEX;
-import jse.math.matrix.RowMatrix;
-import jse.math.vector.IComplexVector;
-import jse.math.vector.IComplexVectorOperation;
-import jse.math.vector.IVector;
-import jse.math.vector.Vectors;
+import jse.math.matrix.*;
+import jse.math.vector.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,7 +97,7 @@ public class Basis {
         final RowMatrix rFingerPrint = MatrixCache.getMatRow(tSizeN, aLMax+1);
         
         // 需要存储所有的 l，n，m 的值来统一进行近邻求和
-        final List<? extends IComplexVector> cnlm = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
+        final ColumnComplexMatrix cnlm = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
         // 缓存 Rn 数组
         final IVector tRn = VectorCache.getVec(aNMax+1);
         // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
@@ -126,8 +124,8 @@ public class Basis {
                 // 虽然看起来和使用 operate2this 效率基本一致，即使后者理论上应该还会创建一些 DoubleComplex；
                 // 总之至少没有反向优化，并且这样包装后更加不吃编译器的优化，也不存在一大坨 lambda 表达式，以及传入的 DoubleComplex 一定不是引用等这种约定
                 double tMul = fc * tRn.get(tN);
-                cnlm.get(tN).operation().mplus2this(tY, tMul);
-                if (aTypeNum > 1) cnlm.get(tN+aNMax+1).operation().mplus2this(tY, wt*tMul);
+                cnlm.col(tN).operation().mplus2this(tY, tMul);
+                if (aTypeNum > 1) cnlm.col(tN+aNMax+1).operation().mplus2this(tY, wt*tMul);
             }
         });
         // 做标量积消去 m 项，得到此原子的 FP
@@ -135,13 +133,13 @@ public class Basis {
             // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
             int tStart = tL*tL;
             int tLen = tL+tL+1;
-            rFingerPrint.set(tN, tL, (4.0*PI/(double)tLen) * cnlm.get(tN).subVec(tStart, tStart+tLen).operation().dot());
+            rFingerPrint.set(tN, tL, (4.0*PI/(double)tLen) * cnlm.col(tN).subVec(tStart, tStart+tLen).operation().dot());
         }
         
         // 归还临时变量
         ComplexVectorCache.returnVec(tY);
         VectorCache.returnVec(tRn);
-        ComplexVectorCache.returnVec(cnlm);
+        ComplexMatrixCache.returnMat(cnlm);
         
         return rFingerPrint;
     }
@@ -169,13 +167,13 @@ public class Basis {
         @Nullable List<RowMatrix> rFingerPrintPzCross = aCalCross ? new ArrayList<>() : null;
         
         // 需要存储所有的 l，n，m 的值来统一进行近邻求和
-        final List<? extends IComplexVector> cnlm = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-        final List<? extends IComplexVector> cnlmPx = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-        final List<? extends IComplexVector> cnlmPy = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-        final List<? extends IComplexVector> cnlmPz = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-        final @Nullable List<List<? extends IComplexVector>> cnlmPxAll = aCalCross ? new ArrayList<>() : null;
-        final @Nullable List<List<? extends IComplexVector>> cnlmPyAll = aCalCross ? new ArrayList<>() : null;
-        final @Nullable List<List<? extends IComplexVector>> cnlmPzAll = aCalCross ? new ArrayList<>() : null;
+        final ColumnComplexMatrix cnlm = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+        final ColumnComplexMatrix cnlmPx = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+        final ColumnComplexMatrix cnlmPy = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+        final ColumnComplexMatrix cnlmPz = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+        final @Nullable List<ColumnComplexMatrix> cnlmPxAll = aCalCross ? new ArrayList<>() : null;
+        final @Nullable List<ColumnComplexMatrix> cnlmPyAll = aCalCross ? new ArrayList<>() : null;
+        final @Nullable List<ColumnComplexMatrix> cnlmPzAll = aCalCross ? new ArrayList<>() : null;
         // 缓存 Rn 数组
         final IVector tRn = VectorCache.getVec(aNMax+1);
         final IVector tRnPx = VectorCache.getVec(aNMax+1);
@@ -281,11 +279,11 @@ public class Basis {
             tYPz.fill(0.0); tYPz.operation().mplus2this(tYPtheta, thetaPz);
             
             // 遍历求 n，l 的情况
-            final List<? extends IComplexVector> cnlmPxUpdate, cnlmPyUpdate, cnlmPzUpdate;
+            final ColumnComplexMatrix cnlmPxUpdate, cnlmPyUpdate, cnlmPzUpdate;
             if (aCalCross) {
-                cnlmPxUpdate = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-                cnlmPyUpdate = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
-                cnlmPzUpdate = ComplexVectorCache.getZeros((aLMax+1)*(aLMax+1), tSizeN);
+                cnlmPxUpdate = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+                cnlmPyUpdate = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
+                cnlmPzUpdate = ComplexMatrixCache.getZerosCol((aLMax+1)*(aLMax+1), tSizeN);
                 cnlmPxAll.add(cnlmPxUpdate);
                 cnlmPyAll.add(cnlmPyUpdate);
                 cnlmPzAll.add(cnlmPzUpdate);
@@ -298,41 +296,41 @@ public class Basis {
             for (int tN = 0; tN <= aNMax; ++tN) {
                 // cnlm 部分
                 double tMul = fc * tRn.get(tN);
-                cnlm.get(tN).operation().mplus2this(tY, tMul);
-                if (aTypeNum > 1) cnlm.get(tN+aNMax+1).operation().mplus2this(tY, wt*tMul);
+                cnlm.col(tN).operation().mplus2this(tY, tMul);
+                if (aTypeNum > 1) cnlm.col(tN+aNMax+1).operation().mplus2this(tY, wt*tMul);
                 // 微分部分
                 double tMulL = fc * tRnPx.get(tN);
                 double tMulR = fcPx * tRn.get(tN);
-                IComplexVectorOperation tOpt = cnlmPxUpdate.get(tN).operation();
+                IComplexVectorOperation tOpt = cnlmPxUpdate.col(tN).operation();
                 tOpt.mplus2this(tY, tMulL);
                 tOpt.mplus2this(tYPx, tMul);
                 tOpt.mplus2this(tY, tMulR);
                 if (aTypeNum > 1) {
-                    tOpt = cnlmPxUpdate.get(tN+aNMax+1).operation();
+                    tOpt = cnlmPxUpdate.col(tN+aNMax+1).operation();
                     tOpt.mplus2this(tY, wt*tMulL);
                     tOpt.mplus2this(tYPx, wt*tMul);
                     tOpt.mplus2this(tY, wt*tMulR);
                 }
                 tMulL = fc * tRnPy.get(tN);
                 tMulR = fcPy * tRn.get(tN);
-                tOpt = cnlmPyUpdate.get(tN).operation();
+                tOpt = cnlmPyUpdate.col(tN).operation();
                 tOpt.mplus2this(tY, tMulL);
                 tOpt.mplus2this(tYPy, tMul);
                 tOpt.mplus2this(tY, tMulR);
                 if (aTypeNum > 1) {
-                    tOpt = cnlmPyUpdate.get(tN+aNMax+1).operation();
+                    tOpt = cnlmPyUpdate.col(tN+aNMax+1).operation();
                     tOpt.mplus2this(tY, wt*tMulL);
                     tOpt.mplus2this(tYPy, wt*tMul);
                     tOpt.mplus2this(tY, wt*tMulR);
                 }
                 tMulL = fc * tRnPz.get(tN);
                 tMulR = fcPz * tRn.get(tN);
-                tOpt = cnlmPzUpdate.get(tN).operation();
+                tOpt = cnlmPzUpdate.col(tN).operation();
                 tOpt.mplus2this(tY, tMulL);
                 tOpt.mplus2this(tYPz, tMul);
                 tOpt.mplus2this(tY, tMulR);
                 if (aTypeNum > 1) {
-                    tOpt = cnlmPzUpdate.get(tN+aNMax+1).operation();
+                    tOpt = cnlmPzUpdate.col(tN+aNMax+1).operation();
                     tOpt.mplus2this(tY, wt*tMulL);
                     tOpt.mplus2this(tYPz, wt*tMul);
                     tOpt.mplus2this(tY, wt*tMulR);
@@ -341,9 +339,9 @@ public class Basis {
         });
         if (aCalCross) {
             // 如果计算了 cross 的，则需要在这里手动累加一下 cnlm
-            for (List<? extends IComplexVector> cnlmPxSub : cnlmPxAll) for (int i = 0; i < tSizeN; ++i) cnlmPx.get(i).plus2this(cnlmPxSub.get(i));
-            for (List<? extends IComplexVector> cnlmPySub : cnlmPyAll) for (int i = 0; i < tSizeN; ++i) cnlmPy.get(i).plus2this(cnlmPySub.get(i));
-            for (List<? extends IComplexVector> cnlmPzSub : cnlmPzAll) for (int i = 0; i < tSizeN; ++i) cnlmPz.get(i).plus2this(cnlmPzSub.get(i));
+            for (ColumnComplexMatrix cnlmPxSub : cnlmPxAll) cnlmPx.plus2this(cnlmPxSub);
+            for (ColumnComplexMatrix cnlmPySub : cnlmPyAll) cnlmPy.plus2this(cnlmPySub);
+            for (ColumnComplexMatrix cnlmPzSub : cnlmPzAll) cnlmPz.plus2this(cnlmPzSub);
             // 在这里初始化 cross 的 FingerPrint 偏导
             final int tNN = cnlmPxAll.size();
             for (int i = 0; i < tNN; ++i) {
@@ -353,59 +351,69 @@ public class Basis {
             }
             // 基组对于近邻原子坐标的偏导值和这里直接计算结果差一个负号；
             // 由于实际计算力时需要近邻的原本基组值来反向传播，因此这里结果实际会传递给近邻用于累加，所以需要的就是 基组对于近邻原子坐标的偏导值
-            for (List<? extends IComplexVector> cnlmPxSub : cnlmPxAll) for (IComplexVector cilmPxSub : cnlmPxSub) cilmPxSub.negative2this();
-            for (List<? extends IComplexVector> cnlmPySub : cnlmPyAll) for (IComplexVector cilmPySub : cnlmPySub) cilmPySub.negative2this();
-            for (List<? extends IComplexVector> cnlmPzSub : cnlmPzAll) for (IComplexVector cilmPzSub : cnlmPzSub) cilmPzSub.negative2this();
+            for (ColumnComplexMatrix cnlmPxSub : cnlmPxAll) cnlmPxSub.negative2this();
+            for (ColumnComplexMatrix cnlmPySub : cnlmPyAll) cnlmPySub.negative2this();
+            for (ColumnComplexMatrix cnlmPzSub : cnlmPzAll) cnlmPzSub.negative2this();
         }
         // 做标量积消去 m 项，得到此原子的 FP
-        for (int tN = 0; tN < tSizeN; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-            // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
-            int tStart = tL*tL;
-            int tLen = tL+tL+1;
-            int tEnd = tStart+tLen;
-            double tMul = 4.0*PI/(double)tLen;
-            double tMul2 = tMul+tMul;
-            IComplexVector subCilm = cnlm.get(tN).subVec(tStart, tEnd);
-            IComplexVector subCilmPx = cnlmPx.get(tN).subVec(tStart, tEnd);
-            IComplexVector subCilmPy = cnlmPy.get(tN).subVec(tStart, tEnd);
-            IComplexVector subCilmPz = cnlmPz.get(tN).subVec(tStart, tEnd);
-            if (aCalBasis) rFingerPrint.set(tN, tL, tMul * subCilm.operation().dot());
-            rFingerPrintPx.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPx.real()) + subCilm.imag().operation().dot(subCilmPx.imag())));
-            rFingerPrintPy.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPy.real()) + subCilm.imag().operation().dot(subCilmPy.imag())));
-            rFingerPrintPz.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPz.real()) + subCilm.imag().operation().dot(subCilmPz.imag())));
+        ShiftVector subCilmReal = new ShiftVector(cnlm.internalDataSize(), cnlm.internalDataShift(), cnlm.internalData()[0]), subCilmImag = new ShiftVector(cnlm.internalDataSize(), cnlm.internalDataShift(), cnlm.internalData()[1]);
+        ShiftVector subCilmPxReal = new ShiftVector(cnlmPx.internalDataSize(), cnlmPx.internalDataShift(), cnlmPx.internalData()[0]), subCilmPxImag = new ShiftVector(cnlmPx.internalDataSize(), cnlmPx.internalDataShift(), cnlmPx.internalData()[1]);
+        ShiftVector subCilmPyReal = new ShiftVector(cnlmPy.internalDataSize(), cnlmPy.internalDataShift(), cnlmPy.internalData()[0]), subCilmPyImag = new ShiftVector(cnlmPy.internalDataSize(), cnlmPy.internalDataShift(), cnlmPy.internalData()[1]);
+        ShiftVector subCilmPzReal = new ShiftVector(cnlmPz.internalDataSize(), cnlmPz.internalDataShift(), cnlmPz.internalData()[0]), subCilmPzImag = new ShiftVector(cnlmPz.internalDataSize(), cnlmPz.internalDataShift(), cnlmPz.internalData()[1]);
+        IVectorOperation subCilmRealOpt = subCilmReal.operation(), subCilmImagOpt = subCilmImag.operation();
+        for (int tN = 0; tN < tSizeN; ++tN) {
+            int tShift = tN * cnlm.rowNumber();
+            for (int tL = 0; tL <= aLMax; ++tL) {
+                // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
+                int tStart = tL*tL;
+                int tLen = tL+tL+1;
+                double tMul = 4.0*PI/(double)tLen;
+                double tMul2 = tMul+tMul;
+                subCilmReal.setSize(tLen).setShift(tShift+tStart); subCilmImag.setSize(tLen).setShift(tShift+tStart);
+                subCilmPxReal.setSize(tLen).setShift(tShift+tStart); subCilmPxImag.setSize(tLen).setShift(tShift+tStart);
+                subCilmPyReal.setSize(tLen).setShift(tShift+tStart); subCilmPyImag.setSize(tLen).setShift(tShift+tStart);
+                subCilmPzReal.setSize(tLen).setShift(tShift+tStart); subCilmPzImag.setSize(tLen).setShift(tShift+tStart);
+                if (aCalBasis) rFingerPrint.set(tN, tL, tMul * (subCilmRealOpt.dot() + subCilmImagOpt.dot()));
+                rFingerPrintPx.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPxReal) + subCilmImagOpt.dot(subCilmPxImag)));
+                rFingerPrintPy.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPyReal) + subCilmImagOpt.dot(subCilmPyImag)));
+                rFingerPrintPz.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPzReal) + subCilmImagOpt.dot(subCilmPzImag)));
+            }
         }
         // 如果计算 cross，则需要这样设置 cross 的 FingerPrint 偏导
         if (aCalCross) {
             final int tNN = cnlmPxAll.size();
             for (int i = 0; i < tNN; ++i) {
-                List<? extends IComplexVector> cnlmPxAllI = cnlmPxAll.get(i);
-                List<? extends IComplexVector> cnlmPyAllI = cnlmPyAll.get(i);
-                List<? extends IComplexVector> cnlmPzAllI = cnlmPzAll.get(i);
+                ColumnComplexMatrix cnlmPxAllI = cnlmPxAll.get(i), cnlmPyAllI = cnlmPyAll.get(i), cnlmPzAllI = cnlmPzAll.get(i);
+                ShiftVector subCilmPxAllIReal = new ShiftVector(cnlmPxAllI.internalDataSize(), cnlmPxAllI.internalDataShift(), cnlmPxAllI.internalData()[0]), subCilmPxAllIImag = new ShiftVector(cnlmPxAllI.internalDataSize(), cnlmPxAllI.internalDataShift(), cnlmPxAllI.internalData()[1]);
+                ShiftVector subCilmPyAllIReal = new ShiftVector(cnlmPyAllI.internalDataSize(), cnlmPyAllI.internalDataShift(), cnlmPyAllI.internalData()[0]), subCilmPyAllIImag = new ShiftVector(cnlmPyAllI.internalDataSize(), cnlmPyAllI.internalDataShift(), cnlmPyAllI.internalData()[1]);
+                ShiftVector subCilmPzAllIReal = new ShiftVector(cnlmPzAllI.internalDataSize(), cnlmPzAllI.internalDataShift(), cnlmPzAllI.internalData()[0]), subCilmPzAllIImag = new ShiftVector(cnlmPzAllI.internalDataSize(), cnlmPzAllI.internalDataShift(), cnlmPzAllI.internalData()[1]);
                 RowMatrix tFingerPrintPxCrossI = rFingerPrintPxCross.get(i);
                 RowMatrix tFingerPrintPyCrossI = rFingerPrintPyCross.get(i);
                 RowMatrix tFingerPrintPzCrossI = rFingerPrintPzCross.get(i);
-                for (int tN = 0; tN < tSizeN; ++tN) for (int tL = 0; tL <= aLMax; ++tL) {
-                    int tStart = tL*tL;
-                    int tLen = tL+tL+1;
-                    int tEnd = tStart+tLen;
-                    double tMul = 4.0*PI/(double)tLen;
-                    double tMul2 = tMul+tMul;
-                    IComplexVector subCilm = cnlm.get(tN).subVec(tStart, tEnd);
-                    IComplexVector subCilmPxAllI = cnlmPxAllI.get(tN).subVec(tStart, tEnd);
-                    IComplexVector subCilmPyAllI = cnlmPyAllI.get(tN).subVec(tStart, tEnd);
-                    IComplexVector subCilmPzAllI = cnlmPzAllI.get(tN).subVec(tStart, tEnd);
-                    tFingerPrintPxCrossI.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPxAllI.real()) + subCilm.imag().operation().dot(subCilmPxAllI.imag())));
-                    tFingerPrintPyCrossI.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPyAllI.real()) + subCilm.imag().operation().dot(subCilmPyAllI.imag())));
-                    tFingerPrintPzCrossI.set(tN, tL, tMul2 * (subCilm.real().operation().dot(subCilmPzAllI.real()) + subCilm.imag().operation().dot(subCilmPzAllI.imag())));
+                for (int tN = 0; tN < tSizeN; ++tN) {
+                    int tShift = tN * cnlm.rowNumber();
+                    for (int tL = 0; tL <= aLMax; ++tL) {
+                        int tStart = tL*tL;
+                        int tLen = tL+tL+1;
+                        double tMul = 4.0*PI/(double)tLen;
+                        double tMul2 = tMul+tMul;
+                        subCilmReal.setSize(tLen).setShift(tShift+tStart); subCilmImag.setSize(tLen).setShift(tShift+tStart);
+                        subCilmPxAllIReal.setSize(tLen).setShift(tShift+tStart); subCilmPxAllIImag.setSize(tLen).setShift(tShift+tStart);
+                        subCilmPyAllIReal.setSize(tLen).setShift(tShift+tStart); subCilmPyAllIImag.setSize(tLen).setShift(tShift+tStart);
+                        subCilmPzAllIReal.setSize(tLen).setShift(tShift+tStart); subCilmPzAllIImag.setSize(tLen).setShift(tShift+tStart);
+                        tFingerPrintPxCrossI.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPxAllIReal) + subCilmImagOpt.dot(subCilmPxAllIImag)));
+                        tFingerPrintPyCrossI.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPyAllIReal) + subCilmImagOpt.dot(subCilmPyAllIImag)));
+                        tFingerPrintPzCrossI.set(tN, tL, tMul2 * (subCilmRealOpt.dot(subCilmPzAllIReal) + subCilmImagOpt.dot(subCilmPzAllIImag)));
+                    }
                 }
             }
         }
         
         // 归还临时变量
         if (aCalCross) {
-            for (List<? extends IComplexVector> cnlmPzSub : cnlmPzAll) ComplexVectorCache.returnVec(cnlmPzSub);
-            for (List<? extends IComplexVector> cnlmPySub : cnlmPyAll) ComplexVectorCache.returnVec(cnlmPySub);
-            for (List<? extends IComplexVector> cnlmPxSub : cnlmPxAll) ComplexVectorCache.returnVec(cnlmPxSub);
+            for (ColumnComplexMatrix cnlmPzSub : cnlmPzAll) ComplexMatrixCache.returnMat(cnlmPzSub);
+            for (ColumnComplexMatrix cnlmPySub : cnlmPyAll) ComplexMatrixCache.returnMat(cnlmPySub);
+            for (ColumnComplexMatrix cnlmPxSub : cnlmPxAll) ComplexMatrixCache.returnMat(cnlmPxSub);
         }
         ComplexVectorCache.returnVec(tYPz);
         ComplexVectorCache.returnVec(tYPy);
@@ -417,10 +425,10 @@ public class Basis {
         VectorCache.returnVec(tRnPy);
         VectorCache.returnVec(tRnPx);
         VectorCache.returnVec(tRn);
-        ComplexVectorCache.returnVec(cnlmPz);
-        ComplexVectorCache.returnVec(cnlmPy);
-        ComplexVectorCache.returnVec(cnlmPx);
-        ComplexVectorCache.returnVec(cnlm);
+        ComplexMatrixCache.returnMat(cnlmPz);
+        ComplexMatrixCache.returnMat(cnlmPy);
+        ComplexMatrixCache.returnMat(cnlmPx);
+        ComplexMatrixCache.returnMat(cnlm);
         
         List<RowMatrix> rOut = Lists.newArrayList(rFingerPrint, rFingerPrintPx, rFingerPrintPy, rFingerPrintPz);
         if (aCalCross) {

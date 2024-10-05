@@ -2,7 +2,6 @@ package jse.math.vector;
 
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.NoSuchElementException;
@@ -23,8 +22,8 @@ public final class ShiftReverseVector extends DoubleArrayVector {
     
     /** 提供额外的接口来直接设置底层参数 */
     public int shift() {return mShift;}
-    public ShiftReverseVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length-mShift, aSize); totShift = mSize-1+mShift; return this;}
-    public ShiftReverseVector setShift(int aShift) {mShift = MathEX.Code.toRange(0, mData.length-mSize, aShift); totShift = mSize-1+mShift; return this;}
+    public ShiftReverseVector setSize(int aSize) {mSize = aSize; totShift = mSize-1+mShift; return this;}
+    public ShiftReverseVector setShift(int aShift) {mShift = aShift; totShift = mSize-1+mShift; return this;}
     public int dataLength() {return mData.length;}
     
     /** IVector stuffs */

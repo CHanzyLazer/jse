@@ -3,7 +3,6 @@ package jse.math.vector;
 import jse.code.collection.IntList;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
-import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -54,7 +53,7 @@ public class IntVector extends IntArrayVector {
     public IntVector(int[] aData) {this(aData.length, aData);}
     
     /** 提供额外的接口来直接设置底层参数 */
-    public final IntVector setSize(int aSize) {mSize = MathEX.Code.toRange(0, mData.length, aSize); return this;}
+    public final IntVector setSize(int aSize) {mSize = aSize; return this;}
     public final int dataLength() {return mData.length;}
     
     /** IIntegerVector stuffs */
