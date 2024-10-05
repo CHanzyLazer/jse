@@ -46,7 +46,7 @@ public class NNAP implements IAutoShutdown {
     }
     private static native void setSingleThread0() throws TorchException;
     
-    protected final long mModelPtr;
+    protected final long[] mModelPtrs;
     private boolean mDead = false;
     private final int mThreadNumber;
     
@@ -95,8 +95,12 @@ public class NNAP implements IAutoShutdown {
         Object tModel = aModelInfo.get("model");
         if (tModel == null) throw new IllegalArgumentException("No model data in ModelInfo");
         byte[] tModelBytes = Base64.getDecoder().decode(tModel.toString());
-        mModelPtr = load1(tModelBytes, tModelBytes.length);
-        if (mModelPtr==0 || mModelPtr==-1) throw new TorchException("Failed to load Torch Model");
+        mModelPtrs = new long[mThreadNumber];
+        for (int i = 0; i < mThreadNumber; ++i) {
+            long tModelPtr = load1(tModelBytes, tModelBytes.length);
+            if (tModelPtr==0 || tModelPtr==-1) throw new TorchException("Failed to load Torch Model");
+            mModelPtrs[i] = tModelPtr;
+        }
     }
     public NNAP(String aModelPath, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) throws TorchException, IOException {
         this(aModelPath.endsWith(".yaml") || aModelPath.endsWith(".yml") ? UT.IO.yaml2map(aModelPath) : UT.IO.json2map(aModelPath), aThreadNumber);
@@ -109,7 +113,7 @@ public class NNAP implements IAutoShutdown {
     @Override public void shutdown() {
         if (!mDead) {
             mDead = true;
-            shutdown0(mModelPtr);
+            for (int i = 0; i < mThreadNumber; ++i) shutdown0(mModelPtrs[i]);
         }
     }
     private static native void shutdown0(long aModelPtr);
@@ -154,7 +158,7 @@ public class NNAP implements IAutoShutdown {
                     });
                 });
                 tBasis.asVecRow().div2this(mNormVec);
-                double tPred = forward(tBasis.internalData(), tBasis.internalDataShift(), tBasis.internalDataSize());
+                double tPred = forward(threadID, tBasis.internalData(), tBasis.internalDataShift(), tBasis.internalDataSize());
                 MatrixCache.returnMat(tBasis);
                 tPred += mRefEngs.get(aMPC.atomType_().get(i)-1);
                 rEngs.set(i, tPred);
@@ -228,21 +232,31 @@ public class NNAP implements IAutoShutdown {
         aAtomData = reorderSymbols(aAtomData);
         try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData, mThreadNumber)) {return calEnergyForces(tMPC);}
     }
-    protected void calEnergyForces_(final MonatomicParameterCalculator aMPC, final @Nullable IVector rEnergies, final @NotNull IVector rForcesX, final @NotNull IVector rForcesY, final @NotNull IVector rForcesZ) throws TorchException {
+    protected void calEnergyForces_(final MonatomicParameterCalculator aMPC, final @Nullable IVector rEnergies, @NotNull IVector rForcesX, @NotNull IVector rForcesY, @NotNull IVector rForcesZ) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mElems.size() != aMPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of MPC: " + aMPC.atomTypeNumber() + ", model: " + mElems.size());
+        // 统一存储常量
+        final int tAtomNumber = aMPC.atomNumber();
+        final int tThreadNumber = aMPC.threadNumber();
         // 需要手动管理一下临时的近邻列表
-        final IntList[] tNLPar = new IntList[aMPC.threadNumber()];
-        for (int i = 0; i < aMPC.threadNumber(); i++) tNLPar[i] = new IntList();
+        final IntList[] tNLPar = new IntList[tThreadNumber];
+        for (int i = 0; i < tThreadNumber; i++) tNLPar[i] = new IntList();
         // 力需要累加统计，所以统一设置为 0
         rForcesX.fill(0.0);
         rForcesY.fill(0.0);
         rForcesZ.fill(0.0);
+        // 并行情况下存在并行写入的问题，因此需要这样操作
+        IVector[] rForcesXPar = new IVector[tThreadNumber]; rForcesXPar[0] = rForcesX; for (int i = 1; i < tThreadNumber; ++i) {rForcesXPar[i] = VectorCache.getZeros(tAtomNumber);}
+        IVector[] rForcesYPar = new IVector[tThreadNumber]; rForcesYPar[0] = rForcesY; for (int i = 1; i < tThreadNumber; ++i) {rForcesYPar[i] = VectorCache.getZeros(tAtomNumber);}
+        IVector[] rForcesZPar = new IVector[tThreadNumber]; rForcesZPar[0] = rForcesZ; for (int i = 1; i < tThreadNumber; ++i) {rForcesZPar[i] = VectorCache.getZeros(tAtomNumber);}
         // 获取需要缓存的近邻列表
         final IntList @Nullable[] tNLToBuffer = aMPC.getNLWhichNeedBuffer_(mBasis.rcut(), -1, false);
         try {
-            aMPC.pool_().parforWithException(rForcesX.size(), null, null, (i, threadID) -> {
+            aMPC.pool_().parforWithException(tAtomNumber, null, null, (i, threadID) -> {
                 final IntList tNL = tNLPar[threadID]; tNL.clear();
+                final IVector tForcesX = rForcesXPar[threadID];
+                final IVector tForcesY = rForcesYPar[threadID];
+                final IVector tForcesZ = rForcesZPar[threadID];
                 List<@NotNull RowMatrix> tOut = mBasis.evalPartial(aMPC.atomTypeNumber(), true, true, dxyzTypeDo -> {
                     aMPC.nl_().forEachNeighbor(i, mBasis.rcut(), false, (x, y, z, idx, dx, dy, dz) -> {
                         dxyzTypeDo.run(dx, dy, dz, aMPC.atomType_().get(idx));
@@ -255,22 +269,22 @@ public class NNAP implements IAutoShutdown {
                 RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(mNormVec);
                 
                 Vector tPredPartial = VectorCache.getVec(tBasis.rowNumber()*tBasis.columnNumber());
-                double tPred = backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
+                double tPred = backward(threadID, tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
                 tPredPartial.div2this(mNormVec);
                 if (rEnergies != null) {
                     tPred += mRefEngs.get(aMPC.atomType_().get(i)-1);
                     rEnergies.set(i, tPred);
                 }
-                rForcesX.add(i, -tPredPartial.opt().dot(tOut.get(1).asVecRow()));
-                rForcesY.add(i, -tPredPartial.opt().dot(tOut.get(2).asVecRow()));
-                rForcesZ.add(i, -tPredPartial.opt().dot(tOut.get(3).asVecRow()));
+                tForcesX.add(i, -tPredPartial.opt().dot(tOut.get(1).asVecRow()));
+                tForcesY.add(i, -tPredPartial.opt().dot(tOut.get(2).asVecRow()));
+                tForcesZ.add(i, -tPredPartial.opt().dot(tOut.get(3).asVecRow()));
                 // 累加交叉项到近邻
                 final int tNN = tNL.size();
                 for (int j = 0; j < tNN; ++j) {
                     int tIdx = tNL.get(j);
-                    rForcesX.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+j).asVecRow()));
-                    rForcesY.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+j).asVecRow()));
-                    rForcesZ.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+tNN+j).asVecRow()));
+                    tForcesX.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+j).asVecRow()));
+                    tForcesY.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+j).asVecRow()));
+                    tForcesZ.add(tIdx, -tPredPartial.opt().dot(tOut.get(4+tNN+tNN+j).asVecRow()));
                 }
                 
                 VectorCache.returnVec(tPredPartial);
@@ -281,29 +295,37 @@ public class NNAP implements IAutoShutdown {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        // 累加其余线程的数据然后归还临时变量
+        for (int i = 1; i < tThreadNumber; ++i) {rForcesZ.plus2this(rForcesZPar[i]); VectorCache.returnVec(rForcesZPar[i]);}
+        for (int i = 1; i < tThreadNumber; ++i) {rForcesY.plus2this(rForcesYPar[i]); VectorCache.returnVec(rForcesYPar[i]);}
+        for (int i = 1; i < tThreadNumber; ++i) {rForcesX.plus2this(rForcesXPar[i]); VectorCache.returnVec(rForcesXPar[i]);}
     }
     
     
-    protected double forward(double[] aX, int aStart, int aCount) throws TorchException {
+    protected double forward(int aThreadID, double[] aX, int aStart, int aCount) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         rangeCheck(aX.length, aStart+aCount);
-        return forward0(mModelPtr, aX, aStart, aCount);
+        return forward0(mModelPtrs[aThreadID], aX, aStart, aCount);
     }
+    protected double forward(double[] aX, int aStart, int aCount) throws TorchException {return forward(0, aX, aStart, aCount);}
     protected double forward(double[] aX, int aCount) throws TorchException {return forward(aX, 0, aCount);}
     protected double forward(double[] aX) throws TorchException {return forward(aX, aX.length);}
-    protected double forward(DoubleCPointer aX, int aCount) throws TorchException {return forward1(mModelPtr, aX.ptr_(), aCount);}
+    protected double forward(int aThreadID, DoubleCPointer aX, int aCount) throws TorchException {return forward1(mModelPtrs[aThreadID], aX.ptr_(), aCount);}
+    protected double forward(DoubleCPointer aX, int aCount) throws TorchException {return forward(0, aX, aCount);}
     private static native double forward0(long aModelPtr, double[] aX, int aStart, int aCount) throws TorchException;
     private static native double forward1(long aModelPtr, long aXPtr, int aCount) throws TorchException;
     
-    protected double backward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {
+    protected double backward(int aThreadID, double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         rangeCheck(aX.length, aStart+aCount);
         rangeCheck(rGradX.length, rStart+aCount);
-        return backward0(mModelPtr, aX, aStart, rGradX, rStart, aCount);
+        return backward0(mModelPtrs[aThreadID], aX, aStart, rGradX, rStart, aCount);
     }
+    protected double backward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {return backward(0, aX, aStart, rGradX, rStart, aCount);}
     protected double backward(double[] aX, double[] rGradX, int aCount) throws TorchException {return backward(aX, 0, rGradX, 0, aCount);}
     protected double backward(double[] aX, double[] rGradX) throws TorchException {return backward(aX, rGradX, aX.length);}
-    protected double backward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward1(mModelPtr, aX.ptr_(), rGradX.ptr_(), aCount);}
+    protected double backward(int aThreadID, DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward1(mModelPtrs[aThreadID], aX.ptr_(), rGradX.ptr_(), aCount);}
+    protected double backward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward(0, aX, rGradX, aCount);}
     private static native double backward0(long aModelPtr, double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException;
     private static native double backward1(long aModelPtr, long aXPtr, long rGradXPtr, int aCount) throws TorchException;
     
