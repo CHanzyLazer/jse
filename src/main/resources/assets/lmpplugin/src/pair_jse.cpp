@@ -99,6 +99,9 @@ void PairJSE::neighborRequestDefault() {
 void PairJSE::neighborRequestFull() {
     neighbor->add_request(this, NeighConst::REQ_FULL);
 }
+void PairJSE::noVirialFdotrCompute() {
+    no_virial_fdotr_compute = 1;
+}
 jlong PairJSE::atomX() {
     return (jlong)(intptr_t) atom->x;
 }
@@ -143,6 +146,12 @@ void PairJSE::evTally(jint i, jint j, jint nlocal, jboolean newtonPair, jdouble 
 }
 void PairJSE::evTallyFull(jint i, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
     ev_tally_full((int)i, (double)evdwl, (double)ecoul, (double)fpair, (double)delx, (double)dely, (double)delz);
+}
+void PairJSE::evTallyXYZ(jint i, jint j, jint nlocal, jboolean newtonPair, jdouble evdwl, jdouble ecoul, jdouble fx, jdouble fy, jdouble fz, jdouble delx, jdouble dely, jdouble delz) {
+    ev_tally_xyz((int)i, (int)j, (int)nlocal, (int)newtonPair, (double)evdwl, (double)ecoul, (double)fx, (double)fy, (double)fz, (double)delx, (double)dely, (double)delz);
+}
+void PairJSE::evTallyXYZFull(jint i, jdouble evdwl, jdouble ecoul, jdouble fx, jdouble fy, jdouble fz, jdouble delx, jdouble dely, jdouble delz) {
+    ev_tally_xyz_full((int)i, (double)evdwl, (double)ecoul, (double)fx, (double)fy, (double)fz, (double)delx, (double)dely, (double)delz);
 }
 jboolean PairJSE::evflag_() {
     return evflag ? JNI_TRUE : JNI_FALSE;

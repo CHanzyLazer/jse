@@ -31,6 +31,7 @@ protected:
 public:
     void neighborRequestDefault();
     void neighborRequestFull();
+    void noVirialFdotrCompute();
     jlong atomX();
     jlong atomF();
     jlong atomType();
@@ -46,6 +47,8 @@ public:
     jdouble cutsq_(jint, jint);
     void evTally(jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
     void evTallyFull(jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+    void evTallyXYZ(jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+    void evTallyXYZFull(jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
     jboolean evflag_();
     jboolean vflagEither();
     jboolean vflagGlobal();

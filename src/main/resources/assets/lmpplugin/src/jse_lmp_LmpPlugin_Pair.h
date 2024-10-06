@@ -25,11 +25,11 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestFull_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
- * Method:    evInit_
- * Signature: (JZZ)V
+ * Method:    noVirialFdotrCompute_
+ * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evInit_1
-  (JNIEnv *, jclass, jlong, jboolean, jboolean);
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_noVirialFdotrCompute_1
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
@@ -150,6 +150,22 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTally_1
  */
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyFull_1
   (JNIEnv *, jclass, jlong, jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    evTallyXYZ_
+ * Signature: (JIIIZDDDDDDDD)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyXYZ_1
+  (JNIEnv *, jclass, jlong, jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    evTallyXYZFull_
+ * Signature: (JIDDDDDDDD)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyXYZFull_1
+  (JNIEnv *, jclass, jlong, jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair

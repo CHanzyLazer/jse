@@ -273,8 +273,8 @@ public class LmpPlugin {
         protected final void neighborRequestFull() {neighborRequestFull_(mPairPtr);}
         private native static void neighborRequestFull_(long aPairPtr);
         
-        protected final void evInit(boolean eflag, boolean vflag) {evInit_(mPairPtr, eflag, vflag);}
-        private native static void evInit_(long aPairPtr, boolean eflag, boolean vflag);
+        protected final void noVirialFdotrCompute() {noVirialFdotrCompute_(mPairPtr);}
+        private native static void noVirialFdotrCompute_(long aPairPtr);
         
         protected final NestedDoubleCPointer atomX() {return new NestedDoubleCPointer(atomX_(mPairPtr));}
         private native static long atomX_(long aPairPtr);
@@ -322,6 +322,12 @@ public class LmpPlugin {
         
         protected final void evTallyFull(int i, double evdwl, double ecoul, double fpair, double delx, double dely, double delz) {evTallyFull_(mPairPtr, i, evdwl, ecoul, fpair, delx, dely, delz);}
         private native static void evTallyFull_(long aPairPtr, int i, double evdwl, double ecoul, double fpair, double delx, double dely, double delz);
+        
+        protected final void evTallyXYZ(int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fx, double fy, double fz, double delx, double dely, double delz) {evTallyXYZ_(mPairPtr, i, j, nlocal, newtonPair, evdwl, ecoul, fx, fy, fz, delx, dely, delz);}
+        private native static void evTallyXYZ_(long aPairPtr, int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fx, double fy, double fz, double delx, double dely, double delz);
+        
+        protected final void evTallyXYZFull(int i, double evdwl, double ecoul, double fx, double fy, double fz, double delx, double dely, double delz) {evTallyXYZFull_(mPairPtr, i, evdwl, ecoul, fx, fy, fz, delx, dely, delz);}
+        private native static void evTallyXYZFull_(long aPairPtr, int i, double evdwl, double ecoul, double fx, double fy, double fz, double delx, double dely, double delz);
         
         protected final boolean evflag() {return evflag_(mPairPtr);}
         private native static boolean evflag_(long aPairPtr);

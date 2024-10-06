@@ -11,6 +11,9 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestDefault_1
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestFull_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     ((PairJSE *)(intptr_t)aPairPtr)->neighborRequestFull();
 }
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_noVirialFdotrCompute_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    ((PairJSE *)(intptr_t)aPairPtr)->noVirialFdotrCompute();
+}
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomX_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomX();
 }
@@ -55,6 +58,12 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTally_1(JNIEnv *aEnv, 
 }
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyFull_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint i, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
     ((PairJSE *)(intptr_t)aPairPtr)->evTallyFull(i, evdwl, ecoul, fpair, delx, dely, delz);
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyXYZ_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint i, jint j, jint nlocal, jboolean newtonPair, jdouble evdwl, jdouble ecoul, jdouble fx, jdouble fy, jdouble fz, jdouble delx, jdouble dely, jdouble delz) {
+    ((PairJSE *)(intptr_t)aPairPtr)->evTallyXYZ(i, j, nlocal, newtonPair, evdwl, ecoul, fx, fy, fz, delx, dely, delz);
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evTallyXYZFull_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint i, jdouble evdwl, jdouble ecoul, jdouble fx, jdouble fy, jdouble fz, jdouble delx, jdouble dely, jdouble delz) {
+    ((PairJSE *)(intptr_t)aPairPtr)->evTallyXYZFull(i, evdwl, ecoul, fx, fy, fz, delx, dely, delz);
 }
 JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_evflag_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->evflag_();
