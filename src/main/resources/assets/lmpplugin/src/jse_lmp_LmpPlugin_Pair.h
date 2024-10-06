@@ -137,6 +137,46 @@ JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Pair_cutsq_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    engVdwl_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_engVdwl_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    engCoul_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_engCoul_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    eatom_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_eatom_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    virial_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_virial_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    vatom_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_vatom_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
  * Method:    evTally_
  * Signature: (JIIIZDDDDDD)V
  */

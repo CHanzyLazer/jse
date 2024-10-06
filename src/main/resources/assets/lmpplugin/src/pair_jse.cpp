@@ -141,6 +141,21 @@ jlong PairJSE::listFirstneigh() {
 jdouble PairJSE::cutsq_(jint i, jint j) {
     return (jdouble) cutsq[i][j];
 }
+jlong PairJSE::engVdwl() {
+    return (jlong)(intptr_t) &eng_vdwl;
+}
+jlong PairJSE::engCoul() {
+    return (jlong)(intptr_t) &eng_coul;
+}
+jlong PairJSE::eatom_() {
+    return (jlong)(intptr_t) eatom;
+}
+jlong PairJSE::virial_() {
+    return (jlong)(intptr_t) virial;
+}
+jlong PairJSE::vatom_() {
+    return (jlong)(intptr_t) vatom;
+}
 void PairJSE::evTally(jint i, jint j, jint nlocal, jboolean newtonPair, jdouble evdwl, jdouble ecoul, jdouble fpair, jdouble delx, jdouble dely, jdouble delz) {
     ev_tally((int)i, (int)j, (int)nlocal, (int)newtonPair, (double)evdwl, (double)ecoul, (double)fpair, (double)delx, (double)dely, (double)delz);
 }

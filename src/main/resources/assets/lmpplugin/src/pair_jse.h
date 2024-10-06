@@ -45,6 +45,11 @@ public:
     jlong listNumneigh();
     jlong listFirstneigh();
     jdouble cutsq_(jint, jint);
+    jlong engVdwl();
+    jlong engCoul();
+    jlong eatom_();
+    jlong virial_();
+    jlong vatom_();
     void evTally(jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
     void evTallyFull(jint, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);
     void evTallyXYZ(jint, jint, jint, jboolean, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble, jdouble);

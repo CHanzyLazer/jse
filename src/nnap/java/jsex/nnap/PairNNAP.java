@@ -1,6 +1,7 @@
 package jsex.nnap;
 
 import jse.cache.*;
+import jse.clib.DoubleCPointer;
 import jse.clib.IntCPointer;
 import jse.clib.NestedDoubleCPointer;
 import jse.clib.NestedIntCPointer;
@@ -17,7 +18,7 @@ import java.util.List;
  * {@link LmpPlugin.Pair} 的 NNAP 版本，在 lammps
  * in 文件中添加：
  * <pre> {@code
- * pair_style   jse lmpex.nnap.PairNNAP
+ * pair_style   jse jsex.nnap.PairNNAP
  * pair_coeff   path/to/nnpot.json Cu Zr
  * } </pre>
  * 来使用
@@ -36,9 +37,12 @@ public class PairNNAP extends LmpPlugin.Pair {
      * @author liqa
      */
     @Override public void compute() throws Exception {
-        double evdwl = 0.0;
         boolean evflag = evflag();
         boolean eflag = eflagEither();
+        boolean eflagGlobal = eflagGlobal();
+        boolean eflagAtom = eflagAtom();
+        DoubleCPointer engVdwl = engVdwl();
+        DoubleCPointer eatom = eatom();
         
         NestedDoubleCPointer x = atomX();
         NestedDoubleCPointer f = atomF();
@@ -54,7 +58,7 @@ public class PairNNAP extends LmpPlugin.Pair {
         int nghost = atomNghost();
         RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
         RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-        IntVector typeVec = IntVectorCache.getVec(nlocal+nghost);
+        final IntVector typeVec = IntVectorCache.getVec(nlocal+nghost);
         x.parse2dest(xMat.internalData(), xMat.internalDataShift(), xMat.rowNumber(), xMat.columnNumber());
         f.parse2dest(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
         type.parse2dest(typeVec.internalData(), typeVec.internalDataShift(), typeVec.internalDataSize());
@@ -65,37 +69,42 @@ public class PairNNAP extends LmpPlugin.Pair {
             final double xtmp = xMat.get(i, 0);
             final double ytmp = xMat.get(i, 1);
             final double ztmp = xMat.get(i, 2);
-            final int typetmp = mLmpType2NNAPType[typeVec.getAt(i)];
+            final int typei = type.getAt(i);
             IntCPointer jlist = firstneigh.getAt(i);
             final int jnum = numneigh.getAt(i);
             final IntVector jlistVec = IntVectorCache.getVec(jnum);
             LogicalVector jlistMask = LogicalVectorCache.getZeros(jnum);
             jlist.parse2dest(jlistVec.internalData(), jlistVec.internalDataShift(), jlistVec.internalDataSize());
             
+            final NNAP.SingleNNAP tNNAP = mNNAP.mModels.get(mLmpType2NNAPType[typei]-1);
             // 这里需要计算力，先计算基组偏导
-            final List<@NotNull RowMatrix> tOut = mNNAP.mBasis.evalPartial(true, true, dxyzTypeDo -> {
+            final List<@NotNull RowMatrix> tOut = tNNAP.mBasis.evalPartial(true, true, dxyzTypeDo -> {
                 // 在这里遍历近邻列表
                 for (int jj = 0; jj < jnum; ++jj) {
                     int j = jlistVec.get(jj);
                     j &= LmpPlugin.NEIGHMASK;
-                    double delx = xtmp - xMat.get(j, 0);
-                    double dely = ytmp - xMat.get(j, 1);
-                    double delz = ztmp - xMat.get(j, 2);
+                    // 注意 jse 中的 dxyz 和 lammps 定义的相反
+                    double delx = xMat.get(j, 0) - xtmp;
+                    double dely = xMat.get(j, 1) - ytmp;
+                    double delz = xMat.get(j, 2) - ztmp;
                     double rsq = delx*delx + dely*dely + delz*delz;
-                    if (rsq < mCutsq) {
+                    if (rsq < mCutsq[typei]) {
                         jlistMask.set(jj, true);
                         dxyzTypeDo.run(delx, dely, delz, mLmpType2NNAPType[typeVec.get(j)]);
                     }
                 }
             });
             // 反向传播
-            RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(mNNAP.mNormVec);
+            RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(tNNAP.mNormVec);
             final Vector tPredPartial = VectorCache.getVec(tBasis.rowNumber()*tBasis.columnNumber());
-            double tPred = mNNAP.backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
-            tPredPartial.div2this(mNNAP.mNormVec);
+            double tPred = tNNAP.backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
+            tPredPartial.div2this(tNNAP.mNormVec);
             // 更新能量
             if (eflag) {
-                evdwl = tPred + mNNAP.mRefEngs.get(typetmp-1);
+                double eng = tPred + tNNAP.mRefEng;
+                // 由于不是瓶颈，并且不是频繁调用，因此这里不去专门优化
+                if (eflagGlobal) engVdwl.set(engVdwl.get()+eng);
+                if (eflagAtom) eatom.putAt(i, eatom.getAt(i)+eng);
             }
             // 更新自身的力
             fMat.update(i, 0, v -> v - tPredPartial.opt().dot(tOut.get(1).asVecRow()));
@@ -103,30 +112,32 @@ public class PairNNAP extends LmpPlugin.Pair {
             fMat.update(i, 2, v -> v - tPredPartial.opt().dot(tOut.get(3).asVecRow()));
             // 然后再遍历一次，传播力和位力到近邻
             final int tNN = (tOut.size()-4)/3;
+            int ji = 0;
             for (int jj = 0; jj < jnum; ++jj) if (jlistMask.get(jj)) {
                 int j = jlistVec.get(jj);
                 j &= LmpPlugin.NEIGHMASK;
                 
-                final double fx = -tPredPartial.opt().dot(tOut.get(4+jj).asVecRow());
-                final double fy = -tPredPartial.opt().dot(tOut.get(4+tNN+jj).asVecRow());
-                final double fz = -tPredPartial.opt().dot(tOut.get(4+tNN+tNN+jj).asVecRow());
+                final double fx = -tPredPartial.opt().dot(tOut.get(4+ji).asVecRow());
+                final double fy = -tPredPartial.opt().dot(tOut.get(4+tNN+ji).asVecRow());
+                final double fz = -tPredPartial.opt().dot(tOut.get(4+tNN+tNN+ji).asVecRow());
                 fMat.update(j, 0, v -> v + fx);
                 fMat.update(j, 1, v -> v + fy);
                 fMat.update(j, 2, v -> v + fz);
+                ++ji;
                 
                 // ev stuffs
                 if (evflag) {
                     double delx = xtmp - xMat.get(j, 0);
                     double dely = ytmp - xMat.get(j, 1);
                     double delz = ztmp - xMat.get(j, 2);
-                    evTallyXYZFull(i, evdwl, 0.0d, fx+fx, fy+fy, fz+fz, delx, dely, delz);
+                    evTallyXYZFull(i, 0.0, 0.0, fx+fx, fy+fy, fz+fz, delx, dely, delz);
                 }
             }
             LogicalVectorCache.returnVec(jlistMask);
             IntVectorCache.returnVec(jlistVec);
         }
         
-        f.fill(fMat.internalData(), fMat.nrows(), fMat.ncols());
+        f.fill(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
         IntVectorCache.returnVec(typeVec);
         MatrixCache.returnMat(fMat);
         MatrixCache.returnMat(xMat);
@@ -140,21 +151,23 @@ public class PairNNAP extends LmpPlugin.Pair {
         mNNAP = new NNAP(aArgs[0]);
         int tArgLen = aArgs.length;
         mLmpType2NNAPType = new int[tArgLen];
+        mCutoff = new double[tArgLen];
+        mCutsq = new double[tArgLen];
         for (int type = 1; type < tArgLen; ++type) {
             String tElem = aArgs[type];
-            int idx = mNNAP.mElems.indexOf(tElem);
+            int idx = mNNAP.indexOf(tElem);
             if (idx < 0) throw new IllegalArgumentException("Invalid element ("+tElem+") in pair_coeff");
             mLmpType2NNAPType[type] = idx+1;
+            mCutoff[type] = mNNAP.mModels.get(idx).mBasis.rcut();
+            mCutsq[type] = mCutoff[type]*mCutoff[type];
         }
-        mCutoff = mNNAP.mBasis.rcut();
-        mCutsq = mCutoff*mCutoff;
     }
     protected NNAP mNNAP = null;
     protected int[] mLmpType2NNAPType = null;
-    protected double mCutoff = 0.0d;
-    protected double mCutsq = Double.NaN;
+    protected double[] mCutoff = null;
+    protected double[] mCutsq = null;
     
     @Override public double initOne(int i, int j) {
-        return mCutoff;
+        return mCutoff[i];
     }
 }

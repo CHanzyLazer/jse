@@ -317,6 +317,21 @@ public class LmpPlugin {
         protected final double cutsq(int i, int j) {return cutsq_(mPairPtr, i, j);}
         private native static double cutsq_(long aPairPtr, int i, int j);
         
+        protected final DoubleCPointer engVdwl() {return new DoubleCPointer(engVdwl_(mPairPtr));}
+        private native static long engVdwl_(long aPairPtr);
+        
+        protected final DoubleCPointer engCoul() {return new DoubleCPointer(engCoul_(mPairPtr));}
+        private native static long engCoul_(long aPairPtr);
+        
+        protected final DoubleCPointer eatom() {return new DoubleCPointer(eatom_(mPairPtr));}
+        private native static long eatom_(long aPairPtr);
+        
+        protected final DoubleCPointer virial() {return new DoubleCPointer(virial_(mPairPtr));}
+        private native static long virial_(long aPairPtr);
+        
+        protected final NestedDoubleCPointer vatom() {return new NestedDoubleCPointer(vatom_(mPairPtr));}
+        private native static long vatom_(long aPairPtr);
+        
         protected final void evTally(int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fpair, double delx, double dely, double delz) {evTally_(mPairPtr, i, j, nlocal, newtonPair, evdwl, ecoul, fpair, delx, dely, delz);}
         private native static void evTally_(long aPairPtr, int i, int j, int nlocal, boolean newtonPair, double evdwl, double ecoul, double fpair, double delx, double dely, double delz);
         
