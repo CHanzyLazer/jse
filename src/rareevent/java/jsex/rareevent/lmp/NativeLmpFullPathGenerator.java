@@ -44,7 +44,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
     public final static byte NOSE_HOOVER = 0, LANGEVIN = 1;
     
     private final List<Lmpdat> mInitPoints;
-    private final IVector mMesses;
+    private final IVector mMasses;
     private final double mTemperature;
     private final String mPairStyle, mPairCoeff;
     private final double mTimestep;
@@ -65,7 +65,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
      * @param aLmpComm 此进程需要运行 {@link NativeLmp} 的 {@link MPI.Comm}，默认为 {@link MPI.Comm#WORLD}
      * @param aParameterCalculator 计算对应 Lmpdat 参数的计算器，建议使用 MPI 版本的计算器，并使用相同范围的 {@link MPI.Comm}
      * @param aInitAtomDataList  用于初始的原子数据
-     * @param aMesses 每个种类的原子对应的摩尔质量，且长度指定原子种类数目
+     * @param aMasses 每个种类的原子对应的摩尔质量，且长度指定原子种类数目
      * @param aTemperature 创建路径的温度
      * @param aPairStyle lammps 输入文件使用的势场类型
      * @param aPairCoeff lammps 输入文件使用的势场参数
@@ -73,10 +73,10 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
      * @param aDumpStep 每隔多少模拟步输出一个 dump，默认为 10
      * @param aThermostat 选择的热浴，默认为 {@link #NOSE_HOOVER}
      */
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, IVector aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {
         // 基本参数存储
         mInitPoints = NewCollections.map(aInitAtomDataList, data -> Lmpdat.fromAtomData(data).setNoVelocity()); // 初始点也需要移除速度，保证会从不同路径开始
-        mMesses = aMesses.copy();
+        mMasses = aMasses.copy();
         mTemperature = aTemperature;
         mPairStyle = aPairStyle; mPairCoeff = aPairCoeff;
         mTimestep = aTimestep;
@@ -86,17 +86,17 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
         mLmp = new NativeLmp(LMP_ARGS, aLmpComm);
         mParameterCalculator = aParameterCalculator;
     }
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, NOSE_HOOVER);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMesses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aThermostat);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aThermostat);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff, aTimestep);}
-    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMesses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMesses), aTemperature, aPairStyle, aPairCoeff);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMasses, aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, NOSE_HOOVER);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMasses, aTemperature, aPairStyle, aPairCoeff, aTimestep, 10);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                      IVector aMasses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, aMasses, aTemperature, aPairStyle, aPairCoeff, 0.002);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aThermostat);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList, Collection<? extends Number> aMasses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep, byte aThermostat) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep, aThermostat);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep, int aDumpStep                  ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep, aDumpStep);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMasses, double aTemperature, String aPairStyle, String aPairCoeff, double aTimestep                                 ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff, aTimestep);}
+    public NativeLmpFullPathGenerator(MPI.Comm aLmpComm, IParameterCalculator<? super IAtomData> aParameterCalculator, Iterable<? extends IAtomData> aInitAtomDataList,                     double[] aMasses, double aTemperature, String aPairStyle, String aPairCoeff                                                   ) throws LmpException {this(aLmpComm, aParameterCalculator, aInitAtomDataList, Vectors.from(aMasses), aTemperature, aPairStyle, aPairCoeff);}
     
     NativeLmpFullPathGenerator setReturnLast() {mReturnLast = true; return this;}
     
@@ -128,7 +128,7 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
             mLmp.command("units           metal");
             mLmp.command("boundary        p p p");
             mLmp.command("timestep        "+mTimestep);
-            mLmp.loadLmpdat(mNext.setMasses(mMesses)); // 在这里统一设置质量
+            mLmp.loadLmpdat(mNext.setMasses(mMasses)); // 在这里统一设置质量
             mLmp.command("pair_style      "+mPairStyle);
             mLmp.command("pair_coeff      "+mPairCoeff); // MARK: 好像卡在这里，但是不一定
             // 逻辑上只要没有速度还是需要重新分配速度
