@@ -295,6 +295,14 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commMe_1
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commNprocs_1
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    unitStyle_
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_jse_lmp_LmpPlugin_00024Pair_unitStyle_1
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

@@ -76,9 +76,9 @@ public class PairNNAP extends LmpPlugin.Pair {
             LogicalVector jlistMask = LogicalVectorCache.getZeros(jnum);
             jlist.parse2dest(jlistVec.internalData(), jlistVec.internalDataShift(), jlistVec.internalDataSize());
             
-            final NNAP.SingleNNAP tNNAP = mNNAP.mModels.get(mLmpType2NNAPType[typei]-1);
+            final NNAP.SingleNNAP tNNAP = mNNAP.model(mLmpType2NNAPType[typei]);
             // 这里需要计算力，先计算基组偏导
-            final List<@NotNull RowMatrix> tOut = tNNAP.mBasis.evalPartial(true, true, dxyzTypeDo -> {
+            final List<@NotNull RowMatrix> tOut = tNNAP.basis().evalPartial(true, true, dxyzTypeDo -> {
                 // 在这里遍历近邻列表
                 for (int jj = 0; jj < jnum; ++jj) {
                     int j = jlistVec.get(jj);
@@ -95,13 +95,13 @@ public class PairNNAP extends LmpPlugin.Pair {
                 }
             });
             // 反向传播
-            RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(tNNAP.mNormVec);
+            RowMatrix tBasis = tOut.get(0); tBasis.asVecRow().div2this(tNNAP.normVec());
             final Vector tPredPartial = VectorCache.getVec(tBasis.rowNumber()*tBasis.columnNumber());
             double tPred = tNNAP.backward(tBasis.internalData(), tBasis.internalDataShift(), tPredPartial.internalData(), tPredPartial.internalDataShift(), tBasis.internalDataSize());
-            tPredPartial.div2this(tNNAP.mNormVec);
+            tPredPartial.div2this(tNNAP.normVec());
             // 更新能量
             if (eflag) {
-                double eng = tPred + tNNAP.mRefEng;
+                double eng = tPred + tNNAP.refEng();
                 // 由于不是瓶颈，并且不是频繁调用，因此这里不去专门优化
                 if (eflagGlobal) engVdwl.set(engVdwl.get()+eng);
                 if (eflagAtom) eatom.putAt(i, eatom.getAt(i)+eng);
@@ -133,6 +133,8 @@ public class PairNNAP extends LmpPlugin.Pair {
                     evTallyXYZFull(i, 0.0, 0.0, fx+fx, fy+fy, fz+fz, delx, dely, delz);
                 }
             }
+            VectorCache.returnVec(tPredPartial);
+            MatrixCache.returnMat(tOut);
             LogicalVectorCache.returnVec(jlistMask);
             IntVectorCache.returnVec(jlistVec);
         }
@@ -149,6 +151,11 @@ public class PairNNAP extends LmpPlugin.Pair {
     
     @Override public void coeff(String... aArgs) throws Exception {
         mNNAP = new NNAP(aArgs[0]);
+        String tNNAPUnits = mNNAP.units();
+        if (tNNAPUnits != null) {
+            String tLmpUnits = unitStyle();
+            if (tLmpUnits!=null && !tLmpUnits.equals(tNNAPUnits)) throw new IllegalArgumentException("Invalid units ("+tLmpUnits+") for this model ("+tNNAPUnits+")");
+        }
         int tArgLen = aArgs.length;
         mLmpType2NNAPType = new int[tArgLen];
         mCutoff = new double[tArgLen];
@@ -158,7 +165,7 @@ public class PairNNAP extends LmpPlugin.Pair {
             int idx = mNNAP.indexOf(tElem);
             if (idx < 0) throw new IllegalArgumentException("Invalid element ("+tElem+") in pair_coeff");
             mLmpType2NNAPType[type] = idx+1;
-            mCutoff[type] = mNNAP.mModels.get(idx).mBasis.rcut();
+            mCutoff[type] = mNNAP.model(idx+1).basis().rcut();
             mCutsq[type] = mCutoff[type]*mCutoff[type];
         }
     }

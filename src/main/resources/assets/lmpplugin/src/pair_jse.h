@@ -65,6 +65,7 @@ public:
     void virialFdotrCompute();
     jint commMe();
     jint commNprocs();
+    jstring unitStyle();
 };
 
 }    // namespace LAMMPS_NS

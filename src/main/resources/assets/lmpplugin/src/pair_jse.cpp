@@ -9,6 +9,7 @@
 #include "lammps/error.h"
 #include "lammps/force.h"
 #include "lammps/memory.h"
+#include "lammps/update.h"
 #include "lammps/neigh_list.h"
 #include "lammps/neighbor.h"
 
@@ -200,4 +201,7 @@ jint PairJSE::commMe() {
 }
 jint PairJSE::commNprocs() {
     return (jint) comm->nprocs;
+}
+jstring PairJSE::unitStyle() {
+    return mEnv->NewStringUTF(lmp->update->unit_style);
 }

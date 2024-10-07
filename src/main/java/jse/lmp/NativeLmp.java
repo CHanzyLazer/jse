@@ -44,7 +44,7 @@ import static jse.code.Conf.*;
  * References:
  * <a href="https://docs.lammps.org/Python_module.html">
  * The lammps Python module </a>,
- * <a href="https://docs.lammps.org/Library.html/">
+ * <a href="https://docs.lammps.org/Library.html">
  * LAMMPS Library Interfaces </a>,
  * @author liqa
  */

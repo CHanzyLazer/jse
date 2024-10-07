@@ -376,5 +376,8 @@ public class LmpPlugin {
         
         protected final int commNprocs() {return commNprocs_(mPairPtr);}
         private native static int commNprocs_(long aPairPtr);
+        
+        protected final String unitStyle() {return unitStyle_(mPairPtr);}
+        private native static String unitStyle_(long aPairPtr);
     }
 }
