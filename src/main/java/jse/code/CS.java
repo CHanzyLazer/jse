@@ -108,6 +108,12 @@ public class CS {
     
     /** Boltzmann constant */
     public final static double K_B = 0.0000861733262; // eV / K
+    /** Reduced Planck constant */
+    public final static double H_BAR = 6.582119514e-4; // eV * ps
+    /** Avogadro constant */
+    public final static double N_A = 6.02214076e23;
+    /** Electron volt */
+    public final static double E_V = 1.602176634e-20; // g * Å^2 / ps^2 == 0.1J
     
     /** All atom name, start from 0 */
     public final static String[] SYMBOLS = {

@@ -2123,7 +2123,7 @@ public class UT {
         public static ILine[] plot(IAtomData aAtomData) {
             @Nullable List<@Nullable String> tSymbols = aAtomData.symbols();
             String[] rAtomTypes = tSymbols==null ? ZL_STR : tSymbols.toArray(ZL_STR);
-            for (int tType = 1; tType <= rAtomTypes.length; ++tType) if (rAtomTypes[tType]==null) rAtomTypes[tType] = "type "+tType;
+            for (int tType = 1; tType <= rAtomTypes.length; ++tType) if (rAtomTypes[tType-1]==null) rAtomTypes[tType-1] = "type "+tType;
             return plot(aAtomData, rAtomTypes);
         }
         
