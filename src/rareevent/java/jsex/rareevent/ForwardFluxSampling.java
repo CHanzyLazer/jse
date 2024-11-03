@@ -389,6 +389,10 @@ public class ForwardFluxSampling<T> extends AbstractThreadPool<ParforThreadPool>
         Point tRoot = tPath.nextUntilReachLambdaAOrLambdaB(false); // 此过程不会记录耗时
         try {
             while (tRoot == null) {
+                if (rPathNum > 100) {
+                    throw new RuntimeException("Init path failed 100 times, check your input points.\n" +
+                                               "This is usually due to the input point already having a large lambda.");
+                }
                 rPointNum += tPath.pointNum();
                 tPath.close();
                 tPath = new BackwardPath(tRNG.nextLong()); ++rPathNum;
