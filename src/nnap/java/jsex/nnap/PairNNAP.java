@@ -19,11 +19,29 @@ import java.util.List;
  * in 文件中添加：
  * <pre> {@code
  * pair_style   jse jsex.nnap.PairNNAP
- * pair_coeff   path/to/nnpot.json Cu Zr
+ * pair_coeff   * * path/to/nnpot.json Cu Zr
  * } </pre>
  * 来使用
  */
 public class PairNNAP extends LmpPlugin.Pair {
+    /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
+    public final static class InitHelper {
+        private static volatile boolean INITIALIZED = false;
+        
+        public static boolean initialized() {return INITIALIZED;}
+        @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf"})
+        public static void init() {
+            // 手动调用此值来强制初始化
+            if (!INITIALIZED) String.valueOf(_INIT_FLAG);
+        }
+    }
+    private final static boolean _INIT_FLAG = false;
+    static {
+        InitHelper.INITIALIZED = true;
+        // 确保 NNAP 已经确实初始化
+        NNAP.InitHelper.init();
+    }
+    
     protected PairNNAP(long aPairPtr) {super(aPairPtr);}
     
     @Override public void initStyle() {
@@ -151,18 +169,20 @@ public class PairNNAP extends LmpPlugin.Pair {
     
     
     @Override public void coeff(String... aArgs) throws Exception {
-        mNNAP = new NNAP(aArgs[0]);
+        if (aArgs==null || aArgs.length<4) throw new IllegalArgumentException("Not enough arguments, pair_coeff MUST be like `* * path/to/nnpot elem1 ...`");
+        if (!aArgs[0].equals("*") || !aArgs[1].equals("*")) throw new IllegalArgumentException("pair_coeff MUST start with `* *`");
+        mNNAP = new NNAP(aArgs[2]);
         String tNNAPUnits = mNNAP.units();
         if (tNNAPUnits != null) {
             String tLmpUnits = unitStyle();
             if (tLmpUnits!=null && !tLmpUnits.equals(tNNAPUnits)) throw new IllegalArgumentException("Invalid units ("+tLmpUnits+") for this model ("+tNNAPUnits+")");
         }
-        int tArgLen = aArgs.length;
+        int tArgLen = aArgs.length-2;
         mLmpType2NNAPType = new int[tArgLen];
         mCutoff = new double[tArgLen];
         mCutsq = new double[tArgLen];
         for (int type = 1; type < tArgLen; ++type) {
-            String tElem = aArgs[type];
+            String tElem = aArgs[2+type];
             int idx = mNNAP.indexOf(tElem);
             if (idx < 0) throw new IllegalArgumentException("Invalid element ("+tElem+") in pair_coeff");
             mLmpType2NNAPType[type] = idx+1;

@@ -77,7 +77,7 @@ public class Torch {
         for (int i = 0; i < LIB_NAMES.length; ++i) {
             LIB_PATHS[i] = LIB_DIR + LIB_NAME_IN(LIB_DIR, LIB_NAMES[i]);
         }
-        // 这里顺便加载 torch 的 c++ 库，不知是否会对 python 的使用造成影响
+        // 这里顺便加载 torch 的 c++ 库，简单测试对 python 的使用似乎没有影响
         for (String tLibPath : LIB_PATHS) {
             System.load(UT.IO.toAbsolutePath(tLibPath));
         }
