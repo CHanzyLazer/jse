@@ -68,15 +68,15 @@ import static jse.code.Conf.*;
 public class SP {
     private SP() {}
     
-    private final static String GROOVY_SP_DIR = "script/groovy/";
-    private final static String PYTHON_SP_DIR = "script/python/";
+    public final static String GROOVY_SP_DIR = "script/groovy/";
+    public final static String PYTHON_SP_DIR = "script/python/";
     /** groovy 库的路径，这里采用 jar 包所在的绝对路径 */
-    private final static String GROOVY_LIB_DIR = JAR_DIR+"groovy/";
-    private final static String JAR_LIB_DIR = JAR_DIR+"jar/";
+    public final static String GROOVY_LIB_DIR = JAR_DIR+"groovy/";
+    public final static String JAR_LIB_DIR = JAR_DIR+"jar/";
     private final static List<String> JAR_LIB_PATHS;
     /** python 离线包的路径以及 python 库的路径，这里采用 jar 包所在的绝对路径 */
-    private final static String PYTHON_PKG_DIR = JAR_DIR+".pypkg/";
-    private final static String PYTHON_LIB_DIR = JAR_DIR+"python/";
+    public final static String PYTHON_PKG_DIR = JAR_DIR+".pypkg/";
+    public final static String PYTHON_LIB_DIR = JAR_DIR+"python/";
     
     static {
         JAR_LIB_PATHS = new ArrayList<>();
