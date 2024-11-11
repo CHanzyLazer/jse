@@ -78,9 +78,11 @@ public class CPointer {
         // 依赖 jniutil
         JNIUtil.InitHelper.init();
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        LIB_PATH = JNIUtil.buildLib("cpointer", "cpointer", "CPOINTER", SRC_NAME, LIB_DIR,
-                                    Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
-                                    Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_CPOINTER_LIB, null);
+        LIB_PATH = new JNIUtil.LibBuilder("cpointer", "CPOINTER", LIB_DIR, Conf.CMAKE_SETTING)
+            .setSrc("cpointer", SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_CPOINTER_LIB)
+            .get();
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
     }

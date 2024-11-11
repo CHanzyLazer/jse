@@ -93,13 +93,15 @@ public class NNAP implements IAutoShutdown {
         // 这里不直接依赖 LmpPlugin
         
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        LIB_PATH = JNIUtil.buildLib("nnap", "nnap", "NNAP", SRC_NAME, LIB_DIR,
-                                    Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
-                                    Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_NNAP_LIB, line -> {
-            // 替换其中的 torch 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_TORCH_CMAKE_DIR}", Torch.CMAKE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            return line;
-        });
+        LIB_PATH = new JNIUtil.LibBuilder("nnap", "NNAP", LIB_DIR, Conf.CMAKE_SETTING)
+            .setSrc("nnap", SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_NNAP_LIB)
+            .setCmakeLineOpt(line -> {
+                // 替换其中的 torch 库路径为设置好的路径
+                line = line.replace("$ENV{JSE_TORCH_CMAKE_DIR}", Torch.CMAKE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                return line;
+            }).get();
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
         

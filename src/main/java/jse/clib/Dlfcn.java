@@ -58,9 +58,12 @@ public class Dlfcn {
     
     static {
         InitHelper.INITIALIZED = true;
-        LIB_PATH = JNIUtil.buildLib("dlfcnjni", "dlfcn", "DLFCN", SRC_NAME, LIB_DIR,
-                                    Conf.CMAKE_C_COMPILER, null, Conf.CMAKE_C_FLAGS, null,
-                                    false, false, Conf.CMAKE_SETTING, Conf.REDIRECT_DLFCN_LIB, null);
+        LIB_PATH = new JNIUtil.LibBuilder("dlfcnjni", "DLFCN", LIB_DIR, Conf.CMAKE_SETTING)
+            .setSrc("dlfcn", SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
+            .setRedirectLibPath(Conf.REDIRECT_DLFCN_LIB)
+            .setCmakeLineOpt(null)
+            .get();
         // 设置库路径，这里直接使用 System.load
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
     }

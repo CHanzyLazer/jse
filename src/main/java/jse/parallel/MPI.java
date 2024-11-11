@@ -1267,9 +1267,11 @@ public class MPI {
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
             // 现在直接使用 JNIUtil.buildLib 来统一初始化
-            MPIJNI_LIB_PATH = JNIUtil.buildLib("mpijni", "mpi", "MPI", MPIJNI_SRC_NAME, MPIJNI_LIB_DIR,
-                                               Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
-                                               Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_MPIJNI_LIB, null);
+            MPIJNI_LIB_PATH = new JNIUtil.LibBuilder("mpijni", "MPI", MPIJNI_LIB_DIR, Conf.CMAKE_SETTING)
+                .setSrc("mpi", MPIJNI_SRC_NAME)
+                .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+                .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_MPIJNI_LIB)
+                .get();
             // 设置库路径
             System.load(UT.IO.toAbsolutePath(MPIJNI_LIB_PATH));
             

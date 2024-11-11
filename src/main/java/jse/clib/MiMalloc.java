@@ -3,7 +3,6 @@ package jse.clib;
 import jse.code.CS;
 import jse.code.OS;
 import jse.code.UT;
-import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -66,32 +65,34 @@ public class MiMalloc {
         InitHelper.INITIALIZED = true;
         // 这样来统一增加 mimalloc 需要的默认额外设置，
         // 先添加额外设置，从而可以通过 Conf.CMAKE_SETTING 来覆盖这些设置
-        Map<String, String> rCmakeSetting = Maps.of(
-            "MI_BUILD_SHARED",  "ON",
-            "MI_BUILD_STATIC",  "OFF",
-            "MI_BUILD_OBJECT",  "OFF",
-            "MI_BUILD_TESTS",   "OFF",
-            "MI_OVERRIDE",      "OFF",
-            "MI_WIN_REDIRECT",  "OFF",
-            "MI_OSX_INTERPOSE", "OFF",
-            "MI_OSX_ZONE",      "OFF",
-            "CMAKE_BUILD_TYPE", "Release");
+        Map<String, String> rCmakeSetting = new LinkedHashMap<>();
+        rCmakeSetting.put("MI_BUILD_SHARED",  "ON");
+        rCmakeSetting.put("MI_BUILD_STATIC",  "OFF");
+        rCmakeSetting.put("MI_BUILD_OBJECT",  "OFF");
+        rCmakeSetting.put("MI_BUILD_TESTS",   "OFF");
+        rCmakeSetting.put("MI_OVERRIDE",      "OFF");
+        rCmakeSetting.put("MI_WIN_REDIRECT",  "OFF");
+        rCmakeSetting.put("MI_OSX_INTERPOSE", "OFF");
+        rCmakeSetting.put("MI_OSX_ZONE",      "OFF");
         rCmakeSetting.putAll(Conf.CMAKE_SETTING);
+        rCmakeSetting.put("CMAKE_BUILD_TYPE", "Release");
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        LIB_PATH = JNIUtil.buildLib("mimalloc", "MIMALLOC", wd -> {
-                                        // 首先获取源码路径，这里直接从 resource 里输出
-                                        String tMiZipPath = wd+"mimalloc-"+VERSION+".zip";
-                                        UT.IO.copy(UT.IO.getResource("mimalloc/mimalloc-"+VERSION+".zip"), tMiZipPath);
-                                        // 解压 mimalloc 包到临时目录，如果已经存在则直接清空此目录
-                                        String tMiDir = wd+"mimalloc/";
-                                        UT.IO.removeDir(tMiDir);
-                                        UT.IO.zip2dir(tMiZipPath, tMiDir);
-                                        // 手动拷贝头文件到指定目录，现在也放在这里
-                                        UT.IO.copy(tMiDir+"include/mimalloc.h", INCLUDE_DIR+"mimalloc.h");
-                                        return tMiDir;
-                                    }, LIB_DIR,
-                                    Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
-                                    false, false, rCmakeSetting, Conf.REDIRECT_MIMALLOC_LIB, null);
+        LIB_PATH = new JNIUtil.LibBuilder("mimalloc", "MIMALLOC", LIB_DIR, rCmakeSetting)
+            .setSrcDirIniter(wd -> {
+                // 首先获取源码路径，这里直接从 resource 里输出
+                String tMiZipPath = wd+"mimalloc-"+VERSION+".zip";
+                UT.IO.copy(UT.IO.getResource("mimalloc/mimalloc-"+VERSION+".zip"), tMiZipPath);
+                // 解压 mimalloc 包到临时目录，如果已经存在则直接清空此目录
+                String tMiDir = wd+"mimalloc/";
+                UT.IO.removeDir(tMiDir);
+                UT.IO.zip2dir(tMiZipPath, tMiDir);
+                // 手动拷贝头文件到指定目录，现在也放在这里
+                UT.IO.copy(tMiDir+"include/mimalloc.h", INCLUDE_DIR+"mimalloc.h");
+                return tMiDir;})
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setRedirectLibPath(Conf.REDIRECT_MIMALLOC_LIB)
+            .setCmakeLineOpt(null)
+            .get();
         if (Conf.REDIRECT_MIMALLOC_LIB == null) {
             @Nullable String tLLibName = LLIB_NAME_IN(LIB_DIR, "mimalloc");
             LLIB_PATH = tLLibName==null ? LIB_PATH : (LIB_DIR+tLLibName);

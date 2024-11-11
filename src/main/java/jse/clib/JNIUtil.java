@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static jse.code.Conf.*;
 import static jse.code.CS.VERSION;
@@ -60,6 +61,7 @@ public class JNIUtil {
         UT.IO.removeDir(INCLUDE_DIR);
         UT.IO.copy(UT.IO.getResource("jniutil/src/"+ HEADER_NAME), HEADER_PATH);
         System.out.println("JNIUTIL INIT INFO: jniutil successfully installed.");
+        System.out.println("JNIUTIL INCLUDE DIR: " + INCLUDE_DIR);
     }
     
     static {
@@ -75,57 +77,75 @@ public class JNIUtil {
     }
     
     
+    
+    private final static String BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     /** 现在将一些通用的 cmake 编译 jni 库流程统一放在这里，减少重复的代码 */
-    public static String buildLib(String aProjectName, String aAssetsDirName, String aInfoProjectName, String[] aSrcNames, String aLibDir,
-                                  @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags,
-                                  boolean aUseMiMalloc, boolean aRebuild, Map<String, String> aCmakeSettings, @Nullable String aRedirectLibPath,
-                                  @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {
-        return buildLib(aProjectName, aInfoProjectName, wd -> {
-                            for (String tName : aSrcNames) {UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
-                            // 注意增加这个被省略的 CMakeLists.txt
-                            UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/CMakeLists.txt"), wd+"CMakeLists.txt");
-                            return wd;
-                        }, aLibDir,
-                        aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags,
-                        aUseMiMalloc, aRebuild, aCmakeSettings, aRedirectLibPath, aCmakeLineOpt);
-    }
-    public static String buildLib(String aProjectName, String aInfoProjectName, IDirIniter aSrcDirIniter, String aLibDir,
-                                  @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags,
-                                  boolean aUseMiMalloc, boolean aRebuild, Map<String, String> aCmakeSettings, @Nullable String aRedirectLibPath,
-                                  @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {
-        return buildLib(aProjectName, aInfoProjectName, aSrcDirIniter, sd -> {
-                            String tBuildDir = sd + (IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build")) + "/";
-                            UT.IO.makeDir(tBuildDir);
-                            return tBuildDir;
-                        }, aLibDir,
-                        "..", aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags,
-                        aUseMiMalloc, aRebuild, aCmakeSettings, aRedirectLibPath, aCmakeLineOpt);
-    }
-    public static String buildLib(String aProjectName, String aInfoProjectName, IDirIniter aSrcDirIniter, IDirIniter aBuildDirIniter, String aLibDir,
-                                  String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags,
-                                  boolean aUseMiMalloc, boolean aRebuild, Map<String, String> aCmakeSettings, @Nullable String aRedirectLibPath,
-                                  @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {
-        // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-        if (aUseMiMalloc) MiMalloc.InitHelper.init();
+    public static class LibBuilder implements Supplier<String> {
+        private final String aProjectName, aInfoProjectName;
+        private IDirIniter aSrcDirIniter = null;
+        private IDirIniter aBuildDirIniter = sd -> {
+            String tBuildDir = sd + BUILD_DIR_NAME + "/";
+            UT.IO.makeDir(tBuildDir);
+            return tBuildDir;
+        };
+        private final String aLibDir;
+        private String aCmakeInitDir = "..";
+        private @Nullable String aCmakeCCompiler = null, aCmakeCxxCompiler = null, aCmakeCFlags = null, aCmakeCxxFlags = null;
+        private @Nullable Boolean aUseMiMalloc = null;
+        private boolean aRebuild = false;
+        private final Map<String, String> aCmakeSettings;
+        private @Nullable String aRedirectLibPath = null;
+        private @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt = line -> line;
         
-        String tLibPath;
-        if (aRedirectLibPath == null) {
-            @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
-            // 如果不存在 jni lib 则需要重新通过源码编译
-            if (aRebuild || tLibName == null) {
-                System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries not found. Reinstalling...");
-                try {
-                    tLibName = initLib_(aProjectName, aInfoProjectName, aSrcDirIniter, aBuildDirIniter, aLibDir,
-                                        aCmakeInitDir, aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags,
-                                        aUseMiMalloc, aCmakeSettings, aCmakeLineOpt);
-                } catch (Exception e) {throw new RuntimeException(e);}
-            }
-            tLibPath = aLibDir + tLibName;
-        } else {
-            if (DEBUG) System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries are redirected to '" + aRedirectLibPath + "'");
-            tLibPath = aRedirectLibPath;
+        public LibBuilder(String aProjectName, String aInfoProjectName, String aLibDir, Map<String, String> aCmakeSettings) {
+            this.aProjectName = aProjectName;
+            this.aInfoProjectName = aInfoProjectName;
+            this.aLibDir = aLibDir;
+            this.aCmakeSettings = aCmakeSettings;
         }
-        return tLibPath;
+        public LibBuilder setSrc(final String aAssetsDirName, final String[] aSrcNames) {
+            aSrcDirIniter = wd -> {
+                for (String tName : aSrcNames) {UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
+                // 注意增加这个被省略的 CMakeLists.txt
+                UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/CMakeLists.txt"), wd+"CMakeLists.txt");
+                return wd;
+            };
+            return this;
+        }
+        public LibBuilder setSrcDirIniter(IDirIniter aSrcDirIniter) {this.aSrcDirIniter = aSrcDirIniter; return this;}
+        public LibBuilder setBuildDirIniter(IDirIniter aBuildDirIniter) {this.aBuildDirIniter = aBuildDirIniter; return this;}
+        public LibBuilder setCmakeInitDir(String aCmakeInitDir) {this.aCmakeInitDir = aCmakeInitDir; return this;}
+        public LibBuilder setCmakeCCompiler(@Nullable String aCmakeCCompiler) {this.aCmakeCCompiler = aCmakeCCompiler; return this;}
+        public LibBuilder setCmakeCxxCompiler(@Nullable String aCmakeCxxCompiler) {this.aCmakeCxxCompiler = aCmakeCxxCompiler; return this;}
+        public LibBuilder setCmakeCFlags(@Nullable String aCmakeCFlags) {this.aCmakeCFlags = aCmakeCFlags; return this;}
+        public LibBuilder setCmakeCxxFlags(@Nullable String aCmakeCxxFlags) {this.aCmakeCxxFlags = aCmakeCxxFlags; return this;}
+        public LibBuilder setUseMiMalloc(@Nullable Boolean aUseMiMalloc) {this.aUseMiMalloc = aUseMiMalloc; return this;}
+        public LibBuilder setRebuild(boolean aRebuild) {this.aRebuild = aRebuild; return this;}
+        public LibBuilder setRedirectLibPath(@Nullable String aRedirectLibPath) {this.aRedirectLibPath = aRedirectLibPath; return this;}
+        public LibBuilder setCmakeLineOpt(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {this.aCmakeLineOpt = aCmakeLineOpt; return this;}
+        
+        @Override public String get() {
+            // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
+            if (aUseMiMalloc!=null && aUseMiMalloc) MiMalloc.InitHelper.init();
+            String tLibPath;
+            if (aRedirectLibPath == null) {
+                @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
+                // 如果不存在 jni lib 则需要重新通过源码编译
+                if (aRebuild || tLibName == null) {
+                    System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries not found. Reinstalling...");
+                    try {
+                        tLibName = initLib_(aProjectName, aInfoProjectName, aSrcDirIniter, aBuildDirIniter, aLibDir,
+                                            aCmakeInitDir, aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags,
+                                            aUseMiMalloc, aCmakeSettings, aCmakeLineOpt);
+                    } catch (Exception e) {throw new RuntimeException(e);}
+                }
+                tLibPath = aLibDir + tLibName;
+            } else {
+                if (DEBUG) System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries are redirected to '" + aRedirectLibPath + "'");
+                tLibPath = aRedirectLibPath;
+            }
+            return tLibPath;
+        }
     }
     
     private static String cmakeInitCmd_(String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags) {
@@ -141,11 +161,13 @@ public class JNIUtil {
         rCommand.add(aCmakeInitDir);
         return String.join(" ", rCommand);
     }
-    private static String cmakeSettingCmd_(String aLibDir, boolean aUseMiMalloc, Map<String, String> aCmakeSettings) throws IOException {
+    private static String cmakeSettingCmd_(String aLibDir, @Nullable Boolean aUseMiMalloc, Map<String, String> aCmakeSettings) throws IOException {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
         rCommand.add("cmake");
+        if (aUseMiMalloc != null) {
         rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(aUseMiMalloc?"ON":"OFF"));
+        }
         // 设置构建输出目录为 lib
         UT.IO.makeDir(aLibDir); // 初始化一下这个目录避免意料外的问题
         rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
@@ -165,7 +187,7 @@ public class JNIUtil {
     @FunctionalInterface public interface IDirIniter {String init(String aInput) throws Exception;}
     private static @NotNull String initLib_(String aProjectName, String aInfoProjectName, IDirIniter aSrcDirIniter, IDirIniter aBuildDirIniter, String aLibDir,
                                             String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags,
-                                            final boolean aUseMiMalloc, Map<String, String> aCmakeSettings,
+                                            final @Nullable Boolean aUseMiMalloc, Map<String, String> aCmakeSettings,
                                             final @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) throws Exception {
         // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
         EXEC.setNoSTDOutput().setNoERROutput();
@@ -180,18 +202,21 @@ public class JNIUtil {
         // 对于较大的项目则会是一个 zip 的源码，多一个解压的步骤
         String tSrcDir = aSrcDirIniter.init(tWorkingDir);
         // 这里对 CMakeLists.txt 特殊处理
-        UT.IO.map(tSrcDir+"CMakeLists.txt", tSrcDir+"CMakeLists1.txt", line -> {
-            // 替换其中的 jniutil 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            // 替换其中的 mimalloc 库路径为设置好的路径
-            if (aUseMiMalloc) {
-            line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                       .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            }
-            return aCmakeLineOpt==null ? line : aCmakeLineOpt.apply(line);
-        });
-        // 覆盖旧的 CMakeLists.txt
-        UT.IO.move(tSrcDir+"CMakeLists1.txt", tSrcDir+"CMakeLists.txt");
+        if (aCmakeLineOpt != null) {
+            String tCmakeListsDir = UT.IO.toInternalValidDir(aCmakeInitDir).substring(3); // 为了让讨论简单，这里约定要求 aCmakeInitDir 一定要 `..` 开头
+            UT.IO.map(tSrcDir+tCmakeListsDir+"CMakeLists.txt", tSrcDir+tCmakeListsDir+"CMakeLists1.txt", line -> {
+                // 替换其中的 jniutil 库路径为设置好的路径
+                line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                // 替换其中的 mimalloc 库路径为设置好的路径
+                if (aUseMiMalloc!=null && aUseMiMalloc) {
+                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
+                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                }
+                return aCmakeLineOpt.apply(line);
+            });
+            // 覆盖旧的 CMakeLists.txt
+            UT.IO.move(tSrcDir+tCmakeListsDir+"CMakeLists1.txt", tSrcDir+tCmakeListsDir+"CMakeLists.txt");
+        }
         // 开始通过 cmake 编译
         System.out.println(aInfoProjectName+" INIT INFO: Building "+aProjectName+" from source code...");
         String tBuildDir = aBuildDirIniter.init(tSrcDir);
@@ -210,7 +235,7 @@ public class JNIUtil {
         // 完事后移除临时解压得到的源码
         UT.IO.removeDir(tWorkingDir);
         System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" successfully installed.");
-        System.out.println(aInfoProjectName+" DIR: " + aLibDir);
+        System.out.println(aInfoProjectName+" LIB DIR: " + aLibDir);
         // 输出安装完成后的库名称
         return tLibName;
     }

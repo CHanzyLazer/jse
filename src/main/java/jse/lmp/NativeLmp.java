@@ -22,7 +22,6 @@ import jse.math.vector.Vector;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
-import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -202,14 +201,14 @@ public class NativeLmp implements IAutoShutdown {
         NATIVELMP_LIB_DIR = NATIVELMP_HOME+"lib/";
         
         // 这样来统一增加 nativelmp 需要的默认额外设置，
-        // 先添加额外设置，从而可以通过 Conf.CMAKE_SETTING 来覆盖这些设置
-        Map<String, String> rCmakeSettingNativeLmp = Maps.of(
-            "BUILD_SHARED_LIBS",      "ON",
-            "LAMMPS_EXCEPTIONS:BOOL", "ON",
-            "CMAKE_BUILD_TYPE",       "Release");
-        rCmakeSettingNativeLmp.putAll(Conf.CMAKE_SETTING);
+        // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
+        Map<String, String> rCmakeSettingNativeLmp = new LinkedHashMap<>(Conf.CMAKE_SETTING);
+        rCmakeSettingNativeLmp.put("BUILD_SHARED_LIBS",      "ON");
+        rCmakeSettingNativeLmp.put("LAMMPS_EXCEPTIONS:BOOL", "ON");
+        rCmakeSettingNativeLmp.put("CMAKE_BUILD_TYPE",       "Release");
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        NATIVELMP_LIB_PATH = JNIUtil.buildLib("lammps", "NATIVE_LMP", wd -> {
+        NATIVELMP_LIB_PATH = new JNIUtil.LibBuilder("lammps", "NATIVE_LMP", NATIVELMP_LIB_DIR, rCmakeSettingNativeLmp)
+            .setSrcDirIniter(wd -> {
                 // 如果有 NATIVELMP_SRC_DIR 但是不合法，则需要下载 lammps
                 if (NATIVELMP_SRC_DIR!=null && !UT.IO.isDir(NATIVELMP_SRC_DIR)) {
                     String tNativeLmpZipPath = wd+"lammps-"+NATIVELMP_TAG+".zip";
@@ -237,14 +236,16 @@ public class NativeLmp implements IAutoShutdown {
                         UT.IO.copyDir(tNativeLmpTempSrcDir2, NATIVELMP_SRC_DIR);
                     }
                 }
-                return NATIVELMP_SRC_DIR;
-            }, sd -> {
+                return NATIVELMP_SRC_DIR;})
+            .setBuildDirIniter(sd -> {
                 // 这样重写 build 目录的初始化，保证 build 目录一定是 NATIVELMP_HOME
                 UT.IO.makeDir(NATIVELMP_HOME);
-                return NATIVELMP_HOME;
-            }, NATIVELMP_LIB_DIR,
-            "../cmake", Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
-            false, Conf.REBUILD, rCmakeSettingNativeLmp, Conf.REDIRECT_LMP_LIB, null);
+                return NATIVELMP_HOME;})
+            .setCmakeInitDir("../cmake")
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setRebuild(Conf.REBUILD).setRedirectLibPath(Conf.REDIRECT_LMP_LIB)
+            .setCmakeLineOpt(null)
+            .get();
         if (Conf.REDIRECT_LMP_LIB == null) {
             @Nullable String tNativeLmpLLibName = LLIB_NAME_IN(NATIVELMP_LIB_DIR, "lammps");
             NATIVELMP_LLIB_PATH = tNativeLmpLLibName==null ? NATIVELMP_LIB_PATH : (NATIVELMP_LIB_DIR+tNativeLmpLLibName);
@@ -256,21 +257,22 @@ public class NativeLmp implements IAutoShutdown {
         // 在这里初始化保证顺序合理
         LMPJNI_LIB_DIR = LMP_ROOT + UT.Code.uniqueID(VERSION, NATIVELMP_HOME, Conf.USE_MIMALLOC, Conf.HAS_EXCEPTIONS, Conf.EXCEPTIONS_NULL_SUPPORT, Conf.CMAKE_C_COMPILER_LMPJNI, Conf.CMAKE_CXX_COMPILER_LMPJNI, Conf.CMAKE_C_FLAGS_LMPJNI, Conf.CMAKE_CXX_FLAGS_LMPJNI, Conf.CMAKE_SETTING_LMPJNI) + "/";
         // 这样来统一增加 lmpjni 需要的默认额外设置，
-        // 先添加额外设置，从而可以通过 Conf.CMAKE_SETTING_LMPJNI 来覆盖这些设置
-        Map<String, String> rCmakeSettingLmpJNI = Maps.of(
-            "JSE_LAMMPS_IS_OLD",                  (Conf.IS_OLD                 ?"ON":"OFF"),
-            "JSE_LAMMPS_HAS_EXCEPTIONS",          (Conf.HAS_EXCEPTIONS         ?"ON":"OFF"),
-            "JSE_LAMMPS_EXCEPTIONS_NULL_SUPPORT", (Conf.EXCEPTIONS_NULL_SUPPORT?"ON":"OFF"));
-        rCmakeSettingLmpJNI.putAll(Conf.CMAKE_SETTING_LMPJNI);
+        // 先添加 Conf.CMAKE_SETTING_LMPJNI，这样保证确定的优先级
+        Map<String, String> rCmakeSettingLmpJNI = new LinkedHashMap<>(Conf.CMAKE_SETTING_LMPJNI);
+        rCmakeSettingLmpJNI.put("JSE_LAMMPS_IS_OLD",                  (Conf.IS_OLD                 ?"ON":"OFF"));
+        rCmakeSettingLmpJNI.put("JSE_LAMMPS_HAS_EXCEPTIONS",          (Conf.HAS_EXCEPTIONS         ?"ON":"OFF"));
+        rCmakeSettingLmpJNI.put("JSE_LAMMPS_EXCEPTIONS_NULL_SUPPORT", (Conf.EXCEPTIONS_NULL_SUPPORT?"ON":"OFF"));
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        LMPJNI_LIB_PATH = JNIUtil.buildLib("lmpjni", "lmp", "NATIVE_LMP", LMPJNI_SRC_NAME, LMPJNI_LIB_DIR,
-                                           Conf.CMAKE_C_COMPILER_LMPJNI, Conf.CMAKE_CXX_COMPILER_LMPJNI, Conf.CMAKE_C_FLAGS_LMPJNI, Conf.CMAKE_CXX_FLAGS_LMPJNI,
-                                           Conf.USE_MIMALLOC, false, rCmakeSettingLmpJNI, Conf.REDIRECT_LMPJNI_LIB, line -> {
-            // 替换其中的 lammps 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                       .replace("$ENV{JSE_LMP_LIB_PATH}"   , NATIVELMP_LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            return line;
-        });
+        LMPJNI_LIB_PATH = new JNIUtil.LibBuilder("lmpjni", "LMP_JNI", LMPJNI_LIB_DIR, rCmakeSettingLmpJNI)
+            .setSrc("lmp", LMPJNI_SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER_LMPJNI).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER_LMPJNI).setCmakeCFlags(Conf.CMAKE_C_FLAGS_LMPJNI).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS_LMPJNI)
+            .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_LMPJNI_LIB)
+            .setCmakeLineOpt(line -> {
+                // 替换其中的 lammps 库路径为设置好的路径
+                line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
+                           .replace("$ENV{JSE_LMP_LIB_PATH}"   , NATIVELMP_LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                return line;
+            }).get();
         
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(NATIVELMP_LIB_PATH));

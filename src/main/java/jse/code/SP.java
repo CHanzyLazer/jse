@@ -764,28 +764,29 @@ public class SP {
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
             // 现在直接使用 JNIUtil.buildLib 来统一初始化
-            JEP_LIB_PATH = JNIUtil.buildLib("jep", "JEP", wd -> {
-                                                // 首先获取源码路径，这里直接从 resource 里输出
-                                                String tJepZipPath = wd+"jep-"+JEP_VERSION+".zip";
-                                                UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
-                                                // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
-                                                String tJepDir = wd+"jep/";
-                                                UT.IO.removeDir(tJepDir);
-                                                UT.IO.zip2dir(tJepZipPath, tJepDir);
-                                                // 拷贝 python 脚本，现在直接在这里拷贝即可
-                                                String tJepPyDir = tJepDir+"src/main/python/jep/";
-                                                String tJepLibPyDir = JEP_LIB_DIR+"jep/";
-                                                UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
-                                                try {
-                                                    UT.IO.move(tJepPyDir, tJepLibPyDir);
-                                                } catch (Exception e) {
-                                                    // 移动失败则尝试直接拷贝整个目录
-                                                    UT.IO.copyDir(tJepPyDir, tJepLibPyDir);
-                                                }
-                                                return tJepDir;
-                                            }, JEP_LIB_DIR,
-                                            Conf.CMAKE_C_COMPILER, null, Conf.CMAKE_C_FLAGS, null,
-                                            Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_JEP_LIB, null);
+            JEP_LIB_PATH = new JNIUtil.LibBuilder("jep", "JEP", JEP_LIB_DIR, Conf.CMAKE_SETTING)
+                .setSrcDirIniter(wd -> {
+                    // 首先获取源码路径，这里直接从 resource 里输出
+                    String tJepZipPath = wd+"jep-"+JEP_VERSION+".zip";
+                    UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
+                    // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
+                    String tJepDir = wd+"jep/";
+                    UT.IO.removeDir(tJepDir);
+                    UT.IO.zip2dir(tJepZipPath, tJepDir);
+                    // 拷贝 python 脚本，现在直接在这里拷贝即可
+                    String tJepPyDir = tJepDir+"src/main/python/jep/";
+                    String tJepLibPyDir = JEP_LIB_DIR+"jep/";
+                    UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
+                    try {
+                        UT.IO.move(tJepPyDir, tJepLibPyDir);
+                    } catch (Exception e) {
+                        // 移动失败则尝试直接拷贝整个目录
+                        UT.IO.copyDir(tJepPyDir, tJepLibPyDir);
+                    }
+                    return tJepDir;})
+                .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
+                .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_JEP_LIB)
+                .get();
             // 设置库路径
             jep.MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(JEP_LIB_PATH));
             
