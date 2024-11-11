@@ -40,7 +40,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.IO;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -580,7 +579,7 @@ public class SP {
              * 自定义构建 jep 的 cmake 参数设置，
              * 会在构建时使用 -D ${key}=${value} 传入
              */
-            public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+            public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
             
             /**
              * 自定义构建 jep 时使用的编译器，
@@ -764,22 +763,29 @@ public class SP {
             
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
-            // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-            if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
-            
-            if (Conf.REDIRECT_JEP_LIB == null) {
-                // 设置 Jep 非 java 库的路径，考虑到 WSL，windows 和 linux 使用不同的名称
-                @Nullable String tLibName = LIB_NAME_IN(JEP_LIB_DIR, "jep");
-                // 如果不存在则需要重新通过源码编译
-                if (tLibName == null) {
-                    System.out.println("JEP INIT INFO: jep libraries not found. Reinstalling...");
-                    try {tLibName = installJep_();} catch (Exception e) {throw new RuntimeException(e);}
-                }
-                JEP_LIB_PATH = JEP_LIB_DIR+tLibName;
-            } else {
-                if (DEBUG) System.out.println("JEP INIT INFO: jep libraries are redirected to '"+Conf.REDIRECT_JEP_LIB+"'");
-                JEP_LIB_PATH = Conf.REDIRECT_JEP_LIB;
-            }
+            // 现在直接使用 JNIUtil.buildLib 来统一初始化
+            JEP_LIB_PATH = JNIUtil.buildLib("jep", "JEP", wd -> {
+                                                // 首先获取源码路径，这里直接从 resource 里输出
+                                                String tJepZipPath = wd+"jep-"+JEP_VERSION+".zip";
+                                                UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
+                                                // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
+                                                String tJepDir = wd+"jep/";
+                                                UT.IO.removeDir(tJepDir);
+                                                UT.IO.zip2dir(tJepZipPath, tJepDir);
+                                                // 拷贝 python 脚本，现在直接在这里拷贝即可
+                                                String tJepPyDir = tJepDir+"src/main/python/jep/";
+                                                String tJepLibPyDir = JEP_LIB_DIR+"jep/";
+                                                UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
+                                                try {
+                                                    UT.IO.move(tJepPyDir, tJepLibPyDir);
+                                                } catch (Exception e) {
+                                                    // 移动失败则尝试直接拷贝整个目录
+                                                    UT.IO.copyDir(tJepPyDir, tJepLibPyDir);
+                                                }
+                                                return tJepDir;
+                                            }, JEP_LIB_DIR,
+                                            Conf.CMAKE_C_COMPILER, null, Conf.CMAKE_C_FLAGS, null,
+                                            Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_JEP_LIB, null);
             // 设置库路径
             jep.MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(JEP_LIB_PATH));
             
@@ -896,102 +902,6 @@ public class SP {
         }
         public static void installPackage(String aRequirement, boolean aIncludeDep) throws IOException {installPackage(aRequirement, aIncludeDep, false);}
         public static void installPackage(String aRequirement) throws IOException {installPackage(aRequirement, false);}
-        
-        
-        private static String cmakeInitCmdJep_() {
-            // 设置参数，这里使用 List 来构造这个长指令
-            List<String> rCommand = new ArrayList<>();
-            rCommand.add("cmake");
-            // 这里设置 C 编译器（如果有）
-            if (Conf.CMAKE_C_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="+Conf.CMAKE_C_COMPILER  );}
-            if (Conf.CMAKE_C_FLAGS    != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='" +Conf.CMAKE_C_FLAGS+"'");}
-            // 初始化使用上一个目录的 CMakeList.txt
-            rCommand.add("..");
-            return String.join(" ", rCommand);
-        }
-        private static String cmakeSettingCmdJep_() throws IOException {
-            // 设置参数，这里使用 List 来构造这个长指令
-            List<String> rCommand = new ArrayList<>();
-            rCommand.add("cmake");
-            rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(Conf.USE_MIMALLOC?"ON":"OFF"));
-            // 设置构建输出目录为 lib
-            UT.IO.makeDir(JEP_LIB_DIR); // 初始化一下这个目录避免意料外的问题
-            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ JEP_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ JEP_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ JEP_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ JEP_LIB_DIR +"'");
-            // 添加额外的设置参数
-            for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-            rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-            }
-            rCommand.add(".");
-            return String.join(" ", rCommand);
-        }
-        
-        /** 内部使用的安装 jep 的操作，和一般的库不同，jep 由于不能离线使用 pip 安装，这里直接使用源码编译 */
-        private static @NotNull String installJep_() throws Exception {
-            // 检测 cmake，这里要求一定要有 cmake 环境
-            EXEC.setNoSTDOutput().setNoERROutput();
-            boolean tNoCmake = EXEC.system("cmake --version") != 0;
-            EXEC.setNoSTDOutput(false).setNoERROutput(false);
-            if (tNoCmake) throw new Exception("JEP BUILD ERROR: No cmake environment.");
-            String tWorkingDir = WORKING_DIR_OF("jep");
-            // 如果已经存在则先删除
-            UT.IO.removeDir(tWorkingDir);
-            // 首先获取源码路径，这里直接从 resource 里输出
-            String tJepZipPath = tWorkingDir+"jep-"+JEP_VERSION+".zip";
-            UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
-            // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
-            String tJepDir = tWorkingDir+"jep/";
-            UT.IO.removeDir(tJepDir);
-            UT.IO.zip2dir(tJepZipPath, tJepDir);
-            // 这里对 CMakeLists.txt 特殊处理，注意要输出到不同的文件
-            UT.IO.map(tJepDir+"CMakeLists.txt", tJepDir+"CMakeLists1.txt", line -> {
-                // 替换其中的 jniutil 库路径为设置好的路径
-                line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                // 替换其中的 mimalloc 库路径为设置好的路径
-                if (Conf.USE_MIMALLOC) {
-                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                }
-                return line;
-            });
-            // 覆盖旧的 CMakeLists.txt
-            UT.IO.move(tJepDir+"CMakeLists1.txt", tJepDir+"CMakeLists.txt");
-            // 安装 jep 包，这里通过 cmake 来安装
-            System.out.println("JEP INIT INFO: Installing jep from source code...");
-            String tJepBuildDir = tJepDir+"build/";
-            UT.IO.makeDir(tJepBuildDir);
-            // 直接通过系统指令来编译 Jep 的库，关闭输出
-            EXEC.setNoSTDOutput().setWorkingDir(tJepBuildDir);
-            // 初始化 cmake
-            EXEC.system(cmakeInitCmdJep_());
-            // 设置参数
-            EXEC.system(cmakeSettingCmdJep_());
-            // 最后进行构造操作
-            EXEC.system("cmake --build . --config Release");
-            EXEC.setNoSTDOutput(false).setWorkingDir(null);
-            // 简单检测一下是否编译成功
-            @Nullable String tJepLibName = LIB_NAME_IN(JEP_LIB_DIR, "jep");
-            if (tJepLibName == null) throw new Exception("JEP BUILD ERROR: No jep lib in "+JEP_LIB_DIR);
-            // 拷贝 python 脚本
-            String tJepPyDir = tJepDir+"src/main/python/jep/";
-            String tJepLibPyDir = JEP_LIB_DIR+"jep/";
-            UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
-            try {
-                UT.IO.move(tJepPyDir, tJepLibPyDir);
-            } catch (Exception e) {
-                // 移动失败则尝试直接拷贝整个目录
-                UT.IO.copyDir(tJepPyDir, tJepLibPyDir);
-            }
-            // 完事后移除临时解压得到的源码
-            UT.IO.removeDir(tWorkingDir);
-            System.out.println("JEP INIT INFO: jep successfully installed.");
-            // 输出安装完成后的库名称
-            return tJepLibName;
-        }
         
         /** 一些内置的 python 库安装，主要用于内部使用 */
         public static void installAse() throws IOException {

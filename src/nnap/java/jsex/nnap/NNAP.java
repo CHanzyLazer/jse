@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.*;
-import static jse.code.OS.EXEC;
 import static jse.code.OS.JAR_DIR;
 
 /**
@@ -58,7 +56,7 @@ public class NNAP implements IAutoShutdown {
          * 自定义构建 nnap 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
          * 自定义构建 nnap 时使用的编译器，
@@ -86,112 +84,22 @@ public class NNAP implements IAutoShutdown {
         , "jsex_nnap_NNAP.h"
     };
     
-    
-    private static String cmakeInitCmd_() {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 这里设置 C/C++ 编译器（如果有）
-        if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER);}
-        if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
-        if (Conf.CMAKE_C_FLAGS      != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='"    + Conf.CMAKE_C_FLAGS  +"'");}
-        if (Conf.CMAKE_CXX_FLAGS    != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS='"  + Conf.CMAKE_CXX_FLAGS+"'");}
-        // 初始化使用上一个目录的 CMakeList.txt
-        rCommand.add("..");
-        return String.join(" ", rCommand);
-    }
-    private static String cmakeSettingCmd_() throws IOException {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(Conf.USE_MIMALLOC?"ON":"OFF"));
-        // 设置构建输出目录为 lib
-        UT.IO.makeDir(LIB_DIR); // 初始化一下这个目录避免意料外的问题
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        // 添加额外的设置参数
-        for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-        }
-        rCommand.add(".");
-        return String.join(" ", rCommand);
-    }
-    
-    private static @NotNull String initNNAP_() throws Exception {
-        // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-        EXEC.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXEC.system("cmake --version") != 0;
-        EXEC.setNoSTDOutput(false).setNoERROutput(false);
-        if (tNoCmake) throw new Exception("NNAP BUILD ERROR: No cmake environment.");
-        // 从内部资源解压到临时目录
-        String tWorkingDir = WORKING_DIR_OF("nnap");
-        // 如果已经存在则先删除
-        UT.IO.removeDir(tWorkingDir);
-        for (String tName : SRC_NAME) {
-            UT.IO.copy(UT.IO.getResource("nnap/src/"+tName), tWorkingDir+tName);
-        }
-        // 这里对 CMakeLists.txt 特殊处理
-        UT.IO.map(UT.IO.getResource("nnap/src/CMakeLists.txt"), tWorkingDir+"CMakeLists.txt", line -> {
-            // 替换其中的 jniutil 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            // 替换其中的 mimalloc 库路径为设置好的路径
-            if (Conf.USE_MIMALLOC) {
-                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            }
-            // 替换其中的 torch 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_TORCH_CMAKE_DIR}", Torch.CMAKE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            return line;
-        });
-        System.out.println("NNAP INIT INFO: Building nnap from source code...");
-        String tBuildDir = tWorkingDir+"build/";
-        UT.IO.makeDir(tBuildDir);
-        // 直接通过系统指令来编译 nnap 的库，关闭输出
-        EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
-        // 初始化 cmake
-        EXEC.system(cmakeInitCmd_());
-        // 设置参数
-        EXEC.system(cmakeSettingCmd_());
-        // 最后进行构造操作
-        EXEC.system("cmake --build . --config Release");
-        EXEC.setNoSTDOutput(false).setWorkingDir(null);
-        // 简单检测一下是否编译成功
-        @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "nnap");
-        if (tLibName == null) throw new Exception("NNAP BUILD ERROR: Build Failed, No nnap lib in '"+LIB_DIR+"'");
-        // 完事后移除临时解压得到的源码
-        UT.IO.removeDir(tWorkingDir);
-        System.out.println("NNAP INIT INFO: nnap successfully installed.");
-        // 输出安装完成后的库名称
-        return tLibName;
-    }
-    
-    
     static {
         InitHelper.INITIALIZED = true;
         // 依赖 torch
         Torch.InitHelper.init();
         // 依赖 jniutil
         JNIUtil.InitHelper.init();
-        // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-        if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
         // 这里不直接依赖 LmpPlugin
         
-        if (Conf.REDIRECT_NNAP_LIB == null) {
-            @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "nnap");
-            // 如果不存在 jni lib 则需要重新通过源码编译
-            if (tLibName == null) {
-                System.out.println("NNAP INIT INFO: nnap libraries not found. Reinstalling...");
-                try {tLibName = initNNAP_();} catch (Exception e) {throw new RuntimeException(e);}
-            }
-            LIB_PATH = LIB_DIR + tLibName;
-        } else {
-            if (DEBUG) System.out.println("NNAP INIT INFO: nnap libraries are redirected to '" + Conf.REDIRECT_NNAP_LIB + "'");
-            LIB_PATH = Conf.REDIRECT_NNAP_LIB;
-        }
+        // 现在直接使用 JNIUtil.buildLib 来统一初始化
+        LIB_PATH = JNIUtil.buildLib("nnap", "nnap", "NNAP", SRC_NAME, LIB_DIR,
+                                    Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
+                                    Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_NNAP_LIB, line -> {
+            // 替换其中的 torch 库路径为设置好的路径
+            line = line.replace("$ENV{JSE_TORCH_CMAKE_DIR}", Torch.CMAKE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+            return line;
+        });
         // 设置库路径
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
         

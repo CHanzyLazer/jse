@@ -5,18 +5,13 @@ import jse.code.OS;
 import jse.code.SP;
 import jse.code.UT;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.*;
 import static jse.code.OS.*;
 
 /**
@@ -44,7 +39,7 @@ public class LmpPlugin {
          * 自定义构建 lmpplugin 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
          * 自定义构建 lmpplugin 时使用的编译器，
@@ -82,92 +77,6 @@ public class LmpPlugin {
         , "version.h"
     };
     
-    private static String cmakeInitCmd_() {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 这里设置 C/C++ 编译器（如果有）
-        if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER);}
-        if (Conf.CMAKE_CXX_FLAGS    != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS='"  + Conf.CMAKE_CXX_FLAGS +"'");}
-        // 初始化使用上一个目录的 CMakeList.txt
-        rCommand.add("..");
-        return String.join(" ", rCommand);
-    }
-    private static String cmakeSettingCmd_() throws IOException {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 设置构建输出目录为 lib
-        UT.IO.makeDir(LIB_DIR); // 初始化一下这个目录避免意料外的问题
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        // 添加额外的设置参数
-        for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-        }
-        rCommand.add(".");
-        return String.join(" ", rCommand);
-    }
-    
-    private static @NotNull String initLmpPlugin_() throws Exception {
-        // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-        EXEC.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXEC.system("cmake --version") != 0;
-        EXEC.setNoSTDOutput(false).setNoERROutput(false);
-        if (tNoCmake) throw new Exception("LMPPLUGIN BUILD ERROR: No cmake environment.");
-        // 从内部资源解压到临时目录
-        String tWorkingDir = WORKING_DIR_OF("lmpplugin");
-        // 如果已经存在则先删除
-        UT.IO.removeDir(tWorkingDir);
-        for (String tName : SRC_NAME) {
-            UT.IO.copy(UT.IO.getResource("lmpplugin/src/"+tName), tWorkingDir+tName);
-        }
-        // 这里对 CMakeLists.txt 特殊处理
-        UT.IO.map(UT.IO.getResource("lmpplugin/src/CMakeLists.txt"), tWorkingDir+"CMakeLists.txt", line -> {
-            // 替换其中的 jniutil 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            // 替换其中的 lammps 库路径为设置好的路径
-            line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NativeLmp.NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                       .replace("$ENV{JSE_LMP_LIB_PATH}"   , NativeLmp.NATIVELMP_LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            // 替换其中的 mimalloc 库路径为设置好的路径
-            if (Conf.USE_MIMALLOC) {
-            line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                       .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-            }
-            // 替换其中的 jvm 库路径为自动检测到的路径
-            line = line.replace("$ENV{JSE_JVM_LIB_PATH_DEF}", JVM.LIB_PATH.replace("\\", "\\\\\\\\")); // 注意反斜杠的转义问题
-            // 替换 jvm 启动设置
-            line = line.replace("$ENV{JSE_JAR_PATH_DEF}",  JAR_PATH.replace("\\", "\\\\\\\\"))
-                       .replace("$ENV{JSE_JVM_XMX}", Conf.JVM_XMX);
-            return line;
-        });
-        System.out.println("LMPPLUGIN INIT INFO: Building lmpplugin from source code...");
-        String tBuildDir = tWorkingDir+"build/";
-        UT.IO.makeDir(tBuildDir);
-        // 直接通过系统指令来编译 lmpplugin 的库，关闭输出
-        EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
-        // 初始化 cmake
-        EXEC.system(cmakeInitCmd_());
-        // 设置参数
-        EXEC.system(cmakeSettingCmd_());
-        // 最后进行构造操作
-        EXEC.system("cmake --build . --config Release");
-        EXEC.setNoSTDOutput(false).setWorkingDir(null);
-        // 简单检测一下是否编译成功
-        @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "lmpplugin");
-        if (tLibName == null) throw new Exception("LMPPLUGIN BUILD ERROR: Build Failed, No lmpplugin lib in '"+LIB_DIR+"'");
-        // 完事后移除临时解压得到的源码
-        UT.IO.removeDir(tWorkingDir);
-        System.out.println("LMPPLUGIN INIT INFO: lmpplugin successfully installed.");
-        System.out.println("LMPPLUGIN PATH: " + LIB_DIR+tLibName);
-        // 输出安装完成后的库名称
-        return tLibName;
-    }
-    
     static {
         InitHelper.INITIALIZED = true;
         
@@ -175,24 +84,23 @@ public class LmpPlugin {
         JNIUtil.InitHelper.init();
         // 依赖 cpointer
         CPointer.InitHelper.init();
-        // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-        if (NativeLmp.Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
         // 依赖 lmpjni，且需要开启了 PLUGIN 插件
         NativeLmp.Conf.CMAKE_SETTING.put("PKG_PLUGIN", "ON");
         NativeLmp.InitHelper.init();
-        
-        if (Conf.REDIRECT_LMPPLUGIN_LIB == null) {
-            @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "lmpplugin");
-            // 如果不存在 jni lib 则需要重新通过源码编译
-            if (tLibName == null) {
-                System.out.println("LMPPLUGIN INIT INFO: lmpplugin libraries not found. Reinstalling...");
-                try {tLibName = initLmpPlugin_();} catch (Exception e) {throw new RuntimeException(e);}
-            }
-            LIB_PATH = LIB_DIR + tLibName;
-        } else {
-            if (DEBUG) System.out.println("LMPPLUGIN INIT INFO: lmpplugin libraries are redirected to '" + Conf.REDIRECT_LMPPLUGIN_LIB + "'");
-            LIB_PATH = Conf.REDIRECT_LMPPLUGIN_LIB;
-        }
+        // 现在直接使用 JNIUtil.buildLib 来统一初始化
+        LIB_PATH = JNIUtil.buildLib("lmpplugin", "lmpplugin", "LMPPLUGIN", SRC_NAME, LIB_DIR,
+                                    null, Conf.CMAKE_CXX_COMPILER, null, Conf.CMAKE_CXX_FLAGS,
+                                    Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_LMPPLUGIN_LIB, line -> {
+            // 替换其中的 lammps 库路径为设置好的路径
+            line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NativeLmp.NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
+                       .replace("$ENV{JSE_LMP_LIB_PATH}"   , NativeLmp.NATIVELMP_LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
+            // 替换其中的 jvm 库路径为自动检测到的路径
+            line = line.replace("$ENV{JSE_JVM_LIB_PATH_DEF}", JVM.LIB_PATH.replace("\\", "\\\\\\\\")); // 注意反斜杠的转义问题
+            // 替换 jvm 启动设置
+            line = line.replace("$ENV{JSE_JAR_PATH_DEF}",  JAR_PATH.replace("\\", "\\\\\\\\"))  // 注意反斜杠的转义问题
+                       .replace("$ENV{JSE_JVM_XMX}", Conf.JVM_XMX);
+            return line;
+        });
         // 设置库路径，这里直接使用 System.load
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
     }

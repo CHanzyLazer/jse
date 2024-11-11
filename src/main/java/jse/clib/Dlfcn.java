@@ -2,18 +2,12 @@ package jse.clib;
 
 import jse.code.OS;
 import jse.code.UT;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION;
-import static jse.code.Conf.*;
-import static jse.code.OS.EXEC;
 import static jse.code.OS.JAR_DIR;
 
 /**
@@ -42,7 +36,7 @@ public class Dlfcn {
          * 自定义构建 dlfcnjni 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
          * 自定义构建 dlfcnjni 时使用的编译器，
@@ -62,89 +56,11 @@ public class Dlfcn {
         , "jse_clib_Dlfcn.h"
     };
     
-    private static String cmakeInitCmd_() {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 这里设置 C/C++ 编译器（如果有）
-        if (Conf.CMAKE_C_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="+ Conf.CMAKE_C_COMPILER);}
-        if (Conf.CMAKE_C_FLAGS    != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='"  + Conf.CMAKE_C_FLAGS +"'");}
-        // 初始化使用上一个目录的 CMakeList.txt
-        rCommand.add("..");
-        return String.join(" ", rCommand);
-    }
-    private static String cmakeSettingCmd_() throws IOException {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 设置构建输出目录为 lib
-        UT.IO.makeDir(LIB_DIR); // 初始化一下这个目录避免意料外的问题
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ LIB_DIR +"'");
-        // 添加额外的设置参数
-        for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-        }
-        rCommand.add(".");
-        return String.join(" ", rCommand);
-    }
-    
-    private static @NotNull String initDlfcn_() throws Exception {
-        // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-        EXEC.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXEC.system("cmake --version") != 0;
-        EXEC.setNoSTDOutput(false).setNoERROutput(false);
-        if (tNoCmake) throw new Exception("DLFCN BUILD ERROR: No cmake environment.");
-        // 从内部资源解压到临时目录
-        String tWorkingDir = WORKING_DIR_OF("dlfcnjni");
-        // 如果已经存在则先删除
-        UT.IO.removeDir(tWorkingDir);
-        for (String tName : SRC_NAME) {
-            UT.IO.copy(UT.IO.getResource("dlfcn/src/"+tName), tWorkingDir+tName);
-        }
-        // 这里可以直接拷贝 CMakeLists.txt
-        UT.IO.copy(UT.IO.getResource("dlfcn/src/CMakeLists.txt"), tWorkingDir+"CMakeLists.txt");
-        System.out.println("DLFCN INIT INFO: Building dlfcnjni from source code...");
-        String tBuildDir = tWorkingDir+"build/";
-        UT.IO.makeDir(tBuildDir);
-        // 直接通过系统指令来编译 dlfcn 的库，关闭输出
-        EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
-        // 初始化 cmake
-        EXEC.system(cmakeInitCmd_());
-        // 设置参数
-        EXEC.system(cmakeSettingCmd_());
-        // 最后进行构造操作
-        EXEC.system("cmake --build . --config Release");
-        EXEC.setNoSTDOutput(false).setWorkingDir(null);
-        // 简单检测一下是否编译成功
-        @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "dlfcnjni");
-        if (tLibName == null) throw new Exception("DLFCN BUILD ERROR: Build Failed, No dlfcnjni lib in '"+LIB_DIR+"'");
-        // 完事后移除临时解压得到的源码
-        UT.IO.removeDir(tWorkingDir);
-        System.out.println("DLFCN INIT INFO: dlfcnjni successfully installed.");
-        // 输出安装完成后的库名称
-        return tLibName;
-    }
-    
     static {
         InitHelper.INITIALIZED = true;
-        
-        if (Conf.REDIRECT_DLFCN_LIB == null) {
-            @Nullable String tLibName = LIB_NAME_IN(LIB_DIR, "dlfcnjni");
-            // 如果不存在 jni lib 则需要重新通过源码编译
-            if (tLibName == null) {
-                System.out.println("DLFCN INIT INFO: dlfcnjni libraries not found. Reinstalling...");
-                try {tLibName = initDlfcn_();} catch (Exception e) {throw new RuntimeException(e);}
-            }
-            LIB_PATH = LIB_DIR + tLibName;
-        } else {
-            if (DEBUG) System.out.println("DLFCN INIT INFO: dlfcnjni libraries are redirected to '" + Conf.REDIRECT_DLFCN_LIB + "'");
-            LIB_PATH = Conf.REDIRECT_DLFCN_LIB;
-        }
+        LIB_PATH = JNIUtil.buildLib("dlfcnjni", "dlfcn", "DLFCN", SRC_NAME, LIB_DIR,
+                                    Conf.CMAKE_C_COMPILER, null, Conf.CMAKE_C_FLAGS, null,
+                                    false, false, Conf.CMAKE_SETTING, Conf.REDIRECT_DLFCN_LIB, null);
         // 设置库路径，这里直接使用 System.load
         System.load(UT.IO.toAbsolutePath(LIB_PATH));
     }

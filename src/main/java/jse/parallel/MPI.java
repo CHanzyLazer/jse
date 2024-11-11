@@ -9,20 +9,15 @@ import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.clib.JNIUtil.*;
 import static jse.code.OS.*;
 import static jse.code.CS.VERSION;
 import static jse.code.CS.ZL_STR;
-import static jse.code.Conf.*;
 
 /**
  * 基于 jni 实现的 MPI wrapper, 介绍部分基于
@@ -84,7 +79,7 @@ public class MPI {
          * 自定义构建 mpijni 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new HashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
          * 自定义构建 mpijni 时使用的编译器，
@@ -1264,86 +1259,6 @@ public class MPI {
             , "jse_parallel_MPI_Native.h"
         };
         
-        private static String cmakeInitCmd_() {
-            // 设置参数，这里使用 List 来构造这个长指令
-            List<String> rCommand = new ArrayList<>();
-            rCommand.add("cmake");
-            // 这里设置 C/C++ 编译器（如果有）
-            if (Conf.CMAKE_C_COMPILER   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + Conf.CMAKE_C_COMPILER   );}
-            if (Conf.CMAKE_CXX_COMPILER != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ Conf.CMAKE_CXX_COMPILER );}
-            if (Conf.CMAKE_C_FLAGS      != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='"    + Conf.CMAKE_C_FLAGS  +"'");}
-            if (Conf.CMAKE_CXX_FLAGS    != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS='"  + Conf.CMAKE_CXX_FLAGS+"'");}
-            // 初始化使用上一个目录的 CMakeList.txt
-            rCommand.add("..");
-            return String.join(" ", rCommand);
-        }
-        private static String cmakeSettingCmd_() throws IOException {
-            // 设置参数，这里使用 List 来构造这个长指令
-            List<String> rCommand = new ArrayList<>();
-            rCommand.add("cmake");
-            rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(Conf.USE_MIMALLOC?"ON":"OFF"));
-            // 设置构建输出目录为 lib
-            UT.IO.makeDir(MPIJNI_LIB_DIR); // 初始化一下这个目录避免意料外的问题
-            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ MPIJNI_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ MPIJNI_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ MPIJNI_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
-            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ MPIJNI_LIB_DIR +"'");
-            // 添加额外的设置参数
-            for (Map.Entry<String, String> tEntry : Conf.CMAKE_SETTING.entrySet()) {
-            rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-            }
-            rCommand.add(".");
-            return String.join(" ", rCommand);
-        }
-        
-        private static @NotNull String initMPI_() throws Exception {
-            // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-            EXEC.setNoSTDOutput().setNoERROutput();
-            boolean tNoCmake = EXEC.system("cmake --version") != 0;
-            EXEC.setNoSTDOutput(false).setNoERROutput(false);
-            if (tNoCmake) throw new Exception("MPI BUILD ERROR: No cmake environment.");
-            // 从内部资源解压到临时目录
-            String tWorkingDir = WORKING_DIR_OF("mpijni");
-            // 如果已经存在则先删除
-            UT.IO.removeDir(tWorkingDir);
-            for (String tName : MPIJNI_SRC_NAME) {
-                UT.IO.copy(UT.IO.getResource("mpi/src/"+tName), tWorkingDir+tName);
-            }
-            // 这里对 CMakeLists.txt 特殊处理
-            UT.IO.map(UT.IO.getResource("mpi/src/CMakeLists.txt"), tWorkingDir+"CMakeLists.txt", line -> {
-                // 替换其中的 jniutil 库路径为设置好的路径
-                line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                // 替换其中的 mimalloc 库路径为设置好的路径
-                if (Conf.USE_MIMALLOC) {
-                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                }
-                return line;
-            });
-            System.out.println("MPI INIT INFO: Building mpijni from source code...");
-            String tBuildDir = tWorkingDir+"build/";
-            UT.IO.makeDir(tBuildDir);
-            // 直接通过系统指令来编译 mpijni 的库，关闭输出
-            EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
-            // 初始化 cmake
-            EXEC.system(cmakeInitCmd_());
-            // 设置参数
-            EXEC.system(cmakeSettingCmd_());
-            // 最后进行构造操作
-            EXEC.system("cmake --build . --config Release");
-            EXEC.setNoSTDOutput(false).setWorkingDir(null);
-            // 简单检测一下是否编译成功
-            @Nullable String tLibName = LIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
-            if (tLibName == null) throw new Exception("MPI BUILD ERROR: Build Failed, No mpijni lib in '"+MPIJNI_LIB_DIR+"'");
-            // 完事后移除临时解压得到的源码
-            UT.IO.removeDir(tWorkingDir);
-            System.out.println("MPI INIT INFO: mpijni successfully installed.");
-            // 输出安装完成后的库名称
-            return tLibName;
-        }
-        
         // 直接进行初始化，虽然原则上会在 MPI_Init() 之前获取，
         // 但是得到的是 final 值，可以避免意外的修改，并且简化代码；
         // 这对于一般的 MPI 实现应该都是没有问题的
@@ -1351,21 +1266,10 @@ public class MPI {
             InitHelper.INITIALIZED = true;
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
-            // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-            if (Conf.USE_MIMALLOC) MiMalloc.InitHelper.init();
-            
-            if (Conf.REDIRECT_MPIJNI_LIB == null) {
-                @Nullable String tLibName = LIB_NAME_IN(MPIJNI_LIB_DIR, "mpijni");
-                // 如果不存在 jni lib 则需要重新通过源码编译
-                if (tLibName == null) {
-                    System.out.println("MPI INIT INFO: mpijni libraries not found. Reinstalling...");
-                    try {tLibName = initMPI_();} catch (Exception e) {throw new RuntimeException(e);}
-                }
-                MPIJNI_LIB_PATH = MPIJNI_LIB_DIR+tLibName;
-            } else {
-                if (DEBUG) System.out.println("MPI INIT INFO: mpijni libraries are redirected to '"+Conf.REDIRECT_MPIJNI_LIB+"'");
-                MPIJNI_LIB_PATH = Conf.REDIRECT_MPIJNI_LIB;
-            }
+            // 现在直接使用 JNIUtil.buildLib 来统一初始化
+            MPIJNI_LIB_PATH = JNIUtil.buildLib("mpijni", "mpi", "MPI", MPIJNI_SRC_NAME, MPIJNI_LIB_DIR,
+                                               Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS,
+                                               Conf.USE_MIMALLOC, false, Conf.CMAKE_SETTING, Conf.REDIRECT_MPIJNI_LIB, null);
             // 设置库路径
             System.load(UT.IO.toAbsolutePath(MPIJNI_LIB_PATH));
             
