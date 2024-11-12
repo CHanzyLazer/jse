@@ -22,9 +22,10 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import static jse.code.Conf.UNICODE_SUPPORT;
-import static jse.code.OS.JAR_PATH;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.WORKING_DIR_OF;
+import static jse.code.OS.*;
+import static jse.code.SP.JAR_LIB_DIR;
 
 /**
  * @author liqa
@@ -83,6 +84,94 @@ public class Main {
             }
             case "-?": case "-help": {
                 printHelp();
+                return;
+            }
+            case "-idea": {
+                // 先是项目文件
+                String tDirName = UT.IO.toFileName(WORKING_DIR);
+                UT.IO.write(tDirName+".iml",
+                            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                            "<module type=\"JAVA_MODULE\" version=\"4\">",
+                            "  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">",
+                            "    <exclude-output />",
+                            "    <content url=\"file://$MODULE_DIR$\">",
+                            "      <sourceFolder url=\"file://$MODULE_DIR$\" isTestSource=\"false\" />",
+                            "      <sourceFolder url=\"file://$MODULE_DIR$/script/groovy\" isTestSource=\"false\" />",
+                            "      <excludeFolder url=\"file://$MODULE_DIR$/.temp\" />",
+                            "      <excludeFolder url=\"file://$MODULE_DIR$/script\" />",
+                            "    </content>",
+                            "    <orderEntry type=\"inheritedJdk\" />",
+                            "    <orderEntry type=\"sourceFolder\" forTests=\"false\" />",
+                            "    <orderEntry type=\"library\" name=\"jse-all\" level=\"project\" />",
+                            "    <orderEntry type=\"library\" name=\"jars\" level=\"project\" />",
+                            "  </component>",
+                            "</module>");
+                // 然后是运行配置
+                UT.IO.write(".run/jse-RunCurrentScript.run.xml",
+                            "<component name=\"ProjectRunConfigurationManager\">",
+                            "  <configuration default=\"false\" name=\"jse-RunCurrentScript\" type=\"JarApplication\" singleton=\"false\">",
+                            "    <option name=\"JAR_PATH\" value=\""+JAR_PATH+"\" />",
+                            "    <option name=\"PROGRAM_PARAMETERS\" value=\"IDEA -f $FileRelativePath$\" />",
+                            "    <option name=\"WORKING_DIRECTORY\" value=\"$ProjectFileDir$\" />",
+                            "    <option name=\"ALTERNATIVE_JRE_PATH\" />",
+                            "    <method v=\"2\" />",
+                            "  </configuration>",
+                            "</component>");
+                // 最后是 idea 配置
+                UT.IO.write(".idea/modules.xml",
+                            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                            "<project version=\"4\">",
+                            "  <component name=\"ProjectModuleManager\">",
+                            "    <modules>",
+                            "      <module fileurl=\"file://$PROJECT_DIR$/"+tDirName+".iml\" filepath=\"$PROJECT_DIR$/"+tDirName+".iml\" />",
+                            "    </modules>",
+                            "  </component>",
+                            "</project>");
+                String tSrcLines = "    <SOURCES />";
+                @Nullable String tJseRootDir = UT.IO.toParentPath(JAR_DIR);
+                if (tJseRootDir != null) {
+                    tJseRootDir = UT.IO.toInternalValidDir(tJseRootDir);
+                    String tSrcDir = tJseRootDir+"src/";
+                    String tJseSrcPath = null;
+                    String tGroovySrcPath = null;
+                    if (UT.IO.isDir(tSrcDir)) for (String tName : UT.IO.list(tSrcDir)) {
+                        if (tName.contains("jse")) tJseSrcPath = tSrcDir+tName;
+                        else if (tName.contains("groovy")) tGroovySrcPath = tSrcDir+tName;
+                    }
+                    if (tJseSrcPath!=null || tGroovySrcPath!=null) {
+                        tSrcLines = "    <SOURCES>\n";
+                        if (tJseSrcPath != null) {
+                        tSrcLines += "      <root url=\"jar://"+tJseSrcPath+"!/\" />\n";
+                        }
+                        if (tGroovySrcPath != null) {
+                        tSrcLines += "      <root url=\"jar://"+tGroovySrcPath+"!/\" />\n";
+                        }
+                        tSrcLines += "    </SOURCES>";
+                    }
+                }
+                UT.IO.write(".idea/libraries/jse_all.xml",
+                            "<component name=\"libraryTable\">",
+                            "  <library name=\"jse-all\">",
+                            "    <CLASSES>",
+                            "      <root url=\"jar://"+JAR_PATH+"!/\" />",
+                            "    </CLASSES>",
+                            "    <JAVADOC />",
+                            tSrcLines,
+                            "  </library>",
+                            "</component>");
+                UT.IO.write(".idea/libraries/jars.xml",
+                            "<component name=\"libraryTable\">",
+                            "  <library name=\"jars\">",
+                            "    <CLASSES>",
+                            "      <root url=\"file://"+JAR_LIB_DIR+"!/\" />",
+                            "    </CLASSES>",
+                            "    <JAVADOC />",
+                            "    <SOURCES />",
+                            "    <jarDirectory url=\"file://"+JAR_LIB_DIR+"\" recursive=\"false\" />",
+                            "  </library>",
+                            "</component>");
+                System.out.println("The current directory has been initialized as an Intellij IDEA project,");
+                System.out.println("now you can open this directory through Intellij IDEA.");
                 return;
             }
             case "-jupyter": {
@@ -300,6 +389,7 @@ public class Main {
         aPrinter.println("    -i -invoke    Invoke the internal java static method directly");
         aPrinter.println("    -v -version   Print version number");
         aPrinter.println("    -? -help      Print help message");
+        aPrinter.println("    -idea         Initialize the current directory to Intellij IDEA project");
         aPrinter.println("    -groovy       Run the groovy file script");
         aPrinter.println("    -python       Run the python file script");
         aPrinter.println("    -groovytext   Run the groovy text script");

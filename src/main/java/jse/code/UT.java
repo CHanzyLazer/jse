@@ -1179,7 +1179,7 @@ public class UT {
          * @param aLines Iterable String or String[] to be written
          * @throws IOException when fail
          */
-        public static void write(String aFilePath, String[]                         aLines)                         throws IOException {write(aFilePath, aLines, ZL_OO);}
+        public static void write(String aFilePath, String...                        aLines)                         throws IOException {write(aFilePath, aLines, ZL_OO);}
         public static void write(String aFilePath, Iterable<? extends CharSequence> aLines)                         throws IOException {write(aFilePath, aLines, ZL_OO);}
         public static void write(String aFilePath, String                            aLine)                         throws IOException {write(aFilePath, aLine, ZL_OO);}
         public static void write(String aFilePath, byte[]                            aData)                         throws IOException {write(aFilePath, aData, ZL_OO);}
