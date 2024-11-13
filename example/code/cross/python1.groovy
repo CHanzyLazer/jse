@@ -1,4 +1,4 @@
-package example.cross
+package code.cross
 
 import jse.code.SP
 

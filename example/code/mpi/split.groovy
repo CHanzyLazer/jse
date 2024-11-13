@@ -1,4 +1,4 @@
-package example.mpi
+package code.mpi
 
 import jse.parallel.MPI
 

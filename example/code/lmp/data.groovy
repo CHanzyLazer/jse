@@ -1,4 +1,4 @@
-package example.lmp
+package code.lmp
 
 import jse.lmp.Data
 

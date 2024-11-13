@@ -1,4 +1,4 @@
-package example.math
+package code.math
 
 import static jse.code.UT.Math.*
 

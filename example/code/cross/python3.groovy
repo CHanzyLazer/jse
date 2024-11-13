@@ -1,4 +1,4 @@
-package example.cross
+package code.cross
 
 import jep.NDArray
 import jse.code.SP

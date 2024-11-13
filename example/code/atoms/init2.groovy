@@ -1,4 +1,4 @@
-package example.atoms
+package code.atoms
 
 import jse.atom.Atom
 import jse.atom.AtomData

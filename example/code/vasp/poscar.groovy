@@ -1,4 +1,4 @@
-package example.vasp
+package code.vasp
 
 import jse.vasp.POSCAR
 

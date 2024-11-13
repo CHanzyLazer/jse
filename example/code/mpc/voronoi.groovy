@@ -1,4 +1,4 @@
-package example.mpc
+package code.mpc
 
 import jse.atom.MPC
 import jse.lmp.Data

@@ -5,4 +5,7 @@ __*
 # lammps shit
 log.lammps
 
+# idea project file
+example.iml
+
 !/.gitignore

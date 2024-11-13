@@ -1,4 +1,4 @@
-package example.io
+package code.io
 
 import static jse.code.UT.IO.*
 
