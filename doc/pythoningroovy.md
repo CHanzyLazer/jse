@@ -227,12 +227,7 @@ java 中的 jep.NDArray 对象 ⟶ 自动转换为 python 中的 ndarray 数据
 ## 安装仅 jse 使用的 python 库
 
 一般情况下，jse 可以直接使用当前 python 环境下所有的第三方库，
-但和一般的 python 脚本不同的是，jse 不能直接使用运行目录（`pwd`）
-下的 python 库，作为替代，jse 会将 `script/python`
-目录添加到 python 的 `sys.path` 中，
-因此对于项目独立使用的 python 脚本或库需要添加到此目录下。
-
-有时可能希望为 jse 安装专门的 python 库，则可以将其置于
+但有时可能希望为 jse 安装专门的 python 库，则可以将其置于
 `${JSE_HOME}/lib/python`，例如安装了 ase 后的文件结构大致为：
 
 ```

@@ -5,6 +5,7 @@
     - [-i/-invoke](#i-invoke)
     - [-v/-version](#v-version)
     - [-?/-help](#help)
+    - [-idea](#idea)
     - [-groovy](#groovy)
     - [-python](#python)
     - [-groovytext](#groovytext)
@@ -14,24 +15,20 @@
 
 # 命令行参数
 
-用于在命令行中运行 jse，对于作为软件安装（将 jse 设置到了环境变量），
-可以使用指令方法来运行：
+在命令行中使用 jse，这里设计成类似 python
+的使用方法，即通过：
 
 ```shell
-jse -t 'println(/hello world/)'
+jse path/to/script
 ```
 
-对于项目中独立安装，则可以在项目目录中运行：
+来运行一个脚本，而直接运行：
 
 ```shell
-./jse -t 'println(/hello world/)'
+jse
 ```
 
-> 这里采用 [groovy 的斜杠字符串](https://groovy-lang.org/syntax.html#_slashy_string)
-> 来避免命令行中烦人的引号转义问题。
-> 
-
-后续介绍统一采用软件安装作为例子，对于独立安装将 `jse` 替换成 `./jse` 即可。
+则会打开一个交互式的 jse 终端。
 
 
 ## *None*
@@ -132,13 +129,13 @@ jse -t 'println(/hello world/)'
 - **执行**
     
     ```shell
-    jse -f script/groovy/example/helloWorld.groovy
+    jse -f helloWorld.groovy
     ```
     
     或：
     
     ```shell
-    jse script/groovy/example/helloWorld.groovy
+    jse helloWorld.groovy
     ```
     
 - **输出**
@@ -147,18 +144,17 @@ jse -t 'println(/hello world/)'
     ```
 
 
-> 可以省略 groovy 脚本的 `.groovy` 后缀，以及前面的 `script/groovy/`
-> 目录（如果有的话），例如：
+> 可以省略 groovy 脚本的 `.groovy` 后缀，例如：
 >
 > ```shell
-> jse example/helloWorld
+> jse helloWorld
 > ```
 > 
-> 可以通过内部的 [jep](https://github.com/ninia/jep)
-> 来执行 python 脚本，例如：
+> 对于 python 脚本则不能省略后缀，因为需要根据 `.py`
+> 后缀来识别为 python 脚本并通过内部的 jep 来执行：
 >
 > ```shell
-> jse script/python/helloWorld.py
+> jse helloWorld.py
 > ```
 >
 
@@ -233,6 +229,32 @@ groovy 版本以及 java 版本并退出。
 
     You can also using another scripting language such as MATLAB or Python with Py4J and import jse-*.jar
     ```
+
+
+## -idea
+
+初始化当前文件夹为 [IntelliJ IDEA](https://www.jetbrains.com/idea/)
+项目文件夹，从而可以在 idea 中调试 groovy 脚本。
+
+- **执行**
+    
+    ```shell
+    jse -idea
+    ```
+    
+- **输出**
+    ```
+    The current directory has been initialized as an Intellij IDEA project,
+    now you can open this directory through Intellij IDEA.
+    ```
+
+> 第一次打开文件夹需要设置 jdk 的路径：
+>     
+> ```
+> 左上角“文件” ⟶ 项目结构 ⟶ 左边栏选择“项目设置-项目” ⟶ SDK 选择本地安装的 JDK
+> ⟶ 语言级别：8 - lambda、类型注解等 ⟶ 右下角“确定”
+> ```
+>
 
 
 ## -groovy
