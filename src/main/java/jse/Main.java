@@ -25,6 +25,7 @@ import static jse.code.Conf.UNICODE_SUPPORT;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.WORKING_DIR_OF;
 import static jse.code.OS.*;
+import static jse.code.SP.GROOVY_LIB_DIR;
 import static jse.code.SP.JAR_LIB_DIR;
 
 /**
@@ -99,6 +100,9 @@ public class Main {
                             "      <sourceFolder url=\"file://$MODULE_DIR$/script/groovy\" isTestSource=\"false\" />",
                             "      <excludeFolder url=\"file://$MODULE_DIR$/.temp\" />",
                             "      <excludeFolder url=\"file://$MODULE_DIR$/script\" />",
+                            "    </content>",
+                            "    <content url=\"file://"+GROOVY_LIB_DIR+"\">",
+                            "      <sourceFolder url=\"file://"+GROOVY_LIB_DIR+"\" isTestSource=\"false\" />",
                             "    </content>",
                             "    <orderEntry type=\"inheritedJdk\" />",
                             "    <orderEntry type=\"sourceFolder\" forTests=\"false\" />",
