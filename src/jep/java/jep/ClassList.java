@@ -195,18 +195,21 @@ public class ClassList implements ClassEnquirer {
         if (files != null) for (File file : files) {
             String entry = file.getName();
             if (file.isDirectory()) {
-                if (prefix != null && !prefix.isEmpty()) {
-                    /*
-                     * Include a . between directories only if there was a
-                     * prefix
-                     */
-                    addClassFilesInTree(file, prefix + "." + entry);
-                } else {
-                    /*
-                     * don't include a prefix - we only care about
-                     * subdirectories
-                     */
-                    addClassFilesInTree(file, entry);
+                // check invalid directory
+                if (!Character.isDigit(entry.charAt(0)) && !entry.contains(".") && !entry.contains(" ")) {
+                    if (prefix != null && !prefix.isEmpty()) {
+                        /*
+                         * Include a . between directories only if there was a
+                         * prefix
+                         */
+                        addClassFilesInTree(file, prefix + "." + entry);
+                    } else {
+                        /*
+                         * don't include a prefix - we only care about
+                         * subdirectories
+                         */
+                        addClassFilesInTree(file, entry);
+                    }
                 }
             } else if (file.exists() && file.canRead()) {
                 if (entry.toLowerCase().endsWith(".class")) {
