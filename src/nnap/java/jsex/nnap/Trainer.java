@@ -14,6 +14,7 @@ import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
+import jse.parallel.IAutoShutdown;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ import java.util.Map;
  * @author liqa
  */
 @ApiStatus.Experimental
-public class Trainer {
+public class Trainer implements IAutoShutdown {
     protected final static int[] DEFAULT_HIDDEN_DIMS = {20, 20};
     protected final static boolean DEFAULT_BN_LAYER = true;
     /** 全局记录 python 中的变量名称 */
@@ -56,6 +57,11 @@ public class Trainer {
         , VAL_SUB_BASE          = "__NNAP_TRAINER_sub_base__"
         , VAL_I                 = "__NNAP_TRAINER_i__"
         ;
+    @Override public void shutdown() {
+        SP.Python.removeValue(VAL_MODEL);
+        SP.Python.removeValue(VAL_OPTIMIZER);
+        SP.Python.removeValue(VAL_LOSS_FN);
+    }
     
     public static class Conf {
         /** 全局初始化脚本，默认为设置串行；经过测试并行训练并不会明显更快 */
@@ -181,11 +187,14 @@ public class Trainer {
         SP.Python.setValue(VAL_HIDDEN_DIMS, tHiddenDims);
         SP.Python.setValue(VAL_BN_LAYERS, tBnLayers);
         SP.Python.setValue(VAL_NTYPES, mSymbols.length);
-        SP.Python.exec(VAL_MODEL+" = "+CLASS_TOTAL_MODEL+"("+VAL_INPUT_DIMS+", "+VAL_HIDDEN_DIMS+", "+VAL_BN_LAYERS+", ntypes="+VAL_NTYPES+").double()");
-        SP.Python.removeValue(VAL_NTYPES);
-        SP.Python.removeValue(VAL_BN_LAYERS);
-        SP.Python.removeValue(VAL_HIDDEN_DIMS);
-        SP.Python.removeValue(VAL_INPUT_DIMS);
+        try {
+            SP.Python.exec(VAL_MODEL+" = "+CLASS_TOTAL_MODEL+"("+VAL_INPUT_DIMS+", "+VAL_HIDDEN_DIMS+", "+VAL_BN_LAYERS+", ntypes="+VAL_NTYPES+").double()");
+        } finally {
+            SP.Python.removeValue(VAL_NTYPES);
+            SP.Python.removeValue(VAL_BN_LAYERS);
+            SP.Python.removeValue(VAL_HIDDEN_DIMS);
+            SP.Python.removeValue(VAL_INPUT_DIMS);
+        }
     }
     /** 重写实现自定义优化器创建，默认采用 LBFGS */
     protected void initOptimizer() {
@@ -234,39 +243,45 @@ public class Trainer {
         initNormVec();
         // 构造 torch 数据，这里直接把数据放到 python 环境中变成一个 python 的全局变量
         SP.Python.setValue(VAL_NORM_VEC_J, mNormVec);
-        SP.Python.exec(VAL_NORM_VEC+" = [torch.tensor(sub_vec.asList(), dtype=torch.float64) for sub_vec in "+VAL_NORM_VEC_J+"]");
         SP.Python.setValue(VAL_TRAIN_BASE_J, mTrainBaseMat);
-        SP.Python.exec(VAL_TRAIN_BASE+" = [torch.tensor(sub_base.asListRows(), dtype=torch.float64) for sub_base in "+VAL_TRAIN_BASE_J+"]");
         Vector tTrainDataEng = mTrainEng.asVec();
         SP.Python.setValue(VAL_TRAIN_ENG_J, tTrainDataEng);
-        SP.Python.exec(VAL_TRAIN_ENG+" = torch.tensor("+VAL_TRAIN_ENG_J+".asList(), dtype=torch.float64)");
         IntVector tTrainDataAtomNum = mTrainAtomNum.asVec();
         SP.Python.setValue(VAL_TRAIN_ATOM_NUM_J, tTrainDataAtomNum);
-        SP.Python.exec(VAL_TRAIN_ATOM_NUM+" = torch.tensor("+VAL_TRAIN_ATOM_NUM_J+".asList(), dtype=torch.float64)");
-        //noinspection ConcatenationWithEmptyString
-        SP.Python.exec("" +
-        "for "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+" in zip("+VAL_TRAIN_BASE+", "+VAL_NORM_VEC+"):\n" +
-        "    for "+VAL_I+" in range(len("+VAL_SUB_BASE+")):\n" +
-        "        "+VAL_SUB_BASE+"["+VAL_I+", :-1] /= "+VAL_SUB_NORM_VEC+"\n" +
-        "del "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+", "+VAL_I
-        );
-        SP.Python.exec(VAL_TRAIN_ENG+" /= "+VAL_TRAIN_ATOM_NUM);
-        SP.Python.removeValue(VAL_NORM_VEC_J);
-        SP.Python.removeValue(VAL_TRAIN_BASE_J);
-        SP.Python.removeValue(VAL_TRAIN_ENG_J);
-        SP.Python.removeValue(VAL_TRAIN_ATOM_NUM_J);
-        // 开始训练
-        if (aPrintLog) UT.Timer.progressBar("train", aEpochs);
-        SP.Python.exec(VAL_MODEL+".train()");
-        for (int i = 0; i < aEpochs; ++i) {
-            double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP)).doubleValue();
-            if (aPrintLog) UT.Timer.progressBar(String.format("loss: %.4g", tLoss));
+        try {
+            SP.Python.exec(VAL_NORM_VEC+" = [torch.tensor(sub_vec.asList(), dtype=torch.float64) for sub_vec in "+VAL_NORM_VEC_J+"]");
+            SP.Python.exec(VAL_TRAIN_BASE+" = [torch.tensor(sub_base.asListRows(), dtype=torch.float64) for sub_base in "+VAL_TRAIN_BASE_J+"]");
+            SP.Python.exec(VAL_TRAIN_ENG+" = torch.tensor("+VAL_TRAIN_ENG_J+".asList(), dtype=torch.float64)");
+            SP.Python.exec(VAL_TRAIN_ATOM_NUM+" = torch.tensor("+VAL_TRAIN_ATOM_NUM_J+".asList(), dtype=torch.float64)");
+            //noinspection ConcatenationWithEmptyString
+            SP.Python.exec("" +
+            "for "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+" in zip("+VAL_TRAIN_BASE+", "+VAL_NORM_VEC+"):\n" +
+            "    for "+VAL_I+" in range(len("+VAL_SUB_BASE+")):\n" +
+            "        "+VAL_SUB_BASE+"["+VAL_I+", :-1] /= "+VAL_SUB_NORM_VEC+"\n" +
+            "del "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+", "+VAL_I
+            );
+            SP.Python.exec(VAL_TRAIN_ENG+" /= "+VAL_TRAIN_ATOM_NUM);
+        } finally {
+            SP.Python.removeValue(VAL_NORM_VEC_J);
+            SP.Python.removeValue(VAL_TRAIN_BASE_J);
+            SP.Python.removeValue(VAL_TRAIN_ENG_J);
+            SP.Python.removeValue(VAL_TRAIN_ATOM_NUM_J);
         }
-        // 完事移除临时数据
-        SP.Python.removeValue(VAL_NORM_VEC);
-        SP.Python.removeValue(VAL_TRAIN_BASE);
-        SP.Python.removeValue(VAL_TRAIN_ENG);
-        SP.Python.removeValue(VAL_TRAIN_ATOM_NUM);
+        // 开始训练
+        try {
+            if (aPrintLog) UT.Timer.progressBar("train", aEpochs);
+            SP.Python.exec(VAL_MODEL+".train()");
+            for (int i = 0; i < aEpochs; ++i) {
+                double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP)).doubleValue();
+                if (aPrintLog) UT.Timer.progressBar(String.format("loss: %.4g", tLoss));
+            }
+        } finally {
+            // 完事移除临时数据
+            SP.Python.removeValue(VAL_NORM_VEC);
+            SP.Python.removeValue(VAL_TRAIN_BASE);
+            SP.Python.removeValue(VAL_TRAIN_ENG);
+            SP.Python.removeValue(VAL_TRAIN_ATOM_NUM);
+        }
     }
     
     @ApiStatus.Internal
