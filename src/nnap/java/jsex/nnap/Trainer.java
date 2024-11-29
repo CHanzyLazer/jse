@@ -38,6 +38,7 @@ public class Trainer implements IAutoShutdown {
           CLASS_SINGLE_MODEL    = "__NNAP_TRAINER_SingleEnergyModel__"
         , CLASS_TOTAL_MODEL     = "__NNAP_TRAINER_TotalEnergyModel__"
         , FN_TRAIN_STEP         = "__NNAP_TRAINER_train_step__"
+        , FN_TEST_LOSS          = "__NNAP_TRAINER_test_loss__"
         , VAL_MODEL             = "__NNAP_TRAINER_model__"
         , VAL_OPTIMIZER         = "__NNAP_TRAINER_optimizer__"
         , VAL_LOSS_FN           = "__NNAP_TRAINER_loss_fn__"
@@ -49,6 +50,12 @@ public class Trainer implements IAutoShutdown {
         , VAL_TRAIN_ENG_J       = "__NNAP_TRAINER_train_eng_J__"
         , VAL_NORM_VEC          = "__NNAP_TRAINER_norm_vec__"
         , VAL_NORM_VEC_J        = "__NNAP_TRAINER_norm_vec_J__"
+        , VAL_TEST_BASE         = "__NNAP_TRAINER_test_base__"
+        , VAL_TEST_BASE_J       = "__NNAP_TRAINER_test_base_J__"
+        , VAL_TEST_ATOM_NUM     = "__NNAP_TRAINER_test_atom_num__"
+        , VAL_TEST_ATOM_NUM_J   = "__NNAP_TRAINER_test_atom_num_J__"
+        , VAL_TEST_ENG          = "__NNAP_TRAINER_test_eng__"
+        , VAL_TEST_ENG_J        = "__NNAP_TRAINER_test_eng_J__"
         , VAL_NTYPES            = "__NNAP_TRAINER_ntypes__"
         , VAL_BN_LAYERS         = "__NNAP_TRAINER_bn_layers__"
         , VAL_HIDDEN_DIMS       = "__NNAP_TRAINER_hidden_dims__"
@@ -108,15 +115,25 @@ public class Trainer implements IAutoShutdown {
         /** 训练一步的脚本函数，修改此值来实现自定义训练算法；默认使用 LBFGS 训练 */
         public static String TRAIN_STEP_SCRIPT =
             "def "+FN_TRAIN_STEP+"():\n" +
-            "   def closure():\n" +
-            "       "+VAL_OPTIMIZER+".zero_grad()\n" +
-            "       pred = "+VAL_MODEL+"("+VAL_TRAIN_BASE+", "+VAL_TRAIN_ATOM_NUM+")\n" +
-            "       loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_ENG+")\n" +
-            "       loss.backward()\n" +
-            "       return loss\n" +
-            "   loss = closure()\n" +
-            "   "+VAL_OPTIMIZER+".step(closure)\n" +
-            "   return loss.item()";
+            "    "+VAL_MODEL+".train()\n"+
+            "    def closure():\n" +
+            "        "+VAL_OPTIMIZER+".zero_grad()\n" +
+            "        pred = "+VAL_MODEL+"("+VAL_TRAIN_BASE+", "+VAL_TRAIN_ATOM_NUM+")\n" +
+            "        loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_ENG+")\n" +
+            "        loss.backward()\n" +
+            "        return loss\n" +
+            "    loss = closure()\n" +
+            "    "+VAL_OPTIMIZER+".step(closure)\n" +
+            "    return loss.item()";
+        
+        /** 获取测试集误差的脚本函数，一般情况不需要重写 */
+        public static String TEST_LOSS_SCRIPT =
+            "def "+FN_TEST_LOSS+"():\n" +
+            "    "+VAL_MODEL+".eval()\n"+
+            "    with torch.no_grad():\n" +
+            "        pred = "+VAL_MODEL+"("+VAL_TEST_BASE+", "+VAL_TEST_ATOM_NUM+")\n" +
+            "        loss = "+VAL_LOSS_FN+"(pred, "+VAL_TEST_ENG+")\n" +
+            "    return loss.item()";
     }
     static {
         SP.Python.exec("import torch");
@@ -124,20 +141,28 @@ public class Trainer implements IAutoShutdown {
         SP.Python.exec(Conf.SINGLE_MODEL_SCRIPT);
         SP.Python.exec(Conf.TOTAL_MODEL_SCRIPT);
         SP.Python.exec(Conf.TRAIN_STEP_SCRIPT);
+        SP.Python.exec(Conf.TEST_LOSS_SCRIPT);
     }
     
     protected final String[] mSymbols;
     protected final IVector mRefEngs;
     protected final Basis.IBasis[] mBasis;
     protected final DoubleList[] mTrainBase; // 按照种类排序，然后内部是可扩展的具体数据，最后一列增加对应的能量的索引；现在使用这种 DoubleList 展开的形式存
+    protected final RowMatrix[] mTrainBaseMat; // mTrainDataBase 的实际值，当然这个只是缓存结果
     protected final DoubleList mTrainEng = new DoubleList(64);
     protected final IntList mTrainAtomNum = new IntList(64);
     protected final Vector[] mNormVec;
-    protected final RowMatrix[] mTrainBaseMat; // mTrainDataBase 的实际值，当然这个只是缓存结果
+    protected final DoubleList[] mTestBase;
+    protected final RowMatrix[] mTestBaseMat;
+    protected final DoubleList mTestEng = new DoubleList(64);
+    protected final IntList mTestAtomNum = new IntList(64);
+    protected boolean mHasTest = false;
     protected boolean mModelInited = false;
     protected final Map<String, ?> mModelSetting;
     protected boolean mOptimizerInited = false;
     protected boolean mLossFnInited = false;
+    protected final DoubleList mTrainLoss = new DoubleList(64);
+    protected final DoubleList mTestLoss = new DoubleList(64);
     
     public Trainer(String[] aSymbols, IVector aRefEngs, Basis.IBasis[] aBasis, Map<String, ?> aModelSetting) {
         if (aSymbols.length != aRefEngs.size()) throw new IllegalArgumentException("Symbols length does not match reference energies length.");
@@ -154,6 +179,11 @@ public class Trainer implements IAutoShutdown {
             mTrainBase[i] = new DoubleList(64);
         }
         mTrainBaseMat = new RowMatrix[mSymbols.length];
+        mTestBase = new DoubleList[mSymbols.length];
+        for (int i = 0; i < mSymbols.length; ++i) {
+            mTestBase[i] = new DoubleList(64);
+        }
+        mTestBaseMat = new RowMatrix[mSymbols.length];
         mModelSetting = aModelSetting;
     }
     public Trainer(String[] aSymbols, IVector aRefEngs, Basis.IBasis aBasis, Map<String, ?> aModelSetting) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length), aModelSetting);}
@@ -239,15 +269,27 @@ public class Trainer implements IAutoShutdown {
             final int tRowNum = mTrainBase[i].size() / tColNum;
             mTrainBaseMat[i] = new RowMatrix(tRowNum, tColNum, mTrainBase[i].internalData());
         }
+        if (mHasTest) for (int i = 0; i < mTestBase.length; ++i) {
+            final int tColNum = mBasis[i].rowNumber()*mBasis[i].columnNumber() + 1;
+            final int tRowNum = mTestBase[i].size() / tColNum;
+            mTestBaseMat[i] = new RowMatrix(tRowNum, tColNum, mTestBase[i].internalData());
+        }
         // 重新构建归一化向量
         initNormVec();
         // 构造 torch 数据，这里直接把数据放到 python 环境中变成一个 python 的全局变量
         SP.Python.setValue(VAL_NORM_VEC_J, mNormVec);
         SP.Python.setValue(VAL_TRAIN_BASE_J, mTrainBaseMat);
-        Vector tTrainDataEng = mTrainEng.asVec();
-        SP.Python.setValue(VAL_TRAIN_ENG_J, tTrainDataEng);
-        IntVector tTrainDataAtomNum = mTrainAtomNum.asVec();
-        SP.Python.setValue(VAL_TRAIN_ATOM_NUM_J, tTrainDataAtomNum);
+        Vector tTrainEng = mTrainEng.asVec();
+        SP.Python.setValue(VAL_TRAIN_ENG_J, tTrainEng);
+        IntVector tTrainAtomNum = mTrainAtomNum.asVec();
+        SP.Python.setValue(VAL_TRAIN_ATOM_NUM_J, tTrainAtomNum);
+        if (mHasTest) {
+            SP.Python.setValue(VAL_TEST_BASE_J, mTestBaseMat);
+            Vector tTestEng = mTestEng.asVec();
+            SP.Python.setValue(VAL_TEST_ENG_J, tTestEng);
+            IntVector tTestAtomNum = mTestAtomNum.asVec();
+            SP.Python.setValue(VAL_TEST_ATOM_NUM_J, tTestAtomNum);
+        }
         try {
             SP.Python.exec(VAL_NORM_VEC+" = [torch.tensor(sub_vec.asList(), dtype=torch.float64) for sub_vec in "+VAL_NORM_VEC_J+"]");
             SP.Python.exec(VAL_TRAIN_BASE+" = [torch.tensor(sub_base.asListRows(), dtype=torch.float64) for sub_base in "+VAL_TRAIN_BASE_J+"]");
@@ -261,11 +303,29 @@ public class Trainer implements IAutoShutdown {
             "del "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+", "+VAL_I
             );
             SP.Python.exec(VAL_TRAIN_ENG+" /= "+VAL_TRAIN_ATOM_NUM);
+            if (mHasTest) {
+                SP.Python.exec(VAL_TEST_BASE+" = [torch.tensor(sub_base.asListRows(), dtype=torch.float64) for sub_base in "+VAL_TEST_BASE_J+"]");
+                SP.Python.exec(VAL_TEST_ENG+" = torch.tensor("+VAL_TEST_ENG_J+".asList(), dtype=torch.float64)");
+                SP.Python.exec(VAL_TEST_ATOM_NUM+" = torch.tensor("+VAL_TEST_ATOM_NUM_J+".asList(), dtype=torch.float64)");
+                //noinspection ConcatenationWithEmptyString
+                SP.Python.exec("" +
+                "for "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+" in zip("+VAL_TEST_BASE+", "+VAL_NORM_VEC+"):\n" +
+                "    for "+VAL_I+" in range(len("+VAL_SUB_BASE+")):\n" +
+                "        "+VAL_SUB_BASE+"["+VAL_I+", :-1] /= "+VAL_SUB_NORM_VEC+"\n" +
+                "del "+VAL_SUB_BASE+", "+VAL_SUB_NORM_VEC+", "+VAL_I
+                );
+                SP.Python.exec(VAL_TEST_ENG+" /= "+VAL_TEST_ATOM_NUM);
+            }
         } finally {
             SP.Python.removeValue(VAL_NORM_VEC_J);
             SP.Python.removeValue(VAL_TRAIN_BASE_J);
             SP.Python.removeValue(VAL_TRAIN_ENG_J);
             SP.Python.removeValue(VAL_TRAIN_ATOM_NUM_J);
+            if (mHasTest) {
+                SP.Python.removeValue(VAL_TEST_BASE_J);
+                SP.Python.removeValue(VAL_TEST_ENG_J);
+                SP.Python.removeValue(VAL_TEST_ATOM_NUM_J);
+            }
         }
         // 开始训练
         try {
@@ -273,7 +333,14 @@ public class Trainer implements IAutoShutdown {
             SP.Python.exec(VAL_MODEL+".train()");
             for (int i = 0; i < aEpochs; ++i) {
                 double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP)).doubleValue();
-                if (aPrintLog) UT.Timer.progressBar(String.format("loss: %.4g", tLoss));
+                mTrainLoss.add(tLoss);
+                if (mHasTest) {
+                    double tTestLoss = ((Number)SP.Python.invoke(FN_TEST_LOSS)).doubleValue();
+                    mTestLoss.add(tTestLoss);
+                    if (aPrintLog) UT.Timer.progressBar(String.format("loss: %.4g | %.4g", tLoss, tTestLoss));
+                } else {
+                    if (aPrintLog) UT.Timer.progressBar(String.format("loss: %.4g", tLoss));
+                }
             }
         } finally {
             // 完事移除临时数据
@@ -281,6 +348,11 @@ public class Trainer implements IAutoShutdown {
             SP.Python.removeValue(VAL_TRAIN_BASE);
             SP.Python.removeValue(VAL_TRAIN_ENG);
             SP.Python.removeValue(VAL_TRAIN_ATOM_NUM);
+            if (mHasTest) {
+                SP.Python.removeValue(VAL_TEST_BASE);
+                SP.Python.removeValue(VAL_TEST_ENG);
+                SP.Python.removeValue(VAL_TEST_ATOM_NUM);
+            }
         }
     }
     
@@ -316,4 +388,17 @@ public class Trainer implements IAutoShutdown {
         calRefEngBaseAndAdd_(aAtomData, aEnergy, mTrainEng, mTrainBase);
         mTrainAtomNum.add(aAtomData.atomNumber());
     }
+    /** 增加一个测试集数据，目前只需要能量 */
+    public void addTestData(IAtomData aAtomData, double aEnergy) {
+        // 这里也重新排序原子数据的 symbol 顺序
+        NNAP.reorderSymbols_(AbstractCollections.from(mSymbols), aAtomData);
+        if (!mHasTest) mHasTest = true;
+        // 添加数据
+        calRefEngBaseAndAdd_(aAtomData, aEnergy, mTestEng, mTestBase);
+        mTestAtomNum.add(aAtomData.atomNumber());
+    }
+    
+    /** 获取历史 loss 值 */
+    public IVector trainLoss() {return mTrainLoss.asVec();}
+    public IVector testLoss() {return mTestLoss.asVec();}
 }
