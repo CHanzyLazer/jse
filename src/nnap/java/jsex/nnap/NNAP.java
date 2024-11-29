@@ -1,11 +1,16 @@
 package jsex.nnap;
 
 import com.google.common.collect.Lists;
+import jep.JepException;
+import jep.NDArray;
+import jep.python.PyObject;
+import jse.ase.AseAtoms;
 import jse.atom.*;
 import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
 import jse.clib.*;
 import jse.code.OS;
+import jse.code.SP;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
@@ -268,6 +273,102 @@ public class NNAP implements IAutoShutdown {
     }
     public int indexOf(String aSymbol) {
         return indexOf_(AbstractCollections.map(mModels, model -> model.mSymbol), aSymbol);
+    }
+    
+    /**
+     * 转换为一个 ase 的计算器，可以方便接入已有的代码直接计算；
+     * 注意这里计算的压力统一按照 ase 的排序，也就是
+     * {@code [xx, yy, zz, yz, xz, xy]}
+     * <p>
+     * 创建的 ase 计算器和原本的 NNAP 为引用关系，因此两者只要关闭了其中一个，另一个也会同时关闭；
+     * 为了方便管理，这里统一采用手动关闭，因此也不实现 {@code __del__} 方法
+     * @return ase 计算器的 python 对象
+     */
+    public PyObject asAseCalculator() throws JepException {return asAseCalculator(SP.Python.interpreter());}
+    public PyObject asAseCalculator(@NotNull jep.Interpreter aInterpreter) throws JepException {
+        // 先定义这个计算器类，这里不考虑性能损失
+        //noinspection ConcatenationWithEmptyString
+        aInterpreter.exec("" +
+        "from ase.calculators.calculator import Calculator, all_changes, PropertyNotImplementedError\n" +
+        "class __NNAP_AseCalculator__(Calculator):\n" +
+        "    implemented_properties = ['energy', 'free_energy', 'energies', 'forces', 'stress', 'stresses']\n" +
+        "    \n" +
+        "    def __init__(self, jnnap, **kwargs):\n" +
+        "        super().__init__(**kwargs)\n" +
+        "        self.jnnap = jnnap\n" +
+        "    \n" +
+        "    def release(self):\n" +
+        "        self.jnnap.shutdown()\n" +
+        "    def shutdown(self):\n" +
+        "        self.jnnap.shutdown()\n" +
+        "    \n" +
+        "    def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):\n" +
+        "        super().calculate(atoms, properties, system_changes)\n" +
+        "        for p in properties:\n" +
+        "            if p not in self.implemented_properties:\n" +
+        "                raise PropertyNotImplementedError(p)\n" +
+        "        self.results = self.jnnap.calculate_(self.results, self.atoms, properties, len(system_changes)>0)"
+        );
+        return (PyObject)aInterpreter.invoke("__NNAP_AseCalculator__", this);
+    }
+    @ApiStatus.Internal
+    public Map<String, Object> calculate_(Map<String, Object> rResults, PyObject aPyAseAtoms, String[] aProperties, boolean aSystemChanges) throws TorchException {
+        if (mDead) throw new IllegalStateException("This NNAP is dead");
+        boolean tAllInResults = true;
+        for (String tProperty : aProperties) {
+            if (!rResults.containsKey(tProperty)) {
+                tAllInResults = false;
+                break;
+            }
+        }
+        if (!aSystemChanges && tAllInResults) return rResults;
+        IAtomData tAtoms = AseAtoms.of(aPyAseAtoms).setSymbolOrder(UT.Text.toArray(AbstractCollections.map(mModels, model -> model.mSymbol)));
+        // 遍历统计需要的量
+        boolean tRequireEnergy = false;
+        boolean tRequireForces = false;
+        boolean tRequireStress = false;
+        for (String tProperty : aProperties) {
+            if (tProperty.equals("energy") || tProperty.equals("energies") || tProperty.equals("free_energy")) tRequireEnergy = true;
+            if (tProperty.equals("forces")) tRequireForces = true;
+            if (tProperty.equals("stress") || tProperty.equals("stresses")) tRequireStress = true;
+        }
+        // 只需要能量则直接使用简单的计算能量接口
+        if (!tRequireForces && !tRequireStress) {
+            assert tRequireEnergy;
+            Vector tEnergies = calEnergies(tAtoms);
+            double tEnergy = tEnergies.sum();
+            rResults.put("energy", tEnergy);
+            rResults.put("energies", new NDArray<>(tEnergies.internalData(), tEnergies.size()));
+            rResults.put("free_energy", tEnergy);
+            VectorCache.returnVec(tEnergies);
+            return rResults;
+        }
+        // 其余情况则统一全部计算
+        Vector rEnergies = VectorCache.getZeros(tAtoms.atomNumber());
+        RowMatrix rForces = MatrixCache.getZerosRow(tAtoms.atomNumber(), 3);
+        Vector rStress = VectorCache.getZeros(6);
+        RowMatrix rStresses = MatrixCache.getZerosRow(tAtoms.atomNumber(), 6);
+        try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(tAtoms)) {
+            calEnergyForcesVirials(tMPC, rEnergies, rForces.col(0), rForces.col(1), rForces.col(2),
+                                   rStresses.col(0), rStresses.col(1), rStresses.col(2), rStresses.col(5), rStresses.col(4), rStresses.col(3));
+        }
+        rStresses.operation().negative2this();
+        for (int i = 0; i < 6; ++i) {
+            rStress.set(i, rStresses.col(i).sum());
+        }
+        rStress.div2this(tAtoms.volume());
+        double tEnergy = rEnergies.sum();
+        rResults.put("energy", tEnergy);
+        rResults.put("energies", new NDArray<>(rEnergies.internalData(), rEnergies.size()));
+        rResults.put("free_energy", tEnergy);
+        rResults.put("forces", new NDArray<>(rForces.internalData(), rForces.rowNumber(), rForces.columnNumber()));
+        rResults.put("stress", new NDArray<>(rStress.internalData(), rStress.size()));
+        rResults.put("stresses", new NDArray<>(rStresses.internalData(), rStresses.rowNumber(), rStresses.columnNumber()));
+        VectorCache.returnVec(rEnergies);
+        MatrixCache.returnMat(rForces);
+        VectorCache.returnVec(rStress);
+        MatrixCache.returnMat(rStresses);
+        return rResults;
     }
     
     /**

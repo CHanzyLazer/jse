@@ -3,6 +3,7 @@ package jsex.nnap;
 import jse.atom.IAtom;
 import jse.atom.IAtomData;
 import jse.atom.MonatomicParameterCalculator;
+import jse.cache.MatrixCache;
 import jse.code.SP;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
@@ -440,6 +441,7 @@ public class Trainer implements IAutoShutdown, ISavable {
                 });
                 rBaseData[tAtom.type()-1].addAll(tBase.asVecRow());
                 rBaseData[tAtom.type()-1].add(rEngData.size());
+                MatrixCache.returnMat(tBase);
             }
         }
         // 这里后添加能量，这样 rEngData.size() 对应正确的索引
