@@ -251,7 +251,16 @@ public class AseAtoms extends AbstractSettableAtomData {
         try (PyObject tPyCell = aPyAtoms.getAttr("cell", PyObject.class)) {
             tPyCellArray = tPyCell.getAttr("array", NDArray.class);
         }
-        NDArray<?> tPyNumbers = aPyAtoms.getAttr("numbers", NDArray.class);
+        NDArray<?> tPyNumbers;
+        try {
+            tPyNumbers = aPyAtoms.getAttr("numbers", NDArray.class);
+        } catch (JepException e) {
+            // 对于某些特殊的 ndarray jep 不能自动转换，这就很麻烦了；
+            // 这对于非主解释器情况下会出现问题，但是这里不考虑
+            SP.Python.setValue("__JSE_ASEATOMS_pyatoms__", aPyAtoms);
+            tPyNumbers = SP.Python.getValue("__JSE_ASEATOMS_pyatoms__.numbers.astype('int32', casting='unsafe')", NDArray.class);
+            SP.Python.removeValue("__JSE_ASEATOMS_pyatoms__");
+        }
         NDArray<?> tPyPositions = aPyAtoms.getAttr("positions", NDArray.class);
         @Nullable NDArray<?> tPyMomenta = null;
         try (PyCallable tHas = aPyAtoms.getAttr("has", PyCallable.class)) {
@@ -285,7 +294,12 @@ public class AseAtoms extends AbstractSettableAtomData {
         if (tPyNumbersData instanceof double[]) {
             tNumbers = new Vector(tPyNumbers.getDimensions()[0], (double[])tPyNumbersData).asIntVec();
         } else {
-            throw new RuntimeException();
+            // 同样这对于非主解释器情况下会出现问题，但是这里不考虑
+            SP.Python.setValue("__JSE_ASEATOMS_pyatoms__", aPyAtoms);
+            tPyNumbers = SP.Python.getValue("__JSE_ASEATOMS_pyatoms__.numbers.astype('int32', casting='unsafe')", NDArray.class);
+            SP.Python.removeValue("__JSE_ASEATOMS_pyatoms__");
+            tPyNumbersData = tPyNumbers.getData();
+            tNumbers = new IntVector(tPyNumbers.getDimensions()[0], (int[])tPyNumbersData);
         }
         AseAtoms rAseAtoms = new AseAtoms(rBox, tNumbers, new RowMatrix(tPyPositions.getDimensions()[0], tPyPositions.getDimensions()[1], (double[])tPyPositions.getData()));
         if (tPyMomenta != null) rAseAtoms.mMomenta = new RowMatrix(tPyMomenta.getDimensions()[0], tPyMomenta.getDimensions()[1], (double[])tPyMomenta.getData());
