@@ -35,11 +35,12 @@ public class PairNNAP extends LmpPlugin.Pair {
             if (!INITIALIZED) String.valueOf(_INIT_FLAG);
         }
     }
-    private final static boolean _INIT_FLAG = false;
+    private final static boolean _INIT_FLAG;
     static {
         InitHelper.INITIALIZED = true;
         // 确保 NNAP 已经确实初始化
         NNAP.InitHelper.init();
+        _INIT_FLAG = false;
     }
     
     protected PairNNAP(long aPairPtr) {super(aPairPtr);}
