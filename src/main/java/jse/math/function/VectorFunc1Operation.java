@@ -434,9 +434,9 @@ public abstract class VectorFunc1Operation extends AbstractFunc1Operation {
             for (int i = 0; i < tNx; ++i) {
                 double tF = tFunc1.get(i);
                 int imm = i - 1;
-                double gFl = (imm < 0) ? Double.NaN : (tF - tFunc1.get(imm)) / tDx;
+                double gFl = (imm < 0) ? 0.0 : (tF - tFunc1.get(imm)) / tDx;
                 int ipp = i + 1;
-                double gFr = (ipp >= tNx) ? Double.NaN : (tFunc1.get(ipp) - tF) / tDx;
+                double gFr = (ipp >= tNx) ? 0.0 : (tFunc1.get(ipp) - tF) / tDx;
                 if (imm < 0) {
                     if (ipp >= tNx) {
                         rDest.set(i, 0.0);

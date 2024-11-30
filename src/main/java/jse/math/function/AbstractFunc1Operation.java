@@ -128,9 +128,9 @@ public abstract class AbstractFunc1Operation implements IFunc1Operation {
         for (int i = 0; i < tNx; ++i) {
             double tF = tFunc1.get(i);
             int imm = i - 1;
-            double gFl = (imm < 0) ? Double.NaN : (tF - tFunc1.get(imm)) / tFunc1.dx(imm);
+            double gFl = (imm < 0) ? 0.0 : (tF - tFunc1.get(imm)) / tFunc1.dx(imm);
             int ipp = i + 1;
-            double gFr = (ipp >= tNx) ? Double.NaN : (tFunc1.get(ipp) - tF) / tFunc1.dx(i);
+            double gFr = (ipp >= tNx) ? 0.0 : (tFunc1.get(ipp) - tF) / tFunc1.dx(i);
             if (imm < 0) {
                 if (ipp >= tNx) {
                     rDest.set(i, 0.0);
