@@ -37,6 +37,8 @@ public class Torch {
     public final static class Conf {
         /** 手动设置 torch 的 home 目录，可以设置为自己的 python 环境中安装的 torch，从而避免重复安装 */
         public static @Nullable String HOME = OS.env("JSE_TORCH_HOME");
+        /** 指定此值来指定下载的 torch 版本 */
+        public static String INDEX_URL = "https://download.pytorch.org/whl/cpu";
     }
     
     public final static String VERSION = "2.5.1";
@@ -61,7 +63,7 @@ public class Torch {
         // 如果没有 ase 包则直接下载，指定版本 VERSION 避免因为更新造成的问题
         if (!tHasTorchPkg) {
             System.out.printf("TORCH INIT INFO: No torch package in %s, downloading...\n", PYTHON_PKG_DIR);
-            SP.Python.downloadPackage("torch=="+VERSION);
+            SP.Python.downloadPackage("torch=="+VERSION, null, null, Conf.INDEX_URL);
             System.out.println("TORCH INIT INFO: torch package downloading finished");
         }
         // 安装 torch 包

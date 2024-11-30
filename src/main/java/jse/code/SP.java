@@ -851,7 +851,7 @@ public class SP {
         
         
         /** 基于 pip 的 python 包管理，下载指定包到 .pypkg */
-        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion) throws IOException {
+        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {
             // 组装指令
             List<String> rCommand = new ArrayList<>();
             rCommand.add("pip"); rCommand.add("download");
@@ -878,12 +878,18 @@ public class SP {
             rCommand.add("--dest"); rCommand.add("'"+PYTHON_PKG_DIR+"'");
             // 设置需要的包名
             rCommand.add("'"+aRequirement+"'");
+            // 自定义下载仓库
+            if (aIndexUrl != null && !aIndexUrl.isEmpty()) {
+                rCommand.add("--index-url"); rCommand.add(aIndexUrl);
+            }
             
             // 直接通过系统指令执行 pip 来下载
             EXEC.system(String.join(" ", rCommand));
         }
+        public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {downloadPackage(aRequirement, false, aPlatform, aPythonVersion, aIndexUrl);}
         public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion) throws IOException {downloadPackage(aRequirement, false, aPlatform, aPythonVersion);}
         public static void downloadPackage(String aRequirement, String aPlatform) throws IOException {downloadPackage(aRequirement, aPlatform, null);}
+        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion) throws IOException {downloadPackage(aRequirement, aIncludeDep, aPlatform, aPythonVersion, null);}
         public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform) throws IOException {downloadPackage(aRequirement, aIncludeDep, aPlatform, null);}
         public static void downloadPackage(String aRequirement, boolean aIncludeDep) throws IOException {downloadPackage(aRequirement, aIncludeDep, null);}
         public static void downloadPackage(String aRequirement) throws IOException {downloadPackage(aRequirement, false);}
