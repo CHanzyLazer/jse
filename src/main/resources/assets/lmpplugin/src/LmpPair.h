@@ -12,6 +12,7 @@ void compute(JNIEnv *, jobject);
 void coeff(JNIEnv *, jobject, int, char **);
 void initStyle(JNIEnv *, jobject);
 double initOne(JNIEnv *, jobject, int, int);
+void shutdown(JNIEnv *, jobject);
 
 /** cache jclass */
 jboolean cacheJClass(JNIEnv *);

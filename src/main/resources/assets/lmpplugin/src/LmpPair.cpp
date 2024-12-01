@@ -35,6 +35,7 @@ static jmethodID sOf = 0;
 static jmethodID sCompute = 0;
 static jmethodID sCoeff = 0;
 static jmethodID sInitStyle = 0;
+static jmethodID sShutdown = 0;
 static jmethodID sInitOne = 0;
 
 jobject JSE_LMPPAIR::newJObject(JNIEnv *aEnv, char *aArg, void *aPtr) {
@@ -76,4 +77,9 @@ double JSE_LMPPAIR::initOne(JNIEnv *aEnv, jobject aSelf, int i, int j) {
         return aEnv->CallDoubleMethod(aSelf, sInitOne, (jint)i, (jint)j);
     }
     return -1.0;
+}
+void JSE_LMPPAIR::shutdown(JNIEnv *aEnv, jobject aSelf) {
+    if (sShutdown || (sShutdown = aEnv->GetMethodID(LMPPAIR_CLAZZ, "shutdown", "()V"))) {
+        aEnv->CallVoidMethod(aSelf, sShutdown);
+    }
 }

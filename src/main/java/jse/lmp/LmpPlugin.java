@@ -4,6 +4,7 @@ import jse.clib.*;
 import jse.code.OS;
 import jse.code.SP;
 import jse.code.UT;
+import jse.parallel.IAutoShutdown;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.jetbrains.annotations.Nullable;
 
@@ -108,7 +109,7 @@ public class LmpPlugin {
     }
     
     
-    public static abstract class Pair {
+    public static abstract class Pair implements IAutoShutdown {
         static {
             // 确保 LmpPlugin 已经确实初始化
             LmpPlugin.InitHelper.init();
@@ -174,6 +175,12 @@ public class LmpPlugin {
          * @author liqa
          */
         public abstract double initOne(int i, int j) throws Exception;
+        
+        /**
+         * lammps pair 析构时调用，用于手动释放一些资源
+         * @author liqa
+         */
+        @Override public void shutdown() {/**/}
         
         
         /// lammps pair 提供的接口
