@@ -57,6 +57,22 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_NNAP_forward1
 
 /*
  * Class:     jsex_nnap_NNAP
+ * Method:    batchForward0
+ * Signature: (J[DII[DII)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_batchForward0
+  (JNIEnv *, jclass, jlong, jdoubleArray, jint, jint, jdoubleArray, jint, jint);
+
+/*
+ * Class:     jsex_nnap_NNAP
+ * Method:    batchForward1
+ * Signature: (JJIJI)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_batchForward1
+  (JNIEnv *, jclass, jlong, jlong, jint, jlong, jint);
+
+/*
+ * Class:     jsex_nnap_NNAP
  * Method:    backward0
  * Signature: (J[DI[DII)D
  */
@@ -70,6 +86,22 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_NNAP_backward0
  */
 JNIEXPORT jdouble JNICALL Java_jsex_nnap_NNAP_backward1
   (JNIEnv *, jclass, jlong, jlong, jlong, jint);
+
+/*
+ * Class:     jsex_nnap_NNAP
+ * Method:    batchBackward0
+ * Signature: (J[DI[DII[DII)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_batchBackward0
+  (JNIEnv *, jclass, jlong, jdoubleArray, jint, jdoubleArray, jint, jint, jdoubleArray, jint, jint);
+
+/*
+ * Class:     jsex_nnap_NNAP
+ * Method:    batchBackward1
+ * Signature: (JJJIJI)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_batchBackward1
+  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jlong, jint);
 
 #ifdef __cplusplus
 }

@@ -58,7 +58,8 @@ public interface IBasis extends ISavable, IAutoShutdown {
      * {@code fp} 为 null，如果开启 aCalBasis 则在后续追加近邻的偏导
      */
     List<@NotNull RowMatrix> evalPartial(boolean aCalBasis, boolean aCalCross, IDxyzTypeIterable aNL);
-    default List<@NotNull RowMatrix> evalPartial(IDxyzTypeIterable aNL) {return evalPartial(true, false, aNL);}
+    default List<@NotNull RowMatrix> evalPartial(boolean aCalBasis, IDxyzTypeIterable aNL) {return evalPartial(aCalBasis, false, aNL);}
+    default List<@NotNull RowMatrix> evalPartial(IDxyzTypeIterable aNL) {return evalPartial(true, aNL);}
     
     @Override default void shutdown() {/**/}
 }
