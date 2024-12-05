@@ -210,9 +210,9 @@ public class SphericalChebyshev implements IBasis {
         RowMatrix rFingerPrintPx = MatrixCache.getMatRow(tSizeN, mLMax+1);
         RowMatrix rFingerPrintPy = MatrixCache.getMatRow(tSizeN, mLMax+1);
         RowMatrix rFingerPrintPz = MatrixCache.getMatRow(tSizeN, mLMax+1);
-        @Nullable List<RowMatrix> rFingerPrintPxCross = aCalCross ? new ArrayList<>() : null;
-        @Nullable List<RowMatrix> rFingerPrintPyCross = aCalCross ? new ArrayList<>() : null;
-        @Nullable List<RowMatrix> rFingerPrintPzCross = aCalCross ? new ArrayList<>() : null;
+        @Nullable List<RowMatrix> rFingerPrintPxCross = null;
+        @Nullable List<RowMatrix> rFingerPrintPyCross = null;
+        @Nullable List<RowMatrix> rFingerPrintPzCross = null;
         
         // 需要存储所有的 l，n，m 的值来统一进行近邻求和
         final RowMatrix cnlm = bufCnlm(true);
@@ -232,7 +232,7 @@ public class SphericalChebyshev implements IBasis {
         final Vector tYPy = bufYPy(false);
         final Vector tYPz = bufYPz(false);
         // 记录一下近邻数目（对于 cross 的情况）
-        final int[] tNN = aCalCross ? new int[]{0} : null;
+        final int[] tNN = {0};
         
         // 遍历近邻计算 Ylm, Rn, fc
         aNL.forEachDxyzType((dx, dy, dz, type) -> {
@@ -322,11 +322,9 @@ public class SphericalChebyshev implements IBasis {
                 cnlmPz.plus2this(bufCnlmPzAll(i, false));
             }
             // 在这里初始化 cross 的 FingerPrint 偏导
-            for (int i = 0; i < tNN_; ++i) {
-                rFingerPrintPxCross.add(MatrixCache.getMatRow(tSizeN, mLMax+1));
-                rFingerPrintPyCross.add(MatrixCache.getMatRow(tSizeN, mLMax+1));
-                rFingerPrintPzCross.add(MatrixCache.getMatRow(tSizeN, mLMax+1));
-            }
+            rFingerPrintPxCross = MatrixCache.getMatRow(tSizeN, mLMax+1, tNN_);
+            rFingerPrintPyCross = MatrixCache.getMatRow(tSizeN, mLMax+1, tNN_);
+            rFingerPrintPzCross = MatrixCache.getMatRow(tSizeN, mLMax+1, tNN_);
         }
         // 因此在这里需要无论如何都给 cnlmPxyz 增加一个负号来翻转回来
         cnlmPx.operation().negative2this();
@@ -361,14 +359,6 @@ public class SphericalChebyshev implements IBasis {
     }
     
     
-    protected void validCrossCnlmPxyz(double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
-                                      double[] rCrossCnlmPx, double[] rCrossCnlmPy, double[] rCrossCnlmPz, int aLength) {
-        for (int i = 0; i < aLength; ++i) {
-            rCnlmPx[i] += rCrossCnlmPx[i];
-            rCnlmPy[i] += rCrossCnlmPy[i];
-            rCnlmPz[i] += rCrossCnlmPz[i];
-        }
-    }
     protected void calRnPxyz(double[] rRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, int aNMax,
                              double aDis, double aRCut, double aDx, double aDy, double aDz) {
         final double tX = 1.0 - 2.0*aDis/aRCut;
