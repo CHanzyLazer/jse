@@ -7,6 +7,7 @@
 #include "lammps/library.h"
 #include "jniutil.h"
 #include "jse_lmp_NativeLmp.h"
+#include "jse_lmp_NativeLmpPointer.h"
 
 
 #ifdef __cplusplus
@@ -500,7 +501,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, 
     if (tVel   != NULL) FREE(tVel  );
 }
 
-JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsClose_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
+JNIEXPORT void JNICALL Java_jse_lmp_NativeLmpPointer_lammpsClose_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
     lammps_close((void *)(intptr_t)aLmpPtr);
     exceptionCheckLMP(aEnv, NULL);
 }

@@ -183,14 +183,6 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsScatter_1
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCreateAtoms_1
   (JNIEnv *, jclass, jlong, jint, jintArray, jintArray, jdoubleArray, jdoubleArray, jintArray, jboolean);
 
-/*
- * Class:     jse_lmp_NativeLmp
- * Method:    lammpsClose_
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsClose_1
-  (JNIEnv *, jclass, jlong);
-
 #ifdef __cplusplus
 }
 #endif

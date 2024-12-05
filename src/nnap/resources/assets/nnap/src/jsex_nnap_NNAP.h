@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef jsex_nnap_NNAP_BATCH_SIZE
+#define jsex_nnap_NNAP_BATCH_SIZE 64L
 /*
  * Class:     jsex_nnap_NNAP
  * Method:    setSingleThread0
@@ -30,14 +32,6 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load0
  */
 JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load1
   (JNIEnv *, jclass, jbyteArray, jint);
-
-/*
- * Class:     jsex_nnap_NNAP
- * Method:    shutdown0
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_shutdown0
-  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     jsex_nnap_NNAP

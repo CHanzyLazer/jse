@@ -1,4 +1,5 @@
 #include "jsex_nnap_NNAP.h"
+#include "jsex_nnap_NNAPModelPointers.h"
 #include "jniutil.h"
 
 #include <torch/torch.h>
@@ -47,10 +48,9 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_NNAP_load1(JNIEnv *aEnv, jclass aClazz, j
     return (jlong)(intptr_t)tModulePtr;
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_shutdown0(JNIEnv *aEnv, jclass aClazz, jlong aModelPtr) {
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAPModelPointers_dispose0(JNIEnv *aEnv, jclass aClazz, jlong aModelPtr) {
     delete (torch::jit::Module *)(intptr_t)aModelPtr;
 }
-
 
 JNIEXPORT jdouble JNICALL Java_jsex_nnap_NNAP_forward0(JNIEnv *aEnv, jclass aClazz, jlong aModelPtr, jdoubleArray aX, jint aStart, jint aCount) {
     torch::jit::Module *tModulePtr = (torch::jit::Module *)(intptr_t)aModelPtr;
