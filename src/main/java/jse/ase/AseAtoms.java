@@ -109,7 +109,7 @@ public class AseAtoms extends AbstractSettableAtomData {
             }
         });
         // 如果有缺失需要补充
-        if (mAtomicNumbers.size() > atomTypeNumber()) {
+        if (mAtomicNumber2Type.size() > mType2AtomicNumber.size()-1) {
             mType2AtomicNumber = IntVector.zeros(mAtomicNumber2Type.size()+1);
             for (Map.Entry<Integer, Integer> tEntry : mAtomicNumber2Type.entrySet()) {
                 mType2AtomicNumber.set(tEntry.getValue(), tEntry.getKey());
@@ -120,7 +120,7 @@ public class AseAtoms extends AbstractSettableAtomData {
     
     /** 支持直接修改 symbols，只会增大种类数，不会减少；少于种类数时会保留旧值 */
     @Override public AseAtoms setSymbols(String... aSymbols) {
-        if (aSymbols == null) aSymbols = ZL_STR;
+        if (aSymbols==null || aSymbols.length==0) return this;
         if (aSymbols.length > atomTypeNumber()) {
             IIntVector oType2AtomicNumber = mType2AtomicNumber;
             mType2AtomicNumber = Vectors.range(aSymbols.length+1);
@@ -306,7 +306,7 @@ public class AseAtoms extends AbstractSettableAtomData {
         return rAseAtoms;
     }
     
-    /** 从 IAtomData 来创建，一般来说 AseAtoms 需要一个额外的 aTypeNames 信息 */
+    /** 从 IAtomData 来创建，一般来说 AseAtoms 需要一个额外的 aSymbols 信息 */
     public static AseAtoms fromAtomData(IAtomData aAtomData) {
         @Nullable List<@Nullable String> tSymbols = aAtomData.symbols();
         return fromAtomData(aAtomData, tSymbols==null ? ZL_STR : tSymbols.toArray(ZL_STR));
@@ -351,6 +351,17 @@ public class AseAtoms extends AbstractSettableAtomData {
     public static AseAtoms of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
     public static AseAtoms of(IAtomData aAtomData, String... aTypeNames) {return fromAtomData(aAtomData, aTypeNames);}
     public static AseAtoms of(PyObject aPyAtoms) throws JepException {return fromPyObject(aPyAtoms);}
+    public static AseAtoms of(Object aAnyData) throws JepException {
+        // 手动实现动态加载
+        if (aAnyData instanceof PyObject) {
+            return fromPyObject((PyObject)aAnyData);
+        } else
+        if (aAnyData instanceof IAtomData) {
+            return fromAtomData((IAtomData)aAnyData);
+        } else {
+            throw new IllegalArgumentException("Invalid data type: " + aAnyData.getClass().getName());
+        }
+    }
     
     
     /** 直接基于 ase 的读写 */
