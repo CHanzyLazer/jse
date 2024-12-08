@@ -26,15 +26,21 @@ public class NNAPExtensions {
      */
     public static List<RowMatrix> calBasisNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff) {
         if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
-        try (IBasis tBasis = new SphericalChebyshev(self.atomTypeNumber(), aNMax, aLMax, aRCutOff)) {
+        final int tThreadNum = self.threadNumber();
+        IBasis[] tBasis = new IBasis[tThreadNum];
+        for (int i = 0; i < tThreadNum; ++i) {
+            //noinspection resource
+            tBasis[i] = new SphericalChebyshev(self.atomTypeNumber(), aNMax, aLMax, aRCutOff);
+        }
+        try {
             final List<RowMatrix> rFingerPrints = NewCollections.nulls(self.atomNumber());
             
             // 获取需要缓存的近邻列表
             final IntList @Nullable[] tNLToBuffer = self.getNLWhichNeedBuffer_(aRCutOff, -1, false);
             
             // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存（所有近邻的 Ylm, Rn, fc 都要存，会随着截断半径增加爆炸增涨），这里不考虑
-            self.pool_().parfor(self.atomNumber(), i -> {
-                rFingerPrints.set(i, tBasis.eval(dxyzTypeDo -> {
+            self.pool_().parfor(self.atomNumber(), (i, threadID) -> {
+                rFingerPrints.set(i, tBasis[threadID].eval(dxyzTypeDo -> {
                     self.nl_().forEachNeighbor(i, aRCutOff, false, (x, y, z, idx, dx, dy, dz) -> {
                         dxyzTypeDo.run(dx, dy, dz, self.atomType_().get(idx));
                         // 还是需要顺便统计近邻进行缓存
@@ -44,6 +50,8 @@ public class NNAPExtensions {
             });
             
             return rFingerPrints;
+        } finally {
+            for (int i = 0; i < tThreadNum; ++i) tBasis[i].shutdown();
         }
     }
     
@@ -61,15 +69,21 @@ public class NNAPExtensions {
      */
     public static List<List<RowMatrix>> calBasisPartialNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis, boolean aCalCross) {
         if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
-        try (IBasis tBasis = new SphericalChebyshev(self.atomTypeNumber(), aNMax, aLMax, aRCutOff)) {
+        final int tThreadNum = self.threadNumber();
+        IBasis[] tBasis = new IBasis[tThreadNum];
+        for (int i = 0; i < tThreadNum; ++i) {
+            //noinspection resource
+            tBasis[i] = new SphericalChebyshev(self.atomTypeNumber(), aNMax, aLMax, aRCutOff);
+        }
+        try {
             final List<List<RowMatrix>> rOut = NewCollections.nulls(self.atomNumber());
             
             // 获取需要缓存的近邻列表
             final IntList @Nullable[] tNLToBuffer = self.getNLWhichNeedBuffer_(aRCutOff, -1, false);
             
             // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存（所有近邻的 Ylm, Rn, fc 都要存，会随着截断半径增加爆炸增涨），这里不考虑
-            self.pool_().parfor(self.atomNumber(), i -> {
-                rOut.set(i, tBasis.evalPartial(aCalBasis, aCalCross, dxyzTypeDo -> {
+            self.pool_().parfor(self.atomNumber(), (i, threadID) -> {
+                rOut.set(i, tBasis[threadID].evalPartial(aCalBasis, aCalCross, dxyzTypeDo -> {
                     self.nl_().forEachNeighbor(i, aRCutOff, false, (x, y, z, idx, dx, dy, dz) -> {
                         dxyzTypeDo.run(dx, dy, dz, self.atomType_().get(idx));
                         // 还是需要顺便统计近邻进行缓存
@@ -79,6 +93,8 @@ public class NNAPExtensions {
             });
             
             return rOut;
+        } finally {
+            for (int i = 0; i < tThreadNum; ++i) tBasis[i].shutdown();
         }
     }
     public static List<List<RowMatrix>> calBasisPartialNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis) {return calBasisPartialNNAP(self, aNMax, aLMax, aRCutOff, aCalBasis, false);}
