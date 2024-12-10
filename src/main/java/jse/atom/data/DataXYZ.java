@@ -168,13 +168,25 @@ public class DataXYZ extends AbstractSettableAtomData {
             mProperties.put("species", tValue);
             return this;
         }
-        case "velo": case "vel": {
-            if (!(aValue instanceof IMatrix)) throw new IllegalArgumentException("Value type MUST be Matrix for "+aKey+", input: "+aValue.getClass().getName());
+        case "velo": {
+            if (!(aValue instanceof IMatrix)) throw new IllegalArgumentException("Value type MUST be Matrix for velo, input: "+aValue.getClass().getName());
             IMatrix tValue = (IMatrix)aValue;
             if (tValue.rowNumber() < mAtomNum) throw new IndexOutOfBoundsException("Need: "+mAtomNum+", Size: "+tValue.rowNumber());
             if (tValue.columnNumber() < ATOM_DATA_KEYS_VELOCITY.length) throw new IndexOutOfBoundsException("Need: "+ATOM_DATA_KEYS_VELOCITY.length+", Size: "+tValue.columnNumber());
             mVelocities = tValue;
-            mProperties.put(aKey, tValue);
+            mProperties.put("velo", tValue);
+            return this;
+        }
+        case "vel": {
+            if (!(aValue instanceof IMatrix)) throw new IllegalArgumentException("Value type MUST be Matrix for vel, input: "+aValue.getClass().getName());
+            IMatrix tValue = (IMatrix)aValue;
+            if (tValue.rowNumber() < mAtomNum) throw new IndexOutOfBoundsException("Need: "+mAtomNum+", Size: "+tValue.rowNumber());
+            if (tValue.columnNumber() < ATOM_DATA_KEYS_VELOCITY.length) throw new IndexOutOfBoundsException("Need: "+ATOM_DATA_KEYS_VELOCITY.length+", Size: "+tValue.columnNumber());
+            Object tVelo = mProperties.remove("velo");
+            if (!(tVelo instanceof IMatrix) || ((IMatrix) tVelo).columnNumber()!=3) {
+                mVelocities = tValue;
+            }
+            mProperties.put("vel", tValue);
             return this;
         }}
         mProperties.put(aKey, aValue);
@@ -193,11 +205,21 @@ public class DataXYZ extends AbstractSettableAtomData {
             mType2Symbol = null;
             return mProperties.remove(aKey);
         }
-        case "velo": case "vel": {
-            mVelocities = null;
-            Object tVelo = mProperties.remove("velo");
+        case "velo": {
             Object tVel = mProperties.remove("vel");
-            return tVelo!=null ? tVelo : tVel;
+            if (tVel instanceof IMatrix && ((IMatrix)tVel).columnNumber()==3) {
+                mVelocities = (IMatrix)tVel;
+            } else {
+                mVelocities = null;
+            }
+            return mProperties.remove("velo");
+        }
+        case "vel": {
+            Object tVelo = mProperties.remove("velo");
+            if (!(tVelo instanceof IMatrix) || ((IMatrix) tVelo).columnNumber()!=3) {
+                mVelocities = null;
+            }
+            return mProperties.remove("vel");
         }}
         return mProperties.remove(aKey);
     }
