@@ -851,7 +851,7 @@ public class SP {
         
         
         /** 基于 pip 的 python 包管理，下载指定包到 .pypkg */
-        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {
+        public static int downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {
             // 组装指令
             List<String> rCommand = new ArrayList<>();
             rCommand.add("pip"); rCommand.add("download");
@@ -884,18 +884,18 @@ public class SP {
             }
             
             // 直接通过系统指令执行 pip 来下载
-            EXEC.system(String.join(" ", rCommand));
+            return EXEC.system(String.join(" ", rCommand));
         }
-        public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {downloadPackage(aRequirement, false, aPlatform, aPythonVersion, aIndexUrl);}
-        public static void downloadPackage(String aRequirement, String aPlatform, String aPythonVersion) throws IOException {downloadPackage(aRequirement, false, aPlatform, aPythonVersion);}
-        public static void downloadPackage(String aRequirement, String aPlatform) throws IOException {downloadPackage(aRequirement, aPlatform, null);}
-        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion) throws IOException {downloadPackage(aRequirement, aIncludeDep, aPlatform, aPythonVersion, null);}
-        public static void downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform) throws IOException {downloadPackage(aRequirement, aIncludeDep, aPlatform, null);}
-        public static void downloadPackage(String aRequirement, boolean aIncludeDep) throws IOException {downloadPackage(aRequirement, aIncludeDep, null);}
-        public static void downloadPackage(String aRequirement) throws IOException {downloadPackage(aRequirement, false);}
+        public static int downloadPackage(String aRequirement, String aPlatform, String aPythonVersion, String aIndexUrl) throws IOException {return downloadPackage(aRequirement, false, aPlatform, aPythonVersion, aIndexUrl);}
+        public static int downloadPackage(String aRequirement, String aPlatform, String aPythonVersion) throws IOException {return downloadPackage(aRequirement, false, aPlatform, aPythonVersion);}
+        public static int downloadPackage(String aRequirement, String aPlatform) throws IOException {return downloadPackage(aRequirement, aPlatform, null);}
+        public static int downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform, String aPythonVersion) throws IOException {return downloadPackage(aRequirement, aIncludeDep, aPlatform, aPythonVersion, null);}
+        public static int downloadPackage(String aRequirement, boolean aIncludeDep, String aPlatform) throws IOException {return downloadPackage(aRequirement, aIncludeDep, aPlatform, null);}
+        public static int downloadPackage(String aRequirement, boolean aIncludeDep) throws IOException {return downloadPackage(aRequirement, aIncludeDep, null);}
+        public static int downloadPackage(String aRequirement) throws IOException {return downloadPackage(aRequirement, false);}
         
         /** 基于 pip 的 python 包管理，直接安装指定包到 lib */
-        public static void installPackage(String aRequirement, boolean aIncludeDep, boolean aIncludeIndex) throws IOException {
+        public static int installPackage(String aRequirement, boolean aIncludeDep, boolean aIncludeIndex) throws IOException {
             // 组装指令
             List<String> rCommand = new ArrayList<>();
             rCommand.add("pip"); rCommand.add("install");
@@ -915,10 +915,10 @@ public class SP {
             rCommand.add("'"+aRequirement+"'");
             
             // 直接通过系统指令执行 pip 来下载
-            EXEC.system(String.join(" ", rCommand));
+            return EXEC.system(String.join(" ", rCommand));
         }
-        public static void installPackage(String aRequirement, boolean aIncludeDep) throws IOException {installPackage(aRequirement, aIncludeDep, false);}
-        public static void installPackage(String aRequirement) throws IOException {installPackage(aRequirement, false);}
+        public static int installPackage(String aRequirement, boolean aIncludeDep) throws IOException {return installPackage(aRequirement, aIncludeDep, false);}
+        public static int installPackage(String aRequirement) throws IOException {return installPackage(aRequirement, false);}
         
         /** 一些内置的 python 库安装，主要用于内部使用 */
         public static void installAse() throws IOException {

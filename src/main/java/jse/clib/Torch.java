@@ -5,8 +5,6 @@ import jse.code.SP;
 import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-
 import static jse.code.Conf.LIB_NAME_IN;
 import static jse.code.OS.IS_WINDOWS;
 import static jse.code.SP.PYTHON_LIB_DIR;
@@ -52,7 +50,7 @@ public class Torch {
     private final static String[] LIB_NAMES = IS_WINDOWS ? new String[]{"asmjit", "libiomp5md", "fbgemm", "c10", "uv", "torch_cpu", "torch"} : new String[]{"torch"};
     
     
-    private static void initTorch_() throws IOException {
+    private static void initTorch_() throws Exception {
         // 首先获取源码路径，这里直接检测是否是 torch-$VERSION 开头
         UT.IO.makeDir(PYTHON_PKG_DIR);
         String[] tList = UT.IO.list(PYTHON_PKG_DIR);
@@ -60,16 +58,33 @@ public class Torch {
         for (String tName : tList) if (tName.startsWith("torch-"+VERSION)) {
             tHasTorchPkg = true; break;
         }
-        // 如果没有 ase 包则直接下载，指定版本 VERSION 避免因为更新造成的问题
-        if (!tHasTorchPkg) {
-            System.out.printf("TORCH INIT INFO: No torch package in %s, downloading...\n", PYTHON_PKG_DIR);
-            SP.Python.downloadPackage("torch=="+VERSION, null, null, Conf.INDEX_URL);
-            System.out.println("TORCH INIT INFO: torch package downloading finished");
+        // 这里先尝试直接安装，直接通过 pip 的安装来进行检测其余是否匹配
+        if (tHasTorchPkg) {
+            // 安装 torch 包
+            System.out.println("TORCH INIT INFO: Installing torch from package...");
+            int tExitCode = SP.Python.installPackage("torch=="+VERSION);
+            if (tExitCode != 0) {
+                System.err.println("TORCH INIT WARNING: torch install Failed: " + tExitCode);
+                System.err.println("    This may be caused by no correct version.");
+            } else {
+                System.out.println("TORCH INIT INFO: torch install finished");
+                return;
+            }
         }
-        // 安装 torch 包
-        System.out.println("TORCH INIT INFO: Installing torch from package...");
-        SP.Python.installPackage("torch=="+VERSION);
-        System.out.println("TORCH INIT INFO: torch Installing finished");
+        // 尝试下载包
+        System.out.printf("TORCH INIT INFO: No correct torch package in %s, downloading...\n", PYTHON_PKG_DIR);
+        int tExitCode = SP.Python.downloadPackage("torch=="+VERSION, null, null, Conf.INDEX_URL);
+        if (tExitCode != 0) {
+            throw new Exception("TORCH INIT ERROR: torch download Failed: " + tExitCode);
+        }
+        System.out.println("TORCH INIT INFO: torch package downloading finished");
+        // 再次安装 torch 包
+        System.out.println("TORCH INIT INFO: Re-installing torch from package...");
+        tExitCode = SP.Python.installPackage("torch=="+VERSION);
+        if (tExitCode != 0) {
+            throw new Exception("TORCH INIT ERROR: torch install Failed: " + tExitCode);
+        }
+        System.out.println("TORCH INIT INFO: torch install finished");
     }
     
     static {
