@@ -65,6 +65,8 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
     @Override public void lmod2this     (double aRHS) {DATA.mapLMod2This    (thisMatrix_()::setIteratorCol, aRHS);}
     @Override public void map2this      (DoubleUnaryOperator aOpt) {DATA.mapDo2This(thisMatrix_()::setIteratorCol, aOpt);}
     
+    @Override public IMatrix abs() {IMatrix rMatrix = newMatrix_(); DATA.mapAbs2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
+    @Override public void abs2this() {DATA.mapAbs2This(thisMatrix_()::setIteratorCol);}
     @Override public IMatrix negative() {IMatrix rMatrix = newMatrix_(); DATA.mapNegative2Dest(thisMatrix_()::iteratorCol, rMatrix::setIteratorCol); return rMatrix;}
     @Override public void negative2this() {DATA.mapNegative2This(thisMatrix_()::setIteratorCol);}
     

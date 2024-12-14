@@ -146,6 +146,8 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     void div2this       (IVector aRHS);
     void mod2this       (IVector aRHS);
     
+    IVector abs();
+    void abs2this();
     IVector negative();
     void negative2this();
     

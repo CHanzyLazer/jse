@@ -51,6 +51,8 @@ public interface IIntVectorOperation {
     void lmod2this      (int aRHS);
     void map2this       (IntUnaryOperator aOpt);
     
+    IIntVector abs();
+    void abs2this();
     IIntVector negative();
     void negative2this();
     

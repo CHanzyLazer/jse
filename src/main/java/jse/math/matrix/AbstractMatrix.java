@@ -625,6 +625,8 @@ public abstract class AbstractMatrix implements IMatrix {
     @Override public final void div2this        (IMatrix aRHS) {operation().div2this     (aRHS);}
     @Override public final void mod2this        (IMatrix aRHS) {operation().mod2this     (aRHS);}
     
+    @Override public final IMatrix abs() {return operation().abs();}
+    @Override public final void abs2this() {operation().abs2this();}
     @Override public final IMatrix negative() {return operation().negative();}
     @Override public final void negative2this() {operation().negative2this();}
     

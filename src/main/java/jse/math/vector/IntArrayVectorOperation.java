@@ -249,6 +249,15 @@ public abstract class IntArrayVectorOperation extends AbstractIntVectorOperation
     @Override public void lmod2this     (int aRHS) {IntArrayVector rThis = thisVector_(); ARRAY.mapLMod2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void map2this      (IntUnaryOperator aOpt) {IntArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
+    @Override public IIntVector abs() {
+        IntArrayVector tThis = thisVector_();
+        IntArrayVector rVector = newVector_();
+        int[] tDataL = rVector.getIfHasSameOrderData(tThis);
+        if (tDataL != null) ARRAY.mapAbs2Dest(tDataL, tThis.internalDataShift(), rVector.internalData(), rVector.internalDataShift(), rVector.internalDataSize());
+        else DATA.mapAbs2Dest(tThis, rVector);
+        return rVector;
+    }
+    @Override public void abs2this() {IntArrayVector rThis = thisVector_(); ARRAY.mapAbs2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize());}
     @Override public IIntVector negative() {
         IntArrayVector tThis = thisVector_();
         IntArrayVector rVector = newVector_();

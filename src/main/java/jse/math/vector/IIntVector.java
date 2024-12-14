@@ -139,6 +139,8 @@ public interface IIntVector extends ISwapper, ISlice, IHasIntIterator, IHasIntSe
     void div2this       (IIntVector aRHS);
     void mod2this       (IIntVector aRHS);
     
+    IIntVector abs();
+    void abs2this();
     IIntVector negative();
     void negative2this();
     

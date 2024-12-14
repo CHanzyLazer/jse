@@ -51,6 +51,8 @@ public abstract class AbstractIntVectorOperation implements IIntVectorOperation 
     @Override public void lmod2this     (int aRHS) {DATA.mapLMod2This    (thisVector_(), aRHS);}
     @Override public void map2this      (IntUnaryOperator aOpt) {DATA.mapDo2This(thisVector_(), aOpt);}
     
+    @Override public IIntVector abs() {IIntVector rVector = newVector_(); DATA.mapAbs2Dest(thisVector_(), rVector); return rVector;}
+    @Override public void abs2this() {DATA.mapAbs2This(thisVector_());}
     @Override public IIntVector negative() {IIntVector rVector = newVector_(); DATA.mapNegative2Dest(thisVector_(), rVector); return rVector;}
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     

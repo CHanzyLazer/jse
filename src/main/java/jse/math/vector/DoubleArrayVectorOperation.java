@@ -93,6 +93,15 @@ public abstract class DoubleArrayVectorOperation extends AbstractVectorOperation
     @Override public void lmod2this     (double aRHS) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapLMod2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void map2this      (DoubleUnaryOperator aOpt) {DoubleArrayVector rThis = thisVector_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
+    @Override public IVector abs() {
+        DoubleArrayVector tThis = thisVector_();
+        DoubleArrayVector rVector = newVector_();
+        double[] tDataL = rVector.getIfHasSameOrderData(tThis);
+        if (tDataL != null) ARRAY.mapAbs2Dest(tDataL, tThis.internalDataShift(), rVector.internalData(), rVector.internalDataShift(), rVector.internalDataSize());
+        else DATA.mapAbs2Dest(tThis, rVector);
+        return rVector;
+    }
+    @Override public void abs2this() {DoubleArrayVector rThis = thisVector_(); ARRAY.mapAbs2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize());}
     @Override public IVector negative() {
         DoubleArrayVector tThis = thisVector_();
         DoubleArrayVector rVector = newVector_();

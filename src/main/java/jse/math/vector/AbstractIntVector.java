@@ -272,6 +272,8 @@ public abstract class AbstractIntVector implements IIntVector {
     @Override public final void div2this        (IIntVector aRHS) {operation().div2this     (aRHS);}
     @Override public final void mod2this        (IIntVector aRHS) {operation().mod2this     (aRHS);}
     
+    @Override public final IIntVector abs() {return operation().abs();}
+    @Override public final void abs2this() {operation().abs2this();}
     @Override public final IIntVector negative() {return operation().negative();}
     @Override public final void negative2this() {operation().negative2this();}
     

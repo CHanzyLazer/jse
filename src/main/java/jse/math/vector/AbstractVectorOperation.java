@@ -57,6 +57,8 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
     @Override public void lmod2this     (double aRHS) {DATA.mapLMod2This    (thisVector_(), aRHS);}
     @Override public void map2this      (DoubleUnaryOperator aOpt) {DATA.mapDo2This(thisVector_(), aOpt);}
     
+    @Override public IVector abs() {IVector rVector = newVector_(); DATA.mapAbs2Dest(thisVector_(), rVector); return rVector;}
+    @Override public void abs2this() {DATA.mapAbs2This(thisVector_());}
     @Override public IVector negative() {IVector rVector = newVector_(); DATA.mapNegative2Dest(thisVector_(), rVector); return rVector;}
     @Override public void negative2this() {DATA.mapNegative2This(thisVector_());}
     

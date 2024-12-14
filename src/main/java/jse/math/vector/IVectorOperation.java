@@ -53,6 +53,8 @@ public interface IVectorOperation {
     void lmod2this      (double aRHS);
     void map2this       (DoubleUnaryOperator aOpt);
     
+    IVector abs();
+    void abs2this();
     IVector negative();
     void negative2this();
     

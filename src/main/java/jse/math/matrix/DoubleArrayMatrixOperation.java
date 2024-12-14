@@ -88,6 +88,15 @@ public abstract class DoubleArrayMatrixOperation extends AbstractMatrixOperation
     @Override public void lmod2this     (double aRHS) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapLMod2This    (rThis.internalData(), rThis.internalDataShift(), aRHS, rThis.internalDataSize());}
     @Override public void map2this      (DoubleUnaryOperator aOpt) {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapDo2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aOpt);}
     
+    @Override public IMatrix abs() {
+        DoubleArrayMatrix tThis = thisMatrix_();
+        DoubleArrayMatrix rMatrix = newMatrix_();
+        double[] tDataL = rMatrix.getIfHasSameOrderData(tThis);
+        if (tDataL != null) ARRAY.mapAbs2Dest(tDataL, tThis.internalDataShift(), rMatrix.internalData(), rMatrix.internalDataShift(), rMatrix.internalDataSize());
+        else DATA.mapAbs2Dest(tThis::iteratorCol, rMatrix::setIteratorCol);
+        return rMatrix;
+    }
+    @Override public void abs2this() {DoubleArrayMatrix rThis = thisMatrix_(); ARRAY.mapAbs2This(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize());}
     @Override public IMatrix negative() {
         DoubleArrayMatrix tThis = thisMatrix_();
         DoubleArrayMatrix rMatrix = newMatrix_();

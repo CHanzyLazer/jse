@@ -147,6 +147,8 @@ public interface IMatrix extends IMatrixGetter {
     void div2this       (IMatrix aRHS);
     void mod2this       (IMatrix aRHS);
     
+    IMatrix abs();
+    void abs2this();
     IMatrix negative();
     void negative2this();
     

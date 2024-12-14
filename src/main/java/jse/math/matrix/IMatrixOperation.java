@@ -52,6 +52,8 @@ public interface IMatrixOperation {
     void lmod2this      (double aRHS);
     void map2this       (DoubleUnaryOperator aOpt);
     
+    IMatrix abs();
+    void abs2this();
     IMatrix negative();
     void negative2this();
     

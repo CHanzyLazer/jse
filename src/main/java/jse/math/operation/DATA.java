@@ -285,6 +285,23 @@ public class DATA {
         while (si.hasNext()) si.set(aOpt.applyAsInt(si.next()));
     }
     
+    /** abs stuffs */
+    public static void mapAbs2Dest(IHasDoubleIterator aData, IHasDoubleSetOnlyIterator rDest) {
+        final IDoubleIterator it = aData.iterator();
+        rDest.assign(() -> Math.abs(it.next()));
+    }
+    public static void mapAbs2This(IHasDoubleSetIterator rThis) {
+        final IDoubleSetIterator si = rThis.setIterator();
+        while (si.hasNext()) si.set(Math.abs(si.next()));
+    }
+    public static void mapAbs2Dest(IHasIntIterator aData, IHasIntSetOnlyIterator rDest) {
+        final IIntIterator it = aData.iterator();
+        rDest.assign(() -> Math.abs(it.next()));
+    }
+    public static void mapAbs2This(IHasIntSetIterator rThis) {
+        final IIntSetIterator si = rThis.setIterator();
+        while (si.hasNext()) si.set(Math.abs(si.next()));
+    }
     /** negative stuffs */
     public static void mapNegative2Dest(IHasDoubleIterator aData, IHasDoubleSetOnlyIterator rDest) {
         final IDoubleIterator it = aData.iterator();

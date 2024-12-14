@@ -575,6 +575,25 @@ public class ARRAY {
     }
     
     
+    /** abs stuffs */
+    public static void mapAbs2Dest(double[] aData, int aShift, double[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShift) for (int i = rShift; i < rEnd; ++i) rDest[i] = Math.abs(aData[i]);
+        else for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) rDest[i] = Math.abs(aData[j]);
+    }
+    public static void mapAbs2This(double[] rThis, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = Math.abs(rThis[i]);
+    }
+    public static void mapAbs2Dest(int[] aData, int aShift, int[] rDest, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        if (rShift == aShift) for (int i = rShift; i < rEnd; ++i) rDest[i] = Math.abs(aData[i]);
+        else for (int i = rShift, j = aShift; i < rEnd; ++i, ++j) rDest[i] = Math.abs(aData[j]);
+    }
+    public static void mapAbs2This(int[] rThis, int rShift, int aLength) {
+        final int rEnd = aLength + rShift;
+        for (int i = rShift; i < rEnd; ++i) rThis[i] = Math.abs(rThis[i]);
+    }
     /** negative stuffs */
     public static void mapNegative2Dest(double[] aData, int aShift, double[] rDest, int rShift, int aLength) {
         final int rEnd = aLength + rShift;
