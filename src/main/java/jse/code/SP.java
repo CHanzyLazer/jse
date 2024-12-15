@@ -807,16 +807,20 @@ public class SP {
                 .redirectStdErr(System.err);
             jep.SharedInterpreter.setConfig(rConfig);
             // 把 groovy 的类路径也加进去
-            if (INCLUDE_WORKING_DIR) {
-            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(WORKING_DIR);
+            if (JEP_ADD_GROOVY_HOOK) {
+                System.err.println("JEP INIT WARNING: `JEP_ADD_GROOVY_HOOK` is opened, which may cause slow jep initialization.");
+                if (INCLUDE_WORKING_DIR) {
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(WORKING_DIR);
+                }
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
+                for (String tGroovyExlibDir : GROOVY_EXLIB_DIRS) {
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(tGroovyExlibDir));
+                }
+                jep.ClassList.ADDITIONAL_CLASS_FILE_EXTENSION.add(".groovy");
             }
-            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
-            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
-            for (String tGroovyExlibDir : GROOVY_EXLIB_DIRS) {
-            jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(tGroovyExlibDir));
-            }
+            // jar 包还是直接统一加进去
             jep.ClassList.ADDITIONAL_CLASS_PATHS.addAll(JAR_LIB_PATHS);
-            jep.ClassList.ADDITIONAL_CLASS_FILE_EXTENSION.add(".groovy");
             // 初始化 JEP_INTERP
             initInterpreter_();
         }
