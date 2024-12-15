@@ -4,7 +4,7 @@ import jse.lmp.LmpBox;
 import jse.math.MathEX;
 
 /**
- * 通用的模拟盒类，现在支持斜方的模拟盒；
+ * 通用的模拟盒接口，现在支持斜方的模拟盒；
  * 对于通用情况的使用，{@link #a()}, {@link #b()}, {@link #c()}
  * 对应模拟盒三个基向量。
  * <p>

@@ -73,6 +73,8 @@ public final class XYZ extends AbstractSettableXYZ {
     public XYZ(IVector aXYZ) {
         mX = aXYZ.get(0); mY = aXYZ.get(1); mZ = aXYZ.get(2);
     }
+    /** @return {@inheritDoc} */
+    @Override public XYZ copy() {return new XYZ(this);}
     
     /** @return {@inheritDoc} */
     @Override public double x() {return mX;}
