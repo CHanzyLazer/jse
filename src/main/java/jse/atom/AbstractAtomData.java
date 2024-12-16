@@ -147,26 +147,56 @@ public abstract class AbstractAtomData implements IAtomData {
      * @see #atom(int)
      */
     protected abstract class AbstractAtom_ extends AbstractAtom {
+        /** 转发 {@link AbstractAtomData#hasVelocity()} */
         @Override public boolean hasVelocity() {return AbstractAtomData.this.hasVelocity();}
+        /** 转发 {@link AbstractAtomData#symbol(int)} */
         @Override public @Nullable String symbol() {return AbstractAtomData.this.symbol(type());}
+        /** 转发 {@link AbstractAtomData#hasSymbol()} */
         @Override public boolean hasSymbol() {return AbstractAtomData.this.hasSymbol();}
+        /** 转发 {@link AbstractAtomData#mass(int)} */
         @Override public double mass() {return AbstractAtomData.this.mass(type());}
+        /** 转发 {@link AbstractAtomData#hasMass()} */
         @Override public boolean hasMass() {return AbstractAtomData.this.hasMass();}
         
+        /**
+         * 为内部 id {@link #id_()} 包装一层检测 id
+         * 是否存在，如果不存在则自动返回 {@link #index()}
+         */
         @Override public int id() {int tID = id_(); return tID<=0 ? (index()+1) : tID;}
+        /**
+         * 为内部 type {@link #type_()} 包装一层检测 type
+         * 是否会超过 {@link #atomTypeNumber()}，如果超过了则自动截断
+         */
         @Override public int type() {return Math.min(type_(), atomTypeNumber());}
-        /** 会复写掉内部的 hasVelocities 数据 */
+        
+        /**
+         * 为内部 vx {@link #vx_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vx() {return hasVelocity() ? vx_() : 0.0;}
+        /**
+         * 为内部 vy {@link #vy_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vy() {return hasVelocity() ? vy_() : 0.0;}
+        /**
+         * 为内部 vz {@link #vz_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vz() {return hasVelocity() ? vz_() : 0.0;}
         
         /// stuff to override
+        /** 可以直接实现的返回内部 id 值 */
         protected abstract int id_();
+        /** 可以直接实现的返回内部 type 值 */
         protected abstract int type_();
+        /** 可以直接实现的返回内部 vx 值 */
         protected double vx_() {return 0.0;}
+        /** 可以直接实现的返回内部 vy 值 */
         protected double vy_() {return 0.0;}
+        /** 可以直接实现的返回内部 vz 值 */
         protected double vz_() {return 0.0;}
-        /** 注意一定要复写掉内部的 index 数据 */
+        /** 对于 {@link IAtomData} 内部的原子一定要复写掉内部的 index 数据 */
         @Override public abstract int index();
     }
     

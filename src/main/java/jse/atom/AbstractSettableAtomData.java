@@ -157,48 +157,107 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
      * @see #atom(int)
      */
     protected abstract class AbstractSettableAtom_ extends AbstractSettableAtom {
+        /** 转发 {@link AbstractSettableAtomData#hasVelocity()} */
         @Override public boolean hasVelocity() {return AbstractSettableAtomData.this.hasVelocity();}
+        /** 转发 {@link AbstractSettableAtomData#symbol(int)} */
         @Override public @Nullable String symbol() {return AbstractSettableAtomData.this.symbol(type());}
+        /** 转发 {@link AbstractSettableAtomData#hasSymbol()} */
         @Override public boolean hasSymbol() {return AbstractSettableAtomData.this.hasSymbol();}
+        /** 转发 {@link AbstractSettableAtomData#mass(int)} */
         @Override public double mass() {return AbstractSettableAtomData.this.mass(type());}
+        /** 转发 {@link AbstractSettableAtomData#hasMass()} */
         @Override public boolean hasMass() {return AbstractSettableAtomData.this.hasMass();}
         
+        /**
+         * 为内部 id {@link #id_()} 包装一层检测 id
+         * 是否存在，如果不存在则自动返回 {@link #index()}
+         */
         @Override public int id() {int tID = id_(); return tID<=0 ? (index()+1) : tID;}
+        /**
+         * 为内部 type {@link #type_()} 包装一层检测 type
+         * 是否会超过 {@link #atomTypeNumber()}，如果超过了则自动截断
+         */
         @Override public int type() {return Math.min(type_(), atomTypeNumber());}
-        /** 会复写掉内部的 hasVelocities 数据 */
+        
+        /**
+         * 为内部 vx {@link #vx_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vx() {return hasVelocity() ? vx_() : 0.0;}
+        /**
+         * 为内部 vy {@link #vy_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vy() {return hasVelocity() ? vy_() : 0.0;}
+        /**
+         * 为内部 vz {@link #vz_()} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接返回 {@code 0.0}
+         */
         @Override public double vz() {return hasVelocity() ? vz_() : 0.0;}
+        
+        /** 为内部修改 x 值 {@link #setX_(double)} 包装一层返回自身 */
         @Override public ISettableAtom setX(double aX) {setX_(aX); return this;}
+        /** 为内部修改 y 值 {@link #setY_(double)} 包装一层返回自身 */
         @Override public ISettableAtom setY(double aY) {setY_(aY); return this;}
+        /** 为内部修改 z 值 {@link #setZ_(double)} 包装一层返回自身 */
         @Override public ISettableAtom setZ(double aZ) {setZ_(aZ); return this;}
+        /** 为内部修改 id 值 {@link #setID_(int)} 包装一层返回自身 */
         @Override public ISettableAtom setID(int aID) {setID_(aID); return this;}
+        /**
+         * 为内部修改 type 值 {@link #setType_(int)} 包装一层返回自身，
+         * 并且自动检测 aType 过大后调用 {@link #setAtomTypeNumber(int)}
+         * 自动调整原子种类数目
+         */
         @Override public ISettableAtom setType(int aType) {
             // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
             if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
             setType_(aType);
             return this;
         }
-        /** 会复写掉内部的 hasVelocities 数据 */
+        /**
+         * 为内部修改 vx 值 {@link #setVx_(double)} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接抛出错误 {@link UnsupportedOperationException}
+         */
         @Override public ISettableAtom setVx(double aVx) {if (!hasVelocity()) throw new UnsupportedOperationException("setVx"); setVx_(aVx); return this;}
+        /**
+         * 为内部修改 vy 值 {@link #setVy_(double)} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接抛出错误 {@link UnsupportedOperationException}
+         */
         @Override public ISettableAtom setVy(double aVy) {if (!hasVelocity()) throw new UnsupportedOperationException("setVy"); setVy_(aVy); return this;}
+        /**
+         * 为内部修改 vz 值 {@link #setVz_(double)} 包装一层检测是否存在确实速度
+         * ({@link #hasVelocity()})，如果不存在则直接抛出错误 {@link UnsupportedOperationException}
+         */
         @Override public ISettableAtom setVz(double aVz) {if (!hasVelocity()) throw new UnsupportedOperationException("setVz"); setVz_(aVz); return this;}
         
         /// stuff to override
+        /** 可以直接实现的返回内部 id 值 */
         protected abstract int id_();
+        /** 可以直接实现的返回内部 type 值 */
         protected abstract int type_();
+        /** 可以直接实现的返回内部 vx 值 */
         protected double vx_() {return 0.0;}
+        /** 可以直接实现的返回内部 vy 值 */
         protected double vy_() {return 0.0;}
+        /** 可以直接实现的返回内部 vz 值 */
         protected double vz_() {return 0.0;}
+        /** 可以直接实现的修改内部 x 值 */
         protected abstract void setX_(double aX);
+        /** 可以直接实现的修改内部 y 值 */
         protected abstract void setY_(double aY);
+        /** 可以直接实现的修改内部 z 值 */
         protected abstract void setZ_(double aZ);
+        /** 可以直接实现的修改内部 id 值 */
         protected abstract void setID_(int aID);
+        /** 可以直接实现的修改内部 type 值 */
         protected abstract void setType_(int aType);
+        /** 可以直接实现的修改内部 vx 值 */
         protected void setVx_(double aVx) {throw new RuntimeException();}
+        /** 可以直接实现的修改内部 vy 值 */
         protected void setVy_(double aVy) {throw new RuntimeException();}
+        /** 可以直接实现的修改内部 vz 值 */
         protected void setVz_(double aVz) {throw new RuntimeException();}
-        /** 注意一定要复写掉内部的 index 数据 */
+        /** 对于 {@link IAtomData} 内部的原子一定要复写掉内部的 index 数据 */
         @Override public abstract int index();
     }
     
