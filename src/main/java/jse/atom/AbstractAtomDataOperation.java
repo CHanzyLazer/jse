@@ -1,7 +1,6 @@
 package jse.atom;
 
 import jse.cache.LogicalVectorCache;
-import jse.code.CS;
 import jse.code.collection.*;
 import jse.code.functional.IFilter;
 import jse.code.functional.IIndexFilter;
