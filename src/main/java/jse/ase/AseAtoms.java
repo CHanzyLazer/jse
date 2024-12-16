@@ -31,6 +31,26 @@ import static jse.code.CS.STD_VZ_COL;
  * 要求系统有 python 环境并且安装了
  * <a href="https://wiki.fysik.dtu.dk/ase/">
  * Atomic Simulation Environment (ASE) </a>
+ * <p>
+ * 通过：
+ * <pre> {@code
+ * def jseAtoms = AseAtoms.of(pyAtoms)
+ * } </pre>
+ * 来将 {@link PyObject} 的 ase atoms 转换成 jse 的原子数据，通过：
+ * 通过：
+ * <pre> {@code
+ * def pyAtoms = jseAtoms.toPyObject()
+ * } </pre>
+ * 来将此对象转换成 {@link PyObject} 的 ase atoms
+ * <p>
+ * 和 python 对象的相互转换会丢失 jse 未支持的属性，如果希望使用这些属性则应该直接通过
+ * {@link PyObject} 来使用
+ * <p>
+ * 由于 ase 读取的 atoms 是带有单位的，因此在读取文件时会自动进行一次单位转换；这在和 jse
+ * 原子数据进行转换时会出现问题，因此这里将 ase atoms 转换成 jse 类型时会按照默认的单位转换统一将这个转换变换回去。
+ *
+ * @see IAtomData IAtomData: 原子数据类型通用接口
+ * @see PyObject
  * @author liqa
  */
 public class AseAtoms extends AbstractSettableAtomData {
@@ -168,44 +188,29 @@ public class AseAtoms extends AbstractSettableAtomData {
     /** AbstractAtomData stuffs */
     @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
+            @Override public int index() {return aIdx;}
             @Override public double x() {return mPositions.get(aIdx, XYZ_X_COL);}
             @Override public double y() {return mPositions.get(aIdx, XYZ_Y_COL);}
             @Override public double z() {return mPositions.get(aIdx, XYZ_Z_COL);}
-            @Override public int id() {return aIdx+1;}
-            @Override public int type() {return mAtomicNumber2Type.get(mAtomicNumbers.get(aIdx));}
-            @Override public int index() {return aIdx;}
-            
-            @Override public double vx() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VX_COL)/mass()/ASE_VEL_MUL);}
-            @Override public double vy() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VY_COL)/mass()/ASE_VEL_MUL);}
-            @Override public double vz() {return mMomenta==null?0.0:(mMomenta.get(aIdx, STD_VZ_COL)/mass()/ASE_VEL_MUL);}
+            @Override protected int id_() {return aIdx+1;}
+            @Override protected int type_() {return mAtomicNumber2Type.get(mAtomicNumbers.get(aIdx));}
+            @Override protected double vx_() {assert mMomenta!=null; return mMomenta.get(aIdx, STD_VX_COL)/mass()/ASE_VEL_MUL;}
+            @Override protected double vy_() {assert mMomenta!=null; return mMomenta.get(aIdx, STD_VY_COL)/mass()/ASE_VEL_MUL;}
+            @Override protected double vz_() {assert mMomenta!=null; return mMomenta.get(aIdx, STD_VZ_COL)/mass()/ASE_VEL_MUL;}
             @Override public IXYZ vxyz() {
                 if (mMomenta==null) return new XYZ(0.0, 0.0, 0.0);
                 double tDiv = mass()*ASE_VEL_MUL;
                 return new XYZ(mMomenta.get(aIdx, STD_VX_COL)/tDiv, mMomenta.get(aIdx, STD_VY_COL)/tDiv, mMomenta.get(aIdx, STD_VZ_COL)/tDiv);
             }
             
-            @Override public ISettableAtom setX(double aX) {mPositions.set(aIdx, XYZ_X_COL, aX); return this;}
-            @Override public ISettableAtom setY(double aY) {mPositions.set(aIdx, XYZ_Y_COL, aY); return this;}
-            @Override public ISettableAtom setZ(double aZ) {mPositions.set(aIdx, XYZ_Z_COL, aZ); return this;}
-            @Override public ISettableAtom setID(int aID) {throw new UnsupportedOperationException("setID");}
-            @Override public ISettableAtom setType(int aType) {
-                // 超过原子种类数目则需要重新设置
-                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
-                mAtomicNumbers.set(aIdx, mType2AtomicNumber.get(aType));
-                return this;
-            }
-            @Override public ISettableAtom setVx(double aVx) {
-                if (mMomenta == null) throw new UnsupportedOperationException("setVx");
-                mMomenta.set(aIdx, STD_VX_COL, aVx*mass()*ASE_VEL_MUL); return this;
-            }
-            @Override public ISettableAtom setVy(double aVy) {
-                if (mMomenta == null) throw new UnsupportedOperationException("setVy");
-                mMomenta.set(aIdx, STD_VY_COL, aVy*mass()*ASE_VEL_MUL); return this;
-            }
-            @Override public ISettableAtom setVz(double aVz) {
-                if (mMomenta == null) throw new UnsupportedOperationException("setVz");
-                mMomenta.set(aIdx, STD_VZ_COL, aVz*mass()*ASE_VEL_MUL); return this;
-            }
+            @Override protected void setX_(double aX) {mPositions.set(aIdx, XYZ_X_COL, aX);}
+            @Override protected void setY_(double aY) {mPositions.set(aIdx, XYZ_Y_COL, aY);}
+            @Override protected void setZ_(double aZ) {mPositions.set(aIdx, XYZ_Z_COL, aZ);}
+            @Override protected void setID_(int aID) {throw new UnsupportedOperationException("setID");}
+            @Override protected void setType_(int aType) {mAtomicNumbers.set(aIdx, mType2AtomicNumber.get(aType));}
+            @Override protected void setVx_(double aVx) {assert mMomenta!=null; mMomenta.set(aIdx, STD_VX_COL, aVx*mass()*ASE_VEL_MUL);}
+            @Override protected void setVy_(double aVy) {assert mMomenta!=null; mMomenta.set(aIdx, STD_VY_COL, aVy*mass()*ASE_VEL_MUL);}
+            @Override protected void setVz_(double aVz) {assert mMomenta!=null; mMomenta.set(aIdx, STD_VZ_COL, aVz*mass()*ASE_VEL_MUL);}
             @Override public ISettableAtom setVxyz(double aVx, double aVy, double aVz) {
                 if (mMomenta == null) throw new UnsupportedOperationException("setVxyz");
                 double tMul = mass()*ASE_VEL_MUL;

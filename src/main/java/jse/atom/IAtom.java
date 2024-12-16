@@ -25,7 +25,12 @@ public interface IAtom extends IXYZ {
     double y();
     /** @return 此原子的 z 坐标值 */
     double z();
-    /** @return 此原子的 id，从 1 开始 (对应 lammps 中的原子 id) */
+    /**
+     * @return 此原子的 id，从 1 开始 (对应 lammps 中的原子
+     * id)，如果不存在 id 属性则会返回 {@code index()+1}，
+     * 如果两者都不存在则会返回 {@code -1}
+     * @see #index()
+     */
     int id();
     /** @return 此原子的种类编号，从 1 开始 (对应 lammps 中的原子 type) */
     int type();

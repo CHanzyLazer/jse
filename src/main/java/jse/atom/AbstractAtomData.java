@@ -47,13 +47,13 @@ public abstract class AbstractAtomData implements IAtomData {
      *         @Override double x() {return atom.x()}
      *         @Override double y() {return atom.y()}
      *         @Override double z() {return atom.z()}
-     *         @Override int id() {return atom.id()}
-     *         @Override int type() {return atom.type()}
+     *         @Override int id_() {return atom.id()}
+     *         @Override int type_() {return atom.type()}
+     *         @Override double vx_() {return atom.vx()}
+     *         @Override double vy_() {return atom.vy()}
+     *         @Override double vz_() {return atom.vz()}
      *         // make sure index() returns the correct value
      *         @Override int index() {return idx}
-     *         @Override double vx() {return atom.vx()}
-     *         @Override double vy() {return atom.vy()}
-     *         @Override double vz() {return atom.vz()}
      *     }
      * }
      * } </pre>
@@ -143,7 +143,7 @@ public abstract class AbstractAtomData implements IAtomData {
      * 对于 {@link IAtomData} 内部的原子的一个一般原子实现，帮助实现重复的部分；
      * 主要转发了 {@link IAtom#hasVelocity()}, {@link IAtom#symbol()},
      * {@link IAtom#hasSymbol()}, {@link IAtom#mass()} 以及 {@link IAtom#hasMass()}
-     * 到相对应的 {@link IAtomData} 内的方法。
+     * 到相对应的 {@link IAtomData} 内的方法；并且对于一些边界情况进行自动处理
      * @see #atom(int)
      */
     protected abstract class AbstractAtom_ extends AbstractAtom {
@@ -152,6 +152,22 @@ public abstract class AbstractAtomData implements IAtomData {
         @Override public boolean hasSymbol() {return AbstractAtomData.this.hasSymbol();}
         @Override public double mass() {return AbstractAtomData.this.mass(type());}
         @Override public boolean hasMass() {return AbstractAtomData.this.hasMass();}
+        
+        @Override public int id() {int tID = id_(); return tID<=0 ? (index()+1) : tID;}
+        @Override public int type() {return Math.min(type_(), atomTypeNumber());}
+        /** 会复写掉内部的 hasVelocities 数据 */
+        @Override public double vx() {return hasVelocity() ? vx_() : 0.0;}
+        @Override public double vy() {return hasVelocity() ? vy_() : 0.0;}
+        @Override public double vz() {return hasVelocity() ? vz_() : 0.0;}
+        
+        /// stuff to override
+        protected abstract int id_();
+        protected abstract int type_();
+        protected double vx_() {return 0.0;}
+        protected double vy_() {return 0.0;}
+        protected double vz_() {return 0.0;}
+        /** 注意一定要复写掉内部的 index 数据 */
+        @Override public abstract int index();
     }
     
     

@@ -52,38 +52,22 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
      *         @Override double x() {return atom.x()}
      *         @Override double y() {return atom.y()}
      *         @Override double z() {return atom.z()}
-     *         @Override int id() {return atom.id()}
-     *         @Override int type() {return atom.type()}
+     *         @Override int id_() {return atom.id()}
+     *         @Override int type_() {return atom.type()}
+     *         @Override double vx_() {return atom.vx()}
+     *         @Override double vy_() {return atom.vy()}
+     *         @Override double vz_() {return atom.vz()}
+     *         /// ISettableAtom stuffs
+     *         @Override void setX_(double x) {atom.setX(x)}
+     *         @Override void setY_(double y) {atom.setY(y)}
+     *         @Override void setZ_(double z) {atom.setZ(z)}
+     *         @Override void setID_(int id) {atom.setID(id)}
+     *         @Override void setType_(int type) {atom.setType(type)}
+     *         @Override void setVx_(double vx) {atom.setVx(vx)}
+     *         @Override void setVy_(double vy) {atom.setVy(vy)}
+     *         @Override void setVz_(double vz) {atom.setVz(vz)}
      *         // make sure index() returns the correct value
      *         @Override int index() {return idx}
-     *         @Override double vx() {return atom.vx()}
-     *         @Override double vy() {return atom.vy()}
-     *         @Override double vz() {return atom.vz()}
-     *         /// ISettableAtom stuffs
-     *         @Override ISettableAtom setX(double x) {atom.setX(x); return this}
-     *         @Override ISettableAtom setY(double y) {atom.setY(y); return this}
-     *         @Override ISettableAtom setZ(double z) {atom.setZ(z); return this}
-     *         @Override ISettableAtom setID(int id) {atom.setID(id); return this}
-     *         @Override ISettableAtom setType(int type) {
-     *             atom.setType(type)
-     *             // set types also need to update the internal type number
-     *             if (type > atomTypeNumber()) setAtomTypeNumber(type)
-     *             return this
-     *         }
-     *         @Override ISettableAtom setVx(double vx) {
-     *             // set velocity need to check `hasVelocity()`
-     *             if (!hasVelocity()) {
-     *                 throw new UnsupportedOperationException("setVx")
-     *             }
-     *             atom.setVx(vx)
-     *             return this
-     *         }
-     *         @Override ISettableAtom setVy(double vy) {
-     *             //...
-     *         }
-     *         @Override ISettableAtom setVz(double vz) {
-     *             //...
-     *         }
      *     }
      * }
      * } </pre>
@@ -169,7 +153,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
      * 对于 {@link ISettableAtomData} 内部的原子的一个一般原子实现，帮助实现重复的部分；
      * 主要转发了 {@link IAtom#hasVelocity()}, {@link IAtom#symbol()},
      * {@link IAtom#hasSymbol()}, {@link IAtom#mass()} 以及 {@link IAtom#hasMass()}
-     * 到相对应的 {@link ISettableAtomData} 内的方法。
+     * 到相对应的 {@link ISettableAtomData} 内的方法；并且对于一些边界情况进行自动处理
      * @see #atom(int)
      */
     protected abstract class AbstractSettableAtom_ extends AbstractSettableAtom {
@@ -178,6 +162,44 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         @Override public boolean hasSymbol() {return AbstractSettableAtomData.this.hasSymbol();}
         @Override public double mass() {return AbstractSettableAtomData.this.mass(type());}
         @Override public boolean hasMass() {return AbstractSettableAtomData.this.hasMass();}
+        
+        @Override public int id() {int tID = id_(); return tID<=0 ? (index()+1) : tID;}
+        @Override public int type() {return Math.min(type_(), atomTypeNumber());}
+        /** 会复写掉内部的 hasVelocities 数据 */
+        @Override public double vx() {return hasVelocity() ? vx_() : 0.0;}
+        @Override public double vy() {return hasVelocity() ? vy_() : 0.0;}
+        @Override public double vz() {return hasVelocity() ? vz_() : 0.0;}
+        @Override public ISettableAtom setX(double aX) {setX_(aX); return this;}
+        @Override public ISettableAtom setY(double aY) {setY_(aY); return this;}
+        @Override public ISettableAtom setZ(double aZ) {setZ_(aZ); return this;}
+        @Override public ISettableAtom setID(int aID) {setID_(aID); return this;}
+        @Override public ISettableAtom setType(int aType) {
+            // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
+            if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
+            setType_(aType);
+            return this;
+        }
+        /** 会复写掉内部的 hasVelocities 数据 */
+        @Override public ISettableAtom setVx(double aVx) {if (!hasVelocity()) throw new UnsupportedOperationException("setVx"); setVx_(aVx); return this;}
+        @Override public ISettableAtom setVy(double aVy) {if (!hasVelocity()) throw new UnsupportedOperationException("setVy"); setVy_(aVy); return this;}
+        @Override public ISettableAtom setVz(double aVz) {if (!hasVelocity()) throw new UnsupportedOperationException("setVz"); setVz_(aVz); return this;}
+        
+        /// stuff to override
+        protected abstract int id_();
+        protected abstract int type_();
+        protected double vx_() {return 0.0;}
+        protected double vy_() {return 0.0;}
+        protected double vz_() {return 0.0;}
+        protected abstract void setX_(double aX);
+        protected abstract void setY_(double aY);
+        protected abstract void setZ_(double aZ);
+        protected abstract void setID_(int aID);
+        protected abstract void setType_(int aType);
+        protected void setVx_(double aVx) {throw new RuntimeException();}
+        protected void setVy_(double aVy) {throw new RuntimeException();}
+        protected void setVz_(double aVz) {throw new RuntimeException();}
+        /** 注意一定要复写掉内部的 index 数据 */
+        @Override public abstract int index();
     }
     
     /**

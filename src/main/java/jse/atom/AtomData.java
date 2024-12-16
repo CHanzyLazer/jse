@@ -66,18 +66,15 @@ public final class AtomData extends AbstractAtomData {
         // 需要包装一层，用于自动复写内部原子的 index 信息
         final IAtom tAtom = mAtoms.get(aIdx);
         return new AbstractAtom_() {
+            @Override public int index() {return aIdx;}
             @Override public double x() {return tAtom.x();}
             @Override public double y() {return tAtom.y();}
             @Override public double z() {return tAtom.z();}
-            @Override public int id() {return tAtom.id();}
-            @Override public int type() {return Math.min(tAtom.type(), mAtomTypeNum);}
-            /** 会复写掉内部的 index 数据 */
-            @Override public int index() {return aIdx;}
-            
-            /** 会复写掉内部的 hasVelocities 数据 */
-            @Override public double vx() {return mHasVelocity ? tAtom.vx() : 0.0;}
-            @Override public double vy() {return mHasVelocity ? tAtom.vy() : 0.0;}
-            @Override public double vz() {return mHasVelocity ? tAtom.vz() : 0.0;}
+            @Override protected int id_() {return tAtom.id();}
+            @Override protected int type_() {return tAtom.type();}
+            @Override protected double vx_() {return tAtom.vx();}
+            @Override protected double vy_() {return tAtom.vy();}
+            @Override protected double vz_() {return tAtom.vz();}
         };
     }
     @Override public IBox box() {return mBox;}

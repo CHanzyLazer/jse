@@ -349,6 +349,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
     @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
             private int mIdx = aIdx;
+            /** poscar 的 atom 在 setType 后会改变位置 */
+            @Override public int index() {return mIdx;}
             @Override public double x() {
                 if (mIsCartesian) {
                     return mDirect.get(mIdx, 0)*mBox.scale();
@@ -381,9 +383,9 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             }
             
             /** 如果没有 id 数据则为顺序位置 +1 */
-            @Override public int id() {return mIDs==null ? mIdx+1 : mIDs.get(mIdx);}
+            @Override protected int id_() {return mIDs==null ? (mIdx+1) : mIDs.get(mIdx);}
             /** type 直接遍历获取即可，根据名称顺序给 type 的数字 */
-            @Override public int type() {
+            @Override protected int type_() {
                 int rType = 0;
                 int rNumber = 0;
                 final int tAtomTypeNum = mAtomNumbers.size();
@@ -394,11 +396,9 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 }
                 throw new RuntimeException();
             }
-            /** poscar 的 atom 在 setType 后会改变位置 */
-            @Override public int index() {return mIdx;}
             
             private final XYZ mBuf = new XYZ();
-            @Override public ISettableAtom setX(double aX) {
+            @Override protected void setX_(double aX) {
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 0, aX/mBox.scale());
                 } else
@@ -412,9 +412,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     mDirect.set(mIdx, 1, mBuf.mY);
                     mDirect.set(mIdx, 2, mBuf.mZ);
                 }
-                return this;
             }
-            @Override public ISettableAtom setY(double aY) {
+            @Override protected void setY_(double aY) {
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 1, aY/mBox.scale());
                 } else
@@ -428,9 +427,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     mDirect.set(mIdx, 1, mBuf.mY);
                     mDirect.set(mIdx, 2, mBuf.mZ);
                 }
-                return this;
             }
-            @Override public ISettableAtom setZ(double aZ) {
+            @Override protected void setZ_(double aZ) {
                 if (mIsCartesian) {
                     mDirect.set(mIdx, 2, aZ/mBox.scale());
                 } else
@@ -444,7 +442,6 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     mDirect.set(mIdx, 1, mBuf.mY);
                     mDirect.set(mIdx, 2, mBuf.mZ);
                 }
-                return this;
             }
             @Override public ISettableAtom setXYZ(double aX, double aY, double aZ) {
                 if (mIsCartesian) {
@@ -466,20 +463,17 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                 }
                 return this;
             }
-            @Override public ISettableAtom setID(int aID) {
+            @Override protected void setID_(int aID) {
                 if (mIsRef) throw new UnsupportedOperationException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
-                if (id() == aID) return this;
+                if (id() == aID) return;
                 if (mIDs==null) mIDs = Vectors.range(1, atomNumber()+1);
                 mIDs.set(mIdx, aID);
-                return this;
             }
             /** poscar 的 atom 在 setType 后会改变位置，并且也会影响其他原子的位置，这里只同步当前原子的位置 */
-            @Override public ISettableAtom setType(int aType) {
+            @Override protected void setType_(int aType) {
                 if (mIsRef) throw new UnsupportedOperationException("This POSCAR is reference from XDATCAR, use copy() to modify it.");
                 int oType = type();
-                if (oType == aType) return this;
-                // 超过原子种类数目则需要重新设置
-                if (aType > mAtomNumbers.size()) setAtomTypeNumber(aType);
+                if (oType == aType) return;
                 //noinspection IfStatementWithIdenticalBranches
                 if (oType < aType) {
                     // 增大 type 的情况，这里使用高效的方式，
@@ -511,7 +505,6 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     // 更新 type 计数
                     mAtomNumbers.decrement(oType-1);
                     mAtomNumbers.increment(aType-1);
-                    return this;
                 } else {
                     // 减小 type 的情况，这里简单处理，
                     // 将所有中间的边界处原子都向下跳跃到正确位置，
@@ -542,7 +535,6 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
                     // 更新 type 计数
                     mAtomNumbers.decrement(oType-1);
                     mAtomNumbers.increment(aType-1);
-                    return this;
                 }
             }
         };

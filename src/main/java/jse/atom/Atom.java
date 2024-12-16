@@ -34,29 +34,46 @@ public class Atom extends AbstractSettableAtom {
         mID = aID; mType = aType;
     }
     /**
+     * 创建一个不包含 id 属性的原子对象
+     * @param aX 原子的 x 坐标
+     * @param aY 原子的 y 坐标
+     * @param aZ 原子的 z 坐标
+     * @param aType 原子的种类编号
+     */
+    public Atom(double aX, double aY, double aZ, int aType) {this(aX, aY, aZ, -1, aType);}
+    /**
+     * 创建一个不包含 id 和种类属性的原子对象
+     * @param aX 原子的 x 坐标
+     * @param aY 原子的 y 坐标
+     * @param aZ 原子的 z 坐标
+     */
+    public Atom(double aX, double aY, double aZ) {this(aX, aY, aZ, 1);}
+    /**
+     * 创建一个默认的原子对象，{@code id==-1, type==1}，
+     * 其余参数都为 {@code 0.0}
+     */
+    public Atom() {this(0.0, 0.0, 0.0);}
+    /**
      * 通过一个 {@link IXYZ} 对象创建一个原子对象
      * @param aXYZ 原子的 xyz 坐标
      * @param aID 原子的 id
      * @param aType 原子的种类编号
      * @see IXYZ
      */
-    public Atom(IXYZ aXYZ, int aID, int aType) {
-        mX = aXYZ.x(); mY = aXYZ.y(); mZ = aXYZ.z();
-        mID = aID; mType = aType;
-    }
+    public Atom(IXYZ aXYZ, int aID, int aType) {this(aXYZ.x(), aXYZ.y(), aXYZ.z(), aID, aType);}
+    /**
+     * 通过一个 {@link IXYZ} 对象创建一个不包含 id 属性的原子对象
+     * @param aXYZ 原子的 xyz 坐标
+     * @param aType 原子的种类编号
+     * @see IXYZ
+     */
+    public Atom(IXYZ aXYZ, int aType) {this(aXYZ, -1, aType);}
     /**
      * 直接通过一个原子创建一个新的原子对象
      * @param aAtom 已有的任意原子对象
      * @see IAtom
      */
-    public Atom(IAtom aAtom) {
-        mX = aAtom.x(); mY = aAtom.y(); mZ = aAtom.z();
-        mID = aAtom.id(); mType = aAtom.type();
-    }
-    /**
-     * 创建一个默认的原子对象，即 {@code new Atom(0.0, 0.0, 0.0, 1, 1)}
-     */
-    public Atom() {this(0.0, 0.0, 0.0, 1, 1);}
+    public Atom(IAtom aAtom) {this(aAtom.x(), aAtom.y(), aAtom.z(), aAtom.id(), aAtom.type());}
     
     /** @return {@inheritDoc} */
     @Override public double x() {return mX;}
@@ -69,6 +86,8 @@ public class Atom extends AbstractSettableAtom {
     @Override public int id() {return mID;}
     /** @return {@inheritDoc} */
     @Override public int type() {return mType;}
+    /** @return 此原子在 {@link IAtomData} 中的索引位置，对于这个独立的 Atom 则永远会返回 {@code -1} */
+    @Override public final int index() {return -1;}
     
     /// ISettableAtom stuffs
     /**

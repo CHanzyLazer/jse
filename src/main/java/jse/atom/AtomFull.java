@@ -34,7 +34,7 @@ public class AtomFull extends Atom {
         mVz = aAtom.vz();
     }
     /**
-     * 创建一个默认的原子对象，{@code id==1, type==1}，
+     * 创建一个默认的原子对象，{@code id==-1, type==1}，
      * 其余参数都为 {@code 0.0}
      */
     public AtomFull() {

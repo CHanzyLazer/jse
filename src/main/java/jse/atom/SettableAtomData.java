@@ -77,35 +77,24 @@ public final class SettableAtomData extends AbstractSettableAtomData {
         // 需要包装一层，用于在更新种类时自动更新整体的种类计数
         final ISettableAtom tAtom = mAtoms.get(aIdx);
         return new AbstractSettableAtom_() {
+            @Override public int index() {return aIdx;}
             @Override public double x() {return tAtom.x();}
             @Override public double y() {return tAtom.y();}
             @Override public double z() {return tAtom.z();}
-            @Override public int id() {return tAtom.id();}
-            @Override public int type() {return Math.min(tAtom.type(), mAtomTypeNum);}
-            /** 会复写掉内部的 index 数据 */
-            @Override public int index() {return aIdx;}
+            @Override protected int id_() {return tAtom.id();}
+            @Override protected int type_() {return tAtom.type();}
+            @Override protected double vx_() {return tAtom.vx();}
+            @Override protected double vy_() {return tAtom.vy();}
+            @Override protected double vz_() {return tAtom.vz();}
             
-            /** 会复写掉内部的 hasVelocities 数据 */
-            @Override public double vx() {return mHasVelocity ? tAtom.vx() : 0.0;}
-            @Override public double vy() {return mHasVelocity ? tAtom.vy() : 0.0;}
-            @Override public double vz() {return mHasVelocity ? tAtom.vz() : 0.0;}
-            
-            /** 注意 return this 和 return tAtom 的区别 */
-            @Override public ISettableAtom setX(double aX) {tAtom.setX(aX); return this;}
-            @Override public ISettableAtom setY(double aY) {tAtom.setY(aY); return this;}
-            @Override public ISettableAtom setZ(double aZ) {tAtom.setZ(aZ); return this;}
-            @Override public ISettableAtom setID(int aID) {tAtom.setID(aID); return this;}
-            @Override public ISettableAtom setType(int aType) {
-                // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
-                tAtom.setType(aType);
-                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
-                return this;
-            }
-            
-            /** 会复写掉内部的 hasVelocities 数据 */
-            @Override public ISettableAtom setVx(double aVx) {if (!mHasVelocity) throw new UnsupportedOperationException("setVx"); tAtom.setVx(aVx); return this;}
-            @Override public ISettableAtom setVy(double aVy) {if (!mHasVelocity) throw new UnsupportedOperationException("setVy"); tAtom.setVy(aVy); return this;}
-            @Override public ISettableAtom setVz(double aVz) {if (!mHasVelocity) throw new UnsupportedOperationException("setVz"); tAtom.setVz(aVz); return this;}
+            @Override protected void setX_(double aX) {tAtom.setX(aX);}
+            @Override protected void setY_(double aY) {tAtom.setY(aY);}
+            @Override protected void setZ_(double aZ) {tAtom.setZ(aZ);}
+            @Override protected void setID_(int aID) {tAtom.setID(aID);}
+            @Override protected void setType_(int aType) {tAtom.setType(aType);}
+            @Override protected void setVx_(double aVx) {tAtom.setVx(aVx);}
+            @Override protected void setVy_(double aVy) {tAtom.setVy(aVy);}
+            @Override protected void setVz_(double aVz) {tAtom.setVz(aVz);}
         };
     }
     @Override public IBox box() {return mBox;}

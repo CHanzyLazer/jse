@@ -323,6 +323,7 @@ public class DataXYZ extends AbstractSettableAtomData {
     /** AbstractAtomData stuffs */
     @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
+            @Override public int index() {return aIdx;}
             @Override public double x() {
                 if (mPositions == null) throw new UnsupportedOperationException("`x` for DataXYZ without pos data");
                 return mPositions.get(aIdx, XYZ_X_COL);
@@ -335,55 +336,38 @@ public class DataXYZ extends AbstractSettableAtomData {
                 if (mPositions == null) throw new UnsupportedOperationException("`z` for DataXYZ without pos data");
                 return mPositions.get(aIdx, XYZ_Z_COL);
             }
-            @Override public int type() {
+            @Override protected int type_() {
                 if (mSpecies == null) return 1;
                 return mSymbol2Type.get(mSpecies[aIdx]);
             }
-            @Override public int id() {return aIdx+1;}
-            @Override public int index() {return aIdx;}
+            @Override protected int id_() {return aIdx+1;}
+            @Override protected double vx_() {assert mVelocities!=null; return mVelocities.get(aIdx, STD_VX_COL);}
+            @Override protected double vy_() {assert mVelocities!=null; return mVelocities.get(aIdx, STD_VY_COL);}
+            @Override protected double vz_() {assert mVelocities!=null; return mVelocities.get(aIdx, STD_VZ_COL);}
             
-            @Override public double vx() {return mVelocities==null?0.0:(mVelocities.get(aIdx, STD_VX_COL));}
-            @Override public double vy() {return mVelocities==null?0.0:(mVelocities.get(aIdx, STD_VY_COL));}
-            @Override public double vz() {return mVelocities==null?0.0:(mVelocities.get(aIdx, STD_VZ_COL));}
-            
-            @Override public ISettableAtom setX(double aX) {
+            @Override protected void setX_(double aX) {
                 if (mPositions == null) throw new UnsupportedOperationException("`setX` for DataXYZ without pos data");
                 mPositions.set(aIdx, XYZ_X_COL, aX);
-                return this;
             }
-            @Override public ISettableAtom setY(double aY) {
+            @Override protected void setY_(double aY) {
                 if (mPositions == null) throw new UnsupportedOperationException("`setY` for DataXYZ without pos data");
                 mPositions.set(aIdx, XYZ_Y_COL, aY);
-                return this;
             }
-            @Override public ISettableAtom setZ(double aZ) {
+            @Override protected void setZ_(double aZ) {
                 if (mPositions == null) throw new UnsupportedOperationException("`setZ` for DataXYZ without pos data");
                 mPositions.set(aIdx, XYZ_Z_COL, aZ);
-                return this;
             }
-            @Override public ISettableAtom setID(int aID) {
+            @Override protected void setID_(int aID) {
                 throw new UnsupportedOperationException("setID");
             }
-            @Override public ISettableAtom setType(int aType) {
+            @Override protected void setType_(int aType) {
                 if (mSpecies == null) throw new UnsupportedOperationException("`setType` for DataXYZ without species data");
                 assert mType2Symbol != null;
-                // 超过原子种类数目则需要重新设置
-                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
                 mSpecies[aIdx] = mType2Symbol[aType];
-                return this;
             }
-            @Override public ISettableAtom setVx(double aVx) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVx");
-                mVelocities.set(aIdx, STD_VX_COL, aVx); return this;
-            }
-            @Override public ISettableAtom setVy(double aVy) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVy");
-                mVelocities.set(aIdx, STD_VY_COL, aVy); return this;
-            }
-            @Override public ISettableAtom setVz(double aVz) {
-                if (mVelocities == null) throw new UnsupportedOperationException("setVz");
-                mVelocities.set(aIdx, STD_VZ_COL, aVz); return this;
-            }
+            @Override protected void setVx_(double aVx) {assert mVelocities!=null; mVelocities.set(aIdx, STD_VX_COL, aVx);}
+            @Override protected void setVy_(double aVy) {assert mVelocities!=null; mVelocities.set(aIdx, STD_VY_COL, aVy);}
+            @Override protected void setVz_(double aVz) {assert mVelocities!=null; mVelocities.set(aIdx, STD_VZ_COL, aVz);}
             
             @Override public String symbol() {
                 return mSpecies!=null ? mSpecies[aIdx] : null;

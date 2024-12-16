@@ -339,6 +339,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     @Override public boolean hasVelocity() {return mHasVelocities;}
     @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
+            @Override public int index() {return aIdx;}
             @Override public double x() {
                 if (mKeyX == null) throw new UnsupportedOperationException("`x` for Lammpstrj without x data");
                 double tX = mAtomData.get(aIdx, mKeyX);
@@ -442,22 +443,21 @@ public class SubLammpstrj extends AbstractSettableAtomData {
             }
             
             /** 如果没有 id 数据则 id 为顺序位置 +1 */
-            @Override public int id() {return mKeyID==null ? aIdx+1 : (int)mAtomData.get(aIdx, mKeyID);}
+            @Override protected int id_() {return mKeyID==null ? aIdx+1 : (int)mAtomData.get(aIdx, mKeyID);}
             /** 如果没有 type 数据则 type 都为 1 */
-            @Override public int type() {return mKeyType==null ? 1 : (int)mAtomData.get(aIdx, mKeyType);}
-            @Override public int index() {return aIdx;}
-            
-            @Override public double vx() {return mKeyVx==null ? 0.0 : mAtomData.get(aIdx, mKeyVx);}
-            @Override public double vy() {return mKeyVy==null ? 0.0 : mAtomData.get(aIdx, mKeyVy);}
-            @Override public double vz() {return mKeyVz==null ? 0.0 : mAtomData.get(aIdx, mKeyVz);}
+            @Override protected int type_() {return mKeyType==null ? 1 : (int)mAtomData.get(aIdx, mKeyType);}
+            /** 这里的速度是每个方向分别存储的，因此都需要判断一下 */
+            @Override protected double vx_() {return mKeyVx==null ? 0.0 : mAtomData.get(aIdx, mKeyVx);}
+            @Override protected double vy_() {return mKeyVy==null ? 0.0 : mAtomData.get(aIdx, mKeyVy);}
+            @Override protected double vz_() {return mKeyVz==null ? 0.0 : mAtomData.get(aIdx, mKeyVz);}
             
             private final XYZ mBuf = new XYZ();
-            @Override public ISettableAtom setX(double aX) {
+            @Override protected void setX_(double aX) {
                 if (mKeyX == null) throw new UnsupportedOperationException("`setX` for Lammpstrj without x data");
                 switch (mXType) {
                 case NORMAL: case UNWRAPPED: {
                     mAtomData.set(aIdx, mKeyX, aX+mBox.xlo());
-                    return this;
+                    return;
                 }
                 case SCALED: case SCALED_UNWRAPPED: {
                     if (!isPrism()) {
@@ -470,17 +470,17 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                         mAtomData.set(aIdx, mKeyX, mBuf.mX);
                         // lammps 风格的 box 此时不用设置 mZ 和 mY
                     }
-                    return this;
+                    return;
                 }
                 default: throw new RuntimeException();
                 }
             }
-            @Override public ISettableAtom setY(double aY) {
+            @Override protected void setY_(double aY) {
                 if (mKeyY == null) throw new UnsupportedOperationException("`setY` for Lammpstrj without y data");
                 switch (mYType) {
                 case NORMAL: case UNWRAPPED: {
                     mAtomData.set(aIdx, mKeyY, aY+mBox.ylo());
-                    return this;
+                    return;
                 }
                 case SCALED: case SCALED_UNWRAPPED: {
                     if (!isPrism()) {
@@ -495,17 +495,17 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                         mAtomData.set(aIdx, mKeyY, mBuf.mY);
                         // lammps 风格的 box 此时不用设置 mZ
                     }
-                    return this;
+                    return;
                 }
                 default: throw new RuntimeException();
                 }
             }
-            @Override public ISettableAtom setZ(double aZ) {
+            @Override protected void setZ_(double aZ) {
                 if (mKeyZ == null) throw new UnsupportedOperationException("`setZ` for Lammpstrj without z data");
                 switch (mZType) {
                 case NORMAL: case UNWRAPPED: {
                     mAtomData.set(aIdx, mKeyZ, aZ+mBox.zlo());
-                    return this;
+                    return;
                 }
                 case SCALED: case SCALED_UNWRAPPED: {
                     if (!isPrism()) {
@@ -520,7 +520,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                         if (mYType==XYZType.SCALED || mYType==XYZType.SCALED_UNWRAPPED) mAtomData.set(aIdx, mKeyY, mBuf.mY);
                         mAtomData.set(aIdx, mKeyZ, mBuf.mZ);
                     }
-                    return this;
+                    return;
                 }
                 default: throw new RuntimeException();
                 }
@@ -555,29 +555,26 @@ public class SubLammpstrj extends AbstractSettableAtomData {
                 }
             }
             
-            @Override public ISettableAtom setID(int aID) {
+            @Override protected void setID_(int aID) {
                 if (mKeyID == null) throw new UnsupportedOperationException("`setID` for Lammpstrj without id");
-                mAtomData.set(aIdx, mKeyID, aID); return this;
+                mAtomData.set(aIdx, mKeyID, aID);
             }
-            @Override public ISettableAtom setType(int aType) {
+            @Override protected void setType_(int aType) {
                 if (mKeyType == null) throw new UnsupportedOperationException("`setType` for Lammpstrj without type");
-                // 对于设置种类需要特殊处理，设置种类同时需要更新内部的原子种类计数
                 mAtomData.set(aIdx, mKeyType, aType);
-                if (aType > atomTypeNumber()) setAtomTypeNumber(aType);
-                return this;
             }
-            
-            @Override public ISettableAtom setVx(double aVx) {
+            /** 这里的速度是每个方向分别存储的，因此都需要判断一下 */
+            @Override protected void setVx_(double aVx) {
                 if (mKeyVx == null) throw new UnsupportedOperationException("`setVx` for Lammpstrj without vx");
-                mAtomData.set(aIdx, mKeyVx, aVx); return this;
+                mAtomData.set(aIdx, mKeyVx, aVx);
             }
-            @Override public ISettableAtom setVy(double aVy) {
+            @Override protected void setVy_(double aVy) {
                 if (mKeyVy == null) throw new UnsupportedOperationException("`setVy` for Lammpstrj without vy");
-                mAtomData.set(aIdx, mKeyVy, aVy); return this;
+                mAtomData.set(aIdx, mKeyVy, aVy);
             }
-            @Override public ISettableAtom setVz(double aVz) {
+            @Override protected void setVz_(double aVz) {
                 if (mKeyVz == null) throw new UnsupportedOperationException("`setVz` for Lammpstrj without vy");
-                mAtomData.set(aIdx, mKeyVz, aVz); return this;
+                mAtomData.set(aIdx, mKeyVz, aVz);
             }
         };
     }
