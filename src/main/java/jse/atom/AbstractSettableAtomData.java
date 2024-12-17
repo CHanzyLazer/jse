@@ -3,6 +3,7 @@ package jse.atom;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.math.vector.IVector;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Collection;
 import java.util.List;
@@ -298,6 +299,9 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
             @Override public int size() {return atomNumber();}
         };
     }
+    // 需要这里重新实现一下两者共有的接口避免冲突
+    /** @deprecated use {@link #atoms()} */
+    @Override @Deprecated @SuppressWarnings("deprecation") public List<? extends ISettableAtom> asList() {return atoms();}
     
     /**
      * {@inheritDoc}
@@ -311,4 +315,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum) {return newZeros_(aAtomNum);}
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum, IBox aBox) {return newZeros_(aAtomNum, aBox);}
     };}
+    // 需要这里重新实现一下两者共有的接口避免冲突
+    /** @see #operation() */
+    @VisibleForTesting @Override public ISettableAtomDataOperation opt() {return operation();}
 }
