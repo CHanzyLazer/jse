@@ -12,21 +12,25 @@ import static jse.code.CS.ZL_STR;
 
 
 /**
+ * 用来直接生成特定结构 {@link IAtomData} 的工具类
+ * <p>
+ * 目前通过抽象引用的方式创建原子数据，因此生成的都是不可修改的
+ * {@link IAtomData}；访问速度会稍慢，但会更节省内存空间
+ *
  * @author liqa
- * <p> 获取统一获取特定结构原子数据的类，现在不再使用专门的 Generator </p>
- * <p> 现在统一返回抽象的原子数据，不支持修改，减少冗余操作 </p>
+ * @see IAtomData
  */
 public class Structures {
     protected Structures() {}
     
     /**
-     * 根据给定数据创建 FCC (Face Center Cubic) 的 atomData
-     * @author liqa
+     * 根据给定数据创建 FCC (Face Center Cubic) 的 {@link IAtomData}
      * @param aCellSize FCC 晶胞的晶格常数 a
      * @param aRepeatX x 方向的重复次数
      * @param aRepeatY Y 方向的重复次数
      * @param aRepeatZ Z 方向的重复次数
-     * @return 返回由此创建的 atomData
+     * @return 由此创建的 {@link IAtomData}
+     * @author liqa
      */
     public static IAtomData FCC(final double aCellSize, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
         return new AtomData(new AbstractRandomAccessList<IAtom>() {
@@ -66,18 +70,26 @@ public class Structures {
             }
         }, 1, new Box(aCellSize*aRepeatX, aCellSize*aRepeatY, aCellSize*aRepeatZ));
     }
+    /**
+     * 根据给定数据创建 FCC (Face Center Cubic) 的 {@link IAtomData}
+     * @param aCellSize FCC 晶胞的晶格常数 a
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
     public static IAtomData FCC(double aCellSize, int aRepeat) {return FCC(aCellSize, aRepeat, aRepeat, aRepeat);}
+    /** @see #FCC(double, int, int, int) */
     @VisibleForTesting public static IAtomData fcc(double aCellSize, int aRepeatX, int aRepeatY, int aRepeatZ) {return FCC(aCellSize, aRepeatX, aRepeatY, aRepeatZ);}
+    /** @see #FCC(double, int) */
     @VisibleForTesting public static IAtomData fcc(double aCellSize, int aRepeat) {return FCC(aCellSize, aRepeat);}
     
     /**
-     * 根据给定数据创建 BCC (Body Center Cubic) 的 atomData
-     * @author liqa
+     * 根据给定数据创建 BCC (Body Center Cubic) 的 {@link IAtomData}
      * @param aCellSize BCC 晶胞的晶格常数 a
      * @param aRepeatX x 方向的重复次数
      * @param aRepeatY Y 方向的重复次数
      * @param aRepeatZ Z 方向的重复次数
-     * @return 返回由此创建的 atomData
+     * @return 由此创建的 {@link IAtomData}
+     * @author liqa
      */
     public static IAtomData BCC(final double aCellSize, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
         return new AtomData(new AbstractRandomAccessList<IAtom>() {
@@ -96,18 +108,26 @@ public class Structures {
             }
         }, 1, new Box(aCellSize*aRepeatX, aCellSize*aRepeatY, aCellSize*aRepeatZ));
     }
+    /**
+     * 根据给定数据创建 BCC (Body Center Cubic) 的 {@link IAtomData}
+     * @param aCellSize BCC 晶胞的晶格常数 a
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
     public static IAtomData BCC(double aCellSize, int aRepeat) {return BCC(aCellSize, aRepeat, aRepeat, aRepeat);}
+    /** @see #BCC(double, int, int, int) */
     @VisibleForTesting public static IAtomData bcc(double aCellSize, int aRepeatX, int aRepeatY, int aRepeatZ) {return BCC(aCellSize, aRepeatX, aRepeatY, aRepeatZ);}
+    /** @see #BCC(double, int) */
     @VisibleForTesting public static IAtomData bcc(double aCellSize, int aRepeat) {return BCC(aCellSize, aRepeat);}
     
     /**
-     * 根据给定数据创建 SC (Simple Cubic) 的 atomData
-     * @author liqa
+     * 根据给定数据创建 SC (Simple Cubic) 的 {@link IAtomData}
      * @param aCellSize SC 晶胞的晶格常数 a
      * @param aRepeatX x 方向的重复次数
      * @param aRepeatY Y 方向的重复次数
      * @param aRepeatZ Z 方向的重复次数
-     * @return 返回由此创建的 atomData
+     * @return 由此创建的 {@link IAtomData}
+     * @author liqa
      */
     public static IAtomData SC(final double aCellSize, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
         return new AtomData(new AbstractRandomAccessList<IAtom>() {
@@ -126,20 +146,28 @@ public class Structures {
             }
         }, 1, new Box(aCellSize*aRepeatX, aCellSize*aRepeatY, aCellSize*aRepeatZ));
     }
+    /**
+     * 根据给定数据创建 SC (Simple Cubic) 的 {@link IAtomData}
+     * @param aCellSize SC 晶胞的晶格常数 a
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
     public static IAtomData SC(double aCellSize, int aRepeat) {return SC(aCellSize, aRepeat, aRepeat, aRepeat);}
+    /** @see #SC(double, int, int, int) */
     @VisibleForTesting public static IAtomData sc(double aCellSize, int aRepeatX, int aRepeatY, int aRepeatZ) {return SC(aCellSize, aRepeatX, aRepeatY, aRepeatZ);}
+    /** @see #SC(double, int, int, int) */
     @VisibleForTesting public static IAtomData sc(double aCellSize, int aRepeat) {return SC(aCellSize, aRepeat);}
     
     /**
-     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 atomData，
+     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 {@link IAtomData}，
      * 为了方便使用这里直接返回正交的晶胞
-     * @author liqa
      * @param aCellSize HCP 晶胞底边六边形的边长 a
-     * @param aCellHeight HCP 晶胞的高度 c（默认为 sqrt(8/3)）
+     * @param aCellHeight HCP 晶胞的高度 c（默认为 {@code sqrt(8/3)*a}）
      * @param aRepeatX x 方向的重复次数
      * @param aRepeatY Y 方向的重复次数
      * @param aRepeatZ Z 方向的重复次数
-     * @return 返回由此创建的 atomData
+     * @return 由此创建的 {@link IAtomData}
+     * @author liqa
      */
     public static IAtomData HCP(final double aCellSize, final double aCellHeight, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
         final double tCellSizeY = aCellSize * SQRT3;
@@ -182,23 +210,51 @@ public class Structures {
             }
         }, 1, new Box(aCellSize*aRepeatX, tCellSizeY*aRepeatY, aCellHeight*aRepeatZ));
     }
-    public static IAtomData HCP(double aCellSize,                     int aRepeatX, int aRepeatY, int aRepeatZ) {return HCP(aCellSize, aCellSize*SQRT83, aRepeatX, aRepeatY, aRepeatZ);}
-    public static IAtomData HCP(double aCellSize, double aCellHeight, int aRepeat                             ) {return HCP(aCellSize, aCellHeight, aRepeat, aRepeat, aRepeat);}
-    public static IAtomData HCP(double aCellSize,                     int aRepeat                             ) {return HCP(aCellSize, aRepeat, aRepeat, aRepeat);}
+    /**
+     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 {@link IAtomData}，
+     * 为了方便使用这里直接返回正交的晶胞
+     * @param aCellSize HCP 晶胞底边六边形的边长 a，此时 HCP 晶胞的高度 c 为 {@code sqrt(8/3)*a}
+     * @param aRepeatX x 方向的重复次数
+     * @param aRepeatY Y 方向的重复次数
+     * @param aRepeatZ Z 方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
+    public static IAtomData HCP(double aCellSize, int aRepeatX, int aRepeatY, int aRepeatZ) {return HCP(aCellSize, aCellSize*SQRT83, aRepeatX, aRepeatY, aRepeatZ);}
+    /**
+     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 {@link IAtomData}，
+     * 为了方便使用这里直接返回正交的晶胞
+     * @param aCellSize HCP 晶胞底边六边形的边长 a
+     * @param aCellHeight HCP 晶胞的高度 c（默认为 {@code sqrt(8/3)*a}）
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
+    public static IAtomData HCP(double aCellSize, double aCellHeight, int aRepeat) {return HCP(aCellSize, aCellHeight, aRepeat, aRepeat, aRepeat);}
+    /**
+     * 根据给定数据创建 HCP (Hexagonal Close Packed) 的 {@link IAtomData}，
+     * 为了方便使用这里直接返回正交的晶胞
+     * @param aCellSize HCP 晶胞底边六边形的边长 a，此时 HCP 晶胞的高度 c 为 {@code sqrt(8/3)*a}
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
+    public static IAtomData HCP(double aCellSize, int aRepeat) {return HCP(aCellSize, aRepeat, aRepeat, aRepeat);}
     private final static double SQRT3 = MathEX.Fast.sqrt(3.0), SQRT83 = MathEX.Fast.sqrt(8.0/3.0);
+    /** @see #HCP(double, double, int, int, int) */
     @VisibleForTesting public static IAtomData hcp(double aCellSize, double aCellHeight, int aRepeatX, int aRepeatY, int aRepeatZ) {return HCP(aCellSize, aCellHeight, aRepeatX, aRepeatY, aRepeatZ);}
+    /** @see #HCP(double, int, int, int) */
     @VisibleForTesting public static IAtomData hcp(double aCellSize,                     int aRepeatX, int aRepeatY, int aRepeatZ) {return HCP(aCellSize, aRepeatX, aRepeatY, aRepeatZ);}
+    /** @see #HCP(double, double, int) */
     @VisibleForTesting public static IAtomData hcp(double aCellSize, double aCellHeight, int aRepeat                             ) {return HCP(aCellSize, aCellHeight, aRepeat);}
+    /** @see #HCP(double, int) */
     @VisibleForTesting public static IAtomData hcp(double aCellSize,                     int aRepeat                             ) {return HCP(aCellSize, aRepeat);}
     
     /**
-     * 根据给定数据创建输入晶胞的 atomData
-     * @author liqa
+     * 根据给定数据创建输入晶胞的 {@link IAtomData}
      * @param aLattice 输入的晶胞数据
      * @param aRepeatX x 方向的重复次数
      * @param aRepeatY Y 方向的重复次数
      * @param aRepeatZ Z 方向的重复次数
-     * @return 返回由此创建的 atomData
+     * @return 由此创建的 {@link IAtomData}
+     * @author liqa
      */
     public static IAtomData from(final IAtomData aLattice, final int aRepeatX, final int aRepeatY, final int aRepeatZ) {
         final IBox aBox = aLattice.box();
@@ -242,5 +298,11 @@ public class Structures {
             }
         }, aLattice.atomTypeNumber(), tBox, aLattice.hasID(), aLattice.hasVelocity(), tSymbols==null ? ZL_STR : tSymbols.toArray(ZL_STR));
     }
+    /**
+     * 根据给定数据创建输入晶胞的 {@link IAtomData}
+     * @param aLattice 输入的晶胞数据
+     * @param aRepeat x, y, z 三个方向的重复次数
+     * @return 由此创建的 {@link IAtomData}
+     */
     public static IAtomData from(IAtomData aLattice, int aRepeat) {return from(aLattice, aRepeat, aRepeat, aRepeat);}
 }
