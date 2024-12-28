@@ -19,13 +19,29 @@ import java.util.function.IntConsumer;
 
 
 /**
+ * jse 中的近邻列表实现，具体采用了 Neighbour Cell List (NCL)
+ * 算法来实现一个 O(N) 复杂度的近邻搜索，具体可以参考 Julia 中的例子：
+ * <a href="https://jaantollander.com/post/searching-for-fixed-radius-near-neighbors-with-cell-lists-algorithm-in-julia-language/">
+ * Searching for Fixed-Radius Near Neighbors with Cell Lists Algorithm in Julia Language </a>
+ * <p>
+ * 这里不会缓存实际的近邻列表，而是使用 lambda 表达式的方式来访问近邻列表：
+ * <pre> {@code
+ * apc.nl_().forEachNeighbor(i, rcut, false) {x, y, z, idx, dx, dy, dz ->
+ *     // use neighbor x,y,z,index,dx,dy,dz here
+ * }
+ * } </pre>
+ * 考虑到 groovy 中使用 lambda 表达式效率非常低，因此实际直接使用
+ * {@link AtomicParameterCalculator#getNeighborList(int, double)} 或
+ * {@link AtomicParameterCalculator#getFullNeighborList(int, double)}
+ * 来获取近邻列表往往会更快，而一般只在内部或者 java 代码中直接使用此类。
+ * <p>
+ * 此类线程安全，包括多个线程同时访问同一个实例
+ *
  * @author liqa
- * <p> 获取 atomDataXYZ 的近邻列表 </p>
- * <p> 暂存 cell 来在重复调用时进行加速，高度优化 </p>
- * <p> 这里考虑已经经过平移的数据，可以避免一些不必要的交叉引用以及重复平移的问题 </p>
- * <p> 认为所有边界都是周期边界条件 </p>
- * <p> 所有成员都是只读的，即使目前没有硬性限制 </p>
- * <p> 此类线程安全，包括多个线程同时访问同一个实例 </p>
+ * @see AtomicParameterCalculator#getNeighborList(int, double)
+ * @see AtomicParameterCalculator#getFullNeighborList(int, double)
+ * @see AtomicParameterCalculator#getNeighborList(IXYZ, double)
+ * @see AtomicParameterCalculator#getFullNeighborList(IXYZ, double)
  */
 public class NeighborListGetter implements IShutdownable {
     private IMatrix mAtomDataXYZ;  // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据

@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.code.UT
 import jse.lmp.Data
 
@@ -13,9 +13,9 @@ double qMax = 10.0
 // 导入 data 文件
 def data = Data.read('lmp/data/data-glass')
 
-// 根据 data 创建参数计算器 mpc 并计算 Sq
-def Sq = MPC.withOf(data) {mpc ->
-    mpc.calSF(N, qMax)
+// 根据 data 创建参数计算器 apc 并计算 Sq
+def Sq = APC.withOf(data) {apc ->
+    apc.calSF(N, qMax)
 }
 
 // 获取 q 值和 S 值
@@ -24,12 +24,12 @@ println('S = ' + Sq.f())
 // 获取峰值的位置
 println('maxQ = ' + Sq.opt().maxX())
 // 保存到 csv
-UT.IO.data2csv(Sq, '.temp/example/mpc/sf.csv')
+UT.IO.data2csv(Sq, '.temp/example/apc/sf.csv')
 
 
 // 计算单个种类的 Sq
 def SqCu, SqZr, SqCuZr
-try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = MPC.of(data.opt().filterType(2))) {
+try (def mpcCu = APC.of(data.opt().filterType(1)); def mpcZr = APC.of(data.opt().filterType(2))) {
     SqCu = mpcCu.calSF(N, qMax)
     SqZr = mpcZr.calSF(N, qMax)
     SqCuZr = mpcCu.calSF_AB(mpcZr, N, qMax)

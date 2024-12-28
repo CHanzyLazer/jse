@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.lmp.Data
 import jse.math.function.Func1
 
@@ -13,7 +13,7 @@ def dataC = Data.read('lmp/data/data-crystal')
 
 // 计算
 def coordinationG, atomicVolumeG, cavityRadiusG
-try (def mpcG = MPC.of(dataG)) {
+try (def mpcG = APC.of(dataG)) {
     def voronois = mpcG.calVoronoi()
     // 这样获取某个原子的 voronoi 参数
     println('coordination    of glass atom at 10: ' + voronois[10].coordination())
@@ -26,7 +26,7 @@ try (def mpcG = MPC.of(dataG)) {
     cavityRadiusG = voronois*.cavityRadius()
 }
 def coordinationC, atomicVolumeC, cavityRadiusC
-try (def mpcC = MPC.of(dataC)) {
+try (def mpcC = APC.of(dataC)) {
     def voronois = mpcC.calVoronoi()
     coordinationC = voronois*.coordination()
     atomicVolumeC = voronois*.atomicVolume()

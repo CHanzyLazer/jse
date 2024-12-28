@@ -1,17 +1,15 @@
 package jsex.nnap;
 
-import jse.atom.MonatomicParameterCalculator;
-import jse.code.collection.IntList;
+import jse.atom.AtomicParameterCalculator;
 import jse.code.collection.NewCollections;
 import jse.math.matrix.RowMatrix;
 import jsex.nnap.basis.IBasis;
 import jsex.nnap.basis.SphericalChebyshev;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * 采用这种方式将 nnap 方法注入到 MPC 中，
+ * 采用这种方式将 nnap 方法注入到 APC 中，
  * 这种做法可以降低代码的耦合，并且保证 jse 不会依赖 jsex
  * @author liqa
  */
@@ -24,7 +22,7 @@ public class NNAPExtensions {
      * @param aRCutOff 截断半径
      * @return 原子指纹矩阵组成的数组，n 为行，l 为列，因此 asVecRow 即为原本定义的基；如果存在超过一个种类则输出行数翻倍
      */
-    public static List<RowMatrix> calBasisNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff) {
+    public static List<RowMatrix> calBasisNNAP(final AtomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff) {
         if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
         final int tThreadNum = self.threadNumber();
         IBasis[] tBasis = new IBasis[tThreadNum];
@@ -56,7 +54,7 @@ public class NNAPExtensions {
      * @return {@code [fp, fpPx, fpPy, fpPz]}，如果关闭 aCalBasis 则第一项
      * {@code fp} 为 null，如果开启 aCalBasis 则在后续追加近邻的偏导
      */
-    public static List<List<RowMatrix>> calBasisPartialNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis, boolean aCalCross) {
+    public static List<List<RowMatrix>> calBasisPartialNNAP(final AtomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis, boolean aCalCross) {
         if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
         final int tThreadNum = self.threadNumber();
         IBasis[] tBasis = new IBasis[tThreadNum];
@@ -76,6 +74,6 @@ public class NNAPExtensions {
             for (int i = 0; i < tThreadNum; ++i) tBasis[i].shutdown();
         }
     }
-    public static List<List<RowMatrix>> calBasisPartialNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis) {return calBasisPartialNNAP(self, aNMax, aLMax, aRCutOff, aCalBasis, false);}
-    public static List<List<RowMatrix>> calBasisPartialNNAP(final MonatomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff) {return calBasisPartialNNAP(self, aNMax, aLMax, aRCutOff, true);}
+    public static List<List<RowMatrix>> calBasisPartialNNAP(final AtomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff, boolean aCalBasis) {return calBasisPartialNNAP(self, aNMax, aLMax, aRCutOff, aCalBasis, false);}
+    public static List<List<RowMatrix>> calBasisPartialNNAP(final AtomicParameterCalculator self, final int aNMax, final int aLMax, final double aRCutOff) {return calBasisPartialNNAP(self, aNMax, aLMax, aRCutOff, true);}
 }

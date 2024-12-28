@@ -1,7 +1,7 @@
 package jsex.rareevent.atom;
 
 import jse.atom.IAtomData;
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.math.vector.ILogicalVector;
 
 
@@ -13,5 +13,5 @@ import jse.math.vector.ILogicalVector;
  * @author liqa
  */
 public class ClusterSizeCalculator extends AbstractClusterSizeCalculator {
-    @Override protected ILogicalVector getIsSolid_(MonatomicParameterCalculator aMPC, IAtomData aPoint) {return aMPC.checkSolidConnectRatio6();}
+    @Override protected ILogicalVector getIsSolid_(AtomicParameterCalculator aAPC, IAtomData aPoint) {return aAPC.checkSolidConnectRatio6();}
 }

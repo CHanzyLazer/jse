@@ -1,6 +1,6 @@
 package jsex.rareevent.atom;
 
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.math.MathEX;
 import jse.math.vector.ILogicalVector;
 import jse.math.vector.IVector;
@@ -9,7 +9,7 @@ import jse.cache.VectorCache;
 import static jse.code.CS.R_NEAREST_MUL;
 
 /**
- * 内部使用 {@link MonatomicParameterCalculator#calConnectCountBOOP} 来进行计算的固体判据器
+ * 内部使用 {@link AtomicParameterCalculator#calConnectCountBOOP} 来进行计算的固体判据器
  * @author liqa
  */
 public class BOOPSolidChecker implements ISolidChecker {
@@ -30,14 +30,14 @@ public class BOOPSolidChecker implements ISolidChecker {
     public BOOPSolidChecker setUseRatio(boolean aUseRatio) {mUseRatio = aUseRatio; return this;}
     public BOOPSolidChecker setUseRatio() {return setUseRatio(true);}
     
-    @Override public ILogicalVector checkSolid(MonatomicParameterCalculator aMPC) {
+    @Override public ILogicalVector checkSolid(AtomicParameterCalculator aAPC) {
         ILogicalVector tIsSolid;
         if (mUseRatio) {
-            IVector tConnectRatio = aMPC.calConnectRatioBOOP(mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+            IVector tConnectRatio = aAPC.calConnectRatioBOOP(mLInBOOP, mConnectThreshold, aAPC.unitLen()*mRNearestMul, mNnn);
             tIsSolid = tConnectRatio.greaterOrEqual(0.5);
             VectorCache.returnVec(tConnectRatio);
         } else {
-            IVector tConnectCount = aMPC.calConnectCountBOOP(mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+            IVector tConnectCount = aAPC.calConnectCountBOOP(mLInBOOP, mConnectThreshold, aAPC.unitLen()*mRNearestMul, mNnn);
             tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
             VectorCache.returnVec(tConnectCount);
         }

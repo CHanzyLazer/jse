@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.code.UT
 import jse.lmp.Data
 
@@ -14,9 +14,9 @@ double rMax = 10.0
 // 导入 data 文件
 def data = Data.read('lmp/data/data-glass')
 
-// 根据 data 创建参数计算器 mpc 并计算 gr
-def gr = MPC.withOf(data) {mpc ->
-    mpc.calRDF(N, rMax)
+// 根据 data 创建参数计算器 apc 并计算 gr
+def gr = APC.withOf(data) {apc ->
+    apc.calRDF(N, rMax)
 }
 
 // 获取 r 值和 g 值
@@ -25,13 +25,13 @@ println('g = ' + gr.f())
 // 获取峰值的位置
 println('maxR = ' + gr.opt().maxX())
 // 保存到 csv
-UT.IO.data2csv(gr, '.temp/example/mpc/rdf.csv')
+UT.IO.data2csv(gr, '.temp/example/apc/rdf.csv')
 
 
 // 计算单个种类的 gr
 def grCu, grZr, grCuZr
 def grCu_G, grZr_G, grCuZr_G
-try (def mpcCu = MPC.of(data.opt().filterType(1)); def mpcZr = MPC.of(data.opt().filterType(2))) {
+try (def mpcCu = APC.of(data.opt().filterType(1)); def mpcZr = APC.of(data.opt().filterType(2))) {
     grCu = mpcCu.calRDF(N, rMax)
     grZr = mpcZr.calRDF(N, rMax)
     grCuZr = mpcCu.calRDF_AB(mpcZr, N, rMax)

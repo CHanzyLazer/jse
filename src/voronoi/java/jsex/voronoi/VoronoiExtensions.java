@@ -1,6 +1,6 @@
 package jsex.voronoi;
 
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.code.collection.AbstractRandomAccessList;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.RandomAccess;
 
 
 /**
- * 采用这种方式将 voronoi 方法注入到 MPC 中，
+ * 采用这种方式将 voronoi 方法注入到 APC 中，
  * 这种做法可以降低代码的耦合，并且保证 jse 不会依赖 jsex
  * @author liqa
  */
@@ -56,7 +56,7 @@ public class VoronoiExtensions {
      * @param aLengthThreshold 过小长度的阈值（相对值），默认为 0.0（不处理）
      * @return Voronoi 分析的参数
      */
-    public static ICalculator calVoronoi(final MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold, double aLengthThreshold) {
+    public static ICalculator calVoronoi(final AtomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold, double aLengthThreshold) {
         if (self.isShutdown()) throw new RuntimeException("This Calculator is dead");
         final VoronoiBuilder rBuilder = new VoronoiBuilder().setNoWarning(aNoWarning).setIndexLength(aIndexLength).setAreaThreshold(aAreaThreshold).setLengthThreshold(aLengthThreshold);
         // 先增加内部原本的粒子，根据 cell 的顺序添加可以加速 voronoi 的构造
@@ -74,9 +74,9 @@ public class VoronoiExtensions {
             @Override public VoronoiBuilder.IVertex get(int aIdx) {return mBuilder.getVertex(idx2voronoi[aIdx]);}
         };
     }
-    public static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, aAreaThreshold, 0.0);}
-    public static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, 0.0);}
-    public static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff, boolean aNoWarning) {return calVoronoi(self, aRCutOff, aNoWarning, 9);}
-    public static ICalculator calVoronoi(MonatomicParameterCalculator self, double aRCutOff) {return calVoronoi(self, aRCutOff, false);}
-    public static ICalculator calVoronoi(MonatomicParameterCalculator self) {return calVoronoi(self, self.unitLen()*3.0);}
+    public static ICalculator calVoronoi(AtomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength, double aAreaThreshold) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, aAreaThreshold, 0.0);}
+    public static ICalculator calVoronoi(AtomicParameterCalculator self, double aRCutOff, boolean aNoWarning, int aIndexLength) {return calVoronoi(self, aRCutOff, aNoWarning, aIndexLength, 0.0);}
+    public static ICalculator calVoronoi(AtomicParameterCalculator self, double aRCutOff, boolean aNoWarning) {return calVoronoi(self, aRCutOff, aNoWarning, 9);}
+    public static ICalculator calVoronoi(AtomicParameterCalculator self, double aRCutOff) {return calVoronoi(self, aRCutOff, false);}
+    public static ICalculator calVoronoi(AtomicParameterCalculator self) {return calVoronoi(self, self.unitLen()*3.0);}
 }

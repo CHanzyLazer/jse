@@ -198,8 +198,8 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         assert !aUnwrapByCluster2this || (tThis instanceof ISettableAtomData);
         
         final int tAtomNum = tThis.atomNumber();
-        // 使用 mpc 来获取近邻列表
-        try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(tThis)) {
+        // 使用 apc 来获取近邻列表
+        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(tThis)) {
             final List<IntVector> rClusters = aOutputIndex ? new ArrayList<>() : null;
             final ILogicalVector tVisited = LogicalVectorCache.getZeros(tAtomNum);
             // 采用深度有限搜索算法来获取团簇
@@ -217,7 +217,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
                     if (aOutputIndex) subCluster.add(currentPoint);
                     
                     if (aUnwrapByCluster2this) tBuf.setXYZ(tThis.atom(currentPoint));
-                    tMPC.nl_().forEachNeighbor(currentPoint, aRCut, (x, y, z, neighbor, dx, dy, dz) -> {
+                    tAPC.nl_().forEachNeighbor(currentPoint, aRCut, (x, y, z, neighbor, dx, dy, dz) -> {
                         if (!tVisited.get(neighbor)) {
                             tStack.push(neighbor);
                             tVisited.set(neighbor, true);

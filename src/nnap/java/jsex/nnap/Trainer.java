@@ -2,7 +2,7 @@ package jsex.nnap;
 
 import jep.python.PyObject;
 import jse.atom.IAtomData;
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.cache.MatrixCache;
 import jse.code.SP;
 import jse.code.UT;
@@ -452,11 +452,11 @@ public class Trainer implements IAutoShutdown, ISavable {
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
         // 由于数据集不完整因此这里不去做归一化
         final int tAtomNum = aAtomData.atomNumber();
-        try (final MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aAtomData)) {
+        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
             for (int i = 0; i < tAtomNum; ++i) {
                 int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
                 IBasis tBasis = basis(tType);
-                RowMatrix tBase = tBasis.eval(tMPC, i, tTypeMap);
+                RowMatrix tBase = tBasis.eval(tAPC, i, tTypeMap);
                 rBaseData[tType-1].addAll(tBase.asVecRow());
                 rBaseData[tType-1].add(rEngData.size());
                 MatrixCache.returnMat(tBase);

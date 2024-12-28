@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.atom.Structures
 import jse.lmp.Data
 import jse.math.function.Func1
@@ -20,25 +20,25 @@ def dataF = Structures.FCC(3.0,  8).opt().perturbXYZ(0.1)
 
 // 计算 q4，q6，w4
 def q4G, q6G, w4G
-try (def mpcG = MPC.of(dataG)) {
+try (def mpcG = APC.of(dataG)) {
     q4G = mpcG.calABOOP(4)
     q6G = mpcG.calABOOP(6)
     w4G = mpcG.calABOOP3(4)
 }
 def q4C, q6C, w4C
-try (def mpcC = MPC.of(dataC)) {
+try (def mpcC = APC.of(dataC)) {
     q4C = mpcC.calABOOP(4)
     q6C = mpcC.calABOOP(6)
     w4C = mpcC.calABOOP3(4)
 }
 def q4B, q6B, w4B
-try (def mpcB = MPC.of(dataB)) {
+try (def mpcB = APC.of(dataB)) {
     q4B = mpcB.calABOOP(4)
     q6B = mpcB.calABOOP(6)
     w4B = mpcB.calABOOP3(4)
 }
 def q4F, q6F, w4F
-try (def mpcF = MPC.of(dataF)) {
+try (def mpcF = APC.of(dataF)) {
     q4F = mpcF.calABOOP(4)
     q6F = mpcF.calABOOP(6)
     w4F = mpcF.calABOOP3(4)

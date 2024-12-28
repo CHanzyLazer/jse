@@ -1,7 +1,7 @@
 package jsex.rareevent.atom;
 
 import jse.atom.IAtomData;
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.math.vector.ILogicalVector;
 
 
@@ -24,9 +24,9 @@ public class CustomClusterSizeCalculator extends AbstractClusterSizeCalculator {
     /** 主要用于兼容外部调用 */
     public CustomClusterSizeCalculator(ISolidChecker aSolidChecker) {this(aSolidChecker, ZL_CHECKERS);}
     
-    @Override protected ILogicalVector getIsSolid_(MonatomicParameterCalculator aMPC, IAtomData aPoint) {
-        ILogicalVector rIsSolid = mSolidChecker.checkSolid(aMPC);
-        for (ISolidChecker tChecker : mRestSolidCheckers) rIsSolid.or2this(tChecker.checkSolid(aMPC));
+    @Override protected ILogicalVector getIsSolid_(AtomicParameterCalculator aAPC, IAtomData aPoint) {
+        ILogicalVector rIsSolid = mSolidChecker.checkSolid(aAPC);
+        for (ISolidChecker tChecker : mRestSolidCheckers) rIsSolid.or2this(tChecker.checkSolid(aAPC));
         return rIsSolid;
     }
 }

@@ -32,7 +32,7 @@ import static jse.code.CS.R_NEAREST_MUL;
 import static jse.math.MathEX.*;
 
 /**
- * 单原子参数计算器，目前包含了 jse 实现的所有参数计算功能；
+ * 原子参数计算器，目前包含了 jse 实现的所有参数计算功能；
  * 包括计算径向分布函数 {@link #calRDF}，结构因子函数
  * {@link #calSF}，键角序参量 {@link #calBOOP}/{@link #calABOOP}
  * 以及近邻列表获取 {@link #getNeighborList}/{@link #getFullNeighborList}。
@@ -47,17 +47,17 @@ import static jse.math.MathEX.*;
  * 一般来说，直接使用 {@link #of(IAtomData)}
  * 来通过一个原子数据来创建一个的参数计算器，然后调用相关方法来进行计算：
  * <pre> {@code
- * def mpc = MPC.of(data)
- * def gr = mpc.calRDF()
- * mpc.shutdown()
+ * def apc = APC.of(data)
+ * def gr = apc.calRDF()
+ * apc.shutdown()
  * } </pre>
  * 由此来计算此原子数据的 rdf，最终调用 {@link #shutdown()}
  * 来手动释放内部缓存资源以及线程池（现在不再强制要求调用，但在高频使用下手动释放可以提高性能）
  * <p>
  * 也可以通过 {@link #withOf(IAtomData, IUnaryFullOperator)}
- * 来创建一个自动关闭的 mpc 并直接获取计算结果：
+ * 来创建一个自动关闭的 apc 并直接获取计算结果：
  * <pre> {@code
- * def gr = MPC.withOf(data) {it.calRDF()}
+ * def gr = APC.withOf(data) {it.calRDF()}
  * } </pre>
  * 来直接计算 rdf 并自动关闭参数计算器
  * <p>
@@ -65,10 +65,10 @@ import static jse.math.MathEX.*;
  *
  * @author liqa
  * @see IAtomData IAtomData: 关于 jse 中原子数据的实现和定义
- * @see MPC MPC: {@link MonatomicParameterCalculator} 的简称
+ * @see APC APC: AtomicParameterCalculator 的简称
  * @see NeighborListGetter NeighborListGetter: jse 目前的近邻列表实现
  */
-public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
+public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPool> {
     /** 缓存近邻列表从而避免重复计算距离，这里设置缓存的大小，设置为 0 关闭缓存；即使现在优化了近邻列表获取，缓存依旧能大幅加速近邻遍历 */
     public static int BUFFER_NL_NUM = 8;
     /** 最大的缓存近邻截断半径关于单位距离的倍率，过高的值的近邻列表缓存对内存是个灾难 */
@@ -94,7 +94,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     @Override public void shutdown() {
         mDead = true; super.shutdown();
         mNL.shutdown(); // 内部保证执行后内部的 mAtomDataXYZ 已经置为 null
-        // 此时 MPC 关闭，归还 mAtomDataXYZ，这种写法保证永远能获取到 mAtomDataXYZ 时都是合法的
+        // 此时 APC 关闭，归还 mAtomDataXYZ，这种写法保证永远能获取到 mAtomDataXYZ 时都是合法的
         // 只有相同线程关闭才会归还
         Thread tThread = Thread.currentThread();
         if (tThread == mInitThread) {
@@ -108,7 +108,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             IntVectorCache.returnVec(oAtomNumType);
             IntVectorCache.returnVec(oTypeVec);
         } else {
-            UT.Code.warning("Thread of shutdown() and init should be SAME in MonatomicParameterCalculator");
+            UT.Code.warning("Thread of shutdown() and init should be SAME in AtomicParameterCalculator");
         }
         if (tThread == mInitBufferNLThread) {
             if (mBufferedNL != null) {
@@ -128,7 +128,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     @ApiStatus.Internal @Override public void close() {shutdown();}
     
     /** @deprecated use {@link #of(IAtomData)} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    MonatomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
+    AtomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
         super(new ParforThreadPool(aThreadNum));
         
         // 获取模拟盒数据
@@ -158,44 +158,44 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         mInitThread = Thread.currentThread();
     }
     /** @deprecated use {@link #of(IAtomData)} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    MonatomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
+    AtomicParameterCalculator(IAtomData aAtomData) {this(aAtomData, 1);}
     
     
     /**
-     * 根据输入数据直接创建 MPC
+     * 根据输入数据直接创建 APC
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aThreadNum MPC 进行计算会使用的线程数，默认为 {@code 1}
+     * @param aThreadNum APC 进行计算会使用的线程数，默认为 {@code 1}
      */
-    public static MonatomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new MonatomicParameterCalculator(aAtomData, aThreadNum);}
+    public static AtomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return new AtomicParameterCalculator(aAtomData, aThreadNum);}
     /**
-     * 根据输入数据直接创建 MPC
+     * 根据输入数据直接创建 APC
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
      */
-    public static MonatomicParameterCalculator of(IAtomData aAtomData) {return new MonatomicParameterCalculator(aAtomData);}
+    public static AtomicParameterCalculator of(IAtomData aAtomData) {return new AtomicParameterCalculator(aAtomData);}
     
     /**
      * 自动关闭的接口，例如通过：
      * <pre> {@code
-     * def gr = MPC.withOf(data) {it.calRDF()}
+     * def gr = APC.withOf(data) {it.calRDF()}
      * } </pre>
      * 来直接计算 rdf 并计算完成后自动关闭
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aThreadNum MPC 进行计算会使用的线程数，默认为 {@code 1}
-     * @param aDoLater 需要使用 MPC 进行的相关操作，返回计算结果
+     * @param aThreadNum APC 进行计算会使用的线程数，默认为 {@code 1}
+     * @param aDoLater 需要使用 APC 进行的相关操作，返回计算结果
      * @return {@code aDoLater} 输出的计算结果
      */
-    public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData, aThreadNum)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super AtomicParameterCalculator> aDoLater) {try (AtomicParameterCalculator tAPC = new AtomicParameterCalculator(aAtomData, aThreadNum)) {return aDoLater.apply(tAPC);}}
     /**
      * 自动关闭的接口，例如通过：
      * <pre> {@code
-     * def gr = MPC.withOf(data) {it.calRDF()}
+     * def gr = APC.withOf(data) {it.calRDF()}
      * } </pre>
      * 来直接计算 rdf 并计算完成后自动关闭
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aDoLater 需要使用 MPC 进行的相关操作，返回计算结果
+     * @param aDoLater 需要使用 APC 进行的相关操作，返回计算结果
      * @return {@code aDoLater} 输出的计算结果
      */
-    public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<? extends T, ? super MonatomicParameterCalculator> aDoLater) {try (MonatomicParameterCalculator tMPC = new MonatomicParameterCalculator(aAtomData)) {return aDoLater.apply(tMPC);}}
+    public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<? extends T, ? super AtomicParameterCalculator> aDoLater) {try (AtomicParameterCalculator tAPC = new AtomicParameterCalculator(aAtomData)) {return aDoLater.apply(tAPC);}}
     
     
     /// 内部使用方法，用来将 aAtomDataXYZ 转换成内部存储的格式，并且处理精度问题造成的超出边界问题
@@ -229,7 +229,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aThreadNum 线程数目
      * @return 返回自身用于链式调用
      */
-    public MonatomicParameterCalculator setThreadNumber(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum)  {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
+    public AtomicParameterCalculator setThreadNumber(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum)  {if (aThreadNum != threadNumber()) setPool(new ParforThreadPool(aThreadNum)); return this;}
     
     
     /// 获取信息
@@ -301,30 +301,30 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /** @deprecated use {@link #birho(int, int)} */
     public final double birou(int aTypeA, int aTypeB) {return birho(aTypeA, aTypeB);}
     /**
-     * 和另一个 MPC 的混合原子数密度，即 {@code sqrt(rho()*aMPC.rho())}
-     * @param aMPC 另一个参数计算器
+     * 和另一个 APC 的混合原子数密度，即 {@code sqrt(rho()*aAPC.rho())}
+     * @param aAPC 另一个参数计算器
      * @return 混合原子数密度值
      */
-    public double birho(MonatomicParameterCalculator aMPC) {return Fast.sqrt(mRho*aMPC.mRho);}
-    /** @deprecated use {@link #birho(MonatomicParameterCalculator)} */
-    public final double birou(MonatomicParameterCalculator aMPC) {return birho(aMPC);}
+    public double birho(AtomicParameterCalculator aAPC) {return Fast.sqrt(mRho*aAPC.mRho);}
+    /** @deprecated use {@link #birho(AtomicParameterCalculator)} */
+    public final double birou(AtomicParameterCalculator aAPC) {return birho(aAPC);}
 
-    /// 现在支持合法修改 MPC 中的原子位置和种类
+    /// 现在支持合法修改 APC 中的原子位置和种类
     /**
      * 修改指定索引原子的坐标位置，会同步更新内部的近邻列表
      * <p>
-     * 相比重新创建一个 MPC，这种小的变化可以大大提高性能
+     * 相比重新创建一个 APC，这种小的变化可以大大提高性能
      *
      * @param aIdx 需要修改的原子索引值
      * @param aXYZ 需要设置的新的 xyz 坐标
      * @return 自身方便链式调用
      * @see IXYZ
      */
-    public MonatomicParameterCalculator setAtomXYZ(int aIdx, IXYZ aXYZ) {return setAtomXYZ(aIdx, aXYZ.x(), aXYZ.y(), aXYZ.z());}
+    public AtomicParameterCalculator setAtomXYZ(int aIdx, IXYZ aXYZ) {return setAtomXYZ(aIdx, aXYZ.x(), aXYZ.y(), aXYZ.z());}
     /**
      * 修改指定索引原子的坐标位置，会同步更新内部的近邻列表
      * <p>
-     * 相比重新创建一个 MPC，这种小的变化可以大大提高性能
+     * 相比重新创建一个 APC，这种小的变化可以大大提高性能
      *
      * @param aIdx 需要修改的原子索引值
      * @param aX 需要设置的新的 x 坐标
@@ -332,7 +332,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * @param aZ 需要设置的新的 z 坐标
      * @return 自身方便链式调用
      */
-    public MonatomicParameterCalculator setAtomXYZ(int aIdx, double aX, double aY, double aZ) {
+    public AtomicParameterCalculator setAtomXYZ(int aIdx, double aX, double aY, double aZ) {
         double oX = mAtomDataXYZ.get(aIdx, 0);
         double oY = mAtomDataXYZ.get(aIdx, 1);
         double oZ = mAtomDataXYZ.get(aIdx, 2);
@@ -346,13 +346,13 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /**
      * 修改指定索引原子的元素种类，这里只会更新内部的原子数计数
      * <p>
-     * 相比重新创建一个 MPC，这种小的变化可以大大提高性能
+     * 相比重新创建一个 APC，这种小的变化可以大大提高性能
      *
      * @param aIdx 需要修改的原子索引值
      * @param aType 需要设置的新的种类编号
      * @return 自身方便链式调用
      */
-    public MonatomicParameterCalculator setAtomType(int aIdx, int aType) {
+    public AtomicParameterCalculator setAtomType(int aIdx, int aType) {
         // 简单更新
         if (aType > mAtomTypeNum) throw new IllegalArgumentException("input type ("+aType+") Must <= ntypes ("+mAtomTypeNum+")");
         mAtomNumType.decrement(mTypeVec.get(aIdx)-1);
@@ -362,22 +362,22 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     /// 补充运算时使用
     /**
-     * 外部为 MPC 补充运算时使用，获取 MPC 内部的并行线程池
+     * 外部为 APC 补充运算时使用，获取 APC 内部的并行线程池
      * @see ParforThreadPool
      */
     @ApiStatus.Internal public ParforThreadPool pool_() {return pool();}
     /**
-     * 外部为 MPC 补充运算时使用，获取 MPC 内部的近邻列表获取器
+     * 外部为 APC 补充运算时使用，获取 APC 内部的近邻列表获取器
      * @see NeighborListGetter
      */
     @ApiStatus.Internal public NeighborListGetter nl_() {return mNL;}
     /**
-     * 外部为 MPC 补充运算时使用，获取 MPC 内部的原子坐标数据矩阵
+     * 外部为 APC 补充运算时使用，获取 APC 内部的原子坐标数据矩阵
      * @see IMatrix
      */
     @ApiStatus.Internal public IMatrix atomDataXYZ_() {return mAtomDataXYZ;}
     /**
-     * 外部为 MPC 补充运算时使用，获取 MPC 内部的原子种类编号向量
+     * 外部为 APC 补充运算时使用，获取 APC 内部的原子种类编号向量
      * @see IIntVector
      */
     @ApiStatus.Internal public IIntVector atomType_() {return mTypeVec;}
@@ -466,7 +466,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /**
      * 计算自身与输入的 aAtomDataXYZ 之间的 RDF，只计算一个固定结构的值，因此不包含温度信息
      * @author liqa
-     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aMPC 即计算两个 MPC 之间的 RDF
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aAPC 即计算两个 APC 之间的 RDF
      * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @return gr 函数
@@ -493,23 +493,23 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      */
     @Deprecated public IFunc1 calRDF_AB(Collection<? extends IXYZ> aAtomDataXYZ) {return calRDF_AB(aAtomDataXYZ, 160);}
     /**
-     * {@code calRDF_AB} 的 MPC 输入版本，计算给定 aMPC 之间的 RDF
+     * {@code calRDF_AB} 的 APC 输入版本，计算给定 aAPC 之间的 RDF
      * @see #calRDF_AB(Collection, int, double)
      * @deprecated use {@link #calRDF_AB(int, int, int, double)}
      */
-    @Deprecated public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC, int aN, final double aRMax) {return calRDF_AB_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax);} // aMPC 的 mAtomDataXYZ 都已经经过平移并且合理化
+    @Deprecated public IFunc1 calRDF_AB(AtomicParameterCalculator aAPC, int aN, final double aRMax) {return calRDF_AB_(aAPC.mAtomDataXYZ, aAPC.mAtomNum, aN, aRMax);} // aAPC 的 mAtomDataXYZ 都已经经过平移并且合理化
     /**
-     * @return {@code calRDF_AB(aMPC, aN, unitLen()*6)}
-     * @see #calRDF_AB(MonatomicParameterCalculator, int, double)
+     * @return {@code calRDF_AB(aAPC, aN, unitLen()*6)}
+     * @see #calRDF_AB(AtomicParameterCalculator, int, double)
      * @deprecated use {@link #calRDF_AB(int, int, int)}
      */
-    @Deprecated public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC, int aN) {return calRDF_AB(aMPC, aN, mUnitLen*6);}
+    @Deprecated public IFunc1 calRDF_AB(AtomicParameterCalculator aAPC, int aN) {return calRDF_AB(aAPC, aN, mUnitLen*6);}
     /**
-     * @return {@code calRDF_AB(aMPC, 160, unitLen()*6)}
-     * @see #calRDF_AB(MonatomicParameterCalculator, int, double)
+     * @return {@code calRDF_AB(aAPC, 160, unitLen()*6)}
+     * @see #calRDF_AB(AtomicParameterCalculator, int, double)
      * @deprecated use {@link #calRDF_AB(int, int)}
      */
-    @Deprecated public IFunc1 calRDF_AB(MonatomicParameterCalculator aMPC) {return calRDF_AB(aMPC, 160);}
+    @Deprecated public IFunc1 calRDF_AB(AtomicParameterCalculator aAPC) {return calRDF_AB(aAPC, 160);}
     
     
     /**
@@ -579,7 +579,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * {@code typeB <= typeA}，也就是说，如果需要访问给定 {@code (typeA, typeB)}
      * 的 {@code g_AB(r)}，需要使用：
      * <pre> {@code
-     * def grAll = mpc.calAllRDF(...)
+     * def grAll = apc.calAllRDF(...)
      * int idx = (typeA*(typeA-1)).intdiv(2) + typeB
      * def grAB = grAll[idx]
      * } </pre>
@@ -761,7 +761,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     /**
      * 使用带有一定展宽的高斯分布代替直接计数来计算自身与输入的 aAtomDataXYZ 之间的 RDF
      * @author liqa
-     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aMPC 即计算两个 MPC 之间的 RDF
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aAPC 即计算两个 APC 之间的 RDF
      * @param aN 指定分划的份数（默认为 160）
      * @param aRMax 指定计算的最大半径（默认为 6 倍单位长度）
      * @param aSigmaMul 高斯分布的一个标准差宽度对应的分划份数，默认为 4
@@ -795,29 +795,29 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      */
     @Deprecated public IFunc1 calRDF_AB_G(Collection<? extends IXYZ> aAtomDataXYZ) {return calRDF_AB_G(aAtomDataXYZ, 1000);}
     /**
-     * {@code calRDF_AB_G} 的 MPC 输入版本，计算给定 aMPC 之间的 RDF
+     * {@code calRDF_AB_G} 的 APC 输入版本，计算给定 aAPC 之间的 RDF
      * @see #calRDF_AB_G(Collection, int, double, int)
      * @deprecated use {@link #calRDF_AB_G(int, int, int, double, int)}
      */
-    @Deprecated public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, double aRMax, int aSigmaMul) {return calRDF_AB_G_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aRMax, aSigmaMul);} // aMPC 的 mAtomDataXYZ 都已经经过了平移
+    @Deprecated public IFunc1 calRDF_AB_G(AtomicParameterCalculator aAPC, int aN, double aRMax, int aSigmaMul) {return calRDF_AB_G_(aAPC.mAtomDataXYZ, aAPC.mAtomNum, aN, aRMax, aSigmaMul);} // aAPC 的 mAtomDataXYZ 都已经经过了平移
     /**
-     * @return {@code calRDF_AB(aMPC, aN, aRMax, 4)}
-     * @see #calRDF_AB_G(MonatomicParameterCalculator, int, double, int)
+     * @return {@code calRDF_AB(aAPC, aN, aRMax, 4)}
+     * @see #calRDF_AB_G(AtomicParameterCalculator, int, double, int)
      * @deprecated use {@link #calRDF_AB_G(int, int, int, double)}
      */
-    @Deprecated public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN, double aRMax) {return calRDF_AB_G(aMPC, aN, aRMax, 4);}
+    @Deprecated public IFunc1 calRDF_AB_G(AtomicParameterCalculator aAPC, int aN, double aRMax) {return calRDF_AB_G(aAPC, aN, aRMax, 4);}
     /**
-     * @return {@code calRDF_AB(aMPC, aN, unitLen()*6, 4)}
-     * @see #calRDF_AB_G(MonatomicParameterCalculator, int, double, int)
+     * @return {@code calRDF_AB(aAPC, aN, unitLen()*6, 4)}
+     * @see #calRDF_AB_G(AtomicParameterCalculator, int, double, int)
      * @deprecated use {@link #calRDF_AB_G(int, int, int)}
      */
-    @Deprecated public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC, int aN) {return calRDF_AB_G(aMPC, aN, mUnitLen*6);}
+    @Deprecated public IFunc1 calRDF_AB_G(AtomicParameterCalculator aAPC, int aN) {return calRDF_AB_G(aAPC, aN, mUnitLen*6);}
     /**
-     * @return {@code calRDF_AB(aMPC, 1000, unitLen()*6, 4)}
-     * @see #calRDF_AB_G(MonatomicParameterCalculator, int, double, int)
+     * @return {@code calRDF_AB(aAPC, 1000, unitLen()*6, 4)}
+     * @see #calRDF_AB_G(AtomicParameterCalculator, int, double, int)
      * @deprecated use {@link #calRDF_AB_G(int, int)}
      */
-    @Deprecated public IFunc1 calRDF_AB_G(MonatomicParameterCalculator aMPC) {return calRDF_AB_G(aMPC, 1000);}
+    @Deprecated public IFunc1 calRDF_AB_G(AtomicParameterCalculator aAPC) {return calRDF_AB_G(aAPC, 1000);}
     
     
     /**
@@ -901,7 +901,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * {@code typeB <= typeA}，也就是说，如果需要访问给定 {@code (typeA, typeB)}
      * 的 {@code g_AB(r)}，需要使用：
      * <pre> {@code
-     * def grAll = mpc.calAllRDF_G(...)
+     * def grAll = apc.calAllRDF_G(...)
      * int idx = (typeA*(typeA-1)).intdiv(2) + typeB
      * def grAB = grAll[idx]
      * } </pre>
@@ -1083,7 +1083,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     }
     /**
      * 计算自身与输入的 aAtomDataXYZ 之间的 SF，只计算一个固定结构的值，因此不包含温度信息
-     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aMPC 即计算两个 MPC 之间的 RDF
+     * @param aAtomDataXYZ 另一个元素的 xyz 坐标组成的列表，或者输入 aAPC 即计算两个 APC 之间的 RDF
      * @param aN 指定分划的份数（默认为 160）
      * @param aQMax 额外指定最大计算的 q 的位置
      * @param aQMin 手动指定最小的截断的 q
@@ -1118,29 +1118,29 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      */
     @Deprecated public IFunc1 calSF_AB(Collection<? extends IXYZ> aAtomDataXYZ) {return calSF_AB(aAtomDataXYZ, 160);}
     /**
-     * {@code calRDF_AB} 的 MPC 输入版本，计算给定 aMPC 之间的 RDF
+     * {@code calRDF_AB} 的 APC 输入版本，计算给定 aAPC 之间的 RDF
      * @see #calSF_AB(Collection, int, double, double)
      * @deprecated use {@link #calSF_AB(int, int, int, double, double)}
      */
-    @Deprecated public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN, double aQMax, double aQMin) {return calSF_AB_(aMPC.mAtomDataXYZ, aMPC.mAtomNum, aN, aQMax, aQMin);}
+    @Deprecated public IFunc1 calSF_AB(AtomicParameterCalculator aAPC, int aN, double aQMax, double aQMin) {return calSF_AB_(aAPC.mAtomDataXYZ, aAPC.mAtomNum, aN, aQMax, aQMin);}
     /**
-     * @return {@code calSF_AB(aMPC, aN, aQMax, 2.0*PI/unitLen() * 0.6)}
-     * @see #calSF_AB(MonatomicParameterCalculator, int, double, double)
+     * @return {@code calSF_AB(aAPC, aN, aQMax, 2.0*PI/unitLen() * 0.6)}
+     * @see #calSF_AB(AtomicParameterCalculator, int, double, double)
      * @deprecated use {@link #calSF_AB(int, int, int, double)}
      */
-    @Deprecated public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN, double aQMax) {return calSF_AB(aMPC, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
+    @Deprecated public IFunc1 calSF_AB(AtomicParameterCalculator aAPC, int aN, double aQMax) {return calSF_AB(aAPC, aN, aQMax, 2.0*PI/mUnitLen * 0.6);}
     /**
-     * @return {@code calSF_AB(aMPC, aN, 2.0*PI/unitLen() * 6.0, 2.0*PI/unitLen() * 0.6)}
-     * @see #calSF_AB(MonatomicParameterCalculator, int, double, double)
+     * @return {@code calSF_AB(aAPC, aN, 2.0*PI/unitLen() * 6.0, 2.0*PI/unitLen() * 0.6)}
+     * @see #calSF_AB(AtomicParameterCalculator, int, double, double)
      * @deprecated use {@link #calSF_AB(int, int, int)}
      */
-    @Deprecated public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC, int aN) {return calSF_AB(aMPC, aN, 2.0*PI/mUnitLen * 6.0);}
+    @Deprecated public IFunc1 calSF_AB(AtomicParameterCalculator aAPC, int aN) {return calSF_AB(aAPC, aN, 2.0*PI/mUnitLen * 6.0);}
     /**
-     * @return {@code calSF_AB(aMPC, 160, 2.0*PI/unitLen() * 6.0, 2.0*PI/unitLen() * 0.6)}
-     * @see #calSF_AB(MonatomicParameterCalculator, int, double, double)
+     * @return {@code calSF_AB(aAPC, 160, 2.0*PI/unitLen() * 6.0, 2.0*PI/unitLen() * 0.6)}
+     * @see #calSF_AB(AtomicParameterCalculator, int, double, double)
      * @deprecated use {@link #calSF_AB(int, int)}
      */
-    @Deprecated public IFunc1 calSF_AB(MonatomicParameterCalculator aMPC) {return calSF_AB(aMPC, 160);}
+    @Deprecated public IFunc1 calSF_AB(AtomicParameterCalculator aAPC) {return calSF_AB(aAPC, 160);}
     
     /**
      * 计算两种种类之间的 SF，只计算一个固定结构的值，因此不包含温度信息
@@ -1214,7 +1214,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * {@code typeB <= typeA}，也就是说，如果需要访问给定 {@code (typeA, typeB)}
      * 的 {@code S_AB(q)}，需要使用：
      * <pre> {@code
-     * def SqAll = mpc.calAllSF(...)
+     * def SqAll = apc.calAllSF(...)
      * int idx = (typeA*(typeA-1)).intdiv(2) + typeB
      * def SqAB = SqAll[idx]
      * } </pre>
@@ -1304,7 +1304,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
     
     
     
-    /// gr 和 Sq 的相互转换，由于依旧需要体系的原子数密度，因此还是都移动到 MPC 中
+    /// gr 和 Sq 的相互转换，由于依旧需要体系的原子数密度，因此还是都移动到 APC 中
     /**
      * 转换 g(r) 到 S(q)，这是主要计算 S(q) 的方法
      * <p>
@@ -1314,7 +1314,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      *
      * @author liqa
      * @param aGr the matrix form of g(r)
-     * @param aRho the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aRho the atom number density（默认会选择本 APC 得到的密度）
      * @param aN the split number of output（默认为 160）
      * @param aQMax the max q of output S(q)（默认为 7.6 倍 gr 第一峰对应的距离）
      * @param aQMin the min q of output S(q)（默认为 0.5 倍 gr 第一峰对应的距离）
@@ -1363,7 +1363,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      *
      * @author liqa
      * @param aSq the matrix form of S(q)
-     * @param aRho the atom number density（默认会选择本 MPC 得到的密度）
+     * @param aRho the atom number density（默认会选择本 APC 得到的密度）
      * @param aN the split number of output（默认为 160）
      * @param aRMax the max r of output g(r)（默认为 7.6 倍 Sq 第一峰对应的距离）
      * @param aRMin the min r of output g(r)（默认为 0.5 倍 Sq 第一峰对应的距离）
@@ -1409,7 +1409,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定索引原子的近邻原子索引组成的列表，不包括自身
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要近邻原子的坐标需要使用
      * {@link #getFullNeighborList(int, double, int)}
@@ -1437,7 +1437,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定索引原子的近邻原子索引组成的列表，不包括自身
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #getNeighborList(int, double, int)}
@@ -1482,7 +1482,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定坐标近邻原子索引组成的列表，不会特意排除恰好位于输入坐标的点
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要近邻原子的坐标需要使用
      * {@link #getFullNeighborList(IXYZ, double, int)}
@@ -1500,7 +1500,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定坐标近邻原子索引组成的列表，不会特意排除恰好位于输入坐标的点
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #getNeighborList(IXYZ, double, int)}
@@ -1528,7 +1528,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定索引原子的近邻原子的坐标以及索引组成的列表，不包括自身
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 使用此方法直接获取近邻原子坐标可以自动考虑 bpc
      * 下镜像原子的情况
@@ -1559,7 +1559,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定索引原子的近邻原子的坐标以及索引组成的列表，不包括自身
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #getFullNeighborList(int, double, int)}
@@ -1612,7 +1612,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定坐标近邻原子的坐标以及索引组成的列表，不会特意排除恰好位于输入坐标的点
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 使用此方法直接获取近邻原子坐标可以自动考虑 bpc
      * 下镜像原子的情况
@@ -1630,7 +1630,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 获取给定坐标近邻原子索引组成的列表，不会特意排除恰好位于输入坐标的点
      * <p>
      * 返回的近邻列表会经过值拷贝，因此可以直接修改不会影响
-     * MPC 内部的工作
+     * APC 内部的工作
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #getFullNeighborList(IXYZ, double, int)}
@@ -1664,7 +1664,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         private final double mXLo, mXHi, mYLo, mYHi, mZLo, mZHi;
         MPIInfo(MPI.Comm aComm) throws MPIException {
             // 这里简单处理，MPI 只支持非斜方的模拟盒
-            if (mBox.isPrism()) throw new IllegalArgumentException("MonatomicParameterCalculator only provides MPI support for orthogonal box");
+            if (mBox.isPrism()) throw new IllegalArgumentException("AtomicParameterCalculator only provides MPI support for orthogonal box");
             mComm = aComm;
             mRank = mComm.rank();
             mSize = mComm.size();
@@ -1977,7 +1977,7 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
             mBufferedNL.reset();
         }
         mInitBufferNLThread = Thread.currentThread();
-        if (mInitBufferNLThread != mInitThread) UT.Code.warning("Thread of initBufferNL() and init should be SAME in MonatomicParameterCalculator");
+        if (mInitBufferNLThread != mInitThread) UT.Code.warning("Thread of initBufferNL() and init should be SAME in AtomicParameterCalculator");
     }
     
     /// 根据参数获取合适的 NL 用于缓存，此时 null 表示关闭了近邻列表缓存或者没有合适的缓存的近邻列表
@@ -2240,11 +2240,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
-     * <p>
      * 主要用于内部使用，由于对象较大这里返回 cache 的值，
      * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      *
      * @author liqa
      * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
@@ -2319,11 +2319,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
-     * <p>
      * 主要用于内部使用，由于对象较大这里返回 cache 的值，
      * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      *
      * @author liqa
      * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
@@ -2341,11 +2341,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * 通过 {@link #calQlmMean(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * Reference: <a href="https://doi.org/10.1063/1.2977970">
-     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
-     * <p>
      * 主要用于内部使用，由于对象较大这里返回 cache 的值，
      * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      *
      * @author liqa
      * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
@@ -2467,6 +2467,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
      * {@link #calABOOP(int, double, int)}
+     * <p>
+     * References: <a href="http://dx.doi.org/10.1103/PhysRevB.28.784">
+     * Bond-orientational order in liquids and glasses</a>,
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>
      *
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 {@code Q4: l = 4, Q6: l = 6}
@@ -2508,6 +2513,11 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
      * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
      * {@link #calABOOP(int, double)}
+     * <p>
+     * References: <a href="http://dx.doi.org/10.1103/PhysRevB.28.784">
+     * Bond-orientational order in liquids and glasses</a>,
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>
      *
      * @author liqa
      * @param aL 计算具体 Q 值的下标，即 {@code Q4: l = 4, Q6: l = 6}
@@ -2549,13 +2559,59 @@ public class MonatomicParameterCalculator extends AbstractThreadPool<ParforThrea
         return Ql;
     }
     private IVector calBOOP_MPI_(MPIInfo aMPIInfo, int aL, double aRNearest, int aNnn) throws MPIException {return calBOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aRNearest, aNnn);}
+    /**
+     * MPI 版本的 BOOP 计算，即 Ql
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return Ql 组成的向量，按照原子数据中的原子排序
+     * @see #calBOOP(int, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calBOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calBOOP_MPI_(aNoGather, tMPIInfo, aL, aRNearest, aNnn);}}
+    /**
+     * @return {@code calBOOP_MPI(false, aComm, aL, aRNearest, aNnn)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     */
     public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calBOOP_MPI_(tMPIInfo, aL, aRNearest, aNnn);}}
-    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) throws MPIException {return calBOOP_MPI(aComm, aL, aRNearest, -1);}
-    public IVector calBOOP_MPI(MPI.Comm aComm, int aL                            ) throws MPIException {return calBOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
-    public IVector calBOOP_MPI(                int aL, double aRNearest, int aNnn) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
-    public IVector calBOOP_MPI(                int aL, double aRNearest          ) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
-    public IVector calBOOP_MPI(                int aL                            ) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calBOOP_MPI(MPI.Comm, int, double, int)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     */
+    public IVector calBOOP_MPI(MPI.Comm aComm, int aL, double aRNearest) throws MPIException {return calBOOP_MPI(aComm, aL, aRNearest, -1);}
+    /**
+     * @return {@code calBOOP_MPI(aComm, aL, unitLen()*R_NEAREST_MUL)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calBOOP_MPI(MPI.Comm aComm, int aL) throws MPIException {return calBOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calBOOP_MPI(int aL, double aRNearest, int aNnn) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
+    /**
+     * @return {@code calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calBOOP_MPI(int aL, double aRNearest) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
+    /**
+     * @return {@code calBOOP_MPI(MPI.Comm.WORLD, aL)}
+     * @see #calBOOP_MPI(boolean, MPI.Comm, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calBOOP_MPI(int aL) throws MPIException {return calBOOP_MPI(MPI.Comm.WORLD, aL);}
     
     
     /**

@@ -1,6 +1,6 @@
 package jsex.rareevent.atom;
 
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.math.MathEX;
 import jse.math.vector.ILogicalVector;
 import jse.math.vector.IVector;
@@ -11,7 +11,7 @@ import jse.parallel.MPIException;
 import static jse.code.CS.R_NEAREST_MUL;
 
 /**
- * 内部使用 {@link MonatomicParameterCalculator#calConnectCountABOOP_MPI} 来进行计算的固体判据器
+ * 内部使用 {@link AtomicParameterCalculator#calConnectCountABOOP_MPI} 来进行计算的固体判据器
  * @author liqa
  */
 public class ABOOPSolidChecker_MPI implements ISolidChecker {
@@ -35,15 +35,15 @@ public class ABOOPSolidChecker_MPI implements ISolidChecker {
     public ABOOPSolidChecker_MPI setUseRatio(boolean aUseRatio) {mUseRatio = aUseRatio; return this;}
     public ABOOPSolidChecker_MPI setUseRatio() {return setUseRatio(true);}
     
-    @Override public ILogicalVector checkSolid(MonatomicParameterCalculator aMPC) {
+    @Override public ILogicalVector checkSolid(AtomicParameterCalculator aAPC) {
         try {
             ILogicalVector tIsSolid;
             if (mUseRatio) {
-                IVector tConnectRatio = aMPC.calConnectRatioABOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+                IVector tConnectRatio = aAPC.calConnectRatioABOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aAPC.unitLen()*mRNearestMul, mNnn);
                 tIsSolid = tConnectRatio.greaterOrEqual(0.5);
                 VectorCache.returnVec(tConnectRatio);
             } else {
-                IVector tConnectCount = aMPC.calConnectCountABOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aMPC.unitLen()*mRNearestMul, mNnn);
+                IVector tConnectCount = aAPC.calConnectCountABOOP_MPI(mComm, mLInBOOP, mConnectThreshold, aAPC.unitLen()*mRNearestMul, mNnn);
                 tIsSolid = tConnectCount.greaterOrEqual(mSolidThreshold);
                 VectorCache.returnVec(tConnectCount);
             }

@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.code.UT
 import jse.lmp.Dump
 
@@ -13,9 +13,9 @@ def dump = Dump.read('lmp/dump/CuFCC108.lammpstrj')
 dump.cutFront(1)
 
 // 对所有帧统计平均的 gr
-def gr = MPC.withOf(dump.first()) {it.calRDF()}
+def gr = APC.withOf(dump.first()) {it.calRDF()}
 for (i in 1..<dump.size()) {
-    gr.plus2this(MPC.withOf(dump[i]) {it.calRDF()})
+    gr.plus2this(APC.withOf(dump[i]) {it.calRDF()})
 }
 gr.div2this(dump.size())
 
@@ -25,7 +25,7 @@ println('g = ' + gr.f())
 // 获取峰值的位置
 println('maxR = ' + gr.opt().maxX())
 // 保存到 csv
-UT.IO.data2csv(gr, '.temp/example/mpc/rdfmulti.csv')
+UT.IO.data2csv(gr, '.temp/example/apc/rdfmulti.csv')
 // 绘制
 plot(gr)
 

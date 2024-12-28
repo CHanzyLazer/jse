@@ -49,11 +49,11 @@
     2. [类型转换](atomdata.md#类型转换)
     3. [通用运算](atomdata.md#通用运算)
     
-8. [原子结构参量计算](mpc.md)
-    1. [参量计算器初始化](mpc.md#参量计算器初始化)
-    2. [RDF 和 SF 的计算](mpc.md#rdf-和-sf-的计算)
-    3. [键角序参量的计算](mpc.md#键角序参量的计算)
-    4. [Voronoi 分析](mpc.md#voronoi-分析)
+8. [原子结构参量计算](apc.md)
+    1. [参量计算器初始化](apc.md#参量计算器初始化)
+    2. [RDF 和 SF 的计算](apc.md#rdf-和-sf-的计算)
+    3. [键角序参量的计算](apc.md#键角序参量的计算)
+    4. [Voronoi 分析](apc.md#voronoi-分析)
     
 9.  [MPI 支持](mpi.md)
     1. [环境要求](mpi.md#环境要求)

@@ -1,4 +1,4 @@
-- [原子结构参量计算](mpc.md)
+- [原子结构参量计算](apc.md)
     - [参量计算器初始化](#参量计算器初始化)
     - [RDF 和 SF 的计算](#rdf-和-sf-的计算)
     - [键角序参量的计算](#键角序参量的计算)
@@ -7,34 +7,34 @@
 
 # 原子结构参量计算
 
-jse 中使用 [`jse.atom.MPC`](../src/main/java/jse/atom/MPC.java) /
-[`jse.atom.MonatomicParameterCalculator`](../src/main/java/jse/atom/MonatomicParameterCalculator.java)
+jse 中使用 [`jse.atom.APC`](../src/main/java/jse/atom/APC.java) /
+[`jse.atom.AtomicParameterCalculator`](../src/main/java/jse/atom/AtomicParameterCalculator.java)
 来实现原子结构的参量计算，两者完全一致，
-`MPC` 只是 `MonatomicParameterCalculator` 的简称。
+`APC` 只是 `AtomicParameterCalculator` 的简称。
 
 
 ## 参量计算器初始化
 
-jse 中可以通过静态方法 `MPC.of` 直接创建一个参数计算器，
-注意在使用完成后手动调用 `shutdown()` 关闭 MPC 回收资源：
+jse 中可以通过静态方法 `APC.of` 直接创建一个参数计算器，
+注意在使用完成后手动调用 `shutdown()` 关闭 APC 回收资源：
 
 ```groovy
-import jse.atom.MPC
+import jse.atom.APC
 import jse.lmp.Data
 
 def data = Data.read('path/to/lmp/data')
 
-def mpc = MPC.of(data)
-// use mpc here
-mpc.shutdown()
+def apc = APC.of(data)
+// use apc here
+apc.shutdown()
 ```
 
 也可以使用 [*try-with-resources*](https://www.baeldung.com/java-try-with-resources)
 来实现自动资源回收：
 
 ```groovy
-try (def mpc = MPC.of(data)) {
-    // use mpc here
+try (def apc = APC.of(data)) {
+    // use apc here
 }
 ```
 
@@ -43,49 +43,49 @@ try (def mpc = MPC.of(data)) {
 
 ```groovy
 def gr
-try (def mpc = MPC.of(data)) {
-    gr = mpc.calRDF()
+try (def apc = APC.of(data)) {
+    gr = apc.calRDF()
 }
 // use gr here
 ```
 
-很多情况下一个 MPC 只需要计算一个参数，导致上述写法有些啰嗦，
-此时可以通过静态方法 `MPC.withOf` 同时实现自动关闭和获取计算结果：
+很多情况下一个 APC 只需要计算一个参数，导致上述写法有些啰嗦，
+此时可以通过静态方法 `APC.withOf` 同时实现自动关闭和获取计算结果：
 
 ```groovy
-def gr = MPC.withOf(data) {mpc ->
-    mpc.calRDF()
+def gr = APC.withOf(data) {apc ->
+    apc.calRDF()
 }
 // use gr here
 ```
 
-其中 `mpc ->` 可以省略，并使用 `it` 来代指 MPC：
+其中 `apc ->` 可以省略，并使用 `it` 来代指 APC：
 
 ```groovy
-def gr = MPC.withOf(data) {
+def gr = APC.withOf(data) {
     it.calRDF()
 }
 // use gr here
 ```
 
-关于 `MPC.of` 和 `MPC.withOf` 方法的详细用法如下：
+关于 `APC.of` 和 `APC.withOf` 方法的详细用法如下：
 
 - **`of`**
     
-    描述：根据输入参数构造一个 `jse.atom.MPC`。
+    描述：根据输入参数构造一个 `jse.atom.APC`。
     
     输入1：`IAtomData`，jse 使用的任意的原子数据
     
     输入2（可选）：`int`，计算器使用的线程数，默认为 1（不开启并行）
     
-    输出：`MPC`，创建的参量计算器对象
+    输出：`APC`，创建的参量计算器对象
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)，
-    `example/mpc/boop`
-    [⤤](../example/code/mpc/boop.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)，
+    `example/apc/boop`
+    [⤤](../example/code/apc/boop.groovy)
     
-    > 注意：创建后记得在使用完成后手动调用 `shutdown()` 关闭 MPC 回收资源，
+    > 注意：创建后记得在使用完成后手动调用 `shutdown()` 关闭 APC 回收资源，
     > 或者使用 [*try-with-resources*](https://www.baeldung.com/java-try-with-resources)
     > 实现自动回收。
     > 
@@ -94,35 +94,35 @@ def gr = MPC.withOf(data) {
     
 - **`withOf`**
     
-    描述：根据输入参数构造一个 `jse.atom.MPC`，
-    并将其作为一个闭包的输入，在闭包内进行任意计算后自动关闭此 MPC；
-    对于只需要使用 MPC 计算单个参数的情况会更加简洁。
+    描述：根据输入参数构造一个 `jse.atom.APC`，
+    并将其作为一个闭包的输入，在闭包内进行任意计算后自动关闭此 APC；
+    对于只需要使用 APC 计算单个参数的情况会更加简洁。
     
     输入1：`IAtomData`，jse 使用的任意的原子数据
     
     输入2（可选）：`int`，计算器使用的线程数，默认为 1（不开启并行）
     
-    输入end：`IUnaryFullOperator<T, MPC>`，一个输入 MPC
+    输入end：`IUnaryFullOperator<T, APC>`，一个输入 APC
     并输出任意结果（一般是计算结果）的闭包
     
-    输出：`T`，通过闭包定义的输出结果，一般是使用 MPC 计算的结果
+    输出：`T`，通过闭包定义的输出结果，一般是使用 APC 计算的结果
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)，
-    `example/mpc/rdfmulti`
-    [⤤](../example/code/mpc/rdfmulti.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)，
+    `example/apc/rdfmulti`
+    [⤤](../example/code/apc/rdfmulti.groovy)
 
     
 ## RDF 和 SF 的计算
 
-MPC 可以计算单个结构的 RDF（radial distribution function）
+APC 可以计算单个结构的 RDF（radial distribution function）
 以及 SF（structural factor），并提供了相互转换的方法。
 
 具体定义和应用可以
 [参考文献 10.1088/0034-4885/69/1/R05](https://doi.org/10.1088/0034-4885/69/1/R05)。
 
-对于有限温度需要进行时间平均的情况，可以参考 `example/mpc/rdfmulti`
-[⤤](../example/code/mpc/rdfmulti.groovy)
+对于有限温度需要进行时间平均的情况，可以参考 `example/apc/rdfmulti`
+[⤤](../example/code/apc/rdfmulti.groovy)
 的方法对所有帧进行计算并取平均。
 
 - **`calRDF`**
@@ -136,16 +136,16 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 g(r)
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)，
-    `example/mpc/rdfmulti`
-    [⤤](../example/code/mpc/rdfmulti.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)，
+    `example/apc/rdfmulti`
+    [⤤](../example/code/apc/rdfmulti.groovy)
     
     > 注意：会按照周期边界条件处理边界，
     > 理论上能够正确处理原子模拟盒小于输入最大半径的情况。
     > 
     > *单位长度*定义：$\text{uintLen} = (\text{volume} / \text{natoms})^{1/3}$，
-    > 可以通过 `MPC.unitLen()` 获取。
+    > 可以通过 `APC.unitLen()` 获取。
     >
     
     -----------------------------
@@ -159,7 +159,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     输入1：根据输入类型重载，具体为：
     
     - `Collection<? extends IXYZ> `，另一个种类的原子坐标数据 `IXYZ` 数组
-    - `MPC`，另一个种类的原子坐标数据构建的 MPC
+    - `APC`，另一个种类的原子坐标数据构建的 APC
     
     输入2（可选）：`int`，指定分划的份数（默认为 160）
     
@@ -167,8 +167,8 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 g(r)
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)
     
     -----------------------------
     
@@ -185,8 +185,8 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 g(r)
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)
     
     -----------------------------
     
@@ -198,7 +198,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     输入1：根据输入类型重载，具体为：
     
     - `Collection<? extends IXYZ> `，另一个种类的原子坐标数据 `IXYZ` 数组
-    - `MPC`，另一个种类的原子坐标数据构建的 MPC
+    - `APC`，另一个种类的原子坐标数据构建的 APC
     
     输入2（可选）：`int`，指定分划的份数（默认为 1000）
     
@@ -208,8 +208,8 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 g(r)
     
-    例子：`example/mpc/rdf`
-    [⤤](../example/code/mpc/rdf.groovy)
+    例子：`example/apc/rdf`
+    [⤤](../example/code/apc/rdf.groovy)
     
     -----------------------------
     
@@ -227,15 +227,15 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 S(q)
     
-    例子：`example/mpc/sf`
-    [⤤](../example/code/mpc/sf.groovy)
+    例子：`example/apc/sf`
+    [⤤](../example/code/apc/sf.groovy)
     
-    > 注意：和 `MPC.calRDF` 不同，此算法会对所有原子遍历所有的其余原子来计算距离，
+    > 注意：和 `APC.calRDF` 不同，此算法会对所有原子遍历所有的其余原子来计算距离，
     > 因此过小的体系会导致计算不准确，而过大的体系会导致计算极其耗时（$O(n^2)$），
-    > 因此建议建议使用 `MPC.RDF2SF` 通过傅里叶变换来将 RDF 转为 SF 来间接计算。
+    > 因此建议建议使用 `APC.RDF2SF` 通过傅里叶变换来将 RDF 转为 SF 来间接计算。
     > 
     > *单位长度*定义：$\text{uintLen} = (\text{volume} / \text{natoms})^{1/3}$，
-    > 可以通过 `MPC.unitLen()` 获取；
+    > 可以通过 `APC.unitLen()` 获取；
     > 对于 q 值会取倒数，具体为：$\text{uintLenQ} = 2\pi / \text{uintLen}$。
     >
     
@@ -250,7 +250,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     输入1：根据输入类型重载，具体为：
     
     - `Collection<? extends IXYZ> `，另一个种类的原子坐标数据 `IXYZ` 数组
-    - `MPC`，另一个种类的原子坐标数据构建的 MPC
+    - `APC`，另一个种类的原子坐标数据构建的 APC
     
     输入2（可选）：`int`，指定分划的份数（默认为 160）
     
@@ -261,12 +261,12 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 S(q)
     
-    例子：`example/mpc/sf`
-    [⤤](../example/code/mpc/sf.groovy)
+    例子：`example/apc/sf`
+    [⤤](../example/code/apc/sf.groovy)
     
-    > 注意：和 `MPC.calRDF_AB` 不同，此算法会对所有原子遍历所有的另一种原子来计算距离，
+    > 注意：和 `APC.calRDF_AB` 不同，此算法会对所有原子遍历所有的另一种原子来计算距离，
     > 因此过小的体系会导致计算不准确，而过大的体系会导致计算极其耗时（$O(n^2)$），
-    > 因此建议建议使用 `MPC.RDF2SF` 通过傅里叶变换来将 RDF 转为 SF 来间接计算。
+    > 因此建议建议使用 `APC.RDF2SF` 通过傅里叶变换来将 RDF 转为 SF 来间接计算。
     >
     
     -----------------------------
@@ -277,7 +277,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输入1：`IFunc1`，已经计算得到的 RDF
     
-    输入2（可选）：`double`，原子数密度（默认会使用 MPC 存储的值）
+    输入2（可选）：`double`，原子数密度（默认会使用 APC 存储的值）
     
     输入3（可选）：`int`，指定分划的份数（默认为 160）
     
@@ -287,18 +287,18 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 S(q)
     
-    例子：`example/mpc/rdfsf`
-    [⤤](../example/code/mpc/rdfsf.groovy)
+    例子：`example/apc/rdfsf`
+    [⤤](../example/code/apc/rdfsf.groovy)
     
-    > 注意：在指定原子数密度后为静态方法，可以不创建 MPC 对象直接使用；
+    > 注意：在指定原子数密度后为静态方法，可以不创建 APC 对象直接使用；
     > 对于两种不同类型的 RDF/SF，需要指定密度为 $\rho = \sqrt{\rho_A \rho_B}$
     > 才能得到正确的结果。
     >
     > 由于周期边界条件的原因，当输入的 g(r) 在计算时如果涉及到了周期边界条件增加重复原子
     > （具体为指定计算的最大半径超过了模拟盒边长的一半时），会导致 S(q)
-    > 包含可能并不期望的周期对称性信息，从而导致结果相比 `MPC.calSF`
+    > 包含可能并不期望的周期对称性信息，从而导致结果相比 `APC.calSF`
     > 出现更多的峰。
-    > 此时需要在使用 `MPC.calRDF` 计算 g(r) 时指定较小的最大半径或者增大体系尺寸。
+    > 此时需要在使用 `APC.calRDF` 计算 g(r) 时指定较小的最大半径或者增大体系尺寸。
     >
     
     -----------------------------
@@ -309,7 +309,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输入1：`IFunc1`，已经计算得到的 SF
     
-    输入2（可选）：`double`，原子数密度（默认会使用 MPC 存储的值）
+    输入2（可选）：`double`，原子数密度（默认会使用 APC 存储的值）
     
     输入3（可选）：`int`，指定分划的份数（默认为 160）
     
@@ -319,10 +319,10 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
     
     输出：`IFunc1`，计算得到的 S(q)
     
-    例子：`example/mpc/rdfsf`
-    [⤤](../example/code/mpc/rdfsf.groovy)
+    例子：`example/apc/rdfsf`
+    [⤤](../example/code/apc/rdfsf.groovy)
     
-    > 注意：在指定原子数密度后为静态方法，可以不创建 MPC 对象直接使用；
+    > 注意：在指定原子数密度后为静态方法，可以不创建 APC 对象直接使用；
     > 对于两种不同类型的 RDF/SF，需要指定密度为 $\rho = \sqrt{\rho_A \rho_B}$
     > 才能得到正确的结果。
     >
@@ -330,7 +330,7 @@ MPC 可以计算单个结构的 RDF（radial distribution function）
 
 ## 键角序参量的计算
 
-MPC 可以计算每个原子的
+APC 可以计算每个原子的
 BOOP（local Bond Orientational Order Parameters），
 ABOOP（Averaged local Bond Orientational Order Parameters），
 以及基于此的原子连接数目和判断原子是否是“类固体”。
@@ -354,8 +354,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的 Ql，按照原子顺序排列
     
-    例子：`example/mpc/boop`
-    [⤤](../example/code/mpc/boop.groovy)
+    例子：`example/apc/boop`
+    [⤤](../example/code/apc/boop.groovy)
     
     > 注意：如果指定了最后一个参数（`Nnn`，Number of Nearest Neighbor list）
     > 则会限制最大的最近邻数目，一般会将此值设为 12 并设定一个足够大的最近邻半径
@@ -367,7 +367,7 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     > 从而选取大致 12 个近邻原子进行计算。
     >
     > *单位长度*定义：$\text{uintLen} = (\text{volume} / \text{natoms})^{1/3}$，
-    > 可以通过 `MPC.unitLen()` 获取。
+    > 可以通过 `APC.unitLen()` 获取。
     >
     
     -----------------------------
@@ -387,8 +387,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的 Wl，按照原子顺序排列
     
-    例子：`example/mpc/boop`
-    [⤤](../example/code/mpc/boop.groovy)
+    例子：`example/apc/boop`
+    [⤤](../example/code/apc/boop.groovy)
     
     -----------------------------
     
@@ -405,8 +405,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的 ql，按照原子顺序排列
     
-    例子：`example/mpc/aboop`
-    [⤤](../example/code/mpc/aboop.groovy)
+    例子：`example/apc/aboop`
+    [⤤](../example/code/apc/aboop.groovy)
     
     -----------------------------
     
@@ -423,8 +423,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的 wl，按照原子顺序排列
     
-    例子：`example/mpc/aboop`
-    [⤤](../example/code/mpc/aboop.groovy)
+    例子：`example/apc/aboop`
+    [⤤](../example/code/apc/aboop.groovy)
     
     -----------------------------
     
@@ -443,8 +443,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的连接数目，按照原子顺序排列
     
-    例子：`example/mpc/connectcount`
-    [⤤](../example/code/mpc/connectcount.groovy)
+    例子：`example/apc/connectcount`
+    [⤤](../example/code/apc/connectcount.groovy)
     
     -----------------------------
     
@@ -463,8 +463,8 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
     
     输出：`IVector`，计算得到的每个原子的连接数目，按照原子顺序排列
     
-    例子：`example/mpc/connectcount`
-    [⤤](../example/code/mpc/connectcount.groovy)
+    例子：`example/apc/connectcount`
+    [⤤](../example/code/apc/connectcount.groovy)
     
     -----------------------------
     
@@ -503,7 +503,7 @@ ABOOP（Averaged local Bond Orientational Order Parameters），
 
 ## Voronoi 分析
 
-MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
+APC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
 从而给出每个原子的 voronoi 多面体的体积，面数，指数等，
 具体定义和应用可以
 [参考 ovito 的文档](https://docs.ovito.org/reference/pipelines/modifiers/voronoi_analysis.html)。
@@ -533,8 +533,8 @@ MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
     
     输出：`IVoronoiCalculator`，voronoi 多面体参数的计算器
     
-    例子：`example/mpc/voronoi`
-    [⤤](../example/code/mpc/voronoi.groovy)
+    例子：`example/apc/voronoi`
+    [⤤](../example/code/apc/voronoi.groovy)
     
     > 注意：`IVoronoiCalculator` 也提供了一系列的 set 方法来设置这些参数，
     > 因此更推荐直接使用 `calVoronoi()` 获取到 `IVoronoiCalculator`
@@ -552,8 +552,8 @@ MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
     
     输出：`int`，此节点对应 voronoi 多面体的面的数目（配位数）
     
-    例子：`example/mpc/voronoi`
-    [⤤](../example/code/mpc/voronoi.groovy)
+    例子：`example/apc/voronoi`
+    [⤤](../example/code/apc/voronoi.groovy)
     
     -----------------------------
     
@@ -561,8 +561,8 @@ MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
     
     输出：`double`，此节点对应 voronoi 多面体的体积（原子体积）
     
-    例子：`example/mpc/voronoi`
-    [⤤](../example/code/mpc/voronoi.groovy)
+    例子：`example/apc/voronoi`
+    [⤤](../example/code/apc/voronoi.groovy)
     
     -----------------------------
     
@@ -570,8 +570,8 @@ MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
     
     输出：`double`，此节点距 voronoi 多面体顶点的最大距离（空腔距离）
     
-    例子：`example/mpc/voronoi`
-    [⤤](../example/code/mpc/voronoi.groovy)
+    例子：`example/apc/voronoi`
+    [⤤](../example/code/apc/voronoi.groovy)
     
     -----------------------------
     
@@ -580,8 +580,8 @@ MPC 可以简单的计算出原子坐标的 voronoi 多面体并进行分析，
     输出：`int[]`，记录此节点的 voronoi 多面体每个面的多边形边数统计（voronoi indices），
     `IVertex.index()[4] == 12` 代表拥有 `12` 个 `4+1` 边形
     
-    例子：`example/mpc/voronoi`
-    [⤤](../example/code/mpc/voronoi.groovy)
+    例子：`example/apc/voronoi`
+    [⤤](../example/code/apc/voronoi.groovy)
     
     > 注意：这里为了保证直接输出的 `IVertex.index()` 和 ovito 的结果一致，
     > 同样保持从 0 开始计数，因此如果希望获得 5 边形的数目应该使用

@@ -1,7 +1,7 @@
 package jsex.rareevent.atom;
 
 import jse.atom.IAtomData;
-import jse.atom.MonatomicParameterCalculator;
+import jse.atom.AtomicParameterCalculator;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
 import jse.math.MathEX;
@@ -30,8 +30,8 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
     /**
      * 构造一个 MultiTypeClusterSizeCalculator
      * @author liqa
-     * @param aAllSolidChecker 适用于所有原子的 Checker，传入的 MPC 为所有原子的体系
-     * @param aTypeSolidCheckers 适用于某个种类的 Checker，传入的 MPC 为选定的种类的原子的体系；对给定种类位置设为 null 则不会考虑这种原子，直接传入 null 则统一采用 aAllSolidChecker 计算
+     * @param aAllSolidChecker 适用于所有原子的 Checker，传入的 APC 为所有原子的体系
+     * @param aTypeSolidCheckers 适用于某个种类的 Checker，传入的 APC 为选定的种类的原子的体系；对给定种类位置设为 null 则不会考虑这种原子，直接传入 null 则统一采用 aAllSolidChecker 计算
      */
     public MultiTypeClusterSizeCalculator(ISolidChecker aAllSolidChecker, ISolidChecker @Nullable[] aTypeSolidCheckers) {
         mAllSolidChecker = aAllSolidChecker;
@@ -45,12 +45,12 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
     public MultiTypeClusterSizeCalculator setTypeCalThreshold(double aTypeCalThreshold) {mTypeCalThreshold = MathEX.Code.toRange(0.0, 1.0, aTypeCalThreshold); return this;}
     
     
-    @Override protected ILogicalVector getIsSolid_(MonatomicParameterCalculator aMPC, IAtomData aPoint) {
+    @Override protected ILogicalVector getIsSolid_(AtomicParameterCalculator aAPC, IAtomData aPoint) {
         // 常量暂存
         final int tTypeNum = aPoint.atomTypeNumber();
         final int tAtomNum = aPoint.atomNumber();
         // 先判断所有的
-        ILogicalVector rIsSolid = mAllSolidChecker.checkSolid(aMPC);
+        ILogicalVector rIsSolid = mAllSolidChecker.checkSolid(aAPC);
         // 手动遍历过滤
         List<IntVector.Builder> tBuilder = NewCollections.from(tTypeNum, i -> IntVector.builder());
         for (int idx = 0; idx < tAtomNum; ++idx) {
@@ -62,13 +62,13 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
         for (int tTypeMM = 0; tTypeMM < tTypeNum; ++tTypeMM) {
             ISolidChecker subTypeSolidChecker = mTypeSolidCheckers==null ? mAllSolidChecker : mTypeSolidCheckers[tTypeMM];
             if (subTypeSolidChecker!=null && tTypeIndices.get(tTypeMM).size()>=tMinCalNum) {
-                try (MonatomicParameterCalculator tMPC = MonatomicParameterCalculator.of(aPoint.operation().refSlice(tTypeIndices.get(tTypeMM)))) {
-                    ILogicalVector tTypeIsSolid = subTypeSolidChecker.checkSolid(tMPC);
+                try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aPoint.operation().refSlice(tTypeIndices.get(tTypeMM)))) {
+                    ILogicalVector tTypeIsSolid = subTypeSolidChecker.checkSolid(tAPC);
                     // 使用 refSlicer 来合并两者结果
                     rIsSolid.refSlicer().get(tTypeIndices.get(tTypeMM)).or2this(tTypeIsSolid);
                     // 周围中有一半的为 solid 则也要设为 solid
                     for (int idx = 0; idx < tAtomNum; ++idx) if (!rIsSolid.get(idx) && aPoint.atom(idx).type()!=tTypeMM+1) {
-                        IIntVector tNL = tMPC.getNeighborList(aPoint.atom(idx));
+                        IIntVector tNL = tAPC.getNeighborList(aPoint.atom(idx));
                         int rTypeSolidNum = tTypeIsSolid.refSlicer().get(tNL).count();
                         if (rTypeSolidNum!=0 && rTypeSolidNum+rTypeSolidNum>=tNL.size()) rIsSolid.set(idx, true);
                     }

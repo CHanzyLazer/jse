@@ -285,12 +285,12 @@ public interface IAtomData {
     double[][] dataVelocities();
     
     
-    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(operation().filterType(aType), aThreadNum);}
-    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getMonatomicParameterCalculator    (                                                              ) {return MonatomicParameterCalculator.of(this                                     );}
-    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getMonatomicParameterCalculator    (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MonatomicParameterCalculator.of(this                         , aThreadNum);}
-    /** @deprecated use {@link MonatomicParameterCalculator#of}*/ @Deprecated default MonatomicParameterCalculator getTypeMonatomicParameterCalculator(int aType                                                     ) {return MonatomicParameterCalculator.of(operation().filterType(aType)            );}
-    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getMPC                             (                                                              ) {return MPC.of(this                                     );}
-    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getMPC                             (           @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(this                         , aThreadNum);}
-    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC                         (int aType                                                     ) {return MPC.of(operation().filterType(aType)            );}
-    /** @deprecated use {@link MPC#of}*/ @Deprecated @VisibleForTesting default MonatomicParameterCalculator       getTypeMPC                         (int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return MPC.of(operation().filterType(aType), aThreadNum);}
+    /** @deprecated use {@link AtomicParameterCalculator#of}*/ @Deprecated default AtomicParameterCalculator getTypeMonatomicParameterCalculator(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return AtomicParameterCalculator.of(operation().filterType(aType), aThreadNum);}
+    /** @deprecated use {@link AtomicParameterCalculator#of}*/ @Deprecated default AtomicParameterCalculator getMonatomicParameterCalculator() {return AtomicParameterCalculator.of(this);}
+    /** @deprecated use {@link AtomicParameterCalculator#of}*/ @Deprecated default AtomicParameterCalculator getMonatomicParameterCalculator(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return AtomicParameterCalculator.of(this                         , aThreadNum);}
+    /** @deprecated use {@link AtomicParameterCalculator#of}*/ @Deprecated default AtomicParameterCalculator getTypeMonatomicParameterCalculator(int aType) {return AtomicParameterCalculator.of(operation().filterType(aType));}
+    /** @deprecated use {@link APC#of}*/ @Deprecated @VisibleForTesting default AtomicParameterCalculator getMPC() {return APC.of(this);}
+    /** @deprecated use {@link APC#of}*/ @Deprecated @VisibleForTesting default AtomicParameterCalculator getMPC(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return APC.of(this                         , aThreadNum);}
+    /** @deprecated use {@link APC#of}*/ @Deprecated @VisibleForTesting default AtomicParameterCalculator getTypeMPC(int aType) {return APC.of(operation().filterType(aType));}
+    /** @deprecated use {@link APC#of}*/ @Deprecated @VisibleForTesting default AtomicParameterCalculator getTypeMPC(int aType, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {return APC.of(operation().filterType(aType), aThreadNum);}
 }

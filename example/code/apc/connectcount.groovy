@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.atom.Structures
 import jse.lmp.Data
 import jse.math.function.Func1
@@ -20,22 +20,22 @@ def dataF = Structures.FCC(3.0,  8).opt().perturbXYZ(0.1)
 
 // 计算 ConnectCount
 def countQ6G, countq6G
-try (def mpcG = MPC.of(dataG)) {
+try (def mpcG = APC.of(dataG)) {
     countQ6G = mpcG.calConnectCountBOOP(6, 0.5)
     countq6G = mpcG.calConnectCountABOOP(6, 0.9)
 }
 def countQ6C, countq6C
-try (def mpcC = MPC.of(dataC)) {
+try (def mpcC = APC.of(dataC)) {
     countQ6C = mpcC.calConnectCountBOOP(6, 0.5)
     countq6C = mpcC.calConnectCountABOOP(6, 0.9)
 }
 def countQ6B, countq6B
-try (def mpcB = MPC.of(dataB)) {
+try (def mpcB = APC.of(dataB)) {
     countQ6B = mpcB.calConnectCountBOOP(6, 0.5)
     countq6B = mpcB.calConnectCountABOOP(6, 0.9)
 }
 def countQ6F, countq6F
-try (def mpcF = MPC.of(dataF)) {
+try (def mpcF = APC.of(dataF)) {
     countQ6F = mpcF.calConnectCountBOOP(6, 0.5)
     countq6F = mpcF.calConnectCountABOOP(6, 0.9)
 }

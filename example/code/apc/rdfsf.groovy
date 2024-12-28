@@ -1,6 +1,6 @@
-package code.mpc
+package code.apc
 
-import jse.atom.MPC
+import jse.atom.APC
 import jse.lmp.Data
 
 import static jse.code.UT.Plot.*
@@ -8,14 +8,14 @@ import static jse.code.UT.Plot.*
 // 导入 data 文件
 def data = Data.read('lmp/data/data-glass')
 
-// 根据 data 创建参数计算器 mpc 并计算 gr 和 Sq
+// 根据 data 创建参数计算器 apc 并计算 gr 和 Sq
 def gr, Sq
 def grFT, SqFT
-try (def mpc = MPC.of(data)) {
-    gr = mpc.calRDF()
-    Sq = mpc.calSF()
-    SqFT = mpc.RDF2SF(gr)
-    grFT = mpc.SF2RDF(Sq)
+try (def apc = APC.of(data)) {
+    gr = apc.calRDF()
+    Sq = apc.calSF()
+    SqFT = apc.RDF2SF(gr)
+    grFT = apc.SF2RDF(Sq)
 }
 
 // 绘制
