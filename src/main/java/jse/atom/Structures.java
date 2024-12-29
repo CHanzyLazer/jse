@@ -187,8 +187,8 @@ public class Structures {
                         switch (index%4) {
                         case 0: return tY;
                         case 1: return tY + tCellSizeY*0.5;
-                        case 2: return tY + aCellSize*2.0/3.0;
-                        case 3: return tY + tCellSizeY - aCellSize/3.0;
+                        case 2: return tY + tCellSizeY/3.0;
+                        case 3: return tY + tCellSizeY*5.0/6.0;
                         default: throw new RuntimeException();
                         }
                     }
