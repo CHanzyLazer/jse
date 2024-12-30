@@ -509,8 +509,80 @@ public class SphericalChebyshev implements IBasis {
         final int tColNum = (aLMax+1)*(aLMax+1);
         final int tColNumFP = aLMax+1;
         int tShift = 0, tShiftFP = 0;
-        for (int tN = 0; tN < aSizeN; ++tN) {
-            for (int tL = 0; tL <= aLMax; ++tL) {
+        for (int tN = 0; tN < aSizeN; ++tN, tShift += tColNum, tShiftFP += tColNumFP) {
+            // l == 0
+            int tIdx = tShift, tIdxFP = tShiftFP;
+            double tCnl0 = aCnlm[tIdx];
+            double tMul = tPI4;
+            double tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0);
+            if (aLMax == 0) continue;
+            // l = 1
+            tIdx = 1+tShift; tIdxFP = 1+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; double tCnl1 = aCnlm[tIdx+1], tCnl2 = aCnlm[tIdx+2];
+            tMul = tPI4/3;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2);
+            if (aLMax == 1) continue;
+            // l = 2
+            tIdx = 4+tShift; tIdxFP = 2+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; double tCnl3 = aCnlm[tIdx+3], tCnl4 = aCnlm[tIdx+4];
+            tMul = tPI4/5;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2] + tCnl3*aCnlmPx[tIdx+3] + tCnl4*aCnlmPx[tIdx+4]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2] + tCnl3*aCnlmPy[tIdx+3] + tCnl4*aCnlmPy[tIdx+4]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2] + tCnl3*aCnlmPz[tIdx+3] + tCnl4*aCnlmPz[tIdx+4]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4);
+            if (aLMax == 2) continue;
+            // l = 3
+            tIdx = 9+tShift; tIdxFP = 3+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; double tCnl5 = aCnlm[tIdx+5], tCnl6 = aCnlm[tIdx+6];
+            tMul = tPI4/7;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2] + tCnl3*aCnlmPx[tIdx+3] + tCnl4*aCnlmPx[tIdx+4] + tCnl5*aCnlmPx[tIdx+5] + tCnl6*aCnlmPx[tIdx+6]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2] + tCnl3*aCnlmPy[tIdx+3] + tCnl4*aCnlmPy[tIdx+4] + tCnl5*aCnlmPy[tIdx+5] + tCnl6*aCnlmPy[tIdx+6]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2] + tCnl3*aCnlmPz[tIdx+3] + tCnl4*aCnlmPz[tIdx+4] + tCnl5*aCnlmPz[tIdx+5] + tCnl6*aCnlmPz[tIdx+6]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6);
+            if (aLMax == 3) continue;
+            // l = 4
+            tIdx = 16+tShift; tIdxFP = 4+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; double tCnl7 = aCnlm[tIdx+7], tCnl8 = aCnlm[tIdx+8];
+            tMul = tPI4/9;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2] + tCnl3*aCnlmPx[tIdx+3] + tCnl4*aCnlmPx[tIdx+4] + tCnl5*aCnlmPx[tIdx+5] + tCnl6*aCnlmPx[tIdx+6] + tCnl7*aCnlmPx[tIdx+7] + tCnl8*aCnlmPx[tIdx+8]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2] + tCnl3*aCnlmPy[tIdx+3] + tCnl4*aCnlmPy[tIdx+4] + tCnl5*aCnlmPy[tIdx+5] + tCnl6*aCnlmPy[tIdx+6] + tCnl7*aCnlmPy[tIdx+7] + tCnl8*aCnlmPy[tIdx+8]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2] + tCnl3*aCnlmPz[tIdx+3] + tCnl4*aCnlmPz[tIdx+4] + tCnl5*aCnlmPz[tIdx+5] + tCnl6*aCnlmPz[tIdx+6] + tCnl7*aCnlmPz[tIdx+7] + tCnl8*aCnlmPz[tIdx+8]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8);
+            if (aLMax == 4) continue;
+            // l = 5
+            tIdx = 25+tShift; tIdxFP = 5+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; double tCnl9 = aCnlm[tIdx+9], tCnl10 = aCnlm[tIdx+10];
+            tMul = tPI4/11;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2] + tCnl3*aCnlmPx[tIdx+3] + tCnl4*aCnlmPx[tIdx+4] + tCnl5*aCnlmPx[tIdx+5] + tCnl6*aCnlmPx[tIdx+6] + tCnl7*aCnlmPx[tIdx+7] + tCnl8*aCnlmPx[tIdx+8] + tCnl9*aCnlmPx[tIdx+9] + tCnl10*aCnlmPx[tIdx+10]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2] + tCnl3*aCnlmPy[tIdx+3] + tCnl4*aCnlmPy[tIdx+4] + tCnl5*aCnlmPy[tIdx+5] + tCnl6*aCnlmPy[tIdx+6] + tCnl7*aCnlmPy[tIdx+7] + tCnl8*aCnlmPy[tIdx+8] + tCnl9*aCnlmPy[tIdx+9] + tCnl10*aCnlmPy[tIdx+10]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2] + tCnl3*aCnlmPz[tIdx+3] + tCnl4*aCnlmPz[tIdx+4] + tCnl5*aCnlmPz[tIdx+5] + tCnl6*aCnlmPz[tIdx+6] + tCnl7*aCnlmPz[tIdx+7] + tCnl8*aCnlmPz[tIdx+8] + tCnl9*aCnlmPz[tIdx+9] + tCnl10*aCnlmPz[tIdx+10]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8 + tCnl9*tCnl9 + tCnl10*tCnl10);
+            if (aLMax == 5) continue;
+            // l = 6
+            tIdx = 36+tShift; tIdxFP = 6+tShiftFP;
+            tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; tCnl9 = aCnlm[tIdx+9]; tCnl10 = aCnlm[tIdx+10]; double tCnl11 = aCnlm[tIdx+11], tCnl12 = aCnlm[tIdx+12];
+            tMul = tPI4/13;
+            tMul2 = tMul+tMul;
+            rFpPx[tIdxFP] = tMul2 * (tCnl0*aCnlmPx[tIdx] + tCnl1*aCnlmPx[tIdx+1] + tCnl2*aCnlmPx[tIdx+2] + tCnl3*aCnlmPx[tIdx+3] + tCnl4*aCnlmPx[tIdx+4] + tCnl5*aCnlmPx[tIdx+5] + tCnl6*aCnlmPx[tIdx+6] + tCnl7*aCnlmPx[tIdx+7] + tCnl8*aCnlmPx[tIdx+8] + tCnl9*aCnlmPx[tIdx+9] + tCnl10*aCnlmPx[tIdx+10] + tCnl11*aCnlmPx[tIdx+11] + tCnl12*aCnlmPx[tIdx+12]);
+            rFpPy[tIdxFP] = tMul2 * (tCnl0*aCnlmPy[tIdx] + tCnl1*aCnlmPy[tIdx+1] + tCnl2*aCnlmPy[tIdx+2] + tCnl3*aCnlmPy[tIdx+3] + tCnl4*aCnlmPy[tIdx+4] + tCnl5*aCnlmPy[tIdx+5] + tCnl6*aCnlmPy[tIdx+6] + tCnl7*aCnlmPy[tIdx+7] + tCnl8*aCnlmPy[tIdx+8] + tCnl9*aCnlmPy[tIdx+9] + tCnl10*aCnlmPy[tIdx+10] + tCnl11*aCnlmPy[tIdx+11] + tCnl12*aCnlmPy[tIdx+12]);
+            rFpPz[tIdxFP] = tMul2 * (tCnl0*aCnlmPz[tIdx] + tCnl1*aCnlmPz[tIdx+1] + tCnl2*aCnlmPz[tIdx+2] + tCnl3*aCnlmPz[tIdx+3] + tCnl4*aCnlmPz[tIdx+4] + tCnl5*aCnlmPz[tIdx+5] + tCnl6*aCnlmPz[tIdx+6] + tCnl7*aCnlmPz[tIdx+7] + tCnl8*aCnlmPz[tIdx+8] + tCnl9*aCnlmPz[tIdx+9] + tCnl10*aCnlmPz[tIdx+10] + tCnl11*aCnlmPz[tIdx+11] + tCnl12*aCnlmPz[tIdx+12]);
+            if (rFp != null) rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8 + tCnl9*tCnl9 + tCnl10*tCnl10 + tCnl11*tCnl11 + tCnl12*tCnl12);
+            if (aLMax == 6) continue;
+            // 优化到 l = 6 主要是大部分只用到这个程度；在本地测试这个优化基本没效果了（可能需要 avx512 指令集更有效）
+            // else
+            for (int tL = 7; tL <= aLMax; ++tL) {
                 // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
                 final int tStart = tL*tL + tShift;
                 final int tLen = tL+tL+1;
@@ -524,8 +596,8 @@ public class SphericalChebyshev implements IBasis {
                         rDotPy += tCnlm*aCnlmPy[i];
                         rDotPz += tCnlm*aCnlmPz[i];
                     }
-                    double tMul = tPI4/(double)tLen;
-                    double tMul2 = tMul+tMul;
+                    tMul = tPI4/(double)tLen;
+                    tMul2 = tMul+tMul;
                     rFp[tL+tShiftFP] = tMul * rDot;
                     rFpPx[tL+tShiftFP] = tMul2 * rDotPx;
                     rFpPy[tL+tShiftFP] = tMul2 * rDotPy;
@@ -538,15 +610,13 @@ public class SphericalChebyshev implements IBasis {
                         rDotPy += tCnlm*aCnlmPy[i];
                         rDotPz += tCnlm*aCnlmPz[i];
                     }
-                    double tMul = tPI4/(double)tLen;
-                    double tMul2 = tMul+tMul;
+                    tMul = tPI4/(double)tLen;
+                    tMul2 = tMul+tMul;
                     rFpPx[tL+tShiftFP] = tMul2 * rDotPx;
                     rFpPy[tL+tShiftFP] = tMul2 * rDotPy;
                     rFpPz[tL+tShiftFP] = tMul2 * rDotPz;
                 }
             }
-            tShift += tColNum;
-            tShiftFP += tColNumFP;
         }
     }
 }
