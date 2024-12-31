@@ -469,15 +469,15 @@ public class SphericalChebyshev implements IBasis {
                                   double aFc, double aFcPx, double aFcPy, double aFcPz,
                                   double aRn, double aRnPx, double aRnPy, double aRnPz, int aLength) {
         double tMul = aFc*aRn;
-        double tMulXL = aFc*aRnPx, tMulXR = aFcPx*aRn;
-        double tMulYL = aFc*aRnPy, tMulYR = aFcPy*aRn;
-        double tMulZL = aFc*aRnPz, tMulZR = aFcPz*aRn;
+        double tMulX = aFc*aRnPx + aFcPx*aRn;
+        double tMulY = aFc*aRnPy + aFcPy*aRn;
+        double tMulZ = aFc*aRnPz + aFcPz*aRn;
         for (int i = 0, j = rShift; i < aLength; ++i, ++j) {
             double tY = aY[i];
             rCnlm[j] += tMul*tY;
-            rCnlmPx[j] -= (tMulXL*tY + tMul*aYPx[i] + tMulXR*tY);
-            rCnlmPy[j] -= (tMulYL*tY + tMul*aYPy[i] + tMulYR*tY);
-            rCnlmPz[j] -= (tMulZL*tY + tMul*aYPz[i] + tMulZR*tY);
+            rCnlmPx[j] -= (tMulX*tY + tMul*aYPx[i]);
+            rCnlmPy[j] -= (tMulY*tY + tMul*aYPy[i]);
+            rCnlmPz[j] -= (tMulZ*tY + tMul*aYPz[i]);
         }
     }
     protected void mminusCnlmPxyz(double[] rCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz, int rShift1, int rShift2,
@@ -486,18 +486,18 @@ public class SphericalChebyshev implements IBasis {
                                   double aRn, double aRnPx, double aRnPy, double aRnPz,
                                   double aWt, int aLength) {
         double tMul = aFc*aRn;
-        double tMulXL = aFc*aRnPx, tMulXR = aFcPx*aRn;
-        double tMulYL = aFc*aRnPy, tMulYR = aFcPy*aRn;
-        double tMulZL = aFc*aRnPz, tMulZR = aFcPz*aRn;
+        double tMulX = aFc*aRnPx + aFcPx*aRn;
+        double tMulY = aFc*aRnPy + aFcPy*aRn;
+        double tMulZ = aFc*aRnPz + aFcPz*aRn;
         for (int i = 0, j = rShift1, k = rShift2; i < aLength; ++i, ++j, ++k) {
             double tY = aY[i];
             double tCnli = tMul*tY;
             rCnlm[j] += tCnli; rCnlm[k] += aWt*tCnli;
-            double tCnliPx = tMulXL*tY + tMul*aYPx[i] + tMulXR*tY;
+            double tCnliPx = tMulX*tY + tMul*aYPx[i];
             rCnlmPx[j] -= tCnliPx; rCnlmPx[k] -= aWt*tCnliPx;
-            double tCnliPy = tMulYL*tY + tMul*aYPy[i] + tMulYR*tY;
+            double tCnliPy = tMulY*tY + tMul*aYPy[i];
             rCnlmPy[j] -= tCnliPy; rCnlmPy[k] -= aWt*tCnliPy;
-            double tCnliPz = tMulZL*tY + tMul*aYPz[i] + tMulZR*tY;
+            double tCnliPz = tMulZ*tY + tMul*aYPz[i];
             rCnlmPz[j] -= tCnliPz; rCnlmPz[k] -= aWt*tCnliPz;
         }
     }
