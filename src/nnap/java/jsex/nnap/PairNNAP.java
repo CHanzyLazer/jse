@@ -1,5 +1,6 @@
 package jsex.nnap;
 
+import jse.atom.XYZ;
 import jse.cache.*;
 import jse.clib.DoubleCPointer;
 import jse.clib.IntCPointer;
@@ -122,10 +123,12 @@ public class PairNNAP extends LmpPlugin.Pair {
                 if (eflagAtom) eatom.putAt(i, eatom.getAt(i)+eng);
             } : null, xGrad -> {
                 xGrad.div2this(tNNAP.normVec());
+                final XYZ rBuf = new XYZ();
                 // 更新自身的力
-                fMat.update(i, 0, v -> v - xGrad.opt().dot(tOut.get(1).asVecRow()));
-                fMat.update(i, 1, v -> v - xGrad.opt().dot(tOut.get(2).asVecRow()));
-                fMat.update(i, 2, v -> v - xGrad.opt().dot(tOut.get(3).asVecRow()));
+                NNAP.forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(1).internalData(), tOut.get(2).internalData(), tOut.get(3).internalData(), xGrad.internalDataSize(), rBuf);
+                fMat.update(i, 0, v -> v - rBuf.mX);
+                fMat.update(i, 1, v -> v - rBuf.mY);
+                fMat.update(i, 2, v -> v - rBuf.mZ);
                 // 然后再遍历一次，传播力和位力到近邻
                 final int tNN = (tOut.size()-4)/3;
                 int ji = 0;
@@ -133,9 +136,10 @@ public class PairNNAP extends LmpPlugin.Pair {
                     int j = jlistVec.get(jj);
                     j &= LmpPlugin.NEIGHMASK;
                     
-                    final double fx = -xGrad.opt().dot(tOut.get(4+ji).asVecRow());
-                    final double fy = -xGrad.opt().dot(tOut.get(4+tNN+ji).asVecRow());
-                    final double fz = -xGrad.opt().dot(tOut.get(4+tNN+tNN+ji).asVecRow());
+                    NNAP.forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(4+ji).internalData(), tOut.get(4+tNN+ji).internalData(), tOut.get(4+tNN+tNN+ji).internalData(), xGrad.internalDataSize(), rBuf);
+                    final double fx = -rBuf.mX;
+                    final double fy = -rBuf.mY;
+                    final double fz = -rBuf.mZ;
                     fMat.update(j, 0, v -> v + fx);
                     fMat.update(j, 1, v -> v + fy);
                     fMat.update(j, 2, v -> v + fz);

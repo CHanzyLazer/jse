@@ -226,9 +226,9 @@ public class NNAP implements IAutoShutdown {
         protected void clearSubmittedBatchForward() throws TorchException {clearSubmittedBatchForward(0);}
         
         /** 提交批量 forward 接口，注意由于内部存储共享，因此不能和 {@link #submitBatchForward} 混用，在使用 forward 前务必使用 {@link #clearSubmittedBatchBackward} 清空缓存 */
-        protected void submitBatchBackward(int aThreadID, IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super IVector> aXGradDo) throws TorchException {
+        protected void submitBatchBackward(int aThreadID, IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {
             @Nullable DoubleConsumer[] tBatchedPredDo = mBatchedPredDo[aThreadID];
-            Consumer<? super IVector>[] tBatchedXGradDo = mBatchedXGradDo[aThreadID];
+            Consumer<? super ShiftVector>[] tBatchedXGradDo = mBatchedXGradDo[aThreadID];
             RowMatrix tBatchedX = mBatchedX.get(aThreadID);
             int tBatchedSize = mBatchedSize[aThreadID];
             tBatchedPredDo[tBatchedSize] = aPredDo;
@@ -266,7 +266,7 @@ public class NNAP implements IAutoShutdown {
             }
             mBatchedSize[aThreadID] = 0;
         }
-        protected void submitBatchBackward(IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super IVector> aXGradDo) throws TorchException {submitBatchBackward(0, aX, aPredDo, aXGradDo);}
+        protected void submitBatchBackward(IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {submitBatchBackward(0, aX, aPredDo, aXGradDo);}
         protected void clearSubmittedBatchBackward() throws TorchException {clearSubmittedBatchBackward(0);}
         
         
@@ -899,16 +899,19 @@ public class NNAP implements IAutoShutdown {
                     rEnergies.set(i, pred);
                 }, xGrad -> {
                     xGrad.div2this(tModel.mNormVec);
-                    if (tForcesX != null) tForcesX.add(i, -xGrad.opt().dot(tOut.get(1).asVecRow()));
-                    if (tForcesY != null) tForcesY.add(i, -xGrad.opt().dot(tOut.get(2).asVecRow()));
-                    if (tForcesZ != null) tForcesZ.add(i, -xGrad.opt().dot(tOut.get(3).asVecRow()));
+                    final XYZ rBuf = new XYZ();
+                    forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(1).internalData(), tOut.get(2).internalData(), tOut.get(3).internalData(), xGrad.internalDataSize(), rBuf);
+                    if (tForcesX != null) tForcesX.add(i, -rBuf.mX);
+                    if (tForcesY != null) tForcesY.add(i, -rBuf.mY);
+                    if (tForcesZ != null) tForcesZ.add(i, -rBuf.mZ);
                     // 累加交叉项到近邻
                     final int tNN = (tOut.size()-4)/3;
                     final int[] j = {0};
                     aAPC.nl_().forEachNeighbor(i, tBasis.rcut(), false, (x, y, z, idx, dx, dy, dz) -> {
-                        double fx = -xGrad.opt().dot(tOut.get(4+j[0]).asVecRow());
-                        double fy = -xGrad.opt().dot(tOut.get(4+tNN+j[0]).asVecRow());
-                        double fz = -xGrad.opt().dot(tOut.get(4+tNN+tNN+j[0]).asVecRow());
+                        forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(4+j[0]).internalData(), tOut.get(4+tNN+j[0]).internalData(), tOut.get(4+tNN+tNN+j[0]).internalData(), xGrad.internalDataSize(), rBuf);
+                        double fx = -rBuf.mX;
+                        double fy = -rBuf.mY;
+                        double fz = -rBuf.mZ;
                         if (tForcesX != null) tForcesX.add(idx, fx);
                         if (tForcesY != null) tForcesY.add(idx, fy);
                         if (tForcesZ != null) tForcesZ.add(idx, fz);
@@ -942,6 +945,17 @@ public class NNAP implements IAutoShutdown {
     }
     public void calEnergyForceVirials(AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ) throws TorchException {
         calEnergyForceVirials(aAPC, rEnergies, rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ, type->type);
+    }
+    
+    static void forceDot_(double[] aXGrad, int aShift, double[] aFpPx, double[] aFpPy, double[] aFpPz, int aLength, XYZ rBuf) {
+        double rDotX = 0.0, rDotY = 0.0, rDotZ = 0.0;
+        for (int i = 0, j = aShift; i < aLength; ++i, ++j) {
+            double tXGrad = aXGrad[j];
+            rDotX += tXGrad * aFpPx[i];
+            rDotY += tXGrad * aFpPy[i];
+            rDotZ += tXGrad * aFpPz[i];
+        }
+        rBuf.setXYZ(rDotX, rDotY, rDotZ);
     }
     
     
