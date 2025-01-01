@@ -2524,7 +2524,7 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @return Ql 组成的向量，按照原子数据中的原子排序
      * @see IVector
-     * @see #calABOOP(int, double, int)
+     * @see #calABOOP(int, double)
      */
     public IVector calBOOP(int aL, double aRNearest) {return calBOOP(aL, aRNearest, -1);}
     /**
@@ -2569,7 +2569,7 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * @author liqa
      * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
      * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
-     * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
+     * @param aL 计算具体 Ql 值的下标，即 {@code Q4: l = 4, Q6: l = 6}
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return Ql 组成的向量，按照原子数据中的原子排序
@@ -2622,12 +2622,22 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * <p>
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, wl），需要调用
+     * {@link #calABOOP3(int, double, int)}
+     * <p>
+     * References: <a href="http://dx.doi.org/10.1103/PhysRevB.28.784">
+     * Bond-orientational order in liquids and glasses</a>,
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>
      *
      * @author liqa
-     * @param aL 计算具体 W 值的下标，即 W4: l = 4, W6: l = 6
+     * @param aL 计算具体 W 值的下标，即 {@code W4: l = 4, W6: l = 6}
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @return Wl 组成的向量
+     * @return Wl 组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calABOOP3(int, double, int)
      */
     public IVector calBOOP3(int aL, double aRNearest, int aNnn) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -2666,8 +2676,38 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return Wl;
     }
+    /**
+     * 计算所有粒子的三阶形式的 BOOP（local Bond Orientational Order Parameters, Wl），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 通过 {@link #calBOOP3(int, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, wl），需要调用
+     * {@link #calABOOP3(int, double)}
+     * <p>
+     * References: <a href="http://dx.doi.org/10.1103/PhysRevB.28.784">
+     * Bond-orientational order in liquids and glasses</a>,
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>
+     *
+     * @author liqa
+     * @param aL 计算具体 W 值的下标，即 {@code W4: l = 4, W6: l = 6}
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return Wl 组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calABOOP3(int, double)
+     */
     public IVector calBOOP3(int aL, double aRNearest) {return calBOOP3(aL, aRNearest, -1);}
-    public IVector calBOOP3(int aL                  ) {return calBOOP3(aL, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calBOOP3(aL, unitLen()*R_NEAREST_MUL)}
+     * @see #calBOOP3(int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calBOOP3(int aL) {return calBOOP3(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /**
@@ -2679,15 +2719,21 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calBOOP(int, double, int)}
+     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
      * @author liqa
-     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aL 计算具体 q 值的下标，即 {@code q4: l = 4, q6: l = 6}
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
      * @return ql 组成的向量
+     * @see IVector
+     * @see #calBOOP(int, double, int)
      */
     public IVector calABOOP(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -2709,11 +2755,63 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return ql;
     }
+    /**
+     * 计算所有粒子的 ABOOP（Averaged local Bond Orientational Order Parameters, ql），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calBOOP(int, double, int)}
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
+     * @author liqa
+     * @param aL 计算具体 q 值的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return ql 组成的向量
+     * @see IVector
+     * @see #calBOOP(int, double, int)
+     */
     public IVector calABOOP(int aL, double aRNearest, int aNnn) {return calABOOP(aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calABOOP(int aL, double aRNearest          ) {return calABOOP(aL, aRNearest, -1);}
-    public IVector calABOOP(int aL                            ) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 计算所有粒子的 ABOOP（Averaged local Bond Orientational Order Parameters, ql），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 通过 {@link #calABOOP(int, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calBOOP(int, double)}
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
+     * @author liqa
+     * @param aL 计算具体 q 值的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return ql 组成的向量
+     * @see IVector
+     * @see #calBOOP(int, double)
+     */
+    public IVector calABOOP(int aL, double aRNearest) {return calABOOP(aL, aRNearest, -1);}
+    /**
+     * @return {@code calABOOP(aL, unitLen()*R_NEAREST_MUL)}
+     * @see #calABOOP(int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calABOOP(int aL) {return calABOOP(aL, mUnitLen*R_NEAREST_MUL);}
     
-    /** MPI 版本的计算所有粒子的 ABOOP */
+    
+    /// MPI 版本的计算所有粒子的 ABOOP
     private IVector calABOOP_MPI_(boolean aNoGather, MPIInfo aMPIInfo, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPIException {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
@@ -2738,14 +2836,66 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         return ql;
     }
     private IVector calABOOP_MPI_(MPIInfo aMPIInfo, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPIException {return calABOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}
+    /**
+     * MPI 版本的 ABOOP 计算，即 ql
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 计算具体 qlm 值的下标，即 {@code q4m: l = 4, q6m: l = 6}
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return ql 组成的向量，按照原子数据中的原子排序
+     * @see #calABOOP(int, double, int, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calABOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calABOOP_MPI_(aNoGather, tMPIInfo, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}}
+    /**
+     * @return {@code calABOOP_MPI(false, aComm, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     */
     public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calABOOP_MPI_(tMPIInfo, aL, aRNearestY, aNnnY, aRNearestQ, aNnnQ);}}
+    /**
+     * @return {@code calABOOP_MPI(aComm, aL, aRNearest, aNnn, aRNearest, aNnn)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     */
     public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest, int aNnn) throws MPIException {return calABOOP_MPI(aComm, aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest          ) throws MPIException {return calABOOP_MPI(aComm, aL, aRNearest, -1);}
-    public IVector calABOOP_MPI(MPI.Comm aComm, int aL                            ) throws MPIException {return calABOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
-    public IVector calABOOP_MPI(                int aL, double aRNearest, int aNnn) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
-    public IVector calABOOP_MPI(                int aL, double aRNearest          ) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
-    public IVector calABOOP_MPI(                int aL                            ) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calABOOP_MPI(MPI.Comm, int, double, int)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     */
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL, double aRNearest) throws MPIException {return calABOOP_MPI(aComm, aL, aRNearest, -1);}
+    /**
+     * @return {@code calABOOP_MPI(aComm, aL, unitLen()*R_NEAREST_MUL)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calABOOP_MPI(MPI.Comm aComm, int aL) throws MPIException {return calABOOP_MPI(aComm, aL, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calABOOP_MPI(int aL, double aRNearest, int aNnn) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest, aNnn);}
+    /**
+     * @return {@code calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calABOOP_MPI(int aL, double aRNearest) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL, aRNearest);}
+    /**
+     * @return {@code calABOOP_MPI(MPI.Comm.WORLD, aL)}
+     * @see #calABOOP_MPI(boolean, MPI.Comm, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calABOOP_MPI(int aL) throws MPIException {return calABOOP_MPI(MPI.Comm.WORLD, aL);}
     
     
     /**
@@ -2757,15 +2907,21 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
+     * {@link #calBOOP3(int, double, int)}
+     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
      * @author liqa
-     * @param aL 计算具体 w 值的下标，即 w4: l = 4, w6: l = 6
+     * @param aL 计算具体 w 值的下标，即 {@code w4: l = 4, w6: l = 6}
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return wl 组成的向量
+     * @return wl 组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calBOOP3(int, double, int)
      */
     public IVector calABOOP3(int aL, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -2804,13 +2960,64 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return wl;
     }
+    /**
+     * 计算所有粒子的三阶形式的 ABOOP（Averaged local Bond Orientational Order Parameters, wl），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
+     * {@link #calBOOP3(int, double, int)}
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
+     * @author liqa
+     * @param aL 计算具体 w 值的下标，即 {@code w4: l = 4, w6: l = 6}
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return wl 组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calBOOP3(int, double, int)
+     */
     public IVector calABOOP3(int aL, double aRNearest, int aNnn) {return calABOOP3(aL, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calABOOP3(int aL, double aRNearest          ) {return calABOOP3(aL, aRNearest, -1);}
-    public IVector calABOOP3(int aL                            ) {return calABOOP3(aL, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 计算所有粒子的三阶形式的 ABOOP（Averaged local Bond Orientational Order Parameters, wl），
+     * 输出结果为按照输入原子顺序排列的向量；
+     * <p>
+     * 通过 {@link #calABOOP3(int, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
+     * {@link #calBOOP3(int, double)}
+     * <p>
+     * Reference: <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
+     * @author liqa
+     * @param aL 计算具体 w 值的下标，即 {@code w4: l = 4, w6: l = 6}
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return wl 组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calBOOP3(int, double)
+     */
+    public IVector calABOOP3(int aL, double aRNearest) {return calABOOP3(aL, aRNearest, -1);}
+    /**
+     * @return {@code calABOOP3(aL, unitLen()*R_NEAREST_MUL)}
+     * @see #calABOOP3(int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calABOOP3(int aL) {return calABOOP3(aL, mUnitLen*R_NEAREST_MUL);}
     
     
     /**
-     * 通过 bond orientational order parameter（Ql）来计算结构中每个原子的连接数目，
+     * 通过类似键角序参量（Ql）的算法来计算结构中每个原子的连接数目，
      * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -2818,21 +3025,27 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
-     * Reference:
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectCountABOOP(int, double, double, int)}
+     * <p>
+     * References:
      * <a href="https://doi.org/10.1039/FD9960400093">
      * Simulation of homogeneous crystal nucleation close to coexistence</a>,
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
      * <a href="https://doi.org/10.1063/1.1896348">
      * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
      * @author liqa
-     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return 最后得到的连接数目组成的向量
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountABOOP(int, double, double, int)
      */
     public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -2885,11 +3098,74 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return tConnectCount;
     }
+    /**
+     * 通过类似键角序参量（BOOP, Ql）的算法来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectCountABOOP(int, double, double, int)}
+     * <p>
+     * References:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
+     * @author liqa
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountABOOP(int, double, double, int)
+     */
     public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountBOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountBOOP(aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountBOOP(int aL, double aConnectThreshold                            ) {return calConnectCountBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 通过类似键角序参量（BOOP, Ql）的算法来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 通过 {@link #calConnectCountBOOP(int, double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectCountABOOP(int, double, double)}
+     * <p>
+     * References:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
+     * @author liqa
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountABOOP(int, double, double)
+     */
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold, double aRNearest) {return calConnectCountBOOP(aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectCountBOOP(aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectCountBOOP(int, double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectCountBOOP(int aL, double aConnectThreshold) {return calConnectCountBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
-    /** MPI 版本的 BOOP 连接数目 */
+    /// MPI 版本的 BOOP 连接数目
     private IVector calConnectCountBOOP_MPI_(boolean aNoGather, MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
@@ -2947,18 +3223,71 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         return tConnectCount;
     }
     private IVector calConnectCountBOOP_MPI_(MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {return calConnectCountBOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}
+    /**
+     * MPI 版本的 BOOP 连接数计算
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see #calConnectCountBOOP(int, double, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calConnectCountBOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectCountBOOP_MPI_(aNoGather, tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
     public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectCountBOOP_MPI_(tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
     public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPIException {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectCountBOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calConnectCountBOOP_MPI(MPI.Comm, int, double, double, int)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectCountBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold) throws MPIException {return calConnectCountBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountBOOP_MPI(int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountBOOP_MPI(int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    /**
+     * @return {@code calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold)}
+     * @see #calConnectCountBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountBOOP_MPI(int aL, double aConnectThreshold) throws MPIException {return calConnectCountBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**
-     * 通过 Averaged bond orientational order parameter（ql）来计算结构中每个原子的连接数目，
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数目，
      * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -2966,11 +3295,15 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectCountBOOP(int, double, double, int)}
+     * <p>
      * Reference:
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
      * @author liqa
-     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
@@ -2978,7 +3311,9 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
      * @param aRNearestS 用来计算 sij 的搜索的最近邻半径。默认为 aRNearestY
      * @param aNnnS 用来计算 sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return 最后得到的连接数目组成的向量
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountBOOP(int, double, double, int)
      */
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -3031,11 +3366,66 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return tConnectCount;
     }
+    /**
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectCountBOOP(int, double, double, int)}
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
+     * @author liqa
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountBOOP(int, double, double, int)
+     */
     public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectCountABOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectCountABOOP(aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountABOOP(int aL, double aConnectThreshold                            ) {return calConnectCountABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数目，
+     * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
+     * <p>
+     * 通过 {@link #calConnectCountABOOP(int, double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectCountBOOP(int, double, double)}
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
+     * @author liqa
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectCountBOOP(int, double, double)
+     */
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold, double aRNearest) {return calConnectCountABOOP(aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectCountABOOP(aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectCountABOOP(int, double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectCountABOOP(int aL, double aConnectThreshold) {return calConnectCountABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
-    /** MPI 版本的 BOOP 连接数目 */
+    /// MPI 版本的 BOOP 连接数目
     private IVector calConnectCountABOOP_MPI_(boolean aNoGather, MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
@@ -3093,18 +3483,73 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         return tConnectCount;
     }
     private IVector calConnectCountABOOP_MPI_(MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {return calConnectCountABOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}
+    /**
+     * MPI 版本的 ABOOP 连接数计算
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @param aRNearestS 用来计算 sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see #calConnectCountABOOP(int, double, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calConnectCountABOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectCountABOOP_MPI_(aNoGather, tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
     public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectCountABOOP_MPI_(tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
     public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPIException {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectCountABOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calConnectCountABOOP_MPI(MPI.Comm, int, double, double, int)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectCountABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold) throws MPIException {return calConnectCountABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountABOOP_MPI(int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountABOOP_MPI(int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    /**
+     * @return {@code calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold)}
+     * @see #calConnectCountABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectCountABOOP_MPI(int aL, double aConnectThreshold) throws MPIException {return calConnectCountABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**
-     * 通过 bond orientational order parameter（Ql）来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 通过类似键角序参量（BOOP, Ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
      * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -3112,21 +3557,27 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
-     * Reference:
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectRatioABOOP(int, double, double, int)}
+     * <p>
+     * References:
      * <a href="https://doi.org/10.1039/FD9960400093">
      * Simulation of homogeneous crystal nucleation close to coexistence</a>,
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
      * <a href="https://doi.org/10.1063/1.1896348">
      * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
      * @author liqa
-     * @param aL 计算具体 Q 值的下标，即 Q4: l = 4, Q6: l = 6
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径，会使用此值对应的近邻总数作为分母。默认为 aRNearestY
      * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return 最后得到的连接数占所有近邻数的比例值组成的向量
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioABOOP(int, double, double, int)
      */
     public IVector calConnectRatioBOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -3192,11 +3643,74 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return tConnectRatio;
     }
+    /**
+     * 通过类似键角序参量（BOOP, Ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectRatioABOOP(int, double, double, int)}
+     * <p>
+     * References:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
+     * @author liqa
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioABOOP(int, double, double, int)
+     */
     public IVector calConnectRatioBOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectRatioBOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectRatioBOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectRatioBOOP(aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectRatioBOOP(int aL, double aConnectThreshold                            ) {return calConnectRatioBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 通过类似键角序参量（BOOP, Ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
+     * <p>
+     * 通过 {@link #calConnectRatioBOOP(int, double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
+     * {@link #calConnectRatioABOOP(int, double, double, int)}
+     * <p>
+     * References:
+     * <a href="https://doi.org/10.1039/FD9960400093">
+     * Simulation of homogeneous crystal nucleation close to coexistence</a>,
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl</a>
+     *
+     * @author liqa
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioABOOP(int, double, double, int)
+     */
+    public IVector calConnectRatioBOOP(int aL, double aConnectThreshold, double aRNearest) {return calConnectRatioBOOP(aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectRatioBOOP(aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectRatioBOOP(int, double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectRatioBOOP(int aL, double aConnectThreshold) {return calConnectRatioBOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
-    /** MPI 版本的 BOOP 连接数目 */
+    /// MPI 版本的 BOOP 连接比例
     private IVector calConnectRatioBOOP_MPI_(boolean aNoGather, MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
@@ -3267,18 +3781,71 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         return tConnectRatio;
     }
     private IVector calConnectRatioBOOP_MPI_(MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {return calConnectRatioBOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}
+    /**
+     * MPI 版本的 BOOP 连接比例计算
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 使用的 Ql 的下标，即 {@code Q4: l = 4, Q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestS 用来计算 Sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 Sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接比例组成的向量，按照原子数据中的原子排序
+     * @see #calConnectRatioBOOP(int, double, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calConnectRatioBOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectRatioBOOP_MPI_(aNoGather, tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
     public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectRatioBOOP_MPI_(tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
     public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPIException {return calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectRatioBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectRatioBOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectRatioBOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calConnectRatioBOOP_MPI(MPI.Comm, int, double, double, int)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     */
+    public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectRatioBOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold) throws MPIException {return calConnectRatioBOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioBOOP_MPI(int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioBOOP_MPI(int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    /**
+     * @return {@code calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold)}
+     * @see #calConnectRatioBOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioBOOP_MPI(int aL, double aConnectThreshold) throws MPIException {return calConnectRatioBOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**
-     * 通过 Averaged bond orientational order parameter（ql）来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
      * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -3286,11 +3853,15 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * 为了统一接口这里同样返回 cache 的值，
      * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectRatioBOOP(int, double, double, int)}
+     * <p>
      * Reference:
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
      * @author liqa
-     * @param aL 计算具体 q 值的下标，即 q4: l = 4, q6: l = 6
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
      * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
@@ -3298,7 +3869,9 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
      * @param aRNearestS 用来计算 sij 的搜索的最近邻半径，会使用此值对应的近邻总数作为分母。默认为 aRNearestY
      * @param aNnnS 用来计算 sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
-     * @return 最后得到的连接数占所有近邻数的比例值组成的向量
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioBOOP(int, double, double, int)
      */
     public IVector calConnectRatioABOOP(int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) {
         if (mDead) throw new RuntimeException("This Calculator is dead");
@@ -3364,11 +3937,66 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 返回最终计算结果
         return tConnectRatio;
     }
+    /**
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
+     * <p>
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectRatioBOOP(int, double, double, int)}
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
+     * @author liqa
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnn 最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioBOOP(int, double, double, int)
+     */
     public IVector calConnectRatioABOOP(int aL, double aConnectThreshold, double aRNearest, int aNnn) {return calConnectRatioABOOP(aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectRatioABOOP(int aL, double aConnectThreshold, double aRNearest          ) {return calConnectRatioABOOP(aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectRatioABOOP(int aL, double aConnectThreshold                            ) {return calConnectRatioABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * 通过类似平均的键角序参量（ABOOP, ql）的算法来计算结构中每个原子的连接数占所有近邻数的比例值，
+     * 输出结果为按照输入原子顺序排列的向量，数值为 0~1 的比例值；
+     * <p>
+     * 通过 {@link #calConnectRatioABOOP(int, double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * 为了统一接口这里同样返回 cache 的值，
+     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
+     * <p>
+     * 如果需要使用原始的键角序参量（BOOP, Ql），需要调用
+     * {@link #calConnectRatioBOOP(int, double, double)}
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>,
+     *
+     * @author liqa
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearest 最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后得到的连接数占所有近邻数的比例值组成的向量，按照原子数据中的原子排序
+     * @see IVector
+     * @see #calConnectRatioBOOP(int, double, double)
+     */
+    public IVector calConnectRatioABOOP(int aL, double aConnectThreshold, double aRNearest) {return calConnectRatioABOOP(aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectRatioABOOP(aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectRatioABOOP(int, double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectRatioABOOP(int aL, double aConnectThreshold) {return calConnectRatioABOOP(aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
     
-    /** MPI 版本的 BOOP 连接数目 */
+    /// MPI 版本的 BOOP 连接数目
     private IVector calConnectRatioABOOP_MPI_(boolean aNoGather, MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {
         if (mDead) throw new RuntimeException("This Calculator is dead");
         
@@ -3439,18 +4067,74 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         return tConnectRatio;
     }
     private IVector calConnectRatioABOOP_MPI_(MPIInfo aMPIInfo, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {return calConnectRatioABOOP_MPI_(aMPIInfo.mSize==1, aMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}
+    /**
+     * MPI 版本的 ABOOP 连接比例计算
+     * <p>
+     * 要求调用此方法的每个 MPI 进程中的原子数据都是完整且一致的，
+     * 通过 aNoGather 参数控制输出结果是否同步，
+     * 如果同步则每个进程都会得到一个相同且完整的计算结果
+     *
+     * @author liqa
+     * @param aNoGather 是否关闭输出结果的同步，关闭可以减少进程通讯的损耗，默认不进行关闭（{@code false}）
+     * @param aComm 希望使用的 MPI 通讯器，默认为 {@link MPI.Comm#WORLD}
+     * @param aL 使用的 ql 的下标，即 {@code q4: l = 4, q6: l = 6}
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值
+     * @param aRNearestY 用来计算 YlmMean 的搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @param aNnnY 用来计算 YlmMean 的最大最近邻数目（Number of Nearest Neighbor list）。默认不做限制
+     * @param aRNearestQ 用来计算 QlmMean 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnQ 用来计算 QlmMean 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @param aRNearestS 用来计算 sij 的搜索的最近邻半径。默认为 aRNearestY
+     * @param aNnnS 用来计算 sij 最大的最近邻数目（Number of Nearest Neighbor list）。默认为 aNnnY
+     * @return 最后得到的连接数目组成的向量，按照原子数据中的原子排序
+     * @see #calConnectRatioABOOP(int, double, double, int)
+     * @see MPI
+     * @see MPI.Comm
+     */
     public IVector calConnectRatioABOOP_MPI(boolean aNoGather, MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectRatioABOOP_MPI_(aNoGather, tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(false, aComm, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
     public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearestY, int aNnnY, double aRNearestQ, int aNnnQ, double aRNearestS, int aNnnS) throws MPIException {try (MPIInfo tMPIInfo = new MPIInfo(aComm)) {return calConnectRatioABOOP_MPI_(tMPIInfo, aL, aConnectThreshold, aRNearestY, aNnnY, aRNearestQ, aNnnQ, aRNearestS, aNnnS);}}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
     public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, aNnn, aRNearest, aNnn, aRNearest, aNnn);}
-    public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
-    public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold                            ) throws MPIException {return calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public IVector calConnectRatioABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
-    public IVector calConnectRatioABOOP_MPI(                int aL, double aConnectThreshold, double aRNearest          ) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
-    public IVector calConnectRatioABOOP_MPI(                int aL, double aConnectThreshold                            ) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
+    /**
+     * 不做近邻数目限制版本的 {@link #calConnectRatioABOOP_MPI(MPI.Comm, int, double, double, int)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     */
+    public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see CS#R_NEAREST_MUL
+     */
+    public IVector calConnectRatioABOOP_MPI(MPI.Comm aComm, int aL, double aConnectThreshold) throws MPIException {return calConnectRatioABOOP_MPI(aComm, aL, aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioABOOP_MPI(int aL, double aConnectThreshold, double aRNearest, int aNnn) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest, aNnn);}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioABOOP_MPI(int aL, double aConnectThreshold, double aRNearest) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold, aRNearest);}
+    /**
+     * @return {@code calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold)}
+     * @see #calConnectRatioABOOP_MPI(boolean, MPI.Comm, int, double, double, int, double, int, double, int)
+     * @see MPI.Comm#WORLD
+     */
+    public IVector calConnectRatioABOOP_MPI(int aL, double aConnectThreshold) throws MPIException {return calConnectRatioABOOP_MPI(MPI.Comm.WORLD, aL, aConnectThreshold);}
     
     
     /**
-     * 具体通过 {@link #calConnectCountBOOP} 且 {@code l = 6} 来检测结构中类似固体的部分，
+     * 具体通过 {@link #calConnectCountBOOP(int, double, double)}
+     * 且 {@code l = 6} 来检测结构中类似固体的部分，
      * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -3458,47 +4142,118 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * Reference:
      * <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
      * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 7
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @return 最后判断得到是否是固体组成的逻辑向量
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectCountBOOP(int, double, double, int)
      */
     public ILogicalVector checkSolidConnectCount6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {IVector tConnectCount = calConnectCountBOOP(6, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(aSolidThreshold); VectorCache.returnVec(tConnectCount); return tIsSolid;}
-    public ILogicalVector checkSolidConnectCount6(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
-    public ILogicalVector checkSolidConnectCount6(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
-    public ILogicalVector checkSolidConnectCount6(                                                                         ) {return checkSolidConnectCount6(0.5, 7);}
+    /**
+     * 具体通过 {@link #calConnectCountBOOP(int, double, double)}
+     * 且 {@code l = 6} 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 通过 {@link #checkSolidConnectCount6(double, int, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.2977970">
+     * Accurate determination of crystal structures based on averaged local bond order parameters</a>
+     *
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.5
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 7
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectCountBOOP(int, double, double)
+     */
+    public ILogicalVector checkSolidConnectCount6(double aConnectThreshold, int aSolidThreshold, double aRNearest) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
+    /**
+     * @return {@code checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectCount6(double, int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectCount6(double aConnectThreshold, int aSolidThreshold) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code checkSolidConnectCount6(0.5, 7, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectCount6(double, int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectCount6() {return checkSolidConnectCount6(0.5, 7);}
     
-    /**@deprecated use {@link #checkSolidConnectCount6} */ @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest, aNnn);}
-    /**@deprecated use {@link #checkSolidConnectCount6} */ @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest);}
-    /**@deprecated use {@link #checkSolidConnectCount6} */ @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold);}
-    /**@deprecated use {@link #checkSolidConnectCount6} */ @Deprecated public ILogicalVector checkSolidQ6(                                                                         ) {return checkSolidConnectCount6();}
+    /**@deprecated use {@link #checkSolidConnectCount6(double, int, double, int)} */
+    @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest, aNnn);}
+    /**@deprecated use {@link #checkSolidConnectCount6(double, int, double)} */
+    @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold, double aRNearest) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold, aRNearest);}
+    /**@deprecated use {@link #checkSolidConnectCount6(double, int)} */
+    @Deprecated public ILogicalVector checkSolidQ6(double aConnectThreshold, int aSolidThreshold) {return checkSolidConnectCount6(aConnectThreshold, aSolidThreshold);}
+    /**@deprecated use {@link #checkSolidConnectCount6()} */
+    @Deprecated public ILogicalVector checkSolidQ6() {return checkSolidConnectCount6();}
     
     /**
-     * 具体通过 {@link #calConnectRatioBOOP} 且 {@code l = 6} 来检测结构中类似固体的部分，
+     * 具体通过 {@link #calConnectRatioBOOP(int, double, double)}
+     * 且 {@code l = 6} 来检测结构中类似固体的部分，
      * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     *
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.58
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @return 最后判断得到是否是固体组成的逻辑向量
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double, int)
      */
     public ILogicalVector checkSolidConnectRatio6(double aConnectThreshold, double aRNearest, int aNnn) {IVector tConnectRatio = calConnectRatioBOOP(6, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectRatio.greaterOrEqual(0.5); VectorCache.returnVec(tConnectRatio); return tIsSolid;}
-    public ILogicalVector checkSolidConnectRatio6(double aConnectThreshold, double aRNearest          ) {return checkSolidConnectRatio6(aConnectThreshold, aRNearest, -1);}
-    public ILogicalVector checkSolidConnectRatio6(double aConnectThreshold                            ) {return checkSolidConnectRatio6(aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public ILogicalVector checkSolidConnectRatio6(                                                    ) {return checkSolidConnectRatio6(0.58);}
+    /**
+     * 具体通过 {@link #calConnectRatioBOOP(int, double, double)}
+     * 且 {@code l = 6} 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 通过 {@link #checkSolidConnectRatio6(double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     *
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.58
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double)
+     */
+    public ILogicalVector checkSolidConnectRatio6(double aConnectThreshold, double aRNearest) {return checkSolidConnectRatio6(aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code checkSolidConnectRatio6(aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectRatio6(double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectRatio6(double aConnectThreshold) {return checkSolidConnectRatio6(aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code checkSolidConnectRatio6(0.58, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectRatio6(double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectRatio6() {return checkSolidConnectRatio6(0.58);}
     
+    /** @see #checkSolidConnectRatio6(double, double, int) */
     @VisibleForTesting public ILogicalVector checkSolidS6(double aConnectThreshold, double aRNearest, int aNnn) {return checkSolidConnectRatio6(aConnectThreshold, aRNearest, aNnn);}
-    @VisibleForTesting public ILogicalVector checkSolidS6(double aConnectThreshold, double aRNearest          ) {return checkSolidConnectRatio6(aConnectThreshold, aRNearest);}
-    @VisibleForTesting public ILogicalVector checkSolidS6(double aConnectThreshold                            ) {return checkSolidConnectRatio6(aConnectThreshold);}
-    @VisibleForTesting public ILogicalVector checkSolidS6(                                                    ) {return checkSolidConnectRatio6();}
+    /** @see #checkSolidConnectRatio6(double, double) */
+    @VisibleForTesting public ILogicalVector checkSolidS6(double aConnectThreshold, double aRNearest) {return checkSolidConnectRatio6(aConnectThreshold, aRNearest);}
+    /** @see #checkSolidConnectRatio6(double) */
+    @VisibleForTesting public ILogicalVector checkSolidS6(double aConnectThreshold) {return checkSolidConnectRatio6(aConnectThreshold);}
+    /** @see #checkSolidConnectRatio6() */
+    @VisibleForTesting public ILogicalVector checkSolidS6() {return checkSolidConnectRatio6();}
     
     
     /**
-     * 具体通过 {@link #calConnectCountBOOP} 且 {@code l = 4} 来检测结构中类似固体的部分，
+     * 具体通过 {@link #calConnectCountBOOP(int, double, double)}
+     * 且 {@code l = 4} 来检测结构中类似固体的部分，
      * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
@@ -3506,41 +4261,111 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      * Reference:
      * <a href="https://doi.org/10.1063/1.1896348">
      * Rate of homogeneous crystal nucleation in molten NaCl </a>
+     *
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
      * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
-     * @return 最后判断得到是否是固体组成的逻辑向量
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double)
      */
     public ILogicalVector checkSolidConnectCount4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {IVector tConnectCount = calConnectCountBOOP(4, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectCount.greaterOrEqual(aSolidThreshold); VectorCache.returnVec(tConnectCount); return tIsSolid;}
-    public ILogicalVector checkSolidConnectCount4(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
-    public ILogicalVector checkSolidConnectCount4(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
-    public ILogicalVector checkSolidConnectCount4(                                                                         ) {return checkSolidConnectCount4(0.35, 6);}
+    /**
+     * 具体通过 {@link #calConnectCountBOOP(int, double, double)}
+     * 且 {@code l = 4} 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 通过 {@link #checkSolidConnectCount4(double, int, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     * <p>
+     * Reference:
+     * <a href="https://doi.org/10.1063/1.1896348">
+     * Rate of homogeneous crystal nucleation in molten NaCl </a>
+     *
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.35
+     * @param aSolidThreshold 用来根据最近邻原子中，连接数大于或等于此值则认为是固体的阈值，默认为 6
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后判断得到是否是固体组成的逻辑向量，按照原子数据中的原子排序
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double)
+     */
+    public ILogicalVector checkSolidConnectCount4(double aConnectThreshold, int aSolidThreshold, double aRNearest) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest, -1);}
+    /**
+     * @return {@code checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectCount4(double, int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectCount4(double aConnectThreshold, int aSolidThreshold) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code checkSolidConnectCount4(0.35, 6, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectCount4(double, int, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectCount4() {return checkSolidConnectCount4(0.35, 6);}
     
-    /**@deprecated use {@link #checkSolidConnectCount4} */ @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest, aNnn);}
-    /**@deprecated use {@link #checkSolidConnectCount4} */ @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest          ) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest);}
-    /**@deprecated use {@link #checkSolidConnectCount4} */ @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold                            ) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold);}
-    /**@deprecated use {@link #checkSolidConnectCount4} */ @Deprecated public ILogicalVector checkSolidQ4(                                                                         ) {return checkSolidConnectCount4();}
+    /**@deprecated use {@link #checkSolidConnectCount4(double, int, double, int)} */
+    @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest, int aNnn) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest, aNnn);}
+    /**@deprecated use {@link #checkSolidConnectCount4(double, int, double)} */
+    @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold, double aRNearest) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold, aRNearest);}
+    /**@deprecated use {@link #checkSolidConnectCount4(double, int)} */
+    @Deprecated public ILogicalVector checkSolidQ4(double aConnectThreshold, int aSolidThreshold) {return checkSolidConnectCount4(aConnectThreshold, aSolidThreshold);}
+    /**@deprecated use {@link #checkSolidConnectCount4()} */
+    @Deprecated public ILogicalVector checkSolidQ4() {return checkSolidConnectCount4();}
     
     /**
-     * 具体通过 {@link #calConnectRatioBOOP} 且 {@code l = 4} 来检测结构中类似固体的部分，
+     * 具体通过 {@link #calConnectRatioBOOP(int, double, double)}
+     * 且 {@code l = 4} 来检测结构中类似固体的部分，
      * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     *
      * @author liqa
      * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.50
      * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
      * @param aNnn 最大的最近邻数目（Number of Nearest Neighbor list）。默认不做限制
      * @return 最后判断得到是否是固体组成的逻辑向量
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double, int)
      */
     public ILogicalVector checkSolidConnectRatio4(double aConnectThreshold, double aRNearest, int aNnn) {IVector tConnectRatio = calConnectRatioBOOP(4, aConnectThreshold, aRNearest, aNnn); ILogicalVector tIsSolid = tConnectRatio.greaterOrEqual(0.5); VectorCache.returnVec(tConnectRatio); return tIsSolid;}
-    public ILogicalVector checkSolidConnectRatio4(double aConnectThreshold, double aRNearest          ) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest, -1);}
-    public ILogicalVector checkSolidConnectRatio4(double aConnectThreshold                            ) {return checkSolidConnectRatio4(aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
-    public ILogicalVector checkSolidConnectRatio4(                                                    ) {return checkSolidConnectRatio4(0.50);}
+    /**
+     * 具体通过 {@link #calConnectRatioBOOP(int, double, double)}
+     * 且 {@code l = 4} 来检测结构中类似固体的部分，
+     * 输出结果为按照输入原子顺序排列的布尔向量，true 表示判断为类似固体；
+     * <p>
+     * 通过 {@link #checkSolidConnectRatio4(double, double, int)}
+     * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
+     *
+     * @author liqa
+     * @param aConnectThreshold 用来判断两个原子是否是相连接的阈值，默认为 0.50
+     * @param aRNearest 用来搜索的最近邻半径。默认为 {@link CS#R_NEAREST_MUL} 倍单位长度
+     * @return 最后判断得到是否是固体组成的逻辑向量
+     * @see ILogicalVector
+     * @see #calConnectRatioBOOP(int, double, double, int)
+     */
+    public ILogicalVector checkSolidConnectRatio4(double aConnectThreshold, double aRNearest) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest, -1);}
+    /**
+     * @return {@code checkSolidConnectRatio4(aConnectThreshold, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectRatio4(double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectRatio4(double aConnectThreshold) {return checkSolidConnectRatio4(aConnectThreshold, mUnitLen*R_NEAREST_MUL);}
+    /**
+     * @return {@code checkSolidConnectRatio4(0.58, unitLen()*R_NEAREST_MUL)}
+     * @see #checkSolidConnectRatio4(double, double)
+     * @see CS#R_NEAREST_MUL
+     */
+    public ILogicalVector checkSolidConnectRatio4() {return checkSolidConnectRatio4(0.50);}
     
+    /** @see #checkSolidConnectRatio4(double, double, int) */
     @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold, double aRNearest, int aNnn) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest, aNnn);}
-    @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold, double aRNearest          ) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest);}
-    @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold                            ) {return checkSolidConnectRatio4(aConnectThreshold);}
-    @VisibleForTesting public ILogicalVector checkSolidS4(                                                    ) {return checkSolidConnectRatio4();}
+    /** @see #checkSolidConnectRatio4(double, double) */
+    @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold, double aRNearest) {return checkSolidConnectRatio4(aConnectThreshold, aRNearest);}
+    /** @see #checkSolidConnectRatio4(double) */
+    @VisibleForTesting public ILogicalVector checkSolidS4(double aConnectThreshold) {return checkSolidConnectRatio4(aConnectThreshold);}
+    /** @see #checkSolidConnectRatio4() */
+    @VisibleForTesting public ILogicalVector checkSolidS4() {return checkSolidConnectRatio4();}
 }
