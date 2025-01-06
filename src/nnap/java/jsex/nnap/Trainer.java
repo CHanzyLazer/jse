@@ -21,6 +21,7 @@ import jse.parallel.IAutoShutdown;
 import jsex.nnap.basis.IBasis;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -223,16 +224,22 @@ public class Trainer implements IAutoShutdown, ISavable {
     protected final String[] mSymbols;
     protected final IVector mRefEngs;
     protected final IBasis[] mBasis;
-    protected final DoubleList[] mTrainBase; // 按照种类排序，然后内部是可扩展的具体数据；现在使用这种 DoubleList 展开的形式存
+    protected final DoubleList[] mTrainBase; // 按照种类排序，内部是可扩展的具体数据；现在使用这种 DoubleList 展开的形式存
     protected final RowMatrix[] mTrainBaseMat; // mTrainDataBase 的实际值（按行排列），这个只是缓存结果
     protected final IntList[] mTrainBaseIndices; // 每个 base 对应的能量/数据的索引，按照种类排序
+    protected final List<List<RowMatrix>> mTrainBasePartial; // 按照种类排序，内部是每个原子的所有基组偏导值，每个基组偏导值按行排列，和交叉项以及 xyz 共同组成一个矩阵
+    protected final List<List<IntVector>> mTrainBasePartialIndices; // 每个 base partial 对应的力/全局原子的索引，按照种类排序
     protected final DoubleList mTrainEng = new DoubleList(64);
+    protected final DoubleList mTrainForce = new DoubleList(64); // 这里的力数值直接展开成单个向量，通过 mTrainBasePartialIndices 来获取对应的索引
     protected final IntList mTrainAtomNum = new IntList(64);
     protected final Vector[] mNormVec;
     protected final DoubleList[] mTestBase;
     protected final RowMatrix[] mTestBaseMat;
     protected final IntList[] mTestBaseIndices;
+    protected final List<List<RowMatrix>> mTestBasePartial;
+    protected final List<List<IntVector>> mTestBasePartialIndices;
     protected final DoubleList mTestEng = new DoubleList(64);
+    protected final DoubleList mTestForce = new DoubleList(64);
     protected final IntList mTestAtomNum = new IntList(64);
     protected boolean mHasData = false;
     protected boolean mHasForce = false;
@@ -255,16 +262,24 @@ public class Trainer implements IAutoShutdown, ISavable {
         }
         mTrainBase = new DoubleList[mSymbols.length];
         mTrainBaseIndices = new IntList[mSymbols.length];
+        mTrainBasePartial = new ArrayList<>(mSymbols.length);
+        mTrainBasePartialIndices = new ArrayList<>(mSymbols.length);
         for (int i = 0; i < mSymbols.length; ++i) {
             mTrainBase[i] = new DoubleList(64);
             mTrainBaseIndices[i] = new IntList(64);
+            mTrainBasePartial.add(new ArrayList<>(64));
+            mTrainBasePartialIndices.add(new ArrayList<>(64));
         }
         mTrainBaseMat = new RowMatrix[mSymbols.length];
         mTestBase = new DoubleList[mSymbols.length];
         mTestBaseIndices = new IntList[mSymbols.length];
+        mTestBasePartial = new ArrayList<>(mSymbols.length);
+        mTestBasePartialIndices = new ArrayList<>(mSymbols.length);
         for (int i = 0; i < mSymbols.length; ++i) {
             mTestBase[i] = new DoubleList(64);
             mTestBaseIndices[i] = new IntList(64);
+            mTestBasePartial.add(new ArrayList<>(64));
+            mTestBasePartialIndices.add(new ArrayList<>(64));
         }
         mTestBaseMat = new RowMatrix[mSymbols.length];
         mModelSetting = aModelSetting;
@@ -493,6 +508,55 @@ public class Trainer implements IAutoShutdown, ISavable {
         // 这里后添加能量，这样 rEngData.size() 对应正确的索引
         rEngData.add(aEnergy);
     }
+    @ApiStatus.Internal
+    protected void calRefEngBasePartialAndAdd_(IAtomData aAtomData, double aEnergy, final DoubleList rEngData, DoubleList[] rBaseData, IntList[] rBaseIndices,
+                                               @NotNull IMatrix aForces, DoubleList rForceData, List<List<RowMatrix>> rBasePartial, List<List<IntVector>> rBasePartialIndices) {
+        IntUnaryOperator tTypeMap = typeMap(aAtomData);
+        // 由于数据集不完整因此这里不去做归一化
+        final int tAtomNum = aAtomData.atomNumber();
+        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+            for (int i = 0; i < tAtomNum; ++i) {
+                int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
+                IBasis tBasis = basis(tType);
+                List<RowMatrix> tOut = tBasis.evalPartial(true, true, tAPC, i, tTypeMap);
+                // 基组和索引
+                rBaseData[tType-1].addAll(tOut.get(0).asVecRow());
+                rBaseIndices[tType-1].add(rEngData.size());
+                // 基组偏导和索引
+                int tRowNum = tOut.size()-1;
+                final RowMatrix tBasePartial = RowMatrix.zeros(tRowNum, tBasis.rowNumber()*tBasis.columnNumber());
+                final IntVector tBasePartialIndices = IntVector.zeros(tRowNum);
+                final int tShift = rForceData.size();
+                tBasePartialIndices.set(0, tShift + 3*i);
+                tBasePartialIndices.set(1, tShift + 3*i + 1);
+                tBasePartialIndices.set(2, tShift + 3*i + 2);
+                tBasePartial.row(0).fill(tOut.get(1).asVecRow());
+                tBasePartial.row(1).fill(tOut.get(2).asVecRow());
+                tBasePartial.row(2).fill(tOut.get(3).asVecRow());
+                final int tNN = (tOut.size()-4)/3;
+                final int[] j = {0};
+                tAPC.nl_().forEachNeighbor(i, tBasis.rcut(), false, (x, y, z, idx, dx, dy, dz) -> {
+                    tBasePartial.row(3 + 3*j[0]).fill(tOut.get(4+j[0]).asVecRow());
+                    tBasePartial.row(4 + 3*j[0]).fill(tOut.get(4+tNN+j[0]).asVecRow());
+                    tBasePartial.row(5 + 3*j[0]).fill(tOut.get(4+tNN+tNN+j[0]).asVecRow());
+                    tBasePartialIndices.set(3 + 3*j[0], tShift + 3*idx);
+                    tBasePartialIndices.set(4 + 3*j[0], tShift + 3*idx + 1);
+                    tBasePartialIndices.set(5 + 3*j[0], tShift + 3*idx + 2);
+                    ++j[0];
+                });
+                rBasePartial.get(tType-1).add(tBasePartial);
+                rBasePartialIndices.get(tType-1).add(tBasePartialIndices);
+                MatrixCache.returnMat(tOut);
+                // 计算相对能量值
+                aEnergy -= mRefEngs.get(tType-1);
+            }
+        }
+        // 这里后添加能量，这样 rEngData.size() 对应正确的索引
+        rEngData.add(aEnergy);
+        // 这里后添加力，这样 rForceData.size() 对应正确的索引
+        rForceData.addAll(aForces.asVecRow());
+    }
+    
     /**
      * 增加一个训练集数据
      * <p>
@@ -506,13 +570,18 @@ public class Trainer implements IAutoShutdown, ISavable {
     public void addTrainData(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces) {
         if (!mHasData) {
             mHasData = true;
-            if (aForces != null) mHasForce = true;
+            mHasForce = aForces!=null;
         } else {
             if (mHasForce && aForces==null) throw new IllegalArgumentException("All data MUST has forces when add force");
             if (!mHasForce && aForces!=null) throw new IllegalArgumentException("All data MUST NOT has forces when not add force");
         }
         // 添加数据
-        calRefEngBaseAndAdd_(aAtomData, aEnergy, mTrainEng, mTrainBase, mTrainBaseIndices);
+        if (mHasForce) {
+            calRefEngBasePartialAndAdd_(aAtomData, aEnergy, mTrainEng, mTrainBase, mTrainBaseIndices,
+                                        aForces, mTrainForce, mTrainBasePartial, mTrainBasePartialIndices);
+        } else {
+            calRefEngBaseAndAdd_(aAtomData, aEnergy, mTrainEng, mTrainBase, mTrainBaseIndices);
+        }
         mTrainAtomNum.add(aAtomData.atomNumber());
         mHasData = true;
     }
@@ -534,13 +603,18 @@ public class Trainer implements IAutoShutdown, ISavable {
     public void addTestData(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces) {
         if (!mHasData) {
             mHasData = true;
-            if (aForces != null) mHasForce = true;
+            mHasForce = aForces!=null;
         } else {
             if (mHasForce && aForces==null) throw new IllegalArgumentException("All data MUST has forces when add force");
             if (!mHasForce && aForces!=null) throw new IllegalArgumentException("All data MUST NOT has forces when not add force");
         }
         // 添加数据
-        calRefEngBaseAndAdd_(aAtomData, aEnergy, mTestEng, mTestBase, mTestBaseIndices);
+        if (mHasForce) {
+            calRefEngBasePartialAndAdd_(aAtomData, aEnergy, mTestEng, mTestBase, mTestBaseIndices,
+                                        aForces, mTestForce, mTestBasePartial, mTestBasePartialIndices);
+        } else {
+            calRefEngBaseAndAdd_(aAtomData, aEnergy, mTestEng, mTestBase, mTestBaseIndices);
+        }
         mTestAtomNum.add(aAtomData.atomNumber());
         if (!mHasTest) mHasTest = true;
     }
