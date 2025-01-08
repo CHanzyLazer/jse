@@ -78,16 +78,25 @@ public class BooleanArrayCache {
     
     
     
-    /** 批量操作的接口，约定所有数组都等长 */
+    /** 批量操作的接口，注意实际不保证数组等长 */
     public static void returnArrayFrom(int aMultiple, IListGetter<boolean @NotNull[]> aArrayGetter) {
         if (NO_CACHE) return;
         if (aMultiple <= 0) return;
         boolean[] tFirst = aArrayGetter.get(0);
-        final int tSizeKey = tFirst.length;
+        int tSizeKey = tFirst.length;
         if (tSizeKey == 0) return;
         IObjectPool<boolean[]> tPool = CACHE.get().computeIfAbsent(tSizeKey, key -> new ObjectCachePool<>());
         tPool.returnObject(tFirst);
-        for (int i = 1; i < aMultiple; ++i) tPool.returnObject(aArrayGetter.get(i));
+        for (int i = 1; i < aMultiple; ++i) {
+            boolean[] tData = aArrayGetter.get(i);
+            int nSizeKey = tData.length;
+            if (nSizeKey == 0) continue;
+            if (nSizeKey < tSizeKey) {
+                tSizeKey = nSizeKey;
+                tPool = CACHE.get().computeIfAbsent(tSizeKey, key -> new ObjectCachePool<>());
+            }
+            tPool.returnObject(tData);
+        }
     }
     
     public static void getZerosTo(int aMinSize, int aMultiple, IListSetter<boolean @NotNull[]> aZerosConsumer) {
