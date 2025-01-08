@@ -50,12 +50,11 @@ public class Trainer implements IAutoShutdown, ISavable {
     /** 全局记录 python 中的变量名称 */
     protected final static String
           CLASS_SINGLE_MODEL                = "__NNAP_TRAINER_SingleEnergyModel__"
-        , CLASS_TOTAL_MODEL                 = "__NNAP_TRAINER_TotalEnergyModel__"
+        , CLASS_TOTAL_MODEL                 = "__NNAP_TRAINER_TotalModel__"
         , FN_TRAIN_STEP                     = "__NNAP_TRAINER_train_step__"
         , FN_TEST_LOSS                      = "__NNAP_TRAINER_test_loss__"
         , FN_CAL_MAE                        = "__NNAP_TRAINER_cal_mae__"
         , FN_MODEL2BYTES                    = "__NNAP_TRAINER_model2bytes__"
-        , FN_CAL_FORCES                     = "__NNAP_TRAINER_cal_forces__"
         , VAL_MODEL                         = "__NNAP_TRAINER_model__"
         , VAL_MODEL_STATE_DICT              = "__NNAP_TRAINER_model_state_dict__"
         , VAL_OPTIMIZER                     = "__NNAP_TRAINER_optimizer__"
@@ -63,6 +62,7 @@ public class Trainer implements IAutoShutdown, ISavable {
         , VAL_LOSS_FN_ENG                   = "__NNAP_TRAINER_loss_fn_eng__"
         , VAL_LOSS_FN_FORCE                 = "__NNAP_TRAINER_loss_fn_force__"
         , VAL_HAS_FORCE                     = "__NNAP_TRAINER_has_force__"
+        , VAL_FORCE_RATIO                   = "__NNAP_TRAINER_force_ratio__"
         , VAL_TRAIN_BASE                    = "__NNAP_TRAINER_train_base__"
         , VAL_TRAIN_BASE_J                  = "__NNAP_TRAINER_train_base_J__"
         , VAL_TRAIN_BASE_INDICES            = "__NNAP_TRAINER_train_base_indices__"
@@ -142,54 +142,57 @@ public class Trainer implements IAutoShutdown, ISavable {
             "        self.ntypes = ntypes\n" +
             "        self.sub_models = torch.nn.ModuleList(["+CLASS_SINGLE_MODEL+"(input_dims[i], hidden_dims[i], bn_layers[i]) for i in range(ntypes)])\n" +
             "    \n" +
-            "    def forward(self, x, indices, atom_nums):\n" +
-            "        ylen = len(atom_nums)\n" +
-            "        y = torch.zeros(ylen, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
+            "    def forward(self, x):\n" +
+            "        return [self.sub_models[i](x[i]) for i in range(self.ntypes)]\n" +
+            "    \n" +
+            "    def cal_eng_force(self, fp, indices, atom_nums, xyz_grad=None, nl=None, create_graph=False):\n" +
+            "        eng_all = self.forward(fp)\n" +
+            "        eng_len = len(atom_nums)\n" +
+            "        eng = torch.zeros(eng_len, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
             "        for i in range(self.ntypes):\n" +
-            "            xout = self.sub_models[i](x[i])\n" +
-            "            y.scatter_add_(0, indices[i], xout)\n" +
-            "        return y";
+            "            eng.scatter_add_(0, indices[i], eng_all[i])\n" +
+            "        eng /= atom_nums\n" +
+            "        if xyz_grad is None:\n" +
+            "            return eng\n" +
+            "        force_len = atom_nums.sum().long().item()*3\n" + // 这里直接把力全部展开成单个向量
+            "        force = torch.zeros(force_len, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
+            "        for i in range(self.ntypes):\n" +
+            "            fp_grad = torch.autograd.grad(eng_all[i].sum(), fp[i], create_graph=create_graph)[0]\n" +
+            "            force_all = -torch.bmm(xyz_grad[i], fp_grad.reshape(*fp_grad.shape, 1))\n" +
+            "            force.scatter_add_(0, nl[i].flatten(), force_all.flatten())\n" + // 总之大概就是这种感觉，nl 中把展开索引以及多个数据索引偏移都考虑进去
+            "        return eng, force";
         
         /** 总 loss 函数，修改此值实现自定义 loss 函数，主要用于控制各种 loss 之间的比例 */
         public static String LOSS_FN_SCRIPT =
             "def "+VAL_LOSS_FN+"(pred_engs, target_engs, pred_forces=None, target_forces=None):\n" +
             "    if pred_forces is None:\n" +
             "        return "+VAL_LOSS_FN_ENG+"(pred_engs, target_engs)\n" +
-            "    return "+VAL_LOSS_FN_ENG+"(pred_engs, target_engs) + 0.1*"+VAL_LOSS_FN_FORCE+"(pred_forces, target_forces)";
+            "    return "+VAL_LOSS_FN_ENG+"(pred_engs, target_engs) + "+VAL_FORCE_RATIO+"*"+VAL_LOSS_FN_FORCE+"(pred_forces, target_forces)";
         
         /** 用于计算能量的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
         public static String LOSS_FN_ENG_SCRIPT = VAL_LOSS_FN_ENG+"=torch.nn.SmoothL1Loss()";
         /** 用于计算能量的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
         public static String LOSS_FN_FORCE_SCRIPT = VAL_LOSS_FN_FORCE+"=torch.nn.SmoothL1Loss()";
         
-        /** 通过网络编导和基组偏导数计算出力的函数，统一使用 torch 的运算方便反向传播计算导数，一般情况不需要重写 */
-        public static String CAL_FORCES_SCRIPT =
-            "def "+FN_CAL_FORCES+"(fp_grad, xyz_grad, nl, atom_nums):\n" +
-            "    flen = atom_nums.sum().long().item()*3\n" + // 这里直接把力全部展开成单个向量
-            "    f = torch.zeros(flen, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
-            "    for i in range(len(fp_grad)):\n" +
-            "        fall = -torch.bmm(xyz_grad[i], fp_grad[i].reshape(*fp_grad[i].shape, 1))\n" +
-            "        f.scatter_add_(0, nl[i].flatten(), fall.flatten())\n" + // 总之大概就是这种感觉，nl 中把展开索引以及多个数据索引偏移都考虑进去
-            "    return f";
-        
         /** 训练一步的脚本函数，修改此值来实现自定义训练算法；默认使用 LBFGS 训练 */
         public static String TRAIN_STEP_SCRIPT =
-            "def "+FN_TRAIN_STEP+"():\n" +
-            "    "+VAL_MODEL+".train()\n"+
-            "    def closure():\n" +
-            "        "+VAL_OPTIMIZER+".zero_grad()\n" +
-            "        pred = "+VAL_MODEL+"("+VAL_TRAIN_BASE+", "+VAL_TRAIN_BASE_INDICES+", "+VAL_TRAIN_ATOM_NUM+")\n" +
-            "        if "+VAL_HAS_FORCE+":\n" +
-            "            pred_sum = pred.sum()\n" +
-            "            fp_grad = [torch.autograd.grad(pred_sum, sub_fp, create_graph=True)[0] for sub_fp in "+VAL_TRAIN_BASE+"]\n" +
-            "            pred_f = "+FN_CAL_FORCES+"(fp_grad, "+VAL_TRAIN_BASE_PARTIAL+", "+VAL_TRAIN_BASE_PARTIAL_INDICES+", "+VAL_TRAIN_ATOM_NUM+")\n" +
-            "            pred /= "+VAL_TRAIN_ATOM_NUM+"\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_ENG+", pred_f, "+VAL_TRAIN_FORCE+")\n" +
-            "        else:\n" +
-            "            pred /= "+VAL_TRAIN_ATOM_NUM+"\n" +
+            "def "+FN_TRAIN_STEP+"(train_force=False):\n" +
+            "    if not train_force:\n" +
+            "        "+VAL_MODEL+".train()\n"+
+            "        def closure():\n" +
+            "            "+VAL_OPTIMIZER+".zero_grad()\n" +
+            "            pred = "+VAL_MODEL+".cal_eng_force("+VAL_TRAIN_BASE+", "+VAL_TRAIN_BASE_INDICES+", "+VAL_TRAIN_ATOM_NUM+")\n" +
             "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_ENG+")\n" +
-            "        loss.backward()\n" +
-            "        return loss\n" +
+            "            loss.backward()\n" +
+            "            return loss\n" +
+            "    else:\n" +
+            "        "+VAL_MODEL+".eval()\n"+
+            "        def closure():\n" +
+            "            "+VAL_OPTIMIZER+".zero_grad()\n" +
+            "            pred, pred_f = "+VAL_MODEL+".cal_eng_force("+VAL_TRAIN_BASE+", "+VAL_TRAIN_BASE_INDICES+", "+VAL_TRAIN_ATOM_NUM+", "+VAL_TRAIN_BASE_PARTIAL+", "+VAL_TRAIN_BASE_PARTIAL_INDICES+", True)\n" +
+            "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_ENG+", pred_f, "+VAL_TRAIN_FORCE+")\n" +
+            "            loss.backward()\n" +
+            "            return loss\n" +
             "    loss = closure()\n" +
             "    "+VAL_OPTIMIZER+".step(closure)\n" +
             "    return loss.item()";
@@ -200,15 +203,10 @@ public class Trainer implements IAutoShutdown, ISavable {
             "    "+VAL_MODEL+".eval()\n"+
             "    if not "+VAL_HAS_FORCE+":\n" +
             "        with torch.no_grad():\n" +
-            "            pred = "+VAL_MODEL+"("+VAL_TEST_BASE+", "+VAL_TEST_BASE_INDICES+", "+VAL_TEST_ATOM_NUM+")\n" +
-            "            pred /= "+VAL_TEST_ATOM_NUM+"\n" +
+            "            pred = "+VAL_MODEL+".cal_eng_force("+VAL_TEST_BASE+", "+VAL_TEST_BASE_INDICES+", "+VAL_TEST_ATOM_NUM+")\n" +
             "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TEST_ENG+")\n" +
             "            return loss.item()\n" +
-            "    pred = "+VAL_MODEL+"("+VAL_TEST_BASE+", "+VAL_TEST_BASE_INDICES+", "+VAL_TEST_ATOM_NUM+")\n" +
-            "    pred_sum = pred.sum()\n" +
-            "    fp_grad = [torch.autograd.grad(pred_sum, sub_fp)[0] for sub_fp in "+VAL_TEST_BASE+"]\n" +
-            "    pred_f = "+FN_CAL_FORCES+"(fp_grad, "+VAL_TEST_BASE_PARTIAL+", "+VAL_TEST_BASE_PARTIAL_INDICES+", "+VAL_TEST_ATOM_NUM+")\n" +
-            "    pred /= "+VAL_TEST_ATOM_NUM+"\n" +
+            "    pred, pred_f = "+VAL_MODEL+".cal_eng_force("+VAL_TEST_BASE+", "+VAL_TEST_BASE_INDICES+", "+VAL_TEST_ATOM_NUM+", "+VAL_TEST_BASE_PARTIAL+", "+VAL_TEST_BASE_PARTIAL_INDICES+")\n" +
             "    loss = "+VAL_LOSS_FN+"(pred, "+VAL_TEST_ENG+", pred_f, "+VAL_TEST_FORCE+")\n" +
             "    return loss.item()";
         
@@ -236,7 +234,6 @@ public class Trainer implements IAutoShutdown, ISavable {
         SP.Python.exec(Conf.LOSS_FN_ENG_SCRIPT);
         SP.Python.exec(Conf.LOSS_FN_FORCE_SCRIPT);
         SP.Python.exec(Conf.LOSS_FN_SCRIPT);
-        SP.Python.exec(Conf.CAL_FORCES_SCRIPT);
         SP.Python.exec(Conf.TRAIN_STEP_SCRIPT);
         SP.Python.exec(Conf.TEST_LOSS_SCRIPT);
         //noinspection ConcatenationWithEmptyString
@@ -245,14 +242,9 @@ public class Trainer implements IAutoShutdown, ISavable {
         "    "+VAL_MODEL+".eval()\n"+
         "    if forces is None:\n" +
         "        with torch.no_grad():\n" +
-        "            pred = "+VAL_MODEL+"(fp, indices, atom_nums)\n" +
-        "            pred /= atom_nums\n" +
+        "            pred = "+VAL_MODEL+".cal_eng_force(fp, indices, atom_nums)\n" +
         "            return (engs - pred).abs().mean().item()\n" +
-        "    pred = "+VAL_MODEL+"(fp, indices, atom_nums)\n" +
-        "    pred_sum = pred.sum()\n" +
-        "    fp_grad = [torch.autograd.grad(pred_sum, sub_fp)[0] for sub_fp in fp]\n" +
-        "    pred_f = "+FN_CAL_FORCES+"(fp_grad, xyz_grad, nl, atom_nums)\n" +
-        "    pred /= atom_nums\n" +
+        "    pred, pred_f = "+VAL_MODEL+".cal_eng_force(fp, indices, atom_nums, xyz_grad, nl)\n" +
         "    return (engs - pred).abs().mean().item(), (forces - pred_f).abs().mean().item()"
         );
         SP.Python.exec(Conf.MODEL2BYTES_SCRIPT);
@@ -272,6 +264,8 @@ public class Trainer implements IAutoShutdown, ISavable {
     public Trainer setUnits(String aUnits) {mUnits = aUnits; return this;}
     protected boolean mTrainInFloat = true;
     public Trainer setTrainInFloat(boolean aFlag) {mTrainInFloat = aFlag; return this;}
+    protected double mForceRatio = 0.1;
+    public Trainer setForceRatio(double aRatio) {mForceRatio = aRatio; return this;}
     
     protected final String[] mSymbols;
     protected final IVector mRefEngs;
@@ -433,6 +427,7 @@ public class Trainer implements IAutoShutdown, ISavable {
         initNormVec();
         // 构造 torch 数据，这里直接把数据放到 python 环境中变成一个 python 的全局变量
         SP.Python.setValue(VAL_HAS_FORCE, mHasForce);
+        SP.Python.setValue(VAL_FORCE_RATIO, mForceRatio);
         SP.Python.setValue(VAL_NORM_VEC_J, mNormVec);
         SP.Python.setValue(VAL_TRAIN_BASE_J, mTrainBaseMat);
         SP.Python.setValue(VAL_TRAIN_BASE_INDICES_J, mTrainBaseIndices);
@@ -549,7 +544,7 @@ public class Trainer implements IAutoShutdown, ISavable {
             double tMinLoss = Double.POSITIVE_INFINITY;
             int tSelectEpoch = -1;
             for (int i = 0; i < aEpochs; ++i) {
-                double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP)).doubleValue();
+                double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP, mHasForce && i>aEpochs/2)).doubleValue();
                 double oLoss = mTrainLoss.isEmpty() ? Double.NaN : mTrainLoss.last();
                 mTrainLoss.add(tLoss);
                 double tTestLoss = Double.NaN;
