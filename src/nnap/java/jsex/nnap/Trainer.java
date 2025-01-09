@@ -57,6 +57,7 @@ public class Trainer implements IAutoShutdown, ISavable {
         , FN_TRAIN_STEP                     = "__NNAP_TRAINER_train_step__"
         , FN_TEST_LOSS                      = "__NNAP_TRAINER_test_loss__"
         , FN_CAL_MAE                        = "__NNAP_TRAINER_cal_mae__"
+        , FN_CAL_LOSS_DETAIL                = "__NNAP_TRAINER_cal_loss_detail__"
         , FN_MODEL2BYTES                    = "__NNAP_TRAINER_model2bytes__"
         , VAL_MODEL                         = "__NNAP_TRAINER_model__"
         , VAL_MODEL_STATE_DICT              = "__NNAP_TRAINER_model_state_dict__"
@@ -196,10 +197,12 @@ public class Trainer implements IAutoShutdown, ISavable {
         
         /** 总 loss 函数，修改此值实现自定义 loss 函数，主要用于控制各种 loss 之间的比例 */
         public static String LOSS_FN_SCRIPT =
-            "def "+VAL_LOSS_FN+"(pred_e, target_e, pred_f=None, target_f=None, pred_s=None, target_s=None):\n" +
+            "def "+VAL_LOSS_FN+"(pred_e, target_e, pred_f=None, target_f=None, pred_s=None, target_s=None, detail=False):\n" +
             "    loss_e = "+VAL_LOSS_FN_ENG+"(pred_e, target_e)\n" +
             "    loss_f = 0.0 if pred_f is None else "+VAL_LOSS_FN_FORCE+"(pred_f, target_f)\n" +
             "    loss_s = 0.0 if pred_s is None else "+VAL_LOSS_FN_STRESS+"(pred_s, target_s)\n" +
+            "    if detail:\n" +
+            "        return loss_e, "+VAL_FORCE_WEIGHT+"*loss_f, "+VAL_STRESS_WEIGHT+"*loss_s\n" +
             "    return loss_e + "+VAL_FORCE_WEIGHT+"*loss_f + "+VAL_STRESS_WEIGHT+"*loss_s";
         
         /** 用于计算能量的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
@@ -212,16 +215,16 @@ public class Trainer implements IAutoShutdown, ISavable {
         /** 训练一步的脚本函数，修改此值来实现自定义训练算法；默认使用 LBFGS 训练 */
         public static String TRAIN_STEP_SCRIPT =
             "def "+FN_TRAIN_STEP+"():\n" +
+            "    data = "+VAL_TRAIN_DATA+"\n"+
             "    "+VAL_MODEL+".train()\n"+
             "    def closure():\n" +
             "        "+VAL_OPTIMIZER+".zero_grad()\n" +
             "        if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
-            "            pred = "+VAL_MODEL+".cal_eng("+VAL_TRAIN_DATA+".fp, "+VAL_TRAIN_DATA+".eng_indices, "+VAL_TRAIN_DATA+".atom_num)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_DATA+".eng)\n" +
+            "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
+            "            loss = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
             "        else:\n" +
-            "            pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress("+VAL_TRAIN_DATA+".fp, "+VAL_TRAIN_DATA+".eng_indices, "+VAL_TRAIN_DATA+".atom_num, "+VAL_TRAIN_DATA+".fp_partial, "+VAL_TRAIN_DATA+".force_indices, "
-                                                                                    +VAL_TRAIN_DATA+".stress_indices, "+VAL_TRAIN_DATA+".stress_dxyz, "+VAL_TRAIN_DATA+".volume, create_graph=True)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TRAIN_DATA+".eng, pred_f, "+VAL_TRAIN_DATA+".force, pred_s, "+VAL_TRAIN_DATA+".stress)\n" +
+            "            pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume, create_graph=True)\n" +
+            "            loss = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress)\n" +
             "        loss += "+VAL_L2_LOSS_WEIGHT+"*"+VAL_MODEL+".cal_l2_loss()\n" +
             "        loss.backward()\n" +
             "        return loss\n" +
@@ -232,15 +235,15 @@ public class Trainer implements IAutoShutdown, ISavable {
         /** 获取测试集误差的脚本函数，一般情况不需要重写 */
         public static String TEST_LOSS_SCRIPT =
             "def "+FN_TEST_LOSS+"():\n" +
+            "    data = "+VAL_TEST_DATA+"\n"+
             "    "+VAL_MODEL+".eval()\n"+
             "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
             "        with torch.no_grad():\n" +
-            "            pred = "+VAL_MODEL+".cal_eng("+VAL_TEST_DATA+".fp, "+VAL_TEST_DATA+".eng_indices, "+VAL_TEST_DATA+".atom_num)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, "+VAL_TEST_DATA+".eng)\n" +
+            "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
+            "            loss = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
             "            return loss.item()\n" +
-            "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress("+VAL_TEST_DATA+".fp, "+VAL_TEST_DATA+".eng_indices, "+VAL_TEST_DATA+".atom_num, "+VAL_TEST_DATA+".fp_partial, "+VAL_TEST_DATA+".force_indices, "
-                                                                            +VAL_TEST_DATA+".stress_indices, "+VAL_TEST_DATA+".stress_dxyz, "+VAL_TEST_DATA+".volume)\n" +
-            "    loss = "+VAL_LOSS_FN+"(pred, "+VAL_TEST_DATA+".eng, pred_f, "+VAL_TEST_DATA+".force, pred_s, "+VAL_TEST_DATA+".stress)\n" +
+            "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
+            "    loss = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress)\n" +
             "    return loss.item()";
         
         /** 将模型转为字节的脚本，一般情况不需要重写 */
@@ -284,6 +287,21 @@ public class Trainer implements IAutoShutdown, ISavable {
         "    mae_f = None if pred_f is None else (data.force - pred_f).abs().mean().item()\n" +
         "    mae_s = None if pred_s is None else (data.stress - pred_s).abs().mean().item()\n" +
         "    return mae, mae_f, mae_s"
+        );
+        //noinspection ConcatenationWithEmptyString
+        SP.Python.exec("" +
+        "def "+FN_CAL_LOSS_DETAIL+"():\n" +
+        "    data = "+VAL_TRAIN_DATA+"\n"+
+        "    "+VAL_MODEL+".eval()\n"+
+        "    loss_l2 = "+VAL_L2_LOSS_WEIGHT+"*"+VAL_MODEL+".cal_l2_loss()\n" +
+        "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
+        "        with torch.no_grad():\n" +
+        "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
+        "            loss_e = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
+        "            return loss_l2.item(), loss_e.item(), None, None\n" +
+        "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
+        "    loss_e, loss_f, loss_s = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress, detail=True)\n" +
+        "    return loss_l2.item(), loss_e.item(), loss_f.item(), loss_s.item()"
         );
         SP.Python.exec(Conf.MODEL2BYTES_SCRIPT);
     }
@@ -668,7 +686,22 @@ public class Trainer implements IAutoShutdown, ISavable {
             }
             if (aEarlyStop && tSelectEpoch>=0) {
                 SP.Python.exec(VAL_MODEL+".load_state_dict("+VAL_MODEL_STATE_DICT+"); del "+VAL_MODEL_STATE_DICT);
-                System.out.printf("Model at epoch = %d selected, test loss = %.4g\n", tSelectEpoch, tMinLoss);
+                if (aPrintLog) System.out.printf("Model at epoch = %d selected, test loss = %.4g\n", tSelectEpoch, tMinLoss);
+            }
+            if (!aPrintLog) return;
+            List<?> tLossDetail = (List<?>)SP.Python.eval(FN_CAL_LOSS_DETAIL+"()");
+            double tLossL2 = ((Number)tLossDetail.get(0)).doubleValue();
+            double tLossE = ((Number)tLossDetail.get(1)).doubleValue();
+            double tLossF = mHasForce ? ((Number)tLossDetail.get(2)).doubleValue() : 0.0;
+            double tLossS = mHasStress ? ((Number)tLossDetail.get(3)).doubleValue() : 0.0;
+            double tLossTot = tLossL2+tLossE+tLossF+tLossS;
+            System.out.printf("Loss-L2: %.4g (%s)\n", tLossL2, UT.Text.percent(tLossL2/tLossTot));
+            System.out.printf("Loss-E : %.4g (%s)\n", tLossE, UT.Text.percent(tLossE/tLossTot));
+            if (mHasForce) {
+                System.out.printf("Loss-F : %.4g (%s)\n", tLossF, UT.Text.percent(tLossF/tLossTot));
+            }
+            if (mHasStress) {
+                System.out.printf("Loss-S : %.4g (%s)\n", tLossS, UT.Text.percent(tLossS/tLossTot));
             }
             List<?> tMAE = (List<?>)SP.Python.eval(FN_CAL_MAE+"("+VAL_TRAIN_DATA+")");
             double tMAE_E = ((Number)tMAE.get(0)).doubleValue();
