@@ -46,7 +46,7 @@ public class Trainer implements IAutoShutdown, ISavable {
     protected final static int[] DEFAULT_HIDDEN_DIMS = {20, 20};
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
     protected final static double DEFAULT_STRESS_WEIGHT = 1.0;
-    protected final static double DEFAULT_L2_LOSS_WEIGHT = 0.0;
+    protected final static double DEFAULT_L2_LOSS_WEIGHT = 1e-5;
     protected final static boolean DEFAULT_CLEAR_DATA_ON_TRAINING = true;
     protected final static PyObject TORCH;
     /** 全局记录 python 中的变量名称 */
