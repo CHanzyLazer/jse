@@ -23,12 +23,36 @@ import static jse.code.CS.*;
 
 /**
  * <a href="https://en.wikipedia.org/wiki/XYZ_file_format">
- * XYZ 文件格式 </a> 的读写支持，由于名称上和现有的代表坐标点的
+ * XYZ 原子数据格式 </a> 支持，由于名称上和现有的代表坐标点的
  * {@link jse.atom.XYZ} 一致，因此这里统称 {@code DataXYZ}
  * <p>
  * 这里主要对
  * <a href="https://docs.ovito.org/reference/file_formats/input/xyz.html#file-formats-input-xyz-extended-format">
- * 扩展的 XYZ 格式 </a> 提供支持
+ * 扩展的 XYZ 格式 </a> 提供支持，一般的 XYZ 格式同样支持读取，而写入时会根据需要自动转为扩展的格式
+ * <p>
+ * 对于扩展的 XYZ 格式，通过：
+ * <pre> {@code
+ * def value = dataXYZ.parameter('param_key')
+ * dataXYZ.setParameter('param_key', value)
+ * } </pre>
+ * 来读写对应的参量（整个原子数据公用的值），可以是
+ * {@code double, int, boolean, String}；
+ * 通过：
+ * <pre> {@code
+ * def values = dataXYZ.property('prop_key')
+ * dataXYZ.setProperty('prop_key', values)
+ * } </pre>
+ * 来读写对应的属性（每个原子独立的值），可以是
+ * {@code IVector, IIntVector, IMatrix, IIntMatrix, String[],
+ * String[][]}，按照原子索引按行排列
+ * <p>
+ * 对于原始的 XYZ 格式，由于不存在模拟盒信息，会自动通过原子坐标自动生成最小的模拟盒
+ *
+ * @see IAtomData IAtomData: 原子数据类型通用接口
+ * @see DumpXYZ DumpXYZ: 多帧的 XYZ 格式
+ * @see #read(String) read(String): 读取指定路径的 XYZ 格式的原子数据
+ * @see #write(String) write(String): 将此 XYZ 原子数据写入指定路径
+ * @see #of(IAtomData) of(IAtomData): 将任意的原子数据转换成 XYZ 类型
  * @author liqa
  */
 public class DataXYZ extends AbstractSettableAtomData {
@@ -87,28 +111,107 @@ public class DataXYZ extends AbstractSettableAtomData {
         }
     }
     
+    /**
+     * @return {@inheritDoc}
+     * @see IAtom#hasVelocity()
+     */
     @Override public boolean hasVelocity() {return mVelocities!=null;}
+    /**
+     * @return {@inheritDoc}
+     * @see IAtom#hasSymbol()
+     */
     @Override public boolean hasSymbol() {return mSpecies!=null;}
+    /**
+     * {@inheritDoc}
+     * @param aType {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#symbol()
+     * @see IAtom#type()
+     * @see #hasSymbol()
+     */
     @Override public String symbol(int aType) {
         if (mType2Symbol == null) return null;
         return mType2Symbol[aType];
     }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#hasMass()
+     */
     @Override public boolean hasMass() {return hasSymbol();}
+    /**
+     * {@inheritDoc}
+     * @param aType {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IVector
+     * @see IAtom#mass()
+     * @see #hasMass()
+     */
     @Override public double mass(int aType) {
         if (!hasSymbol()) return Double.NaN;
         return MASS.get(symbol(aType));
     }
-    /** XYZ 特有的接口 */
+    
+    /// XYZ 特有的接口
+    /**
+     * @return 此 XYZ 数据的注释值，如果没有或者是扩展的 XYZ 格式则返回 {@code null}
+     * @see #setComment(String)
+     */
     public @Nullable String comment() {return mComment;}
+    /** @see #comment() */
     @VisibleForTesting public @Nullable String getComment() {return mComment;}
+    /**
+     * 设置此 XYZ 数据的注释值，只能适用于原始且带有注释的 XYZ
+     * 格式，因为没有注释值会自动视为扩展的 XYZ 格式
+     * @param aComment 需要设置的注释值
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 当不存在注释值或者是扩展的 XYZ 格式时
+     * @see #comment()
+     */
     public DataXYZ setComment(String aComment) {
         if (mComment == null) throw new UnsupportedOperationException("`setComment` for DataXYZ without comment");
         mComment = aComment;
         return this;
     }
+    /**
+     * 判断是否有某个参量（整个原子数据公用的值）
+     * @param aKey 此参量的名称，区分大小写
+     * @return 是否存在这个参量值
+     * @see #parameter(String)
+     * @see #setParameter(String, Object)
+     * @see #removeParameter(String)
+     */
     public boolean hasParameter(String aKey) {return mParameters.containsKey(aKey);}
+    /**
+     * 直接获取所有的参量组成的 {@link Map}，方便直接遍历，原则上不允许修改
+     * @return 参量名称和具体参量值组成的 {@link Map}
+     * @see #parameter(String)
+     * @see #setParameter(String, Object)
+     * @see #removeParameter(String)
+     */
     public @Unmodifiable Map<String,Object> parameters() {return mParameters;}
+    /**
+     * 获取某个参量（整个原子数据公用的值）
+     * @param aKey 需要的参量的名称，区分大小写
+     * @return 具体参量值
+     * @see #hasParameter(String)
+     * @see #setParameter(String, Object)
+     * @see #removeParameter(String)
+     */
     public Object parameter(String aKey) {return mParameters.get(aKey);}
+    /**
+     * 设置某个参量（整个原子数据公用的值），不支持设置扩展
+     * XYZ 格式中已经预定的参量名称 {@code Lattice} 和
+     * {@code Properties}；如果是包含注释的原始 XYZ
+     * 格式，则会尝试将注释设置成 {@code Comment} 参量并清除注释值。
+     *
+     * @param aKey 需要设置的参量的名称，区分大小写
+     * @param aValue 需要设置的参量值
+     * @return 自身方便链式调用
+     * @see #hasParameter(String)
+     * @see #parameter(String)
+     * @see #removeParameter(String)
+     */
     public DataXYZ setParameter(String aKey, Object aValue) {
         if (aKey.equals("Lattice")) throw new IllegalArgumentException("Lattice for DataXYZ parameter");
         if (aKey.equals("Properties")) throw new IllegalArgumentException("Properties for DataXYZ parameter");
@@ -124,14 +227,67 @@ public class DataXYZ extends AbstractSettableAtomData {
         mParameters.put(aKey, aValue);
         return this;
     }
+    /**
+     * 移除某个参量（整个原子数据公用的值）
+     * @param aKey 需要移除的参量的名称，区分大小写
+     * @return 移除的参量的值，如果没有则会返回 {@code null}
+     * @see #hasParameter(String)
+     * @see #parameter(String)
+     * @see #setParameter(String, Object)
+     * @see Map#remove(Object)
+     */
     public Object removeParameter(String aKey) {
         if (aKey.equals("Lattice")) throw new IllegalArgumentException("Lattice for DataXYZ parameter");
         if (aKey.equals("Properties")) throw new IllegalArgumentException("Properties for DataXYZ parameter");
         return mParameters.remove(aKey);
     }
+    /**
+     * 判断是否有某个属性（每个原子独立的值）
+     * @param aKey 此属性的名称，区分大小写
+     * @return 是否存在这个属性值
+     * @see #property(String)
+     * @see #setProperty(String, Object)
+     * @see #removeProperty(String)
+     */
     public boolean hasProperty(String aKey) {return mProperties.containsKey(aKey);}
+    /**
+     * 直接获取所有的属性组成的 {@link Map}，方便直接遍历，原则上不允许修改
+     * @return 属性名称和具体属性值组成的 {@link Map}
+     * @see #property(String)
+     * @see #setProperty(String, Object)
+     * @see #removeProperty(String)
+     */
     public @Unmodifiable Map<String,Object> properties() {return mProperties;}
+    /**
+     * 获取某个属性（每个原子独立的值），一般来说类型只能是
+     * {@code IVector, IIntVector, IMatrix, IIntMatrix, String[],
+     * String[][]}，按照原子索引按行排列
+     *
+     * @param aKey 需要的属性的名称，区分大小写
+     * @return 具体属性值
+     * @see #hasProperty(String)
+     * @see #setProperty(String, Object)
+     * @see #removeProperty(String)
+     */
     public Object property(String aKey) {return mProperties.get(aKey);}
+    /**
+     * 设置某个属性（每个原子独立的值），一般来说类型只能是
+     * {@code IVector, IIntVector, IMatrix, IIntMatrix, String[],
+     * String[][]}，按照原子索引按行排列
+     * <p>
+     * 对于扩展 XYZ 格式中特定的参量名称 {@code pos, species, velo, vel}
+     * 严格限制维数和类型；如果是包含注释的原始 XYZ 格式，则会尝试将注释设置成
+     * {@code Comment} 参量并清除注释值。
+     * <p>
+     * 此设置不会进行值拷贝
+     *
+     * @param aKey 需要设置的属性的名称，区分大小写
+     * @param aValue 需要设置的属性值
+     * @return 自身方便链式调用
+     * @see #hasProperty(String)
+     * @see #property(String)
+     * @see #removeProperty(String)
+     */
     public DataXYZ setProperty(String aKey, Object aValue) {
         if (mComment != null) {
             // 如果 comment 没有影响解析的字符则直接保留 comment
@@ -197,6 +353,15 @@ public class DataXYZ extends AbstractSettableAtomData {
         mProperties.put(aKey, aValue);
         return this;
     }
+    /**
+     * 移除某个属性（每个原子独立的值）
+     * @param aKey 需要移除的属性的名称，区分大小写
+     * @return 移除的属性的值，如果没有则会返回 {@code null}
+     * @see #hasProperty(String)
+     * @see #property(String)
+     * @see #setProperty(String, Object)
+     * @see Map#remove(Object)
+     */
     @SuppressWarnings("UnusedReturnValue")
     public Object removeProperty(String aKey) {
         switch(aKey) {
@@ -229,8 +394,15 @@ public class DataXYZ extends AbstractSettableAtomData {
         return mProperties.remove(aKey);
     }
     
-    
-    /** 支持调整种类的顺序，这对于 xyz 比较重要 */
+    /**
+     * 直接调整元素符号的顺序，由于 XYZ 格式中是采用额外一列元素符号来存储种类信息的，
+     * 因此并没有指明元素种类的编号顺序，在 jse 中默认会使用元素符号出现的顺序来排列种类编号，
+     * 而如果需要手动设置特定的编号顺序则需要通过类似 {@code data.setSymbolOrder('Cu', 'Zr')}
+     * 的方式设置顺序
+     * @param aSymbolOrder 需要的元素符号顺序
+     * @return 自身方便链式调用
+     * @see #setSymbols(String...)
+     */
     public DataXYZ setSymbolOrder(String... aSymbolOrder) {
         if (mSpecies == null) throw new UnsupportedOperationException("`setSymbolOrder` for DataXYZ without species data");
         assert mType2Symbol != null;
@@ -258,7 +430,15 @@ public class DataXYZ extends AbstractSettableAtomData {
         return this;
     }
     
-    /** 支持直接修改 symbols，只会增大种类数，不会减少；少于种类数时会保留旧值 */
+    /**
+     * {@inheritDoc}
+     * @param aSymbols {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws UnsupportedOperationException 如果不包含元素符号信息
+     * @see #symbols()
+     * @see IAtom#symbol()
+     * @see #setSymbolOrder(String...)
+     */
     @Override public DataXYZ setSymbols(String... aSymbols) {
         if (mSpecies == null) throw new UnsupportedOperationException("`setSymbols` for DataXYZ without species data");
         assert mType2Symbol != null;
@@ -274,7 +454,14 @@ public class DataXYZ extends AbstractSettableAtomData {
         validSymbol2Type_();
         return this;
     }
-    /** 设置原子种类数目 */
+    /**
+     * {@inheritDoc}
+     * @param aAtomTypeNum {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws UnsupportedOperationException 如果不包含元素符号信息
+     * @see #atomTypeNumber()
+     * @see IAtom#type()
+     */
     @Override public DataXYZ setAtomTypeNumber(int aAtomTypeNum) {
         if (mSpecies == null) throw new UnsupportedOperationException("`setAtomTypeNumber` for DataXYZ without species data");
         assert mType2Symbol != null;
@@ -311,12 +498,24 @@ public class DataXYZ extends AbstractSettableAtomData {
             mSymbol2Type.put(mType2Symbol[tType], tType);
         }
     }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see #hasVelocity()
+     * @see #setHasVelocity()
+     */
     @Override public DataXYZ setNoVelocity() {
         mVelocities = null;
         mProperties.remove("velo");
         mProperties.remove("vel");
         return this;
     }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see #hasVelocity()
+     * @see #setNoVelocity()
+     */
     @Override public DataXYZ setHasVelocity() {
         if (mVelocities == null) {
             mVelocities = RowMatrix.zeros(atomNumber(), ATOM_DATA_KEYS_VELOCITY.length);
@@ -325,7 +524,15 @@ public class DataXYZ extends AbstractSettableAtomData {
         return this;
     }
     
-    /** AbstractAtomData stuffs */
+    /// AbstractAtomData stuffs
+    /**
+     * {@inheritDoc}
+     * @param aIdx {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see ISettableAtom
+     * @see #atom(int)
+     * @see #setAtom(int, IAtom)
+     */
     @Override public ISettableAtom atom(final int aIdx) {
         return new AbstractSettableAtom_() {
             @Override public int index() {return aIdx;}
@@ -378,11 +585,17 @@ public class DataXYZ extends AbstractSettableAtomData {
             }
         };
     }
+    /**
+     * @return {@inheritDoc}
+     * @see IBox
+     */
     @Override public IBox box() {return mBox;}
+    /** @return {@inheritDoc} */
     @Override public int atomNumber() {return mAtomNum;}
+    /** @return {@inheritDoc} */
     @Override public int atomTypeNumber() {return mType2Symbol==null ? 1 : mType2Symbol.length-1;}
     
-    /** 拷贝一份 XYZ */
+    /** @return {@inheritDoc} */
     @Override public DataXYZ copy() {
         Map<String, Object> tParameter = new LinkedHashMap<>(mParameters);
         Map<String, Object> tProperties = new LinkedHashMap<>();
@@ -423,11 +636,34 @@ public class DataXYZ extends AbstractSettableAtomData {
         return tOut;
     }
     
-    /** 从 IAtomData 来创建，一般来说 XYZ 需要一个额外的 aSymbols 信息 */
+    /**
+     * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 XYZ 数据
+     * <p>
+     * 默认会尝试自动从 {@link IAtomData} 获取元素符号信息，使用
+     * {@link #fromAtomData(IAtomData, String...)} 来手动指定元素符号信息
+     * <p>
+     * {@link #of(IAtomData)} 为等价的别名方法
+     *
+     * @param aAtomData 输入的原子数据
+     * @return 创建的 XYZ 数据
+     * @see #of(IAtomData)
+     * @see #fromAtomData(IAtomData, String...)
+     */
     public static DataXYZ fromAtomData(IAtomData aAtomData) {
         @Nullable List<@Nullable String> tSymbols = aAtomData.symbols();
         return fromAtomData(aAtomData, tSymbols==null ? ZL_STR : tSymbols.toArray(ZL_STR));
     }
+    /**
+     * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 XYZ 数据
+     * <p>
+     * {@link #of(IAtomData, String...)} 为等价的别名方法
+     *
+     * @param aAtomData 输入的原子数据
+     * @param aSymbols 可选的元素符号信息，默认会自动通过输入原子数据获取
+     * @return 创建的 XYZ 数据
+     * @see #of(IAtomData, String...)
+     * @see #fromAtomData(IAtomData)
+     */
     public static DataXYZ fromAtomData(IAtomData aAtomData, String... aSymbols) {
         if (aSymbols == null) aSymbols = ZL_STR;
         // 根据输入的 aAtomData 类型来具体判断需要如何获取 rAtomData
@@ -460,22 +696,48 @@ public class DataXYZ extends AbstractSettableAtomData {
             return new DataXYZ(tAtomNum, null, new LinkedHashMap<>(), rProperties, aAtomData.box().copy()).setSymbols(aSymbols);
         }
     }
+    /**
+     * 传入列表形式元素符号的创建
+     * @see #fromAtomData(IAtomData, String...)
+     * @see Collection
+     */
     public static DataXYZ fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, UT.Text.toArray(aSymbols));}
-    /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
+    /**
+     * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 XYZ 数据
+     * <p>
+     * 默认会尝试自动从 {@link IAtomData} 获取元素符号信息，使用
+     * {@link #of(IAtomData, String...)} 来手动指定元素符号信息
+     *
+     * @param aAtomData 输入的原子数据
+     * @return 创建的 XYZ 数据
+     * @see #of(IAtomData, String...)
+     */
     public static DataXYZ of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
+    /**
+     * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 XYZ 数据
+     * @param aAtomData 输入的原子数据
+     * @param aSymbols 可选的元素符号信息，默认会自动通过输入原子数据获取
+     * @return 创建的 XYZ 数据
+     * @see #of(IAtomData)
+     */
     public static DataXYZ of(IAtomData aAtomData, String... aSymbols) {return fromAtomData(aAtomData, aSymbols);}
+    /**
+     * 传入列表形式元素符号的转换
+     * @see #of(IAtomData, String...)
+     * @see Collection
+     */
     public static DataXYZ of(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, aSymbols);}
     
     
     /// 文件读写
     /**
-     * 从标准的 XYZ 文件中读取来实现初始化
+     * 从 XYZ 原子数据格式或者扩展的 XYZ 格式文件读取来初始化
      * @param aFilePath XYZ 文件路径
-     * @return 读取得到的 DataXYZ 对象，如果文件不完整会直接返回 null
+     * @return 读取得到的 {@link DataXYZ} 对象，如果文件不完整会直接返回 {@code null}
      * @throws IOException 如果读取失败
+     * @see #write(String)
      */
     public static DataXYZ read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
-    /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static DataXYZ read_(BufferedReader aReader) throws IOException {
         String tLine;
         String[] tTokens;
@@ -648,9 +910,10 @@ public class DataXYZ extends AbstractSettableAtomData {
     
     
     /**
-     * 输出成标准的 xyz 文件
+     * 输出成标准的 XYZ 文件，会根据需要自动选择原始的 XYZ 格式或者扩展的 XYZ 格式
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
+     * @see #read(String)
      */
     public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
     /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */

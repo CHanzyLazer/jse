@@ -27,11 +27,11 @@ public abstract class AbstractListWrapper<R, T, E> {
     protected List<E> mList;
     protected AbstractListWrapper(List<E> aList) {mList = aList;}
     
-    /** stuff to override */
+    /// stuff to override
     protected abstract E toInternal_(T aValue);
     protected abstract R toOutput_(E aValue);
     
-    /** List stuffs */
+    /// List stuffs
     public final R get(int aIdx) {return toOutput_(mList.get(aIdx));}
     public final int size() {return mList.size();}
     
@@ -46,14 +46,14 @@ public abstract class AbstractListWrapper<R, T, E> {
     public final List<R> asList() {return AbstractCollections.map(mList, this::toOutput_);}
     public final Iterator<R> iterator() {return AbstractCollections.map(mList.iterator(), this::toOutput_);}
     
-    /** useful stuffs */
+    /// useful stuffs
     public final R removeLast() {return toOutput_(DefaultGroovyMethods.removeLast(mList));}
     public final R first() {return toOutput_(DefaultGroovyMethods.first(mList));}
     public final R last() {return toOutput_(DefaultGroovyMethods.last(mList));}
     public AbstractListWrapper<R, T, E> append(T aValue) {add(aValue); return this;}
     public AbstractListWrapper<R, T, E> appendAll(Collection<? extends T> aList) {addAll(aList); return this;}
     
-    /** groovy stuffs */
+    /// groovy stuffs
     @VisibleForTesting public final R getAt(int aIdx) {return toOutput_(DefaultGroovyMethods.getAt(mList, aIdx));}
     @VisibleForTesting public final void putAt(int aIdx, T aValue) {DefaultGroovyMethods.putAt(mList, aIdx, toInternal_(aValue));}
     @VisibleForTesting @SuppressWarnings("rawtypes") public final List<R> getAt(Range aRange) {return DefaultGroovyMethods.getAt(asList(), aRange);}
