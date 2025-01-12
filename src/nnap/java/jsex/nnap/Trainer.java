@@ -46,7 +46,7 @@ public class Trainer implements IAutoShutdown, ISavable {
     protected final static int[] DEFAULT_HIDDEN_DIMS = {20, 20};
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
     protected final static double DEFAULT_STRESS_WEIGHT = 1.0;
-    protected final static double DEFAULT_L2_LOSS_WEIGHT = 1e-5;
+    protected final static double DEFAULT_L2_LOSS_WEIGHT = 0.001;
     protected final static boolean DEFAULT_CLEAR_DATA_ON_TRAINING = true;
     protected final static PyObject TORCH;
     /** 全局记录 python 中的变量名称 */
@@ -145,10 +145,11 @@ public class Trainer implements IAutoShutdown, ISavable {
             "    def cal_l2_loss(self):\n" +
             "        l2_loss = 0.0\n" +
             "        nparams = 0\n" +
-            "        for param in self.parameters():\n" +
-            "            param = param.flatten()\n" +
-            "            l2_loss += param.dot(param).mean()\n" +
-            "            nparams += 1\n" +
+            "        for name, param in self.named_parameters():\n" +
+            "            if 'weight' in name:\n" +
+            "                param = param.flatten()\n" +
+            "                l2_loss += param.dot(param)\n" +
+            "                nparams += param.numel()\n" +
             "        l2_loss /= nparams\n" +
             "        return l2_loss\n" +
             "    \n" +
