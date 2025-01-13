@@ -2,11 +2,15 @@
 #include "version.h"
 
 #include "pair_jse.h"
+#include "fix_jse.h"
 
 using namespace LAMMPS_NS;
 
-static Pair *jsecreator(LAMMPS *lmp) {
+static Pair *jsepaircreator(LAMMPS *lmp) {
     return new PairJSE(lmp);
+}
+static Fix *jsefixcreator(LAMMPS *lmp, int argc, char **argv) {
+    return new FixJSE(lmp, argc, argv);
 }
 
 extern "C" {
@@ -18,9 +22,18 @@ JNIEXPORT void JNICALL lammpsplugin_init(void *lmp, void *handle, void *regfunc)
     plugin.version = LAMMPS_VERSION;
     plugin.style = "pair";
     plugin.name = "jse";
-    plugin.info = "jse pair v0.1";
+    plugin.info = "jse pair";
     plugin.author = "liqa, CHanzyLazer";
-    plugin.creator.v1 = (lammpsplugin_factory1 *) &jsecreator;
+    plugin.creator.v1 = (lammpsplugin_factory1 *) &jsepaircreator;
+    plugin.handle = handle;
+    (*register_plugin)(&plugin, lmp);
+    
+    plugin.version = LAMMPS_VERSION;
+    plugin.style = "fix";
+    plugin.name = "jse";
+    plugin.info = "jse fix";
+    plugin.author = "liqa, CHanzyLazer";
+    plugin.creator.v2 = (lammpsplugin_factory2 *) &jsefixcreator;
     plugin.handle = handle;
     (*register_plugin)(&plugin, lmp);
 }

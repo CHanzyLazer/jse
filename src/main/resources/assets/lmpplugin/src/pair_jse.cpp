@@ -59,7 +59,7 @@ void PairJSE::allocate() {
 
 /** global settings, init LmpPair here */
 void PairJSE::settings(int aArgc, char **aArgv) {
-    if (aArgc != 1) error->all(FLERR, "Illegal pair_style command");
+    if (aArgc != 1) error->all(FLERR, "Illegal pair_style jse command");
     
     // init jni env
     if (mEnv == NULL) {

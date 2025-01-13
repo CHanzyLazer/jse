@@ -1,6 +1,8 @@
 #ifndef LMPPAIR_H
 #define LMPPAIR_H
 
+#include <jni.h>
+
 namespace JSE_LMPPAIR {
 
 extern jclass LMPPAIR_CLAZZ;

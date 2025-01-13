@@ -28,8 +28,11 @@ endif()
 set(SOURCE_FILES
     jseplugin.cpp
     pair_jse.cpp
+    fix_jse.cpp
     jse_lmp_LmpPlugin_Pair.cpp
+    jse_lmp_LmpPlugin_Fix.cpp
     LmpPair.cpp
+    LmpFix.cpp
     LmpPlugin.cpp)
 add_library(lmpplugin SHARED ${SOURCE_FILES})
 

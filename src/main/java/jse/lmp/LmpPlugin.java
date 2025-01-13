@@ -67,13 +67,19 @@ public class LmpPlugin {
     private final static String[] SRC_NAME = {
           "jse_lmp_LmpPlugin_Pair.cpp"
         , "jse_lmp_LmpPlugin_Pair.h"
+        , "jse_lmp_LmpPlugin_Fix.cpp"
+        , "jse_lmp_LmpPlugin_Fix.h"
         , "jseplugin.cpp"
         , "LmpPair.cpp"
         , "LmpPair.h"
+        , "LmpFix.cpp"
+        , "LmpFix.h"
         , "LmpPlugin.cpp"
         , "LmpPlugin.h"
         , "pair_jse.cpp"
         , "pair_jse.h"
+        , "fix_jse.cpp"
+        , "fix_jse.h"
         , "lammpsplugin.h"
         , "version.h"
     };
@@ -296,5 +302,210 @@ public class LmpPlugin {
         
         protected final String unitStyle() {return unitStyle_(mPairPtr);}
         private native static String unitStyle_(long aPairPtr);
+    }
+    
+    
+    public static abstract class Fix implements IAutoShutdown {
+        /** 目前认为这些值永远都不会变 */
+        public final static int
+              INITIAL_INTEGRATE         = 1
+            , POST_INTEGRATE            = 1 << 1
+            , PRE_EXCHANGE              = 1 << 2
+            , PRE_NEIGHBOR              = 1 << 3
+            , POST_NEIGHBOR             = 1 << 4
+            , PRE_FORCE                 = 1 << 5
+            , PRE_REVERSE               = 1 << 6
+            , POST_FORCE                = 1 << 7
+            , FINAL_INTEGRATE           = 1 << 8
+            , END_OF_STEP               = 1 << 9
+            , POST_RUN                  = 1 << 10
+            , MIN_PRE_EXCHANGE          = 1 << 16
+            , MIN_PRE_NEIGHBOR          = 1 << 17
+            , MIN_POST_NEIGHBOR         = 1 << 18
+            , MIN_PRE_FORCE             = 1 << 19
+            , MIN_PRE_REVERSE           = 1 << 20
+            , MIN_POST_FORCE            = 1 << 21
+            ;
+        
+        /**
+         * 通过反射来获取类，可以是文件路径，也可以是类路径；
+         * 这里简单处理，先尝试当文件路径，然后再尝试当类路径
+         * @param aClassNameOrPath 类路径的名称或者是 groovy 的脚本文件路径
+         * @param aFixPtr lammps jse fix 对应类的指针
+         * @param aArgs 初始化 fix 的参数，这个参数和 lammps fix 参数保持一致为完整的参数
+         * @return 需要的对象
+         * @author liqa
+         */
+        public static Fix of(String aClassNameOrPath, long aFixPtr, String... aArgs) throws Exception {
+            Class<?> tClazz;
+            try {
+                tClazz = SP.Groovy.parseClass(aClassNameOrPath);
+            } catch (Exception e) {
+                try {
+                    tClazz = SP.Groovy.getClass(aClassNameOrPath);
+                } catch (Exception ex) {
+                    // 这里简单判断然后抛出合适的错误
+                    if (aClassNameOrPath.endsWith(".groovy") || aClassNameOrPath.contains("/") || aClassNameOrPath.contains("\\") || aClassNameOrPath.contains(File.separator)) throw e;
+                    else throw ex;
+                }
+            }
+            return (Fix)InvokerHelper.invokeConstructorOf(tClazz, new Object[]{aFixPtr, aArgs});
+        }
+        
+        
+        protected final long mFixPtr;
+        /**
+         * @param aFixPtr lammps jse fix 对应类的指针
+         * @param aArgs 初始化 fix 的参数，这个参数和 lammps fix 参数保持一致为完整的参数，因此一般来说需要从
+         *        {@code aArgs[4]} 来获取后续参数
+         * @author liqa
+         */
+        protected Fix(long aFixPtr, String... aArgs) {mFixPtr = aFixPtr;}
+        
+        /// lammps fix 初始化调用的接口
+        public abstract int setMask() throws Exception;
+        public void init() throws Exception {/**/}
+        public void setup(int aVFlag) throws Exception {/**/}
+        public void minSetup(int aVFlag) throws Exception {/**/}
+        
+        /**
+         * lammps fix 析构时调用，用于手动释放一些资源
+         * @author liqa
+         */
+        @Override public void shutdown() {/**/}
+        
+        /// lammps fix 固定步数回调的钩子
+        public void initialIntegrate(int aVFlag) throws Exception {/**/}
+        public void postIntegrate() throws Exception {/**/}
+        public void preExchange() throws Exception {/**/}
+        public void preNeighbor() throws Exception {/**/}
+        public void postNeighbor() throws Exception {/**/}
+        public void preForce(int aVFlag) throws Exception {/**/}
+        public void preReverse(int aEFlag, int aVFlag) throws Exception {/**/}
+        public void postForce(int aVFlag) throws Exception {/**/}
+        public void finalIntegrate() throws Exception {/**/}
+        public void endOfStep() throws Exception {/**/}
+        public void postRun() throws Exception {/**/}
+        public void minPreExchange() throws Exception {/**/}
+        public void minPreNeighbor() throws Exception {/**/}
+        public void minPostNeighbor() throws Exception {/**/}
+        public void minPreForce(int aVFlag) throws Exception {/**/}
+        public void minPreReverse(int aEFlag, int aVFlag) throws Exception {/**/}
+        public void minPostForce(int aVFlag) throws Exception {/**/}
+        
+        /// lammps fix 可以用来计算获取的变量
+        public double computeScalar() throws Exception {return 0.0;}
+        public double computeVector(int aVFlag) throws Exception {return 0.0;}
+        public double computeArray(int aEFlag, int aVFlag) throws Exception {return 0.0;}
+        
+        
+        /// lammps fix 提供的接口
+        protected final void setForceReneighbor(boolean aFlag) {setForceReneighbor_(mFixPtr, aFlag);}
+        private native static void setForceReneighbor_(long aFixPtr, boolean aFlag);
+        
+        protected final void setNextReneighbor(long aTimestep) {setNextReneighbor_(mFixPtr, aTimestep);}
+        private native static void setNextReneighbor_(long aFixPtr, long aTimestep);
+        
+        protected final long nextReneighbor() {return nextReneighbor_(mFixPtr);}
+        private native static long nextReneighbor_(long aFixPtr);
+        
+        protected final void setNevery(int aNevery) {setNevery_(mFixPtr, aNevery);}
+        private native static void setNevery_(long aFixPtr, int aNevery);
+        
+        protected final void setEnergyGlobalFlag(boolean aFlag) {setEnergyGlobalFlag_(mFixPtr, aFlag);}
+        private native static void setEnergyGlobalFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setEnergyPeratomFlag(boolean aFlag) {setEnergyPeratomFlag_(mFixPtr, aFlag);}
+        private native static void setEnergyPeratomFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setVirialGlobalFlag(boolean aFlag) {setVirialGlobalFlag_(mFixPtr, aFlag);}
+        private native static void setVirialGlobalFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setVirialPeratomFlag(boolean aFlag) {setVirialPeratomFlag_(mFixPtr, aFlag);}
+        private native static void setVirialPeratomFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setTimeDepend(boolean aFlag) {setTimeDepend_(mFixPtr, aFlag);}
+        private native static void setTimeDepend_(long aFixPtr, boolean aFlag);
+        
+        protected final void setDynamicGroupAllow(boolean aFlag) {setDynamicGroupAllow_(mFixPtr, aFlag);}
+        private native static void setDynamicGroupAllow_(long aFixPtr, boolean aFlag);
+        
+        protected final void setScalarFlag(boolean aFlag) {setScalarFlag_(mFixPtr, aFlag);}
+        private native static void setScalarFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setVectorFlag(boolean aFlag) {setVectorFlag_(mFixPtr, aFlag);}
+        private native static void setVectorFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setArrayFlag(boolean aFlag) {setArrayFlag_(mFixPtr, aFlag);}
+        private native static void setArrayFlag_(long aFixPtr, boolean aFlag);
+        
+        protected final void setSizeVector(int aSize) {setSizeVector_(mFixPtr, aSize);}
+        private native static void setSizeVector_(long aFixPtr, int aSize);
+        
+        protected final void setSizeArrayRows(int aRowNum) {setSizeArrayRows_(mFixPtr, aRowNum);}
+        private native static void setSizeArrayRows_(long aFixPtr, int aRowNum);
+        
+        protected final void setSizeArrayCols(int aColNum) {setSizeArrayCols_(mFixPtr, aColNum);}
+        private native static void setSizeArrayCols_(long aFixPtr, int aColNum);
+        
+        protected final void setGlobalFreq(int aFreq) {setGlobalFreq_(mFixPtr, aFreq);}
+        private native static void setGlobalFreq_(long aFixPtr, int aFreq);
+        
+        protected final void setExtscalar(boolean aFlag) {setExtscalar_(mFixPtr, aFlag);}
+        private native static void setExtscalar_(long aFixPtr, boolean aFlag);
+        
+        protected final void setExtvector(boolean aFlag) {setExtvector_(mFixPtr, aFlag);}
+        private native static void setExtvector_(long aFixPtr, boolean aFlag);
+        
+        protected final void setExtarray(boolean aFlag) {setExtarray_(mFixPtr, aFlag);}
+        private native static void setExtarray_(long aFixPtr, boolean aFlag);
+        
+        protected final NestedDoubleCPointer atomX() {return new NestedDoubleCPointer(atomX_(mFixPtr));}
+        private native static long atomX_(long aFixPtr);
+        
+        protected final NestedDoubleCPointer atomF() {return new NestedDoubleCPointer(atomF_(mFixPtr));}
+        private native static long atomF_(long aFixPtr);
+        
+        protected final IntCPointer atomType() {return new IntCPointer(atomType_(mFixPtr));}
+        private native static long atomType_(long aFixPtr);
+        
+        protected final int atomNtypes() {return atomNtypes_(mFixPtr);}
+        private native static int atomNtypes_(long aFixPtr);
+        
+        protected final int atomNlocal() {return atomNlocal_(mFixPtr);}
+        private native static int atomNlocal_(long aFixPtr);
+        
+        protected final int atomNghost() {return atomNghost_(mFixPtr);}
+        private native static int atomNghost_(long aFixPtr);
+        
+        protected final double forceBoltz() {return forceBoltz_(mFixPtr);}
+        private native static double forceBoltz_(long aFixPtr);
+        
+        protected final double dt() {return dt_(mFixPtr);}
+        private native static double dt_(long aFixPtr);
+        
+        protected final long ntimestep() {return ntimestep_(mFixPtr);}
+        private native static long ntimestep_(long aFixPtr);
+        
+        protected final long firststep() {return firststep_(mFixPtr);}
+        private native static long firststep_(long aFixPtr);
+        
+        protected final long laststep() {return laststep_(mFixPtr);}
+        private native static long laststep_(long aFixPtr);
+        
+        protected final long beginstep() {return beginstep_(mFixPtr);}
+        private native static long beginstep_(long aFixPtr);
+        
+        protected final long endstep() {return endstep_(mFixPtr);}
+        private native static long endstep_(long aFixPtr);
+        
+        protected final int commMe() {return commMe_(mFixPtr);}
+        private native static int commMe_(long aFixPtr);
+        
+        protected final int commNprocs() {return commNprocs_(mFixPtr);}
+        private native static int commNprocs_(long aFixPtr);
+        
+        protected final String unitStyle() {return unitStyle_(mFixPtr);}
+        private native static String unitStyle_(long aFixPtr);
     }
 }
