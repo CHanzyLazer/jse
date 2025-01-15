@@ -219,11 +219,17 @@ public class LmpPlugin {
         protected final int atomNghost() {return atomNghost_(mPairPtr);}
         private native static int atomNghost_(long aPairPtr);
         
+        protected final int atomNmax() {return atomNmax_(mPairPtr);}
+        private native static int atomNmax_(long aPairPtr);
+        
         protected final DoubleCPointer forceSpecialLj() {return new DoubleCPointer(forceSpecialLj_(mPairPtr));}
         private native static long forceSpecialLj_(long aPairPtr);
         
         protected final boolean forceNewtonPair() {return forceNewtonPair_(mPairPtr);}
         private native static boolean forceNewtonPair_(long aPairPtr);
+        
+        protected final int listGnum() {return listGnum_(mPairPtr);}
+        private native static int listGnum_(long aPairPtr);
         
         protected final int listInum() {return listInum_(mPairPtr);}
         private native static int listInum_(long aPairPtr);
@@ -400,8 +406,8 @@ public class LmpPlugin {
         
         /// lammps fix 可以用来计算获取的变量
         public double computeScalar() throws Exception {return 0.0;}
-        public double computeVector(int aVFlag) throws Exception {return 0.0;}
-        public double computeArray(int aEFlag, int aVFlag) throws Exception {return 0.0;}
+        public double computeVector(int i) throws Exception {return 0.0;}
+        public double computeArray(int i, int j) throws Exception {return 0.0;}
         
         
         /// lammps fix 提供的接口
@@ -524,8 +530,14 @@ public class LmpPlugin {
         protected final int atomNlocal() {return atomNlocal_(mFixPtr);}
         private native static int atomNlocal_(long aFixPtr);
         
+        protected final int atomNmax() {return atomNmax_(mFixPtr);}
+        private native static int atomNmax_(long aFixPtr);
+        
         protected final int atomNghost() {return atomNghost_(mFixPtr);}
         private native static int atomNghost_(long aFixPtr);
+        
+        protected final int listGnum() {return listGnum_(mFixPtr);}
+        private native static int listGnum_(long aFixPtr);
         
         protected final int listInum() {return listInum_(mFixPtr);}
         private native static int listInum_(long aFixPtr);
@@ -541,6 +553,9 @@ public class LmpPlugin {
         
         protected final double forceBoltz() {return forceBoltz_(mFixPtr);}
         private native static double forceBoltz_(long aFixPtr);
+        
+        protected final double forcePairCutforce() {return forcePairCutforce_(mFixPtr);}
+        private native static double forcePairCutforce_(long aFixPtr);
         
         protected final double dt() {return dt_(mFixPtr);}
         private native static double dt_(long aFixPtr);

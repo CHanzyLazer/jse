@@ -339,10 +339,26 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNlocal_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    atomNmax_
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNmax_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
  * Method:    atomNghost_
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNghost_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    listGnum_
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_listGnum_1
   (JNIEnv *, jclass, jlong);
 
 /*
@@ -383,6 +399,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_listFirstneigh_1
  * Signature: (J)D
  */
 JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Fix_forceBoltz_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    forcePairCutforce_
+ * Signature: (J)D
+ */
+JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Fix_forcePairCutforce_1
   (JNIEnv *, jclass, jlong);
 
 /*

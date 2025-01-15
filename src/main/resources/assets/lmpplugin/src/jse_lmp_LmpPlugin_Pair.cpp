@@ -32,11 +32,17 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNlocal_1(JNIEnv *aEn
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNghost_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomNghost();
 }
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNmax_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->atomNmax();
+}
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_forceSpecialLj_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->forceSpecialLj();
 }
 JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_forceNewtonPair_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->forceNewtonPair();
+}
+JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_listGnum_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->listGnum();
 }
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_listInum_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->listInum();

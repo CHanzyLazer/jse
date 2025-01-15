@@ -89,11 +89,14 @@ public:
     jint atomNtypes();
     jint atomNlocal();
     jint atomNghost();
+    jint atomNmax();
+    jint listGnum();
     jint listInum();
     jlong listIlist();
     jlong listNumneigh();
     jlong listFirstneigh();
     jdouble forceBoltz();
+    jdouble forcePairCutforce();
     jdouble dt();
     jlong ntimestep();
     jlong firststep();

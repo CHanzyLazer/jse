@@ -8,6 +8,7 @@
 #include "lammps/comm.h"
 #include "lammps/error.h"
 #include "lammps/force.h"
+#include "lammps/pair.h"
 #include "lammps/update.h"
 #include "lammps/neigh_list.h"
 #include "lammps/neighbor.h"
@@ -283,6 +284,13 @@ jint FixJSE::atomNlocal() {
 jint FixJSE::atomNghost() {
     return (jint) atom->nghost;
 }
+jint FixJSE::atomNmax() {
+    return (jint) atom->nmax;
+}
+jint FixJSE::listGnum() {
+    if (mNL == NULL) error->all(FLERR, "No neighbor list in this fix");
+    return (jint) mNL->gnum;
+}
 jint FixJSE::listInum() {
     if (mNL == NULL) error->all(FLERR, "No neighbor list in this fix");
     return (jint) mNL->inum;
@@ -301,6 +309,10 @@ jlong FixJSE::listFirstneigh() {
 }
 jdouble FixJSE::forceBoltz() {
     return force->boltz;
+}
+jdouble FixJSE::forcePairCutforce() {
+    if (force->pair == NULL) return 0.0;
+    return force->pair->cutforce;
 }
 jdouble FixJSE::dt() {
     return update->dt;

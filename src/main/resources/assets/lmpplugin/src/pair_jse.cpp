@@ -125,11 +125,17 @@ jint PairJSE::atomNlocal() {
 jint PairJSE::atomNghost() {
     return (jint) atom->nghost;
 }
+jint PairJSE::atomNmax() {
+    return (jint) atom->nmax;
+}
 jlong PairJSE::forceSpecialLj() {
     return (jlong)(intptr_t) force->special_lj;
 }
 jboolean PairJSE::forceNewtonPair() {
     return force->newton_pair ? JNI_TRUE : JNI_FALSE;
+}
+jint PairJSE::listGnum() {
+    return (jint) list->gnum;
 }
 jint PairJSE::listInum() {
     return (jint) list->inum;

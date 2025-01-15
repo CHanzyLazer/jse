@@ -38,8 +38,10 @@ public:
     jint atomNtypes();
     jint atomNlocal();
     jint atomNghost();
+    jint atomNmax();
     jlong forceSpecialLj();
     jboolean forceNewtonPair();
+    jint listGnum();
     jint listInum();
     jlong listIlist();
     jlong listNumneigh();

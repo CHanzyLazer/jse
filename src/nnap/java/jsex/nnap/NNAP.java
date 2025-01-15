@@ -191,7 +191,7 @@ public class NNAP implements IAutoShutdown {
         private final Consumer<? super IVector>[][] mBatchedXGradDo;
         private final int[] mBatchedSize;
         /** 提交批量 forward 接口，注意由于内部存储共享，因此不能和 {@link #submitBatchBackward} 混用，在使用 backward 前务必使用 {@link #clearSubmittedBatchForward} 清空缓存 */
-        protected void submitBatchForward(int aThreadID, IVector aX, DoubleConsumer aPredDo) throws TorchException {
+        public void submitBatchForward(int aThreadID, IVector aX, DoubleConsumer aPredDo) throws TorchException {
             DoubleConsumer[] tBatchedPredDo = mBatchedPredDo[aThreadID];
             RowMatrix tBatchedX = mBatchedX.get(aThreadID);
             int tBatchedSize = mBatchedSize[aThreadID];
@@ -209,7 +209,7 @@ public class NNAP implements IAutoShutdown {
             }
             mBatchedSize[aThreadID] = tBatchedSize;
         }
-        protected void clearSubmittedBatchForward(int aThreadID) throws TorchException {
+        public void clearSubmittedBatchForward(int aThreadID) throws TorchException {
             int tBatchedSize = mBatchedSize[aThreadID];
             if (tBatchedSize == 0) return;
             DoubleConsumer[] tBatchedPredDo = mBatchedPredDo[aThreadID];
@@ -222,11 +222,11 @@ public class NNAP implements IAutoShutdown {
             }
             mBatchedSize[aThreadID] = 0;
         }
-        protected void submitBatchForward(IVector aX, DoubleConsumer aPredDo) throws TorchException {submitBatchForward(0, aX, aPredDo);}
-        protected void clearSubmittedBatchForward() throws TorchException {clearSubmittedBatchForward(0);}
+        public void submitBatchForward(IVector aX, DoubleConsumer aPredDo) throws TorchException {submitBatchForward(0, aX, aPredDo);}
+        public void clearSubmittedBatchForward() throws TorchException {clearSubmittedBatchForward(0);}
         
         /** 提交批量 forward 接口，注意由于内部存储共享，因此不能和 {@link #submitBatchForward} 混用，在使用 forward 前务必使用 {@link #clearSubmittedBatchBackward} 清空缓存 */
-        protected void submitBatchBackward(int aThreadID, IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {
+        public void submitBatchBackward(int aThreadID, IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {
             @Nullable DoubleConsumer[] tBatchedPredDo = mBatchedPredDo[aThreadID];
             Consumer<? super ShiftVector>[] tBatchedXGradDo = mBatchedXGradDo[aThreadID];
             RowMatrix tBatchedX = mBatchedX.get(aThreadID);
@@ -249,7 +249,7 @@ public class NNAP implements IAutoShutdown {
             }
             mBatchedSize[aThreadID] = tBatchedSize;
         }
-        protected void clearSubmittedBatchBackward(int aThreadID) throws TorchException {
+        public void clearSubmittedBatchBackward(int aThreadID) throws TorchException {
             int tBatchedSize = mBatchedSize[aThreadID];
             if (tBatchedSize == 0) return;
             @Nullable DoubleConsumer[] tBatchedPredDo = mBatchedPredDo[aThreadID];
@@ -266,57 +266,57 @@ public class NNAP implements IAutoShutdown {
             }
             mBatchedSize[aThreadID] = 0;
         }
-        protected void submitBatchBackward(IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {submitBatchBackward(0, aX, aPredDo, aXGradDo);}
-        protected void clearSubmittedBatchBackward() throws TorchException {clearSubmittedBatchBackward(0);}
+        public void submitBatchBackward(IVector aX, @Nullable DoubleConsumer aPredDo, Consumer<? super ShiftVector> aXGradDo) throws TorchException {submitBatchBackward(0, aX, aPredDo, aXGradDo);}
+        public void clearSubmittedBatchBackward() throws TorchException {clearSubmittedBatchBackward(0);}
         
         
-        protected double forward(int aThreadID, double[] aX, int aStart, int aCount) throws TorchException {
+        public double forward(int aThreadID, double[] aX, int aStart, int aCount) throws TorchException {
             if (mDead) throw new IllegalStateException("This NNAP is dead");
             rangeCheck(aX.length, aStart+aCount);
             return forward0(mModelPtrs.mPtrs[aThreadID], aX, aStart, aCount);
         }
-        protected double forward(double[] aX, int aStart, int aCount) throws TorchException {return forward(0, aX, aStart, aCount);}
-        protected double forward(double[] aX, int aCount) throws TorchException {return forward(aX, 0, aCount);}
-        protected double forward(double[] aX) throws TorchException {return forward(aX, aX.length);}
-        protected double forward(int aThreadID, DoubleCPointer aX, int aCount) throws TorchException {return forward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), aCount);}
-        protected double forward(DoubleCPointer aX, int aCount) throws TorchException {return forward(0, aX, aCount);}
+        public double forward(double[] aX, int aStart, int aCount) throws TorchException {return forward(0, aX, aStart, aCount);}
+        public double forward(double[] aX, int aCount) throws TorchException {return forward(aX, 0, aCount);}
+        public double forward(double[] aX) throws TorchException {return forward(aX, aX.length);}
+        public double forward(int aThreadID, DoubleCPointer aX, int aCount) throws TorchException {return forward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), aCount);}
+        public double forward(DoubleCPointer aX, int aCount) throws TorchException {return forward(0, aX, aCount);}
         
-        protected void batchForward(int aThreadID, double[] aX, int aStart, int aCount, double[] rY, int rYStart, int aBatchSize) throws TorchException {
+        public void batchForward(int aThreadID, double[] aX, int aStart, int aCount, double[] rY, int rYStart, int aBatchSize) throws TorchException {
             if (mDead) throw new IllegalStateException("This NNAP is dead");
             rangeCheck(aX.length, aStart+aCount);
             rangeCheck(rY.length, rYStart+aBatchSize);
             batchForward0(mModelPtrs.mPtrs[aThreadID], aX, aStart, aCount, rY, rYStart, aBatchSize);
         }
-        protected void batchForward(double[] aX, int aStart, int aCount, double[] rY, int rYStart, int aBatchSize) throws TorchException {batchForward(0, aX, aStart, aCount, rY, rYStart, aBatchSize);}
-        protected void batchForward(double[] aX, int aCount, double[] rY, int aBatchSize) throws TorchException {batchForward(aX, 0, aCount, rY, 0, aBatchSize);}
-        protected void batchForward(double[] aX, double[] rY) throws TorchException {batchForward(aX, aX.length/rY.length, rY, rY.length);}
-        protected void batchForward(int aThreadID, DoubleCPointer aX, int aCount, DoubleCPointer rY, int aBatchSize) throws TorchException {batchForward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), aCount, rY.ptr_(), aBatchSize);}
-        protected void batchForward(DoubleCPointer aX, int aCount, DoubleCPointer rY, int aBatchSize) throws TorchException {batchForward(0, aX, aCount, rY, aBatchSize);}
+        public void batchForward(double[] aX, int aStart, int aCount, double[] rY, int rYStart, int aBatchSize) throws TorchException {batchForward(0, aX, aStart, aCount, rY, rYStart, aBatchSize);}
+        public void batchForward(double[] aX, int aCount, double[] rY, int aBatchSize) throws TorchException {batchForward(aX, 0, aCount, rY, 0, aBatchSize);}
+        public void batchForward(double[] aX, double[] rY) throws TorchException {batchForward(aX, aX.length/rY.length, rY, rY.length);}
+        public void batchForward(int aThreadID, DoubleCPointer aX, int aCount, DoubleCPointer rY, int aBatchSize) throws TorchException {batchForward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), aCount, rY.ptr_(), aBatchSize);}
+        public void batchForward(DoubleCPointer aX, int aCount, DoubleCPointer rY, int aBatchSize) throws TorchException {batchForward(0, aX, aCount, rY, aBatchSize);}
         
-        protected double backward(int aThreadID, double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {
+        public double backward(int aThreadID, double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {
             if (mDead) throw new IllegalStateException("This NNAP is dead");
             rangeCheck(aX.length, aStart+aCount);
             rangeCheck(rGradX.length, rStart+aCount);
             return backward0(mModelPtrs.mPtrs[aThreadID], aX, aStart, rGradX, rStart, aCount);
         }
-        protected double backward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {return backward(0, aX, aStart, rGradX, rStart, aCount);}
-        protected double backward(double[] aX, double[] rGradX, int aCount) throws TorchException {return backward(aX, 0, rGradX, 0, aCount);}
-        protected double backward(double[] aX, double[] rGradX) throws TorchException {return backward(aX, rGradX, aX.length);}
-        protected double backward(int aThreadID, DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), rGradX.ptr_(), aCount);}
-        protected double backward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward(0, aX, rGradX, aCount);}
+        public double backward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount) throws TorchException {return backward(0, aX, aStart, rGradX, rStart, aCount);}
+        public double backward(double[] aX, double[] rGradX, int aCount) throws TorchException {return backward(aX, 0, rGradX, 0, aCount);}
+        public double backward(double[] aX, double[] rGradX) throws TorchException {return backward(aX, rGradX, aX.length);}
+        public double backward(int aThreadID, DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), rGradX.ptr_(), aCount);}
+        public double backward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount) throws TorchException {return backward(0, aX, rGradX, aCount);}
         
-        protected void batchBackward(int aThreadID, double[] aX, int aStart, double[] rGradX, int rStart, int aCount, double @Nullable[] rY, int rYStart, int aBatchSize) throws TorchException {
+        public void batchBackward(int aThreadID, double[] aX, int aStart, double[] rGradX, int rStart, int aCount, double @Nullable[] rY, int rYStart, int aBatchSize) throws TorchException {
             if (mDead) throw new IllegalStateException("This NNAP is dead");
             rangeCheck(aX.length, aStart+aCount*aBatchSize);
             rangeCheck(rGradX.length, rStart+aCount*aBatchSize);
             if (rY != null) rangeCheck(rY.length, rYStart+aBatchSize);
             batchBackward0(mModelPtrs.mPtrs[aThreadID], aX, aStart, rGradX, rStart, aCount, rY, rYStart, aBatchSize);
         }
-        protected void batchBackward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount, double @Nullable[] rY, int rYStart, int aBatchSize) throws TorchException {batchBackward(0, aX, aStart, rGradX, rStart, aCount, rY, rYStart, aBatchSize);}
-        protected void batchBackward(double[] aX, double[] rGradX, int aCount, double @Nullable[] rY, int aBatchSize) throws TorchException {batchBackward(aX, 0, rGradX, 0, aCount, rY, 0, aBatchSize);}
-        protected void batchBackward(double[] aX, double[] rGradX, double[] rY) throws TorchException {batchBackward(aX, rGradX, aX.length/rY.length, rY, rY.length);}
-        protected void batchBackward(int aThreadID, DoubleCPointer aX, DoubleCPointer rGradX, int aCount, @Nullable DoubleCPointer rY, int aBatchSize) throws TorchException {batchBackward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), rGradX.ptr_(), aCount, rY==null ? 0 : rY.ptr_(), aBatchSize);}
-        protected void batchBackward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount, @Nullable DoubleCPointer rY, int aBatchSize) throws TorchException {batchBackward(0, aX, rGradX, aCount, rY, aBatchSize);}
+        public void batchBackward(double[] aX, int aStart, double[] rGradX, int rStart, int aCount, double @Nullable[] rY, int rYStart, int aBatchSize) throws TorchException {batchBackward(0, aX, aStart, rGradX, rStart, aCount, rY, rYStart, aBatchSize);}
+        public void batchBackward(double[] aX, double[] rGradX, int aCount, double @Nullable[] rY, int aBatchSize) throws TorchException {batchBackward(aX, 0, rGradX, 0, aCount, rY, 0, aBatchSize);}
+        public void batchBackward(double[] aX, double[] rGradX, double[] rY) throws TorchException {batchBackward(aX, rGradX, aX.length/rY.length, rY, rY.length);}
+        public void batchBackward(int aThreadID, DoubleCPointer aX, DoubleCPointer rGradX, int aCount, @Nullable DoubleCPointer rY, int aBatchSize) throws TorchException {batchBackward1(mModelPtrs.mPtrs[aThreadID], aX.ptr_(), rGradX.ptr_(), aCount, rY==null ? 0 : rY.ptr_(), aBatchSize);}
+        public void batchBackward(DoubleCPointer aX, DoubleCPointer rGradX, int aCount, @Nullable DoubleCPointer rY, int aBatchSize) throws TorchException {batchBackward(0, aX, rGradX, aCount, rY, aBatchSize);}
         
     }
     private final List<SingleNNAP> mModels;
