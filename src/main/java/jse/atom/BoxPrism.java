@@ -31,7 +31,7 @@ public final class BoxPrism implements IBox {
      * @see IXYZ#cross(IXYZ)
      * @see IXYZ#dot(IXYZ)
      */
-    public BoxPrism(@NotNull IXYZ aA, @NotNull IXYZ aB, @NotNull IXYZ aC) {
+    public BoxPrism(IXYZ aA, IXYZ aB, IXYZ aC) {
         mA = new XYZ(aA); mB = new XYZ(aB); mC = new XYZ(aC);
         // 现在直接在创建时初始化缓存，从根本上杜绝线程读取不安全的问题
         initCache_();

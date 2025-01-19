@@ -89,6 +89,139 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
      */
     @Override public AbstractSettableAtomData setAtomTypeNumber(int aAtomTypeNum) {throw new UnsupportedOperationException("setAtomTypeNumber");}
     /**
+     * {@inheritDoc}
+     * @param aKeepAtomPosition {@inheritDoc}
+     * @param aX {@inheritDoc}
+     * @param aY {@inheritDoc}
+     * @param aZ {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @see IBox
+     * @implSpec 需要调用 {@link #setBox_(double, double, double)} 来设置模拟盒，并在设置完后调用
+     * {@link #validAtomPosition_(boolean, IBox)} 来调整原子位置，或者采用任何等价的实现形式
+     */
+    @Override public AbstractSettableAtomData setBox(boolean aKeepAtomPosition, double aX, double aY, double aZ) {
+        IBox oBox = box();
+        setBox_(aX, aY, aZ);
+        validAtomPosition_(aKeepAtomPosition, oBox);
+        return this;
+    }
+    /**
+     * {@inheritDoc}
+     * @param aKeepAtomPosition {@inheritDoc}
+     * @param aA {@inheritDoc}
+     * @param aB {@inheritDoc}
+     * @param aC {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @see IBox
+     * @implSpec 需要调用 {@link #setBox(boolean, double, double, double, double, double, double, double, double, double)}
+     * 或任何等价的形式
+     */
+    @Override public AbstractSettableAtomData setBox(boolean aKeepAtomPosition, IXYZ aA, IXYZ aB, IXYZ aC) {
+        return setBox(aKeepAtomPosition,
+                      aA.x(), aA.y(), aA.z(),
+                      aB.x(), aB.y(), aB.z(),
+                      aC.x(), aC.y(), aC.z());
+    }
+    /**
+     * {@inheritDoc}
+     * @param aKeepAtomPosition {@inheritDoc}
+     * @param aX {@inheritDoc}
+     * @param aY {@inheritDoc}
+     * @param aZ {@inheritDoc}
+     * @param aXY {@inheritDoc}
+     * @param aXZ {@inheritDoc}
+     * @param aYZ {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @see IBox
+     * @implSpec 需要调用 {@link #setBox_(double, double, double, double, double, double)} 来设置模拟盒，并在设置完后调用
+     * {@link #validAtomPosition_(boolean, IBox)} 来调整原子位置，或者采用任何等价的实现形式
+     */
+    @Override public AbstractSettableAtomData setBox(boolean aKeepAtomPosition, double aX, double aY, double aZ, double aXY, double aXZ, double aYZ) {
+        IBox oBox = box();
+        setBox_(aX, aY, aZ, aXY, aXZ, aYZ);
+        validAtomPosition_(aKeepAtomPosition, oBox);
+        return this;
+    }
+    /**
+     * {@inheritDoc}
+     * @param aKeepAtomPosition {@inheritDoc}
+     * @param aAx {@inheritDoc}
+     * @param aAy {@inheritDoc}
+     * @param aAz {@inheritDoc}
+     * @param aBx {@inheritDoc}
+     * @param aBy {@inheritDoc}
+     * @param aBz {@inheritDoc}
+     * @param aCx {@inheritDoc}
+     * @param aCy {@inheritDoc}
+     * @param aCz {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @see IBox
+     * @implSpec 需要调用 {@link #setBox_(double, double, double, double, double, double, double, double, double)}
+     * 来设置模拟盒，并在设置完后调用 {@link #validAtomPosition_(boolean, IBox)} 来调整原子位置，或者采用任何等价的实现形式
+     */
+    @Override public AbstractSettableAtomData setBox(boolean aKeepAtomPosition, double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {
+        IBox oBox = box();
+        setBox_(aAx, aAy, aAz, aBx, aBy, aBz, aCx, aCy, aCz);
+        validAtomPosition_(aKeepAtomPosition, oBox);
+        return this;
+    }
+    /**
+     * {@inheritDoc}
+     * @param aKeepAtomPosition {@inheritDoc}
+     * @param aBox {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @see IBox
+     * @implSpec 当输入模拟和正交时调用 {@link #setBox(boolean, double, double, double)}，否则调用
+     * {@link #setBox(boolean, double, double, double, double, double, double, double, double, double)}
+     * 或者采用任何等价的实现形式
+     */
+    @Override public AbstractSettableAtomData setBox(boolean aKeepAtomPosition, IBox aBox) {
+        return aBox.isPrism() ?
+            setBox(aKeepAtomPosition, aBox.ax(), aBox.ay(), aBox.az(),
+                   aBox.bx(), aBox.by(), aBox.bz(),
+                   aBox.cx(), aBox.cy(), aBox.cz()) :
+            setBox(aKeepAtomPosition, aBox.x(), aBox.y(), aBox.z());
+    }
+    /**
+     * 内部使用的仅修改模拟盒的操作，实现用来支持模拟盒修改
+     * @see #setBox(double, double, double)
+     */
+    protected void setBox_(double aX, double aY, double aZ) {throw new UnsupportedOperationException("setBox");}
+    /**
+     * 内部使用的仅修改模拟盒的操作，实现用来支持模拟盒修改
+     * @see #setBox(double, double, double, double, double, double)
+     */
+    protected void setBox_(double aX, double aY, double aZ, double aXY, double aXZ, double aYZ) {setBox_(aX, 0.0, 0.0, aXY, aY, 0.0, aXZ, aYZ, aZ);}
+    /**
+     * 内部使用的仅修改模拟盒的操作，实现用来支持模拟盒修改
+     * @see #setBox(double, double, double, double, double, double, double, double, double)
+     */
+    protected void setBox_(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {throw new UnsupportedOperationException("setBox");}
+    /**
+     * 设置模拟盒后拉伸原子位置使其合法化的操作，重写来采用更加快速的算法进行优化
+     * @param aKeepAtomPosition 传入的是否保留原子位置 flag，在一些实现中需要保留原子位置时反而需要进行操作
+     * @param aOldBox 设置之前的旧模拟盒
+     */
+    protected void validAtomPosition_(boolean aKeepAtomPosition, IBox aOldBox) {
+        if (aKeepAtomPosition) return;
+        final int tAtomNum = atomNumber();
+        IBox tBox = box();
+        XYZ tBuf = new XYZ();
+        if (tBox.isPrism() || aOldBox.isPrism()) {
+            for (int i = 0; i < tAtomNum; ++i) {
+                aOldBox.toDirect(tBuf);
+                tBox.toCartesian(tBuf);
+                atom(i).setXYZ(tBuf);
+            }
+        } else {
+            tBuf.setXYZ(tBox);
+            tBuf.div2this(aOldBox);
+            for (int i = 0; i < tAtomNum; ++i) {
+                atom(i).multiply2this(tBuf);
+            }
+        }
+    }
+    /**
      *{@inheritDoc}
      * @return {@inheritDoc}
      * @throws UnsupportedOperationException {@inheritDoc}

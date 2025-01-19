@@ -91,6 +91,171 @@ public interface ISettableAtomData extends IAtomData {
     @Deprecated default ISettableAtomData setAtomTypeNum(int aAtomTypeNum) {return setAtomTypeNumber(aAtomTypeNum);}
     
     /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBox(boolean, double, double, double)}
+     * <p>
+     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的
+     *
+     * @param aX 模拟盒 x 方向边长
+     * @param aY 模拟盒 y 方向边长
+     * @param aZ 模拟盒 z 方向边长
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBox(double aX, double aY, double aZ) {return setBox(false, aX, aY, aZ);}
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aX 模拟盒 x 方向边长
+     * @param aY 模拟盒 y 方向边长
+     * @param aZ 模拟盒 z 方向边长
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBox(boolean aKeepAtomPosition, double aX, double aY, double aZ);
+    
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBox(boolean, IXYZ, IXYZ, IXYZ)}
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的，根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     *
+     * @param aA 模拟盒第一个基向量
+     * @param aB 模拟盒第二个基向量
+     * @param aC 模拟盒第三个基向量
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBox(IXYZ aA, IXYZ aB, IXYZ aC) {return setBox(false, aA, aB, aC);}
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的，根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aA 模拟盒第一个基向量
+     * @param aB 模拟盒第二个基向量
+     * @param aC 模拟盒第三个基向量
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBox(boolean aKeepAtomPosition, IXYZ aA, IXYZ aB, IXYZ aC);
+    
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBox(boolean, double, double, double, double, double, double)}
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的
+     *
+     * @param aX 模拟盒 x 长度
+     * @param aY 模拟盒 y 长度
+     * @param aZ 模拟盒 z 长度
+     * @param aXY 模拟盒 xy 倾斜因子，对应 {@link IBox#bx()}
+     * @param aXZ 模拟盒 xz 倾斜因子，对应 {@link IBox#cx()}
+     * @param aYZ 模拟盒 yz 倾斜因子，对应 {@link IBox#cy()}
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBox(double aX, double aY, double aZ, double aXY, double aXZ, double aYZ) {return setBox(false, aX, aY, aZ, aXY, aXZ, aYZ);}
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aX 模拟盒 x 长度
+     * @param aY 模拟盒 y 长度
+     * @param aZ 模拟盒 z 长度
+     * @param aXY 模拟盒 xy 倾斜因子，对应 {@link IBox#bx()}
+     * @param aXZ 模拟盒 xz 倾斜因子，对应 {@link IBox#cx()}
+     * @param aYZ 模拟盒 yz 倾斜因子，对应 {@link IBox#cy()}
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBox(boolean aKeepAtomPosition, double aX, double aY, double aZ, double aXY, double aXZ, double aYZ);
+    
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBox(boolean, double, double, double, double, double, double, double, double, double)}
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的
+     *
+     * @param aAx 模拟盒第一个基向量的 x 方向
+     * @param aAy 模拟盒第一个基向量的 y 方向
+     * @param aAz 模拟盒第一个基向量的 z 方向
+     * @param aBx 模拟盒第二个基向量的 x 方向
+     * @param aBy 模拟盒第二个基向量的 y 方向
+     * @param aBz 模拟盒第二个基向量的 z 方向
+     * @param aCx 模拟盒第三个基向量的 x 方向
+     * @param aCy 模拟盒第三个基向量的 y 方向
+     * @param aCz 模拟盒第三个基向量的 z 方向
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBox(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {return setBox(false, aAx, aAy, aAz, aBx, aBy, aBz, aCx, aCy, aCz);}
+    /**
+     * 设置此原子数据的模拟盒属性
+     * <p>
+     * 此方法会直接让原子数据的模拟盒变为三斜的
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aAx 模拟盒第一个基向量的 x 方向
+     * @param aAy 模拟盒第一个基向量的 y 方向
+     * @param aAz 模拟盒第一个基向量的 z 方向
+     * @param aBx 模拟盒第二个基向量的 x 方向
+     * @param aBy 模拟盒第二个基向量的 y 方向
+     * @param aBz 模拟盒第二个基向量的 z 方向
+     * @param aCx 模拟盒第三个基向量的 x 方向
+     * @param aCy 模拟盒第三个基向量的 y 方向
+     * @param aCz 模拟盒第三个基向量的 z 方向
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBox(boolean aKeepAtomPosition, double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz);
+    
+    /**
+     * 通过给定的模拟盒来设置此原子数据的模拟盒属性，会读取输入然后进行一次值拷贝，从而避免引用
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBox(boolean, IBox)}
+     *
+     * @param aBox 输入的任意模拟盒
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBox(IBox aBox) {return setBox(false, aBox);}
+    /**
+     * 通过给定的模拟盒来设置此原子数据的模拟盒属性，会读取输入然后进行一次值拷贝，从而避免引用
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aBox 输入的任意模拟盒
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBox(boolean aKeepAtomPosition, IBox aBox);
+    
+    /**
      * 设置此原子数据不再包含速度信息，在调用过后
      * {@link #hasVelocity()} 总是会返回 {@code false}
      * <p>
@@ -206,6 +371,8 @@ public interface ISettableAtomData extends IAtomData {
     /// Groovy stuffs
     /** @see #atomTypeNumber() */
     @VisibleForTesting default int getAtomTypeNumber() {return atomTypeNumber();}
+    /** @see #box() */
+    @VisibleForTesting default IBox getBox() {return box();}
     /** @see #symbols() */
     @VisibleForTesting default @Nullable List<@Nullable String> getSymbols() {return symbols();}
     /** @see #masses() */

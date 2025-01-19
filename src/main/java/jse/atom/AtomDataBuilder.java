@@ -334,9 +334,9 @@ public abstract class AtomDataBuilder<R> {
     
     /**
      * 设置原子数据的模拟盒信息，这会创建一个正交的模拟盒 {@link Box}
-     * @param aX aX 模拟盒 x 方向边长
-     * @param aY aY 模拟盒 y 方向边长
-     * @param aZ aZ 模拟盒 z 方向边长
+     * @param aX 模拟盒 x 方向边长
+     * @param aY 模拟盒 y 方向边长
+     * @param aZ 模拟盒 z 方向边长
      * @return 自身方便链式调用
      * @see Box
      */
@@ -349,7 +349,19 @@ public abstract class AtomDataBuilder<R> {
      * @return 自身方便链式调用
      * @see BoxPrism
      */
-    public AtomDataBuilder<R> setBox(@NotNull IXYZ aA, @NotNull IXYZ aB, @NotNull IXYZ aC) {mBox = new BoxPrism(aA, aB, aC); return this;}
+    public AtomDataBuilder<R> setBox(IXYZ aA, IXYZ aB, IXYZ aC) {mBox = new BoxPrism(aA, aB, aC); return this;}
+    /**
+     * 设置原子数据的模拟盒信息，这会创建一个三斜的模拟盒 {@link BoxPrism}
+     * @param aX 模拟盒 x 长度
+     * @param aY 模拟盒 y 长度
+     * @param aZ 模拟盒 z 长度
+     * @param aXY 模拟盒 xy 倾斜因子，对应 {@link IBox#bx()}
+     * @param aXZ 模拟盒 xz 倾斜因子，对应 {@link IBox#cx()}
+     * @param aYZ 模拟盒 yz 倾斜因子，对应 {@link IBox#cy()}
+     * @return 自身方便链式调用
+     * @see BoxPrism
+     */
+    public AtomDataBuilder<R> setBox(double aX, double aY, double aZ, double aXY, double aXZ, double aYZ) {mBox = new BoxPrism(aX, 0.0, 0.0, aXY, aY, 0.0, aXZ, aYZ, aZ); return this;}
     /**
      * 设置原子数据的模拟盒信息，这会创建一个三斜的模拟盒 {@link BoxPrism}
      * @param aAx 模拟盒第一个基向量的 x 方向
@@ -371,7 +383,7 @@ public abstract class AtomDataBuilder<R> {
      * @return 自身方便链式调用
      * @see IBox
      */
-    public AtomDataBuilder<R> setBox(@NotNull IBox aBox) {
+    public AtomDataBuilder<R> setBox(IBox aBox) {
         return aBox.isPrism() ?
             setBox(aBox.ax(), aBox.ay(), aBox.az(),
                    aBox.bx(), aBox.by(), aBox.bz(),
