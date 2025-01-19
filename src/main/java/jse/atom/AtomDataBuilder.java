@@ -2,7 +2,6 @@ package jse.atom;
 
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -384,11 +383,11 @@ public abstract class AtomDataBuilder<R> {
      * @see IBox
      */
     public AtomDataBuilder<R> setBox(IBox aBox) {
-        return aBox.isPrism() ?
-            setBox(aBox.ax(), aBox.ay(), aBox.az(),
-                   aBox.bx(), aBox.by(), aBox.bz(),
-                   aBox.cx(), aBox.cy(), aBox.cz()) :
-            setBox(aBox.x(), aBox.y(), aBox.z());
+        if (!aBox.isPrism()) return setBox(aBox.x(), aBox.y(), aBox.z());
+        if (aBox.isLmpStyle()) return setBox(aBox.x(), aBox.y(), aBox.z(), aBox.xy(), aBox.xz(), aBox.yz());
+        return setBox(aBox.ax(), aBox.ay(), aBox.az(),
+                      aBox.bx(), aBox.by(), aBox.bz(),
+                      aBox.cx(), aBox.cy(), aBox.cz());
     }
     
     /**

@@ -96,7 +96,9 @@ public interface ISettableAtomData extends IAtomData {
      * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
      * {@link #setBox(boolean, double, double, double)}
      * <p>
-     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的
+     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的；
+     * 如果希望保留倾斜数据，则调用 {@link #setBoxXYZ(double, double, double)}；
+     * 如果只希望抹去倾斜数据，则调用 {@link #setBoxNormal()}
      *
      * @param aX 模拟盒 x 方向边长
      * @param aY 模拟盒 y 方向边长
@@ -109,7 +111,9 @@ public interface ISettableAtomData extends IAtomData {
     /**
      * 设置此原子数据的模拟盒属性
      * <p>
-     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的
+     * 此方法会直接抹去倾斜数据，直接让原子数据的模拟盒强制变为正交的；
+     * 如果希望保留倾斜数据，则调用 {@link #setBoxXYZ(boolean, double, double, double)}；
+     * 如果只希望抹去倾斜数据，则调用 {@link #setBoxNormal(boolean)}
      *
      * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
      * @param aX 模拟盒 x 方向边长
@@ -127,7 +131,11 @@ public interface ISettableAtomData extends IAtomData {
      * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
      * {@link #setBox(boolean, IXYZ, IXYZ, IXYZ)}
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的，根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(boolean, double, double, double, double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
      *
      * @param aA 模拟盒第一个基向量
      * @param aB 模拟盒第二个基向量
@@ -140,7 +148,11 @@ public interface ISettableAtomData extends IAtomData {
     /**
      * 设置此原子数据的模拟盒属性
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的，根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(boolean, double, double, double, double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
      *
      * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
      * @param aA 模拟盒第一个基向量
@@ -158,7 +170,9 @@ public interface ISettableAtomData extends IAtomData {
      * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
      * {@link #setBox(boolean, double, double, double, double, double, double)}
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
      *
      * @param aX 模拟盒 x 长度
      * @param aY 模拟盒 y 长度
@@ -174,7 +188,9 @@ public interface ISettableAtomData extends IAtomData {
     /**
      * 设置此原子数据的模拟盒属性
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(boolean, double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
      *
      * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
      * @param aX 模拟盒 x 长度
@@ -195,7 +211,11 @@ public interface ISettableAtomData extends IAtomData {
      * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
      * {@link #setBox(boolean, double, double, double, double, double, double, double, double, double)}
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(double, double, double, double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
      *
      * @param aAx 模拟盒第一个基向量的 x 方向
      * @param aAy 模拟盒第一个基向量的 y 方向
@@ -214,7 +234,11 @@ public interface ISettableAtomData extends IAtomData {
     /**
      * 设置此原子数据的模拟盒属性
      * <p>
-     * 此方法会直接让原子数据的模拟盒变为三斜的
+     * 此方法会直接让原子数据的模拟盒变为三斜的；
+     * 如果希望保留 xyz 数据，则调用 {@link #setBoxPrism(boolean, double, double, double, double, double, double)}；
+     * 如果只希望将模拟盒设置成三斜的，则调用 {@link #setBoxPrism()}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
      *
      * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
      * @param aAx 模拟盒第一个基向量的 x 方向
@@ -254,6 +278,159 @@ public interface ISettableAtomData extends IAtomData {
      * @see IBox
      */
     ISettableAtomData setBox(boolean aKeepAtomPosition, IBox aBox);
+    
+    /**
+     * 设置此原子数据的模拟盒为正交的，会直接抹去倾斜数据并让
+     * {@link #isPrism()} 返回 {@code false}，如果已经是正交的则不进行任何操作
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBoxNormal(boolean)}
+     *
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBoxNormal() {return setBoxNormal(false);}
+    /**
+     * 设置此原子数据的模拟盒为正交的，会直接抹去倾斜数据并让
+     * {@link #isPrism()} 返回 {@code false}，如果已经是正交的则不进行任何操作
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxNormal(boolean aKeepAtomPosition);
+    
+    /**
+     * 设置此原子数据的模拟盒为三斜的，即让 {@link #isPrism()} 返回
+     * {@code true}，如果已经是三斜的则不进行任何操作
+     *
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxPrism();
+    
+    /**
+     * 设置此原子数据的模拟盒为三斜的，并设置对应的倾斜因子（不会修改 xyz 的数据），让
+     * {@link #isPrism()} 返回 {@code true}
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBoxPrism(boolean, double, double, double)}
+     *
+     * @param aXY 模拟盒 xy 倾斜因子，对应 {@link IBox#bx()}
+     * @param aXZ 模拟盒 xz 倾斜因子，对应 {@link IBox#cx()}
+     * @param aYZ 模拟盒 yz 倾斜因子，对应 {@link IBox#cy()}
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBoxPrism(double aXY, double aXZ, double aYZ) {return setBoxPrism(false, aXY, aXZ, aYZ);}
+    /**
+     * 设置此原子数据的模拟盒为三斜的，并设置对应的倾斜因子（不会修改 xyz 的数据），让
+     * {@link #isPrism()} 返回 {@code true}
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aXY 模拟盒 xy 倾斜因子，对应 {@link IBox#bx()}
+     * @param aXZ 模拟盒 xz 倾斜因子，对应 {@link IBox#cx()}
+     * @param aYZ 模拟盒 yz 倾斜因子，对应 {@link IBox#cy()}
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxPrism(boolean aKeepAtomPosition, double aXY, double aXZ, double aYZ);
+    /**
+     * 设置此原子数据的模拟盒为三斜的，并设置对应的倾斜因子（不会修改 xyz 的数据），让
+     * {@link #isPrism()} 返回 {@code true}
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBoxPrism(boolean, double, double, double, double, double, double)}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     *
+     * @param aAy 模拟盒第一个基向量的 y 方向
+     * @param aAz 模拟盒第一个基向量的 z 方向
+     * @param aBx 模拟盒第二个基向量的 x 方向
+     * @param aBz 模拟盒第二个基向量的 z 方向
+     * @param aCx 模拟盒第三个基向量的 x 方向
+     * @param aCy 模拟盒第三个基向量的 y 方向
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBoxPrism(double aAy, double aAz, double aBx, double aBz, double aCx, double aCy) {return setBoxPrism(false, aAy, aAz, aBx, aBz, aCx, aCy);}
+    /**
+     * 设置此原子数据的模拟盒为三斜的，并设置对应的倾斜因子（不会修改 xyz 的数据），让
+     * {@link #isPrism()} 返回 {@code true}
+     * <p>
+     * 根据实现的不同，实际的模拟盒属性值可能会不同，但应当是等价的
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aAy 模拟盒第一个基向量的 y 方向
+     * @param aAz 模拟盒第一个基向量的 z 方向
+     * @param aBx 模拟盒第二个基向量的 x 方向
+     * @param aBz 模拟盒第二个基向量的 z 方向
+     * @param aCx 模拟盒第三个基向量的 x 方向
+     * @param aCy 模拟盒第三个基向量的 y 方向
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxPrism(boolean aKeepAtomPosition, double aAy, double aAz, double aBx, double aBz, double aCx, double aCy);
+    
+    /**
+     * 只设置此原子数据的模拟盒的 xyz 三个方向的长度，不会修改倾斜的数据（如果有的话）
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBoxXYZ(boolean, double, double, double)}
+     *
+     * @param aX 模拟盒 x 长度
+     * @param aY 模拟盒 y 长度
+     * @param aZ 模拟盒 z 长度
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBoxXYZ(double aX, double aY, double aZ) {return setBoxXYZ(false, aX, aY, aZ);}
+    /**
+     * 只设置此原子数据的模拟盒的 xyz 三个方向的长度，不会修改倾斜的数据（如果有的话）
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aX 模拟盒 x 长度
+     * @param aY 模拟盒 y 长度
+     * @param aZ 模拟盒 z 长度
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxXYZ(boolean aKeepAtomPosition, double aX, double aY, double aZ);
+    
+    /**
+     * 只设置此原子数据的模拟盒的缩放比例，现在无论何种实现都会完全应用缩放，
+     * 进而重复设置会进一步缩放（保证行为一致）
+     * <p>
+     * 默认会同步拉伸内部原子位置，如果需要保持原子位置不同，则需要调用
+     * {@link #setBoxScale(boolean, double)}
+     *
+     * @param aScale 需要设置的缩放比例
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    default ISettableAtomData setBoxScale(double aScale) {return setBoxScale(false, aScale);}
+    /**
+     * 只设置此原子数据的模拟盒的缩放比例，现在无论何种实现都会完全应用缩放，
+     * 进而重复设置会进一步缩放（保证行为一致）
+     *
+     * @param aKeepAtomPosition 是否保持原子的位置不随模拟盒的设置而拉伸，默认为 {@code false}
+     * @param aScale 需要设置的缩放比例
+     * @return 自身方便链式调用
+     * @throws UnsupportedOperationException 如果原子数据不支持设置模拟盒操作
+     * @see IBox
+     */
+    ISettableAtomData setBoxScale(boolean aKeepAtomPosition, double aScale);
+    
     
     /**
      * 设置此原子数据不再包含速度信息，在调用过后
