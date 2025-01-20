@@ -61,7 +61,7 @@ public class AseAtoms extends AbstractSettableAtomData {
     /** 注意 ase 的值是带有单位的，而不是直接和文件保持一致，这其实很自作聪明；为了尽量保持一致，这里统一对速度做一个转换，保证默认情况下会一致 */
     public final static double ASE_VEL_MUL = MathEX.Fast.sqrt(1.660539040e-27 / 1.6021766208e-19) * 1.0e2;
     
-    private final IBox mBox;
+    private IBox mBox;
     private final IIntVector mAtomicNumbers;
     private final IMatrix mPositions;
     private @Nullable IMatrix mMomenta = null;
@@ -273,6 +273,58 @@ public class AseAtoms extends AbstractSettableAtomData {
      * @see #setNoVelocity()
      */
     @Override public AseAtoms setHasVelocity() {if (mMomenta == null) {mMomenta = RowMatrix.zeros(atomNumber(), ATOM_DATA_KEYS_VELOCITY.length);} return this;}
+    
+    /// set box stuff
+    @Override protected void setBox_(double aX, double aY, double aZ) {
+        mBox = new Box(aX, aY, aZ);
+    }
+    @Override protected void setBox_(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {
+        mBox = new BoxPrism(aAx, aAy, aAz, aBx, aBy, aBz, aCx, aCy, aCz);
+    }
+    @Override protected void scaleAtomPosition_(boolean aKeepAtomPosition, double aScale) {
+        if (aKeepAtomPosition) return;
+        mPositions.multiply2this(aScale);
+        if (mMomenta != null) {
+            mMomenta.multiply2this(aScale);
+        }
+    }
+    @Override protected void validAtomPosition_(boolean aKeepAtomPosition, IBox aOldBox) {
+        if (aKeepAtomPosition) return;
+        final int tAtomNum = atomNumber();
+        XYZ tBuf = new XYZ();
+        if (mBox.isPrism() || aOldBox.isPrism()) {
+            for (int i = 0; i < tAtomNum; ++i) {
+                tBuf.setXYZ(mPositions.get(i, XYZ_X_COL), mPositions.get(i, XYZ_Y_COL), mPositions.get(i, XYZ_Z_COL));
+                // 这样转换两次即可实现线性变换
+                aOldBox.toDirect(tBuf);
+                mBox.toCartesian(tBuf);
+                mPositions.set(i, XYZ_X_COL, tBuf.mX);
+                mPositions.set(i, XYZ_Y_COL, tBuf.mY);
+                mPositions.set(i, XYZ_Z_COL, tBuf.mZ);
+                // 如果存在速度，则速度也需要做一次这样的变换
+                if (mMomenta != null) {
+                    tBuf.setXYZ(mMomenta.get(i, STD_VX_COL), mMomenta.get(i, STD_VY_COL), mMomenta.get(i, STD_VZ_COL));
+                    aOldBox.toDirect(tBuf);
+                    mBox.toCartesian(tBuf);
+                    mMomenta.set(i, STD_VX_COL, tBuf.mX);
+                    mMomenta.set(i, STD_VY_COL, tBuf.mY);
+                    mMomenta.set(i, STD_VZ_COL, tBuf.mZ);
+                }
+            }
+        } else {
+            tBuf.setXYZ(mBox);
+            tBuf.div2this(aOldBox);
+            mPositions.col(XYZ_X_COL).multiply2this(tBuf.mX);
+            mPositions.col(XYZ_Y_COL).multiply2this(tBuf.mY);
+            mPositions.col(XYZ_Z_COL).multiply2this(tBuf.mZ);
+            // 如果存在速度，则速度也需要做一次这样的变换
+            if (mMomenta != null) {
+                mMomenta.col(STD_VX_COL).multiply2this(tBuf.mX);
+                mMomenta.col(STD_VY_COL).multiply2this(tBuf.mY);
+                mMomenta.col(STD_VZ_COL).multiply2this(tBuf.mZ);
+            }
+        }
+    }
     
     /// AbstractAtomData stuffs
     /**

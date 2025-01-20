@@ -130,6 +130,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /** Groovy stuffs */
     @VisibleForTesting public long getTimeStep() {return mTimeStep;}
     
+    /// set box stuff
     @Override protected void setBox_(double aX, double aY, double aZ) {
         // 这里统一移除掉 boxlo 的数据，保证新的 box 合法性
         removeBoxLo_();

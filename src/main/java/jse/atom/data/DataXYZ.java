@@ -61,7 +61,7 @@ public class DataXYZ extends AbstractSettableAtomData {
     private final @NotNull Map<String, Object> mParameters;
     private final @NotNull Map<String, Object> mProperties;
     
-    private final @Nullable IBox mBox;
+    private @Nullable IBox mBox;
     private String @Nullable[] mSpecies = null;
     private @Nullable IMatrix mPositions = null;
     private @Nullable IMatrix mVelocities  = null;
@@ -173,6 +173,13 @@ public class DataXYZ extends AbstractSettableAtomData {
         mComment = aComment;
         return this;
     }
+    private void validComment_() {
+        if (mComment != null) {
+            // 如果 comment 没有影响解析的字符则直接保留 comment
+            if (!mComment.contains("\"")) mParameters.put("Comment", mComment);
+            mComment = null;
+        }
+    }
     /**
      * 判断是否有某个参量（整个原子数据公用的值）
      * @param aKey 此参量的名称，区分大小写
@@ -215,11 +222,7 @@ public class DataXYZ extends AbstractSettableAtomData {
     public DataXYZ setParameter(String aKey, Object aValue) {
         if (aKey.equals("Lattice")) throw new IllegalArgumentException("Lattice for DataXYZ parameter");
         if (aKey.equals("Properties")) throw new IllegalArgumentException("Properties for DataXYZ parameter");
-        if (mComment != null) {
-            // 如果 comment 没有影响解析的字符则直接保留 comment
-            if (!mComment.contains("\"")) mParameters.put("Comment", mComment);
-            mComment = null;
-        }
+        validComment_();
         if (aValue == null) {
             mParameters.remove(aKey);
             return this;
@@ -289,11 +292,7 @@ public class DataXYZ extends AbstractSettableAtomData {
      * @see #removeProperty(String)
      */
     public DataXYZ setProperty(String aKey, Object aValue) {
-        if (mComment != null) {
-            // 如果 comment 没有影响解析的字符则直接保留 comment
-            if (!mComment.contains("\"")) mParameters.put("Comment", mComment);
-            mComment = null;
-        }
+        validComment_();
         if (aValue == null) {
             removeProperty(aKey);
             return this;
@@ -517,11 +516,73 @@ public class DataXYZ extends AbstractSettableAtomData {
      * @see #setNoVelocity()
      */
     @Override public DataXYZ setHasVelocity() {
+        validComment_();
         if (mVelocities == null) {
             mVelocities = RowMatrix.zeros(atomNumber(), ATOM_DATA_KEYS_VELOCITY.length);
             mProperties.put("velo", mVelocities);
         }
         return this;
+    }
+    
+    /// set box stuff
+    @Override protected void setBox_(double aX, double aY, double aZ) {
+        validComment_();
+        mBox = new Box(aX, aY, aZ);
+    }
+    @Override protected void setBox_(double aAx, double aAy, double aAz, double aBx, double aBy, double aBz, double aCx, double aCy, double aCz) {
+        validComment_();
+        mBox = new BoxPrism(aAx, aAy, aAz, aBx, aBy, aBz, aCx, aCy, aCz);
+    }
+    @Override protected void scaleAtomPosition_(boolean aKeepAtomPosition, double aScale) {
+        if (aKeepAtomPosition) return;
+        if (mPositions != null) {
+            mPositions.multiply2this(aScale);
+        }
+        if (mVelocities != null) {
+            mVelocities.multiply2this(aScale);
+        }
+    }
+    @Override protected void validAtomPosition_(boolean aKeepAtomPosition, IBox aOldBox) {
+        if (aKeepAtomPosition) return;
+        final int tAtomNum = atomNumber();
+        XYZ tBuf = new XYZ();
+        assert mBox != null;
+        if (mBox.isPrism() || aOldBox.isPrism()) {
+            for (int i = 0; i < tAtomNum; ++i) {
+                if (mPositions != null) {
+                    tBuf.setXYZ(mPositions.get(i, XYZ_X_COL), mPositions.get(i, XYZ_Y_COL), mPositions.get(i, XYZ_Z_COL));
+                    // 这样转换两次即可实现线性变换
+                    aOldBox.toDirect(tBuf);
+                    mBox.toCartesian(tBuf);
+                    mPositions.set(i, XYZ_X_COL, tBuf.mX);
+                    mPositions.set(i, XYZ_Y_COL, tBuf.mY);
+                    mPositions.set(i, XYZ_Z_COL, tBuf.mZ);
+                }
+                // 如果存在速度，则速度也需要做一次这样的变换
+                if (mVelocities != null) {
+                    tBuf.setXYZ(mVelocities.get(i, STD_VX_COL), mVelocities.get(i, STD_VY_COL), mVelocities.get(i, STD_VZ_COL));
+                    aOldBox.toDirect(tBuf);
+                    mBox.toCartesian(tBuf);
+                    mVelocities.set(i, STD_VX_COL, tBuf.mX);
+                    mVelocities.set(i, STD_VY_COL, tBuf.mY);
+                    mVelocities.set(i, STD_VZ_COL, tBuf.mZ);
+                }
+            }
+        } else {
+            tBuf.setXYZ(mBox);
+            tBuf.div2this(aOldBox);
+            if (mPositions != null) {
+                mPositions.col(XYZ_X_COL).multiply2this(tBuf.mX);
+                mPositions.col(XYZ_Y_COL).multiply2this(tBuf.mY);
+                mPositions.col(XYZ_Z_COL).multiply2this(tBuf.mZ);
+            }
+            // 如果存在速度，则速度也需要做一次这样的变换
+            if (mVelocities != null) {
+                mVelocities.col(STD_VX_COL).multiply2this(tBuf.mX);
+                mVelocities.col(STD_VY_COL).multiply2this(tBuf.mY);
+                mVelocities.col(STD_VZ_COL).multiply2this(tBuf.mZ);
+            }
+        }
     }
     
     /// AbstractAtomData stuffs

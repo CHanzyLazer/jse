@@ -155,6 +155,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         return null;
     }
     
+    /// set box stuff
     @Override protected void setBox_(double aX, double aY, double aZ) {
         // 这里统一移除掉 boxlo 的数据，保证新的 box 合法性
         mAtomXYZ.col(XYZ_X_COL).minus2this(mBox.xlo());
