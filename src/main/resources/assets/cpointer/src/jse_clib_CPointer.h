@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     jse_clib_CPointer
  * Method:    malloc_
- * Signature: (I)J
+ * Signature: (II)J
  */
 JNIEXPORT jlong JNICALL Java_jse_clib_CPointer_malloc_1
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     jse_clib_CPointer
  * Method:    calloc_
- * Signature: (I)J
+ * Signature: (II)J
  */
 JNIEXPORT jlong JNICALL Java_jse_clib_CPointer_calloc_1
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     jse_clib_CPointer

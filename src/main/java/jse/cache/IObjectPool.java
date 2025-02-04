@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * @author liqa
  */
 public interface IObjectPool<T> {
-    /** 现在不预设返回值是否是 null */
+    // 现在不预设返回值是否是 null
     T getObject();
     void returnObject(@NotNull T aObject);
 }

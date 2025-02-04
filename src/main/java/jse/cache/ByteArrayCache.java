@@ -30,7 +30,6 @@ public class ByteArrayCache {
     /**
      * 归还数组，会根据数组长度自动选择缓存存放的位置
      * @param aArray 需要归还的数组
-     * @author liqa
      */
     public static void returnArray(byte @NotNull[] aArray) {
         if (NO_CACHE) return;
@@ -47,9 +46,9 @@ public class ByteArrayCache {
     
     
     /**
+     * 从缓存获取全零的数组
      * @param aMinSize 要求的最小长度
      * @return 大于等于要求长度的 {@code byte[]}，并且所有成员都为 0
-     * @author liqa
      */
     public static byte @NotNull[] getZeros(int aMinSize) {
         if (aMinSize <= 0) return ZL_BYTE;
@@ -65,9 +64,9 @@ public class ByteArrayCache {
     }
     
     /**
+     * 从缓存获取一个数组，不保证内部为零
      * @param aMinSize 要求的最小长度
      * @return 大于等于要求长度的 {@code byte[]}，成员为任意值
-     * @author liqa
      */
     public static byte @NotNull[] getArray(int aMinSize) {
         if (aMinSize <= 0) return ZL_BYTE;
@@ -83,7 +82,11 @@ public class ByteArrayCache {
     
     
     
-    /** 批量操作的接口，注意实际不保证数组等长 */
+    /**
+     * {@link #returnArray(byte[])} 的批量操作的接口，注意实际不保证数组等长
+     * @param aMultiple 需要批量归还的数组数目
+     * @param aArrayGetter 获取需要归还的数组的接口
+     */
     public static void returnArrayFrom(int aMultiple, IListGetter<byte @NotNull[]> aArrayGetter) {
         if (NO_CACHE) return;
         if (aMultiple <= 0) return;
@@ -104,6 +107,12 @@ public class ByteArrayCache {
         }
     }
     
+    /**
+     * {@link #getZeros(int)} 的批量操作的接口，注意不保证获取的数组等长
+     * @param aMinSize 需要的数组的最小长度
+     * @param aMultiple 需要批量获取的数组数目
+     * @param aZerosConsumer 需要获取数据的存储接口
+     */
     public static void getZerosTo(int aMinSize, int aMultiple, IListSetter<byte @NotNull[]> aZerosConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {
@@ -138,6 +147,12 @@ public class ByteArrayCache {
         }
     }
     
+    /**
+     * {@link #getArray(int)} 的批量操作的接口，注意不保证获取的数组等长
+     * @param aMinSize 需要的数组的最小长度
+     * @param aMultiple 需要批量获取的数组数目
+     * @param aArrayConsumer 需要获取数据的存储接口
+     */
     public static void getArrayTo(int aMinSize, int aMultiple, IListSetter<byte @NotNull[]> aArrayConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {

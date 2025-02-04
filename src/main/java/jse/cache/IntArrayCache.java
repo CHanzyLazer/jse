@@ -31,7 +31,6 @@ public class IntArrayCache {
     /**
      * 归还数组，会根据数组长度自动选择缓存存放的位置
      * @param aArray 需要归还的数组
-     * @author liqa
      */
     public static void returnArray(int @NotNull[] aArray) {
         if (NO_CACHE) return;
@@ -42,9 +41,9 @@ public class IntArrayCache {
     
     
     /**
+     * 从缓存获取全零的数组
      * @param aMinSize 要求的最小长度
      * @return 大于等于要求长度的 {@code int[]}，并且所有成员都为 0
-     * @author liqa
      */
     public static int @NotNull[] getZeros(int aMinSize) {
         if (aMinSize <= 0) return ZL_INT;
@@ -60,9 +59,9 @@ public class IntArrayCache {
     }
     
     /**
+     * 从缓存获取一个数组，不保证内部为零
      * @param aMinSize 要求的最小长度
      * @return 大于等于要求长度的 {@code int[]}，成员为任意值
-     * @author liqa
      */
     public static int @NotNull[] getArray(int aMinSize) {
         if (aMinSize <= 0) return ZL_INT;
@@ -78,7 +77,11 @@ public class IntArrayCache {
     
     
     
-    /** 批量操作的接口，注意实际不保证数组等长 */
+    /**
+     * {@link #returnArray(int[])} 的批量操作的接口，注意实际不保证数组等长
+     * @param aMultiple 需要批量归还的数组数目
+     * @param aArrayGetter 获取需要归还的数组的接口
+     */
     public static void returnArrayFrom(int aMultiple, IListGetter<int @NotNull[]> aArrayGetter) {
         if (NO_CACHE) return;
         if (aMultiple <= 0) return;
@@ -99,6 +102,12 @@ public class IntArrayCache {
         }
     }
     
+    /**
+     * {@link #getZeros(int)} 的批量操作的接口，注意不保证获取的数组等长
+     * @param aMinSize 需要的数组的最小长度
+     * @param aMultiple 需要批量获取的数组数目
+     * @param aZerosConsumer 需要获取数据的存储接口
+     */
     public static void getZerosTo(int aMinSize, int aMultiple, IListSetter<int @NotNull[]> aZerosConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {
@@ -133,6 +142,12 @@ public class IntArrayCache {
         }
     }
     
+    /**
+     * {@link #getArray(int)} 的批量操作的接口，注意不保证获取的数组等长
+     * @param aMinSize 需要的数组的最小长度
+     * @param aMultiple 需要批量获取的数组数目
+     * @param aArrayConsumer 需要获取数据的存储接口
+     */
     public static void getArrayTo(int aMinSize, int aMultiple, IListSetter<int @NotNull[]> aArrayConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {

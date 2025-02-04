@@ -2,6 +2,7 @@ package jse.clib;
 
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,8 +30,9 @@ public class JNIUtil {
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
-        
+        /** @return {@link JNIUtil} 相关的 JNI 库是否已经初始化完成 */
         public static boolean initialized() {return INITIALIZED;}
+        /** 初始化 {@link JNIUtil} 相关的 JNI 库 */
         @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf"})
         public static void init() {
             // 手动调用此值来强制初始化
@@ -38,12 +40,16 @@ public class JNIUtil {
         }
     }
     
+    /** 当前 {@link JNIUtil} JNI 库的根目录，结尾一定存在 {@code '/'} */
     public final static String HOME = JAR_DIR+"jniutil/" + UT.Code.uniqueID(VERSION) + "/";
+    /** 当前 {@link JNIUtil} JNI 库的头文件所在文件夹，结尾一定存在 {@code '/'} */
     public final static String INCLUDE_DIR = HOME+"include/";
+    /** 当前 {@link JNIUtil} JNI 库的头文件名称 */
     public final static String HEADER_NAME = "jniutil.h";
+    /** 当前 {@link JNIUtil} JNI 库的头文件路径 */
     public final static String HEADER_PATH = INCLUDE_DIR+HEADER_NAME;
     
-    /** jniutil 内部定义的常量，这里重新定义一次从而避免交互 */
+    /** {@link JNIUtil} 内部定义的常量，这里重新定义一次从而避免 JNI 通讯 */
     public final static int
       JTYPE_NULL    = 0
     , JTYPE_BYTE    = 1
@@ -80,6 +86,7 @@ public class JNIUtil {
     
     private final static String BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
     /** 现在将一些通用的 cmake 编译 jni 库流程统一放在这里，减少重复的代码 */
+    @ApiStatus.Internal
     public static class LibBuilder implements Supplier<String> {
         private final String aProjectName, aInfoProjectName;
         private IDirIniter aSrcDirIniter = null;
@@ -148,6 +155,7 @@ public class JNIUtil {
         }
     }
     
+    @ApiStatus.Internal
     private static String cmakeInitCmd_(String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags) {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
@@ -161,6 +169,7 @@ public class JNIUtil {
         rCommand.add(aCmakeInitDir);
         return String.join(" ", rCommand);
     }
+    @ApiStatus.Internal
     private static String cmakeSettingCmd_(String aLibDir, @Nullable Boolean aUseMiMalloc, Map<String, String> aCmakeSettings) throws IOException {
         // 设置参数，这里使用 List 来构造这个长指令
         List<String> rCommand = new ArrayList<>();
