@@ -204,8 +204,8 @@ public class Trainer implements IAutoShutdown, ISavable {
         public static String LOSS_FN_SCRIPT =
             "def "+VAL_LOSS_FN+"(pred_e, target_e, pred_f=None, target_f=None, pred_s=None, target_s=None, detail=False):\n" +
             "    loss_e = "+VAL_LOSS_FN_ENG+"(pred_e, target_e)\n" +
-            "    loss_f = 0.0 if pred_f is None else "+VAL_LOSS_FN_FORCE+"(pred_f, target_f)\n" +
-            "    loss_s = 0.0 if pred_s is None else "+VAL_LOSS_FN_STRESS+"(pred_s, target_s)\n" +
+            "    loss_f = torch.tensor(0.0) if pred_f is None else "+VAL_LOSS_FN_FORCE+"(pred_f, target_f)\n" +
+            "    loss_s = torch.tensor(0.0) if pred_s is None else "+VAL_LOSS_FN_STRESS+"(pred_s, target_s)\n" +
             "    if detail:\n" +
             "        return loss_e, "+VAL_FORCE_WEIGHT+"*loss_f, "+VAL_STRESS_WEIGHT+"*loss_s\n" +
             "    return loss_e + "+VAL_FORCE_WEIGHT+"*loss_f + "+VAL_STRESS_WEIGHT+"*loss_s";
