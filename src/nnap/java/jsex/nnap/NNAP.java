@@ -148,11 +148,15 @@ public class NNAP implements IAutoShutdown {
         IVector aNormSigma = Vectors.from(tNormSigma);
         List<? extends Number> tNormMu = (List<? extends Number>)aModelInfo.get("norm_mu");
         IVector aNormMu = tNormMu==null ? Vectors.zeros(tNormSigma.size()) : Vectors.from(tNormMu);
+        Number tNormSigmaEng = (Number)aModelInfo.get("norm_sigma_eng");
+        double aNormSigmaEng = tNormSigmaEng==null ? 1.0 : tNormSigmaEng.doubleValue();
+        Number tNormMuEng = (Number)aModelInfo.get("norm_mu_eng");
+        double aNormMuEng = tNormMuEng==null ? 0.0 : tNormMuEng.doubleValue();
         
         Object tModel = aModelInfo.get("torch");
         if (tModel == null) throw new IllegalArgumentException("No torch data in ModelInfo");
         String aModel = tModel.toString();
-        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aBasis, aModel);
+        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aModel);
     }
     @SuppressWarnings("unchecked")
     private @Nullable SingleNNAP postInitSingleNNAPFrom(int aType, Map<String, ?> aModelInfo) throws TorchException {
@@ -177,12 +181,14 @@ public class NNAP implements IAutoShutdown {
         if (tNormVec != null) throw new IllegalArgumentException("norm_vec in mirror ModelInfo MUST be empty");
         IVector aNormMu = model(tMirrorType).normMu();
         IVector aNormSigma = model(tMirrorType).normSigma();
+        double aNormMuEng = model(tMirrorType).normMuEng();
+        double aNormSigmaEng = model(tMirrorType).normSigmaEng();
         
         Object tModel = aModelInfo.get("torch");
         if (tModel != null) throw new IllegalArgumentException("torch data in mirror ModelInfo MUST be empty");
         String aModel = model(tMirrorType).mModel;
         
-        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aBasis, aModel);
+        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aModel);
     }
     
     @SuppressWarnings("SameParameterValue")
@@ -191,12 +197,15 @@ public class NNAP implements IAutoShutdown {
         private final String mModel;
         private final double mRefEng;
         private final IVector mNormMu, mNormSigma;
+        private final double mNormMuEng, mNormSigmaEng;
         private final IBasis[] mBasis;
         private final int mBasisSize;
         
         public double refEng() {return mRefEng;}
         public IVector normMu() {return mNormMu;}
         public IVector normSigma() {return mNormSigma;}
+        public double normMuEng() {return mNormMuEng;}
+        public double normSigmaEng() {return mNormSigmaEng;}
         public IBasis basis() {return basis(0);}
         public IBasis basis(int aThreadID) {return mBasis[aThreadID];}
         
@@ -207,12 +216,20 @@ public class NNAP implements IAutoShutdown {
         public void normBasisPartial(IVector rFp) {
             rFp.div2this(mNormSigma);
         }
+        public double denormEng(double aEng) {
+            return aEng*mNormSigmaEng + mNormMuEng;
+        }
+        public void denormEngPartial(IVector rEngPartial) {
+            rEngPartial.multiply2this(mNormSigmaEng);
+        }
         
         @SuppressWarnings("unchecked")
-        private SingleNNAP(double aRefEng, IVector aNormMu, IVector aNormSigma, IBasis[] aBasis, String aModel) throws TorchException {
+        private SingleNNAP(double aRefEng, IVector aNormMu, IVector aNormSigma, double aNormMuEng, double aNormSigmaEng, IBasis[] aBasis, String aModel) throws TorchException {
             mRefEng = aRefEng;
             mNormMu = aNormMu;
             mNormSigma = aNormSigma;
+            mNormMuEng = aNormMuEng;
+            mNormSigmaEng = aNormSigmaEng;
             mBasis = aBasis;
             mBasisSize = mBasis[0].rowNumber()*mBasis[0].columnNumber();
             mModel = aModel;
@@ -564,6 +581,7 @@ public class NNAP implements IAutoShutdown {
                 RowMatrix tBasisValue = tBasis.eval(aAPC, i, aTypeMap);
                 tModel.normBasis(tBasisValue.asVecRow());
                 tModel.submitBatchForward(threadID, tBasisValue.asVecRow(), pred -> {
+                    pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
                     rEngs.set(i, pred);
                 });
@@ -608,6 +626,7 @@ public class NNAP implements IAutoShutdown {
                 RowMatrix tBasisValue = tBasis.eval(aAPC, cIdx, aTypeMap);
                 tModel.normBasis(tBasisValue.asVecRow());
                 tModel.submitBatchForward(threadID, tBasisValue.asVecRow(), pred -> {
+                    pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
                     rEngs.set(i, pred);
                 });
@@ -991,10 +1010,12 @@ public class NNAP implements IAutoShutdown {
                 final List<@NotNull RowMatrix> tOut = tBasis.evalPartial(true, true, aAPC, i, aTypeMap);
                 RowMatrix tBasisValue = tOut.get(0); tModel.normBasis(tBasisValue.asVecRow());
                 tModel.submitBatchBackward(threadID, tBasisValue.asVecRow(), rEnergies==null ? null : pred -> {
+                    pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
                     rEnergies.set(i, pred);
                 }, xGrad -> {
                     tModel.normBasisPartial(xGrad);
+                    tModel.denormEngPartial(xGrad);
                     final XYZ rBuf = new XYZ();
                     forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(1).internalData(), tOut.get(2).internalData(), tOut.get(3).internalData(), xGrad.internalDataSize(), rBuf);
                     if (tForcesX != null) tForcesX.add(i, -rBuf.mX);

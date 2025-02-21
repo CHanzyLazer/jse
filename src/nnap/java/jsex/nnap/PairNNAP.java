@@ -117,12 +117,13 @@ public class PairNNAP extends LmpPlugin.Pair {
             RowMatrix tBasis = tOut.get(0); tNNAP.normBasis(tBasis.asVecRow());
             tNNAP.submitBatchBackward(tBasis.asVecRow(), eflag ? pred -> {
                 // 更新能量
-                double eng = pred + tNNAP.refEng();
+                double eng = tNNAP.denormEng(pred) + tNNAP.refEng();
                 // 由于不是瓶颈，并且不是频繁调用，因此这里不去专门优化
                 if (eflagGlobal) engVdwl.set(engVdwl.get()+eng);
                 if (eflagAtom) eatom.putAt(i, eatom.getAt(i)+eng);
             } : null, xGrad -> {
                 tNNAP.normBasisPartial(xGrad);
+                tNNAP.denormEngPartial(xGrad);
                 final XYZ rBuf = new XYZ();
                 // 更新自身的力
                 NNAP.forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tOut.get(1).internalData(), tOut.get(2).internalData(), tOut.get(3).internalData(), xGrad.internalDataSize(), rBuf);

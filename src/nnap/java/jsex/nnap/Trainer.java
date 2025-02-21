@@ -77,6 +77,8 @@ public class Trainer implements IAutoShutdown, ISavable {
         , VAL_NORM_MU_J                     = "__NNAP_TRAINER_norm_mu_J__"
         , VAL_NORM_SIGMA                    = "__NNAP_TRAINER_norm_sigma__"
         , VAL_NORM_SIGMA_J                  = "__NNAP_TRAINER_norm_sigma_J__"
+        , VAL_NORM_MU_ENG                   = "__NNAP_TRAINER_norm_mu_eng__"
+        , VAL_NORM_SIGMA_ENG                = "__NNAP_TRAINER_norm_sigma_eng__"
         , VAL_TRAIN_DATA                    = "__NNAP_TRAINER_train_data__"
         , VAL_TEST_DATA                     = "__NNAP_TRAINER_test_data__"
         , VAL_DATA_J                        = "__NNAP_TRAINER_data_J__"
@@ -286,11 +288,11 @@ public class Trainer implements IAutoShutdown, ISavable {
         "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
         "        with torch.no_grad():\n" +
         "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
-        "            return (data.eng - pred).abs().mean().item(), None, None\n" +
+        "            return (data.eng - pred).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+", None, None\n" +
         "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
-        "    mae = (data.eng - pred).abs().mean().item()\n" +
-        "    mae_f = None if pred_f is None else (data.force - pred_f).abs().mean().item()\n" +
-        "    mae_s = None if pred_s is None else (data.stress - pred_s).abs().mean().item()\n" +
+        "    mae = (data.eng - pred).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
+        "    mae_f = None if pred_f is None else (data.force - pred_f).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
+        "    mae_s = None if pred_s is None else (data.stress - pred_s).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
         "    return mae, mae_f, mae_s"
         );
         //noinspection ConcatenationWithEmptyString
@@ -428,7 +430,12 @@ public class Trainer implements IAutoShutdown, ISavable {
                 "    "+aPyDataSetName+".fp["+VAL_I+"] /= "+VAL_NORM_SIGMA+"["+VAL_I+"]\n" +
                 "del "+VAL_I
                 );
-                SP.Python.exec(aPyDataSetName+".eng /= "+aPyDataSetName+".atom_num");
+                //noinspection ConcatenationWithEmptyString
+                SP.Python.exec("" +
+                aPyDataSetName+".eng /= "+aPyDataSetName+".atom_num\n"+
+                aPyDataSetName+".eng -= "+VAL_NORM_MU_ENG+"\n"+
+                aPyDataSetName+".eng /= "+VAL_NORM_SIGMA_ENG
+                );
                 // 训练力和应力需要的额外数据
                 if (!mHasForce && !mHasStress) return;
                 if (mHasForce) {
@@ -437,6 +444,7 @@ public class Trainer implements IAutoShutdown, ISavable {
                     if (aClearData) {
                         mForce.clear();
                     }
+                    SP.Python.exec(aPyDataSetName+".force /= "+VAL_NORM_SIGMA_ENG);
                 }
                 if (mHasStress) {
                     SP.Python.exec(aPyDataSetName+".stress_indices = ([], [])");
@@ -447,6 +455,7 @@ public class Trainer implements IAutoShutdown, ISavable {
                         mStress.clear();
                         mVolume.clear();
                     }
+                    SP.Python.exec(aPyDataSetName+".stress /= "+VAL_NORM_SIGMA_ENG);
                 }
                 for (int i = 0; i < mSymbols.length; ++i) {
                     // 先根据近邻数排序 FpPartial 和 Indices，拆分成两份来减少内存占用
@@ -532,6 +541,7 @@ public class Trainer implements IAutoShutdown, ISavable {
     protected final IVector mRefEngs;
     protected final IBasis[] mBasis;
     protected final Vector[] mNormMu, mNormSigma;
+    protected double mNormMuEng = 0.0, mNormSigmaEng = 0.0;
     protected final DataSet mTrainData;
     protected final DataSet mTestData;
     protected boolean mHasData = false;
@@ -636,8 +646,8 @@ public class Trainer implements IAutoShutdown, ISavable {
     protected void initOptimizer() {
         SP.Python.exec(VAL_OPTIMIZER+" = torch.optim.LBFGS("+VAL_MODEL+".parameters(), history_size=100, max_iter=5, line_search_fn='strong_wolfe')");
     }
-    /** 重写实现自定义归一化方案 */
-    protected void initNormVec() {
+    /** 重写实现自定义基组归一化方案 */
+    protected void initNormBasis() {
         for (int i = 0; i < mSymbols.length; ++i) {
             mNormMu[i].fill(0.0);
             mNormSigma[i].fill(0.0);
@@ -667,6 +677,41 @@ public class Trainer implements IAutoShutdown, ISavable {
             mNormMu[i] = mNormMu[tMirrorIdx];
             mNormSigma[i] = mNormSigma[tMirrorIdx];
         }
+    }
+    /** 重写实现自定义能量归一化方案 */
+    protected void initNormEng() {
+        // 这里采用中位数和上下四分位数来归一化能量
+        Vector tSortedEng = mTrainData.mEng.copy2vec();
+        tSortedEng.div2this(mTrainData.mAtomNum.asVec());
+        tSortedEng.sort();
+        int tSize = tSortedEng.size();
+        int tSize2 = tSize/2;
+        mNormMuEng = tSortedEng.get(tSize2);
+        if ((tSize&1)==1) {
+            mNormMuEng = (mNormMuEng + tSortedEng.get(tSize2+1))*0.5;
+        }
+        int tSize4 = tSize2/2;
+        double tEng14 = tSortedEng.get(tSize4);
+        double tEng14R = tSortedEng.get(tSize4+1);
+        int tSize34 = tSize2+tSize4;
+        if ((tSize&1)==1) ++tSize34;
+        double tEng34 = tSortedEng.get(tSize34);
+        double tEng34R = tSortedEng.get(tSize34+1);
+        if ((tSize&1)==1) {
+            if ((tSize2&1)==1) {
+                tEng14 = (tEng14 + 3*tEng14R)*0.25;
+                tEng34 = (3*tEng34 + tEng34R)*0.25;
+            } else {
+                tEng14 = (3*tEng14 + tEng14R)*0.25;
+                tEng34 = (tEng34 + 3*tEng34R)*0.25;
+            }
+        } else {
+            if ((tSize2&1)==1) {
+                tEng14 = (tEng14 + tEng14R)*0.5;
+                tEng34 = (tEng34 + tEng34R)*0.5;
+            }
+        }
+        mNormSigmaEng = tEng34 - tEng14;
     }
     @ApiStatus.Internal
     protected int calBestSplit_(IIntVector aSortedNN) {
@@ -699,8 +744,9 @@ public class Trainer implements IAutoShutdown, ISavable {
         // 初始化矩阵数据
         mTrainData.initFpMat_();
         if (mHasTest) mTestData.initFpMat_();
-        // 重新构建归一化向量
-        initNormVec();
+        // 重新构建归一化参数
+        initNormBasis();
+        initNormEng();
         // 构造 torch 数据，这里直接把数据放到 python 环境中变成一个 python 的全局变量
         SP.Python.setValue(VAL_HAS_FORCE, mHasForce);
         SP.Python.setValue(VAL_HAS_STRESS, mHasStress);
@@ -713,6 +759,8 @@ public class Trainer implements IAutoShutdown, ISavable {
         SP.Python.exec(VAL_NORM_SIGMA+" = [torch.tensor("+VAL_SUB+".asList(), dtype=torch."+(mTrainInFloat?"float32":"float64")+") for "+VAL_SUB+" in "+VAL_NORM_SIGMA_J+"]");
         SP.Python.removeValue(VAL_NORM_MU_J);
         SP.Python.removeValue(VAL_NORM_SIGMA_J);
+        SP.Python.setValue(VAL_NORM_MU_ENG, mNormMuEng);
+        SP.Python.setValue(VAL_NORM_SIGMA_ENG, mNormSigmaEng);
         mTrainData.putData2Py_(VAL_TRAIN_DATA, mClearDataOnTraining);
         if (mHasTest) mTestData.putData2Py_(VAL_TEST_DATA, mClearDataOnTraining);
         // 开始训练
@@ -781,17 +829,44 @@ public class Trainer implements IAutoShutdown, ISavable {
             double tTestMAE_E = ((Number)tTestMAE.get(0)).doubleValue();
             double tTestMAE_F = mHasForce ? ((Number)tTestMAE.get(1)).doubleValue() : Double.NaN;
             double tTestMAE_S = mHasStress ? ((Number)tTestMAE.get(2)).doubleValue() : Double.NaN;
-            System.out.printf("MAE-E: %.4g meV | %.4g meV\n", tMAE_E*1000, tTestMAE_E*1000);
-            if (mHasForce) {
-                System.out.printf("MAE-F: %.4g meV/A | %.4g meV/A\n", tMAE_F*1000, tTestMAE_F*1000);
+            switch(mUnits) {
+            case "metal": {
+                System.out.printf("MAE-E: %.4g meV | %.4g meV\n", tMAE_E*1000, tTestMAE_E*1000);
+                if (mHasForce) {
+                    System.out.printf("MAE-F: %.4g meV/A | %.4g meV/A\n", tMAE_F*1000, tTestMAE_F*1000);
+                }
+                if (mHasStress) {
+                    System.out.printf("MAE-S: %.4g meV/A^3 | %.4g meV/A^3\n", tMAE_S*1000, tTestMAE_S*1000);
+                }
+                break;
             }
-            if (mHasStress) {
-                System.out.printf("MAE-S: %.4g meV/A^3 | %.4g meV/A^3\n", tMAE_S*1000, tTestMAE_S*1000);
+            case "real":{
+                System.out.printf("MAE-E: %.4g kcal/mol | %.4g kcal/mol\n", tMAE_E, tTestMAE_E);
+                if (mHasForce) {
+                    System.out.printf("MAE-F: %.4g kcal/mol/A | %.4g kcal/mol/A\n", tMAE_F, tTestMAE_F);
+                }
+                if (mHasStress) {
+                    System.out.printf("MAE-S: %.4g kcal/mol/A^3 | %.4g kcal/mol/A^3\n", tMAE_S, tTestMAE_S);
+                }
+                break;
             }
+            default: {
+                System.out.printf("MAE-E: %.4g | %.4g\n", tMAE_E, tTestMAE_E);
+                if (mHasForce) {
+                    System.out.printf("MAE-F: %.4g | %.4g\n", tMAE_F, tTestMAE_F);
+                }
+                if (mHasStress) {
+                    System.out.printf("MAE-S: %.4g | %.4g\n", tMAE_S, tTestMAE_S);
+                }
+                break;
+            }}
+
         } finally {
             // 完事移除临时数据
             SP.Python.removeValue(VAL_NORM_MU);
             SP.Python.removeValue(VAL_NORM_SIGMA);
+            SP.Python.removeValue(VAL_NORM_MU_ENG);
+            SP.Python.removeValue(VAL_NORM_SIGMA_ENG);
             SP.Python.removeValue(VAL_TRAIN_DATA);
             if (mHasTest) {
                 SP.Python.removeValue(VAL_TEST_DATA);
@@ -1055,6 +1130,8 @@ public class Trainer implements IAutoShutdown, ISavable {
                 "ref_eng", mRefEngs.get(i),
                 "norm_mu", mNormMu[i].asList(),
                 "norm_sigma", mNormSigma[i].asList(),
+                "norm_mu_eng", mNormMuEng,
+                "norm_sigma_eng", mNormSigmaEng,
                 "basis", rBasis,
                 "torch", Base64.getEncoder().encodeToString(tModelByes)
             ));
