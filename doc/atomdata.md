@@ -55,13 +55,14 @@ println('box: ' + data.box())
 
 
 ```groovy
+import jse.atom.AtomData
 import jse.atom.Structures
 
 // #1.
-def cell = new AtomData(
-    [new Atom(0.0, 0.0, 0.0, 1, 1)],
-    new Box(2.0, 2.0, 2.0)
-)
+def cell = AtomData.builder()
+    .add(0.0, 0.0, 0.0)
+    .setBox(2.0, 2.0, 2.0)
+    .build()
 
 // #2.
 def data = Structures.from(cell, 10)
@@ -78,8 +79,8 @@ println('box: ' + data.box())
 > [⤤](../example/code/atoms/init2.groovy)
 > 
 > 1. 手动创建一个简单立方的原胞，只有一个原子，位置为
-> `(0.0, 0.0, 0.0)`，id 为 `1`，type 为 `1`；
-> 模拟盒大小为 `(2.0, 2.0, 2.0)`
+> `(0.0, 0.0, 0.0)`（type 为 `1`）；
+> 设置模拟盒大小为 `(2.0, 2.0, 2.0)`
 > 
 > 2. 根据给定原胞扩展，xyz 方向都重复 10 次
 > 
