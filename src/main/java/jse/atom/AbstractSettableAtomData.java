@@ -269,8 +269,8 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
         if (!oBox.isPrism()) setBox_(aX, aY, aZ);
         else if (oBox.isLmpStyle()) setBox_(aX, aY, aZ, oBox.xy(), oBox.xz(), oBox.yz());
         else setBox_(aX, oBox.ay(), oBox.az(),
-                     oBox.bx(), aX, oBox.bz(),
-                     oBox.cx(), oBox.cy(), aX);
+                     oBox.bx(), aY, oBox.bz(),
+                     oBox.cx(), oBox.cy(), aZ);
         validAtomPosition_(aKeepAtomPosition, oBox);
         return this;
     }
