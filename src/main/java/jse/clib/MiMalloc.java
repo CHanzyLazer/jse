@@ -1,6 +1,7 @@
 package jse.clib;
 
 import jse.code.CS;
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
@@ -116,13 +117,13 @@ public class MiMalloc {
             .setSrcDirIniter(wd -> {
                 // 首先获取源码路径，这里直接从 resource 里输出
                 String tMiZipPath = wd+"mimalloc-"+VERSION+".zip";
-                UT.IO.copy(UT.IO.getResource("mimalloc/mimalloc-"+VERSION+".zip"), tMiZipPath);
+                IO.copy(IO.getResource("mimalloc/mimalloc-"+VERSION+".zip"), tMiZipPath);
                 // 解压 mimalloc 包到临时目录，如果已经存在则直接清空此目录
                 String tMiDir = wd+"mimalloc/";
-                UT.IO.removeDir(tMiDir);
-                UT.IO.zip2dir(tMiZipPath, tMiDir);
+                IO.removeDir(tMiDir);
+                IO.zip2dir(tMiZipPath, tMiDir);
                 // 手动拷贝头文件到指定目录，现在也放在这里
-                UT.IO.copy(tMiDir+"include/mimalloc.h", INCLUDE_DIR+"mimalloc.h");
+                IO.copy(tMiDir+"include/mimalloc.h", INCLUDE_DIR+"mimalloc.h");
                 return tMiDir;})
             .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
             .setRedirectLibPath(Conf.REDIRECT_MIMALLOC_LIB)
@@ -135,6 +136,6 @@ public class MiMalloc {
             LLIB_PATH = Conf.REDIRECT_MIMALLOC_LLIB==null ? Conf.REDIRECT_MIMALLOC_LIB : Conf.REDIRECT_MIMALLOC_LLIB;
         }
         // 设置库路径
-        System.load(UT.IO.toAbsolutePath(LIB_PATH));
+        System.load(IO.toAbsolutePath(LIB_PATH));
     }
 }

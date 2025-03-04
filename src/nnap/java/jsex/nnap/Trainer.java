@@ -9,6 +9,7 @@ import jse.cache.IntMatrixCache;
 import jse.cache.IntVectorCache;
 import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
+import jse.code.IO;
 import jse.code.SP;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
@@ -803,13 +804,13 @@ public class Trainer implements IAutoShutdown, ISavable {
             double tLossF = mHasForce ? ((Number)tLossDetail.get(2)).doubleValue() : 0.0;
             double tLossS = mHasStress ? ((Number)tLossDetail.get(3)).doubleValue() : 0.0;
             double tLossTot = tLossL2+tLossE+tLossF+tLossS;
-            System.out.printf("Loss-L2: %.4g (%s)\n", tLossL2, UT.Text.percent(tLossL2/tLossTot));
-            System.out.printf("Loss-E : %.4g (%s)\n", tLossE, UT.Text.percent(tLossE/tLossTot));
+            System.out.printf("Loss-L2: %.4g (%s)\n", tLossL2, IO.Text.percent(tLossL2/tLossTot));
+            System.out.printf("Loss-E : %.4g (%s)\n", tLossE, IO.Text.percent(tLossE/tLossTot));
             if (mHasForce) {
-                System.out.printf("Loss-F : %.4g (%s)\n", tLossF, UT.Text.percent(tLossF/tLossTot));
+                System.out.printf("Loss-F : %.4g (%s)\n", tLossF, IO.Text.percent(tLossF/tLossTot));
             }
             if (mHasStress) {
-                System.out.printf("Loss-S : %.4g (%s)\n", tLossS, UT.Text.percent(tLossS/tLossTot));
+                System.out.printf("Loss-S : %.4g (%s)\n", tLossS, IO.Text.percent(tLossS/tLossTot));
             }
             List<?> tMAE = (List<?>)SP.Python.eval(FN_CAL_MAE+"("+VAL_TRAIN_DATA+")");
             double tMAE_E = ((Number)tMAE.get(0)).doubleValue();
@@ -1144,7 +1145,7 @@ public class Trainer implements IAutoShutdown, ISavable {
     public void save(String aPath, boolean aPretty) throws IOException {
         Map rJson = new LinkedHashMap();
         save(rJson);
-        UT.IO.map2json(rJson, aPath, aPretty);
+        IO.map2json(rJson, aPath, aPretty);
     }
     public void save(String aPath) throws IOException {save(aPath, false);}
 }

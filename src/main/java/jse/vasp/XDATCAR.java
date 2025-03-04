@@ -3,6 +3,7 @@ package jse.vasp;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import jse.atom.*;
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractListWrapper;
@@ -469,9 +470,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         it.forEachRemaining(rXDATCAR::append);
         return rXDATCAR;
     }
-    public static XDATCAR fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, UT.Text.toArray(aTypeNames));}
-    public static XDATCAR fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aTypeNames) {return fromAtomDataList(aAtomDataList, UT.Text.toArray(aTypeNames));}
-    public static XDATCAR fromAtomDataList(Collection<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aTypeNames) {return fromAtomDataList(aAtomDataList, UT.Text.toArray(aTypeNames));}
+    public static XDATCAR fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, IO.Text.toArray(aTypeNames));}
+    public static XDATCAR fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aTypeNames) {return fromAtomDataList(aAtomDataList, IO.Text.toArray(aTypeNames));}
+    public static XDATCAR fromAtomDataList(Collection<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aTypeNames) {return fromAtomDataList(aAtomDataList, IO.Text.toArray(aTypeNames));}
     
     IMatrix getDirect_(IAtomData aAtomData) {
         // 这里只考虑一般的情况，这里直接遍历 atoms 来创建，
@@ -547,7 +548,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
      * @return 读取得到的 XDATCAR 对象，如果文件不完整的帧会跳过
      * @throws IOException 如果读取失败
      */
-    public static XDATCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static XDATCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static XDATCAR read_(BufferedReader aReader) throws IOException {
         String tLine;
@@ -566,19 +567,19 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         tLine = aReader.readLine();
         aComment = tLine;
         // 读取模拟盒信息
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         aBoxScale = Double.parseDouble(tTokens[0]);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxA = UT.Text.str2data(tLine, 3);
+        aBoxA = IO.Text.str2data(tLine, 3);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxB = UT.Text.str2data(tLine, 3);
+        aBoxB = IO.Text.str2data(tLine, 3);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxC = UT.Text.str2data(tLine, 3);
+        aBoxC = IO.Text.str2data(tLine, 3);
         // 读取原子种类（可选）和对应数目的信息
         boolean tNoAtomType = false;
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         aTypeNames = tTokens;
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         try {
         final String[] fTokens = tTokens;
         aAtomNumbers = Vectors.fromInteger(fTokens.length, i -> Integer.parseInt(fTokens[i]));
@@ -592,8 +593,8 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         tLine = aReader.readLine(); if (tLine == null) return null;
         }
         // 只支持 Direct 和 Cartesian
-        aIsCartesian = UT.Text.containsIgnoreCase(tLine, "Cartesian");
-        if (!aIsCartesian && !UT.Text.containsIgnoreCase(tLine, "Direct")) {
+        aIsCartesian = IO.Text.containsIgnoreCase(tLine, "Cartesian");
+        if (!aIsCartesian && !IO.Text.containsIgnoreCase(tLine, "Direct")) {
         throw new RuntimeException("Can ONLY read Direct or Cartesian XDATCAR");
         }
         
@@ -607,7 +608,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
             for (IVector tRow : subDirect.rows()) {
                 tLine = aReader.readLine();
                 if (tLine == null) {tIsAtomDataReadFull = false; break;}
-                tRow.fill(UT.Text.str2data(tLine, 3));
+                tRow.fill(IO.Text.str2data(tLine, 3));
             }
             if (!tIsAtomDataReadFull) break;
             
@@ -639,9 +640,9 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(IO.IWriteln aWriteln) throws IOException {
         // 先输出通用信息
         aWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
         aWriteln.writeln(String.valueOf(mBox.scale()));

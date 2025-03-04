@@ -1,6 +1,6 @@
 package code.io
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 write('.temp/example/io/a/1.txt', '''\
 111111

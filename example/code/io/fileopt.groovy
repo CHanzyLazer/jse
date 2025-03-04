@@ -1,6 +1,6 @@
 package code.io
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 // 创建目录，支持直接递归创建子目录
 mkdir('.temp/example/io/a/b/c/d')

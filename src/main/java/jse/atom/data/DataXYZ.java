@@ -1,7 +1,7 @@
 package jse.atom.data;
 
 import jse.atom.*;
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
 import jse.math.matrix.IIntMatrix;
@@ -763,7 +763,7 @@ public class DataXYZ extends AbstractSettableAtomData {
      * @see #fromAtomData(IAtomData, String...)
      * @see Collection
      */
-    public static DataXYZ fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, UT.Text.toArray(aSymbols));}
+    public static DataXYZ fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, IO.Text.toArray(aSymbols));}
     /**
      * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 XYZ 数据
      * <p>
@@ -799,7 +799,7 @@ public class DataXYZ extends AbstractSettableAtomData {
      * @throws IOException 如果读取失败
      * @see #write(String)
      */
-    public static DataXYZ read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static DataXYZ read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     static DataXYZ read_(BufferedReader aReader) throws IOException {
         String tLine;
         String[] tTokens;
@@ -828,7 +828,7 @@ public class DataXYZ extends AbstractSettableAtomData {
                 tLattice = aParameters.remove("lattice");
             }
             if (tLattice instanceof String) {
-                Vector tVec = UT.Text.str2data((String)tLattice, 9);
+                Vector tVec = IO.Text.str2data((String)tLattice, 9);
                 boolean tAnyNaN = false;
                 for (int i = 0; i < 9; ++i) {
                     if (Double.isNaN(tVec.get(i))) {
@@ -889,7 +889,7 @@ public class DataXYZ extends AbstractSettableAtomData {
         }
         // 简单遍历后续数据
         for (int i = 0; i < aAtomNum; ++i) {
-            tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+            tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
             // 基于 aProperties 的顺序解析，现在可以统一解析语法
             int j = 0;
             for (Object tValue : aProperties.values()) {
@@ -947,7 +947,7 @@ public class DataXYZ extends AbstractSettableAtomData {
                 tValueEnd = aComment.indexOf('"', tValueBegin);
                 if (tValueEnd < 0) return false;
             } else {
-                tValueEnd = UT.Text.findBlankIndex(aComment, tValueBegin);
+                tValueEnd = IO.Text.findBlankIndex(aComment, tValueBegin);
                 if (tValueEnd < 0) tValueEnd = tLen;
             }
             Object tValue = aComment.substring(tValueBegin, tValueEnd);
@@ -958,13 +958,13 @@ public class DataXYZ extends AbstractSettableAtomData {
                 if (tValue.equals("F")) {
                     tValue = false;
                 } else {
-                    Number tNumberValue = UT.Text.str2number((String)tValue);
+                    Number tNumberValue = IO.Text.str2number((String)tValue);
                     if (tNumberValue != null) tValue = tNumberValue;
                 }
             }
             rParameters.put(aComment.substring(tKeyBegin, tKeyEnd), tValue);
             if (tHasQuote) ++tValueEnd;
-            tKeyBegin = UT.Text.findNoBlankIndex(aComment, tValueEnd);
+            tKeyBegin = IO.Text.findNoBlankIndex(aComment, tValueEnd);
             if (tKeyBegin < 0) break; // 注意这种情况是已经结束了
         }
         // 这里削弱要求，不一定需要特定的参数名称
@@ -978,9 +978,9 @@ public class DataXYZ extends AbstractSettableAtomData {
      * @throws IOException 如果写入文件失败
      * @see #read(String)
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(IO.IWriteln aWriteln) throws IOException {
         aWriteln.writeln(String.valueOf(mAtomNum));
         if (mComment != null) {
             aWriteln.writeln(mComment);
@@ -1043,7 +1043,7 @@ public class DataXYZ extends AbstractSettableAtomData {
                     rLine.append((Boolean)tValue ? "T" : "F");
                 } else {
                     String tValueStr = tValue.toString();
-                    boolean tHasBlank = UT.Text.findBlankIndex(tValueStr, 0)>=0;
+                    boolean tHasBlank = IO.Text.findBlankIndex(tValueStr, 0)>=0;
                     if (tHasBlank) rLine.append("\"");
                     rLine.append(tValueStr);
                     if (tHasBlank) rLine.append("\"");

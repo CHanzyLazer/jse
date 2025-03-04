@@ -2,6 +2,7 @@ package jse.parallel;
 
 import jse.cache.ByteArrayCache;
 import jse.clib.*;
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import jse.math.vector.IIntVector;
@@ -1273,7 +1274,7 @@ public class MPI {
                 .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_MPIJNI_LIB)
                 .get();
             // 设置库路径
-            System.load(UT.IO.toAbsolutePath(MPIJNI_LIB_PATH));
+            System.load(IO.toAbsolutePath(MPIJNI_LIB_PATH));
             
             // 初始化 final 常量
             MPI_GROUP_NULL  = getMpiGroupNull_();

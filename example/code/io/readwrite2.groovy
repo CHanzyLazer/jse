@@ -2,7 +2,7 @@ package code.io
 
 import java.nio.ByteBuffer
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 
 // 先创建一个二进制文件数据，jse 目前没有提供专门的方法，

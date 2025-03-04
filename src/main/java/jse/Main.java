@@ -3,6 +3,7 @@ package jse;
 import io.github.spencerpark.jupyter.channels.JupyterConnection;
 import io.github.spencerpark.jupyter.channels.JupyterSocket;
 import io.github.spencerpark.jupyter.kernel.KernelConnectionProperties;
+import jse.code.IO;
 import jse.code.SP;
 import jse.code.UT;
 import jse.system.PythonSystemExecutor;
@@ -89,56 +90,56 @@ public class Main {
             }
             case "-idea": {
                 // 先是项目文件
-                String tDirName = UT.IO.toFileName(WORKING_DIR);
-                UT.IO.write(tDirName+".iml",
-                            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                            "<module type=\"JAVA_MODULE\" version=\"4\">",
-                            "  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">",
-                            "    <exclude-output />",
-                            "    <content url=\"file://$MODULE_DIR$\">",
-                            "      <sourceFolder url=\"file://$MODULE_DIR$\" isTestSource=\"false\" />",
-                            "      <sourceFolder url=\"file://$MODULE_DIR$/script/groovy\" isTestSource=\"false\" />",
-                            "      <excludeFolder url=\"file://$MODULE_DIR$/.temp\" />",
-                            "      <excludeFolder url=\"file://$MODULE_DIR$/script\" />",
-                            "    </content>",
-                            "    <content url=\"file://"+GROOVY_LIB_DIR+"\">",
-                            "      <sourceFolder url=\"file://"+GROOVY_LIB_DIR+"\" isTestSource=\"false\" />",
-                            "    </content>",
-                            "    <orderEntry type=\"inheritedJdk\" />",
-                            "    <orderEntry type=\"sourceFolder\" forTests=\"false\" />",
-                            "    <orderEntry type=\"library\" name=\"jse-all\" level=\"project\" />",
-                            "    <orderEntry type=\"library\" name=\"jars\" level=\"project\" />",
-                            "  </component>",
-                            "</module>");
+                String tDirName = IO.toFileName(WORKING_DIR);
+                IO.write(tDirName+".iml",
+                         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                         "<module type=\"JAVA_MODULE\" version=\"4\">",
+                         "  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">",
+                         "    <exclude-output />",
+                         "    <content url=\"file://$MODULE_DIR$\">",
+                         "      <sourceFolder url=\"file://$MODULE_DIR$\" isTestSource=\"false\" />",
+                         "      <sourceFolder url=\"file://$MODULE_DIR$/script/groovy\" isTestSource=\"false\" />",
+                         "      <excludeFolder url=\"file://$MODULE_DIR$/.temp\" />",
+                         "      <excludeFolder url=\"file://$MODULE_DIR$/script\" />",
+                         "    </content>",
+                         "    <content url=\"file://"+GROOVY_LIB_DIR+"\">",
+                         "      <sourceFolder url=\"file://"+GROOVY_LIB_DIR+"\" isTestSource=\"false\" />",
+                         "    </content>",
+                         "    <orderEntry type=\"inheritedJdk\" />",
+                         "    <orderEntry type=\"sourceFolder\" forTests=\"false\" />",
+                         "    <orderEntry type=\"library\" name=\"jse-all\" level=\"project\" />",
+                         "    <orderEntry type=\"library\" name=\"jars\" level=\"project\" />",
+                         "  </component>",
+                         "</module>");
                 // 然后是运行配置
-                UT.IO.write(".run/jse-RunCurrentScript.run.xml",
-                            "<component name=\"ProjectRunConfigurationManager\">",
-                            "  <configuration default=\"false\" name=\"jse-RunCurrentScript\" type=\"JarApplication\" singleton=\"false\">",
-                            "    <option name=\"JAR_PATH\" value=\""+JAR_PATH+"\" />",
-                            "    <option name=\"PROGRAM_PARAMETERS\" value=\"IDEA -f $FileRelativePath$\" />",
-                            "    <option name=\"WORKING_DIRECTORY\" value=\"$ProjectFileDir$\" />",
-                            "    <option name=\"ALTERNATIVE_JRE_PATH\" />",
-                            "    <method v=\"2\" />",
-                            "  </configuration>",
-                            "</component>");
+                IO.write(".run/jse-RunCurrentScript.run.xml",
+                         "<component name=\"ProjectRunConfigurationManager\">",
+                         "  <configuration default=\"false\" name=\"jse-RunCurrentScript\" type=\"JarApplication\" singleton=\"false\">",
+                         "    <option name=\"JAR_PATH\" value=\""+JAR_PATH+"\" />",
+                         "    <option name=\"PROGRAM_PARAMETERS\" value=\"IDEA -f $FileRelativePath$\" />",
+                         "    <option name=\"WORKING_DIRECTORY\" value=\"$ProjectFileDir$\" />",
+                         "    <option name=\"ALTERNATIVE_JRE_PATH\" />",
+                         "    <method v=\"2\" />",
+                         "  </configuration>",
+                         "</component>");
                 // 最后是 idea 配置
-                UT.IO.write(".idea/modules.xml",
-                            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                            "<project version=\"4\">",
-                            "  <component name=\"ProjectModuleManager\">",
-                            "    <modules>",
-                            "      <module fileurl=\"file://$PROJECT_DIR$/"+tDirName+".iml\" filepath=\"$PROJECT_DIR$/"+tDirName+".iml\" />",
-                            "    </modules>",
-                            "  </component>",
-                            "</project>");
+                IO.write(".idea/modules.xml",
+                         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                         "<project version=\"4\">",
+                         "  <component name=\"ProjectModuleManager\">",
+                         "    <modules>",
+                         "      <module fileurl=\"file://$PROJECT_DIR$/"+tDirName+".iml\" filepath=\"$PROJECT_DIR$/"+tDirName+".iml\" />",
+                         "    </modules>",
+                         "  </component>",
+                         "</project>");
                 String tSrcLines = "    <SOURCES />";
-                @Nullable String tJseRootDir = UT.IO.toParentPath(JAR_DIR);
+                @Nullable String tJseRootDir = IO.toParentPath(JAR_DIR);
                 if (tJseRootDir != null) {
-                    tJseRootDir = UT.IO.toInternalValidDir(tJseRootDir);
+                    tJseRootDir = IO.toInternalValidDir(tJseRootDir);
                     String tSrcDir = tJseRootDir+"src/";
                     String tJseSrcPath = null;
                     String tGroovySrcPath = null;
-                    if (UT.IO.isDir(tSrcDir)) for (String tName : UT.IO.list(tSrcDir)) {
+                    if (IO.isDir(tSrcDir)) for (String tName : IO.list(tSrcDir)) {
                         if (tName.contains("jse")) tJseSrcPath = tSrcDir+tName;
                         else if (tName.contains("groovy")) tGroovySrcPath = tSrcDir+tName;
                     }
@@ -153,27 +154,27 @@ public class Main {
                         tSrcLines += "    </SOURCES>";
                     }
                 }
-                UT.IO.write(".idea/libraries/jse_all.xml",
-                            "<component name=\"libraryTable\">",
-                            "  <library name=\"jse-all\">",
-                            "    <CLASSES>",
-                            "      <root url=\"jar://"+JAR_PATH+"!/\" />",
-                            "    </CLASSES>",
-                            "    <JAVADOC />",
-                            tSrcLines,
-                            "  </library>",
-                            "</component>");
-                UT.IO.write(".idea/libraries/jars.xml",
-                            "<component name=\"libraryTable\">",
-                            "  <library name=\"jars\">",
-                            "    <CLASSES>",
-                            "      <root url=\"file://"+JAR_LIB_DIR+"!/\" />",
-                            "    </CLASSES>",
-                            "    <JAVADOC />",
-                            "    <SOURCES />",
-                            "    <jarDirectory url=\"file://"+JAR_LIB_DIR+"\" recursive=\"false\" />",
-                            "  </library>",
-                            "</component>");
+                IO.write(".idea/libraries/jse_all.xml",
+                         "<component name=\"libraryTable\">",
+                         "  <library name=\"jse-all\">",
+                         "    <CLASSES>",
+                         "      <root url=\"jar://"+JAR_PATH+"!/\" />",
+                         "    </CLASSES>",
+                         "    <JAVADOC />",
+                         tSrcLines,
+                         "  </library>",
+                         "</component>");
+                IO.write(".idea/libraries/jars.xml",
+                         "<component name=\"libraryTable\">",
+                         "  <library name=\"jars\">",
+                         "    <CLASSES>",
+                         "      <root url=\"file://"+JAR_LIB_DIR+"!/\" />",
+                         "    </CLASSES>",
+                         "    <JAVADOC />",
+                         "    <SOURCES />",
+                         "    <jarDirectory url=\"file://"+JAR_LIB_DIR+"\" recursive=\"false\" />",
+                         "  </library>",
+                         "</component>");
                 System.out.println("The current directory has been initialized as an Intellij IDEA project,");
                 System.out.println("now you can open this directory through Intellij IDEA.");
                 return;
@@ -184,16 +185,16 @@ public class Main {
                 for (int i = 2; i < aArgs.length; ++i) rArgs.append(", ").append(aArgs[i]);
                 // 使用写入到临时目录然后走 jupyter 的方法来安装，这样应该是符合规范的
                 String tWorkingDir = WORKING_DIR_OF("jupyterkernel");
-                UT.IO.removeDir(tWorkingDir);
+                IO.removeDir(tWorkingDir);
                 // 构造 kernel.json 并写入指定位置
-                UT.IO.map2json(Maps.of(
+                IO.map2json(Maps.of(
                       "argv", new String[]{"java", "-jar", JAR_PATH, "JUPYTER", "-jupyterkernel", "{connection_file}"}
                     , "display_name", "jse"
                     , "language", "groovy"
                     , "interrupt_mode", "message"), tWorkingDir+"kernel.json");
                 // 写入 logo
-                UT.IO.copy(UT.IO.getResource("jupyter/logo-32x32.png"), tWorkingDir+"logo-32x32.png");
-                UT.IO.copy(UT.IO.getResource("jupyter/logo-64x64.png"), tWorkingDir+"logo-64x64.png");
+                IO.copy(IO.getResource("jupyter/logo-32x32.png"), tWorkingDir+"logo-32x32.png");
+                IO.copy(IO.getResource("jupyter/logo-64x64.png"), tWorkingDir+"logo-64x64.png");
                 // 使用这种方法来安装，不走 jep 来避免安装失败的问题；
                 // 现在支持直接使用 PythonExec 来执行
                 try (PythonSystemExecutor tPython = new PythonSystemExecutor()) {
@@ -204,7 +205,7 @@ public class Main {
                     );
                     if (tExitValue != 0) {System.exit(tExitValue); return;}
                 }
-                UT.IO.removeDir(tWorkingDir);
+                IO.removeDir(tWorkingDir);
                 // 由于 java 中不能正常关闭 jupyter，因此不在这里运行 jupyter
                 System.out.println("The jupyter kernel for JSE has been initialized,");
                 System.out.println("now you can open the jupyter notebook through `jupyter notebook`");
@@ -270,7 +271,7 @@ public class Main {
                     IS_KERNEL = true;
                     JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
                     
-                    String tContents = UT.IO.readAllText(tValue);
+                    String tContents = IO.readAllText(tValue);
                     KernelConnectionProperties tConnProps = KernelConnectionProperties.parse(tContents);
                     JupyterConnection tConnection = new JupyterConnection(tConnProps);
                     

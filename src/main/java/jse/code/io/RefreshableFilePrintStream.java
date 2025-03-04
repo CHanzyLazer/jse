@@ -1,6 +1,6 @@
 package jse.code.io;
 
-import jse.code.UT;
+import jse.code.IO;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -118,7 +118,7 @@ public class RefreshableFilePrintStream extends PrintStream {
         private final RandomAccessFile mFile;
         private long mRefreshTo = 0;
         RefreshableFileOutputStream(@NotNull String aFilePath) throws IOException {
-            mFile = new RandomAccessFile(UT.IO.toFile(aFilePath), "rw");
+            mFile = new RandomAccessFile(IO.toFile(aFilePath), "rw");
             mFile.setLength(0);
         }
         

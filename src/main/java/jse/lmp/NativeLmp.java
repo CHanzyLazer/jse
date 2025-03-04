@@ -11,6 +11,7 @@ import jse.clib.CPointer;
 import jse.clib.Dlfcn;
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import jse.math.matrix.*;
@@ -185,16 +186,16 @@ public class NativeLmp implements IAutoShutdown {
             NATIVELMP_TAG = Conf.LMP_TAG==null ? Conf.DEFAULT_LMP_TAG : Conf.LMP_TAG;
             String tNativeDir = LMP_ROOT+NATIVE_DIR_NAME+"-"+NATIVELMP_TAG+"/";
             // 如果没有手动设定 LMP_TAG 则还会尝试不带 tag 的目录
-            if (Conf.LMP_TAG==null && !UT.IO.isDir(tNativeDir)) {
+            if (Conf.LMP_TAG==null && !IO.isDir(tNativeDir)) {
                 String tShortLmpDir = LMP_ROOT+NATIVE_DIR_NAME+"/";
-                if (UT.IO.isDir(tShortLmpDir)) tNativeDir = tShortLmpDir;
+                if (IO.isDir(tShortLmpDir)) tNativeDir = tShortLmpDir;
             }
             NATIVELMP_SRC_DIR = tNativeDir;
             NATIVELMP_HOME = NATIVELMP_SRC_DIR+BUILD_DIR_NAME+"/";
         } else {
             NATIVELMP_TAG = null;
             NATIVELMP_SRC_DIR = null;
-            NATIVELMP_HOME = UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(Conf.LMP_HOME));
+            NATIVELMP_HOME = IO.toInternalValidDir(IO.toAbsolutePath(Conf.LMP_HOME));
         }
         NATIVELMP_INCLUDE_DIR = NATIVELMP_HOME+"includes/";
         NATIVELMP_LIB_DIR = NATIVELMP_HOME+"lib/";
@@ -209,19 +210,19 @@ public class NativeLmp implements IAutoShutdown {
         NATIVELMP_LIB_PATH = new JNIUtil.LibBuilder("lammps", "NATIVE_LMP", NATIVELMP_LIB_DIR, rCmakeSettingNativeLmp)
             .setSrcDirIniter(wd -> {
                 // 如果有 NATIVELMP_SRC_DIR 但是不合法，则需要下载 lammps
-                if (NATIVELMP_SRC_DIR!=null && !UT.IO.isDir(NATIVELMP_SRC_DIR)) {
+                if (NATIVELMP_SRC_DIR!=null && !IO.isDir(NATIVELMP_SRC_DIR)) {
                     String tNativeLmpZipPath = wd+"lammps-"+NATIVELMP_TAG+".zip";
                     System.out.printf("NATIVE_LMP INIT INFO: No lammps in %s, downloading the source code...\n", NATIVELMP_SRC_DIR);
-                    UT.IO.copy(URI.create(String.format("https://github.com/lammps/lammps/archive/refs/tags/%s.zip", NATIVELMP_TAG)).toURL(), tNativeLmpZipPath);
+                    IO.copy(URI.create(String.format("https://github.com/lammps/lammps/archive/refs/tags/%s.zip", NATIVELMP_TAG)).toURL(), tNativeLmpZipPath);
                     System.out.println("NATIVE_LMP INIT INFO: lammps source code downloading finished.");
                     // 解压 lammps 到临时目录，如果已经存在则直接清空此目录
                     String tNativeLmpTempSrcDir = wd+"temp/";
-                    UT.IO.removeDir(tNativeLmpTempSrcDir);
-                    UT.IO.zip2dir(tNativeLmpZipPath, tNativeLmpTempSrcDir);
+                    IO.removeDir(tNativeLmpTempSrcDir);
+                    IO.zip2dir(tNativeLmpZipPath, tNativeLmpTempSrcDir);
                     String tNativeLmpTempSrcDir2 = null;
-                    for (String tName : UT.IO.list(tNativeLmpTempSrcDir)) {
+                    for (String tName : IO.list(tNativeLmpTempSrcDir)) {
                         String tNativeLmpTempDir1 = tNativeLmpTempSrcDir + tName + "/";
-                        if (UT.IO.isDir(tNativeLmpTempDir1)) {
+                        if (IO.isDir(tNativeLmpTempDir1)) {
                             tNativeLmpTempSrcDir2 = tNativeLmpTempDir1;
                             break;
                         }
@@ -229,16 +230,16 @@ public class NativeLmp implements IAutoShutdown {
                     if (tNativeLmpTempSrcDir2 == null) throw new Exception("NATIVE_LMP INIT ERROR: No lammps in "+tNativeLmpTempSrcDir);
                     // 移动到需要的目录
                     try {
-                        UT.IO.move(tNativeLmpTempSrcDir2, NATIVELMP_SRC_DIR);
+                        IO.move(tNativeLmpTempSrcDir2, NATIVELMP_SRC_DIR);
                     } catch (Exception e) {
                         // 移动失败则尝试直接拷贝整个目录
-                        UT.IO.copyDir(tNativeLmpTempSrcDir2, NATIVELMP_SRC_DIR);
+                        IO.copyDir(tNativeLmpTempSrcDir2, NATIVELMP_SRC_DIR);
                     }
                 }
                 return NATIVELMP_SRC_DIR;})
             .setBuildDirIniter(sd -> {
                 // 这样重写 build 目录的初始化，保证 build 目录一定是 NATIVELMP_HOME
-                UT.IO.makeDir(NATIVELMP_HOME);
+                IO.makeDir(NATIVELMP_HOME);
                 return NATIVELMP_HOME;})
             .setCmakeInitDir("../cmake")
             .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
@@ -274,13 +275,13 @@ public class NativeLmp implements IAutoShutdown {
             }).get();
         
         // 设置库路径
-        System.load(UT.IO.toAbsolutePath(NATIVELMP_LIB_PATH));
-        System.load(UT.IO.toAbsolutePath(LMPJNI_LIB_PATH));
+        System.load(IO.toAbsolutePath(NATIVELMP_LIB_PATH));
+        System.load(IO.toAbsolutePath(LMPJNI_LIB_PATH));
         // 部分情况需要将 lammps 库提升到全局范围，主要用于保证部分 lammps 的插件总是能找到 lammps 库本身
         if (Conf.DLOPEN) Dlfcn.dlopen(NATIVELMP_LIB_PATH);
         
         // 设置 EXECUTABLE_NAME
-        String tExecutableName = UT.IO.toFileName(NATIVELMP_LIB_PATH);
+        String tExecutableName = IO.toFileName(NATIVELMP_LIB_PATH);
         int tFirstDot = tExecutableName.indexOf(".");
         EXECUTABLE_NAME = tFirstDot>=0 ? tExecutableName.substring(0, tFirstDot) : tExecutableName;
         DEFAULT_ARGS = new String[] {EXECUTABLE_NAME, "-log", "none"};
@@ -319,7 +320,7 @@ public class NativeLmp implements IAutoShutdown {
         mLmpPtr = new NativeLmpPointer(this, tLmpPtr);
         mInitThead = Thread.currentThread();
     }
-    public NativeLmp(Collection<? extends CharSequence> aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(UT.Text.toArray(aArgs), aComm);}
+    public NativeLmp(Collection<? extends CharSequence> aArgs, @Nullable MPI.Comm aComm) throws LmpException {this(IO.Text.toArray(aArgs), aComm);}
     public NativeLmp(String... aArgs) throws LmpException {this(aArgs, null);}
     public NativeLmp(@Nullable MPI.Comm aComm, String... aArgs) throws LmpException {this(aArgs, aComm);}
     public NativeLmp(@Nullable MPI.Comm aComm) throws LmpException {this((String[])null, aComm);}
@@ -380,7 +381,7 @@ public class NativeLmp implements IAutoShutdown {
     public void file(String aPath) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
-        lammpsFile_(mLmpPtr.mPtr, UT.IO.toAbsolutePath(aPath));
+        lammpsFile_(mLmpPtr.mPtr, IO.toAbsolutePath(aPath));
     }
     private native static void lammpsFile_(long aLmpPtr, String aPath) throws LmpException;
     

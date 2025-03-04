@@ -1,7 +1,7 @@
 package jse.compat.UT;
 
-import jse.code.UT;
 import org.jetbrains.annotations.VisibleForTesting;
 
-@VisibleForTesting
-public final class IO extends UT.IO {}
+/** @deprecated use {@link jse.code.IO} */
+@VisibleForTesting @Deprecated
+public final class IO extends jse.code.IO {}

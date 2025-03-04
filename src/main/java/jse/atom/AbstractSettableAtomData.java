@@ -1,6 +1,6 @@
 package jse.atom;
 
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.math.MathEX;
 import jse.math.vector.IVector;
@@ -396,7 +396,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
      * @see Collection
      * @implSpec 需要调用 {@link #setSymbols(String...)} 或任何等价形式
      */
-    @Override public AbstractSettableAtomData setSymbols(Collection<? extends CharSequence> aSymbols) {return setSymbols(UT.Text.toArray(aSymbols));}
+    @Override public AbstractSettableAtomData setSymbols(Collection<? extends CharSequence> aSymbols) {return setSymbols(IO.Text.toArray(aSymbols));}
     /**
      * {@inheritDoc}
      * @return {@inheritDoc}

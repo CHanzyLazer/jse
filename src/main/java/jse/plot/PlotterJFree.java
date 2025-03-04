@@ -1,6 +1,7 @@
 package jse.plot;
 
 import jse.Main;
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.math.MathEX;
@@ -504,8 +505,8 @@ public class PlotterJFree implements IPlotter {
             @Nullable String tFilePath = aFilePath;
             if (tFilePath==null || tFilePath.isEmpty()) tFilePath = IPlotter.DEFAULT_FIGURE_NAME;
             if (!tFilePath.endsWith(".png")) tFilePath = tFilePath+".png";
-            UT.IO.validPath(tFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
-            ChartUtils.saveChartAsPNG(UT.IO.toFile(tFilePath), mChart, aWidth, aHeight);
+            IO.validPath(tFilePath); // 注意这里是调用外部接口保存，需要手动合法化路径
+            ChartUtils.saveChartAsPNG(IO.toFile(tFilePath), mChart, aWidth, aHeight);
         });
     }
     @Override public void save(@Nullable String aFilePath) throws IOException {save(aFilePath, mWidth, mHeight);}

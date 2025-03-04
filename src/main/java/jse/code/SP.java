@@ -39,7 +39,6 @@ import org.apache.groovy.groovysh.Groovysh;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.tools.shell.IO;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -79,16 +78,16 @@ public class SP {
     static {
         JAR_LIB_PATHS = new ArrayList<>();
         try {
-            if (UT.IO.isDir(JAR_LIB_DIR)) {
-                for (String tName : UT.IO.list(JAR_LIB_DIR)) if (tName.endsWith(".jar")) {
-                    JAR_LIB_PATHS.add(UT.IO.toAbsolutePath(JAR_LIB_DIR+tName));
+            if (IO.isDir(JAR_LIB_DIR)) {
+                for (String tName : IO.list(JAR_LIB_DIR)) if (tName.endsWith(".jar")) {
+                    JAR_LIB_PATHS.add(IO.toAbsolutePath(JAR_LIB_DIR+tName));
                 }
             }
             // 增加外置 jar 的库的路径
-            for (String tJarExlibDir : JAR_EXLIB_DIRS) if (UT.IO.isDir(tJarExlibDir)) {
-                tJarExlibDir = UT.IO.toInternalValidDir(tJarExlibDir);
-                for (String tName : UT.IO.list(tJarExlibDir)) if (tName.endsWith(".jar")) {
-                    JAR_LIB_PATHS.add(UT.IO.toAbsolutePath(tJarExlibDir+tName));
+            for (String tJarExlibDir : JAR_EXLIB_DIRS) if (IO.isDir(tJarExlibDir)) {
+                tJarExlibDir = IO.toInternalValidDir(tJarExlibDir);
+                for (String tName : IO.list(tJarExlibDir)) if (tName.endsWith(".jar")) {
+                    JAR_LIB_PATHS.add(IO.toAbsolutePath(tJarExlibDir+tName));
                 }
             }
         } catch (IOException e) {
@@ -219,8 +218,8 @@ public class SP {
                     List<String> tArgs = tCellCTX.getMagicCall().getArgs();
                     if (tArgs.isEmpty()) throw new IllegalArgumentException("Magic `%%writefile` Must have at least one argument.");
                     String tPath = tArgs.get(0);
-                    UT.IO.write(tPath, tCellCTX.getMagicCall().getBody());
-                    return new DisplayData("Cell body has been written to '"+tPath+"' ("+UT.IO.toAbsolutePath(tPath)+")");
+                    IO.write(tPath, tCellCTX.getMagicCall().getBody());
+                    return new DisplayData("Cell body has been written to '"+tPath+"' ("+ IO.toAbsolutePath(tPath)+")");
                 }
                 default: {
                     throw new IllegalArgumentException("Invalid cell magic: "+tCellName+"\n\n"+MAGIC_INFO);
@@ -328,7 +327,7 @@ public class SP {
     
     /** 一般的 aScriptPath 合法化，返回 null 表示没有找到文件 */
     static @Nullable String findValidScriptPath(String aScriptPath, String aExtension, String aScriptDir) {
-        aScriptDir = UT.IO.toInternalValidDir(aScriptDir);
+        aScriptDir = IO.toInternalValidDir(aScriptDir);
         // 如果不是指定后缀则有限检测带有后缀的，和 .bat 脚本类似的逻辑，可以保证同名脚本共存
         if (!aScriptPath.endsWith(aExtension)) {
             @Nullable String tPath = findValidScriptPath_(aScriptPath+aExtension, aScriptDir);
@@ -339,14 +338,14 @@ public class SP {
     }
     private static @Nullable String findValidScriptPath_(String aScriptPath, String aScriptDir) {
         // 都转为绝对路径避免意料外的问题
-        String tPath = UT.IO.toAbsolutePath(aScriptPath);
+        String tPath = IO.toAbsolutePath(aScriptPath);
         // 首先如果此文件存在则直接返回
-        if (UT.IO.isFile(tPath)) return tPath;
+        if (IO.isFile(tPath)) return tPath;
         // 如果是绝对路径则不再考虑增加 aScriptDir 的情况
-        if (UT.IO.isAbsolutePath(aScriptPath)) return null;
+        if (IO.isAbsolutePath(aScriptPath)) return null;
         // 否则增加 aScriptDir 后再次检测
-        tPath = UT.IO.toAbsolutePath(aScriptDir+aScriptPath);
-        if (UT.IO.isFile(tPath)) return tPath;
+        tPath = IO.toAbsolutePath(aScriptDir+aScriptPath);
+        if (IO.isFile(tPath)) return tPath;
         // 否则返回 null
         return null;
     }
@@ -427,7 +426,7 @@ public class SP {
             Python.runScript(aScriptPath, aArgs);
             return;
         }
-        throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+        throw new FileNotFoundException(aScriptPath + " (" + IO.toAbsolutePath(aScriptPath) + ")");
     }
     
     
@@ -437,8 +436,8 @@ public class SP {
         /** 将 aScriptPath 转换成 File，现在可以省略掉 script/groovy/ 以及后缀 */
         private static File toSourceFile(String aScriptPath) throws IOException {
             @Nullable String tPath = findValidScriptPath(aScriptPath, ".groovy", GROOVY_SP_DIR);
-            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
-            return UT.IO.toFile(tPath);
+            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + IO.toAbsolutePath(aScriptPath) + ")");
+            return IO.toFile(tPath);
         }
         /** 现在 groovy 也一样统一使用全局的一个解释器 */
         private final static GroovyShell GROOVY_SHELL;
@@ -456,7 +455,7 @@ public class SP {
             // 使用这个方法来自动设置种类
             org.apache.groovy.groovysh.Main.setTerminalType("auto", false);
             // 这样手动指定 CLASS_LOADER
-            Groovysh tGroovysh = new Groovysh(GROOVY_SHELL.getClassLoader(), GROOVY_SHELL.getContext(), new IO(), null, GROOVY_CONF);
+            Groovysh tGroovysh = new Groovysh(GROOVY_SHELL.getClassLoader(), GROOVY_SHELL.getContext(), new org.codehaus.groovy.tools.shell.IO(), null, GROOVY_CONF);
             // 这样直接添加默认 import，shell 会默认导入这些方便使用
             tGroovysh.getImports().add(MathEX.class.getName());
             tGroovysh.getImports().add(ComplexDouble.class.getName());
@@ -469,7 +468,7 @@ public class SP {
             tGroovysh.getImports().add(Conf.class.getName());
             tGroovysh.getImports().add("static "+UT.Timer.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Par.class.getName()+".*");
-            tGroovysh.getImports().add("static "+UT.IO.class.getName()+".*");
+            tGroovysh.getImports().add("static "+IO.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Math.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Plot.class.getName()+".*");
             tGroovysh.getImports().add("static "+UT.Code.class.getName()+".*");
@@ -548,12 +547,12 @@ public class SP {
             GROOVY_SHELL.getClassLoader().addClasspath(WORKING_DIR);
             }
             // 指定默认的 Groovy 脚本的类路径
-            GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
+            GROOVY_SHELL.getClassLoader().addClasspath(IO.toAbsolutePath(GROOVY_SP_DIR));
             // 增加一个 Groovy 的库的路径
-            GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
+            GROOVY_SHELL.getClassLoader().addClasspath(IO.toAbsolutePath(GROOVY_LIB_DIR));
             // 增加外置 Groovy 的库的路径
             for (String tGroovyExlibDir : GROOVY_EXLIB_DIRS) {
-            GROOVY_SHELL.getClassLoader().addClasspath(UT.IO.toAbsolutePath(tGroovyExlibDir));
+            GROOVY_SHELL.getClassLoader().addClasspath(IO.toAbsolutePath(tGroovyExlibDir));
             }
             // 增加 jar 文件夹下的所有 jar 文件到类路径中
             JAR_LIB_PATHS.forEach(path -> GROOVY_SHELL.getClassLoader().addClasspath(path));
@@ -612,7 +611,7 @@ public class SP {
         /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
         private static String validScriptPath(String aScriptPath) throws IOException {
             @Nullable String tPath = findValidScriptPath(aScriptPath, ".py", PYTHON_SP_DIR);
-            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + UT.IO.toAbsolutePath(aScriptPath) + ")");
+            if (tPath == null) throw new FileNotFoundException(aScriptPath + " (" + IO.toAbsolutePath(aScriptPath) + ")");
             return tPath;
         }
         /** 一样这里统一使用全局的一个解释器 */
@@ -771,37 +770,37 @@ public class SP {
                 .setSrcDirIniter(wd -> {
                     // 首先获取源码路径，这里直接从 resource 里输出
                     String tJepZipPath = wd+"jep-"+JEP_VERSION+".zip";
-                    UT.IO.copy(UT.IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
+                    IO.copy(IO.getResource("jep/jep-"+JEP_VERSION+".zip"), tJepZipPath);
                     // 解压 jep 包到临时目录，如果已经存在则直接清空此目录
                     String tJepDir = wd+"jep/";
-                    UT.IO.removeDir(tJepDir);
-                    UT.IO.zip2dir(tJepZipPath, tJepDir);
+                    IO.removeDir(tJepDir);
+                    IO.zip2dir(tJepZipPath, tJepDir);
                     // 拷贝 python 脚本，现在直接在这里拷贝即可
                     String tJepPyDir = tJepDir+"src/main/python/jep/";
                     String tJepLibPyDir = JEP_LIB_DIR+"jep/";
-                    UT.IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
+                    IO.removeDir(tJepLibPyDir); // 如果存在删除一下保证移动成功
                     try {
-                        UT.IO.move(tJepPyDir, tJepLibPyDir);
+                        IO.move(tJepPyDir, tJepLibPyDir);
                     } catch (Exception e) {
                         // 移动失败则尝试直接拷贝整个目录
-                        UT.IO.copyDir(tJepPyDir, tJepLibPyDir);
+                        IO.copyDir(tJepPyDir, tJepLibPyDir);
                     }
                     return tJepDir;})
                 .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
                 .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_JEP_LIB)
                 .get();
             // 设置库路径
-            jep.MainInterpreter.setJepLibraryPath(UT.IO.toAbsolutePath(JEP_LIB_PATH));
+            jep.MainInterpreter.setJepLibraryPath(IO.toAbsolutePath(JEP_LIB_PATH));
             
             // 配置 Jep，这里只能配置一次；这里考虑了优先级，越能看到的优先级越高
             JepConfig rConfig = new JepConfig();
             if (INCLUDE_WORKING_DIR) {
             rConfig.addIncludePaths(WORKING_DIR);
             }
-            rConfig.addIncludePaths(UT.IO.toAbsolutePath(PYTHON_SP_DIR),
-                                    UT.IO.toAbsolutePath(PYTHON_LIB_DIR))
-                .addIncludePaths(NewCollections.mapArray(PYTHON_EXLIB_DIRS, UT.IO::toAbsolutePath))
-                .addIncludePaths(UT.IO.toAbsolutePath(JEP_LIB_DIR))
+            rConfig.addIncludePaths(IO.toAbsolutePath(PYTHON_SP_DIR),
+                                    IO.toAbsolutePath(PYTHON_LIB_DIR))
+                .addIncludePaths(NewCollections.mapArray(PYTHON_EXLIB_DIRS, IO::toAbsolutePath))
+                .addIncludePaths(IO.toAbsolutePath(JEP_LIB_DIR))
                 .setClassLoader(Groovy.classLoader()) // 指定 Groovy 的 ClassLoader 从而可以直接导入 groovy 的类
                 .redirectStdout(System.out)
                 .redirectStdErr(System.err);
@@ -812,10 +811,10 @@ public class SP {
                 if (INCLUDE_WORKING_DIR) {
                 jep.ClassList.ADDITIONAL_CLASS_PATHS.add(WORKING_DIR);
                 }
-                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_SP_DIR));
-                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(GROOVY_LIB_DIR));
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(IO.toAbsolutePath(GROOVY_SP_DIR));
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(IO.toAbsolutePath(GROOVY_LIB_DIR));
                 for (String tGroovyExlibDir : GROOVY_EXLIB_DIRS) {
-                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(UT.IO.toAbsolutePath(tGroovyExlibDir));
+                jep.ClassList.ADDITIONAL_CLASS_PATHS.add(IO.toAbsolutePath(tGroovyExlibDir));
                 }
                 jep.ClassList.ADDITIONAL_CLASS_FILE_EXTENSION.add(".groovy");
             }
@@ -878,7 +877,7 @@ public class SP {
             }
             // 不提供强制仅下载源码的选项，因为很多下载的源码都不能编译成功
             // 设置目标路径
-            UT.IO.makeDir(PYTHON_PKG_DIR);
+            IO.makeDir(PYTHON_PKG_DIR);
             rCommand.add("--dest"); rCommand.add("'"+PYTHON_PKG_DIR+"'");
             // 设置需要的包名
             rCommand.add("'"+aRequirement+"'");
@@ -908,10 +907,10 @@ public class SP {
             // 是否开启联网，这里默认不开启联网，因为标准下会使用 downloadPackage 来下载包
             if (!aIncludeIndex) rCommand.add("--no-index");
             // 添加 .pypkg 到搜索路径
-            UT.IO.makeDir(PYTHON_PKG_DIR);
+            IO.makeDir(PYTHON_PKG_DIR);
             rCommand.add("--find-links"); rCommand.add("'file:"+PYTHON_PKG_DIR+"'");
             // 设置目标路径
-            UT.IO.makeDir(PYTHON_LIB_DIR);
+            IO.makeDir(PYTHON_LIB_DIR);
             rCommand.add("--target"); rCommand.add("'"+PYTHON_LIB_DIR+"'");
             // 强制开启更新，替换已有的包
             rCommand.add("--upgrade");
@@ -927,8 +926,8 @@ public class SP {
         /** 一些内置的 python 库安装，主要用于内部使用 */
         public static void installAse() throws IOException {
             // 首先获取源码路径，这里直接检测是否是 ase-$ASE_VERSION 开头
-            UT.IO.makeDir(PYTHON_PKG_DIR);
-            String[] tList = UT.IO.list(PYTHON_PKG_DIR);
+            IO.makeDir(PYTHON_PKG_DIR);
+            String[] tList = IO.list(PYTHON_PKG_DIR);
             boolean tHasAsePkg = false;
             for (String tName : tList) if (tName.startsWith("ase-"+ASE_VERSION)) {
                 tHasAsePkg = true; break;

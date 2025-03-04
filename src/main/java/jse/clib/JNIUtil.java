@@ -1,5 +1,6 @@
 package jse.clib;
 
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
 import org.jetbrains.annotations.ApiStatus;
@@ -64,8 +65,8 @@ public class JNIUtil {
     
     private static void initJNIUtil_() throws Exception {
         // 直接从内部资源解压到需要目录，如果已经存在则先删除
-        UT.IO.removeDir(INCLUDE_DIR);
-        UT.IO.copy(UT.IO.getResource("jniutil/src/"+ HEADER_NAME), HEADER_PATH);
+        IO.removeDir(INCLUDE_DIR);
+        IO.copy(IO.getResource("jniutil/src/"+ HEADER_NAME), HEADER_PATH);
         System.out.println("JNIUTIL INIT INFO: jniutil successfully installed.");
         System.out.println("JNIUTIL INCLUDE DIR: " + INCLUDE_DIR);
     }
@@ -74,7 +75,7 @@ public class JNIUtil {
         InitHelper.INITIALIZED = true;
         
         // 如果不存在 jniutil.h 则需要重新通过源码编译
-        if (!UT.IO.isFile(HEADER_PATH)) {
+        if (!IO.isFile(HEADER_PATH)) {
             System.out.println("JNIUTIL INIT INFO: jniutil.h not found. Reinstalling...");
             try {initJNIUtil_();}
             catch (Exception e) {throw new RuntimeException(e);}
@@ -92,7 +93,7 @@ public class JNIUtil {
         private IDirIniter aSrcDirIniter = null;
         private IDirIniter aBuildDirIniter = sd -> {
             String tBuildDir = sd + BUILD_DIR_NAME + "/";
-            UT.IO.makeDir(tBuildDir);
+            IO.makeDir(tBuildDir);
             return tBuildDir;
         };
         private final String aLibDir;
@@ -112,9 +113,9 @@ public class JNIUtil {
         }
         public LibBuilder setSrc(final String aAssetsDirName, final String[] aSrcNames) {
             aSrcDirIniter = wd -> {
-                for (String tName : aSrcNames) {UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
+                for (String tName : aSrcNames) {IO.copy(IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
                 // 注意增加这个被省略的 CMakeLists.txt
-                UT.IO.copy(UT.IO.getResource(aAssetsDirName+"/src/CMakeLists.txt"), wd+"CMakeLists.txt");
+                IO.copy(IO.getResource(aAssetsDirName+"/src/CMakeLists.txt"), wd+"CMakeLists.txt");
                 return wd;
             };
             return this;
@@ -178,7 +179,7 @@ public class JNIUtil {
         rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(aUseMiMalloc?"ON":"OFF"));
         }
         // 设置构建输出目录为 lib
-        UT.IO.makeDir(aLibDir); // 初始化一下这个目录避免意料外的问题
+        IO.makeDir(aLibDir); // 初始化一下这个目录避免意料外的问题
         rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
         rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
         rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
@@ -206,14 +207,14 @@ public class JNIUtil {
         // 从内部资源解压到临时目录
         String tWorkingDir = WORKING_DIR_OF(aProjectName+"@"+UT.Code.randID());
         // 如果已经存在则先删除
-        UT.IO.removeDir(tWorkingDir);
+        IO.removeDir(tWorkingDir);
         // 初始化工作目录，默认操作为把源码拷贝到目录下；
         // 对于较大的项目则会是一个 zip 的源码，多一个解压的步骤
         String tSrcDir = aSrcDirIniter.init(tWorkingDir);
         // 这里对 CMakeLists.txt 特殊处理
         if (aCmakeLineOpt != null) {
-            String tCmakeListsDir = UT.IO.toInternalValidDir(aCmakeInitDir).substring(3); // 为了让讨论简单，这里约定要求 aCmakeInitDir 一定要 `..` 开头
-            UT.IO.map(tSrcDir+tCmakeListsDir+"CMakeLists.txt", tSrcDir+tCmakeListsDir+"CMakeLists1.txt", line -> {
+            String tCmakeListsDir = IO.toInternalValidDir(aCmakeInitDir).substring(3); // 为了让讨论简单，这里约定要求 aCmakeInitDir 一定要 `..` 开头
+            IO.map(tSrcDir+tCmakeListsDir+"CMakeLists.txt", tSrcDir+tCmakeListsDir+"CMakeLists1.txt", line -> {
                 // 替换其中的 jniutil 库路径为设置好的路径
                 line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
                 // 替换其中的 mimalloc 库路径为设置好的路径
@@ -224,7 +225,7 @@ public class JNIUtil {
                 return aCmakeLineOpt.apply(line);
             });
             // 覆盖旧的 CMakeLists.txt
-            UT.IO.move(tSrcDir+tCmakeListsDir+"CMakeLists1.txt", tSrcDir+tCmakeListsDir+"CMakeLists.txt");
+            IO.move(tSrcDir+tCmakeListsDir+"CMakeLists1.txt", tSrcDir+tCmakeListsDir+"CMakeLists.txt");
         }
         // 开始通过 cmake 编译
         System.out.println(aInfoProjectName+" INIT INFO: Building "+aProjectName+" from source code...");
@@ -242,7 +243,7 @@ public class JNIUtil {
         @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
         if (tLibName == null) throw new Exception(aInfoProjectName+" BUILD ERROR: Build Failed, No "+aProjectName+" lib in '"+aLibDir+"'");
         // 完事后移除临时解压得到的源码
-        UT.IO.removeDir(tWorkingDir);
+        IO.removeDir(tWorkingDir);
         System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" successfully installed.");
         System.out.println(aInfoProjectName+" LIB DIR: " + aLibDir);
         // 输出安装完成后的库名称

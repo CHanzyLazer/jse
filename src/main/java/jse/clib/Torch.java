@@ -1,8 +1,8 @@
 package jse.clib;
 
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.SP;
-import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
 import static jse.code.Conf.LIB_NAME_IN;
@@ -60,8 +60,8 @@ public class Torch {
     
     private static void initTorch_() throws Exception {
         // 首先获取源码路径，这里直接检测是否是 torch-$VERSION 开头
-        UT.IO.makeDir(PYTHON_PKG_DIR);
-        String[] tList = UT.IO.list(PYTHON_PKG_DIR);
+        IO.makeDir(PYTHON_PKG_DIR);
+        String[] tList = IO.list(PYTHON_PKG_DIR);
         boolean tHasTorchPkg = false;
         for (String tName : tList) if (tName.startsWith("torch-"+VERSION)) {
             tHasTorchPkg = true; break;
@@ -100,12 +100,12 @@ public class Torch {
         
         // 如果设置了自定义的 TORCH_HOME，并且改为使用此处的 torch；
         // 这里简单处理，不去检测是否合理（或者后续有检测则统一检测方式）
-        HOME = Conf.HOME!=null ? UT.IO.toInternalValidDir(Conf.HOME) : PYTHON_LIB_DIR+"torch/";
+        HOME = Conf.HOME!=null ? IO.toInternalValidDir(Conf.HOME) : PYTHON_LIB_DIR+"torch/";
         LIB_DIR = HOME+"lib/";
         CMAKE_DIR = HOME+"share/cmake/Torch/";
         
         // 如果不存在 torch 目录需要重新通过 pip 来安装
-        if (!UT.IO.isDir(HOME)) {
+        if (!IO.isDir(HOME)) {
             System.out.println("TORCH INIT INFO: torch not found. Reinstalling...");
             try {initTorch_();}
             catch (Exception e) {throw new RuntimeException(e);}
@@ -117,7 +117,7 @@ public class Torch {
         }
         // 这里顺便加载 torch 的 c++ 库，简单测试对 python 的使用似乎没有影响
         for (String tLibPath : LIB_PATHS) {
-            System.load(UT.IO.toAbsolutePath(tLibPath));
+            System.load(IO.toAbsolutePath(tLibPath));
         }
     }
     

@@ -1,6 +1,7 @@
 package jse.system;
 
 import com.jcraft.jsch.*;
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import jse.parallel.ExecutorsEX;
@@ -98,7 +99,7 @@ final class SSHCore implements IAutoShutdown {
                 rServerSSH.mPassword = aPassword;
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "password");
             } else {
-                rServerSSH.mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : UT.IO.toAbsolutePath(aKeyPath));
+                rServerSSH.mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : IO.toAbsolutePath(aKeyPath));
                 rServerSSH.mKeyPath = aKeyPath; // 传入 addIdentity 的需要转为绝对路径，而内部存储的属性保留输入的格式
                 rServerSSH.mSession.setConfig("PreferredAuthentications", "publickey");
             }
@@ -126,7 +127,7 @@ final class SSHCore implements IAutoShutdown {
         if (mDead) throw new RuntimeException("Can NOT setLocalWorkingDir from a Dead SSH.");
         if (aLocalWorkingDir == null) aLocalWorkingDir = "";
         mLocalWorkingDir_ = aLocalWorkingDir;
-        aLocalWorkingDir = UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(aLocalWorkingDir));
+        aLocalWorkingDir = IO.toInternalValidDir(IO.toAbsolutePath(aLocalWorkingDir));
         mLocalWorkingDir = aLocalWorkingDir;
         return this;
     }
@@ -134,7 +135,7 @@ final class SSHCore implements IAutoShutdown {
         if (mDead) throw new RuntimeException("Can NOT setRemoteWorkingDir from a Dead SSH.");
         if (aRemoteWorkingDir == null) aRemoteWorkingDir = "";
         mRemoteWorkingDir_ = aRemoteWorkingDir;
-        aRemoteWorkingDir = UT.IO.toInternalValidDir(aRemoteWorkingDir);
+        aRemoteWorkingDir = IO.toInternalValidDir(aRemoteWorkingDir);
         if (aRemoteWorkingDir.startsWith("~/")) aRemoteWorkingDir = aRemoteWorkingDir.substring(2); // JSch 不支持 ~
         mRemoteWorkingDir = aRemoteWorkingDir;
         return this;
@@ -177,7 +178,7 @@ final class SSHCore implements IAutoShutdown {
     public SSHCore setKey(String aKeyPath) throws Exception {
         if (mDead) throw new RuntimeException("Can NOT setKey from a Dead SSH.");
         mJsch.removeAllIdentity(); // 移除旧的认证
-        mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : UT.IO.toAbsolutePath(aKeyPath));
+        mJsch.addIdentity(aKeyPath==null ? DEFAULT_KEY_PATH : IO.toAbsolutePath(aKeyPath));
         mPassword = null;
         mKeyPath = aKeyPath; // 传入 addIdentity 的需要转为绝对路径，而内部存储的属性保留输入的格式
         session().setConfig("PreferredAuthentications", "publickey");
@@ -241,7 +242,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            aDir = UT.IO.toInternalValidDir(aDir);
+            aDir = IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 如果没有此文件夹则直接退出
             if (!isDir_(tChannelSftp, tRemoteDir)) return;
@@ -263,7 +264,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            aDir = UT.IO.toInternalValidDir(aDir);
+            aDir = IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 创建文件夹
             makeDir_(tChannelSftp, tRemoteDir);
@@ -283,7 +284,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            aDir = UT.IO.toInternalValidDir(aDir);
+            aDir = IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             // 获取结果
             return isDir_(tChannelSftp, tRemoteDir);
@@ -360,7 +361,7 @@ final class SSHCore implements IAutoShutdown {
             tChannelSftp = (ChannelSftp) session().openChannel("sftp");
             tChannelSftp.connect();
             if (aDir.equals(".")) aDir = "";
-            aDir = UT.IO.toInternalValidDir(aDir);
+            aDir = IO.toInternalValidDir(aDir);
             String tRemoteDir = mRemoteWorkingDir+aDir;
             String[] tList = list_(tChannelSftp, tRemoteDir);
             if (tList == null) throw new IOException("Fail to det list of \""+aDir+"\"");
@@ -388,7 +389,7 @@ final class SSHCore implements IAutoShutdown {
             for (String tFilePath : aFilePaths) if (tFilePath!=null && !tFilePath.isEmpty()) {
                 // 检测文件路径是否合法，这里非法路径直接跳过
                 String tLocalFile = mLocalWorkingDir+tFilePath;
-                if (UT.IO.isFile(tLocalFile)) {
+                if (IO.isFile(tLocalFile)) {
                     // 创建目标文件夹
                     String tRemoteDir = mRemoteWorkingDir;
                     int tEndIdx = tFilePath.lastIndexOf("/");
@@ -422,7 +423,7 @@ final class SSHCore implements IAutoShutdown {
                     int tEndIdx = tFilePath.lastIndexOf("/");
                     if (tEndIdx > 0) { // 否则不用创建，认为 mLocalWorkingDir 已经存在
                         tLocalDir += tFilePath.substring(0, tEndIdx + 1);
-                        UT.IO.makeDir(tLocalDir);
+                        IO.makeDir(tLocalDir);
                     }
                     // 下载文件
                     tChannelSftp.get(tRemoteDir, tLocalDir);
@@ -443,7 +444,7 @@ final class SSHCore implements IAutoShutdown {
                 tSftpPool.submit(aChannelSftp -> {
                     // 检测文件路径是否合法，这里非法路径直接跳过
                     String tLocalFile = mLocalWorkingDir+tFilePath;
-                    if (UT.IO.isFile(tLocalFile)) {
+                    if (IO.isFile(tLocalFile)) {
                         // 创建目标文件夹
                         String tRemoteDir = mRemoteWorkingDir;
                         int tEndIdx = tFilePath.lastIndexOf("/");
@@ -479,7 +480,7 @@ final class SSHCore implements IAutoShutdown {
                         int tEndIdx = tFilePath.lastIndexOf("/");
                         if (tEndIdx > 0) { // 否则不用创建，认为 mLocalWorkingDir 已经存在
                             tLocalDir += tFilePath.substring(0, tEndIdx + 1);
-                            UT.IO.makeDir(tLocalDir);
+                            IO.makeDir(tLocalDir);
                         }
                         // 下载文件
                         aChannelSftp.get(tRemoteDir, tLocalDir);

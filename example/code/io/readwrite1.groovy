@@ -1,6 +1,6 @@
 package code.io
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 // 写入多行字符串到文件
 write('.temp/example/io/1.txt', ['111111', '222222', '333333'])

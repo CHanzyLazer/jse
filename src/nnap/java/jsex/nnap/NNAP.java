@@ -9,10 +9,7 @@ import jse.atom.*;
 import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
 import jse.clib.*;
-import jse.code.CS;
-import jse.code.OS;
-import jse.code.SP;
-import jse.code.UT;
+import jse.code.*;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
 import jse.code.collection.IntList;
@@ -111,7 +108,7 @@ public class NNAP implements IAutoShutdown {
                 return line;
             }).get();
         // 设置库路径
-        System.load(UT.IO.toAbsolutePath(LIB_PATH));
+        System.load(IO.toAbsolutePath(LIB_PATH));
         
         // 这里需要 torch 单线程
         try {setSingleThread0();}
@@ -432,7 +429,7 @@ public class NNAP implements IAutoShutdown {
         }
     }
     public NNAP(String aModelPath, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) throws TorchException, IOException {
-        this(aModelPath.endsWith(".yaml") || aModelPath.endsWith(".yml") ? UT.IO.yaml2map(aModelPath) : UT.IO.json2map(aModelPath), aThreadNumber);
+        this(aModelPath.endsWith(".yaml") || aModelPath.endsWith(".yml") ? IO.yaml2map(aModelPath) : IO.json2map(aModelPath), aThreadNumber);
     }
     public NNAP(Map<?, ?> aModelInfo) throws TorchException {this(aModelInfo, 1);}
     public NNAP(String aModelPath) throws TorchException, IOException {this(aModelPath, 1);}

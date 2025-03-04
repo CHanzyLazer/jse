@@ -1,5 +1,6 @@
 package jse.system;
 
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.parallel.AbstractThreadPool;
@@ -60,11 +61,11 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         return UT.Par.map(tSystemTask, v -> rList);
     }
     
-    protected final static UT.IO.IWriteln NUL_WRITELN = line -> {/**/};
-    protected final static UT.IO.IWriteln STD_OUT_WRITELN = System.out::println;
-    private UT.IO.IWriteln fileWriteln(String aFilePath) {
+    protected final static IO.IWriteln NUL_WRITELN = line -> {/**/};
+    protected final static IO.IWriteln STD_OUT_WRITELN = System.out::println;
+    private IO.IWriteln fileWriteln(String aFilePath) {
         try {
-            return UT.IO.toWriteln(aFilePath);
+            return IO.toWriteln(aFilePath);
         } catch (IOException e) {
             printStackTrace(e);
             return NUL_WRITELN;
@@ -176,7 +177,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     
     
     /** 保证提交的指令都在内部有记录 */
-    private int system_(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
+    private int system_(String aCommand, @NotNull IO.IWriteln aWriteln) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return 0;
         int tExitValue;
@@ -195,7 +196,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
         }
         return tExitValue;
     }
-    private Future<Integer> submitSystem_(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
+    private Future<Integer> submitSystem_(String aCommand, @NotNull IO.IWriteln aWriteln) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return SUC_FUTURE;
         SystemFuture<Integer> tSystem = toSystemFuture(submitSystem__(aCommand, aWriteln));
@@ -210,7 +211,7 @@ public abstract class AbstractSystemExecutor extends AbstractThreadPool<IExecuto
     
     /** stuff to override */
     protected void shutdownFinal() {/**/}
-    protected abstract Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln);
+    protected abstract Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln);
     protected abstract void putFiles_(Iterable<String> aFiles) throws Exception;
     protected abstract void getFiles_(Iterable<String> aFiles) throws Exception;
 }

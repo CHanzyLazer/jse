@@ -1,6 +1,6 @@
 package jse.atom;
 
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractCollections;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -430,7 +430,7 @@ public abstract class AtomDataBuilder<R> {
     public AtomDataBuilder<R> setSymbols(Collection<? extends CharSequence> aSymbols) {
         if (aSymbols.size() > mAtomTypeNum) {
             mAtomTypeNum = aSymbols.size();
-            mSymbols = UT.Text.toArray(aSymbols);
+            mSymbols = IO.Text.toArray(aSymbols);
             return this;
         }
         if (mSymbols == null) mSymbols = new String[mAtomTypeNum];

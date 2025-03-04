@@ -3,6 +3,7 @@ package jse.math.table;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
+import jse.code.IO;
 import jse.code.UT;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.IMatrixGetter;
@@ -29,7 +30,7 @@ public class Tables {
         return rTable;
     }
     public static Table from(int aRowNum, Collection<? extends CharSequence> aHeads, IMatrixGetter aDataGetter) {
-        return from(aRowNum, UT.Text.toArray(aHeads), aDataGetter);
+        return from(aRowNum, IO.Text.toArray(aHeads), aDataGetter);
     }
     public static Table from(int aRowNum, int aColNum, IMatrixGetter aDataGetter) {
         Table rTable = zeros(aRowNum, aColNum);

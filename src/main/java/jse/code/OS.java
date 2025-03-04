@@ -26,6 +26,8 @@ import static jse.code.CS.ZL_STR;
 /**
  * 系统相关操作，包括 jar 包的位置，执行系统指令，判断系统类型，获取工作目录等；
  * 现在变为独立的类而不是放在 {@link CS} 或 {@link UT} 中
+ * @see ISystemExecutor ISystemExecutor: 独立的系统命令执行器
+ * @see IO IO: 文件操作工具类
  * @author liqa
  */
 public class OS {
@@ -62,10 +64,10 @@ public class OS {
         InitHelper.INITIALIZED = true;
         // 获取 java.home
         JAVA_HOME = System.getProperty("java.home"); // 这里统一认为 java.home 就是绝对路径
-        JAVA_HOME_DIR = UT.IO.toInternalValidDir(JAVA_HOME);
+        JAVA_HOME_DIR = IO.toInternalValidDir(JAVA_HOME);
         // 先获取 user.home
         USER_HOME = System.getProperty("user.home"); // 这里统一认为 user.home 就是绝对路径
-        USER_HOME_DIR = UT.IO.toInternalValidDir(USER_HOME);
+        USER_HOME_DIR = IO.toInternalValidDir(USER_HOME);
         // 然后通过执行指令来初始化 WORKING_DIR；
         // 这种写法可以保证有最大的兼容性，即使后续 EXE 可能非法（不是所有平台都有 bash）
         String wd = USER_HOME;
@@ -85,7 +87,7 @@ public class OS {
         // 全局修改工作目录为正确的目录
         System.setProperty("user.dir", wd);
         // jse 内部使用的 dir 需要末尾增加 `/`
-        WORKING_DIR = UT.IO.toInternalValidDir(wd);
+        WORKING_DIR = IO.toInternalValidDir(wd);
         WORKING_DIR_PATH = Paths.get(WORKING_DIR);
         
         // 获取此 jar 的路径
@@ -97,12 +99,12 @@ public class OS {
         } catch (Exception e) {
             // 在 linux 中这个路径可能是相对路径，为了避免库安装错误这里统一获取一下绝对路径
             // 现在应该可以随意使用 UT.IO 而不会循环初始化
-            tJarPath = UT.IO.toAbsolutePath_(System.getProperty("java.class.path"));
+            tJarPath = IO.toAbsolutePath_(System.getProperty("java.class.path"));
         }
         JAR_PATH = tJarPath.toString();
         Path tJarDirPath = tJarPath.getParent();
         String tJarDir = tJarDirPath==null ? "" : tJarDirPath.toString();
-        tJarDir = UT.IO.toInternalValidDir(tJarDir);
+        tJarDir = IO.toInternalValidDir(tJarDir);
         JAR_DIR = tJarDir;
         // 创建默认 EXE，无内部线程池，windows 下使用 powershell 而 linux 下使用 bash 统一指令；
         // 这种选择可以保证指令使用统一，即使这些终端不一定所有平台都有
@@ -332,7 +334,7 @@ public class OS {
         static {
             // 获取节点列表，如果失败则不是 slurm
             String tRawNodeList = OS.env("SLURM_NODELIST");
-            NODE_LIST = tRawNodeList==null ? null : ImmutableList.copyOf(UT.Text.splitNodeList(tRawNodeList));
+            NODE_LIST = tRawNodeList==null ? null : ImmutableList.copyOf(IO.Text.splitNodeList(tRawNodeList));
             IS_SLURM = NODE_LIST != null;
             // 是 slurm 则从环境变量中读取后续参数，否则使用默认非法值
             if (IS_SLURM) {

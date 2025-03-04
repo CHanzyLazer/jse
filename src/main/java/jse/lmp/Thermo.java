@@ -1,6 +1,6 @@
 package jse.lmp;
 
-import jse.code.UT;
+import jse.code.IO;
 import jse.math.table.ITable;
 import jse.math.table.Table;
 import jse.math.table.Tables;
@@ -54,7 +54,7 @@ public class Thermo extends Table {
      * @throws IOException 如果读取失败
      */
     public static Thermo readCSV(String aPath) throws IOException {
-        return new Thermo(UT.IO.csv2table(aPath));
+        return new Thermo(IO.csv2table(aPath));
     }
     
     /**
@@ -65,7 +65,7 @@ public class Thermo extends Table {
      * @return 读取得到的 Thermo 对象，如果有多个 thermo 会尝试自动合并，理论上文件不完整的帧会尝试读取已有的部分
      * @throws IOException 如果读取失败
      */
-    public static Thermo read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static Thermo read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static Thermo read_(BufferedReader aReader) throws IOException {
         String tLine;
@@ -74,10 +74,10 @@ public class Thermo extends Table {
         
         while (true) {
             // 跳转到 "Per MPI rank memory allocation" 后面的 "Step" 行，也就是需要 thermo 中包含 step 项
-            tLine = UT.Text.findLineContaining(aReader, "Per MPI rank memory allocation"); if (tLine == null) break;
-            tLine = UT.Text.findLineContaining(aReader, "Step", true); if (tLine == null) break;
+            tLine = IO.Text.findLineContaining(aReader, "Per MPI rank memory allocation"); if (tLine == null) break;
+            tLine = IO.Text.findLineContaining(aReader, "Step", true); if (tLine == null) break;
             // 获取种类的 key
-            String[] tHeads = UT.Text.splitBlank(tLine);
+            String[] tHeads = IO.Text.splitBlank(tLine);
             if (aHeads == null) {
                 aHeads = tHeads;
             } else {
@@ -87,8 +87,8 @@ public class Thermo extends Table {
             // 直接遍历读取数据
             while ((tLine = aReader.readLine()) != null) {
                 // 现在改为字符串判断而不是靠不稳定的 str2data 来判断结束
-                if (UT.Text.containsIgnoreCase(tLine, "Loop time of")) break;
-                rDataRows.add(UT.Text.str2data(tLine, tHeads.length));
+                if (IO.Text.containsIgnoreCase(tLine, "Loop time of")) break;
+                rDataRows.add(IO.Text.str2data(tLine, tHeads.length));
             }
         }
         if (aHeads == null) return null;
@@ -102,6 +102,6 @@ public class Thermo extends Table {
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        UT.IO.table2csv(this, aFilePath);
+        IO.table2csv(this, aFilePath);
     }
 }

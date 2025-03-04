@@ -90,7 +90,7 @@ public class Conf {
      * <p>
      * 也可使用环境变量 {@code JSE_TEMP_WORKING_DIR} 来设置，可以不包含最后的斜杠 {@code "/"}
      */
-    public static String TEMP_WORKING_DIR = UT.IO.toInternalValidDir(OS.env("JSE_TEMP_WORKING_DIR", ".temp/%n/"));
+    public static String TEMP_WORKING_DIR = IO.toInternalValidDir(OS.env("JSE_TEMP_WORKING_DIR", ".temp/%n/"));
     /**
      * 获取一个给定独立名称的临时工作目录，为了避免目录重复一般会调用
      * {@link UT.Code#randID()} 来创建一个随机的 id 来作为输入。
@@ -98,7 +98,7 @@ public class Conf {
      * 此操作仅获取路径，不会实际创建文件夹，也不会检查文件夹是否存在或者为空。
      *
      * @param aUniqueName 希望的工作目录的特殊名称
-     * @return 返回临时工作目录的路径，内部会调用 {@link UT.IO#toInternalValidDir(String)} 确保得到的路径可以直接拼接文件名称
+     * @return 返回临时工作目录的路径，内部会调用 {@link IO#toInternalValidDir(String)} 确保得到的路径可以直接拼接文件名称
      */
     public static String WORKING_DIR_OF(String aUniqueName) {return WORKING_DIR_OF(aUniqueName, false);}
     /**
@@ -109,12 +109,12 @@ public class Conf {
      *
      * @param aUniqueName 希望的工作目录的特殊名称
      * @param aRelative 是否需要一个相对路径，默认为 {@code false}，即总是会返回绝对路径
-     * @return 返回临时工作目录的路径，内部会调用 {@link UT.IO#toInternalValidDir(String)} 确保得到的路径可以直接拼接文件名称
+     * @return 返回临时工作目录的路径，内部会调用 {@link IO#toInternalValidDir(String)} 确保得到的路径可以直接拼接文件名称
      */
     public static String WORKING_DIR_OF(String aUniqueName, boolean aRelative) {
         String tRelativeWD = TEMP_WORKING_DIR.replaceAll("%n", aUniqueName);
         if (aRelative) return tRelativeWD;
-        return UT.IO.toInternalValidDir(UT.IO.toAbsolutePath(tRelativeWD));
+        return IO.toInternalValidDir(IO.toAbsolutePath(tRelativeWD));
     }
     
     /**
@@ -260,7 +260,7 @@ public class Conf {
      */
     public static @Nullable String LIB_NAME_IN(String aLibDir, String aProjectName) {
         try {
-            for (String tName : UT.IO.list(aLibDir)) {
+            for (String tName : IO.list(aLibDir)) {
                 // 固定后缀保证不会加载到其他平台的动态库
                 if (tName.endsWith(LIB_EXTENSION) && tName.contains(aProjectName)) return tName;
             }
@@ -278,7 +278,7 @@ public class Conf {
      */
     public static @Nullable String LLIB_NAME_IN(String aLibDir, String aProjectName) {
         try {
-            for (String tName : UT.IO.list(aLibDir)) {
+            for (String tName : IO.list(aLibDir)) {
                 // 固定后缀保证不会加载到其他平台的动态库
                 if (tName.endsWith(LLIB_EXTENSION) && tName.contains(aProjectName)) return tName;
             }

@@ -2,7 +2,7 @@ package jsex.kmc;
 
 
 import jse.code.CS;
-import jse.code.UT;
+import jse.code.IO;
 import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -149,12 +149,12 @@ public class BiTrapSimple {
     public void run(int aStep, int aOutStep,                   boolean aAppend) throws IOException {run(aStep, aOutStep, System.out::println, aAppend);}
     public void run(int aStep, int aOutStep, String aFilePath                 ) throws IOException {run(aStep, aOutStep, aFilePath, false);}
     public void run(int aStep, int aOutStep, String aFilePath, boolean aAppend) throws IOException {
-        try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING)) {
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath, CREATE, aAppend ? APPEND : TRUNCATE_EXISTING)) {
             run(aStep, aOutStep, tWriteln, aAppend);
         }
     }
-    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut                 ) throws IOException {run(aStep, aOutStep, aOut, false);}
-    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut, boolean aAppend) throws IOException {
+    public void run(int aStep, int aOutStep, @Nullable IO.IWriteln aOut) throws IOException {run(aStep, aOutStep, aOut, false);}
+    public void run(int aStep, int aOutStep, @Nullable IO.IWriteln aOut, boolean aAppend) throws IOException {
         run(aStep, aOutStep, aOut, aAppend,
             String.format("%12s, %12s, %12s, %12s, %12s, %12s, %12s, %12s", "time", "temp", "Nlo", "Nhi", "clo", "chi", "Etot", "Epar"),
             () -> String.format("%12.6g, %12.6g, %12d, %12d, %12.6g, %12.6g, %12.6g, %12.6g", mTime, mTemp, mNlo, mNhi, concentrationLow(), concentrationHigh(), energyTotal(), energyParticle())
@@ -169,7 +169,7 @@ public class BiTrapSimple {
      * @param aHead 输出的标题字符串
      * @param aBody 输出的内容属性，重写 IStringSupplier 来指定具体内容
      */
-    public void run(int aStep, int aOutStep, @Nullable UT.IO.IWriteln aOut, boolean aAppend, @Nullable String aHead, IStringSupplier aBody) throws IOException {
+    public void run(int aStep, int aOutStep, @Nullable IO.IWriteln aOut, boolean aAppend, @Nullable String aHead, IStringSupplier aBody) throws IOException {
         // 特殊输入处理
         if (aOutStep > 0) aStep = aStep*aOutStep;
         if (aStep < 0) {aOutStep = -1; aStep = Integer.MAX_VALUE;}

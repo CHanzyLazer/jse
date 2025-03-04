@@ -2,7 +2,7 @@ package code.io
 
 import jse.math.table.Tables
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 double[][] data0 = [
     [1.1111, 2.2222, 3.3333],

@@ -1,5 +1,6 @@
 package jse.clib;
 
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import org.jetbrains.annotations.ApiStatus;
@@ -112,7 +113,7 @@ public class CPointer {
             .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_CPOINTER_LIB)
             .get();
         // 设置库路径
-        System.load(UT.IO.toAbsolutePath(LIB_PATH));
+        System.load(IO.toAbsolutePath(LIB_PATH));
     }
     
     

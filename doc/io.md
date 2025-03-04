@@ -14,7 +14,7 @@
 已经提供了用于操作文件和目录的方法，并且
 [groovy 的 IO 接口](https://www.groovy-lang.org/groovy-dev-kit.html#_working_with_io)
 也提供了更加丰富的功能，在 jse 中还是封装了一套自己的 IO 接口，
-位于 [`jse.code.UT.IO`](../src/main/java/jse/code/UT.java)。
+位于 [`jse.code.IO`](../src/main/java/jse/code/IO.java)。
 相比于这些现成的方法，主要的区别有：
 
 - 直接基于 `String` 表示的路径进行操作，而不需要转为 `java.nio.file.Path`。
@@ -24,14 +24,14 @@
 - 文本文件编码格式统一为 [UTF-8](https://en.wikipedia.org/wiki/UTF-8)，
   换行符统一为 `\n`（即 `LF`），因此不用考虑文件格式的问题。
 
-> `jse.code.UT.IO` 中的静态方法在 shell 模式下是默认导入的，
+> `jse.code.IO` 中的静态方法在 shell 模式下是默认导入的，
 > 因此在 shell 模式下可以直接执行 `readAllLines()` 之类的方法而不需要导入。
 > 
 
 
 ## 文件读写
 
-- **`UT.IO.readAllLines`**
+- **`IO.readAllLines`**
     
     描述：读取输入路径对应文件中的所有行，作为一个 `List<String>` 返回
     
@@ -47,7 +47,7 @@
     
     -----------------------------
     
-- **`UT.IO.readAllText`**
+- **`IO.readAllText`**
     
     描述：读取输入路径对应文件中的所有文本，作为一个 `String` 返回
     
@@ -63,7 +63,7 @@
     
     -----------------------------
   
-- **`UT.IO.readAllBytes`**
+- **`IO.readAllBytes`**
     
     描述：读取输入路径对应二进制文件，作为一个 `byte[]` 返回
     
@@ -79,7 +79,7 @@
     
     -----------------------------
   
-- **`UT.IO.write`**
+- **`IO.write`**
     
     描述：将输入的字符串或数据写入到输入的路径中
     
@@ -102,13 +102,13 @@
     > 给定的路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
     > 
     > 当输入为 `String` 时会将其看作单行的文文，实际最后会添加一个换行符
-    > `\n`，如果希望和 `UT.IO.readAllText` 的结果完全一致，可以使用
-    > `UT.IO.writeText` 方法
+    > `\n`，如果希望和 `IO.readAllText` 的结果完全一致，可以使用
+    > `IO.writeText` 方法
     >
     
     -----------------------------
     
-- **`UT.IO.writeText`**
+- **`IO.writeText`**
     
     描述：将输入的字符串文本写入到输入的路径中
     
@@ -121,13 +121,13 @@
     > 注意：默认情况下会覆盖已有文件，如果文件不存在会创建，如果目录不存在会递归创建，
     > 给定的路径有同名的目录时会抛出异常；触发权限不够时会抛出异常
     > 
-    > 不会在最后添加换行符，保证和 `UT.IO.readAllText` 的结果完全一致
+    > 不会在最后添加换行符，保证和 `IO.readAllText` 的结果完全一致
     >
 
 
 ## 文件操作
 
-- **`UT.IO.mkdir`/`UT.IO.makeDir`**
+- **`IO.mkdir`/`IO.makeDir`**
     
     描述：创建目录
     
@@ -141,7 +141,7 @@
     
     -----------------------------
     
-- **`UT.IO.rmdir`/`UT.IO.removeDir`**
+- **`IO.rmdir`/`IO.removeDir`**
     
     描述：移除目录
     
@@ -155,7 +155,7 @@
     
     -----------------------------
     
-- **`UT.IO.cpdir`/`UT.IO.copyDir`**
+- **`IO.cpdir`/`IO.copyDir`**
     
     描述：拷贝目录
     
@@ -170,7 +170,7 @@
     
     -----------------------------
     
-- **`UT.IO.isdir`/`UT.IO.isDir`**
+- **`IO.isdir`/`IO.isDir`**
     
     描述：判断输入路径是否是目录
     
@@ -186,7 +186,7 @@
     
     -----------------------------
     
-- **`UT.IO.isfile`/`UT.IO.isFile`**
+- **`IO.isfile`/`IO.isFile`**
     
     描述：判断输入路径是否是文件
     
@@ -202,7 +202,7 @@
     
     -----------------------------
     
-- **`UT.IO.exists`**
+- **`IO.exists`**
     
     描述：判断输入路径是否存在
     
@@ -218,7 +218,7 @@
     
     -----------------------------
     
-- **`UT.IO.delete`**
+- **`IO.delete`**
     
     描述：如果给定的文件存在则移除给定的文件
     
@@ -233,7 +233,7 @@
     
     -----------------------------
     
-- **`UT.IO.copy`**
+- **`IO.copy`**
     
     描述：复制指定文件到另一个位置
     
@@ -251,7 +251,7 @@
     
     -----------------------------
     
-- **`UT.IO.move`**
+- **`IO.move`**
     
     描述：移动指定文件或目录到另一个位置
     
@@ -270,7 +270,7 @@
     
     -----------------------------
     
-- **`UT.IO.list`**
+- **`IO.list`**
     
     描述：列出输入目录下的所有文件或目录的名称
     
@@ -286,7 +286,7 @@
     
     -----------------------------
     
-- **`UT.IO.map`**
+- **`IO.map`**
     
     描述：通过输入的行映射器，映射指定文件到另一个位置；
     主要用于将给定文本文件特定字符串批量替换。
@@ -307,7 +307,7 @@
     
     -----------------------------
     
-- **`UT.IO.samePath`**
+- **`IO.samePath`**
     
     描述：判断输入的两个路径是否相同。
     
@@ -322,13 +322,13 @@
     
     -----------------------------
     
-- **`UT.IO.validPath`**
+- **`IO.validPath`**
     
     描述：合法化输入的路径（创建需要的文件夹）。
     
     输入：`String`，字符串表示的路径
     
-    例子：`UT.IO.validPath('path/to/output/file')`
+    例子：`IO.validPath('path/to/output/file')`
     
     > 注意：一般用于在调用第三方工具时，对方输出文件在目录不存在时会报错时使用，
     > jse 内部的文件操作由于会自动创建文件夹，因此不需要手动调用；
@@ -337,7 +337,7 @@
     
     -----------------------------
     
-- **`UT.IO.toAbsolutePath`**
+- **`IO.toAbsolutePath`**
     
     描述：将输入的路径转为绝对路径。
     
@@ -345,11 +345,11 @@
     
     输出：`String`，字符串表示的绝对路径
     
-    例子：`def absPath = UT.IO.toAbsolutePath('path/to/something')`
+    例子：`def absPath = IO.toAbsolutePath('path/to/something')`
     
-    > 注意：尽量使用 `UT.IO.toAbsolutePath` 而不是 java 自带的
+    > 注意：尽量使用 `IO.toAbsolutePath` 而不是 java 自带的
     > `Path.toAbsolutePath` 之类的方法，jse 考虑了在 matlab
-    > 之类的环境下工作目录被修改的环境，使用 `UT.IO.toAbsolutePath`
+    > 之类的环境下工作目录被修改的环境，使用 `IO.toAbsolutePath`
     > 可以确保获取到正确的绝对路径。
     >
 
@@ -361,7 +361,7 @@
 jse 直接基于 [`groovy-json`](https://www.groovy-lang.org/processing-json.html)
 实现 json 文件的读写。
 
-- **`UT.IO.json2map`**
+- **`IO.json2map`**
     
     描述：读取输入 json 文件路径并存储为 java 中的 `Map` 对象。
     
@@ -377,7 +377,7 @@ jse 直接基于 [`groovy-json`](https://www.groovy-lang.org/processing-json.htm
     
     -----------------------------
     
-- **`UT.IO.map2json`**
+- **`IO.map2json`**
     
     描述：通过输入的 `Map` 对象创建 json 文件。
     
@@ -400,7 +400,7 @@ jse 直接基于 [`groovy-json`](https://www.groovy-lang.org/processing-json.htm
 jse 直接基于 [`groovy-yaml`](https://www.groovy-lang.org/processing-yaml.html)
 实现 yaml 文件的读写。
 
-- **`UT.IO.yaml2map`**
+- **`IO.yaml2map`**
     
     描述：读取输入 yaml 文件路径并存储为 java 中的 `Map` 对象。
     
@@ -416,7 +416,7 @@ jse 直接基于 [`groovy-yaml`](https://www.groovy-lang.org/processing-yaml.htm
     
     -----------------------------
     
-- **`UT.IO.map2yaml`**
+- **`IO.map2yaml`**
     
     描述：通过输入的 `Map` 对象创建 yaml 文件。
     
@@ -438,7 +438,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
 [Apache Commons CSV](https://commons.apache.org/proper/commons-csv/)
 实现。
 
-- **`UT.IO.csv2data`**
+- **`IO.csv2data`**
     
     描述：读取输入 csv 文件路径并存储为 jse 矩阵 `IMatrix`。
     
@@ -458,7 +458,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.data2csv`**
+- **`IO.data2csv`**
     
     描述：通过输入的数据创建 csv 文件。
     
@@ -489,7 +489,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.rows2csv`**
+- **`IO.rows2csv`**
     
     描述：将输入的数据视为按行分隔的并写入到 csv 文件。
     
@@ -512,7 +512,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.cols2csv`**
+- **`IO.cols2csv`**
     
     描述：将输入的数据视为按列分隔的并写入到 csv 文件。
     
@@ -535,7 +535,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.csv2table`**
+- **`IO.csv2table`**
     
     描述：读取输入 csv 文件路径并存储为 jse 表格 `ITable`。
     
@@ -556,7 +556,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.table2csv`**
+- **`IO.table2csv`**
     
     描述：通过输入的 jse 表格 `ITable` 创建 csv 文件。
     
@@ -575,7 +575,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.csv2str`**
+- **`IO.csv2str`**
     
     描述：读取输入 csv 文件路径并按行分隔存储为 `List<String[]>`。
     
@@ -596,7 +596,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
     
     -----------------------------
     
-- **`UT.IO.str2csv`**
+- **`IO.str2csv`**
     
     描述：将输入的按行排列的字符串写入 csv 文件。
     
@@ -625,7 +625,7 @@ jse 对于内部的纯数字的矩阵和表格做了简单 csv 读写支持，
 jse 直接基于 [`java.util.zip`](https://www.baeldung.com/java-compress-and-uncompress)
 实现一般的压缩和解压功能（并没有提供关于 `tar.gz` 的压缩和解压功能）。
 
-- **`UT.IO.zip2dir`**
+- **`IO.zip2dir`**
     
     描述：解压一个 `.zip` 文件到指定目录下。
     
@@ -645,7 +645,7 @@ jse 直接基于 [`java.util.zip`](https://www.baeldung.com/java-compress-and-un
     
     -----------------------------
     
-- **`UT.IO.dir2zip`**
+- **`IO.dir2zip`**
     
     描述：压缩一个目录为 `.zip` 文件。
     
@@ -668,7 +668,7 @@ jse 直接基于 [`java.util.zip`](https://www.baeldung.com/java-compress-and-un
     
     -----------------------------
     
-- **`UT.IO.files2zip`**
+- **`IO.files2zip`**
     
     描述：压缩多个文件（或目录）到 `.zip` 文件。
     

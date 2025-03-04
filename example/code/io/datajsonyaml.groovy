@@ -1,6 +1,6 @@
 package code.io
 
-import static jse.code.UT.IO.*
+import static jse.code.IO.*
 
 def data0 = [
     'pi': 3.141,

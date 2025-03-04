@@ -1,6 +1,7 @@
 package jse.lmp;
 
 import jse.clib.*;
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.SP;
 import jse.code.UT;
@@ -113,7 +114,7 @@ public class LmpPlugin {
                 return line;
             }).get();
         // 设置库路径，这里直接使用 System.load
-        System.load(UT.IO.toAbsolutePath(LIB_PATH));
+        System.load(IO.toAbsolutePath(LIB_PATH));
     }
     
     

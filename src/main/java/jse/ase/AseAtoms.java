@@ -5,8 +5,8 @@ import jep.NDArray;
 import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.atom.*;
+import jse.code.IO;
 import jse.code.SP;
-import jse.code.UT;
 import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RowMatrix;
@@ -562,7 +562,7 @@ public class AseAtoms extends AbstractSettableAtomData {
      * @see #fromAtomData(IAtomData, String...)
      * @see Collection
      */
-    public static AseAtoms fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, UT.Text.toArray(aSymbols));}
+    public static AseAtoms fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, IO.Text.toArray(aSymbols));}
     /**
      * 通过一个一般的原子数据 {@link IAtomData} 来创建一个 jse 版 {@link AseAtoms}
      * <p>

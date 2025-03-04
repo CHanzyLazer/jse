@@ -1,7 +1,7 @@
 package jse.lmp;
 
 import jse.atom.IAtomData;
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractListWrapper;
 import jse.code.collection.NewCollections;
@@ -170,7 +170,7 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
      * @return 读取得到的 Lammpstrj 对象，如果文件不完整的帧会跳过
      * @throws IOException 如果读取失败
      */
-    public static Lammpstrj read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static Lammpstrj read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static Lammpstrj read_(BufferedReader aReader) throws IOException {
         List<SubLammpstrj> rLammpstrj = new ArrayList<>();
@@ -187,9 +187,9 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(IO.IWriteln aWriteln) throws IOException {
         for (SubLammpstrj tSubLammpstrj : mList) tSubLammpstrj.write_(aWriteln);
     }
     

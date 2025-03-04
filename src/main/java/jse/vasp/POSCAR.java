@@ -3,7 +3,7 @@ package jse.vasp;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import jse.atom.*;
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
@@ -540,8 +540,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
             return new POSCAR(null, rBox, copyTypeNames(aTypeNames), rAtomNumbers, aSelectiveDynamics, rDirect, true);
         }
     }
-    public static POSCAR fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, UT.Text.toArray(aTypeNames));}
-    public static POSCAR fromAtomData(IAtomData aAtomData, boolean aSelectiveDynamics, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, aSelectiveDynamics, UT.Text.toArray(aTypeNames));}
+    public static POSCAR fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, IO.Text.toArray(aTypeNames));}
+    public static POSCAR fromAtomData(IAtomData aAtomData, boolean aSelectiveDynamics, Collection<? extends CharSequence> aTypeNames) {return fromAtomData(aAtomData, aSelectiveDynamics, IO.Text.toArray(aTypeNames));}
     /** 按照规范，这里还提供这种构造方式；目前暂不清楚何种更好，因此不做注解 */
     public static POSCAR of(IAtomData aAtomData) {return fromAtomData(aAtomData);}
     public static POSCAR of(IAtomData aAtomData, String... aTypeNames) {return fromAtomData(aAtomData, aTypeNames);}
@@ -557,7 +557,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
      * @return 读取得到的 POSCAR 对象，如果文件不完整会直接返回 null
      * @throws IOException 如果读取失败
      */
-    public static POSCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static POSCAR read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用 */
     static POSCAR read_(BufferedReader aReader) throws IOException {
         String tLine;
@@ -577,19 +577,19 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         tLine = aReader.readLine();
         aComment = tLine;
         // 读取模拟盒信息
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         aBoxScale = Double.parseDouble(tTokens[0]);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxA = UT.Text.str2data(tLine, 3);
+        aBoxA = IO.Text.str2data(tLine, 3);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxB = UT.Text.str2data(tLine, 3);
+        aBoxB = IO.Text.str2data(tLine, 3);
         tLine = aReader.readLine(); if (tLine == null) return null;
-        aBoxC = UT.Text.str2data(tLine, 3);
+        aBoxC = IO.Text.str2data(tLine, 3);
         // 读取原子种类（可选）和对应数目的信息
         boolean tNoAtomType = false;
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         aTypeNames = tTokens;
-        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = UT.Text.splitBlank(tLine);
+        tLine = aReader.readLine(); if (tLine == null) return null; tTokens = IO.Text.splitBlank(tLine);
         try {
         final String[] fTokens = tTokens;
         aAtomNumbers = Vectors.fromInteger(fTokens.length, i -> Integer.parseInt(fTokens[i]));
@@ -607,8 +607,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         aSelectiveDynamics = true; tLine = aReader.readLine(); if (tLine == null) return null;
         }
         // 只支持 Direct 和 Cartesian，改为 contains 从而可以支持直接读取 XDATCAR
-        aIsCartesian = UT.Text.containsIgnoreCase(tLine, "Cartesian");
-        if (!aIsCartesian && !UT.Text.containsIgnoreCase(tLine, "Direct")) {
+        aIsCartesian = IO.Text.containsIgnoreCase(tLine, "Cartesian");
+        if (!aIsCartesian && !IO.Text.containsIgnoreCase(tLine, "Direct")) {
         throw new RuntimeException("Can ONLY read Direct or Cartesian POSCAR");
         }
         // 读取原子数据
@@ -617,7 +617,7 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         for (IVector tRow : aDirect.rows()) {
             tLine = aReader.readLine();
             if (tLine == null) return null;
-            tRow.fill(UT.Text.str2data(tLine, 3));
+            tRow.fill(IO.Text.str2data(tLine, 3));
         }
         
         // 判断是否是 prism 并据此创建 VaspBox
@@ -643,9 +643,9 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用 */
+    void write_(IO.IWriteln aWriteln) throws IOException {
         aWriteln.writeln(mComment==null ? DEFAULT_COMMENT : mComment);
         aWriteln.writeln(String.valueOf(mBox.scale()));
         aWriteln.writeln(String.format("  %24.18g  %24.18g  %24.18g", mBox.iax(), mBox.iay(), mBox.iaz()));

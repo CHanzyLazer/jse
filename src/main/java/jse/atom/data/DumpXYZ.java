@@ -1,7 +1,7 @@
 package jse.atom.data;
 
 import jse.atom.IAtomData;
-import jse.code.UT;
+import jse.code.IO;
 import jse.code.collection.AbstractListWrapper;
 import jse.code.collection.IListGetter;
 import jse.code.collection.NewCollections;
@@ -277,19 +277,19 @@ public class DumpXYZ extends AbstractListWrapper<DataXYZ, IAtomData, DataXYZ> {
      * @see #fromAtomData(IAtomData, String...)
      * @see Collection
      */
-    public static DumpXYZ fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, UT.Text.toArray(aSymbols));}
+    public static DumpXYZ fromAtomData(IAtomData aAtomData, Collection<? extends CharSequence> aSymbols) {return fromAtomData(aAtomData, IO.Text.toArray(aSymbols));}
     /**
      * 传入列表形式元素符号的创建
      * @see #fromAtomDataList(Iterable, String...)
      * @see Collection
      */
-    public static DumpXYZ fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aSymbols) {return fromAtomDataList(aAtomDataList, UT.Text.toArray(aSymbols));}
+    public static DumpXYZ fromAtomDataList(Iterable<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aSymbols) {return fromAtomDataList(aAtomDataList, IO.Text.toArray(aSymbols));}
     /**
      * 传入列表形式元素符号的创建
      * @see #fromAtomDataList(Collection, String...)
      * @see Collection
      */
-    public static DumpXYZ fromAtomDataList(Collection<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aSymbols) {return fromAtomDataList(aAtomDataList, UT.Text.toArray(aSymbols));}
+    public static DumpXYZ fromAtomDataList(Collection<? extends IAtomData> aAtomDataList, Collection<? extends CharSequence> aSymbols) {return fromAtomDataList(aAtomDataList, IO.Text.toArray(aSymbols));}
     /**
      * 对于 matlab 调用的兼容方法
      * @see #fromAtomDataList(Collection)
@@ -467,7 +467,7 @@ public class DumpXYZ extends AbstractListWrapper<DataXYZ, IAtomData, DataXYZ> {
      * @see #write(String)
      * @see DataXYZ#read(String)
      */
-    public static DumpXYZ read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static DumpXYZ read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     static DumpXYZ read_(BufferedReader aReader) throws IOException {
         List<DataXYZ> rDumpXYZ = new ArrayList<>();
         DataXYZ tDataXYZ;
@@ -485,8 +485,8 @@ public class DumpXYZ extends AbstractListWrapper<DataXYZ, IAtomData, DataXYZ> {
      * @see #read(String)
      * @see DataXYZ#write(String)
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    void write_(IO.IWriteln aWriteln) throws IOException {
         for (DataXYZ tDataXYZ : mList) tDataXYZ.write_(aWriteln);
     }
 }

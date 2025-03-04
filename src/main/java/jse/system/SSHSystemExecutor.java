@@ -1,6 +1,7 @@
 package jse.system;
 
 import com.jcraft.jsch.ChannelExec;
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.io.ISavable;
 import org.jetbrains.annotations.ApiStatus;
@@ -141,7 +142,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     @Override public final String @NotNull[] list(String aDir) throws Exception {return mSSH.list(aDir);}
     
     /** 通过 ssh 直接执行命令 */
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln) {
         final SSHSystemFuture tFuture = new SSHSystemFuture(aCommand, aWriteln);
         // 增加结束时都断开连接的任务
         return toSystemFuture(tFuture, () -> {if (tFuture.mChannelExec != null) tFuture.mChannelExec.disconnect();});
@@ -152,7 +153,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         private final @Nullable ChannelExec mChannelExec;
         private volatile boolean mCancelled = false;
         private final @Nullable Future<Void> mOutTask;
-        private SSHSystemFuture(String aCommand, final @NotNull UT.IO.IWriteln aWriteln) {
+        private SSHSystemFuture(String aCommand, final @NotNull IO.IWriteln aWriteln) {
             // 执行指令
             ChannelExec tChannelExec;
             try {tChannelExec = mSSH.systemChannel(aCommand, noERROutput());}
@@ -172,7 +173,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
                 mOutTask = null;
             } else {
                 mOutTask = UT.Par.runAsync(() -> {
-                    try (BufferedReader tReader = UT.IO.toReader(mChannelExec.getInputStream(), StandardCharsets.UTF_8); UT.IO.IWriteln tWriteln = aWriteln) {
+                    try (BufferedReader tReader = IO.toReader(mChannelExec.getInputStream(), StandardCharsets.UTF_8); IO.IWriteln tWriteln = aWriteln) {
                         mChannelExec.connect();
                         String tLine;
                         while ((tLine = tReader.readLine()) != null) tWriteln.writeln(tLine);

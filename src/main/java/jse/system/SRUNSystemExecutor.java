@@ -1,5 +1,6 @@
 package jse.system;
 
+import jse.code.IO;
 import jse.code.OS.Slurm;
 import jse.code.UT;
 import org.jetbrains.annotations.NotNull;
@@ -66,7 +67,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         mAssignedResources.put(aResource, false);
     }
     
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln) {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         // 先尝试获取节点
@@ -82,7 +83,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         }
         // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行，从而可以支持复杂的逻辑输入（包含 cd 等操作或者多行命令）
         String tTempScriptPath = mWorkingDir+UT.Code.randID()+".sh";
-        try {UT.IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
+        try {IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
         catch (Exception e) {printStackTrace(e); returnResource(tResource); return ERR_FUTURE;}
         // 获取提交指令
         String tCommand = RESOURCES_MANAGER.creatJobStep(tResource, "bash "+tTempScriptPath); // 使用 bash 执行不需要考虑权限的问题
@@ -96,7 +97,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
     /** 程序结束时删除自己的临时工作目录，并归还资源 */
     @Override protected void shutdownFinal() {
         try {
-            UT.IO.removeDir(mWorkingDir);
+            IO.removeDir(mWorkingDir);
         } catch (Exception ignored) {}
         for (Slurm.Resource tResource : mAssignedResources.keySet()) RESOURCES_MANAGER.returnResource(tResource);
     }

@@ -1,5 +1,6 @@
 package jse.system;
 
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.NewCollections;
 import org.jetbrains.annotations.NotNull;
@@ -25,18 +26,18 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
     protected Charset charset_() {return Charset.defaultCharset();}
     
     private @Nullable File mWorkingDir = null;
-    @Override public final LocalSystemExecutor setWorkingDir(@Nullable String aWorkingDir) {mWorkingDir = aWorkingDir==null ? null : UT.IO.toFile(aWorkingDir); return this;}
+    @Override public final LocalSystemExecutor setWorkingDir(@Nullable String aWorkingDir) {mWorkingDir = aWorkingDir==null ? null : IO.toFile(aWorkingDir); return this;}
     
     /** 本地则在本地创建目录即可 */
-    @Override public final void validPath(String aPath) throws IOException {UT.IO.validPath(aPath);}
-    @Override public final void makeDir(String aDir) throws IOException {UT.IO.makeDir(aDir);}
-    @Override public final void removeDir(String aDir) throws IOException {UT.IO.removeDir(aDir);}
-    @Override public final void delete(String aPath) throws IOException {UT.IO.delete(aPath);}
-    @Override public final boolean isFile(String aFilePath) {return UT.IO.isFile(aFilePath);}
-    @Override public final boolean isDir(String aDir) {return UT.IO.isDir(aDir);}
-    @Override public final String @NotNull[] list(String aDir) throws IOException {return UT.IO.list(aDir);}
+    @Override public final void validPath(String aPath) throws IOException {IO.validPath(aPath);}
+    @Override public final void makeDir(String aDir) throws IOException {IO.makeDir(aDir);}
+    @Override public final void removeDir(String aDir) throws IOException {IO.removeDir(aDir);}
+    @Override public final void delete(String aPath) throws IOException {IO.delete(aPath);}
+    @Override public final boolean isFile(String aFilePath) {return IO.isFile(aFilePath);}
+    @Override public final boolean isDir(String aDir) {return IO.isDir(aDir);}
+    @Override public final String @NotNull[] list(String aDir) throws IOException {return IO.list(aDir);}
     
-    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull UT.IO.IWriteln aWriteln) {
+    @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln) {
         // 对于空指令专门优化，不执行操作
         if (aCommand == null || aCommand.isEmpty()) return SUC_FUTURE;
         
@@ -49,13 +50,13 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
         private final @Nullable Process mProcess;
         private final Future<Void> mErrTask, mOutTask;
         private volatile boolean mCancelled = false;
-        private LocalSystemFuture(String aCommand, final @NotNull UT.IO.IWriteln aWriteln) {
+        private LocalSystemFuture(String aCommand, final @NotNull IO.IWriteln aWriteln) {
             // 执行指令
             Process tProcess;
             try {
                 // 这里对于一般情况改为更加稳定的 processBuilder
                 String[] tProgramAndArgs = programAndArgs_();
-                String[] tCommands = tProgramAndArgs.length==0 ? UT.Text.splitBlank(aCommand) : NewCollections.merge(tProgramAndArgs, aCommand);
+                String[] tCommands = tProgramAndArgs.length==0 ? IO.Text.splitBlank(aCommand) : NewCollections.merge(tProgramAndArgs, aCommand);
                 tProcess = new ProcessBuilder(tCommands).directory(mWorkingDir).start();
             } catch (Exception e) {
                 printStackTrace(e); tProcess = null;
@@ -73,7 +74,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
                 mOutTask = UT.Par.redirectStream(mProcess.getInputStream(), true, noSTDOutput() ? NUL_PRINT_STREAM : System.out);
             } else {
                 mOutTask = UT.Par.runAsync(() -> {
-                    try (BufferedReader tOutReader = UT.IO.toReader(mProcess.getInputStream(), charset_()); UT.IO.IWriteln tWriteln = (noSTDOutput() ? NUL_WRITELN: aWriteln)) {
+                    try (BufferedReader tOutReader = IO.toReader(mProcess.getInputStream(), charset_()); IO.IWriteln tWriteln = (noSTDOutput() ? NUL_WRITELN: aWriteln)) {
                         // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
                         String tLine;
                         while ((tLine = tOutReader.readLine()) != null) tWriteln.writeln(tLine);

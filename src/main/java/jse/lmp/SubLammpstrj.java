@@ -1,6 +1,7 @@
 package jse.lmp;
 
 import jse.atom.*;
+import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
@@ -652,7 +653,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
      * @return 读取得到的 SubLammpstrj 对象，只会读取第一帧，如果文件不完整会直接返回 null
      * @throws IOException 如果读取失败
      */
-    public static SubLammpstrj read(String aFilePath) throws IOException {try (BufferedReader tReader = UT.IO.toReader(aFilePath)) {return read_(tReader);}}
+    public static SubLammpstrj read(String aFilePath) throws IOException {try (BufferedReader tReader = IO.toReader(aFilePath)) {return read_(tReader);}}
     /** 改为 {@link BufferedReader} 而不是 {@code List<String>} 来避免过多内存占用；不会自动关闭流，只读取一帧的数据然后停止读取 */
     static SubLammpstrj read_(BufferedReader aReader) throws IOException {
         String tLine;
@@ -665,27 +666,27 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         final ITable aAtomData;
         
         // 读取时间步数
-        UT.Text.findLineContaining(aReader, "ITEM: TIMESTEP", true); tLine=aReader.readLine();
+        IO.Text.findLineContaining(aReader, "ITEM: TIMESTEP", true); tLine=aReader.readLine();
         if (tLine == null) return null;
-        tTokens = UT.Text.splitBlank(tLine);
+        tTokens = IO.Text.splitBlank(tLine);
         aTimeStep = Long.parseLong(tTokens[0]);
         // 读取原子总数
-        UT.Text.findLineContaining(aReader, "ITEM: NUMBER OF ATOMS", true); tLine=aReader.readLine();
+        IO.Text.findLineContaining(aReader, "ITEM: NUMBER OF ATOMS", true); tLine=aReader.readLine();
         if (tLine == null) return null;
-        tTokens = UT.Text.splitBlank(tLine);
+        tTokens = IO.Text.splitBlank(tLine);
         tAtomNum = Integer.parseInt(tTokens[0]);
         // 读取模拟盒信息
-        tLine = UT.Text.findLineContaining(aReader, "ITEM: BOX BOUNDS", true);
+        tLine = IO.Text.findLineContaining(aReader, "ITEM: BOX BOUNDS", true);
         if (tLine == null) return null;
-        tTokens = UT.Text.splitBlank(tLine);
+        tTokens = IO.Text.splitBlank(tLine);
         // 斜方支持
         if (tTokens[3].equalsIgnoreCase("xy")) {
             aBoxBounds = new String[] {tTokens[6], tTokens[7], tTokens[8]};
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aXlo = Double.parseDouble(tTokens[0]); double aXhi = Double.parseDouble(tTokens[1]); double aXY = Double.parseDouble(tTokens[2]);
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aYlo = Double.parseDouble(tTokens[0]); double aYhi = Double.parseDouble(tTokens[1]); double aXZ = Double.parseDouble(tTokens[2]);
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]); double aYZ = Double.parseDouble(tTokens[2]);
             // 注意 dump 和 data 斜方格式不同，需要转换
             aXlo -= Math.min(Math.min(0.0, aXY), Math.min(aXZ, aXY+aXZ));
@@ -695,19 +696,19 @@ public class SubLammpstrj extends AbstractSettableAtomData {
             aBox = new LmpBoxPrism(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi, aXY, aXZ, aYZ);
         } else {
             aBoxBounds = new String[] {tTokens[3], tTokens[4], tTokens[5]};
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aXlo = Double.parseDouble(tTokens[0]); double aXhi = Double.parseDouble(tTokens[1]);
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aYlo = Double.parseDouble(tTokens[0]); double aYhi = Double.parseDouble(tTokens[1]);
-            tLine=aReader.readLine(); tTokens = UT.Text.splitBlank(tLine);
+            tLine=aReader.readLine(); tTokens = IO.Text.splitBlank(tLine);
             double aZlo = Double.parseDouble(tTokens[0]); double aZhi = Double.parseDouble(tTokens[1]);
             aBox = new LmpBox(aXlo, aXhi, aYlo, aYhi, aZlo, aZhi);
         }
         
         // 读取原子信息
-        tLine = UT.Text.findLineContaining(aReader, "ITEM: ATOMS", true);
+        tLine = IO.Text.findLineContaining(aReader, "ITEM: ATOMS", true);
         if (tLine == null) return null;
-        tTokens = UT.Text.splitBlank(tLine);
+        tTokens = IO.Text.splitBlank(tLine);
         String[] tAtomDataKeys = new String[tTokens.length-2];
         System.arraycopy(tTokens, 2, tAtomDataKeys, 0, tAtomDataKeys.length);
         boolean tIsAtomDataReadFull = true;
@@ -715,7 +716,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         for (IVector tRow : aAtomData.rows()) {
             tLine = aReader.readLine();
             if (tLine == null) {tIsAtomDataReadFull = false; break;}
-            tRow.fill(UT.Text.str2data(tLine, tAtomDataKeys.length));
+            tRow.fill(IO.Text.str2data(tLine, tAtomDataKeys.length));
         }
         if (!tIsAtomDataReadFull) return null;
         
@@ -726,14 +727,14 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /**
      * 输出成 lammps 格式的 dump 文件，可以供 OVITO 等软件读取
      * <p>
-     * 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用
+     * 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用
      * @author liqa
      * @param aFilePath 需要输出的路径
      * @throws IOException 如果写入文件失败
      */
-    public void write(String aFilePath) throws IOException {try (UT.IO.IWriteln tWriteln = UT.IO.toWriteln(aFilePath)) {write_(tWriteln);}}
-    /** 改为 {@link UT.IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用；不会自动关闭流，只写入一帧的数据然后停止写入 */
-    void write_(UT.IO.IWriteln aWriteln) throws IOException {
+    public void write(String aFilePath) throws IOException {try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln);}}
+    /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用；不会自动关闭流，只写入一帧的数据然后停止写入 */
+    void write_(IO.IWriteln aWriteln) throws IOException {
         aWriteln.writeln("ITEM: TIMESTEP");
         aWriteln.writeln(String.format("%d", mTimeStep));
         aWriteln.writeln("ITEM: NUMBER OF ATOMS");

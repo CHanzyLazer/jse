@@ -1,5 +1,6 @@
 package jse.clib;
 
+import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
@@ -79,7 +80,7 @@ public class Dlfcn {
             .setCmakeLineOpt(null)
             .get();
         // 设置库路径，这里直接使用 System.load
-        System.load(UT.IO.toAbsolutePath(LIB_PATH));
+        System.load(IO.toAbsolutePath(LIB_PATH));
     }
     
     /**
