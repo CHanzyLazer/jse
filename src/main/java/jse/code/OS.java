@@ -270,9 +270,7 @@ public class OS {
     
     
     /**
-     * 针对使用 SLURM 系统管理任务的相关功能，
-     * 主要包含对 SLURM 中常用的环境变量的统一获取，
-     * 自动资源分配，获取节点列表等
+     * 针对使用 SLURM 系统管理任务的相关功能，主要包含对 SLURM 中常用的环境变量的统一获取，自动资源分配，获取节点列表等
      * @see jse.system.SRUNSystemExecutor SRUNSystemExecutor: 使用 srun 执行命令的执行器
      * @author liqa
      */

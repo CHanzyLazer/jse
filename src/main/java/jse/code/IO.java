@@ -2,6 +2,7 @@ package jse.code;
 
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
+import groovy.lang.Closure;
 import groovy.yaml.YamlBuilder;
 import groovy.yaml.YamlSlurper;
 import jse.cache.ByteArrayCache;
@@ -49,12 +50,58 @@ import static jse.code.OS.USER_HOME;
 import static jse.code.OS.WORKING_DIR_PATH;
 
 
+/**
+ * 通用的文件操作工具类；现在变为独立的类而不是放在 {@link UT} 中。
+ * <p>
+ * 相比 java 自带的 {@link java.nio.file.Files} 以及
+ * <a href="https://www.groovy-lang.org/groovy-dev-kit.html#_working_with_io">
+ * groovy 的 IO 接口 </a>，主要的区别有：<ol>
+ * <li> 直接基于字符串 {@link String} 表示的路径进行操作，而不需要转为 {@link java.nio.file.Path}
+ * <li> 在创建文件或目录时，对应目录不存在时会自动创建，并且会自动递归创建子目录
+ * <li> 文本文件编码格式统一为 {@code UTF-8}，换行符统一为 {@code \n}（即 {@code LF}），不用考虑文件格式的问题
+ * </ol>
+ * 因此在绝大部分时候都建议统一使用此工具类中的方法，而不需要再去使用原始的接口。
+ * <p>
+ * 在 jse 内部对于文件夹的路径都会统一保留结尾的斜杠 {@code "/"}（或者对于完全为空的路径则保持为空），
+ * 从而可以保证在需要拼接得到文件路径时可以直接相加。而对于外部输入的文件夹路径则没有强制要求，
+ * 如果有拼接需求则也可以通过 {@link IO#toInternalValidDir(String)} 来为结尾补上这个斜杠 {@code "/"}
+ * <p>
+ * 对于 java 的读写流，jse 主要使用 {@link BufferedReader} 作为读取流，使用
+ * {@link BufferedWriter} 并包装成通用的 {@link IO.IWriteln} 来作为写入流；
+ * 可以通过 {@link IO#toReader} 和 {@link IO#toWriteln} 方法来获取这些流。
+ *
+ * @see IO.Text IO.Text: 文件操作中的字符串操作工具类
+ * @see UT UT: 通用方法工具类
+ * @see CS CS: 全局常量工具类
+ * @see OS OS: 系统操作工具类
+ * @author liqa
+ */
 public class IO {
     static {jse.code.OS.InitHelper.init();}
     private final static int BUFFER_SIZE = 8192;
     
+    /**
+     * 文本操作的工具类，这里包含只进行文本操作，但不进行文件读写的一些方法
+     * <p>
+     * 例如常见的字符串按照空格或者逗号切分（切分后忽略空格）{@link Text#splitStr(String)}，
+     * 以及专门对纯数字情况进行优化的 {@link Text#str2data(String, int)} 等通用方法。
+     * @author liqa
+     */
     public static class Text {
+        /**
+         * 将输入字符串转换为读取此字符串的一个 {@link Reader}，主要用于内部使用
+         * @param aStr 需要读取的字符串
+         * @return 读取输入字符串的 {@link Reader}
+         * @see #toReader(CharSequence)
+         * @see CharSequenceReader
+         */
         public static Reader toReader_(CharSequence aStr) {return new CharSequenceReader(aStr);}
+        /**
+         * 将输入字符串转换为读取此字符串的一个 {@link BufferedReader}，主要用于内部使用
+         * @param aStr 需要读取的字符串
+         * @return 读取输入字符串的 {@link BufferedReader}
+         * @see CharSequenceReader
+         */
         public static BufferedReader toReader(CharSequence aStr) {return new BufferedReader(toReader_(aStr));}
         public static void eachLine(final CharSequence aStr, final Consumer<String> aCon) throws IOException {
             try (BufferedReader tReader = toReader(aStr)) {
@@ -62,6 +109,21 @@ public class IO {
                 while ((tLine = tReader.readLine()) != null) aCon.accept(tLine);
             }
         }
+        /**
+         * 按行遍历输入的字符串，并且可以提供对应的行号（从 0 开始）；
+         * 主要用于内部使用，在 groovy 脚本中可以直接通过：
+         * <pre> {@code
+         * def str = 'aaa\nbbb\nccc'
+         * str.eachLine {line ->
+         *     //
+         * }
+         * } </pre>
+         * 来按行遍历字符串
+         *
+         * @param aStr 需要遍历的字符串
+         * @param aCon 传入的遍历行的相关代码块，提供两个参数，第一个为当前行的字符串，第二个为当前的行号（从 0 开始）
+         * @see StringGroovyMethods#eachLine(CharSequence, Closure)
+         */
         public static void eachLine(final CharSequence aStr, final BiConsumer<String, Integer> aCon) throws IOException {
             try (BufferedReader tReader = toReader(aStr)) {
                 int tLineNum = 0;
@@ -73,6 +135,15 @@ public class IO {
             }
         }
         
+        /**
+         * 将一个字符串组成的列表转换成 {@code String[]}
+         * 的数组形式；主要用于兼容 groovy 中的字符串列表输入
+         * <p>
+         * 在 groovy 脚本中可以直接通过 {@code as String[]} 进行转换
+         *
+         * @param aLines 字符串组成的列表
+         * @return 转换后的字符串数组
+         */
         public static String[] toArray(Collection<? extends CharSequence> aLines) {
             String[] rArray = new String[aLines.size()];
             int i = 0;
@@ -84,15 +155,20 @@ public class IO {
         }
         
         /**
-         * Convert a prob value to percent String
-         * @author liqa
+         * 将一个概率值（一般为 0~1）转换为百分数字符串（带有百分号
+         * {@code %}），主要用于各种输出显示
+         * @param aProb 概率值
+         * @return 百分比数字符串
          */
         public static String percent(double aProb) {
             return String.format("%.2f", aProb*100) + "%";
         }
         
         /**
-         * 重复给定 char，照搬 {@code me.tongfei.progressbar.Util} 中的方法
+         * 重复给定 {@code char} 指定次数，照搬 {@code me.tongfei.progressbar.Util#repeat(char, int)}
+         * @param aChar 需要重复的 {@code char}
+         * @param aNum 需要重复的次数
+         * @return 重复后得到的字符串
          * @author Tongfei Chen, liqa
          */
         public static String repeat(char aChar, int aNum) {
@@ -103,8 +179,11 @@ public class IO {
         }
         
         /**
-         * 重复给定 String，使用类似 Groovy 中对于 String 的乘法的方法
-         * @author liqa
+         * 重复给定字符串，使用类似 Groovy 中对于 {@link String} 的乘法的方法
+         * @param aStr 需要重复的字符串
+         * @param aNum 需要重复的次数
+         * @return 重复后得到的字符串
+         * @see StringGroovyMethods#multiply(CharSequence, Number)
          */
         public static String repeat(CharSequence aStr, int aNum) {
             if (aNum <= 0) return "";
@@ -126,10 +205,11 @@ public class IO {
             }}
         }
         /**
-         * 将单个字符串转为 Number 值，要求前后不能含有任何空格，如果转换失败则返回 {@code null}；
-         * 自动检测整数类型和小数类型，现在对于小数会返回 {@link Double} 而不是
-         * {@link java.math.BigDecimal}
-         * @author liqa
+         * 将单个字符串转为 Number 值，要求前后不能含有任何空格；
+         * 自动检测整数类型和小数类型，对于小数会返回{@link Double}，整数会根据大小返回
+         * {@link Integer} 或 {@link Long}
+         * @param aStr 需要进行转换的字符串
+         * @return 转换得到的数字，如果转换失败则返回 {@code null}
          */
         public static @Nullable Number str2number(String aStr) {
             // 先直接转 char[]，适配 groovy-json 的 CharScanner
@@ -142,6 +222,20 @@ public class IO {
             return null;
         }
         
+        /**
+         * 从开始索引找到字符串中首个非空字符的索引，有：
+         * <pre> {@code
+         * import jse.code.IO
+         *
+         * assert IO.Text.findNoBlankIndex('  cde cf   ', 0) == 2
+         * assert IO.Text.findNoBlankIndex('  cde cf   ', 3) == 3
+         * assert IO.Text.findNoBlankIndex('  cde cf   ', 5) == 6
+         * assert IO.Text.findNoBlankIndex('  cde cf   ', 8) == -1
+         * } </pre>
+         * @param aStr 需要查找的字符串
+         * @param aStart 开始位置的索引
+         * @return 找到的第一个非空字符串索引，如果没有找到则返回 {@code -1}
+         */
         public static int findNoBlankIndex(String aStr, int aStart) {
             final int tLen = aStr.length();
             int c;
@@ -153,6 +247,20 @@ public class IO {
             }
             return -1;
         }
+        /**
+         * 从开始索引找到字符串中首个空字符的索引，有：
+         * <pre> {@code
+         * import jse.code.IO
+         *
+         * assert IO.Text.findBlankIndex('ab  cde cf', 0) == 2
+         * assert IO.Text.findBlankIndex('ab  cde cf', 3) == 3
+         * assert IO.Text.findBlankIndex('ab  cde cf', 5) == 7
+         * assert IO.Text.findBlankIndex('ab  cde cf', 8) == -1
+         * } </pre>
+         * @param aStr 需要查找的字符串
+         * @param aStart 开始位置的索引
+         * @return 找到的第一个空字符串索引，如果没有找到则返回 {@code -1}
+         */
         public static int findBlankIndex(String aStr, int aStart) {
             final int tLen = aStr.length();
             int c;
@@ -166,13 +274,18 @@ public class IO {
         }
         
         /**
-         * 针对 lammps 等软件输出文件中存在的使用空格分割的数据专门优化的读取操作，
-         * 使用 groovy-json 中现成的 parseDouble 等方法，总体比直接 split 并用 java 的 parseDouble 快一倍以上；
+         * 将字符串转换成 jse 的向量数据 {@link Vector}，认为这个字符串是按照逗号
+         * {@code ","} 或者空格 {@code " "} 分割的数字组成的，会忽略每个数据开头和结尾的任意数量空格，
+         * 任何读取失败的数字都会存为 {@link Double#NaN} 而不是抛出错误。
          * <p>
-         * 现在兼容考虑逗号分割的情况，并同时运用在 csv 的读取上
+         * 这样设计主要确保支持 lammps 或其他软件的输出文件中使用的空格分割的数据，并也能兼容一般的逗号分割的 csv 文件。
          * <p>
-         * 现在读取失败会存为 {@link Double#NaN} 而不是抛出错误
-         * @author liqa
+         * 此操作进行了专门优化，使用了 groovy-json 中的 {@link CharScanner#parseDouble(char[], int, int)}
+         * 等方法，总体比直接 {@code split} 并用 java 的 {@link Double#parseDouble(String)} 快一倍以上。
+         *
+         * @param aStr 需要进行转换的字符串
+         * @param aLength 期望的向量长度，字符串超出的数据会忽略，不足的会填充 {@link Double#NaN}
+         * @return 转换得到的向量 {@link Vector}
          */
         public static Vector str2data(String aStr, int aLength) {
             // 不足的数据现在默认为 NaN
@@ -218,37 +331,62 @@ public class IO {
             return rData;
         }
         
-        /** useful methods, wrapper of {@link StringGroovyMethods} stuffs */
+        /**
+         * 判断输入字符串是否为空或者是空格，此方法等效
+         * {@link StringGroovyMethods#isBlank(CharSequence)}
+         * @param self 需要判断的字符串
+         * @return 是否为空
+         * @see CS#BLANKS_OR_EMPTY
+         */
         @Contract("null -> true")
         public static boolean isBlank(final CharSequence self) {
             if (self == null) return true;
             return BLANKS_OR_EMPTY.matcher(self).matches();
         }
+        /**
+         * 不考虑大小写的判断字符串是否包含给定字符串，此方法等效
+         * {@link StringGroovyMethods#containsIgnoreCase(CharSequence, CharSequence)}
+         * @param self 需要判断的主字符串
+         * @param searchString 需要用于搜索的字符串
+         * @return 是否包含给定字符串
+         */
         public static boolean containsIgnoreCase(final CharSequence self, final CharSequence searchString) {return StringGroovyMethods.containsIgnoreCase(self, searchString);}
         
         /**
-         * Start from aStartIdx to find the first index containing aContainStr
-         * @author liqa
+         * Start from aStart to find the first index containing aContainStr
          * @param aLines where to find the aContainStr
-         * @param aStartIdx the start position, include
+         * @param aStart the start index, include
          * @param aContainStr a string to find in aLines
-         * @param aIgnoreCase if true, ignore case when comparing characters
-         * @return the idx of aLines which contains aContainStr, or aLines.length if not find
+         * @param aIgnoreCase if true, ignore case when comparing characters (default: {@code false})
+         * @return the idx of aLines which contains aContainStr, or {@code -1} if not find
          */
-        public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr, boolean aIgnoreCase) {
-            int tIdx = aStartIdx;
-            while (tIdx < aLines.size()) {
+        public static int findLineContaining(List<String> aLines, int aStart, String aContainStr, boolean aIgnoreCase) {
+            final int tSize = aLines.size();
+            for (; aStart < tSize; ++aStart) {
                 if (aIgnoreCase) {
-                    if (containsIgnoreCase(aLines.get(tIdx), aContainStr)) break;
+                    if (containsIgnoreCase(aLines.get(aStart), aContainStr)) return aStart;
                 } else {
-                    if (aLines.get(tIdx).contains(aContainStr)) break;
+                    if (aLines.get(aStart).contains(aContainStr)) return aStart;
                 }
-                ++tIdx;
             }
-            return tIdx;
+            return -1;
         }
-        public static int findLineContaining(List<String> aLines, int aStartIdx, String aContainStr) {return findLineContaining(aLines, aStartIdx, aContainStr, false);}
+        /**
+         * Start from aStart to find the first index containing aContainStr
+         * @param aLines where to find the aContainStr
+         * @param aStart the start index, include
+         * @param aContainStr a string to find in aLines
+         * @return the idx of aLines which contains aContainStr, or {@code -1} if not find
+         */
+        public static int findLineContaining(List<String> aLines, int aStart, String aContainStr) {return findLineContaining(aLines, aStart, aContainStr, false);}
         
+        /**
+         * 读取 aReader 直到包含 aContainStr 的行
+         * @param aReader 用来读取的 {@link BufferedReader}
+         * @param aContainStr 需要查找的字符串
+         * @param aIgnoreCase 是否忽略大小写，默认为 {@code false}
+         * @return 找到的包含指定字符串的行，如果没有找到则返回 {@code null}
+         */
         public static @Nullable String findLineContaining(BufferedReader aReader, String aContainStr, boolean aIgnoreCase) throws IOException {
             String tLine;
             while ((tLine = aReader.readLine()) != null) {
@@ -260,49 +398,69 @@ public class IO {
             }
             return null;
         }
+        /**
+         * 读取 aReader 直到包含 aContainStr 的行
+         * @param aReader 用来读取的 {@link BufferedReader}
+         * @param aContainStr 需要查找的字符串
+         * @return 找到的包含指定字符串的行，如果没有找到则返回 {@code null}
+         */
         public static @Nullable String findLineContaining(BufferedReader aReader, String aContainStr) throws IOException {return findLineContaining(aReader, aContainStr, false);}
-        
         
         /**
          * Splits a string separated by blank characters into multiple strings
-         * <p> will automatically ignores multiple spaces and the beginning and end spaces </p>
-         * @author liqa
+         * <p>
+         * will automatically ignore multiple spaces and the beginning and end spaces, we have:
+         * <pre> {@code
+         * import jse.code.IO
+         *
+         * assert IO.Text.splitBlank(' ab  cde cf  ') == ['ab', 'cde', 'cf']
+         * } </pre>
          * @param aStr input string
          * @return the split sting in array
          */
         public static String[] splitBlank(String aStr) {
             return BLANKS.split(aStr.trim(), -1);
         }
-        
-        
         /**
          * Splits a string separated by comma(",") characters into multiple strings
-         * <p> will automatically ignores multiple spaces </p>
-         * @author liqa
+         * <p>
+         * will automatically ignore multiple spaces and the beginning and end spaces, we have:
+         * <pre> {@code
+         * import jse.code.IO
+         *
+         * assert IO.Text.splitComma(' ab , cde, cf  ') == ['ab', 'cde', 'cf']
+         * } </pre>
          * @param aStr input string
          * @return the split sting in array
          */
         public static String[] splitComma(String aStr) {
             return COMMA.split(aStr.trim(), -1);
         }
-        
         /**
-         * 匹配使用空格分割或者逗号（{@code ,}）分割的字符串，可以出现混合
-         * <p> 会自动忽略多余的空格 </p>
-         * @author liqa
+         * 匹配使用空格分割或者逗号（{@code ","}）分割的字符串，可以出现混合
+         * <p>
+         * 会自动忽略多余的空格，有：
+         * <pre> {@code
+         * import jse.code.IO
+         *
+         * assert IO.Text.splitStr(' ab  cde , cf  ') == ['ab', 'cde', 'cf']
+         * } </pre>
          * @param aStr input string
          * @return the split sting in array
          */
-        @ApiStatus.Experimental
         public static String[] splitStr(String aStr) {
             return COMMA_OR_BLANKS.split(aStr.trim(), -1);
         }
         
         /**
-         * Java version of splitNodeList
-         * @author liqa
-         * @param aRawNodeList input raw node list from $SLURM_JOB_NODELIST
-         * @return split node list
+         * 拆分 SLURM 系统中使用的环境变量 {@code SLURM_NODELIST} 成为可以直接使用的列表形式
+         * <p>
+         * 这里考虑了 SLURM 系统中各种神奇的格式，例如不一定是 {@code "cn"} 开头，节点数可能存在
+         * 开头填充 {@code "0"} 的情况等
+         *
+         * @param aRawNodeList 原始 SLURM 环境变量 {@code SLURM_NODELIST} 字符串
+         * @return 拆分后的列表形式的节点列表
+         * @see OS.Slurm#NODE_LIST
          */
         public static List<String> splitNodeList(String aRawNodeList) {
             List<String> rOutput = new ArrayList<>();
@@ -363,27 +521,55 @@ public class IO {
         
         
         /**
-         * convert between json and map
-         * @author liqa
+         * 将一个 json 字符串转换成 {@link Map}，这里直接调用了
+         * {@link JsonSlurper#parseText(String)}
+         * @param aText 需要解析的 json 字符串
+         * @return 解析得到的 {@link Map}
+         * @see IO#json2map(String)
          */
         public static Map<?, ?> json2map(String aText) {
             return (Map<?, ?>) (new JsonSlurper()).parseText(aText);
         }
+        /**
+         * 将一个 {@link Map} 转换成 json 格式的字符串，这里直接调用了
+         * {@link JsonBuilder#toString()}
+         * @param aMap 需要编码成 json 的 {@link Map}
+         * @return 编码得到的 json 字符串
+         * @see IO#map2json(Map, String)
+         */
         public static String map2json(Map<?, ?> aMap) {
             return map2json(aMap, false);
         }
+        /**
+         * 将一个 {@link Map} 转换成 json 格式的字符串，这里直接调用了
+         * {@link JsonBuilder#toPrettyString()} 或 {@link JsonBuilder#toString()}
+         * @param aMap 需要编码成 json 的 {@link Map}
+         * @param aPretty 是否自动格式化字符串保证较易读的形式，默认为 {@code false}
+         * @return 编码得到的 json 字符串
+         * @see IO#map2json(Map, String, boolean)
+         */
         public static String map2json(Map<?, ?> aMap, boolean aPretty) {
             JsonBuilder tBuilder = new JsonBuilder();
             tBuilder.call(aMap);
             return aPretty ? tBuilder.toPrettyString() : tBuilder.toString();
         }
         /**
-         * convert between yaml and map
-         * @author liqa
+         * 将一个 yaml 字符串转换成 {@link Map}，这里直接调用了
+         * {@link YamlSlurper#parseText(String)}
+         * @param aText 需要解析的 yaml 字符串
+         * @return 解析得到的 {@link Map}
+         * @see IO#yaml2map(String)
          */
         public static Map<?, ?> yaml2map(String aText) {
             return (Map<?, ?>) (new YamlSlurper()).parseText(aText);
         }
+        /**
+         * 将一个 {@link Map} 转换成 yaml 格式的字符串，这里直接调用了
+         * {@link YamlBuilder#toString()}
+         * @param aMap 需要编码成 yaml 的 {@link Map}
+         * @return 编码得到的 yaml 字符串
+         * @see IO#map2yaml(Map, String)
+         */
         public static String map2yaml(Map<?, ?> aMap) {
             YamlBuilder tBuilder = new YamlBuilder();
             tBuilder.call(aMap);
