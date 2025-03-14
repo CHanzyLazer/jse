@@ -206,7 +206,7 @@ public abstract class AtomDataBuilder<R> {
         }
         // 此时位置已经被占，优先考虑有相同元素的情况；
         // 注意需要考虑 mSymbols 比 mAtomTypeNum 还要长的情况
-        int tType = IAtomData.typeOf_(AbstractCollections.from(mAtomTypeNum, i->mSymbols[i]), aSymbol);
+        int tType = IHasSymbol.typeOf_(AbstractCollections.from(mAtomTypeNum, i->mSymbols[i]), aSymbol);
         if (tType > 0) {
             return tType;
         }

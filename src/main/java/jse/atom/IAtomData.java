@@ -2,15 +2,11 @@ package jse.atom;
 
 import jse.code.CS;
 import jse.math.vector.IVector;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.IntUnaryOperator;
 
 /**
  * 通用的原子数据接口，此接口只开放了访问接口，没开放修改接口
@@ -38,7 +34,7 @@ import java.util.function.IntUnaryOperator;
  * @see IBox IBox: 对于 jse 中的模拟盒定义
  * @author liqa
  */
-public interface IAtomData {
+public interface IAtomData extends IHasSymbol {
     /**
      * @return 内部原子引用组成的列表
      * @see IAtom
@@ -62,8 +58,8 @@ public interface IAtomData {
     /** @deprecated use {@link #atomNumber()} or {@link #natoms()} */
     @Deprecated default int atomNum() {return atomNumber();}
     
-    /** @return 原子种类的总数，可以大于实际真实包含的原子种类数目 */
-    int atomTypeNumber();
+    /** @return {@inheritDoc}，可以大于实际真实包含的原子种类数目 */
+    @Override int atomTypeNumber();
     /** @see #atomTypeNumber() */
     @VisibleForTesting default int ntypes() {return atomTypeNumber();}
     /** @deprecated use {@link #atomTypeNumber()} or {@link #ntypes()} */
@@ -108,27 +104,24 @@ public interface IAtomData {
     @Deprecated default boolean hasVelocities() {return hasVelocity();}
     
     /**
-     * @return 此原子数据是否包含元素符号信息
+     * @return {@inheritDoc}
      * @see IAtom#hasSymbol()
      */
-    boolean hasSymbol();
+    @Override boolean hasSymbol();
     /**
-     * @return 按照原子种类编号排序的元素符号列表，有
-     * {@code symbols().size() == ntypes()}；
-     * 如果不存在元素符号信息则会返回 {@code null}
+     * @return {@inheritDoc}
      * @see IAtom#symbol()
      */
-    @Nullable List<@Nullable String> symbols();
+    @Override default @Nullable List<@Nullable String> symbols() {return IHasSymbol.super.symbols();}
     /**
-     * 直接获取指定种类编号下的元素符号，可以避免一次创建匿名列表的过程；
-     * 有关系 {@code symbol(type) == symbols()[type-1]}
-     * @param aType 需要查询的种类编号，从 {@code 1} 开始
-     * @return 指定种类编号的元素符号，如果不存在元素符号信息则会返回 {@code null}
+     * {@inheritDoc}
+     * @param aType {@inheritDoc}
+     * @return {@inheritDoc}
      * @see IAtom#symbol()
      * @see IAtom#type()
      * @see #hasSymbol()
      */
-    @Nullable String symbol(int aType);
+    @Override @Nullable String symbol(int aType);
     
     /**
      * @return 此原子数据是否包含质量信息
@@ -157,66 +150,6 @@ public interface IAtomData {
     
     /** @return 此原子数据的拷贝，拷贝结果都是可以修改的 */
     ISettableAtomData copy();
-    
-    
-    /// symbols stuffs
-    /**
-     * 通过内部的 {@link #symbols()} 来获取关于另一个
-     * {@link IAtomData} 的 type 编号映射
-     * @param aAtomData 需要获取 type 编号映射的源自数据
-     * @return 一个 type 编号映射，输入原始的原子种类编号，返回对应的本原子数据中的种类编号
-     * @throws UnsupportedOperationException 当不存在 {@link #symbols()} 数据
-     */
-    default IntUnaryOperator typeMap(IAtomData aAtomData) {
-        if (!hasSymbol()) throw new UnsupportedOperationException("`typeMap` for IAtomData without symbols");
-        return typeMap_(Objects.requireNonNull(symbols()), aAtomData);
-    }
-    /**
-     * 通过内部的 {@link #symbols()} 来判断输入的 symbols 是否是有着相同的顺序
-     * @param aSymbolsIn 需要进行判断的输入元素符号列表
-     * @return 一个 type 编号映射，输入原始的原子种类编号，返回对应的本原子数据中的种类编号
-     * @throws UnsupportedOperationException 当不存在 {@link #symbols()} 数据
-     */
-    default boolean sameSymbolOrder(Collection<? extends CharSequence> aSymbolsIn) {
-        if (!hasSymbol()) throw new UnsupportedOperationException("`sameSymbolOrder` for IAtomData without symbols");
-        return sameSymbolOrder_(Objects.requireNonNull(symbols()), aSymbolsIn);
-    }
-    @ApiStatus.Internal
-    static IntUnaryOperator typeMap_(List<String> aSymbols, IAtomData aAtomData) {
-        if (aSymbols.size() < aAtomData.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + aSymbols.size());
-        if (!aAtomData.hasSymbol()) return type->type;
-        List<String> tAtomDataSymbols = Objects.requireNonNull(aAtomData.symbols());
-        if (sameSymbolOrder_(aSymbols, tAtomDataSymbols)) return type->type;
-        final int[] tAtomDataType2newType = new int[tAtomDataSymbols.size()+1];
-        for (int i = 0; i < tAtomDataSymbols.size(); ++i) {
-            String tElem = tAtomDataSymbols.get(i);
-            int type = typeOf_(aSymbols, tElem);
-            if (type <= 0) throw new IllegalArgumentException("Invalid element ("+tElem+") in AtomData");
-            tAtomDataType2newType[i+1] = type;
-        }
-        return type -> tAtomDataType2newType[type];
-    }
-    @ApiStatus.Internal
-    static boolean sameSymbolOrder_(List<String> aSymbols, Collection<? extends CharSequence> aSymbolsIn) {
-        if (aSymbols.size() < aSymbolsIn.size()) return false;
-        int tIdx = 0;
-        for (CharSequence aSymbol : aSymbolsIn) {
-            if (!aSymbol.equals(aSymbols.get(tIdx))) {
-                return false;
-            }
-            ++tIdx;
-        }
-        return true;
-    }
-    @ApiStatus.Internal
-    static int typeOf_(List<String> aSymbols, String aSymbol) {
-        for (int i = 0; i < aSymbols.size(); ++i) {
-            if (aSymbol.equals(aSymbols.get(i))) {
-                return i+1;
-            }
-        }
-        return -1;
-    }
     
     /**
      * 获取原子数据的计算器，包含许多较为复杂的原子数据操作

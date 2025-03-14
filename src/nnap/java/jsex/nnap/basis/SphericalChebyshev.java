@@ -280,10 +280,18 @@ public class SphericalChebyshev implements IBasis {
         return sizeN()*sizeL();
     }
     /** @return {@inheritDoc} */
-    @Override public @Unmodifiable List<String> symbols() {
-        return mSymbols==null ? null : AbstractCollections.from(mSymbols);
-    }
+    @Override public int atomTypeNumber() {return mTypeNum;}
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override public boolean hasSymbol() {return mSymbols!=null;}
+    /**
+     * {@inheritDoc}
+     * @param aType
+     * @return {@inheritDoc}
+     */
+    @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
     protected int sizeN() {
         return mTypeNum>1 ? mNMax+mNMax+2 : mNMax+1;

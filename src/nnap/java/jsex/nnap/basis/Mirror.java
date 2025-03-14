@@ -42,7 +42,9 @@ public class Mirror implements IBasis {
     
     @Override public double rcut() {return mMirrorBasis.rcut();}
     @Override public int size() {return mMirrorBasis.size();}
-    @Override public @Nullable List<String> symbols() {return mMirrorBasis.symbols();}
+    @Override public int atomTypeNumber() {return mMirrorBasis.atomTypeNumber();}
+    @Override public boolean hasSymbol() {return mMirrorBasis.hasSymbol();}
+    @Override public String symbol(int aType) {return mMirrorBasis.symbol(aType);}
     
     @Override public Vector eval(IDxyzTypeIterable aNL) {
         return mMirrorBasis.eval(dxyzTypeDo -> aNL.forEachDxyzType((dx, dy, dz, type) -> {

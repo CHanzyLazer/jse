@@ -10,13 +10,11 @@ import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
 import jse.clib.*;
 import jse.code.*;
-import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
 import jse.code.collection.IntList;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import jse.math.vector.Vector;
-import jse.parallel.IAutoShutdown;
 import jsex.nnap.basis.IBasis;
 import jsex.nnap.basis.Mirror;
 import jsex.nnap.basis.SphericalChebyshev;
@@ -44,7 +42,7 @@ import static jse.code.OS.JAR_DIR;
  * 当然即使如此依旧建议手动调用 {@link #shutdown()} 来及时释放资源
  * @author liqa
  */
-public class NNAP implements IAutoShutdown {
+public class NNAP implements IPotential {
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
@@ -403,11 +401,11 @@ public class NNAP implements IAutoShutdown {
     private final @Nullable String mUnits;
     private boolean mDead = false;
     private final int mThreadNumber;
-    public int atomTypeNumber() {return mSymbols.length;}
+    @Override public int atomTypeNumber() {return mSymbols.length;}
     public SingleNNAP model(int aType) {return mModels.get(aType-1);}
     public @Unmodifiable List<SingleNNAP> models() {return mModels;}
-    public String symbol(int aType) {return mSymbols[aType-1];}
-    public @Unmodifiable List<String> symbols() {return AbstractCollections.from(mSymbols);}
+    @Override public boolean hasSymbol() {return true;}
+    @Override public String symbol(int aType) {return mSymbols[aType-1];}
     public String units() {return mUnits;}
     
     @SuppressWarnings("unchecked")
@@ -467,10 +465,6 @@ public class NNAP implements IAutoShutdown {
     public boolean isShutdown() {return mDead;}
     public int threadNumber() {return mThreadNumber;}
     @VisibleForTesting public int nthreads() {return threadNumber();}
-    
-    public IntUnaryOperator typeMap(IAtomData aAtomData) {return IAtomData.typeMap_(symbols(), aAtomData);}
-    public boolean sameOrder(Collection<? extends CharSequence> aSymbolsIn) {return IAtomData.sameSymbolOrder_(symbols(), aSymbolsIn);}
-    public int typeOf(String aSymbol) {return IAtomData.typeOf_(symbols(), aSymbol);}
     
     /**
      * 转换为一个 ase 的计算器，可以方便接入已有的代码直接计算；

@@ -137,7 +137,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
     }
     private boolean sameTypeNameOrder_(String[] aTypeNamesIn) {
         if (aTypeNamesIn==null || mTypeNames==null) return true;
-        return IAtomData.sameSymbolOrder_(AbstractCollections.from(mTypeNames), AbstractCollections.from(aTypeNamesIn));
+        return IHasSymbol.sameSymbolOrder_(AbstractCollections.from(mTypeNames), AbstractCollections.from(aTypeNamesIn));
     }
     
     
@@ -485,7 +485,7 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         XYZ tBuf = new XYZ();
         int tIdx = 0;
         // 这里还是统一按照 type 进行排序；还需要检测 type 的 symbol 是否是一一对应的
-        IntUnaryOperator tTypeMap = mTypeNames==null ? t->t : IAtomData.typeMap_(AbstractCollections.from(mTypeNames), aAtomData);
+        IntUnaryOperator tTypeMap = mTypeNames==null ? t->t : IHasSymbol.typeMap_(AbstractCollections.from(mTypeNames), aAtomData);
         int tMaxIdx = 0;
         for (int type = 1; type <= tAtomTypeNum; ++type) {
             tMaxIdx += atomNumber(type);

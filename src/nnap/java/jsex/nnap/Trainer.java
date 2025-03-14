@@ -5,6 +5,7 @@ import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.atom.IAtomData;
 import jse.atom.AtomicParameterCalculator;
+import jse.atom.IHasSymbol;
 import jse.cache.IntMatrixCache;
 import jse.cache.IntVectorCache;
 import jse.cache.MatrixCache;
@@ -43,7 +44,7 @@ import java.util.function.IntUnaryOperator;
  * @author liqa
  */
 @ApiStatus.Experimental
-public class Trainer implements IAutoShutdown, ISavable {
+public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     
     protected final static String DEFAULT_UNITS = "metal";
     protected final static int[] DEFAULT_HIDDEN_DIMS = {20, 20};
@@ -596,19 +597,15 @@ public class Trainer implements IAutoShutdown, ISavable {
         return rOut;
     }
     
-    public int atomTypeNumber() {return mSymbols.length;}
+    @Override public int atomTypeNumber() {return mSymbols.length;}
     public PyObject model(int aType) {return SP.Python.getAs(PyObject.class, VAL_MODEL+".sub_models["+(aType-1)+"]");}
     @SuppressWarnings("unchecked")
     public @Unmodifiable List<PyObject> models() {return (List<PyObject>)SP.Python.getAs(List.class, VAL_MODEL+".sub_models");}
     public IBasis basis(int aType) {return mBasis[aType-1];}
     public @Unmodifiable List<IBasis> basis() {return AbstractCollections.from(mBasis);}
-    public String symbol(int aType) {return mSymbols[aType-1];}
-    public @Unmodifiable List<String> symbols() {return AbstractCollections.from(mSymbols);}
+    @Override public boolean hasSymbol() {return true;}
+    @Override public String symbol(int aType) {return mSymbols[aType-1];}
     public String units() {return mUnits;}
-    
-    public IntUnaryOperator typeMap(IAtomData aAtomData) {return IAtomData.typeMap_(symbols(), aAtomData);}
-    public boolean sameOrder(Collection<? extends CharSequence> aSymbolsIn) {return IAtomData.sameSymbolOrder_(symbols(), aSymbolsIn);}
-    public int typeOf(String aSymbol) {return IAtomData.typeOf_(symbols(), aSymbol);}
     
     /** 重写实现自定义模型创建 */
     protected void initModel() {

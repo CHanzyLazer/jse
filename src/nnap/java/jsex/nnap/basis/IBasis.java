@@ -2,6 +2,7 @@ package jsex.nnap.basis;
 
 import jse.atom.IAtomData;
 import jse.atom.AtomicParameterCalculator;
+import jse.atom.IHasSymbol;
 import jse.code.io.ISavable;
 import jse.math.vector.Vector;
 import jse.parallel.IAutoShutdown;
@@ -10,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.IntUnaryOperator;
 
@@ -19,30 +19,24 @@ import java.util.function.IntUnaryOperator;
  * @author liqa
  */
 @ApiStatus.Experimental
-public interface IBasis extends ISavable, IAutoShutdown {
+public interface IBasis extends IHasSymbol, ISavable, IAutoShutdown {
     /** @return 基组需要的近邻截断半径 */
     double rcut();
     /** @return 基组的长度 */
     int size();
     
-    /** @return 基组需要的元素顺序 */
-    @Nullable List<String> symbols();
-    default boolean hasSymbol() {return symbols()!=null;}
-    default IntUnaryOperator typeMap(IAtomData aAtomData) {
-        List<String> tSymbols = symbols();
-        if (tSymbols == null) throw new UnsupportedOperationException("`typeMap` for Basis without symbols");
-        return IAtomData.typeMap_(tSymbols, aAtomData);
-    }
-    default boolean sameOrder(Collection<? extends CharSequence> aSymbolsIn) {
-        List<String> tSymbols = symbols();
-        if (tSymbols == null) throw new UnsupportedOperationException("`sameOrder` for Basis without symbols");
-        return IAtomData.sameSymbolOrder_(tSymbols, aSymbolsIn);
-    }
-    default int typeOf(String aSymbol) {
-        List<String> tSymbols = symbols();
-        if (tSymbols == null) throw new UnsupportedOperationException("`typeOf` for Basis without symbols");
-        return IAtomData.typeOf_(tSymbols, aSymbol);
-    }
+    /** @return {@inheritDoc} */
+    @Override default int atomTypeNumber() {return 1;}
+    /** @return {@inheritDoc}；如果存在则会自动根据元素符号重新映射种类 */
+    @Override default boolean hasSymbol() {return false;}
+    /**
+     * {@inheritDoc}
+     * @param aType {@inheritDoc}
+     * @return {@inheritDoc}；如果存在则会自动根据元素符号重新映射种类
+     */
+    @Override default @Nullable String symbol(int aType) {return null;}
+    /** @return {@inheritDoc}；如果存在则会自动根据元素符号重新映射种类 */
+    @Override default @Nullable List<@Nullable String> symbols() {return IHasSymbol.super.symbols();}
     
     @FunctionalInterface interface IDxyzTypeIterable {void forEachDxyzType(IDxyzTypeDo aDxyzTypeDo);}
     @FunctionalInterface interface IDxyzTypeDo {void run(double aDx, double aDy, double aDz, int aType);}

@@ -121,17 +121,6 @@ public abstract class AbstractAtomData implements IAtomData {
     
     /**
      * @return {@inheritDoc}
-     * @see IAtom#symbol()
-     */
-    @Override public @Nullable List<@Nullable String> symbols() {
-        if (!hasSymbol()) return null;
-        return new AbstractRandomAccessList<@Nullable String>() {
-            @Override public @Nullable String get(int index) {return symbol(index+1);}
-            @Override public int size() {return atomTypeNumber();}
-        };
-    }
-    /**
-     * @return {@inheritDoc}
      * @see IVector
      * @see IAtom#mass()
      * @see #hasMass()
