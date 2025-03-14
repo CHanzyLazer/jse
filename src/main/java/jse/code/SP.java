@@ -631,6 +631,13 @@ public class SP {
         public static Object eval(String aText) throws JepException {return JEP_INTERP.getValue(aText);}
         // python 脚本文件不会有返回值
         
+        /** 获取 shell 的交互式运行 */
+        public static void runShell() throws JepException {
+            JEP_INTERP.set("jepInstance", JEP_INTERP);
+            JEP_INTERP.exec("from jep import console");
+            JEP_INTERP.exec("console.prompt(jepInstance)");
+        }
+        
         /** 直接运行文本的脚本 */
         public static void runText(String aText)                  throws JepException {runText(aText, ZL_STR);}
         public static void runText(String aText, String... aArgs) throws JepException {setArgs_("", aArgs); JEP_INTERP.exec(aText);}

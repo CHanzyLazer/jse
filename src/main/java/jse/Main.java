@@ -88,6 +88,14 @@ public class Main {
                 printHelp();
                 return;
             }
+            case "-groovy": {
+                SP.Groovy.runShell();
+                return;
+            }
+            case "-python": {
+                SP.Python.runShell();
+                return;
+            }
             case "-idea": {
                 // 先是项目文件
                 String tDirName = IO.toFileName(WORKING_DIR);
@@ -395,8 +403,8 @@ public class Main {
         aPrinter.println("    -v -version   Print version number");
         aPrinter.println("    -? -help      Print help message");
         aPrinter.println("    -idea         Initialize the current directory to Intellij IDEA project");
-        aPrinter.println("    -groovy       Run the groovy file script");
-        aPrinter.println("    -python       Run the python file script");
+        aPrinter.println("    -groovy       Run the groovy file script, or open the groovy interactive shell when no file input");
+        aPrinter.println("    -python       Run the python file script, or open the python interactive shell when no file input");
         aPrinter.println("    -groovytext   Run the groovy text script");
         aPrinter.println("    -pythontext   Run the python text script");
         aPrinter.println("    -jupyter      Install current jse to the jupyter kernel");
