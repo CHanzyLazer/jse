@@ -36,7 +36,7 @@ import static jse.code.OS.JAR_DIR;
  * 当然即使如此依旧建议手动调用 {@link #shutdown()} 来及时释放资源
  * @author liqa
  */
-public class NNAP implements IPotential {
+public class NNAP implements IPairPotential {
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
@@ -476,7 +476,8 @@ public class NNAP implements IPotential {
      */
     @Override public double calEnergyAt(final AtomicParameterCalculator aAPC, final ISlice aIndices, final IntUnaryOperator aTypeMap) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
-        if (atomTypeNumber() < aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", model: " + atomTypeNumber());
+        int tTypeNum = atomTypeNumber();
+        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
         // 统一存储常量
         final int tSize = aIndices.size();
         final int tThreadNumber = aAPC.threadNumber();
@@ -529,7 +530,8 @@ public class NNAP implements IPotential {
      */
     @Override public void calEnergyForceVirials(final AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
-        if (atomTypeNumber() < aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", model: " + atomTypeNumber());
+        int tTypeNum = atomTypeNumber();
+        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
         // 统一存储常量
         final int tAtomNumber = aAPC.atomNumber();
         final int tThreadNumber = aAPC.threadNumber();
@@ -564,8 +566,7 @@ public class NNAP implements IPotential {
                     tModel.submitBatchForward(threadID, tBasisValue, pred -> {
                         pred = tModel.denormEng(pred);
                         pred += tModel.mRefEng;
-                        if (tEnergies.size() == 1) tEnergies.add(0, pred);
-                        else tEnergies.set(i, pred);
+                        tEnergies.add(tEnergies.size()==1?0:i, pred);
                     });
                     VectorCache.returnVec(tBasisValue);
                 });
@@ -626,8 +627,7 @@ public class NNAP implements IPotential {
                 tModel.submitBatchBackward(threadID, tBasisValue, tEnergies==null ? null : pred -> {
                     pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
-                    if (tEnergies.size() == 1) tEnergies.add(0, pred);
-                    else tEnergies.set(i, pred);
+                    tEnergies.add(tEnergies.size()==1?0:i, pred);
                 }, xGrad -> {
                     tModel.normBasisPartial(xGrad);
                     tModel.denormEngPartial(xGrad);

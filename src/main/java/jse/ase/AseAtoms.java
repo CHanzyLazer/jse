@@ -25,7 +25,7 @@ import static jse.code.CS.*;
 import static jse.code.CS.STD_VZ_COL;
 
 /**
- * 基于 {@code ase.Atoms} 的 jse 实现，继承了 {@link IAtomData}
+ * {@code ase.Atoms} 的 jse 实现，继承了 {@link IAtomData}
  * 用于保证使用方法和 jse 中的原子结构类型一致。
  * <p>
  * 此实现会对 {@code ase.Atoms} 中常用的数据进行值拷贝，保证频繁访问下的效率。
