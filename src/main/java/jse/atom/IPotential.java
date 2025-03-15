@@ -92,7 +92,7 @@ public interface IPotential extends IAutoShutdown {
         boolean tRequireForces = false;
         boolean tRequireStress = false, tRequirePreAtomStress = false;;
         for (String tProperty : aProperties) {
-            if (tProperty.equals("energy") || tProperty.equals("energies") || tProperty.equals("free_energy")) tRequireEnergy = true;
+            if (tProperty.equals("energy") || tProperty.equals("energies")) tRequireEnergy = true;
             if (tProperty.equals("forces")) tRequireForces = true;
             if (tProperty.equals("stress") || tProperty.equals("stresses")) tRequireStress = true;
             if (tProperty.equals("energies")) tRequirePreAtomEnergy = true;
@@ -104,14 +104,12 @@ public interface IPotential extends IAutoShutdown {
             if (!tRequirePreAtomEnergy) {
                 double tEnergy = calEnergy(tAtoms);
                 rResults.put("energy", tEnergy);
-                rResults.put("free_energy", tEnergy);
                 return rResults;
             }
             Vector tEnergies = calEnergies(tAtoms);
             double tEnergy = tEnergies.sum();
             rResults.put("energy", tEnergy);
             rResults.put("energies", new NDArray<>(tEnergies.internalData(), tEnergies.size()));
-            rResults.put("free_energy", tEnergy);
             VectorCache.returnVec(tEnergies);
             return rResults;
         }
@@ -133,7 +131,6 @@ public interface IPotential extends IAutoShutdown {
         if (tRequirePreAtomEnergy) {
         rResults.put("energies", new NDArray<>(rEnergies.internalData(), rEnergies.size()));
         }
-        rResults.put("free_energy", tEnergy);
         rResults.put("forces", new NDArray<>(rForces.internalData(), rForces.rowNumber(), rForces.columnNumber()));
         rResults.put("stress", new NDArray<>(rStress.internalData(), rStress.size()));
         if (tRequirePreAtomStress) {

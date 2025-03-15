@@ -361,15 +361,14 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * {@link #calEnergyDiffMove(AtomicParameterCalculator, int, double, double, double, IntUnaryOperator)}
      * 来避免这个过程，从而提高效率
      *
-     * @param aAtomData 需要计算能量差的原子数据
-     * @param aI 移动原子的索引
-     * @param aDx x 方向移动的距离
-     * @param aDy y 方向移动的距离
-     * @param aDz z 方向移动的距离
-     * @param aRestoreData 计算完成后是否还原 {@link ISettableAtomData} 的状态，默认为
-     *                     {@code true}；如果关闭则会在 aAtomData 中保留移动后的结构
-     * @return 移动后能量 - 移动前能量
-     * @throws Exception 特殊实现下可选的抛出异常
+     * @param aAtomData {@inheritDoc}
+     * @param aI {@inheritDoc}
+     * @param aDx {@inheritDoc}
+     * @param aDy {@inheritDoc}
+     * @param aDz {@inheritDoc}
+     * @param aRestoreData {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws Exception {@inheritDoc}
      */
     @Override default double calEnergyDiffMove(ISettableAtomData aAtomData, int aI, double aDx, double aDy, double aDz, boolean aRestoreData) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
@@ -496,15 +495,14 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * {@link #calEnergyDiffSwap(AtomicParameterCalculator, int, int, IntUnaryOperator)}
      * 来避免这个过程，从而提高效率
      *
-     * @param aAtomData 需要计算能量差的原子数据
-     * @param aI 需要交换种类的第一个原子索引
-     * @param aJ 需要交换种类的第二个原子索引
-     * @param aRestoreData 计算完成后是否还原 {@link ISettableAtomData} 的状态，默认为
-     *                     {@code true}；如果关闭则会在 aAtomData 中保留交换后的结构
-     * @return 交换后能量 - 交换前能量
-     * @throws Exception 特殊实现下可选的抛出异常
+     * @param aAtomData {@inheritDoc}
+     * @param aI {@inheritDoc}
+     * @param aJ {@inheritDoc}
+     * @param aRestoreData {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws Exception {@inheritDoc}
      */
-    default double calEnergyDiffSwap(ISettableAtomData aAtomData, int aI, int aJ, boolean aRestoreData) throws Exception {
+    @Override default double calEnergyDiffSwap(ISettableAtomData aAtomData, int aI, int aJ, boolean aRestoreData) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
         IntUnaryOperator tTypeMap = hasSymbol() ? typeMap(aAtomData) : type->type;
         try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData, threadNumber())) {return calEnergyDiffSwap(tAPC, aI, aJ, false, tTypeMap);}
@@ -597,15 +595,14 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * {@link #calEnergyDiffFlip(AtomicParameterCalculator, int, int, IntUnaryOperator)}
      * 来避免这个过程，从而提高效率
      *
-     * @param aAtomData 需要计算能量差的原子数据
-     * @param aI 需要翻转种类的原子索引
-     * @param aType 此原子需要翻转的种类编号，对应输入原子数据原始的种类编号，没有经过 aTypeMap（如果有的话）
-     * @param aRestoreData 计算完成后是否还原 {@link ISettableAtomData} 的状态，默认为
-     *                     {@code true}；如果关闭则会在 aAtomData 中保留翻转后的结构
-     * @return 翻转后能量 - 翻转前能量
-     * @throws Exception 特殊实现下可选的抛出异常
+     * @param aAtomData {@inheritDoc}
+     * @param aI {@inheritDoc}
+     * @param aType {@inheritDoc}
+     * @param aRestoreData {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws Exception {@inheritDoc}
      */
-    default double calEnergyDiffFlip(ISettableAtomData aAtomData, int aI, int aType, boolean aRestoreData) throws Exception {
+    @Override default double calEnergyDiffFlip(ISettableAtomData aAtomData, int aI, int aType, boolean aRestoreData) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
         IntUnaryOperator tTypeMap = hasSymbol() ? typeMap(aAtomData) : type->type;
         try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData, threadNumber())) {return calEnergyDiffFlip(tAPC, aI, aType, false, tTypeMap);}
@@ -660,23 +657,19 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         calEnergyForceVirials(aAPC, rEnergies, rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ, type->type);
     }
     /**
-     * 使用此势函数计算所有需要的性质，需要注意的是，这里位力需要采用
-     * lammps 一致的定义，具体可以参见：
-     * <a href="https://en.wikipedia.org/wiki/Virial_stress">
-     * Virial stress - Wikipedia </a>
-     *
-     * @param aAtomData 需要计算性质的原子数据
-     * @param rEnergies 存储计算输出的每原子能量值，{@code null} 表示不需要能量，长度为 {@code 1} 表示只需要体系的总能量
-     * @param rForcesX 存储计算输出的 x 方向力值，{@code null} 表示不需要此值
-     * @param rForcesY 存储计算输出的 y 方向力值，{@code null} 表示不需要此值
-     * @param rForcesZ 存储计算输出的 z 方向力值，{@code null} 表示不需要此值
-     * @param rVirialsXX 存储计算输出的 xx 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @param rVirialsYY 存储计算输出的 yy 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @param rVirialsZZ 存储计算输出的 zz 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @param rVirialsXY 存储计算输出的 xy 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @param rVirialsXZ 存储计算输出的 xz 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @param rVirialsYZ 存储计算输出的 yz 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
-     * @throws Exception 特殊实现下可选的抛出异常
+     * {@inheritDoc}
+     * @param aAtomData {@inheritDoc}
+     * @param rEnergies {@inheritDoc}
+     * @param rForcesX {@inheritDoc}
+     * @param rForcesY {@inheritDoc}
+     * @param rForcesZ {@inheritDoc}
+     * @param rVirialsXX {@inheritDoc}
+     * @param rVirialsYY {@inheritDoc}
+     * @param rVirialsZZ {@inheritDoc}
+     * @param rVirialsXY {@inheritDoc}
+     * @param rVirialsXZ {@inheritDoc}
+     * @param rVirialsYZ {@inheritDoc}
+     * @throws Exception {@inheritDoc}
      */
     @Override default void calEnergyForceVirials(IAtomData aAtomData, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");

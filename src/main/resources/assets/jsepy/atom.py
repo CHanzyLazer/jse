@@ -1,7 +1,7 @@
 from ase.calculators.calculator import Calculator, all_changes, PropertyNotImplementedError
 
 class PotentialCalculator(Calculator):
-    implemented_properties = ['energy', 'free_energy', 'energies', 'forces', 'stress', 'stresses']
+    implemented_properties = ['energy', 'energies', 'forces', 'stress', 'stresses']
     
     def __init__(self, pot, **kwargs):
         super().__init__(**kwargs)
