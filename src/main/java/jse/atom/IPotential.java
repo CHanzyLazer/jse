@@ -213,6 +213,15 @@ public interface IPotential extends IAutoShutdown {
         }
         return rStresses;
     }
+    /**
+     * 使用此势函数计算给定原子数据 {@link IAtomData} 中所有原子的单独应力，具体可以参见：
+     * <a href="https://en.wikipedia.org/wiki/Virial_stress">
+     * Virial stress - Wikipedia </a>
+     * @param aAtomData 需要计算应力的原子数据
+     * @return 按照 {@code [xx, yy, zz, xy, xz, yz]} 顺序排列的应力向量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    default List<Vector> calStresses(IAtomData aAtomData) throws Exception {return calStresses(aAtomData, false);}
     
     /**
      * 使用此势函数计算给定原子数据 {@link IAtomData} 原子结构的应力，具体可以参见：

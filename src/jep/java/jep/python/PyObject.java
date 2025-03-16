@@ -78,9 +78,16 @@ public class PyObject extends JepAccess implements AutoCloseable, GroovyObject {
     
     
     /** python 重载运算符匹配 */
-    public Object getAt(int aIdx) {return getAttr("__getitem__", PyCallable.class).call(aIdx);}
-    public void putAt(int aIdx, Object aValue) {getAttr("__setitem__", PyCallable.class).call(aIdx, aValue);}
-    
+    public Object getAt(int aIdx) {
+        try (PyCallable tGetitem = getAttr("__getitem__", PyCallable.class)) {
+            return tGetitem.call(aIdx);
+        }
+    }
+    public void putAt(int aIdx, Object aValue) {
+        try (PyCallable tSetitem = getAttr("__setitem__", PyCallable.class)) {
+            tSetitem.call(aIdx, aValue);
+        }
+    }
     
     
     protected final PyPointer pointer;
