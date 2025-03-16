@@ -1,4 +1,3 @@
-#include "jniutil.h"
 #include "fix_jse.h"
 
 #include "LmpPlugin.h"
@@ -168,10 +167,10 @@ double FixJSE::compute_array(int i, int j) {
 
 /* ---------------------------------------------------------------------- */
 jint FixJSE::findVariable(jstring name) {
-    char *name_c = parseStr(mEnv, name);
+    const char *name_c = mEnv->GetStringUTFChars(name, NULL);
     if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "parse name");
     int ivar = input->variable->find(name_c);
-    FREE(name_c);
+    mEnv->ReleaseStringUTFChars(name, name_c);
     return (jint)ivar;
 }
 jdouble FixJSE::computeVariable(jint ivar) {

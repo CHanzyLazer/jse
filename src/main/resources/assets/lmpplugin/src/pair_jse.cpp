@@ -1,4 +1,3 @@
-#include "jniutil.h"
 #include "pair_jse.h"
 
 #include "LmpPlugin.h"
@@ -100,10 +99,10 @@ double PairJSE::init_one(int i, int j) {
 
 /* ---------------------------------------------------------------------- */
 jint PairJSE::findVariable(jstring name) {
-    char *name_c = parseStr(mEnv, name);
+    const char *name_c = mEnv->GetStringUTFChars(name, NULL);
     if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "parse name");
     int ivar = input->variable->find(name_c);
-    FREE(name_c);
+    mEnv->ReleaseStringUTFChars(name, name_c);
     return (jint)ivar;
 }
 jdouble PairJSE::computeVariable(jint ivar) {

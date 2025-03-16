@@ -62,10 +62,6 @@ else()
 endif()
 
 
-# add jniutil
-include_directories("$ENV{JSE_JNIUTIL_INCLUDE_DIR}")
-
-
 # add mpi
 find_package(MPI)
 if(MPI_CXX_FOUND)
@@ -74,16 +70,6 @@ if(MPI_CXX_FOUND)
     set(MPI_CXX_SKIP_MPICXX TRUE)
     
     target_link_libraries(lmpplugin MPI::MPI_CXX)
-endif()
-
-
-# add mimalloc
-option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
-if(JSE_USE_MIMALLOC)
-    add_definitions(-DUSE_MIMALLOC)
-    
-    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
-    target_link_libraries(lmpplugin "$ENV{JSE_MIMALLOC_LIB_PATH}")
 endif()
 
 

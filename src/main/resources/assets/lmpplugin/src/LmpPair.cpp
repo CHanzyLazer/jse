@@ -1,4 +1,3 @@
-#include "jniutil.h"
 #include "LmpPair.h"
 
 

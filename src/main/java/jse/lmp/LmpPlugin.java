@@ -52,12 +52,6 @@ public class LmpPlugin {
         public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_LMPPLUGIN", jse.code.Conf.CMAKE_CXX_COMPILER);
         public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_LMPPLUGIN"   , jse.code.Conf.CMAKE_CXX_FLAGS);
         
-        /**
-         * 对于 lmpplugin，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
-         * 这对于 java 数组和 c 数组的转换很有效
-         */
-        public static boolean USE_MIMALLOC = OS.envZ("JSE_USE_MIMALLOC_LMPPLUGIN", jse.code.Conf.USE_MIMALLOC);
-        
         /** 启动的 jvm 的最大内存，默认为 1g 用来防止 mpi 运行 java 导致内存溢出 */
         public static String JVM_XMX = "1g";
         
@@ -91,7 +85,7 @@ public class LmpPlugin {
     static {
         InitHelper.INITIALIZED = true;
         
-        // 依赖 jniutil
+        // 依赖 jniutil；实际内部不直接依赖
         JNIUtil.InitHelper.init();
         // 依赖 cpointer
         CPointer.InitHelper.init();
@@ -102,7 +96,6 @@ public class LmpPlugin {
         LIB_PATH = new JNIUtil.LibBuilder("lmpplugin", "LMPPLUGIN", LIB_DIR, Conf.CMAKE_SETTING)
             .setSrc("lmpplugin", SRC_NAME)
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
-            .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_LMPPLUGIN_LIB)
             .setCmakeLineOpt(line -> {
                 // 替换其中的 lammps 库路径为设置好的路径
                 line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NativeLmp.NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
