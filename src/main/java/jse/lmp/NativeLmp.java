@@ -22,6 +22,7 @@ import jse.math.vector.Vector;
 import jse.parallel.IAutoShutdown;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -314,7 +315,13 @@ public class NativeLmp implements IAutoShutdown {
     public NativeLmp(String[] aArgs, @Nullable MPI.Comm aComm) throws LmpException {
         String[] tArgs = aArgs==null ? DEFAULT_ARGS : new String[aArgs.length+1];
         tArgs[0] = EXECUTABLE_NAME;
-        if (aArgs != null) System.arraycopy(aArgs, 0, tArgs, 1, aArgs.length);
+        if (aArgs != null) {
+            for (int i = 0; i < aArgs.length; i++) {
+                String tArg = aArgs[i];
+                if (tArg==null) throw new NullPointerException();
+                tArgs[i+1] = tArg;
+            }
+        }
         long tLmpPtr = aComm==null ? lammpsOpen_(tArgs) : lammpsOpen_(tArgs, aComm.ptr_());
         if (tLmpPtr==0 || tLmpPtr==-1) throw new LmpException("Failed to init a NativeLmp: "+tLmpPtr);
         mLmpPtr = new NativeLmpPointer(this, tLmpPtr);
@@ -325,8 +332,8 @@ public class NativeLmp implements IAutoShutdown {
     public NativeLmp(@Nullable MPI.Comm aComm, String... aArgs) throws LmpException {this(aArgs, aComm);}
     public NativeLmp(@Nullable MPI.Comm aComm) throws LmpException {this((String[])null, aComm);}
     public NativeLmp() throws LmpException {this((String[])null);}
-    private native static long lammpsOpen_(String[] aArgs, long aComm) throws LmpException;
-    private native static long lammpsOpen_(String[] aArgs) throws LmpException;
+    private native static long lammpsOpen_(@NotNull String @NotNull[] aArgs, long aComm) throws LmpException;
+    private native static long lammpsOpen_(@NotNull String @NotNull[] aArgs) throws LmpException;
     
     public boolean threadValid() {
         return Thread.currentThread() == mInitThead;
@@ -380,10 +387,11 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void file(String aPath) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aPath == null) throw new NullPointerException();
         checkThread();
         lammpsFile_(mLmpPtr.mPtr, IO.toAbsolutePath(aPath));
     }
-    private native static void lammpsFile_(long aLmpPtr, String aPath) throws LmpException;
+    private native static void lammpsFile_(long aLmpPtr, @NotNull String aPath) throws LmpException;
     
     /**
      * Process a single LAMMPS input command from a string.
@@ -393,10 +401,11 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void command(String aCmd) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aCmd == null) throw new NullPointerException();
         checkThread();
         lammpsCommand_(mLmpPtr.mPtr, aCmd);
     }
-    private native static void lammpsCommand_(long aLmpPtr, String aCmd) throws LmpException;
+    private native static void lammpsCommand_(long aLmpPtr, @NotNull String aCmd) throws LmpException;
     
     /**
      * Process multiple LAMMPS input commands from a list of strings.
@@ -406,10 +415,12 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void commands(String... aCmds) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aCmds == null) throw new NullPointerException();
+        for (String tCmd : aCmds) if (tCmd == null) throw new NullPointerException();
         checkThread();
         lammpsCommandsList_(mLmpPtr.mPtr, aCmds);
     }
-    private native static void lammpsCommandsList_(long aLmpPtr, String[] aCmds) throws LmpException;
+    private native static void lammpsCommandsList_(long aLmpPtr, @NotNull String @NotNull[] aCmds) throws LmpException;
     
     /**
      * Process a block of LAMMPS input commands from a string.
@@ -419,10 +430,11 @@ public class NativeLmp implements IAutoShutdown {
      */
     public void commands(String aMultiCmd) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aMultiCmd == null) throw new NullPointerException();
         checkThread();
         lammpsCommandsString_(mLmpPtr.mPtr, aMultiCmd);
     }
-    private native static void lammpsCommandsString_(long aLmpPtr, String aMultiCmd) throws LmpException;
+    private native static void lammpsCommandsString_(long aLmpPtr, @NotNull String aMultiCmd) throws LmpException;
     
     /**
      * Get the total number of atoms in the LAMMPS instance.
@@ -480,7 +492,7 @@ public class NativeLmp implements IAutoShutdown {
      * <p>
      * {@code [0  , 1  , 2  , 3  , 4  , 5  , 6 , 7 , 8 , 9 , 10, 11, 12, 13, 14]}
      */
-    private native static void lammpsExtractBox_(long aLmpPtr, double[] rBox) throws LmpException;
+    private native static void lammpsExtractBox_(long aLmpPtr, double @NotNull[] rBox) throws LmpException;
     
     /**
      * Reset simulation box parameters
@@ -526,10 +538,11 @@ public class NativeLmp implements IAutoShutdown {
      */
     public double thermoOf(String aName) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         return lammpsGetThermo_(mLmpPtr.mPtr, aName);
     }
-    private native static double lammpsGetThermo_(long aLmpPtr, String aName) throws LmpException;
+    private native static double lammpsGetThermo_(long aLmpPtr, @NotNull String aName) throws LmpException;
     
     /**
      * Query LAMMPS about global settings that can be expressed as an integer.
@@ -542,10 +555,11 @@ public class NativeLmp implements IAutoShutdown {
      */
     public int settingOf(String aName) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         return lammpsExtractSetting_(mLmpPtr.mPtr, aName);
     }
-    private native static int lammpsExtractSetting_(long aLmpPtr, String aName) throws LmpException;
+    private native static int lammpsExtractSetting_(long aLmpPtr, @NotNull String aName) throws LmpException;
     
     /**
      * Gather the named per-atom, per-atom fix, per-atom compute,
@@ -564,6 +578,7 @@ public class NativeLmp implements IAutoShutdown {
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public RowMatrix atomDataOf(String aName) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         switch(aName) {
         case "mass":        {return localAtomDataOf(aName, 1, atomTypeNumber()+1, 1);}
         case "id":          {return fullAtomDataOf(aName, false, 1);}
@@ -602,6 +617,7 @@ public class NativeLmp implements IAutoShutdown {
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public RowIntMatrix atomIntDataOf(String aName) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         switch(aName) {
         case "id":          {return fullAtomIntDataOf(aName, 1);}
         case "type":        {return fullAtomIntDataOf(aName, 1);}
@@ -649,6 +665,7 @@ public class NativeLmp implements IAutoShutdown {
      */
     public RowMatrix fullAtomDataOf(String aName, boolean aIsDouble, int aColNum) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         RowMatrix rData = MatrixCache.getMatRow(atomNumber(), aColNum);
         lammpsGatherConcat_(mLmpPtr.mPtr, aName, aIsDouble, aColNum, rData.internalData());
@@ -656,6 +673,7 @@ public class NativeLmp implements IAutoShutdown {
     }
     public RowIntMatrix fullAtomIntDataOf(String aName, int aColNum) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         RowIntMatrix rData = IntMatrixCache.getMatRow(atomNumber(), aColNum);
         lammpsGatherConcatInt_(mLmpPtr.mPtr, aName, aColNum, rData.internalData());
@@ -675,6 +693,7 @@ public class NativeLmp implements IAutoShutdown {
      */
     public RowMatrix localAtomDataOf(String aName, int aDataType, int aRowNum, int aColNum) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         RowMatrix rData = MatrixCache.getMatRow(aRowNum, aColNum);
         lammpsExtractAtom_(mLmpPtr.mPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
@@ -682,6 +701,7 @@ public class NativeLmp implements IAutoShutdown {
     }
     public RowIntMatrix localAtomIntDataOf(String aName, int aDataType, int aRowNum, int aColNum) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         RowIntMatrix rData = IntMatrixCache.getMatRow(aRowNum, aColNum);
         lammpsExtractAtomInt_(mLmpPtr.mPtr, aName, aDataType, aRowNum, aColNum, rData.internalData());
@@ -696,15 +716,16 @@ public class NativeLmp implements IAutoShutdown {
      */
     public CPointer localAtomCPointerDataOf(String aName) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         return new CPointer(lammpsExtractAtomCPointer_(mLmpPtr.mPtr, aName));
     }
-    private native static void lammpsGatherConcat_(long aLmpPtr, String aName, boolean aIsDouble, int aCount, double[] rData) throws LmpException, MPIException;
-    private native static void lammpsGatherConcatInt_(long aLmpPtr, String aName, int aCount, int[] rData) throws LmpException, MPIException;
-    private native static void lammpsExtractAtom_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, double[] rData) throws LmpException;
-    private native static void lammpsExtractAtomInt_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, int[] rData) throws LmpException;
-    private native static void lammpsExtractAtomLong_(long aLmpPtr, String aName, int aDataType, int aAtomNum, int aCount, long[] rData) throws LmpException;
-    private native static long lammpsExtractAtomCPointer_(long aLmpPtr, String aName) throws LmpException;
+    private native static void lammpsGatherConcat_(long aLmpPtr, @NotNull String aName, boolean aIsDouble, int aCount, double @NotNull[] rData) throws LmpException, MPIException;
+    private native static void lammpsGatherConcatInt_(long aLmpPtr, @NotNull String aName, int aCount, int @NotNull[] rData) throws LmpException, MPIException;
+    private native static void lammpsExtractAtom_(long aLmpPtr, @NotNull String aName, int aDataType, int aAtomNum, int aCount, double @NotNull[] rData) throws LmpException;
+    private native static void lammpsExtractAtomInt_(long aLmpPtr, @NotNull String aName, int aDataType, int aAtomNum, int aCount, int @NotNull[] rData) throws LmpException;
+    private native static void lammpsExtractAtomLong_(long aLmpPtr, @NotNull String aName, int aDataType, int aAtomNum, int aCount, long @NotNull[] rData) throws LmpException;
+    private native static long lammpsExtractAtomCPointer_(long aLmpPtr, @NotNull String aName) throws LmpException;
     
     /**
      * Scatter the named per-atom, per-atom fix, per-atom compute,
@@ -723,6 +744,7 @@ public class NativeLmp implements IAutoShutdown {
     @SuppressWarnings("DuplicateBranchesInSwitch")
     public void setAtomDataOf(String aName, IMatrix aData) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         switch(aName) {
         case "id":          {setAtomDataOf(aName, aData, false); return;}
         case "type":        {setAtomDataOf(aName, aData, false); return;}
@@ -759,6 +781,7 @@ public class NativeLmp implements IAutoShutdown {
     }
     public void setAtomDataOf(String aName, IMatrix aData, boolean aIsDouble) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
         checkThread();
         if ((aData instanceof RowMatrix) || ((aData instanceof ColumnMatrix) && aData.columnNumber()==1)) {
             lammpsScatter_(mLmpPtr.mPtr, aName, aIsDouble, aData.rowNumber(), aData.columnNumber(), ((DoubleArrayMatrix)aData).internalData());
@@ -766,7 +789,7 @@ public class NativeLmp implements IAutoShutdown {
             lammpsScatter_(mLmpPtr.mPtr, aName, aIsDouble, aData.rowNumber(), aData.columnNumber(), aData.asVecRow().data());
         }
     }
-    private native static void lammpsScatter_(long aLmpPtr, String aName, boolean aIsDouble, int aAtomNum, int aCount, double[] aData) throws LmpException;
+    private native static void lammpsScatter_(long aLmpPtr, @NotNull String aName, boolean aIsDouble, int aAtomNum, int aCount, double @NotNull[] aData) throws LmpException;
     
     /** 提供 {@link Lmpdat} 格式的获取质量 */
     public IVector masses() throws LmpException {
@@ -892,7 +915,7 @@ public class NativeLmp implements IAutoShutdown {
     public void creatAtoms(List<? extends IAtom> aAtoms) throws LmpException {
         creatAtoms(aAtoms, false);
     }
-    private native static void lammpsCreateAtoms_(long aLmpPtr, int aAtomNum, int[] aID, int[] aType, double[] aXYZ, double[] aVelocities, int[] aImage, boolean aShrinkExceed) throws LmpException;
+    private native static void lammpsCreateAtoms_(long aLmpPtr, int aAtomNum, int @NotNull[] aID, int @NotNull[] aType, double @NotNull[] aXYZ, double @Nullable[] aVelocities, int @Nullable[] aImage, boolean aShrinkExceed) throws LmpException;
     
     /**
      * lammps clear 指令
