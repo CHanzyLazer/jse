@@ -840,10 +840,11 @@ public class NativeLmp implements IAutoShutdown {
         }
         int tAtomTypeNum = aLmpdat.atomTypeNumber();
         command(String.format("create_box      %d box", tAtomTypeNum));
-        IVector tMasses = aLmpdat.masses();
-        if (tMasses != null) for (int i = 0; i < tAtomTypeNum; ++i) {
-        command(String.format("mass            %d %f", i+1, tMasses.get(i)));
-        }
+        if (aLmpdat.hasMass()) for (int tType = 1; tType <= tAtomTypeNum; ++tType) {
+        double tMass = aLmpdat.mass(tType);
+        if (!Double.isNaN(tMass)) {
+        command(String.format("mass            %d %f", tType, tMass));
+        }}
         IIntVector tIDs = aLmpdat.ids(); IntVector tBufIDs = tIDs.toBuf();
         IIntVector tTypes = aLmpdat.types(); IntVector tBufTypes = tTypes.toBuf();
         IVector tPositionsVec = aLmpdat.positions().asVecRow(); Vector tBufPositionsVec = tPositionsVec.toBuf();
@@ -862,6 +863,8 @@ public class NativeLmp implements IAutoShutdown {
     public void loadData(IAtomData aAtomData) throws LmpException {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
+        // 需要统一转换成 lammps style 的 box
+        if (!aAtomData.isLmpStyle()) {aAtomData = Lmpdat.of(aAtomData);}
         if (aAtomData instanceof Lmpdat) {loadLmpdat((Lmpdat)aAtomData); return;}
         IXYZ tBox = aAtomData.box();
         command(String.format("region          box block 0 %f 0 %f 0 %f", tBox.x(), tBox.y(), tBox.z()));

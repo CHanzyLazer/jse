@@ -59,7 +59,7 @@ import static jse.code.CS.STD_VZ_COL;
  */
 public class AseAtoms extends AbstractSettableAtomData {
     /** 注意 ase 的值是带有单位的，而不是直接和文件保持一致，这其实很自作聪明；为了尽量保持一致，这里统一对速度做一个转换，保证默认情况下会一致 */
-    public final static double ASE_VEL_MUL = MathEX.Fast.sqrt(1.660539040e-27 / 1.6021766208e-19) * 1.0e2;
+    public final static double ASE_VEL_MUL = 1.0 / UNITS_ASE.get("fs") * 1e-3;
     
     private IBox mBox;
     private final IIntVector mAtomicNumbers;

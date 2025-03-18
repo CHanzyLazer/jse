@@ -54,7 +54,8 @@ public class Thermo extends Table {
      * @throws IOException 如果读取失败
      */
     public static Thermo readCSV(String aPath) throws IOException {
-        return new Thermo(IO.csv2table(aPath));
+        Table tTable = IO.csv2table(aPath);
+        return tTable==null ? null : new Thermo(tTable);
     }
     
     /**

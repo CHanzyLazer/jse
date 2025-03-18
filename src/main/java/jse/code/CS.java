@@ -122,14 +122,114 @@ public class CS {
     /** 匹配周围有任意空格的逗号或者空格的正则表达式，{@code \s*[,\s]\s*} */
     public final static Pattern COMMA_OR_BLANKS = Pattern.compile("\\s*[,\\s]\\s*");
     
+    /** units from ase, use 2018 codata version */
+    public final static Map<String, Double> UNITS = (new ImmutableMap.Builder<String, Double>())
+        .put("_c", 299792458.0)
+        .put("_mu0", 1.2566370614359173e-06)
+        .put("_Grav", 6.6743e-11)
+        .put("_hplanck", 6.62607015e-34)
+        .put("_e", 1.602176634e-19)
+        .put("_me", 9.1093837015e-31)
+        .put("_mp", 1.67262192369e-27)
+        .put("_Nav", 6.02214076e+23)
+        .put("_k", 1.380649e-23)
+        .put("_amu", 1.6605390666e-27)
+        .put("_eps0", 8.85418781762039e-12)
+        .put("_hbar", 1.0545718176461565e-34)
+        .put("Ang", 1.0)
+        .put("Angstrom", 1.0)
+        .put("nm", 10.0)
+        .put("Bohr", 0.5291772111941798)
+        .put("eV", 1.0)
+        .put("Hartree", 27.21138621614287)
+        .put("kJ", 6.241509074460763e+21)
+        .put("kcal", 2.6114473967543833e+22)
+        .put("mol", 6.02214076e+23)
+        .put("Rydberg", 13.605693108071435)
+        .put("Ry", 13.605693108071435)
+        .put("Ha", 27.21138621614287)
+        .put("second", 98226947502532.77)
+        .put("fs", 0.09822694750253277)
+        .put("kB", 8.617333262145179e-05)
+        .put("Pascal", 6.241509074460763e-12)
+        .put("GPa", 0.006241509074460762)
+        .put("bar", 6.241509074460762e-07)
+        .put("Debye", 0.20819433270935597)
+        .put("alpha", 0.0072973525653052115)
+        .put("invcm", 0.0001239841984332003)
+        .put("_aut", 2.4188843292387268e-17)
+        .put("_auv", 2187691.262445455)
+        .put("_auf", 8.238723484684572e-08)
+        .put("_aup", 29421015615686.684)
+        .put("AUT", 0.002375996240228316)
+        .put("m", 10000000000.0)
+        .put("kg", 6.022140762081123e+26)
+        .put("s", 98226947502532.77)
+        .put("A", 63541.71877630451)
+        .put("J", 6.241509074460763e+18)
+        .put("C", 6.241509074460763e+18)
+        .build();
+    
+    /** units from ase, use 2014 codata version (ase default value) */
+    public final static Map<String, Double> UNITS_ASE = (new ImmutableMap.Builder<String, Double>())
+        .put("_c", 299792458.0)
+        .put("_mu0", 1.2566370614359173e-06)
+        .put("_Grav", 6.67408e-11)
+        .put("_hplanck", 6.62607004e-34)
+        .put("_e", 1.6021766208e-19)
+        .put("_me", 9.10938356e-31)
+        .put("_mp", 1.672621898e-27)
+        .put("_Nav", 6.022140857e+23)
+        .put("_k", 1.38064852e-23)
+        .put("_amu", 1.66053904e-27)
+        .put("_eps0", 8.85418781762039e-12)
+        .put("_hbar", 1.0545718001391127e-34)
+        .put("Ang", 1.0)
+        .put("Angstrom", 1.0)
+        .put("nm", 10.0)
+        .put("Bohr", 0.5291772105638411)
+        .put("eV", 1.0)
+        .put("Hartree", 27.211386024367243)
+        .put("kJ", 6.241509125883258e+21)
+        .put("kcal", 2.611447418269555e+22)
+        .put("mol", 6.022140857e+23)
+        .put("Rydberg", 13.605693012183622)
+        .put("Ry", 13.605693012183622)
+        .put("Ha", 27.211386024367243)
+        .put("second", 98226947884640.62)
+        .put("fs", 0.09822694788464063)
+        .put("kB", 8.617330337217213e-05)
+        .put("Pascal", 6.241509125883258e-12)
+        .put("GPa", 0.006241509125883258)
+        .put("bar", 6.241509125883258e-07)
+        .put("Debye", 0.20819433442462576)
+        .put("alpha", 0.007297352566206496)
+        .put("invcm", 0.0001239841973964072)
+        .put("_aut", 2.418884326058678e-17)
+        .put("_auv", 2187691.262715653)
+        .put("_auf", 8.238723368557715e-08)
+        .put("_aup", 29421015271080.86)
+        .put("AUT", 0.0023759962463473982)
+        .put("m", 10000000000.0)
+        .put("kg", 6.0221408585491615e+26)
+        .put("s", 98226947884640.62)
+        .put("A", 63541.719052630964)
+        .put("J", 6.241509125883258e+18)
+        .put("C", 6.241509125883258e+18)
+        .build();
+    
     /** Boltzmann constant, eV/K */
-    public final static double K_B = 0.0000861733262; // eV / K
+    public final static double K_B = UNITS.get("kB"); // eV / K
     /** Reduced Planck constant, eV*ps */
-    public final static double H_BAR = 6.582119514e-4; // eV * ps
+    public final static double H_BAR = UNITS.get("_hbar") / UNITS.get("_e") * 1e12; // eV * ps
     /** Avogadro constant */
-    public final static double N_A = 6.02214076e23;
+    public final static double N_A = UNITS.get("_Nav");
     /** Electron volt, {@code g * Å^2 / ps^2 == 0.1J} */
-    public final static double E_V = 1.602176634e-20; // g * Å^2 / ps^2 == 0.1J
+    public final static double E_V = UNITS.get("_e") * 0.1; // g * Å^2 / ps^2 == 0.1J
+    /** Electron volt to Joule */
+    public final static double EV_TO_J = UNITS.get("_e");
+    /** Electron volt to kcal/mol */
+    public final static double EV_TO_KCAL = UNITS.get("mol") / UNITS.get("kcal");
     
     /** All atom name, start from 0, {@code SYMBOLS[0] == "H"} */
     public final static String[] SYMBOLS = {
