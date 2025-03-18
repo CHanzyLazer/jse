@@ -2,6 +2,7 @@ package jse.lmp;
 
 import jse.atom.IAtom;
 import jse.atom.IAtomData;
+import jse.atom.IBox;
 import jse.atom.IXYZ;
 import jse.cache.DoubleArrayCache;
 import jse.cache.IntArrayCache;
@@ -286,6 +287,7 @@ public class NativeLmp implements IAutoShutdown {
         int tFirstDot = tExecutableName.indexOf(".");
         EXECUTABLE_NAME = tFirstDot>=0 ? tExecutableName.substring(0, tFirstDot) : tExecutableName;
         DEFAULT_ARGS = new String[] {EXECUTABLE_NAME, "-log", "none"};
+        LAMMPS_LIB_MPI = lammpsLibMpi_();
     }
     
     
@@ -367,6 +369,10 @@ public class NativeLmp implements IAutoShutdown {
         return MPI.Comm.of(lammpsComm_(mLmpPtr.mPtr));
     }
     private native static long lammpsComm_(long aLmpPtr) throws LmpException;
+    
+    /** 在编译 lammps jni 库时是否有找到 mpi 支持，如果没有则很多操作不需要真的执行 mpi 通讯 */
+    public final static boolean LAMMPS_LIB_MPI;
+    private native static boolean lammpsLibMpi_();
     
     /**
      * Shut down the MPI communication like {@link MPI#shutdown}
@@ -727,6 +733,127 @@ public class NativeLmp implements IAutoShutdown {
     private native static void lammpsExtractAtomLong_(long aLmpPtr, @NotNull String aName, int aDataType, int aAtomNum, int aCount, long @NotNull[] rData) throws LmpException;
     private native static long lammpsExtractAtomCPointer_(long aLmpPtr, @NotNull String aName) throws LmpException;
     
+    
+    /**
+     * 获取指定名称的任意的 compute 属性，会自动检测列数和行数，
+     * 并自动对 atom 的情况进行 MPI 同步
+     * @param aName 需要获取的 compute 值名称，不需要 {@code c_} 前缀
+     * @param aDataStyle 此名称对应的数据类型，{@link #LMP_STYLE_GLOBAL}, {@link #LMP_STYLE_ATOM} or {@link #LMP_STYLE_LOCAL}
+     * @param aDataType 此名称对应的数据种类，{@link #LMP_TYPE_SCALAR}, {@link #LMP_TYPE_VECTOR} or {@link #LMP_TYPE_ARRAY}
+     * @return 得到的 compute 属性
+     */
+    public RowMatrix computeOf(String aName, int aDataStyle, int aDataType) throws LmpException, MPIException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
+        checkThread();
+        switch (aDataStyle) {
+        case LMP_STYLE_GLOBAL: {
+            RowMatrix rData;
+            switch (aDataType) {
+            case LMP_TYPE_SCALAR: {
+                rData = MatrixCache.getMatRow(1, 1);
+                break;
+            }
+            case LMP_TYPE_VECTOR: {
+                rData = MatrixCache.getMatRow(lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_VECTOR), 1);
+                break;
+            }
+            case LMP_TYPE_ARRAY: {
+                rData = MatrixCache.getMatRow(lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_ROWS), lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_COLS));
+                break;
+            }
+            default: throw new IllegalArgumentException("Invalid DataType: " + aDataType);
+            }
+            lammpsExtractCompute_(mLmpPtr.mPtr, aName, aDataStyle, aDataType, rData.rowNumber(), rData.columnNumber(), rData.internalData());
+            return rData;
+        }
+        case LMP_STYLE_LOCAL: {
+            RowMatrix rData;
+            switch (aDataType) {
+            case LMP_TYPE_VECTOR: {
+                rData = MatrixCache.getMatRow(lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_VECTOR), 1);
+                break;
+            }
+            case LMP_TYPE_ARRAY: {
+                rData = MatrixCache.getMatRow(lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_ROWS), lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_COLS));
+                break;
+            }
+            default: throw new IllegalArgumentException("Invalid DataType: " + aDataType);
+            }
+            lammpsExtractCompute_(mLmpPtr.mPtr, aName, aDataStyle, aDataType, rData.rowNumber(), rData.columnNumber(), rData.internalData());
+            return rData;
+        }
+        case LMP_STYLE_ATOM: {
+            int tColNum;
+            switch (aDataType) {
+            case LMP_TYPE_VECTOR: {
+                tColNum = 0;
+                break;
+            }
+            case LMP_TYPE_ARRAY: {
+                tColNum = lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, LMP_SIZE_COLS);
+                break;
+            }
+            default: throw new IllegalArgumentException("Invalid DataType: " + aDataType);
+            }
+            RowMatrix rData = MatrixCache.getMatRow(atomNumber(), tColNum==0?1:tColNum);
+            lammpsGatherCompute_(mLmpPtr.mPtr, aName, tColNum, rData.internalData());
+            return rData;
+        }
+        default: throw new IllegalArgumentException("Invalid DataStyle: " + aDataStyle);
+        }
+    }
+    
+    /**
+     * 直接获取 compute 属性的大小值。
+     * @param aName 需要获取的 compute 值名称，不需要 {@code c_} 前缀
+     * @param aDataStyle 此名称对应的数据类型，{@link #LMP_STYLE_GLOBAL}, {@link #LMP_STYLE_ATOM} or {@link #LMP_STYLE_LOCAL}
+     * @param aDataType 此名称对应的数据种类，{@link #LMP_SIZE_VECTOR}, {@link #LMP_SIZE_ROWS} or {@link #LMP_SIZE_COLS}
+     * @return 请求获取的 compute 属性的具体大小值
+     */
+    public int computeSizeOf(String aName, int aDataStyle, int aDataType) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
+        checkThread();
+        if (aDataStyle<0 || aDataStyle>2) throw new IllegalArgumentException("Invalid DataStyle: " + aDataStyle);
+        if (aDataType<3 || aDataType>5) throw new IllegalArgumentException("Invalid DataType: " + aDataType);
+        return lammpsExtractComputeSize_(mLmpPtr.mPtr, aName, aDataStyle, aDataType);
+    }
+    /**
+     * 直接获取 compute 属性的 C 指针，用于只获取部分数据而不是整体，
+     * 可以避免整体值拷贝带来的损耗。
+     * @param aName 需要获取的 compute 值名称，不需要 {@code c_} 前缀
+     * @param aDataStyle 此名称对应的数据类型，{@link #LMP_STYLE_GLOBAL}, {@link #LMP_STYLE_ATOM} or {@link #LMP_STYLE_LOCAL}
+     * @param aDataType 此名称对应的数据种类，{@link #LMP_TYPE_SCALAR}, {@link #LMP_TYPE_VECTOR}, {@link #LMP_TYPE_ARRAY}, {@link #LMP_SIZE_VECTOR}, {@link #LMP_SIZE_ROWS} or {@link #LMP_SIZE_COLS}
+     * @return {@link CPointer} of lammps internal compute data
+     */
+    public CPointer computeCPointerOf(String aName, int aDataStyle, int aDataType) throws LmpException {
+        if (mDead) throw new IllegalStateException("This NativeLmp is dead");
+        if (aName == null) throw new NullPointerException();
+        checkThread();
+        if (aDataStyle<0 || aDataStyle>2) throw new IllegalArgumentException("Invalid DataStyle: " + aDataStyle);
+        if (aDataType<0 || aDataType>5) throw new IllegalArgumentException("Invalid DataType: " + aDataType);
+        return new CPointer(lammpsExtractComputeCPointer_(mLmpPtr.mPtr, aName, aDataStyle, aDataType));
+    }
+    
+    public final static int
+          LMP_STYLE_GLOBAL = 0
+        , LMP_STYLE_ATOM = 1
+        , LMP_STYLE_LOCAL = 2
+        ;
+    public final static int
+          LMP_TYPE_SCALAR = 0
+        , LMP_TYPE_VECTOR = 1
+        , LMP_TYPE_ARRAY = 2
+        , LMP_SIZE_VECTOR = 3
+        , LMP_SIZE_ROWS = 4
+        , LMP_SIZE_COLS = 5
+        ;
+    private native static void lammpsGatherCompute_(long aLmpPtr, @NotNull String aName, int aColNum, double @NotNull[] rData) throws LmpException, MPIException;
+    private native static void lammpsExtractCompute_(long aLmpPtr, @NotNull String aName, int aDataStyle, int aDataType, int aRowNum, int aColNum, double @NotNull[] rData) throws LmpException;
+    private native static int lammpsExtractComputeSize_(long aLmpPtr, @NotNull String aName, int aDataStyle, int aDataType) throws LmpException;
+    private native static long lammpsExtractComputeCPointer_(long aLmpPtr, @NotNull String aName, int aDataStyle, int aDataType) throws LmpException;
+    
     /**
      * Scatter the named per-atom, per-atom fix, per-atom compute,
      * or fix property/atom-based entity in data to all processes.
@@ -833,7 +960,7 @@ public class NativeLmp implements IAutoShutdown {
         if (mDead) throw new IllegalStateException("This NativeLmp is dead");
         checkThread();
         LmpBox tBox = aLmpdat.box();
-        if (aLmpdat.isPrism()) {
+        if (tBox.isPrism()) {
         command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi(), tBox.xy(), tBox.xz(), tBox.yz()));
         } else {
         command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
@@ -866,8 +993,12 @@ public class NativeLmp implements IAutoShutdown {
         // 需要统一转换成 lammps style 的 box
         if (!aAtomData.isLmpStyle()) {aAtomData = Lmpdat.of(aAtomData);}
         if (aAtomData instanceof Lmpdat) {loadLmpdat((Lmpdat)aAtomData); return;}
-        IXYZ tBox = aAtomData.box();
-        command(String.format("region          box block 0 %f 0 %f 0 %f", tBox.x(), tBox.y(), tBox.z()));
+        IBox tBox = aAtomData.box();
+        if (tBox.isPrism()) {
+        command(String.format("region          box prism 0 %f 0 %f 0 %f %f %f %f", tBox.x(), tBox.y(), tBox.z(), tBox.xy(), tBox.xz(), tBox.yz()));
+        } else {
+        command(String.format("region          box block 0 %f 0 %f 0 %f",          tBox.x(), tBox.y(), tBox.z()));
+        }
         int tAtomTypeNum = aAtomData.atomTypeNumber();
         command(String.format("create_box      %d box", tAtomTypeNum));
         if (aAtomData.hasMass()) for (int tType = 1; tType <= tAtomTypeNum; ++tType) {

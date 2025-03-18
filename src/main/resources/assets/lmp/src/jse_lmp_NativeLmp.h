@@ -7,6 +7,24 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef jse_lmp_NativeLmp_LMP_STYLE_GLOBAL
+#define jse_lmp_NativeLmp_LMP_STYLE_GLOBAL 0L
+#undef jse_lmp_NativeLmp_LMP_STYLE_ATOM
+#define jse_lmp_NativeLmp_LMP_STYLE_ATOM 1L
+#undef jse_lmp_NativeLmp_LMP_STYLE_LOCAL
+#define jse_lmp_NativeLmp_LMP_STYLE_LOCAL 2L
+#undef jse_lmp_NativeLmp_LMP_TYPE_SCALAR
+#define jse_lmp_NativeLmp_LMP_TYPE_SCALAR 0L
+#undef jse_lmp_NativeLmp_LMP_TYPE_VECTOR
+#define jse_lmp_NativeLmp_LMP_TYPE_VECTOR 1L
+#undef jse_lmp_NativeLmp_LMP_TYPE_ARRAY
+#define jse_lmp_NativeLmp_LMP_TYPE_ARRAY 2L
+#undef jse_lmp_NativeLmp_LMP_SIZE_VECTOR
+#define jse_lmp_NativeLmp_LMP_SIZE_VECTOR 3L
+#undef jse_lmp_NativeLmp_LMP_SIZE_ROWS
+#define jse_lmp_NativeLmp_LMP_SIZE_ROWS 4L
+#undef jse_lmp_NativeLmp_LMP_SIZE_COLS
+#define jse_lmp_NativeLmp_LMP_SIZE_COLS 5L
 /*
  * Class:     jse_lmp_NativeLmp
  * Method:    lammpsOpen_
@@ -38,6 +56,14 @@ JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsVersion_1
  */
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsComm_1
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsLibMpi_
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsLibMpi_1
+  (JNIEnv *, jclass);
 
 /*
  * Class:     jse_lmp_NativeLmp
@@ -166,6 +192,38 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomLong_1
  */
 JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomCPointer_1
   (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsGatherCompute_
+ * Signature: (JLjava/lang/String;I[D)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherCompute_1
+  (JNIEnv *, jclass, jlong, jstring, jint, jdoubleArray);
+
+/*
+ * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsExtractCompute_
+ * Signature: (JLjava/lang/String;IIII[D)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractCompute_1
+  (JNIEnv *, jclass, jlong, jstring, jint, jint, jint, jint, jdoubleArray);
+
+/*
+ * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsExtractComputeSize_
+ * Signature: (JLjava/lang/String;II)I
+ */
+JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsExtractComputeSize_1
+  (JNIEnv *, jclass, jlong, jstring, jint, jint);
+
+/*
+ * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsExtractComputeCPointer_
+ * Signature: (JLjava/lang/String;II)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsExtractComputeCPointer_1
+  (JNIEnv *, jclass, jlong, jstring, jint, jint);
 
 /*
  * Class:     jse_lmp_NativeLmp

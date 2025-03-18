@@ -110,6 +110,13 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsComm_1(JNIEnv *aEnv, jclass
     return (jlong)lammps_get_mpi_comm((void *)(intptr_t)aLmpPtr);
 #endif
 }
+JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsLibMpi_1(JNIEnv *aEnv, jclass aClazz) {
+#ifdef LAMMPS_LIB_MPI
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
+}
 
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsMpiFinalize_1(JNIEnv *aEnv, jclass aClazz) {
 #ifdef LAMMPS_OLD
@@ -218,7 +225,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcat_1(JNIEnv *aEnv,
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, tLmpPtr);
     FREE(tName);
-    if (tHasException || tRef==NULL) return;
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract atom"); return;}
     int tLocalAtomNum = lammps_extract_setting(tLmpPtr, "nlocal"); if (exceptionCheckLMP(aEnv, tLmpPtr)) return;
 #ifdef LAMMPS_LIB_MPI
     // init MPI_Comm stuffs
@@ -314,7 +322,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherConcatInt_1(JNIEnv *aE
     void *tRef = lammps_extract_atom(tLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, tLmpPtr);
     FREE(tName);
-    if (tHasException || tRef==NULL) return;
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract atom"); return;}
     int tLocalAtomNum = lammps_extract_setting(tLmpPtr, "nlocal"); if (exceptionCheckLMP(aEnv, tLmpPtr)) return;
 #ifdef LAMMPS_LIB_MPI
     // init MPI_Comm stuffs
@@ -372,7 +381,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtom_1(JNIEnv *aEnv, 
     void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
-    if (tHasException || tRef==NULL) return;
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract atom"); return;}
     switch (aDataType) {
     case 0: {
         parseint2jdoubleWithCount(aEnv, rData, tRef, aAtomNum, aCount);
@@ -400,7 +410,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomInt_1(JNIEnv *aEn
     void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
-    if (tHasException || tRef==NULL) return;
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract atom"); return;}
     switch (aDataType) {
         case 0: {
             parseint2jintWithCount(aEnv, rData, tRef, aAtomNum, aCount);
@@ -428,7 +439,8 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomLong_1(JNIEnv *aE
     void *tRef = lammps_extract_atom((void *)(intptr_t)aLmpPtr, tName); // NO need to free due to it is lammps internal data
     jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     FREE(tName);
-    if (tHasException || tRef==NULL) return;
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract atom"); return;}
     switch (aDataType) {
         case 0: {
             parseint2jlongWithCount(aEnv, rData, tRef, aAtomNum, aCount);
@@ -459,6 +471,94 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsExtractAtomCPointer_1(JNIEn
     if (tHasException) return 0;
     return (jlong)(intptr_t)tRef;
 }
+
+JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsGatherCompute_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aColNum, jdoubleArray rData) {
+    void *tLmpPtr = (void *)(intptr_t)aLmpPtr;
+    char *tName = parseStr(aEnv, aName);
+    int aCount = aColNum==0?1:aColNum;
+    void *tRef = lammps_extract_compute(tLmpPtr, tName, (int)jse_lmp_NativeLmp_LMP_STYLE_ATOM, aColNum==0?(int)jse_lmp_NativeLmp_LMP_TYPE_VECTOR:(int)jse_lmp_NativeLmp_LMP_TYPE_ARRAY); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, tLmpPtr);
+    FREE(tName);
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract compute"); return;}
+    int tLocalAtomNum = lammps_extract_setting(tLmpPtr, "nlocal"); if (exceptionCheckLMP(aEnv, tLmpPtr)) return;
+#ifdef LAMMPS_LIB_MPI
+    // init MPI_Comm stuffs
+    MPI_Comm tLmpComm = (MPI_Comm)(intptr_t)lammps_get_mpi_comm(tLmpPtr);
+    int tLmpMe, tLmpNP;
+    int tExitCodeMPI;
+    tExitCodeMPI = MPI_Comm_rank(tLmpComm, &tLmpMe); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
+    tExitCodeMPI = MPI_Comm_size(tLmpComm, &tLmpNP); if (exceptionCheckMPI(aEnv, tExitCodeMPI)) return;
+    // allgather counts (tLocalAtomNum * aCount)
+    int *tCounts = MALLOCN_TP(int, tLmpNP);
+    tCounts[tLmpMe] = tLocalAtomNum * aCount;
+    tExitCodeMPI = MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tCounts, 1, MPI_INT, tLmpComm);
+    if (exceptionCheckMPI(aEnv, tExitCodeMPI)) {FREE(tCounts); return;}
+    // cal displs
+    int *tDispls = MALLOCN_TP(int, tLmpNP);
+    tDispls[0] = 0;
+    for (int i = 1; i < tLmpNP; ++i) {
+        tDispls[i] = tDispls[i-1] + tCounts[i-1];
+    }
+    // gather atom data by allgatherv
+    int tDataSize = tDispls[tLmpNP-1] + tCounts[tLmpNP-1];
+    double *rDataBuf = MALLOCN_TP(double, tDataSize);
+    if (aColNum > 0) {
+        double **tDoubleRef = (double **)tRef;
+        double *it = rDataBuf + tDispls[tLmpMe];
+        for (int i = 0; i < tLocalAtomNum; ++i) {
+            double *subDoubleRef = tDoubleRef[i];
+            if (subDoubleRef == NULL) break;
+            for (int j = 0; j < aCount; ++j) {
+                *it = subDoubleRef[j];
+                ++it;
+            }
+        }
+    } else {
+        double *tDoubleRef = (double *)tRef;
+        double *it = rDataBuf + tDispls[tLmpMe];
+        for (int i = 0; i < tLocalAtomNum; ++i) {
+            *it = tDoubleRef[i];
+            ++it;
+        }
+    }
+    tExitCodeMPI = MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, rDataBuf, tCounts, tDispls, MPI_DOUBLE, tLmpComm);
+    exceptionCheckMPI(aEnv, tExitCodeMPI);
+    parsedouble2jdouble(aEnv, rData, rDataBuf, tDataSize);
+    FREE(rDataBuf);
+    FREE(tCounts);
+    FREE(tDispls);
+#else
+    parsedouble2jdoubleWithCount(aEnv, rData, tRef, tLocalAtomNum, aCount);
+#endif
+}
+JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractCompute_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataStyle, jint aDataType, jint aRowNum, jint aColNum, jdoubleArray rData) {
+    char *tName = parseStr(aEnv, aName);
+    void *tRef = lammps_extract_compute((void *)(intptr_t)aLmpPtr, tName, (int)aDataStyle, (int)aDataType); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
+    FREE(tName);
+    if (tHasException) return;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract compute"); return;}
+    parsedouble2jdoubleWithCount(aEnv, rData, tRef, aRowNum, aColNum);
+}
+JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsExtractComputeSize_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataStyle, jint aDataType) {
+    char *tName = parseStr(aEnv, aName);
+    int *tRef = (int *)lammps_extract_compute((void *)(intptr_t)aLmpPtr, tName, (int)aDataStyle, (int)aDataType); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
+    FREE(tName);
+    if (tHasException) return -1;
+    if (tRef == NULL) {throwExceptionLMP(aEnv, "Fail to extract compute"); return -1;}
+    return (jint)*tRef;
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_NativeLmp_lammpsExtractComputeCPointer_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jint aDataStyle, jint aDataType) {
+    char *tName = parseStr(aEnv, aName);
+    void *tRef = lammps_extract_compute((void *)(intptr_t)aLmpPtr, tName, (int)aDataStyle, (int)aDataType); // NO need to free due to it is lammps internal data
+    jboolean tHasException = exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
+    FREE(tName);
+    if (tHasException) return 0;
+    return (jlong)(intptr_t)tRef;
+}
+
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jstring aName, jboolean aIsDouble, jint aAtomNum, jint aCount, jdoubleArray aData) {
     void *tDataBuf;
     if (aIsDouble) {
