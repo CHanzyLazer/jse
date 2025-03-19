@@ -3,6 +3,7 @@ package jse.math.vector;
 
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
+import jep.NDArray;
 import jse.code.UT;
 import jse.code.collection.NewCollections;
 import jse.code.functional.IDoubleFilter;
@@ -11,11 +12,12 @@ import jse.code.iterator.IHasDoubleIterator;
 import jse.math.MathEX;
 import groovy.lang.Closure;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
+ * 方便创建向量的工具类，默认获取 {@link Vector}
  * @author liqa
- * <p> 获取向量的类，默认获取 {@link Vector} </p>
  */
 public class Vectors {
     private Vectors() {}
@@ -28,31 +30,91 @@ public class Vectors {
         return rVector;
     }
     
-    public static Vector from(int aSize, IVectorGetter aVectorGetter) {
+    /**
+     * 从 numpy 的 {@link NDArray} 创建向量，自动检测类型
+     * <p>
+     * 和下面 {@code from} 相关方法不同的是，这里在 java
+     * 侧不会进行值拷贝，考虑到 {@link NDArray}
+     * 实际总是会经过一次值拷贝，因此在 python
+     * 中使用不会有引用的问题
+     *
+     * @param aNDArray 输入的 numpy 数组
+     * @param aUnsignedWarning 是否开启检测无符号的警告，如果这不是问题则可以关闭，默认为 {@code true}
+     * @return 从 {@link NDArray} 创建的向量
+     * @throws UnsupportedOperationException 当输入的 {@link NDArray}
+     * 类型还不存在对应的 jse 向量类型
+     * @throws IllegalArgumentException 当输入的 {@link NDArray} 不是一维的
+     */
+    public static Object fromNumpy(NDArray<?> aNDArray, boolean aUnsignedWarning) {
+        int[] tDims = aNDArray.getDimensions();
+        if (tDims.length != 1) throw new IllegalArgumentException("Invalid numpy shape: " + Arrays.toString(tDims));
+        if (aUnsignedWarning && aNDArray.isUnsigned()) {
+            UT.Code.warning("Input numpy is unsigned, which is not supported in jse, so the original signed value will be directly obtained");
+        }
+        final int tSize = tDims[0];
+        Object tData = aNDArray.getData();
+        if (tData instanceof double[]) {
+            return new Vector(tSize, (double[])tData);
+        } else
+        if (tData instanceof int[]) {
+            return new IntVector(tSize, (int[])tData);
+        } else
+        if (tData instanceof long[]) {
+            return new LongVector(tSize, (long[])tData);
+        } else
+        if (tData instanceof boolean[]) {
+            return new LogicalVector(tSize, (boolean[])tData);
+        } else {
+            throw new UnsupportedOperationException("Invalid numpy dtype: " + tData.getClass().getName());
+        }
+    }
+    /**
+     * 从 numpy 的 {@link NDArray} 创建向量，自动检测类型
+     * <p>
+     * 和下面 {@code from} 相关方法不同的是，这里在 java
+     * 侧不会进行值拷贝，考虑到 {@link NDArray}
+     * 实际总是会经过一次值拷贝，因此在 python
+     * 中使用不会有引用的问题
+     *
+     * @param aNDArray 输入的 numpy 数组
+     * @return 从 {@link NDArray} 创建的向量
+     * @throws UnsupportedOperationException 当输入的 {@link NDArray}
+     * 类型还不存在对应的 jse 向量类型
+     * @throws IllegalArgumentException 当输入的 {@link NDArray} 不是一维的
+     */
+    public static Object fromNumpy(NDArray<?> aNDArray) {return fromNumpy(aNDArray, true);}
+    
+    public static Vector from(int aSize, IVectorGetter aVectorGetter) {return fromDouble(aSize, aVectorGetter);}
+    public static Vector from(IVector aVector) {return fromDouble(aVector);}
+    public static Vector fromDouble(int aSize, IVectorGetter aVectorGetter) {
         Vector rVector = zeros(aSize);
         rVector.fill(aVectorGetter);
         return rVector;
     }
-    public static Vector from(IVector aVector) {
+    public static Vector fromDouble(IVector aVector) {
         Vector rVector = zeros(aVector.size());
         rVector.fill(aVector);
         return rVector;
     }
-    /** Groovy stuff */
-    public static Vector from(int aSize, @ClosureParams(value=SimpleType.class, options="int") final Closure<? extends Number> aGroovyTask) {return from(aSize, i -> UT.Code.doubleValue(aGroovyTask.call(i)));}
+    /// Groovy stuff
+    public static Vector from(int aSize, @ClosureParams(value=SimpleType.class, options="int") final Closure<? extends Number> aGroovyTask) {return fromDouble(aSize, aGroovyTask);}
+    public static Vector fromDouble(int aSize, @ClosureParams(value=SimpleType.class, options="int") final Closure<? extends Number> aGroovyTask) {return fromDouble(aSize, i -> UT.Code.doubleValue(aGroovyTask.call(i)));}
     
-    public static Vector from(Iterable<? extends Number> aIterable) {
+    public static Vector from(Iterable<? extends Number> aIterable) {return fromDouble(aIterable);}
+    public static Vector from(Collection<? extends Number> aList) {return fromDouble(aList);}
+    public static Vector from(double[] aData) {return fromDouble(aData);}
+    public static Vector fromDouble(Iterable<? extends Number> aIterable) {
         final Vector.Builder rBuilder = Vector.builder();
         for (Number tValue : aIterable) rBuilder.add(UT.Code.doubleValue(tValue));
         rBuilder.trimToSize();
         return rBuilder.build();
     }
-    public static Vector from(Collection<? extends Number> aList) {
+    public static Vector fromDouble(Collection<? extends Number> aList) {
         Vector rVector = zeros(aList.size());
         rVector.fill(aList);
         return rVector;
     }
-    public static Vector from(double[] aData) {
+    public static Vector fromDouble(double[] aData) {
         Vector rVector = zeros(aData.length);
         rVector.fill(aData);
         return rVector;

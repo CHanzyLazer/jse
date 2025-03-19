@@ -3,6 +3,7 @@ package jse.math.vector;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
+import jep.NDArray;
 import jse.code.UT;
 import jse.math.SliceType;
 import jse.code.collection.ISlice;
@@ -24,8 +25,8 @@ import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
 /**
+ * 实数向量，返回类型 {@code double}
  * @author liqa
- * <p> 简单起见默认都是实向量，返回类型 double </p>
  */
 public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIterator, IVectorGetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
@@ -39,7 +40,13 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
     IMatrix asMatCol();
     IMatrix asMatRow();
     
-    /** 转为兼容性更好的 double[] */
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    NDArray<double[]> numpy();
+    /** 转为兼容性更好的 {@code double[]}，会进行一次值拷贝 */
     double[] data();
     
     /**
@@ -54,7 +61,6 @@ public interface IVector extends ISwapper, IHasDoubleIterator, IHasDoubleSetIter
      * <p>
      * 显而易见，对于 {@link Vector}，aAbort 参数不会有任何影响，
      * 而对于其他类型，aAbort 参数可以对复杂工况做优化。
-     * @author liqa
      */
     @ApiStatus.Experimental Vector toBuf(boolean aAbort);
     @ApiStatus.Experimental void releaseBuf(@NotNull IVector aBuf, boolean aAbort);

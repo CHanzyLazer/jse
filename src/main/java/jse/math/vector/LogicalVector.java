@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.code.collection.BooleanList;
 import jse.code.functional.IBooleanUnaryOperator;
 import jse.code.iterator.IBooleanIterator;
@@ -81,6 +82,7 @@ public class LogicalVector extends BooleanArrayVector {
         if (aObj instanceof boolean[]) return (boolean[])aObj;
         return null;
     }
+    @Override public final NDArray<boolean[]> numpy() {return new NDArray<>(mData, mSize);}
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftLogicalVector} */
     @Override public final BooleanArrayVector subVec(final int aFromIdx, final int aToIdx) {

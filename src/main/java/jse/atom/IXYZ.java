@@ -1,5 +1,6 @@
 package jse.atom;
 
+import jep.NDArray;
 import jse.atom.data.DataXYZ;
 import jse.code.collection.NewCollections;
 import jse.math.MathEX;
@@ -30,7 +31,9 @@ public interface IXYZ {
     /** @return 自身的拷贝 */
     default IXYZ copy() {return new XYZ(this);}
     
-    /** @return 兼容性更高的 double[] 类型，会进行一次值拷贝 */
+    /** @return numpy 的数组 {@link NDArray}，会进行一次值拷贝 */
+    default NDArray<double[]> numpy() {return new NDArray<>(data(), 3);}
+    /** @return 兼容性更高的 {@code double[]} 类型，会进行一次值拷贝 */
     default double[] data() {return new double[] {x(), y(), z()};}
     /**
      * 转换为 {@link Vector} 类型，由于 xyz 本身很小，这里只提供会进行一次值拷贝的 {@code to} 接口

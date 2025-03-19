@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.code.collection.IntList;
 import jse.code.iterator.IIntIterator;
 import jse.code.iterator.IIntSetIterator;
@@ -80,6 +81,7 @@ public class IntVector extends IntArrayVector {
         return null;
     }
     
+    @Override public final NDArray<int[]> numpy() {return new NDArray<>(mData, mSize);}
     @Override public final IntVector toBuf(boolean aAbort) {return this;}
     @Override public final void releaseBuf(@NotNull IIntVector aBuf, boolean aAbort) {if (aBuf != this) super.releaseBuf(aBuf, aAbort);}
     

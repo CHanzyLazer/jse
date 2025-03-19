@@ -1,5 +1,6 @@
 package jse.atom;
 
+import jep.NDArray;
 import jse.code.CS;
 import jse.math.vector.IVector;
 import org.jetbrains.annotations.Nullable;
@@ -165,6 +166,57 @@ public interface IAtomData extends IHasSymbol {
     IAtomDataOperation operation();
     /** @see #operation() */
     @VisibleForTesting default IAtomDataOperation opt() {return operation();}
+    
+    
+    /// numpy stuffs
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code x, y, z, id, type, vx, vy, vz}
+     * @see IAtom#numpy()
+     * @see CS#ATOM_DATA_KEYS
+     */
+    NDArray<double[]> numpy();
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code x, y, z}
+     * @see IAtom#numpyXYZ()
+     * @see CS#ATOM_DATA_KEYS_XYZ
+     */
+    NDArray<double[]> numpyXYZ();
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code x, y, z, id}
+     * @see IAtom#numpyXYZID()
+     * @see CS#ATOM_DATA_KEYS_XYZID
+     */
+    NDArray<double[]> numpyXYZID();
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code id, type, x, y, z}
+     * @see IAtom#numpySTD()
+     * @see CS#STD_ATOM_DATA_KEYS
+     */
+    NDArray<double[]> numpySTD();
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code id, type, x, y, z, vx, vy, vz}
+     * @see IAtom#numpyAll()
+     * @see CS#ALL_ATOM_DATA_KEYS
+     */
+    NDArray<double[]> numpyAll();
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 按行排列的数组，每行对应一个原子，
+     * 顺序为 {@code vx, vy, vz}
+     * @see IAtom#numpyVelocities()
+     * @see CS#ATOM_DATA_KEYS_VELOCITY
+     */
+    NDArray<double[]> numpyVelocities();
     
     
     /// data stuffs

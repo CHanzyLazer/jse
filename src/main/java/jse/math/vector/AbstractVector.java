@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.cache.VectorCache;
 import jse.code.UT;
 import jse.code.collection.AbstractRandomAccessList;
@@ -129,7 +130,12 @@ public abstract class AbstractVector implements IVector {
         };
     }
     
-    /** 转为兼容性更好的 double[] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<double[]> numpy() {return new NDArray<>(data(), size());}
+    /** {@inheritDoc} */
     @Override public double[] data() {
         final int tSize = size();
         double[] rData = new double[tSize];

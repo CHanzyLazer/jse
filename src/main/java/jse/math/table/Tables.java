@@ -14,8 +14,8 @@ import java.util.Collection;
 import static jse.code.CS.ZL_STR;
 
 /**
+ * 方便创建列表的工具类，默认获取 {@link Table}
  * @author liqa
- * <p> 获取列表的类，默认获取 {@link Table} </p>
  */
 public class Tables {
     private Tables() {}

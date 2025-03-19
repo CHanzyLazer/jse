@@ -1,5 +1,6 @@
 package jse.atom;
 
+import jep.NDArray;
 import jse.code.CS;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.NewCollections;
@@ -228,6 +229,124 @@ public abstract class AbstractAtomData implements IAtomData {
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum) {return newZeros_(aAtomNum);}
         @Override protected ISettableAtomData newSettableAtomData_(int aAtomNum, IBox aBox) {return newZeros_(aAtomNum, aBox);}
     };}
+    
+    
+    /// numpy stuffs
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#numpy()
+     * @see CS#ATOM_DATA_KEYS
+     */
+    @Override public NDArray<double[]> numpy() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*8];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.x(); ++j;
+            rData[j] = tAtom.y(); ++j;
+            rData[j] = tAtom.z(); ++j;
+            rData[j] = tAtom.id(); ++j;
+            rData[j] = tAtom.type(); ++j;
+            rData[j] = tAtom.vx(); ++j;
+            rData[j] = tAtom.vy(); ++j;
+            rData[j] = tAtom.vz(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 8);
+    }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#dataXYZ()
+     * @see CS#ATOM_DATA_KEYS_XYZ
+     */
+    @Override public NDArray<double[]> numpyXYZ() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*3];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.x(); ++j;
+            rData[j] = tAtom.y(); ++j;
+            rData[j] = tAtom.z(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 3);
+    }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#dataXYZID()
+     * @see CS#ATOM_DATA_KEYS_XYZID
+     */
+    @Override public NDArray<double[]> numpyXYZID() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*4];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.x(); ++j;
+            rData[j] = tAtom.y(); ++j;
+            rData[j] = tAtom.z(); ++j;
+            rData[j] = tAtom.id(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 4);
+    }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#dataSTD()
+     * @see CS#STD_ATOM_DATA_KEYS
+     */
+    @Override public NDArray<double[]> numpySTD() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*5];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.id(); ++j;
+            rData[j] = tAtom.type(); ++j;
+            rData[j] = tAtom.x(); ++j;
+            rData[j] = tAtom.y(); ++j;
+            rData[j] = tAtom.z(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 5);
+    }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#dataAll()
+     * @see CS#ALL_ATOM_DATA_KEYS
+     */
+    @Override public NDArray<double[]> numpyAll() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*8];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.id(); ++j;
+            rData[j] = tAtom.type(); ++j;
+            rData[j] = tAtom.x(); ++j;
+            rData[j] = tAtom.y(); ++j;
+            rData[j] = tAtom.z(); ++j;
+            rData[j] = tAtom.vx(); ++j;
+            rData[j] = tAtom.vy(); ++j;
+            rData[j] = tAtom.vz(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 8);
+    }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     * @see IAtom#dataVelocities()
+     * @see CS#ATOM_DATA_KEYS_VELOCITY
+     */
+    @Override public NDArray<double[]> numpyVelocities() {
+        final int tAtomNum = atomNumber();
+        double[] rData = new double[tAtomNum*3];
+        for (int i = 0, j = 0; i < tAtomNum; ++i) {
+            IAtom tAtom = atom(i);
+            rData[j] = tAtom.vx(); ++j;
+            rData[j] = tAtom.vy(); ++j;
+            rData[j] = tAtom.vz(); ++j;
+        }
+        return new NDArray<>(rData, tAtomNum, 3);
+    }
     
     
     /// data stuffs

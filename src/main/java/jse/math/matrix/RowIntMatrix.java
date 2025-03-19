@@ -1,5 +1,6 @@
 package jse.math.matrix;
 
+import jep.NDArray;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.IntList;
 import jse.code.iterator.IIntIterator;
@@ -103,6 +104,7 @@ public class RowIntMatrix extends IntArrayMatrix {
         return null;
     }
     
+    @Override public final NDArray<int[]> numpy() {return new NDArray<>(mData, mRowNum, mColNum);}
     @Override public final RowIntMatrix toBufRow(boolean aAbort) {return this;}
     @Override public final void releaseBuf(@NotNull IIntMatrix aBuf, boolean aAbort) {if (aBuf != this) super.releaseBuf(aBuf, aAbort);}
     

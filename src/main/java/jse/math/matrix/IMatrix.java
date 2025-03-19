@@ -3,6 +3,7 @@ package jse.math.matrix;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
+import jep.NDArray;
 import jse.code.UT;
 import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
@@ -20,9 +21,8 @@ import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
 /**
+ * 实数矩阵，返回类型 {@code double}
  * @author liqa
- * <p> 可自定义获取的矩阵类型的矩阵类 </p>
- * <p> 简单起见默认都是实矩阵，返回类型 double，而如果涉及复矩阵则会提供额外的接口获取复数部分 </p>
  */
 public interface IMatrix extends IMatrixGetter {
     /** Iterable stuffs，现在指定具体行列会仅遍历此行或者列，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便使用 */
@@ -49,7 +49,13 @@ public interface IMatrix extends IMatrixGetter {
         int col();
     }
     
-    /** 转为兼容性更好的 double[][] */
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    NDArray<double[]> numpy();
+    /** 转为兼容性更好的 {@code double[][]} */
     double[][] data();
     
     /**

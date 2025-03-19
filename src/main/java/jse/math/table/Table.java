@@ -62,7 +62,7 @@ public class Table extends AbstractTable implements IDataShell<DoubleList> {
     
     
     /** 重写这些接口实现直接返回 {@link ShiftVector} */
-    @Override public final Map<String, ShiftVector> cols() {
+    @Override public final Map<String, ShiftVector> asMap() {
         return new AbstractMap<String, ShiftVector>() {
             @NotNull @Override public Set<Entry<String, ShiftVector>> entrySet() {
                 return new AbstractSet<Entry<String, ShiftVector>>() {
@@ -84,6 +84,7 @@ public class Table extends AbstractTable implements IDataShell<DoubleList> {
             @Override public ShiftVector put(String key, ShiftVector value) {throw new UnsupportedOperationException("put");}
         };
     }
+    @Override public final List<? extends ShiftVector> cols() {return asMatrix().cols();}
     @Override public final ShiftVector col(String aHead) {return asMatrix().col(mHead2Idx.get(aHead));}
     @Override public final int rowNumber() {return mRowNum;}
     

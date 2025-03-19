@@ -1,5 +1,6 @@
 package jse.atom;
 
+import jep.NDArray;
 import jse.code.CS;
 import org.jetbrains.annotations.Nullable;
 
@@ -117,6 +118,51 @@ public interface IAtom extends IXYZ {
     default double mass() {return Double.NaN;}
     /** @return 此原子是否包含质量信息 */
     default boolean hasMass() {return false;}
+    
+    
+    /// numpy stuffs
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code x, y, z, id, type, vx, vy, vz} 的 {@link NDArray}
+     * @see IAtomData#numpy()
+     * @see CS#ATOM_DATA_KEYS
+     */
+    @Override default NDArray<double[]> numpy() {return new NDArray<>(data(), 8);}
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code x, y, z} 的 {@link NDArray}
+     * @see IAtomData#numpyXYZ()
+     * @see CS#ATOM_DATA_KEYS_XYZ
+     */
+    default NDArray<double[]> numpyXYZ() {return new NDArray<>(dataXYZ(), 3);}
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code x, y, z, id} 的 {@link NDArray}
+     * @see IAtomData#numpyXYZID()
+     * @see CS#ATOM_DATA_KEYS_XYZID
+     */
+    default NDArray<double[]> numpyXYZID() {return new NDArray<>(dataXYZID(), 4);}
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code id, type, x, y, z} 的 {@link NDArray}
+     * @see IAtomData#numpySTD()
+     * @see CS#STD_ATOM_DATA_KEYS
+     */
+    default NDArray<double[]> numpySTD() {return new NDArray<>(dataSTD(), 5);}
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code id, type, x, y, z, vx, vy, vz} 的 {@link NDArray}
+     * @see IAtomData#numpyAll()
+     * @see CS#ALL_ATOM_DATA_KEYS
+     */
+    default NDArray<double[]> numpyAll() {return new NDArray<>(dataAll(), 8);}
+    /**
+     * 直接获取 numpy 的 {@link NDArray} 数据，会进行一次值拷贝
+     * @return 顺序为 {@code vx, vy, vz} 的 {@link NDArray}
+     * @see IAtomData#numpyVelocities()
+     * @see CS#ATOM_DATA_KEYS_VELOCITY
+     */
+    default NDArray<double[]> numpyVelocities() {return new NDArray<>(dataVelocities(), 3);}
     
     
     /// data stuffs

@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.math.SliceType;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.ISlice;
@@ -104,7 +105,12 @@ public abstract class AbstractLogicalVector implements ILogicalVector {
         };
     }
     
-    /** 转为兼容性更好的 boolean[] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<boolean[]> numpy() {return new NDArray<>(data(), size());}
+    /** {@inheritDoc} */
     @Override public boolean[] data() {
         final int tSize = size();
         boolean[] rData = new boolean[tSize];

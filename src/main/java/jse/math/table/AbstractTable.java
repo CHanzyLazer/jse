@@ -1,6 +1,7 @@
 package jse.math.table;
 
 
+import jep.NDArray;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
@@ -44,6 +45,15 @@ public abstract class AbstractTable implements ITable {
         return tOut;
     }
     
+    @Override public Map<String, NDArray<double[]>> numpy() {
+        Map<String, NDArray<double[]>> rMap = new LinkedHashMap<>();
+        for (String tHead : mHeads) {
+            rMap.put(tHead, col(tHead).numpy());
+        }
+        return rMap;
+    }
+    @Override public final double[][] data() {return asMatrix().data();}
+    
     /** ITable stuffs */
     @Override public final String getHead(int aCol) {return mHeads.get(aCol);}
     @Override public final int getColumn(String aHead) {return mHead2Idx.getOrDefault(aHead, -1);}
@@ -81,14 +91,7 @@ public abstract class AbstractTable implements ITable {
             return false;
         }
     }
-    @Override public final double[][] data() {return asMatrix().data();}
-    
-    /** Matrix like stuffs */
-    @Override public double get(int aRow, String aHead) {return asMatrix().get(aRow, mHead2Idx.get(aHead));}
-    @Override public void set(int aRow, String aHead, double aValue) {asMatrix().set(aRow, mHead2Idx.get(aHead), aValue);}
-    @Override public List<? extends IVector> rows() {return asMatrix().rows();}
-    @Override public IVector row(int aRow) {return asMatrix().row(aRow);}
-    @Override public Map<String, ? extends IVector> cols() {
+    @Override public Map<String, ? extends IVector> asMap() {
         return new AbstractMap<String, IVector>() {
             @NotNull @Override public Set<Entry<String, IVector>> entrySet() {
                 return new AbstractSet<Entry<String, IVector>>() {
@@ -110,6 +113,13 @@ public abstract class AbstractTable implements ITable {
             @Override public IVector put(String key, IVector value) {throw new UnsupportedOperationException("put");}
         };
     }
+    
+    /** Matrix like stuffs */
+    @Override public double get(int aRow, String aHead) {return asMatrix().get(aRow, mHead2Idx.get(aHead));}
+    @Override public void set(int aRow, String aHead, double aValue) {asMatrix().set(aRow, mHead2Idx.get(aHead), aValue);}
+    @Override public List<? extends IVector> rows() {return asMatrix().rows();}
+    @Override public IVector row(int aRow) {return asMatrix().row(aRow);}
+    @Override public List<? extends IVector> cols() {return asMatrix().cols();}
     @Override public IVector col(String aHead) {return asMatrix().col(mHead2Idx.get(aHead));}
     @Override public int rowNumber() {return asMatrix().rowNumber();}
     @Override public int columnNumber() {return mHeads.size();}

@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.math.SliceType;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.ISlice;
@@ -99,7 +100,12 @@ public abstract class AbstractLongVector implements ILongVector {
         };
     }
     
-    /** 转为兼容性更好的 long[] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<long[]> numpy() {return new NDArray<>(data(), size());}
+    /** {@inheritDoc} */
     @Override public long[] data() {
         final int tSize = size();
         long[] rData = new long[tSize];

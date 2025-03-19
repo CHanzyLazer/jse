@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.code.collection.LongList;
 import jse.code.iterator.ILongIterator;
 import jse.code.iterator.ILongSetIterator;
@@ -18,7 +19,7 @@ import static jse.math.vector.AbstractVector.*;
  * @author liqa
  * <p> 整数向量的一般实现 </p>
  */
-public final class LongVector extends LongArrayVector {
+public class LongVector extends LongArrayVector {
     /** 提供默认的创建 */
     public static LongVector ones(int aSize) {
         long[] tData = new long[aSize];
@@ -57,9 +58,9 @@ public final class LongVector extends LongArrayVector {
     public int dataLength() {return mData.length;}
     
     /** IIntegerVector stuffs */
-    @Override public long get(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx];}
-    @Override public void set(int aIdx, long aValue) {rangeCheck(aIdx, mSize); mData[aIdx] = aValue;}
-    @Override public long getAndSet(int aIdx, long aValue) {
+    @Override public final long get(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx];}
+    @Override public final void set(int aIdx, long aValue) {rangeCheck(aIdx, mSize); mData[aIdx] = aValue;}
+    @Override public final long getAndSet(int aIdx, long aValue) {
         rangeCheck(aIdx, mSize);
         long oValue = mData[aIdx];
         mData[aIdx] = aValue;
@@ -67,66 +68,67 @@ public final class LongVector extends LongArrayVector {
     }
     @Override public int size() {return mSize;}
     
-    @Override protected LongVector newZeros_(int aSize) {return LongVector.zeros(aSize);}
-    @Override public LongVector copy() {return (LongVector)super.copy();}
+    @Override protected final LongVector newZeros_(int aSize) {return LongVector.zeros(aSize);}
+    @Override public final LongVector copy() {return (LongVector)super.copy();}
     
-    @Override public LongVector newShell() {return new LongVector(mSize, null);}
-    @Override public long @Nullable[] getIfHasSameOrderData(Object aObj) {
+    @Override public final LongVector newShell() {return new LongVector(mSize, null);}
+    @Override public final long @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof LongVector) return ((LongVector)aObj).mData;
         if (aObj instanceof ShiftLongVector) return ((ShiftLongVector)aObj).mData;
         if (aObj instanceof LongList) return ((LongList)aObj).internalData();
         if (aObj instanceof long[]) return (long[])aObj;
         return null;
     }
+    @Override public final NDArray<long[]> numpy() {return new NDArray<>(mData, mSize);}
     
     /** Optimize stuffs，subVec 切片直接返回  {@link ShiftLongVector} */
-    @Override public LongArrayVector subVec(final int aFromIdx, final int aToIdx) {
+    @Override public final LongArrayVector subVec(final int aFromIdx, final int aToIdx) {
         subVecRangeCheck(aFromIdx, aToIdx, mSize);
         return aFromIdx==0 ? new LongVector(aToIdx, mData) : new ShiftLongVector(aToIdx-aFromIdx, aFromIdx, mData);
     }
     
     /** Optimize stuffs，重写加速这些操作 */
-    @Override public void swap(int aIdx1, int aIdx2) {
+    @Override public final void swap(int aIdx1, int aIdx2) {
         biRangeCheck(aIdx1, aIdx2, mSize);
         long tValue = mData[aIdx2];
         mData[aIdx2] = mData[aIdx1];
         mData[aIdx1] = tValue;
     }
     
-    @Override public void increment(int aIdx) {rangeCheck(aIdx, mSize); ++mData[aIdx];}
-    @Override public long getAndIncrement(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx]++;}
-    @Override public void decrement(int aIdx) {rangeCheck(aIdx, mSize); --mData[aIdx];}
-    @Override public long getAndDecrement(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx]--;}
+    @Override public final void increment(int aIdx) {rangeCheck(aIdx, mSize); ++mData[aIdx];}
+    @Override public final long getAndIncrement(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx]++;}
+    @Override public final void decrement(int aIdx) {rangeCheck(aIdx, mSize); --mData[aIdx];}
+    @Override public final long getAndDecrement(int aIdx) {rangeCheck(aIdx, mSize); return mData[aIdx]--;}
     
-    @Override public void add(int aIdx, long aDelta) {rangeCheck(aIdx, mSize); mData[aIdx] += aDelta;}
-    @Override public long getAndAdd(int aIdx, long aDelta) {
+    @Override public final void add(int aIdx, long aDelta) {rangeCheck(aIdx, mSize); mData[aIdx] += aDelta;}
+    @Override public final long getAndAdd(int aIdx, long aDelta) {
         rangeCheck(aIdx, mSize);
         long tValue = mData[aIdx];
         mData[aIdx] += aDelta;
         return tValue;
     }
-    @Override public void update(int aIdx, LongUnaryOperator aOpt) {
+    @Override public final void update(int aIdx, LongUnaryOperator aOpt) {
         rangeCheck(aIdx, mSize);
         mData[aIdx] = aOpt.applyAsLong(mData[aIdx]);
     }
-    @Override public long getAndUpdate(int aIdx, LongUnaryOperator aOpt) {
+    @Override public final long getAndUpdate(int aIdx, LongUnaryOperator aOpt) {
         rangeCheck(aIdx, mSize);
         long tValue = mData[aIdx];
         mData[aIdx] = aOpt.applyAsLong(tValue);
         return tValue;
     }
-    @Override public boolean isEmpty() {return mSize==0;}
-    @Override public long last() {
+    @Override public final boolean isEmpty() {return mSize==0;}
+    @Override public final long last() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access last() element from an empty LongVector");
         return mData[mSize-1];
     }
-    @Override public long first() {
+    @Override public final long first() {
         if (isEmpty()) throw new NoSuchElementException("Cannot access first() element from an empty LongVector");
         return mData[0];
     }
     
     /** Optimize stuffs，重写迭代器来提高遍历速度（主要是省去隐函数的调用，以及保持和矩阵相同的写法格式）*/
-    @Override public ILongIterator iterator() {
+    @Override public final ILongIterator iterator() {
         return new ILongIterator() {
             private int mIdx = 0;
             @Override public boolean hasNext() {return mIdx < mSize;}
@@ -141,7 +143,7 @@ public final class LongVector extends LongArrayVector {
             }
         };
     }
-    @Override public ILongSetIterator setIterator() {
+    @Override public final ILongSetIterator setIterator() {
         return new ILongSetIterator() {
             private int mIdx = 0, oIdx = -1;
             @Override public boolean hasNext() {return mIdx < mSize;}

@@ -3,6 +3,7 @@ package jse.math.vector;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
+import jep.NDArray;
 import jse.math.SliceType;
 import jse.code.collection.ISlice;
 import jse.code.functional.IIndexFilter;
@@ -18,10 +19,8 @@ import java.util.NoSuchElementException;
 import java.util.function.*;
 
 /**
+ * 长整数向量，返回类型 {@code long}
  * @author liqa
- * <p> 专用的长整数向量 </p>
- * <p> 由于完全实现工作量较大，这里暂只实现用到的接口 </p>
- * <p> 当然为了后续完善的方便，结构依旧保持一致 </p>
  */
 public interface ILongVector extends ISwapper, IHasLongIterator, IHasLongSetIterator, ILongVectorGetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
@@ -33,7 +32,13 @@ public interface ILongVector extends ISwapper, IHasLongIterator, IHasLongSetIter
     IVector asVec();
     IIntVector asIntVec();
     
-    /** 转为兼容性更好的 long[] */
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    NDArray<long[]> numpy();
+    /** 转为兼容性更好的 {@code long[]} */
     long[] data();
     
     /** ISwapper stuffs */

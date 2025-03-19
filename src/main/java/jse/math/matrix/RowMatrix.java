@@ -1,5 +1,6 @@
 package jse.math.matrix;
 
+import jep.NDArray;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
@@ -97,6 +98,7 @@ public class RowMatrix extends DoubleArrayMatrix {
         return null;
     }
     
+    @Override public final NDArray<double[]> numpy() {return new NDArray<>(mData, mRowNum, mColNum);}
     @Override public final RowMatrix toBufRow(boolean aAbort) {return this;}
     @Override public final void releaseBuf(@NotNull IMatrix aBuf, boolean aAbort) {if (aBuf != this) super.releaseBuf(aBuf, aAbort);}
     

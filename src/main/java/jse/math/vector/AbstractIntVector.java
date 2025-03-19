@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.math.SliceType;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.ISlice;
@@ -96,7 +97,12 @@ public abstract class AbstractIntVector implements IIntVector {
         };
     }
     
-    /** 转为兼容性更好的 int[] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<int[]> numpy() {return new NDArray<>(data(), size());}
+    /** {@inheritDoc} */
     @Override public int[] data() {
         final int tSize = size();
         int[] rData = new int[tSize];

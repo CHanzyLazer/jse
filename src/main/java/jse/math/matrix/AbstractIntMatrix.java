@@ -1,5 +1,6 @@
 package jse.math.matrix;
 
+import jep.NDArray;
 import jse.cache.IntMatrixCache;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractRandomAccessList;
@@ -307,7 +308,22 @@ public abstract class AbstractIntMatrix implements IIntMatrix {
     }
     
     
-    /** 转为兼容性更好的 int[][]，默认直接使用 asListRow 转为 int[][] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<int[]> numpy() {
+        final int tRowNum = rowNumber();
+        final int tColNum = columnNumber();
+        final int tSize = tRowNum*tColNum;
+        int[] rData = new int[tSize];
+        final IIntIterator it = iteratorRow();
+        for (int i = 0; i < tSize; ++i) {
+            rData[i] = it.next();
+        }
+        return new NDArray<>(rData, tRowNum, tColNum);
+    }
+    /** {@inheritDoc} */
     @Override public int[][] data() {
         final int tRowNum = rowNumber();
         final int tColNum = columnNumber();

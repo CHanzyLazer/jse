@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.math.SliceType;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
@@ -13,8 +14,8 @@ import java.util.NoSuchElementException;
 import java.util.function.BooleanSupplier;
 
 /**
+ * 逻辑值向量，返回类型 {@code boolean}
  * @author liqa
- * <p> 专用的逻辑值向量 </p>
  */
 public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBooleanSetIterator, ILogicalVectorGetter {
     /** Iterable stuffs，虽然不继承 Iterable 但是会提供相关的直接获取的接口方便直接使用 */
@@ -26,7 +27,13 @@ public interface ILogicalVector extends ISwapper, IHasBooleanIterator, IHasBoole
     IVector asVec();
     IIntVector asIntVec();
     
-    /** 转为兼容性更好的 boolean[] */
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    NDArray<boolean[]> numpy();
+    /** 转为兼容性更好的 {@code boolean[]} */
     boolean[] data();
     
     /** ISwapper stuffs */

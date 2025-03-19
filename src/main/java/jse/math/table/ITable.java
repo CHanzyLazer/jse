@@ -1,5 +1,6 @@
 package jse.math.table;
 
+import jep.NDArray;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.math.matrix.IMatrix;
 import jse.math.vector.IVector;
@@ -15,7 +16,15 @@ import java.util.Map;
  * @author liqa
  */
 public interface ITable {
-    /** 转为兼容性更好的 double[][] */
+    /**
+     * 转换为通过 map 访问的 numpy 数组 {@link NDArray}，这样保证用法类似；
+     * 会进行一次值拷贝
+     * <p>
+     * 如果希望保留矩阵格式应使用 {@code asMatrix().numpy()}
+     * @return 通过 map 访问的 {@link NDArray}
+     */
+    Map<String, NDArray<double[]>> numpy();
+    /** 转为兼容性更好的 {@code double[][]} */
     double[][] data();
     
     String getHead(int aCol);
@@ -29,6 +38,7 @@ public interface ITable {
     }
     
     /** Map like stuffs */
+    Map<String, ? extends IVector> asMap();
     IVector get(String aHead);
     void put(String aHead, double aValue);
     void put(String aHead, IVector aVector);
@@ -44,7 +54,7 @@ public interface ITable {
     void set(int aRow, String aHead, double aValue);
     List<? extends IVector> rows();
     IVector row(int aRow);
-    Map<String, ? extends IVector> cols();
+    List<? extends IVector> cols();
     IVector col(String aHead);
     int rowNumber();
     int columnNumber();

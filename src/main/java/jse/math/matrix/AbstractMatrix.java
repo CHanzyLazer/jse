@@ -1,5 +1,6 @@
 package jse.math.matrix;
 
+import jep.NDArray;
 import jse.cache.MatrixCache;
 import jse.math.SliceType;
 import jse.code.collection.AbstractCollections;
@@ -302,7 +303,22 @@ public abstract class AbstractMatrix implements IMatrix {
     }
     
     
-    /** 转为兼容性更好的 double[][]，默认直接使用 asListRow 转为 double[][] */
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public NDArray<double[]> numpy() {
+        final int tRowNum = rowNumber();
+        final int tColNum = columnNumber();
+        final int tSize = tRowNum*tColNum;
+        double[] rData = new double[tSize];
+        final IDoubleIterator it = iteratorRow();
+        for (int i = 0; i < tSize; ++i) {
+            rData[i] = it.next();
+        }
+        return new NDArray<>(rData, tRowNum, tColNum);
+    }
+    /** {@inheritDoc} */
     @Override public double[][] data() {
         final int tRowNum = rowNumber();
         final int tColNum = columnNumber();

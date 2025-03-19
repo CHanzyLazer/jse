@@ -25,9 +25,9 @@ import jse.math.IComplexDouble;
 import jse.math.MathEX;
 import jse.math.function.IFunc1;
 import jse.math.function.IFunc1Subs;
-import jse.math.matrix.ColumnMatrix;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.Matrices;
+import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
@@ -1350,14 +1350,14 @@ public class UT {
         public static IVector meanOfCols(IMatrix aMat) {return aMat.operation().meanOfCols();}
         public static IVector meanOfRows(IMatrix aMat) {return aMat.operation().meanOfRows();}
         
-        public static ColumnMatrix zeros(int aRowNum, int ColNum) {return Matrices.zeros(aRowNum, ColNum);}
-        public static ColumnMatrix ones(int aRowNum, int ColNum) {return Matrices.ones(aRowNum, ColNum);}
-        public static ColumnMatrix NaN(int aRowNum, int ColNum) {return Matrices.NaN(aRowNum, ColNum);}
-        public static ColumnMatrix nan(int aRowNum, int ColNum) {return NaN(aRowNum, ColNum);}
-        public static ColumnMatrix rand(int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::rand); return rMat;}
-        public static ColumnMatrix randn(int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::randn); return rMat;}
-        public static ColumnMatrix randi(final int aBound, int aRowNum, int ColNum) {ColumnMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(()->randi(aBound)); return rMat;}
-        public static ColumnMatrix diag(IVector aVec) {return Matrices.diag(aVec);}
+        public static RowMatrix zeros(int aRowNum, int ColNum) {return Matrices.zeros(aRowNum, ColNum);}
+        public static RowMatrix ones(int aRowNum, int ColNum) {return Matrices.ones(aRowNum, ColNum);}
+        public static RowMatrix NaN(int aRowNum, int ColNum) {return Matrices.NaN(aRowNum, ColNum);}
+        public static RowMatrix nan(int aRowNum, int ColNum) {return NaN(aRowNum, ColNum);}
+        public static RowMatrix rand(int aRowNum, int ColNum) {RowMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::rand); return rMat;}
+        public static RowMatrix randn(int aRowNum, int ColNum) {RowMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(Math::randn); return rMat;}
+        public static RowMatrix randi(final int aBound, int aRowNum, int ColNum) {RowMatrix rMat = zeros(aRowNum, ColNum); rMat.assignCol(()->randi(aBound)); return rMat;}
+        public static RowMatrix diag(IVector aVec) {return Matrices.diag(aVec);}
         public static IVector diag(IMatrix aMat) {return aMat.slicer().diag();}
         public static IVector diag(IMatrix aMat, int aShift) {return aMat.slicer().diag(aShift);}
         

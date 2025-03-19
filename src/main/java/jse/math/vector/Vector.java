@@ -1,5 +1,6 @@
 package jse.math.vector;
 
+import jep.NDArray;
 import jse.code.collection.DoubleList;
 import jse.code.iterator.IDoubleIterator;
 import jse.code.iterator.IDoubleSetIterator;
@@ -80,6 +81,7 @@ public class Vector extends DoubleArrayVector {
         return null;
     }
     
+    @Override public final NDArray<double[]> numpy() {return new NDArray<>(mData, mSize);}
     @Override public final Vector toBuf(boolean aAbort) {return this;}
     @Override public final void releaseBuf(@NotNull IVector aBuf, boolean aAbort) {if (aBuf != this) super.releaseBuf(aBuf, aAbort);}
     
