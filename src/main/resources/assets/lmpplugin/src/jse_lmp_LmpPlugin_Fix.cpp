@@ -1,6 +1,8 @@
 #include "jse_lmp_LmpPlugin_Fix.h"
 #include "fix_jse.h"
 
+#include <stdint.h>
+
 extern "C" {
 
 using namespace LAMMPS_NS;

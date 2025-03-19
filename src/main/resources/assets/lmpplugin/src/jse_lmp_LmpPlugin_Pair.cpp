@@ -1,6 +1,8 @@
 #include "jse_lmp_LmpPlugin_Pair.h"
 #include "pair_jse.h"
 
+#include <stdint.h>
+
 extern "C" {
 
 using namespace LAMMPS_NS;

@@ -1,5 +1,6 @@
 #include "LmpFix.h"
 
+#include <stdint.h>
 
 jclass JSE_LMPFIX::LMPFIX_CLAZZ = NULL;
 jclass JSE_LMPFIX::STRING_CLAZZ = NULL;

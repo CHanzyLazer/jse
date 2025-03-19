@@ -1,5 +1,6 @@
 #include "LmpPair.h"
 
+#include <stdint.h>
 
 jclass JSE_LMPPAIR::LMPPAIR_CLAZZ = NULL;
 jclass JSE_LMPPAIR::STRING_CLAZZ = NULL;

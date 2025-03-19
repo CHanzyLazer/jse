@@ -16,6 +16,8 @@
 #include "lammps/variable.h"
 #include "neigh_request.h"
 
+#include <stdint.h>
+
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
