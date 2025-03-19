@@ -75,10 +75,26 @@ public interface IHasSymbol {
         if (!hasSymbol()) throw new UnsupportedOperationException("`typeOf` for IHasSymbol without symbols");
         return typeOf_(Objects.requireNonNull(symbols()), aSymbol);
     }
+    /**
+     * 验证输入的 aTypeMap 是否超过了自身的种类数目，
+     * 当种类数小于等于 {@code 0} 时不会进行检测
+     * @param aTypeNum aTypeMap 总共的种类数
+     * @param aTypeMap 需要检测的种类映射
+     */
+    default void typeMapCheck(int aTypeNum, IntUnaryOperator aTypeMap) {
+        int tTypeNum = atomTypeNumber();
+        if (tTypeNum <= 0) return;
+        for (int tType = 1; tType <= aTypeNum; ++tType) {
+            if (tTypeNum < aTypeMap.applyAsInt(tType)) throw new IllegalArgumentException("Invalid atom type number of TypeMap: " + aTypeMap.applyAsInt(tType) + ", limit: " + tTypeNum);
+        }
+    }
+    
     @ApiStatus.Internal
     static IntUnaryOperator typeMap_(List<String> aSymbols, IAtomData aAtomData) {
-        if (aSymbols.size() < aAtomData.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + aSymbols.size());
-        if (!aAtomData.hasSymbol()) return type->type;
+        if (!aAtomData.hasSymbol()) {
+            if (aSymbols.size() < aAtomData.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + aSymbols.size());
+            return type->type;
+        }
         List<String> tAtomDataSymbols = Objects.requireNonNull(aAtomData.symbols());
         if (sameSymbolOrder_(aSymbols, tAtomDataSymbols)) return type->type;
         final int[] tAtomDataType2newType = new int[tAtomDataSymbols.size()+1];

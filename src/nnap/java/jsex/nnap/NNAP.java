@@ -530,8 +530,7 @@ public class NNAP implements IPairPotential {
      */
     @Override public void calEnergyForceVirials(final AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         // 统一存储常量
         final int tAtomNumber = aAPC.atomNumber();
         final int tThreadNumber = aAPC.threadNumber();

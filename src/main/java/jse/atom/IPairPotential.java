@@ -66,8 +66,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default Vector calEnergies(AtomicParameterCalculator aAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         Vector rEnergies = VectorCache.getVec(aAPC.atomNumber());
         calEnergyForceVirials(aAPC, rEnergies, null, null, null, null, null, null, null, null, null, aTypeMap);
         return rEnergies;
@@ -94,8 +93,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default double calEnergy(AtomicParameterCalculator aAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         Vector rTotEng = VectorCache.getVec(1);
         calEnergyForceVirials(aAPC, rTotEng, null, null, null, null, null, null, null, null, null, aTypeMap);
         double tTotEng = rTotEng.get(0);
@@ -125,8 +123,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default RowMatrix calForces(AtomicParameterCalculator aAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         RowMatrix rForces = MatrixCache.getMatRow(aAPC.atomNumber(), 3);
         calEnergyForceVirials(aAPC, null, rForces.col(0), rForces.col(1), rForces.col(2), null, null, null, null, null, null, aTypeMap);
         return rForces;
@@ -156,8 +153,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default List<Vector> calStresses(AtomicParameterCalculator aAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         List<Vector> rStresses = VectorCache.getVec(aAPC.atomNumber(), 6);
         calEnergyForceVirials(aAPC, null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5), aTypeMap);
         for (int i = 0; i < 6; ++i) {
@@ -191,8 +187,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default List<Double> calStress(AtomicParameterCalculator aAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         List<Vector> rStresses = VectorCache.getVec(1, 6);
         calEnergyForceVirials(aAPC, null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5), aTypeMap);
         double tStressXX = -rStresses.get(0).get(0);
@@ -278,8 +273,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default double calEnergyDiffMove(AtomicParameterCalculator aAPC, int aI, double aDx, double aDy, double aDz, boolean aRestoreAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         double tRCut = rcut();
         if (tRCut <= 0) {
             double oEng = calEnergy(aAPC, aTypeMap);
@@ -417,8 +411,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default double calEnergyDiffSwap(AtomicParameterCalculator aAPC, int aI, int aJ, boolean aRestoreAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         int oTypeI = aAPC.atomType_().get(aI);
         int oTypeJ = aAPC.atomType_().get(aJ);
         if (oTypeI == oTypeJ) return 0.0;
@@ -522,8 +515,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default double calEnergyDiffFlip(AtomicParameterCalculator aAPC, int aI, int aType, boolean aRestoreAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
-        int tTypeNum = atomTypeNumber();
-        if (tTypeNum>0 && tTypeNum<aAPC.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of APC: " + aAPC.atomTypeNumber() + ", potential: " + tTypeNum);
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         int oType = aAPC.atomType_().get(aI);
         if (oType == aType) return 0.0;
         double tRCut = rcut();
