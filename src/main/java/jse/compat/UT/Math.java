@@ -19,7 +19,5 @@ public final class Math extends UT.Math {
     public final static IComplexDouble
           i1 = UT.Math.i1
         , j1 = UT.Math.j1
-        , i  = UT.Math.i
-        , j  = UT.Math.j
         ;
 }
