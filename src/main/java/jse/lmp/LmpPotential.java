@@ -1,21 +1,16 @@
 package jse.lmp;
 
 import jse.atom.*;
-import jse.code.collection.ISlice;
-import jse.math.MathEX;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static jse.code.CS.*;
 
 /**
  * 基于 {@link NativeLmp} 实现的势函数，用来方便使用 lammps
@@ -33,7 +28,7 @@ import static jse.code.CS.*;
  * @see IPotential IPotential: 通用的势函数接口
  * @author liqa
  */
-public class LmpPotential implements IPotential {
+public class LmpPotential extends AbstractLmpPotential {
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
         /** @return {@link LmpPotential} 相关的 JNI 库是否已经初始化完成，主要用于辅助初始化 {@link NativeLmp} */
@@ -51,18 +46,8 @@ public class LmpPotential implements IPotential {
         NativeLmp.InitHelper.init();
         _INIT_FLAG = false;
     }
-    
     private final static String[] LMP_ARGS = {"-log", "none", "-screen", "none"};
-    private final static String DEFAULT_UNITS = "metal";
-    /** 将 lammps metal 单位制中的 bar 转换成 ev/Å^3 需要乘的倍数 */
-    public final static double BAR_TO_EV = UNITS.get("bar");
-    /** 将 lammps real 单位制中的 atmospheres 转换成 (kcal/mol)/Å^3 需要乘的倍数 */
-    public final static double ATM_TO_KCAL = 1.01325*BAR_TO_EV*EV_TO_KCAL;
-    /** 将 lammps electron 单位制中的 Pascal 转换成 Hartree/Bohr^3 需要乘的倍数 */
-    public final static double PA_TO_HARTREE = UNITS.get("Pascal") / UNITS.get("Hartree") * MathEX.Fast.pow3(UNITS.get("Bohr"));
     
-    private final @NotNull String mPairStyle;
-    private final @NotNull String mPairCoeff;
     private final NativeLmp mLmp;
     /**
      * 根据输入的 aPairStyle 和 aPairCoeff 创建一个原生调用 lammps 计算的势函数
@@ -70,11 +55,8 @@ public class LmpPotential implements IPotential {
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      * @param aComm 希望使用的 {@link MPI.Comm}，默认为 {@code null}，当有 MPI 支持时会采用 {@link MPI.Comm#WORLD}
      */
-    @SuppressWarnings("NullableProblems")
     public LmpPotential(String aPairStyle, String aPairCoeff, @Nullable MPI.Comm aComm) throws LmpException {
-        if (aPairStyle==null || aPairCoeff==null) throw new NullPointerException();
-        mPairStyle = aPairStyle;
-        mPairCoeff = aPairCoeff;
+        super(aPairStyle, aPairCoeff);
         mLmp = new NativeLmp(LMP_ARGS, aComm);
     }
     /**
@@ -83,56 +65,6 @@ public class LmpPotential implements IPotential {
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      */
     public LmpPotential(String aPairStyle, String aPairCoeff) throws LmpException {this(aPairStyle, aPairCoeff, null);}
-    
-    private @Nullable String mBeforeCommands = null;
-    public LmpPotential setBeforeCommands(String aCommands) {mBeforeCommands = aCommands; return this;}
-    private @Nullable String mLastCommands = null;
-    public LmpPotential setLastCommands(String aCommands) {mLastCommands = aCommands; return this;}
-    
-    private String mUnits = DEFAULT_UNITS;
-    /**
-     * 设置内部 lammps 计算采用的单位，默认为 {@code metal}。
-     * <p>
-     * 注意设置单位仅仅影响能量和长度的单位，压强和力会统一采用推导的形式。
-     * 因此计算输出的单位不一定会是 lammps 设定的单位，例如对于 {@code metal}
-     * 单位，lammps 压力单位为 {@code bar}，而这里会统一进行单位转换，确保压力单位为
-     * {@code eV/Å^3}（其余单位恰好一致）
-     *
-     * @param aUnits 需要设置的单位
-     * @return 自身方便链式调用
-     */
-    public LmpPotential setUnits(String aUnits) {mUnits = aUnits; return this;}
-    /** @return 内部 lammps 计算采用的单位，默认为 {@code metal} */
-    public String units() {return mUnits;}
-    
-    private double validStressUnit(double aLmpStress) {
-        switch (mUnits) {
-        case "metal": {return aLmpStress*BAR_TO_EV;}
-        case "real": {return aLmpStress*ATM_TO_KCAL;}
-        case "electron": {return aLmpStress*PA_TO_HARTREE;}
-        default: {return aLmpStress;}
-        }
-    }
-    @SuppressWarnings("SuspiciousNameCombination")
-    private void rotateVirial(IBox aBoxIn, IBox aBoxOut, XYZ rBuf0, XYZ rBuf1, XYZ rBuf2) {
-        // 应力需要这样旋转变换两次
-        aBoxIn.toDirect(rBuf0);
-        aBoxIn.toDirect(rBuf1);
-        aBoxIn.toDirect(rBuf2);
-        aBoxOut.toCartesian(rBuf0);
-        aBoxOut.toCartesian(rBuf1);
-        aBoxOut.toCartesian(rBuf2);
-        double
-        tV = rBuf0.mY; rBuf0.mY = rBuf1.mX; rBuf1.mX = tV;
-        tV = rBuf0.mZ; rBuf0.mZ = rBuf2.mX; rBuf2.mX = tV;
-        tV = rBuf1.mZ; rBuf1.mZ = rBuf2.mY; rBuf2.mY = tV;
-        aBoxIn.toDirect(rBuf0);
-        aBoxIn.toDirect(rBuf1);
-        aBoxIn.toDirect(rBuf2);
-        aBoxOut.toCartesian(rBuf0);
-        aBoxOut.toCartesian(rBuf1);
-        aBoxOut.toCartesian(rBuf2);
-    }
     
     private boolean mDead = false;
     /** @return 此 lammps 势函数是否已经关闭 */
@@ -146,9 +78,6 @@ public class LmpPotential implements IPotential {
         mDead = true;
         mLmp.shutdown();
     }
-    
-    /** 常规的 lammps 不支持计算部分原子能量，因此会直接抛出 {@link UnsupportedOperationException} */
-    @Override public double calEnergyAt(IAtomData aAPC, ISlice aIndices) {throw new UnsupportedOperationException();}
     
     /**
      * {@inheritDoc}
