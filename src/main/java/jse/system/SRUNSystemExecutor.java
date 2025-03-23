@@ -13,7 +13,6 @@ import java.util.concurrent.Future;
 import static jse.code.CS.*;
 import static jse.code.OS.Slurm.IS_SLURM;
 import static jse.code.OS.Slurm.RESOURCES_MANAGER;
-import static jse.code.Conf.WORKING_DIR_OF;
 
 /**
  * @author liqa
@@ -22,38 +21,32 @@ import static jse.code.Conf.WORKING_DIR_OF;
  * <p> 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务 </p>
  */
 public class SRUNSystemExecutor extends LocalSystemExecutor {
-    private final String mWorkingDir;
-    private final Map<Slurm.Resource, Boolean> mAssignedResources;
-    
+    private final SRUNChecker mChecker;
     /** 线程数现在由每个任务的并行数，申请到的节点数，以及每节点的核心数来确定 */
-    public SRUNSystemExecutor(int aTaskNum, int aMaxParallelNum) throws Exception {
+    public SRUNSystemExecutor(int aTaskNum, int aMaxParallelNum) {
         super();
-        
-        mAssignedResources = new HashMap<>();
-        // 设置一下工作目录；虽然非强制，这里还是使用相对路径保证 removeDir(mWorkingDir); 合法
-        mWorkingDir = WORKING_DIR_OF("SRUN@"+UT.Code.randID(), true);
         // 由于是本地的，这里不需要创建文件夹
         // 仅 slurm 可用
         if (!IS_SLURM) {
-            this.shutdown();
-            throw new Exception("SRUN can Only be used in SLURM");
+            throw new IllegalStateException("SRUN can Only be used in SLURM");
         }
+        Map<Slurm.Resource, Boolean> tAssignedResources = new HashMap<>();
         for (int i = 0; i < aMaxParallelNum; ++i) {
             Slurm.Resource tResource = aTaskNum>0 ? RESOURCES_MANAGER.assignResource(aTaskNum) : RESOURCES_MANAGER.assignResource();
             // 分配失败直接抛出错误
             if (tResource == null) {
-                this.shutdown();
-                throw new Exception("Not enough resource in SLURM to assign");
+                throw new IllegalArgumentException("Not enough resource in SLURM to assign");
             }
-            mAssignedResources.put(tResource, false);
+            tAssignedResources.put(tResource, false);
         }
+        mChecker = new SRUNChecker(this, tAssignedResources);
     }
-    public SRUNSystemExecutor(int aTaskNum) throws Exception {this(aTaskNum, 1);}
-    public SRUNSystemExecutor() throws Exception {this(-1, 1);}
+    public SRUNSystemExecutor(int aTaskNum) {this(aTaskNum, 1);}
+    public SRUNSystemExecutor() {this(-1, 1);}
     
     /** 内部使用的向任务分配节点的方法 */
     private synchronized @Nullable Slurm.Resource assignResource() {
-        for (Map.Entry<Slurm.Resource, Boolean> tEntry : mAssignedResources.entrySet()) {
+        for (Map.Entry<Slurm.Resource, Boolean> tEntry : mChecker.mAssignedResources.entrySet()) {
             if (!tEntry.getValue()) {
                 tEntry.setValue(true);
                 return tEntry.getKey();
@@ -64,7 +57,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
     }
     /** 内部使用的任务完成归还节点的方法 */
     private synchronized void returnResource(Slurm.Resource aResource) {
-        mAssignedResources.put(aResource, false);
+        mChecker.mAssignedResources.put(aResource, false);
     }
     
     @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln) {
@@ -82,7 +75,7 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
             tResource = assignResource();
         }
         // 为了兼容性，需要将实际需要执行的脚本写入 bash 后再执行，从而可以支持复杂的逻辑输入（包含 cd 等操作或者多行命令）
-        String tTempScriptPath = mWorkingDir+UT.Code.randID()+".sh";
+        String tTempScriptPath = mChecker.mWorkingDir+UT.Code.randID()+".sh";
         try {IO.write(tTempScriptPath, "#!/bin/bash\n"+aCommand);}
         catch (Exception e) {printStackTrace(e); returnResource(tResource); return ERR_FUTURE;}
         // 获取提交指令
@@ -106,11 +99,5 @@ public class SRUNSystemExecutor extends LocalSystemExecutor {
         }
     }
     
-    /** 程序结束时删除自己的临时工作目录，并归还资源 */
-    @Override protected void shutdownFinal() {
-        try {
-            IO.removeDir(mWorkingDir);
-        } catch (Exception ignored) {}
-        for (Slurm.Resource tResource : mAssignedResources.keySet()) RESOURCES_MANAGER.returnResource(tResource);
-    }
+    @Override protected void shutdownFinal() {mChecker.dispose();}
 }

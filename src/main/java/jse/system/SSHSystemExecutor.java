@@ -21,15 +21,15 @@ import static jse.code.CS.SSH_SLEEP_TIME;
  * <p> 在 ssh 服务器上执行指令的简单实现 </p>
  */
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
-    final SSHCore mSSH;
+    final SSHChecker mSSH;
     private final int mIOThreadNum;
     SSHSystemExecutor(int aIOThreadNum, SSHCore aSSH) throws Exception {
         super();
-        mIOThreadNum = aIOThreadNum; mSSH = aSSH;
+        mIOThreadNum = aIOThreadNum; mSSH = new SSHChecker(this, aSSH);
         // 需要初始化一下远程的工作目录，只需要创建目录即可，因为原本 ssh 设计时不是这样初始化的
         // 注意初始化失败时需要抛出异常并且执行关闭操作
         try {
-            mSSH.makeDir(".");
+            mSSH.mCore.makeDir(".");
         } catch (Exception e) {
             this.shutdown(); // 构造函数中不调用多态方法
             throw e;
@@ -38,10 +38,10 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     
     @Override public final SSHSystemExecutor setWorkingDir(@Nullable String aWorkingDir) throws Exception {return setRemoteWorkingDir(aWorkingDir);}
     /** 这些属性支持创建后修改来方便使用 */
-    public SSHSystemExecutor setLocalWorkingDir(String aLocalWorkingDir) {mSSH.setLocalWorkingDir(aLocalWorkingDir); return this;}
-    public SSHSystemExecutor setRemoteWorkingDir(String aRemoteWorkingDir) throws Exception {mSSH.setRemoteWorkingDir(aRemoteWorkingDir); mSSH.makeDir("."); return this;}
-    public SSHSystemExecutor setCompressLevel(int aCompressLevel) throws Exception {mSSH.setCompressLevel(aCompressLevel); return this;}
-    public SSHSystemExecutor setBeforeCommand(String aBeforeCommand) {mSSH.setBeforeCommand(aBeforeCommand); return this;}
+    public SSHSystemExecutor setLocalWorkingDir(String aLocalWorkingDir) {mSSH.mCore.setLocalWorkingDir(aLocalWorkingDir); return this;}
+    public SSHSystemExecutor setRemoteWorkingDir(String aRemoteWorkingDir) throws Exception {mSSH.mCore.setRemoteWorkingDir(aRemoteWorkingDir); mSSH.mCore.makeDir("."); return this;}
+    public SSHSystemExecutor setCompressLevel(int aCompressLevel) throws Exception {mSSH.mCore.setCompressLevel(aCompressLevel); return this;}
+    public SSHSystemExecutor setBeforeCommand(String aBeforeCommand) {mSSH.mCore.setBeforeCommand(aBeforeCommand); return this;}
     
     /** 现在也支持使用 builder 来构造 */
     public static Builder builder() {return new Builder();}
@@ -83,7 +83,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override public void save(Map rSaveTo) {
         // 先保存内部 SSH
-        mSSH.save(rSaveTo);
+        mSSH.mCore.save(rSaveTo);
         // 注意如果是默认值则不要保存
         if (mIOThreadNum > 0) rSaveTo.put("IOThreadNumber", mIOThreadNum);
     }
@@ -133,13 +133,13 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     private static int getIOThreadNum(Map<?, ?> aArgs) {return ((Number)UT.Code.getWithDefault(aArgs, -1, "IOThreadNumber", "iothreadnumber", "IOThreadNum", "iothreadnum", "ion")).intValue();}
     
     /** SSH 需要使用 ssh 来创建，现在不会本地同步创建 */
-    @Override public final void validPath(String aPath) throws Exception {mSSH.validPath(aPath);}
-    @Override public final void makeDir(String aDir) throws Exception {mSSH.makeDir(aDir);}
-    @Override public final void removeDir(String aDir) throws Exception {mSSH.removeDir(aDir);}
-    @Override public final void delete(String aPath) throws Exception {mSSH.delete(aPath);}
-    @Override public final boolean isFile(String aFilePath) throws Exception {return mSSH.isFile(aFilePath);}
-    @Override public final boolean isDir(String aDir) throws Exception {return mSSH.isDir(aDir);}
-    @Override public final String @NotNull[] list(String aDir) throws Exception {return mSSH.list(aDir);}
+    @Override public final void validPath(String aPath) throws Exception {mSSH.mCore.validPath(aPath);}
+    @Override public final void makeDir(String aDir) throws Exception {mSSH.mCore.makeDir(aDir);}
+    @Override public final void removeDir(String aDir) throws Exception {mSSH.mCore.removeDir(aDir);}
+    @Override public final void delete(String aPath) throws Exception {mSSH.mCore.delete(aPath);}
+    @Override public final boolean isFile(String aFilePath) throws Exception {return mSSH.mCore.isFile(aFilePath);}
+    @Override public final boolean isDir(String aDir) throws Exception {return mSSH.mCore.isDir(aDir);}
+    @Override public final String @NotNull[] list(String aDir) throws Exception {return mSSH.mCore.list(aDir);}
     
     /** 通过 ssh 直接执行命令 */
     @Override protected Future<Integer> submitSystem__(String aCommand, @NotNull IO.IWriteln aWriteln) {
@@ -154,7 +154,7 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
         private SSHSystemFuture(String aCommand, final @NotNull IO.IWriteln aWriteln) {
             // 执行指令
             ChannelExec tChannelExec;
-            try {tChannelExec = mSSH.systemChannel(aCommand, noERROutput());}
+            try {tChannelExec = mSSH.mCore.systemChannel(aCommand, noERROutput());}
             catch (Exception e) {printStackTrace(e); tChannelExec = null;}
             mChannelExec = tChannelExec;
             if (mChannelExec == null) {
@@ -229,11 +229,11 @@ public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable 
     
     
     @Override protected final void putFiles_(Iterable<String> aFiles) throws Exception {
-        if (mIOThreadNum>0) {mSSH.putFiles(aFiles, mIOThreadNum);} else {mSSH.putFiles(aFiles);}
+        if (mIOThreadNum>0) {mSSH.mCore.putFiles(aFiles, mIOThreadNum);} else {mSSH.mCore.putFiles(aFiles);}
     }
     @Override protected final void getFiles_(Iterable<String> aFiles) throws Exception {
-        if (mIOThreadNum>0) {mSSH.getFiles(aFiles, mIOThreadNum);} else {mSSH.getFiles(aFiles);}
+        if (mIOThreadNum>0) {mSSH.mCore.getFiles(aFiles, mIOThreadNum);} else {mSSH.mCore.getFiles(aFiles);}
     }
     /** 需要重写 shutdownFinal 方法将内部 ssh 的关闭包含进去 */
-    @Override protected void shutdownFinal() {mSSH.shutdown();}
+    @Override protected void shutdownFinal() {mSSH.dispose();}
 }
