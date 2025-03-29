@@ -1,6 +1,7 @@
 package jse.lmp;
 
 import jse.atom.*;
+import jse.code.IO;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
@@ -10,6 +11,7 @@ import jse.parallel.MPIException;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -57,7 +59,7 @@ public class LmpPotential extends AbstractLmpPotential {
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      * @param aComm 希望使用的 {@link MPI.Comm}，默认为 {@code null}，当有 MPI 支持时会采用 {@link MPI.Comm#WORLD}
      */
-    public LmpPotential(String aPairStyle, String aPairCoeff, @Nullable MPI.Comm aComm) throws LmpException {
+    public LmpPotential(String aPairStyle, String[] aPairCoeff, @Nullable MPI.Comm aComm) throws LmpException {
         super(aPairStyle, aPairCoeff);
         mLmp = new NativeLmp(LMP_ARGS, aComm);
     }
@@ -65,8 +67,26 @@ public class LmpPotential extends AbstractLmpPotential {
      * 根据输入的 aPairStyle 和 aPairCoeff 创建一个原生调用 lammps 计算的势函数
      * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aComm 希望使用的 {@link MPI.Comm}，默认为 {@code null}，当有 MPI 支持时会采用 {@link MPI.Comm#WORLD}
      */
-    public LmpPotential(String aPairStyle, String aPairCoeff) throws LmpException {this(aPairStyle, aPairCoeff, null);}
+    public LmpPotential(String aPairStyle, String aPairCoeff, @Nullable MPI.Comm aComm) throws LmpException {
+        this(aPairStyle, new String[]{aPairCoeff}, aComm);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个原生调用 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aComm 希望使用的 {@link MPI.Comm}，默认为 {@code null}，当有 MPI 支持时会采用 {@link MPI.Comm#WORLD}
+     */
+    public LmpPotential(String aPairStyle, Collection<? extends CharSequence> aPairCoeff, @Nullable MPI.Comm aComm) throws LmpException {
+        this(aPairStyle, IO.Text.toArray(aPairCoeff), aComm);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个原生调用 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     */
+    public LmpPotential(String aPairStyle, String... aPairCoeff) throws LmpException {this(aPairStyle, aPairCoeff, null);}
     
     private boolean mDead = false;
     /** @return 此 lammps 势函数是否已经关闭 */
@@ -116,7 +136,9 @@ public class LmpPotential extends AbstractLmpPotential {
             if (Double.isNaN(tMass)) mLmp.command(String.format("mass  %d 1.0", tType));
         }
         mLmp.command("pair_style   "+mPairStyle);
-        mLmp.command("pair_coeff   "+mPairCoeff);
+        for (String tPairCoeff : mPairCoeff) {
+            mLmp.command("pair_coeff   "+tPairCoeff);
+        }
         if (mLastCommands != null) mLmp.commands(mLastCommands);
         // 增加这个 thermo 确保势能和应力可以获取到
         List<String> rThermoStyle = new ArrayList<>(8);

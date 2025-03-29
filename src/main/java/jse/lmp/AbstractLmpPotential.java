@@ -26,15 +26,18 @@ abstract class AbstractLmpPotential implements IPotential {
     public final static double PA_TO_HARTREE = UNITS.get("Pascal") / UNITS.get("Hartree") * MathEX.Fast.pow3(UNITS.get("Bohr"));
     
     @NotNull String mPairStyle;
-    @NotNull String mPairCoeff;
+    @NotNull String[] mPairCoeff;
     /**
      * 根据输入的 aPairStyle 和 aPairCoeff 创建一个运行 lammps 计算的势函数
      * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      */
     @SuppressWarnings("NullableProblems")
-    public AbstractLmpPotential(String aPairStyle, String aPairCoeff) {
+    public AbstractLmpPotential(String aPairStyle, String... aPairCoeff) {
         if (aPairStyle==null || aPairCoeff==null) throw new NullPointerException();
+        for (String tPairCoeff : aPairCoeff) {
+            if (tPairCoeff == null) throw new NullPointerException();
+        }
         mPairStyle = aPairStyle;
         mPairCoeff = aPairCoeff;
     }
@@ -43,13 +46,24 @@ abstract class AbstractLmpPotential implements IPotential {
      * @param aPairStyle 需要设置的 {@code pair_style}
      * @return 自身方便链式调用
      */
-    public AbstractLmpPotential setPairStyle(String aPairStyle) {if (aPairStyle==null) throw new NullPointerException(); mPairStyle = aPairStyle; return this;}
+    public AbstractLmpPotential setPairStyle(String aPairStyle) {
+        if (aPairStyle==null) throw new NullPointerException();
+        mPairStyle = aPairStyle;
+        return this;
+    }
     /**
      * 设置 lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      * @param aPairCoeff 需要设置的 {@code pair_coeff}
      * @return 自身方便链式调用
      */
-    public AbstractLmpPotential setPairCoeff(String aPairCoeff) {if (aPairCoeff==null) throw new NullPointerException(); mPairCoeff = aPairCoeff; return this;}
+    public AbstractLmpPotential setPairCoeff(String... aPairCoeff) {
+        if (aPairCoeff==null) throw new NullPointerException();
+        for (String tPairCoeff : aPairCoeff) {
+            if (tPairCoeff == null) throw new NullPointerException();
+        }
+        mPairCoeff = aPairCoeff;
+        return this;
+    }
     
     @Nullable String mBeforeCommands = null;
     /**

@@ -53,6 +53,11 @@ public interface IHasSymbol {
      */
     default IntUnaryOperator typeMap(IAtomData aAtomData) {
         if (!hasSymbol()) throw new UnsupportedOperationException("`typeMap` for IHasSymbol without symbols");
+        if (!aAtomData.hasSymbol()) {
+            int tTypeNum = atomTypeNumber();
+            if (tTypeNum>0 && tTypeNum<aAtomData.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + tTypeNum);
+            return type->type;
+        }
         return typeMap_(Objects.requireNonNull(symbols()), aAtomData);
     }
     /**
@@ -91,10 +96,6 @@ public interface IHasSymbol {
     
     @ApiStatus.Internal
     static IntUnaryOperator typeMap_(List<String> aSymbols, IAtomData aAtomData) {
-        if (!aAtomData.hasSymbol()) {
-            if (aSymbols.size() < aAtomData.atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + aSymbols.size());
-            return type->type;
-        }
         List<String> tAtomDataSymbols = Objects.requireNonNull(aAtomData.symbols());
         if (sameSymbolOrder_(aSymbols, tAtomDataSymbols)) return type->type;
         final int[] tAtomDataType2newType = new int[tAtomDataSymbols.size()+1];

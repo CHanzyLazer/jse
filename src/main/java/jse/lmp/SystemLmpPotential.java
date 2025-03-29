@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -48,7 +49,7 @@ public class SystemLmpPotential extends AbstractLmpPotential {
      * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}
      * @param aShutdownExec 是否会在关闭此势函数时，自动关闭内部的系统执行器，默认在手动传入 aExec 时为 {@code true}，不传入时为 {@code false}
      */
-    public SystemLmpPotential(String aPairStyle, String aPairCoeff, ISystemExecutor aExec, boolean aShutdownExec) {
+    public SystemLmpPotential(String aPairStyle, String[] aPairCoeff, ISystemExecutor aExec, boolean aShutdownExec) {
         super(aPairStyle, aPairCoeff);
         mExec = aExec;
         mShutdownExec = aShutdownExec;
@@ -60,14 +61,56 @@ public class SystemLmpPotential extends AbstractLmpPotential {
      * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}，默认在关闭时会同时自动关闭
+     * @param aShutdownExec 是否会在关闭此势函数时，自动关闭内部的系统执行器，默认在手动传入 aExec 时为 {@code true}，不传入时为 {@code false}
      */
-    public SystemLmpPotential(String aPairStyle, String aPairCoeff, ISystemExecutor aExec) {this(aPairStyle, aPairCoeff, aExec, true);}
+    public SystemLmpPotential(String aPairStyle, String aPairCoeff, ISystemExecutor aExec, boolean aShutdownExec) {
+        this(aPairStyle, new String[]{aPairCoeff}, aExec, aShutdownExec);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个命令运行 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}，默认在关闭时会同时自动关闭
+     * @param aShutdownExec 是否会在关闭此势函数时，自动关闭内部的系统执行器，默认在手动传入 aExec 时为 {@code true}，不传入时为 {@code false}
+     */
+    public SystemLmpPotential(String aPairStyle, Collection<? extends CharSequence> aPairCoeff, ISystemExecutor aExec, boolean aShutdownExec) {
+        this(aPairStyle, IO.Text.toArray(aPairCoeff), aExec, aShutdownExec);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个命令运行 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}，默认在关闭时会同时自动关闭
+     */
+    public SystemLmpPotential(String aPairStyle, String[] aPairCoeff, ISystemExecutor aExec) {
+        this(aPairStyle, aPairCoeff, aExec, true);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个命令运行 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}，默认在关闭时会同时自动关闭
+     */
+    public SystemLmpPotential(String aPairStyle, String aPairCoeff, ISystemExecutor aExec) {
+        this(aPairStyle, new String[]{aPairCoeff}, aExec);
+    }
+    /**
+     * 根据输入的 aPairStyle 和 aPairCoeff 创建一个命令运行 lammps 计算的势函数
+     * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
+     * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
+     * @param aExec 希望使用的系统命令执行器 {@link ISystemExecutor}，默认为 {@link OS#EXEC}，默认在关闭时会同时自动关闭
+     */
+    public SystemLmpPotential(String aPairStyle, Collection<? extends CharSequence> aPairCoeff, ISystemExecutor aExec) {
+        this(aPairStyle, IO.Text.toArray(aPairCoeff), aExec);
+    }
     /**
      * 根据输入的 aPairStyle 和 aPairCoeff 创建一个命令运行 lammps 计算的势函数
      * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      */
-    public SystemLmpPotential(String aPairStyle, String aPairCoeff) {this(aPairStyle, aPairCoeff, OS.EXEC, false);}
+    public SystemLmpPotential(String aPairStyle, String... aPairCoeff) {
+        this(aPairStyle, aPairCoeff, OS.EXEC, false);
+    }
     
     private String mLmpCommand = "lmp";
     /**
@@ -127,7 +170,9 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         rLmpIn.add("boundary  p p p");
         rLmpIn.add("read_data  "+tDataPath);
         rLmpIn.add("pair_style   "+mPairStyle);
-        rLmpIn.add("pair_coeff   "+mPairCoeff);
+        for (String tPairCoeff : mPairCoeff) {
+            rLmpIn.add("pair_coeff   "+tPairCoeff);
+        }
         if (mLastCommands != null) rLmpIn.add(mLastCommands);
         // 增加这个 thermo 确保势能和应力可以获取到
         List<String> rThermoStyle = new ArrayList<>(8);

@@ -478,14 +478,14 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
         // 这里只考虑一般的情况，这里直接遍历 atoms 来创建，
         // 现在不再考虑 id 顺序（因为可能存在 type 发生改变的问题）
         IBox tBox = aAtomData.box();
-        int tAtomNum = aAtomData.atomNumber();
-        int tAtomTypeNum = aAtomData.atomTypeNumber();
-        if (tAtomTypeNum > atomTypeNumber()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.atomTypeNumber() + ", target: " + atomTypeNumber());
+        int tAtomNum = atomNumber();
+        if (tAtomNum != aAtomData.atomNumber()) throw new IllegalArgumentException("Invalid atom number of AtomData: " + aAtomData.atomNumber() + ", target: " + tAtomNum);
+        int tAtomTypeNum = atomTypeNumber();
+        // 这里还是统一按照 type 进行排序；还需要检测 type 的 symbol 是否是一一对应的
+        IntUnaryOperator tTypeMap = (mTypeNames==null || !aAtomData.hasSymbol()) ? t->t : IHasSymbol.typeMap_(AbstractCollections.from(mTypeNames), aAtomData);
         IMatrix rDirect = Matrices.zeros(tAtomNum, 3);
         XYZ tBuf = new XYZ();
         int tIdx = 0;
-        // 这里还是统一按照 type 进行排序；还需要检测 type 的 symbol 是否是一一对应的
-        IntUnaryOperator tTypeMap = mTypeNames==null ? t->t : IHasSymbol.typeMap_(AbstractCollections.from(mTypeNames), aAtomData);
         int tMaxIdx = 0;
         for (int type = 1; type <= tAtomTypeNum; ++type) {
             tMaxIdx += atomNumber(type);
