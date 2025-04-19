@@ -57,8 +57,15 @@ public class IntList implements ISlice, IDataShell<int[]> {
     @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
-        if (tSize > mData.length) grow_(tSize);
+        if (tSize > mData.length) {
+            grow_(tSize);
+        } else {
+            for (int i = mSize; i<tSize; ++i) mData[i] = 0;
+        }
         mSize = tSize;
+    }
+    public void ensureCapacity(int aMinCapacity) {
+        if (aMinCapacity > mData.length) grow_(aMinCapacity);
     }
     
     public void addAll(IIntVector aVector) {

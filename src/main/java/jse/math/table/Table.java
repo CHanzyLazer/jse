@@ -25,14 +25,14 @@ public class Table extends AbstractTable implements IDataShell<DoubleList> {
             return new Table(aRowNum);
         } else {
             int tSize = aRowNum * aHeads.length;
-            DoubleList tData = new DoubleList(tSize);
+            DoubleList tData = new DoubleList();
             tData.addZeros(tSize);
             return new Table(aRowNum, tData, aHeads);
         }
     }
     public static Table zeros(final int aRowNum, int aColNum) {
         int tSize = aRowNum * aColNum;
-        DoubleList tData = new DoubleList(tSize);
+        DoubleList tData = new DoubleList();
         tData.addZeros(tSize);
         return new Table(aRowNum, aColNum, tData);
     }

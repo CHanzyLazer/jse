@@ -24,8 +24,12 @@ import java.util.function.IntUnaryOperator;
 import static jse.code.OS.JAR_DIR;
 
 /**
- * jse 实现的 nnap 计算器，所有
- * nnap 相关能量和力的计算都在此实现
+ * jse 实现的 nnap，所有 nnap 相关能量和力的计算都在此实现，
+ * 具体定义可以参考：
+ * <a href="https://link.springer.com/article/10.1007/s40843-024-2953-9">
+ * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
+ * <p>
+ * 这里使用 pytorch 来实现神经网络的部分
  * <p>
  * 考虑到 Torch 本身的内存安全性，此类设计时确保不同对象之间线程安全，
  * 而不同线程访问相同的对象线程不安全
