@@ -6,7 +6,6 @@ import jse.clib.NestedIntCPointer;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
 import jse.math.matrix.RowMatrix;
 
 import java.io.BufferedReader;
@@ -97,13 +96,9 @@ public class NEP {
     }
     
     int num_atoms = 0;
-    int[] num_cells = new int[3];
-    double[] ebox = new double[18];
     ParaMB paramb = new ParaMB();
     ANN annmb = new ANN();
     ZBL zbl = new ZBL();
-    IntList NN_radial = new IntList(), NL_radial = new IntList(), NN_angular = new IntList(), NL_angular = new IntList();
-    DoubleList r12 = new DoubleList();
     DoubleList Fp = new DoubleList();
     DoubleList sum_fxyz = new DoubleList();
     DoubleList parameters = new DoubleList();
@@ -424,7 +419,7 @@ public class NEP {
     void compute_for_lammps(int nlocal, int N, IntCPointer ilist, IntCPointer NN, NestedIntCPointer NL,
                             int[] type, int[] type_map, RowMatrix pos,
                             double[] total_potential, double[] total_virial,
-                            double[] potential, RowMatrix force, RowMatrix virial) {
+                            double[] potential, RowMatrix force, RowMatrix virial, RowMatrix virialHalf) {
         if (num_atoms < nlocal) {
             Fp.clear(); Fp.addZeros(nlocal * annmb.dim);
             sum_fxyz.clear(); sum_fxyz.addZeros(nlocal * (paramb.n_max_angular + 1) * NUM_OF_ABC);
@@ -438,16 +433,16 @@ public class NEP {
         find_force_radial_for_lammps(
             paramb, annmb, nlocal, N, ilist, NN, NL, type, type_map, pos, Fp.internalData(),
             gnp_radial.internalData(),
-            force, total_virial, virial
+            force, total_virial, virial, virialHalf
         );
         find_force_angular_for_lammps(
             paramb, annmb, nlocal, N, ilist, NN, NL, type, type_map, pos, Fp.internalData(), sum_fxyz.internalData(),
             gn_angular.internalData(), gnp_angular.internalData(),
-            force, total_virial, virial
+            force, total_virial, virial, virialHalf
         );
         if (zbl.enabled) {
             find_force_ZBL_for_lammps(
-                paramb, zbl, N, ilist, NN, NL, type, type_map, pos, force, total_virial, virial,
+                paramb, zbl, N, ilist, NN, NL, type, type_map, pos, force, total_virial, virial, virialHalf,
                 total_potential, potential
             );
         }
@@ -1957,7 +1952,7 @@ public class NEP {
                                              IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
                                              int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp,
                                              double[] g_gnp_radial,
-                                             RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial) {
+                                             RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half) {
         double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
         double[] fnp12 = DoubleArrayCache.getArray(MAX_NUM_N);
         for (int ii = 0; ii < N; ++ii) {
@@ -2037,6 +2032,14 @@ public class NEP {
                     g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
                     g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
                 }
+                if (g_virial_half != null) {           // only calculate the per-atom virial when required
+                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
+                }
             }
         }
         DoubleArrayCache.returnArray(fn12);
@@ -2047,7 +2050,7 @@ public class NEP {
                                               IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
                                               int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp, double[] g_sum_fxyz,
                                               double[] g_gn_angular, double[] g_gnp_angular,
-                                              RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial) {
+                                              RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half) {
         double[] Fp = DoubleArrayCache.getArray(MAX_DIM_ANGULAR);
         double[] sum_fxyz = DoubleArrayCache.getArray(NUM_OF_ABC * MAX_NUM_N);
         double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
@@ -2133,6 +2136,14 @@ public class NEP {
                     g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
                     g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
                 }
+                if (g_virial_half != null) {           // only calculate the per-atom virial when required
+                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
+                }
             }
         }
         DoubleArrayCache.returnArray(Fp);
@@ -2144,7 +2155,7 @@ public class NEP {
     static void find_force_ZBL_for_lammps(ParaMB paramb, ZBL zbl, int N,
                                           IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
                                           int[] g_type, int[] type_map, RowMatrix g_pos, RowMatrix g_force,
-                                          double[] g_total_virial, RowMatrix g_virial, double[] g_total_potential, double[] g_potential) {
+                                          double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half, double[] g_total_potential, double[] g_potential) {
         for (int ii = 0; ii < N; ++ii) {
             int n1 = g_ilist.getAt(ii);
             int type1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
@@ -2217,6 +2228,14 @@ public class NEP {
                     g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
                     g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
                     g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
+                }
+                if (g_virial_half != null) {           // only calculate the per-atom virial when required
+                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
                 }
                 g_total_potential[0] += f[0] * 0.5; // always calculate this
                 if (g_potential != null) {    // only calculate when required

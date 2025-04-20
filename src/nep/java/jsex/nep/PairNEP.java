@@ -14,10 +14,13 @@ import jse.math.matrix.RowMatrix;
  * {@link LmpPlugin.Pair} 的 NEP 版本，在 lammps
  * in 文件中添加：
  * <pre> {@code
- * pair_style   jse jsex.nnap.PairNEP
+ * pair_style   jse jsex.nep.PairNEP
  * pair_coeff   * * path/to/neppot.txt Cu Zr
  * } </pre>
  * 来使用
+ *
+ * @see NEP
+ * @author Junjie Wang，liqa
  */
 public class PairNEP extends LmpPlugin.Pair {
     protected PairNEP(long aPairPtr) {super(aPairPtr);}
@@ -41,10 +44,12 @@ public class PairNEP extends LmpPlugin.Pair {
         boolean eflag = eflagEither();
         boolean vflag = vflagEither();
         boolean eflagAtom = eflagAtom();
+        boolean vflagAtom = vflagAtom();
         boolean cvflagAtom = cvflagAtom();
         DoubleCPointer engVdwl = engVdwl();
         DoubleCPointer eatom = eatom();
         DoubleCPointer virial = virial();
+        NestedDoubleCPointer vatom = vatom();
         NestedDoubleCPointer cvatom = cvatom();
         
         NestedDoubleCPointer x = atomX();
@@ -68,19 +73,24 @@ public class PairNEP extends LmpPlugin.Pair {
         double[] engBuf = {0.0};
         double[] virialBuf = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         double[] eatomBuf = null;
+        RowMatrix vatomMat = null;
         RowMatrix cvatomMat = null;
         if (eflagAtom) {
             eatomBuf = DoubleArrayCache.getArray(nlocal);
             eatom.parse2dest(eatomBuf);
         }
+        if (vflagAtom) {
+            vatomMat = MatrixCache.getMatRow(nlocal, 6);
+            vatom.parse2dest(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+        }
         if (cvflagAtom) {
-            cvatomMat = MatrixCache.getMatRow(nlocal, 9);
+            cvatomMat = MatrixCache.getMatRow(nlocal+nghost, 9);
             cvatom.parse2dest(cvatomMat.internalData(), cvatomMat.internalDataShift(), cvatomMat.rowNumber(), cvatomMat.columnNumber());
         }
         
         mNEP.compute_for_lammps(
             nlocal, inum, ilist, numneigh, firstneigh, typeBuf, mTypeMap,
-            xMat, engBuf, virialBuf, eatomBuf, fMat, cvatomMat
+            xMat, engBuf, virialBuf, eatomBuf, fMat, cvatomMat, vatomMat
         );
         
         if (eflag) {
@@ -94,6 +104,10 @@ public class PairNEP extends LmpPlugin.Pair {
         if (eflagAtom) {
             eatom.fill(eatomBuf);
             DoubleArrayCache.returnArray(eatomBuf);
+        }
+        if (vflagAtom) {
+            vatom.fill(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+            MatrixCache.returnMat(vatomMat);
         }
         if (cvflagAtom) {
             cvatom.fill(cvatomMat.internalData(), cvatomMat.internalDataShift(), cvatomMat.rowNumber(), cvatomMat.columnNumber());
