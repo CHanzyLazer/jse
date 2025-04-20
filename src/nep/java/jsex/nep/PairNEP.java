@@ -112,9 +112,7 @@ public class PairNEP extends LmpPlugin.Pair {
             tElements[type] = aArgs[2+type];
             mTypeMap[type] = type;
         }
-        // read the potential file
-        mNEP.init_from_file(aArgs[2], commMe()==0);
-        // update the type map to elements in potential file
+        mNEP.init_from_file(aArgs[2]);
         mNEP.update_type_map(tTypeNum, mTypeMap, tElements);
         
         // get cutoff from NEP model
