@@ -862,11 +862,95 @@ public class NEP {
         f12[2] += tmp1 * r12[2];
     }
     
-    static void calculate_s_one(int L, int n, int n_max_angular_plus_1, 
-                                double[] Fp, double[] sum_fxyz, double[] s) {
-        int L_minus_1 = L - 1;
-        int L_twice_plus_1 = 2 * L + 1;
-        int L_square_minus_1 = L * L - 1;
+    static void calculate_s_one_1(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 1 - 1;
+        final int L_twice_plus_1 = 2 * 1 + 1;
+        final int L_square_minus_1 = 1 * 1 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_2(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 2 - 1;
+        final int L_twice_plus_1 = 2 * 2 + 1;
+        final int L_square_minus_1 = 2 * 2 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_3(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 3 - 1;
+        final int L_twice_plus_1 = 2 * 3 + 1;
+        final int L_square_minus_1 = 3 * 3 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_4(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 4 - 1;
+        final int L_twice_plus_1 = 2 * 4 + 1;
+        final int L_square_minus_1 = 4 * 4 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_5(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 5 - 1;
+        final int L_twice_plus_1 = 2 * 5 + 1;
+        final int L_square_minus_1 = 5 * 5 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_6(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 6 - 1;
+        final int L_twice_plus_1 = 2 * 6 + 1;
+        final int L_square_minus_1 = 6 * 6 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_7(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 7 - 1;
+        final int L_twice_plus_1 = 2 * 7 + 1;
+        final int L_square_minus_1 = 7 * 7 - 1;
+        double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
+        s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
+        Fp_factor *= 2.0;
+        for (int k = 1; k < L_twice_plus_1; ++k) {
+            s[k] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1 + k] * C3B[L_square_minus_1 + k] * Fp_factor;
+        }
+    }
+    static void calculate_s_one_8(int n, int n_max_angular_plus_1,
+                                  double[] Fp, double[] sum_fxyz, double[] s) {
+        final int L_minus_1 = 8 - 1;
+        final int L_twice_plus_1 = 2 * 8 + 1;
+        final int L_square_minus_1 = 8 * 8 - 1;
         double Fp_factor = 2.0 * Fp[L_minus_1 * n_max_angular_plus_1 + n];
         s[0] = sum_fxyz[n * NUM_OF_ABC + L_square_minus_1] * C3B[L_square_minus_1] * Fp_factor;
         Fp_factor *= 2.0;
@@ -875,17 +959,15 @@ public class NEP {
         }
     }
     
-    static void accumulate_f12_one(int L, double d12inv, double fn, double fnp, 
-                                   double[] s, double[] r12, double[] f12) {
+    static void accumulate_f12_one_1(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
         double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
         double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
         double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
         
-        double[] z_pow = DoubleArrayCache.getArray(L+1);
-        z_pow[0] = 1.0;
-        for (int n = 1; n <= L; ++n) {
-            z_pow[n] = r12[2] * z_pow[n-1];
-        }
+        final int L = 1;
+        double[] z_pow = {1.0, 0.0};
+        z_pow[1] = r12[2] * z_pow[0];
         
         double[] real_part = {1.0};
         double[] imag_part = {0.0};
@@ -894,53 +976,10 @@ public class NEP {
             double z_factor = 0.0;
             double dz_factor = 0.0;
             for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
-                if (L == 1) {
-                    z_factor += Z_COEFFICIENT_1[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_1[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 2) {
-                    z_factor += Z_COEFFICIENT_2[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_2[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 3) {
-                    z_factor += Z_COEFFICIENT_3[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_3[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 4) {
-                    z_factor += Z_COEFFICIENT_4[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_4[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 5) {
-                    z_factor += Z_COEFFICIENT_5[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_5[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 6) {
-                    z_factor += Z_COEFFICIENT_6[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_6[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 7) {
-                    z_factor += Z_COEFFICIENT_7[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_7[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
-                }
-                if (L == 8) {
-                    z_factor += Z_COEFFICIENT_8[n1][n2] * z_pow[n2];
-                    if (n2 > 0) {
-                        dz_factor += Z_COEFFICIENT_8[n1][n2] * n2 * z_pow[n2 - 1];
-                    }
+                // L == 1
+                z_factor += Z_COEFFICIENT_1[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_1[n1][n2] * n2 * z_pow[n2 - 1];
                 }
             }
             if (n1 == 0) {
@@ -963,7 +1002,328 @@ public class NEP {
                 }
             }
         }
-        DoubleArrayCache.returnArray(z_pow);
+    }
+    static void accumulate_f12_one_2(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 2;
+        double[] z_pow = {1.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 2
+                z_factor += Z_COEFFICIENT_2[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_2[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_3(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 3;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 3
+                z_factor += Z_COEFFICIENT_3[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_3[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_4(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 4;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 4
+                z_factor += Z_COEFFICIENT_4[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_4[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_5(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 5;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 5
+                z_factor += Z_COEFFICIENT_5[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_5[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_6(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 6;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 6
+                z_factor += Z_COEFFICIENT_6[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_6[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_7(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 7;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 7
+                z_factor += Z_COEFFICIENT_7[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_7[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
+    }
+    static void accumulate_f12_one_8(double d12inv, double fn, double fnp,
+                                     double[] s, double[] r12, double[] f12) {
+        double[] dx = {(1.0 - r12[0] * r12[0]) * d12inv, -r12[0] * r12[1] * d12inv, -r12[0] * r12[2] * d12inv};
+        double[] dy = {-r12[0] * r12[1] * d12inv, (1.0 - r12[1] * r12[1]) * d12inv, -r12[1] * r12[2] * d12inv};
+        double[] dz = {-r12[0] * r12[2] * d12inv, -r12[1] * r12[2] * d12inv, (1.0 - r12[2] * r12[2]) * d12inv};
+        
+        final int L = 8;
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = r12[2] * z_pow[n-1];
+        }
+        
+        double[] real_part = {1.0};
+        double[] imag_part = {0.0};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            double dz_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 8
+                z_factor += Z_COEFFICIENT_8[n1][n2] * z_pow[n2];
+                if (n2 > 0) {
+                    dz_factor += Z_COEFFICIENT_8[n1][n2] * n2 * z_pow[n2 - 1];
+                }
+            }
+            if (n1 == 0) {
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += s[0] * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            } else {
+                double real_part_n1 = n1 * real_part[0];
+                double imag_part_n1 = n1 * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    double[] real_part_dx = {dx[d]};
+                    double[] imag_part_dy = {dy[d]};
+                    complex_product(real_part_n1, imag_part_n1, real_part_dx, imag_part_dy);
+                    f12[d] += (s[2 * n1 - 1] * real_part_dx[0] + s[2 * n1 - 0] * imag_part_dy[0]) * z_factor * fn;
+                }
+                complex_product(r12[0], r12[1], real_part, imag_part);
+                double xy_temp = s[2 * n1 - 1] * real_part[0] + s[2 * n1 - 0] * imag_part[0];
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += xy_temp * (z_factor * fnp * r12[d] + fn * dz_factor * dz[d]);
+                }
+            }
+        }
     }
     
     static void accumulate_f12(int L_max, int num_L, int n, int n_max_angular_plus_1, 
@@ -983,8 +1343,8 @@ public class NEP {
         
         if (L_max >= 1) {
             double[] s1 = {0.0, 0.0, 0.0};
-            calculate_s_one(1, n, n_max_angular_plus_1, Fp, sum_fxyz, s1);
-            accumulate_f12_one(1, d12inv, fn_original, fnp_original, s1, r12unit, f12);
+            calculate_s_one_1(n, n_max_angular_plus_1, Fp, sum_fxyz, s1);
+            accumulate_f12_one_1(d12inv, fn_original, fnp_original, s1, r12unit, f12);
         }
         
         fnp = fnp * d12inv - fn * d12inv * d12inv;
@@ -996,52 +1356,52 @@ public class NEP {
         
         if (L_max >= 2) {
             double[] s2 = {0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(2, n, n_max_angular_plus_1, Fp, sum_fxyz, s2);
-            accumulate_f12_one(2, d12inv, fn_original, fnp_original, s2, r12unit, f12);
+            calculate_s_one_2(n, n_max_angular_plus_1, Fp, sum_fxyz, s2);
+            accumulate_f12_one_2(d12inv, fn_original, fnp_original, s2, r12unit, f12);
         }
         
         if (L_max >= 3) {
             double[] s3 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(3, n, n_max_angular_plus_1, Fp, sum_fxyz, s3);
-            accumulate_f12_one(3, d12inv, fn_original, fnp_original, s3, r12unit, f12);
+            calculate_s_one_3(n, n_max_angular_plus_1, Fp, sum_fxyz, s3);
+            accumulate_f12_one_3(d12inv, fn_original, fnp_original, s3, r12unit, f12);
         }
         
         if (L_max >= 4) {
             double[] s4 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(4, n, n_max_angular_plus_1, Fp, sum_fxyz, s4);
-            accumulate_f12_one(4, d12inv, fn_original, fnp_original, s4, r12unit, f12);
+            calculate_s_one_4(n, n_max_angular_plus_1, Fp, sum_fxyz, s4);
+            accumulate_f12_one_4(d12inv, fn_original, fnp_original, s4, r12unit, f12);
         }
         
         if (L_max >= 5) {
             double[] s5 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(5, n, n_max_angular_plus_1, Fp, sum_fxyz, s5);
-            accumulate_f12_one(5, d12inv, fn_original, fnp_original, s5, r12unit, f12);
+            calculate_s_one_5(n, n_max_angular_plus_1, Fp, sum_fxyz, s5);
+            accumulate_f12_one_5(d12inv, fn_original, fnp_original, s5, r12unit, f12);
         }
         
         if (L_max >= 6) {
             double[] s6 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(6, n, n_max_angular_plus_1, Fp, sum_fxyz, s6);
-            accumulate_f12_one(6, d12inv, fn_original, fnp_original, s6, r12unit, f12);
+            calculate_s_one_6(n, n_max_angular_plus_1, Fp, sum_fxyz, s6);
+            accumulate_f12_one_6(d12inv, fn_original, fnp_original, s6, r12unit, f12);
         }
         
         if (L_max >= 7) {
             double[] s7 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(7, n, n_max_angular_plus_1, Fp, sum_fxyz, s7);
-            accumulate_f12_one(7, d12inv, fn_original, fnp_original, s7, r12unit, f12);
+            calculate_s_one_7(n, n_max_angular_plus_1, Fp, sum_fxyz, s7);
+            accumulate_f12_one_7(d12inv, fn_original, fnp_original, s7, r12unit, f12);
         }
         
         if (L_max >= 8) {
             double[] s8 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            calculate_s_one(8, n, n_max_angular_plus_1, Fp, sum_fxyz, s8);
-            accumulate_f12_one(8, d12inv, fn_original, fnp_original, s8, r12unit, f12);
+            calculate_s_one_8(n, n_max_angular_plus_1, Fp, sum_fxyz, s8);
+            accumulate_f12_one_8(d12inv, fn_original, fnp_original, s8, r12unit, f12);
         }
     }
     
-    static void accumulate_s_one(int L, double x12, double y12, double z12, double fn, double[] s) {
+    static void accumulate_s_one_1(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 1;
         int s_index = L * L - 1;
         
-        double[] z_pow = DoubleArrayCache.getArray(L+1);
-        z_pow[0] = 1.0;
+        double[] z_pow = {1.0, 0.0};
         for (int n = 1; n <= L; ++n) {
             z_pow[n] = z12 * z_pow[n-1];
         }
@@ -1051,30 +1411,8 @@ public class NEP {
             int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
             double z_factor = 0.0;
             for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
-                if (L == 1) {
-                    z_factor += Z_COEFFICIENT_1[n1][n2] * z_pow[n2];
-                }
-                if (L == 2) {
-                    z_factor += Z_COEFFICIENT_2[n1][n2] * z_pow[n2];
-                }
-                if (L == 3) {
-                    z_factor += Z_COEFFICIENT_3[n1][n2] * z_pow[n2];
-                }
-                if (L == 4) {
-                    z_factor += Z_COEFFICIENT_4[n1][n2] * z_pow[n2];
-                }
-                if (L == 5) {
-                    z_factor += Z_COEFFICIENT_5[n1][n2] * z_pow[n2];
-                }
-                if (L == 6) {
-                    z_factor += Z_COEFFICIENT_6[n1][n2] * z_pow[n2];
-                }
-                if (L == 7) {
-                    z_factor += Z_COEFFICIENT_7[n1][n2] * z_pow[n2];
-                }
-                if (L == 8) {
-                    z_factor += Z_COEFFICIENT_8[n1][n2] * z_pow[n2];
-                }
+                // L == 1
+                z_factor += Z_COEFFICIENT_1[n1][n2] * z_pow[n2];
             }
             z_factor *= fn;
             if (n1 == 0) {
@@ -1085,7 +1423,195 @@ public class NEP {
                 complex_product(x12, y12, real_part, imag_part);
             }
         }
-        DoubleArrayCache.returnArray(z_pow);
+    }
+    static void accumulate_s_one_2(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 2;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 2
+                z_factor += Z_COEFFICIENT_2[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_3(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 3;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 3
+                z_factor += Z_COEFFICIENT_3[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_4(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 4;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 4
+                z_factor += Z_COEFFICIENT_4[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_5(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 5;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 5
+                z_factor += Z_COEFFICIENT_5[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_6(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 6;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 6
+                z_factor += Z_COEFFICIENT_6[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_7(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 7;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 7
+                z_factor += Z_COEFFICIENT_7[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
+    }
+    static void accumulate_s_one_8(double x12, double y12, double z12, double fn, double[] s) {
+        final int L = 8;
+        int s_index = L * L - 1;
+        
+        double[] z_pow = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        for (int n = 1; n <= L; ++n) {
+            z_pow[n] = z12 * z_pow[n-1];
+        }
+        double[] real_part = {x12};
+        double[] imag_part = {y12};
+        for (int n1 = 0; n1 <= L; ++n1) {
+            int n2_start = (L + n1) % 2 == 0 ? 0 : 1;
+            double z_factor = 0.0;
+            for (int n2 = n2_start; n2 <= L - n1; n2 += 2) {
+                // L == 8
+                z_factor += Z_COEFFICIENT_8[n1][n2] * z_pow[n2];
+            }
+            z_factor *= fn;
+            if (n1 == 0) {
+                s[s_index++] += z_factor;
+            } else {
+                s[s_index++] += z_factor * real_part[0];
+                s[s_index++] += z_factor * imag_part[0];
+                complex_product(x12, y12, real_part, imag_part);
+            }
+        }
     }
     
     static void accumulate_s(int L_max, double d12, double x12, double y12, double z12, double fn, double[] s) {
@@ -1094,34 +1620,111 @@ public class NEP {
         y12 *= d12inv;
         z12 *= d12inv;
         if (L_max >= 1) {
-            accumulate_s_one(1, x12, y12, z12, fn, s);
+            accumulate_s_one_1(x12, y12, z12, fn, s);
         }
         if (L_max >= 2) {
-            accumulate_s_one(2, x12, y12, z12, fn, s);
+            accumulate_s_one_2(x12, y12, z12, fn, s);
         }
         if (L_max >= 3) {
-            accumulate_s_one(3, x12, y12, z12, fn, s);
+            accumulate_s_one_3(x12, y12, z12, fn, s);
         }
         if (L_max >= 4) {
-            accumulate_s_one(4, x12, y12, z12, fn, s);
+            accumulate_s_one_4(x12, y12, z12, fn, s);
         }
         if (L_max >= 5) {
-            accumulate_s_one(5, x12, y12, z12, fn, s);
+            accumulate_s_one_5(x12, y12, z12, fn, s);
         }
         if (L_max >= 6) {
-            accumulate_s_one(6, x12, y12, z12, fn, s);
+            accumulate_s_one_6(x12, y12, z12, fn, s);
         }
         if (L_max >= 7) {
-            accumulate_s_one(7, x12, y12, z12, fn, s);
+            accumulate_s_one_7(x12, y12, z12, fn, s);
         }
         if (L_max >= 8) {
-            accumulate_s_one(8, x12, y12, z12, fn, s);
+            accumulate_s_one_8(x12, y12, z12, fn, s);
         }
     }
     
-    static double find_q_one(int L, double[] s) {
-        int start_index = L * L - 1;
-        int num_terms = 2 * L + 1;
+    static double find_q_one_1(double[] s) {
+        final int start_index = 1 * 1 - 1;
+        final int num_terms = 2 * 1 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_2(double[] s) {
+        int start_index = 2 * 2 - 1;
+        int num_terms = 2 * 2 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_3(double[] s) {
+        int start_index = 3 * 3 - 1;
+        int num_terms = 2 * 3 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_4(double[] s) {
+        int start_index = 4 * 4 - 1;
+        int num_terms = 2 * 4 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_5(double[] s) {
+        int start_index = 5 * 5 - 1;
+        int num_terms = 2 * 5 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_6(double[] s) {
+        int start_index = 6 * 6 - 1;
+        int num_terms = 2 * 6 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_7(double[] s) {
+        int start_index = 7 * 7 - 1;
+        int num_terms = 2 * 7 + 1;
+        double q = 0.0;
+        for (int k = 1; k < num_terms; ++k) {
+            q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
+        }
+        q *= 2.0;
+        q += C3B[start_index] * s[start_index] * s[start_index];
+        return q;
+    }
+    static double find_q_one_8(double[] s) {
+        int start_index = 8 * 8 - 1;
+        int num_terms = 2 * 8 + 1;
         double q = 0.0;
         for (int k = 1; k < num_terms; ++k) {
             q += C3B[start_index + k] * s[start_index + k] * s[start_index + k];
@@ -1134,28 +1737,28 @@ public class NEP {
     static void find_q(int L_max, int num_L, int n_max_angular_plus_1, int n, 
                        double[] s, double[] q, int shift) {
         if (L_max >= 1) {
-            q[shift + 0 * n_max_angular_plus_1 + n] = find_q_one(1, s);
+            q[shift + 0 * n_max_angular_plus_1 + n] = find_q_one_1(s);
         }
         if (L_max >= 2) {
-            q[shift + 1 * n_max_angular_plus_1 + n] = find_q_one(2, s);
+            q[shift + 1 * n_max_angular_plus_1 + n] = find_q_one_2(s);
         }
         if (L_max >= 3) {
-            q[shift + 2 * n_max_angular_plus_1 + n] = find_q_one(3, s);
+            q[shift + 2 * n_max_angular_plus_1 + n] = find_q_one_3(s);
         }
         if (L_max >= 4) {
-            q[shift + 3 * n_max_angular_plus_1 + n] = find_q_one(4, s);
+            q[shift + 3 * n_max_angular_plus_1 + n] = find_q_one_4(s);
         }
         if (L_max >= 5) {
-            q[shift + 4 * n_max_angular_plus_1 + n] = find_q_one(5, s);
+            q[shift + 4 * n_max_angular_plus_1 + n] = find_q_one_5(s);
         }
         if (L_max >= 6) {
-            q[shift + 5 * n_max_angular_plus_1 + n] = find_q_one(6, s);
+            q[shift + 5 * n_max_angular_plus_1 + n] = find_q_one_6(s);
         }
         if (L_max >= 7) {
-            q[shift + 6 * n_max_angular_plus_1 + n] = find_q_one(7, s);
+            q[shift + 6 * n_max_angular_plus_1 + n] = find_q_one_7(s);
         }
         if (L_max >= 8) {
-            q[shift + 7 * n_max_angular_plus_1 + n] = find_q_one(8, s);
+            q[shift + 7 * n_max_angular_plus_1 + n] = find_q_one_8(s);
         }
         if (num_L >= L_max + 1) {
             q[shift + L_max * n_max_angular_plus_1 + n] =
