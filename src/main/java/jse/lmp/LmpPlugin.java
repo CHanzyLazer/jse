@@ -182,7 +182,9 @@ public class LmpPlugin {
          * } </pre>
          * @param aArgs {@code pair_style} 传入的参数，第一个参数永远是 pair 的类名
          */
-        public void settings(String... aArgs) throws Exception {/**/}
+        public void settings(String... aArgs) throws Exception {
+            if (aArgs.length > 1) throw new IllegalArgumentException("Illegal pair_style jse command");
+        }
         
         /**
          * lammps pair 初始化调用，主要用于在这里设置需要的近邻列表样式

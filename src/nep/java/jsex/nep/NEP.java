@@ -1,9 +1,12 @@
 package jsex.nep;
 
+import jse.clib.IntCPointer;
+import jse.clib.NestedIntCPointer;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
+import jse.math.matrix.RowMatrix;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -473,10 +476,10 @@ public class NEP {
         }
     }
     
-    void compute_for_lammps(int nlocal, int N, int[] ilist, int[] NN, int[][] NL,
-                            int[] type, int[] type_map, double[][] pos,
+    void compute_for_lammps(int nlocal, int N, IntCPointer ilist, IntCPointer NN, NestedIntCPointer NL,
+                            int[] type, int[] type_map, RowMatrix pos,
                             double[] total_potential, double[] total_virial,
-                            double[] potential, double[][] force, double[][] virial) {
+                            double[] potential, RowMatrix force, RowMatrix virial) {
         if (num_atoms < nlocal) {
             Fp.clear(); Fp.addZeros(nlocal * annmb.dim);
             sum_fxyz.clear(); sum_fxyz.addZeros(nlocal * (paramb.n_max_angular + 1) * NUM_OF_ABC);
@@ -1655,18 +1658,19 @@ public class NEP {
     }
     
     static void find_descriptor_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                           int[] g_ilist, int[] g_NN, int[][] g_NL,
-                                           int[] g_type, int[] type_map, double[][] g_pos,
+                                           IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
+                                           int[] g_type, int[] type_map, RowMatrix g_pos,
                                            double[] g_gn_radial, double[] g_gn_angular,
                                            double[] g_Fp, double[] g_sum_fxyz, double[] g_total_potential, double[] g_potential) {
         for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist[ii];
+            int n1 = g_ilist.getAt(ii);
             int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
             double[] q = new double[MAX_DIM];
             
-            for (int i1 = 0; i1 < g_NN[n1]; ++i1) {
-                int n2 = g_NL[n1][i1];
-                double[] r12 = {g_pos[n2][0] - g_pos[n1][0], g_pos[n2][1] - g_pos[n1][1], g_pos[n2][2] - g_pos[n1][2]};
+            int g_NNn1 = g_NN.getAt(n1);
+            for (int i1 = 0; i1 < g_NNn1; ++i1) {
+                int n2 = g_NL.getAt(n1, i1);
+                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
                 double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
                 if (d12sq >= paramb.rc_radial * paramb.rc_radial) {
                     continue;
@@ -1708,9 +1712,9 @@ public class NEP {
             
             for (int n = 0; n <= paramb.n_max_angular; ++n) {
                 double[] s = new double[NUM_OF_ABC];
-                for (int i1 = 0; i1 < g_NN[n1]; ++i1) {
-                    int n2 = g_NL[n1][i1];
-                    double[] r12 = {g_pos[n2][0] - g_pos[n1][0], g_pos[n2][1] - g_pos[n1][1], g_pos[n2][2] - g_pos[n1][2]};
+                for (int i1 = 0; i1 < g_NNn1; ++i1) {
+                    int n2 = g_NL.getAt(n1, i1);
+                    double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
                     double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
                     if (d12sq >= paramb.rc_angular * paramb.rc_angular) {
                         continue;
@@ -1765,7 +1769,7 @@ public class NEP {
             }
             
             g_total_potential[0] += F[0]; // always calculate this
-            if (g_potential != null) {      // only calculate when required
+            if (g_potential != null) {    // only calculate when required
                 g_potential[n1] += F[0];
             }
             for (int d = 0; d < annmb.dim; ++d) {
@@ -1775,17 +1779,18 @@ public class NEP {
     }
     
     static void find_force_radial_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                             int[] g_ilist, int[] g_NN, int[][] g_NL,
-                                             int[] g_type, int[] type_map, double[][] g_pos, double[] g_Fp,
+                                             IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
+                                             int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp,
                                              double[] g_gnp_radial,
-                                             double[][] g_force, double[] g_total_virial, double[][] g_virial) {
+                                             RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial) {
         for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist[ii];
+            int n1 = g_ilist.getAt(ii);
             int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
-            for (int i1 = 0; i1 < g_NN[n1]; ++i1) {
-                int n2 = g_NL[n1][i1];
+            int g_NNn1 = g_NN.getAt(n1);
+            for (int i1 = 0; i1 < g_NNn1; ++i1) {
+                int n2 = g_NL.getAt(n1, i1);
                 int t2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                double[] r12 = {g_pos[n2][0] - g_pos[n1][0], g_pos[n2][1] - g_pos[n1][1], g_pos[n2][2] - g_pos[n1][2]};
+                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
                 double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
                 if (d12sq >= paramb.rc_radial * paramb.rc_radial) {
                     continue;
@@ -1832,12 +1837,12 @@ public class NEP {
                         }
                     }
                 }
-                g_force[n1][0] += f12[0];
-                g_force[n1][1] += f12[1];
-                g_force[n1][2] += f12[2];
-                g_force[n2][0] -= f12[0];
-                g_force[n2][1] -= f12[1];
-                g_force[n2][2] -= f12[2];
+                g_force.update(n1, 0, v -> v + f12[0]);
+                g_force.update(n1, 1, v -> v + f12[1]);
+                g_force.update(n1, 2, v -> v + f12[2]);
+                g_force.update(n2, 0, v -> v - f12[0]);
+                g_force.update(n2, 1, v -> v - f12[1]);
+                g_force.update(n2, 2, v -> v - f12[2]);
                 
                 // always calculate the total virial:
                 g_total_virial[0] -= r12[0] * f12[0]; // xx
@@ -1847,27 +1852,27 @@ public class NEP {
                 g_total_virial[4] -= r12[0] * f12[2]; // xz
                 g_total_virial[5] -= r12[1] * f12[2]; // yz
                 if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial[n2][0] -= r12[0] * f12[0]; // xx
-                    g_virial[n2][1] -= r12[1] * f12[1]; // yy
-                    g_virial[n2][2] -= r12[2] * f12[2]; // zz
-                    g_virial[n2][3] -= r12[0] * f12[1]; // xy
-                    g_virial[n2][4] -= r12[0] * f12[2]; // xz
-                    g_virial[n2][5] -= r12[1] * f12[2]; // yz
-                    g_virial[n2][6] -= r12[1] * f12[0]; // yx
-                    g_virial[n2][7] -= r12[2] * f12[0]; // zx
-                    g_virial[n2][8] -= r12[2] * f12[1]; // zy
+                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
+                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
+                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
+                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
                 }
             }
         }
     }
     
     static void find_force_angular_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                              int[] g_ilist, int[] g_NN, int[][] g_NL,
-                                              int[] g_type, int[] type_map, double[][] g_pos, double[] g_Fp, double[] g_sum_fxyz,
+                                              IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
+                                              int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp, double[] g_sum_fxyz,
                                               double[] g_gn_angular, double[] g_gnp_angular,
-                                              double[][] g_force, double[] g_total_virial, double[][] g_virial) {
+                                              RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial) {
         for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist[ii];
+            int n1 = g_ilist.getAt(ii);
             double[] Fp = new double[MAX_DIM_ANGULAR];
             double[] sum_fxyz = new double[NUM_OF_ABC * MAX_NUM_N];
             for (int d = 0; d < paramb.dim_angular; ++d) {
@@ -1879,9 +1884,10 @@ public class NEP {
             
             int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
             
-            for (int i1 = 0; i1 < g_NN[n1]; ++i1) {
-                int n2 = g_NL[n1][i1];
-                double[] r12 = {g_pos[n2][0] - g_pos[n1][0], g_pos[n2][1] - g_pos[n1][1], g_pos[n2][2] - g_pos[n1][2]};
+            int g_NNn1 = g_NN.getAt(n1);
+            for (int i1 = 0; i1 < g_NNn1; ++i1) {
+                int n2 = g_NL.getAt(n1, i1);
+                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
                 double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
                 if (d12sq >= paramb.rc_angular * paramb.rc_angular) {
                     continue;
@@ -1926,12 +1932,12 @@ public class NEP {
                         accumulate_f12(paramb.L_max, paramb.num_L, n, paramb.n_max_angular + 1, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
                     }
                 }
-                g_force[n1][0] += f12[0];
-                g_force[n1][1] += f12[1];
-                g_force[n1][2] += f12[2];
-                g_force[n2][0] -= f12[0];
-                g_force[n2][1] -= f12[1];
-                g_force[n2][2] -= f12[2];
+                g_force.update(n1, 0, v -> v + f12[0]);
+                g_force.update(n1, 1, v -> v + f12[1]);
+                g_force.update(n1, 2, v -> v + f12[2]);
+                g_force.update(n2, 0, v -> v - f12[0]);
+                g_force.update(n2, 1, v -> v - f12[1]);
+                g_force.update(n2, 2, v -> v - f12[2]);
                 // always calculate the total virial:
                 g_total_virial[0] -= r12[0] * f12[0]; // xx
                 g_total_virial[1] -= r12[1] * f12[1]; // yy
@@ -1940,32 +1946,33 @@ public class NEP {
                 g_total_virial[4] -= r12[0] * f12[2]; // xz
                 g_total_virial[5] -= r12[1] * f12[2]; // yz
                 if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial[n2][0] -= r12[0] * f12[0]; // xx
-                    g_virial[n2][1] -= r12[1] * f12[1]; // yy
-                    g_virial[n2][2] -= r12[2] * f12[2]; // zz
-                    g_virial[n2][3] -= r12[0] * f12[1]; // xy
-                    g_virial[n2][4] -= r12[0] * f12[2]; // xz
-                    g_virial[n2][5] -= r12[1] * f12[2]; // yz
-                    g_virial[n2][6] -= r12[1] * f12[0]; // yx
-                    g_virial[n2][7] -= r12[2] * f12[0]; // zx
-                    g_virial[n2][8] -= r12[2] * f12[1]; // zy
+                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
+                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
+                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
+                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
                 }
             }
         }
     }
     
     static void find_force_ZBL_for_lammps(ParaMB paramb, ZBL zbl, int N,
-                                          int[] g_ilist, int[] g_NN, int[][] g_NL,
-                                          int[] g_type, int[] type_map, double[][] g_pos, double[][] g_force,
-                                          double[] g_total_virial, double[][] g_virial, double[] g_total_potential, double[] g_potential) {
+                                          IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
+                                          int[] g_type, int[] type_map, RowMatrix g_pos, RowMatrix g_force,
+                                          double[] g_total_virial, RowMatrix g_virial, double[] g_total_potential, double[] g_potential) {
         for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist[ii];
+            int n1 = g_ilist.getAt(ii);
             int type1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
             int zi = paramb.atomic_numbers[type1] + 1;
             double pow_zi = pow(zi, 0.23);
-            for (int i1 = 0; i1 < g_NN[n1]; ++i1) {
-                int n2 = g_NL[n1][i1];
-                double[] r12 = {g_pos[n2][0] - g_pos[n1][0], g_pos[n2][1] - g_pos[n1][1], g_pos[n2][2] - g_pos[n1][2]};
+            int g_NNn1 = g_NN.getAt(n1);
+            for (int i1 = 0; i1 < g_NNn1; ++i1) {
+                int n2 = g_NL.getAt(n1, i1);
+                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
                 double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
                 double max_rc_outer = 2.5;
                 if (d12sq >= max_rc_outer * max_rc_outer) {
@@ -2006,12 +2013,12 @@ public class NEP {
                 }
                 double f2 = fp[0] * d12inv * 0.5;
                 double[] f12 = {r12[0] * f2, r12[1] * f2, r12[2] * f2};
-                g_force[n1][0] += f12[0]; // accumulation here
-                g_force[n1][1] += f12[1];
-                g_force[n1][2] += f12[2];
-                g_force[n2][0] -= f12[0];
-                g_force[n2][1] -= f12[1];
-                g_force[n2][2] -= f12[2];
+                g_force.update(n1, 0, v -> v + f12[0]); // accumulation here
+                g_force.update(n1, 1, v -> v + f12[1]);
+                g_force.update(n1, 2, v -> v + f12[2]);
+                g_force.update(n2, 0, v -> v - f12[0]);
+                g_force.update(n2, 1, v -> v - f12[1]);
+                g_force.update(n2, 2, v -> v - f12[2]);
                 // always calculate the total virial:
                 g_total_virial[0] -= r12[0] * f12[0]; // xx
                 g_total_virial[1] -= r12[1] * f12[1]; // yy
@@ -2020,15 +2027,15 @@ public class NEP {
                 g_total_virial[4] -= r12[0] * f12[2]; // xz
                 g_total_virial[5] -= r12[1] * f12[2]; // yz
                 if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial[n2][0] -= r12[0] * f12[0]; // xx
-                    g_virial[n2][1] -= r12[1] * f12[1]; // yy
-                    g_virial[n2][2] -= r12[2] * f12[2]; // zz
-                    g_virial[n2][3] -= r12[0] * f12[1]; // xy
-                    g_virial[n2][4] -= r12[0] * f12[2]; // xz
-                    g_virial[n2][5] -= r12[1] * f12[2]; // yz
-                    g_virial[n2][6] -= r12[1] * f12[0]; // yx
-                    g_virial[n2][7] -= r12[2] * f12[0]; // zx
-                    g_virial[n2][8] -= r12[2] * f12[1]; // zy
+                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
+                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
+                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
+                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
+                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
+                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
+                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
+                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
+                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
                 }
                 g_total_potential[0] += f[0] * 0.5; // always calculate this
                 if (g_potential != null) {    // only calculate when required

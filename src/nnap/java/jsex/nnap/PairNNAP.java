@@ -50,7 +50,10 @@ public class PairNNAP extends LmpPlugin.Pair {
         NNAP.setTorchSingleThread();
     }
     
-    @Override public void settings(String... aArgs) {
+    @Override public void settings(String... aArgs) throws Exception {
+        super.settings(aArgs);
+        // 限制只能调用一次 pair_coeff
+        setOneCoeff(true);
         // 此时需要禁用 VirialFdotrCompute
         noVirialFdotrCompute();
     }
@@ -62,7 +65,6 @@ public class PairNNAP extends LmpPlugin.Pair {
     
     /**
      * 这里为了和 lammps 接口保持一致，并不完全按照 java 中的代码风格编写
-     * @author liqa
      */
     @Override public void compute() throws Exception {
         boolean evflag = evflag();
@@ -193,7 +195,9 @@ public class PairNNAP extends LmpPlugin.Pair {
             String tLmpUnits = unitStyle();
             if (tLmpUnits!=null && !tLmpUnits.equals(tNNAPUnits)) throw new IllegalArgumentException("Invalid units ("+tLmpUnits+") for this model ("+tNNAPUnits+")");
         }
+        int tTypeNum = atomNtypes();
         int tArgLen = aArgs.length-2;
+        if (tArgLen-1 != tTypeNum) throw new IllegalArgumentException("Elements number in pair_coeff not match ntypes ("+tTypeNum+").");
         mLmpType2NNAPType = new int[tArgLen];
         mCutoff = new double[tArgLen];
         mCutsq = new double[tArgLen];
