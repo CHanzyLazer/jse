@@ -53,7 +53,7 @@ public class DoubleList implements IDataShell<double[]> {
         double[] oData = mData;
         int tCapacity = Math.max(aMinCapacity, tLen + (tLen>>1));
         mData = new double[tCapacity];
-        System.arraycopy(oData, 0, mData, 0, tLen);
+        System.arraycopy(oData, 0, mData, 0, mSize);
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */

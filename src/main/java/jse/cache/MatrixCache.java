@@ -62,11 +62,11 @@ public class MatrixCache {
     }
     
     
-    public static @NotNull ColumnMatrix getZeros(int aRowNum, int aColNum) {
-        return getZerosCol(aRowNum, aColNum);
+    public static @NotNull RowMatrix getZeros(int aRowNum, int aColNum) {
+        return getZerosRow(aRowNum, aColNum);
     }
-    public static @NotNull List<ColumnMatrix> getZeros(int aRowNum, int aColNum, int aMultiple) {
-        return getZerosCol(aRowNum, aColNum, aMultiple);
+    public static @NotNull List<RowMatrix> getZeros(int aRowNum, int aColNum, int aMultiple) {
+        return getZerosRow(aRowNum, aColNum, aMultiple);
     }
     public static @NotNull ColumnMatrix getZerosCol(int aRowNum, int aColNum) {
         return new CacheableColumnMatrix(aRowNum, aColNum, DoubleArrayCache.getZeros(aRowNum*aColNum));
@@ -86,11 +86,11 @@ public class MatrixCache {
         DoubleArrayCache.getZerosTo(aRowNum*aColNum, aMultiple, (i, arr) -> rOut.add(new CacheableRowMatrix(aRowNum, aColNum, arr)));
         return rOut;
     }
-    public static @NotNull ColumnMatrix getMat(int aRowNum, int aColNum) {
-        return getMatCol(aRowNum, aColNum);
+    public static @NotNull RowMatrix getMat(int aRowNum, int aColNum) {
+        return getMatRow(aRowNum, aColNum);
     }
-    public static @NotNull List<ColumnMatrix> getMat(int aRowNum, int aColNum, int aMultiple) {
-        return getMatCol(aRowNum, aColNum, aMultiple);
+    public static @NotNull List<RowMatrix> getMat(int aRowNum, int aColNum, int aMultiple) {
+        return getMatRow(aRowNum, aColNum, aMultiple);
     }
     public static @NotNull ColumnMatrix getMatCol(int aRowNum, int aColNum) {
         return new CacheableColumnMatrix(aRowNum, aColNum, DoubleArrayCache.getArray(aRowNum*aColNum));

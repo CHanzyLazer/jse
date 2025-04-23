@@ -62,16 +62,28 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
         double[][] oData = mData;
         int tCapacity = Math.max(aMinCapacity, tLen + (tLen>>1));
         mData = new double[2][tCapacity];
-        System.arraycopy(oData[0], 0, mData[0], 0, tLen);
-        System.arraycopy(oData[1], 0, mData[1], 0, tLen);
+        System.arraycopy(oData[0], 0, mData[0], 0, mSize);
+        System.arraycopy(oData[1], 0, mData[1], 0, mSize);
     }
     
     /** 高性能接口，在末尾直接增加 aLen 个零，这将只进行扩容操作而不会赋值 */
     @ApiStatus.Experimental
     public void addZeros(int aLen) {
         int tSize = mSize+aLen;
-        if (tSize > mData[0].length) grow_(tSize);
+        if (tSize > mData[0].length) {
+            grow_(tSize);
+        } else {
+            final double[] tReal = mData[0];
+            final double[] tImag = mData[1];
+            for (int i = mSize; i<tSize; ++i) {
+                tReal[i] = 0.0;
+                tImag[i] = 0.0;
+            }
+        }
         mSize = tSize;
+    }
+    public void ensureCapacity(int aMinCapacity) {
+        if (aMinCapacity > mData[0].length) grow_(aMinCapacity);
     }
     
     public void addAll(IComplexVector aVector) {
