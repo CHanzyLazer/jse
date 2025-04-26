@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static jse.code.Conf.*;
 import static jse.code.CS.VERSION;
@@ -87,6 +88,8 @@ public class JNIUtil {
     
     
     private final static String BUILD_DIR_NAME = IS_WINDOWS ? "build-win" : (IS_MAC ? "build-mac" : "build");
+    private final static Pattern BUILD_DIR_INVALID_NAME = Pattern.compile("[^a-zA-Z0-9_\\-./\\\\]");
+    
     /** 现在将一些通用的 cmake 编译 jni 库流程统一放在这里，减少重复的代码 */
     @ApiStatus.Internal
     public static class LibBuilder implements Supplier<String> {
@@ -208,8 +211,20 @@ public class JNIUtil {
             System.err.println("No cmake found, you can download cmake from: https://cmake.org/download/");
             throw new Exception(aInfoProjectName+" BUILD ERROR: No cmake environment.");
         }
-        // 从内部资源解压到临时目录
-        String tWorkingDir = WORKING_DIR_OF(aProjectName+"@"+UT.Code.randID());
+        // 从内部资源解压到临时目录，现在编译任务统一放到 jse 安装目录
+        boolean tWorkingDirValid = true;
+        String tWorkingDirName = "build-"+aProjectName+"@"+UT.Code.randID() + "/";
+        String tWorkingDir = JAR_DIR + tWorkingDirName;
+        // 判断路径是否存在非法字符，如果存在则改为到用户目录编译
+        if (BUILD_DIR_INVALID_NAME.matcher(tWorkingDir).find()) {
+            String tWorkingDir2 = USER_HOME_DIR + tWorkingDirName;
+            if (!BUILD_DIR_INVALID_NAME.matcher(tWorkingDir2).find()) {
+                tWorkingDir = tWorkingDir2;
+            } else {
+                System.err.println(aInfoProjectName+" INIT WARNING: Build directory ("+tWorkingDir+") contains inappropriate characters, build may fail.");
+                tWorkingDirValid = false;
+            }
+        }
         // 如果已经存在则先删除
         IO.removeDir(tWorkingDir);
         // 初始化工作目录，默认操作为把源码拷贝到目录下；
@@ -246,12 +261,16 @@ public class JNIUtil {
         // 简单检测一下是否编译成功
         @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
         if (tLibName == null) {
-            System.err.println("Build Failed, this may be caused by the lack of a C/C++ compiler");
-            if (IS_WINDOWS) {
-                System.err.println("  For Windows, you can use MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
+            if (tWorkingDirValid) {
+                System.err.println("Build Failed, this may be caused by the lack of a C/C++ compiler");
+                if (IS_WINDOWS) {
+                    System.err.println("  For Windows, you can use MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
+                } else {
+                    System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
+                    System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
+                }
             } else {
-                System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
-                System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
+                System.err.println("Build Failed, this may be caused by the inappropriate characters in build directory: "+tWorkingDir);
             }
             throw new Exception(aInfoProjectName+" BUILD ERROR: Build Failed, No "+aProjectName+" lib in '"+aLibDir+"'");
         }
