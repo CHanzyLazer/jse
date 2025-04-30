@@ -23,9 +23,4 @@ public interface IThreadPool extends IAutoShutdown {
     
     /** 注意线程池的 try-with-resources 自动关闭还需要等待线程池完全关闭（注意需要忽略 InterruptedException 让后续可能的资源正常释放） */
     @ApiStatus.Internal @Override default void close() {shutdown(); try {awaitTermination();} catch (InterruptedException ignored) {}}
-    
-    
-    /** @deprecated use {@link #jobNumber} or {@link #njobs} */       @Deprecated default int nJobs() {return jobNumber();}
-    /** @deprecated use {@link #threadNumber} or {@link #nthreads} */ @Deprecated default int nThreads() {return threadNumber();}
-    /** @deprecated use {@link #jobNumber} or {@link #njobs} */       @Deprecated default int getTaskNumber() {return jobNumber();}
 }

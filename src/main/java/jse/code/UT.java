@@ -891,9 +891,6 @@ public class UT {
     /** @deprecated use {@link jse.code.IO} */
     @Deprecated public static class IO extends jse.code.IO {}
     
-    /** @deprecated use {@link OS} */
-    @Deprecated public final static class Exec extends OS {}
-    
     /**
      * 实现类似 matlab 中可以直接使用 plot 函数进行绘图
      * <p>

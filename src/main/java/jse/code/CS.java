@@ -746,36 +746,4 @@ public class CS {
     @ApiStatus.Internal public final static Future<List<Integer>> ERR_FUTURES = new CompletedFuture<>(Collections.singletonList(-1));
     @ApiStatus.Internal public final static Future<List<String>> EPT_STR_FUTURE = new CompletedFuture<>(AbstractCollections.zl());
     @ApiStatus.Internal public final static PrintStream NUL_PRINT_STREAM = new PrintStream(new OutputStream() {public void write(int b) {/**/}});
-    
-    
-    /** @deprecated use {@link OS} */
-    @Deprecated public final static class Exec extends OS {
-        public final static boolean IS_WINDOWS = OS.IS_WINDOWS;
-        public final static boolean IS_MAC = OS.IS_MAC;
-        public final static String NO_LOG_LINUX = OS.NO_LOG_LINUX;
-        public final static String NO_LOG_WIN = OS.NO_LOG_WIN;
-        public final static String NO_LOG = OS.NO_LOG;
-        
-        public final static ISystemExecutor EXE = OS.EXEC;
-        public final static String JAR_PATH = OS.JAR_PATH;
-        public final static String JAR_DIR = OS.JAR_DIR;
-        public final static String USER_HOME = OS.USER_HOME;
-        public final static String USER_HOME_DIR = OS.USER_HOME_DIR;
-        public final static String WORKING_DIR = OS.WORKING_DIR;
-    }
-    
-    /** @deprecated use {@link OS.Slurm} */
-    @Deprecated public final static class Slurm extends OS.Slurm {
-        public final static boolean IS_SLURM = OS.Slurm.IS_SLURM;
-        public final static int PROCID = OS.Slurm.PROCID;
-        public final static int NTASKS = OS.Slurm.NTASKS;
-        public final static int CORES_PER_NODE = OS.Slurm.CORES_PER_NODE;
-        public final static int CORES_PER_TASK = OS.Slurm.CORES_PER_TASK;
-        public final static int MAX_STEP_COUNT = OS.Slurm.MAX_STEP_COUNT;
-        public final static int JOB_ID = OS.Slurm.JOB_ID;
-        public final static int NODEID = OS.Slurm.NODEID;
-        public final static String NODENAME = OS.Slurm.NODENAME;
-        public final static List<String> NODE_LIST = OS.Slurm.NODE_LIST;
-        public final static ResourcesManager RESOURCES_MANAGER = OS.Slurm.RESOURCES_MANAGER;
-    }
 }
