@@ -112,5 +112,7 @@ public interface IIntMatrix extends IIntMatrixGetter {
     
     /** 矩阵的运算操作，默认返回新的矩阵 */
     IIntMatrixOperation operation();
-    @VisibleForTesting default IIntMatrixOperation opt() {return operation();}
+    @VisibleForTesting default IIntMatrixOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated default IIntMatrixOperation opt() {return operation();}
 }

@@ -539,7 +539,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         mAtomTypeNum = aAtomTypeNum;
         if (aAtomTypeNum<oTypeNum && mKeyType!=null) {
             // 现在支持设置更小的值，更大的种类会直接截断
-            mAtomData.col(mKeyType).opt().map2this(v -> Math.min(v, aAtomTypeNum));
+            mAtomData.col(mKeyType).op().map2this(v -> Math.min(v, aAtomTypeNum));
             return this;
         }
         return this;

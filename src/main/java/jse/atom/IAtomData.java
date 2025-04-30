@@ -165,7 +165,9 @@ public interface IAtomData extends IHasSymbol {
      */
     IAtomDataOperation operation();
     /** @see #operation() */
-    @VisibleForTesting default IAtomDataOperation opt() {return operation();}
+    @VisibleForTesting default IAtomDataOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated default IAtomDataOperation opt() {return operation();}
     
     
     /// numpy stuffs

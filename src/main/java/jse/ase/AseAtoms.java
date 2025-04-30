@@ -224,7 +224,7 @@ public class AseAtoms extends AbstractSettableAtomData {
             mType2AtomicNumber.set(tType, tAtomicNumber);
         }
         // 更新 mAtomicNumbers，此时需要旧的 mAtomicNumber2Type
-        mAtomicNumbers.opt().map2this(i -> mType2AtomicNumber.get(mAtomicNumber2Type.get(i)));
+        mAtomicNumbers.op().map2this(i -> mType2AtomicNumber.get(mAtomicNumber2Type.get(i)));
         validAtomicNumber2Type_();
         return this;
     }
@@ -241,7 +241,7 @@ public class AseAtoms extends AbstractSettableAtomData {
         if (aAtomTypeNum == oTypeNum) return this;
         if (aAtomTypeNum < oTypeNum) {
             // 现在支持设置更小的值，更大的种类会直接截断
-            mAtomicNumbers.opt().map2this(i -> {
+            mAtomicNumbers.op().map2this(i -> {
                 int tType = mAtomicNumber2Type.get(i);
                 return tType>aAtomTypeNum ? mType2AtomicNumber.get(aAtomTypeNum) : i;
             });

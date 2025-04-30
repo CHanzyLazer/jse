@@ -636,5 +636,7 @@ public abstract class AbstractSettableAtomData extends AbstractAtomData implemen
     };}
     // 需要这里重新实现一下两者共有的接口避免冲突
     /** @see #operation() */
-    @VisibleForTesting @Override public ISettableAtomDataOperation opt() {return operation();}
+    @VisibleForTesting @Override public ISettableAtomDataOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated @SuppressWarnings("deprecation") @Override public ISettableAtomDataOperation opt() {return operation();}
 }

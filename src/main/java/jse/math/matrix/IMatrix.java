@@ -125,7 +125,9 @@ public interface IMatrix extends IMatrixGetter {
     
     /** 矩阵的运算操作，默认返回新的矩阵 */
     IMatrixOperation operation();
-    @VisibleForTesting default IMatrixOperation opt() {return operation();}
+    @VisibleForTesting default IMatrixOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated default IMatrixOperation opt() {return operation();}
     
     /** Groovy 的部分，增加矩阵基本的运算操作，现在也归入内部使用 */
     IMatrix plus     (double aRHS);

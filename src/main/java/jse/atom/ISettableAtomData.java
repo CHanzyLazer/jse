@@ -36,7 +36,7 @@ public interface ISettableAtomData extends IAtomData {
      */
     List<? extends ISettableAtom> atoms();
     /** @deprecated use {@link #atoms()} */
-    @Override @Deprecated @SuppressWarnings("deprecation") default List<? extends ISettableAtom> asList() {return atoms();}
+    @Deprecated @SuppressWarnings("deprecation") default List<? extends ISettableAtom> asList() {return atoms();}
     /**
      * {@inheritDoc}
      * <p>
@@ -61,7 +61,9 @@ public interface ISettableAtomData extends IAtomData {
      */
     ISettableAtomDataOperation operation();
     /** @see #operation() */
-    @VisibleForTesting default ISettableAtomDataOperation opt() {return operation();}
+    @VisibleForTesting default ISettableAtomDataOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated @SuppressWarnings("deprecation") default ISettableAtomDataOperation opt() {return operation();}
     
     /**
      * 直接修改指定索引位置的原子，会读取输入原子的属性然后进行设置

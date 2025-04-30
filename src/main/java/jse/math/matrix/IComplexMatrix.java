@@ -115,7 +115,9 @@ public interface IComplexMatrix extends IComplexMatrixGetter {
     
     /** 矩阵的运算操作，默认返回新的矩阵 */
     IComplexMatrixOperation operation();
-    @VisibleForTesting default IComplexMatrixOperation opt() {return operation();}
+    @VisibleForTesting default IComplexMatrixOperation op() {return operation();}
+    /** @deprecated use {@link #op()} */
+    @VisibleForTesting @Deprecated default IComplexMatrixOperation opt() {return operation();}
     
     /** Groovy 的部分，增加矩阵基本的运算操作，现在也归入内部使用 */
     IComplexMatrix plus     (IComplexDouble aRHS);

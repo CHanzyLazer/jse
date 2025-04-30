@@ -119,7 +119,7 @@ public class Lmpdat extends AbstractSettableAtomData {
         mAtomTypeNum = aAtomTypeNum;
         if (aAtomTypeNum < oTypeNum) {
             // 现在支持设置更小的值，更大的种类会直接截断
-            mAtomType.opt().map2this(v -> Math.min(v, aAtomTypeNum));
+            mAtomType.op().map2this(v -> Math.min(v, aAtomTypeNum));
             return this;
         }
         // 现在理论上不需要更新 Masses 长度
