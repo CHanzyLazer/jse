@@ -75,23 +75,11 @@ public final class VaspBoxPrism extends VaspBox {
             mAB.dot(rCartesian) / mV
         );
         // direct 需要考虑计算误差带来的出边界的问题，现在支持自动靠近所有整数值
-        if (Math.abs(rCartesian.mX) < MathEX.Code.DBL_EPSILON) {
-            rCartesian.mX = 0.0;
-        } else {
-            int tIntX = MathEX.Code.round2int(rCartesian.mX);
-            if (tIntX!=0 && MathEX.Code.numericEqual(rCartesian.mX, tIntX)) rCartesian.mX = tIntX;
-        }
-        if (Math.abs(rCartesian.mY) < MathEX.Code.DBL_EPSILON) {
-            rCartesian.mY = 0.0;
-        } else {
-            int tIntY = MathEX.Code.round2int(rCartesian.mY);
-            if (tIntY!=0 && MathEX.Code.numericEqual(rCartesian.mY, tIntY)) rCartesian.mY = tIntY;
-        }
-        if (Math.abs(rCartesian.mZ) < MathEX.Code.DBL_EPSILON) {
-            rCartesian.mZ = 0.0;
-        } else {
-            int tIntZ = MathEX.Code.round2int(rCartesian.mZ);
-            if (tIntZ!=0 && MathEX.Code.numericEqual(rCartesian.mZ, tIntZ)) rCartesian.mZ = tIntZ;
-        }
+        int tIntX = MathEX.Code.round2int(rCartesian.mX);
+        if (Math.abs(rCartesian.mX-tIntX) < MathEX.Code.DBL_EPSILON) rCartesian.mX = tIntX;
+        int tIntY = MathEX.Code.round2int(rCartesian.mY);
+        if (Math.abs(rCartesian.mY-tIntY) < MathEX.Code.DBL_EPSILON) rCartesian.mY = tIntY;
+        int tIntZ = MathEX.Code.round2int(rCartesian.mZ);
+        if (Math.abs(rCartesian.mZ-tIntZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = tIntZ;
     }
 }

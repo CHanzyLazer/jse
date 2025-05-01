@@ -216,9 +216,8 @@ public class POSCAR extends AbstractSettableAtomData implements IVaspCommonData 
         }
         // direct 现在无论任何情况都会自动靠近所有接近的整数值
         mDirect.operation().map2this(v -> {
-            if (Math.abs(v) < MathEX.Code.DBL_EPSILON) return 0.0;
             int tIntV = MathEX.Code.round2int(v);
-            if (tIntV!=0 && MathEX.Code.numericEqual(v, tIntV)) return tIntV;
+            if (Math.abs(v-tIntV) < MathEX.Code.DBL_EPSILON) return tIntV;
             return v;
         });
         mIsCartesian = false;

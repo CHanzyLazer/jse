@@ -369,9 +369,8 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, IMatrix> imp
                 tDirect.operation().matmul2this(tInvIABC);
                 // direct 需要考虑计算误差带来的出边界的问题，现在支持自动靠近所有整数值
                 tDirect.operation().map2this(v -> {
-                    if (Math.abs(v) < MathEX.Code.DBL_EPSILON) return 0.0;
                     int tIntV = MathEX.Code.round2int(v);
-                    if (tIntV!=0 && MathEX.Code.numericEqual(v, tIntV)) return tIntV;
+                    if (Math.abs(v-tIntV) < MathEX.Code.DBL_EPSILON) return tIntV;
                     return v;
                 });
             }
