@@ -410,7 +410,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     SP.Python.setValue(VAL_I, i);
                     SP.Python.exec(aPyDataSetName+".eng_indices.append(torch.tensor("+VAL_DATA_J+".mEngIndices["+VAL_I+"].asList(), dtype=torch.int64))");
                     // 这里将最大的 Base 数据也用 numpy 的方式转换
-                    NDArray<double[]> tBaseNP = new NDArray<>(mFpMat[i].internalData(), mFpMat[i].rowNumber(), mFpMat[i].columnNumber());
+                    NDArray<double[]> tBaseNP = mFpMat[i].numpy();
                     SP.Python.setValue(VAL_SUB, tBaseNP);
                     SP.Python.exec(aPyDataSetName+".fp.append(torch.from_numpy("+VAL_SUB+(mTrainInFloat?").float())":"))"));
                 }
@@ -965,7 +965,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
                 PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
                 try (PyCallable tFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
-                    tPyFpPartial = tFromNumpy.callAs(PyObject.class, new NDArray<>(tFpPartial.internalData(), tFpPartial.rowNumber(), tFpPartial.columnNumber()));
+                    tPyFpPartial = tFromNumpy.callAs(PyObject.class, tFpPartial.numpy());
                     if (mTrainInFloat) {
                         try (PyObject oPyFpPartial = tPyFpPartial; PyCallable tFloat = oPyFpPartial.getAttr("float", PyCallable.class)) {
                             tPyFpPartial = tFloat.callAs(PyObject.class);
@@ -973,13 +973,13 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     }
                     if (mHasForce) {
                         assert tForceIndices != null;
-                        tPyForceIndices = tFromNumpy.callAs(PyObject.class, new NDArray<>(tForceIndices.internalData(), tForceIndices.size()));
+                        tPyForceIndices = tFromNumpy.callAs(PyObject.class, tForceIndices.numpy());
                     }
                     if (mHasStress) {
                         assert tStressIndices != null;
-                        tPyStressIndices = tFromNumpy.callAs(PyObject.class, new NDArray<>(tStressIndices.internalData(), tStressIndices.rowNumber(), tStressIndices.columnNumber()));
+                        tPyStressIndices = tFromNumpy.callAs(PyObject.class, tStressIndices.numpy());
                         assert tStressDxyz != null;
-                        tPyStressDxyz = tFromNumpy.callAs(PyObject.class, new NDArray<>(tStressDxyz.internalData(), tStressDxyz.rowNumber(), tStressDxyz.columnNumber()));
+                        tPyStressDxyz = tFromNumpy.callAs(PyObject.class, tStressDxyz.numpy());
                         if (mTrainInFloat) {
                             try (PyObject oPyStressDxyz = tPyStressDxyz; PyCallable tFloat = oPyStressDxyz.getAttr("float", PyCallable.class)) {
                                 tPyStressDxyz = tFloat.callAs(PyObject.class);

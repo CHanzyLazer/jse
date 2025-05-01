@@ -2,7 +2,6 @@ package jse.atom;
 
 import com.google.common.collect.Lists;
 import jep.JepException;
-import jep.NDArray;
 import jep.python.PyObject;
 import jse.ase.AseAtoms;
 import jse.cache.MatrixCache;
@@ -96,7 +95,7 @@ public interface IPotential extends IAutoShutdown {
             Vector tEnergies = calEnergies(tAtoms);
             double tEnergy = tEnergies.sum();
             rResults.put("energy", tEnergy);
-            rResults.put("energies", new NDArray<>(tEnergies.internalData(), tEnergies.size()));
+            rResults.put("energies", tEnergies.numpy());
             VectorCache.returnVec(tEnergies);
             return rResults;
         }
@@ -116,12 +115,12 @@ public interface IPotential extends IAutoShutdown {
         double tEnergy = rEnergies.sum();
         rResults.put("energy", tEnergy);
         if (tRequirePreAtomEnergy) {
-        rResults.put("energies", new NDArray<>(rEnergies.internalData(), rEnergies.size()));
+        rResults.put("energies", rEnergies.numpy());
         }
-        rResults.put("forces", new NDArray<>(rForces.internalData(), rForces.rowNumber(), rForces.columnNumber()));
-        rResults.put("stress", new NDArray<>(rStress.internalData(), rStress.size()));
+        rResults.put("forces", rForces.numpy());
+        rResults.put("stress", rStress.numpy());
         if (tRequirePreAtomStress) {
-        rResults.put("stresses", new NDArray<>(rStresses.internalData(), rStresses.rowNumber(), rStresses.columnNumber()));
+        rResults.put("stresses", rStresses.numpy());
         }
         VectorCache.returnVec(rEnergies);
         MatrixCache.returnMat(rForces);
