@@ -12,7 +12,6 @@ import jse.math.vector.Vector;
 import jsex.nnap.basis.IBasis;
 import jsex.nnap.basis.Mirror;
 import jsex.nnap.basis.SphericalChebyshev;
-import jsex.nnap.basis.SphericalChebyshevNative;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.*;
 
@@ -61,12 +60,6 @@ public class NNAP implements IPairPotential {
         public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
-         * 是否采用 native nnap basis 作为默认的基组，一般可以利用
-         * c 的编译得到更快的速度
-         */
-        public static boolean USE_NATIVE_BASIS = OS.envZ("JSE_NNAP_USE_NATIVE_BASIS", false);
-        
-        /**
          * 自定义构建 nnap 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
          */
@@ -101,7 +94,7 @@ public class NNAP implements IPairPotential {
         // 依赖 jniutil
         JNIUtil.InitHelper.init();
         // 依赖 nnapbasis
-        if (Conf.USE_NATIVE_BASIS) SphericalChebyshevNative.InitHelper.init();
+        SphericalChebyshev.InitHelper.init();
         // 这里不直接依赖 LmpPlugin
         
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
@@ -150,7 +143,7 @@ public class NNAP implements IPairPotential {
         if (!tBasisType.equals("spherical_chebyshev")) throw new IllegalArgumentException("Unsupported basis type: " + tBasisType);
         IBasis[] aBasis = new IBasis[mThreadNumber];
         for (int i = 0; i < mThreadNumber; ++i) {
-            aBasis[i] = Conf.USE_NATIVE_BASIS ? SphericalChebyshevNative.load(mSymbols, tBasis) : SphericalChebyshev.load(mSymbols, tBasis);
+            aBasis[i] = SphericalChebyshev.load(mSymbols, tBasis);
         }
         
         Number tRefEng = (Number)aModelInfo.get("ref_eng");

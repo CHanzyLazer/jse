@@ -10,7 +10,7 @@ endif()
 
 
 set(SOURCE_FILES
-    jsex_nnap_basis_SphericalChebyshevNative.c)
+    jsex_nnap_basis_SphericalChebyshev.c)
 add_library(nnapbasis SHARED ${SOURCE_FILES})
 
 option(JSE_USE_CXX "Use CXX compiler" OFF)

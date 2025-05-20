@@ -1,4 +1,4 @@
-#include "jsex_nnap_basis_SphericalChebyshevNative.h"
+#include "jsex_nnap_basis_SphericalChebyshev.h"
 
 #include <math.h>
 
@@ -1456,7 +1456,7 @@ static inline void cnlm2fp(double *aCnlm, double *rFp, jint aSizeN, jint aSizeL,
 }
 
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshevNative_eval1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray rRn, jdoubleArray rY, jdoubleArray rCnlm, jdoubleArray rFingerPrint,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jboolean aL3Cross) {
@@ -1500,7 +1500,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshevNative_eval1(JNIEn
     aEnv->ReleasePrimitiveArrayCritical(aNlType, tNlType, JNI_ABORT);
     aEnv->ReleasePrimitiveArrayCritical(rRn, tRn, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rY, tY, JNI_ABORT); // buffer only
-    aEnv->ReleasePrimitiveArrayCritical(rCnlm, tCnlm, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rCnlm, tCnlm, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rFingerPrint, tFingerPrint, 0);
 #else
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -1509,12 +1509,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshevNative_eval1(JNIEn
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlType, tNlType, JNI_ABORT);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rRn, rRn, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rY, rY, JNI_ABORT); // buffer only
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlm, tCnlm, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlm, tCnlm, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrint, tFingerPrint, 0);
 #endif
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshevNative_evalPartial1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray rNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz,
         jdoubleArray rNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,

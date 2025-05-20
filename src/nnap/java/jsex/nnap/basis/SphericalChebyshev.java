@@ -1,20 +1,23 @@
 package jsex.nnap.basis;
 
-import jse.cache.MatrixCache;
 import jse.cache.VectorCache;
+import jse.clib.JNIUtil;
+import jse.code.CS;
+import jse.code.IO;
+import jse.code.OS;
 import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.MathEX;
-import jse.math.matrix.RowMatrix;
-import jse.math.operation.ARRAY;
-import jse.math.vector.*;
+import jse.math.vector.Vector;
+import jsex.nnap.NNAP;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static jse.math.MathEX.*;
+import static jse.code.OS.JAR_DIR;
 
 /**
  * 一种基于 Chebyshev 多项式和球谐函数将原子局域环境展开成一个基组的方法，
@@ -22,134 +25,169 @@ import static jse.math.MathEX.*;
  * <p>
  * 为了中间变量缓存利用效率，此类相同实例线程不安全，而不同实例之间线程安全
  * <p>
+ * 现在统一通过调用 c 并借助 avx 指令优化来得到最佳的性能
+ * <p>
  * References:
  * <a href="https://link.springer.com/article/10.1007/s40843-024-2953-9">
  * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
  * @author Su Rui, liqa
  */
-@SuppressWarnings("SameParameterValue")
 public class SphericalChebyshev implements IBasis {
-    /** 需要的固定系数存储 */
-    final static Vector SQRT_LPM_LMM1; // sqrt((l+m)(l-m+1))
-    final static Vector SQRT_LPM1_LMM; // sqrt((l+m+1)(l-m))
-    final static double WIGNER_222_000, WIGNER_222_011, WIGNER_222_022, WIGNER_222_112;
-    final static double WIGNER_112_000, WIGNER_112_011, WIGNER_112_110, WIGNER_112_112;
-    final static double WIGNER_233_000, WIGNER_233_011, WIGNER_233_022, WIGNER_233_033, WIGNER_233_110, WIGNER_233_220, WIGNER_233_112, WIGNER_233_211, WIGNER_233_123, WIGNER_233_213;
-    final static double WIGNER_123_000, WIGNER_123_011, WIGNER_123_022, WIGNER_123_110, WIGNER_123_101, WIGNER_123_112, WIGNER_123_121, WIGNER_123_123;
-    final static double WIGNER_444_000, WIGNER_444_011, WIGNER_444_022, WIGNER_444_033, WIGNER_444_044, WIGNER_444_112, WIGNER_444_224, WIGNER_444_123, WIGNER_444_134;
-    final static double WIGNER_224_000, WIGNER_224_011, WIGNER_224_022, WIGNER_224_110, WIGNER_224_220, WIGNER_224_112, WIGNER_224_224, WIGNER_224_121, WIGNER_224_123;
-    final static double WIGNER_334_000, WIGNER_334_011, WIGNER_334_022, WIGNER_334_033, WIGNER_334_110, WIGNER_334_220, WIGNER_334_330, WIGNER_334_112, WIGNER_334_224, WIGNER_334_121, WIGNER_334_123, WIGNER_334_132, WIGNER_334_231, WIGNER_334_134;
-    final static double WIGNER_244_000, WIGNER_244_011, WIGNER_244_022, WIGNER_244_033, WIGNER_244_044, WIGNER_244_110, WIGNER_244_220, WIGNER_244_211, WIGNER_244_112, WIGNER_244_224, WIGNER_244_123, WIGNER_244_213, WIGNER_244_134;
-    final static double WIGNER_134_000, WIGNER_134_011, WIGNER_134_022, WIGNER_134_033, WIGNER_134_110, WIGNER_134_101, WIGNER_134_112, WIGNER_134_121, WIGNER_134_123, WIGNER_134_132, WIGNER_134_134;
-    final static double PI4 = PI*4.0;
-    final static int[] L3NCOLS = {0, 0, 2, 4, 9}, L3NCOLS_NOCROSS = {0, 0, 1, 1, 2};
-    static {
-        final int tSize = (SH_LARGEST_L+1)*(SH_LARGEST_L+1);
-        SQRT_LPM_LMM1 = Vectors.NaN(tSize);
-        SQRT_LPM1_LMM = Vectors.NaN(tSize);
-        int tStart = 0;
-        for (int tL = 0; tL <= SH_LARGEST_L; ++tL) {
-            for (int tM = -tL; tM <= tL; ++tM) {
-                SQRT_LPM_LMM1.set(tStart+tL+tM, MathEX.Fast.sqrt((tL+tM) * (tL-tM+1)));
-                SQRT_LPM1_LMM.set(tStart+tL+tM, MathEX.Fast.sqrt((tL+tM+1) * (tL-tM)));
-            }
-            tStart += tL+tL+1;
+    /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
+    public final static class InitHelper {
+        private static volatile boolean INITIALIZED = false;
+        
+        public static boolean initialized() {return INITIALIZED;}
+        @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf"})
+        public static void init() {
+            // 手动调用此值来强制初始化
+            if (!INITIALIZED) String.valueOf(LIB_PATH);
         }
-        WIGNER_222_000 = MathEX.Func.wigner3j(2, 2, 2, 0, 0, 0);
-        WIGNER_222_011 = MathEX.Func.wigner3j(2, 2, 2, 0, 1,-1);
-        WIGNER_222_022 = MathEX.Func.wigner3j(2, 2, 2, 0, 2,-2);
-        WIGNER_222_112 = MathEX.Func.wigner3j(2, 2, 2, 1, 1,-2);
-        WIGNER_112_000 = MathEX.Func.wigner3j(1, 1, 2, 0, 0, 0);
-        WIGNER_112_011 = MathEX.Func.wigner3j(1, 1, 2, 0, 1,-1);
-        WIGNER_112_110 = MathEX.Func.wigner3j(1, 1, 2, 1,-1, 0);
-        WIGNER_112_112 = MathEX.Func.wigner3j(1, 1, 2, 1, 1,-2);
-        WIGNER_233_000 = MathEX.Func.wigner3j(2, 3, 3, 0, 0, 0);
-        WIGNER_233_011 = MathEX.Func.wigner3j(2, 3, 3, 0, 1,-1);
-        WIGNER_233_022 = MathEX.Func.wigner3j(2, 3, 3, 0, 2,-2);
-        WIGNER_233_033 = MathEX.Func.wigner3j(2, 3, 3, 0, 3,-3);
-        WIGNER_233_110 = MathEX.Func.wigner3j(2, 3, 3, 1,-1, 0);
-        WIGNER_233_220 = MathEX.Func.wigner3j(2, 3, 3, 2,-2, 0);
-        WIGNER_233_112 = MathEX.Func.wigner3j(2, 3, 3, 1, 1,-2);
-        WIGNER_233_211 = MathEX.Func.wigner3j(2, 3, 3,-2, 1, 1);
-        WIGNER_233_123 = MathEX.Func.wigner3j(2, 3, 3, 1, 2,-3);
-        WIGNER_233_213 = MathEX.Func.wigner3j(2, 3, 3, 2, 1,-3);
-        WIGNER_123_000 = MathEX.Func.wigner3j(1, 2, 3, 0, 0, 0);
-        WIGNER_123_011 = MathEX.Func.wigner3j(1, 2, 3, 0, 1,-1);
-        WIGNER_123_022 = MathEX.Func.wigner3j(1, 2, 3, 0, 2,-2);
-        WIGNER_123_110 = MathEX.Func.wigner3j(1, 2, 3, 1,-1, 0);
-        WIGNER_123_101 = MathEX.Func.wigner3j(1, 2, 3, 1, 0,-1);
-        WIGNER_123_112 = MathEX.Func.wigner3j(1, 2, 3, 1, 1,-2);
-        WIGNER_123_121 = MathEX.Func.wigner3j(1, 2, 3, 1,-2, 1);
-        WIGNER_123_123 = MathEX.Func.wigner3j(1, 2, 3, 1, 2,-3);
-        WIGNER_444_000 = MathEX.Func.wigner3j(4, 4, 4, 0, 0, 0);
-        WIGNER_444_011 = MathEX.Func.wigner3j(4, 4, 4, 0, 1,-1);
-        WIGNER_444_022 = MathEX.Func.wigner3j(4, 4, 4, 0, 2,-2);
-        WIGNER_444_033 = MathEX.Func.wigner3j(4, 4, 4, 0, 3,-3);
-        WIGNER_444_044 = MathEX.Func.wigner3j(4, 4, 4, 0, 4,-4);
-        WIGNER_444_112 = MathEX.Func.wigner3j(4, 4, 4, 1, 1,-2);
-        WIGNER_444_224 = MathEX.Func.wigner3j(4, 4, 4, 2, 2,-4);
-        WIGNER_444_123 = MathEX.Func.wigner3j(4, 4, 4, 1, 2,-3);
-        WIGNER_444_134 = MathEX.Func.wigner3j(4, 4, 4, 1, 3,-4);
-        WIGNER_224_000 = MathEX.Func.wigner3j(2, 2, 4, 0, 0, 0);
-        WIGNER_224_011 = MathEX.Func.wigner3j(2, 2, 4, 0, 1,-1);
-        WIGNER_224_022 = MathEX.Func.wigner3j(2, 2, 4, 0, 2,-2);
-        WIGNER_224_110 = MathEX.Func.wigner3j(2, 2, 4, 1,-1, 0);
-        WIGNER_224_220 = MathEX.Func.wigner3j(2, 2, 4, 2,-2, 0);
-        WIGNER_224_112 = MathEX.Func.wigner3j(2, 2, 4, 1, 1,-2);
-        WIGNER_224_224 = MathEX.Func.wigner3j(2, 2, 4, 2, 2,-4);
-        WIGNER_224_121 = MathEX.Func.wigner3j(2, 2, 4, 1,-2, 1);
-        WIGNER_224_123 = MathEX.Func.wigner3j(2, 2, 4, 1, 2,-3);
-        WIGNER_334_000 = MathEX.Func.wigner3j(3, 3, 4, 0, 0, 0);
-        WIGNER_334_011 = MathEX.Func.wigner3j(3, 3, 4, 0, 1,-1);
-        WIGNER_334_022 = MathEX.Func.wigner3j(3, 3, 4, 0, 2,-2);
-        WIGNER_334_033 = MathEX.Func.wigner3j(3, 3, 4, 0, 3,-3);
-        WIGNER_334_110 = MathEX.Func.wigner3j(3, 3, 4, 1,-1, 0);
-        WIGNER_334_220 = MathEX.Func.wigner3j(3, 3, 4, 2,-2, 0);
-        WIGNER_334_330 = MathEX.Func.wigner3j(3, 3, 4, 3,-3, 0);
-        WIGNER_334_112 = MathEX.Func.wigner3j(3, 3, 4, 1, 1,-2);
-        WIGNER_334_224 = MathEX.Func.wigner3j(3, 3, 4, 2, 2,-4);
-        WIGNER_334_121 = MathEX.Func.wigner3j(3, 3, 4, 1,-2, 1);
-        WIGNER_334_123 = MathEX.Func.wigner3j(3, 3, 4, 1, 2,-3);
-        WIGNER_334_132 = MathEX.Func.wigner3j(3, 3, 4, 1,-3, 2);
-        WIGNER_334_231 = MathEX.Func.wigner3j(3, 3, 4, 2,-3, 1);
-        WIGNER_334_134 = MathEX.Func.wigner3j(3, 3, 4, 1, 3,-4);
-        WIGNER_244_000 = MathEX.Func.wigner3j(2, 4, 4, 0, 0, 0);
-        WIGNER_244_011 = MathEX.Func.wigner3j(2, 4, 4, 0, 1,-1);
-        WIGNER_244_022 = MathEX.Func.wigner3j(2, 4, 4, 0, 2,-2);
-        WIGNER_244_033 = MathEX.Func.wigner3j(2, 4, 4, 0, 3,-3);
-        WIGNER_244_044 = MathEX.Func.wigner3j(2, 4, 4, 0, 4,-4);
-        WIGNER_244_110 = MathEX.Func.wigner3j(2, 4, 4, 1,-1, 0);
-        WIGNER_244_220 = MathEX.Func.wigner3j(2, 4, 4, 2,-2, 0);
-        WIGNER_244_211 = MathEX.Func.wigner3j(2, 4, 4,-2, 1, 1);
-        WIGNER_244_112 = MathEX.Func.wigner3j(2, 4, 4, 1, 1,-2);
-        WIGNER_244_224 = MathEX.Func.wigner3j(2, 4, 4, 2, 2,-4);
-        WIGNER_244_123 = MathEX.Func.wigner3j(2, 4, 4, 1, 2,-3);
-        WIGNER_244_213 = MathEX.Func.wigner3j(2, 4, 4, 2, 1,-3);
-        WIGNER_244_134 = MathEX.Func.wigner3j(2, 4, 4, 1, 3,-4);
-        WIGNER_134_000 = MathEX.Func.wigner3j(1, 3, 4, 0, 0, 0);
-        WIGNER_134_011 = MathEX.Func.wigner3j(1, 3, 4, 0, 1,-1);
-        WIGNER_134_022 = MathEX.Func.wigner3j(1, 3, 4, 0, 2,-2);
-        WIGNER_134_033 = MathEX.Func.wigner3j(1, 3, 4, 0, 3,-3);
-        WIGNER_134_110 = MathEX.Func.wigner3j(1, 3, 4, 1,-1, 0);
-        WIGNER_134_101 = MathEX.Func.wigner3j(1, 3, 4, 1, 0,-1);
-        WIGNER_134_112 = MathEX.Func.wigner3j(1, 3, 4, 1, 1,-2);
-        WIGNER_134_121 = MathEX.Func.wigner3j(1, 3, 4, 1,-2, 1);
-        WIGNER_134_123 = MathEX.Func.wigner3j(1, 3, 4, 1, 2,-3);
-        WIGNER_134_132 = MathEX.Func.wigner3j(1, 3, 4, 1,-3, 2);
-        WIGNER_134_134 = MathEX.Func.wigner3j(1, 3, 4, 1, 3,-4);
     }
+    
+    public final static class Conf {
+        /**
+         * 自定义构建 native nnap basis 的 cmake 参数设置，
+         * 会在构建时使用 -D ${key}=${value} 传入
+         */
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        
+        public static final int NONE = -1;
+        public static final int COMPAT = 0;
+        public static final int BASE = 1;
+        public static final int MAX = 2;
+        /**
+         * 自定义 native nnap basis 需要采用的优化等级，默认为 1（基础优化），
+         * 会开启 AVX2 指令集，在大多数现代处理器上能兼容运行
+         */
+        public static int OPT_LEVEL = OS.envI("JSE_NNAPBASIS_OPT_LEVEL", BASE);
+        
+        /**
+         * 自定义构建 native nnap basis 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER   = OS.env("JSE_CMAKE_C_COMPILER_NNAPBASIS"  , jse.code.Conf.CMAKE_C_COMPILER);
+        public static @Nullable String CMAKE_C_FLAGS      = OS.env("JSE_CMAKE_C_FLAGS_NNAPBASIS"     , jse.code.Conf.CMAKE_C_FLAGS);
+        public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_NNAPBASIS", jse.code.Conf.CMAKE_CXX_COMPILER);
+        public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_NNAPBASIS"   , jse.code.Conf.CMAKE_CXX_FLAGS);
+        
+        /** 重定向 native nnap basis 动态库的路径 */
+        public static @Nullable String REDIRECT_NNAPBASIS_LIB = OS.env("JSE_REDIRECT_NNAPBASIS_LIB");
+    }
+    
+    public final static String LIB_DIR = JAR_DIR+"nnap/basis/" + UT.Code.uniqueID(CS.VERSION, NNAP.VERSION, Conf.OPT_LEVEL, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_PATH;
+    private final static String[] SRC_NAME = {
+          "jsex_nnap_basis_SphericalChebyshev.c"
+        , "jsex_nnap_basis_SphericalChebyshev.h"
+    };
+    
+    static {
+        InitHelper.INITIALIZED = true;
+        // 不直接依赖 nnap
+        
+        // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
+        Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
+        switch(Conf.OPT_LEVEL) {
+        case Conf.MAX: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "ON");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }
+        case Conf.BASE: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "ON");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }
+        case Conf.COMPAT: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "ON");
+            break;
+        }
+        case Conf.NONE: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }}
+        // 现在直接使用 JNIUtil.buildLib 来统一初始化
+        LIB_PATH = new JNIUtil.LibBuilder("nnapbasis", "NATIVE_NNAP_BASIS", LIB_DIR, rCmakeSetting)
+            .setSrc("nnap/basis", SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
+            .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setRedirectLibPath(Conf.REDIRECT_NNAPBASIS_LIB)
+            .get();
+        // 设置库路径
+        System.load(IO.toAbsolutePath(LIB_PATH));
+    }
+    
+    final static int[] L3NCOLS = {0, 0, 2, 4, 9}, L3NCOLS_NOCROSS = {0, 0, 1, 1, 2};
     
     public final static int DEFAULT_NMAX = 5;
     public final static int DEFAULT_LMAX = 6;
     public final static int DEFAULT_L3MAX = 0;
     public final static boolean DEFAULT_L3CROSS = true;
-    public final static double DEFAULT_RCUT = 6.2;
+    public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
     final int mTypeNum;
     final String @Nullable[] mSymbols;
     final int mNMax, mLMax, mL3Max;
     final boolean mL3Cross;
     final double mRCut;
+    
+    final int mSizeN, mSizeL, mSize;
+    final int mLMaxMax, mLMAll;
+    
+    /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
+    private final Vector mCnlm;
+    private final Vector mCnlmPx, mCnlmPy, mCnlmPz;
+    private final Vector mRn, mRnPx, mRnPy, mRnPz;
+    private final Vector mY, mYPx, mYPy, mYPz, mYPphi, mYPtheta;
+    
+    final DoubleList mNlDx = new DoubleList(16), mNlDy = new DoubleList(16), mNlDz = new DoubleList(16);
+    final IntList mNlType = new IntList(16);
+    final DoubleList mNlY = new DoubleList(1024);
+    final DoubleList mNlRn = new DoubleList(128);
+    
+    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
+        if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
+        if (aLMax<0 || aLMax>20) throw new IllegalArgumentException("Input lmax MUST be in [0, 20], input: "+aLMax);
+        if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
+        mSymbols = aSymbols;
+        mTypeNum = aTypeNum;
+        mNMax = aNMax;
+        mLMax = aLMax;
+        mL3Max = aL3Max;
+        mL3Cross = aL3Cross;
+        mRCut = aRCut;
+        
+        mSizeN = mTypeNum>1 ? mNMax+mNMax+2 : mNMax+1;
+        mSizeL = mLMax+1 + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
+        mSize = mSizeN*mSizeL;
+        mLMaxMax = Math.max(mLMax, mL3Max);
+        mLMAll = (mLMaxMax+1)*(mLMaxMax+1);
+        
+        mCnlm = VectorCache.getVec(mSizeN*mLMAll);
+        mCnlmPx = VectorCache.getVec(mLMAll);
+        mCnlmPy = VectorCache.getVec(mLMAll);
+        mCnlmPz = VectorCache.getVec(mLMAll);
+        
+        mRn = VectorCache.getVec(mNMax+1);
+        mRnPx = VectorCache.getVec(mNMax+1);
+        mRnPy = VectorCache.getVec(mNMax+1);
+        mRnPz = VectorCache.getVec(mNMax+1);
+        
+        mY = VectorCache.getVec(mLMAll);
+        mYPx = VectorCache.getVec(mLMAll);
+        mYPy = VectorCache.getVec(mLMAll);
+        mYPz = VectorCache.getVec(mLMAll);
+        mYPphi = VectorCache.getVec(mLMAll);
+        mYPtheta = VectorCache.getVec(mLMAll);
+    }
+    
     /**
      * @param aSymbols 基组需要的元素排序
      * @param aNMax Chebyshev 多项式选取的最大阶数
@@ -159,16 +197,7 @@ public class SphericalChebyshev implements IBasis {
      * @param aRCut 截断半径
      */
     public SphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
-        if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
-        if (aLMax < 0) throw new IllegalArgumentException("Input lmax MUST be Non-Negative, input: "+aLMax);
-        if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
-        mSymbols = aSymbols;
-        mTypeNum = mSymbols.length;
-        mNMax = aNMax;
-        mLMax = aLMax;
-        mL3Max = aL3Max;
-        mL3Cross = aL3Cross;
-        mRCut = aRCut;
+        this(aSymbols, aSymbols.length, aNMax, aLMax, aL3Max, aL3Cross, aRCut);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -199,16 +228,7 @@ public class SphericalChebyshev implements IBasis {
      * @param aRCut 截断半径
      */
     public SphericalChebyshev(int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
-        if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
-        if (aLMax < 0) throw new IllegalArgumentException("Input lmax MUST be Non-Negative, input: "+aLMax);
-        if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
-        mSymbols = null;
-        mTypeNum = aTypeNum;
-        mNMax = aNMax;
-        mLMax = aLMax;
-        mL3Max = aL3Max;
-        mL3Cross = aL3Cross;
-        mRCut = aRCut;
+        this(null, aTypeNum, aNMax, aLMax, aL3Max, aL3Cross, aRCut);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -262,18 +282,15 @@ public class SphericalChebyshev implements IBasis {
         );
     }
     
+    
     /** @return {@inheritDoc} */
-    @Override public double rcut() {
-        return mRCut;
-    }
+    @Override public double rcut() {return mRCut;}
     /**
      * @return {@inheritDoc}；如果只有一个种类则为
      * {@code (nmax+1)(lmax+1)}，如果超过一个种类则为
      * {@code 2(nmax+1)(lmax+1)}
      */
-    @Override public int size() {
-        return sizeN()*sizeL();
-    }
+    @Override public int size() {return mSize;}
     /** @return {@inheritDoc} */
     @Override public int atomTypeNumber() {return mTypeNum;}
     /**
@@ -288,64 +305,18 @@ public class SphericalChebyshev implements IBasis {
      */
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
-    int sizeN() {
-        return mTypeNum>1 ? mNMax+mNMax+2 : mNMax+1;
-    }
-    int sizeL() {
-        return mLMax+1 + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
-    }
-    private int lmax_() {
-        return Math.max(mLMax, mL3Max);
-    }
-    private int lmAll_() {
-        int tLMax = lmax_();
-        return (tLMax+1)*(tLMax+1);
-    }
     
-    
-    /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
-    private @Nullable RowMatrix mCnlm = null;
-    @NotNull RowMatrix bufCnlm(boolean aClear) {if (mCnlm==null) {mCnlm = MatrixCache.getMatRow(sizeN(), lmAll_());} if (aClear) {mCnlm.fill(0.0);} return mCnlm;}
-    private @Nullable Vector mCnlmPx = null, mCnlmPy = null, mCnlmPz = null;
-    @NotNull Vector bufCnlmPx(boolean aClear) {if (mCnlmPx==null) {mCnlmPx = VectorCache.getVec(lmAll_());} if (aClear) {mCnlmPx.fill(0.0);} return mCnlmPx;}
-    @NotNull Vector bufCnlmPy(boolean aClear) {if (mCnlmPy==null) {mCnlmPy = VectorCache.getVec(lmAll_());} if (aClear) {mCnlmPy.fill(0.0);} return mCnlmPy;}
-    @NotNull Vector bufCnlmPz(boolean aClear) {if (mCnlmPz==null) {mCnlmPz = VectorCache.getVec(lmAll_());} if (aClear) {mCnlmPz.fill(0.0);} return mCnlmPz;}
-    
-    private @Nullable Vector mRn = null, mRnPx = null, mRnPy = null, mRnPz = null;
-    @NotNull Vector bufRn(boolean aClear) {if (mRn==null) {mRn = VectorCache.getVec(mNMax+1);} if (aClear) {mRn.fill(0.0);} return mRn;}
-    @NotNull Vector bufRnPx(boolean aClear) {if (mRnPx==null) {mRnPx = VectorCache.getVec(mNMax+1);} if (aClear) {mRnPx.fill(0.0);} return mRnPx;}
-    @NotNull Vector bufRnPy(boolean aClear) {if (mRnPy==null) {mRnPy = VectorCache.getVec(mNMax+1);} if (aClear) {mRnPy.fill(0.0);} return mRnPy;}
-    @NotNull Vector bufRnPz(boolean aClear) {if (mRnPz==null) {mRnPz = VectorCache.getVec(mNMax+1);} if (aClear) {mRnPz.fill(0.0);} return mRnPz;}
-    
-    private @Nullable Vector mY = null, mYPx = null, mYPy = null, mYPz = null, mYPphi = null, mYPtheta = null;
-    @NotNull Vector bufY(boolean aClear) {if (mY==null) {mY = VectorCache.getVec(lmAll_());} if (aClear) {mY.fill(0.0);} return mY;}
-    @NotNull Vector bufYPx(boolean aClear) {if (mYPx==null) {mYPx = VectorCache.getVec(lmAll_());} if (aClear) {mYPx.fill(0.0);} return mYPx;}
-    @NotNull Vector bufYPy(boolean aClear) {if (mYPy==null) {mYPy = VectorCache.getVec(lmAll_());} if (aClear) {mYPy.fill(0.0);} return mYPy;}
-    @NotNull Vector bufYPz(boolean aClear) {if (mYPz==null) {mYPz = VectorCache.getVec(lmAll_());} if (aClear) {mYPz.fill(0.0);} return mYPz;}
-    @NotNull Vector bufYPphi(boolean aClear) {if (mYPphi==null) {mYPphi = VectorCache.getVec(lmAll_());} if (aClear) {mYPphi.fill(0.0);} return mYPphi;}
-    @NotNull Vector bufYPtheta(boolean aClear) {if (mYPtheta==null) {mYPtheta = VectorCache.getVec(lmAll_());} if (aClear) {mYPtheta.fill(0.0);} return mYPtheta;}
-    
-    final DoubleList mDxAll = new DoubleList(16), mDyAll = new DoubleList(16), mDzAll = new DoubleList(16);
-    final IntList mTypeAll = new IntList(16);
-    final DoubleList mYAll = new DoubleList(1024);
-    @NotNull ShiftVector bufYAll(int i, boolean aClear) {
-        int tVecSize = lmAll_();
-        int tMinSize = (i+1) * tVecSize;
-        mYAll.ensureCapacity(tMinSize);
-        while (mYAll.size()<tMinSize) mYAll.add(0.0);
-        ShiftVector tY = new ShiftVector(tVecSize, i*tVecSize, mYAll.internalData());
-        if (aClear) tY.fill(0.0);
-        return tY;
+    private void validYAllSize(int aNN) {
+        int tMinSize = aNN * mLMAll;
+        int tSize = mNlY.size();
+        if (tSize >= tMinSize) return;
+        mNlY.addZeros(tMinSize-tSize);
     }
-    final DoubleList mRnAll = new DoubleList(128);
-    @NotNull ShiftVector bufRnAll(int i, boolean aClear) {
-        int tVecSize = mNMax+1;
-        int tMinSize = (i+1) * tVecSize;
-        mRnAll.ensureCapacity(tMinSize);
-        while (mRnAll.size()<tMinSize) mRnAll.add(0.0);
-        ShiftVector tRn = new ShiftVector(tVecSize, i*tVecSize, mRnAll.internalData());
-        if (aClear) tRn.fill(0.0);
-        return tRn;
+    private void validRnAllSize(int aNN) {
+        int tMinSize = aNN * (mNMax+1);
+        int tSize = mNlRn.size();
+        if (tSize >= tMinSize) return;
+        mNlRn.addZeros(tMinSize-tSize);
     }
     
     boolean mDead = false;
@@ -353,31 +324,34 @@ public class SphericalChebyshev implements IBasis {
     @Override public void shutdown() {
         if (mDead) return;
         mDead = true;
-        if (mCnlm != null) MatrixCache.returnMat(mCnlm);
-        if (mCnlmPx != null) VectorCache.returnVec(mCnlmPx);
-        if (mCnlmPy != null) VectorCache.returnVec(mCnlmPy);
-        if (mCnlmPz != null) VectorCache.returnVec(mCnlmPz);
-        if (mRn != null) VectorCache.returnVec(mRn);
-        if (mRnPx != null) VectorCache.returnVec(mRnPx);
-        if (mRnPy != null) VectorCache.returnVec(mRnPy);
-        if (mRnPz != null) VectorCache.returnVec(mRnPz);
-        if (mY != null) VectorCache.returnVec(mY);
-        if (mYPx != null) VectorCache.returnVec(mYPx);
-        if (mYPy != null) VectorCache.returnVec(mYPy);
-        if (mYPz != null) VectorCache.returnVec(mYPz);
-        if (mYPphi != null) VectorCache.returnVec(mYPphi);
-        if (mYPtheta != null) VectorCache.returnVec(mYPtheta);
+        VectorCache.returnVec(mCnlm);
+        VectorCache.returnVec(mCnlmPx);
+        VectorCache.returnVec(mCnlmPy);
+        VectorCache.returnVec(mCnlmPz);
+        VectorCache.returnVec(mRn);
+        VectorCache.returnVec(mRnPx);
+        VectorCache.returnVec(mRnPy);
+        VectorCache.returnVec(mRnPz);
+        VectorCache.returnVec(mY);
+        VectorCache.returnVec(mYPx);
+        VectorCache.returnVec(mYPy);
+        VectorCache.returnVec(mYPz);
+        VectorCache.returnVec(mYPphi);
+        VectorCache.returnVec(mYPtheta);
     }
     
     @Override public void eval(IDxyzTypeIterable aNL, Vector rFp) {
         if (mDead) throw new IllegalStateException("This Basis is dead");
         
-        // 统一计算 cnlm
-        final RowMatrix cnlm = calCnlm(aNL, false);
+        // 统一缓存近邻列表
+        buildNL(aNL);
+        final int tNN = mNlDx.size();
         
-        // 做标量积消去 m 项，得到此原子的 FP
-        cnlm2fp(cnlm.internalData(), rFp.internalData(),
-                sizeN(), mLMax, mL3Max, mL3Cross);
+        // cnlm 需要累加，因此需要事先清空
+        mCnlm.fill(0.0);
+        
+        // 现在直接计算基组
+        eval0(tNN, rFp);
     }
     
     @Override public final void evalPartial(IDxyzTypeIterable aNL, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz) {
@@ -386,1233 +360,113 @@ public class SphericalChebyshev implements IBasis {
     @Override public void evalPartial(IDxyzTypeIterable aNL, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz, @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
         if (mDead) throw new IllegalStateException("This Basis is dead");
         
-        final int tSizeN = sizeN();
-        final int tSizeL = sizeL();
-        final int tSizeFP = tSizeN*tSizeL;
-        // 先统一计算 cnlm 并缓存近邻
-        final RowMatrix cnlm = calCnlm(aNL, true);
-        final int tNN = mDxAll.size();
-        // 做标量积消去 m 项，得到此原子的 FP
-        cnlm2fp(cnlm.internalData(), rFp.internalData(),
-                tSizeN, mLMax, mL3Max, mL3Cross);
+        // 统一缓存近邻列表
+        buildNL(aNL);
+        final int tNN = mNlDx.size();
         
-        // 下面计算偏导部分
+        // 确保 Rn Y 的长度
+        validYAllSize(tNN);
+        validRnAllSize(tNN);
+        
+        // cnlm 需要累加，因此需要事先清空
+        mCnlm.fill(0.0);
+        
+        // 初始化偏导数相关值
         rFpPx.fill(0.0);
         rFpPy.fill(0.0);
         rFpPz.fill(0.0);
         if (rFpPxCross != null) {
             assert rFpPyCross!=null && rFpPzCross!=null;
-            rFpPxCross.clear(); rFpPxCross.addZeros(tNN*tSizeFP);
-            rFpPyCross.clear(); rFpPyCross.addZeros(tNN*tSizeFP);
-            rFpPzCross.clear(); rFpPzCross.addZeros(tNN*tSizeFP);
+            rFpPxCross.clear(); rFpPxCross.addZeros(tNN*mSize);
+            rFpPyCross.clear(); rFpPyCross.addZeros(tNN*mSize);
+            rFpPzCross.clear(); rFpPzCross.addZeros(tNN*mSize);
         }
-        // 缓存 cnlm 偏导数数据，现在只需要特定 n 下的一行即可
-        final Vector cnlmPx = bufCnlmPx(false);
-        final Vector cnlmPy = bufCnlmPy(false);
-        final Vector cnlmPz = bufCnlmPz(false);
-        // 缓存 Rn 数组
-        final Vector tRnPx = bufRnPx(false);
-        final Vector tRnPy = bufRnPy(false);
-        final Vector tRnPz = bufRnPz(false);
-        // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
-        final Vector tYPtheta = bufYPtheta(false);
-        final Vector tYPphi = bufYPphi(false);
-        final Vector tYPx = bufYPx(false);
-        final Vector tYPy = bufYPy(false);
-        final Vector tYPz = bufYPz(false);
         
-        // 再次遍历近邻计算偏导，这里可以直接累加到基组上
-        final int tLMax = lmax_();
-        for (int j = 0; j < tNN; ++j) {
-            double dx = mDxAll.get(j), dy = mDyAll.get(j), dz = mDzAll.get(j);
-            double dis = MathEX.Fast.hypot(dx, dy, dz);
-            // 计算种类的权重
-            int type = mTypeAll.get(j);
-            double wt = ((type&1)==1) ? type : -type;
-            // 计算截断函数 fc 以及偏导数（涉及重复计算，不过无所谓）
-            double fcMul = 1.0 - MathEX.Fast.pow2(dis/mRCut);
-            double fcMul3 = MathEX.Fast.pow3(fcMul);
-            double fc = fcMul3 * fcMul;
-            double fcPMul = 8.0 * fcMul3 / (mRCut*mRCut);
-            double fcPx = dx * fcPMul;
-            double fcPy = dy * fcPMul;
-            double fcPz = dz * fcPMul;
-            // 计算 Rn 的偏导数
-            IVector tRn = bufRnAll(j, false);
-            calRnPxyz(tRnPx.internalData(), tRnPy.internalData(), tRnPz.internalData(), mNMax,
-                      dis, mRCut, dx, dy, dz);
-            // 计算 Ylm 偏导数；这里需要使用事先计算好角度的版本
-            double dxy = MathEX.Fast.hypot(dx, dy);
-            final double cosTheta = dz / dis;
-            final double sinTheta = dxy / dis;
-            final double cosPhi;
-            final double sinPhi;
-            final boolean dxyCloseZero = MathEX.Code.numericEqual(dxy, 0.0);
-            if (dxyCloseZero) {
-                cosPhi = 1.0;
-                sinPhi = 0.0;
-            } else {
-                cosPhi = dx / dxy;
-                sinPhi = dy / dxy;
-            }
-            ShiftVector tY = bufYAll(j, false); // 不再需要重复计算球谐函数值了
-            if (dxyCloseZero) tYPphi.fill(0.0); // 这样来修复顶点的情况，此时另一边 tYPtheta 会恰好弥补使得全局连续
-            for (int tL = 0; tL <= tLMax; ++tL) {
-                if (!dxyCloseZero) {
-                    calYPphi(tYPphi.internalData(), tY.internalData(), tY.internalDataShift(), tL);
-                }
-                calYPtheta(cosPhi, sinPhi, tYPtheta.internalData(), tY.internalData(), tY.internalDataShift(), tL);
-            }
-            // 最后转换为 xyz 的偏微分
-            calYPxyz(cosTheta, sinTheta, cosPhi, sinPhi, dis, dxy, dxyCloseZero,
-                     tYPx.internalData(), tYPy.internalData(), tYPz.internalData(),
-                     tYPtheta.internalData(), tYPphi.internalData(), tY.size());
-            
-            // 遍历 n，l 求 cnlmPxyz；现在直接边求边累加到 Fp 中
-            final int tColNum = cnlm.columnNumber();
-            for (int tN=0, tShift=0, tShiftFP=0; tN <= mNMax; ++tN, tShift+=tColNum, tShiftFP+=tSizeL) {
-                // 先统一计算当前 n 下的所有 cnlmPxyz
-                calCnlmPxyz(cnlmPx.internalData(), cnlmPy.internalData(), cnlmPz.internalData(),
-                            tY.internalData(), tY.internalDataShift(), tYPx.internalData(), tYPy.internalData(), tYPz.internalData(),
-                            fc, fcPx, fcPy, fcPz,
-                            tRn.get(tN), tRnPx.get(tN), tRnPy.get(tN), tRnPz.get(tN),
-                            tY.internalDataSize());
-                // 遍历 l，m 累加到 fp 中
-                cnlm2fpPxyz(cnlm.internalData(), cnlmPx.internalData(), cnlmPy.internalData(), cnlmPz.internalData(),
-                            rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
-                            rFpPxCross==null?null:rFpPxCross.internalData(),
-                            rFpPyCross==null?null:rFpPyCross.internalData(),
-                            rFpPzCross==null?null:rFpPzCross.internalData(),
-                            1.0, mLMax, mL3Max, mL3Cross, tShift, tShiftFP, tSizeFP*j);
-                if (mTypeNum > 1) {
-                    cnlm2fpPxyz(cnlm.internalData(), cnlmPx.internalData(), cnlmPy.internalData(), cnlmPz.internalData(),
-                                rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
-                                rFpPxCross==null?null:rFpPxCross.internalData(),
-                                rFpPyCross==null?null:rFpPyCross.internalData(),
-                                rFpPzCross==null?null:rFpPzCross.internalData(),
-                                wt, mLMax, mL3Max, mL3Cross, tShift+(mNMax+1)*tColNum, tShiftFP+(mNMax+1)*tSizeL, tSizeFP*j);
-                }
-            }
-        }
+        // 现在直接计算基组偏导
+        evalPartial0(tNN, rFp, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross);
     }
     
-    RowMatrix calCnlm(IDxyzTypeIterable aNL, final boolean aBufferNL) {
-        // 需要存储所有的 l，n，m 的值来统一进行近邻求和
-        final RowMatrix cnlm = bufCnlm(true);
-        // 缓存 Rn 数组
-        final Vector tRn = aBufferNL ? null : bufRn(false);
-        // 全局暂存 Y 的数组，这样可以用来防止重复获取来提高效率
-        final Vector tY = aBufferNL ? null : bufY(false);
+    void buildNL(IDxyzTypeIterable aNL) {
         // 缓存情况需要先清空这些
-        if (aBufferNL) {
-            mDxAll.clear(); mDyAll.clear(); mDzAll.clear();
-            mTypeAll.clear();
-        }
-        
-        // 遍历近邻计算 Ylm, Rn, fc
-        final int tLMax = lmax_();
+        mNlDx.clear(); mNlDy.clear(); mNlDz.clear();
+        mNlType.clear();
         aNL.forEachDxyzType((dx, dy, dz, type) -> {
             double dis = MathEX.Fast.hypot(dx, dy, dz);
             if (dis >= mRCut) return; // 理论不会触发，因为在上层遍历时就排除了
             if (type > mTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+mTypeNum+")");
-            
-            final int j = aBufferNL ? mDxAll.size() : -1;
-            if (aBufferNL) {
-                mDxAll.add(dx); mDyAll.add(dy); mDzAll.add(dz);
-                mTypeAll.add(type);
-            }
-            // 计算种类的权重
-            double wt = ((type&1)==1) ? type : -type;
-            // 计算截断函数 fc
-            double fc = MathEX.Fast.powFast(1.0 - MathEX.Fast.pow2(dis/mRCut), 4);
-            // 统一遍历一次计算 Rn
-            final double tX = 1.0 - 2.0*dis/mRCut;
-            IVector tRn_ = aBufferNL ? bufRnAll(j, false) : tRn;
-            tRn_.fill(n -> MathEX.Func.chebyshev(n, tX));
-            
-            // 遍历求 n，l 的情况；现在采用实球谐函数进行计算
-            DoubleArrayVector tY_ = aBufferNL ? bufYAll(j, false) : tY;
-            MathEX.Func.realSphericalHarmonicsFull2DestXYZDis_(tLMax, dx, dy, dz, dis, tY_);
-            if (mTypeNum > 1) {
-                for (int tN = 0; tN <= mNMax; ++tN) {
-                    mplusCnlm(cnlm.internalData(), cnlm.row(tN).internalDataShift(), cnlm.row(tN+mNMax+1).internalDataShift(),
-                              tY_.internalData(), tY_.internalDataShift(), fc, tRn_.get(tN), wt, cnlm.columnNumber());
-                }
-            } else {
-                for (int tN = 0; tN <= mNMax; ++tN) {
-                    mplusCnlm(cnlm.internalData(), cnlm.row(tN).internalDataShift(),
-                              tY_.internalData(), tY_.internalDataShift(), fc, tRn_.get(tN), cnlm.columnNumber());
-                }
-            }
+            // 简单缓存近邻列表
+            mNlDx.add(dx); mNlDy.add(dy); mNlDz.add(dz);
+            mNlType.add(type);
         });
-        return cnlm;
     }
     
+    void eval0(int aNN, Vector rFp) {
+        if (mL3Max > 4) throw new IllegalArgumentException("l3max > 4 for SphericalChebyshev");
+        if (mLMaxMax > 20) throw new IllegalArgumentException("lmax > 20 for SphericalChebyshev");
+        rangeCheck(mNlDx.size(), aNN);
+        rangeCheck(mNlDy.size(), aNN);
+        rangeCheck(mNlDz.size(), aNN);
+        rangeCheck(mNlType.size(), aNN);
+        rangeCheck(mRn.size(), mNMax+1);
+        rangeCheck(mY.size(), mLMAll);
+        rangeCheck(mCnlm.size(), mSizeN*mLMAll);
+        rangeCheck(rFp.size(), mSize);
+        eval1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
+              mRn.internalData(), mY.internalData(), mCnlm.internalData(), rFp.internalData(),
+              mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross);
+    }
+    private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                     double[] rRn, double[] rY, double[] rCnlm, double[] rFingerPrint,
+                                     int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross);
     
-    static void calRnPxyz(double[] rRnPx, double[] rRnPy, double[] rRnPz, int aNMax,
-                          double aDis, double aRCut, double aDx, double aDy, double aDz) {
-        final double tX = 1.0 - 2.0*aDis/aRCut;
-        final double tRnPMul = 2.0 / (aDis*aRCut);
-        rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
-        for (int tN = 1; tN <= aNMax; ++tN) {
-            double tRnP = tN*MathEX.Func.chebyshev2(tN-1, tX)*tRnPMul;
-            rRnPx[tN] = tRnP*aDx;
-            rRnPy[tN] = tRnP*aDy;
-            rRnPz[tN] = tRnP*aDz;
-        }
+    void evalPartial0(int aNN, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz,
+                      @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
+        if (mL3Max > 4) throw new IllegalArgumentException("l3max > 4 for SphericalChebyshev");
+        if (mLMaxMax > 20) throw new IllegalArgumentException("lmax > 20 for SphericalChebyshev");
+        rangeCheck(mNlDx.size(), aNN);
+        rangeCheck(mNlDy.size(), aNN);
+        rangeCheck(mNlDz.size(), aNN);
+        rangeCheck(mNlType.size(), aNN);
+        rangeCheck(mNlRn.size(), aNN*(mNMax+1));
+        rangeCheck(mRnPx.size(), mNMax+1);
+        rangeCheck(mRnPy.size(), mNMax+1);
+        rangeCheck(mRnPz.size(), mNMax+1);
+        rangeCheck(mNlY.size(), aNN*mLMAll);
+        rangeCheck(mYPtheta.size(), mLMAll);
+        rangeCheck(mYPphi.size(), mLMAll);
+        rangeCheck(mYPx.size(), mLMAll);
+        rangeCheck(mYPy.size(), mLMAll);
+        rangeCheck(mYPz.size(), mLMAll);
+        rangeCheck(mCnlm.size(), mSizeN*mLMAll);
+        rangeCheck(mCnlmPx.size(), mLMAll);
+        rangeCheck(mCnlmPy.size(), mLMAll);
+        rangeCheck(mCnlmPz.size(), mLMAll);
+        rangeCheck(rFp.size(), mSize);
+        rangeCheck(rFpPx.size(), mSize);
+        rangeCheck(rFpPy.size(), mSize);
+        rangeCheck(rFpPz.size(), mSize);
+        if (rFpPxCross != null) rangeCheck(rFpPxCross.size(), aNN*mSize);
+        if (rFpPyCross != null) rangeCheck(rFpPyCross.size(), aNN*mSize);
+        if (rFpPzCross != null) rangeCheck(rFpPzCross.size(), aNN*mSize);
+        evalPartial1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
+                     mNlRn.internalData(), mRnPx.internalData(), mRnPy.internalData(), mRnPz.internalData(),
+                     mNlY.internalData(), mYPtheta.internalData(), mYPphi.internalData(), mYPx.internalData(), mYPy.internalData(), mYPz.internalData(),
+                     mCnlm.internalData(), mCnlmPx.internalData(), mCnlmPy.internalData(), mCnlmPz.internalData(),
+                     rFp.internalData(), rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
+                     rFpPxCross!=null?rFpPxCross.internalData():null,
+                     rFpPyCross!=null?rFpPyCross.internalData():null,
+                     rFpPzCross!=null?rFpPzCross.internalData():null,
+                     mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross);
     }
-    static void calYPphi(double[] rYPphi, double[] aY, int aShift, int aL) {
-        final int tStart = aL*aL;
-        final int tIdx = tStart+aL;
-        for (int tM = -aL; tM <= aL; ++tM) {
-            rYPphi[tIdx+tM] = -tM * aY[aShift+tIdx-tM];
-        }
-    }
-    static void calYPtheta(double aCosPhi, double aSinPhi, double[] rYPtheta, double[] aY, int aShift, int aL) {
-        switch(aL) {
-        case 0: {
-            rYPtheta[0] = 0.0;
-            return;
-        }
-        case 1: {
-            double tMul = SQRT_LPM_LMM1.get(2)*SQRT2_INV;
-            rYPtheta[1] = -tMul * aSinPhi*aY[aShift+2];
-            rYPtheta[2] =  tMul * (aCosPhi*aY[aShift+3] + aSinPhi*aY[aShift+1]);
-            rYPtheta[3] = -tMul * aCosPhi*aY[aShift+2];
-            return;
-        }
-        default: {
-            // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
-            final int tStart = aL*aL;
-            final int tIdx = tStart+aL;
-            double tMul = SQRT_LPM_LMM1.get(tIdx)*SQRT2_INV;
-            rYPtheta[tIdx] = tMul * (aCosPhi*aY[aShift+tIdx+1] + aSinPhi*aY[aShift+tIdx-1]);
-            rYPtheta[tIdx+1] = -tMul * aCosPhi*aY[aShift+tIdx];
-            rYPtheta[tIdx-1] = -tMul * aSinPhi*aY[aShift+tIdx];
-            for (int tM = 2; tM <= aL; ++tM) {
-                tMul = -0.5*SQRT_LPM_LMM1.get(tIdx+tM);
-                rYPtheta[tIdx+tM] = tMul * (aCosPhi*aY[aShift+tIdx+tM-1] - aSinPhi*aY[aShift+tIdx-tM+1]);
-                rYPtheta[tIdx-tM] = tMul * (aCosPhi*aY[aShift+tIdx-tM+1] + aSinPhi*aY[aShift+tIdx+tM-1]);
-            }
-            for (int tM = 1; tM < aL; ++tM) {
-                tMul = 0.5*SQRT_LPM1_LMM.get(tIdx+tM);
-                rYPtheta[tIdx+tM] += tMul * (aCosPhi*aY[aShift+tIdx+tM+1] + aSinPhi*aY[aShift+tIdx-tM-1]);
-                rYPtheta[tIdx-tM] += tMul * (aCosPhi*aY[aShift+tIdx-tM-1] - aSinPhi*aY[aShift+tIdx+tM+1]);
-            }
-            return;
-        }}
-    }
-    static void calYPxyz(double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, double aDis, double aDxy, boolean aDxyCloseZero,
-                         double[] rYPx, double[] rYPy, double[] rYPz, double[] aYPtheta, double[] aYPphi, int aLength) {
-        final double thetaPx = -aCosTheta * aCosPhi / aDis;
-        final double thetaPy = -aCosTheta * aSinPhi / aDis;
-        final double thetaPz =  aSinTheta / aDis;
-        final double phiPx = aDxyCloseZero ? 0.0 :  aSinPhi / aDxy;
-        final double phiPy = aDxyCloseZero ? 0.0 : -aCosPhi / aDxy;
-        for (int i = 0; i < aLength; ++i) {
-            double tYPtheta = aYPtheta[i];
-            double tYPphi = aYPphi[i];
-            rYPx[i] = tYPtheta*thetaPx + tYPphi*phiPx;
-            rYPy[i] = tYPtheta*thetaPy + tYPphi*phiPy;
-            rYPz[i] = tYPtheta*thetaPz;
-        }
-    }
-    /** 热点优化，累加 cnlm 部分放在一个循环中进行，让 java 优化整个运算 */
-    static void mplusCnlm(double[] rCnlm, int rShift, double[] aY, int aShiftY, double aFc, double aRn, int aLength) {
-        double tMul = aFc*aRn;
-        for (int ii = 0, j = rShift, i = aShiftY; ii < aLength; ++ii, ++j, ++i) {
-            rCnlm[j] += tMul*aY[i];
-        }
-    }
-    static void mplusCnlm(double[] rCnlm, int rShift1, int rShift2, double[] aY, int aShiftY, double aFc, double aRn, double aWt, int aLength) {
-        double tMul = aFc*aRn;
-        for (int ii = 0, j = rShift1, k = rShift2, i = aShiftY; ii < aLength; ++ii, ++j, ++k, ++i) {
-            double tCnli = tMul*aY[i];
-            rCnlm[j] += tCnli; rCnlm[k] += aWt*tCnli;
-        }
-    }
-    static void calCnlmPxyz(double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
-                            double[] aY, int aShift, double[] aYPx, double[] aYPy, double[] aYPz,
-                            double aFc, double aFcPx, double aFcPy, double aFcPz,
-                            double aRn, double aRnPx, double aRnPy, double aRnPz, int aLength) {
-        double tMul = -(aFc*aRn);
-        double tMulX = -(aFc*aRnPx + aFcPx*aRn);
-        double tMulY = -(aFc*aRnPy + aFcPy*aRn);
-        double tMulZ = -(aFc*aRnPz + aFcPz*aRn);
-        for (int i = 0, j = aShift; i < aLength; ++i, ++j) {
-            double tY = aY[j];
-            rCnlmPx[i] = tMulX*tY + tMul*aYPx[i];
-            rCnlmPy[i] = tMulY*tY + tMul*aYPy[i];
-            rCnlmPz[i] = tMulZ*tY + tMul*aYPz[i];
-        }
-    }
-    /** 热点优化，cnlm 转成 fp 放在一个循环中，让 java 优化整个运算 */
-    static void cnlm2fp(double[] aCnlm, double[] rFp, int aSizeN, int aLMax, int aL3Max, boolean aL3Cross) {
-        final int tLMax = Math.max(aLMax, aL3Max);
-        final int tColNum = (tLMax+1)*(tLMax+1);
-        final int tColNumFP = aLMax+1 + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
-        int tShift = 0, tShiftFP = 0;
-        for (int tN = 0; tN < aSizeN; ++tN, tShift += tColNum, tShiftFP += tColNumFP) {
-            calL2_(aCnlm, rFp, aLMax, tShift, tShiftFP);
-            calL3_(aCnlm, rFp, aLMax, aL3Max, aL3Cross, tShift, tShiftFP);
-        }
-    }
-    private static void calL2_(double[] aCnlm, double[] rFp, int aLMax, int aShift, int aShiftFP) {
-        // l == 0
-        int tIdx = aShift, tIdxFP = aShiftFP;
-        double tCnl0 = aCnlm[tIdx];
-        double tMul = PI4;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0);
-        if (aLMax == 0) return;
-        // l = 1
-        tIdx = 1+aShift; tIdxFP = 1+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; double tCnl1 = aCnlm[tIdx+1], tCnl2 = aCnlm[tIdx+2];
-        tMul = PI4/3;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2);
-        if (aLMax == 1) return;
-        // l = 2
-        tIdx = 4+aShift; tIdxFP = 2+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; double tCnl3 = aCnlm[tIdx+3], tCnl4 = aCnlm[tIdx+4];
-        tMul = PI4/5;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4);
-        if (aLMax == 2) return;
-        // l = 3
-        tIdx = 9+aShift; tIdxFP = 3+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; double tCnl5 = aCnlm[tIdx+5], tCnl6 = aCnlm[tIdx+6];
-        tMul = PI4/7;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6);
-        if (aLMax == 3) return;
-        // l = 4
-        tIdx = 16+aShift; tIdxFP = 4+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; double tCnl7 = aCnlm[tIdx+7], tCnl8 = aCnlm[tIdx+8];
-        tMul = PI4/9;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8);
-        if (aLMax == 4) return;
-        // l = 5
-        tIdx = 25+aShift; tIdxFP = 5+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; double tCnl9 = aCnlm[tIdx+9], tCnl10 = aCnlm[tIdx+10];
-        tMul = PI4/11;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8 + tCnl9*tCnl9 + tCnl10*tCnl10);
-        if (aLMax == 5) return;
-        // l = 6
-        tIdx = 36+aShift; tIdxFP = 6+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; tCnl9 = aCnlm[tIdx+9]; tCnl10 = aCnlm[tIdx+10]; double tCnl11 = aCnlm[tIdx+11], tCnl12 = aCnlm[tIdx+12];
-        tMul = PI4/13;
-        rFp[tIdxFP] = tMul * (tCnl0*tCnl0 + tCnl1*tCnl1 + tCnl2*tCnl2 + tCnl3*tCnl3 + tCnl4*tCnl4 + tCnl5*tCnl5 + tCnl6*tCnl6 + tCnl7*tCnl7 + tCnl8*tCnl8 + tCnl9*tCnl9 + tCnl10*tCnl10 + tCnl11*tCnl11 + tCnl12*tCnl12);
-        if (aLMax == 6) return;
-        // 优化到 l = 6 主要是大部分只用到这个程度
-        // else
-        for (int tL = 7; tL <= aLMax; ++tL) {
-            // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
-            final int tStart = tL*tL + aShift;
-            final int tLen = tL+tL+1;
-            // 调用 ARRAY 中的 dotOfThis 方法，有做 SIMD 优化
-            double rDot = ARRAY.dotOfThis(aCnlm, tStart, tLen);
-            tMul = PI4/(double)tLen;
-            rFp[tL+aShiftFP] = tMul * rDot;
-        }
-    }
-    private static void calL3_(double[] aCnlm, double[] rFp, int aLMax, int aL3Max, boolean aL3Cross, int aShift, int aShiftFP) {
-        if (aL3Max <= 1) return;
-        int tIdxFP = aLMax+1+aShiftFP;
-        /// l1 = l2 = l3 = 2
-        int tIdx = (2*2+2)+aShift;
-        final double c20  = aCnlm[tIdx  ];
-        final double c21  = aCnlm[tIdx+1];
-        final double c2n1 = aCnlm[tIdx-1];
-        final double c22  = aCnlm[tIdx+2];
-        final double c2n2 = aCnlm[tIdx-2];
-        double rFp3 = 0.0;
-        rFp3 += WIGNER_222_000 * c20*c20*c20;
-        rFp3 -= (3.0*WIGNER_222_011) * c20 * (c21*c21 + c2n1*c2n1);
-        rFp3 += (3.0*WIGNER_222_022) * c20 * (c22*c22 + c2n2*c2n2);
-        rFp3 += (3.0*SQRT2_INV*WIGNER_222_112) * c22 * (c21*c21 - c2n1*c2n1);
-        rFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1*c2n2;
-        rFp[tIdxFP] = rFp3;
-        ++tIdxFP;
-        final double c10, c11, c1n1;
-        if (aL3Cross) {
-            /// l1 = l2 = 1, l3 = 2
-            tIdx = (1+1)+aShift;
-            c10  = aCnlm[tIdx  ];
-            c11  = aCnlm[tIdx+1];
-            c1n1 = aCnlm[tIdx-1];
-            rFp3 = 0.0;
-            rFp3 += WIGNER_112_000 * c10*c10*c20;
-            rFp3 -= WIGNER_112_110 * c20 * (c11*c11 + c1n1*c1n1);
-            rFp3 -= (2.0*WIGNER_112_011) * c10 * (c11*c21 + c1n1*c2n1);
-            rFp3 += (SQRT2_INV*WIGNER_112_112) * c22 * (c11*c11 - c1n1*c1n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c1n1*c2n2;
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-        } else {
-            c10 = c11 = c1n1 = Double.NaN;
-        }
-        if (aL3Max == 2) return;
-        final double c30, c31, c3n1, c32, c3n2, c33, c3n3;
-        if (aL3Cross) {
-            /// l1 = 2, l2 = l3 = 3
-            tIdx = (3*3+3)+aShift;
-            c30  = aCnlm[tIdx  ];
-            c31  = aCnlm[tIdx+1];
-            c3n1 = aCnlm[tIdx-1];
-            c32  = aCnlm[tIdx+2];
-            c3n2 = aCnlm[tIdx-2];
-            c33  = aCnlm[tIdx+3];
-            c3n3 = aCnlm[tIdx-3];
-            rFp3 = 0.0;
-            rFp3 += WIGNER_233_000 * c20*c30*c30;
-            rFp3 -= WIGNER_233_011 * c20 * (c31*c31 + c3n1*c3n1);
-            rFp3 += WIGNER_233_022 * c20 * (c32*c32 + c3n2*c3n2);
-            rFp3 -= WIGNER_233_033 * c20 * (c33*c33 + c3n3*c3n3);
-            rFp3 -= (2.0*WIGNER_233_110) * c30 * (c21*c31 + c2n1*c3n1);
-            rFp3 += (2.0*WIGNER_233_220) * c30 * (c22*c32 + c2n2*c3n2);
-            rFp3 += (SQRT2_INV*WIGNER_233_211) * c22 * (c31*c31 - c3n1*c3n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_233_211) * c2n2*c31*c3n1;
-            rFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * c21 * (c31*c32 + c3n1*c3n2);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * c2n1 * (c31*c3n2 - c3n1*c32);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c21 * (c32*c33 + c3n2*c3n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c2n1 * (c32*c3n3 - c3n2*c33);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c22 * (c31*c33 + c3n1*c3n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c2n2 * (c31*c3n3 - c3n1*c33);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-            /// l1 = 1, l2 = 2, l3 = 3
-            rFp3 = 0.0;
-            rFp3 += WIGNER_123_000 * c10*c20*c30;
-            rFp3 -= WIGNER_123_011 * c10 * (c21*c31 + c2n1*c3n1);
-            rFp3 += WIGNER_123_022 * c10 * (c22*c32 + c2n2*c3n2);
-            rFp3 -= WIGNER_123_101 * c20 * (c11*c31 + c1n1*c3n1);
-            rFp3 -= WIGNER_123_110 * c30 * (c11*c21 + c1n1*c2n1);
-            rFp3 += (SQRT2_INV*WIGNER_123_112) * c11 * (c21*c32 + c2n1*c3n2);
-            rFp3 += (SQRT2_INV*WIGNER_123_112) * c1n1 * (c21*c3n2 - c2n1*c32);
-            rFp3 += (SQRT2_INV*WIGNER_123_121) * c11 * (c22*c31 + c2n2*c3n1);
-            rFp3 += (SQRT2_INV*WIGNER_123_121) * c1n1 * (c2n2*c31 - c22*c3n1);
-            rFp3 -= (SQRT2_INV*WIGNER_123_123) * c11 * (c22*c33 + c2n2*c3n3);
-            rFp3 -= (SQRT2_INV*WIGNER_123_123) * c1n1 * (c22*c3n3 - c2n2*c33);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-        } else {
-            c30 = c31 = c3n1 = c32 = c3n2 = c33 = c3n3 = Double.NaN;
-        }
-        if (aL3Max == 3) return;
-        /// l1 = l2 = l3 = 4
-        tIdx = (4*4+4)+aShift;
-        final double c40  = aCnlm[tIdx  ];
-        final double c41  = aCnlm[tIdx+1];
-        final double c4n1 = aCnlm[tIdx-1];
-        final double c42  = aCnlm[tIdx+2];
-        final double c4n2 = aCnlm[tIdx-2];
-        final double c43  = aCnlm[tIdx+3];
-        final double c4n3 = aCnlm[tIdx-3];
-        final double c44  = aCnlm[tIdx+4];
-        final double c4n4 = aCnlm[tIdx-4];
-        rFp3 = 0.0;
-        rFp3 += WIGNER_444_000 * c40*c40*c40;
-        rFp3 -= (3.0*WIGNER_444_011) * c40 * (c41*c41 + c4n1*c4n1);
-        rFp3 += (3.0*WIGNER_444_022) * c40 * (c42*c42 + c4n2*c4n2);
-        rFp3 -= (3.0*WIGNER_444_033) * c40 * (c43*c43 + c4n3*c4n3);
-        rFp3 += (3.0*WIGNER_444_044) * c40 * (c44*c44 + c4n4*c4n4);
-        rFp3 += (3.0*SQRT2_INV*WIGNER_444_112) * c42 * (c41*c41 - c4n1*c4n1);
-        rFp3 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n1*c4n2;
-        rFp3 += (3.0*SQRT2_INV*WIGNER_444_224) * c44 * (c42*c42 - c4n2*c4n2);
-        rFp3 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n2*c4n4;
-        rFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c41 * (c42*c43 + c4n2*c4n3);
-        rFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c4n1 * (c42*c4n3 - c4n2*c43);
-        rFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * c41 * (c43*c44 + c4n3*c4n4);
-        rFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * c4n1 * (c43*c4n4 - c4n3*c44);
-        rFp[tIdxFP] = rFp3;
-        ++tIdxFP;
-        if (aL3Cross) {
-            /// l1 = l2 = 2, l3 = 4
-            rFp3 = 0.0;
-            rFp3 += WIGNER_224_000 * c20*c20*c40;
-            rFp3 -= WIGNER_224_110 * c40 * (c21*c21 + c2n1*c2n1);
-            rFp3 += WIGNER_224_220 * c40 * (c22*c22 + c2n2*c2n2);
-            rFp3 -= (2.0*WIGNER_224_011) * c20 * (c21*c41 + c2n1*c4n1);
-            rFp3 += (2.0*WIGNER_224_022) * c20 * (c22*c42 + c2n2*c4n2);
-            rFp3 += (SQRT2_INV*WIGNER_224_112) * c42 * (c21*c21 - c2n1*c2n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c2n1*c4n2;
-            rFp3 += (SQRT2_INV*WIGNER_224_224) * c44 * (c22*c22 - c2n2*c2n2);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c2n2*c4n4;
-            rFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * c21 * (c22*c41 + c2n2*c4n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * c2n1 * (c2n2*c41 - c22*c4n1);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c21 * (c22*c43 + c2n2*c4n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c2n1 * (c22*c4n3 - c2n2*c43);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-            /// l1 = l2 = 3, l3 = 4
-            rFp3 = 0.0;
-            rFp3 += WIGNER_334_000 * c30*c30*c40;
-            rFp3 -= WIGNER_334_110 * c40 * (c31*c31 + c3n1*c3n1);
-            rFp3 += WIGNER_334_220 * c40 * (c32*c32 + c3n2*c3n2);
-            rFp3 -= WIGNER_334_330 * c40 * (c33*c33 + c3n3*c3n3);
-            rFp3 -= (2.0*WIGNER_334_011) * c30 * (c31*c41 + c3n1*c4n1);
-            rFp3 += (2.0*WIGNER_334_022) * c30 * (c32*c42 + c3n2*c4n2);
-            rFp3 -= (2.0*WIGNER_334_033) * c30 * (c33*c43 + c3n3*c4n3);
-            rFp3 += (SQRT2_INV*WIGNER_334_112) * c42 * (c31*c31 - c3n1*c3n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c3n1*c4n2;
-            rFp3 += (SQRT2_INV*WIGNER_334_224) * c44 * (c32*c32 - c3n2*c3n2);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c3n2*c4n4;
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * c31 * (c32*c41 + c3n2*c4n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * c3n1 * (c3n2*c41 - c32*c4n1);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c31 * (c32*c43 + c3n2*c4n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c3n1 * (c32*c4n3 - c3n2*c43);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c31 * (c33*c42 + c3n3*c4n2);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c3n1 * (c3n3*c42 - c33*c4n2);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c32 * (c33*c41 + c3n3*c4n1);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c3n2 * (c3n3*c41 - c33*c4n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * c31 * (c33*c44 + c3n3*c4n4);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * c3n1 * (c33*c4n4 - c3n3*c44);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-            /// l1 = 2, l2 = l3 = 4
-            rFp3 = 0.0;
-            rFp3 += WIGNER_244_000 * c20*c40*c40;
-            rFp3 -= WIGNER_244_011 * c20 * (c41*c41 + c4n1*c4n1);
-            rFp3 += WIGNER_244_022 * c20 * (c42*c42 + c4n2*c4n2);
-            rFp3 -= WIGNER_244_033 * c20 * (c43*c43 + c4n3*c4n3);
-            rFp3 += WIGNER_244_044 * c20 * (c44*c44 + c4n4*c4n4);
-            rFp3 -= (2.0*WIGNER_244_110) * c40 * (c21*c41 + c2n1*c4n1);
-            rFp3 += (2.0*WIGNER_244_220) * c40 * (c22*c42 + c2n2*c4n2);
-            rFp3 += (SQRT2_INV*WIGNER_244_211) * c22 * (c41*c41 - c4n1*c4n1);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_211) * c2n2*c41*c4n1;
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * c21 * (c41*c42 + c4n1*c4n2);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * c2n1 * (c41*c4n2 - c4n1*c42);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * c22 * (c42*c44 + c4n2*c4n4);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * c2n2 * (c42*c4n4 - c4n2*c44);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c21 * (c42*c43 + c4n2*c4n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c2n1 * (c42*c4n3 - c4n2*c43);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c22 * (c41*c43 + c4n1*c4n3);
-            rFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c2n2 * (c41*c4n3 - c4n1*c43);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * c21 * (c43*c44 + c4n3*c4n4);
-            rFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * c2n1 * (c43*c4n4 - c4n3*c44);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-            /// l1 = 1, l2 = 3, l3 = 4
-            rFp3 = 0.0;
-            rFp3 += WIGNER_134_000 * c10*c30*c40;
-            rFp3 -= WIGNER_134_011 * c10 * (c31*c41 + c3n1*c4n1);
-            rFp3 += WIGNER_134_022 * c10 * (c32*c42 + c3n2*c4n2);
-            rFp3 -= WIGNER_134_033 * c10 * (c33*c43 + c3n3*c4n3);
-            rFp3 -= WIGNER_134_110 * c40 * (c11*c31 + c1n1*c3n1);
-            rFp3 -= WIGNER_134_101 * c30 * (c11*c41 + c1n1*c4n1);
-            rFp3 += (SQRT2_INV*WIGNER_134_112) * c11 * (c31*c42 + c3n1*c4n2);
-            rFp3 += (SQRT2_INV*WIGNER_134_112) * c1n1 * (c31*c4n2 - c3n1*c42);
-            rFp3 += (SQRT2_INV*WIGNER_134_121) * c11 * (c32*c41 + c3n2*c4n1);
-            rFp3 += (SQRT2_INV*WIGNER_134_121) * c1n1 * (c3n2*c41 - c32*c4n1);
-            rFp3 -= (SQRT2_INV*WIGNER_134_123) * c11 * (c32*c43 + c3n2*c4n3);
-            rFp3 -= (SQRT2_INV*WIGNER_134_123) * c1n1 * (c32*c4n3 - c3n2*c43);
-            rFp3 -= (SQRT2_INV*WIGNER_134_132) * c11 * (c33*c42 + c3n3*c4n2);
-            rFp3 -= (SQRT2_INV*WIGNER_134_132) * c1n1 * (c3n3*c42 - c33*c4n2);
-            rFp3 += (SQRT2_INV*WIGNER_134_134) * c11 * (c33*c44 + c3n3*c4n4);
-            rFp3 += (SQRT2_INV*WIGNER_134_134) * c1n1 * (c33*c4n4 - c3n3*c44);
-            rFp[tIdxFP] = rFp3;
-            ++tIdxFP;
-        }
-    }
-    static void cnlm2fpPxyz(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                            double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                            double @Nullable[] rFpPxCross, double @Nullable[] rFpPyCross, double @Nullable[] rFpPzCross,
-                            double aWt, int aLMax, int aL3Max, boolean aL3Cross, int aShift, int aShiftFP, int aShiftCross) {
-        calL2_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-               rFpPx, rFpPy, rFpPz,
-               rFpPxCross, rFpPyCross, rFpPzCross,
-               aWt, aLMax, aShift, aShiftFP, aShiftCross);
-        calL3_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-               rFpPx, rFpPy, rFpPz,
-               rFpPxCross, rFpPyCross, rFpPzCross,
-               aWt, aLMax, aL3Max, aL3Cross, aShift, aShiftFP, aShiftCross);
-    }
-    private static void putFpPxyz_(double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aSubFpPx, double aSubFpPy, double aSubFpPz, int aIdxFp, int aShiftCross) {
-        rFpPx[aIdxFp] -= aSubFpPx;
-        rFpPy[aIdxFp] -= aSubFpPy;
-        rFpPz[aIdxFp] -= aSubFpPz;
-        if (rFpPxCross != null) {
-            rFpPxCross[aShiftCross+aIdxFp] += aSubFpPx;
-            rFpPyCross[aShiftCross+aIdxFp] += aSubFpPy;
-            rFpPzCross[aShiftCross+aIdxFp] += aSubFpPz;
-        }
-    }
-    private static void calL2_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                               double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                               double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                               double aWt, int aLMax, int aShift, int aShiftFP, int aShiftCross) {
-        // l = 0
-        int tIdx = aShift, tIdxFP = aShiftFP;
-        double tCnl0 = aCnlm[tIdx];
-        double tMul = aWt*(PI4+PI4);
-        double subFpPx = tMul * (tCnl0*aCnlmPx[0]);
-        double subFpPy = tMul * (tCnl0*aCnlmPy[0]);
-        double subFpPz = tMul * (tCnl0*aCnlmPz[0]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 0) return;
-        // l = 1
-        tIdx = 1+aShift; tIdxFP = 1+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; double tCnl1 = aCnlm[tIdx+1], tCnl2 = aCnlm[tIdx+2];
-        tMul = aWt*(PI4/3 + PI4/3);
-        subFpPx = tMul * (tCnl0*aCnlmPx[1] + tCnl1*aCnlmPx[1+1] + tCnl2*aCnlmPx[1+2]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[1] + tCnl1*aCnlmPy[1+1] + tCnl2*aCnlmPy[1+2]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[1] + tCnl1*aCnlmPz[1+1] + tCnl2*aCnlmPz[1+2]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 1) return;
-        // l = 2
-        tIdx = 4+aShift; tIdxFP = 2+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; double tCnl3 = aCnlm[tIdx+3], tCnl4 = aCnlm[tIdx+4];
-        tMul = aWt*(PI4/5 + PI4/5);
-        subFpPx = tMul * (tCnl0*aCnlmPx[4] + tCnl1*aCnlmPx[4+1] + tCnl2*aCnlmPx[4+2] + tCnl3*aCnlmPx[4+3] + tCnl4*aCnlmPx[4+4]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[4] + tCnl1*aCnlmPy[4+1] + tCnl2*aCnlmPy[4+2] + tCnl3*aCnlmPy[4+3] + tCnl4*aCnlmPy[4+4]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[4] + tCnl1*aCnlmPz[4+1] + tCnl2*aCnlmPz[4+2] + tCnl3*aCnlmPz[4+3] + tCnl4*aCnlmPz[4+4]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 2) return;
-        // l = 3
-        tIdx = 9+aShift; tIdxFP = 3+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; double tCnl5 = aCnlm[tIdx+5], tCnl6 = aCnlm[tIdx+6];
-        tMul = aWt*(PI4/7 + PI4/7);
-        subFpPx = tMul * (tCnl0*aCnlmPx[9] + tCnl1*aCnlmPx[9+1] + tCnl2*aCnlmPx[9+2] + tCnl3*aCnlmPx[9+3] + tCnl4*aCnlmPx[9+4] + tCnl5*aCnlmPx[9+5] + tCnl6*aCnlmPx[9+6]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[9] + tCnl1*aCnlmPy[9+1] + tCnl2*aCnlmPy[9+2] + tCnl3*aCnlmPy[9+3] + tCnl4*aCnlmPy[9+4] + tCnl5*aCnlmPy[9+5] + tCnl6*aCnlmPy[9+6]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[9] + tCnl1*aCnlmPz[9+1] + tCnl2*aCnlmPz[9+2] + tCnl3*aCnlmPz[9+3] + tCnl4*aCnlmPz[9+4] + tCnl5*aCnlmPz[9+5] + tCnl6*aCnlmPz[9+6]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 3) return;
-        // l = 4
-        tIdx = 16+aShift; tIdxFP = 4+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; double tCnl7 = aCnlm[tIdx+7], tCnl8 = aCnlm[tIdx+8];
-        tMul = aWt*(PI4/9 + PI4/9);
-        subFpPx = tMul * (tCnl0*aCnlmPx[16] + tCnl1*aCnlmPx[16+1] + tCnl2*aCnlmPx[16+2] + tCnl3*aCnlmPx[16+3] + tCnl4*aCnlmPx[16+4] + tCnl5*aCnlmPx[16+5] + tCnl6*aCnlmPx[16+6] + tCnl7*aCnlmPx[16+7] + tCnl8*aCnlmPx[16+8]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[16] + tCnl1*aCnlmPy[16+1] + tCnl2*aCnlmPy[16+2] + tCnl3*aCnlmPy[16+3] + tCnl4*aCnlmPy[16+4] + tCnl5*aCnlmPy[16+5] + tCnl6*aCnlmPy[16+6] + tCnl7*aCnlmPy[16+7] + tCnl8*aCnlmPy[16+8]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[16] + tCnl1*aCnlmPz[16+1] + tCnl2*aCnlmPz[16+2] + tCnl3*aCnlmPz[16+3] + tCnl4*aCnlmPz[16+4] + tCnl5*aCnlmPz[16+5] + tCnl6*aCnlmPz[16+6] + tCnl7*aCnlmPz[16+7] + tCnl8*aCnlmPz[16+8]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 4) return;
-        // l = 5
-        tIdx = 25+aShift; tIdxFP = 5+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; double tCnl9 = aCnlm[tIdx+9], tCnl10 = aCnlm[tIdx+10];
-        tMul = aWt*(PI4/11 + PI4/11);
-        subFpPx = tMul * (tCnl0*aCnlmPx[25] + tCnl1*aCnlmPx[25+1] + tCnl2*aCnlmPx[25+2] + tCnl3*aCnlmPx[25+3] + tCnl4*aCnlmPx[25+4] + tCnl5*aCnlmPx[25+5] + tCnl6*aCnlmPx[25+6] + tCnl7*aCnlmPx[25+7] + tCnl8*aCnlmPx[25+8] + tCnl9*aCnlmPx[25+9] + tCnl10*aCnlmPx[25+10]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[25] + tCnl1*aCnlmPy[25+1] + tCnl2*aCnlmPy[25+2] + tCnl3*aCnlmPy[25+3] + tCnl4*aCnlmPy[25+4] + tCnl5*aCnlmPy[25+5] + tCnl6*aCnlmPy[25+6] + tCnl7*aCnlmPy[25+7] + tCnl8*aCnlmPy[25+8] + tCnl9*aCnlmPy[25+9] + tCnl10*aCnlmPy[25+10]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[25] + tCnl1*aCnlmPz[25+1] + tCnl2*aCnlmPz[25+2] + tCnl3*aCnlmPz[25+3] + tCnl4*aCnlmPz[25+4] + tCnl5*aCnlmPz[25+5] + tCnl6*aCnlmPz[25+6] + tCnl7*aCnlmPz[25+7] + tCnl8*aCnlmPz[25+8] + tCnl9*aCnlmPz[25+9] + tCnl10*aCnlmPz[25+10]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 5) return;
-        // l = 6
-        tIdx = 36+aShift; tIdxFP = 6+aShiftFP;
-        tCnl0 = aCnlm[tIdx]; tCnl1 = aCnlm[tIdx+1]; tCnl2 = aCnlm[tIdx+2]; tCnl3 = aCnlm[tIdx+3]; tCnl4 = aCnlm[tIdx+4]; tCnl5 = aCnlm[tIdx+5]; tCnl6 = aCnlm[tIdx+6]; tCnl7 = aCnlm[tIdx+7]; tCnl8 = aCnlm[tIdx+8]; tCnl9 = aCnlm[tIdx+9]; tCnl10 = aCnlm[tIdx+10]; double tCnl11 = aCnlm[tIdx+11], tCnl12 = aCnlm[tIdx+12];
-        tMul = aWt*(PI4/13 + PI4/13);
-        subFpPx = tMul * (tCnl0*aCnlmPx[36] + tCnl1*aCnlmPx[36+1] + tCnl2*aCnlmPx[36+2] + tCnl3*aCnlmPx[36+3] + tCnl4*aCnlmPx[36+4] + tCnl5*aCnlmPx[36+5] + tCnl6*aCnlmPx[36+6] + tCnl7*aCnlmPx[36+7] + tCnl8*aCnlmPx[36+8] + tCnl9*aCnlmPx[36+9] + tCnl10*aCnlmPx[36+10] + tCnl11*aCnlmPx[36+11] + tCnl12*aCnlmPx[36+12]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[36] + tCnl1*aCnlmPy[36+1] + tCnl2*aCnlmPy[36+2] + tCnl3*aCnlmPy[36+3] + tCnl4*aCnlmPy[36+4] + tCnl5*aCnlmPy[36+5] + tCnl6*aCnlmPy[36+6] + tCnl7*aCnlmPy[36+7] + tCnl8*aCnlmPy[36+8] + tCnl9*aCnlmPy[36+9] + tCnl10*aCnlmPy[36+10] + tCnl11*aCnlmPy[36+11] + tCnl12*aCnlmPy[36+12]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[36] + tCnl1*aCnlmPz[36+1] + tCnl2*aCnlmPz[36+2] + tCnl3*aCnlmPz[36+3] + tCnl4*aCnlmPz[36+4] + tCnl5*aCnlmPz[36+5] + tCnl6*aCnlmPz[36+6] + tCnl7*aCnlmPz[36+7] + tCnl8*aCnlmPz[36+8] + tCnl9*aCnlmPz[36+9] + tCnl10*aCnlmPz[36+10] + tCnl11*aCnlmPz[36+11] + tCnl12*aCnlmPz[36+12]);
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tIdxFP, aShiftCross);
-        if (aLMax == 6) return;
-        // 优化到 l = 6 主要是大部分只用到这个程度；在本地测试这个优化基本没效果了（可能需要 avx512 指令集更有效）
-        // else
-        for (int tL = 7; tL <= aLMax; ++tL) {
-            // 根据 sphericalHarmonicsFull2Dest 的约定这里需要这样索引
-            final int tStart0 = tL*tL;
-            final int tStart = tStart0 + aShift;
-            final int tLen = tL+tL+1;
-            final int tEnd = tStart+tLen;
-            double rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
-            for (int i=tStart, j=tStart0; i < tEnd; ++i, ++j) {
-                double tCnlm = aCnlm[i];
-                rDotPx += tCnlm*aCnlmPx[j];
-                rDotPy += tCnlm*aCnlmPy[j];
-                rDotPz += tCnlm*aCnlmPz[j];
-            }
-            tMul = PI4/(double)tLen;
-            tMul = aWt*(tMul+tMul);
-            subFpPx = tMul * rDotPx;
-            subFpPy = tMul * rDotPy;
-            subFpPz = tMul * rDotPz;
-            putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tL+aShiftFP, aShiftCross);
-        }
-    }
+    private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                            double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz,
+                                            double[] rNlY, double[] rYPtheta, double[] rYPphi, double[] rYPx, double[] rYPy, double[] rYPz,
+                                            double[] rCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
+                                            double[] rFingerPrint, double[] rFingerPrintPx, double[] rFingerPrintPy, double[] rFingerPrintPz,
+                                            double @Nullable[] rFingerPrintPxCross, double @Nullable[] rFingerPrintPyCross, double @Nullable[] rFingerPrintPzCross,
+                                            int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross);
     
-    private static void calL3_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                               double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                               double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                               double aWt, int aLMax, int aL3Max, boolean aL3Cross, int aShift, int aShiftFP, int aShiftCross) {
-        // 过大的单一函数会阻止 JIT 优化，因此这里要拆分成多个函数
-        if (aL3Max <= 1) return;
-        int tIdxFP = aLMax+1+aShiftFP;
-        calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-        ++tIdxFP;
-        if (aL3Cross) {
-            calL3_112_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-        }
-        if (aL3Max == 2) return;
-        if (aL3Cross) {
-            calL3_233_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-            calL3_123_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-        }
-        if (aL3Max == 3) return;
-        calL3_444_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-        ++tIdxFP;
-        if (aL3Cross) {
-            calL3_224_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-            calL3_334_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-            calL3_244_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-            calL3_134_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, aShift, tIdxFP, aShiftCross);
-            ++tIdxFP;
-        }
-    }
-    private static void calL3_222_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP = 2*2+2;
-        final int tIdx = tIdxP+aShift;
-        final double c20  = aCnlm[tIdx  ];
-        final double c21  = aCnlm[tIdx+1];
-        final double c2n1 = aCnlm[tIdx-1];
-        final double c22  = aCnlm[tIdx+2];
-        final double c2n2 = aCnlm[tIdx-2];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = (3.0*WIGNER_222_000)*c20*c20 - (3.0*WIGNER_222_011)*(c21*c21 + c2n1*c2n1) + (3.0*WIGNER_222_022)*(c22*c22 + c2n2*c2n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP];
-        rFp3Py += tMul*aCnlmPy[tIdxP];
-        rFp3Pz += tMul*aCnlmPz[tIdxP];
-        
-        double tMul1 = (-6.0*WIGNER_222_011)*c20*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c22*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c2n1*c2n2;
-        double tMul2 = (-6.0*WIGNER_222_011)*c20*c2n1 - (6.0*SQRT2_INV*WIGNER_222_112)*c22*c2n1 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP+1] + tMul2*aCnlmPx[tIdxP-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+1] + tMul2*aCnlmPy[tIdxP-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+1] + tMul2*aCnlmPz[tIdxP-1];
-        tMul1 = (6.0*WIGNER_222_022)*c20*c22  + (3.0*SQRT2_INV*WIGNER_222_112)*(c21*c21 - c2n1*c2n1);
-        tMul2 = (6.0*WIGNER_222_022)*c20*c2n2 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP+2] + tMul2*aCnlmPx[tIdxP-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+2] + tMul2*aCnlmPy[tIdxP-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+2] + tMul2*aCnlmPz[tIdxP-2];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_112_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP1 = 1+1;
-        final int tIdxP2 = 2*2+2;
-        final int tIdx1 = tIdxP1+aShift;
-        final double c10  = aCnlm[tIdx1  ];
-        final double c11  = aCnlm[tIdx1+1];
-        final double c1n1 = aCnlm[tIdx1-1];
-        final int tIdx2 = tIdxP2+aShift;
-        final double c20  = aCnlm[tIdx2  ];
-        final double c21  = aCnlm[tIdx2+1];
-        final double c2n1 = aCnlm[tIdx2-1];
-        final double c22  = aCnlm[tIdx2+2];
-        final double c2n2 = aCnlm[tIdx2-2];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_112_000*c10*c10 - WIGNER_112_110*(c11*c11 + c1n1*c1n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP2];
-        rFp3Py += tMul*aCnlmPy[tIdxP2];
-        rFp3Pz += tMul*aCnlmPz[tIdxP2];
-        tMul = (2.0*WIGNER_112_000)*c10*c20 - (2.0*WIGNER_112_011)*(c11*c21 + c1n1*c2n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP1];
-        rFp3Py += tMul*aCnlmPy[tIdxP1];
-        rFp3Pz += tMul*aCnlmPz[tIdxP1];
-        
-        double tMul1 = (-2.0*WIGNER_112_110)*c20*c11  - (2.0*WIGNER_112_011)*c10*c21  + (2.0*SQRT2_INV*WIGNER_112_112)*c22*c11  + (2.0*SQRT2_INV*WIGNER_112_112)*c1n1*c2n2;
-        double tMul2 = (-2.0*WIGNER_112_110)*c20*c1n1 - (2.0*WIGNER_112_011)*c10*c2n1 - (2.0*SQRT2_INV*WIGNER_112_112)*c22*c1n1 + (2.0*SQRT2_INV*WIGNER_112_112)*c11*c2n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP1+1] + tMul2*aCnlmPx[tIdxP1-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP1+1] + tMul2*aCnlmPy[tIdxP1-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP1+1] + tMul2*aCnlmPz[tIdxP1-1];
-        
-        tMul1 = (-2.0*WIGNER_112_011)*c10*c11;
-        tMul2 = (-2.0*WIGNER_112_011)*c10*c1n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+1] + tMul2*aCnlmPx[tIdxP2-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+1] + tMul2*aCnlmPy[tIdxP2-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+1] + tMul2*aCnlmPz[tIdxP2-1];
-        tMul1 = (SQRT2_INV*WIGNER_112_112)*(c11*c11 - c1n1*c1n1);
-        tMul2 = (2.0*SQRT2_INV*WIGNER_112_112)*c11*c1n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+2] + tMul2*aCnlmPx[tIdxP2-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+2] + tMul2*aCnlmPy[tIdxP2-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+2] + tMul2*aCnlmPz[tIdxP2-2];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_233_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP2 = 2*2+2;
-        final int tIdxP3 = 3*3+3;
-        final int tIdx2 = tIdxP2+aShift;
-        final double c20  = aCnlm[tIdx2  ];
-        final double c21  = aCnlm[tIdx2+1];
-        final double c2n1 = aCnlm[tIdx2-1];
-        final double c22  = aCnlm[tIdx2+2];
-        final double c2n2 = aCnlm[tIdx2-2];
-        final int tIdx3 = tIdxP3+aShift;
-        final double c30  = aCnlm[tIdx3  ];
-        final double c31  = aCnlm[tIdx3+1];
-        final double c3n1 = aCnlm[tIdx3-1];
-        final double c32  = aCnlm[tIdx3+2];
-        final double c3n2 = aCnlm[tIdx3-2];
-        final double c33  = aCnlm[tIdx3+3];
-        final double c3n3 = aCnlm[tIdx3-3];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_233_000*c30*c30 - WIGNER_233_011*(c31*c31 + c3n1*c3n1) + WIGNER_233_022*(c32*c32 + c3n2*c3n2) - WIGNER_233_033*(c33*c33 + c3n3*c3n3);
-        rFp3Px += tMul*aCnlmPx[tIdxP2];
-        rFp3Py += tMul*aCnlmPy[tIdxP2];
-        rFp3Pz += tMul*aCnlmPz[tIdxP2];
-        tMul = (2.0*WIGNER_233_000)*c20*c30 - (2.0*WIGNER_233_110)*(c21*c31 + c2n1*c3n1) + (2.0*WIGNER_233_220)*(c22*c32 + c2n2*c3n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP3];
-        rFp3Py += tMul*aCnlmPy[tIdxP3];
-        rFp3Pz += tMul*aCnlmPz[tIdxP3];
-        
-        double tMul1 = (-2.0*WIGNER_233_110) * c30*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c33 + c3n2*c3n3);
-        double tMul2 = (-2.0*WIGNER_233_110) * c30*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c3n3 - c3n2*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+1] + tMul2*aCnlmPx[tIdxP2-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+1] + tMul2*aCnlmPy[tIdxP2-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+1] + tMul2*aCnlmPz[tIdxP2-1];
-        tMul1 = (2.0*WIGNER_233_220) * c30*c32  - (2.0*SQRT2_INV*WIGNER_233_213)*(c31*c33 + c3n1*c3n3) + (SQRT2_INV*WIGNER_233_211)*(c31*c31 - c3n1*c3n1);
-        tMul2 = (2.0*WIGNER_233_220) * c30*c3n2 - (2.0*SQRT2_INV*WIGNER_233_213)*(c31*c3n3 - c3n1*c33) + (2.0*SQRT2_INV*WIGNER_233_211)*c31*c3n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+2] + tMul2*aCnlmPx[tIdxP2-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+2] + tMul2*aCnlmPy[tIdxP2-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+2] + tMul2*aCnlmPz[tIdxP2-2];
-        
-        tMul1 = (-2.0*WIGNER_233_011)*c20*c31  - (2.0*WIGNER_233_110)*c30*c21  + (2.0*SQRT2_INV*WIGNER_233_211)*c22*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c32 + c2n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c33 + c2n2*c3n3) + (2.0*SQRT2_INV*WIGNER_233_211)*c2n2*c3n1;
-        tMul2 = (-2.0*WIGNER_233_011)*c20*c3n1 - (2.0*WIGNER_233_110)*c30*c2n1 - (2.0*SQRT2_INV*WIGNER_233_211)*c22*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c3n2 - c2n1*c32) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c3n3 - c2n2*c33) + (2.0*SQRT2_INV*WIGNER_233_211)*c31*c2n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+1] + tMul2*aCnlmPx[tIdxP3-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+1] + tMul2*aCnlmPy[tIdxP3-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+1] + tMul2*aCnlmPz[tIdxP3-1];
-        tMul1 = (2.0*WIGNER_233_022)*c20*c32  + (2.0*WIGNER_233_220)*c30*c22  + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c31 - c2n1*c3n1) - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c33 + c2n1*c3n3);
-        tMul2 = (2.0*WIGNER_233_022)*c20*c3n2 + (2.0*WIGNER_233_220)*c30*c2n2 + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c3n1 + c2n1*c31) - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c3n3 - c2n1*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+2] + tMul2*aCnlmPx[tIdxP3-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+2] + tMul2*aCnlmPy[tIdxP3-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+2] + tMul2*aCnlmPz[tIdxP3-2];
-        tMul1 = (-2.0*WIGNER_233_033)*c20*c33  - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c32 - c2n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c31 - c2n2*c3n1);
-        tMul2 = (-2.0*WIGNER_233_033)*c20*c3n3 - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c3n2 + c2n1*c32) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c3n1 + c2n2*c31);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+3] + tMul2*aCnlmPx[tIdxP3-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+3] + tMul2*aCnlmPy[tIdxP3-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+3] + tMul2*aCnlmPz[tIdxP3-3];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_123_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP1 = 1+1;
-        final int tIdxP2 = 2*2+2;
-        final int tIdxP3 = 3*3+3;
-        final int tIdx1 = tIdxP1+aShift;
-        final double c10  = aCnlm[tIdx1  ];
-        final double c11  = aCnlm[tIdx1+1];
-        final double c1n1 = aCnlm[tIdx1-1];
-        final int tIdx2 = tIdxP2+aShift;
-        final double c20  = aCnlm[tIdx2  ];
-        final double c21  = aCnlm[tIdx2+1];
-        final double c2n1 = aCnlm[tIdx2-1];
-        final double c22  = aCnlm[tIdx2+2];
-        final double c2n2 = aCnlm[tIdx2-2];
-        final int tIdx3 = tIdxP3+aShift;
-        final double c30  = aCnlm[tIdx3  ];
-        final double c31  = aCnlm[tIdx3+1];
-        final double c3n1 = aCnlm[tIdx3-1];
-        final double c32  = aCnlm[tIdx3+2];
-        final double c3n2 = aCnlm[tIdx3-2];
-        final double c33  = aCnlm[tIdx3+3];
-        final double c3n3 = aCnlm[tIdx3-3];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_123_000*c20*c30 - WIGNER_123_011*(c21*c31 + c2n1*c3n1) + WIGNER_123_022*(c22*c32 + c2n2*c3n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP1];
-        rFp3Py += tMul*aCnlmPy[tIdxP1];
-        rFp3Pz += tMul*aCnlmPz[tIdxP1];
-        tMul = WIGNER_123_000*c10*c30 - WIGNER_123_101*(c11*c31 + c1n1*c3n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP2];
-        rFp3Py += tMul*aCnlmPy[tIdxP2];
-        rFp3Pz += tMul*aCnlmPz[tIdxP2];
-        tMul = WIGNER_123_000*c10*c20 - WIGNER_123_110*(c11*c21 + c1n1*c2n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP3];
-        rFp3Py += tMul*aCnlmPy[tIdxP3];
-        rFp3Pz += tMul*aCnlmPz[tIdxP3];
-        
-        double tMul1 = (-WIGNER_123_101)*c20*c31  - WIGNER_123_110*c30*c21  + (SQRT2_INV*WIGNER_123_112)*(c21*c32 + c2n1*c3n2) + (SQRT2_INV*WIGNER_123_121)*(c22*c31 + c2n2*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c33 + c2n2*c3n3);
-        double tMul2 = (-WIGNER_123_101)*c20*c3n1 - WIGNER_123_110*c30*c2n1 + (SQRT2_INV*WIGNER_123_112)*(c21*c3n2 - c2n1*c32) + (SQRT2_INV*WIGNER_123_121)*(c2n2*c31 - c22*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c3n3 - c2n2*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP1+1] + tMul2*aCnlmPx[tIdxP1-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP1+1] + tMul2*aCnlmPy[tIdxP1-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP1+1] + tMul2*aCnlmPz[tIdxP1-1];
-        
-        tMul1 = (-WIGNER_123_011)*c10*c31  - WIGNER_123_110*c30*c11  + (SQRT2_INV*WIGNER_123_112)*(c11*c32 + c1n1*c3n2);
-        tMul2 = (-WIGNER_123_011)*c10*c3n1 - WIGNER_123_110*c30*c1n1 + (SQRT2_INV*WIGNER_123_112)*(c11*c3n2 - c1n1*c32);
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+1] + tMul2*aCnlmPx[tIdxP2-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+1] + tMul2*aCnlmPy[tIdxP2-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+1] + tMul2*aCnlmPz[tIdxP2-1];
-        tMul1 = WIGNER_123_022*c10*c32  + (SQRT2_INV*WIGNER_123_121)*(c11*c31 - c1n1*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c11*c33 + c1n1*c3n3);
-        tMul2 = WIGNER_123_022*c10*c3n2 + (SQRT2_INV*WIGNER_123_121)*(c11*c3n1 + c1n1*c31) - (SQRT2_INV*WIGNER_123_123)*(c11*c3n3 - c1n1*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+2] + tMul2*aCnlmPx[tIdxP2-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+2] + tMul2*aCnlmPy[tIdxP2-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+2] + tMul2*aCnlmPz[tIdxP2-2];
-        
-        tMul1 = (-WIGNER_123_011)*c10*c21  - WIGNER_123_101*c20*c11  + (SQRT2_INV*WIGNER_123_121)*(c11*c22 + c1n1*c2n2);
-        tMul2 = (-WIGNER_123_011)*c10*c2n1 - WIGNER_123_101*c20*c1n1 + (SQRT2_INV*WIGNER_123_121)*(c11*c2n2 - c1n1*c22);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+1] + tMul2*aCnlmPx[tIdxP3-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+1] + tMul2*aCnlmPy[tIdxP3-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+1] + tMul2*aCnlmPz[tIdxP3-1];
-        tMul1 = WIGNER_123_022*c10*c22  + (SQRT2_INV*WIGNER_123_112)*(c11*c21 - c1n1*c2n1);
-        tMul2 = WIGNER_123_022*c10*c2n2 + (SQRT2_INV*WIGNER_123_112)*(c11*c2n1 + c1n1*c21);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+2] + tMul2*aCnlmPx[tIdxP3-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+2] + tMul2*aCnlmPy[tIdxP3-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+2] + tMul2*aCnlmPz[tIdxP3-2];
-        tMul1 = (-SQRT2_INV*WIGNER_123_123)*(c11*c22 - c1n1*c2n2);
-        tMul2 = (-SQRT2_INV*WIGNER_123_123)*(c11*c2n2 + c1n1*c22);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+3] + tMul2*aCnlmPx[tIdxP3-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+3] + tMul2*aCnlmPy[tIdxP3-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+3] + tMul2*aCnlmPz[tIdxP3-3];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_444_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP = 4*4+4;
-        final int tIdx = tIdxP+aShift;
-        final double c40  = aCnlm[tIdx  ];
-        final double c41  = aCnlm[tIdx+1];
-        final double c4n1 = aCnlm[tIdx-1];
-        final double c42  = aCnlm[tIdx+2];
-        final double c4n2 = aCnlm[tIdx-2];
-        final double c43  = aCnlm[tIdx+3];
-        final double c4n3 = aCnlm[tIdx-3];
-        final double c44  = aCnlm[tIdx+4];
-        final double c4n4 = aCnlm[tIdx-4];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = (3.0*WIGNER_444_000)*c40*c40 - (3.0*WIGNER_444_011)*(c41*c41 + c4n1*c4n1) + (3.0*WIGNER_444_022)*(c42*c42 + c4n2*c4n2) - (3.0*WIGNER_444_033)*(c43*c43 + c4n3*c4n3) + (3.0*WIGNER_444_044)*(c44*c44 + c4n4*c4n4);
-        rFp3Px += tMul*aCnlmPx[tIdxP];
-        rFp3Py += tMul*aCnlmPy[tIdxP];
-        rFp3Pz += tMul*aCnlmPz[tIdxP];
-        
-        double tMul1 = (-6.0*WIGNER_444_011)*c40*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c42*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c4n1*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c43 + c4n2*c4n3) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c44 + c4n3*c4n4);
-        double tMul2 = (-6.0*WIGNER_444_011)*c40*c4n1 - (6.0*SQRT2_INV*WIGNER_444_112)*c42*c4n1 + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n2  - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c4n3 - c4n2*c43) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c4n4 - c4n3*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP+1] + tMul2*aCnlmPx[tIdxP-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+1] + tMul2*aCnlmPy[tIdxP-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+1] + tMul2*aCnlmPz[tIdxP-1];
-        tMul1 = (6.0*WIGNER_444_022)*c40*c42  + (6.0*SQRT2_INV*WIGNER_444_224)*c44*c42  - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c43 + c4n1*c4n3) + (6.0*SQRT2_INV*WIGNER_444_224)*c4n2*c4n4 + (3.0*SQRT2_INV*WIGNER_444_112)*(c41*c41 - c4n1*c4n1);
-        tMul2 = (6.0*WIGNER_444_022)*c40*c4n2 - (6.0*SQRT2_INV*WIGNER_444_224)*c44*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c4n3 - c4n1*c43) + (6.0*SQRT2_INV*WIGNER_444_224)*c42*c4n4  + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP+2] + tMul2*aCnlmPx[tIdxP-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+2] + tMul2*aCnlmPy[tIdxP-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+2] + tMul2*aCnlmPz[tIdxP-2];
-        tMul1 = (-6.0*WIGNER_444_033)*c40*c43  - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c42 - c4n1*c4n2) + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c44 + c4n1*c4n4);
-        tMul2 = (-6.0*WIGNER_444_033)*c40*c4n3 - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c4n2 + c4n1*c42) + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c4n4 - c4n1*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP+3] + tMul2*aCnlmPx[tIdxP-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+3] + tMul2*aCnlmPy[tIdxP-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+3] + tMul2*aCnlmPz[tIdxP-3];
-        tMul1 = (6.0*WIGNER_444_044)*c40*c44  + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c43 - c4n1*c4n3) + (3.0*SQRT2_INV*WIGNER_444_224)*(c42*c42 - c4n2*c4n2);
-        tMul2 = (6.0*WIGNER_444_044)*c40*c4n4 + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c4n3 + c4n1*c43) + (6.0*SQRT2_INV*WIGNER_444_224)*c42*c4n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP+4] + tMul2*aCnlmPx[tIdxP-4];
-        rFp3Py += tMul1*aCnlmPy[tIdxP+4] + tMul2*aCnlmPy[tIdxP-4];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP+4] + tMul2*aCnlmPz[tIdxP-4];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_224_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP2 = 2*2+2;
-        final int tIdxP4 = 4*4+4;
-        final int tIdx2 = tIdxP2+aShift;
-        final double c20  = aCnlm[tIdx2  ];
-        final double c21  = aCnlm[tIdx2+1];
-        final double c2n1 = aCnlm[tIdx2-1];
-        final double c22  = aCnlm[tIdx2+2];
-        final double c2n2 = aCnlm[tIdx2-2];
-        final int tIdx4 = tIdxP4+aShift;
-        final double c40  = aCnlm[tIdx4  ];
-        final double c41  = aCnlm[tIdx4+1];
-        final double c4n1 = aCnlm[tIdx4-1];
-        final double c42  = aCnlm[tIdx4+2];
-        final double c4n2 = aCnlm[tIdx4-2];
-        final double c43  = aCnlm[tIdx4+3];
-        final double c4n3 = aCnlm[tIdx4-3];
-        final double c44  = aCnlm[tIdx4+4];
-        final double c4n4 = aCnlm[tIdx4-4];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_224_000*c20*c20 - WIGNER_224_110*(c21*c21 + c2n1*c2n1) + WIGNER_224_220*(c22*c22 + c2n2*c2n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP4];
-        rFp3Py += tMul*aCnlmPy[tIdxP4];
-        rFp3Pz += tMul*aCnlmPz[tIdxP4];
-        tMul = (2.0*WIGNER_224_000)*c20*c40 - (2.0*WIGNER_224_011)*(c21*c41 + c2n1*c4n1) + (2.0*WIGNER_224_022)*(c22*c42 + c2n2*c4n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP2];
-        rFp3Py += tMul*aCnlmPy[tIdxP2];
-        rFp3Pz += tMul*aCnlmPz[tIdxP2];
-        
-        double tMul1 = (-2.0*WIGNER_224_110)*c40*c21  - (2.0*WIGNER_224_011)*c20*c41  + (2.0*SQRT2_INV*WIGNER_224_112)*c42*c21  + (2.0*SQRT2_INV*WIGNER_224_112)*c2n1*c4n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c22*c41 + c2n2*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c43 + c2n2*c4n3);
-        double tMul2 = (-2.0*WIGNER_224_110)*c40*c2n1 - (2.0*WIGNER_224_011)*c20*c4n1 - (2.0*SQRT2_INV*WIGNER_224_112)*c42*c2n1 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c4n2  + (2.0*SQRT2_INV*WIGNER_224_121)*(c2n2*c41 - c22*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c4n3 - c2n2*c43);
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+1] + tMul2*aCnlmPx[tIdxP2-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+1] + tMul2*aCnlmPy[tIdxP2-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+1] + tMul2*aCnlmPz[tIdxP2-1];
-        tMul1 = (2.0*WIGNER_224_220)*c40*c22  + (2.0*WIGNER_224_022)*c20*c42  + (2.0*SQRT2_INV*WIGNER_224_224)*c44*c22  + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c41 - c2n1*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c21*c43 + c2n1*c4n3) + (2.0*SQRT2_INV*WIGNER_224_224)*c2n2*c4n4;
-        tMul2 = (2.0*WIGNER_224_220)*c40*c2n2 + (2.0*WIGNER_224_022)*c20*c4n2 - (2.0*SQRT2_INV*WIGNER_224_224)*c44*c2n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c4n1 + c2n1*c41) - (2.0*SQRT2_INV*WIGNER_224_123)*(c21*c4n3 - c2n1*c43) + (2.0*SQRT2_INV*WIGNER_224_224)*c22*c4n4;
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+2] + tMul2*aCnlmPx[tIdxP2-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+2] + tMul2*aCnlmPy[tIdxP2-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+2] + tMul2*aCnlmPz[tIdxP2-2];
-        
-        tMul1 = (-2.0*WIGNER_224_011)*c20*c21  + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c22 + c2n1*c2n2);
-        tMul2 = (-2.0*WIGNER_224_011)*c20*c2n1 + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c2n2 - c2n1*c22);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+1] + tMul2*aCnlmPx[tIdxP4-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+1] + tMul2*aCnlmPy[tIdxP4-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+1] + tMul2*aCnlmPz[tIdxP4-1];
-        tMul1 = (2.0*WIGNER_224_022)*c20*c22  + (SQRT2_INV*WIGNER_224_112)*(c21*c21 - c2n1*c2n1);
-        tMul2 = (2.0*WIGNER_224_022)*c20*c2n2 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c2n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+2] + tMul2*aCnlmPx[tIdxP4-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+2] + tMul2*aCnlmPy[tIdxP4-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+2] + tMul2*aCnlmPz[tIdxP4-2];
-        tMul1 = (-2.0*SQRT2_INV*WIGNER_224_123)*(c21*c22 - c2n1*c2n2);
-        tMul2 = (-2.0*SQRT2_INV*WIGNER_224_123)*(c21*c2n2 + c2n1*c22);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+3] + tMul2*aCnlmPx[tIdxP4-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+3] + tMul2*aCnlmPy[tIdxP4-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+3] + tMul2*aCnlmPz[tIdxP4-3];
-        tMul1 = (2.0*SQRT2_INV*WIGNER_224_224)*c22*c2n2;
-        tMul2 = (SQRT2_INV*WIGNER_224_224)*(c22*c22 - c2n2*c2n2);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4-4] + tMul2*aCnlmPx[tIdxP4+4];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4-4] + tMul2*aCnlmPy[tIdxP4+4];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4-4] + tMul2*aCnlmPz[tIdxP4+4];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_334_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP3 = 3*3+3;
-        final int tIdxP4 = 4*4+4;
-        final int tIdx3 = tIdxP3+aShift;
-        final double c30  = aCnlm[tIdx3  ];
-        final double c31  = aCnlm[tIdx3+1];
-        final double c3n1 = aCnlm[tIdx3-1];
-        final double c32  = aCnlm[tIdx3+2];
-        final double c3n2 = aCnlm[tIdx3-2];
-        final double c33  = aCnlm[tIdx3+3];
-        final double c3n3 = aCnlm[tIdx3-3];
-        final int tIdx4 = tIdxP4+aShift;
-        final double c40  = aCnlm[tIdx4  ];
-        final double c41  = aCnlm[tIdx4+1];
-        final double c4n1 = aCnlm[tIdx4-1];
-        final double c42  = aCnlm[tIdx4+2];
-        final double c4n2 = aCnlm[tIdx4-2];
-        final double c43  = aCnlm[tIdx4+3];
-        final double c4n3 = aCnlm[tIdx4-3];
-        final double c44  = aCnlm[tIdx4+4];
-        final double c4n4 = aCnlm[tIdx4-4];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_334_000*c30*c30 - WIGNER_334_110*(c31*c31 + c3n1*c3n1) + WIGNER_334_220*(c32*c32 + c3n2*c3n2) - WIGNER_334_330*(c33*c33 + c3n3*c3n3);
-        rFp3Px += tMul*aCnlmPx[tIdxP4];
-        rFp3Py += tMul*aCnlmPy[tIdxP4];
-        rFp3Pz += tMul*aCnlmPz[tIdxP4];
-        tMul = (2.0*WIGNER_334_000)*c30*c40 - (2.0*WIGNER_334_011)*(c31*c41 + c3n1*c4n1) + (2.0*WIGNER_334_022)*(c32*c42 + c3n2*c4n2) - (2.0*WIGNER_334_033)*(c33*c43 + c3n3*c4n3);
-        rFp3Px += tMul*aCnlmPx[tIdxP3];
-        rFp3Py += tMul*aCnlmPy[tIdxP3];
-        rFp3Pz += tMul*aCnlmPz[tIdxP3];
-        
-        double tMul1 = (-2.0*WIGNER_334_110)*c40*c31  - (2.0*WIGNER_334_011)*c30*c41  + (2.0*SQRT2_INV*WIGNER_334_112)*c42*c31  + (2.0*SQRT2_INV*WIGNER_334_112)*c3n1*c4n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c32*c41 + c3n2*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c43 + c3n2*c4n3) - (2.0*SQRT2_INV*WIGNER_334_132)*(c33*c42 + c3n3*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c44 + c3n3*c4n4);
-        double tMul2 = (-2.0*WIGNER_334_110)*c40*c3n1 - (2.0*WIGNER_334_011)*c30*c4n1 - (2.0*SQRT2_INV*WIGNER_334_112)*c42*c3n1 + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c4n2  + (2.0*SQRT2_INV*WIGNER_334_121)*(c3n2*c41 - c32*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c4n3 - c3n2*c43) - (2.0*SQRT2_INV*WIGNER_334_132)*(c3n3*c42 - c33*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c4n4 - c3n3*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+1] + tMul2*aCnlmPx[tIdxP3-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+1] + tMul2*aCnlmPy[tIdxP3-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+1] + tMul2*aCnlmPz[tIdxP3-1];
-        tMul1 = (2.0*WIGNER_334_220)*c40*c32  + (2.0*WIGNER_334_022)*c30*c42  + (2.0*SQRT2_INV*WIGNER_334_224)*c44*c32  + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c41 - c3n1*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c43 + c3n1*c4n3) + (2.0*SQRT2_INV*WIGNER_334_224)*c3n2*c4n4 - (2.0*SQRT2_INV*WIGNER_334_231)*(c33*c41 + c3n3*c4n1);
-        tMul2 = (2.0*WIGNER_334_220)*c40*c3n2 + (2.0*WIGNER_334_022)*c30*c4n2 - (2.0*SQRT2_INV*WIGNER_334_224)*c44*c3n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c4n1 + c3n1*c41) - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c4n3 - c3n1*c43) + (2.0*SQRT2_INV*WIGNER_334_224)*c32*c4n4  - (2.0*SQRT2_INV*WIGNER_334_231)*(c3n3*c41 - c33*c4n1);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+2] + tMul2*aCnlmPx[tIdxP3-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+2] + tMul2*aCnlmPy[tIdxP3-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+2] + tMul2*aCnlmPz[tIdxP3-2];
-        tMul1 = (-2.0*WIGNER_334_330)*c40*c33  - (2.0*WIGNER_334_033)*c30*c43  - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c42 - c3n1*c4n2) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c41 - c3n2*c4n1) + (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c44 + c3n1*c4n4);
-        tMul2 = (-2.0*WIGNER_334_330)*c40*c3n3 - (2.0*WIGNER_334_033)*c30*c4n3 - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c4n2 + c3n1*c42) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c4n1 + c3n2*c41) + (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c4n4 - c3n1*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+3] + tMul2*aCnlmPx[tIdxP3-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+3] + tMul2*aCnlmPy[tIdxP3-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+3] + tMul2*aCnlmPz[tIdxP3-3];
-        
-        tMul1 = (-2.0*WIGNER_334_011)*c30*c31  + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c33 + c3n2*c3n3);
-        tMul2 = (-2.0*WIGNER_334_011)*c30*c3n1 + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c3n3 - c3n2*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+1] + tMul2*aCnlmPx[tIdxP4-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+1] + tMul2*aCnlmPy[tIdxP4-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+1] + tMul2*aCnlmPz[tIdxP4-1];
-        tMul1 = (2.0*WIGNER_334_022)*c30*c32  - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c33 + c3n1*c3n3) + (SQRT2_INV*WIGNER_334_112)*(c31*c31 - c3n1*c3n1);
-        tMul2 = (2.0*WIGNER_334_022)*c30*c3n2 - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c3n3 - c3n1*c33) + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c3n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+2] + tMul2*aCnlmPx[tIdxP4-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+2] + tMul2*aCnlmPy[tIdxP4-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+2] + tMul2*aCnlmPz[tIdxP4-2];
-        tMul1 = (-2.0*WIGNER_334_033)*c30*c33  - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c32 - c3n1*c3n2);
-        tMul2 = (-2.0*WIGNER_334_033)*c30*c3n3 - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c3n2 + c3n1*c32);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+3] + tMul2*aCnlmPx[tIdxP4-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+3] + tMul2*aCnlmPy[tIdxP4-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+3] + tMul2*aCnlmPz[tIdxP4-3];
-        tMul1 = (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c33 - c3n1*c3n3) + (SQRT2_INV*WIGNER_334_224)*(c32*c32 - c3n2*c3n2);
-        tMul2 = (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c3n3 + c3n1*c33) + (2.0*SQRT2_INV*WIGNER_334_224)*c32*c3n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+4] + tMul2*aCnlmPx[tIdxP4-4];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+4] + tMul2*aCnlmPy[tIdxP4-4];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+4] + tMul2*aCnlmPz[tIdxP4-4];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_244_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP2 = 2*2+2;
-        final int tIdxP4 = 4*4+4;
-        final int tIdx2 = tIdxP2+aShift;
-        final double c20  = aCnlm[tIdx2  ];
-        final double c21  = aCnlm[tIdx2+1];
-        final double c2n1 = aCnlm[tIdx2-1];
-        final double c22  = aCnlm[tIdx2+2];
-        final double c2n2 = aCnlm[tIdx2-2];
-        final int tIdx4 = tIdxP4+aShift;
-        final double c40  = aCnlm[tIdx4  ];
-        final double c41  = aCnlm[tIdx4+1];
-        final double c4n1 = aCnlm[tIdx4-1];
-        final double c42  = aCnlm[tIdx4+2];
-        final double c4n2 = aCnlm[tIdx4-2];
-        final double c43  = aCnlm[tIdx4+3];
-        final double c4n3 = aCnlm[tIdx4-3];
-        final double c44  = aCnlm[tIdx4+4];
-        final double c4n4 = aCnlm[tIdx4-4];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_244_000*c40*c40 - WIGNER_244_011*(c41*c41 + c4n1*c4n1) + WIGNER_244_022*(c42*c42 + c4n2*c4n2) - WIGNER_244_033*(c43*c43 + c4n3*c4n3) + WIGNER_244_044*(c44*c44 + c4n4*c4n4);
-        rFp3Px += tMul*aCnlmPx[tIdxP2];
-        rFp3Py += tMul*aCnlmPy[tIdxP2];
-        rFp3Pz += tMul*aCnlmPz[tIdxP2];
-        tMul = (2.0*WIGNER_244_000)*c20*c40 - (2.0*WIGNER_244_110)*(c21*c41 + c2n1*c4n1) + (2.0*WIGNER_244_220)*(c22*c42 + c2n2*c4n2);
-        rFp3Px += tMul*aCnlmPx[tIdxP4];
-        rFp3Py += tMul*aCnlmPy[tIdxP4];
-        rFp3Pz += tMul*aCnlmPz[tIdxP4];
-        
-        double tMul1 = (-2.0*WIGNER_244_110)*c40*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c42 + c4n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c43 + c4n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c44 + c4n3*c4n4);
-        double tMul2 = (-2.0*WIGNER_244_110)*c40*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c4n2 - c4n1*c42) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c4n3 - c4n2*c43) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c4n4 - c4n3*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+1] + tMul2*aCnlmPx[tIdxP2-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+1] + tMul2*aCnlmPy[tIdxP2-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+1] + tMul2*aCnlmPz[tIdxP2-1];
-        tMul1 = (2.0*WIGNER_244_220)*c40*c42  + (2.0*SQRT2_INV*WIGNER_244_224)*(c42*c44 + c4n2*c4n4) - (2.0*SQRT2_INV*WIGNER_244_213)*(c41*c43 + c4n1*c4n3) + (SQRT2_INV*WIGNER_244_211)*(c41*c41 - c4n1*c4n1);
-        tMul2 = (2.0*WIGNER_244_220)*c40*c4n2 + (2.0*SQRT2_INV*WIGNER_244_224)*(c42*c4n4 - c4n2*c44) - (2.0*SQRT2_INV*WIGNER_244_213)*(c41*c4n3 - c4n1*c43) + (2.0*SQRT2_INV*WIGNER_244_211)*c41*c4n1;
-        rFp3Px += tMul1*aCnlmPx[tIdxP2+2] + tMul2*aCnlmPx[tIdxP2-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP2+2] + tMul2*aCnlmPy[tIdxP2-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP2+2] + tMul2*aCnlmPz[tIdxP2-2];
-        
-        tMul1 = (-2.0*WIGNER_244_011)*c20*c41  - (2.0*WIGNER_244_110)*c40*c21  + (2.0*SQRT2_INV*WIGNER_244_211)*c22*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c42 + c2n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c43 + c2n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_211)*c2n2*c4n1;
-        tMul2 = (-2.0*WIGNER_244_011)*c20*c4n1 - (2.0*WIGNER_244_110)*c40*c2n1 - (2.0*SQRT2_INV*WIGNER_244_211)*c22*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c4n2 - c2n1*c42) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c4n3 - c2n2*c43) + (2.0*SQRT2_INV*WIGNER_244_211)*c41*c2n2;
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+1] + tMul2*aCnlmPx[tIdxP4-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+1] + tMul2*aCnlmPy[tIdxP4-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+1] + tMul2*aCnlmPz[tIdxP4-1];
-        tMul1 = (2.0*WIGNER_244_022)*c20*c42  + (2.0*WIGNER_244_220)*c40*c22  + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c41 - c2n1*c4n1) + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c44 + c2n2*c4n4) - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c43 + c2n1*c4n3);
-        tMul2 = (2.0*WIGNER_244_022)*c20*c4n2 + (2.0*WIGNER_244_220)*c40*c2n2 + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c4n1 + c2n1*c41) + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c4n4 - c2n2*c44) - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c4n3 - c2n1*c43);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+2] + tMul2*aCnlmPx[tIdxP4-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+2] + tMul2*aCnlmPy[tIdxP4-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+2] + tMul2*aCnlmPz[tIdxP4-2];
-        tMul1 = (-2.0*WIGNER_244_033)*c20*c43  - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c42 - c2n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c41 - c2n2*c4n1) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c44 + c2n1*c4n4);
-        tMul2 = (-2.0*WIGNER_244_033)*c20*c4n3 - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c4n2 + c2n1*c42) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c4n1 + c2n2*c41) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c4n4 - c2n1*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+3] + tMul2*aCnlmPx[tIdxP4-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+3] + tMul2*aCnlmPy[tIdxP4-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+3] + tMul2*aCnlmPz[tIdxP4-3];
-        tMul1 = (2.0*WIGNER_244_044)*c20*c44  + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c42 - c2n2*c4n2) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c43 - c2n1*c4n3);
-        tMul2 = (2.0*WIGNER_244_044)*c20*c4n4 + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c4n2 + c2n2*c42) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c4n3 + c2n1*c43);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+4] + tMul2*aCnlmPx[tIdxP4-4];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+4] + tMul2*aCnlmPy[tIdxP4-4];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+4] + tMul2*aCnlmPz[tIdxP4-4];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
-    }
-    private static void calL3_134_(double[] aCnlm, double[] aCnlmPx, double[] aCnlmPy, double[] aCnlmPz,
-                                   double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                   double @Nullable[] rFpPxCross, double[] rFpPyCross, double[] rFpPzCross,
-                                   double aWt, int aShift, int aIdxFP, int aShiftCross) {
-        final int tIdxP1 = 1+1;
-        final int tIdxP3 = 3*3+3;
-        final int tIdxP4 = 4*4+4;
-        final int tIdx1 = tIdxP1+aShift;
-        final double c10  = aCnlm[tIdx1  ];
-        final double c11  = aCnlm[tIdx1+1];
-        final double c1n1 = aCnlm[tIdx1-1];
-        final int tIdx3 = tIdxP3+aShift;
-        final double c30  = aCnlm[tIdx3  ];
-        final double c31  = aCnlm[tIdx3+1];
-        final double c3n1 = aCnlm[tIdx3-1];
-        final double c32  = aCnlm[tIdx3+2];
-        final double c3n2 = aCnlm[tIdx3-2];
-        final double c33  = aCnlm[tIdx3+3];
-        final double c3n3 = aCnlm[tIdx3-3];
-        final int tIdx4 = tIdxP4+aShift;
-        final double c40  = aCnlm[tIdx4  ];
-        final double c41  = aCnlm[tIdx4+1];
-        final double c4n1 = aCnlm[tIdx4-1];
-        final double c42  = aCnlm[tIdx4+2];
-        final double c4n2 = aCnlm[tIdx4-2];
-        final double c43  = aCnlm[tIdx4+3];
-        final double c4n3 = aCnlm[tIdx4-3];
-        final double c44  = aCnlm[tIdx4+4];
-        final double c4n4 = aCnlm[tIdx4-4];
-        double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-        // 这里做简单的合并同项优化
-        double tMul = WIGNER_134_000*c30*c40 - WIGNER_134_011*(c31*c41 + c3n1*c4n1) + WIGNER_134_022*(c32*c42 + c3n2*c4n2) - WIGNER_134_033*(c33*c43 + c3n3*c4n3);
-        rFp3Px += tMul*aCnlmPx[tIdxP1];
-        rFp3Py += tMul*aCnlmPy[tIdxP1];
-        rFp3Pz += tMul*aCnlmPz[tIdxP1];
-        tMul = WIGNER_134_000*c10*c30 - WIGNER_134_110*(c11*c31 + c1n1*c3n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP4];
-        rFp3Py += tMul*aCnlmPy[tIdxP4];
-        rFp3Pz += tMul*aCnlmPz[tIdxP4];
-        tMul = WIGNER_134_000*c10*c40 - WIGNER_134_101*(c11*c41 + c1n1*c4n1);
-        rFp3Px += tMul*aCnlmPx[tIdxP3];
-        rFp3Py += tMul*aCnlmPy[tIdxP3];
-        rFp3Pz += tMul*aCnlmPz[tIdxP3];
-        
-        double tMul1 = (-WIGNER_134_110)*c40*c31  - WIGNER_134_101*c30*c41  + (SQRT2_INV*WIGNER_134_112)*(c31*c42 + c3n1*c4n2) + (SQRT2_INV*WIGNER_134_121)*(c32*c41 + c3n2*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c43 + c3n2*c4n3) - (SQRT2_INV*WIGNER_134_132)*(c33*c42 + c3n3*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c44 + c3n3*c4n4);
-        double tMul2 = (-WIGNER_134_110)*c40*c3n1 - WIGNER_134_101*c30*c4n1 + (SQRT2_INV*WIGNER_134_112)*(c31*c4n2 - c3n1*c42) + (SQRT2_INV*WIGNER_134_121)*(c3n2*c41 - c32*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c4n3 - c3n2*c43) - (SQRT2_INV*WIGNER_134_132)*(c3n3*c42 - c33*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c4n4 - c3n3*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP1+1] + tMul2*aCnlmPx[tIdxP1-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP1+1] + tMul2*aCnlmPy[tIdxP1-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP1+1] + tMul2*aCnlmPz[tIdxP1-1];
-        
-        tMul1 = (-WIGNER_134_011)*c10*c41  - WIGNER_134_110*c40*c11  + (SQRT2_INV*WIGNER_134_112)*(c11*c42 + c1n1*c4n2);
-        tMul2 = (-WIGNER_134_011)*c10*c4n1 - WIGNER_134_110*c40*c1n1 + (SQRT2_INV*WIGNER_134_112)*(c11*c4n2 - c1n1*c42);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+1] + tMul2*aCnlmPx[tIdxP3-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+1] + tMul2*aCnlmPy[tIdxP3-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+1] + tMul2*aCnlmPz[tIdxP3-1];
-        tMul1 = WIGNER_134_022*c10*c42  + (SQRT2_INV*WIGNER_134_121)*(c11*c41 - c1n1*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c11*c43 + c1n1*c4n3);
-        tMul2 = WIGNER_134_022*c10*c4n2 + (SQRT2_INV*WIGNER_134_121)*(c11*c4n1 + c1n1*c41) - (SQRT2_INV*WIGNER_134_123)*(c11*c4n3 - c1n1*c43);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+2] + tMul2*aCnlmPx[tIdxP3-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+2] + tMul2*aCnlmPy[tIdxP3-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+2] + tMul2*aCnlmPz[tIdxP3-2];
-        tMul1 = (-WIGNER_134_033)*c10*c43  - (SQRT2_INV*WIGNER_134_132)*(c11*c42 - c1n1*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c11*c44 + c1n1*c4n4);
-        tMul2 = (-WIGNER_134_033)*c10*c4n3 - (SQRT2_INV*WIGNER_134_132)*(c11*c4n2 + c1n1*c42) + (SQRT2_INV*WIGNER_134_134)*(c11*c4n4 - c1n1*c44);
-        rFp3Px += tMul1*aCnlmPx[tIdxP3+3] + tMul2*aCnlmPx[tIdxP3-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP3+3] + tMul2*aCnlmPy[tIdxP3-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP3+3] + tMul2*aCnlmPz[tIdxP3-3];
-        
-        tMul1 = (-WIGNER_134_011)*c10*c31  - WIGNER_134_101*c30*c11  + (SQRT2_INV*WIGNER_134_121)*(c11*c32 + c1n1*c3n2);
-        tMul2 = (-WIGNER_134_011)*c10*c3n1 - WIGNER_134_101*c30*c1n1 + (SQRT2_INV*WIGNER_134_121)*(c11*c3n2 - c1n1*c32);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+1] + tMul2*aCnlmPx[tIdxP4-1];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+1] + tMul2*aCnlmPy[tIdxP4-1];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+1] + tMul2*aCnlmPz[tIdxP4-1];
-        tMul1 = WIGNER_134_022*c10*c32  + (SQRT2_INV*WIGNER_134_112)*(c11*c31 - c1n1*c3n1) - (SQRT2_INV*WIGNER_134_132)*(c11*c33 + c1n1*c3n3);
-        tMul2 = WIGNER_134_022*c10*c3n2 + (SQRT2_INV*WIGNER_134_112)*(c11*c3n1 + c1n1*c31) - (SQRT2_INV*WIGNER_134_132)*(c11*c3n3 - c1n1*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+2] + tMul2*aCnlmPx[tIdxP4-2];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+2] + tMul2*aCnlmPy[tIdxP4-2];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+2] + tMul2*aCnlmPz[tIdxP4-2];
-        tMul1 = (-WIGNER_134_033)*c10*c33  - (SQRT2_INV*WIGNER_134_123)*(c11*c32 - c1n1*c3n2);
-        tMul2 = (-WIGNER_134_033)*c10*c3n3 - (SQRT2_INV*WIGNER_134_123)*(c11*c3n2 + c1n1*c32);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+3] + tMul2*aCnlmPx[tIdxP4-3];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+3] + tMul2*aCnlmPy[tIdxP4-3];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+3] + tMul2*aCnlmPz[tIdxP4-3];
-        tMul1 = (SQRT2_INV*WIGNER_134_134)*(c11*c33 - c1n1*c3n3);
-        tMul2 = (SQRT2_INV*WIGNER_134_134)*(c11*c3n3 + c1n1*c33);
-        rFp3Px += tMul1*aCnlmPx[tIdxP4+4] + tMul2*aCnlmPx[tIdxP4-4];
-        rFp3Py += tMul1*aCnlmPy[tIdxP4+4] + tMul2*aCnlmPy[tIdxP4-4];
-        rFp3Pz += tMul1*aCnlmPz[tIdxP4+4] + tMul2*aCnlmPz[tIdxP4-4];
-        
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP, aShiftCross);
+    static void rangeCheck(int jArraySize, int aCount) {
+        if (aCount > jArraySize) throw new IndexOutOfBoundsException(aCount+" > "+jArraySize);
     }
 }
