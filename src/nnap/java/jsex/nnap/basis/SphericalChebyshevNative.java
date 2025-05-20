@@ -1,25 +1,19 @@
 package jsex.nnap.basis;
 
-import com.google.common.collect.Lists;
-import jse.cache.VectorCache;
 import jse.clib.JNIUtil;
 import jse.code.CS;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
-import jse.code.collection.ArrayLists;
 import jse.code.collection.DoubleList;
 import jse.code.timer.AccumulatedTimer;
 import jse.math.MathEX;
-import jse.math.vector.ShiftVector;
 import jse.math.vector.Vector;
 import jsex.nnap.NNAP;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static jse.code.OS.JAR_DIR;

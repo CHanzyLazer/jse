@@ -9,7 +9,6 @@ import jse.code.collection.DoubleList;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import jse.math.vector.Vector;
-import jse.parallel.ParforThreadPool;
 import jsex.nnap.basis.IBasis;
 import jsex.nnap.basis.Mirror;
 import jsex.nnap.basis.SphericalChebyshev;
@@ -223,6 +222,23 @@ public class NNAP implements IPairPotential {
         public IBasis basis() {return basis(0);}
         public IBasis basis(int aThreadID) {return mBasis[aThreadID];}
         
+        /// 现在使用全局的缓存实现，可以进一步减少内存池的调用操作
+        private final Vector[][] mFp;
+        private final Vector[][] mFpPx;
+        private final Vector[][] mFpPy;
+        private final Vector[][] mFpPz;
+        private final DoubleList[][] mFpPxCross;
+        private final DoubleList[][] mFpPyCross;
+        private final DoubleList[][] mFpPzCross;
+        
+        private Vector bufFp(int aThreadID) {return mFp[aThreadID][mBatchedSize[aThreadID]];}
+        private Vector bufFpPx(int aThreadID) {return mFpPx[aThreadID][mBatchedSize[aThreadID]];}
+        private Vector bufFpPy(int aThreadID) {return mFpPy[aThreadID][mBatchedSize[aThreadID]];}
+        private Vector bufFpPz(int aThreadID) {return mFpPz[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPxCross(int aThreadID) {return mFpPxCross[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPyCross(int aThreadID) {return mFpPyCross[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPzCross(int aThreadID) {return mFpPzCross[aThreadID][mBatchedSize[aThreadID]];}
+        
         public void normBasis(IVector rFp) {
             rFp.minus2this(mNormMu);
             rFp.div2this(mNormSigma);
@@ -266,6 +282,23 @@ public class NNAP implements IPairPotential {
             mBatchedPredDo = new DoubleConsumer[mThreadNumber][BATCH_SIZE];
             mBatchedXGradDo = (Consumer<? super IVector>[][]) new Consumer[mThreadNumber][BATCH_SIZE];
             mBatchedSize = new int[mThreadNumber];
+            
+            mFp = new Vector[mThreadNumber][BATCH_SIZE];
+            mFpPx = new Vector[mThreadNumber][BATCH_SIZE];
+            mFpPy = new Vector[mThreadNumber][BATCH_SIZE];
+            mFpPz = new Vector[mThreadNumber][BATCH_SIZE];
+            mFpPxCross = new DoubleList[mThreadNumber][BATCH_SIZE];
+            mFpPyCross = new DoubleList[mThreadNumber][BATCH_SIZE];
+            mFpPzCross = new DoubleList[mThreadNumber][BATCH_SIZE];
+            for (int i = 0; i < mThreadNumber; ++i) for (int j = 0; j < BATCH_SIZE; ++j) {
+                mFp[i][j] = VectorCache.getVec(mBasisSize);
+                mFpPx[i][j] = VectorCache.getVec(mBasisSize);
+                mFpPy[i][j] = VectorCache.getVec(mBasisSize);
+                mFpPz[i][j] = VectorCache.getVec(mBasisSize);
+                mFpPxCross[i][j] = new DoubleList(1024);
+                mFpPyCross[i][j] = new DoubleList(1024);
+                mFpPzCross[i][j] = new DoubleList(1024);
+            }
         }
         
         private final List<RowMatrix> mBatchedX;
@@ -460,6 +493,12 @@ public class NNAP implements IPairPotential {
                 MatrixCache.returnMat(tModel.mBatchedX);
                 MatrixCache.returnMat(tModel.mBatchedXGrad);
                 VectorCache.returnVec(tModel.mBatchedY);
+                for (int i = 0; i < mThreadNumber; ++i) for (int j = 0; j < BATCH_SIZE; ++j) {
+                    VectorCache.returnVec(tModel.mFp[i][j]);
+                    VectorCache.returnVec(tModel.mFpPx[i][j]);
+                    VectorCache.returnVec(tModel.mFpPy[i][j]);
+                    VectorCache.returnVec(tModel.mFpPz[i][j]);
+                }
                 for (int i = 0; i < mThreadNumber; ++i) {
                     tModel.basis(i).shutdown();
                 }
@@ -540,15 +579,14 @@ public class NNAP implements IPairPotential {
             }, (threadID, cIdx, cType, nl) -> {
                 final SingleNNAP tModel = model(cType);
                 final IBasis tBasis = tModel.basis(threadID);
-                // 目前还是采用缓存实现
                 final int tBasisSize = tBasis.size();
-                Vector tFp = VectorCache.getVec(tBasisSize);
-                Vector tFpPx = VectorCache.getVec(tBasisSize);
-                Vector tFpPy = VectorCache.getVec(tBasisSize);
-                Vector tFpPz = VectorCache.getVec(tBasisSize);
-                DoubleList tFpPxCross = new DoubleList(1024);
-                DoubleList tFpPyCross = new DoubleList(1024);
-                DoubleList tFpPzCross = new DoubleList(1024);
+                Vector tFp = tModel.bufFp(threadID);
+                Vector tFpPx = tModel.bufFpPx(threadID);
+                Vector tFpPy = tModel.bufFpPy(threadID);
+                Vector tFpPz = tModel.bufFpPz(threadID);
+                DoubleList tFpPxCross = tModel.bufFpPxCross(threadID);
+                DoubleList tFpPyCross = tModel.bufFpPyCross(threadID);
+                DoubleList tFpPzCross = tModel.bufFpPzCross(threadID);
                 tBasis.evalPartial(dxyzTypeDo -> {
                     nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> dxyzTypeDo.run(dx, dy, dz, type));
                 }, tFp, tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross);
@@ -581,11 +619,6 @@ public class NNAP implements IPairPotential {
                         }
                         ++j[0];
                     });
-                    // 注意要在这里归还中间变量，实际为延迟归还操作
-                    VectorCache.returnVec(tFp);
-                    VectorCache.returnVec(tFpPx);
-                    VectorCache.returnVec(tFpPy);
-                    VectorCache.returnVec(tFpPz);
                 });
             });
         } catch (TorchException e) {
