@@ -6,10 +6,10 @@ import jse.cache.VectorCache;
 import jse.clib.*;
 import jse.code.*;
 import jse.code.collection.DoubleList;
-import jse.code.collection.ISlice;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import jse.math.vector.Vector;
+import jse.parallel.ParforThreadPool;
 import jsex.nnap.basis.IBasis;
 import jsex.nnap.basis.Mirror;
 import jsex.nnap.basis.SphericalChebyshev;
@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
-import java.util.function.IntUnaryOperator;
 
 import static jse.code.OS.JAR_DIR;
 
@@ -473,169 +472,73 @@ public class NNAP implements IPairPotential {
     @Override public boolean isShutdown() {return mDead;}
     @Override public int threadNumber() {return mThreadNumber;}
     @VisibleForTesting public int nthreads() {return threadNumber();}
-    
-    @Override public double rcut() {
+    @Override public double rcutMax() {
         double tRCut = 0.0;
         for (SingleNNAP tModel : models()) {
             tRCut = Math.max(tRCut, tModel.basis().rcut());
         }
         return tRCut;
     }
+    
     /**
      * {@inheritDoc}
-     * @param aAPC {@inheritDoc}
-     * @param aIndices {@inheritDoc}
-     * @param aTypeMap {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aAtomNumber {@inheritDoc}
+     * @param aNeighborListGetter {@inheritDoc}
+     * @param rEnergyAccumulator {@inheritDoc}
      */
-    @Override public double calEnergyAt(final AtomicParameterCalculator aAPC, final ISlice aIndices, final IntUnaryOperator aTypeMap) throws TorchException {
+    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
-        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
-        // 统一存储常量
-        final int tThreadNumber = aAPC.threadNumber();
-        Vector rEngPar = VectorCache.getZeros(tThreadNumber);
+        final int tThreadNum = threadNumber();
         try {
-            aAPC.pool_().parforWithException(aIndices.size(), threadID -> {
-                if (tThreadNumber > 1) setTorchSingleThread();
+            aNeighborListGetter.forEachNLWithException(threadID -> {
+                if (tThreadNum > 1) setTorchSingleThread();
             }, threadID -> {
                 for (SingleNNAP tModel : mModels) {
                     tModel.clearSubmittedBatchForward(threadID);
                 }
-            }, (i, threadID) -> {
-                final int cIdx = aIndices.get(i);
-                final SingleNNAP tModel = model(aTypeMap.applyAsInt(aAPC.atomType_().get(cIdx)));
+            }, (threadID, cIdx, cType, nl) -> {
+                final SingleNNAP tModel = model(cType);
                 final IBasis tBasis = tModel.basis(threadID);
                 // 目前还是采用缓存实现
-                Vector tBasisValue = VectorCache.getVec(tBasis.size());
-                tBasis.eval(aAPC, cIdx, aTypeMap, tBasisValue);
-                tModel.normBasis(tBasisValue);
-                tModel.submitBatchForward(threadID, tBasisValue, pred -> {
+                Vector tFp = VectorCache.getVec(tBasis.size());
+                tBasis.eval(dxyzTypeDo -> {
+                    nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> dxyzTypeDo.run(dx, dy, dz, type));
+                }, tFp);
+                tModel.normBasis(tFp);
+                tModel.submitBatchForward(threadID, tFp, pred -> {
                     pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
-                    rEngPar.add(threadID, pred);
+                    rEnergyAccumulator.add(threadID, cIdx, -1, pred);
                 });
-                VectorCache.returnVec(tBasisValue);
+                VectorCache.returnVec(tFp);
             });
         } catch (TorchException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        double rEng = rEngPar.sum();
-        VectorCache.returnVec(rEngPar);
-        return rEng;
     }
-    
     
     /**
      * {@inheritDoc}
-     * @param aAPC {@inheritDoc}
-     * @param rEnergies {@inheritDoc}
-     * @param rForcesX {@inheritDoc}
-     * @param rForcesY {@inheritDoc}
-     * @param rForcesZ {@inheritDoc}
-     * @param rVirialsXX {@inheritDoc}
-     * @param rVirialsYY {@inheritDoc}
-     * @param rVirialsZZ {@inheritDoc}
-     * @param rVirialsXY {@inheritDoc}
-     * @param rVirialsXZ {@inheritDoc}
-     * @param rVirialsYZ {@inheritDoc}
-     * @param aTypeMap {@inheritDoc}
+     * @param aAtomNumber {@inheritDoc}
+     * @param aNeighborListGetter {@inheritDoc}
+     * @param rEnergyAccumulator {@inheritDoc}
+     * @param rForceAccumulator {@inheritDoc}
+     * @param rVirialAccumulator {@inheritDoc}
      */
-    @Override public void calEnergyForceVirials(final AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) throws TorchException {
+    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws TorchException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
-        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
-        // 统一存储常量
-        final int tAtomNumber = aAPC.atomNumber();
-        final int tThreadNumber = aAPC.threadNumber();
-        // 能量虽然不用累加，但在长度为一时需要累加计算总能量，此时也需要统一设置为 0
-        if (rEnergies != null) rEnergies.fill(0.0);
-        // 并行情况下存在并行写入的问题，因此需要这样操作
-        IVector @Nullable[] rEnergiesPar = rEnergies!=null ? new IVector[tThreadNumber] : null;
-        if (rEnergies != null) {
-            rEnergiesPar[0] = rEnergies;
-            for (int i = 1; i < tThreadNumber; ++i) {
-                rEnergiesPar[i] = VectorCache.getZeros(rEnergies.size());
-            }
-        }
-        // 特殊处理只需要计算能量的情况
-        if (rForcesX==null && rForcesY==null && rForcesZ==null &&
-            rVirialsXX==null && rVirialsYY==null && rVirialsZZ==null &&
-            rVirialsXY==null && rVirialsXZ==null && rVirialsYZ==null) {
-            if (rEnergies == null) return;
-            try {
-                aAPC.pool_().parforWithException(tAtomNumber, threadID -> {
-                    if (aAPC.threadNumber() > 1) setTorchSingleThread();
-                }, threadID -> {
-                    for (SingleNNAP tModel : mModels) {
-                        tModel.clearSubmittedBatchForward(threadID);
-                    }
-                }, (i, threadID) -> {
-                    final IVector tEnergies = rEnergiesPar[threadID];
-                    final SingleNNAP tModel = model(aTypeMap.applyAsInt(aAPC.atomType_().get(i)));
-                    final IBasis tBasis = tModel.basis(threadID);
-                    // 目前还是采用缓存实现
-                    Vector tBasisValue = VectorCache.getVec(tBasis.size());
-                    tBasis.eval(aAPC, i, aTypeMap, tBasisValue);
-                    tModel.normBasis(tBasisValue);
-                    tModel.submitBatchForward(threadID, tBasisValue, pred -> {
-                        pred = tModel.denormEng(pred);
-                        pred += tModel.mRefEng;
-                        tEnergies.add(tEnergies.size()==1?0:i, pred);
-                    });
-                    VectorCache.returnVec(tBasisValue);
-                });
-            } catch (TorchException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            for (int i = 1; i < tThreadNumber; ++i) {
-                rEnergies.plus2this(rEnergiesPar[i]);
-                VectorCache.returnVec(rEnergiesPar[i]);
-            }
-            return;
-        }
-        // 力需要累加统计，所以统一设置为 0
-        if (rForcesX != null) rForcesX.fill(0.0);
-        if (rForcesY != null) rForcesY.fill(0.0);
-        if (rForcesZ != null) rForcesZ.fill(0.0);
-        // 位力需要累加统计，所以统一设置为 0
-        if (rVirialsXX != null) rVirialsXX.fill(0.0);
-        if (rVirialsYY != null) rVirialsYY.fill(0.0);
-        if (rVirialsZZ != null) rVirialsZZ.fill(0.0);
-        if (rVirialsXY != null) rVirialsXY.fill(0.0);
-        if (rVirialsXZ != null) rVirialsXZ.fill(0.0);
-        if (rVirialsYZ != null) rVirialsYZ.fill(0.0);
-        // 并行情况下存在并行写入的问题，因此需要这样操作
-        IVector @Nullable[] rForcesXPar = rForcesX!=null ? new IVector[tThreadNumber] : null; if (rForcesX != null) {rForcesXPar[0] = rForcesX; for (int i = 1; i < tThreadNumber; ++i) {rForcesXPar[i] = VectorCache.getZeros(tAtomNumber);}}
-        IVector @Nullable[] rForcesYPar = rForcesY!=null ? new IVector[tThreadNumber] : null; if (rForcesY != null) {rForcesYPar[0] = rForcesY; for (int i = 1; i < tThreadNumber; ++i) {rForcesYPar[i] = VectorCache.getZeros(tAtomNumber);}}
-        IVector @Nullable[] rForcesZPar = rForcesZ!=null ? new IVector[tThreadNumber] : null; if (rForcesZ != null) {rForcesZPar[0] = rForcesZ; for (int i = 1; i < tThreadNumber; ++i) {rForcesZPar[i] = VectorCache.getZeros(tAtomNumber);}}
-        IVector @Nullable[] rVirialsXXPar = rVirialsXX!=null ? new IVector[tThreadNumber] : null; if (rVirialsXX != null) {rVirialsXXPar[0] = rVirialsXX; for (int i = 1; i < tThreadNumber; ++i) {rVirialsXXPar[i] = VectorCache.getZeros(rVirialsXX.size());}}
-        IVector @Nullable[] rVirialsYYPar = rVirialsYY!=null ? new IVector[tThreadNumber] : null; if (rVirialsYY != null) {rVirialsYYPar[0] = rVirialsYY; for (int i = 1; i < tThreadNumber; ++i) {rVirialsYYPar[i] = VectorCache.getZeros(rVirialsYY.size());}}
-        IVector @Nullable[] rVirialsZZPar = rVirialsZZ!=null ? new IVector[tThreadNumber] : null; if (rVirialsZZ != null) {rVirialsZZPar[0] = rVirialsZZ; for (int i = 1; i < tThreadNumber; ++i) {rVirialsZZPar[i] = VectorCache.getZeros(rVirialsZZ.size());}}
-        IVector @Nullable[] rVirialsXYPar = rVirialsXY!=null ? new IVector[tThreadNumber] : null; if (rVirialsXY != null) {rVirialsXYPar[0] = rVirialsXY; for (int i = 1; i < tThreadNumber; ++i) {rVirialsXYPar[i] = VectorCache.getZeros(rVirialsXY.size());}}
-        IVector @Nullable[] rVirialsXZPar = rVirialsXZ!=null ? new IVector[tThreadNumber] : null; if (rVirialsXZ != null) {rVirialsXZPar[0] = rVirialsXZ; for (int i = 1; i < tThreadNumber; ++i) {rVirialsXZPar[i] = VectorCache.getZeros(rVirialsXZ.size());}}
-        IVector @Nullable[] rVirialsYZPar = rVirialsYZ!=null ? new IVector[tThreadNumber] : null; if (rVirialsYZ != null) {rVirialsYZPar[0] = rVirialsYZ; for (int i = 1; i < tThreadNumber; ++i) {rVirialsYZPar[i] = VectorCache.getZeros(rVirialsYZ.size());}}
+        final int tThreadNum = threadNumber();
         try {
-            aAPC.pool_().parforWithException(tAtomNumber, threadID -> {
-                if (aAPC.threadNumber() > 1) setTorchSingleThread();
+            aNeighborListGetter.forEachNLWithException(threadID -> {
+                if (tThreadNum > 1) setTorchSingleThread();
             }, threadID -> {
                 for (SingleNNAP tModel : mModels) {
                     tModel.clearSubmittedBatchBackward(threadID);
                 }
-            }, (i, threadID) -> {
-                final @Nullable IVector tEnergies = rEnergies!=null ? rEnergiesPar[threadID] : null;
-                final @Nullable IVector tForcesX = rForcesX!=null ? rForcesXPar[threadID] : null;
-                final @Nullable IVector tForcesY = rForcesY!=null ? rForcesYPar[threadID] : null;
-                final @Nullable IVector tForcesZ = rForcesZ!=null ? rForcesZPar[threadID] : null;
-                final @Nullable IVector tVirialsXX = rVirialsXX!=null ? rVirialsXXPar[threadID] : null;
-                final @Nullable IVector tVirialsYY = rVirialsYY!=null ? rVirialsYYPar[threadID] : null;
-                final @Nullable IVector tVirialsZZ = rVirialsZZ!=null ? rVirialsZZPar[threadID] : null;
-                final @Nullable IVector tVirialsXY = rVirialsXY!=null ? rVirialsXYPar[threadID] : null;
-                final @Nullable IVector tVirialsXZ = rVirialsXZ!=null ? rVirialsXZPar[threadID] : null;
-                final @Nullable IVector tVirialsYZ = rVirialsYZ!=null ? rVirialsYZPar[threadID] : null;
-                final SingleNNAP tModel = model(aTypeMap.applyAsInt(aAPC.atomType_().get(i)));
+            }, (threadID, cIdx, cType, nl) -> {
+                final SingleNNAP tModel = model(cType);
                 final IBasis tBasis = tModel.basis(threadID);
                 // 目前还是采用缓存实现
                 final int tBasisSize = tBasis.size();
@@ -646,36 +549,36 @@ public class NNAP implements IPairPotential {
                 DoubleList tFpPxCross = new DoubleList(1024);
                 DoubleList tFpPyCross = new DoubleList(1024);
                 DoubleList tFpPzCross = new DoubleList(1024);
-                tBasis.evalPartial(aAPC, i, aTypeMap, tFp, tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross);
+                tBasis.evalPartial(dxyzTypeDo -> {
+                    nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> dxyzTypeDo.run(dx, dy, dz, type));
+                }, tFp, tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross);
                 tModel.normBasis(tFp);
-                tModel.submitBatchBackward(threadID, tFp, tEnergies==null ? null : pred -> {
+                tModel.submitBatchBackward(threadID, tFp, rEnergyAccumulator==null ? null : pred -> {
                     pred = tModel.denormEng(pred);
                     pred += tModel.mRefEng;
-                    tEnergies.add(tEnergies.size()==1?0:i, pred);
+                    rEnergyAccumulator.add(threadID, cIdx, -1, pred);
                 }, xGrad -> {
                     tModel.normBasisPartial(xGrad);
                     tModel.denormEngPartial(xGrad);
                     final XYZ rBuf = new XYZ();
                     forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tFpPx.internalData(), tFpPy.internalData(), tFpPz.internalData(), xGrad.internalDataSize(), 0, rBuf);
-                    if (tForcesX != null) tForcesX.add(i, -rBuf.mX);
-                    if (tForcesY != null) tForcesY.add(i, -rBuf.mY);
-                    if (tForcesZ != null) tForcesZ.add(i, -rBuf.mZ);
+                    if (rForceAccumulator != null) {
+                        rForceAccumulator.add(threadID, cIdx, -1, rBuf.mX, rBuf.mY, rBuf.mZ);
+                    }
                     // 累加交叉项到近邻
                     final int[] j = {0};
-                    aAPC.nl_().forEachNeighbor(i, tBasis.rcut(), (dx, dy, dz, idx) -> {
+                    nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> {
+                        // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查
                         forceDot_(xGrad.internalData(), xGrad.internalDataShift(), tFpPxCross.internalData(), tFpPyCross.internalData(), tFpPzCross.internalData(), xGrad.internalDataSize(), tBasisSize*j[0], rBuf);
                         double fx = -rBuf.mX;
                         double fy = -rBuf.mY;
                         double fz = -rBuf.mZ;
-                        if (tForcesX != null) tForcesX.add(idx, fx);
-                        if (tForcesY != null) tForcesY.add(idx, fy);
-                        if (tForcesZ != null) tForcesZ.add(idx, fz);
-                        if (tVirialsXX != null) tVirialsXX.add(tVirialsXX.size()==1?0:i, dx*fx);
-                        if (tVirialsYY != null) tVirialsYY.add(tVirialsYY.size()==1?0:i, dy*fy);
-                        if (tVirialsZZ != null) tVirialsZZ.add(tVirialsZZ.size()==1?0:i, dz*fz);
-                        if (tVirialsXY != null) tVirialsXY.add(tVirialsXY.size()==1?0:i, dx*fy);
-                        if (tVirialsXZ != null) tVirialsXZ.add(tVirialsXZ.size()==1?0:i, dx*fz);
-                        if (tVirialsYZ != null) tVirialsYZ.add(tVirialsYZ.size()==1?0:i, dy*fz);
+                        if (rForceAccumulator != null) {
+                            rForceAccumulator.add(threadID, -1, idx, fx, fy, fz);
+                        }
+                        if (rVirialAccumulator != null) {
+                            rVirialAccumulator.add(threadID, cIdx, -1, dx*fx, dy*fy, dz*fz, dx*fy, dx*fz, dy*fz);
+                        }
                         ++j[0];
                     });
                     // 注意要在这里归还中间变量，实际为延迟归还操作
@@ -690,17 +593,6 @@ public class NNAP implements IPairPotential {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        // 累加其余线程的数据然后归还临时变量
-        if (rEnergies != null) {for (int i = 1; i < tThreadNumber; ++i) {rEnergies.plus2this(rEnergiesPar[i]); VectorCache.returnVec(rEnergiesPar[i]);}}
-        if (rForcesZ != null) {for (int i = 1; i < tThreadNumber; ++i) {rForcesZ.plus2this(rForcesZPar[i]); VectorCache.returnVec(rForcesZPar[i]);}}
-        if (rForcesY != null) {for (int i = 1; i < tThreadNumber; ++i) {rForcesY.plus2this(rForcesYPar[i]); VectorCache.returnVec(rForcesYPar[i]);}}
-        if (rForcesX != null) {for (int i = 1; i < tThreadNumber; ++i) {rForcesX.plus2this(rForcesXPar[i]); VectorCache.returnVec(rForcesXPar[i]);}}
-        if (rVirialsYZ != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsYZ.plus2this(rVirialsYZPar[i]); VectorCache.returnVec(rVirialsYZPar[i]);}}
-        if (rVirialsXZ != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsXZ.plus2this(rVirialsXZPar[i]); VectorCache.returnVec(rVirialsXZPar[i]);}}
-        if (rVirialsXY != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsXY.plus2this(rVirialsXYPar[i]); VectorCache.returnVec(rVirialsXYPar[i]);}}
-        if (rVirialsZZ != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsZZ.plus2this(rVirialsZZPar[i]); VectorCache.returnVec(rVirialsZZPar[i]);}}
-        if (rVirialsYY != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsYY.plus2this(rVirialsYYPar[i]); VectorCache.returnVec(rVirialsYYPar[i]);}}
-        if (rVirialsXX != null) {for (int i = 1; i < tThreadNumber; ++i) {rVirialsXX.plus2this(rVirialsXXPar[i]); VectorCache.returnVec(rVirialsXXPar[i]);}}
     }
     
     @ApiStatus.Internal

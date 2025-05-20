@@ -1,22 +1,15 @@
 package jsex.nep;
 
-import jse.atom.AtomicParameterCalculator;
 import jse.atom.IPairPotential;
 import jse.cache.DoubleArrayCache;
-import jse.clib.IntCPointer;
-import jse.clib.NestedIntCPointer;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.collection.DoubleList;
-import jse.code.collection.ISlice;
-import jse.math.matrix.RowMatrix;
-import jse.math.vector.IVector;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.IntUnaryOperator;
 
 import static jse.code.CS.ZL_STR;
 import static jse.math.MathEX.Fast.*;
@@ -53,95 +46,71 @@ public class NEP implements IPairPotential {
     @Override public int atomTypeNumber() {return element_list.size();}
     @Override public boolean hasSymbol() {return true;}
     @Override public String symbol(int aType) {return element_list.get(aType-1);}
-    @Override public double rcut() {return Math.max(paramb.rc_radial, paramb.rc_angular);}
+    @Override public double rcutMax() {return Math.max(paramb.rc_radial, paramb.rc_angular);}
+    @Override public boolean neighborListChecked() {return true;}
     
     /**
      * {@inheritDoc}
-     * @param aAPC {@inheritDoc}
-     * @param aIndices {@inheritDoc}
-     * @param aTypeMap {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aAtomNumber {@inheritDoc}
+     * @param aNeighborListGetter {@inheritDoc}
+     * @param rEnergyAccumulator {@inheritDoc}
      */
-    @Override public double calEnergyAt(AtomicParameterCalculator aAPC, ISlice aIndices, IntUnaryOperator aTypeMap) {
-        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
-        int tSize = aIndices.size();
-        if (num_atoms < tSize) {
-            Fp.clear(); Fp.addZeros(tSize * annmb.dim);
-            sum_fxyz.clear(); sum_fxyz.addZeros(tSize * (paramb.n_max_angular + 1) * NUM_OF_ABC);
-            num_atoms = tSize;
+    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) {
+        if (num_atoms < aAtomNumber) {
+            Fp.clear(); Fp.addZeros(aAtomNumber * annmb.dim);
+            sum_fxyz.clear(); sum_fxyz.addZeros(aAtomNumber * (paramb.n_max_angular+1) * NUM_OF_ABC);
+            num_atoms = aAtomNumber;
         }
-        double[] eng = {0.0};
-        find_descriptor_for_energy_at(
-            paramb, annmb, aIndices, aAPC, aTypeMap,
+        find_descriptor(
+            paramb, annmb, aAtomNumber, aNeighborListGetter,
             gn_radial.internalData(), gn_angular.internalData(),
-            Fp.internalData(), sum_fxyz.internalData(), eng
+            Fp.internalData(), sum_fxyz.internalData(), rEnergyAccumulator
         );
         if (zbl.enabled) {
-            find_energy_ZBL_at(
-                paramb, zbl, aIndices, aAPC, aTypeMap, eng
+            find_force_ZBL(
+                paramb, zbl, aNeighborListGetter,
+                null,
+                null,
+                rEnergyAccumulator
             );
         }
-        return eng[0];
     }
-    
     /**
      * {@inheritDoc}
-     * @param aAPC {@inheritDoc}
-     * @param rEnergies {@inheritDoc}
-     * @param rForcesX {@inheritDoc}
-     * @param rForcesY {@inheritDoc}
-     * @param rForcesZ {@inheritDoc}
-     * @param rVirialsXX {@inheritDoc}
-     * @param rVirialsYY {@inheritDoc}
-     * @param rVirialsZZ {@inheritDoc}
-     * @param rVirialsXY {@inheritDoc}
-     * @param rVirialsXZ {@inheritDoc}
-     * @param rVirialsYZ {@inheritDoc}
-     * @param aTypeMap {@inheritDoc}
+     * @param aAtomNumber {@inheritDoc}
+     * @param aNeighborListGetter {@inheritDoc}
+     * @param rEnergyAccumulator {@inheritDoc}
+     * @param rForceAccumulator {@inheritDoc}
+     * @param rVirialAccumulator {@inheritDoc}
      */
-    @Override public void calEnergyForceVirials(final AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) {
-        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
-        if (rEnergies != null) rEnergies.fill(0.0);
-        if (rForcesX != null) rForcesX.fill(0.0);
-        if (rForcesY != null) rForcesY.fill(0.0);
-        if (rForcesZ != null) rForcesZ.fill(0.0);
-        if (rVirialsXX != null) rVirialsXX.fill(0.0);
-        if (rVirialsYY != null) rVirialsYY.fill(0.0);
-        if (rVirialsZZ != null) rVirialsZZ.fill(0.0);
-        if (rVirialsXY != null) rVirialsXY.fill(0.0);
-        if (rVirialsXZ != null) rVirialsXZ.fill(0.0);
-        if (rVirialsYZ != null) rVirialsYZ.fill(0.0);
-        final boolean tRequireForceOrStress = rForcesX!=null || rForcesY!=null || rForcesZ!=null || rVirialsXX!=null || rVirialsYY!=null || rVirialsZZ!=null || rVirialsXY!=null || rVirialsXZ!=null || rVirialsYZ!=null;
-        int tAtomNum = aAPC.atomNumber();
-        if (num_atoms < tAtomNum) {
-            Fp.clear(); Fp.addZeros(tAtomNum * annmb.dim);
-            sum_fxyz.clear(); sum_fxyz.addZeros(tAtomNum * (paramb.n_max_angular + 1) * NUM_OF_ABC);
-            num_atoms = tAtomNum;
+    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) {
+        if (num_atoms < aAtomNumber) {
+            Fp.clear(); Fp.addZeros(aAtomNumber * annmb.dim);
+            sum_fxyz.clear(); sum_fxyz.addZeros(aAtomNumber * (paramb.n_max_angular + 1) * NUM_OF_ABC);
+            num_atoms = aAtomNumber;
         }
-        find_descriptor_for_jse(
-            paramb, annmb, aAPC, aTypeMap,
+        find_descriptor(
+            paramb, annmb, aAtomNumber, aNeighborListGetter,
             gn_radial.internalData(), gn_angular.internalData(),
-            Fp.internalData(), sum_fxyz.internalData(), rEnergies
+            Fp.internalData(), sum_fxyz.internalData(), rEnergyAccumulator
         );
-        if (tRequireForceOrStress) {
-            find_force_radial_for_jse(
-                paramb, annmb, aAPC, aTypeMap,
-                Fp.internalData(), gnp_radial.internalData(),
-                rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ
-            );
-            find_force_angular_for_jse(
-                paramb, annmb, aAPC, aTypeMap,
-                Fp.internalData(), sum_fxyz.internalData(),
-                gn_angular.internalData(), gnp_angular.internalData(),
-                rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ
-            );
-        }
+        find_force_radial(
+            paramb, annmb, aAtomNumber, aNeighborListGetter,
+            Fp.internalData(), gnp_radial.internalData(),
+            rForceAccumulator, rVirialAccumulator
+        );
+        find_force_angular(
+            paramb, annmb, aAtomNumber, aNeighborListGetter,
+            Fp.internalData(), sum_fxyz.internalData(),
+            gn_angular.internalData(), gnp_angular.internalData(),
+            rForceAccumulator, rVirialAccumulator
+        );
         if (zbl.enabled) {
-            find_force_ZBL_for_jse(
-                paramb, zbl, aAPC, aTypeMap,
-                rForcesX, rForcesY, rForcesZ,
-                rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ,
-                rEnergies
+            find_force_ZBL(
+                paramb, zbl, aNeighborListGetter,
+                rForceAccumulator,
+                rVirialAccumulator,
+                rEnergyAccumulator
             );
         }
     }
@@ -436,28 +405,6 @@ public class NEP implements IPairPotential {
         }
     }
     
-    void update_type_map(int ntype, int[] type_map, String[] elements) {
-        int n = 0;
-        for (int itype = 0; itype < ntype + 1; ++itype) {
-            // check if set NULL in lammps input file
-            if (type_map[itype] == -1) {
-                continue;
-            }
-            // find the same element name in potential file
-            String element_name = elements[type_map[itype]];
-            for (n = 0; n < paramb.num_types; ++n) {
-                if (element_name.equals(element_list.get(n))) {
-                    type_map[itype] = n;
-                    break;
-                }
-            }
-            // check if no corresponding element
-            if (n == paramb.num_types) {
-                throw new IllegalArgumentException("There is no element " + element_name + " in the potential file.");
-            }
-        }
-    }
-    
     void update_potential(double[] parameters, ANN ann) {
         int start = 0;
         double[] buf;
@@ -516,40 +463,6 @@ public class NEP implements IPairPotential {
             paramb.basis_size_angular, paramb.rc_angular, paramb.rcinv_angular,
             parameters, annmb.num_para_ann+paramb.num_c_radial, gn_angular.internalData(), gnp_angular.internalData()
         );
-    }
-    
-    void compute_for_lammps(int nlocal, int N, IntCPointer ilist, IntCPointer NN, NestedIntCPointer NL,
-                            int[] type, int[] type_map, RowMatrix pos,
-                            double[] total_potential, double[] total_virial,
-                            double[] potential, RowMatrix force, RowMatrix virial, RowMatrix virialHalf) {
-        if (num_atoms < nlocal) {
-            Fp.clear(); Fp.addZeros(nlocal * annmb.dim);
-            sum_fxyz.clear(); sum_fxyz.addZeros(nlocal * (paramb.n_max_angular + 1) * NUM_OF_ABC);
-            num_atoms = nlocal;
-        }
-        find_descriptor_for_lammps(
-            paramb, annmb, nlocal, N, ilist, NN, NL, type, type_map, pos,
-            gn_radial.internalData(), gn_angular.internalData(),
-            Fp.internalData(), sum_fxyz.internalData(), total_potential, potential
-        );
-        find_force_radial_for_lammps(
-            paramb, annmb, nlocal, N, ilist, NN, NL, type, type_map, pos,
-            Fp.internalData(),
-            gnp_radial.internalData(),
-            force, total_virial, virial, virialHalf
-        );
-        find_force_angular_for_lammps(
-            paramb, annmb, nlocal, N, ilist, NN, NL, type, type_map, pos,
-            Fp.internalData(), sum_fxyz.internalData(),
-            gn_angular.internalData(), gnp_angular.internalData(),
-            force, total_virial, virial, virialHalf
-        );
-        if (zbl.enabled) {
-            find_force_ZBL_for_lammps(
-                paramb, zbl, N, ilist, NN, NL, type, type_map, pos, force, total_virial, virial, virialHalf,
-                total_potential, potential
-            );
-        }
     }
     
     
@@ -2188,184 +2101,22 @@ public class NEP implements IPairPotential {
         DoubleArrayCache.returnArray(fnp12);
     }
     
-    static void find_descriptor_for_energy_at(ParaMB paramb, ANN annmb,
-                                              ISlice aIndices, final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                              double[] g_gn_radial, double[] g_gn_angular,
-                                              double[] g_Fp, double[] g_sum_fxyz, double[] g_total_potential) {
+    static void find_descriptor(ParaMB paramb, ANN annmb,
+                                int aAtomNumber, INeighborListGetter aNeighborListGetter,
+                                double[] g_gn_radial, double[] g_gn_angular,
+                                double[] g_Fp, double[] g_sum_fxyz, @Nullable IEnergyAccumulator rEnergyAccumulator) {
         double[] q = DoubleArrayCache.getArray(MAX_DIM);
         double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
         double[] s = DoubleArrayCache.getArray(NUM_OF_ABC);
         double[] Fp = DoubleArrayCache.getArray(MAX_DIM), latent_space = DoubleArrayCache.getArray(MAX_NEURON);
-        final int N = aIndices.size();
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = aIndices.get(ii);
-            int t1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
+        final int N = aAtomNumber;
+        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
+            int t1 = cType-1;
             Arrays.fill(q, 0.0);
-            
-            aAPC.nl_().forEachNeighbor(n1, paramb.rc_radial, (dx, dy, dz, n2) -> {
+            nl.forEachDxyzTypeIdx(paramb.rc_radial, (dx, dy, dz, type, idx) -> {
                 double d12 = hypot(dx, dy, dz);
-                int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
-                
-                if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                    int[] index_left = {0}, index_right = {0};
-                    double[] weight_left = {0.0}, weight_right = {0.0};
-                    find_index_and_weight(d12 * paramb.rcinv_radial, index_left, index_right, weight_left, weight_right);
-                    int t12 = t1 * paramb.num_types + t2;
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        q[n] += g_gn_radial[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_left[0] +
-                                g_gn_radial[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_right[0];
-                    }
-                } else {
-                    double[] fc12 = {0.0};
-                    double rc = paramb.rc_radial;
-                    double rcinv = paramb.rcinv_radial;
-                    if (paramb.use_typewise_cutoff) {
-                        rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_radial_factor, rc);
-                        rcinv = 1.0 / rc;
-                    }
-                    find_fc(rc, rcinv, d12, fc12);
-                    find_fn(paramb.basis_size_radial, rcinv, d12, fc12[0], fn12);
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        double gn12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_radial; ++k) {
-                            int c_index = (n * (paramb.basis_size_radial + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2;
-                            gn12 += fn12[k] * annmb.c[c_index];
-                        }
-                        q[n] += gn12;
-                    }
-                }
-            });
-            
-            for (int n = 0; n <= paramb.n_max_angular; ++n) {
-                Arrays.fill(s, 0.0);
-                final int fn = n;
-                aAPC.nl_().forEachNeighbor(n1, paramb.rc_angular, (dx, dy, dz, n2) -> {
-                    double d12 = hypot(dx, dy, dz);
-                    int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
-                    
-                    if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                        int[] index_left = {0}, index_right = {0};
-                        double[] weight_left = {0.0}, weight_right = {0.0};
-                        find_index_and_weight(d12 * paramb.rcinv_angular, index_left, index_right, weight_left, weight_right);
-                        int t12 = t1 * paramb.num_types + t2;
-                        double gn12 =
-                            g_gn_angular[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + fn] * weight_left[0] +
-                            g_gn_angular[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + fn] * weight_right[0];
-                        accumulate_s(paramb.L_max, d12, dx, dy, dz, gn12, s);
-                    } else {
-                        double[] fc12 = {0.0};
-                        double rc = paramb.rc_angular;
-                        double rcinv = paramb.rcinv_angular;
-                        if (paramb.use_typewise_cutoff) {
-                            rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_angular_factor, rc);
-                            rcinv = 1.0 / rc;
-                        }
-                        find_fc(rc, rcinv, d12, fc12);
-                        find_fn(paramb.basis_size_angular, rcinv, d12, fc12[0], fn12);
-                        double gn12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_angular; ++k) {
-                            int c_index = (fn * (paramb.basis_size_angular + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2 + paramb.num_c_radial;
-                            gn12 += fn12[k] * annmb.c[c_index];
-                        }
-                        accumulate_s(paramb.L_max, d12, dx, dy, dz, gn12, s);
-                    }
-                });
-                find_q(paramb.L_max, paramb.num_L, paramb.n_max_angular + 1, n, s, q, (paramb.n_max_radial + 1));
-                for (int abc = 0; abc < NUM_OF_ABC; ++abc) {
-                    g_sum_fxyz[(n * NUM_OF_ABC + abc) * N + n1] = s[abc];
-                }
-            }
-            for (int d = 0; d < annmb.dim; ++d) {
-                q[d] = q[d] * paramb.q_scaler[d];
-            }
-            double[] F = {0.0};
-            Arrays.fill(Fp, 0.0);
-            Arrays.fill(latent_space, 0.0);
-            
-            if (paramb.version == 5) {
-                apply_ann_one_layer_nep5(annmb.dim, annmb.num_neurons1, annmb.w0[t1], annmb.b0[t1], annmb.w1[t1], annmb.b1, q, F, Fp, latent_space);
-            } else {
-                apply_ann_one_layer(annmb.dim, annmb.num_neurons1, annmb.w0[t1], annmb.b0[t1], annmb.w1[t1], annmb.b1, q, F, Fp, latent_space, false, null, 0);
-            }
-            
-            g_total_potential[0] += F[0]; // always calculate this
-            for (int d = 0; d < annmb.dim; ++d) {
-                g_Fp[d * N + n1] = Fp[d] * paramb.q_scaler[d];
-            }
-        }
-        DoubleArrayCache.returnArray(latent_space);
-        DoubleArrayCache.returnArray(Fp);
-        DoubleArrayCache.returnArray(s);
-        DoubleArrayCache.returnArray(fn12);
-        DoubleArrayCache.returnArray(q);
-    }
-    
-    static void find_energy_ZBL_at(ParaMB paramb, ZBL zbl,
-                                   ISlice aIndices, final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                   double[] g_total_potential) {
-        final int N = aIndices.size();
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = aIndices.get(ii);
-            int type1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
-            int zi = paramb.atomic_numbers[type1] + 1;
-            double pow_zi = pow(zi, 0.23);
-            double max_rc_outer = 2.5;
-            aAPC.nl_().forEachNeighbor(n1, max_rc_outer, (dx, dy, dz, n2) -> {
-                double d12 = hypot(dx, dy, dz);
-                double d12inv = 1.0 / d12;
-                double[] f = {0.0}, fp = {0.0};
-                int type2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
-                int zj = paramb.atomic_numbers[type2] + 1;
-                double a_inv = (pow_zi + pow(zj, 0.23)) * 2.134563;
-                double zizj = K_C_SP * zi * zj;
-                if (zbl.flexibled) {
-                    int t1, t2;
-                    if (type1 < type2) {
-                        t1 = type1;
-                        t2 = type2;
-                    } else {
-                        t1 = type2;
-                        t2 = type1;
-                    }
-                    int zbl_index = t1 * zbl.num_types - (t1 * (t1 - 1)) / 2 + (t2 - t1);
-                    double[] ZBL_para = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-                    for (int i = 0; i < 10; ++i) {
-                        ZBL_para[i] = zbl.para[10 * zbl_index + i];
-                    }
-                    find_f_and_fp_zbl(ZBL_para, zizj, a_inv, d12, d12inv, f, fp);
-                } else {
-                    double rc_inner = zbl.rc_inner;
-                    double rc_outer = zbl.rc_outer;
-                    if (paramb.use_typewise_cutoff_zbl) {
-                        // zi and zj start from 1, so need to minus 1 here
-                        rc_outer = Math.min((COVALENT_RADIUS[zi - 1] + COVALENT_RADIUS[zj - 1]) * paramb.typewise_cutoff_zbl_factor, rc_outer);
-                        rc_inner = rc_outer * 0.5f;
-                    }
-                    find_f_and_fp_zbl(zizj, a_inv, rc_inner, rc_outer, d12, d12inv, f, fp);
-                }
-                g_total_potential[0] += f[0] * 0.5; // always calculate this
-            });
-        }
-    }
-    
-    static void find_descriptor_for_jse(ParaMB paramb, ANN annmb,
-                                        final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                        double[] g_gn_radial, double[] g_gn_angular,
-                                        double[] g_Fp, double[] g_sum_fxyz, IVector rEnergies) {
-        double[] q = DoubleArrayCache.getArray(MAX_DIM);
-        double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        double[] s = DoubleArrayCache.getArray(NUM_OF_ABC);
-        double[] Fp = DoubleArrayCache.getArray(MAX_DIM), latent_space = DoubleArrayCache.getArray(MAX_NEURON);
-        final int N = aAPC.atomNumber();
-        for (int n1 = 0; n1 < N; ++n1) {
-            int t1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
-            Arrays.fill(q, 0.0);
-            
-            aAPC.nl_().forEachNeighbor(n1, paramb.rc_radial, (dx, dy, dz, n2) -> {
-                double d12 = hypot(dx, dy, dz);
-                int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
+                if (d12 >= paramb.rc_radial) return;
+                int t2 = type - 1;
                 
                 if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
                     int[] index_left = {0}, index_right = {0};
@@ -2401,9 +2152,10 @@ public class NEP implements IPairPotential {
             for (int n = 0; n <= paramb.n_max_angular; ++n) {
                 Arrays.fill(s, 0.0);
                 final int fn = n;
-                aAPC.nl_().forEachNeighbor(n1, paramb.rc_angular, (dx, dy, dz, n2) -> {
+                nl.forEachDxyzTypeIdx(paramb.rc_angular, (dx, dy, dz, type, idx) -> {
                     double d12 = hypot(dx, dy, dz);
-                    int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
+                    if (d12 >= paramb.rc_angular) return;
+                    int t2 = type-1;
                     
                     if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
                         int[] index_left = {0}, index_right = {0};
@@ -2435,7 +2187,7 @@ public class NEP implements IPairPotential {
                 });
                 find_q(paramb.L_max, paramb.num_L, paramb.n_max_angular + 1, n, s, q, (paramb.n_max_radial + 1));
                 for (int abc = 0; abc < NUM_OF_ABC; ++abc) {
-                    g_sum_fxyz[(n * NUM_OF_ABC + abc) * N + n1] = s[abc];
+                    g_sum_fxyz[(n * NUM_OF_ABC + abc) * N + cIdx] = s[abc];
                 }
             }
             for (int d = 0; d < annmb.dim; ++d) {
@@ -2451,13 +2203,13 @@ public class NEP implements IPairPotential {
                 apply_ann_one_layer(annmb.dim, annmb.num_neurons1, annmb.w0[t1], annmb.b0[t1], annmb.w1[t1], annmb.b1, q, F, Fp, latent_space, false, null, 0);
             }
             
-            if (rEnergies != null) {
-                rEnergies.add(rEnergies.size()==1 ? 0 : n1, F[0]);
+            if (rEnergyAccumulator != null) {
+                rEnergyAccumulator.add(threadID, cIdx, -1, F[0]);
             }
             for (int d = 0; d < annmb.dim; ++d) {
-                g_Fp[d * N + n1] = Fp[d] * paramb.q_scaler[d];
+                g_Fp[d * N + cIdx] = Fp[d] * paramb.q_scaler[d];
             }
-        }
+        });
         DoubleArrayCache.returnArray(latent_space);
         DoubleArrayCache.returnArray(Fp);
         DoubleArrayCache.returnArray(s);
@@ -2465,20 +2217,19 @@ public class NEP implements IPairPotential {
         DoubleArrayCache.returnArray(q);
     }
     
-    static void find_force_radial_for_jse(ParaMB paramb, ANN annmb,
-                                          final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                          double[] g_Fp, double[] g_gnp_radial,
-                                          IVector rForcesX, IVector rForcesY, IVector rForcesZ,
-                                          IVector rVirialsXX, IVector rVirialsYY, IVector rVirialsZZ, IVector rVirialsXY, IVector rVirialsXZ, IVector rVirialsYZ) {
+    static void find_force_radial(ParaMB paramb, ANN annmb,
+                                  int aAtomNumber, INeighborListGetter aNeighborListGetter,
+                                  double[] g_Fp, double[] g_gnp_radial,
+                                  @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) {
         double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
         double[] fnp12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        final int N = aAPC.atomNumber();
-        for (int n1 = 0; n1 < N; ++n1) {
-            int t1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
-            final int fn1 = n1;
-            aAPC.nl_().forEachNeighbor(n1, paramb.rc_radial, (dx, dy, dz, n2) -> {
-                int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
+        final int N = aAtomNumber;
+        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
+            int t1 = cType-1;
+            nl.forEachDxyzTypeIdx(paramb.rc_radial, (dx, dy, dz, type, idx) -> {
                 double d12 = hypot(dx, dy, dz);
+                if (d12 >= paramb.rc_radial) return;
+                int t2 = type - 1;
                 double d12inv = 1.0 / d12;
                 double[] f12 = {0.0, 0.0, 0.0};
                 if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
@@ -2489,8 +2240,8 @@ public class NEP implements IPairPotential {
                     for (int n = 0; n <= paramb.n_max_radial; ++n) {
                         double gnp12 =
                             g_gnp_radial[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_left[0] +
-                                g_gnp_radial[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_right[0];
-                        double tmp12 = g_Fp[fn1 + n * N] * gnp12 * d12inv;
+                            g_gnp_radial[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_right[0];
+                        double tmp12 = -g_Fp[cIdx + n * N] * gnp12 * d12inv;
                         f12[0] += tmp12 * dx;
                         f12[1] += tmp12 * dy;
                         f12[2] += tmp12 * dz;
@@ -2512,73 +2263,47 @@ public class NEP implements IPairPotential {
                             c_index += t1 * paramb.num_types + t2;
                             gnp12 += fnp12[k] * annmb.c[c_index];
                         }
-                        double tmp12 = g_Fp[fn1 + n * N] * gnp12 * d12inv;
+                        double tmp12 = -g_Fp[cIdx + n * N] * gnp12 * d12inv;
                         f12[0] += tmp12 * dx;
                         f12[1] += tmp12 * dy;
                         f12[2] += tmp12 * dz;
                     }
                 }
-                if (rForcesX != null) {
-                    rForcesX.add(fn1, f12[0]);
-                    rForcesX.add(n2, -f12[0]);
+                if (rForceAccumulator != null) {
+                    rForceAccumulator.add(threadID, cIdx, idx, f12[0], f12[1], f12[2]);
                 }
-                if (rForcesY != null) {
-                    rForcesY.add(fn1, f12[1]);
-                    rForcesY.add(n2, -f12[1]);
-                }
-                if (rForcesZ != null) {
-                    rForcesZ.add(fn1, f12[2]);
-                    rForcesZ.add(n2, -f12[2]);
-                }
-                
-                if (rVirialsXX != null) {
-                    rVirialsXX.add(rVirialsXX.size()==1 ? 0 : fn1, -dx*f12[0]);
-                }
-                if (rVirialsYY != null) {
-                    rVirialsYY.add(rVirialsYY.size()==1 ? 0 : fn1, -dy*f12[1]);
-                }
-                if (rVirialsZZ != null) {
-                    rVirialsZZ.add(rVirialsZZ.size()==1 ? 0 : fn1, -dz*f12[2]);
-                }
-                if (rVirialsXY != null) {
-                    rVirialsXY.add(rVirialsXY.size()==1 ? 0 : fn1, -dx*f12[1]);
-                }
-                if (rVirialsXZ != null) {
-                    rVirialsXZ.add(rVirialsXZ.size()==1 ? 0 : fn1, -dx*f12[2]);
-                }
-                if (rVirialsYZ != null) {
-                    rVirialsYZ.add(rVirialsYZ.size()==1 ? 0 : fn1, -dy*f12[2]);
+                if (rVirialAccumulator != null) {
+                    rVirialAccumulator.add(threadID, cIdx, -1, dx*f12[0], dy*f12[1], dz*f12[2], dx*f12[1], dx*f12[2], dy*f12[2]);
                 }
             });
-        }
+        });
         DoubleArrayCache.returnArray(fn12);
         DoubleArrayCache.returnArray(fnp12);
     }
     
-    static void find_force_angular_for_jse(ParaMB paramb, ANN annmb,
-                                           final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                           double[] g_Fp, double[] g_sum_fxyz,
-                                           double[] g_gn_angular, double[] g_gnp_angular,
-                                           IVector rForcesX, IVector rForcesY, IVector rForcesZ,
-                                           IVector rVirialsXX, IVector rVirialsYY, IVector rVirialsZZ, IVector rVirialsXY, IVector rVirialsXZ, IVector rVirialsYZ) {
+    static void find_force_angular(ParaMB paramb, ANN annmb,
+                                   int aAtomNumber, INeighborListGetter aNeighborListGetter,
+                                   double[] g_Fp, double[] g_sum_fxyz,
+                                   double[] g_gn_angular, double[] g_gnp_angular,
+                                   @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) {
         double[] Fp = DoubleArrayCache.getArray(MAX_DIM_ANGULAR);
         double[] sum_fxyz = DoubleArrayCache.getArray(NUM_OF_ABC * MAX_NUM_N);
         double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
         double[] fnp12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        final int N = aAPC.atomNumber();
-        for (int n1 = 0; n1 < N; ++n1) {
+        final int N = aAtomNumber;
+        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
             for (int d = 0; d < paramb.dim_angular; ++d) {
-                Fp[d] = g_Fp[(paramb.n_max_radial + 1 + d) * N + n1];
+                Fp[d] = g_Fp[(paramb.n_max_radial + 1 + d) * N + cIdx];
             }
             for (int d = 0; d < (paramb.n_max_angular + 1) * NUM_OF_ABC; ++d) {
-                sum_fxyz[d] = g_sum_fxyz[d * N + n1];
+                sum_fxyz[d] = g_sum_fxyz[d * N + cIdx];
             }
             
-            int t1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
-            final int fn1 = n1;
-            aAPC.nl_().forEachNeighbor(n1, paramb.rc_angular, (dx, dy, dz, n2) -> {
+            int t1 = cType-1;
+            nl.forEachDxyzTypeIdx(paramb.rc_angular, (dx, dy, dz, type, idx) -> {
                 double d12 = hypot(dx, dy, dz);
-                int t2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
+                if (d12 >= paramb.rc_angular) return;
+                int t2 = type-1;
                 double[] r12 = {dx, dy, dz};
                 double[] f12 = {0.0, 0.0, 0.0};
                 
@@ -2616,62 +2341,39 @@ public class NEP implements IPairPotential {
                         accumulate_f12(paramb.L_max, paramb.num_L, n, paramb.n_max_angular + 1, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
                     }
                 }
-                if (rForcesX != null) {
-                    rForcesX.add(fn1, f12[0]);
-                    rForcesX.add(n2, -f12[0]);
+                f12[0] = -f12[0];
+                f12[1] = -f12[1];
+                f12[2] = -f12[2];
+                if (rForceAccumulator != null) {
+                    rForceAccumulator.add(threadID, cIdx, idx, f12[0], f12[1], f12[2]);
                 }
-                if (rForcesY != null) {
-                    rForcesY.add(fn1, f12[1]);
-                    rForcesY.add(n2, -f12[1]);
-                }
-                if (rForcesZ != null) {
-                    rForcesZ.add(fn1, f12[2]);
-                    rForcesZ.add(n2, -f12[2]);
-                }
-                
-                if (rVirialsXX != null) {
-                    rVirialsXX.add(rVirialsXX.size()==1 ? 0 : fn1, -dx*f12[0]);
-                }
-                if (rVirialsYY != null) {
-                    rVirialsYY.add(rVirialsYY.size()==1 ? 0 : fn1, -dy*f12[1]);
-                }
-                if (rVirialsZZ != null) {
-                    rVirialsZZ.add(rVirialsZZ.size()==1 ? 0 : fn1, -dz*f12[2]);
-                }
-                if (rVirialsXY != null) {
-                    rVirialsXY.add(rVirialsXY.size()==1 ? 0 : fn1, -dx*f12[1]);
-                }
-                if (rVirialsXZ != null) {
-                    rVirialsXZ.add(rVirialsXZ.size()==1 ? 0 : fn1, -dx*f12[2]);
-                }
-                if (rVirialsYZ != null) {
-                    rVirialsYZ.add(rVirialsYZ.size()==1 ? 0 : fn1, -dy*f12[2]);
+                if (rVirialAccumulator != null) {
+                    rVirialAccumulator.add(threadID, cIdx, -1, dx*f12[0], dy*f12[1], dz*f12[2], dx*f12[1], dx*f12[2], dy*f12[2]);
                 }
             });
-        }
+        });
         DoubleArrayCache.returnArray(Fp);
         DoubleArrayCache.returnArray(sum_fxyz);
         DoubleArrayCache.returnArray(fn12);
         DoubleArrayCache.returnArray(fnp12);
     }
     
-    static void find_force_ZBL_for_jse(ParaMB paramb, ZBL zbl,
-                                       final AtomicParameterCalculator aAPC, final IntUnaryOperator aTypeMap,
-                                       IVector rForcesX, IVector rForcesY, IVector rForcesZ,
-                                       IVector rVirialsXX, IVector rVirialsYY, IVector rVirialsZZ, IVector rVirialsXY, IVector rVirialsXZ, IVector rVirialsYZ,
-                                       IVector rEnergies) {
-        final int N = aAPC.atomNumber();
-        for (int n1 = 0; n1 < N; ++n1) {
-            int type1 = aTypeMap.applyAsInt(aAPC.atomType_().get(n1)) - 1;
+    static void find_force_ZBL(ParaMB paramb, ZBL zbl,
+                               INeighborListGetter aNeighborListGetter,
+                               @Nullable IForceAccumulator rForceAccumulator,
+                               @Nullable IVirialAccumulator rVirialAccumulator,
+                               @Nullable IEnergyAccumulator rEnergyAccumulator) {
+        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
+            int type1 = cType-1;
             int zi = paramb.atomic_numbers[type1] + 1;
             double pow_zi = pow(zi, 0.23);
             double max_rc_outer = 2.5;
-            final int fn1 = n1;
-            aAPC.nl_().forEachNeighbor(n1, max_rc_outer, (dx, dy, dz, n2) -> {
+            nl.forEachDxyzTypeIdx(max_rc_outer, (dx, dy, dz, type, idx) -> {
                 double d12 = hypot(dx, dy, dz);
+                if (d12 >= max_rc_outer) return;
+                int type2 = type - 1;
                 double d12inv = 1.0 / d12;
                 double[] f = {0.0}, fp = {0.0};
-                int type2 = aTypeMap.applyAsInt(aAPC.atomType_().get(n2)) - 1;
                 int zj = paramb.atomic_numbers[type2] + 1;
                 double a_inv = (pow_zi + pow(zj, 0.23)) * 2.134563;
                 double zizj = K_C_SP * zi * zj;
@@ -2700,472 +2402,21 @@ public class NEP implements IPairPotential {
                     }
                     find_f_and_fp_zbl(zizj, a_inv, rc_inner, rc_outer, d12, d12inv, f, fp);
                 }
-                double f2 = fp[0] * d12inv * 0.5;
+                double f2 = -fp[0] * d12inv * 0.5;
                 double[] f12 = {dx * f2, dy * f2, dz * f2};
-                if (rForcesX != null) {
-                    rForcesX.add(fn1, f12[0]);
-                    rForcesX.add(n2, -f12[0]);
+                if (rForceAccumulator != null) {
+                    rForceAccumulator.add(threadID, cIdx, idx, f12[0], f12[1], f12[2]);
                 }
-                if (rForcesY != null) {
-                    rForcesY.add(fn1, f12[1]);
-                    rForcesY.add(n2, -f12[1]);
+                if (rVirialAccumulator != null) {
+                    rVirialAccumulator.add(threadID, cIdx, -1, dx*f12[0], dy*f12[1], dz*f12[2], dx*f12[1], dx*f12[2], dy*f12[2]);
                 }
-                if (rForcesZ != null) {
-                    rForcesZ.add(fn1, f12[2]);
-                    rForcesZ.add(n2, -f12[2]);
-                }
-                
-                if (rVirialsXX != null) {
-                    rVirialsXX.add(rVirialsXX.size()==1 ? 0 : fn1, -dx*f12[0]);
-                }
-                if (rVirialsYY != null) {
-                    rVirialsYY.add(rVirialsYY.size()==1 ? 0 : fn1, -dy*f12[1]);
-                }
-                if (rVirialsZZ != null) {
-                    rVirialsZZ.add(rVirialsZZ.size()==1 ? 0 : fn1, -dz*f12[2]);
-                }
-                if (rVirialsXY != null) {
-                    rVirialsXY.add(rVirialsXY.size()==1 ? 0 : fn1, -dx*f12[1]);
-                }
-                if (rVirialsXZ != null) {
-                    rVirialsXZ.add(rVirialsXZ.size()==1 ? 0 : fn1, -dx*f12[2]);
-                }
-                if (rVirialsYZ != null) {
-                    rVirialsYZ.add(rVirialsYZ.size()==1 ? 0 : fn1, -dy*f12[2]);
-                }
-                if (rEnergies != null) {
-                    rEnergies.add(rEnergies.size()==1 ? 0 : fn1, f[0]*0.5);
+                if (rEnergyAccumulator != null) {
+                    rEnergyAccumulator.add(threadID, cIdx, -1, f[0]*0.5);
                 }
             });
-        }
+        });
     }
     
-    
-    static void find_descriptor_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                           IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
-                                           int[] g_type, int[] type_map, RowMatrix g_pos,
-                                           double[] g_gn_radial, double[] g_gn_angular,
-                                           double[] g_Fp, double[] g_sum_fxyz, double[] g_total_potential, double[] g_potential) {
-        double[] q = DoubleArrayCache.getArray(MAX_DIM);
-        double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        double[] s = DoubleArrayCache.getArray(NUM_OF_ABC);
-        double[] Fp = DoubleArrayCache.getArray(MAX_DIM), latent_space = DoubleArrayCache.getArray(MAX_NEURON);
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist.getAt(ii);
-            int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
-            Arrays.fill(q, 0.0);
-            
-            int g_NNn1 = g_NN.getAt(n1);
-            for (int i1 = 0; i1 < g_NNn1; ++i1) {
-                int n2 = g_NL.getAt(n1, i1);
-                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
-                double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
-                if (d12sq >= paramb.rc_radial * paramb.rc_radial) {
-                    continue;
-                }
-                double d12 = sqrt(d12sq);
-                int t2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                
-                if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                    int[] index_left = {0}, index_right = {0};
-                    double[] weight_left = {0.0}, weight_right = {0.0};
-                    find_index_and_weight(d12 * paramb.rcinv_radial, index_left, index_right, weight_left, weight_right);
-                    int t12 = t1 * paramb.num_types + t2;
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        q[n] += g_gn_radial[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_left[0] +
-                                g_gn_radial[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_right[0];
-                    }
-                } else {
-                    double[] fc12 = {0.0};
-                    double rc = paramb.rc_radial;
-                    double rcinv = paramb.rcinv_radial;
-                    if (paramb.use_typewise_cutoff) {
-                        rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_radial_factor, rc);
-                        rcinv = 1.0 / rc;
-                    }
-                    find_fc(rc, rcinv, d12, fc12);
-                    find_fn(paramb.basis_size_radial, rcinv, d12, fc12[0], fn12);
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        double gn12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_radial; ++k) {
-                            int c_index = (n * (paramb.basis_size_radial + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2;
-                            gn12 += fn12[k] * annmb.c[c_index];
-                        }
-                        q[n] += gn12;
-                    }
-                }
-            }
-            
-            for (int n = 0; n <= paramb.n_max_angular; ++n) {
-                Arrays.fill(s, 0.0);
-                for (int i1 = 0; i1 < g_NNn1; ++i1) {
-                    int n2 = g_NL.getAt(n1, i1);
-                    double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
-                    double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
-                    if (d12sq >= paramb.rc_angular * paramb.rc_angular) {
-                        continue;
-                    }
-                    double d12 = sqrt(d12sq);
-                    int t2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                    
-                    if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                        int[] index_left = {0}, index_right = {0};
-                        double[] weight_left = {0.0}, weight_right = {0.0};
-                        find_index_and_weight(d12 * paramb.rcinv_angular, index_left, index_right, weight_left, weight_right);
-                        int t12 = t1 * paramb.num_types + t2;
-                        double gn12 =
-                            g_gn_angular[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + n] * weight_left[0] +
-                            g_gn_angular[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + n] * weight_right[0];
-                        accumulate_s(paramb.L_max, d12, r12[0], r12[1], r12[2], gn12, s);
-                    } else {
-                        double[] fc12 = {0.0};
-                        double rc = paramb.rc_angular;
-                        double rcinv = paramb.rcinv_angular;
-                        if (paramb.use_typewise_cutoff) {
-                            rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_angular_factor, rc);
-                            rcinv = 1.0 / rc;
-                        }
-                        find_fc(rc, rcinv, d12, fc12);
-                        find_fn(paramb.basis_size_angular, rcinv, d12, fc12[0], fn12);
-                        double gn12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_angular; ++k) {
-                            int c_index = (n * (paramb.basis_size_angular + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2 + paramb.num_c_radial;
-                            gn12 += fn12[k] * annmb.c[c_index];
-                        }
-                        accumulate_s(paramb.L_max, d12, r12[0], r12[1], r12[2], gn12, s);
-                    }
-                }
-                find_q(paramb.L_max, paramb.num_L, paramb.n_max_angular + 1, n, s, q, (paramb.n_max_radial + 1));
-                for (int abc = 0; abc < NUM_OF_ABC; ++abc) {
-                    g_sum_fxyz[(n * NUM_OF_ABC + abc) * nlocal + n1] = s[abc];
-                }
-            }
-            for (int d = 0; d < annmb.dim; ++d) {
-                q[d] = q[d] * paramb.q_scaler[d];
-            }
-            double[] F = {0.0};
-            Arrays.fill(Fp, 0.0);
-            Arrays.fill(latent_space, 0.0);
-            
-            if (paramb.version == 5) {
-                apply_ann_one_layer_nep5(annmb.dim, annmb.num_neurons1, annmb.w0[t1], annmb.b0[t1], annmb.w1[t1], annmb.b1, q, F, Fp, latent_space);
-            } else {
-                apply_ann_one_layer(annmb.dim, annmb.num_neurons1, annmb.w0[t1], annmb.b0[t1], annmb.w1[t1], annmb.b1, q, F, Fp, latent_space, false, null, 0);
-            }
-            
-            g_total_potential[0] += F[0]; // always calculate this
-            if (g_potential != null) {    // only calculate when required
-                g_potential[n1] += F[0];
-            }
-            for (int d = 0; d < annmb.dim; ++d) {
-                g_Fp[d * nlocal + n1] = Fp[d] * paramb.q_scaler[d];
-            }
-        }
-        DoubleArrayCache.returnArray(latent_space);
-        DoubleArrayCache.returnArray(Fp);
-        DoubleArrayCache.returnArray(s);
-        DoubleArrayCache.returnArray(fn12);
-        DoubleArrayCache.returnArray(q);
-    }
-    
-    static void find_force_radial_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                             IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
-                                             int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp,
-                                             double[] g_gnp_radial,
-                                             RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half) {
-        double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        double[] fnp12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist.getAt(ii);
-            int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
-            int g_NNn1 = g_NN.getAt(n1);
-            for (int i1 = 0; i1 < g_NNn1; ++i1) {
-                int n2 = g_NL.getAt(n1, i1);
-                int t2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
-                double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
-                if (d12sq >= paramb.rc_radial * paramb.rc_radial) {
-                    continue;
-                }
-                double d12 = sqrt(d12sq);
-                double d12inv = 1.0 / d12;
-                double[] f12 = {0.0, 0.0, 0.0};
-                if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                    int[] index_left = {0}, index_right = {0};
-                    double[] weight_left = {0.0}, weight_right = {0.0};
-                    find_index_and_weight(d12 * paramb.rcinv_radial, index_left, index_right, weight_left, weight_right);
-                    int t12 = t1 * paramb.num_types + t2;
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        double gnp12 =
-                            g_gnp_radial[(index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_left[0] +
-                            g_gnp_radial[(index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_radial + 1) + n] * weight_right[0];
-                        double tmp12 = g_Fp[n1 + n * nlocal] * gnp12 * d12inv;
-                        for (int d = 0; d < 3; ++d) {
-                            f12[d] += tmp12 * r12[d];
-                        }
-                    }
-                } else {
-                    double[] fc12 = {0.0}, fcp12 = {0.0};
-                    double rc = paramb.rc_radial;
-                    double rcinv = paramb.rcinv_radial;
-                    if (paramb.use_typewise_cutoff) {
-                        rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_radial_factor, rc);
-                        rcinv = 1.0 / rc;
-                    }
-                    find_fc_and_fcp(rc, rcinv, d12, fc12, fcp12);
-                    find_fn_and_fnp(paramb.basis_size_radial, rcinv, d12, fc12[0], fcp12[0], fn12, fnp12);
-                    for (int n = 0; n <= paramb.n_max_radial; ++n) {
-                        double gnp12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_radial; ++k) {
-                            int c_index = (n * (paramb.basis_size_radial + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2;
-                            gnp12 += fnp12[k] * annmb.c[c_index];
-                        }
-                        double tmp12 = g_Fp[n1 + n * nlocal] * gnp12 * d12inv;
-                        for (int d = 0; d < 3; ++d) {
-                            f12[d] += tmp12 * r12[d];
-                        }
-                    }
-                }
-                g_force.update(n1, 0, v -> v + f12[0]);
-                g_force.update(n1, 1, v -> v + f12[1]);
-                g_force.update(n1, 2, v -> v + f12[2]);
-                g_force.update(n2, 0, v -> v - f12[0]);
-                g_force.update(n2, 1, v -> v - f12[1]);
-                g_force.update(n2, 2, v -> v - f12[2]);
-                
-                // always calculate the total virial:
-                g_total_virial[0] -= r12[0] * f12[0]; // xx
-                g_total_virial[1] -= r12[1] * f12[1]; // yy
-                g_total_virial[2] -= r12[2] * f12[2]; // zz
-                g_total_virial[3] -= r12[0] * f12[1]; // xy
-                g_total_virial[4] -= r12[0] * f12[2]; // xz
-                g_total_virial[5] -= r12[1] * f12[2]; // yz
-                if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
-                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
-                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
-                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
-                }
-                if (g_virial_half != null) {           // only calculate the per-atom virial when required
-                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
-                }
-            }
-        }
-        DoubleArrayCache.returnArray(fn12);
-        DoubleArrayCache.returnArray(fnp12);
-    }
-    
-    static void find_force_angular_for_lammps(ParaMB paramb, ANN annmb, int nlocal, int N,
-                                              IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
-                                              int[] g_type, int[] type_map, RowMatrix g_pos, double[] g_Fp, double[] g_sum_fxyz,
-                                              double[] g_gn_angular, double[] g_gnp_angular,
-                                              RowMatrix g_force, double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half) {
-        double[] Fp = DoubleArrayCache.getArray(MAX_DIM_ANGULAR);
-        double[] sum_fxyz = DoubleArrayCache.getArray(NUM_OF_ABC * MAX_NUM_N);
-        double[] fn12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        double[] fnp12 = DoubleArrayCache.getArray(MAX_NUM_N);
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist.getAt(ii);
-            for (int d = 0; d < paramb.dim_angular; ++d) {
-                Fp[d] = g_Fp[(paramb.n_max_radial + 1 + d) * nlocal + n1];
-            }
-            for (int d = 0; d < (paramb.n_max_angular + 1) * NUM_OF_ABC; ++d) {
-                sum_fxyz[d] = g_sum_fxyz[d * nlocal + n1];
-            }
-            
-            int t1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
-            
-            int g_NNn1 = g_NN.getAt(n1);
-            for (int i1 = 0; i1 < g_NNn1; ++i1) {
-                int n2 = g_NL.getAt(n1, i1);
-                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
-                double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
-                if (d12sq >= paramb.rc_angular * paramb.rc_angular) {
-                    continue;
-                }
-                double d12 = sqrt(d12sq);
-                int t2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                double[] f12 = {0.0, 0.0, 0.0};
-                
-                if (Conf.USE_TABLE_FOR_RADIAL_FUNCTIONS) {
-                    int[] index_left = {0}, index_right = {0};
-                    double[] weight_left = {0.0}, weight_right = {0.0};
-                    find_index_and_weight(d12 * paramb.rcinv_angular, index_left, index_right, weight_left, weight_right);
-                    int t12 = t1 * paramb.num_types + t2;
-                    for (int n = 0; n <= paramb.n_max_angular; ++n) {
-                        int index_left_all = (index_left[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + n;
-                        int index_right_all = (index_right[0] * paramb.num_types_sq + t12) * (paramb.n_max_angular + 1) + n;
-                        double gn12 = g_gn_angular[index_left_all] * weight_left[0] + g_gn_angular[index_right_all] * weight_right[0];
-                        double gnp12 = g_gnp_angular[index_left_all] * weight_left[0] + g_gnp_angular[index_right_all] * weight_right[0];
-                        accumulate_f12(paramb.L_max, paramb.num_L, n, paramb.n_max_angular + 1, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
-                    }
-                } else {
-                    double[] fc12 = {0.0}, fcp12 = {0.0};
-                    double rc = paramb.rc_angular;
-                    double rcinv = paramb.rcinv_angular;
-                    if (paramb.use_typewise_cutoff) {
-                        rc = Math.min((COVALENT_RADIUS[paramb.atomic_numbers[t1]] + COVALENT_RADIUS[paramb.atomic_numbers[t2]]) * paramb.typewise_cutoff_angular_factor, rc);
-                        rcinv = 1.0 / rc;
-                    }
-                    find_fc_and_fcp(rc, rcinv, d12, fc12, fcp12);
-                    find_fn_and_fnp(paramb.basis_size_angular, rcinv, d12, fc12[0], fcp12[0], fn12, fnp12);
-                    for (int n = 0; n <= paramb.n_max_angular; ++n) {
-                        double gn12 = 0.0;
-                        double gnp12 = 0.0;
-                        for (int k = 0; k <= paramb.basis_size_angular; ++k) {
-                            int c_index = (n * (paramb.basis_size_angular + 1) + k) * paramb.num_types_sq;
-                            c_index += t1 * paramb.num_types + t2 + paramb.num_c_radial;
-                            gn12 += fn12[k] * annmb.c[c_index];
-                            gnp12 += fnp12[k] * annmb.c[c_index];
-                        }
-                        accumulate_f12(paramb.L_max, paramb.num_L, n, paramb.n_max_angular + 1, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
-                    }
-                }
-                g_force.update(n1, 0, v -> v + f12[0]);
-                g_force.update(n1, 1, v -> v + f12[1]);
-                g_force.update(n1, 2, v -> v + f12[2]);
-                g_force.update(n2, 0, v -> v - f12[0]);
-                g_force.update(n2, 1, v -> v - f12[1]);
-                g_force.update(n2, 2, v -> v - f12[2]);
-                // always calculate the total virial:
-                g_total_virial[0] -= r12[0] * f12[0]; // xx
-                g_total_virial[1] -= r12[1] * f12[1]; // yy
-                g_total_virial[2] -= r12[2] * f12[2]; // zz
-                g_total_virial[3] -= r12[0] * f12[1]; // xy
-                g_total_virial[4] -= r12[0] * f12[2]; // xz
-                g_total_virial[5] -= r12[1] * f12[2]; // yz
-                if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
-                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
-                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
-                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
-                }
-                if (g_virial_half != null) {           // only calculate the per-atom virial when required
-                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
-                }
-            }
-        }
-        DoubleArrayCache.returnArray(Fp);
-        DoubleArrayCache.returnArray(sum_fxyz);
-        DoubleArrayCache.returnArray(fn12);
-        DoubleArrayCache.returnArray(fnp12);
-    }
-    
-    static void find_force_ZBL_for_lammps(ParaMB paramb, ZBL zbl, int N,
-                                          IntCPointer g_ilist, IntCPointer g_NN, NestedIntCPointer g_NL,
-                                          int[] g_type, int[] type_map, RowMatrix g_pos, RowMatrix g_force,
-                                          double[] g_total_virial, RowMatrix g_virial, RowMatrix g_virial_half, double[] g_total_potential, double[] g_potential) {
-        for (int ii = 0; ii < N; ++ii) {
-            int n1 = g_ilist.getAt(ii);
-            int type1 = type_map[g_type[n1]]; // from LAMMPS to NEP convention
-            int zi = paramb.atomic_numbers[type1] + 1;
-            double pow_zi = pow(zi, 0.23);
-            int g_NNn1 = g_NN.getAt(n1);
-            for (int i1 = 0; i1 < g_NNn1; ++i1) {
-                int n2 = g_NL.getAt(n1, i1);
-                double[] r12 = {g_pos.get(n2, 0) - g_pos.get(n1, 0), g_pos.get(n2, 1) - g_pos.get(n1, 1), g_pos.get(n2, 2) - g_pos.get(n1, 2)};
-                double d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
-                double max_rc_outer = 2.5;
-                if (d12sq >= max_rc_outer * max_rc_outer) {
-                    continue;
-                }
-                double d12 = sqrt(d12sq);
-                
-                double d12inv = 1.0 / d12;
-                double[] f = {0.0}, fp = {0.0};
-                int type2 = type_map[g_type[n2]]; // from LAMMPS to NEP convention
-                int zj = paramb.atomic_numbers[type2] + 1;
-                double a_inv = (pow_zi + pow(zj, 0.23)) * 2.134563;
-                double zizj = K_C_SP * zi * zj;
-                if (zbl.flexibled) {
-                    int t1, t2;
-                    if (type1 < type2) {
-                        t1 = type1;
-                        t2 = type2;
-                    } else {
-                        t1 = type2;
-                        t2 = type1;
-                    }
-                    int zbl_index = t1 * zbl.num_types - (t1 * (t1 - 1)) / 2 + (t2 - t1);
-                    double[] ZBL_para = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-                    for (int i = 0; i < 10; ++i) {
-                        ZBL_para[i] = zbl.para[10 * zbl_index + i];
-                    }
-                    find_f_and_fp_zbl(ZBL_para, zizj, a_inv, d12, d12inv, f, fp);
-                } else {
-                    double rc_inner = zbl.rc_inner;
-                    double rc_outer = zbl.rc_outer;
-                    if (paramb.use_typewise_cutoff_zbl) {
-                        // zi and zj start from 1, so need to minus 1 here
-                        rc_outer = Math.min((COVALENT_RADIUS[zi - 1] + COVALENT_RADIUS[zj - 1]) * paramb.typewise_cutoff_zbl_factor, rc_outer);
-                        rc_inner = rc_outer * 0.5f;
-                    }
-                    find_f_and_fp_zbl(zizj, a_inv, rc_inner, rc_outer, d12, d12inv, f, fp);
-                }
-                double f2 = fp[0] * d12inv * 0.5;
-                double[] f12 = {r12[0] * f2, r12[1] * f2, r12[2] * f2};
-                g_force.update(n1, 0, v -> v + f12[0]); // accumulation here
-                g_force.update(n1, 1, v -> v + f12[1]);
-                g_force.update(n1, 2, v -> v + f12[2]);
-                g_force.update(n2, 0, v -> v - f12[0]);
-                g_force.update(n2, 1, v -> v - f12[1]);
-                g_force.update(n2, 2, v -> v - f12[2]);
-                // always calculate the total virial:
-                g_total_virial[0] -= r12[0] * f12[0]; // xx
-                g_total_virial[1] -= r12[1] * f12[1]; // yy
-                g_total_virial[2] -= r12[2] * f12[2]; // zz
-                g_total_virial[3] -= r12[0] * f12[1]; // xy
-                g_total_virial[4] -= r12[0] * f12[2]; // xz
-                g_total_virial[5] -= r12[1] * f12[2]; // yz
-                if (g_virial != null) {               // only calculate the per-atom virial when required
-                    g_virial.update(n2, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial.update(n2, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial.update(n2, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial.update(n2, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial.update(n2, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial.update(n2, 5, v -> v - r12[1]*f12[2]); // yz
-                    g_virial.update(n2, 6, v -> v - r12[1]*f12[0]); // yx
-                    g_virial.update(n2, 7, v -> v - r12[2]*f12[0]); // zx
-                    g_virial.update(n2, 8, v -> v - r12[2]*f12[1]); // zy
-                }
-                if (g_virial_half != null) {           // only calculate the per-atom virial when required
-                    g_virial_half.update(n1, 0, v -> v - r12[0]*f12[0]); // xx
-                    g_virial_half.update(n1, 1, v -> v - r12[1]*f12[1]); // yy
-                    g_virial_half.update(n1, 2, v -> v - r12[2]*f12[2]); // zz
-                    g_virial_half.update(n1, 3, v -> v - r12[0]*f12[1]); // xy
-                    g_virial_half.update(n1, 4, v -> v - r12[0]*f12[2]); // xz
-                    g_virial_half.update(n1, 5, v -> v - r12[1]*f12[2]); // yz
-                }
-                g_total_potential[0] += f[0] * 0.5; // always calculate this
-                if (g_potential != null) {    // only calculate when required
-                    g_potential[n1] += f[0] * 0.5;
-                }
-            }
-        }
-    }
     
     static String[] get_tokens(BufferedReader input) throws IOException {
         String line = input.readLine();

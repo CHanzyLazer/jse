@@ -1,14 +1,13 @@
 package jsex.nep;
 
-import jse.cache.DoubleArrayCache;
-import jse.cache.IntArrayCache;
-import jse.cache.MatrixCache;
+import jse.cache.*;
 import jse.clib.DoubleCPointer;
 import jse.clib.IntCPointer;
 import jse.clib.NestedDoubleCPointer;
 import jse.clib.NestedIntCPointer;
 import jse.lmp.LmpPlugin;
 import jse.math.matrix.RowMatrix;
+import jse.math.vector.IntVector;
 
 /**
  * {@link LmpPlugin.Pair} 的 NEP 版本，在 lammps
@@ -45,12 +44,10 @@ public class PairNEP extends LmpPlugin.Pair {
         boolean vflag = vflagEither();
         boolean eflagAtom = eflagAtom();
         boolean vflagAtom = vflagAtom();
-        boolean cvflagAtom = cvflagAtom();
         DoubleCPointer engVdwl = engVdwl();
         DoubleCPointer eatom = eatom();
         DoubleCPointer virial = virial();
         NestedDoubleCPointer vatom = vatom();
-        NestedDoubleCPointer cvatom = cvatom();
         
         NestedDoubleCPointer x = atomX();
         NestedDoubleCPointer f = atomF();
@@ -70,28 +67,74 @@ public class PairNEP extends LmpPlugin.Pair {
         x.parse2dest(xMat.internalData(), xMat.internalDataShift(), xMat.rowNumber(), xMat.columnNumber());
         f.parse2dest(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
         
-        double[] engBuf = {0.0};
-        double[] virialBuf = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        double[] eatomBuf = null;
-        RowMatrix vatomMat = null;
-        RowMatrix cvatomMat = null;
+        final double[] engBuf = {0.0};
+        final double[] virialBuf = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        final double[] eatomBuf = eflagAtom ? DoubleArrayCache.getArray(nlocal) : null;
+        final RowMatrix vatomMat = vflagAtom ? MatrixCache.getMatRow(nlocal, 6) : null;
         if (eflagAtom) {
-            eatomBuf = DoubleArrayCache.getArray(nlocal);
             eatom.parse2dest(eatomBuf);
         }
         if (vflagAtom) {
-            vatomMat = MatrixCache.getMatRow(nlocal, 6);
             vatom.parse2dest(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
         }
-        if (cvflagAtom) {
-            cvatomMat = MatrixCache.getMatRow(nlocal+nghost, 9);
-            cvatom.parse2dest(cvatomMat.internalData(), cvatomMat.internalDataShift(), cvatomMat.rowNumber(), cvatomMat.columnNumber());
-        }
         
-        mNEP.compute_for_lammps(
-            nlocal, inum, ilist, numneigh, firstneigh, typeBuf, mTypeMap,
-            xMat, engBuf, virialBuf, eatomBuf, fMat, cvatomMat, vatomMat
-        );
+        mNEP.calEnergyForceVirial(nlocal, (initDo, finalDo, neighborListDo) -> {
+            if (initDo != null) initDo.run(0);
+            for (int ii = 0; ii < inum; ++ii) {
+                int i = ilist.getAt(ii);
+                final double xtmp = xMat.get(i, 0);
+                final double ytmp = xMat.get(i, 1);
+                final double ztmp = xMat.get(i, 2);
+                final int typei = mTypeMap[typeBuf[i]];
+                IntCPointer jlist = firstneigh.getAt(i);
+                final int jnum = numneigh.getAt(i);
+                final IntVector jlistVec = IntVectorCache.getVec(jnum);
+                jlist.parse2dest(jlistVec.internalData(), jlistVec.internalDataShift(), jlistVec.internalDataSize());
+                // 遍历近邻
+                neighborListDo.run(0, i, typei, (rmax, dxyzTypeDo) -> {
+                    for (int jj = 0; jj < jnum; ++jj) {
+                        int j = jlistVec.get(jj);
+                        j &= LmpPlugin.NEIGHMASK;
+                        // 注意 jse 中的 dxyz 和 lammps 定义的相反
+                        double delx = xMat.get(j, 0) - xtmp;
+                        double dely = xMat.get(j, 1) - ytmp;
+                        double delz = xMat.get(j, 2) - ztmp;
+                        dxyzTypeDo.run(delx, dely, delz, mTypeMap[typeBuf[j]], j);
+                    }
+                });
+                IntVectorCache.returnVec(jlistVec);
+            }
+            if (finalDo != null) finalDo.run(0);
+        }, !eflag ? null : (threadID, cIdx, idx, eng) -> {
+            if (idx >= 0) throw new IllegalStateException();
+            engBuf[0] += eng;
+            if (eflagAtom) {
+                eatomBuf[cIdx] += eng;
+            }
+        }, (threadID, cIdx, idx, fx, fy, fz) -> {
+            fMat.update(cIdx, 0, v -> v - fx);
+            fMat.update(cIdx, 1, v -> v - fy);
+            fMat.update(cIdx, 2, v -> v - fz);
+            fMat.update(idx, 0, v -> v + fx);
+            fMat.update(idx, 1, v -> v + fy);
+            fMat.update(idx, 2, v -> v + fz);
+        }, !vflag ? null : (threadID, cIdx, idx, vxx, vyy, vzz, vxy, vxz, vyz) -> {
+            if (idx >= 0) throw new IllegalStateException();
+            virialBuf[0] += vxx;
+            virialBuf[1] += vyy;
+            virialBuf[2] += vzz;
+            virialBuf[3] += vxy;
+            virialBuf[4] += vxz;
+            virialBuf[5] += vyz;
+            if (vflagAtom) {
+                vatomMat.update(cIdx, 0, v -> v + vxx);
+                vatomMat.update(cIdx, 1, v -> v + vyy);
+                vatomMat.update(cIdx, 2, v -> v + vzz);
+                vatomMat.update(cIdx, 3, v -> v + vxy);
+                vatomMat.update(cIdx, 4, v -> v + vxz);
+                vatomMat.update(cIdx, 5, v -> v + vyz);
+            }
+        });
         
         if (eflag) {
             engVdwl.set(engVdwl.get() + engBuf[0]);
@@ -109,10 +152,6 @@ public class PairNEP extends LmpPlugin.Pair {
             vatom.fill(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
             MatrixCache.returnMat(vatomMat);
         }
-        if (cvflagAtom) {
-            cvatom.fill(cvatomMat.internalData(), cvatomMat.internalDataShift(), cvatomMat.rowNumber(), cvatomMat.columnNumber());
-            MatrixCache.returnMat(cvatomMat);
-        }
         f.fill(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
         IntArrayCache.returnArray(typeBuf);
         MatrixCache.returnMat(fMat);
@@ -127,14 +166,16 @@ public class PairNEP extends LmpPlugin.Pair {
         int tArgLen = aArgs.length-2;
         if (tArgLen-1 != tTypeNum) throw new IllegalArgumentException("Elements number in pair_coeff not match ntypes ("+tTypeNum+").");
         mTypeMap = new int[tArgLen];
-        mTypeMap[0] = -1;
-        String[] tElements = new String[tArgLen];
-        for (int type = 1; type < tArgLen; ++type) {
-            tElements[type] = aArgs[2+type];
-            mTypeMap[type] = type;
-        }
         mNEP.init_from_file(aArgs[2]);
-        mNEP.update_type_map(tTypeNum, mTypeMap, tElements);
+        for (int type = 1; type < tArgLen; ++type) {
+            String tElem = aArgs[2+type];
+            int tNEPType = mNEP.typeOf(tElem);
+            if (tNEPType <= 0) throw new IllegalArgumentException("Invalid element ("+tElem+") in pair_coeff");
+            mTypeMap[type] = tNEPType;
+        }
+        // 一些检测，要求 NEP 是全近邻列表，且需要在内部检测截断半径
+        if (mNEP.neighborListHalf()) throw new IllegalStateException();
+        if (!mNEP.neighborListChecked()) throw new IllegalStateException();
         
         // get cutoff from NEP model
         mCutoff = Math.max(mNEP.paramb.rc_radial, mNEP.paramb.rc_angular);

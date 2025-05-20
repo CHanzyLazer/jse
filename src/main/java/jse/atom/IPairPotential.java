@@ -9,6 +9,7 @@ import jse.math.matrix.RowMatrix;
 import jse.math.vector.IIntVector;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
+import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +44,44 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     /** @return {@inheritDoc}；如果存在则会自动根据元素符号重新映射种类 */
     @Override default @Nullable List<@Nullable String> symbols() {return IHasSymbol.super.symbols();}
     
+    /** 用于计算原子相互作用势能的近邻列表获取器 */
+    @FunctionalInterface interface INeighborListGetter {
+        void forEachNLWithException(@Nullable ParforThreadPool.ITaskWithIDAndException aInitDo, @Nullable ParforThreadPool.ITaskWithIDAndException aFinalDo, INeighborListDoWithException aNeighborListDo) throws Exception;
+        default void forEachNL(INeighborListDo aNeighborListDo) {
+            try {forEachNLWithException(null, null, aNeighborListDo::run);}
+            catch (Exception e) {throw new RuntimeException(e);}
+        }
+    }
+    /** 获取到每个原子的近邻列表需要进行的操作 */
+    @FunctionalInterface interface INeighborListDoWithException {
+        void run(int aThreadID, int cIdx, int cType, IDxyzTypeIdxIterable aNL) throws Exception;
+    }
+    @FunctionalInterface interface INeighborListDo {
+        void run(int aThreadID, int cIdx, int cType, IDxyzTypeIdxIterable aNL);
+    }
+    
+    /** 用于计算原子相互作用势能的近邻列表 */
+    @FunctionalInterface interface IDxyzTypeIdxIterable {
+        void forEachDxyzTypeIdx(double aRMax, IDxyzTypeIdxDo aDxyzTypeIdxDo);
+    }
+    /** 每个原子获取到近邻后的后续操作 */
+    @FunctionalInterface interface IDxyzTypeIdxDo {
+        void run(double aDx, double aDy, double aDz, int aType, int aIdx);
+    }
+    
+    /** 能量累加接口，用于接收能量计算结果 */
+    @FunctionalInterface interface IEnergyAccumulator {
+        void add(int aThreadID, int cIdx, int aIdx, double aEnergy);
+    }
+    /** 力累加接口，用于接收力计算结果 */
+    @FunctionalInterface interface IForceAccumulator {
+        void add(int aThreadID, int cIdx, int aIdx, double aForceX, double aForceY, double aForceZ);
+    }
+    /** 位力累加接口，用于接收位力计算结果 */
+    @FunctionalInterface interface IVirialAccumulator {
+        void add(int aThreadID, int cIdx, int aIdx, double aVirialXX, double aVirialYY, double aVirialZZ, double aVirialsXY, double aVirialsXZ, double aVirialsYZ);
+    }
+    
     /**
      * 此势函数期望使用的线程数，默认永远为 {@code 1}，重写来修改内部自动创建 {@link AtomicParameterCalculator}
      * 时使用的线程数，但是否确实并行还是需要具体实现中使用 {@link AtomicParameterCalculator}
@@ -55,7 +94,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * 从而加速这些计算。默认为 {@code -1}，表示不能进行这些优化
      * @return 势函数的（最大）截断半径
      */
-    default double rcut() {return -1;}
+    default double rcutMax() {return -1;}
     /**
      * 标记此势函数是否符合牛顿第三定律，即，原子的力是否能够分解成每个原子之间的对力之和，
      * 并且这些相互的对力是大小相同方向相反的
@@ -66,6 +105,19 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @return 此势函数是否符合牛顿第三定律
      */
     default boolean newton() {return false;}
+    /**
+     * 标记此势函数内部的通用近邻遍历内核实现是否已经检查了超出截断的原子，
+     * 如果已经检查了则外部实现可以不再进行二次检查。
+     * @return 此势函数内核实现中是否已经检查了截断半径
+     */
+    default boolean neighborListChecked() {return false;}
+    /**
+     * 标记此势函数内部的通用近邻遍历内核实现是否总是认为是一半的近邻列表遍历，
+     * 默认会和 {@link #newton()} 标记一致
+     * @return 此势函数内核实现中是否认为是一半的近邻列表遍历
+     */
+    default boolean neighborListHalf() {return newton();}
+    
     
     /**
      * 通过此势函数计算给定原子参数计算器 {@link AtomicParameterCalculator} 中每个原子的能量值
@@ -231,7 +283,6 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      */
     default List<Double> calStress(AtomicParameterCalculator aAPC) throws Exception {return calStress(aAPC, type->type);}
     
-    
     /**
      * 通过此势函数计算给定原子参数计算器 {@link AtomicParameterCalculator} 指定原子的总能量
      * @param aAPC 需要计算能量的原子参数计算器，主要通过此计算器来获取近邻列表
@@ -240,7 +291,38 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @return 指定原子的总能量
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    double calEnergyAt(AtomicParameterCalculator aAPC, ISlice aIndices, IntUnaryOperator aTypeMap) throws Exception;
+    default double calEnergyAt(AtomicParameterCalculator aAPC, ISlice aIndices, IntUnaryOperator aTypeMap) throws Exception {
+        if (isShutdown()) throw new IllegalStateException("This Potential is dead");
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
+        final int tTypeNum = atomTypeNumber();
+        // 现在强制设置 apc 的线程数
+        int oThreadNum = aAPC.threadNumber();
+        int tThreadNum = threadNumber();
+        aAPC.setThreadNumber(tThreadNum);
+        Vector rEngPar = VectorCache.getZeros(tThreadNum);
+        final double tMul = neighborListHalf() ? 0.5 : 1.0;
+        final boolean tNLChecked = neighborListChecked();
+        calEnergy(aAPC.atomNumber(), (initDo, finalDo, neighborListDo) -> {
+            aAPC.pool_().parforWithException(aIndices.size(), initDo, finalDo, (i, threadID) -> {
+                final int cIdx = aIndices.get(i);
+                final int cType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(cIdx));
+                neighborListDo.run(threadID, i, cType, (rmax, dxyzTypeDo) -> {
+                    // 计算部分原子能量总是不使用半数遍历优化
+                    aAPC.nl_().forEachNeighbor(cIdx, rmax, (dx, dy, dz, idx) -> {
+                        if ((!tNLChecked) && (dx*dx + dy*dy + dz*dz >= rmax*rmax)) return;
+                        int tType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(idx));
+                        dxyzTypeDo.run(dx, dy, dz, tType, idx);
+                    });
+                });
+            });
+        }, (threadID, cIdx, idx, eng) -> {
+            rEngPar.add(threadID, eng*tMul);
+        });
+        double rEng = rEngPar.sum();
+        VectorCache.returnVec(rEngPar);
+        aAPC.setThreadNumber(oThreadNum);
+        return rEng;
+    }
     /**
      * 通过此势函数计算给定原子参数计算器 {@link AtomicParameterCalculator} 指定原子的总能量
      * <p>
@@ -284,7 +366,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     default double calEnergyDiffMove(AtomicParameterCalculator aAPC, int aI, double aDx, double aDy, double aDz, boolean aRestoreAPC, IntUnaryOperator aTypeMap) throws Exception {
         if (isShutdown()) throw new IllegalStateException("This Potential is dead");
         typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
-        double tRCut = rcut();
+        double tRCut = rcutMax();
         if (tRCut <= 0) {
             double oEng = calEnergy(aAPC, aTypeMap);
             double oX = aAPC.atomDataXYZ_().get(aI, 0), oY = aAPC.atomDataXYZ_().get(aI, 1), oZ = aAPC.atomDataXYZ_().get(aI, 2);
@@ -433,7 +515,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         int oTypeI = aAPC.atomType_().get(aI);
         int oTypeJ = aAPC.atomType_().get(aJ);
         if (oTypeI == oTypeJ) return 0.0;
-        double tRCut = rcut();
+        double tRCut = rcutMax();
         if (tRCut <= 0) {
             double oEng = calEnergy(aAPC, aTypeMap);
             double nEng = calEnergy(aAPC.setAtomType(aI, oTypeJ).setAtomType(aJ, oTypeI), aTypeMap);
@@ -544,7 +626,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
         int oType = aAPC.atomType_().get(aI);
         if (oType == aType) return 0.0;
-        double tRCut = rcut();
+        double tRCut = rcutMax();
         if (tRCut <= 0) {
             double oEng = calEnergy(aAPC, aTypeMap);
             double nEng = calEnergy(aAPC.setAtomType(aI, aType), aTypeMap);
@@ -636,6 +718,28 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     
     
     /**
+     * 通过此势函数计算并给定近邻列表获取器包含的原子能量，将计算值传入 rEnergyAccumulator
+     * @param aAtomNumber 遍历中涉及到的最大的原子数 {@code (idx < atomNumber)}
+     * @param aNeighborListGetter 通用的近邻列表获取器
+     * @param rEnergyAccumulator 接受能量的收集器
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    @ApiStatus.Experimental
+    void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) throws Exception;
+    
+    /**
+     * 通过此势函数计算并给定近邻列表获取器包含的原子的能量力和位力，分别将计算值传入 rEnergyAccumulator, rForceAccumulator, rVirialAccumulator
+     * @param aAtomNumber 遍历中涉及到的最大的原子数 {@code (idx < atomNumber)}
+     * @param aNeighborListGetter 通用的近邻列表获取器
+     * @param rEnergyAccumulator 接受能量的收集器，{@code null} 表示不需要此值
+     * @param rForceAccumulator 接受力的收集器，{@code null} 表示不需要此值
+     * @param rVirialAccumulator 接受位力的收集器，{@code null} 表示不需要此值
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    @ApiStatus.Experimental
+    void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception;
+    
+    /**
      * 使用此势函数计算所有需要的性质，需要注意的是，这里位力需要采用
      * lammps 一致的定义，具体可以参见：
      * <a href="https://en.wikipedia.org/wiki/Virial_stress">
@@ -655,7 +759,199 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @param aTypeMap 计算器中元素种类到基组定义的种类序号的一个映射，默认不做映射
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    void calEnergyForceVirials(AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) throws Exception;
+    default void calEnergyForceVirials(AtomicParameterCalculator aAPC, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, IntUnaryOperator aTypeMap) throws Exception {
+        if (isShutdown()) throw new IllegalStateException("This Potential is dead");
+        typeMapCheck(aAPC.atomTypeNumber(), aTypeMap);
+        // 统一存储常量
+        final boolean tCalEnergy = rEnergies!=null;
+        final boolean tCalForce = rForcesX!=null || rForcesY!=null || rForcesZ!=null;
+        final boolean tCalVirial = rVirialsXX!=null || rVirialsYY!=null || rVirialsZZ!=null || rVirialsXY!=null || rVirialsXZ!=null || rVirialsYZ!=null;
+        final int tTypeNum = atomTypeNumber();
+        final int tAtomNum = aAPC.atomNumber();
+        final int tThreadNum = threadNumber();
+        final boolean tNLHalf = neighborListHalf();
+        final boolean tNLChecked = neighborListChecked();
+        // 现在强制设置 apc 的线程数
+        final int oThreadNum = aAPC.threadNumber();
+        aAPC.setThreadNumber(tThreadNum);
+        // 清空可能存在的旧值
+        if (tCalEnergy) rEnergies.fill(0.0);
+        // 并行情况下存在并行写入的问题，因此需要这样操作
+        IVector @Nullable[] rEnergiesPar = rEnergies!=null ? new IVector[tThreadNum] : null;
+        if (tCalEnergy) {
+            rEnergiesPar[0] = rEnergies;
+            for (int i = 1; i < tThreadNum; ++i) {
+                rEnergiesPar[i] = VectorCache.getZeros(rEnergies.size());
+            }
+        }
+        /// 特殊处理只需要计算能量的情况
+        if (!tCalForce && !tCalVirial) {
+            if (!tCalEnergy) {
+                aAPC.setThreadNumber(oThreadNum);
+                return;
+            }
+            calEnergy(tAtomNum, (initDo, finalDo, neighborListDo) -> {
+                aAPC.pool_().parforWithException(tAtomNum, initDo, finalDo, (i, threadID) -> {
+                    final int cType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(i));
+                    neighborListDo.run(threadID, i, cType, (rmax, dxyzTypeDo) -> {
+                        // 根据 neighborListHalf 来确定是否开启半数优化
+                        aAPC.nl_().forEachNeighbor(i, rmax, tNLHalf, (dx, dy, dz, idx) -> {
+                            if ((!tNLChecked) && (dx*dx + dy*dy + dz*dz >= rmax*rmax)) return;
+                            int tType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(idx));
+                            dxyzTypeDo.run(dx, dy, dz, tType, idx);
+                        });
+                    });
+                });
+            }, (threadID, cIdx, idx, eng) -> {
+                final IVector tEnergies = rEnergiesPar[threadID];
+                if (tEnergies.size()==1) {
+                    tEnergies.add(0, eng);
+                } else {
+                    // 根据每个 idx 来控制能量具体累加的逻辑
+                    if (cIdx>=0 && idx>=0) {
+                        tEnergies.add(cIdx, eng*0.5);
+                        tEnergies.add(idx, eng*0.5);
+                    } else
+                    if (cIdx>=0) {
+                        tEnergies.add(cIdx, eng);
+                    } else
+                    if (idx>=0) {
+                        tEnergies.add(idx, eng);
+                    } else {
+                        throw new IllegalStateException();
+                    }
+                }
+            });
+            for (int i = 1; i < tThreadNum; ++i) {
+                rEnergies.plus2this(rEnergiesPar[i]);
+                VectorCache.returnVec(rEnergiesPar[i]);
+            }
+            aAPC.setThreadNumber(oThreadNum);
+            return;
+        }
+        /// 其余需要计算力或位力的情况
+        // 清空可能存在的旧值
+        if (rForcesX != null) rForcesX.fill(0.0);
+        if (rForcesY != null) rForcesY.fill(0.0);
+        if (rForcesZ != null) rForcesZ.fill(0.0);
+        if (rVirialsXX != null) rVirialsXX.fill(0.0);
+        if (rVirialsYY != null) rVirialsYY.fill(0.0);
+        if (rVirialsZZ != null) rVirialsZZ.fill(0.0);
+        if (rVirialsXY != null) rVirialsXY.fill(0.0);
+        if (rVirialsXZ != null) rVirialsXZ.fill(0.0);
+        if (rVirialsYZ != null) rVirialsYZ.fill(0.0);
+        // 并行情况下存在并行写入的问题，因此需要这样操作
+        IVector @Nullable[] rForcesXPar = rForcesX!=null ? new IVector[tThreadNum] : null; if (rForcesX != null) {rForcesXPar[0] = rForcesX; for (int i = 1; i < tThreadNum; ++i) {rForcesXPar[i] = VectorCache.getZeros(tThreadNum);}}
+        IVector @Nullable[] rForcesYPar = rForcesY!=null ? new IVector[tThreadNum] : null; if (rForcesY != null) {rForcesYPar[0] = rForcesY; for (int i = 1; i < tThreadNum; ++i) {rForcesYPar[i] = VectorCache.getZeros(tThreadNum);}}
+        IVector @Nullable[] rForcesZPar = rForcesZ!=null ? new IVector[tThreadNum] : null; if (rForcesZ != null) {rForcesZPar[0] = rForcesZ; for (int i = 1; i < tThreadNum; ++i) {rForcesZPar[i] = VectorCache.getZeros(tThreadNum);}}
+        IVector @Nullable[] rVirialsXXPar = rVirialsXX!=null ? new IVector[tThreadNum] : null; if (rVirialsXX != null) {rVirialsXXPar[0] = rVirialsXX; for (int i = 1; i < tThreadNum; ++i) {rVirialsXXPar[i] = VectorCache.getZeros(rVirialsXX.size());}}
+        IVector @Nullable[] rVirialsYYPar = rVirialsYY!=null ? new IVector[tThreadNum] : null; if (rVirialsYY != null) {rVirialsYYPar[0] = rVirialsYY; for (int i = 1; i < tThreadNum; ++i) {rVirialsYYPar[i] = VectorCache.getZeros(rVirialsYY.size());}}
+        IVector @Nullable[] rVirialsZZPar = rVirialsZZ!=null ? new IVector[tThreadNum] : null; if (rVirialsZZ != null) {rVirialsZZPar[0] = rVirialsZZ; for (int i = 1; i < tThreadNum; ++i) {rVirialsZZPar[i] = VectorCache.getZeros(rVirialsZZ.size());}}
+        IVector @Nullable[] rVirialsXYPar = rVirialsXY!=null ? new IVector[tThreadNum] : null; if (rVirialsXY != null) {rVirialsXYPar[0] = rVirialsXY; for (int i = 1; i < tThreadNum; ++i) {rVirialsXYPar[i] = VectorCache.getZeros(rVirialsXY.size());}}
+        IVector @Nullable[] rVirialsXZPar = rVirialsXZ!=null ? new IVector[tThreadNum] : null; if (rVirialsXZ != null) {rVirialsXZPar[0] = rVirialsXZ; for (int i = 1; i < tThreadNum; ++i) {rVirialsXZPar[i] = VectorCache.getZeros(rVirialsXZ.size());}}
+        IVector @Nullable[] rVirialsYZPar = rVirialsYZ!=null ? new IVector[tThreadNum] : null; if (rVirialsYZ != null) {rVirialsYZPar[0] = rVirialsYZ; for (int i = 1; i < tThreadNum; ++i) {rVirialsYZPar[i] = VectorCache.getZeros(rVirialsYZ.size());}}
+        // 遍历所有原子计算力
+        calEnergyForceVirial(tAtomNum, (initDo, finalDo, neighborListDo) -> {
+            aAPC.pool_().parforWithException(tAtomNum, initDo, finalDo, (i, threadID) -> {
+                final int cType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(i));
+                neighborListDo.run(threadID, i, cType, (rmax, dxyzTypeDo) -> {
+                    // 根据 neighborListHalf 来确定是否开启半数优化
+                    aAPC.nl_().forEachNeighbor(i, rmax, tNLHalf, (dx, dy, dz, idx) -> {
+                        if ((!tNLChecked) && (dx*dx + dy*dy + dz*dz >= rmax*rmax)) return;
+                        int tType = tTypeNum<=0 ? 0 : aTypeMap.applyAsInt(aAPC.atomType_().get(idx));
+                        dxyzTypeDo.run(dx, dy, dz, tType, idx);
+                    });
+                });
+            });
+        }, !tCalEnergy ? null : (threadID, cIdx, idx, eng) -> {
+            final IVector tEnergies = rEnergiesPar[threadID];
+            if (tEnergies.size()==1) {
+                tEnergies.add(0, eng);
+            } else {
+                // 根据每个 idx 来控制能量具体累加的逻辑
+                if (cIdx>=0 && idx>=0) {
+                    tEnergies.add(cIdx, eng*0.5);
+                    tEnergies.add(idx, eng*0.5);
+                } else
+                if (cIdx>=0) {
+                    tEnergies.add(cIdx, eng);
+                } else
+                if (idx>=0) {
+                    tEnergies.add(idx, eng);
+                } else {
+                    throw new IllegalStateException();
+                }
+            }
+        }, !tCalForce ? null : (threadID, cIdx, idx, fx, fy, fz) -> {
+            final @Nullable IVector tForcesX = rForcesX!=null ? rForcesXPar[threadID] : null;
+            final @Nullable IVector tForcesY = rForcesY!=null ? rForcesYPar[threadID] : null;
+            final @Nullable IVector tForcesZ = rForcesZ!=null ? rForcesZPar[threadID] : null;
+            // 根据每个 idx 来控制力具体累加的逻辑
+            if (cIdx>=0 && idx>=0) {
+                if (tForcesX != null) {tForcesX.add(cIdx, -fx); tForcesX.add(idx, fx);}
+                if (tForcesY != null) {tForcesY.add(cIdx, -fy); tForcesY.add(idx, fy);}
+                if (tForcesZ != null) {tForcesZ.add(cIdx, -fz); tForcesZ.add(idx, fz);}
+            } else
+            if (cIdx>=0) {
+                if (tForcesX != null) {tForcesX.add(cIdx, -fx);}
+                if (tForcesY != null) {tForcesY.add(cIdx, -fy);}
+                if (tForcesZ != null) {tForcesZ.add(cIdx, -fz);}
+            } else
+            if (idx>=0) {
+                if (tForcesX != null) {tForcesX.add(idx, fx);}
+                if (tForcesY != null) {tForcesY.add(idx, fy);}
+                if (tForcesZ != null) {tForcesZ.add(idx, fz);}
+            } else {
+                throw new IllegalStateException();
+            }
+        }, !tCalVirial ? null : (threadID, cIdx, idx, vxx, vyy, vzz, vxy, vxz, vyz) -> {
+            final @Nullable IVector tVirialsXX = rVirialsXX!=null ? rVirialsXXPar[threadID] : null;
+            final @Nullable IVector tVirialsYY = rVirialsYY!=null ? rVirialsYYPar[threadID] : null;
+            final @Nullable IVector tVirialsZZ = rVirialsZZ!=null ? rVirialsZZPar[threadID] : null;
+            final @Nullable IVector tVirialsXY = rVirialsXY!=null ? rVirialsXYPar[threadID] : null;
+            final @Nullable IVector tVirialsXZ = rVirialsXZ!=null ? rVirialsXZPar[threadID] : null;
+            final @Nullable IVector tVirialsYZ = rVirialsYZ!=null ? rVirialsYZPar[threadID] : null;
+            // 根据每个 idx 来控制位力具体累加的逻辑
+            if (cIdx>=0 && idx>=0) {
+                if (tVirialsXX != null) {if (tVirialsXX.size()==1) {tVirialsXX.add(0, vxx);} else {tVirialsXX.add(cIdx, 0.5*vxx); tVirialsXX.add(idx, 0.5*vxx);}}
+                if (tVirialsYY != null) {if (tVirialsYY.size()==1) {tVirialsYY.add(0, vyy);} else {tVirialsYY.add(cIdx, 0.5*vyy); tVirialsYY.add(idx, 0.5*vyy);}}
+                if (tVirialsZZ != null) {if (tVirialsZZ.size()==1) {tVirialsZZ.add(0, vzz);} else {tVirialsZZ.add(cIdx, 0.5*vzz); tVirialsZZ.add(idx, 0.5*vzz);}}
+                if (tVirialsXY != null) {if (tVirialsXY.size()==1) {tVirialsXY.add(0, vxy);} else {tVirialsXY.add(cIdx, 0.5*vxy); tVirialsXY.add(idx, 0.5*vxy);}}
+                if (tVirialsXZ != null) {if (tVirialsXZ.size()==1) {tVirialsXZ.add(0, vxz);} else {tVirialsXZ.add(cIdx, 0.5*vxz); tVirialsXZ.add(idx, 0.5*vxz);}}
+                if (tVirialsYZ != null) {if (tVirialsYZ.size()==1) {tVirialsYZ.add(0, vyz);} else {tVirialsYZ.add(cIdx, 0.5*vyz); tVirialsYZ.add(idx, 0.5*vyz);}}
+            } else
+            if (cIdx>=0) {
+                if (tVirialsXX != null) {if (tVirialsXX.size()==1) {tVirialsXX.add(0, vxx);} else {tVirialsXX.add(cIdx, vxx);}}
+                if (tVirialsYY != null) {if (tVirialsYY.size()==1) {tVirialsYY.add(0, vyy);} else {tVirialsYY.add(cIdx, vyy);}}
+                if (tVirialsZZ != null) {if (tVirialsZZ.size()==1) {tVirialsZZ.add(0, vzz);} else {tVirialsZZ.add(cIdx, vzz);}}
+                if (tVirialsXY != null) {if (tVirialsXY.size()==1) {tVirialsXY.add(0, vxy);} else {tVirialsXY.add(cIdx, vxy);}}
+                if (tVirialsXZ != null) {if (tVirialsXZ.size()==1) {tVirialsXZ.add(0, vxz);} else {tVirialsXZ.add(cIdx, vxz);}}
+                if (tVirialsYZ != null) {if (tVirialsYZ.size()==1) {tVirialsYZ.add(0, vyz);} else {tVirialsYZ.add(cIdx, vyz);}}
+            } else
+            if (idx>=0) {
+                if (tVirialsXX != null) {if (tVirialsXX.size()==1) {tVirialsXX.add(0, vxx);} else {tVirialsXX.add(idx, vxx);}}
+                if (tVirialsYY != null) {if (tVirialsYY.size()==1) {tVirialsYY.add(0, vyy);} else {tVirialsYY.add(idx, vyy);}}
+                if (tVirialsZZ != null) {if (tVirialsZZ.size()==1) {tVirialsZZ.add(0, vzz);} else {tVirialsZZ.add(idx, vzz);}}
+                if (tVirialsXY != null) {if (tVirialsXY.size()==1) {tVirialsXY.add(0, vxy);} else {tVirialsXY.add(idx, vxy);}}
+                if (tVirialsXZ != null) {if (tVirialsXZ.size()==1) {tVirialsXZ.add(0, vxz);} else {tVirialsXZ.add(idx, vxz);}}
+                if (tVirialsYZ != null) {if (tVirialsYZ.size()==1) {tVirialsYZ.add(0, vyz);} else {tVirialsYZ.add(idx, vyz);}}
+            } else {
+                throw new IllegalStateException();
+            }
+        });
+        // 累加其余线程的数据然后归还临时变量
+        if (rEnergies != null) {for (int i = 1; i < tThreadNum; ++i) {rEnergies.plus2this(rEnergiesPar[i]); VectorCache.returnVec(rEnergiesPar[i]);}}
+        if (rForcesZ != null) {for (int i = 1; i < tThreadNum; ++i) {rForcesZ.plus2this(rForcesZPar[i]); VectorCache.returnVec(rForcesZPar[i]);}}
+        if (rForcesY != null) {for (int i = 1; i < tThreadNum; ++i) {rForcesY.plus2this(rForcesYPar[i]); VectorCache.returnVec(rForcesYPar[i]);}}
+        if (rForcesX != null) {for (int i = 1; i < tThreadNum; ++i) {rForcesX.plus2this(rForcesXPar[i]); VectorCache.returnVec(rForcesXPar[i]);}}
+        if (rVirialsYZ != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsYZ.plus2this(rVirialsYZPar[i]); VectorCache.returnVec(rVirialsYZPar[i]);}}
+        if (rVirialsXZ != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsXZ.plus2this(rVirialsXZPar[i]); VectorCache.returnVec(rVirialsXZPar[i]);}}
+        if (rVirialsXY != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsXY.plus2this(rVirialsXYPar[i]); VectorCache.returnVec(rVirialsXYPar[i]);}}
+        if (rVirialsZZ != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsZZ.plus2this(rVirialsZZPar[i]); VectorCache.returnVec(rVirialsZZPar[i]);}}
+        if (rVirialsYY != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsYY.plus2this(rVirialsYYPar[i]); VectorCache.returnVec(rVirialsYYPar[i]);}}
+        if (rVirialsXX != null) {for (int i = 1; i < tThreadNum; ++i) {rVirialsXX.plus2this(rVirialsXXPar[i]); VectorCache.returnVec(rVirialsXXPar[i]);}}
+        aAPC.setThreadNumber(oThreadNum);
+    }
     /**
      * 使用此势函数计算所有需要的性质，需要注意的是，这里位力需要采用
      * lammps 一致的定义，具体可以参见：
