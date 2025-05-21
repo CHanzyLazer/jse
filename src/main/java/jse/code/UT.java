@@ -201,7 +201,8 @@ public class UT {
         public static <T> T min(T[] self) {return DefaultGroovyMethods.min(self);}
         public static <T> Object sum(Iterable<T> self) {return DefaultGroovyMethods.sum(self);}
         public static Object sum(Object[] self) {return DefaultGroovyMethods.sum(self);}
-        
+        public static boolean contains(Object[] self, Object aValue) {return DefaultGroovyMethods.contains(self, aValue);}
+        public static boolean contains(int[] self, Object aValue) {return DefaultGroovyMethods.contains(self, aValue);}
         
         /** 保留这些接口方便外部调用使用 */
         @VisibleForTesting public static <T> List<T> merge(T[] aBefore, T[] aAfter) {return AbstractCollections.merge(aBefore, aAfter);}

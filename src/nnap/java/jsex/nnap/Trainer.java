@@ -48,7 +48,7 @@ import java.util.function.IntUnaryOperator;
 public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     
     protected final static String DEFAULT_UNITS = "metal";
-    protected final static int[] DEFAULT_HIDDEN_DIMS = {20, 20};
+    protected final static int[] DEFAULT_HIDDEN_DIMS = {32, 32}; // 现在统一默认为 32, 32
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
     protected final static double DEFAULT_STRESS_WEIGHT = 1.0;
     protected final static double DEFAULT_L2_LOSS_WEIGHT = 0.001;

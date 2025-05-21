@@ -53,11 +53,15 @@ public class SphericalChebyshev implements IBasis {
     public final static boolean DEFAULT_L3CROSS = true;
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
+    public final static int WTYPE_DEFAULT = 0, WTYPE_SINGLE = 1;
+    private final static int[] ALL_WTYPE = {WTYPE_DEFAULT, WTYPE_SINGLE};
+    
     final int mTypeNum;
     final String @Nullable[] mSymbols;
     final int mNMax, mLMax, mL3Max;
     final boolean mL3Cross;
     final double mRCut;
+    final int mWType;
     
     final int mSizeN, mSizeL, mSize;
     final int mLMaxMax, mLMAll;
@@ -65,7 +69,7 @@ public class SphericalChebyshev implements IBasis {
     /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
     private final Vector mCnlm;
     private final Vector mCnlmPx, mCnlmPy, mCnlmPz;
-    private final Vector mRn, mRnPx, mRnPy, mRnPz;
+    private final Vector mRn, mRnPx, mRnPy, mRnPz, mCheby2;
     private final Vector mY, mYPx, mYPy, mYPz, mYPphi, mYPtheta;
     
     final DoubleList mNlDx = new DoubleList(16), mNlDy = new DoubleList(16), mNlDz = new DoubleList(16);
@@ -73,10 +77,12 @@ public class SphericalChebyshev implements IBasis {
     final DoubleList mNlY = new DoubleList(1024);
     final DoubleList mNlRn = new DoubleList(128);
     
-    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
+    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
+        if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Non-Negative, input: "+aTypeNum);
         if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
         if (aLMax<0 || aLMax>20) throw new IllegalArgumentException("Input lmax MUST be in [0, 20], input: "+aLMax);
         if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
+        if (!UT.Code.contains(ALL_WTYPE, aWType)) throw new IllegalArgumentException("Input wtype MUST be in {0, 1}, input: "+ aWType);
         mSymbols = aSymbols;
         mTypeNum = aTypeNum;
         mNMax = aNMax;
@@ -84,8 +90,20 @@ public class SphericalChebyshev implements IBasis {
         mL3Max = aL3Max;
         mL3Cross = aL3Cross;
         mRCut = aRCut;
+        mWType = aWType;
         
-        mSizeN = mTypeNum>1 ? mNMax+mNMax+2 : mNMax+1;
+        switch(mWType) {
+        case WTYPE_SINGLE: {
+            mSizeN = mNMax+1;
+            break;
+        }
+        case WTYPE_DEFAULT: {
+            mSizeN = mTypeNum>1 ? (mNMax+mNMax+2) : (mNMax+1);
+            break;
+        }
+        default: {
+            throw new IllegalStateException();
+        }}
         mSizeL = mLMax+1 + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
         mSize = mSizeN*mSizeL;
         mLMaxMax = Math.max(mLMax, mL3Max);
@@ -100,6 +118,7 @@ public class SphericalChebyshev implements IBasis {
         mRnPx = VectorCache.getVec(mNMax+1);
         mRnPy = VectorCache.getVec(mNMax+1);
         mRnPz = VectorCache.getVec(mNMax+1);
+        mCheby2 = VectorCache.getVec(mNMax);
         
         mY = VectorCache.getVec(mLMAll);
         mYPx = VectorCache.getVec(mLMAll);
@@ -116,9 +135,21 @@ public class SphericalChebyshev implements IBasis {
      * @param aL3Max 三阶基组中球谐函数 l 选取的最大阶数，目前只支持到 {@code l = 4}
      * @param aL3Cross 三阶基组中球谐函数是否考虑交叉项，默认为 {@code true}
      * @param aRCut 截断半径
+     * @param aWType 控制多个种类情况下的处理方式，默认为 {@link #WTYPE_DEFAULT}
+     */
+    public SphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
+        this(aSymbols, aSymbols.length, aNMax, aLMax, aL3Max, aL3Cross, aRCut, aWType);
+    }
+    /**
+     * @param aSymbols 基组需要的元素排序
+     * @param aNMax Chebyshev 多项式选取的最大阶数
+     * @param aLMax 球谐函数中 l 选取的最大阶数
+     * @param aL3Max 三阶基组中球谐函数 l 选取的最大阶数，目前只支持到 {@code l = 4}
+     * @param aL3Cross 三阶基组中球谐函数是否考虑交叉项，默认为 {@code true}
+     * @param aRCut 截断半径
      */
     public SphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aLMax, aL3Max, aL3Cross, aRCut);
+        this(aSymbols, aNMax, aLMax, aL3Max, aL3Cross, aRCut, WTYPE_DEFAULT);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -147,9 +178,21 @@ public class SphericalChebyshev implements IBasis {
      * @param aL3Max 三阶基组中球谐函数 l 选取的最大阶数，目前只支持到 {@code l = 4}
      * @param aL3Cross 三阶基组中球谐函数是否考虑交叉项，默认为 {@code true}
      * @param aRCut 截断半径
+     * @param aWType 控制多个种类情况下的处理方式，默认为 {@link #WTYPE_DEFAULT}
+     */
+    public SphericalChebyshev(int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
+        this(null, aTypeNum, aNMax, aLMax, aL3Max, aL3Cross, aRCut, aWType);
+    }
+    /**
+     * @param aTypeNum 原子种类数目
+     * @param aNMax Chebyshev 多项式选取的最大阶数
+     * @param aLMax 球谐函数中 l 选取的最大阶数
+     * @param aL3Max 三阶基组中球谐函数 l 选取的最大阶数，目前只支持到 {@code l = 4}
+     * @param aL3Cross 三阶基组中球谐函数是否考虑交叉项，默认为 {@code true}
+     * @param aRCut 截断半径
      */
     public SphericalChebyshev(int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut) {
-        this(null, aTypeNum, aNMax, aLMax, aL3Max, aL3Cross, aRCut);
+        this(aTypeNum, aNMax, aLMax, aL3Max, aL3Cross, aRCut, WTYPE_DEFAULT);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -179,6 +222,7 @@ public class SphericalChebyshev implements IBasis {
         rSaveTo.put("l3max", mL3Max);
         rSaveTo.put("l3cross", mL3Cross);
         rSaveTo.put("rcut", mRCut);
+        rSaveTo.put("wtype", mWType);
     }
     @SuppressWarnings("rawtypes")
     public static SphericalChebyshev load(String @NotNull[] aSymbols, Map aMap) {
@@ -188,7 +232,8 @@ public class SphericalChebyshev implements IBasis {
             ((Number) UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
             ((Number) UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
-            ((Number) UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue()
+            ((Number) UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Number) UT.Code.getWithDefault(aMap, WTYPE_DEFAULT, "wtype")).intValue()
         );
     }
     @SuppressWarnings("rawtypes")
@@ -199,7 +244,8 @@ public class SphericalChebyshev implements IBasis {
             ((Number) UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
             ((Number) UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
-            ((Number) UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue()
+            ((Number) UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Number) UT.Code.getWithDefault(aMap, WTYPE_DEFAULT, "wtype")).intValue()
         );
     }
     
@@ -253,6 +299,7 @@ public class SphericalChebyshev implements IBasis {
         VectorCache.returnVec(mRnPx);
         VectorCache.returnVec(mRnPy);
         VectorCache.returnVec(mRnPz);
+        VectorCache.returnVec(mCheby2);
         VectorCache.returnVec(mY);
         VectorCache.returnVec(mYPx);
         VectorCache.returnVec(mYPy);
@@ -322,8 +369,6 @@ public class SphericalChebyshev implements IBasis {
     }
     
     void eval0(int aNN, Vector rFp) {
-        if (mL3Max > 4) throw new IllegalArgumentException("l3max > 4 for SphericalChebyshev");
-        if (mLMaxMax > 20) throw new IllegalArgumentException("lmax > 20 for SphericalChebyshev");
         BASIS.rangeCheck(mNlDx.size(), aNN);
         BASIS.rangeCheck(mNlDy.size(), aNN);
         BASIS.rangeCheck(mNlDz.size(), aNN);
@@ -334,16 +379,14 @@ public class SphericalChebyshev implements IBasis {
         BASIS.rangeCheck(rFp.size(), mSize);
         eval1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
               mRn.internalData(), mY.internalData(), mCnlm.internalData(), rFp.internalData(),
-              mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross);
+              mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rRn, double[] rY, double[] rCnlm, double[] rFingerPrint,
-                                     int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross);
+                                     int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
     
     void evalPartial0(int aNN, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz,
                       @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
-        if (mL3Max > 4) throw new IllegalArgumentException("l3max > 4 for SphericalChebyshev");
-        if (mLMaxMax > 20) throw new IllegalArgumentException("lmax > 20 for SphericalChebyshev");
         BASIS.rangeCheck(mNlDx.size(), aNN);
         BASIS.rangeCheck(mNlDy.size(), aNN);
         BASIS.rangeCheck(mNlDz.size(), aNN);
@@ -352,6 +395,7 @@ public class SphericalChebyshev implements IBasis {
         BASIS.rangeCheck(mRnPx.size(), mNMax+1);
         BASIS.rangeCheck(mRnPy.size(), mNMax+1);
         BASIS.rangeCheck(mRnPz.size(), mNMax+1);
+        BASIS.rangeCheck(mCheby2.size(), mNMax);
         BASIS.rangeCheck(mNlY.size(), aNN*mLMAll);
         BASIS.rangeCheck(mYPtheta.size(), mLMAll);
         BASIS.rangeCheck(mYPphi.size(), mLMAll);
@@ -370,20 +414,20 @@ public class SphericalChebyshev implements IBasis {
         if (rFpPyCross != null) BASIS.rangeCheck(rFpPyCross.size(), aNN*mSize);
         if (rFpPzCross != null) BASIS.rangeCheck(rFpPzCross.size(), aNN*mSize);
         evalPartial1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
-                     mNlRn.internalData(), mRnPx.internalData(), mRnPy.internalData(), mRnPz.internalData(),
+                     mNlRn.internalData(), mRnPx.internalData(), mRnPy.internalData(), mRnPz.internalData(), mCheby2.internalData(),
                      mNlY.internalData(), mYPtheta.internalData(), mYPphi.internalData(), mYPx.internalData(), mYPy.internalData(), mYPz.internalData(),
                      mCnlm.internalData(), mCnlmPx.internalData(), mCnlmPy.internalData(), mCnlmPz.internalData(),
                      rFp.internalData(), rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
                      rFpPxCross!=null?rFpPxCross.internalData():null,
                      rFpPyCross!=null?rFpPyCross.internalData():null,
                      rFpPzCross!=null?rFpPzCross.internalData():null,
-                     mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross);
+                     mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
     }
     private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                            double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz,
+                                            double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                             double[] rNlY, double[] rYPtheta, double[] rYPphi, double[] rYPx, double[] rYPy, double[] rYPz,
                                             double[] rCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
                                             double[] rFingerPrint, double[] rFingerPrintPx, double[] rFingerPrintPy, double[] rFingerPrintPz,
                                             double @Nullable[] rFingerPrintPxCross, double @Nullable[] rFingerPrintPyCross, double @Nullable[] rFingerPrintPzCross,
-                                            int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross);
+                                            int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
 }

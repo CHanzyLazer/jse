@@ -17,21 +17,25 @@ extern "C" {
 #define jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3CROSS 1L
 #undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT
 #define jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT 6.0
+#undef jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT
+#define jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT 0L
+#undef jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE
+#define jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE 1L
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev
  * Method:    eval1
- * Signature: ([D[D[D[II[D[D[D[DIDIIIZ)V
+ * Signature: ([D[D[D[II[D[D[D[DIDIIIZI)V
  */
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jint, jboolean);
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jint, jboolean, jint);
 
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev
  * Method:    evalPartial1
- * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[DIDIIIZ)V
+ * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[DIDIIIZI)V
  */
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jint, jboolean);
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jint, jboolean, jint);
 
 #ifdef __cplusplus
 }
