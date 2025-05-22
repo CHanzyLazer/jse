@@ -12,8 +12,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 
 /**
- * 一种基于 Chebyshev 多项式和球谐函数将原子局域环境展开成一个基组的方法，
- * 主要用于作为机器学习的输入向量；这是 NNAP 中默认使用的原子基组。
+ * 一种仅使用 Chebyshev 多项式将原子局域环境展开成一个基组的方法，
+ * 主要用于作为机器学习的输入向量；这不会包含角向序，但是速度可以很快。
  * <p>
  * 为了中间变量缓存利用效率，此类相同实例线程不安全，而不同实例之间线程安全
  * <p>
@@ -24,7 +24,7 @@ import java.util.Map;
  * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
  * @author Su Rui, liqa
  */
-public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
+public class Chebyshev extends NNAPWTypeBasis implements IBasis {
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
@@ -45,124 +45,81 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         _INIT_FLAG = false;
     }
     
-    final static int[] L3NCOLS = {0, 0, 2, 4, 9}, L3NCOLS_NOCROSS = {0, 0, 1, 1, 2};
-    
     public final static int DEFAULT_NMAX = 5;
-    public final static int DEFAULT_LMAX = 6;
-    public final static int DEFAULT_L3MAX = 0;
-    public final static boolean DEFAULT_L3CROSS = true;
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
     final int mTypeNum;
     final String @Nullable[] mSymbols;
-    final int mNMax, mLMax, mL3Max;
-    final boolean mL3Cross;
+    final int mNMax;
     final double mRCut;
     final int mWType;
     
-    final int mSizeN, mSizeL, mSize;
-    final int mLMaxMax, mLMAll;
+    final int mSize;
     
     /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
-    private final Vector mCnlm;
-    private final Vector mCnlmPx, mCnlmPy, mCnlmPz;
     private final Vector mRn, mRnPx, mRnPy, mRnPz, mCheby2;
-    private final Vector mY, mYPx, mYPy, mYPz, mYPphi, mYPtheta;
     
     final DoubleList mNlDx = new DoubleList(16), mNlDy = new DoubleList(16), mNlDz = new DoubleList(16);
     final IntList mNlType = new IntList(16);
-    final DoubleList mNlY = new DoubleList(1024);
     final DoubleList mNlRn = new DoubleList(128);
     
-    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
+    Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType) {
         if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Positive, input: "+aTypeNum);
         if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
-        if (aLMax<0 || aLMax>20) throw new IllegalArgumentException("Input lmax MUST be in [0, 20], input: "+aLMax);
-        if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
         if (!ALL_WTYPE.containsValue(aWType)) throw new IllegalArgumentException("Input wtype MUST be in {-1, 0, 1, 2, 3}, input: "+ aWType);
         mSymbols = aSymbols;
         mTypeNum = aTypeNum;
         mNMax = aNMax;
-        mLMax = aLMax;
-        mL3Max = aL3Max;
-        mL3Cross = aL3Cross;
         mRCut = aRCut;
         mWType = aWType;
         
-        mSizeN = sizeN_(mNMax, mTypeNum, mWType);
-        mSizeL = mLMax+1 + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
-        mSize = mSizeN*mSizeL;
-        mLMaxMax = Math.max(mLMax, mL3Max);
-        mLMAll = (mLMaxMax+1)*(mLMaxMax+1);
-        
-        mCnlm = VectorCache.getVec(mSizeN*mLMAll);
-        mCnlmPx = VectorCache.getVec(mLMAll);
-        mCnlmPy = VectorCache.getVec(mLMAll);
-        mCnlmPz = VectorCache.getVec(mLMAll);
+        mSize = sizeN_(mNMax, mTypeNum, mWType);
         
         mRn = VectorCache.getVec(mNMax+1);
         mRnPx = VectorCache.getVec(mNMax+1);
         mRnPy = VectorCache.getVec(mNMax+1);
         mRnPz = VectorCache.getVec(mNMax+1);
         mCheby2 = VectorCache.getVec(mNMax);
-        
-        mY = VectorCache.getVec(mLMAll);
-        mYPx = VectorCache.getVec(mLMAll);
-        mYPy = VectorCache.getVec(mLMAll);
-        mYPz = VectorCache.getVec(mLMAll);
-        mYPphi = VectorCache.getVec(mLMAll);
-        mYPtheta = VectorCache.getVec(mLMAll);
     }
     /**
      * @param aSymbols 基组需要的元素排序
      * @param aNMax Chebyshev 多项式选取的最大阶数
-     * @param aLMax 球谐函数中 l 选取的最大阶数
      * @param aRCut 截断半径
      */
-    public SphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aLMax, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
+    public Chebyshev(String @NotNull[] aSymbols, int aNMax, double aRCut) {
+        this(aSymbols, aSymbols.length, aNMax, aRCut, WTYPE_DEFAULT);
     }
     /**
      * @param aTypeNum 原子种类数目
      * @param aNMax Chebyshev 多项式选取的最大阶数
-     * @param aLMax 球谐函数中 l 选取的最大阶数
      * @param aRCut 截断半径
      */
-    public SphericalChebyshev(int aTypeNum, int aNMax, int aLMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aLMax, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
+    public Chebyshev(int aTypeNum, int aNMax, double aRCut) {
+        this(null, aTypeNum, aNMax, aRCut, WTYPE_DEFAULT);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
-        rSaveTo.put("type", "spherical_chebyshev");
+        rSaveTo.put("type", "chebyshev");
         rSaveTo.put("nmax", mNMax);
-        rSaveTo.put("lmax", mLMax);
-        rSaveTo.put("l3max", mL3Max);
-        rSaveTo.put("l3cross", mL3Cross);
         rSaveTo.put("rcut", mRCut);
         rSaveTo.put("wtype", ALL_WTYPE.inverse().get(mWType));
     }
     
     @SuppressWarnings("rawtypes")
-    public static SphericalChebyshev load(String @NotNull[] aSymbols, Map aMap) {
-        return new SphericalChebyshev(
+    public static Chebyshev load(String @NotNull[] aSymbols, Map aMap) {
+        return new Chebyshev(
             aSymbols, aSymbols.length,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
-            (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
             getWType_(UT.Code.get(aMap, "wtype"))
         );
     }
     @SuppressWarnings("rawtypes")
-    public static SphericalChebyshev load(int aTypeNum, Map aMap) {
-        return new SphericalChebyshev(
+    public static Chebyshev load(int aTypeNum, Map aMap) {
+        return new Chebyshev(
             null, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
-            (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
             getWType_(UT.Code.get(aMap, "wtype"))
         );
@@ -192,12 +149,6 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
     
-    private void validYAllSize(int aNN) {
-        int tMinSize = aNN * mLMAll;
-        int tSize = mNlY.size();
-        if (tSize >= tMinSize) return;
-        mNlY.addZeros(tMinSize-tSize);
-    }
     private void validRnAllSize(int aNN) {
         int tMinSize = aNN * (mNMax+1);
         int tSize = mNlRn.size();
@@ -210,21 +161,11 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
     @Override public void shutdown() {
         if (mDead) return;
         mDead = true;
-        VectorCache.returnVec(mCnlm);
-        VectorCache.returnVec(mCnlmPx);
-        VectorCache.returnVec(mCnlmPy);
-        VectorCache.returnVec(mCnlmPz);
         VectorCache.returnVec(mRn);
         VectorCache.returnVec(mRnPx);
         VectorCache.returnVec(mRnPy);
         VectorCache.returnVec(mRnPz);
         VectorCache.returnVec(mCheby2);
-        VectorCache.returnVec(mY);
-        VectorCache.returnVec(mYPx);
-        VectorCache.returnVec(mYPy);
-        VectorCache.returnVec(mYPz);
-        VectorCache.returnVec(mYPphi);
-        VectorCache.returnVec(mYPtheta);
     }
     
     @Override public void eval(IDxyzTypeIterable aNL, Vector rFp) {
@@ -234,8 +175,8 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         buildNL(aNL);
         final int tNN = mNlDx.size();
         
-        // cnlm 需要累加，因此需要事先清空
-        mCnlm.fill(0.0);
+        // rFp 需要累加，因此需要事先清空
+        rFp.fill(0.0);
         
         // 现在直接计算基组
         eval0(tNN, rFp);
@@ -251,12 +192,11 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         buildNL(aNL);
         final int tNN = mNlDx.size();
         
-        // 确保 Rn Y 的长度
-        validYAllSize(tNN);
+        // 确保 Rn 的长度
         validRnAllSize(tNN);
         
-        // cnlm 需要累加，因此需要事先清空
-        mCnlm.fill(0.0);
+        // rFp 需要累加，因此需要事先清空
+        rFp.fill(0.0);
         
         // 初始化偏导数相关值
         rFpPx.fill(0.0);
@@ -293,16 +233,14 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         BASIS.rangeCheck(mNlDz.size(), aNN);
         BASIS.rangeCheck(mNlType.size(), aNN);
         BASIS.rangeCheck(mRn.size(), mNMax+1);
-        BASIS.rangeCheck(mY.size(), mLMAll);
-        BASIS.rangeCheck(mCnlm.size(), mSizeN*mLMAll);
         BASIS.rangeCheck(rFp.size(), mSize);
         eval1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
-              mRn.internalData(), mY.internalData(), mCnlm.internalData(), rFp.internalData(),
-              mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
+              mRn.internalData(), rFp.internalData(),
+              mTypeNum, mRCut, mNMax, mWType);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                     double[] rRn, double[] rY, double[] rCnlm, double[] rFp,
-                                     int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
+                                     double[] rRn, double[] rFp,
+                                     int aTypeNum, double aRCut, int aNMax, int aWType);
     
     void evalPartial0(int aNN, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz,
                       @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
@@ -315,16 +253,6 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         BASIS.rangeCheck(mRnPy.size(), mNMax+1);
         BASIS.rangeCheck(mRnPz.size(), mNMax+1);
         BASIS.rangeCheck(mCheby2.size(), mNMax);
-        BASIS.rangeCheck(mNlY.size(), aNN*mLMAll);
-        BASIS.rangeCheck(mYPtheta.size(), mLMAll);
-        BASIS.rangeCheck(mYPphi.size(), mLMAll);
-        BASIS.rangeCheck(mYPx.size(), mLMAll);
-        BASIS.rangeCheck(mYPy.size(), mLMAll);
-        BASIS.rangeCheck(mYPz.size(), mLMAll);
-        BASIS.rangeCheck(mCnlm.size(), mSizeN*mLMAll);
-        BASIS.rangeCheck(mCnlmPx.size(), mLMAll);
-        BASIS.rangeCheck(mCnlmPy.size(), mLMAll);
-        BASIS.rangeCheck(mCnlmPz.size(), mLMAll);
         BASIS.rangeCheck(rFp.size(), mSize);
         BASIS.rangeCheck(rFpPx.size(), mSize);
         BASIS.rangeCheck(rFpPy.size(), mSize);
@@ -334,19 +262,15 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         if (rFpPzCross != null) BASIS.rangeCheck(rFpPzCross.size(), aNN*mSize);
         evalPartial1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
                      mNlRn.internalData(), mRnPx.internalData(), mRnPy.internalData(), mRnPz.internalData(), mCheby2.internalData(),
-                     mNlY.internalData(), mYPtheta.internalData(), mYPphi.internalData(), mYPx.internalData(), mYPy.internalData(), mYPz.internalData(),
-                     mCnlm.internalData(), mCnlmPx.internalData(), mCnlmPy.internalData(), mCnlmPz.internalData(),
                      rFp.internalData(), rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
                      rFpPxCross!=null?rFpPxCross.internalData():null,
                      rFpPyCross!=null?rFpPyCross.internalData():null,
                      rFpPzCross!=null?rFpPzCross.internalData():null,
-                     mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
+                     mTypeNum, mRCut, mNMax, mWType);
     }
     private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                             double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                            double[] rNlY, double[] rYPtheta, double[] rYPphi, double[] rYPx, double[] rYPy, double[] rYPz,
-                                            double[] rCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
                                             double[] rFp, double[] rFpPx, double[] rFpPy, double[] rFpPz,
                                             double @Nullable[] rFpPxCross, double @Nullable[] rFpPyCross, double @Nullable[] rFpPzCross,
-                                            int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
+                                            int aTypeNum, double aRCut, int aNMax, int aWType);
 }

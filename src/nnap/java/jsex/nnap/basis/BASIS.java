@@ -64,10 +64,13 @@ public final class BASIS {
     public final static String LIB_DIR = JAR_DIR+"nnap/basis/" + UT.Code.uniqueID(CS.VERSION, NNAP.VERSION, Conf.OPT_LEVEL, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
-          "jsex_nnap_basis_BASIS.c"
+          "basis_util.h"
+        , "jsex_nnap_basis_BASIS.c"
         , "jsex_nnap_basis_BASIS.h"
         , "jsex_nnap_basis_SphericalChebyshev.c"
         , "jsex_nnap_basis_SphericalChebyshev.h"
+        , "jsex_nnap_basis_Chebyshev.c"
+        , "jsex_nnap_basis_Chebyshev.h"
     };
     
     static {

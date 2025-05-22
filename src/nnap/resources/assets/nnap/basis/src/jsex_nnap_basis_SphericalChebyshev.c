@@ -1,19 +1,10 @@
 #include "jsex_nnap_basis_SphericalChebyshev.h"
-
-#include <math.h>
+#include "basis_util.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define JSE_DBL_MIN_NORMAL (2.2250738585072014E-308)
-#define JSE_EPS_MUL (8)
-#define JSE_DBL_EPSILON (1.0e-10)
-
-#define SQRT2 (1.4142135623730951)
-#define SQRT2_INV (0.7071067811865475)
-#define SQRT3 (1.7320508075688772)
-#define SQRT3DIV2 (1.224744871391589)
 #define SH_LARGEST_L (20)
 
 #define WIGNER_222_000 (-0.23904572186687872)
@@ -106,8 +97,6 @@ extern "C" {
 #define WIGNER_134_123 (-0.2886751345948129)
 #define WIGNER_134_132 (0.06299407883487121)
 #define WIGNER_134_134 (0.33333333333333337)
-
-#define PI4 (12.566370614359172)
 
 static const jint L3NCOLS[5] = {0, 0, 2, 4, 9};
 static const jint L3NCOLS_NOCROSS[5] = {0, 0, 1, 1, 2};
@@ -203,120 +192,6 @@ static const double SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     6.164414002968976, 8.602325267042627, 10.392304845413264, 11.832159566199232, 13.038404810405298, 14.071247279470288, 14.966629547095765, 15.748015748023622, 16.431676725154983, 17.029386365926403, 17.549928774784245, 18.0, 18.384776310850235, 18.708286933869708, 18.973665961010276, 19.183326093250876, 19.339079605813716, 19.44222209522358, 19.493588689617926, 19.493588689617926, 19.44222209522358, 19.339079605813716, 19.183326093250876, 18.973665961010276, 18.708286933869708, 18.384776310850235, 18.0, 17.549928774784245, 17.029386365926403, 16.431676725154983, 15.748015748023622, 14.966629547095765, 14.071247279470288, 13.038404810405298, 11.832159566199232, 10.392304845413264, 8.602325267042627, 6.164414002968976, 0.0,
     6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759, 0.0
 };
-
-
-static inline double pow2(double value) {
-    return value * value;
-}
-static inline double pow3(double value) {
-    return value * value * value;
-}
-static inline double pow4(double value) {
-    double value2 = value * value;
-    return value2 * value2;
-}
-static inline jboolean numericEqual(double aLHS, double aRHS) {
-    double tNorm = fabs(aLHS) + fabs(aRHS);
-    if (tNorm < JSE_DBL_MIN_NORMAL * JSE_EPS_MUL) return JNI_TRUE;
-    double tDiff = fabs(aLHS - aRHS);
-    return (tDiff <= tNorm * JSE_DBL_EPSILON) ? JNI_TRUE : JNI_FALSE;
-}
-
-static inline double dot(double *aArray, jint aLen) {
-    double rDot = 0.0;
-    // loop first
-    jint tIdx = 0;
-    const jint tEnd = aLen-7;
-    for (; tIdx < tEnd; tIdx+=8) {
-        double tData0 = aArray[tIdx  ];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        double tData3 = aArray[tIdx+3];
-        double tData4 = aArray[tIdx+4];
-        double tData5 = aArray[tIdx+5];
-        double tData6 = aArray[tIdx+6];
-        double tData7 = aArray[tIdx+7];
-        rDot += (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3 + tData4*tData4 + tData5*tData5 + tData6*tData6 + tData7*tData7);
-    }
-    // rest
-    const jint tRest = aLen - tIdx;
-    switch(tRest) {
-    case 0: {
-        return rDot;
-    }
-    case 1: {
-        double tData = aArray[tIdx];
-        return rDot + (tData*tData);
-    }
-    case 2: {
-        double tData0 = aArray[tIdx  ];
-        double tData1 = aArray[tIdx+1];
-        return rDot + (tData0*tData0 + tData1*tData1);
-    }
-    case 3: {
-        double tData0 = aArray[tIdx+0];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        return rDot + (tData0*tData0 + tData1*tData1 + tData2*tData2);
-    }
-    case 4: {
-        double tData0 = aArray[tIdx+0];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        double tData3 = aArray[tIdx+3];
-        return rDot + (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3);
-    }
-    case 5: {
-        double tData0 = aArray[tIdx+0];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        double tData3 = aArray[tIdx+3];
-        double tData4 = aArray[tIdx+4];
-        return rDot + (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3 + tData4*tData4);
-    }
-    case 6: {
-        double tData0 = aArray[tIdx+0];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        double tData3 = aArray[tIdx+3];
-        double tData4 = aArray[tIdx+4];
-        double tData5 = aArray[tIdx+5];
-        return rDot + (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3 + tData4*tData4 + tData5*tData5);
-    }
-    case 7: {
-        double tData0 = aArray[tIdx  ];
-        double tData1 = aArray[tIdx+1];
-        double tData2 = aArray[tIdx+2];
-        double tData3 = aArray[tIdx+3];
-        double tData4 = aArray[tIdx+4];
-        double tData5 = aArray[tIdx+5];
-        double tData6 = aArray[tIdx+6];
-        return rDot + (tData0*tData0 + tData1*tData1 + tData2*tData2 + tData3*tData3 + tData4*tData4 + tData5*tData5 + tData6*tData6);
-    }
-    default: {
-        // never reach
-        return 0.0;
-    }}
-}
-
-static inline void chebyshevFull(jint aN, double aX, double *rDest) {
-    if (aN < 0) return;
-    rDest[0] = 1.0;
-    if (aN == 0) return;
-    rDest[1] = aX;
-    for (jint n = 2; n <= aN; ++n) {
-        rDest[n] = 2.0*aX*rDest[n-1] - rDest[n-2];
-    }
-}
-static inline void chebyshev2Full(jint aN, double aX, double *rDest) {
-    if (aN < 0) return;
-    rDest[0] = 1.0;
-    if (aN == 0) return;
-    rDest[1] = 2.0*aX;
-    for (jint n = 2; n <= aN; ++n) {
-        rDest[n] = 2.0*aX*rDest[n-1] - rDest[n-2];
-    }
-}
 
 static inline void realNormalizedLegendreFull(jint aLMax, double aX, double aY, double *rDest) {
     double tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
@@ -646,17 +521,6 @@ static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jint aL3Max, j
     }
 }
 
-static inline void calRnPxyz(double *rRnPx, double *rRnPy, double *rRnPz, double *aCheby2, jint aNMax,
-                             double aDis, double aRCut, double aWt, double aDx, double aDy, double aDz) {
-    const double tRnPMul = 2.0 * aWt / (aDis*aRCut);
-    rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
-    for (jint n = 1; n <= aNMax; ++n) {
-        const double tRnP = n*tRnPMul*aCheby2[n-1];
-        rRnPx[n] = tRnP*aDx;
-        rRnPy[n] = tRnP*aDy;
-        rRnPz[n] = tRnP*aDz;
-    }
-}
 static inline void calYPphi(double *rYPphi, double *aY, jint aL) {
     const jint tStart = aL*aL;
     const jint tIdx = tStart+aL;
@@ -728,18 +592,6 @@ static inline void calCnlmPxyz(double *rCnlmPx, double *rCnlmPy, double *rCnlmPz
     }
 }
 
-static inline void putFpPxyz_(double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
-                              double aSubFpPx, double aSubFpPy, double aSubFpPz, jint aIdxFp) {
-    rFpPx[aIdxFp] -= aSubFpPx;
-    rFpPy[aIdxFp] -= aSubFpPy;
-    rFpPz[aIdxFp] -= aSubFpPz;
-    if (rFpPxCross != NULL) {
-        rFpPxCross[aIdxFp] += aSubFpPx;
-        rFpPyCross[aIdxFp] += aSubFpPy;
-        rFpPzCross[aIdxFp] += aSubFpPz;
-    }
-}
 static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                            double *rFpPx, double *rFpPy, double *rFpPz,
                            double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
@@ -750,7 +602,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     double subFpPx = tMul * (tCnl0*aCnlmPx[0]);
     double subFpPy = tMul * (tCnl0*aCnlmPy[0]);
     double subFpPz = tMul * (tCnl0*aCnlmPz[0]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 0);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 0);
     if (aLMax == 0) return;
     // l = 1
     tCnl0 = aCnlm[1]; double tCnl1 = aCnlm[1+1], tCnl2 = aCnlm[1+2];
@@ -758,7 +610,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[1] + tCnl1*aCnlmPx[1+1] + tCnl2*aCnlmPx[1+2]);
     subFpPy = tMul * (tCnl0*aCnlmPy[1] + tCnl1*aCnlmPy[1+1] + tCnl2*aCnlmPy[1+2]);
     subFpPz = tMul * (tCnl0*aCnlmPz[1] + tCnl1*aCnlmPz[1+1] + tCnl2*aCnlmPz[1+2]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 1);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 1);
     if (aLMax == 1) return;
     // l = 2
     tCnl0 = aCnlm[4]; tCnl1 = aCnlm[4+1]; tCnl2 = aCnlm[4+2]; double tCnl3 = aCnlm[4+3], tCnl4 = aCnlm[4+4];
@@ -766,7 +618,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[4] + tCnl1*aCnlmPx[4+1] + tCnl2*aCnlmPx[4+2] + tCnl3*aCnlmPx[4+3] + tCnl4*aCnlmPx[4+4]);
     subFpPy = tMul * (tCnl0*aCnlmPy[4] + tCnl1*aCnlmPy[4+1] + tCnl2*aCnlmPy[4+2] + tCnl3*aCnlmPy[4+3] + tCnl4*aCnlmPy[4+4]);
     subFpPz = tMul * (tCnl0*aCnlmPz[4] + tCnl1*aCnlmPz[4+1] + tCnl2*aCnlmPz[4+2] + tCnl3*aCnlmPz[4+3] + tCnl4*aCnlmPz[4+4]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 2);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 2);
     if (aLMax == 2) return;
     // l = 3
     tCnl0 = aCnlm[9]; tCnl1 = aCnlm[9+1]; tCnl2 = aCnlm[9+2]; tCnl3 = aCnlm[9+3]; tCnl4 = aCnlm[9+4]; double tCnl5 = aCnlm[9+5], tCnl6 = aCnlm[9+6];
@@ -774,7 +626,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[9] + tCnl1*aCnlmPx[9+1] + tCnl2*aCnlmPx[9+2] + tCnl3*aCnlmPx[9+3] + tCnl4*aCnlmPx[9+4] + tCnl5*aCnlmPx[9+5] + tCnl6*aCnlmPx[9+6]);
     subFpPy = tMul * (tCnl0*aCnlmPy[9] + tCnl1*aCnlmPy[9+1] + tCnl2*aCnlmPy[9+2] + tCnl3*aCnlmPy[9+3] + tCnl4*aCnlmPy[9+4] + tCnl5*aCnlmPy[9+5] + tCnl6*aCnlmPy[9+6]);
     subFpPz = tMul * (tCnl0*aCnlmPz[9] + tCnl1*aCnlmPz[9+1] + tCnl2*aCnlmPz[9+2] + tCnl3*aCnlmPz[9+3] + tCnl4*aCnlmPz[9+4] + tCnl5*aCnlmPz[9+5] + tCnl6*aCnlmPz[9+6]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 3);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 3);
     if (aLMax == 3) return;
     // l = 4
     tCnl0 = aCnlm[16]; tCnl1 = aCnlm[16+1]; tCnl2 = aCnlm[16+2]; tCnl3 = aCnlm[16+3]; tCnl4 = aCnlm[16+4]; tCnl5 = aCnlm[16+5]; tCnl6 = aCnlm[16+6]; double tCnl7 = aCnlm[16+7], tCnl8 = aCnlm[16+8];
@@ -782,7 +634,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[16] + tCnl1*aCnlmPx[16+1] + tCnl2*aCnlmPx[16+2] + tCnl3*aCnlmPx[16+3] + tCnl4*aCnlmPx[16+4] + tCnl5*aCnlmPx[16+5] + tCnl6*aCnlmPx[16+6] + tCnl7*aCnlmPx[16+7] + tCnl8*aCnlmPx[16+8]);
     subFpPy = tMul * (tCnl0*aCnlmPy[16] + tCnl1*aCnlmPy[16+1] + tCnl2*aCnlmPy[16+2] + tCnl3*aCnlmPy[16+3] + tCnl4*aCnlmPy[16+4] + tCnl5*aCnlmPy[16+5] + tCnl6*aCnlmPy[16+6] + tCnl7*aCnlmPy[16+7] + tCnl8*aCnlmPy[16+8]);
     subFpPz = tMul * (tCnl0*aCnlmPz[16] + tCnl1*aCnlmPz[16+1] + tCnl2*aCnlmPz[16+2] + tCnl3*aCnlmPz[16+3] + tCnl4*aCnlmPz[16+4] + tCnl5*aCnlmPz[16+5] + tCnl6*aCnlmPz[16+6] + tCnl7*aCnlmPz[16+7] + tCnl8*aCnlmPz[16+8]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 4);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 4);
     if (aLMax == 4) return;
     // l = 5
     tCnl0 = aCnlm[25]; tCnl1 = aCnlm[25+1]; tCnl2 = aCnlm[25+2]; tCnl3 = aCnlm[25+3]; tCnl4 = aCnlm[25+4]; tCnl5 = aCnlm[25+5]; tCnl6 = aCnlm[25+6]; tCnl7 = aCnlm[25+7]; tCnl8 = aCnlm[25+8]; double tCnl9 = aCnlm[25+9], tCnl10 = aCnlm[25+10];
@@ -790,7 +642,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[25] + tCnl1*aCnlmPx[25+1] + tCnl2*aCnlmPx[25+2] + tCnl3*aCnlmPx[25+3] + tCnl4*aCnlmPx[25+4] + tCnl5*aCnlmPx[25+5] + tCnl6*aCnlmPx[25+6] + tCnl7*aCnlmPx[25+7] + tCnl8*aCnlmPx[25+8] + tCnl9*aCnlmPx[25+9] + tCnl10*aCnlmPx[25+10]);
     subFpPy = tMul * (tCnl0*aCnlmPy[25] + tCnl1*aCnlmPy[25+1] + tCnl2*aCnlmPy[25+2] + tCnl3*aCnlmPy[25+3] + tCnl4*aCnlmPy[25+4] + tCnl5*aCnlmPy[25+5] + tCnl6*aCnlmPy[25+6] + tCnl7*aCnlmPy[25+7] + tCnl8*aCnlmPy[25+8] + tCnl9*aCnlmPy[25+9] + tCnl10*aCnlmPy[25+10]);
     subFpPz = tMul * (tCnl0*aCnlmPz[25] + tCnl1*aCnlmPz[25+1] + tCnl2*aCnlmPz[25+2] + tCnl3*aCnlmPz[25+3] + tCnl4*aCnlmPz[25+4] + tCnl5*aCnlmPz[25+5] + tCnl6*aCnlmPz[25+6] + tCnl7*aCnlmPz[25+7] + tCnl8*aCnlmPz[25+8] + tCnl9*aCnlmPz[25+9] + tCnl10*aCnlmPz[25+10]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 5);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 5);
     if (aLMax == 5) return;
     // l = 6
     tCnl0 = aCnlm[36]; tCnl1 = aCnlm[36+1]; tCnl2 = aCnlm[36+2]; tCnl3 = aCnlm[36+3]; tCnl4 = aCnlm[36+4]; tCnl5 = aCnlm[36+5]; tCnl6 = aCnlm[36+6]; tCnl7 = aCnlm[36+7]; tCnl8 = aCnlm[36+8]; tCnl9 = aCnlm[36+9]; tCnl10 = aCnlm[36+10]; double tCnl11 = aCnlm[36+11], tCnl12 = aCnlm[36+12];
@@ -798,7 +650,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     subFpPx = tMul * (tCnl0*aCnlmPx[36] + tCnl1*aCnlmPx[36+1] + tCnl2*aCnlmPx[36+2] + tCnl3*aCnlmPx[36+3] + tCnl4*aCnlmPx[36+4] + tCnl5*aCnlmPx[36+5] + tCnl6*aCnlmPx[36+6] + tCnl7*aCnlmPx[36+7] + tCnl8*aCnlmPx[36+8] + tCnl9*aCnlmPx[36+9] + tCnl10*aCnlmPx[36+10] + tCnl11*aCnlmPx[36+11] + tCnl12*aCnlmPx[36+12]);
     subFpPy = tMul * (tCnl0*aCnlmPy[36] + tCnl1*aCnlmPy[36+1] + tCnl2*aCnlmPy[36+2] + tCnl3*aCnlmPy[36+3] + tCnl4*aCnlmPy[36+4] + tCnl5*aCnlmPy[36+5] + tCnl6*aCnlmPy[36+6] + tCnl7*aCnlmPy[36+7] + tCnl8*aCnlmPy[36+8] + tCnl9*aCnlmPy[36+9] + tCnl10*aCnlmPy[36+10] + tCnl11*aCnlmPy[36+11] + tCnl12*aCnlmPy[36+12]);
     subFpPz = tMul * (tCnl0*aCnlmPz[36] + tCnl1*aCnlmPz[36+1] + tCnl2*aCnlmPz[36+2] + tCnl3*aCnlmPz[36+3] + tCnl4*aCnlmPz[36+4] + tCnl5*aCnlmPz[36+5] + tCnl6*aCnlmPz[36+6] + tCnl7*aCnlmPz[36+7] + tCnl8*aCnlmPz[36+8] + tCnl9*aCnlmPz[36+9] + tCnl10*aCnlmPz[36+10] + tCnl11*aCnlmPz[36+11] + tCnl12*aCnlmPz[36+12]);
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 6);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, 6);
     if (aLMax == 6) return;
     // else
     for (jint tL = 7; tL <= aLMax; ++tL) {
@@ -817,7 +669,7 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         subFpPx = tMul * rDotPx;
         subFpPy = tMul * rDotPy;
         subFpPz = tMul * rDotPz;
-        putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tL);
+        putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, subFpPx, subFpPy, subFpPz, tL);
     }
 }
 
@@ -849,7 +701,7 @@ static inline void calL3_222_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx+2] + tMul2*aCnlmPy[tIdx-2];
     rFp3Pz += tMul1*aCnlmPz[tIdx+2] + tMul2*aCnlmPz[tIdx-2];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -893,7 +745,7 @@ static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
     rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -951,7 +803,7 @@ static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
     rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1023,7 +875,7 @@ static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
     rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                              double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1067,7 +919,7 @@ static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx+4] + tMul2*aCnlmPy[tIdx-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx+4] + tMul2*aCnlmPz[tIdx-4];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1132,7 +984,7 @@ static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4-4] + tMul2*aCnlmPy[tIdx4+4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4-4] + tMul2*aCnlmPz[tIdx4+4];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1204,7 +1056,7 @@ static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1269,7 +1121,7 @@ static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1355,7 +1207,7 @@ static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz_(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
 }
 static inline void calL3p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                            double *rFpPx, double *rFpPy, double *rFpPz,
@@ -1498,7 +1350,7 @@ static inline void cnlm2fp(double *aCnlm, double *rFp, jint aSizeN, jint aSizeL,
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
-        jdoubleArray rRn, jdoubleArray rY, jdoubleArray rCnlm, jdoubleArray rFingerPrint,
+        jdoubleArray rRn, jdoubleArray rY, jdoubleArray rCnlm, jdoubleArray rFp,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jboolean aL3Cross, jint aWType) {
         // java array init
 #ifdef __cplusplus
@@ -1509,7 +1361,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     double *tRn = (double *)aEnv->GetPrimitiveArrayCritical(rRn, NULL);
     double *tY = (double *)aEnv->GetPrimitiveArrayCritical(rY, NULL);
     double *tCnlm = (double *)aEnv->GetPrimitiveArrayCritical(rCnlm, NULL);
-    double *tFingerPrint = (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrint, NULL);
+    double *tFp = (double *)aEnv->GetPrimitiveArrayCritical(rFp, NULL);
 #else
     double *tNlDx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDx, NULL);
     double *tNlDy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDy, NULL);
@@ -1518,7 +1370,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     double *tRn = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rRn, NULL);
     double *tY = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rY, NULL);
     double *tCnlm = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rCnlm, NULL);
-    double *tFingerPrint = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrint, NULL);
+    double *tFp = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFp, NULL);
 #endif
     
     // const init
@@ -1552,7 +1404,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     calCnlm(tNlDx, tNlDy, tNlDz, tNlType, aNN,
             tRn, tY, tCnlm, JNI_FALSE,
             aTypeNum, aRCut, aNMax, tLMax, tLMAll, aWType);
-    cnlm2fp(tCnlm, tFingerPrint, tSizeN, tSizeL, aLMax, aL3Max, aL3Cross, tLMAll);
+    cnlm2fp(tCnlm, tFp, tSizeN, tSizeL, aLMax, aL3Max, aL3Cross, tLMAll);
     
     // release java array
 #ifdef __cplusplus
@@ -1563,7 +1415,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     aEnv->ReleasePrimitiveArrayCritical(rRn, tRn, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rY, tY, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rCnlm, tCnlm, JNI_ABORT); // buffer only
-    aEnv->ReleasePrimitiveArrayCritical(rFingerPrint, tFingerPrint, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rFp, tFp, 0);
 #else
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDx, tNlDx, JNI_ABORT);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDy, tNlDy, JNI_ABORT);
@@ -1572,7 +1424,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rRn, rRn, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rY, rY, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlm, tCnlm, JNI_ABORT); // buffer only
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrint, tFingerPrint, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFp, tFp, 0);
 #endif
 }
 
@@ -1581,8 +1433,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
         jdoubleArray rNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray rNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
         jdoubleArray rCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
-        jdoubleArray rFingerPrint, jdoubleArray rFingerPrintPx, jdoubleArray rFingerPrintPy, jdoubleArray rFingerPrintPz,
-        jdoubleArray rFingerPrintPxCross, jdoubleArray rFingerPrintPyCross, jdoubleArray rFingerPrintPzCross,
+        jdoubleArray rFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
+        jdoubleArray rFpPxCross, jdoubleArray rFpPyCross, jdoubleArray rFpPzCross,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
 #ifdef __cplusplus
@@ -1605,13 +1457,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     double *tCnlmPx = (double *)aEnv->GetPrimitiveArrayCritical(rCnlmPx, NULL);
     double *tCnlmPy = (double *)aEnv->GetPrimitiveArrayCritical(rCnlmPy, NULL);
     double *tCnlmPz = (double *)aEnv->GetPrimitiveArrayCritical(rCnlmPz, NULL);
-    double *tFingerPrint = (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrint, NULL);
-    double *tFingerPrintPx = (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPx, NULL);
-    double *tFingerPrintPy = (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPy, NULL);
-    double *tFingerPrintPz = (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPz, NULL);
-    double *tFingerPrintPxCross = rFingerPrintPxCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPxCross, NULL);
-    double *tFingerPrintPyCross = rFingerPrintPyCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPyCross, NULL);
-    double *tFingerPrintPzCross = rFingerPrintPzCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFingerPrintPzCross, NULL);
+    double *tFp = (double *)aEnv->GetPrimitiveArrayCritical(rFp, NULL);
+    double *tFpPx = (double *)aEnv->GetPrimitiveArrayCritical(rFpPx, NULL);
+    double *tFpPy = (double *)aEnv->GetPrimitiveArrayCritical(rFpPy, NULL);
+    double *tFpPz = (double *)aEnv->GetPrimitiveArrayCritical(rFpPz, NULL);
+    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPxCross, NULL);
+    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPyCross, NULL);
+    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPzCross, NULL);
 #else
     double *tNlDx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDx, NULL);
     double *tNlDy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDy, NULL);
@@ -1632,13 +1484,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     double *tCnlmPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rCnlmPx, NULL);
     double *tCnlmPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rCnlmPy, NULL);
     double *tCnlmPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rCnlmPz, NULL);
-    double *tFingerPrint = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrint, NULL);
-    double *tFingerPrintPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPx, NULL);
-    double *tFingerPrintPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPy, NULL);
-    double *tFingerPrintPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPz, NULL);
-    double *tFingerPrintPxCross = rFingerPrintPxCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPxCross, NULL);
-    double *tFingerPrintPyCross = rFingerPrintPyCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPyCross, NULL);
-    double *tFingerPrintPzCross = rFingerPrintPzCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFingerPrintPzCross, NULL);
+    double *tFp = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFp, NULL);
+    double *tFpPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPx, NULL);
+    double *tFpPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPy, NULL);
+    double *tFpPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPz, NULL);
+    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPxCross, NULL);
+    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPyCross, NULL);
+    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPzCross, NULL);
 #endif
 
     // const init
@@ -1672,7 +1524,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     calCnlm(tNlDx, tNlDy, tNlDz, tNlType, aNN,
             tNlRn, tNlY, tCnlm, JNI_TRUE,
             aTypeNum, aRCut, aNMax, tLMax, tLMAll, aWType);
-    cnlm2fp(tCnlm, tFingerPrint, tSizeN, tSizeL, aLMax, aL3Max, aL3Cross, tLMAll);
+    cnlm2fp(tCnlm, tFp, tSizeN, tSizeL, aLMax, aL3Max, aL3Cross, tLMAll);
     
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
@@ -1739,7 +1591,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                  tYPtheta, tYPphi, tLMAll);
         // cal cnlmPxyz
         switch(aWType) {
-                    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
             for (jint tN=0, tShift=0, tShiftFP=0; tN <= aNMax; ++tN, tShift+=tLMAll, tShiftFP+=tSizeL) {
                 // cal cnlmPxyz first
                 calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
@@ -1750,20 +1602,20 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 jint tShiftFPC = tShiftFP + j*(tSizeN*tSizeL);
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                            tFingerPrintPx+tShiftFP, tFingerPrintPy+tShiftFP, tFingerPrintPz+tShiftFP,
-                            tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                            tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                            tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                            tFpPx+tShiftFP, tFpPy+tShiftFP, tFpPz+tShiftFP,
+                            tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                            tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                            tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                             1.0, aLMax, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll*type;
                     jint tShiftFP0 = tShiftFP + (aNMax+1)*tSizeL*type;
                     tShiftFPC = tShiftFP0 + j*(tSizeN*tSizeL);
                     cnlm2fpPxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                                tFingerPrintPx+tShiftFP0, tFingerPrintPy+tShiftFP0, tFingerPrintPz+tShiftFP0,
-                                tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                                tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                                tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                                tFpPx+tShiftFP0, tFpPy+tShiftFP0, tFpPz+tShiftFP0,
+                                tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                                tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                                tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                                 1.0, aLMax, aL3Max, aL3Cross);
                 }
             }
@@ -1782,10 +1634,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 jint tShiftFPC = tShiftFP + j*(tSizeN*tSizeL);
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                            tFingerPrintPx+tShiftFP, tFingerPrintPy+tShiftFP, tFingerPrintPz+tShiftFP,
-                            tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                            tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                            tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                            tFpPx+tShiftFP, tFpPy+tShiftFP, tFpPz+tShiftFP,
+                            tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                            tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                            tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                             1.0, aLMax, aL3Max, aL3Cross);
             }
             break;
@@ -1802,10 +1654,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 jint tShiftFPC = tShiftFP + j*(tSizeN*tSizeL);
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                            tFingerPrintPx+tShiftFP, tFingerPrintPy+tShiftFP, tFingerPrintPz+tShiftFP,
-                            tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                            tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                            tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                            tFpPx+tShiftFP, tFpPy+tShiftFP, tFpPz+tShiftFP,
+                            tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                            tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                            tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                             1.0, aLMax, aL3Max, aL3Cross);
             }
             break;
@@ -1823,20 +1675,20 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 jint tShiftFPC = tShiftFP + j*(tSizeN*tSizeL);
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                            tFingerPrintPx+tShiftFP, tFingerPrintPy+tShiftFP, tFingerPrintPz+tShiftFP,
-                            tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                            tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                            tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                            tFpPx+tShiftFP, tFpPy+tShiftFP, tFpPz+tShiftFP,
+                            tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                            tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                            tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                             1.0, aLMax, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll;
                     jint tShiftFP0 = tShiftFP + (aNMax+1)*tSizeL;
                     tShiftFPC = tShiftFP0 + j*(tSizeN*tSizeL);
                     cnlm2fpPxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                                tFingerPrintPx+tShiftFP0, tFingerPrintPy+tShiftFP0, tFingerPrintPz+tShiftFP0,
-                                tFingerPrintPxCross==NULL ? NULL : (tFingerPrintPxCross+tShiftFPC),
-                                tFingerPrintPyCross==NULL ? NULL : (tFingerPrintPyCross+tShiftFPC),
-                                tFingerPrintPzCross==NULL ? NULL : (tFingerPrintPzCross+tShiftFPC),
+                                tFpPx+tShiftFP0, tFpPy+tShiftFP0, tFpPz+tShiftFP0,
+                                tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFPC),
+                                tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFPC),
+                                tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFPC),
                                 wt, aLMax, aL3Max, aL3Cross);
                 }
             }
@@ -1867,13 +1719,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     aEnv->ReleasePrimitiveArrayCritical(rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
     aEnv->ReleasePrimitiveArrayCritical(rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
-    aEnv->ReleasePrimitiveArrayCritical(rFingerPrint, tFingerPrint, 0);
-    aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPx, tFingerPrintPx, 0);
-    aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPy, tFingerPrintPy, 0);
-    aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPz, tFingerPrintPz, 0);
-    if (rFingerPrintPxCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPxCross, tFingerPrintPxCross, 0);
-    if (rFingerPrintPyCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPyCross, tFingerPrintPyCross, 0);
-    if (rFingerPrintPzCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFingerPrintPzCross, tFingerPrintPzCross, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rFp, tFp, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rFpPx, tFpPx, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rFpPy, tFpPy, 0);
+    aEnv->ReleasePrimitiveArrayCritical(rFpPz, tFpPz, 0);
+    if (rFpPxCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPxCross, tFpPxCross, 0);
+    if (rFpPyCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPyCross, tFpPyCross, 0);
+    if (rFpPzCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPzCross, tFpPzCross, 0);
 #else
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDx, tNlDx, JNI_ABORT);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDy, tNlDy, JNI_ABORT);
@@ -1894,13 +1746,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrint, tFingerPrint, 0);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPx, tFingerPrintPx, 0);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPy, tFingerPrintPy, 0);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPz, tFingerPrintPz, 0);
-    if (rFingerPrintPxCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPxCross, tFingerPrintPxCross, 0);
-    if (rFingerPrintPyCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPyCross, tFingerPrintPyCross, 0);
-    if (rFingerPrintPzCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFingerPrintPzCross, tFingerPrintPzCross, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFp, tFp, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPx, tFpPx, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPy, tFpPy, 0);
+    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPz, tFpPz, 0);
+    if (rFpPxCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPxCross, tFpPxCross, 0);
+    if (rFpPyCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPyCross, tFpPyCross, 0);
+    if (rFpPzCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPzCross, tFpPzCross, 0);
 #endif
 }
 

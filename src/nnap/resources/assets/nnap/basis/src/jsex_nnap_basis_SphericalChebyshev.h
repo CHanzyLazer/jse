@@ -7,16 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_NMAX
-#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_NMAX 5L
-#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_LMAX
-#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_LMAX 6L
-#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3MAX
-#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3MAX 0L
-#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3CROSS
-#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3CROSS 1L
-#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT
-#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT 6.0
 #undef jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT
 #define jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT 0L
 #undef jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE
@@ -27,6 +17,16 @@ extern "C" {
 #define jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL 2L
 #undef jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL
 #define jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL 3L
+#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_NMAX
+#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_NMAX 5L
+#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_LMAX
+#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_LMAX 6L
+#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3MAX
+#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3MAX 0L
+#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3CROSS
+#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_L3CROSS 1L
+#undef jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT
+#define jsex_nnap_basis_SphericalChebyshev_DEFAULT_RCUT 6.0
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev
  * Method:    eval1

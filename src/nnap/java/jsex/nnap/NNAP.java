@@ -9,10 +9,7 @@ import jse.code.collection.DoubleList;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import jse.math.vector.Vector;
-import jsex.nnap.basis.BASIS;
-import jsex.nnap.basis.IBasis;
-import jsex.nnap.basis.Mirror;
-import jsex.nnap.basis.SphericalChebyshev;
+import jsex.nnap.basis.*;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.*;
 
@@ -95,7 +92,7 @@ public class NNAP implements IPairPotential {
         // 依赖 jniutil
         JNIUtil.InitHelper.init();
         // 依赖 nnapbasis
-        SphericalChebyshev.InitHelper.init();
+        BASIS.InitHelper.init();
         // 这里不直接依赖 LmpPlugin
         
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
@@ -140,12 +137,26 @@ public class NNAP implements IPairPotential {
         if (tBasisType == null) {
             tBasisType = "spherical_chebyshev";
         }
-        if (tBasisType.equals("mirror")) return null; // mirror 情况延迟初始化
-        if (!tBasisType.equals("spherical_chebyshev")) throw new IllegalArgumentException("Unsupported basis type: " + tBasisType);
         IBasis[] aBasis = new IBasis[mThreadNumber];
-        for (int i = 0; i < mThreadNumber; ++i) {
-            aBasis[i] = SphericalChebyshev.load(mSymbols, tBasis);
+        switch(tBasisType.toString()) {
+        case "mirror": {
+            return null; // mirror 情况延迟初始化
         }
+        case "spherical_chebyshev": {
+            for (int i = 0; i < mThreadNumber; ++i) {
+                aBasis[i] = SphericalChebyshev.load(mSymbols, tBasis);
+            }
+            break;
+        }
+        case "chebyshev": {
+            for (int i = 0; i < mThreadNumber; ++i) {
+                aBasis[i] = Chebyshev.load(mSymbols, tBasis);
+            }
+            break;
+        }
+        default: {
+            throw new IllegalArgumentException("Unsupported basis type: " + tBasisType);
+        }}
         
         Number tRefEng = (Number)aModelInfo.get("ref_eng");
         if (tRefEng == null) throw new IllegalArgumentException("No ref_eng in ModelInfo");
