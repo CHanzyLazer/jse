@@ -35,6 +35,6 @@ public abstract class DoubleArrayMatrix extends AbstractMatrix implements IDataS
     
     /** stuff to override */
     protected abstract DoubleArrayMatrix newZeros_(int aRowNum, int aColNum);
-    public abstract DoubleArrayMatrix newShell();
+    
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

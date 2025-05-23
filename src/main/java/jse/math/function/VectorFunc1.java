@@ -104,6 +104,6 @@ public abstract class VectorFunc1 extends AbstractFunc1 implements IEqualInterva
     
     /** stuff to override，重写表明 x 超出了界限的情况下如何处理 */
     public abstract double subs(double aX);
-    public abstract VectorFunc1 newShell();
+    
     protected abstract VectorFunc1 newInstance_(double aX0, double aDx, Vector aData);
 }

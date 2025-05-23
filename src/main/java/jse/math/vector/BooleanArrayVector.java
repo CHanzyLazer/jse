@@ -40,6 +40,6 @@ public abstract class BooleanArrayVector extends AbstractLogicalVector implement
     
     /** stuff to override */
     protected abstract BooleanArrayVector newZeros_(int aSize);
-    public abstract BooleanArrayVector newShell();
+    
     public abstract boolean @Nullable[] getIfHasSameOrderData(Object aObj);
 }

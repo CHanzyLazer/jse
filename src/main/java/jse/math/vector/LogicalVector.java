@@ -74,7 +74,6 @@ public class LogicalVector extends BooleanArrayVector {
         return rVector;
     }
     
-    @Override public final LogicalVector newShell() {return new LogicalVector(mSize, null);}
     @Override public final boolean @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof LogicalVector) return ((LogicalVector)aObj).mData;
         if (aObj instanceof ShiftLogicalVector) return ((ShiftLogicalVector)aObj).mData;

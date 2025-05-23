@@ -42,7 +42,6 @@ public final class ShiftIntVector extends IntArrayVector {
     @Override protected IntVector newZeros_(int aSize) {return IntVector.zeros(aSize);}
     @Override public IntVector copy() {return (IntVector)super.copy();}
     
-    @Override public ShiftIntVector newShell() {return new ShiftIntVector(mSize, mShift, null);}
     @Override public int @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof IntVector) return ((IntVector)aObj).mData;
         if (aObj instanceof ShiftIntVector) return ((ShiftIntVector)aObj).mData;

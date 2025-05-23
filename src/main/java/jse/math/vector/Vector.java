@@ -72,7 +72,6 @@ public class Vector extends DoubleArrayVector {
     @Override protected final Vector newZeros_(int aSize) {return Vector.zeros(aSize);}
     @Override public final Vector copy() {return (Vector)super.copy();}
     
-    @Override public final Vector newShell() {return new Vector(mSize, null);}
     @Override public final double @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof Vector) return ((Vector)aObj).mData;
         if (aObj instanceof ShiftVector) return ((ShiftVector)aObj).mData;

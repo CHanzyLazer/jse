@@ -71,7 +71,6 @@ public class LongVector extends LongArrayVector {
     @Override protected final LongVector newZeros_(int aSize) {return LongVector.zeros(aSize);}
     @Override public final LongVector copy() {return (LongVector)super.copy();}
     
-    @Override public final LongVector newShell() {return new LongVector(mSize, null);}
     @Override public final long @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof LongVector) return ((LongVector)aObj).mData;
         if (aObj instanceof ShiftLongVector) return ((ShiftLongVector)aObj).mData;

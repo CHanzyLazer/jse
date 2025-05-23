@@ -30,7 +30,7 @@ public abstract class BiDoubleArrayMatrix extends AbstractComplexMatrix implemen
     
     /** stuff to override */
     protected abstract BiDoubleArrayMatrix newZeros_(int aRowNum, int aColNum);
-    public abstract BiDoubleArrayMatrix newShell();
+    
     public abstract double @Nullable[][] getIfHasSameOrderData(Object aObj);
 }
 

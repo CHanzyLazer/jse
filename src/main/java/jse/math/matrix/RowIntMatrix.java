@@ -97,7 +97,7 @@ public class RowIntMatrix extends IntArrayMatrix {
     @Override public RowIntMatrix copy() {return (RowIntMatrix)super.copy();}
     
     @Override public int internalDataSize() {return mRowNum*mColNum;}
-    @Override public RowIntMatrix newShell() {return new RowIntMatrix(mRowNum, mColNum, null);}
+    
     @Override public int @Nullable[] getIfHasSameOrderData(Object aObj) {
         // 只有同样是 RowMatrix 并且列数相同才会返回 mData
         if (aObj instanceof RowIntMatrix && ((RowIntMatrix)aObj).mColNum == mColNum) return ((RowIntMatrix)aObj).mData;

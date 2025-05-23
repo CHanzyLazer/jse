@@ -35,6 +35,5 @@ public final class ZeroBoundFunc1 extends VectorFunc1 implements IZeroBoundFunc1
     @Override public double zeroBoundL() {return mX0 - mDx;}
     @Override public double zeroBoundR() {return mX0 + Nx()*mDx;}
     
-    @Override public ZeroBoundFunc1 newShell() {return new ZeroBoundFunc1(mX0, mDx, null);}
     @Override protected ZeroBoundFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new ZeroBoundFunc1(aX0, aDx, aData);}
 }

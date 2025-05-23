@@ -58,6 +58,5 @@ public final class PBCFunc2 extends ColumnMatrixFunc2 {
         return tJ;
     }
     
-    @Override public PBCFunc2 newShell() {return new PBCFunc2(mX0, mY0, mDx, mDy, null);}
     @Override protected PBCFunc2 newInstance_(double aX0, double aY0, double aDx, double aDy, ColumnMatrix aData) {return new PBCFunc2(aX0, aY0, aDx, aDy, aData);}
 }

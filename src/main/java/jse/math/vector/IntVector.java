@@ -72,7 +72,6 @@ public class IntVector extends IntArrayVector {
     @Override protected final IntVector newZeros_(int aSize) {return IntVector.zeros(aSize);}
     @Override public final IntVector copy() {return (IntVector)super.copy();}
     
-    @Override public final IntVector newShell() {return new IntVector(mSize, null);}
     @Override public final int @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof IntVector) return ((IntVector)aObj).mData;
         if (aObj instanceof ShiftIntVector) return ((ShiftIntVector)aObj).mData;

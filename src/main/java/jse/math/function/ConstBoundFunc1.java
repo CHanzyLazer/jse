@@ -31,6 +31,5 @@ public final class ConstBoundFunc1 extends VectorFunc1 {
     }
     @Override public int getINear(double aX) {return MathEX.Code.toRange(0, Nx()-1, super.getINear(aX));}
     
-    @Override public ConstBoundFunc1 newShell() {return new ConstBoundFunc1(mX0, mDx, null);}
     @Override protected ConstBoundFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new ConstBoundFunc1(aX0, aDx, aData);}
 }

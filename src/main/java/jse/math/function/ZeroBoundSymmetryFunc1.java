@@ -42,7 +42,6 @@ public final class ZeroBoundSymmetryFunc1 extends VectorFunc1 implements IZeroBo
     @Override public double zeroBoundL() {return mX0 - Nx()*mDx;}
     @Override public double zeroBoundR() {return mX0 + Nx()*mDx;}
     
-    @Override public ZeroBoundSymmetryFunc1 newShell() {return new ZeroBoundSymmetryFunc1(mX0, mDx, null);}
     @Override protected ZeroBoundSymmetryFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new ZeroBoundSymmetryFunc1(aX0, aDx, aData);}
     
     

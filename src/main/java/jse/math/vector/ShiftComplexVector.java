@@ -55,7 +55,6 @@ public final class ShiftComplexVector extends BiDoubleArrayVector {
         return rVector;
     }
     
-    @Override public ShiftComplexVector newShell() {return new ShiftComplexVector(mSize, mShift, null);}
     @Override public double @Nullable[][] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof ComplexVector) return ((ComplexVector)aObj).mData;
         if (aObj instanceof ShiftComplexVector) return ((ShiftComplexVector)aObj).mData;

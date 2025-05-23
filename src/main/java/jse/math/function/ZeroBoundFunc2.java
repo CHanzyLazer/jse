@@ -49,6 +49,5 @@ public final class ZeroBoundFunc2 extends ColumnMatrixFunc2 implements IZeroBoun
     @Override public double zeroBoundNegY() {return mY0 - mDy;}
     @Override public double zeroBoundPosY() {return mY0 + Ny()*mDy;}
     
-    @Override public ZeroBoundFunc2 newShell() {return new ZeroBoundFunc2(mX0, mY0, mDx, mDy, null);}
     @Override protected ZeroBoundFunc2 newInstance_(double aX0, double aY0, double aDx, double aDy, ColumnMatrix aData) {return new ZeroBoundFunc2(aX0, aY0, aDx, aDy, aData);}
 }

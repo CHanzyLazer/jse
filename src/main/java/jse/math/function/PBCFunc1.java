@@ -39,7 +39,6 @@ public final class PBCFunc1 extends VectorFunc1 {
         return tI;
     }
     
-    @Override public PBCFunc1 newShell() {return new PBCFunc1(mX0, mDx, null);}
     @Override protected PBCFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new PBCFunc1(aX0, aDx, aData);}
     
     

@@ -46,7 +46,6 @@ public final class ShiftLogicalVector extends BooleanArrayVector {
         return rVector;
     }
     
-    @Override public ShiftLogicalVector newShell() {return new ShiftLogicalVector(mSize, mShift, null);}
     @Override public boolean @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof LogicalVector) return ((LogicalVector)aObj).mData;
         if (aObj instanceof ShiftLogicalVector) return ((ShiftLogicalVector)aObj).mData;

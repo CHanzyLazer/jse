@@ -99,6 +99,6 @@ public abstract class ColumnMatrixFunc2 extends AbstractFunc2 implements IEqualI
     
     /** stuff to override，重写表明 x, y 超出了界限的情况下如何处理 */
     public abstract double subs(double aX, double aY);
-    public abstract ColumnMatrixFunc2 newShell();
+    
     protected abstract ColumnMatrixFunc2 newInstance_(double aX0, double aY0, double aDx, double aDy, ColumnMatrix aData);
 }

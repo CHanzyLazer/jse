@@ -37,7 +37,7 @@ public abstract class LongArrayVector extends AbstractLongVector implements IDat
     
     /** stuff to override */
     protected abstract LongArrayVector newZeros_(int aSize);
-    public abstract LongArrayVector newShell();
+    
     public abstract long @Nullable[] getIfHasSameOrderData(Object aObj);
 }
 

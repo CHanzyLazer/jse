@@ -44,6 +44,5 @@ public final class FixBoundFunc1 extends VectorFunc1 {
     }
     @Override public int getINear(double aX) {return MathEX.Code.toRange(0, Nx()-1, super.getINear(aX));}
     
-    @Override public FixBoundFunc1 newShell() {return new FixBoundFunc1(mX0, mDx, null).setBound(mBoundL, mBoundR);}
     @Override protected FixBoundFunc1 newInstance_(double aX0, double aDx, Vector aData) {return new FixBoundFunc1(aX0, aDx, aData).setBound(mBoundL, mBoundR);}
 }

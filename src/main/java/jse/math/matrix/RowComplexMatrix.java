@@ -98,7 +98,7 @@ public class RowComplexMatrix extends BiDoubleArrayMatrix {
     @Override public RowComplexMatrix copy() {return (RowComplexMatrix)super.copy();}
     
     @Override public int internalDataSize() {return mRowNum*mColNum;}
-    @Override public RowComplexMatrix newShell() {return new RowComplexMatrix(mRowNum, mColNum, null);}
+    
     @Override public double @Nullable[][] getIfHasSameOrderData(Object aObj) {
         // 只有同样是 RowMatrix 并且列数相同才会返回 mData
         if (aObj instanceof RowComplexMatrix && ((RowComplexMatrix)aObj).mColNum == mColNum) return ((RowComplexMatrix)aObj).mData;

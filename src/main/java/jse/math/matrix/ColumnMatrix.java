@@ -91,7 +91,7 @@ public class ColumnMatrix extends DoubleArrayMatrix {
     @Override public ColumnMatrix copy() {return (ColumnMatrix)super.copy();}
     
     @Override public int internalDataSize() {return mRowNum*mColNum;}
-    @Override public ColumnMatrix newShell() {return new ColumnMatrix(mRowNum, mColNum, null);}
+    
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
         // 只有同样是 ColumnMatrix 并且行数相同才会返回 mData
         if (aObj instanceof ColumnMatrix && ((ColumnMatrix)aObj).mRowNum == mRowNum) return ((ColumnMatrix)aObj).mData;

@@ -42,7 +42,6 @@ public final class ShiftLongVector extends LongArrayVector {
     @Override protected LongVector newZeros_(int aSize) {return LongVector.zeros(aSize);}
     @Override public LongVector copy() {return (LongVector)super.copy();}
     
-    @Override public ShiftLongVector newShell() {return new ShiftLongVector(mSize, mShift, null);}
     @Override public long @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof LongVector) return ((LongVector)aObj).mData;
         if (aObj instanceof ShiftLongVector) return ((ShiftLongVector)aObj).mData;

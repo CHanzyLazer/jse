@@ -56,6 +56,6 @@ public abstract class BiDoubleArrayVector extends AbstractComplexVector implemen
     
     /** stuff to override */
     protected abstract BiDoubleArrayVector newZeros_(int aSize);
-    public abstract BiDoubleArrayVector newShell();
+    
     public abstract double @Nullable[][] getIfHasSameOrderData(Object aObj);
 }

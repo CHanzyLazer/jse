@@ -234,7 +234,7 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     /** IDataShell stuffs */
     @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(double[][] aData) {mData = aData;}
-    @Override public ComplexDoubleList newShell() {return new ComplexDoubleList(mSize, null);}
+    
     @Override public double[][] internalData() {return mData;}
     @ApiStatus.Internal @Override public double @Nullable[][] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof ComplexDoubleList) return ((ComplexDoubleList)aObj).mData;

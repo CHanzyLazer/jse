@@ -112,7 +112,7 @@ public class Table extends AbstractTable implements IDataShell<DoubleList> {
     @Override public final void setInternalData(DoubleList aData) {mData = aData; mMatrix = null;}
     @Override public final DoubleList internalData() {mMatrix = null; return mData;}
     @Override public final int internalDataSize() {return mData.size();}
-    @Override public Table newShell() {return new Table(mRowNum, null, NewCollections.from(mHeads));}
+    
     @Override public @Nullable DoubleList getIfHasSameOrderData(Object aObj) {
         // 简单处理，这里认为所有 Table 内部数据都不是相同 order 的
         return null;

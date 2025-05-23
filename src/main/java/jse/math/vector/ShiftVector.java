@@ -40,7 +40,6 @@ public final class ShiftVector extends DoubleArrayVector {
     @Override protected Vector newZeros_(int aSize) {return Vector.zeros(aSize);}
     @Override public Vector copy() {return (Vector)super.copy();}
     
-    @Override public ShiftVector newShell() {return new ShiftVector(mSize, mShift, null);}
     @Override public double @Nullable[] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof Vector) return ((Vector)aObj).mData;
         if (aObj instanceof ShiftVector) return ((ShiftVector)aObj).mData;

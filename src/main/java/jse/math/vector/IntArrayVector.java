@@ -37,7 +37,7 @@ public abstract class IntArrayVector extends AbstractIntVector implements IDataS
     
     /** stuff to override */
     protected abstract IntArrayVector newZeros_(int aSize);
-    public abstract IntArrayVector newShell();
+    
     public abstract int @Nullable[] getIfHasSameOrderData(Object aObj);
 }
 

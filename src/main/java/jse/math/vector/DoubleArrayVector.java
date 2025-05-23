@@ -42,6 +42,6 @@ public abstract class DoubleArrayVector extends AbstractVector implements IDataS
     
     /** stuff to override */
     protected abstract DoubleArrayVector newZeros_(int aSize);
-    public abstract DoubleArrayVector newShell();
+    
     public abstract double @Nullable[] getIfHasSameOrderData(Object aObj);
 }

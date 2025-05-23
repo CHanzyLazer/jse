@@ -12,7 +12,6 @@ import java.lang.reflect.Array;
  */
 public interface IDataShell<D> {
     void setInternalData(D aData);
-    IDataShell<D> newShell();
     D internalData();
     /** 返回需要使用的 data 长度，因为可能会通过 setData 导致 data 过长 */
     int internalDataSize();

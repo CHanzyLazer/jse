@@ -157,7 +157,7 @@ public class BooleanList implements IDataShell<boolean[]> {
     /** IDataShell stuffs */
     @Override public int internalDataSize() {return size();}
     @Override public void setInternalData(boolean[] aData) {mData = aData;}
-    @Override public BooleanList newShell() {return new BooleanList(mSize, null);}
+    
     @Override public boolean[] internalData() {return mData;}
     @ApiStatus.Internal @Override public boolean @Nullable [] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof BooleanList) return ((BooleanList)aObj).mData;

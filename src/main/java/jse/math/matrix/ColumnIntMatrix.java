@@ -96,7 +96,7 @@ public class ColumnIntMatrix extends IntArrayMatrix {
     @Override public ColumnIntMatrix copy() {return (ColumnIntMatrix)super.copy();}
     
     @Override public int internalDataSize() {return mRowNum*mColNum;}
-    @Override public ColumnIntMatrix newShell() {return new ColumnIntMatrix(mRowNum, mColNum, null);}
+    
     @Override public int @Nullable[] getIfHasSameOrderData(Object aObj) {
         // 只有同样是 ColumnMatrix 并且行数相同才会返回 mData
         if (aObj instanceof ColumnIntMatrix && ((ColumnIntMatrix)aObj).mRowNum == mRowNum) return ((ColumnIntMatrix)aObj).mData;

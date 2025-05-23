@@ -98,7 +98,7 @@ public class ColumnComplexMatrix extends BiDoubleArrayMatrix {
     @Override public ColumnComplexMatrix copy() {return (ColumnComplexMatrix)super.copy();}
     
     @Override public int internalDataSize() {return mRowNum*mColNum;}
-    @Override public ColumnComplexMatrix newShell() {return new ColumnComplexMatrix(mRowNum, mColNum, null);}
+    
     @Override public double @Nullable[][] getIfHasSameOrderData(Object aObj) {
         // 只有同样是 ColumnMatrix 并且行数相同才会返回 mData
         if (aObj instanceof ColumnComplexMatrix && ((ColumnComplexMatrix)aObj).mRowNum == mRowNum) return ((ColumnComplexMatrix)aObj).mData;

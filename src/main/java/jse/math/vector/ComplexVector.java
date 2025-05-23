@@ -84,7 +84,6 @@ public class ComplexVector extends BiDoubleArrayVector {
         return rVector;
     }
     
-    @Override public final ComplexVector newShell() {return new ComplexVector(mSize, null);}
     @Override public final double @Nullable[][] getIfHasSameOrderData(Object aObj) {
         if (aObj instanceof ComplexVector) return ((ComplexVector)aObj).mData;
         if (aObj instanceof ShiftComplexVector) return ((ShiftComplexVector)aObj).mData;

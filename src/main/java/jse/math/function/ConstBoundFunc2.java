@@ -43,6 +43,5 @@ public final class ConstBoundFunc2 extends ColumnMatrixFunc2 {
     @Override public int getINear(double aX) {return MathEX.Code.toRange(0, Nx()-1, super.getINear(aX));}
     @Override public int getJNear(double aY) {return MathEX.Code.toRange(0, Ny()-1, super.getJNear(aY));}
     
-    @Override public ConstBoundFunc2 newShell() {return new ConstBoundFunc2(mX0, mY0, mDx, mDy, null);}
     @Override protected ConstBoundFunc2 newInstance_(double aX0, double aY0, double aDx, double aDy, ColumnMatrix aData) {return new ConstBoundFunc2(aX0, aY0, aDx, aDy, aData);}
 }
