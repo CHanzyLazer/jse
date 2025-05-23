@@ -839,9 +839,9 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         if (rVirialsXZ != null) rVirialsXZ.fill(0.0);
         if (rVirialsYZ != null) rVirialsYZ.fill(0.0);
         // 并行情况下存在并行写入的问题，因此需要这样操作
-        IVector @Nullable[] rForcesXPar = rForcesX!=null ? new IVector[tThreadNum] : null; if (rForcesX != null) {rForcesXPar[0] = rForcesX; for (int i = 1; i < tThreadNum; ++i) {rForcesXPar[i] = VectorCache.getZeros(tThreadNum);}}
-        IVector @Nullable[] rForcesYPar = rForcesY!=null ? new IVector[tThreadNum] : null; if (rForcesY != null) {rForcesYPar[0] = rForcesY; for (int i = 1; i < tThreadNum; ++i) {rForcesYPar[i] = VectorCache.getZeros(tThreadNum);}}
-        IVector @Nullable[] rForcesZPar = rForcesZ!=null ? new IVector[tThreadNum] : null; if (rForcesZ != null) {rForcesZPar[0] = rForcesZ; for (int i = 1; i < tThreadNum; ++i) {rForcesZPar[i] = VectorCache.getZeros(tThreadNum);}}
+        IVector @Nullable[] rForcesXPar = rForcesX!=null ? new IVector[tThreadNum] : null; if (rForcesX != null) {rForcesXPar[0] = rForcesX; for (int i = 1; i < tThreadNum; ++i) {rForcesXPar[i] = VectorCache.getZeros(tAtomNum);}}
+        IVector @Nullable[] rForcesYPar = rForcesY!=null ? new IVector[tThreadNum] : null; if (rForcesY != null) {rForcesYPar[0] = rForcesY; for (int i = 1; i < tThreadNum; ++i) {rForcesYPar[i] = VectorCache.getZeros(tAtomNum);}}
+        IVector @Nullable[] rForcesZPar = rForcesZ!=null ? new IVector[tThreadNum] : null; if (rForcesZ != null) {rForcesZPar[0] = rForcesZ; for (int i = 1; i < tThreadNum; ++i) {rForcesZPar[i] = VectorCache.getZeros(tAtomNum);}}
         IVector @Nullable[] rVirialsXXPar = rVirialsXX!=null ? new IVector[tThreadNum] : null; if (rVirialsXX != null) {rVirialsXXPar[0] = rVirialsXX; for (int i = 1; i < tThreadNum; ++i) {rVirialsXXPar[i] = VectorCache.getZeros(rVirialsXX.size());}}
         IVector @Nullable[] rVirialsYYPar = rVirialsYY!=null ? new IVector[tThreadNum] : null; if (rVirialsYY != null) {rVirialsYYPar[0] = rVirialsYY; for (int i = 1; i < tThreadNum; ++i) {rVirialsYYPar[i] = VectorCache.getZeros(rVirialsYY.size());}}
         IVector @Nullable[] rVirialsZZPar = rVirialsZZ!=null ? new IVector[tThreadNum] : null; if (rVirialsZZ != null) {rVirialsZZPar[0] = rVirialsZZ; for (int i = 1; i < tThreadNum; ++i) {rVirialsZZPar[i] = VectorCache.getZeros(rVirialsZZ.size());}}
