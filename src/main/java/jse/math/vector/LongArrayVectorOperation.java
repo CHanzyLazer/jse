@@ -20,9 +20,9 @@ public abstract class LongArrayVectorOperation extends AbstractLongVectorOperati
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
-    @Override public void fill          (ILongVectorGetter aRHS) {LongArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
-    @Override public void assign        (LongSupplier      aSup) {LongArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
-    @Override public void forEach       (LongConsumer      aCon) {LongArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
+    @Override public void fill          (ILongVectorGetter aRHS) {LongArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aRHS);}
+    @Override public void assign        (LongSupplier      aSup) {LongArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aSup);}
+    @Override public void forEach       (LongConsumer      aCon) {LongArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aCon);}
     
     @Override public long   sum ()                      {LongArrayVector tThis = thisVector_(); return ARRAY.sumOfThis (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public double mean()                      {LongArrayVector tThis = thisVector_(); return ARRAY.meanOfThis(tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
@@ -44,16 +44,11 @@ public abstract class LongArrayVectorOperation extends AbstractLongVectorOperati
     @Override public void sort() {
         final LongArrayVector rThis = thisVector_();
         ARRAY.sort(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize());
-        if (rThis.isReverse()) reverse2this();
     }
     @Override public void biSort(ISwapper aSwapper) {
         final LongArrayVector rThis = thisVector_();
         final int tSize = rThis.internalDataSize();
         ARRAY.biSort(rThis.internalData(), rThis.internalDataShift(), tSize, aSwapper.undata(rThis));
-        if (rThis.isReverse()) {
-            reverse2this();
-            DATA.reverse2This(aSwapper, tSize);
-        }
     }
     
     

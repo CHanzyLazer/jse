@@ -29,15 +29,7 @@ public interface ISwapper extends Swapper {
     default ISwapper unshift(final int aShift) {
         return aShift==0 ? this : (i, j) -> swap(i-aShift, j-aShift);
     }
-    default ISwapper unreverse(int aSize) {
-        final int tSizeMM = aSize - 1;
-        return (i, j) -> swap(tSizeMM-i, tSizeMM-j);
-    }
     default ISwapper undata(IDataShell<?> aData) {
-        if (aData.isReverse()) {
-            return unshift(aData.internalDataShift()).unreverse(aData.internalDataSize());
-        } else {
-            return unshift(aData.internalDataShift());
-        }
+        return unshift(aData.internalDataShift());
     }
 }

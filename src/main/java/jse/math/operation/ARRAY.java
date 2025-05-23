@@ -974,130 +974,99 @@ public class ARRAY {
         ebeFill2This(rThis[0], rShift, aDataR[0], aShiftR, aLength);
         ebeFill2This(rThis[1], rShift, aDataR[1], aShiftR, aLength);
     }
-    public static void vecFill2This(double[][] rThis, int rShift, int aLength, boolean aReverse, IComplexVectorGetter aVec) {
+    public static void vecFill2This(double[][] rThis, int rShift, int aLength, IComplexVectorGetter aVec) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) {
+        if (rShift == 0) {
+            for (int i = 0; i < aLength; ++i) {
+                IComplexDouble tValue = aVec.get(i);
+                tRealData[i] = tValue.real();
+                tImagData[i] = tValue.imag();
+            }
+        } else {
+            final int tEnd = aLength + rShift;
+            for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
                 IComplexDouble tValue = aVec.get(j);
                 tRealData[i] = tValue.real();
                 tImagData[i] = tValue.imag();
             }
-        } else {
-            if (rShift == 0) {
-                for (int i = 0; i < aLength; ++i) {
-                    IComplexDouble tValue = aVec.get(i);
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                }
-            } else {
-                final int tEnd = aLength + rShift;
-                for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
-                    IComplexDouble tValue = aVec.get(j);
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                }
-            }
         }
     }
-    public static void vecFill2This(double[][] rThis, int rShift, int aLength, boolean aReverse, IVectorGetter aVec) {
+    public static void vecFill2This(double[][] rThis, int rShift, int aLength, IVectorGetter aVec) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) {
+        if (rShift == 0) {
+            for (int i = 0; i < aLength; ++i) {
+                tRealData[i] = aVec.get(i);
+                tImagData[i] = 0.0;
+            }
+        } else {
+            final int tEnd = aLength + rShift;
+            for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
                 tRealData[i] = aVec.get(j);
                 tImagData[i] = 0.0;
             }
-        } else {
-            if (rShift == 0) {
-                for (int i = 0; i < aLength; ++i) {
-                    tRealData[i] = aVec.get(i);
-                    tImagData[i] = 0.0;
-                }
-            } else {
-                final int tEnd = aLength + rShift;
-                for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
-                    tRealData[i] = aVec.get(j);
-                    tImagData[i] = 0.0;
-                }
-            }
         }
     }
-    public static void assign2This(double[][] rThis, int rShift, int aLength, boolean aReverse, Supplier<? extends IComplexDouble> aSup) {
+    public static void assign2This(double[][] rThis, int rShift, int aLength, Supplier<? extends IComplexDouble> aSup) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) {
-                IComplexDouble tValue = aSup.get();
-                tRealData[i] = tValue.real();
-                tImagData[i] = tValue.imag();
-            }
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) {
-                IComplexDouble tValue = aSup.get();
-                tRealData[i] = tValue.real();
-                tImagData[i] = tValue.imag();
-            }
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) {
+            IComplexDouble tValue = aSup.get();
+            tRealData[i] = tValue.real();
+            tImagData[i] = tValue.imag();
         }
     }
-    public static void assign2This(double[][] rThis, int rShift, int aLength, boolean aReverse, DoubleSupplier aSup) {
+    public static void assign2This(double[][] rThis, int rShift, int aLength, DoubleSupplier aSup) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) {
-                tRealData[i] = aSup.getAsDouble();
-                tImagData[i] = 0.0;
-            }
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) {
-                tRealData[i] = aSup.getAsDouble();
-                tImagData[i] = 0.0;
-            }
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) {
+            tRealData[i] = aSup.getAsDouble();
+            tImagData[i] = 0.0;
         }
     }
-    public static void forEachOfThis(double[][] aThis, int aShift, int aLength, boolean aReverse, Consumer<? super ComplexDouble> aCon) {
+    public static void forEachOfThis(double[][] aThis, int aShift, int aLength, Consumer<? super ComplexDouble> aCon) {
         final double[] tRealData = aThis[0];
         final double[] tImagData = aThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) {
-                aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
-            }
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) {
-                aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
-            }
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) {
+            aCon.accept(new ComplexDouble(tRealData[i], tImagData[i]));
         }
     }
-    public static void forEachOfThis(double[][] aThis, int aShift, int aLength, boolean aReverse, IDoubleBinaryConsumer aCon) {
+    public static void forEachOfThis(double[][] aThis, int aShift, int aLength, IDoubleBinaryConsumer aCon) {
         final double[] tRealData = aThis[0];
         final double[] tImagData = aThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) {
-                aCon.accept(tRealData[i], tImagData[i]);
-            }
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) {
-                aCon.accept(tRealData[i], tImagData[i]);
-            }
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) {
+            aCon.accept(tRealData[i], tImagData[i]);
         }
     }
     /** Groovy stuffs */
-    public static void vecFill2This(double[][] rThis, int rShift, int aLength, boolean aReverse, @ClosureParams(value=SimpleType.class, options="int") Closure<?> aGroovyTask) {
+    public static void vecFill2This(double[][] rThis, int rShift, int aLength, @ClosureParams(value=SimpleType.class, options="int") Closure<?> aGroovyTask) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) {
+        if (rShift == 0) {
+            for (int i = 0; i < aLength; ++i) {
+                // 直接先执行然后检测类型决定如何设置
+                Object tObj = aGroovyTask.call(i);
+                if (tObj instanceof IComplexDouble) {
+                    IComplexDouble tValue = (IComplexDouble)tObj;
+                    tRealData[i] = tValue.real();
+                    tImagData[i] = tValue.imag();
+                } else
+                if (tObj instanceof Number) {
+                    tRealData[i] = ((Number)tObj).doubleValue();
+                    tImagData[i] = 0.0;
+                } else {
+                    tRealData[i] = Double.NaN;
+                    tImagData[i] = 0.0;
+                }
+            }
+        } else {
+            final int tEnd = aLength + rShift;
+            for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
                 // 直接先执行然后检测类型决定如何设置
                 Object tObj = aGroovyTask.call(j);
                 if (tObj instanceof IComplexDouble) {
@@ -1113,83 +1082,26 @@ public class ARRAY {
                     tImagData[i] = 0.0;
                 }
             }
-        } else {
-            if (rShift == 0) {
-                for (int i = 0; i < aLength; ++i) {
-                    // 直接先执行然后检测类型决定如何设置
-                    Object tObj = aGroovyTask.call(i);
-                    if (tObj instanceof IComplexDouble) {
-                        IComplexDouble tValue = (IComplexDouble)tObj;
-                        tRealData[i] = tValue.real();
-                        tImagData[i] = tValue.imag();
-                    } else
-                    if (tObj instanceof Number) {
-                        tRealData[i] = ((Number)tObj).doubleValue();
-                        tImagData[i] = 0.0;
-                    } else {
-                        tRealData[i] = Double.NaN;
-                        tImagData[i] = 0.0;
-                    }
-                }
-            } else {
-                final int tEnd = aLength + rShift;
-                for (int i = rShift, j = 0; i < tEnd; ++i, ++j) {
-                    // 直接先执行然后检测类型决定如何设置
-                    Object tObj = aGroovyTask.call(j);
-                    if (tObj instanceof IComplexDouble) {
-                        IComplexDouble tValue = (IComplexDouble)tObj;
-                        tRealData[i] = tValue.real();
-                        tImagData[i] = tValue.imag();
-                    } else
-                    if (tObj instanceof Number) {
-                        tRealData[i] = ((Number)tObj).doubleValue();
-                        tImagData[i] = 0.0;
-                    } else {
-                        tRealData[i] = Double.NaN;
-                        tImagData[i] = 0.0;
-                    }
-                }
-            }
         }
     }
-    public static void assign2This(double[][] rThis, int rShift, int aLength, boolean aReverse, Closure<?> aGroovyTask) {
+    public static void assign2This(double[][] rThis, int rShift, int aLength, Closure<?> aGroovyTask) {
         final double[] tRealData = rThis[0];
         final double[] tImagData = rThis[1];
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) {
-                // 直接先执行然后检测类型决定如何设置
-                Object tObj = aGroovyTask.call();
-                if (tObj instanceof IComplexDouble) {
-                    IComplexDouble tValue = (IComplexDouble)tObj;
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                } else
-                if (tObj instanceof Number) {
-                    tRealData[i] = ((Number)tObj).doubleValue();
-                    tImagData[i] = 0.0;
-                } else {
-                    tRealData[i] = Double.NaN;
-                    tImagData[i] = 0.0;
-                }
-            }
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) {
-                // 直接先执行然后检测类型决定如何设置
-                Object tObj = aGroovyTask.call();
-                if (tObj instanceof IComplexDouble) {
-                    IComplexDouble tValue = (IComplexDouble)tObj;
-                    tRealData[i] = tValue.real();
-                    tImagData[i] = tValue.imag();
-                } else
-                if (tObj instanceof Number) {
-                    tRealData[i] = ((Number)tObj).doubleValue();
-                    tImagData[i] = 0.0;
-                } else {
-                    tRealData[i] = Double.NaN;
-                    tImagData[i] = 0.0;
-                }
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) {
+            // 直接先执行然后检测类型决定如何设置
+            Object tObj = aGroovyTask.call();
+            if (tObj instanceof IComplexDouble) {
+                IComplexDouble tValue = (IComplexDouble)tObj;
+                tRealData[i] = tValue.real();
+                tImagData[i] = tValue.imag();
+            } else
+            if (tObj instanceof Number) {
+                tRealData[i] = ((Number)tObj).doubleValue();
+                tImagData[i] = 0.0;
+            } else {
+                tRealData[i] = Double.NaN;
+                tImagData[i] = 0.0;
             }
         }
     }
@@ -1201,33 +1113,18 @@ public class ARRAY {
     public static void ebeFill2This(double[] rThis, int rShift, double[] aDataR, int aShiftR, int aLength) {
         System.arraycopy(aDataR, aShiftR, rThis, rShift, aLength);
     }
-    public static void vecFill2This(double[] rThis, int rShift, int aLength, boolean aReverse, IVectorGetter aVec) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) rThis[i] = aVec.get(j);
-        } else {
-            final int tEnd = aLength + rShift;
-            if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
-            else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
-        }
+    public static void vecFill2This(double[] rThis, int rShift, int aLength, IVectorGetter aVec) {
+        final int tEnd = aLength + rShift;
+        if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
+        else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
     }
-    public static void assign2This(double[] rThis, int rShift, int aLength, boolean aReverse, DoubleSupplier aSup) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) rThis[i] = aSup.getAsDouble();
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsDouble();
-        }
+    public static void assign2This(double[] rThis, int rShift, int aLength, DoubleSupplier aSup) {
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsDouble();
     }
-    public static void forEachOfThis(double[] aThis, int aShift, int aLength, boolean aReverse, DoubleConsumer aCon) {
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) aCon.accept(aThis[i]);
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
-        }
+    public static void forEachOfThis(double[] aThis, int aShift, int aLength, DoubleConsumer aCon) {
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
     }
     
     public static void mapFill2This(boolean[] rThis, int rShift, boolean aRHS, int aLength) {
@@ -1237,33 +1134,18 @@ public class ARRAY {
     public static void ebeFill2This(boolean[] rThis, int rShift, boolean[] aDataR, int aShiftR, int aLength) {
         System.arraycopy(aDataR, aShiftR, rThis, rShift, aLength);
     }
-    public static void vecFill2This(boolean[] rThis, int rShift, int aLength, boolean aReverse, ILogicalVectorGetter aVec) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) rThis[i] = aVec.get(j);
-        } else {
-            final int tEnd = aLength + rShift;
-            if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
-            else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
-        }
+    public static void vecFill2This(boolean[] rThis, int rShift, int aLength, ILogicalVectorGetter aVec) {
+        final int tEnd = aLength + rShift;
+        if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
+        else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
     }
-    public static void assign2This(boolean[] rThis, int rShift, int aLength, boolean aReverse, BooleanSupplier aSup) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) rThis[i] = aSup.getAsBoolean();
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsBoolean();
-        }
+    public static void assign2This(boolean[] rThis, int rShift, int aLength, BooleanSupplier aSup) {
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsBoolean();
     }
-    public static void forEachOfThis(boolean[] aThis, int aShift, int aLength, boolean aReverse, IBooleanConsumer aCon) {
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) aCon.accept(aThis[i]);
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
-        }
+    public static void forEachOfThis(boolean[] aThis, int aShift, int aLength, IBooleanConsumer aCon) {
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
     }
     
     public static void mapFill2This(int[] rThis, int rShift, int aRHS, int aLength) {
@@ -1273,33 +1155,18 @@ public class ARRAY {
     public static void ebeFill2This(int[] rThis, int rShift, int[] aDataR, int aShiftR, int aLength) {
         System.arraycopy(aDataR, aShiftR, rThis, rShift, aLength);
     }
-    public static void vecFill2This(int[] rThis, int rShift, int aLength, boolean aReverse, IIntVectorGetter aVec) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) rThis[i] = aVec.get(j);
-        } else {
-            final int tEnd = aLength + rShift;
-            if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
-            else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
-        }
+    public static void vecFill2This(int[] rThis, int rShift, int aLength, IIntVectorGetter aVec) {
+        final int tEnd = aLength + rShift;
+        if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
+        else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
     }
-    public static void assign2This(int[] rThis, int rShift, int aLength, boolean aReverse, IntSupplier aSup) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) rThis[i] = aSup.getAsInt();
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsInt();
-        }
+    public static void assign2This(int[] rThis, int rShift, int aLength, IntSupplier aSup) {
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsInt();
     }
-    public static void forEachOfThis(int[] aThis, int aShift, int aLength, boolean aReverse, IntConsumer aCon) {
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) aCon.accept(aThis[i]);
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
-        }
+    public static void forEachOfThis(int[] aThis, int aShift, int aLength, IntConsumer aCon) {
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
     }
     
     public static void mapFill2This(long[] rThis, int rShift, long aRHS, int aLength) {
@@ -1309,33 +1176,18 @@ public class ARRAY {
     public static void ebeFill2This(long[] rThis, int rShift, long[] aDataR, int aShiftR, int aLength) {
         System.arraycopy(aDataR, aShiftR, rThis, rShift, aLength);
     }
-    public static void vecFill2This(long[] rThis, int rShift, int aLength, boolean aReverse, ILongVectorGetter aVec) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM, j = 0; i >= rShift; --i, ++j) rThis[i] = aVec.get(j);
-        } else {
-            final int tEnd = aLength + rShift;
-            if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
-            else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
-        }
+    public static void vecFill2This(long[] rThis, int rShift, int aLength, ILongVectorGetter aVec) {
+        final int tEnd = aLength + rShift;
+        if (rShift == 0) {for (int i = rShift; i < tEnd; ++i) rThis[i] = aVec.get(i);}
+        else {for (int i = rShift, j = 0; i < tEnd; ++i, ++j) rThis[i] = aVec.get(j);}
     }
-    public static void assign2This(long[] rThis, int rShift, int aLength, boolean aReverse, LongSupplier aSup) {
-        if (aReverse) {
-            final int tEndMM = aLength + rShift - 1;
-            for (int i = tEndMM; i >= rShift; --i) rThis[i] = aSup.getAsLong();
-        } else {
-            final int tEnd = aLength + rShift;
-            for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsLong();
-        }
+    public static void assign2This(long[] rThis, int rShift, int aLength, LongSupplier aSup) {
+        final int tEnd = aLength + rShift;
+        for (int i = rShift; i < tEnd; ++i) rThis[i] = aSup.getAsLong();
     }
-    public static void forEachOfThis(long[] aThis, int aShift, int aLength, boolean aReverse, LongConsumer aCon) {
-        if (aReverse) {
-            final int tEndMM = aLength + aShift - 1;
-            for (int i = tEndMM; i >= aShift; --i) aCon.accept(aThis[i]);
-        } else {
-            final int tEnd = aLength + aShift;
-            for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
-        }
+    public static void forEachOfThis(long[] aThis, int aShift, int aLength, LongConsumer aCon) {
+        final int tEnd = aLength + aShift;
+        for (int i = aShift; i < tEnd; ++i) aCon.accept(aThis[i]);
     }
     
     /** stat stuff */

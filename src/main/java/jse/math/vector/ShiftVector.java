@@ -58,15 +58,6 @@ public final class ShiftVector extends DoubleArrayVector {
         return new ShiftVector(aToIdx-aFromIdx, aFromIdx+mShift, mData);
     }
     
-    /** Optimize stuffs，引用反转直接返回 {@link ShiftReverseVector} */
-    @Override public IVectorOperation operation() {
-        return new DoubleArrayVectorOperation_() {
-            @Override public ShiftReverseVector refReverse() {
-                return new ShiftReverseVector(mSize, mShift, mData);
-            }
-        };
-    }
-    
     /** Optimize stuffs，重写加速这些操作 */
     @Override public void swap(int aIdx1, int aIdx2) {
         biRangeCheck(aIdx1, aIdx2, mSize);

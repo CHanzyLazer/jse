@@ -143,9 +143,9 @@ public abstract class BooleanArrayVectorOperation extends AbstractLogicalVectorO
         if (tDataR != null) ARRAY.ebeFill2This(rThis.internalData(), rThis.internalDataShift(), tDataR, IDataShell.internalDataShift(aRHS), rThis.internalDataSize());
         else DATA.ebeFill2This(rThis, aRHS);
     }
-    @Override public void fill              (ILogicalVectorGetter aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aRHS);}
-    @Override public void assign            (BooleanSupplier      aSup) {BooleanArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aSup);}
-    @Override public void forEach           (IBooleanConsumer     aCon) {BooleanArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), rThis.isReverse(), aCon);}
+    @Override public void fill              (ILogicalVectorGetter aRHS) {BooleanArrayVector rThis = thisVector_(); ARRAY.vecFill2This (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aRHS);}
+    @Override public void assign            (BooleanSupplier      aSup) {BooleanArrayVector rThis = thisVector_(); ARRAY.assign2This  (rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aSup);}
+    @Override public void forEach           (IBooleanConsumer     aCon) {BooleanArrayVector rThis = thisVector_(); ARRAY.forEachOfThis(rThis.internalData(), rThis.internalDataShift(), rThis.internalDataSize(), aCon);}
     
     @Override public boolean        all     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.allOfThis  (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}
     @Override public boolean        any     () {BooleanArrayVector tThis = thisVector_(); return ARRAY.anyOfThis  (tThis.internalData(), tThis.internalDataShift(), tThis.internalDataSize());}

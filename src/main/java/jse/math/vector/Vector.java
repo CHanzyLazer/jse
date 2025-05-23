@@ -100,15 +100,6 @@ public class Vector extends DoubleArrayVector {
         return aFromIdx==0 ? new Vector(aToIdx, mData) : new ShiftVector(aToIdx-aFromIdx, aFromIdx, mData);
     }
     
-    /** Optimize stuffs，引用反转直接返回 {@link ReverseVector} */
-    @Override public final IVectorOperation operation() {
-        return new DoubleArrayVectorOperation_() {
-            @Override public ReverseVector refReverse() {
-                return new ReverseVector(mSize, mData);
-            }
-        };
-    }
-    
     /** Optimize stuffs，重写加速这些操作 */
     @Override public final void swap(int aIdx1, int aIdx2) {
         biRangeCheck(aIdx1, aIdx2, mSize);

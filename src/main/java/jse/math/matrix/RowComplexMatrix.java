@@ -204,7 +204,7 @@ public class RowComplexMatrix extends BiDoubleArrayMatrix {
                 }
             }
             @Override public void assignRow(Closure<?> aGroovyTask) {
-                ARRAY.assign2This(internalData(), internalDataShift(), internalDataSize(), false, aGroovyTask);
+                ARRAY.assign2This(internalData(), internalDataShift(), internalDataSize(), aGroovyTask);
             }
             
             @Override public ColumnComplexMatrix refTranspose() {
