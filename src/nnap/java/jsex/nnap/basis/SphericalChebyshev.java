@@ -50,13 +50,14 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
     public final static int DEFAULT_NMAX = 5;
     public final static int DEFAULT_LMAX = 6;
     public final static int DEFAULT_L3MAX = 0;
+    public final static boolean DEFAULT_NORADIAL = false;
     public final static boolean DEFAULT_L3CROSS = true;
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
     final int mTypeNum;
     final String @Nullable[] mSymbols;
     final int mNMax, mLMax, mL3Max;
-    final boolean mL3Cross;
+    final boolean mNoRadial, mL3Cross;
     final double mRCut;
     final int mWType;
     
@@ -74,7 +75,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
     final DoubleList mNlY = new DoubleList(1024);
     final DoubleList mNlRn = new DoubleList(128);
     
-    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
+    SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, double aRCut, int aWType) {
         if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Positive, input: "+aTypeNum);
         if (aNMax < 0) throw new IllegalArgumentException("Input nmax MUST be Non-Negative, input: "+aNMax);
         if (aLMax<0 || aLMax>20) throw new IllegalArgumentException("Input lmax MUST be in [0, 20], input: "+aLMax);
@@ -85,12 +86,13 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         mNMax = aNMax;
         mLMax = aLMax;
         mL3Max = aL3Max;
+        mNoRadial = aNoRadial;
         mL3Cross = aL3Cross;
         mRCut = aRCut;
         mWType = aWType;
         
         mSizeN = sizeN_(mNMax, mTypeNum, mWType);
-        mSizeL = mLMax+1 + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
+        mSizeL = (mNoRadial?mLMax:(mLMax+1)) + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
         mSize = mSizeN*mSizeL;
         mLMaxMax = Math.max(mLMax, mL3Max);
         mLMAll = (mLMaxMax+1)*(mLMaxMax+1);
@@ -120,7 +122,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
      * @param aRCut 截断半径
      */
     public SphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aLMax, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
+        this(aSymbols, aSymbols.length, aNMax, aLMax, DEFAULT_NORADIAL, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -129,7 +131,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
      * @param aRCut 截断半径
      */
     public SphericalChebyshev(int aTypeNum, int aNMax, int aLMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aLMax, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
+        this(null, aTypeNum, aNMax, aLMax, DEFAULT_NORADIAL, DEFAULT_L3MAX, DEFAULT_L3CROSS, aRCut, WTYPE_DEFAULT);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -137,6 +139,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         rSaveTo.put("type", "spherical_chebyshev");
         rSaveTo.put("nmax", mNMax);
         rSaveTo.put("lmax", mLMax);
+        rSaveTo.put("noradial", mNoRadial);
         rSaveTo.put("l3max", mL3Max);
         rSaveTo.put("l3cross", mL3Cross);
         rSaveTo.put("rcut", mRCut);
@@ -149,6 +152,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
             aSymbols, aSymbols.length,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
+            (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_NORADIAL, "noradial"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
@@ -161,6 +165,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
             null, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
+            (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_NORADIAL, "noradial"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_L3CROSS, "l3cross"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
@@ -298,11 +303,11 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
         BASIS.rangeCheck(rFp.size(), mSize);
         eval1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
               mRn.internalData(), mY.internalData(), mCnlm.internalData(), rFp.internalData(),
-              mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
+              mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rRn, double[] rY, double[] rCnlm, double[] rFp,
-                                     int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
+                                     int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType);
     
     void evalPartial0(int aNN, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz,
                       @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
@@ -340,7 +345,7 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
                      rFpPxCross!=null?rFpPxCross.internalData():null,
                      rFpPyCross!=null?rFpPyCross.internalData():null,
                      rFpPzCross!=null?rFpPzCross.internalData():null,
-                     mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL3Cross, mWType);
+                     mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType);
     }
     private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                             double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
@@ -348,5 +353,5 @@ public class SphericalChebyshev extends NNAPWTypeBasis implements IBasis {
                                             double[] rCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
                                             double[] rFp, double[] rFpPx, double[] rFpPy, double[] rFpPz,
                                             double @Nullable[] rFpPxCross, double @Nullable[] rFpPyCross, double @Nullable[] rFpPzCross,
-                                            int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, boolean aL3Cross, int aWType);
+                                            int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType);
 }

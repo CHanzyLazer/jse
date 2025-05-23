@@ -15,7 +15,7 @@ import java.util.Map;
 import static jse.code.OS.JAR_DIR;
 
 /**
- * 基组工具类，主要用来初始化基组相关的 jni 库
+ * 基组工具类，主要用来初始化基组相关的 jni 库，以及一些通用的方法
  * @author liqa
  */
 public final class BASIS {

@@ -14,7 +14,7 @@ static inline void calFp(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlT
         double dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
         double dis = sqrt(dx*dx + dy*dy + dz*dz);
         // cal fc
-        double fc = pow4(1.0 - pow2(dis/aRCut));
+        double fc = pow4_jse(1.0 - pow2_jse(dis/aRCut));
         // cal Rn
         double tRnX = 1.0 - 2.0*dis/aRCut;
         double *tRn = aBufferNl ? (rNlRn + j*(aNMax+1)) : rNlRn;
@@ -208,8 +208,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
         double dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
         double dis = sqrt(dx*dx + dy*dy + dz*dz);
         // cal fc
-        double fcMul = 1.0 - pow2(dis/aRCut);
-        double fcMul3 = pow3(fcMul);
+        double fcMul = 1.0 - pow2_jse(dis/aRCut);
+        double fcMul3 = pow3_jse(fcMul);
         double fc = fcMul3 * fcMul;
         double fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
         double fcPx = dx * fcPMul;

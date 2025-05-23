@@ -13,21 +13,33 @@
 /** mimalloc stuffs */
 #ifdef USE_MIMALLOC
     #include "mimalloc.h"
+    #undef MALLOCN
     #define MALLOCN(count, size) (mi_mallocn(count, size))
+    #undef CALLOC
     #define CALLOC(count, size) (mi_calloc(count, size))
+    #undef MALLOCN_TP
     #define MALLOCN_TP(tp, n) ((tp*)mi_mallocn(n, sizeof(tp)))
+    #undef CALLOC_TP
     #define CALLOC_TP(tp, n) ((tp*)mi_calloc(n, sizeof(tp)))
+    #undef FREE
     #define FREE(ptr) (mi_free(ptr))
+    #undef STRDUP
     #define STRDUP(str) (mi_strdup(str))
 #else
     #include <stdlib.h>
+    #undef MALLOCN
     #define MALLOCN(count, size) (malloc((count) * (size)))
+    #undef CALLOC
     #define CALLOC(count, size) (calloc(count, size))
+    #undef MALLOCN_TP
     #define MALLOCN_TP(tp, n) ((tp*)malloc((n) * sizeof(tp)))
+    #undef CALLOC_TP
     #define CALLOC_TP(tp, n) ((tp*)calloc(n, sizeof(tp)))
+    #undef FREE
     #define FREE(ptr) (free(ptr))
     
     #include <string.h>
+    #undef STRDUP
     #if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
     #define STRDUP(str) (_strdup(str))
     #else
@@ -39,14 +51,23 @@
 
 
 /** jarray type stuffs */
+#undef JTYPE_NULL
 #define JTYPE_NULL      (0)
+#undef JTYPE_BYTE
 #define JTYPE_BYTE      (1)
+#undef JTYPE_DOUBLE
 #define JTYPE_DOUBLE    (2)
+#undef JTYPE_BOOLEAN
 #define JTYPE_BOOLEAN   (3)
+#undef JTYPE_CHAR
 #define JTYPE_CHAR      (4)
+#undef JTYPE_SHORT
 #define JTYPE_SHORT     (5)
+#undef JTYPE_INT
 #define JTYPE_INT       (6)
+#undef JTYPE_LONG
 #define JTYPE_LONG      (7)
+#undef JTYPE_FLOAT
 #define JTYPE_FLOAT     (8)
 
 #ifdef __cplusplus
@@ -127,6 +148,7 @@ static inline void freeBuf(void *aBuf) {
 }
 
 
+#undef GEN_PARSE_ANY_TO_JANY
 #ifdef __cplusplus
 #define GEN_PARSE_ANY_TO_JANY(CTYPE, JTYPE)                                                                                                 \
 static inline void parse##CTYPE##2##JTYPE##V(JNIEnv *aEnv, JTYPE##Array rJArray, jsize aJStart, const CTYPE *aBuf, jsize aBStart, jsize aLen) {\
@@ -181,6 +203,7 @@ static inline void parsedouble2jdoubleV(JNIEnv *aEnv, jdoubleArray rJArray, jsiz
 static inline void parsedouble2jdouble(JNIEnv *aEnv, jdoubleArray rJArray, const double *aBuf, jsize aLen) {parsedouble2jdoubleV(aEnv, rJArray, 0, aBuf, 0, aLen);}
 
 
+#undef GEN_PARSE_JANY_TO_ANY
 #ifdef __cplusplus
 #define GEN_PARSE_JANY_TO_ANY(JTYPE, CTYPE)                                                                                                 \
 static inline void parse##JTYPE##2##CTYPE##V(JNIEnv *aEnv, JTYPE##Array aJArray, jsize aJStart, CTYPE *rBuf, jsize aBStart, jsize aLen) {   \
@@ -235,6 +258,7 @@ static inline void parsejdouble2doubleV(JNIEnv *aEnv, jdoubleArray aJArray, jsiz
 static inline void parsejdouble2double(JNIEnv *aEnv, jdoubleArray aJArray, double *rBuf, jsize aLen) {parsejdouble2doubleV(aEnv, aJArray, 0, rBuf, 0, aLen);}
 
 
+#undef GEN_PARSE_ANY_TO_JANY_WITH_COUNT
 #ifdef __cplusplus
 #define GEN_PARSE_ANY_TO_JANY_WITH_COUNT(CTYPE, JTYPE)                                                                                                          \
 static inline void parse##CTYPE##2##JTYPE##WithCountV(JNIEnv *aEnv, JTYPE##Array rJArray, jsize aJStart, const void *aBuf, jsize aBStart, jsize aSize, jsize aCount) {\
@@ -353,6 +377,7 @@ static inline void parsedouble2jdoubleWithCount(JNIEnv *aEnv, jdoubleArray rJArr
 }
 
 
+#undef GEN_PARSE_NESTED_ANY_TO_JANY
 #ifdef __cplusplus
 #define GEN_PARSE_NESTED_ANY_TO_JANY(CTYPE, JTYPE)                                                                                          \
 static inline void parsenested##CTYPE##2##JTYPE##V(JNIEnv *aEnv, JTYPE##Array rJArray, jsize aJStart, const CTYPE **aBuf, jsize aBStart, jsize aRowNum, jsize aColNum) {\
@@ -406,6 +431,7 @@ GEN_PARSE_NESTED_ANY_TO_JANY(int64_t, jdouble)
 GEN_PARSE_NESTED_ANY_TO_JANY(double, jdouble)
 
 
+#undef GEN_PARSE_JANY_TO_NESTED_ANY
 #ifdef __cplusplus
 #define GEN_PARSE_JANY_TO_NESTED_ANY(JTYPE, CTYPE)                                                                                          \
 static inline void parse##JTYPE##2nested##CTYPE##V(JNIEnv *aEnv, JTYPE##Array aJArray, jsize aJStart, CTYPE **rBuf, jsize aBStart, jsize aRowNum, jsize aColNum) {\

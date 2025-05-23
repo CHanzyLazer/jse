@@ -8,35 +8,43 @@
 extern "C" {
 #endif
 
+#undef JSE_DBL_MIN_NORMAL
 #define JSE_DBL_MIN_NORMAL (2.2250738585072014E-308)
+#undef JSE_EPS_MUL
 #define JSE_EPS_MUL (8)
+#undef JSE_DBL_EPSILON
 #define JSE_DBL_EPSILON (1.0e-10)
 
+#undef SQRT2
 #define SQRT2 (1.4142135623730951)
+#undef SQRT2_INV
 #define SQRT2_INV (0.7071067811865475)
+#undef SQRT3
 #define SQRT3 (1.7320508075688772)
+#undef SQRT3DIV2
 #define SQRT3DIV2 (1.224744871391589)
 
+#undef PI4
 #define PI4 (12.566370614359172)
 
-static inline double pow2(double value) {
+static inline double pow2_jse(double value) {
     return value * value;
 }
-static inline double pow3(double value) {
+static inline double pow3_jse(double value) {
     return value * value * value;
 }
-static inline double pow4(double value) {
+static inline double pow4_jse(double value) {
     double value2 = value * value;
     return value2 * value2;
 }
-static inline jboolean numericEqual(double aLHS, double aRHS) {
+static inline jboolean numericEqual_jse(double aLHS, double aRHS) {
     double tNorm = fabs(aLHS) + fabs(aRHS);
     if (tNorm < JSE_DBL_MIN_NORMAL * JSE_EPS_MUL) return JNI_TRUE;
     double tDiff = fabs(aLHS - aRHS);
     return (tDiff <= tNorm * JSE_DBL_EPSILON) ? JNI_TRUE : JNI_FALSE;
 }
 
-static inline double dot(double *aArray, jint aLen) {
+static inline double dot_jse(double *aArray, jint aLen) {
     double rDot = 0.0;
     // loop first
     jint tIdx = 0;
