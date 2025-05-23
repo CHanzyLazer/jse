@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
+import static jsex.nnap.basis.BASIS.lengthCheck;
+
 /**
  * 一种仅使用 Chebyshev 多项式将原子局域环境展开成一个基组的方法，
  * 主要用于作为机器学习的输入向量；这不会包含角向序，但是速度可以很快。
@@ -228,14 +230,8 @@ public class Chebyshev extends NNAPWTypeBasis implements IBasis {
     }
     
     void eval0(int aNN, Vector rFp) {
-        BASIS.sizeCheck(mNlDx.size(), aNN);
-        BASIS.sizeCheck(mNlDy.size(), aNN);
-        BASIS.sizeCheck(mNlDz.size(), aNN);
-        BASIS.sizeCheck(mNlType.size(), aNN);
-        BASIS.sizeCheck(mRn.size(), mNMax+1);
-        BASIS.sizeCheck(rFp.size(), mSize);
-        eval1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
-              mRn.internalData(), rFp.internalData(),
+        eval1(lengthCheck(mNlDx.internalData(), aNN), lengthCheck(mNlDy.internalData(), aNN), lengthCheck(mNlDz.internalData(), aNN), lengthCheck(mNlType.internalData(), aNN), aNN,
+              lengthCheck(mRn.internalData(), mNMax+1), lengthCheck(rFp.internalData(), mSize),
               mTypeNum, mRCut, mNMax, mWType);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
@@ -244,28 +240,12 @@ public class Chebyshev extends NNAPWTypeBasis implements IBasis {
     
     void evalPartial0(int aNN, Vector rFp, Vector rFpPx, Vector rFpPy, Vector rFpPz,
                       @Nullable DoubleList rFpPxCross, @Nullable DoubleList rFpPyCross, @Nullable DoubleList rFpPzCross) {
-        BASIS.sizeCheck(mNlDx.size(), aNN);
-        BASIS.sizeCheck(mNlDy.size(), aNN);
-        BASIS.sizeCheck(mNlDz.size(), aNN);
-        BASIS.sizeCheck(mNlType.size(), aNN);
-        BASIS.sizeCheck(mNlRn.size(), aNN*(mNMax+1));
-        BASIS.sizeCheck(mRnPx.size(), mNMax+1);
-        BASIS.sizeCheck(mRnPy.size(), mNMax+1);
-        BASIS.sizeCheck(mRnPz.size(), mNMax+1);
-        BASIS.sizeCheck(mCheby2.size(), mNMax);
-        BASIS.sizeCheck(rFp.size(), mSize);
-        BASIS.sizeCheck(rFpPx.size(), mSize);
-        BASIS.sizeCheck(rFpPy.size(), mSize);
-        BASIS.sizeCheck(rFpPz.size(), mSize);
-        if (rFpPxCross != null) BASIS.sizeCheck(rFpPxCross.size(), aNN*mSize);
-        if (rFpPyCross != null) BASIS.sizeCheck(rFpPyCross.size(), aNN*mSize);
-        if (rFpPzCross != null) BASIS.sizeCheck(rFpPzCross.size(), aNN*mSize);
-        evalPartial1(mNlDx.internalData(), mNlDy.internalData(), mNlDz.internalData(), mNlType.internalData(), aNN,
-                     mNlRn.internalData(), mRnPx.internalData(), mRnPy.internalData(), mRnPz.internalData(), mCheby2.internalData(),
-                     rFp.internalData(), rFpPx.internalData(), rFpPy.internalData(), rFpPz.internalData(),
-                     rFpPxCross!=null?rFpPxCross.internalData():null,
-                     rFpPyCross!=null?rFpPyCross.internalData():null,
-                     rFpPzCross!=null?rFpPzCross.internalData():null,
+        evalPartial1(lengthCheck(mNlDx.internalData(), aNN), lengthCheck(mNlDy.internalData(), aNN), lengthCheck(mNlDz.internalData(), aNN), lengthCheck(mNlType.internalData(), aNN), aNN,
+                     lengthCheck(mNlRn.internalData(), aNN*(mNMax+1)), lengthCheck(mRnPx.internalData(), mNMax+1), lengthCheck(mRnPy.internalData(), mNMax+1), lengthCheck(mRnPz.internalData(), mNMax+1), lengthCheck(mCheby2.internalData(), mNMax),
+                     lengthCheck(rFp.internalData(), mSize), lengthCheck(rFpPx.internalData(), mSize), lengthCheck(rFpPy.internalData(), mSize), lengthCheck(rFpPz.internalData(), mSize),
+                     rFpPxCross!=null?lengthCheck(rFpPxCross.internalData(), aNN*mSize):null,
+                     rFpPyCross!=null?lengthCheck(rFpPyCross.internalData(), aNN*mSize):null,
+                     rFpPzCross!=null?lengthCheck(rFpPzCross.internalData(), aNN*mSize):null,
                      mTypeNum, mRCut, mNMax, mWType);
     }
     private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,

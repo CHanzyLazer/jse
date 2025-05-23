@@ -117,21 +117,19 @@ public final class BASIS {
     
     @ApiStatus.Internal
     public static void forceDot0(double[] aXGrad, double[] aFpPx, double[] aFpPy, double[] aFpPz, int aShift, int aLength, double[] aFpPxCross, double[] aFpPyCross, double[] aFpPzCross, double[] rFx, double[] rFy, double[] rFz, int aNN) {
-        sizeCheck(aXGrad.length, aShift+aLength);
-        sizeCheck(aFpPx.length, aLength);
-        sizeCheck(aFpPy.length, aLength);
-        sizeCheck(aFpPz.length, aLength);
-        sizeCheck(aFpPxCross.length, aLength*aNN);
-        sizeCheck(aFpPyCross.length, aLength*aNN);
-        sizeCheck(aFpPzCross.length, aLength*aNN);
-        sizeCheck(rFx.length, aNN+1);
-        sizeCheck(rFy.length, aNN+1);
-        sizeCheck(rFz.length, aNN+1);
-        forceDot1(aXGrad, aFpPx, aFpPy, aFpPz, aShift, aLength, aFpPxCross, aFpPyCross, aFpPzCross, rFx, rFy, rFz, aNN);
+        forceDot1(lengthCheck(aXGrad, aShift+aLength),
+                  lengthCheck(aFpPx, aLength), lengthCheck(aFpPy, aLength), lengthCheck(aFpPz, aLength), aShift, aLength,
+                  lengthCheck(aFpPxCross, aLength*aNN), lengthCheck(aFpPyCross, aLength*aNN), lengthCheck(aFpPzCross, aLength*aNN),
+                  lengthCheck(rFx, aNN+1), lengthCheck(rFy, aNN+1), lengthCheck(rFz, aNN+1), aNN);
     }
     private static native void forceDot1(double[] aXGrad, double[] aFpPx, double[] aFpPy, double[] aFpPz, int aShift, int aLength, double[] aFpPxCross, double[] aFpPyCross, double[] aFpPzCross, double[] rFx, double[] rFy, double[] rFz, int aNN);
     
-    static void sizeCheck(int jArraySize, int aCount) {
-        if (aCount > jArraySize) throw new IndexOutOfBoundsException(aCount+" > "+jArraySize);
+    static int[] lengthCheck(int[] jArray, int aLength) {
+        if (aLength > jArray.length) throw new IndexOutOfBoundsException(aLength+" > "+jArray.length);
+        return jArray;
+    }
+    static double[] lengthCheck(double[] jArray, int aLength) {
+        if (aLength > jArray.length) throw new IndexOutOfBoundsException(aLength+" > "+jArray.length);
+        return jArray;
     }
 }
