@@ -153,19 +153,6 @@ static inline void calRnPxyz(double *rRnPx, double *rRnPy, double *rRnPz, double
     }
 }
 
-static inline void putFpPxyz(double *rFpPx, double *rFpPy, double *rFpPz,
-                             double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
-                             double aSubFpPx, double aSubFpPy, double aSubFpPz, jint aIdxFp) {
-    rFpPx[aIdxFp] -= aSubFpPx;
-    rFpPy[aIdxFp] -= aSubFpPy;
-    rFpPz[aIdxFp] -= aSubFpPz;
-    if (rFpPxCross != NULL) {
-        rFpPxCross[aIdxFp] += aSubFpPx;
-        rFpPyCross[aIdxFp] += aSubFpPy;
-        rFpPzCross[aIdxFp] += aSubFpPz;
-    }
-}
-
 #ifdef __cplusplus
 }
 #endif

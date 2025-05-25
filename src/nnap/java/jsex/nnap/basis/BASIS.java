@@ -118,15 +118,14 @@ public final class BASIS {
     
     @ApiStatus.Internal
     public static void forceDot0(IDataShell<double[]> aXGrad, IDataShell<double[]> aFpPx, IDataShell<double[]> aFpPy, IDataShell<double[]> aFpPz,
-                                 IDataShell<double[]> aFpPxCross, IDataShell<double[]> aFpPyCross, IDataShell<double[]> aFpPzCross, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, int aNN) {
+                                 IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, int aNN) {
         int tLength = aXGrad.internalDataSize();
         int tShift = aXGrad.internalDataShift();
-        forceDot1(lengthCheck(aXGrad, tLength, tShift),
-                  lengthCheck(aFpPx, tLength), lengthCheck(aFpPy, tLength), lengthCheck(aFpPz, tLength), tShift, tLength,
-                  lengthCheck(aFpPxCross, tLength*aNN), lengthCheck(aFpPyCross, tLength*aNN), lengthCheck(aFpPzCross, tLength*aNN),
-                  lengthCheck(rFx, aNN+1), lengthCheck(rFy, aNN+1), lengthCheck(rFz, aNN+1), aNN);
+        forceDot1(lengthCheck(aXGrad, tLength, tShift), tShift, tLength,
+                  lengthCheck(aFpPx, tLength*aNN), lengthCheck(aFpPy, tLength*aNN), lengthCheck(aFpPz, tLength*aNN),
+                  lengthCheck(rFx, aNN), lengthCheck(rFy, aNN), lengthCheck(rFz, aNN), aNN);
     }
-    private static native void forceDot1(double[] aXGrad, double[] aFpPx, double[] aFpPy, double[] aFpPz, int aShift, int aLength, double[] aFpPxCross, double[] aFpPyCross, double[] aFpPzCross, double[] rFx, double[] rFy, double[] rFz, int aNN);
+    private static native void forceDot1(double[] aXGrad, int aShift, int aLength, double[] aFpPx, double[] aFpPy, double[] aFpPz, double[] rFx, double[] rFy, double[] rFz, int aNN);
     
     static int[] lengthCheckI(IDataShell<int[]> aData, int aLength) {
         return lengthCheckI(aData, aLength, 0);

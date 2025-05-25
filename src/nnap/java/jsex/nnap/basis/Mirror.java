@@ -51,18 +51,11 @@ public class Mirror implements IBasis {
             dxyzTypeDo.run(dx, dy, dz, type);
         }), rFp);
     }
-    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz) {
+    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
         mMirrorBasis.evalPartial(dxyzTypeDo -> aNL.forEachDxyzType((dx, dy, dz, type) -> {
             if (type == mThisType) type = mMirrorType;
             else if (type == mMirrorType) type = mThisType;
             dxyzTypeDo.run(dx, dy, dz, type);
         }), rFp, rFpPx, rFpPy, rFpPz);
-    }
-    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz, DoubleList rFpPxCross, DoubleList rFpPyCross, DoubleList rFpPzCross) {
-        mMirrorBasis.evalPartial(dxyzTypeDo -> aNL.forEachDxyzType((dx, dy, dz, type) -> {
-            if (type == mThisType) type = mMirrorType;
-            else if (type == mMirrorType) type = mThisType;
-            dxyzTypeDo.run(dx, dy, dz, type);
-        }), rFp, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross);
     }
 }

@@ -234,16 +234,13 @@ public class NNAP implements IPairPotential {
         public IBasis basis(int aThreadID) {return mBasis[aThreadID];}
         
         /// 现在使用全局的缓存实现，可以进一步减少内存池的调用操作
-        private final Vector[][] mFp, mFpPx, mFpPy, mFpPz;
-        private final DoubleList[][] mFpPxCross, mFpPyCross, mFpPzCross;
+        private final Vector[][] mFp;
+        private final DoubleList[][] mFpPx, mFpPy, mFpPz;
         
         private Vector bufFp(int aThreadID) {return mFp[aThreadID][mBatchedSize[aThreadID]];}
-        private Vector bufFpPx(int aThreadID) {return mFpPx[aThreadID][mBatchedSize[aThreadID]];}
-        private Vector bufFpPy(int aThreadID) {return mFpPy[aThreadID][mBatchedSize[aThreadID]];}
-        private Vector bufFpPz(int aThreadID) {return mFpPz[aThreadID][mBatchedSize[aThreadID]];}
-        private DoubleList bufFpPxCross(int aThreadID) {return mFpPxCross[aThreadID][mBatchedSize[aThreadID]];}
-        private DoubleList bufFpPyCross(int aThreadID) {return mFpPyCross[aThreadID][mBatchedSize[aThreadID]];}
-        private DoubleList bufFpPzCross(int aThreadID) {return mFpPzCross[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPx(int aThreadID) {return mFpPx[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPy(int aThreadID) {return mFpPy[aThreadID][mBatchedSize[aThreadID]];}
+        private DoubleList bufFpPz(int aThreadID) {return mFpPz[aThreadID][mBatchedSize[aThreadID]];}
         
         private final DoubleList[] mForceX, mForceY, mForceZ;
         private DoubleList bufForceX(int aThreadID, int aSizeMin) {
@@ -310,20 +307,14 @@ public class NNAP implements IPairPotential {
             mBatchedSize = new int[mThreadNumber];
             
             mFp = new Vector[mThreadNumber][BATCH_SIZE];
-            mFpPx = new Vector[mThreadNumber][BATCH_SIZE];
-            mFpPy = new Vector[mThreadNumber][BATCH_SIZE];
-            mFpPz = new Vector[mThreadNumber][BATCH_SIZE];
-            mFpPxCross = new DoubleList[mThreadNumber][BATCH_SIZE];
-            mFpPyCross = new DoubleList[mThreadNumber][BATCH_SIZE];
-            mFpPzCross = new DoubleList[mThreadNumber][BATCH_SIZE];
+            mFpPx = new DoubleList[mThreadNumber][BATCH_SIZE];
+            mFpPy = new DoubleList[mThreadNumber][BATCH_SIZE];
+            mFpPz = new DoubleList[mThreadNumber][BATCH_SIZE];
             for (int i = 0; i < mThreadNumber; ++i) for (int j = 0; j < BATCH_SIZE; ++j) {
                 mFp[i][j] = VectorCache.getVec(mBasisSize);
-                mFpPx[i][j] = VectorCache.getVec(mBasisSize);
-                mFpPy[i][j] = VectorCache.getVec(mBasisSize);
-                mFpPz[i][j] = VectorCache.getVec(mBasisSize);
-                mFpPxCross[i][j] = new DoubleList(1024);
-                mFpPyCross[i][j] = new DoubleList(1024);
-                mFpPzCross[i][j] = new DoubleList(1024);
+                mFpPx[i][j] = new DoubleList(1024);
+                mFpPy[i][j] = new DoubleList(1024);
+                mFpPz[i][j] = new DoubleList(1024);
             }
             mForceX = new DoubleList[mThreadNumber];
             mForceY = new DoubleList[mThreadNumber];
@@ -529,9 +520,6 @@ public class NNAP implements IPairPotential {
                 VectorCache.returnVec(tModel.mBatchedY);
                 for (int i = 0; i < mThreadNumber; ++i) for (int j = 0; j < BATCH_SIZE; ++j) {
                     VectorCache.returnVec(tModel.mFp[i][j]);
-                    VectorCache.returnVec(tModel.mFpPx[i][j]);
-                    VectorCache.returnVec(tModel.mFpPy[i][j]);
-                    VectorCache.returnVec(tModel.mFpPz[i][j]);
                 }
                 for (int i = 0; i < mThreadNumber; ++i) {
                     tModel.basis(i).shutdown();
@@ -615,16 +603,13 @@ public class NNAP implements IPairPotential {
                 final IBasis tBasis = tModel.basis(threadID);
                 final int tBasisSize = tBasis.size();
                 final Vector tFp = tModel.bufFp(threadID);
-                final Vector tFpPx = tModel.bufFpPx(threadID);
-                final Vector tFpPy = tModel.bufFpPy(threadID);
-                final Vector tFpPz = tModel.bufFpPz(threadID);
-                final DoubleList tFpPxCross = tModel.bufFpPxCross(threadID);
-                final DoubleList tFpPyCross = tModel.bufFpPyCross(threadID);
-                final DoubleList tFpPzCross = tModel.bufFpPzCross(threadID);
+                final DoubleList tFpPx = tModel.bufFpPx(threadID);
+                final DoubleList tFpPy = tModel.bufFpPy(threadID);
+                final DoubleList tFpPz = tModel.bufFpPz(threadID);
                 tBasis.evalPartial(dxyzTypeDo -> {
                     nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> dxyzTypeDo.run(dx, dy, dz, type));
-                }, tFp, tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross);
-                final int tNN = tFpPxCross.size()/tBasisSize;
+                }, tFp, tFpPx, tFpPy, tFpPz);
+                final int tNN = tFpPx.size()/tBasisSize;
                 tModel.normBasis(tFp);
                 tModel.submitBatchBackward(threadID, tFp, rEnergyAccumulator==null ? null : pred -> {
                     pred = tModel.denormEng(pred);
@@ -633,23 +618,19 @@ public class NNAP implements IPairPotential {
                 }, xGrad -> {
                     tModel.normBasisPartial(xGrad);
                     tModel.denormEngPartial(xGrad);
-                    final DoubleList tForceX = tModel.bufForceX(threadID, tNN+1);
-                    final DoubleList tForceY = tModel.bufForceY(threadID, tNN+1);
-                    final DoubleList tForceZ = tModel.bufForceZ(threadID, tNN+1);
-                    BASIS.forceDot0(xGrad, tFpPx, tFpPy, tFpPz,
-                                    tFpPxCross, tFpPyCross, tFpPzCross, tForceX, tForceY, tForceZ, tNN);
-                    if (rForceAccumulator != null) {
-                        rForceAccumulator.add(threadID, cIdx, -1, tForceX.get(0), tForceY.get(0), tForceZ.get(0));
-                    }
+                    final DoubleList tForceX = tModel.bufForceX(threadID, tNN);
+                    final DoubleList tForceY = tModel.bufForceY(threadID, tNN);
+                    final DoubleList tForceZ = tModel.bufForceZ(threadID, tNN);
+                    BASIS.forceDot0(xGrad, tFpPx, tFpPy, tFpPz, tForceX, tForceY, tForceZ, tNN);
                     // 累加交叉项到近邻
-                    final int[] j = {1};
+                    final int[] j = {0};
                     nl.forEachDxyzTypeIdx(tBasis.rcut(), (dx, dy, dz, type, idx) -> {
                         // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查
                         double fx = -tForceX.get(j[0]);
                         double fy = -tForceY.get(j[0]);
                         double fz = -tForceZ.get(j[0]);
                         if (rForceAccumulator != null) {
-                            rForceAccumulator.add(threadID, -1, idx, fx, fy, fz);
+                            rForceAccumulator.add(threadID, cIdx, idx, fx, fy, fz);
                         }
                         if (rVirialAccumulator != null) {
                             rVirialAccumulator.add(threadID, cIdx, -1, dx*fx, dy*fy, dz*fz, dx*fy, dx*fz, dy*fz);

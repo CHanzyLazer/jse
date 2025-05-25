@@ -172,17 +172,12 @@ public class PairNNAP extends LmpPlugin.Pair {
                 eatomVec.add(cIdx, eng);
             }
         }, (threadID, cIdx, idx, fx, fy, fz) -> {
-            if (cIdx >= 0) {
-                if (idx >= 0) throw new IllegalStateException();
-                fMat.update(cIdx, 0, v -> v - fx);
-                fMat.update(cIdx, 1, v -> v - fy);
-                fMat.update(cIdx, 2, v -> v - fz);
-            } else {
-                if (idx < 0) throw new IllegalStateException();
-                fMat.update(idx, 0, v -> v + fx);
-                fMat.update(idx, 1, v -> v + fy);
-                fMat.update(idx, 2, v -> v + fz);
-            }
+            fMat.update(cIdx, 0, v -> v - fx);
+            fMat.update(cIdx, 1, v -> v - fy);
+            fMat.update(cIdx, 2, v -> v - fz);
+            fMat.update(idx, 0, v -> v + fx);
+            fMat.update(idx, 1, v -> v + fy);
+            fMat.update(idx, 2, v -> v + fz);
         }, !vflag ? null : (threadID, cIdx, idx, vxx, vyy, vzz, vxy, vxz, vyz) -> {
             if (idx >= 0) throw new IllegalStateException();
             virialBuf[0] += vxx;

@@ -600,79 +600,66 @@ static inline void calCnlmPxyz(double *rCnlmPx, double *rCnlmPy, double *rCnlmPz
 
 static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                            double *rFpPx, double *rFpPy, double *rFpPz,
-                           double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                            double aWt, jint aLMax, jboolean aNoRadial) {
     // l = 0
     double tCnl0;
     double tMul;
-    double subFpPx, subFpPy, subFpPz;
     double *tFpPx = rFpPx, *tFpPy = rFpPy, *tFpPz = rFpPz;
-    double *tFpPxCross = rFpPxCross, *tFpPyCross = rFpPyCross, *tFpPzCross = rFpPzCross;
     if (!aNoRadial) {
         tCnl0 = aCnlm[0];
         tMul = aWt*(PI4+PI4);
-        subFpPx = tMul * (tCnl0*aCnlmPx[0]);
-        subFpPy = tMul * (tCnl0*aCnlmPy[0]);
-        subFpPz = tMul * (tCnl0*aCnlmPz[0]);
-        putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 0);
+        tFpPx[0] += tMul * (tCnl0*aCnlmPx[0]);
+        tFpPy[0] += tMul * (tCnl0*aCnlmPy[0]);
+        tFpPz[0] += tMul * (tCnl0*aCnlmPz[0]);
         ++tFpPx; ++tFpPy; ++tFpPz;
-        if (rFpPxCross != NULL) {
-            ++tFpPxCross; ++tFpPyCross; ++tFpPzCross;
-        }
     }
     if (aLMax == 0) return;
     // l = 1
     tCnl0 = aCnlm[1]; double tCnl1 = aCnlm[1+1], tCnl2 = aCnlm[1+2];
     tMul = aWt*(PI4/3 + PI4/3);
-    subFpPx = tMul * (tCnl0*aCnlmPx[1] + tCnl1*aCnlmPx[1+1] + tCnl2*aCnlmPx[1+2]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[1] + tCnl1*aCnlmPy[1+1] + tCnl2*aCnlmPy[1+2]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[1] + tCnl1*aCnlmPz[1+1] + tCnl2*aCnlmPz[1+2]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 0);
+    tFpPx[0] += tMul * (tCnl0*aCnlmPx[1] + tCnl1*aCnlmPx[1+1] + tCnl2*aCnlmPx[1+2]);
+    tFpPy[0] += tMul * (tCnl0*aCnlmPy[1] + tCnl1*aCnlmPy[1+1] + tCnl2*aCnlmPy[1+2]);
+    tFpPz[0] += tMul * (tCnl0*aCnlmPz[1] + tCnl1*aCnlmPz[1+1] + tCnl2*aCnlmPz[1+2]);
     if (aLMax == 1) return;
     // l = 2
     tCnl0 = aCnlm[4]; tCnl1 = aCnlm[4+1]; tCnl2 = aCnlm[4+2]; double tCnl3 = aCnlm[4+3], tCnl4 = aCnlm[4+4];
     tMul = aWt*(PI4/5 + PI4/5);
-    subFpPx = tMul * (tCnl0*aCnlmPx[4] + tCnl1*aCnlmPx[4+1] + tCnl2*aCnlmPx[4+2] + tCnl3*aCnlmPx[4+3] + tCnl4*aCnlmPx[4+4]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[4] + tCnl1*aCnlmPy[4+1] + tCnl2*aCnlmPy[4+2] + tCnl3*aCnlmPy[4+3] + tCnl4*aCnlmPy[4+4]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[4] + tCnl1*aCnlmPz[4+1] + tCnl2*aCnlmPz[4+2] + tCnl3*aCnlmPz[4+3] + tCnl4*aCnlmPz[4+4]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 1);
+    tFpPx[1] += tMul * (tCnl0*aCnlmPx[4] + tCnl1*aCnlmPx[4+1] + tCnl2*aCnlmPx[4+2] + tCnl3*aCnlmPx[4+3] + tCnl4*aCnlmPx[4+4]);
+    tFpPy[1] += tMul * (tCnl0*aCnlmPy[4] + tCnl1*aCnlmPy[4+1] + tCnl2*aCnlmPy[4+2] + tCnl3*aCnlmPy[4+3] + tCnl4*aCnlmPy[4+4]);
+    tFpPz[1] += tMul * (tCnl0*aCnlmPz[4] + tCnl1*aCnlmPz[4+1] + tCnl2*aCnlmPz[4+2] + tCnl3*aCnlmPz[4+3] + tCnl4*aCnlmPz[4+4]);
     if (aLMax == 2) return;
     // l = 3
     tCnl0 = aCnlm[9]; tCnl1 = aCnlm[9+1]; tCnl2 = aCnlm[9+2]; tCnl3 = aCnlm[9+3]; tCnl4 = aCnlm[9+4]; double tCnl5 = aCnlm[9+5], tCnl6 = aCnlm[9+6];
     tMul = aWt*(PI4/7 + PI4/7);
-    subFpPx = tMul * (tCnl0*aCnlmPx[9] + tCnl1*aCnlmPx[9+1] + tCnl2*aCnlmPx[9+2] + tCnl3*aCnlmPx[9+3] + tCnl4*aCnlmPx[9+4] + tCnl5*aCnlmPx[9+5] + tCnl6*aCnlmPx[9+6]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[9] + tCnl1*aCnlmPy[9+1] + tCnl2*aCnlmPy[9+2] + tCnl3*aCnlmPy[9+3] + tCnl4*aCnlmPy[9+4] + tCnl5*aCnlmPy[9+5] + tCnl6*aCnlmPy[9+6]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[9] + tCnl1*aCnlmPz[9+1] + tCnl2*aCnlmPz[9+2] + tCnl3*aCnlmPz[9+3] + tCnl4*aCnlmPz[9+4] + tCnl5*aCnlmPz[9+5] + tCnl6*aCnlmPz[9+6]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 2);
+    tFpPx[2] += tMul * (tCnl0*aCnlmPx[9] + tCnl1*aCnlmPx[9+1] + tCnl2*aCnlmPx[9+2] + tCnl3*aCnlmPx[9+3] + tCnl4*aCnlmPx[9+4] + tCnl5*aCnlmPx[9+5] + tCnl6*aCnlmPx[9+6]);
+    tFpPy[2] += tMul * (tCnl0*aCnlmPy[9] + tCnl1*aCnlmPy[9+1] + tCnl2*aCnlmPy[9+2] + tCnl3*aCnlmPy[9+3] + tCnl4*aCnlmPy[9+4] + tCnl5*aCnlmPy[9+5] + tCnl6*aCnlmPy[9+6]);
+    tFpPz[2] += tMul * (tCnl0*aCnlmPz[9] + tCnl1*aCnlmPz[9+1] + tCnl2*aCnlmPz[9+2] + tCnl3*aCnlmPz[9+3] + tCnl4*aCnlmPz[9+4] + tCnl5*aCnlmPz[9+5] + tCnl6*aCnlmPz[9+6]);
     if (aLMax == 3) return;
     // l = 4
     tCnl0 = aCnlm[16]; tCnl1 = aCnlm[16+1]; tCnl2 = aCnlm[16+2]; tCnl3 = aCnlm[16+3]; tCnl4 = aCnlm[16+4]; tCnl5 = aCnlm[16+5]; tCnl6 = aCnlm[16+6]; double tCnl7 = aCnlm[16+7], tCnl8 = aCnlm[16+8];
     tMul = aWt*(PI4/9 + PI4/9);
-    subFpPx = tMul * (tCnl0*aCnlmPx[16] + tCnl1*aCnlmPx[16+1] + tCnl2*aCnlmPx[16+2] + tCnl3*aCnlmPx[16+3] + tCnl4*aCnlmPx[16+4] + tCnl5*aCnlmPx[16+5] + tCnl6*aCnlmPx[16+6] + tCnl7*aCnlmPx[16+7] + tCnl8*aCnlmPx[16+8]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[16] + tCnl1*aCnlmPy[16+1] + tCnl2*aCnlmPy[16+2] + tCnl3*aCnlmPy[16+3] + tCnl4*aCnlmPy[16+4] + tCnl5*aCnlmPy[16+5] + tCnl6*aCnlmPy[16+6] + tCnl7*aCnlmPy[16+7] + tCnl8*aCnlmPy[16+8]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[16] + tCnl1*aCnlmPz[16+1] + tCnl2*aCnlmPz[16+2] + tCnl3*aCnlmPz[16+3] + tCnl4*aCnlmPz[16+4] + tCnl5*aCnlmPz[16+5] + tCnl6*aCnlmPz[16+6] + tCnl7*aCnlmPz[16+7] + tCnl8*aCnlmPz[16+8]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 3);
+    tFpPx[3] += tMul * (tCnl0*aCnlmPx[16] + tCnl1*aCnlmPx[16+1] + tCnl2*aCnlmPx[16+2] + tCnl3*aCnlmPx[16+3] + tCnl4*aCnlmPx[16+4] + tCnl5*aCnlmPx[16+5] + tCnl6*aCnlmPx[16+6] + tCnl7*aCnlmPx[16+7] + tCnl8*aCnlmPx[16+8]);
+    tFpPy[3] += tMul * (tCnl0*aCnlmPy[16] + tCnl1*aCnlmPy[16+1] + tCnl2*aCnlmPy[16+2] + tCnl3*aCnlmPy[16+3] + tCnl4*aCnlmPy[16+4] + tCnl5*aCnlmPy[16+5] + tCnl6*aCnlmPy[16+6] + tCnl7*aCnlmPy[16+7] + tCnl8*aCnlmPy[16+8]);
+    tFpPz[3] += tMul * (tCnl0*aCnlmPz[16] + tCnl1*aCnlmPz[16+1] + tCnl2*aCnlmPz[16+2] + tCnl3*aCnlmPz[16+3] + tCnl4*aCnlmPz[16+4] + tCnl5*aCnlmPz[16+5] + tCnl6*aCnlmPz[16+6] + tCnl7*aCnlmPz[16+7] + tCnl8*aCnlmPz[16+8]);
     if (aLMax == 4) return;
     // l = 5
     tCnl0 = aCnlm[25]; tCnl1 = aCnlm[25+1]; tCnl2 = aCnlm[25+2]; tCnl3 = aCnlm[25+3]; tCnl4 = aCnlm[25+4]; tCnl5 = aCnlm[25+5]; tCnl6 = aCnlm[25+6]; tCnl7 = aCnlm[25+7]; tCnl8 = aCnlm[25+8]; double tCnl9 = aCnlm[25+9], tCnl10 = aCnlm[25+10];
     tMul = aWt*(PI4/11 + PI4/11);
-    subFpPx = tMul * (tCnl0*aCnlmPx[25] + tCnl1*aCnlmPx[25+1] + tCnl2*aCnlmPx[25+2] + tCnl3*aCnlmPx[25+3] + tCnl4*aCnlmPx[25+4] + tCnl5*aCnlmPx[25+5] + tCnl6*aCnlmPx[25+6] + tCnl7*aCnlmPx[25+7] + tCnl8*aCnlmPx[25+8] + tCnl9*aCnlmPx[25+9] + tCnl10*aCnlmPx[25+10]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[25] + tCnl1*aCnlmPy[25+1] + tCnl2*aCnlmPy[25+2] + tCnl3*aCnlmPy[25+3] + tCnl4*aCnlmPy[25+4] + tCnl5*aCnlmPy[25+5] + tCnl6*aCnlmPy[25+6] + tCnl7*aCnlmPy[25+7] + tCnl8*aCnlmPy[25+8] + tCnl9*aCnlmPy[25+9] + tCnl10*aCnlmPy[25+10]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[25] + tCnl1*aCnlmPz[25+1] + tCnl2*aCnlmPz[25+2] + tCnl3*aCnlmPz[25+3] + tCnl4*aCnlmPz[25+4] + tCnl5*aCnlmPz[25+5] + tCnl6*aCnlmPz[25+6] + tCnl7*aCnlmPz[25+7] + tCnl8*aCnlmPz[25+8] + tCnl9*aCnlmPz[25+9] + tCnl10*aCnlmPz[25+10]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 4);
+    tFpPx[4] += tMul * (tCnl0*aCnlmPx[25] + tCnl1*aCnlmPx[25+1] + tCnl2*aCnlmPx[25+2] + tCnl3*aCnlmPx[25+3] + tCnl4*aCnlmPx[25+4] + tCnl5*aCnlmPx[25+5] + tCnl6*aCnlmPx[25+6] + tCnl7*aCnlmPx[25+7] + tCnl8*aCnlmPx[25+8] + tCnl9*aCnlmPx[25+9] + tCnl10*aCnlmPx[25+10]);
+    tFpPy[4] += tMul * (tCnl0*aCnlmPy[25] + tCnl1*aCnlmPy[25+1] + tCnl2*aCnlmPy[25+2] + tCnl3*aCnlmPy[25+3] + tCnl4*aCnlmPy[25+4] + tCnl5*aCnlmPy[25+5] + tCnl6*aCnlmPy[25+6] + tCnl7*aCnlmPy[25+7] + tCnl8*aCnlmPy[25+8] + tCnl9*aCnlmPy[25+9] + tCnl10*aCnlmPy[25+10]);
+    tFpPz[4] += tMul * (tCnl0*aCnlmPz[25] + tCnl1*aCnlmPz[25+1] + tCnl2*aCnlmPz[25+2] + tCnl3*aCnlmPz[25+3] + tCnl4*aCnlmPz[25+4] + tCnl5*aCnlmPz[25+5] + tCnl6*aCnlmPz[25+6] + tCnl7*aCnlmPz[25+7] + tCnl8*aCnlmPz[25+8] + tCnl9*aCnlmPz[25+9] + tCnl10*aCnlmPz[25+10]);
     if (aLMax == 5) return;
     // l = 6
     tCnl0 = aCnlm[36]; tCnl1 = aCnlm[36+1]; tCnl2 = aCnlm[36+2]; tCnl3 = aCnlm[36+3]; tCnl4 = aCnlm[36+4]; tCnl5 = aCnlm[36+5]; tCnl6 = aCnlm[36+6]; tCnl7 = aCnlm[36+7]; tCnl8 = aCnlm[36+8]; tCnl9 = aCnlm[36+9]; tCnl10 = aCnlm[36+10]; double tCnl11 = aCnlm[36+11], tCnl12 = aCnlm[36+12];
     tMul = aWt*(PI4/13 + PI4/13);
-    subFpPx = tMul * (tCnl0*aCnlmPx[36] + tCnl1*aCnlmPx[36+1] + tCnl2*aCnlmPx[36+2] + tCnl3*aCnlmPx[36+3] + tCnl4*aCnlmPx[36+4] + tCnl5*aCnlmPx[36+5] + tCnl6*aCnlmPx[36+6] + tCnl7*aCnlmPx[36+7] + tCnl8*aCnlmPx[36+8] + tCnl9*aCnlmPx[36+9] + tCnl10*aCnlmPx[36+10] + tCnl11*aCnlmPx[36+11] + tCnl12*aCnlmPx[36+12]);
-    subFpPy = tMul * (tCnl0*aCnlmPy[36] + tCnl1*aCnlmPy[36+1] + tCnl2*aCnlmPy[36+2] + tCnl3*aCnlmPy[36+3] + tCnl4*aCnlmPy[36+4] + tCnl5*aCnlmPy[36+5] + tCnl6*aCnlmPy[36+6] + tCnl7*aCnlmPy[36+7] + tCnl8*aCnlmPy[36+8] + tCnl9*aCnlmPy[36+9] + tCnl10*aCnlmPy[36+10] + tCnl11*aCnlmPy[36+11] + tCnl12*aCnlmPy[36+12]);
-    subFpPz = tMul * (tCnl0*aCnlmPz[36] + tCnl1*aCnlmPz[36+1] + tCnl2*aCnlmPz[36+2] + tCnl3*aCnlmPz[36+3] + tCnl4*aCnlmPz[36+4] + tCnl5*aCnlmPz[36+5] + tCnl6*aCnlmPz[36+6] + tCnl7*aCnlmPz[36+7] + tCnl8*aCnlmPz[36+8] + tCnl9*aCnlmPz[36+9] + tCnl10*aCnlmPz[36+10] + tCnl11*aCnlmPz[36+11] + tCnl12*aCnlmPz[36+12]);
-    putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, 5);
+    tFpPx[5] += tMul * (tCnl0*aCnlmPx[36] + tCnl1*aCnlmPx[36+1] + tCnl2*aCnlmPx[36+2] + tCnl3*aCnlmPx[36+3] + tCnl4*aCnlmPx[36+4] + tCnl5*aCnlmPx[36+5] + tCnl6*aCnlmPx[36+6] + tCnl7*aCnlmPx[36+7] + tCnl8*aCnlmPx[36+8] + tCnl9*aCnlmPx[36+9] + tCnl10*aCnlmPx[36+10] + tCnl11*aCnlmPx[36+11] + tCnl12*aCnlmPx[36+12]);
+    tFpPy[5] += tMul * (tCnl0*aCnlmPy[36] + tCnl1*aCnlmPy[36+1] + tCnl2*aCnlmPy[36+2] + tCnl3*aCnlmPy[36+3] + tCnl4*aCnlmPy[36+4] + tCnl5*aCnlmPy[36+5] + tCnl6*aCnlmPy[36+6] + tCnl7*aCnlmPy[36+7] + tCnl8*aCnlmPy[36+8] + tCnl9*aCnlmPy[36+9] + tCnl10*aCnlmPy[36+10] + tCnl11*aCnlmPy[36+11] + tCnl12*aCnlmPy[36+12]);
+    tFpPz[5] += tMul * (tCnl0*aCnlmPz[36] + tCnl1*aCnlmPz[36+1] + tCnl2*aCnlmPz[36+2] + tCnl3*aCnlmPz[36+3] + tCnl4*aCnlmPz[36+4] + tCnl5*aCnlmPz[36+5] + tCnl6*aCnlmPz[36+6] + tCnl7*aCnlmPz[36+7] + tCnl8*aCnlmPz[36+8] + tCnl9*aCnlmPz[36+9] + tCnl10*aCnlmPz[36+10] + tCnl11*aCnlmPz[36+11] + tCnl12*aCnlmPz[36+12]);
     if (aLMax == 6) return;
     // else
-    for (jint tL = 7; tL <= aLMax; ++tL) {
-        const jint tStart = tL*tL;
-        const jint tLen = tL+tL+1;
+    for (jint l = 7; l <= aLMax; ++l) {
+        const jint tStart = l*l;
+        const jint tLen = l+l+1;
         const jint tEnd = tStart+tLen;
         double rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
         for (jint i=tStart; i < tEnd; ++i) {
@@ -683,16 +670,14 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         }
         tMul = PI4/(double)tLen;
         tMul = aWt*(tMul+tMul);
-        subFpPx = tMul * rDotPx;
-        subFpPy = tMul * rDotPy;
-        subFpPz = tMul * rDotPz;
-        putFpPxyz(tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross, subFpPx, subFpPy, subFpPz, tL-1);
+        tFpPx[l-1] += tMul * rDotPx;
+        tFpPy[l-1] += tMul * rDotPy;
+        tFpPz[l-1] += tMul * rDotPz;
     }
 }
 
 static inline void calL3_222_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx = 2*2+2;
     const double c20  = aCnlm[tIdx  ];
@@ -718,11 +703,12 @@ static inline void calL3_222_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx+2] + tMul2*aCnlmPy[tIdx-2];
     rFp3Pz += tMul1*aCnlmPz[tIdx+2] + tMul2*aCnlmPz[tIdx-2];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
@@ -762,11 +748,12 @@ static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
     rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx3 = 3*3+3;
@@ -820,11 +807,12 @@ static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
     rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
@@ -892,11 +880,12 @@ static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
     rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                              double *rFpPx, double *rFpPy, double *rFpPz,
-                             double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                              double aWt, jint aIdxFP) {
     const jint tIdx = 4*4+4;
     const double c40  = aCnlm[tIdx  ];
@@ -936,11 +925,12 @@ static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx+4] + tMul2*aCnlmPy[tIdx-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx+4] + tMul2*aCnlmPz[tIdx-4];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
@@ -1001,11 +991,12 @@ static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4-4] + tMul2*aCnlmPy[tIdx4+4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4-4] + tMul2*aCnlmPz[tIdx4+4];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx3 = 3*3+3;
     const jint tIdx4 = 4*4+4;
@@ -1073,11 +1064,12 @@ static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
@@ -1138,11 +1130,12 @@ static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                               double *rFpPx, double *rFpPy, double *rFpPz,
-                              double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                               double aWt, jint aIdxFP) {
     const jint tIdx1 = 1+1;
     const jint tIdx3 = 3*3+3;
@@ -1224,52 +1217,50 @@ static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
     rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
     
-    putFpPxyz(rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt*rFp3Px, aWt*rFp3Py, aWt*rFp3Pz, aIdxFP);
+    rFpPx[aIdxFP] += aWt*rFp3Px;
+    rFpPy[aIdxFP] += aWt*rFp3Py;
+    rFpPz[aIdxFP] += aWt*rFp3Pz;
 }
 static inline void calL3p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                            double *rFpPx, double *rFpPy, double *rFpPz,
-                           double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                            double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Max <= 1) return;
     jint tIdxFP = aNoRadial ? aLMax : (aLMax+1);
-    calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+    calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
     ++tIdxFP;
     if (aL3Cross) {
-        calL3_112_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_112_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
     }
     if (aL3Max == 2) return;
     if (aL3Cross) {
-        calL3_233_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_233_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
-        calL3_123_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_123_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
     }
     if (aL3Max == 3) return;
-    calL3_444_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+    calL3_444_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
     ++tIdxFP;
     if (aL3Cross) {
-        calL3_224_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_224_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
-        calL3_334_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_334_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
-        calL3_244_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_244_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
-        calL3_134_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, rFpPxCross, rFpPyCross, rFpPzCross, aWt, tIdxFP);
+        calL3_134_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, rFpPx, rFpPy, rFpPz, aWt, tIdxFP);
         ++tIdxFP;
     }
 }
 static inline void cnlm2fpPxyz(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
                                double *rFpPx, double *rFpPy, double *rFpPz,
-                               double *rFpPxCross, double *rFpPyCross, double *rFpPzCross,
                                double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     calL2p_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
             rFpPx, rFpPy, rFpPz,
-            rFpPxCross, rFpPyCross, rFpPzCross,
             aWt, aLMax, aNoRadial);
     calL3p_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
             rFpPx, rFpPy, rFpPz,
-            rFpPxCross, rFpPyCross, rFpPzCross,
             aWt, aLMax, aNoRadial, aL3Max, aL3Cross);
 }
 
@@ -1458,8 +1449,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
         jdoubleArray rNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray rNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
         jdoubleArray rCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
-        jdoubleArray rFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz, jint aSizeFp, jint aShiftFp,
-        jdoubleArray rFpPxCross, jdoubleArray rFpPyCross, jdoubleArray rFpPzCross,
+        jdoubleArray rFp, jint aSizeFp, jint aShiftFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
 #ifdef __cplusplus
@@ -1486,9 +1476,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     double *tFpPx = (double *)aEnv->GetPrimitiveArrayCritical(rFpPx, NULL);
     double *tFpPy = (double *)aEnv->GetPrimitiveArrayCritical(rFpPy, NULL);
     double *tFpPz = (double *)aEnv->GetPrimitiveArrayCritical(rFpPz, NULL);
-    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPxCross, NULL);
-    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPyCross, NULL);
-    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPzCross, NULL);
 #else
     double *tNlDx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDx, NULL);
     double *tNlDy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDy, NULL);
@@ -1513,9 +1500,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     double *tFpPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPx, NULL);
     double *tFpPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPy, NULL);
     double *tFpPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPz, NULL);
-    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPxCross, NULL);
-    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPyCross, NULL);
-    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPzCross, NULL);
 #endif
 
     // const init
@@ -1549,16 +1533,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     const jint tSize = tSizeN*tSizeL;
     // clear cnlm first
     double *tFp_ = tFp + aShiftFp;
-    double *tFpPx_ = tFpPx + aShiftFp;
-    double *tFpPy_ = tFpPy + aShiftFp;
-    double *tFpPz_ = tFpPz + aShiftFp;
     for (jint i = 0; i < tSizeCnlm; ++i) {
         tCnlm[i] = 0.0;
-    }
-    for (jint i = 0; i < tSize; ++i) {
-        tFpPx_[i] = 0.0;
-        tFpPy_[i] = 0.0;
-        tFpPz_[i] = 0.0;
     }
     // cal cnlm and fp first
     calCnlm(tNlDx, tNlDy, tNlDz, tNlType, aNN,
@@ -1569,16 +1545,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         // clear fpPxyz here
-        jint tShiftFpC = j*(aSizeFp+aShiftFp) + aShiftFp;
-        double *tFpPxCross_ = tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFpC);
-        double *tFpPyCross_ = tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFpC);
-        double *tFpPzCross_ = tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFpC);
-        if (tFpPxCross != NULL) {
-            for (jint i = 0; i < tSize; ++i) {
-                tFpPxCross_[i] = 0.0;
-                tFpPyCross_[i] = 0.0;
-                tFpPzCross_[i] = 0.0;
-            }
+        jint tShiftFpP = j*(aSizeFp+aShiftFp) + aShiftFp;
+        double *tFpPx_ = tFpPx+tShiftFpP;
+        double *tFpPy_ = tFpPy+tShiftFpP;
+        double *tFpPz_ = tFpPz+tShiftFpP;
+        for (jint i = 0; i < tSize; ++i) {
+            tFpPx_[i] = 0.0;
+            tFpPy_[i] = 0.0;
+            tFpPz_[i] = 0.0;
         }
         // init nl
         jint type = tNlType[j];
@@ -1657,18 +1631,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
                             tFpPx_+tShiftFp, tFpPy_+tShiftFp, tFpPz_+tShiftFp,
-                            tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp),
-                            tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp),
-                            tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp),
                             1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll*type;
                     jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL*type;
                     cnlm2fpPxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
                                 tFpPx_+tShiftFp0, tFpPy_+tShiftFp0, tFpPz_+tShiftFp0,
-                                tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp0),
-                                tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp0),
-                                tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp0),
                                 1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 }
             }
@@ -1687,9 +1655,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
                             tFpPx_+tShiftFp, tFpPy_+tShiftFp, tFpPz_+tShiftFp,
-                            tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp),
-                            tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp),
-                            tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp),
                             1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
             }
             break;
@@ -1706,9 +1671,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
                             tFpPx_+tShiftFp, tFpPy_+tShiftFp, tFpPz_+tShiftFp,
-                            tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp),
-                            tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp),
-                            tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp),
                             1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
             }
             break;
@@ -1726,18 +1688,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
                 // accumulate to fp
                 cnlm2fpPxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
                             tFpPx_+tShiftFp, tFpPy_+tShiftFp, tFpPz_+tShiftFp,
-                            tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp),
-                            tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp),
-                            tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp),
                             1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll;
                     jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL;
                     cnlm2fpPxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
                                 tFpPx_+tShiftFp0, tFpPy_+tShiftFp0, tFpPz_+tShiftFp0,
-                                tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp0),
-                                tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp0),
-                                tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp0),
                                 wt, aLMax, aNoRadial, aL3Max, aL3Cross);
                 }
             }
@@ -1772,9 +1728,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     aEnv->ReleasePrimitiveArrayCritical(rFpPx, tFpPx, 0);
     aEnv->ReleasePrimitiveArrayCritical(rFpPy, tFpPy, 0);
     aEnv->ReleasePrimitiveArrayCritical(rFpPz, tFpPz, 0);
-    if (rFpPxCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPxCross, tFpPxCross, 0);
-    if (rFpPyCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPyCross, tFpPyCross, 0);
-    if (rFpPzCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPzCross, tFpPzCross, 0);
 #else
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDx, tNlDx, JNI_ABORT);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDy, tNlDy, JNI_ABORT);
@@ -1799,9 +1752,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPx, tFpPx, 0);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPy, tFpPy, 0);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPz, tFpPz, 0);
-    if (rFpPxCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPxCross, tFpPxCross, 0);
-    if (rFpPyCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPyCross, tFpPyCross, 0);
-    if (rFpPzCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPzCross, tFpPzCross, 0);
 #endif
 }
 

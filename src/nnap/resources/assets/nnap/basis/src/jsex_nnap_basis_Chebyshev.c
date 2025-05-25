@@ -164,8 +164,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1(JNIEnv *aEnv, jclass
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray rNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
-        jdoubleArray rFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz, jint aSizeFp, jint aShiftFp,
-        jdoubleArray rFpPxCross, jdoubleArray rFpPyCross, jdoubleArray rFpPzCross,
+        jdoubleArray rFp, jint aSizeFp, jint aShiftFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType) {
     // java array init
 #ifdef __cplusplus
@@ -182,9 +181,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     double *tFpPx = (double *)aEnv->GetPrimitiveArrayCritical(rFpPx, NULL);
     double *tFpPy = (double *)aEnv->GetPrimitiveArrayCritical(rFpPy, NULL);
     double *tFpPz = (double *)aEnv->GetPrimitiveArrayCritical(rFpPz, NULL);
-    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPxCross, NULL);
-    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPyCross, NULL);
-    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)aEnv->GetPrimitiveArrayCritical(rFpPzCross, NULL);
 #else
     double *tNlDx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDx, NULL);
     double *tNlDy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aNlDy, NULL);
@@ -199,9 +195,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     double *tFpPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPx, NULL);
     double *tFpPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPy, NULL);
     double *tFpPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPz, NULL);
-    double *tFpPxCross = rFpPxCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPxCross, NULL);
-    double *tFpPyCross = rFpPyCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPyCross, NULL);
-    double *tFpPzCross = rFpPzCross==NULL ? NULL : (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFpPzCross, NULL);
 #endif
 
     // const init
@@ -230,14 +223,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     }}
     // clear fp first
     double *tFp_ = tFp + aShiftFp;
-    double *tFpPx_ = tFpPx + aShiftFp;
-    double *tFpPy_ = tFpPy + aShiftFp;
-    double *tFpPz_ = tFpPz + aShiftFp;
     for (jint i = 0; i < tSize; ++i) {
         tFp_[i] = 0.0;
-        tFpPx_[i] = 0.0;
-        tFpPy_[i] = 0.0;
-        tFpPz_[i] = 0.0;
     }
     // cal fp
     calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN,
@@ -247,16 +234,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         // clear fpPxyz here
-        jint tShiftFpC = j*(aSizeFp+aShiftFp) + aShiftFp;
-        double *tFpPxCross_ = tFpPxCross==NULL ? NULL : (tFpPxCross+tShiftFpC);
-        double *tFpPyCross_ = tFpPyCross==NULL ? NULL : (tFpPyCross+tShiftFpC);
-        double *tFpPzCross_ = tFpPzCross==NULL ? NULL : (tFpPzCross+tShiftFpC);
-        if (tFpPxCross != NULL) {
-            for (jint i = 0; i < tSize; ++i) {
-                tFpPxCross_[i] = 0.0;
-                tFpPyCross_[i] = 0.0;
-                tFpPzCross_[i] = 0.0;
-            }
+        jint tShiftFpP = j*(aSizeFp+aShiftFp) + aShiftFp;
+        double *tFpPx_ = tFpPx+tShiftFpP;
+        double *tFpPy_ = tFpPy+tShiftFpP;
+        double *tFpPz_ = tFpPz+tShiftFpP;
+        for (jint i = 0; i < tSize; ++i) {
+            tFpPx_[i] = 0.0;
+            tFpPy_[i] = 0.0;
+            tFpPz_[i] = 0.0;
         }
         // init nl
         jint type = tNlType[j];
@@ -297,38 +282,28 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL: {
             if (aTypeNum == 1) {
-                for (jint tN=0; tN <= aNMax; ++tN) {
-                    // cal subFpPxyz first
-                    const double tRnn = tRn[tN];
-                    const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                    const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                    const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
-                    // accumulate to fp
-                    putFpPxyz(tFpPx_, tFpPy_, tFpPz_,
-                              tFpPxCross_, tFpPyCross_, tFpPzCross_,
-                              subFpPx, subFpPy, subFpPz, tN);
+                for (jint n = 0; n <= aNMax; ++n) {
+                    // cal subFpPxyz and accumulate to fp
+                    const double tRnn = tRn[n];
+                    tFpPx_[n] -= (fc*tRnPx[n] + fcPx*tRnn);
+                    tFpPy_[n] -= (fc*tRnPy[n] + fcPy*tRnn);
+                    tFpPz_[n] -= (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 jint tShiftFp = (aNMax+1)*type;
                 double *tFpPxWt = tFpPx_+tShiftFp;
                 double *tFpPyWt = tFpPy_+tShiftFp;
                 double *tFpPzWt = tFpPz_+tShiftFp;
-                double *tFpPxCrossWt = tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp);
-                double *tFpPyCrossWt = tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp);
-                double *tFpPzCrossWt = tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp);
-                for (jint tN=0; tN <= aNMax; ++tN) {
+                for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[tN];
-                    const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                    const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                    const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
+                    const double tRnn = tRn[n];
+                    const double subFpPx = -(fc*tRnPx[n] + fcPx*tRnn);
+                    const double subFpPy = -(fc*tRnPy[n] + fcPy*tRnn);
+                    const double subFpPz = -(fc*tRnPz[n] + fcPz*tRnn);
                     // accumulate to fp
-                    putFpPxyz(tFpPx_, tFpPy_, tFpPz_,
-                              tFpPxCross_, tFpPyCross_, tFpPzCross_,
-                              subFpPx, subFpPy, subFpPz, tN);
-                    putFpPxyz(tFpPxWt, tFpPyWt, tFpPzWt,
-                              tFpPxCrossWt, tFpPyCrossWt, tFpPzCrossWt,
-                              subFpPx, subFpPy, subFpPz, tN);
+                    tFpPx_[n] += subFpPx; tFpPxWt[n] += subFpPx;
+                    tFpPy_[n] += subFpPy; tFpPyWt[n] += subFpPy;
+                    tFpPz_[n] += subFpPz; tFpPzWt[n] += subFpPz;
                 }
             }
             break;
@@ -338,49 +313,34 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
             double *tFpPxWt = tFpPx_+tShiftFp;
             double *tFpPyWt = tFpPy_+tShiftFp;
             double *tFpPzWt = tFpPz_+tShiftFp;
-            double *tFpPxCrossWt = tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp);
-            double *tFpPyCrossWt = tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp);
-            double *tFpPzCrossWt = tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp);
-            for (jint tN=0; tN <= aNMax; ++tN) {
-                // cal subFpPxyz first
-                const double tRnn = tRn[tN];
-                const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
-                // accumulate to fp
-                putFpPxyz(tFpPxWt, tFpPyWt, tFpPzWt,
-                          tFpPxCrossWt, tFpPyCrossWt, tFpPzCrossWt,
-                          subFpPx, subFpPy, subFpPz, tN);
+            for (jint n = 0; n <= aNMax; ++n) {
+                // cal subFpPxyz and accumulate to fp
+                const double tRnn = tRn[n];
+                tFpPxWt[n] -= (fc*tRnPx[n] + fcPx*tRnn);
+                tFpPyWt[n] -= (fc*tRnPy[n] + fcPy*tRnn);
+                tFpPzWt[n] -= (fc*tRnPz[n] + fcPz*tRnn);
             }
             break;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE:
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
-            for (jint tN=0; tN <= aNMax; ++tN) {
-                // cal subFpPxyz first
-                const double tRnn = tRn[tN];
-                const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
-                // accumulate to fp
-                putFpPxyz(tFpPx_, tFpPy_, tFpPz_,
-                          tFpPxCross_, tFpPyCross_, tFpPzCross_,
-                          subFpPx, subFpPy, subFpPz, tN);
+            for (jint n = 0; n <= aNMax; ++n) {
+                // cal subFpPxyz and accumulate to fp
+                const double tRnn = tRn[n];
+                tFpPx_[n] -= (fc*tRnPx[n] + fcPx*tRnn);
+                tFpPy_[n] -= (fc*tRnPy[n] + fcPy*tRnn);
+                tFpPz_[n] -= (fc*tRnPz[n] + fcPz*tRnn);
             }
             break;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
             if (aTypeNum == 1) {
-                for (jint tN=0; tN <= aNMax; ++tN) {
-                    // cal subFpPxyz first
-                    const double tRnn = tRn[tN];
-                    const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                    const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                    const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
-                    // accumulate to fp
-                    putFpPxyz(tFpPx_, tFpPy_, tFpPz_,
-                              tFpPxCross_, tFpPyCross_, tFpPzCross_,
-                              subFpPx, subFpPy, subFpPz, tN);
+                for (jint n = 0; n <= aNMax; ++n) {
+                    // cal subFpPxyz and accumulate to fp
+                    const double tRnn = tRn[n];
+                    tFpPx_[n] -= (fc*tRnPx[n] + fcPx*tRnn);
+                    tFpPy_[n] -= (fc*tRnPy[n] + fcPy*tRnn);
+                    tFpPz_[n] -= (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 // cal weight of type here
@@ -389,22 +349,16 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
                 double *tFpPxWt = tFpPx_+tShiftFp;
                 double *tFpPyWt = tFpPy_+tShiftFp;
                 double *tFpPzWt = tFpPz_+tShiftFp;
-                double *tFpPxCrossWt = tFpPxCross_==NULL ? NULL : (tFpPxCross_+tShiftFp);
-                double *tFpPyCrossWt = tFpPyCross_==NULL ? NULL : (tFpPyCross_+tShiftFp);
-                double *tFpPzCrossWt = tFpPzCross_==NULL ? NULL : (tFpPzCross_+tShiftFp);
-                for (jint tN=0; tN <= aNMax; ++tN) {
+                for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[tN];
-                    const double subFpPx = -(fc*tRnPx[tN] + fcPx*tRnn);
-                    const double subFpPy = -(fc*tRnPy[tN] + fcPy*tRnn);
-                    const double subFpPz = -(fc*tRnPz[tN] + fcPz*tRnn);
+                    const double tRnn = tRn[n];
+                    const double subFpPx = -(fc*tRnPx[n] + fcPx*tRnn);
+                    const double subFpPy = -(fc*tRnPy[n] + fcPy*tRnn);
+                    const double subFpPz = -(fc*tRnPz[n] + fcPz*tRnn);
                     // accumulate to fp
-                    putFpPxyz(tFpPx_, tFpPy_, tFpPz_,
-                              tFpPxCross_, tFpPyCross_, tFpPzCross_,
-                              subFpPx, subFpPy, subFpPz, tN);
-                    putFpPxyz(tFpPxWt, tFpPyWt, tFpPzWt,
-                              tFpPxCrossWt, tFpPyCrossWt, tFpPzCrossWt,
-                              subFpPx*wt, subFpPy*wt, subFpPz*wt, tN);
+                    tFpPx_[n] += subFpPx; tFpPxWt[n] += wt*subFpPx;
+                    tFpPy_[n] += subFpPy; tFpPyWt[n] += wt*subFpPy;
+                    tFpPz_[n] += subFpPz; tFpPzWt[n] += wt*subFpPz;
                 }
             }
             break;
@@ -428,9 +382,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     aEnv->ReleasePrimitiveArrayCritical(rFpPx, tFpPx, 0);
     aEnv->ReleasePrimitiveArrayCritical(rFpPy, tFpPy, 0);
     aEnv->ReleasePrimitiveArrayCritical(rFpPz, tFpPz, 0);
-    if (rFpPxCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPxCross, tFpPxCross, 0);
-    if (rFpPyCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPyCross, tFpPyCross, 0);
-    if (rFpPzCross != NULL) aEnv->ReleasePrimitiveArrayCritical(rFpPzCross, tFpPzCross, 0);
 #else
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDx, tNlDx, JNI_ABORT);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aNlDy, tNlDy, JNI_ABORT);
@@ -445,9 +396,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPx, tFpPx, 0);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPy, tFpPy, 0);
     (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPz, tFpPz, 0);
-    if (rFpPxCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPxCross, tFpPxCross, 0);
-    if (rFpPyCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPyCross, tFpPyCross, 0);
-    if (rFpPzCross != NULL) (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFpPzCross, tFpPzCross, 0);
 #endif
 }
 

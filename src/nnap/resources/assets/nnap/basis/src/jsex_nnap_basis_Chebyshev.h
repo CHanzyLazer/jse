@@ -32,10 +32,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1
 /*
  * Class:     jsex_nnap_basis_Chebyshev
  * Method:    evalPartial1
- * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[DII[D[D[DIDII)V
+ * Signature: ([D[D[D[II[D[D[D[D[D[DII[D[D[DIDII)V
  */
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint);
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint);
 
 #ifdef __cplusplus
 }

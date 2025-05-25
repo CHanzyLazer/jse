@@ -912,13 +912,10 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 // 这里依旧采用缓存的写法
                 final int tBasisSize = tBasis.size();
                 Vector tFp = VectorCache.getVec(tBasisSize);
-                Vector tFpPx = VectorCache.getVec(tBasisSize);
-                Vector tFpPy = VectorCache.getVec(tBasisSize);
-                Vector tFpPz = VectorCache.getVec(tBasisSize);
                 DoubleList tFpPxCross = new DoubleList(1024);
                 DoubleList tFpPyCross = new DoubleList(1024);
                 DoubleList tFpPzCross = new DoubleList(1024);
-                tBasis.evalPartial(tAPC, i, tTypeMap, tFp, tFpPx, tFpPy, tFpPz, tFpPxCross, tFpPyCross, tFpPzCross);
+                tBasis.evalPartial(tAPC, i, tTypeMap, tFp, tFpPxCross, tFpPyCross, tFpPzCross);
                 // 基组和索引
                 rData.mFp[tType-1].addAll(tFp);
                 rData.mEngIndices[tType-1].add(rData.mEng.size());
@@ -928,9 +925,9 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 final int tNN = tFpPxCross.size()/tBasisSize;
                 int tRowNum = tNN*3 + 3;
                 final RowMatrix tFpPartial = MatrixCache.getMatRow(tRowNum, tBasis.size());
-                tFpPartial.row(0).fill(tFpPx);
-                tFpPartial.row(1).fill(tFpPy);
-                tFpPartial.row(2).fill(tFpPz);
+//                tFpPartial.row(0).fill(tFpPx);
+//                tFpPartial.row(1).fill(tFpPy);
+//                tFpPartial.row(2).fill(tFpPz);
                 final IntVector tForceIndices = mHasForce ? IntVectorCache.getVec(tRowNum) : null;
                 final int tShiftF = mHasForce ? rData.mForce.size() : -1;
                 if (mHasForce) {
@@ -977,9 +974,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     ++j[0];
                 });
                 VectorCache.returnVec(tFp);
-                VectorCache.returnVec(tFpPx);
-                VectorCache.returnVec(tFpPy);
-                VectorCache.returnVec(tFpPz);
                 // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
                 PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
                 try (PyCallable tFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {

@@ -21,7 +21,7 @@ public class Merge implements IBasis {
     private final double mRCut;
     private final int mSize, mTypeNum;
     private final String @Nullable[] mSymbols;
-    private final ShiftVector[] mFpShell, mFpPxShell, mFpPyShell, mFpPzShell;
+    private final ShiftVector[] mFpShell;
     
     public Merge(IBasis... aMergeBasis) {
         if (aMergeBasis==null || aMergeBasis.length==0) throw new IllegalArgumentException("Merge basis can not be null or empty");
@@ -65,16 +65,10 @@ public class Merge implements IBasis {
         mSymbols = tSymbols==null ? null : tSymbols.toArray(ZL_STR);
         // init fp shell
         mFpShell = new ShiftVector[mMergeBasis.length];
-        mFpPxShell = new ShiftVector[mMergeBasis.length];
-        mFpPyShell = new ShiftVector[mMergeBasis.length];
-        mFpPzShell = new ShiftVector[mMergeBasis.length];
         int tShift = 0;
         for (int i = 0; i < mMergeBasis.length; ++i) {
             int tSizeFp = mSize - tShift;
             mFpShell[i] = new ShiftVector(tSizeFp, tShift, null);
-            mFpPxShell[i] = new ShiftVector(tSizeFp, tShift, null);
-            mFpPyShell[i] = new ShiftVector(tSizeFp, tShift, null);
-            mFpPzShell[i] = new ShiftVector(tSizeFp, tShift, null);
             tShift += mMergeBasis[i].size();
         }
     }
@@ -157,46 +151,13 @@ public class Merge implements IBasis {
             mMergeBasis[i].eval(aNL, tFp);
         }
     }
-    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz) {
+    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
         int tSizeFp = rFp.size();
-        int tSizeFpPx = rFpPx.size();
-        int tSizeFpPy = rFpPy.size();
-        int tSizeFpPz = rFpPz.size();
         if (mSize > tSizeFp) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFp);
-        if (mSize > tSizeFpPx) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPx);
-        if (mSize > tSizeFpPy) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPy);
-        if (mSize > tSizeFpPz) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPz);
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tFp = mFpShell[i];
-            ShiftVector tFpPx = mFpPxShell[i];
-            ShiftVector tFpPy = mFpPyShell[i];
-            ShiftVector tFpPz = mFpPzShell[i];
             tFp.setInternalData(rFp.internalData());
-            tFpPx.setInternalData(rFpPx.internalData());
-            tFpPy.setInternalData(rFpPy.internalData());
-            tFpPz.setInternalData(rFpPz.internalData());
-            mMergeBasis[i].evalPartial(aNL, tFp, tFpPx, tFpPy, tFpPz);
-        }
-    }
-    @Override public void evalPartial(IDxyzTypeIterable aNL, DoubleArrayVector rFp, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz, DoubleList rFpPxCross, DoubleList rFpPyCross, DoubleList rFpPzCross) {
-        int tSizeFp = rFp.size();
-        int tSizeFpPx = rFpPx.size();
-        int tSizeFpPy = rFpPy.size();
-        int tSizeFpPz = rFpPz.size();
-        if (mSize > tSizeFp) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFp);
-        if (mSize > tSizeFpPx) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPx);
-        if (mSize > tSizeFpPy) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPy);
-        if (mSize > tSizeFpPz) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFpPz);
-        for (int i = 0; i < mMergeBasis.length; ++i) {
-            ShiftVector tFp = mFpShell[i];
-            ShiftVector tFpPx = mFpPxShell[i];
-            ShiftVector tFpPy = mFpPyShell[i];
-            ShiftVector tFpPz = mFpPzShell[i];
-            tFp.setInternalData(rFp.internalData());
-            tFpPx.setInternalData(rFpPx.internalData());
-            tFpPy.setInternalData(rFpPy.internalData());
-            tFpPz.setInternalData(rFpPz.internalData());
-            mMergeBasis[i].evalPartial(aNL, tFp, tFpPx, tFpPy, tFpPz, rFpPxCross, rFpPyCross, rFpPzCross);
+            mMergeBasis[i].evalPartial(aNL, tFp, rFpPx, rFpPy, rFpPz);
         }
     }
 }
