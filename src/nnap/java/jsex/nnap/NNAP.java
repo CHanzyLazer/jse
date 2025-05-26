@@ -125,8 +125,8 @@ public class NNAP implements IPairPotential {
     }
     private static native void setSingleThread0() throws TorchException;
     
-    /** 中间缓存批次数量，一次传入多个批次进入神经网络可以大大提高效率 */
-    public final static int BATCH_SIZE = 64;
+    /** torch 需要 batch 计算才能有合理的速度，但是过高的 batch 数会占用过高的内存，让主要数据超出缓存，从而降低速度，因此这里只能折中选择 */
+    public final static int BATCH_SIZE = 8;
     
     @SuppressWarnings("unchecked")
     private @Nullable SingleNNAP initSingleNNAPFrom(int aType, Map<String, ?> aModelInfo) throws TorchException {
