@@ -167,7 +167,7 @@ public class CPointer {
         free_(mPtr);
         mPtr = 0;
     }
-    private native static void free_(long aPtr);
+    protected native static void free_(long aPtr);
     
     /**
      * 拷贝一份 c 指针包装类，注意此方法不会实际拷贝内部

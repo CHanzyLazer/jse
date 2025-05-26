@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     jse_clib_NestedCPointer
- * Method:    typeSize
+ * Method:    typeSize_
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_jse_clib_NestedCPointer_typeSize
+JNIEXPORT jint JNICALL Java_jse_clib_NestedCPointer_typeSize_1
   (JNIEnv *, jclass);
 
 /*

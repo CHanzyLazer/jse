@@ -32,7 +32,7 @@ public class NestedIntCPointer extends NestedCPointer {
      * @return 创建的嵌套指针的 c 指针对象
      */
     public static NestedIntCPointer malloc(int aCount) {
-        return new NestedIntCPointer(malloc_(aCount, typeSize()));
+        return new NestedIntCPointer(malloc_(aCount, TYPE_SIZE));
     }
     /**
      * 调用 c 中的 {@code calloc} 来分配全零内存创建一个 c 指针
@@ -43,7 +43,7 @@ public class NestedIntCPointer extends NestedCPointer {
      * @return 创建的嵌套指针的 c 指针对象
      */
     public static NestedIntCPointer calloc(int aCount) {
-        return new NestedIntCPointer(calloc_(aCount, typeSize()));
+        return new NestedIntCPointer(calloc_(aCount, TYPE_SIZE));
     }
     
     /**

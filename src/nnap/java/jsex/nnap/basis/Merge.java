@@ -1,10 +1,8 @@
 package jsex.nnap.basis;
 
-import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
+import jse.clib.DoubleCPointer;
+import jse.clib.IntCPointer;
 import jse.code.collection.NewCollections;
-import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.ShiftVector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +20,7 @@ public class Merge extends Basis {
     private final double mRCut;
     private final int mSize, mTypeNum;
     private final String @Nullable[] mSymbols;
-    private final ShiftVector[] mFpShell;
+    private final int[] mSizeFpArr, mShiftFpArr;
     
     public Merge(Basis... aMergeBasis) {
         if (aMergeBasis==null || aMergeBasis.length==0) throw new IllegalArgumentException("Merge basis can not be null or empty");
@@ -65,12 +63,14 @@ public class Merge extends Basis {
         mTypeNum = tTypeNum;
         mSymbols = tSymbols==null ? null : tSymbols.toArray(ZL_STR);
         // init fp shell
-        mFpShell = new ShiftVector[mMergeBasis.length];
-        int tShift = 0;
+        mSizeFpArr = new int[mMergeBasis.length];
+        mShiftFpArr = new int[mMergeBasis.length];
+        int tShiftFp = 0;
         for (int i = 0; i < mMergeBasis.length; ++i) {
-            int tSizeFp = mSize - tShift;
-            mFpShell[i] = new ShiftVector(tSizeFp, tShift, null);
-            tShift += mMergeBasis[i].size();
+            int tSizeFp = mSize - tShiftFp;
+            mSizeFpArr[i] = tSizeFp;
+            mShiftFpArr[i] = tShiftFp;
+            tShiftFp += mMergeBasis[i].size();
         }
     }
     @Override public double rcut() {return mRCut;}
@@ -78,6 +78,12 @@ public class Merge extends Basis {
     @Override public int atomTypeNumber() {return mTypeNum;}
     @Override public boolean hasSymbol() {return mSymbols != null;}
     @Override public String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
+    
+    @Override protected void shutdown_() {
+        for (Basis tBasis : mMergeBasis) {
+            tBasis.shutdown();
+        }
+    }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
@@ -144,23 +150,18 @@ public class Merge extends Basis {
     }
     
     @Override
-    public void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp) {
-        int tSizeFp = rFp.size();
-        if (mSize > tSizeFp) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFp);
+    public void eval_(DoubleCPointer aNlDx, DoubleCPointer aNlDy, DoubleCPointer aNlDz, IntCPointer aNlType, int aNN, DoubleCPointer rFp) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         for (int i = 0; i < mMergeBasis.length; ++i) {
-            ShiftVector tFp = mFpShell[i];
-            tFp.setInternalData(rFp.internalData());
-            mMergeBasis[i].eval_(aNlDx, aNlDy, aNlDz, aNlType, tFp);
+            mMergeBasis[i].eval_(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp.plus(mShiftFpArr[i]));
         }
     }
     @Override
-    public void evalPartial_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
-        int tSizeFp = rFp.size();
-        if (mSize > tSizeFp) throw new IndexOutOfBoundsException(mSize+" > "+tSizeFp);
+    public void evalPartial_(DoubleCPointer aNlDx, DoubleCPointer aNlDy, DoubleCPointer aNlDz, IntCPointer aNlType, int aNN,
+                             DoubleCPointer rFp, int aSizeFp, int aShiftFp, DoubleCPointer rFpPx, DoubleCPointer rFpPy, DoubleCPointer rFpPz) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         for (int i = 0; i < mMergeBasis.length; ++i) {
-            ShiftVector tFp = mFpShell[i];
-            tFp.setInternalData(rFp.internalData());
-            mMergeBasis[i].evalPartial_(aNlDx, aNlDy, aNlDz, aNlType, tFp, rFpPx, rFpPy, rFpPz);
+            mMergeBasis[i].evalPartial_(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp.plus(mShiftFpArr[i]), mSizeFpArr[i], mShiftFpArr[i], rFpPx, rFpPy, rFpPz);
         }
     }
 }

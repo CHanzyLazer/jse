@@ -1,12 +1,10 @@
 package jsex.nnap.basis;
 
-import jse.cache.VectorCache;
+import jse.clib.DoubleCPointer;
+import jse.clib.GrowableDoubleCPointer;
+import jse.clib.GrowableIntCPointer;
+import jse.clib.IntCPointer;
 import jse.code.UT;
-import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
-import jse.math.IDataShell;
-import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,10 +34,7 @@ public class Chebyshev extends NNAPWTypeBasis {
     final int mWType;
     
     final int mSize;
-    
-    /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
-    final Vector mRn, mRnPx, mRnPy, mRnPz, mCheby2;
-    final DoubleList mNlRn = new DoubleList(128);
+    private final BasisCachePointers mCPointers;
     
     Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType) {
         if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Positive, input: "+aTypeNum);
@@ -53,11 +48,14 @@ public class Chebyshev extends NNAPWTypeBasis {
         
         mSize = sizeN_(mNMax, mTypeNum, mWType);
         
-        mRn = VectorCache.getVec(mNMax+1);
-        mRnPx = VectorCache.getVec(mNMax+1);
-        mRnPy = VectorCache.getVec(mNMax+1);
-        mRnPz = VectorCache.getVec(mNMax+1);
-        mCheby2 = VectorCache.getVec(mNMax);
+        // Rn, RnPx, RnPy, RnPz, Cheby2,
+        // nlRn
+        mCPointers = new BasisCachePointers(this, new GrowableDoubleCPointer[]{
+            new GrowableDoubleCPointer(mNMax+1), // Rn
+            new GrowableDoubleCPointer(mNMax+1), new GrowableDoubleCPointer(mNMax+1), new GrowableDoubleCPointer(mNMax+1), // RnPx, RnPy, RnPz
+            new GrowableDoubleCPointer(mNMax), // Cheby2
+            new GrowableDoubleCPointer(128) // nlRn
+        }, new GrowableIntCPointer[0]);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -126,66 +124,44 @@ public class Chebyshev extends NNAPWTypeBasis {
      */
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
-    boolean mDead = false;
-    @Override public boolean isShutdown() {return mDead;}
-    @Override public void shutdown() {
-        if (mDead) return;
-        mDead = true;
-        VectorCache.returnVec(mRn);
-        VectorCache.returnVec(mRnPx);
-        VectorCache.returnVec(mRnPy);
-        VectorCache.returnVec(mRnPz);
-        VectorCache.returnVec(mCheby2);
+    @Override protected void shutdown_() {
+        mCPointers.dispose();
     }
     
     @Override
-    public void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp) {
-        if (mDead) throw new IllegalStateException("This Basis is dead");
+    public void eval_(DoubleCPointer aNlDx, DoubleCPointer aNlDy, DoubleCPointer aNlDz, IntCPointer aNlType, int aNN, DoubleCPointer rFp) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 现在直接计算基组
-        eval0(aNlDx, aNlDy, aNlDz, aNlType, rFp);
+        eval0(aNlDx.ptr_(), aNlDy.ptr_(), aNlDz.ptr_(), aNlType.ptr_(), aNN,
+              mCPointers.mDoublePointers[0].ptr_(), rFp.ptr_(),
+              mTypeNum, mRCut, mNMax, mWType);
     }
     
     @Override
-    public void evalPartial_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
-        if (mDead) throw new IllegalStateException("This Basis is dead");
+    public void evalPartial_(DoubleCPointer aNlDx, DoubleCPointer aNlDy, DoubleCPointer aNlDz, IntCPointer aNlType, int aNN,
+                             DoubleCPointer rFp, int aSizeFp, int aShiftFp, DoubleCPointer rFpPx, DoubleCPointer rFpPy, DoubleCPointer rFpPz) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
-        final int tNN = aNlDx.size();
+        GrowableDoubleCPointer[] tPtrs = mCPointers.mDoublePointers;
+        
         // 确保 Rn 的长度
-        validSize_(mNlRn, tNN*(mNMax+1));
-        // 初始化偏导数相关值
-        int tSizeAll = rFp.size() + rFp.internalDataShift();
-        validSize_(rFpPx, tNN*tSizeAll);
-        validSize_(rFpPy, tNN*tSizeAll);
-        validSize_(rFpPz, tNN*tSizeAll);
+        GrowableDoubleCPointer tNlRn = tPtrs[5];
+        tNlRn.ensureCapacity(aNN*(mNMax+1));
         
         // 现在直接计算基组偏导
-        evalPartial0(aNlDx, aNlDy, aNlDz, aNlType, rFp, rFpPx, rFpPy, rFpPz);
-    }
-    
-    void eval0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp) {
-        int tNN = aNlDx.internalDataSize();
-        int tShiftFp = rFp.internalDataShift();
-        eval1(aNlDx.internalDataWithLengthCheck(tNN), aNlDy.internalDataWithLengthCheck(tNN), aNlDz.internalDataWithLengthCheck(tNN), aNlType.internalDataWithLengthCheck(tNN), tNN,
-              mRn.internalDataWithLengthCheck(mNMax+1), rFp.internalDataWithLengthCheck(mSize, tShiftFp), tShiftFp,
-              mTypeNum, mRCut, mNMax, mWType);
-    }
-    private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                     double[] rRn, double[] rFp, int aShiftFp,
-                                     int aTypeNum, double aRCut, int aNMax, int aWType);
-    
-    void evalPartial0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, IDataShell<double[]> rFpPx, IDataShell<double[]> rFpPy, IDataShell<double[]> rFpPz) {
-        int tNN = aNlDx.internalDataSize();
-        int tShiftFp = rFp.internalDataShift();
-        int tSizeFp = rFp.internalDataSize();
-        evalPartial1(aNlDx.internalDataWithLengthCheck(tNN), aNlDy.internalDataWithLengthCheck(tNN), aNlDz.internalDataWithLengthCheck(tNN), aNlType.internalDataWithLengthCheck(tNN), tNN,
-                     mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1)), mRnPx.internalDataWithLengthCheck(mNMax+1), mRnPy.internalDataWithLengthCheck(mNMax+1), mRnPz.internalDataWithLengthCheck(mNMax+1), mCheby2.internalDataWithLengthCheck(mNMax),
-                     rFp.internalDataWithLengthCheck(mSize, tShiftFp), tSizeFp, tShiftFp,
-                     rFpPx.internalDataWithLengthCheck(tNN*(tSizeFp+tShiftFp)), rFpPy.internalDataWithLengthCheck(tNN*(tSizeFp+tShiftFp)), rFpPz.internalDataWithLengthCheck(tNN*(tSizeFp+tShiftFp)),
+        evalPartial0(aNlDx.ptr_(), aNlDy.ptr_(), aNlDz.ptr_(), aNlType.ptr_(), aNN,
+                     tNlRn.ptr_(), tPtrs[1].ptr_(), tPtrs[2].ptr_(), tPtrs[3].ptr_(), tPtrs[4].ptr_(),
+                     rFp.ptr_(), aSizeFp, aShiftFp,
+                     rFpPx.ptr_(), rFpPy.ptr_(), rFpPz.ptr_(),
                      mTypeNum, mRCut, mNMax, mWType);
     }
-    private static native void evalPartial1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                            double[] rNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                            double[] rFp, int aSizeFp, int aShiftFp, double[] rFpPx, double[] rFpPy, double[] rFpPz,
+    
+    private static native void eval0(long aNlDx, long aNlDy, long aNlDz, long aNlType, int aNN, long rRn, long rFp,
+                                     int aTypeNum, double aRCut, int aNMax, int aWType);
+    
+    private static native void evalPartial0(long aNlDx, long aNlDy, long aNlDz, long aNlType, int aNN,
+                                            long rNlRn, long rRnPx, long rRnPy, long rRnPz, long rCheby2,
+                                            long rFp, int aSizeFp, int aShiftFp, long rFpPx, long rFpPy, long rFpPz,
                                             int aTypeNum, double aRCut, int aNMax, int aWType);
 }

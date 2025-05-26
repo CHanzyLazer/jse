@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_jse_clib_IntCPointer_typeSize(JNIEnv *aEnv, jclass aClazz) {
+JNIEXPORT jint JNICALL Java_jse_clib_IntCPointer_typeSize_1(JNIEnv *aEnv, jclass aClazz) {
     return (jint)sizeof(int);
 }
 JNIEXPORT void JNICALL Java_jse_clib_IntCPointer_fill0(JNIEnv *aEnv, jclass aClazz, jlong rPtr, jintArray aJArray, jint aStart, jint aCount) {

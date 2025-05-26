@@ -32,7 +32,7 @@ public class DoubleCPointer extends CPointer {
      * @return 创建的双精度浮点 c 指针对象
      */
     public static DoubleCPointer malloc(int aCount) {
-        return new DoubleCPointer(malloc_(aCount, typeSize()));
+        return new DoubleCPointer(malloc_(aCount, TYPE_SIZE));
     }
     /**
      * 调用 c 中的 {@code calloc} 来分配全零内存创建一个 c 指针
@@ -43,10 +43,11 @@ public class DoubleCPointer extends CPointer {
      * @return 创建的双精度浮点 c 指针对象
      */
     public static DoubleCPointer calloc(int aCount) {
-        return new DoubleCPointer(calloc_(aCount, typeSize()));
+        return new DoubleCPointer(calloc_(aCount, TYPE_SIZE));
     }
-    /** @return {@code sizeof(double)} */
-    public native static int typeSize();
+    /** {@code sizeof(double)} */
+    public final static int TYPE_SIZE = typeSize_();
+    private native static int typeSize_();
     
     /**
      * 将 java 的 {@code double[]} 填充到此 c 指针对应的内存中

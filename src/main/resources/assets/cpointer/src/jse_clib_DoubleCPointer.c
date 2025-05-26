@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_jse_clib_DoubleCPointer_typeSize(JNIEnv *aEnv, jclass aClazz) {
+JNIEXPORT jint JNICALL Java_jse_clib_DoubleCPointer_typeSize_1(JNIEnv *aEnv, jclass aClazz) {
     return (jint)sizeof(double);
 }
 JNIEXPORT void JNICALL Java_jse_clib_DoubleCPointer_fill0(JNIEnv *aEnv, jclass aClazz, jlong rPtr, jdoubleArray aJArray, jint aStart, jint aCount) {

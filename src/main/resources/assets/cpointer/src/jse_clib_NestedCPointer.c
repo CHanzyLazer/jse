@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_jse_clib_NestedCPointer_typeSize(JNIEnv *aEnv, jclass aClazz) {
+JNIEXPORT jint JNICALL Java_jse_clib_NestedCPointer_typeSize_1(JNIEnv *aEnv, jclass aClazz) {
     return (jint)sizeof(void *);
 }
 JNIEXPORT jlong JNICALL Java_jse_clib_NestedCPointer_get_1(JNIEnv *aEnv, jclass aClazz, jlong aPtr) {

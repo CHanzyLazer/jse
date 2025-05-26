@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     jse_clib_DoubleCPointer
- * Method:    typeSize
+ * Method:    typeSize_
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_jse_clib_DoubleCPointer_typeSize
+JNIEXPORT jint JNICALL Java_jse_clib_DoubleCPointer_typeSize_1
   (JNIEnv *, jclass);
 
 /*

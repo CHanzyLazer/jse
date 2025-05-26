@@ -33,7 +33,7 @@ public class IntCPointer extends CPointer {
      * @return 创建的整数 c 指针对象
      */
     public static IntCPointer malloc(int aCount) {
-        return new IntCPointer(malloc_(aCount, typeSize()));
+        return new IntCPointer(malloc_(aCount, TYPE_SIZE));
     }
     /**
      * 调用 c 中的 {@code calloc} 来分配全零内存创建一个 c 指针
@@ -44,10 +44,11 @@ public class IntCPointer extends CPointer {
      * @return 创建的整数 c 指针对象
      */
     public static IntCPointer calloc(int aCount) {
-        return new IntCPointer(calloc_(aCount, typeSize()));
+        return new IntCPointer(calloc_(aCount, TYPE_SIZE));
     }
-    /** @return {@code sizeof(int)} */
-    public native static int typeSize();
+    /** {@code sizeof(int)} */
+    public final static int TYPE_SIZE = typeSize_();
+    private native static int typeSize_();
     
     /**
      * 将 java 的 {@code int[]} 填充到此 c 指针对应的内存中
