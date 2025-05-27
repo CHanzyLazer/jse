@@ -1,4 +1,4 @@
-package jsex.nnap.model;
+package jsex.nnap.nn;
 
 import jse.cache.VectorCache;
 import jse.code.UT;
@@ -21,7 +21,7 @@ import java.util.Map;
  * 由于内部会缓存中间结果，因此此类一般来说相同实例线程不安全，而不同实例之间线程安全
  * @author liqa
  */
-public class FeedForward extends Model {
+public class FeedForward extends NeuralNetwork {
     final int mInputDim;
     final int[] mHiddenDims;
     final int mHiddenNumber;

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(nnapbasis C CXX)
+project(nnap C CXX)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
@@ -10,10 +10,10 @@ endif()
 
 
 set(SOURCE_FILES
-    jsex_nnap_basis_Basis.c
+    jsex_nnap_NNAP.c
     jsex_nnap_basis_SphericalChebyshev.c
     jsex_nnap_basis_Chebyshev.c)
-add_library(nnapbasis SHARED ${SOURCE_FILES})
+add_library(nnap SHARED ${SOURCE_FILES})
 
 option(JSE_USE_CXX "Use CXX compiler" OFF)
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
@@ -35,7 +35,7 @@ endif()
 find_package(JNI)
 if(JNI_FOUND)
     include_directories(${JNI_INCLUDE_DIRS})
-    target_link_libraries(nnapbasis ${JNI_LIBRARIES})
+    target_link_libraries(nnap ${JNI_LIBRARIES})
 else()
     message(FATAL_ERROR "No Java Environment Found")
 endif()

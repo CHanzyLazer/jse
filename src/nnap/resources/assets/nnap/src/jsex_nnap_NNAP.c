@@ -1,10 +1,10 @@
-#include "jsex_nnap_basis_Basis.h"
+#include "jsex_nnap_NNAP.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_Basis_forceDot1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_forceDot1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aXGrad, jint aShift, jint aLength, jdoubleArray aFpPx, jdoubleArray aFpPy, jdoubleArray aFpPz,
         jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz, jint aNN) {
     // java array init

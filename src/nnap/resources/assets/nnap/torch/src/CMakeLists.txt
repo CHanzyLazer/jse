@@ -9,7 +9,7 @@ endif()
 
 
 set(SOURCE_FILES
-    jsex_nnap_model_TorchModel.cpp)
+    jsex_nnap_nn_TorchModel.cpp)
 add_library(nnaptorch SHARED ${SOURCE_FILES})
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")

@@ -1,4 +1,4 @@
-package jsex.nnap.model;
+package jsex.nnap.nn;
 
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
@@ -19,7 +19,8 @@ import static jse.code.OS.JAR_DIR;
  * @author liqa
  */
 @Deprecated
-public class TorchModel extends Model {
+@SuppressWarnings("DeprecatedIsStillUsed")
+public class TorchModel extends NeuralNetwork {
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
         private static volatile boolean INITIALIZED = false;
@@ -58,15 +59,17 @@ public class TorchModel extends Model {
     public final static String LIB_DIR = JAR_DIR+"nnap/torch/" + UT.Code.uniqueID(CS.VERSION, Torch.HOME, Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
-          "jsex_nnap_model_TorchModel.cpp"
-        , "jsex_nnap_model_TorchModel.h"
-        , "jsex_nnap_model_TorchPointer.h"
+          "jsex_nnap_nn_TorchModel.cpp"
+        , "jsex_nnap_nn_TorchModel.h"
+        , "jsex_nnap_nn_TorchPointer.h"
     };
     /** 记录所有已经初始化 torch 线程的开启的线程，因为 torch 设置线程数居然是线程独立的 */
     private final static Set<Long> INITIALIZED_THREAD = Collections.synchronizedSet(new HashSet<>());
     
     static {
         InitHelper.INITIALIZED = true;
+        UT.Code.warning("TorchModel in nnap has been deprecated due to efficiency issues and is now only running in compatibility mode, which limits its speed. \n" +
+                        "It is recommended to convert the existing potential function or retrain it");
         // 依赖 torch
         Torch.InitHelper.init();
         // 依赖 jniutil

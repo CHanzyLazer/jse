@@ -2,21 +2,28 @@ package jsex.nnap;
 
 import jse.atom.IPairPotential;
 import jse.cache.VectorCache;
+import jse.clib.JNIUtil;
+import jse.code.CS;
 import jse.code.IO;
+import jse.code.OS;
 import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
+import jse.math.IDataShell;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 import jsex.nnap.basis.*;
-import jsex.nnap.model.*;
+import jsex.nnap.nn.*;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static jse.code.OS.JAR_DIR;
 
 /**
  * jse 实现的 nnap，所有 nnap 相关能量和力的计算都在此实现，
@@ -46,20 +53,105 @@ public class NNAP implements IPairPotential {
         @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf"})
         public static void init() {
             // 手动调用此值来强制初始化
-            if (!INITIALIZED) String.valueOf(VERSION);
+            if (!INITIALIZED) String.valueOf(LIB_PATH);
         }
     }
     
-    public final static int VERSION;
+    public final static class Conf {
+        /**
+         * 自定义构建 native nnap basis 的 cmake 参数设置，
+         * 会在构建时使用 -D ${key}=${value} 传入
+         */
+        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        
+        public static final int NONE = -1;
+        public static final int COMPAT = 0;
+        public static final int BASE = 1;
+        public static final int MAX = 2;
+        /**
+         * 自定义 native nnap basis 需要采用的优化等级，默认为 1（基础优化），
+         * 会开启 AVX2 指令集，在大多数现代处理器上能兼容运行
+         */
+        public static int OPT_LEVEL = OS.envI("JSE_NNAP_OPT_LEVEL", BASE);
+        
+        /**
+         * 自定义构建 native nnap basis 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         */
+        public static @Nullable String CMAKE_C_COMPILER   = OS.env("JSE_CMAKE_C_COMPILER_NNAP"  , jse.code.Conf.CMAKE_C_COMPILER);
+        public static @Nullable String CMAKE_C_FLAGS      = OS.env("JSE_CMAKE_C_FLAGS_NNAP"     , jse.code.Conf.CMAKE_C_FLAGS);
+        public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_NNAP", jse.code.Conf.CMAKE_CXX_COMPILER);
+        public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_NNAP"   , jse.code.Conf.CMAKE_CXX_FLAGS);
+        
+        /** 重定向 native nnap basis 动态库的路径 */
+        public static @Nullable String REDIRECT_NNAPBASIS_LIB = OS.env("JSE_REDIRECT_NNAP_LIB");
+    }
+    
+    public final static int VERSION = 4;
+    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(CS.VERSION, VERSION, Conf.OPT_LEVEL, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_PATH;
+    private final static String[] SRC_NAME = {
+          "basis_util.h"
+        , "jsex_nnap_NNAP.c"
+        , "jsex_nnap_NNAP.h"
+        , "jsex_nnap_basis_SphericalChebyshev.c"
+        , "jsex_nnap_basis_SphericalChebyshev.h"
+        , "jsex_nnap_basis_Chebyshev.c"
+        , "jsex_nnap_basis_Chebyshev.h"
+    };
     
     static {
         InitHelper.INITIALIZED = true;
-        // 依赖 nnapbasis
-        Basis.InitHelper.init();
         // 这里不直接依赖 LmpPlugin
         
-        VERSION = 3;
+        // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
+        Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
+        switch(Conf.OPT_LEVEL) {
+        case Conf.MAX: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "ON");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }
+        case Conf.BASE: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "ON");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }
+        case Conf.COMPAT: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "ON");
+            break;
+        }
+        case Conf.NONE: {
+            rCmakeSetting.put("JSE_OPT_MAX",    "OFF");
+            rCmakeSetting.put("JSE_OPT_BASE",   "OFF");
+            rCmakeSetting.put("JSE_OPT_COMPAT", "OFF");
+            break;
+        }}
+        // 现在直接使用 JNIUtil.buildLib 来统一初始化
+        LIB_PATH = new JNIUtil.LibBuilder("nnap", "NNAP", LIB_DIR, rCmakeSetting)
+            .setSrc("nnap", SRC_NAME)
+            .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
+            .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setRedirectLibPath(Conf.REDIRECT_NNAPBASIS_LIB)
+            .get();
+        // 设置库路径
+        System.load(IO.toAbsolutePath(LIB_PATH));
     }
+    
+    static void forceDot(IDataShell<double[]> aXGrad, IDataShell<double[]> aFpPx, IDataShell<double[]> aFpPy, IDataShell<double[]> aFpPz,
+                                IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, int aNN) {
+        int tLength = aXGrad.internalDataSize();
+        int tShift = aXGrad.internalDataShift();
+        forceDot1(aXGrad.internalDataWithLengthCheck(tLength, tShift), tShift, tLength,
+                  aFpPx.internalDataWithLengthCheck(tLength*aNN), aFpPy.internalDataWithLengthCheck(tLength*aNN), aFpPz.internalDataWithLengthCheck(tLength*aNN),
+                  rFx.internalDataWithLengthCheck(aNN), rFy.internalDataWithLengthCheck(aNN), rFz.internalDataWithLengthCheck(aNN), aNN);
+    }
+    private static native void forceDot1(double[] aXGrad, int aShift, int aLength, double[] aFpPx, double[] aFpPy, double[] aFpPz, double[] rFx, double[] rFy, double[] rFz, int aNN);
+    
     
     @SuppressWarnings("unchecked")
     private @Nullable SingleNNAP initSingleNNAPFrom(int aType, Map<String, ?> aModelInfo) throws Exception {
@@ -111,15 +203,15 @@ public class NNAP implements IPairPotential {
         Number tNormMuEng = (Number)aModelInfo.get("norm_mu_eng");
         double aNormMuEng = tNormMuEng==null ? 0.0 : tNormMuEng.doubleValue();
         
-        Model[] aModel = new Model[mThreadNumber];
+        NeuralNetwork[] aNN = new NeuralNetwork[mThreadNumber];
         Object tModelObj = aModelInfo.get("torch");
         if (tModelObj != null) {
             mIsTorch = true;
             for (int i = 0; i < mThreadNumber; ++i) {
                 //noinspection resource
-                aModel[i] = new TorchModel(tModelObj.toString());
+                aNN[i] = new TorchModel(tModelObj.toString());
             }
-            return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aModel);
+            return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aNN);
         }
         Map<String, ?> tModel = (Map<String, ?>)aModelInfo.get("model");
         Object tModelType = tModel.get("type");
@@ -128,12 +220,12 @@ public class NNAP implements IPairPotential {
         }
         if (tModelType.toString().equals("FFNN")) {
             for (int i = 0; i < mThreadNumber; ++i) {
-                aModel[i] = FeedForward.load(tModel);
+                aNN[i] = FeedForward.load(tModel);
             }
         } else {
             throw new IllegalArgumentException("Unsupported model type: " + tBasisType);
         }
-        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aModel);
+        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aNN);
     }
     @SuppressWarnings("unchecked")
     private @Nullable SingleNNAP postInitSingleNNAPFrom(int aType, Map<String, ?> aModelInfo) {
@@ -166,13 +258,13 @@ public class NNAP implements IPairPotential {
         tModel = aModelInfo.get("model");
         if (tModel != null) throw new IllegalArgumentException("model data in mirror ModelInfo MUST be empty");
         // 现在直接采用引用写法，因为不会存在同时调用的情况
-        Model[] aModel = model(tMirrorType).mModel;
-        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aModel);
+        NeuralNetwork[] aNN = model(tMirrorType).mNN;
+        return new SingleNNAP(aRefEng, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng, aBasis, aNN);
     }
     
     @SuppressWarnings("SameParameterValue")
     public class SingleNNAP {
-        private final Model[] mModel;
+        private final NeuralNetwork[] mNN;
         private final double mRefEng;
         private final IVector mNormMu, mNormSigma;
         private final double mNormMuEng, mNormSigmaEng;
@@ -185,8 +277,8 @@ public class NNAP implements IPairPotential {
         public double normSigmaEng() {return mNormSigmaEng;}
         public Basis basis() {return basis(0);}
         public Basis basis(int aThreadID) {return mBasis[aThreadID];}
-        public Model model() {return model(0);}
-        public Model model(int aThreadID) {return mModel[aThreadID];}
+        public NeuralNetwork nn() {return nn(0);}
+        public NeuralNetwork nn(int aThreadID) {return mNN[aThreadID];}
         
         /// 现在使用全局的缓存实现，可以进一步减少内存池的调用操作
         private final Vector[] mFp, mFpGrad;
@@ -239,14 +331,14 @@ public class NNAP implements IPairPotential {
             rEngPartial.multiply2this(mNormSigmaEng);
         }
         
-        private SingleNNAP(double aRefEng, IVector aNormMu, IVector aNormSigma, double aNormMuEng, double aNormSigmaEng, Basis[] aBasis, Model[] aModel) {
+        private SingleNNAP(double aRefEng, IVector aNormMu, IVector aNormSigma, double aNormMuEng, double aNormSigmaEng, Basis[] aBasis, NeuralNetwork[] aNN) {
             mRefEng = aRefEng;
             mNormMu = aNormMu;
             mNormSigma = aNormSigma;
             mNormMuEng = aNormMuEng;
             mNormSigmaEng = aNormSigmaEng;
             mBasis = aBasis;
-            mModel = aModel;
+            mNN = aNN;
             int tBasisSize = mBasis[0].size();
             
             mFp = new Vector[mThreadNumber];
@@ -340,7 +432,7 @@ public class NNAP implements IPairPotential {
                 tModel.basis(i).shutdown();
             }
             for (int i = 0; i < mThreadNumber; ++i) {
-                tModel.mModel[i].shutdown();
+                tModel.mNN[i].shutdown();
             }
         }
     }
@@ -384,7 +476,7 @@ public class NNAP implements IPairPotential {
         }, null, (threadID, cIdx, cType, nl) -> {
             SingleNNAP tModel = model(cType);
             Basis tBasis = tModel.basis(threadID);
-            Model tModel_ = tModel.model(threadID);
+            NeuralNetwork tNN = tModel.nn(threadID);
             DoubleList tNlDx = tModel.bufNlDx(threadID);
             DoubleList tNlDy = tModel.bufNlDy(threadID);
             DoubleList tNlDz = tModel.bufNlDz(threadID);
@@ -394,7 +486,7 @@ public class NNAP implements IPairPotential {
             Vector tFp = tModel.bufFp(threadID);
             tBasis.eval_(tNlDx, tNlDy, tNlDz, tNlType, tFp);
             tModel.normBasis(tFp);
-            double tPred = tModel_.forward(tFp);
+            double tPred = tNN.forward(tFp);
             tPred = tModel.denormEng(tPred);
             tPred += tModel.mRefEng;
             rEnergyAccumulator.add(threadID, cIdx, -1, tPred);
@@ -417,14 +509,14 @@ public class NNAP implements IPairPotential {
         }, null, (threadID, cIdx, cType, nl) -> {
             SingleNNAP tModel = model(cType);
             Basis tBasis = tModel.basis(threadID);
-            Model tModel_ = tModel.model(threadID);
+            NeuralNetwork tNN = tModel.nn(threadID);
             DoubleList tNlDx = tModel.bufNlDx(threadID);
             DoubleList tNlDy = tModel.bufNlDy(threadID);
             DoubleList tNlDz = tModel.bufNlDz(threadID);
             IntList tNlType = tModel.bufNlType(threadID);
             IntList tNlIdx = tModel.bufNlIdx(threadID);
             buildNL_(nl, tBasis.rcut(), tNlDx, tNlDy, tNlDz, tNlType, tNlIdx);
-            final int tNN = tNlDx.size();
+            final int tNeiNum = tNlDx.size();
             Vector tFp = tModel.bufFp(threadID);
             Vector tFpGrad = tModel.bufFpGrad(threadID);
             DoubleList tFpPx = tModel.bufFpPx(threadID);
@@ -432,7 +524,7 @@ public class NNAP implements IPairPotential {
             DoubleList tFpPz = tModel.bufFpPz(threadID);
             tBasis.evalPartial_(tNlDx, tNlDy, tNlDz, tNlType, tFp, tFpPx, tFpPy, tFpPz);
             tModel.normBasis(tFp);
-            double tPred = tModel_.backward(tFp, tFpGrad);
+            double tPred = tNN.backward(tFp, tFpGrad);
             
             if (rEnergyAccumulator != null) {
                 tPred = tModel.denormEng(tPred);
@@ -441,12 +533,12 @@ public class NNAP implements IPairPotential {
             }
             tModel.normBasisPartial(tFpGrad);
             tModel.denormEngPartial(tFpGrad);
-            DoubleList tForceX = tModel.bufForceX(threadID, tNN);
-            DoubleList tForceY = tModel.bufForceY(threadID, tNN);
-            DoubleList tForceZ = tModel.bufForceZ(threadID, tNN);
-            Basis.forceDot(tFpGrad, tFpPx, tFpPy, tFpPz, tForceX, tForceY, tForceZ, tNN);
+            DoubleList tForceX = tModel.bufForceX(threadID, tNeiNum);
+            DoubleList tForceY = tModel.bufForceY(threadID, tNeiNum);
+            DoubleList tForceZ = tModel.bufForceZ(threadID, tNeiNum);
+            forceDot(tFpGrad, tFpPx, tFpPy, tFpPz, tForceX, tForceY, tForceZ, tNeiNum);
             // 累加交叉项到近邻
-            for (int j = 0; j < tNN; ++j) {
+            for (int j = 0; j < tNeiNum; ++j) {
                 double dx = tNlDx.get(j);
                 double dy = tNlDy.get(j);
                 double dz = tNlDz.get(j);

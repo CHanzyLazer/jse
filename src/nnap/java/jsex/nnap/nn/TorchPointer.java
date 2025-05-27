@@ -1,4 +1,4 @@
-package jsex.nnap.model;
+package jsex.nnap.nn;
 
 import jse.code.ReferenceChecker;
 
