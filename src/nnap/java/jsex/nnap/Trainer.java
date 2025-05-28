@@ -300,6 +300,24 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             }
             mRefEngs.set(i, tRefEng);
         }
+        mFp = new Vector[mSymbols.length];
+        mFpPx = new Vector[mSymbols.length];
+        mFpPy = new Vector[mSymbols.length];
+        mFpPz = new Vector[mSymbols.length];
+        mFpPxCross = new DoubleList[mSymbols.length];
+        mFpPyCross = new DoubleList[mSymbols.length];
+        mFpPzCross = new DoubleList[mSymbols.length];
+        for (int i = 0; i < mSymbols.length; ++i) {
+            int tBasisSize = mBasis[i].size();
+            mFp[i] = Vectors.zeros(tBasisSize);
+            mFpPx[i] = Vectors.zeros(tBasisSize);
+            mFpPy[i] = Vectors.zeros(tBasisSize);
+            mFpPz[i] = Vectors.zeros(tBasisSize);
+            mFpPxCross[i] = new DoubleList(1024);
+            mFpPyCross[i] = new DoubleList(1024);
+            mFpPzCross[i] = new DoubleList(1024);
+        }
+        
     }
     public Trainer(String[] aSymbols, IVector aRefEngs, Basis aBasis, Map<String, ?> aModelSetting) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length), aModelSetting);}
     public Trainer(String[] aSymbols, double[] aRefEngs, Basis[] aBasis, Map<String, ?> aModelSetting) {this(aSymbols, Vectors.from(aRefEngs), aBasis, aModelSetting);}
@@ -562,6 +580,10 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     public void train(int aEpochs, boolean aEarlyStop) {train(aEpochs, aEarlyStop, true);}
     public void train(int aEpochs) {train(aEpochs, true);}
     
+    /// 现在全局缓存这些变量
+    private final Vector[] mFp, mFpPx, mFpPy, mFpPz;
+    private final DoubleList[] mFpPxCross, mFpPyCross, mFpPzCross;
+    
     @ApiStatus.Internal
     protected void calRefEngFpAndAdd_(IAtomData aAtomData, double aEnergy, DataSet rData) {
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
@@ -594,15 +616,14 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             for (int i = 0; i < tAtomNum; ++i) {
                 int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
                 Basis tBasis = basis(tType);
-                // 这里依旧采用缓存的写法
                 final int tBasisSize = tBasis.size();
-                Vector tFp = VectorCache.getVec(tBasisSize);
-                Vector tFpPx = VectorCache.getZeros(tBasisSize);
-                Vector tFpPy = VectorCache.getZeros(tBasisSize);
-                Vector tFpPz = VectorCache.getZeros(tBasisSize);
-                DoubleList tFpPxCross = new DoubleList(1024);
-                DoubleList tFpPyCross = new DoubleList(1024);
-                DoubleList tFpPzCross = new DoubleList(1024);
+                Vector tFp = mFp[tType-1];
+                Vector tFpPx = mFpPx[tType-1];
+                Vector tFpPy = mFpPy[tType-1];
+                Vector tFpPz = mFpPz[tType-1];
+                DoubleList tFpPxCross = mFpPxCross[tType-1];
+                DoubleList tFpPyCross = mFpPyCross[tType-1];
+                DoubleList tFpPzCross = mFpPzCross[tType-1];
                 tBasis.evalPartial(tAPC, i, tTypeMap, tFp, tFpPxCross, tFpPyCross, tFpPzCross);
                 // 基组和索引
                 rData.mFp[tType-1].addAll(tFp);
@@ -612,6 +633,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 // 基组偏导和索引
                 final int tNN = tFpPxCross.size()/tBasisSize;
                 // 为了减少后续优化过程中的近邻求和次数，因此这里还是使用旧的求力方法
+                tFpPx.fill(0.0); tFpPy.fill(0.0); tFpPz.fill(0.0);
                 for (int j = 0; j < tNN; ++j) {
                     tFpPx.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPxCross.internalData()));
                     tFpPy.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPyCross.internalData()));
@@ -667,10 +689,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     }
                     ++j[0];
                 });
-                VectorCache.returnVec(tFp);
-                VectorCache.returnVec(tFpPx);
-                VectorCache.returnVec(tFpPy);
-                VectorCache.returnVec(tFpPz);
                 // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
                 PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
                 try (PyCallable fFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
