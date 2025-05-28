@@ -1,6 +1,5 @@
 package jsex.nnap;
 
-import jep.NDArray;
 import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.atom.IAtomData;
@@ -32,6 +31,7 @@ import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.util.*;
@@ -52,271 +52,45 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
     protected final static double DEFAULT_STRESS_WEIGHT = 1.0;
     protected final static double DEFAULT_L2_LOSS_WEIGHT = 0.001;
+    protected final static boolean DEFAULT_TRAIN_IN_FLOAT = true;
     protected final static boolean DEFAULT_CLEAR_DATA_ON_TRAINING = true;
     protected final static PyObject TORCH;
-    /** 全局记录 python 中的变量名称 */
-    protected final static String
-          CLASS_DATA_SET                    = "__NNAP_TRAINER_DataSet__"
-        , CLASS_SINGLE_MODEL                = "__NNAP_TRAINER_SingleEnergyModel__"
-        , CLASS_TOTAL_MODEL                 = "__NNAP_TRAINER_TotalModel__"
-        , FN_TRAIN_STEP                     = "__NNAP_TRAINER_train_step__"
-        , FN_TEST_LOSS                      = "__NNAP_TRAINER_test_loss__"
-        , FN_CAL_MAE                        = "__NNAP_TRAINER_cal_mae__"
-        , FN_CAL_LOSS_DETAIL                = "__NNAP_TRAINER_cal_loss_detail__"
-        , FN_MODEL2BYTES                    = "__NNAP_TRAINER_model2bytes__"
-        , VAL_MODEL                         = "__NNAP_TRAINER_model__"
-        , VAL_MODEL_STATE_DICT              = "__NNAP_TRAINER_model_state_dict__"
-        , VAL_OPTIMIZER                     = "__NNAP_TRAINER_optimizer__"
-        , VAL_LOSS_FN                       = "__NNAP_TRAINER_loss_fn__"
-        , VAL_LOSS_FN_ENG                   = "__NNAP_TRAINER_loss_fn_eng__"
-        , VAL_LOSS_FN_FORCE                 = "__NNAP_TRAINER_loss_fn_force__"
-        , VAL_LOSS_FN_STRESS                = "__NNAP_TRAINER_loss_fn_stress__"
-        , VAL_HAS_FORCE                     = "__NNAP_TRAINER_has_force__"
-        , VAL_HAS_STRESS                    = "__NNAP_TRAINER_has_stress__"
-        , VAL_FORCE_WEIGHT                  = "__NNAP_TRAINER_force_weight__"
-        , VAL_STRESS_WEIGHT                 = "__NNAP_TRAINER_stress_weight__"
-        , VAL_L2_LOSS_WEIGHT                = "__NNAP_TRAINER_l2_loss_wright__"
-        , VAL_NORM_MU                       = "__NNAP_TRAINER_norm_mu__"
-        , VAL_NORM_MU_J                     = "__NNAP_TRAINER_norm_mu_J__"
-        , VAL_NORM_SIGMA                    = "__NNAP_TRAINER_norm_sigma__"
-        , VAL_NORM_SIGMA_J                  = "__NNAP_TRAINER_norm_sigma_J__"
-        , VAL_NORM_MU_ENG                   = "__NNAP_TRAINER_norm_mu_eng__"
-        , VAL_NORM_SIGMA_ENG                = "__NNAP_TRAINER_norm_sigma_eng__"
-        , VAL_TRAIN_DATA                    = "__NNAP_TRAINER_train_data__"
-        , VAL_TEST_DATA                     = "__NNAP_TRAINER_test_data__"
-        , VAL_DATA_J                        = "__NNAP_TRAINER_data_J__"
-        , VAL_NTYPES                        = "__NNAP_TRAINER_ntypes__"
-        , VAL_MIRROR_MAP                    = "__NNAP_TRAINER_mirror_map__"
-        , VAL_HIDDEN_DIMS                   = "__NNAP_TRAINER_hidden_dims__"
-        , VAL_INPUT_DIMS                    = "__NNAP_TRAINER_input_dims__"
-        , VAL_SUB                           = "__NNAP_TRAINER_sub__"
-        , VAL_I                             = "__NNAP_TRAINER_i__"
-        , VAL_S                             = "__NNAP_TRAINER_s__"
-        , VAL_INDICES                       = "__NNAP_TRAINER_indices__"
-        ;
+    protected final static PyCallable TRAINER;
     
     public static class Conf {
+        /** pytorch 训练时采用的线程数 */
+        public static int THREAD_NUMBER = 4;
         /** 全局初始化脚本，默认为设置串行；经过测试并行训练并不会明显更快 */
-        public static String INIT_SCRIPT =
-            "try:\n" +
-            "    torch.set_num_threads(1)\n" +
-            "    torch.set_num_interop_threads(1)\n" +
-            "except RuntimeError:\n" +
-            "    pass";
-        
-        /** python 中对应的 DataSet 类，内部存储 torch 的 tensor，一般情况不需要重写 */
-        public static String DATA_SET_SCRIPT =
-            "class "+CLASS_DATA_SET+":\n" +
-            "    def __init__(self):\n" +
-            "        self.fp = []\n" +
-            "        self.eng_indices = []\n" +
-            "        self.fp_partial = ([], [])\n" +
-            "        self.force_indices = None\n" +
-            "        self.stress_indices = None\n" +
-            "        self.stress_dxyz = None\n" +
-            "        self.eng = None\n" +
-            "        self.force = None\n" +
-            "        self.stress = None\n" +
-            "        self.atom_num = None\n" +
-            "        self.volume = None";
-        
-        /** 创建获取单粒子能量的模型的类，修改此值来实现自定义模型 */
-        public static String SINGLE_MODEL_SCRIPT =
-            "class "+CLASS_SINGLE_MODEL+"(torch.nn.Module):\n" +
-            "    def __init__(self, input_dim, hidden_dims):\n" +
-            "        super().__init__()\n" +
-            "        self.in_layer = torch.nn.Linear(input_dim, hidden_dims[0])\n" +
-            "        self.hidden_layers = torch.nn.ModuleList([torch.nn.Linear(hidden_dims[i], hidden_dims[i+1]) for i in range(len(hidden_dims)-1)])\n" +
-            "        self.out_layer = torch.nn.Linear(hidden_dims[-1], 1)\n" +
-            "        self.active = torch.nn.SiLU()\n" +
-            "    \n" +
-            "    def forward(self, x):\n" +
-            "        x = self.active(self.in_layer(x))\n" +
-            "        for hidden_layer in self.hidden_layers:\n" +
-            "            x = self.active(hidden_layer(x))\n" +
-            "        x = self.out_layer(x)\n" +
-            "        return torch.reshape(x, x.shape[:-1])";
-        
-        /** 创建获取总能量的模型的类，一般情况不需要重写 */
-        public static String TOTAL_MODEL_SCRIPT =
-            "class "+CLASS_TOTAL_MODEL+"(torch.nn.Module):\n" +
-            "    def __init__(self, input_dims, hidden_dims, mirror_map, ntypes):\n" +
-            "        super().__init__()\n" +
-            "        self.input_dims = input_dims\n" +
-            "        self.ntypes = ntypes\n" +
-            "        self.sub_models = torch.nn.ModuleList([(None if i in mirror_map else "+CLASS_SINGLE_MODEL+"(input_dims[i], hidden_dims[i])) for i in range(ntypes)])\n" +
-            "        for k, v in mirror_map.items():\n" +
-            "             self.sub_models[k] = self.sub_models[v]\n" +
-            "    \n" +
-            "    def forward(self, x):\n" +
-            "        return [self.sub_models[i](x[i]) for i in range(self.ntypes)]\n" +
-            "    \n" +
-            "    def cal_l2_loss(self):\n" +
-            "        l2_loss = 0.0\n" +
-            "        nparams = 0\n" +
-            "        for name, param in self.named_parameters():\n" +
-            "            if 'weight' in name:\n" +
-            "                param = param.flatten()\n" +
-            "                l2_loss += param.dot(param)\n" +
-            "                nparams += param.numel()\n" +
-            "        l2_loss /= nparams\n" +
-            "        return l2_loss\n" +
-            "    \n" +
-            "    def cal_eng(self, fp, indices, atom_nums):\n" +
-            "        eng, _, _ = self.cal_eng_force_stress(fp, indices, atom_nums)\n" +
-            "        return eng\n" +
-            "    \n" +
-            "    def cal_eng_force_stress(self, fp, indices, atom_nums, xyz_grad=None, indices_f=None, indices_s=None, dxyz=None, volumes=None, create_graph=False):\n" +
-            "        eng_all = self.forward(fp)\n" +
-            "        eng_len = len(atom_nums)\n" +
-            "        eng = torch.zeros(eng_len, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
-            "        for i in range(self.ntypes):\n" +
-            "            eng.scatter_add_(0, indices[i], eng_all[i])\n" +
-            "        eng /= atom_nums\n" +
-            "        if xyz_grad is None:\n" +
-            "            return eng, None, None\n" +
-            "        force, stress = None, None\n" +
-            "        if indices_f is not None:\n" +
-            "            force_len = atom_nums.sum().long().item()*3\n" + // 这里直接把力全部展开成单个向量
-            "            force = torch.zeros(force_len, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
-            "        if indices_s is not None:\n" +
-            "            stress_len = eng_len*6\n" + // 这里直接把应力全部展开成单个向量
-            "            stress = torch.zeros(stress_len, device=atom_nums.device, dtype=atom_nums.dtype)\n" +
-            "        for i in range(self.ntypes):\n" +
-            "            fp_grad = torch.autograd.grad(eng_all[i].sum(), fp[i], create_graph=create_graph)[0]\n" +
-            "            split_ = xyz_grad[0][i].shape[0]\n" +
-            "            force_all = torch.bmm(xyz_grad[0][i], fp_grad[:split_, :].unsqueeze(-1))\n" +
-            "            if indices_f is not None:\n" +
-            "                force.scatter_add_(0, indices_f[0][i].flatten(), force_all.flatten())\n" +
-            "            if indices_s is not None:\n" +
-            "                stress_all = force_all * dxyz[0][i]\n" + // 利用 boardcast 的特性，自动计算交叉项
-            "                stress.scatter_add_(0, indices_s[0][i].flatten(), stress_all.flatten())\n" +
-            "            force_all = torch.bmm(xyz_grad[1][i], fp_grad[split_:, :].unsqueeze(-1))\n" +
-            "            if indices_f is not None:\n" +
-            "                force.scatter_add_(0, indices_f[1][i].flatten(), force_all.flatten())\n" +
-            "            if indices_s is not None:\n" +
-            "                stress_all = force_all * dxyz[1][i]\n" + // 利用 boardcast 的特性，自动计算交叉项
-            "                stress.scatter_add_(0, indices_s[1][i].flatten(), stress_all.flatten())\n" +
-            "        if indices_f is not None:\n" +
-            "            force = -force\n" + // 这里统一补回负号，这样 stress 就不需要增加负号
-            "        if indices_s is not None:\n" +
-            "            stress = stress.reshape(eng_len, 6)\n" +
-            "            stress /= volumes.unsqueeze(-1)\n" + // 利用 boardcast 的特性统一消去体积
-            "            stress = stress.flatten()\n" +
-            "        return eng, force, stress";
-        
-        /** 总 loss 函数，修改此值实现自定义 loss 函数，主要用于控制各种 loss 之间的比例 */
-        public static String LOSS_FN_SCRIPT =
-            "def "+VAL_LOSS_FN+"(pred_e, target_e, pred_f=None, target_f=None, pred_s=None, target_s=None, detail=False):\n" +
-            "    loss_e = "+VAL_LOSS_FN_ENG+"(pred_e, target_e)\n" +
-            "    loss_f = torch.tensor(0.0) if pred_f is None else "+VAL_LOSS_FN_FORCE+"(pred_f, target_f)\n" +
-            "    loss_s = torch.tensor(0.0) if pred_s is None else "+VAL_LOSS_FN_STRESS+"(pred_s, target_s)\n" +
-            "    if detail:\n" +
-            "        return loss_e, "+VAL_FORCE_WEIGHT+"*loss_f, "+VAL_STRESS_WEIGHT+"*loss_s\n" +
-            "    return loss_e + "+VAL_FORCE_WEIGHT+"*loss_f + "+VAL_STRESS_WEIGHT+"*loss_s";
-        
-        /** 用于计算能量的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
-        public static String LOSS_FN_ENG_SCRIPT = VAL_LOSS_FN_ENG+"=torch.nn.SmoothL1Loss()";
-        /** 用于计算力的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
-        public static String LOSS_FN_FORCE_SCRIPT = VAL_LOSS_FN_FORCE+"=torch.nn.SmoothL1Loss()";
-        /** 用于计算应力的 loss 函数，修改此值实现自定义 loss 函数；目前默认采用 SmoothL1Loss */
-        public static String LOSS_FN_STRESS_SCRIPT = VAL_LOSS_FN_STRESS+"=torch.nn.SmoothL1Loss()";
-        
-        /** 训练一步的脚本函数，修改此值来实现自定义训练算法；默认使用 LBFGS 训练 */
-        public static String TRAIN_STEP_SCRIPT =
-            "def "+FN_TRAIN_STEP+"():\n" +
-            "    data = "+VAL_TRAIN_DATA+"\n"+
-            "    "+VAL_MODEL+".train()\n"+
-            "    def closure():\n" +
-            "        "+VAL_OPTIMIZER+".zero_grad()\n" +
-            "        if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
-            "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
-            "        else:\n" +
-            "            pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume, create_graph=True)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress)\n" +
-            "        loss += "+VAL_L2_LOSS_WEIGHT+"*"+VAL_MODEL+".cal_l2_loss()\n" +
-            "        loss.backward()\n" +
-            "        return loss\n" +
-            "    loss = closure()\n" +
-            "    "+VAL_OPTIMIZER+".step(closure)\n" +
-            "    return loss.item()";
-        
-        /** 获取测试集误差的脚本函数，一般情况不需要重写 */
-        public static String TEST_LOSS_SCRIPT =
-            "def "+FN_TEST_LOSS+"():\n" +
-            "    data = "+VAL_TEST_DATA+"\n"+
-            "    "+VAL_MODEL+".eval()\n"+
-            "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
-            "        with torch.no_grad():\n" +
-            "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
-            "            loss = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
-            "            return loss.item()\n" +
-            "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
-            "    loss = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress)\n" +
-            "    return loss.item()";
-        
-        /** 将模型转为字节的脚本，一般情况不需要重写 */
-        public static String MODEL2BYTES_SCRIPT =
-            "def "+FN_MODEL2BYTES+"(i):\n" +
-            "    sub_model = "+VAL_MODEL+".sub_models[i].double()\n" +
-            "    sub_model.eval()\n" +
-            "    input_ones = torch.ones(1, "+VAL_MODEL+".input_dims[i], dtype=torch.float64)\n" +
-            "    traced_script_module = torch.jit.trace(sub_model, input_ones)\n" +
-            "\n" +
-            "    buffer = io.BytesIO()\n" +
-            "    torch.jit.save(traced_script_module, buffer)\n" +
-            "    buffer.seek(0)\n" +
-            "    return buffer.read()";
+        public static @Nullable String INIT_SCRIPT = null;
     }
     static {
+        // 依赖 Python
+        SP.Python.InitHelper.init();
         // 简单直接依赖 Torch
         Torch.InitHelper.init();
-        
+        // 拷贝依赖的 python 脚本
+        String tPath = SP.Python.JEP_LIB_DIR+"jsexpy/nnap_trainer.py";
+        if (!IO.exists(tPath)) {
+            try {
+                IO.copy(IO.getResource("jsexpy/nnap_trainer.py"), tPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // torch 初始化设置线程
         SP.Python.exec("import torch");
         TORCH = SP.Python.getClass("torch");
-        SP.Python.exec("import copy");
-        SP.Python.exec("import io");
-        SP.Python.exec(Conf.INIT_SCRIPT);
-        SP.Python.exec(Conf.DATA_SET_SCRIPT);
-        SP.Python.exec(Conf.SINGLE_MODEL_SCRIPT);
-        SP.Python.exec(Conf.TOTAL_MODEL_SCRIPT);
-        SP.Python.exec(Conf.LOSS_FN_ENG_SCRIPT);
-        SP.Python.exec(Conf.LOSS_FN_FORCE_SCRIPT);
-        SP.Python.exec(Conf.LOSS_FN_STRESS_SCRIPT);
-        SP.Python.exec(Conf.LOSS_FN_SCRIPT);
-        SP.Python.exec(Conf.TRAIN_STEP_SCRIPT);
-        SP.Python.exec(Conf.TEST_LOSS_SCRIPT);
         //noinspection ConcatenationWithEmptyString
-        SP.Python.exec("" +
-        "def "+FN_CAL_MAE+"(data):\n" +
-        "    "+VAL_MODEL+".eval()\n"+
-        "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
-        "        with torch.no_grad():\n" +
-        "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
-        "            return (data.eng - pred).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+", None, None\n" +
-        "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
-        "    mae = (data.eng - pred).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
-        "    mae_f = None if pred_f is None else (data.force - pred_f).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
-        "    mae_s = None if pred_s is None else (data.stress - pred_s).abs().mean().item()*"+VAL_NORM_SIGMA_ENG+"\n" +
-        "    return mae, mae_f, mae_s"
+        SP.Python.exec(Conf.INIT_SCRIPT!=null ? Conf.INIT_SCRIPT : ""+
+            "try:\n" +
+            "    torch.set_num_threads("+Conf.THREAD_NUMBER+")\n" +
+            "    torch.set_num_interop_threads("+Conf.THREAD_NUMBER+")\n" +
+            "except RuntimeError:\n" +
+            "    pass"
         );
-        //noinspection ConcatenationWithEmptyString
-        SP.Python.exec("" +
-        "def "+FN_CAL_LOSS_DETAIL+"():\n" +
-        "    data = "+VAL_TRAIN_DATA+"\n"+
-        "    "+VAL_MODEL+".eval()\n"+
-        "    loss_l2 = "+VAL_L2_LOSS_WEIGHT+"*"+VAL_MODEL+".cal_l2_loss()\n" +
-        "    if not "+VAL_HAS_FORCE+" and not "+VAL_HAS_STRESS+":\n" +
-        "        with torch.no_grad():\n" +
-        "            pred = "+VAL_MODEL+".cal_eng(data.fp, data.eng_indices, data.atom_num)\n" +
-        "            loss_e = "+VAL_LOSS_FN+"(pred, data.eng)\n" +
-        "            return loss_l2.item(), loss_e.item(), None, None\n" +
-        "    pred, pred_f, pred_s = "+VAL_MODEL+".cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)\n" +
-        "    loss_e, loss_f, loss_s = "+VAL_LOSS_FN+"(pred, data.eng, pred_f, data.force, pred_s, data.stress, detail=True)\n" +
-        "    return loss_l2.item(), loss_e.item(), loss_f.item(), loss_s.item()"
-        );
-        SP.Python.exec(Conf.MODEL2BYTES_SCRIPT);
+        // 初始化 nnap trainer
+        SP.Python.exec("from jsexpy import nnap_trainer");
+        TRAINER = SP.Python.getAs(PyCallable.class, "nnap_trainer.Trainer");
     }
     
     private boolean mDead = false;
@@ -324,27 +98,28 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     @Override public void shutdown() {
         if (!mDead) {
             mDead = true;
-            if (mModelInited) SP.Python.removeValue(VAL_MODEL);
-            if (mOptimizerInited) SP.Python.removeValue(VAL_OPTIMIZER);
+            if (mTrainer != null) {
+                mTrainer.close();
+                mTrainer = null;
+            }
         }
     }
     
+    protected PyObject mTrainer = TRAINER.callAs(PyObject.class, DEFAULT_FORCE_WEIGHT, DEFAULT_STRESS_WEIGHT, DEFAULT_L2_LOSS_WEIGHT, DEFAULT_TRAIN_IN_FLOAT);
+    public Trainer setForceWeight(double aWeight) {mTrainer.setAttr("force_weight", aWeight); return this;}
+    public Trainer setStressWeight(double aWeight) {mTrainer.setAttr("stress_weight", aWeight); return this;}
+    public Trainer setL2LossWeight(double aWeight) {mTrainer.setAttr("l2_loss_weight", aWeight); return this;}
+    public Trainer setTrainInFloat(boolean aFlag) {mTrainer.setAttr("train_in_float", aFlag); return this;}
+    
     protected String mUnits = DEFAULT_UNITS;
     public Trainer setUnits(String aUnits) {mUnits = aUnits; return this;}
-    protected boolean mTrainInFloat = true;
-    public Trainer setTrainInFloat(boolean aFlag) {mTrainInFloat = aFlag; return this;}
-    protected double mForceWeight = DEFAULT_FORCE_WEIGHT;
-    public Trainer setForceWeight(double aWeight) {mForceWeight = aWeight; return this;}
-    protected double mStressWeight = DEFAULT_STRESS_WEIGHT;
-    public Trainer setStressWeight(double aWeight) {mStressWeight = aWeight; return this;}
-    protected double mL2LossWeight = DEFAULT_L2_LOSS_WEIGHT;
-    public Trainer setL2LossWeight(double aWeight) {mL2LossWeight = aWeight; return this;}
     protected boolean mClearDataOnTraining = DEFAULT_CLEAR_DATA_ON_TRAINING;
     public Trainer setClearDataOnTraining(boolean aFlag) {mClearDataOnTraining = aFlag; return this;}
     
     
     /** 所有训练相关的数据放在这里，同来减少训练集和测试集使用时的重复代码 */
     protected class DataSet {
+        public final int mAtomTypeNumber;
         /** 按照种类排序，内部是可扩展的具体数据；现在使用这种 DoubleList 展开的形式存 */
         public final DoubleList[] mFp;
         /** mFp 的实际值（按行排列），这个只是缓存结果 */
@@ -373,6 +148,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         public final DoubleList mVolume = new DoubleList(64);
         
         protected DataSet(int aAtomTypeNum) {
+            mAtomTypeNumber = aAtomTypeNum;
             mFp = new DoubleList[aAtomTypeNum];
             mEngIndices = new IntList[aAtomTypeNum];
             mFpPartial = new ArrayList<>(aAtomTypeNum);
@@ -404,23 +180,12 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         }
         @ApiStatus.Internal
         protected void putData2Py_(String aPyDataSetName, boolean aClearData) {
-            SP.Python.setValue(VAL_DATA_J, this);
-            String tDType = mTrainInFloat ? "float32" : "float64";
-            try {
-                SP.Python.exec(aPyDataSetName+" = "+CLASS_DATA_SET+"()");
-                SP.Python.exec(aPyDataSetName+".eng = torch.tensor("+VAL_DATA_J+".mEng.asList(), dtype=torch."+tDType+")");
-                SP.Python.exec(aPyDataSetName+".atom_num = torch.tensor("+VAL_DATA_J+".mAtomNum.asList(), dtype=torch."+tDType+")");
-                for (int i = 0; i < mSymbols.length; ++i) {
-                    SP.Python.setValue(VAL_I, i);
-                    SP.Python.exec(aPyDataSetName+".eng_indices.append(torch.tensor("+VAL_DATA_J+".mEngIndices["+VAL_I+"].asList(), dtype=torch.int64))");
-                    // 这里将最大的 Base 数据也用 numpy 的方式转换
-                    NDArray<double[]> tBaseNP = mFpMat[i].numpy();
-                    SP.Python.setValue(VAL_SUB, tBaseNP);
-                    SP.Python.exec(aPyDataSetName+".fp.append(torch.from_numpy("+VAL_SUB+(mTrainInFloat?").float())":"))"));
+            try (PyObject tDataSet = mTrainer.getAttr(aPyDataSetName, PyObject.class)) {
+                try (PyCallable fInitEngPart = tDataSet.getAttr("init_eng_part", PyCallable.class)) {
+                    fInitEngPart.call(this);
                 }
-                SP.Python.removeValue(VAL_SUB);
                 if (aClearData) {
-                    for (int i = 0; i < mSymbols.length; ++i) {
+                    for (int i = 0; i < mAtomTypeNumber; ++i) {
                         mFp[i].clear();
                         mEngIndices[i].clear();
                         mFp[i].clear();
@@ -429,41 +194,16 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     mEng.clear();
                     mAtomNum.clear();
                 }
-                //noinspection ConcatenationWithEmptyString
-                SP.Python.exec("" +
-                "for "+VAL_I+" in range(len("+aPyDataSetName+".fp)):\n" +
-                "    "+aPyDataSetName+".fp["+VAL_I+"] -= "+VAL_NORM_MU+"["+VAL_I+"]\n" +
-                "    "+aPyDataSetName+".fp["+VAL_I+"] /= "+VAL_NORM_SIGMA+"["+VAL_I+"]\n" +
-                "del "+VAL_I
-                );
-                //noinspection ConcatenationWithEmptyString
-                SP.Python.exec("" +
-                aPyDataSetName+".eng /= "+aPyDataSetName+".atom_num\n"+
-                aPyDataSetName+".eng -= "+VAL_NORM_MU_ENG+"\n"+
-                aPyDataSetName+".eng /= "+VAL_NORM_SIGMA_ENG
-                );
                 // 训练力和应力需要的额外数据
                 if (!mHasForce && !mHasStress) return;
-                if (mHasForce) {
-                    SP.Python.exec(aPyDataSetName+".force_indices = ([], [])");
-                    SP.Python.exec(aPyDataSetName+".force = torch.tensor("+VAL_DATA_J+".mForce.asList(), dtype=torch."+tDType+")");
-                    if (aClearData) {
-                        mForce.clear();
-                    }
-                    SP.Python.exec(aPyDataSetName+".force /= "+VAL_NORM_SIGMA_ENG);
+                try (PyCallable fInitForcePart = tDataSet.getAttr("init_force_part1", PyCallable.class)) {
+                    fInitForcePart.call(this);
                 }
-                if (mHasStress) {
-                    SP.Python.exec(aPyDataSetName+".stress_indices = ([], [])");
-                    SP.Python.exec(aPyDataSetName+".stress_dxyz = ([], [])");
-                    SP.Python.exec(aPyDataSetName+".stress = torch.tensor("+VAL_DATA_J+".mStress.asList(), dtype=torch."+tDType+")");
-                    SP.Python.exec(aPyDataSetName+".volume = torch.tensor("+VAL_DATA_J+".mVolume.asList(), dtype=torch."+tDType+")");
-                    if (aClearData) {
-                        mStress.clear();
-                        mVolume.clear();
-                    }
-                    SP.Python.exec(aPyDataSetName+".stress /= "+VAL_NORM_SIGMA_ENG);
+                if (aClearData) {
+                    if (mHasForce) {mForce.clear();}
+                    if (mHasStress) {mStress.clear(); mVolume.clear();}
                 }
-                for (int i = 0; i < mSymbols.length; ++i) {
+                for (int i = 0; i < mAtomTypeNumber; ++i) {
                     // 先根据近邻数排序 FpPartial 和 Indices，拆分成两份来减少内存占用
                     final List<PyObject> tSubFpPartial = mFpPartial.get(i);
                     final List<PyObject> tSubForceIndices = mHasForce ? mForceIndices.get(i) : null;
@@ -484,24 +224,8 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                             Collections.swap(tSubStressDxyz, ii, jj);
                         }
                     });
-                    SP.Python.setValue(VAL_INDICES, tSortIndices.internalData());
-                    SP.Python.setValue(VAL_S, calBestSplit_(tSubNN));
-                    SP.Python.setValue(VAL_I, i);
-                    // 基组本身也需要同步排序
-                    SP.Python.exec(aPyDataSetName+".fp["+VAL_I+"] = "+aPyDataSetName+".fp["+VAL_I+"]["+VAL_INDICES+", :]");
-                    SP.Python.exec(aPyDataSetName+".eng_indices["+VAL_I+"] = "+aPyDataSetName+".eng_indices["+VAL_I+"]["+VAL_INDICES+"]");
-                    // 直接通过 torch.nn.utils.rnn.pad_sequence 来填充 0
-                    SP.Python.exec(aPyDataSetName+".fp_partial[0].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mFpPartial["+VAL_I+"][:"+VAL_S+"], batch_first=True))");
-                    SP.Python.exec(aPyDataSetName+".fp_partial[1].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mFpPartial["+VAL_I+"]["+VAL_S+":], batch_first=True))");
-                    if (mHasForce) {
-                        SP.Python.exec(aPyDataSetName+".force_indices[0].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mForceIndices["+VAL_I+"][:"+VAL_S+"], batch_first=True).long())");
-                        SP.Python.exec(aPyDataSetName+".force_indices[1].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mForceIndices["+VAL_I+"]["+VAL_S+":], batch_first=True).long())");
-                    }
-                    if (mHasStress) {
-                        SP.Python.exec(aPyDataSetName+".stress_indices[0].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mStressIndices["+VAL_I+"][:"+VAL_S+"], batch_first=True).long())");
-                        SP.Python.exec(aPyDataSetName+".stress_indices[1].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mStressIndices["+VAL_I+"]["+VAL_S+":], batch_first=True).long())");
-                        SP.Python.exec(aPyDataSetName+".stress_dxyz[0].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mStressDxyz["+VAL_I+"][:"+VAL_S+"], batch_first=True))");
-                        SP.Python.exec(aPyDataSetName+".stress_dxyz[1].append(torch.nn.utils.rnn.pad_sequence("+VAL_DATA_J+".mStressDxyz["+VAL_I+"]["+VAL_S+":], batch_first=True))");
+                    try (PyCallable fInitForcePart = tDataSet.getAttr("init_force_part2", PyCallable.class)) {
+                        fInitForcePart.call(this, i, tSortIndices.numpy(), calBestSplit_(tSubNN));
                     }
                     // 遍历过程中清空数据，进一步减少转换过程的内存占用峰值
                     if (aClearData) {
@@ -522,23 +246,9 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                         }
                     }
                 }
-                SP.Python.removeValue(VAL_INDICES);
-                //noinspection ConcatenationWithEmptyString
-                SP.Python.exec("" +
-                "for "+VAL_I+" in range(len("+aPyDataSetName+".fp_partial[0])):\n" +
-                "    "+aPyDataSetName+".fp_partial[0]["+VAL_I+"] /= "+VAL_NORM_SIGMA+"["+VAL_I+"]\n" +
-                "    "+aPyDataSetName+".fp_partial[1]["+VAL_I+"] /= "+VAL_NORM_SIGMA+"["+VAL_I+"]\n" +
-                "del "+VAL_I
-                );
-                // 此时基组值本身需要梯度
-                //noinspection ConcatenationWithEmptyString
-                SP.Python.exec("" +
-                "for "+VAL_SUB+" in "+aPyDataSetName+".fp:\n" +
-                "    "+VAL_SUB+".requires_grad_(True)\n" +
-                "del "+VAL_SUB
-                );
-            } finally {
-                SP.Python.removeValue(VAL_DATA_J);
+                try (PyCallable fInitForcePart = tDataSet.getAttr("init_force_part3", PyCallable.class)) {
+                    fInitForcePart.call(this);
+                }
             }
         }
     }
@@ -556,7 +266,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     protected boolean mHasTest = false;
     protected boolean mModelInited = false;
     protected final Map<String, ?> mModelSetting;
-    protected boolean mOptimizerInited = false;
     protected final DoubleList mTrainLoss = new DoubleList(64);
     protected final DoubleList mTestLoss = new DoubleList(64);
     
@@ -602,21 +311,28 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     }
     
     @Override public int atomTypeNumber() {return mSymbols.length;}
-    public PyObject model(int aType) {return SP.Python.getAs(PyObject.class, VAL_MODEL+".sub_models["+(aType-1)+"]");}
+    public PyObject model(int aType) {
+        try (PyCallable fModel = mTrainer.getAttr("model", PyCallable.class)) {
+            return fModel.callAs(PyObject.class, aType-1);
+        }
+    }
     @SuppressWarnings("unchecked")
-    public @Unmodifiable List<PyObject> models() {return (List<PyObject>)SP.Python.getAs(List.class, VAL_MODEL+".sub_models");}
+    public @Unmodifiable List<PyObject> models() {
+        try (PyCallable fModels = mTrainer.getAttr("models", PyCallable.class)) {
+            return (List<PyObject>)fModels.callAs(List.class);
+        }
+    }
     public Basis basis(int aType) {return mBasis[aType-1];}
     public @Unmodifiable List<Basis> basis() {return AbstractCollections.from(mBasis);}
     @Override public boolean hasSymbol() {return true;}
     @Override public String symbol(int aType) {return mSymbols[aType-1];}
     public String units() {return mUnits;}
     
-    /** 重写实现自定义模型创建 */
     protected void initModel() {
         @Nullable List<?> tHiddenDims = (List<?>)UT.Code.get(mModelSetting, "hidden_dims", "nnarch");
         if (tHiddenDims == null) {
             tHiddenDims = NewCollections.from(mSymbols.length, i -> DEFAULT_HIDDEN_DIMS);
-        }
+        } else
         if (tHiddenDims.get(0) instanceof Integer) {
             final List<?> tSubDims = tHiddenDims;
             tHiddenDims = NewCollections.from(mSymbols.length, i -> tSubDims);
@@ -631,24 +347,10 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 UT.Code.warning("hidden_dims of mirror mismatch for type: "+(i+1)+", overwrite with mirror values automatically");
             }
         }
-        SP.Python.setValue(VAL_INPUT_DIMS, NewCollections.map(mBasis, Basis::size));
-        SP.Python.setValue(VAL_HIDDEN_DIMS, tHiddenDims);
-        SP.Python.setValue(VAL_MIRROR_MAP, tMirrorMap);
-        SP.Python.setValue(VAL_NTYPES, mSymbols.length);
-        try {
-            SP.Python.exec(VAL_MODEL+" = "+CLASS_TOTAL_MODEL+"("+VAL_INPUT_DIMS+", "+VAL_HIDDEN_DIMS+", "+VAL_MIRROR_MAP+", ntypes="+VAL_NTYPES+")");
-            if (!mTrainInFloat) SP.Python.exec(VAL_MODEL+" = "+VAL_MODEL+".double()");
-        } finally {
-            SP.Python.removeValue(VAL_NTYPES);
-            SP.Python.removeValue(VAL_HIDDEN_DIMS);
-            SP.Python.removeValue(VAL_INPUT_DIMS);
+        try (PyCallable fInitModel = mTrainer.getAttr("init_model", PyCallable.class)) {
+            fInitModel.call(NewCollections.map(mBasis, Basis::size), tHiddenDims, tMirrorMap, mSymbols.length);
         }
     }
-    /** 重写实现自定义优化器创建，默认采用 LBFGS */
-    protected void initOptimizer() {
-        SP.Python.exec(VAL_OPTIMIZER+" = torch.optim.LBFGS("+VAL_MODEL+".parameters(), history_size=100, max_iter=5, line_search_fn='strong_wolfe')");
-    }
-    /** 重写实现自定义基组归一化方案 */
     protected void initNormBasis() {
         for (int i = 0; i < mSymbols.length; ++i) {
             mNormMu[i].fill(0.0);
@@ -680,7 +382,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             mNormSigma[i] = mNormSigma[tMirrorIdx];
         }
     }
-    /** 重写实现自定义能量归一化方案 */
     protected void initNormEng() {
         // 这里采用中位数和上下四分位数来归一化能量
         Vector tSortedEng = mTrainData.mEng.copy2vec();
@@ -737,11 +438,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             initModel();
             mModelInited = true;
         }
-        // 同样在这里初始化优化器
-        if (!mOptimizerInited) {
-            initOptimizer();
-            mOptimizerInited = true;
-        }
         if (aPrintLog) System.out.println("Init train data...");
         // 初始化矩阵数据
         mTrainData.initFpMat_();
@@ -749,39 +445,38 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         // 重新构建归一化参数
         initNormBasis();
         initNormEng();
-        // 构造 torch 数据，这里直接把数据放到 python 环境中变成一个 python 的全局变量
-        SP.Python.setValue(VAL_HAS_FORCE, mHasForce);
-        SP.Python.setValue(VAL_HAS_STRESS, mHasStress);
-        SP.Python.setValue(VAL_FORCE_WEIGHT, mForceWeight);
-        SP.Python.setValue(VAL_STRESS_WEIGHT, mStressWeight);
-        SP.Python.setValue(VAL_L2_LOSS_WEIGHT, mL2LossWeight);
-        SP.Python.setValue(VAL_NORM_MU_J, mNormMu);
-        SP.Python.setValue(VAL_NORM_SIGMA_J, mNormSigma);
-        SP.Python.exec(VAL_NORM_MU+" = [torch.tensor("+VAL_SUB+".asList(), dtype=torch."+(mTrainInFloat?"float32":"float64")+") for "+VAL_SUB+" in "+VAL_NORM_MU_J+"]");
-        SP.Python.exec(VAL_NORM_SIGMA+" = [torch.tensor("+VAL_SUB+".asList(), dtype=torch."+(mTrainInFloat?"float32":"float64")+") for "+VAL_SUB+" in "+VAL_NORM_SIGMA_J+"]");
-        SP.Python.removeValue(VAL_NORM_MU_J);
-        SP.Python.removeValue(VAL_NORM_SIGMA_J);
-        SP.Python.setValue(VAL_NORM_MU_ENG, mNormMuEng);
-        SP.Python.setValue(VAL_NORM_SIGMA_ENG, mNormSigmaEng);
-        mTrainData.putData2Py_(VAL_TRAIN_DATA, mClearDataOnTraining);
-        if (mHasTest) mTestData.putData2Py_(VAL_TEST_DATA, mClearDataOnTraining);
+        // 构造 torch 数据
+        mTrainer.setAttr("has_force", mHasForce);
+        mTrainer.setAttr("has_stress", mHasStress);
+        try (PyCallable fInitNorm = mTrainer.getAttr("init_norm", PyCallable.class)) {
+            fInitNorm.call(mNormMu, mNormSigma);
+        }
+        mTrainer.setAttr("norm_mu_eng", mNormMuEng);
+        mTrainer.setAttr("norm_sigma_eng", mNormSigmaEng);
+        mTrainData.putData2Py_("train_data", mClearDataOnTraining);
+        if (mHasTest) mTestData.putData2Py_("test_data", mClearDataOnTraining);
         // 开始训练
-        try {
+        try (PyCallable fTrainStep = mTrainer.getAttr("train_step", PyCallable.class);
+             PyCallable fTestLoss = mTrainer.getAttr("test_loss", PyCallable.class);
+             PyCallable fSaveCheckpoint = mTrainer.getAttr("save_checkpoint", PyCallable.class);
+             PyCallable fLoadCheckpoint = mTrainer.getAttr("load_checkpoint", PyCallable.class);
+             PyCallable fCalLossDetail = mTrainer.getAttr("cal_loss_detail", PyCallable.class);
+             PyCallable fCalMae = mTrainer.getAttr("cal_mae", PyCallable.class);) {
             if (aPrintLog) UT.Timer.progressBar("train", aEpochs);
             double tMinLoss = Double.POSITIVE_INFINITY;
             int tSelectEpoch = -1;
             for (int i = 0; i < aEpochs; ++i) {
-                double tLoss = ((Number)SP.Python.invoke(FN_TRAIN_STEP)).doubleValue();
+                double tLoss = fTrainStep.callAs(Number.class).doubleValue();
                 double oLoss = mTrainLoss.isEmpty() ? Double.NaN : mTrainLoss.last();
                 mTrainLoss.add(tLoss);
                 double tTestLoss = Double.NaN;
                 if (mHasTest) {
-                    tTestLoss = ((Number)SP.Python.invoke(FN_TEST_LOSS)).doubleValue();
+                    tTestLoss = fTestLoss.callAs(Number.class).doubleValue();
                     mTestLoss.add(tTestLoss);
                     if (aEarlyStop && tTestLoss<tMinLoss) {
                         tSelectEpoch = i;
                         tMinLoss = tTestLoss;
-                        SP.Python.exec(VAL_MODEL_STATE_DICT+" = copy.deepcopy("+VAL_MODEL+".state_dict())");
+                        fSaveCheckpoint.call();
                     }
                 }
                 if (!Double.isNaN(oLoss) && Math.abs(oLoss-tLoss)<(tLoss*1e-8)) {
@@ -795,11 +490,11 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 }
             }
             if (aEarlyStop && tSelectEpoch>=0) {
-                SP.Python.exec(VAL_MODEL+".load_state_dict("+VAL_MODEL_STATE_DICT+"); del "+VAL_MODEL_STATE_DICT);
+                fLoadCheckpoint.call();
                 if (aPrintLog) System.out.printf("Model at epoch = %d selected, test loss = %.4g\n", tSelectEpoch, tMinLoss);
             }
             if (!aPrintLog) return;
-            List<?> tLossDetail = (List<?>)SP.Python.eval(FN_CAL_LOSS_DETAIL+"()");
+            List<?> tLossDetail = fCalLossDetail.callAs(List.class);
             double tLossL2 = ((Number)tLossDetail.get(0)).doubleValue();
             double tLossE = ((Number)tLossDetail.get(1)).doubleValue();
             double tLossF = mHasForce ? ((Number)tLossDetail.get(2)).doubleValue() : 0.0;
@@ -813,7 +508,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             if (mHasStress) {
                 System.out.printf("Loss-S : %.4g (%s)\n", tLossS, IO.Text.percent(tLossS/tLossTot));
             }
-            List<?> tMAE = (List<?>)SP.Python.eval(FN_CAL_MAE+"("+VAL_TRAIN_DATA+")");
+            List<?> tMAE = fCalMae.callAs(List.class, false);
             double tMAE_E = ((Number)tMAE.get(0)).doubleValue();
             double tMAE_F = mHasForce ? ((Number)tMAE.get(1)).doubleValue() : Double.NaN;
             double tMAE_S = mHasStress ? ((Number)tMAE.get(2)).doubleValue() : Double.NaN;
@@ -827,7 +522,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 }
                 return;
             }
-            List<?> tTestMAE = (List<?>)SP.Python.eval(FN_CAL_MAE+"("+VAL_TEST_DATA+")");
+            List<?> tTestMAE = fCalMae.callAs(List.class, true);
             double tTestMAE_E = ((Number)tTestMAE.get(0)).doubleValue();
             double tTestMAE_F = mHasForce ? ((Number)tTestMAE.get(1)).doubleValue() : Double.NaN;
             double tTestMAE_S = mHasStress ? ((Number)tTestMAE.get(2)).doubleValue() : Double.NaN;
@@ -862,17 +557,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 }
                 break;
             }}
-
-        } finally {
-            // 完事移除临时数据
-            SP.Python.removeValue(VAL_NORM_MU);
-            SP.Python.removeValue(VAL_NORM_SIGMA);
-            SP.Python.removeValue(VAL_NORM_MU_ENG);
-            SP.Python.removeValue(VAL_NORM_SIGMA_ENG);
-            SP.Python.removeValue(VAL_TRAIN_DATA);
-            if (mHasTest) {
-                SP.Python.removeValue(VAL_TEST_DATA);
-            }
         }
     }
     public void train(int aEpochs, boolean aEarlyStop) {train(aEpochs, aEarlyStop, true);}
@@ -902,6 +586,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     }
     @ApiStatus.Internal
     protected void calRefEngFpPartialAndAdd_(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress, DataSet rData) {
+        final boolean tTrainInFloat = mTrainer.getAttr("train_in_float", Boolean.class);
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
         // 由于数据集不完整因此这里不去做归一化
         final int tAtomNum = aAtomData.atomNumber();
@@ -912,6 +597,9 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 // 这里依旧采用缓存的写法
                 final int tBasisSize = tBasis.size();
                 Vector tFp = VectorCache.getVec(tBasisSize);
+                Vector tFpPx = VectorCache.getZeros(tBasisSize);
+                Vector tFpPy = VectorCache.getZeros(tBasisSize);
+                Vector tFpPz = VectorCache.getZeros(tBasisSize);
                 DoubleList tFpPxCross = new DoubleList(1024);
                 DoubleList tFpPyCross = new DoubleList(1024);
                 DoubleList tFpPzCross = new DoubleList(1024);
@@ -923,11 +611,17 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 aEnergy -= mRefEngs.get(tType-1);
                 // 基组偏导和索引
                 final int tNN = tFpPxCross.size()/tBasisSize;
+                // 为了减少后续优化过程中的近邻求和次数，因此这里还是使用旧的求力方法
+                for (int j = 0; j < tNN; ++j) {
+                    tFpPx.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPxCross.internalData()));
+                    tFpPy.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPyCross.internalData()));
+                    tFpPz.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPzCross.internalData()));
+                }
                 int tRowNum = tNN*3 + 3;
                 final RowMatrix tFpPartial = MatrixCache.getMatRow(tRowNum, tBasis.size());
-//                tFpPartial.row(0).fill(tFpPx);
-//                tFpPartial.row(1).fill(tFpPy);
-//                tFpPartial.row(2).fill(tFpPz);
+                tFpPartial.row(0).fill(tFpPx);
+                tFpPartial.row(1).fill(tFpPy);
+                tFpPartial.row(2).fill(tFpPz);
                 final IntVector tForceIndices = mHasForce ? IntVectorCache.getVec(tRowNum) : null;
                 final int tShiftF = mHasForce ? rData.mForce.size() : -1;
                 if (mHasForce) {
@@ -974,27 +668,30 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     ++j[0];
                 });
                 VectorCache.returnVec(tFp);
+                VectorCache.returnVec(tFpPx);
+                VectorCache.returnVec(tFpPy);
+                VectorCache.returnVec(tFpPz);
                 // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
                 PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
-                try (PyCallable tFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
-                    tPyFpPartial = tFromNumpy.callAs(PyObject.class, tFpPartial.numpy());
-                    if (mTrainInFloat) {
-                        try (PyObject oPyFpPartial = tPyFpPartial; PyCallable tFloat = oPyFpPartial.getAttr("float", PyCallable.class)) {
-                            tPyFpPartial = tFloat.callAs(PyObject.class);
+                try (PyCallable fFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
+                    tPyFpPartial = fFromNumpy.callAs(PyObject.class, tFpPartial.numpy());
+                    if (tTrainInFloat) {
+                        try (PyObject oPyFpPartial = tPyFpPartial; PyCallable fFloat = oPyFpPartial.getAttr("float", PyCallable.class)) {
+                            tPyFpPartial = fFloat.callAs(PyObject.class);
                         }
                     }
                     if (mHasForce) {
                         assert tForceIndices != null;
-                        tPyForceIndices = tFromNumpy.callAs(PyObject.class, tForceIndices.numpy());
+                        tPyForceIndices = fFromNumpy.callAs(PyObject.class, tForceIndices.numpy());
                     }
                     if (mHasStress) {
                         assert tStressIndices != null;
-                        tPyStressIndices = tFromNumpy.callAs(PyObject.class, tStressIndices.numpy());
+                        tPyStressIndices = fFromNumpy.callAs(PyObject.class, tStressIndices.numpy());
                         assert tStressDxyz != null;
-                        tPyStressDxyz = tFromNumpy.callAs(PyObject.class, tStressDxyz.numpy());
-                        if (mTrainInFloat) {
-                            try (PyObject oPyStressDxyz = tPyStressDxyz; PyCallable tFloat = oPyStressDxyz.getAttr("float", PyCallable.class)) {
-                                tPyStressDxyz = tFloat.callAs(PyObject.class);
+                        tPyStressDxyz = fFromNumpy.callAs(PyObject.class, tStressDxyz.numpy());
+                        if (tTrainInFloat) {
+                            try (PyObject oPyStressDxyz = tPyStressDxyz; PyCallable fFloat = oPyStressDxyz.getAttr("float", PyCallable.class)) {
+                                tPyStressDxyz = fFloat.callAs(PyObject.class);
                             }
                         }
                     }
@@ -1134,7 +831,10 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 ));
                 continue;
             }
-            byte[] tModelByes = (byte[])SP.Python.invoke(FN_MODEL2BYTES, i);
+            List<?> tModelState;
+            try (PyCallable fSaveModel = mTrainer.getAttr("save_model", PyCallable.class)) {
+                tModelState = fSaveModel.callAs(List.class, i);
+            }
             rModels.add(Maps.of(
                 "symbol", mSymbols[i],
                 "basis", rBasis,
@@ -1143,7 +843,15 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 "norm_sigma", mNormSigma[i].asList(),
                 "norm_mu_eng", mNormMuEng,
                 "norm_sigma_eng", mNormSigmaEng,
-                "torch", Base64.getEncoder().encodeToString(tModelByes)
+                "nn", Maps.of(
+                    "type", "feed_forward",
+                    "input_dim", tModelState.get(0),
+                    "hidden_dims", tModelState.get(1),
+                    "hidden_weights", tModelState.get(2),
+                    "hidden_biases", tModelState.get(3),
+                    "output_weight", tModelState.get(4),
+                    "output_bias", tModelState.get(5)
+                )
             ));
         }
         rSaveTo.put("version", NNAP.VERSION);
@@ -1157,4 +865,31 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         IO.map2json(rJson, aPath, aPretty);
     }
     public void save(String aPath) throws IOException {save(aPath, false);}
+    
+    /** 转换旧版势函数到新的版本的工具方法 */
+    @SuppressWarnings({"rawtypes", "unchecked"}) @VisibleForTesting
+    public static void convert(String aOldPath, String aNewPath) throws IOException {
+        Map rInfo = (aOldPath.endsWith(".yaml") || aOldPath.endsWith(".yml")) ? IO.yaml2map(aOldPath) : IO.json2map(aOldPath);
+        rInfo.put("version", NNAP.VERSION); // 更新为最新的版本，保证旧的 nnap 直接报错不兼容
+        List<Map> tModels = (List<Map>)rInfo.get("models");
+        for (Map tModel : tModels) {
+            Object tTorch = tModel.remove("torch");
+            if (tTorch == null) continue;
+            List<?> tModelState;
+            try (PyCallable fConvertBytes = SP.Python.getAs(PyCallable.class, "nnap_trainer.convert_bytes_")) {
+                tModelState = fConvertBytes.callAs(List.class, new Object[]{Base64.getDecoder().decode(tTorch.toString())});
+            }
+            tModel.put("nn", Maps.of(
+                "type", "feed_forward",
+                "input_dim", tModelState.get(0),
+                "hidden_dims", tModelState.get(1),
+                "hidden_weights", tModelState.get(2),
+                "hidden_biases", tModelState.get(3),
+                "output_weight", tModelState.get(4),
+                "output_bias", tModelState.get(5)
+            ));
+        }
+        if (aNewPath.endsWith(".yaml") || aNewPath.endsWith(".yml")) IO.map2yaml(rInfo, aNewPath);
+        else IO.map2json(rInfo, aNewPath);
+    }
 }
