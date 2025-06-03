@@ -80,22 +80,22 @@ public class PairNNAP extends LmpPlugin.Pair {
         // 优化部分，将这些经常访问的数据全部缓存来加速遍历
         int nlocal = atomNlocal();
         int nghost = atomNghost();
-        RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-        RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
+        final RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
+        final RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
         final IntVector typeVec = IntVectorCache.getVec(nlocal+nghost);
-        x.parse2dest(xMat.internalData(), xMat.internalDataShift(), xMat.rowNumber(), xMat.columnNumber());
-        f.parse2dest(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
-        type.parse2dest(typeVec.internalData(), typeVec.internalDataShift(), typeVec.internalDataSize());
+        x.parse2dest(xMat);
+        f.parse2dest(fMat);
+        type.parse2dest(typeVec);
         
         final double[] engBuf = {0.0};
         final double[] virialBuf = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         final Vector eatomVec = eflagAtom ? VectorCache.getVec(nlocal) : null;
         final RowMatrix vatomMat = vflagAtom ? MatrixCache.getMatRow(nlocal, 6) : null;
         if (eflagAtom) {
-            eatom.parse2dest(eatomVec.internalData(), eatomVec.internalDataShift(), eatomVec.internalDataSize());
+            eatom.parse2dest(eatomVec);
         }
         if (vflagAtom) {
-            vatom.parse2dest(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+            vatom.parse2dest(vatomMat);
         }
         
         // loop over neighbors of atoms
@@ -110,7 +110,7 @@ public class PairNNAP extends LmpPlugin.Pair {
                 IntCPointer jlist = firstneigh.getAt(i);
                 final int jnum = numneigh.getAt(i);
                 final IntVector jlistVec = IntVectorCache.getVec(jnum);
-                jlist.parse2dest(jlistVec.internalData(), jlistVec.internalDataShift(), jlistVec.internalDataSize());
+                jlist.parse2dest(jlistVec);
                 // 遍历近邻
                 neighborListDo.run(0, i, mLmpType2NNAPType[typei], (aRMax, aDxyzTypeIdxDo) -> {
                     for (int jj = 0; jj < jnum; ++jj) {
@@ -169,14 +169,14 @@ public class PairNNAP extends LmpPlugin.Pair {
             }
         }
         if (eflagAtom) {
-            eatom.fill(eatomVec.internalData(), eatomVec.internalDataShift(), eatomVec.internalDataSize());
+            eatom.fill(eatomVec);
             VectorCache.returnVec(eatomVec);
         }
         if (vflagAtom) {
-            vatom.fill(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+            vatom.fill(vatomMat);
             MatrixCache.returnMat(vatomMat);
         }
-        f.fill(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
+        f.fill(fMat);
         IntVectorCache.returnVec(typeVec);
         MatrixCache.returnMat(fMat);
         MatrixCache.returnMat(xMat);

@@ -8,6 +8,7 @@ import jse.clib.NestedIntCPointer;
 import jse.lmp.LmpPlugin;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 
 /**
  * {@link LmpPlugin.Pair} 的 NEP 版本，在 lammps
@@ -60,22 +61,22 @@ public class PairNEP extends LmpPlugin.Pair {
         
         int nlocal = atomNlocal();
         int nghost = atomNghost();
-        int[] typeBuf = IntArrayCache.getArray(nlocal+nghost);
-        RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-        RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
-        type.parse2dest(typeBuf);
-        x.parse2dest(xMat.internalData(), xMat.internalDataShift(), xMat.rowNumber(), xMat.columnNumber());
-        f.parse2dest(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
+        final IntVector typeVec = IntVectorCache.getVec(nlocal+nghost);
+        final RowMatrix xMat = MatrixCache.getMatRow(nlocal+nghost, 3);
+        final RowMatrix fMat = MatrixCache.getMatRow(nlocal+nghost, 3);
+        type.parse2dest(typeVec);
+        x.parse2dest(xMat);
+        f.parse2dest(fMat);
         
         final double[] engBuf = {0.0};
         final double[] virialBuf = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        final double[] eatomBuf = eflagAtom ? DoubleArrayCache.getArray(nlocal) : null;
+        final Vector eatomVec = eflagAtom ? VectorCache.getVec(nlocal) : null;
         final RowMatrix vatomMat = vflagAtom ? MatrixCache.getMatRow(nlocal, 6) : null;
         if (eflagAtom) {
-            eatom.parse2dest(eatomBuf);
+            eatom.parse2dest(eatomVec);
         }
         if (vflagAtom) {
-            vatom.parse2dest(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+            vatom.parse2dest(vatomMat);
         }
         
         mNEP.calEnergyForceVirial(nlocal, (initDo, finalDo, neighborListDo) -> {
@@ -85,11 +86,11 @@ public class PairNEP extends LmpPlugin.Pair {
                 final double xtmp = xMat.get(i, 0);
                 final double ytmp = xMat.get(i, 1);
                 final double ztmp = xMat.get(i, 2);
-                final int typei = mTypeMap[typeBuf[i]];
+                final int typei = mTypeMap[typeVec.get(i)];
                 IntCPointer jlist = firstneigh.getAt(i);
                 final int jnum = numneigh.getAt(i);
                 final IntVector jlistVec = IntVectorCache.getVec(jnum);
-                jlist.parse2dest(jlistVec.internalData(), jlistVec.internalDataShift(), jlistVec.internalDataSize());
+                jlist.parse2dest(jlistVec);
                 // 遍历近邻
                 neighborListDo.run(0, i, typei, (rmax, dxyzTypeDo) -> {
                     for (int jj = 0; jj < jnum; ++jj) {
@@ -99,7 +100,7 @@ public class PairNEP extends LmpPlugin.Pair {
                         double delx = xMat.get(j, 0) - xtmp;
                         double dely = xMat.get(j, 1) - ytmp;
                         double delz = xMat.get(j, 2) - ztmp;
-                        dxyzTypeDo.run(delx, dely, delz, mTypeMap[typeBuf[j]], j);
+                        dxyzTypeDo.run(delx, dely, delz, mTypeMap[typeVec.get(j)], j);
                     }
                 });
                 IntVectorCache.returnVec(jlistVec);
@@ -109,7 +110,7 @@ public class PairNEP extends LmpPlugin.Pair {
             if (idx >= 0) throw new IllegalStateException();
             engBuf[0] += eng;
             if (eflagAtom) {
-                eatomBuf[cIdx] += eng;
+                eatomVec.add(cIdx, eng);
             }
         }, (threadID, cIdx, idx, fx, fy, fz) -> {
             fMat.update(cIdx, 0, v -> v - fx);
@@ -145,15 +146,15 @@ public class PairNEP extends LmpPlugin.Pair {
             }
         }
         if (eflagAtom) {
-            eatom.fill(eatomBuf);
-            DoubleArrayCache.returnArray(eatomBuf);
+            eatom.fill(eatomVec);
+            VectorCache.returnVec(eatomVec);
         }
         if (vflagAtom) {
-            vatom.fill(vatomMat.internalData(), vatomMat.internalDataShift(), vatomMat.rowNumber(), vatomMat.columnNumber());
+            vatom.fill(vatomMat);
             MatrixCache.returnMat(vatomMat);
         }
-        f.fill(fMat.internalData(), fMat.internalDataShift(), fMat.rowNumber(), fMat.columnNumber());
-        IntArrayCache.returnArray(typeBuf);
+        f.fill(fMat);
+        IntVectorCache.returnVec(typeVec);
         MatrixCache.returnMat(fMat);
         MatrixCache.returnMat(xMat);
     }

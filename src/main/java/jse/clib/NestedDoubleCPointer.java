@@ -1,9 +1,11 @@
 package jse.clib;
 
 import jse.code.collection.AbstractRandomAccessList;
+import jse.math.IDataShell;
 import jse.math.matrix.AbstractMatrix;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RefMatrix;
+import jse.math.matrix.RowMatrix;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,6 +49,34 @@ public class NestedDoubleCPointer extends NestedCPointer {
     }
     
     /**
+     * 将 jse 的 {@link RowMatrix} 填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
+     * double 指针对应的长度一致
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param aData 输入的 {@link RowMatrix} 数据
+     * @see RowMatrix
+     */
+    public void fill(RowMatrix aData) {
+        fill(aData, aData.rowNumber(), aData.columnNumber());
+    }
+    /**
+     * 将 jse 的 {@code IDataShell<double[]>} 填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
+     * double 指针对应的长度一致
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param aData 输入的 {@code IDataShell<double[]>} 数据
+     * @param aRowNum 需要读取的 aData 的行数
+     * @param aColNum 需要读取的 aData 的列数
+     * @see IDataShell
+     */
+    public void fill(IDataShell<double[]> aData, int aRowNum, int aColNum) {
+        if (isNull()) throw new NullPointerException();
+        int tStart = aData.internalDataShift();
+        fill0(mPtr, aData.internalDataWithLengthCheck(aRowNum*aColNum, tStart), tStart, aRowNum, aColNum);
+    }
+    /**
      * 将 java 的 {@code double[]} 填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
      * double 指针对应的长度一致
      * <p>
@@ -62,27 +92,6 @@ public class NestedDoubleCPointer extends NestedCPointer {
         rangeCheck(aData.length, aStart + aRowNum*aColNum);
         fill0(mPtr, aData, aStart, aRowNum, aColNum);
     }
-    /**
-     * 将 java 的 {@code double[]} 填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
-     * double 指针对应的长度一致
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param aData 输入的 {@code double[]} 数据
-     * @param aRowNum 需要读取的 aData 的行数
-     * @param aColNum 需要读取的 aData 的列数
-     */
-    public void fill(double[] aData, int aRowNum, int aColNum) {fill(aData, 0, aRowNum, aColNum);}
-    /**
-     * 将 java 的 {@code double[]} 填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
-     * double 指针对应的长度一致
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param aData 输入的 {@code double[]} 数据
-     * @param aColNum 需要读取的 aData 的列数
-     */
-    public void fill(double[] aData, int aColNum) {fill(aData, 0, aData.length/aColNum, aColNum);}
     private native static void fill0(long rPtr, double[] aData, int aStart, int aRowNum, int aColNum);
     /**
      * 将给定输入数值填充到此嵌套 c 指针对应的内存中，认为数据按行排列且每个内部的
@@ -100,6 +109,32 @@ public class NestedDoubleCPointer extends NestedCPointer {
     private native static void fill1(long rPtr, double aValue, int aRowNum, int aColNum);
     
     /**
+     * 将此嵌套 c 指针对应的内存数值写入 jse 的 {@link RowMatrix} 中，认为数据按行排列且每个内部的
+     * double 指针对应的长度一致
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param rDest 需要写入的 {@link RowMatrix}
+     * @see RowMatrix
+     */
+    public void parse2dest(RowMatrix rDest) {parse2dest(rDest, rDest.rowNumber(), rDest.columnNumber());}
+    /**
+     * 将此嵌套 c 指针对应的内存数值写入 jse 的 {@code IDataShell<double[]>} 中，认为数据按行排列且每个内部的
+     * double 指针对应的长度一致
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param rDest 需要写入的 {@code IDataShell<double[]>}
+     * @param aRowNum 需要写入的 rDest 的行数
+     * @param aColNum 需要写入的 rDest 的列数
+     * @see IDataShell
+     */
+    public void parse2dest(IDataShell<double[]> rDest, int aRowNum, int aColNum) {
+        if (isNull()) throw new NullPointerException();
+        int tStart = rDest.internalDataShift();
+        parse2dest_(mPtr, rDest.internalDataWithLengthCheck(aRowNum*aColNum, tStart), tStart, aRowNum, aColNum);
+    }
+    /**
      * 将此嵌套 c 指针对应的内存数值写入 java 的 {@code double[]} 中，认为数据按行排列且每个内部的
      * double 指针对应的长度一致
      * <p>
@@ -115,27 +150,6 @@ public class NestedDoubleCPointer extends NestedCPointer {
         rangeCheck(rDest.length, aStart + aRowNum*aColNum);
         parse2dest_(mPtr, rDest, aStart, aRowNum, aColNum);
     }
-    /**
-     * 将此嵌套 c 指针对应的内存数值写入 java 的 {@code double[]} 中，认为数据按行排列且每个内部的
-     * double 指针对应的长度一致
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param rDest 需要写入的 {@code double[]}
-     * @param aRowNum 需要写入的 rDest 的行数
-     * @param aColNum 需要写入的 rDest 的列数
-     */
-    public void parse2dest(double[] rDest, int aRowNum, int aColNum) {parse2dest(rDest, 0, aRowNum, aColNum);}
-    /**
-     * 将此嵌套 c 指针对应的内存数值写入 java 的 {@code double[]} 中，认为数据按行排列且每个内部的
-     * double 指针对应的长度一致
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param rDest 需要写入的 {@code double[]}
-     * @param aColNum 需要写入的 rDest 的列数
-     */
-    public void parse2dest(double[] rDest, int aColNum) {parse2dest(rDest, 0, rDest.length/aColNum, aColNum);}
     private native static void parse2dest_(long aPtr, double[] rDest, int aStart, int aRowNum, int aColNum);
     
     

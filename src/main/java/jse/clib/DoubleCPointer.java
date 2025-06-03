@@ -1,6 +1,7 @@
 package jse.clib;
 
 import jse.code.collection.AbstractRandomAccessList;
+import jse.math.IDataShell;
 import jse.math.vector.AbstractVector;
 import jse.math.vector.IVector;
 import jse.math.vector.RefVector;
@@ -50,6 +51,20 @@ public class DoubleCPointer extends CPointer {
     private native static int typeSize_();
     
     /**
+     * 将 jse 的 {@code IDataShell<double[]>} 填充到此 c 指针对应的内存中
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param aData 输入的 {@code IDataShell<double[]>} 数据
+     * @see IDataShell
+     */
+    public void fill(IDataShell<double[]> aData) {
+        if (isNull()) throw new NullPointerException();
+        int tStart = aData.internalDataShift();
+        int tCount = aData.internalDataSize();
+        fill0(mPtr, aData.internalDataWithLengthCheck(tCount, tStart), tStart, tCount);
+    }
+    /**
      * 将 java 的 {@code double[]} 填充到此 c 指针对应的内存中
      * <p>
      * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
@@ -63,23 +78,6 @@ public class DoubleCPointer extends CPointer {
         rangeCheck(aData.length, aStart+aCount);
         fill0(mPtr, aData, aStart, aCount);
     }
-    /**
-     * 将 java 的 {@code double[]} 填充到此 c 指针对应的内存中
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param aData 输入的 {@code double[]} 数据
-     * @param aCount 需要读取的 aData 的长度
-     */
-    public void fill(double[] aData, int aCount) {fill(aData, 0, aCount);}
-    /**
-     * 将 java 的 {@code double[]} 填充到此 c 指针对应的内存中
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param aData 输入的 {@code double[]} 数据
-     */
-    public void fill(double[] aData) {fill(aData, 0, aData.length);}
     private native static void fill0(long rPtr, double[] aData, int aStart, int aCount);
     /**
      * 将给定输入数值填充到此 c 指针对应的内存中
@@ -96,6 +94,20 @@ public class DoubleCPointer extends CPointer {
     private native static void fill1(long rPtr, double aValue, int aCount);
     
     /**
+     * 将此 c 指针对应的内存数值写入 jse 的 {@code IDataShell<double[]>} 中
+     * <p>
+     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
+     *
+     * @param rDest 需要写入的 {@code IDataShell<double[]>}
+     * @see IDataShell
+     */
+    public void parse2dest(IDataShell<double[]> rDest) {
+        if (isNull()) throw new NullPointerException();
+        int tStart = rDest.internalDataShift();
+        int tCount = rDest.internalDataSize();
+        parse2dest_(mPtr, rDest.internalDataWithLengthCheck(tCount, tStart), tStart, tCount);
+    }
+    /**
      * 将此 c 指针对应的内存数值写入 java 的 {@code double[]} 中
      * <p>
      * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
@@ -109,23 +121,6 @@ public class DoubleCPointer extends CPointer {
         rangeCheck(rDest.length, aStart+aCount);
         parse2dest_(mPtr, rDest, aStart, aCount);
     }
-    /**
-     * 将此 c 指针对应的内存数值写入 java 的 {@code double[]} 中
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param rDest 需要写入的 {@code double[]}
-     * @param aCount 需要写入的 rDest 的长度
-     */
-    public void parse2dest(double[] rDest, int aCount) {parse2dest(rDest, 0, aCount);}
-    /**
-     * 将此 c 指针对应的内存数值写入 java 的 {@code double[]} 中
-     * <p>
-     * 注意此方法和 c 一致，并不会对此 c 指针对应的内存的长度进行检测（内部不会存储内存长度）
-     *
-     * @param rDest 需要写入的 {@code double[]}
-     */
-    public void parse2dest(double[] rDest) {parse2dest(rDest, 0, rDest.length);}
     private native static void parse2dest_(long aPtr, double[] rDest, int aStart, int aCount);
     
     
