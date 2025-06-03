@@ -73,6 +73,12 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setExtvector_1(JNIEnv *aE
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setExtarray_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr, jboolean aFlag) {
     ((FixJSE *)(intptr_t)aFixPtr)->setExtarray(aFlag);
 }
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setCommForward_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr, jint aSize) {
+    ((FixJSE *)(intptr_t)aFixPtr)->setCommForward(aSize);
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setCommReverse_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr, jint aSize) {
+    ((FixJSE *)(intptr_t)aFixPtr)->setCommReverse(aSize);
+}
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_findVariable_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr, jstring aName) {
     return ((FixJSE *)(intptr_t)aFixPtr)->findVariable(aName);
 }
@@ -237,6 +243,12 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commWorld_1(JNIEnv *aEnv
 }
 JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commCutghostuser_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
     return ((FixJSE *)(intptr_t)aFixPtr)->commCutghostuser();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commForwardComm_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    return ((FixJSE *)(intptr_t)aFixPtr)->commForwardComm();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commReverseComm_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    return ((FixJSE *)(intptr_t)aFixPtr)->commReverseComm();
 }
 JNIEXPORT jstring JNICALL Java_jse_lmp_LmpPlugin_00024Fix_unitStyle_1(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
     return ((FixJSE *)(intptr_t)aFixPtr)->unitStyle();

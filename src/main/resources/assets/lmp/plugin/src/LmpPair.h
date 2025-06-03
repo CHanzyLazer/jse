@@ -18,6 +18,11 @@ void initStyle(JNIEnv *, jobject);
 double initOne(JNIEnv *, jobject, int, int);
 void shutdown(JNIEnv *, jobject);
 
+int packForwardComm(JNIEnv *, jobject, int, int *, double *, int, int *);
+void unpackForwardComm(JNIEnv *, jobject, int, int, double *);
+int packReverseComm(JNIEnv *, jobject, int, int, double *);
+void unpackReverseComm(JNIEnv *, jobject, int, int *, double *);
+
 /** cache jclass */
 jboolean cacheJClass(JNIEnv *);
 void uncacheJClass(JNIEnv *);

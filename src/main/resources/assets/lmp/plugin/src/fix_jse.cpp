@@ -151,6 +151,25 @@ void FixJSE::min_post_force(int vflag) {
     if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to call min_post_force");
 }
 
+int FixJSE::pack_forward_comm(int n, int *list, double *buf, int pbc_flag, int *pbc) {
+    int out = JSE_LMPFIX::packForwardComm(mEnv, mCore, n, list, buf, pbc_flag, pbc);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to pack_forward_comm");
+    return out;
+}
+void FixJSE::unpack_forward_comm(int n, int first, double *buf) {
+    JSE_LMPFIX::unpackForwardComm(mEnv, mCore, n, first, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to unpack_forward_comm");
+}
+int FixJSE::pack_reverse_comm(int n, int first, double *buf) {
+    int out = JSE_LMPFIX::packReverseComm(mEnv, mCore, n, first, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to pack_reverse_comm");
+    return out;
+}
+void FixJSE::unpack_reverse_comm(int n, int *list, double *buf) {
+    JSE_LMPFIX::unpackReverseComm(mEnv, mCore, n, list, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to unpack_reverse_comm");
+}
+
 double FixJSE::compute_scalar() {
     double out = JSE_LMPFIX::computeScalar(mEnv, mCore);
     if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to compute_scalar");
@@ -244,6 +263,12 @@ void FixJSE::setExtvector(jboolean flag) {
 }
 void FixJSE::setExtarray(jboolean flag) {
     extarray = flag ? 1 : 0;
+}
+void FixJSE::setCommForward(jint size) {
+    comm_forward = (int)size;
+}
+void FixJSE::setCommReverse(jint size) {
+    comm_reverse = (int)size;
 }
 
 void FixJSE::neighborRequestDefault(jdouble rcut) {
@@ -415,6 +440,12 @@ jlong FixJSE::commWorld() {
 }
 jdouble FixJSE::commCutghostuser() {
     return comm->cutghostuser;
+}
+void FixJSE::commForwardComm() {
+    comm->forward_comm();
+}
+void FixJSE::commReverseComm() {
+    comm->reverse_comm();
 }
 jstring FixJSE::unitStyle() {
     char *tUnits = lmp->update->unit_style;

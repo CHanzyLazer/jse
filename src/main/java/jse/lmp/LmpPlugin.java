@@ -205,6 +205,43 @@ public class LmpPlugin {
          */
         @Override public void shutdown() {/**/}
         
+        /**
+         * lammps pair 中提供的 {@code pack_forward_comm} 方法包装，用于将数据送出到 ghost 原子
+         * <p>
+         * 在这里打包需要向其他进程送出的数据
+         */
+        public int packForwardComm(int n, IntCPointer list, DoubleCPointer buf, int pbc_flag, IntCPointer pbc) throws Exception {return 0;}
+        private int packForwardComm_(int n, long list, long buf, int pbc_flag, long pbc) throws Exception {
+            return packForwardComm(n, new IntCPointer(list), new DoubleCPointer(buf), pbc_flag, new IntCPointer(pbc));
+        }
+        /**
+         * lammps pair 中提供的 {@code unpack_forward_comm} 方法包装，用于将数据送出到 ghost 原子
+         * <p>
+         * 在这里解包其他进程送来的数据
+         */
+        public void unpackForwardComm(int n, int first, DoubleCPointer buf) throws Exception {}
+        private void unpackForwardComm_(int n, int first, long buf) throws Exception {
+            unpackForwardComm(n, first, new DoubleCPointer(buf));
+        }
+        /**
+         * lammps pair 中提供的 {@code pack_reverse_comm} 方法包装，用于从 ghost 原子获取数据
+         * <p>
+         * 在这里打包需要向其他进程送出的数据
+         */
+        public int packReverseComm(int n, int first, DoubleCPointer buf) throws Exception {return 0;}
+        private int packReverseComm_(int n, int first, long buf) throws Exception {
+            return packReverseComm(n, first, new DoubleCPointer(buf));
+        }
+        /**
+         * lammps pair 中提供的 {@code unpack_reverse_comm} 方法包装，用于从 ghost 原子获取数据
+         * <p>
+         * 在这里解包其他进程送来的数据
+         */
+        public void unpackReverseComm(int n, IntCPointer list, DoubleCPointer buf) throws Exception {}
+        private void unpackReverseComm_(int n, long list, long buf) throws Exception {
+            unpackReverseComm(n, new IntCPointer(list), new DoubleCPointer(buf));
+        }
+
         
         /// lammps pair 提供的接口
         protected final int findVariable(String aName) {
@@ -243,6 +280,15 @@ public class LmpPlugin {
         
         protected final void setCentroidstressflag(int aFlag) {setCentroidstressflag_(mPairPtr, aFlag);}
         private native static void setCentroidstressflag_(long aPairPtr, int aFlag);
+        
+        protected final void setCommForward(int aSize) {setCommForward_(mPairPtr, aSize);}
+        private native static void setCommForward_(long aPairPtr, int aSize);
+        
+        protected final void setCommReverse(int aSize) {setCommReverse_(mPairPtr, aSize);}
+        private native static void setCommReverse_(long aPairPtr, int aSize);
+        
+        protected final void setCommReverseOff(int aSize) {setCommReverseOff_(mPairPtr, aSize);}
+        private native static void setCommReverseOff_(long aPairPtr, int aSize);
         
         protected final void neighborRequestDefault() {neighborRequestDefault_(mPairPtr);}
         private native static void neighborRequestDefault_(long aPairPtr);
@@ -369,6 +415,12 @@ public class LmpPlugin {
         protected final MPI.Comm commWorld() {return MPI.Comm.of(commWorld_(mPairPtr));}
         private native static long commWorld_(long aPairPtr);
         
+        protected final void commForwardComm() {commForwardComm_(mPairPtr);}
+        private native static void commForwardComm_(long aPairPtr);
+        
+        protected final void commReverseComm() {commReverseComm_(mPairPtr);}
+        private native static void commReverseComm_(long aPairPtr);
+        
         protected final String unitStyle() {return unitStyle_(mPairPtr);}
         private native static String unitStyle_(long aPairPtr);
     }
@@ -477,6 +529,43 @@ public class LmpPlugin {
         public void minPreReverse(int aEFlag, int aVFlag) throws Exception {/**/}
         public void minPostForce(int aVFlag) throws Exception {/**/}
         
+        /**
+         * lammps fix 中提供的 {@code pack_forward_comm} 方法包装，用于将数据送出到 ghost 原子
+         * <p>
+         * 在这里打包需要向其他进程送出的数据
+         */
+        public int packForwardComm(int n, IntCPointer list, DoubleCPointer buf, int pbc_flag, IntCPointer pbc) throws Exception {return 0;}
+        private int packForwardComm_(int n, long list, long buf, int pbc_flag, long pbc) throws Exception {
+            return packForwardComm(n, new IntCPointer(list), new DoubleCPointer(buf), pbc_flag, new IntCPointer(pbc));
+        }
+        /**
+         * lammps fix 中提供的 {@code unpack_forward_comm} 方法包装，用于将数据送出到 ghost 原子
+         * <p>
+         * 在这里解包其他进程送来的数据
+         */
+        public void unpackForwardComm(int n, int first, DoubleCPointer buf) throws Exception {}
+        private void unpackForwardComm_(int n, int first, long buf) throws Exception {
+            unpackForwardComm(n, first, new DoubleCPointer(buf));
+        }
+        /**
+         * lammps fix 中提供的 {@code pack_reverse_comm} 方法包装，用于从 ghost 原子获取数据
+         * <p>
+         * 在这里打包需要向其他进程送出的数据
+         */
+        public int packReverseComm(int n, int first, DoubleCPointer buf) throws Exception {return 0;}
+        private int packReverseComm_(int n, int first, long buf) throws Exception {
+            return packReverseComm(n, first, new DoubleCPointer(buf));
+        }
+        /**
+         * lammps fix 中提供的 {@code unpack_reverse_comm} 方法包装，用于从 ghost 原子获取数据
+         * <p>
+         * 在这里解包其他进程送来的数据
+         */
+        public void unpackReverseComm(int n, IntCPointer list, DoubleCPointer buf) throws Exception {}
+        private void unpackReverseComm_(int n, long list, long buf) throws Exception  {
+            unpackReverseComm(n, new IntCPointer(list), new DoubleCPointer(buf));
+        }
+        
         /// lammps fix 可以用来计算获取的变量
         public double computeScalar() throws Exception {return 0.0;}
         public double computeVector(int i) throws Exception {return 0.0;}
@@ -549,6 +638,12 @@ public class LmpPlugin {
         
         protected final void setExtarray(boolean aFlag) {setExtarray_(mFixPtr, aFlag);}
         private native static void setExtarray_(long aFixPtr, boolean aFlag);
+        
+        protected final void setCommForward(int aSize) {setCommForward_(mFixPtr, aSize);}
+        private native static void setCommForward_(long aFixPtr, int aSize);
+        
+        protected final void setCommReverse(int aSize) {setCommReverse_(mFixPtr, aSize);}
+        private native static void setCommReverse_(long aFixPtr, int aSize);
         
         protected final int findVariable(String aName) {
             if (aName == null) throw new NullPointerException();
@@ -728,6 +823,12 @@ public class LmpPlugin {
         
         protected final double commCutghostuser() {return commCutghostuser_(mFixPtr);}
         private native static double commCutghostuser_(long aFixPtr);
+        
+        protected final void commForwardComm() {commForwardComm_(mFixPtr);}
+        private native static void commForwardComm_(long aFixPtr);
+        
+        protected final void commReverseComm() {commReverseComm_(mFixPtr);}
+        private native static void commReverseComm_(long aFixPtr);
         
         protected final String unitStyle() {return unitStyle_(mFixPtr);}
         private native static String unitStyle_(long aFixPtr);

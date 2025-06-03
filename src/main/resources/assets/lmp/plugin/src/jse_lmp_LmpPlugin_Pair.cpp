@@ -37,6 +37,15 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setGhostneigh_1(JNIEnv *
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCentroidstressflag_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint aFlag) {
     ((PairJSE *)(intptr_t)aPairPtr)->setCentroidstressflag(aFlag);
 }
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommForward_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint aSize) {
+    ((PairJSE *)(intptr_t)aPairPtr)->setCommForward(aSize);
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommReverse_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint aSize) {
+    ((PairJSE *)(intptr_t)aPairPtr)->setCommReverse(aSize);
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommReverseOff_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jint aSize) {
+    ((PairJSE *)(intptr_t)aPairPtr)->setCommReverseOff(aSize);
+}
 JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_neighborRequestDefault_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     ((PairJSE *)(intptr_t)aPairPtr)->neighborRequestDefault();
 }
@@ -159,6 +168,12 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commNprocs_1(JNIEnv *aEn
 }
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commWorld_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->commWorld();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commForwardComm_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->commForwardComm();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commReverseComm_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->commReverseComm();
 }
 JNIEXPORT jstring JNICALL Java_jse_lmp_LmpPlugin_00024Pair_unitStyle_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->unitStyle();

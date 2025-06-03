@@ -23,6 +23,11 @@ public:
     void init_style() override;
     double init_one(int, int) override;
 
+    int pack_forward_comm(int, int *, double *, int, int *) override;
+    void unpack_forward_comm(int, int, double *) override;
+    int pack_reverse_comm(int, int, double *) override;
+    void unpack_reverse_comm(int, int *, double *) override;
+
 protected:
     JNIEnv *mEnv = NULL;
     jobject mCore = NULL;
@@ -30,8 +35,6 @@ protected:
     virtual void allocate();
     
 public:
-    jint findVariable(jstring);
-    jdouble computeVariable(jint);
     void setSingleEnable(jboolean);
     void setOneCoeff(jboolean);
     void setManybodyFlag(jboolean);
@@ -40,6 +43,12 @@ public:
     void setFinitecutflag(jboolean);
     void setGhostneigh(jboolean);
     void setCentroidstressflag(jint);
+    void setCommForward(jint);
+    void setCommReverse(jint);
+    void setCommReverseOff(jint);
+
+    jint findVariable(jstring);
+    jdouble computeVariable(jint);
     void neighborRequestDefault();
     void neighborRequestFull();
     jlong atomX();
@@ -81,6 +90,8 @@ public:
     jint commMe();
     jint commNprocs();
     jlong commWorld();
+    void commForwardComm();
+    void commReverseComm();
     jstring unitStyle();
 };
 

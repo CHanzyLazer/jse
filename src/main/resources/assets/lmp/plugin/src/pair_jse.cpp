@@ -108,6 +108,25 @@ double PairJSE::init_one(int i, int j) {
     return cutij;
 }
 
+int PairJSE::pack_forward_comm(int n, int *list, double *buf, int pbc_flag, int *pbc) {
+    int out = JSE_LMPPAIR::packForwardComm(mEnv, mCore, n, list, buf, pbc_flag, pbc);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to pack_forward_comm");
+    return out;
+}
+void PairJSE::unpack_forward_comm(int n, int first, double *buf) {
+    JSE_LMPPAIR::unpackForwardComm(mEnv, mCore, n, first, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to unpack_forward_comm");
+}
+int PairJSE::pack_reverse_comm(int n, int first, double *buf) {
+    int out = JSE_LMPPAIR::packReverseComm(mEnv, mCore, n, first, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to pack_reverse_comm");
+    return out;
+}
+void PairJSE::unpack_reverse_comm(int n, int *list, double *buf) {
+    JSE_LMPPAIR::unpackReverseComm(mEnv, mCore, n, list, buf);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "Fail to unpack_reverse_comm");
+}
+
 /* ---------------------------------------------------------------------- */
 jint PairJSE::findVariable(jstring name) {
     const char *name_c = mEnv->GetStringUTFChars(name, NULL);
@@ -144,6 +163,16 @@ void PairJSE::setGhostneigh(jboolean flag) {
 void PairJSE::setCentroidstressflag(jint flag) {
     centroidstressflag = (int)flag;
 }
+void PairJSE::setCommForward(jint size) {
+    comm_forward = (int)size;
+}
+void PairJSE::setCommReverse(jint size) {
+    comm_reverse = (int)size;
+}
+void PairJSE::setCommReverseOff(jint size) {
+    comm_reverse_off = (int)size;
+}
+
 void PairJSE::neighborRequestDefault() {
     neighbor->add_request(this, NeighConst::REQ_DEFAULT);
 }
@@ -266,6 +295,12 @@ jint PairJSE::commNprocs() {
 }
 jlong PairJSE::commWorld() {
     return (jlong)(intptr_t)world;
+}
+void PairJSE::commForwardComm() {
+    comm->forward_comm();
+}
+void PairJSE::commReverseComm() {
+    comm->reverse_comm();
 }
 jstring PairJSE::unitStyle() {
     char *tUnits = lmp->update->unit_style;

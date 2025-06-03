@@ -39,6 +39,10 @@ static jmethodID sSettings = 0;
 static jmethodID sInitStyle = 0;
 static jmethodID sShutdown = 0;
 static jmethodID sInitOne = 0;
+static jmethodID sPackForwardComm = 0;
+static jmethodID sUnpackForwardComm = 0;
+static jmethodID sPackReverseComm = 0;
+static jmethodID sUnpackReverseComm = 0;
 
 jobject JSE_LMPPAIR::newJObject(JNIEnv *aEnv, char *aArg, void *aPtr) {
     jobject rOut = NULL;
@@ -105,3 +109,27 @@ void JSE_LMPPAIR::shutdown(JNIEnv *aEnv, jobject aSelf) {
         aEnv->CallVoidMethod(aSelf, sShutdown);
     }
 }
+
+int JSE_LMPPAIR::packForwardComm(JNIEnv *aEnv, jobject aSelf, int n, int *list, double *buf, int pbc_flag, int *pbc) {
+    if (sPackForwardComm || (sPackForwardComm = aEnv->GetMethodID(LMPPAIR_CLAZZ, "packForwardComm_", "(IJJIJ)I"))) {
+        return (int)aEnv->CallIntMethod(aSelf, sPackForwardComm, (jint)n, (jlong)(intptr_t)list, (jlong)(intptr_t)buf, (jint)pbc_flag, (jlong)(intptr_t)pbc);
+    }
+    return 0;
+}
+void JSE_LMPPAIR::unpackForwardComm(JNIEnv *aEnv, jobject aSelf, int n, int first, double *buf) {
+    if (sUnpackForwardComm || (sUnpackForwardComm = aEnv->GetMethodID(LMPPAIR_CLAZZ, "unpackForwardComm_", "(IIJ)V"))) {
+        aEnv->CallVoidMethod(aSelf, sUnpackForwardComm, (jint)n, (jint)first, (jlong)(intptr_t)buf);
+    }
+}
+int JSE_LMPPAIR::packReverseComm(JNIEnv *aEnv, jobject aSelf, int n, int first, double *buf) {
+    if (sPackReverseComm || (sPackReverseComm = aEnv->GetMethodID(LMPPAIR_CLAZZ, "packReverseComm_", "(IIJ)I"))) {
+        return (int)aEnv->CallIntMethod(aSelf, sPackReverseComm, (jint)n, (jint)first, (jlong)(intptr_t)buf);
+    }
+    return 0;
+}
+void JSE_LMPPAIR::unpackReverseComm(JNIEnv *aEnv, jobject aSelf, int n, int *list, double *buf) {
+    if (sUnpackReverseComm || (sUnpackReverseComm = aEnv->GetMethodID(LMPPAIR_CLAZZ, "unpackReverseComm_", "(IJJ)V"))) {
+        aEnv->CallVoidMethod(aSelf, sUnpackReverseComm, (jint)n, (jlong)(intptr_t)list, (jlong)(intptr_t)buf);
+    }
+}
+

@@ -54,6 +54,10 @@ static jmethodID sMinPostNeighbor = 0;
 static jmethodID sMinPreForce = 0;
 static jmethodID sMinPreReverse = 0;
 static jmethodID sMinPostForce = 0;
+static jmethodID sPackForwardComm = 0;
+static jmethodID sUnpackForwardComm = 0;
+static jmethodID sPackReverseComm = 0;
+static jmethodID sUnpackReverseComm = 0;
 static jmethodID sComputeScalar = 0;
 static jmethodID sComputeVector = 0;
 static jmethodID sComputeArray = 0;
@@ -131,17 +135,17 @@ void JSE_LMPFIX::postNeighbor(JNIEnv *aEnv, jobject aSelf) {
 }
 void JSE_LMPFIX::preForce(JNIEnv *aEnv, jobject aSelf, int vflag) {
     if (sPreForce || (sPreForce = aEnv->GetMethodID(LMPFIX_CLAZZ, "preForce", "(I)V"))) {
-        aEnv->CallVoidMethod(aSelf, sPreForce, vflag);
+        aEnv->CallVoidMethod(aSelf, sPreForce, (jint)vflag);
     }
 }
 void JSE_LMPFIX::preReverse(JNIEnv *aEnv, jobject aSelf, int eflag, int vflag) {
     if (sPreReverse || (sPreReverse = aEnv->GetMethodID(LMPFIX_CLAZZ, "preReverse", "(II)V"))) {
-        aEnv->CallVoidMethod(aSelf, sPreReverse, eflag, vflag);
+        aEnv->CallVoidMethod(aSelf, sPreReverse, (jint)eflag, (jint)vflag);
     }
 }
 void JSE_LMPFIX::postForce(JNIEnv *aEnv, jobject aSelf, int vflag) {
     if (sPostForce || (sPostForce = aEnv->GetMethodID(LMPFIX_CLAZZ, "postForce", "(I)V"))) {
-        aEnv->CallVoidMethod(aSelf, sPostForce, vflag);
+        aEnv->CallVoidMethod(aSelf, sPostForce, (jint)vflag);
     }
 }
 void JSE_LMPFIX::finalIntegrate(JNIEnv *aEnv, jobject aSelf) {
@@ -176,17 +180,40 @@ void JSE_LMPFIX::minPostNeighbor(JNIEnv *aEnv, jobject aSelf) {
 }
 void JSE_LMPFIX::minPreForce(JNIEnv *aEnv, jobject aSelf, int vflag) {
     if (sMinPreForce || (sMinPreForce = aEnv->GetMethodID(LMPFIX_CLAZZ, "minPreForce", "(I)V"))) {
-        aEnv->CallVoidMethod(aSelf, sMinPreForce, vflag);
+        aEnv->CallVoidMethod(aSelf, sMinPreForce, (jint)vflag);
     }
 }
 void JSE_LMPFIX::minPreReverse(JNIEnv *aEnv, jobject aSelf, int eflag, int vflag) {
     if (sMinPreReverse || (sMinPreReverse = aEnv->GetMethodID(LMPFIX_CLAZZ, "minPreReverse", "(II)V"))) {
-        aEnv->CallVoidMethod(aSelf, sMinPreReverse, eflag, vflag);
+        aEnv->CallVoidMethod(aSelf, sMinPreReverse, (jint)eflag, (jint)vflag);
     }
 }
 void JSE_LMPFIX::minPostForce(JNIEnv *aEnv, jobject aSelf, int vflag) {
     if (sMinPostForce || (sMinPostForce = aEnv->GetMethodID(LMPFIX_CLAZZ, "minPostForce", "(I)V"))) {
-        aEnv->CallVoidMethod(aSelf, sMinPostForce, vflag);
+        aEnv->CallVoidMethod(aSelf, sMinPostForce, (jint)vflag);
+    }
+}
+
+int JSE_LMPFIX::packForwardComm(JNIEnv *aEnv, jobject aSelf, int n, int *list, double *buf, int pbc_flag, int *pbc) {
+    if (sPackForwardComm || (sPackForwardComm = aEnv->GetMethodID(LMPFIX_CLAZZ, "packForwardComm_", "(IJJIJ)I"))) {
+        return (int)aEnv->CallIntMethod(aSelf, sPackForwardComm, (jint)n, (jlong)(intptr_t)list, (jlong)(intptr_t)buf, (jint)pbc_flag, (jlong)(intptr_t)pbc);
+    }
+    return 0;
+}
+void JSE_LMPFIX::unpackForwardComm(JNIEnv *aEnv, jobject aSelf, int n, int first, double *buf) {
+    if (sUnpackForwardComm || (sUnpackForwardComm = aEnv->GetMethodID(LMPFIX_CLAZZ, "unpackForwardComm_", "(IIJ)V"))) {
+        aEnv->CallVoidMethod(aSelf, sUnpackForwardComm, (jint)n, (jint)first, (jlong)(intptr_t)buf);
+    }
+}
+int JSE_LMPFIX::packReverseComm(JNIEnv *aEnv, jobject aSelf, int n, int first, double *buf) {
+    if (sPackReverseComm || (sPackReverseComm = aEnv->GetMethodID(LMPFIX_CLAZZ, "packReverseComm_", "(IIJ)I"))) {
+        return (int)aEnv->CallIntMethod(aSelf, sPackReverseComm, (jint)n, (jint)first, (jlong)(intptr_t)buf);
+    }
+    return 0;
+}
+void JSE_LMPFIX::unpackReverseComm(JNIEnv *aEnv, jobject aSelf, int n, int *list, double *buf) {
+    if (sUnpackReverseComm || (sUnpackReverseComm = aEnv->GetMethodID(LMPFIX_CLAZZ, "unpackReverseComm_", "(IJJ)V"))) {
+        aEnv->CallVoidMethod(aSelf, sUnpackReverseComm, (jint)n, (jlong)(intptr_t)list, (jlong)(intptr_t)buf);
     }
 }
 

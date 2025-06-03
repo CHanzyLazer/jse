@@ -241,6 +241,22 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setExtarray_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    setCommForward_
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setCommForward_1
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    setCommReverse_
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_setCommReverse_1
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
  * Method:    findVariable_
  * Signature: (JLjava/lang/String;)I
  */
@@ -677,6 +693,22 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commWorld_1
  * Signature: (J)D
  */
 JNIEXPORT jdouble JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commCutghostuser_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    commForwardComm_
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commForwardComm_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    commReverseComm_
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_commReverseComm_1
   (JNIEnv *, jclass, jlong);
 
 /*

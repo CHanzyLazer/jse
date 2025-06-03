@@ -95,6 +95,30 @@ JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCentroidstressflag_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    setCommForward_
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommForward_1
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    setCommReverse_
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommReverse_1
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    setCommReverseOff_
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_setCommReverseOff_1
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
  * Method:    neighborRequestDefault_
  * Signature: (J)V
  */
@@ -419,6 +443,22 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commNprocs_1
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commWorld_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    commForwardComm_
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commForwardComm_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    commReverseComm_
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_commReverseComm_1
   (JNIEnv *, jclass, jlong);
 
 /*

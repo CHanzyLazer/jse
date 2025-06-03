@@ -34,6 +34,11 @@ void minPreForce(JNIEnv *, jobject, int);
 void minPreReverse(JNIEnv *, jobject, int, int);
 void minPostForce(JNIEnv *, jobject, int);
 
+int packForwardComm(JNIEnv *, jobject, int, int *, double *, int, int *);
+void unpackForwardComm(JNIEnv *, jobject, int, int, double *);
+int packReverseComm(JNIEnv *, jobject, int, int, double *);
+void unpackReverseComm(JNIEnv *, jobject, int, int *, double *);
+
 double computeScalar(JNIEnv *, jobject);
 double computeVector(JNIEnv *, jobject, int);
 double computeArray(JNIEnv *, jobject, int, int);
