@@ -758,7 +758,7 @@ public class DataXYZ extends AbstractSettableAtomData {
             // 转换时默认增加 T T T 的 pbc
             Map<String, Object> rParameters = new LinkedHashMap<>();
             rParameters.put("pbc", "T T T");
-            return new DataXYZ(tAtomNum, null, rParameters, rProperties, aAtomData.box().copy()).setSymbols(aSymbols);
+            return new DataXYZ(tAtomNum, null, rParameters, rProperties, aAtomData.box().copy()).setSymbolOrder(aSymbols);
         }
     }
     /**
