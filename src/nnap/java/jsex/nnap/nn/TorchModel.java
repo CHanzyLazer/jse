@@ -34,25 +34,25 @@ public class TorchModel extends NeuralNetwork {
     }
     public final static class Conf {
         /**
-         * 自定义构建 nnap 的 cmake 参数设置，
+         * 自定义构建 nnap torch 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
         public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
         
         /**
-         * 自定义构建 nnap 时使用的编译器，
+         * 自定义构建 nnap torch 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
          */
         public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_NNAPTORCH", jse.code.Conf.CMAKE_CXX_COMPILER);
         public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_NNAPTORCH"   , jse.code.Conf.CMAKE_CXX_FLAGS);
         
         /**
-         * 对于 nnap，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
+         * 对于 nnap torch，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
          * 这对于 java 数组和 c 数组的转换很有效
          */
         public static boolean USE_MIMALLOC = OS.envZ("JSE_USE_MIMALLOC_NNAPTORCH", jse.code.Conf.USE_MIMALLOC);
         
-        /** 重定向 nnap 动态库的路径 */
+        /** 重定向 nnap torch 动态库的路径 */
         public static @Nullable String REDIRECT_NNAPTORCH_LIB = OS.env("JSE_REDIRECT_NNAPTORCH_LIB");
     }
     

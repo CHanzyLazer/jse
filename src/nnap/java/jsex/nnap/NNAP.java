@@ -2,6 +2,7 @@ package jsex.nnap;
 
 import jse.atom.IPairPotential;
 import jse.clib.JNIUtil;
+import jse.clib.MiMalloc;
 import jse.code.CS;
 import jse.code.IO;
 import jse.code.OS;
@@ -58,7 +59,7 @@ public class NNAP implements IPairPotential {
     
     public final static class Conf {
         /**
-         * 自定义构建 native nnap basis 的 cmake 参数设置，
+         * 自定义构建 nnap 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
         public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
@@ -68,13 +69,13 @@ public class NNAP implements IPairPotential {
         public static final int BASE = 1;
         public static final int MAX = 2;
         /**
-         * 自定义 native nnap basis 需要采用的优化等级，默认为 1（基础优化），
+         * 自定义 nnap 需要采用的优化等级，默认为 1（基础优化），
          * 会开启 AVX2 指令集，在大多数现代处理器上能兼容运行
          */
         public static int OPT_LEVEL = OS.envI("JSE_NNAP_OPT_LEVEL", BASE);
         
         /**
-         * 自定义构建 native nnap basis 时使用的编译器，
+         * 自定义构建 nnap 时使用的编译器，
          * cmake 有时不能自动检测到希望使用的编译器
          */
         public static @Nullable String CMAKE_C_COMPILER   = OS.env("JSE_CMAKE_C_COMPILER_NNAP"  , jse.code.Conf.CMAKE_C_COMPILER);
@@ -82,12 +83,18 @@ public class NNAP implements IPairPotential {
         public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_NNAP", jse.code.Conf.CMAKE_CXX_COMPILER);
         public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_NNAP"   , jse.code.Conf.CMAKE_CXX_FLAGS);
         
-        /** 重定向 native nnap basis 动态库的路径 */
+        /**
+         * 对于 nnap，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
+         * 这对于 java 数组和 c 数组的转换很有效
+         */
+        public static boolean USE_MIMALLOC = OS.envZ("JSE_USE_MIMALLOC_NNAP", jse.code.Conf.USE_MIMALLOC);
+        
+        /** 重定向 nnap 动态库的路径 */
         public static @Nullable String REDIRECT_NNAPBASIS_LIB = OS.env("JSE_REDIRECT_NNAP_LIB");
     }
     
     public final static int VERSION = 4;
-    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(CS.VERSION, VERSION, Conf.OPT_LEVEL, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(CS.VERSION, VERSION, Conf.OPT_LEVEL, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "nnap_util.h"
@@ -103,6 +110,8 @@ public class NNAP implements IPairPotential {
     
     static {
         InitHelper.INITIALIZED = true;
+        // 依赖 jniutil
+        JNIUtil.InitHelper.init();
         // 这里不直接依赖 LmpPlugin
         
         // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
@@ -137,7 +146,7 @@ public class NNAP implements IPairPotential {
             .setSrc("nnap", SRC_NAME)
             .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
-            .setRedirectLibPath(Conf.REDIRECT_NNAPBASIS_LIB)
+            .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_NNAPBASIS_LIB)
             .get();
         // 设置库路径
         System.load(IO.toAbsolutePath(LIB_PATH));

@@ -1,4 +1,5 @@
 #include "jsex_nnap_NNAP.h"
+#include "jniutil.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,23 +9,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_forceDot1(JNIEnv *aEnv, jclass aClazz
         jdoubleArray aXGrad, jint aShift, jint aLength, jdoubleArray aFpPx, jdoubleArray aFpPy, jdoubleArray aFpPz,
         jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz, jint aNN) {
     // java array init
-#ifdef __cplusplus
-    double *tXGrad = (double *)aEnv->GetPrimitiveArrayCritical(aXGrad, NULL);
-    double *tFpPx = (double *)aEnv->GetPrimitiveArrayCritical(aFpPx, NULL);
-    double *tFpPy = (double *)aEnv->GetPrimitiveArrayCritical(aFpPy, NULL);
-    double *tFpPz = (double *)aEnv->GetPrimitiveArrayCritical(aFpPz, NULL);
-    double *tFx = (double *)aEnv->GetPrimitiveArrayCritical(rFx, NULL);
-    double *tFy = (double *)aEnv->GetPrimitiveArrayCritical(rFy, NULL);
-    double *tFz = (double *)aEnv->GetPrimitiveArrayCritical(rFz, NULL);
-#else
-    double *tXGrad = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aXGrad, NULL);
-    double *tFpPx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aFpPx, NULL);
-    double *tFpPy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aFpPy, NULL);
-    double *tFpPz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, aFpPz, NULL);
-    double *tFx = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFx, NULL);
-    double *tFy = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFy, NULL);
-    double *tFz = (double *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rFz, NULL);
-#endif
+    double *tXGrad = (double *)getJArrayBuf(aEnv, aXGrad);
+    double *tFpPx = (double *)getJArrayBuf(aEnv, aFpPx);
+    double *tFpPy = (double *)getJArrayBuf(aEnv, aFpPy);
+    double *tFpPz = (double *)getJArrayBuf(aEnv, aFpPz);
+    double *tFx = (double *)getJArrayBuf(aEnv, rFx);
+    double *tFy = (double *)getJArrayBuf(aEnv, rFy);
+    double *tFz = (double *)getJArrayBuf(aEnv, rFz);
     
     double *tXGrad_ = tXGrad + aShift;
     double *tFpPx_ = tFpPx;
@@ -43,23 +34,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_NNAP_forceDot1(JNIEnv *aEnv, jclass aClazz
     }
     
     // release java array
-#ifdef __cplusplus
-    aEnv->ReleasePrimitiveArrayCritical(aXGrad, tXGrad, JNI_ABORT);
-    aEnv->ReleasePrimitiveArrayCritical(aFpPx, tFpPx, JNI_ABORT);
-    aEnv->ReleasePrimitiveArrayCritical(aFpPy, tFpPy, JNI_ABORT);
-    aEnv->ReleasePrimitiveArrayCritical(aFpPz, tFpPz, JNI_ABORT);
-    aEnv->ReleasePrimitiveArrayCritical(rFx, tFx, 0);
-    aEnv->ReleasePrimitiveArrayCritical(rFy, tFy, 0);
-    aEnv->ReleasePrimitiveArrayCritical(rFz, tFz, 0);
-#else
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aXGrad, tXGrad, JNI_ABORT);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aFpPx, tFpPx, JNI_ABORT);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aFpPy, tFpPy, JNI_ABORT);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, aFpPz, tFpPz, JNI_ABORT);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFx, tFx, 0);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFy, tFy, 0);
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rFz, tFz, 0);
-#endif
+    releaseJArrayBuf(aEnv, aXGrad, tXGrad, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFpPx, tFpPx, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFpPy, tFpPy, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFpPz, tFpPz, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rFx, tFx, 0);
+    releaseJArrayBuf(aEnv, rFy, tFy, 0);
+    releaseJArrayBuf(aEnv, rFz, tFz, 0);
 }
 
 #ifdef __cplusplus

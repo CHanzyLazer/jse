@@ -32,7 +32,7 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_nn_TorchModel_load0(JNIEnv *aEnv, jclass 
 }
 
 JNIEXPORT jlong JNICALL Java_jsex_nnap_nn_TorchModel_load1(JNIEnv *aEnv, jclass aClazz, jbyteArray aModelBytes, jint aSize) {
-    void *tBuf = aEnv->GetPrimitiveArrayCritical(aModelBytes, NULL);
+    void *tBuf = getJArrayBuf(aEnv, aModelBytes);
     torch::jit::Module *tModulePtr = NULL;
     try {
         // This is the only way I have found to use buf input, but this happens to be deprecated, which is c++
@@ -44,7 +44,7 @@ JNIEXPORT jlong JNICALL Java_jsex_nnap_nn_TorchModel_load1(JNIEnv *aEnv, jclass 
     } catch (const std::exception &e) {
         throwExceptionTorch(aEnv, e.what());
     }
-    aEnv->ReleasePrimitiveArrayCritical(aModelBytes, tBuf, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aModelBytes, tBuf, JNI_ABORT);
     return (jlong)(intptr_t)tModulePtr;
 }
 

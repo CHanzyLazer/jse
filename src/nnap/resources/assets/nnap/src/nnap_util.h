@@ -1,4 +1,4 @@
-#include <jni.h>
+#include "jniutil.h"
 #include <math.h>
 
 #ifndef BASIS_UTIL_H

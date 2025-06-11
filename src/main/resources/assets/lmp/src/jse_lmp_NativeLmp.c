@@ -168,11 +168,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv, j
     int rBoxflag[3];
     lammps_extract_box((void *)(intptr_t)aLmpPtr, rBoxlo, rBoxhi, &rXY, &rYZ, &rXZ, rPflags, rBoxflag);
     exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
-#ifdef __cplusplus
-    jdouble *rBoxBuf = (jdouble *)aEnv->GetPrimitiveArrayCritical(rBox, NULL);
-#else
-    jdouble *rBoxBuf = (jdouble *)(*aEnv)->GetPrimitiveArrayCritical(aEnv, rBox, NULL);
-#endif
+    jdouble *rBoxBuf = (jdouble *)getJArrayBuf(aEnv, rBox);
     rBoxBuf[0 ] = rBoxlo[0];
     rBoxBuf[1 ] = rBoxlo[1];
     rBoxBuf[2 ] = rBoxlo[2];
@@ -188,11 +184,7 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsExtractBox_1(JNIEnv *aEnv, j
     rBoxBuf[12] = rBoxflag[0];
     rBoxBuf[13] = rBoxflag[1];
     rBoxBuf[14] = rBoxflag[2];
-#ifdef __cplusplus
-    aEnv->ReleasePrimitiveArrayCritical(rBox, rBoxBuf, 0); // write mode
-#else
-    (*aEnv)->ReleasePrimitiveArrayCritical(aEnv, rBox, rBoxBuf, 0); // write mode
-#endif
+    releaseJArrayBuf(aEnv, rBox, rBoxBuf, 0); // write mode
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsResetBox_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jdouble aXlo, jdouble aYlo, jdouble aZlo, jdouble aXhi, jdouble aYhi, jdouble aZhi, jdouble aXY, jdouble aYZ, jdouble aXZ) {
     double tBoxLo[] = {aXlo, aYlo, aZlo};
