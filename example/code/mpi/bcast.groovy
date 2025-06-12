@@ -10,31 +10,36 @@ rng(123456789)
 MPI.init()
 int me = MPI.Comm.WORLD.rank()
 
-byte[] r = [0, 0, 0]
-if (me == 0) {
-    r[0] = (byte)randi(128)
-    r[1] = (byte)randi(128)
-    r[2] = (byte)randi(128)
-}
+def r = me==0 ? rand(3) : zeros(3)
 println("rand of <$me>: $r")
 
-MPI.Comm.WORLD.bcast(r, r.size(), 0)
+MPI.Comm.WORLD.bcast(r, 0)
 println("bcast rand of <$me>: $r")
 
 MPI.shutdown()
 
 
 //OUTPUT (jse code/mpi/bcast):
-// rand of <0>: [84, 97, 58]
-// bcast rand of <0>: [84, 97, 58]
+// rand of <0>: 3-length Vector:
+//    0.6640   0.4570   0.3905
+// bcast rand of <0>: 3-length Vector:
+//    0.6640   0.4570   0.3905
 
 //OUTPUT (mpiexec -np 4 jse code/mpi/bcast):
-// rand of <3>: [0, 0, 0]
-// rand of <2>: [0, 0, 0]
-// rand of <1>: [0, 0, 0]
-// rand of <0>: [84, 97, 58]
-// bcast rand of <0>: [84, 97, 58]
-// bcast rand of <1>: [84, 97, 58]
-// bcast rand of <2>: [84, 97, 58]
-// bcast rand of <3>: [84, 97, 58]
+// rand of <2>: 3-length Vector:
+//    0.000   0.000   0.000
+// rand of <3>: 3-length Vector:
+//    0.000   0.000   0.000
+// rand of <1>: 3-length Vector:
+//    0.000   0.000   0.000
+// rand of <0>: 3-length Vector:
+//    0.6640   0.4570   0.3905
+// bcast rand of <0>: 3-length Vector:
+//    0.6640   0.4570   0.3905
+// bcast rand of <1>: 3-length Vector:
+//    0.6640   0.4570   0.3905
+// bcast rand of <2>: 3-length Vector:
+//    0.6640   0.4570   0.3905
+// bcast rand of <3>: 3-length Vector:
+//    0.6640   0.4570   0.3905
 

@@ -67,7 +67,7 @@
 > 因此第一次运行 MPI 代码时需要在“串行”环境下运行，保证相关
 > jni 库正常编译。
 >
-> 2. 在 windows 下，可能需要手动指定指定的脚本才能正常使用 mpiexec 运行，例如
+> 2. 在 windows 下，需要手动指定脚本完整名称才能正常使用 mpiexec 运行，例如
 > `mpiexec -np 4 jse.bat path/to/script`
 > 
 
@@ -167,6 +167,18 @@ jse 在 [`jse.parallel.MPI.Conf`](../src/main/java/jse/parallel/MPI.java)
 可以在脚本中手动设置这些配置从而实现不同脚本使用不同的配置，
 也可以通过环境变量的方式进行设置，从而实现全局的默认配置。
 
+- **`COPY_JARRAY`**
+    
+    描述：是否在通讯之前拷贝一份 java array，关闭时在绝大多数情况下都能提高 mpi 的性能。
+    
+    类型：`boolean`
+    
+    默认值：`false`
+    
+    环境变量名称：`JSE_COPY_JARRAY_MPI`
+      
+    -----------------------------
+    
 - **`CMAKE_C_COMPILER`**
     
     描述：自定义使用 cmake 构建 MPI jni 部分使用的 C 编译器。
