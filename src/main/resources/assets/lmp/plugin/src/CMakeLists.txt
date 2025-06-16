@@ -58,7 +58,7 @@ if(JNI_FOUND)
         add_definitions(-DJVM_LIB_PATH="$ENV{JSE_JVM_LIB_PATH_DEF}")
     endif()
 else()
-    message(FATAL_ERROR "No Java Environment Found")
+    message(FATAL_ERROR "No java development environment found")
 endif()
 
 
@@ -71,6 +71,8 @@ if(MPI_CXX_FOUND)
     
     target_link_libraries(lmpplugin MPI::MPI_CXX)
 else()
+    message(WARNING "No MPI development environment found, lmpplugin will build without MPI support")
+    
     include_directories(STUBS)
 endif()
 

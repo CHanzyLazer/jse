@@ -1040,29 +1040,12 @@ public class MPI {
             InitHelper.INITIALIZED = true;
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
-            // 需要 mpi 环境
-            EXEC.setNoSTDOutput().setNoERROutput();
-            boolean tNoMpi = EXEC.system("mpiexec --version") != 0;
-            if (tNoMpi) {
-                tNoMpi = EXEC.system("mpiexec -?") != 0;
-            }
-            EXEC.setNoSTDOutput(false).setNoERROutput(false);
-            if (tNoMpi) {
-                System.err.println("No MPI found");
-                if (IS_WINDOWS) {
-                    System.err.println("  For Windows, you can use MS-MPI: https://www.microsoft.com/en-us/download/details.aspx?id=105289");
-                    System.err.println("  BOTH 'msmpisetup.exe' and 'msmpisdk.msi' are needed.");
-                } else {
-                    System.err.println("  For Liunx/Mac, you can use OpenMPI: https://www.open-mpi.org/");
-                    System.err.println("  For Ubuntu, you can use `sudo apt install libopenmpi-dev`");
-                }
-                throw new RuntimeException("MPI BUILD ERROR: No MPI environment.");
-            }
             // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
             Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
             rCmakeSetting.put("JSE_COPY_JARRAY", Conf.COPY_JARRAY ? "ON" : "OFF");
             // 现在直接使用 JNIUtil.buildLib 来统一初始化
             MPIJNI_LIB_PATH = new JNIUtil.LibBuilder("mpijni", "MPI", MPIJNI_LIB_DIR, rCmakeSetting)
+                .setMPIChecker(true) // 强制要求 mpi 环境
                 .setSrc("mpi", MPIJNI_SRC_NAME)
                 .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
                 .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_MPIJNI_LIB)

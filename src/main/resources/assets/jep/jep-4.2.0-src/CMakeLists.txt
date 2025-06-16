@@ -101,7 +101,7 @@ if (JNI_FOUND)
     include_directories(${JNI_INCLUDE_DIRS})
     target_link_libraries(jep ${JNI_LIBRARIES})
 else ()
-    message(FATAL_ERROR "No Java Environment Found")
+    message(FATAL_ERROR "No java development environment found")
 endif(JNI_FOUND)
 
 
@@ -139,7 +139,7 @@ if (Python3_Development_FOUND)
         add_definitions(-DJEP_NUMPY_ENABLED=0)
     endif(Python3_NumPy_FOUND)
 else ()
-    message(FATAL_ERROR "No Python3 Development Environment Found")
+    message(FATAL_ERROR "No python3 development environment found")
 endif(Python3_Development_FOUND)
 
 

@@ -4,6 +4,7 @@ import jse.code.CS;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -93,9 +94,9 @@ public class MiMalloc {
     /** 当前 {@link MiMalloc} 库的 include 目录路径，结尾一定存在 {@code '/'} */
     public final static String INCLUDE_DIR = HOME+"include/";
     /** 当前 {@link MiMalloc} 库的动态库路径 */
-    public final static String LIB_PATH;
+    public final static @NotNull String LIB_PATH;
     /** 当前 {@link MiMalloc} 库用于链接的库的路径，对于 linux 则和 {@link #LIB_PATH} 一致 */
-    public final static String LLIB_PATH;
+    public final static @NotNull String LLIB_PATH;
     
     static {
         InitHelper.INITIALIZED = true;

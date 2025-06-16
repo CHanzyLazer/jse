@@ -95,6 +95,7 @@ public class LmpPlugin {
         NativeLmp.InitHelper.init();
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LIB_PATH = new JNIUtil.LibBuilder("lmpplugin", "LMPPLUGIN", LIB_DIR, Conf.CMAKE_SETTING)
+            .setMPIChecker() // 现在也会检测 mpi
             .setSrc("lmp/plugin", SRC_NAME)
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
             .setCmakeLineOpt(line -> {

@@ -212,6 +212,7 @@ public class NativeLmp implements IAutoShutdown {
         rCmakeSettingNativeLmp.put("CMAKE_BUILD_TYPE",       "Release");
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         NATIVELMP_LIB_PATH = new JNIUtil.LibBuilder("lammps", "NATIVE_LMP", NATIVELMP_LIB_DIR, rCmakeSettingNativeLmp)
+            .setMPIChecker() // 现在也会检测 mpi
             .setSrcDirIniter(wd -> {
                 // 如果有 NATIVELMP_SRC_DIR 但是不合法，则需要下载 lammps
                 if (NATIVELMP_SRC_DIR!=null && !IO.isDir(NATIVELMP_SRC_DIR)) {
@@ -285,6 +286,7 @@ public class NativeLmp implements IAutoShutdown {
         rCmakeSettingLmpJNI.put("JSE_LAMMPS_EXCEPTIONS_NULL_SUPPORT", (Conf.EXCEPTIONS_NULL_SUPPORT?"ON":"OFF"));
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LMPJNI_LIB_PATH = new JNIUtil.LibBuilder("lmpjni", "LMP_JNI", LMPJNI_LIB_DIR, rCmakeSettingLmpJNI)
+            .setMPIChecker() // 现在也会检测 mpi
             .setSrc("lmp", LMPJNI_SRC_NAME)
             .setCmakeCCompiler(Conf.CMAKE_C_COMPILER_LMPJNI).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER_LMPJNI).setCmakeCFlags(Conf.CMAKE_C_FLAGS_LMPJNI).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS_LMPJNI)
             .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_LMPJNI_LIB)

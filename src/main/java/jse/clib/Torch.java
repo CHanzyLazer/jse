@@ -47,7 +47,7 @@ public class Torch {
     }
     
     /** 当前 {@link Torch} 所使用的版本号 */
-    public final static String VERSION = "2.7.0";
+    public final static String VERSION = "2.7.1";
     
     /** 当前 {@link Torch} 库的根目录，结尾一定存在 {@code '/'} */
     public final static String HOME;

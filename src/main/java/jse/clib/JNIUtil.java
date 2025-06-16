@@ -1,19 +1,19 @@
 package jse.clib;
 
 import jse.code.IO;
-import jse.code.OS;
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static jse.code.Conf.*;
@@ -129,33 +129,80 @@ public class JNIUtil {
         return BUILD_DIR_INVALID_NAME.matcher(aDir).find();
     }
     
+    
+    @ApiStatus.Internal
+    @FunctionalInterface public interface IEnvChecker {void check() throws Exception;}
+    @ApiStatus.Internal
+    @FunctionalInterface public interface IDirIniter {String init(String aInput) throws Exception;}
+    
     /** 现在将一些通用的 cmake 编译 jni 库流程统一放在这里，减少重复的代码 */
     @ApiStatus.Internal
     public static class LibBuilder implements Supplier<String> {
-        private final String aProjectName, aInfoProjectName;
-        private IDirIniter aSrcDirIniter = null;
-        private IDirIniter aBuildDirIniter = sd -> {
+        private final String mProjectName, mInfoProjectName;
+        private IEnvChecker mEnvChecker = null;
+        private IDirIniter mSrcDirIniter = null;
+        private IDirIniter mBuildDirIniter = sd -> {
             String tBuildDir = sd + BUILD_DIR_NAME + "/";
             IO.makeDir(tBuildDir);
             return tBuildDir;
         };
-        private final String aLibDir;
-        private String aCmakeInitDir = "..";
-        private @Nullable String aCmakeCCompiler = null, aCmakeCxxCompiler = null, aCmakeCFlags = null, aCmakeCxxFlags = null;
-        private @Nullable Boolean aUseMiMalloc = null;
-        private boolean aRebuild = false;
-        private final Map<String, String> aCmakeSettings;
-        private @Nullable String aRedirectLibPath = null;
-        private @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt = line -> line;
+        private final String mLibDir;
+        private String mCmakeInitDir = "..";
+        private @Nullable String mCmakeCCompiler = null, mCmakeCxxCompiler = null, mCmakeCFlags = null, mCmakeCxxFlags = null;
+        private @Nullable Boolean mUseMiMalloc = null;
+        private boolean mRebuild = false;
+        private final Map<String, String> mCmakeSettings;
+        private @Nullable String mRedirectLibPath = null;
+        private @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> mCmakeLineOpt = line -> line;
         
         public LibBuilder(String aProjectName, String aInfoProjectName, String aLibDir, Map<String, String> aCmakeSettings) {
-            this.aProjectName = aProjectName;
-            this.aInfoProjectName = aInfoProjectName;
-            this.aLibDir = aLibDir;
-            this.aCmakeSettings = aCmakeSettings;
+            mProjectName = aProjectName;
+            mInfoProjectName = aInfoProjectName;
+            mLibDir = aLibDir;
+            mCmakeSettings = aCmakeSettings;
         }
+        public LibBuilder setMPIChecker() {return setMPIChecker(false);}
+        public LibBuilder setMPIChecker(final boolean aForce) {
+            // 通用的检测 mpi 接口
+            mEnvChecker = () -> {
+                EXEC.setNoSTDOutput().setNoERROutput();
+                boolean tNoMpi = EXEC.system("mpiexec --version") != 0;
+                if (tNoMpi) {
+                    tNoMpi = EXEC.system("mpiexec -?") != 0;
+                }
+                EXEC.setNoSTDOutput(false).setNoERROutput(false);
+                if (tNoMpi) {
+                    if (aForce) {
+                        System.err.println("No MPI found");
+                    } else {
+                        System.err.println(mInfoProjectName +" INIT WARNING: No MPI found for "+ mProjectName +" build");
+                    }
+                    if (IS_WINDOWS) {
+                        System.err.println("  For Windows, you can use MS-MPI: https://www.microsoft.com/en-us/download/details.aspx?id=105289");
+                        System.err.println("  BOTH 'msmpisetup.exe' and 'msmpisdk.msi' are needed.");
+                    } else {
+                        System.err.println("  For Liunx/Mac, you can use OpenMPI: https://www.open-mpi.org/");
+                        System.err.println("  For Ubuntu, you can use `sudo apt install libopenmpi-dev`");
+                    }
+                    if (aForce) {
+                        throw new Exception(mInfoProjectName +" INIT ERROR: No MPI environment.");
+                    }
+                    System.out.println("build "+ mProjectName +" without MPI support ? (y/N)");
+                    BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
+                    String tLine = tReader.readLine();
+                    while (!tLine.equalsIgnoreCase("y")) {
+                        if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
+                            throw new Exception(mInfoProjectName +" INIT ERROR: No MPI environment.");
+                        }
+                        System.out.println("build "+ mProjectName +" without MPI support ? (y/N)");
+                    }
+                }
+            };
+            return this;
+        }
+        public LibBuilder setEnvChecker(IEnvChecker aEnvChecker) {mEnvChecker = aEnvChecker; return this;}
         public LibBuilder setSrc(final String aAssetsDirName, final String[] aSrcNames) {
-            aSrcDirIniter = wd -> {
+            mSrcDirIniter = wd -> {
                 for (String tName : aSrcNames) {IO.copy(IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
                 // 注意增加这个被省略的 CMakeLists.txt
                 IO.copy(IO.getResource(aAssetsDirName+"/src/CMakeLists.txt"), wd+"CMakeLists.txt");
@@ -163,161 +210,155 @@ public class JNIUtil {
             };
             return this;
         }
-        public LibBuilder setSrcDirIniter(IDirIniter aSrcDirIniter) {this.aSrcDirIniter = aSrcDirIniter; return this;}
-        public LibBuilder setBuildDirIniter(IDirIniter aBuildDirIniter) {this.aBuildDirIniter = aBuildDirIniter; return this;}
-        public LibBuilder setCmakeInitDir(String aCmakeInitDir) {this.aCmakeInitDir = aCmakeInitDir; return this;}
-        public LibBuilder setCmakeCCompiler(@Nullable String aCmakeCCompiler) {this.aCmakeCCompiler = aCmakeCCompiler; return this;}
-        public LibBuilder setCmakeCxxCompiler(@Nullable String aCmakeCxxCompiler) {this.aCmakeCxxCompiler = aCmakeCxxCompiler; return this;}
-        public LibBuilder setCmakeCFlags(@Nullable String aCmakeCFlags) {this.aCmakeCFlags = aCmakeCFlags; return this;}
-        public LibBuilder setCmakeCxxFlags(@Nullable String aCmakeCxxFlags) {this.aCmakeCxxFlags = aCmakeCxxFlags; return this;}
-        public LibBuilder setUseMiMalloc(@Nullable Boolean aUseMiMalloc) {this.aUseMiMalloc = aUseMiMalloc; return this;}
-        public LibBuilder setRebuild(boolean aRebuild) {this.aRebuild = aRebuild; return this;}
-        public LibBuilder setRedirectLibPath(@Nullable String aRedirectLibPath) {this.aRedirectLibPath = aRedirectLibPath; return this;}
-        public LibBuilder setCmakeLineOpt(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {this.aCmakeLineOpt = aCmakeLineOpt; return this;}
+        public LibBuilder setSrcDirIniter(IDirIniter aSrcDirIniter) {mSrcDirIniter = aSrcDirIniter; return this;}
+        public LibBuilder setBuildDirIniter(IDirIniter aBuildDirIniter) {mBuildDirIniter = aBuildDirIniter; return this;}
+        public LibBuilder setCmakeInitDir(String aCmakeInitDir) {mCmakeInitDir = aCmakeInitDir; return this;}
+        public LibBuilder setCmakeCCompiler(@Nullable String aCmakeCCompiler) {mCmakeCCompiler = aCmakeCCompiler; return this;}
+        public LibBuilder setCmakeCxxCompiler(@Nullable String aCmakeCxxCompiler) {mCmakeCxxCompiler = aCmakeCxxCompiler; return this;}
+        public LibBuilder setCmakeCFlags(@Nullable String aCmakeCFlags) {mCmakeCFlags = aCmakeCFlags; return this;}
+        public LibBuilder setCmakeCxxFlags(@Nullable String aCmakeCxxFlags) {mCmakeCxxFlags = aCmakeCxxFlags; return this;}
+        public LibBuilder setUseMiMalloc(@Nullable Boolean aUseMiMalloc) {mUseMiMalloc = aUseMiMalloc; return this;}
+        public LibBuilder setRebuild(boolean aRebuild) {mRebuild = aRebuild; return this;}
+        public LibBuilder setRedirectLibPath(@Nullable String aRedirectLibPath) {mRedirectLibPath = aRedirectLibPath; return this;}
+        public LibBuilder setCmakeLineOpt(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {mCmakeLineOpt = aCmakeLineOpt; return this;}
         
         @Override public String get() {
             // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
-            if (aUseMiMalloc!=null && aUseMiMalloc) MiMalloc.InitHelper.init();
+            if (mUseMiMalloc !=null && mUseMiMalloc) MiMalloc.InitHelper.init();
             String tLibPath;
-            if (aRedirectLibPath == null) {
-                @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
+            if (mRedirectLibPath == null) {
+                @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);
                 // 如果不存在 jni lib 则需要重新通过源码编译
-                if (aRebuild || tLibName == null) {
-                    System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries not found. Reinstalling...");
+                if (mRebuild || tLibName == null) {
+                    System.out.println(mInfoProjectName +" INIT INFO: "+ mProjectName +" libraries not found. Reinstalling...");
                     try {
-                        tLibName = initLib_(aProjectName, aInfoProjectName, aSrcDirIniter, aBuildDirIniter, aLibDir,
-                                            aCmakeInitDir, aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags,
-                                            aUseMiMalloc, aCmakeSettings, aCmakeLineOpt);
+                        tLibName = initLib_();
                     } catch (Exception e) {throw new RuntimeException(e);}
                 }
-                tLibPath = aLibDir + tLibName;
+                tLibPath = mLibDir + tLibName;
             } else {
-                if (DEBUG) System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" libraries are redirected to '" + aRedirectLibPath + "'");
-                tLibPath = aRedirectLibPath;
+                if (DEBUG) System.out.println(mInfoProjectName +" INIT INFO: "+ mProjectName +" libraries are redirected to '" + mRedirectLibPath + "'");
+                tLibPath = mRedirectLibPath;
             }
             return tLibPath;
         }
-    }
-    
-    @ApiStatus.Internal
-    private static String cmakeInitCmd_(String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags) {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        // 这里设置 C/C++ 编译器（如果有）
-        if (aCmakeCCompiler   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + aCmakeCCompiler);}
-        if (aCmakeCxxCompiler != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ aCmakeCxxCompiler);}
-        if (aCmakeCFlags      != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='"    + aCmakeCFlags  +"'");}
-        if (aCmakeCxxFlags    != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS='"  + aCmakeCxxFlags+"'");}
-        // 初始化使用上一个目录的 CMakeList.txt
-        rCommand.add(aCmakeInitDir);
-        return String.join(" ", rCommand);
-    }
-    @ApiStatus.Internal
-    private static String cmakeSettingCmd_(String aLibDir, @Nullable Boolean aUseMiMalloc, Map<String, String> aCmakeSettings) throws IOException {
-        // 设置参数，这里使用 List 来构造这个长指令
-        List<String> rCommand = new ArrayList<>();
-        rCommand.add("cmake");
-        if (aUseMiMalloc != null) {
-        rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(aUseMiMalloc?"ON":"OFF"));
+        
+        
+        private String cmakeInitCmd_() {
+            // 设置参数，这里使用 List 来构造这个长指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("cmake");
+            // 这里设置 C/C++ 编译器（如果有）
+            if (mCmakeCCompiler != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + mCmakeCCompiler);}
+            if (mCmakeCxxCompiler != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ mCmakeCxxCompiler);}
+            if (mCmakeCFlags != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS='"    + mCmakeCFlags +"'");}
+            if (mCmakeCxxFlags != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS='"  + mCmakeCxxFlags +"'");}
+            // 初始化使用上一个目录的 CMakeList.txt
+            rCommand.add(mCmakeInitDir);
+            return String.join(" ", rCommand);
         }
-        // 设置构建输出目录为 lib
-        IO.makeDir(aLibDir); // 初始化一下这个目录避免意料外的问题
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ aLibDir +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ aLibDir +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ aLibDir +"'");
-        rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ aLibDir +"'");
-        // 添加额外的设置参数
-        for (Map.Entry<String, String> tEntry : aCmakeSettings.entrySet()) {
-        rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
-        }
-        rCommand.add(".");
-        return String.join(" ", rCommand);
-    }
-    
-    @FunctionalInterface public interface IDirIniter {String init(String aInput) throws Exception;}
-    private static @NotNull String initLib_(String aProjectName, String aInfoProjectName, IDirIniter aSrcDirIniter, IDirIniter aBuildDirIniter, String aLibDir,
-                                            String aCmakeInitDir, @Nullable String aCmakeCCompiler, @Nullable String aCmakeCxxCompiler, @Nullable String aCmakeCFlags, @Nullable String aCmakeCxxFlags,
-                                            final @Nullable Boolean aUseMiMalloc, Map<String, String> aCmakeSettings,
-                                            final @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) throws Exception {
-        // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-        EXEC.setNoSTDOutput().setNoERROutput();
-        boolean tNoCmake = EXEC.system("cmake --version") != 0;
-        EXEC.setNoSTDOutput(false).setNoERROutput(false);
-        if (tNoCmake) {
-            System.err.println("No cmake found, you can download cmake from: https://cmake.org/download/");
-            throw new Exception(aInfoProjectName+" BUILD ERROR: No cmake environment.");
-        }
-        // 从内部资源解压到临时目录，现在编译任务统一放到 jse 安装目录
-        boolean tWorkingDirValid = true;
-        String tWorkingDirName = "build-"+aProjectName+"@"+UT.Code.randID() + "/";
-        String tWorkingDir = JAR_DIR + tWorkingDirName;
-        // 判断路径是否存在非法字符，如果存在则改为到用户目录编译
-        if (containsAnyInvalidChar_(tWorkingDir)) {
-            String tWorkingDir2 = USER_HOME_DIR + tWorkingDirName;
-            if (!containsAnyInvalidChar_(tWorkingDir2)) {
-                tWorkingDir = tWorkingDir2;
-            } else {
-                System.err.println(aInfoProjectName+" INIT WARNING: Build directory ("+tWorkingDir+") contains inappropriate characters, build may fail.");
-                tWorkingDirValid = false;
+        private String cmakeSettingCmd_() throws IOException {
+            // 设置参数，这里使用 List 来构造这个长指令
+            List<String> rCommand = new ArrayList<>();
+            rCommand.add("cmake");
+            if (mUseMiMalloc != null) {
+                rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(mUseMiMalloc ?"ON":"OFF"));
             }
+            // 设置构建输出目录为 lib
+            IO.makeDir(mLibDir); // 初始化一下这个目录避免意料外的问题
+            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ mLibDir +"'");
+            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH='"+ mLibDir +"'");
+            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH='"+ mLibDir +"'");
+            rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH='"+ mLibDir +"'");
+            rCommand.add("-D"); rCommand.add("CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE:PATH='"+ mLibDir +"'");
+            rCommand.add("-D"); rCommand.add("CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE:PATH='"+ mLibDir +"'");
+            // 添加额外的设置参数
+            for (Map.Entry<String, String> tEntry : mCmakeSettings.entrySet()) {
+                rCommand.add("-D"); rCommand.add(String.format("%s=%s", tEntry.getKey(), tEntry.getValue()));
+            }
+            rCommand.add(".");
+            return String.join(" ", rCommand);
         }
-        // 如果已经存在则先删除
-        IO.removeDir(tWorkingDir);
-        // 初始化工作目录，默认操作为把源码拷贝到目录下；
-        // 对于较大的项目则会是一个 zip 的源码，多一个解压的步骤
-        String tSrcDir = aSrcDirIniter.init(tWorkingDir);
-        // 这里对 CMakeLists.txt 特殊处理
-        if (aCmakeLineOpt != null) {
-            String tCmakeListsDir = IO.toInternalValidDir(aCmakeInitDir).substring(3); // 为了让讨论简单，这里约定要求 aCmakeInitDir 一定要 `..` 开头
-            IO.map(tSrcDir+tCmakeListsDir+"CMakeLists.txt", tSrcDir+tCmakeListsDir+"CMakeLists1.txt", line -> {
-                // 替换其中的 jniutil 库路径为设置好的路径
-                line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                // 替换其中的 mimalloc 库路径为设置好的路径
-                if (aUseMiMalloc!=null && aUseMiMalloc) {
-                line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
-                           .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
-                }
-                return aCmakeLineOpt.apply(line);
-            });
-            // 覆盖旧的 CMakeLists.txt
-            IO.move(tSrcDir+tCmakeListsDir+"CMakeLists1.txt", tSrcDir+tCmakeListsDir+"CMakeLists.txt");
-        }
-        // 开始通过 cmake 编译
-        System.out.println(aInfoProjectName+" INIT INFO: Building "+aProjectName+" from source code...");
-        String tBuildDir = aBuildDirIniter.init(tSrcDir);
-        // 直接通过系统指令来编译库，关闭输出
-        EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
-        // 初始化 cmake
-        EXEC.system(cmakeInitCmd_(aCmakeInitDir, aCmakeCCompiler, aCmakeCxxCompiler, aCmakeCFlags, aCmakeCxxFlags));
-        // 设置参数
-        EXEC.system(cmakeSettingCmd_(aLibDir, aUseMiMalloc, aCmakeSettings));
-        // 最后进行构造操作
-        EXEC.system("cmake --build . --config Release");
-        EXEC.setNoSTDOutput(false).setWorkingDir(null);
-        // 简单检测一下是否编译成功
-        @Nullable String tLibName = LIB_NAME_IN(aLibDir, aProjectName);
-        if (tLibName == null) {
-            if (tWorkingDirValid) {
-                System.err.println("Build Failed, this may be caused by the lack of a C/C++ compiler");
-                if (IS_WINDOWS) {
-                    System.err.println("  For Windows, you can use MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
+        private @NotNull String initLib_() throws Exception {
+            // 优先检测环境
+            if (mEnvChecker != null) mEnvChecker.check();
+            // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
+            EXEC.setNoSTDOutput().setNoERROutput();
+            boolean tNoCmake = EXEC.system("cmake --version") != 0;
+            EXEC.setNoSTDOutput(false).setNoERROutput(false);
+            if (tNoCmake) {
+                System.err.println("No cmake found, you can download cmake from: https://cmake.org/download/");
+                throw new Exception(mInfoProjectName +" BUILD ERROR: No cmake environment.");
+            }
+            // 从内部资源解压到临时目录，现在编译任务统一放到 jse 安装目录
+            boolean tWorkingDirValid = true;
+            String tWorkingDirName = "build-"+ mProjectName +"@"+UT.Code.randID() + "/";
+            String tWorkingDir = JAR_DIR + tWorkingDirName;
+            // 判断路径是否存在非法字符，如果存在则改为到用户目录编译
+            if (containsAnyInvalidChar_(tWorkingDir)) {
+                String tWorkingDir2 = USER_HOME_DIR + tWorkingDirName;
+                if (!containsAnyInvalidChar_(tWorkingDir2)) {
+                    tWorkingDir = tWorkingDir2;
                 } else {
-                    System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
-                    System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
+                    System.err.println(mInfoProjectName +" INIT WARNING: Build directory ("+tWorkingDir+") contains inappropriate characters, build may fail.");
+                    tWorkingDirValid = false;
                 }
-            } else {
-                System.err.println("Build Failed, this may be caused by the inappropriate characters in build directory: "+tWorkingDir);
             }
-            throw new Exception(aInfoProjectName+" BUILD ERROR: Build Failed, No "+aProjectName+" lib in '"+aLibDir+"'");
+            // 如果已经存在则先删除
+            IO.removeDir(tWorkingDir);
+            // 初始化工作目录，默认操作为把源码拷贝到目录下；
+            // 对于较大的项目则会是一个 zip 的源码，多一个解压的步骤
+            String tSrcDir = mSrcDirIniter.init(tWorkingDir);
+            // 这里对 CMakeLists.txt 特殊处理
+            if (mCmakeLineOpt != null) {
+                String tCmakeListsDir = IO.toInternalValidDir(mCmakeInitDir).substring(3); // 为了让讨论简单，这里约定要求 aCmakeInitDir 一定要 `..` 开头
+                IO.map(tSrcDir+tCmakeListsDir+"CMakeLists.txt", tSrcDir+tCmakeListsDir+"CMakeLists1.txt", line -> {
+                    // 替换其中的 jniutil 库路径为设置好的路径
+                    line = line.replace("$ENV{JSE_JNIUTIL_INCLUDE_DIR}", JNIUtil.INCLUDE_DIR.replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    // 替换其中的 mimalloc 库路径为设置好的路径
+                    if (mUseMiMalloc!=null && mUseMiMalloc) {
+                        line = line.replace("$ENV{JSE_MIMALLOC_INCLUDE_DIR}", MiMalloc.INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
+                                   .replace("$ENV{JSE_MIMALLOC_LIB_PATH}"   , MiMalloc.LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
+                    }
+                    return mCmakeLineOpt.apply(line);
+                });
+                // 覆盖旧的 CMakeLists.txt
+                IO.move(tSrcDir+tCmakeListsDir+"CMakeLists1.txt", tSrcDir+tCmakeListsDir+"CMakeLists.txt");
+            }
+            // 开始通过 cmake 编译
+            System.out.println(mInfoProjectName +" INIT INFO: Building "+ mProjectName +" from source code...");
+            String tBuildDir = mBuildDirIniter.init(tSrcDir);
+            // 直接通过系统指令来编译库，关闭输出
+            EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
+            // 初始化 cmake
+            EXEC.system(cmakeInitCmd_());
+            // 设置参数
+            EXEC.system(cmakeSettingCmd_());
+            // 最后进行构造操作
+            EXEC.system("cmake --build . --config Release");
+            EXEC.setNoSTDOutput(false).setWorkingDir(null);
+            // 简单检测一下是否编译成功
+            @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);
+            if (tLibName == null) {
+                if (tWorkingDirValid) {
+                    System.err.println("Build Failed, this may be caused by the lack of a C/C++ compiler");
+                    if (IS_WINDOWS) {
+                        System.err.println("  For Windows, you can use MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
+                    } else {
+                        System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
+                        System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
+                    }
+                } else {
+                    System.err.println("Build Failed, this may be caused by the inappropriate characters in build directory: "+tWorkingDir);
+                }
+                throw new Exception(mInfoProjectName +" BUILD ERROR: Build Failed, No "+ mProjectName +" lib in '"+ mLibDir +"'");
+            }
+            // 完事后移除临时解压得到的源码
+            IO.removeDir(tWorkingDir);
+            System.out.println(mInfoProjectName +" INIT INFO: "+ mProjectName +" successfully installed.");
+            System.out.println(mInfoProjectName +" LIB DIR: " + mLibDir);
+            // 输出安装完成后的库名称
+            return tLibName;
         }
-        // 完事后移除临时解压得到的源码
-        IO.removeDir(tWorkingDir);
-        System.out.println(aInfoProjectName+" INIT INFO: "+aProjectName+" successfully installed.");
-        System.out.println(aInfoProjectName+" LIB DIR: " + aLibDir);
-        // 输出安装完成后的库名称
-        return tLibName;
     }
 }

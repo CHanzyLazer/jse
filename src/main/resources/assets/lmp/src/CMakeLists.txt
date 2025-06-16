@@ -35,7 +35,7 @@ if(JNI_FOUND)
     include_directories(${JNI_INCLUDE_DIRS})
     target_link_libraries(lmpjni ${JNI_LIBRARIES})
 else()
-    message(FATAL_ERROR "No Java Environment Found")
+    message(FATAL_ERROR "No java development environment found")
 endif()
 
 
@@ -52,12 +52,16 @@ if(JSE_USE_CXX)
         set(MPI_CXX_SKIP_MPICXX TRUE)
         
         target_link_libraries(lmpjni MPI::MPI_CXX)
+    else()
+        message(WARNING "No MPI development environment found, lmpjni will build without MPI support")
     endif()
 else()
     if(MPI_C_FOUND)
         add_definitions(-DLAMMPS_LIB_MPI)
         
         target_link_libraries(lmpjni MPI::MPI_C)
+    else()
+        message(WARNING "No MPI development environment found, lmpjni will build without MPI support")
     endif()
 endif()
 

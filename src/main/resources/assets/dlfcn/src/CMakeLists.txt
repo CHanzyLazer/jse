@@ -24,6 +24,6 @@ if(JNI_FOUND)
     include_directories(${JNI_INCLUDE_DIRS})
     target_link_libraries(dlfcnjni ${JNI_LIBRARIES})
 else()
-    message(FATAL_ERROR "No Java Environment Found")
+    message(FATAL_ERROR "No java development environment found")
 endif()
 

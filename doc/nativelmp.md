@@ -394,7 +394,7 @@ lammps 源码的 `src` 目录下，和 `library.cpp` 位于相同的目录。
         include_directories(${JNI_INCLUDE_DIRS})
         target_link_libraries(lammps PUBLIC ${JNI_LIBRARIES})
     else()
-        message(FATAL_ERROR "No Java Environment Found")
+        message(FATAL_ERROR "No java development environment found")
     endif()
 
     # mpi define for lammps

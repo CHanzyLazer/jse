@@ -33,7 +33,7 @@ find_package(JNI)
 if(JNI_FOUND)
     include_directories(${JNI_INCLUDE_DIRS})
 else ()
-    message(FATAL_ERROR "No Java Environment Found")
+    message(FATAL_ERROR "No java development environment found")
 endif()
 
 
