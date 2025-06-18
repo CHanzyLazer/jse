@@ -551,8 +551,10 @@ public class SP {
         
         /** 包的版本 */
         public final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.25.0";
+        /** 检测到的 python prefix 路径位置，已经合法化可以直接拼接路径 */
+        public final static String PYTHON_PREFIX_DIR;
         /** jep 二进制库路径 */
-        public final static String JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(JAVA_HOME, VERSION, JEP_VERSION, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
+        public final static String JEP_LIB_DIR;
         public final static String JEP_LIB_PATH;
         /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
         private static String validScriptPath(String aScriptPath) throws IOException {
@@ -744,14 +746,16 @@ public class SP {
             OS.InitHelper.init();
             // 在 JVM 关闭时关闭 JEP_INTERP，最先添加来避免一些问题
             Main.addGlobalAutoCloseable(Python::close);
-            
             // 依赖 jniutil
             JNIUtil.InitHelper.init();
-            // 需要 python 环境
+            
+            // 需要 python 环境，由于总是需要执行 python 来
+            boolean tUsePython3 = false;
             EXEC.setNoSTDOutput().setNoERROutput();
             boolean tNoPython = EXEC.system("python --version") != 0;
             if (tNoPython) {
                 tNoPython = EXEC.system("python3 --version") != 0;
+                if (!tNoPython) tUsePython3 =  true;
             }
             EXEC.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoPython) {
@@ -759,6 +763,10 @@ public class SP {
                 System.err.println("  If you need numpy, you need to install numpy before running: `pip install numpy==1.26.4`");
                 throw new RuntimeException("JEP BUILD ERROR: No python environment.");
             }
+            String tPrefix = EXEC.system_str((tUsePython3 ? "python3" : "python") + " -c 'import sys; print(sys.prefix)'").get(0);
+            PYTHON_PREFIX_DIR = IO.exists(tPrefix) ? IO.toInternalValidDir(tPrefix) : null;
+            JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(JAVA_HOME, VERSION, PYTHON_PREFIX_DIR, JEP_VERSION, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
+            
             // 现在直接使用 JNIUtil.buildLib 来统一初始化
             JEP_LIB_PATH = new JNIUtil.LibBuilder("jep", "JEP", JEP_LIB_DIR, Conf.CMAKE_SETTING)
                 .setSrcDirIniter(wd -> {

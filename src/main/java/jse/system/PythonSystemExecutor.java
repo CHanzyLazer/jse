@@ -7,8 +7,12 @@ import org.jetbrains.annotations.NotNull;
  * <p> 在本地的 python 上执行 </p>
  */
 public class PythonSystemExecutor extends LocalSystemExecutor {
-    public PythonSystemExecutor() {super();}
+    private final String[] mPyArgs;
+    public PythonSystemExecutor(boolean aUsePython3) {
+        super();
+        mPyArgs = new String[]{aUsePython3 ? "python3" : "python", "-c"};
+    }
+    public PythonSystemExecutor() {this(false);}
     
-    private final static String[] PY_ARGS = {"python", "-c"};
-    @Override protected String @NotNull[] programAndArgs_() {return PY_ARGS;}
+    @Override protected String @NotNull[] programAndArgs_() {return mPyArgs;}
 }
