@@ -552,7 +552,7 @@ public class SP {
         /** 包的版本 */
         public final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.25.0";
         /** jep 二进制库路径 */
-        public final static String JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(VERSION, JEP_VERSION, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
+        public final static String JEP_LIB_DIR = JAR_DIR+"jep/" + UT.Code.uniqueID(JAVA_HOME, VERSION, JEP_VERSION, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
         public final static String JEP_LIB_PATH;
         /** 将 aScriptPath 合法化，现在可以省略掉 script/python/ 以及后缀 */
         private static String validScriptPath(String aScriptPath) throws IOException {

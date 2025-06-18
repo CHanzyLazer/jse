@@ -59,7 +59,7 @@ public class LmpPlugin {
         public static @Nullable String REDIRECT_LMPPLUGIN_LIB = OS.env("JSE_REDIRECT_LMPPLUGIN_LIB");
     }
     
-    public final static String LIB_DIR = JAR_DIR+"lmp/plugin/" + UT.Code.uniqueID(VERSION, NativeLmp.NATIVELMP_HOME, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"lmp/plugin/" + UT.Code.uniqueID(JAVA_HOME, VERSION, NativeLmp.NATIVELMP_HOME, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "jse_lmp_LmpPlugin_Pair.cpp"

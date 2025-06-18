@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static jse.code.OS.JAR_DIR;
+import static jse.code.OS.JAVA_HOME;
 
 /**
  * jse 实现的 nnap，所有 nnap 相关能量和力的计算都在此实现，
@@ -92,7 +93,7 @@ public class NNAP implements IPairPotential {
     }
     
     public final static int VERSION = 4;
-    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(CS.VERSION, VERSION, Conf.OPT_LEVEL, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(JAVA_HOME, CS.VERSION, NNAP.VERSION, Conf.OPT_LEVEL, Conf.USE_MIMALLOC, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "nnap_util.h"
