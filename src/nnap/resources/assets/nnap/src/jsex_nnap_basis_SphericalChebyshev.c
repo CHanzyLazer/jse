@@ -100,7 +100,7 @@ extern "C" {
 
 static const jint L3NCOLS[5] = {0, 0, 2, 4, 9};
 static const jint L3NCOLS_NOCROSS[5] = {0, 0, 1, 1, 2};
-static const double SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
+static const jdouble SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     0.0,
     0.0, 0.0,
     1.9364916731037085, 0.0, 0.0,
@@ -123,7 +123,7 @@ static const double SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     1.9993073592865873, 2.0020822493927, 2.0104767610501466, 2.024705365770985, 2.045142707894042, 2.0723520109148583, 2.1071307505705477, 2.1505813167606567, 2.2042200113840402, 2.27014788693852, 2.351326355949745, 2.452039967047846, 2.5787147157554005, 2.7414640249326636, 2.957271469692045, 3.2573446421352252, 3.7071359757712075, 4.476792006187765, 0.0, 0.0,
     1.9993749023132206, 2.0018788167600157, 2.0094473837049796, 2.0222546987202583, 2.0406034646643136, 2.064945519862449, 2.0959143930173156, 2.1343747458109497, 2.181496864867922, 2.2388700687965297, 2.3086792761230392, 2.393988887964797, 2.499218627891526, 2.630984211674012, 2.7996848562146504, 3.0227707252027662, 3.3322915038553673, 3.7954453500749294, 4.586880604965702, 0.0, 0.0
 };
-static const double SH_Blm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
+static const jdouble SH_Blm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     0.0,
     0.0, 0.0,
     -0.5773502691896257, 0.0, 0.0,
@@ -146,7 +146,7 @@ static const double SH_Blm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     -0.5001930129390556, -0.4994205136163806, -0.49709581280096005, -0.4931969619160719, -0.4876862083736199, -0.48050809658946525, -0.4715864951351156, -0.4608201518545086, -0.44807611046807744, -0.4331798560007005, -0.41590019592802907, -0.3959251908590268, -0.37282185960072, -0.3459640439281511, -0.3143909967567437, -0.2764920911127051, -0.2291498472826297, -0.1643989873053573, 0.0, 0.0,
     -0.5001732201680236, -0.49947997905846986, -0.49739445855502595, -0.493899022003733, -0.48896343328028025, -0.4825435035810065, -0.4745789978762495, -0.46499055497527714, -0.4536752206382952, -0.44049993648148694, -0.4252918772715756, -0.40782369514309286, -0.38779008546009835, -0.3647686020700426, -0.3381495443514812, -0.3069985248304855, -0.26975001902701096, -0.22337423731498202, -0.16012815380508713, 0.0, 0.0
 };
-static const double SQRT_LPM_LMM1[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
+static const jdouble SQRT_LPM_LMM1[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     0.0,
     0.0, 1.4142135623730951, 1.4142135623730951,
     0.0, 2.0, 2.449489742783178, 2.449489742783178, 2.0,
@@ -169,7 +169,7 @@ static const double SQRT_LPM_LMM1[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     0.0, 6.164414002968976, 8.602325267042627, 10.392304845413264, 11.832159566199232, 13.038404810405298, 14.071247279470288, 14.966629547095765, 15.748015748023622, 16.431676725154983, 17.029386365926403, 17.549928774784245, 18.0, 18.384776310850235, 18.708286933869708, 18.973665961010276, 19.183326093250876, 19.339079605813716, 19.44222209522358, 19.493588689617926, 19.493588689617926, 19.44222209522358, 19.339079605813716, 19.183326093250876, 18.973665961010276, 18.708286933869708, 18.384776310850235, 18.0, 17.549928774784245, 17.029386365926403, 16.431676725154983, 15.748015748023622, 14.966629547095765, 14.071247279470288, 13.038404810405298, 11.832159566199232, 10.392304845413264, 8.602325267042627, 6.164414002968976,
     0.0, 6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759
 };
-static const double SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
+static const jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     0.0,
     1.4142135623730951, 1.4142135623730951, 0.0,
     2.0, 2.449489742783178, 2.449489742783178, 2.0, 0.0,
@@ -193,8 +193,8 @@ static const double SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759, 0.0
 };
 
-static inline void realNormalizedLegendreFull(jint aLMax, double aX, double aY, double *rDest) {
-    double tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
+static inline void realNormalizedLegendreFull(jint aLMax, jdouble aX, jdouble aY, jdouble *rDest) {
+    jdouble tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
     rDest[0] = tPll;
     if (aLMax > 0) {
         rDest[2] = SQRT3 * aX * tPll;
@@ -206,7 +206,7 @@ static inline void realNormalizedLegendreFull(jint aLMax, double aX, double aY, 
         for (jint tL = 2; tL <= aLMax; ++tL) {
             for (jint tM = 0; tM < tL-1; ++tM) {
                 jint tIdxAB = tStartAB+tM;
-                double tPlm = SH_Alm[tIdxAB] * (aX*rDest[tStartLmm+tM] + SH_Blm[tIdxAB]*rDest[tStartLm2+tM]);
+                jdouble tPlm = SH_Alm[tIdxAB] * (aX*rDest[tStartLmm+tM] + SH_Blm[tIdxAB]*rDest[tStartLm2+tM]);
                 if (tM == 0) {
                     rDest[tStartL] = tPlm;
                 } else {
@@ -214,7 +214,7 @@ static inline void realNormalizedLegendreFull(jint aLMax, double aX, double aY, 
                     rDest[tStartL-tM] = tPlm;
                 }
             }
-            double tPlm = aX * sqrt(2.0*(tL-1) + 3.0) * tPll;
+            jdouble tPlm = aX * sqrt(2.0*(tL-1) + 3.0) * tPll;
             rDest[tStartL+(tL-1)] = tPlm;
             rDest[tStartL-(tL-1)] = tPlm;
             tPll *= (-sqrt(1.0 + 0.5/(double)tL) * aY);
@@ -227,12 +227,12 @@ static inline void realNormalizedLegendreFull(jint aLMax, double aX, double aY, 
         }
     }
 }
-static inline void realSphericalHarmonicsFull4(jint aLMax, double aX, double aY, double aZ, double aDis, double *rDest) {
-    double tXY = hypot(aX, aY);
-    double tCosTheta = aZ / aDis;
-    double tSinTheta = tXY / aDis;
-    double tCosPhi;
-    double tSinPhi;
+static inline void realSphericalHarmonicsFull4(jint aLMax, jdouble aX, jdouble aY, jdouble aZ, jdouble aDis, jdouble *rDest) {
+    jdouble tXY = hypot(aX, aY);
+    jdouble tCosTheta = aZ / aDis;
+    jdouble tSinTheta = tXY / aDis;
+    jdouble tCosPhi;
+    jdouble tSinPhi;
     // avoid nan
     if (numericEqual_jse(tXY, 0.0)) {
         tCosPhi = 1.0;
@@ -244,48 +244,48 @@ static inline void realSphericalHarmonicsFull4(jint aLMax, double aX, double aY,
     // cal real Legendre
     realNormalizedLegendreFull(aLMax, tCosTheta, tSinTheta, rDest);
     // cal sinMPhi & conMPhi
-    double tSinMmmPhi = 0.0;
-    double tCosMmmPhi = 1.0;
-    double tSinMPhi = tSinPhi;
-    double tCosMPhi = tCosPhi;
-    const double tCosPhi2 = tCosMPhi+tCosMPhi;
+    jdouble tSinMmmPhi = 0.0;
+    jdouble tCosMmmPhi = 1.0;
+    jdouble tSinMPhi = tSinPhi;
+    jdouble tCosMPhi = tCosPhi;
+    const jdouble tCosPhi2 = tCosMPhi+tCosMPhi;
     for (jint tM = 1; tM <= aLMax; ++tM) {
         jint tStartL = tM*tM+tM;
-        const double fSqrt2CosMPhi = SQRT2*tCosMPhi;
-        const double fSqrt2SinMPhi = SQRT2*tSinMPhi;
+        const jdouble fSqrt2CosMPhi = SQRT2*tCosMPhi;
+        const jdouble fSqrt2SinMPhi = SQRT2*tSinMPhi;
         for (jint tL = tM; tL <= aLMax; ++tL) {
             rDest[tStartL+tM] *= fSqrt2CosMPhi;
             rDest[tStartL-tM] *= fSqrt2SinMPhi;
             tStartL += tL+tL+2;
         }
-        double tSinMppPhi = tCosPhi2 * tSinMPhi - tSinMmmPhi;
-        double tCosMppPhi = tCosPhi2 * tCosMPhi - tCosMmmPhi;
+        jdouble tSinMppPhi = tCosPhi2 * tSinMPhi - tSinMmmPhi;
+        jdouble tCosMppPhi = tCosPhi2 * tCosMPhi - tCosMmmPhi;
         tSinMmmPhi = tSinMPhi; tCosMmmPhi = tCosMPhi;
         tSinMPhi = tSinMppPhi; tCosMPhi = tCosMppPhi;
     }
 }
 
 
-static inline void mplusCnlm(double *rCnlm, double *aY, double aFc, double aRn, jint aLength) {
-    double tMul = aFc*aRn;
+static inline void mplusCnlm(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble aRn, jint aLength) {
+    jdouble tMul = aFc*aRn;
     for (jint i = 0; i < aLength; ++i) {
         rCnlm[i] += tMul*aY[i];
     }
 }
-static inline void mplusCnlmWt(double *rCnlm, double *rCnlmWt, double *aY, double aFc, double aRn, double aWt, jint aLength) {
-    double tMul = aFc*aRn;
+static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jdouble aFc, jdouble aRn, jdouble aWt, jint aLength) {
+    jdouble tMul = aFc*aRn;
     for (jint i = 0; i < aLength; ++i) {
-        double tCnli = tMul*aY[i];
+        jdouble tCnli = tMul*aY[i];
         rCnlm[i] += tCnli;
         rCnlmWt[i] += aWt*tCnli;
     }
 }
 
-static inline void calL2_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRadial) {
+static inline void calL2_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial) {
     // l == 0
-    double tCnl0;
-    double tMul;
-    double *tFp = rFp;
+    jdouble tCnl0;
+    jdouble tMul;
+    jdouble *tFp = rFp;
     if (!aNoRadial) {
         tCnl0 = aCnlm[0];
         tMul = PI4;
@@ -295,21 +295,21 @@ static inline void calL2_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRa
     // else
     for (jint tL = 1; tL <= aLMax; ++tL) {
         jint tLen = tL+tL+1;
-        double rDot = dot_jse(aCnlm + (tL*tL), tLen);
-        tMul = PI4/(double)tLen;
+        jdouble rDot = dot_jse(aCnlm + (tL*tL), tLen);
+        tMul = PI4/(jdouble)tLen;
         tFp[tL-1] = tMul * rDot;
     }
 }
-static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void calL3_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Max <= 1) return;
     jint tIdxFP = aNoRadial ? aLMax : (aLMax+1);
     /// l1 = l2 = l3 = 2
-    double c20  = aCnlm[(2*2+2)  ];
-    double c21  = aCnlm[(2*2+2)+1];
-    double c2n1 = aCnlm[(2*2+2)-1];
-    double c22  = aCnlm[(2*2+2)+2];
-    double c2n2 = aCnlm[(2*2+2)-2];
-    double rFp3 = 0.0;
+    jdouble c20  = aCnlm[(2*2+2)  ];
+    jdouble c21  = aCnlm[(2*2+2)+1];
+    jdouble c2n1 = aCnlm[(2*2+2)-1];
+    jdouble c22  = aCnlm[(2*2+2)+2];
+    jdouble c2n2 = aCnlm[(2*2+2)-2];
+    jdouble rFp3 = 0.0;
     rFp3 += WIGNER_222_000 * c20*c20*c20;
     rFp3 -= (3.0*WIGNER_222_011) * c20 * (c21*c21 + c2n1*c2n1);
     rFp3 += (3.0*WIGNER_222_022) * c20 * (c22*c22 + c2n2*c2n2);
@@ -317,7 +317,7 @@ static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRa
     rFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1*c2n2;
     rFp[tIdxFP] = rFp3;
     ++tIdxFP;
-    double c10, c11, c1n1;
+    jdouble c10, c11, c1n1;
     if (aL3Cross) {
         /// l1 = l2 = 1, l3 = 2
         c10  = aCnlm[(1+1)  ];
@@ -335,7 +335,7 @@ static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRa
         c10 = c11 = c1n1 = 0.0;
     }
     if (aL3Max == 2) return;
-    double c30, c31, c3n1, c32, c3n2, c33, c3n3;
+    jdouble c30, c31, c3n1, c32, c3n2, c33, c3n3;
     if (aL3Cross) {
         /// l1 = 2, l2 = l3 = 3
         c30  = aCnlm[(3*3+3)  ];
@@ -382,15 +382,15 @@ static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRa
     }
     if (aL3Max == 3) return;
     /// l1 = l2 = l3 = 4
-    double c40  = aCnlm[(4*4+4)  ];
-    double c41  = aCnlm[(4*4+4)+1];
-    double c4n1 = aCnlm[(4*4+4)-1];
-    double c42  = aCnlm[(4*4+4)+2];
-    double c4n2 = aCnlm[(4*4+4)-2];
-    double c43  = aCnlm[(4*4+4)+3];
-    double c4n3 = aCnlm[(4*4+4)-3];
-    double c44  = aCnlm[(4*4+4)+4];
-    double c4n4 = aCnlm[(4*4+4)-4];
+    jdouble c40  = aCnlm[(4*4+4)  ];
+    jdouble c41  = aCnlm[(4*4+4)+1];
+    jdouble c4n1 = aCnlm[(4*4+4)-1];
+    jdouble c42  = aCnlm[(4*4+4)+2];
+    jdouble c4n2 = aCnlm[(4*4+4)-2];
+    jdouble c43  = aCnlm[(4*4+4)+3];
+    jdouble c4n3 = aCnlm[(4*4+4)-3];
+    jdouble c44  = aCnlm[(4*4+4)+4];
+    jdouble c4n4 = aCnlm[(4*4+4)-4];
     rFp3 = 0.0;
     rFp3 += WIGNER_444_000 * c40*c40*c40;
     rFp3 -= (3.0*WIGNER_444_011) * c40 * (c41*c41 + c4n1*c4n1);
@@ -496,21 +496,21 @@ static inline void calL3_(double *aCnlm, double *rFp, jint aLMax, jboolean aNoRa
     }
 }
 
-static inline void calYPphi(double *rYPphi, double *aY, jint aL) {
+static inline void calYPphi(jdouble *rYPphi, jdouble *aY, jint aL) {
     const jint tStart = aL*aL;
     const jint tIdx = tStart+aL;
     for (jint m = -aL; m <= aL; ++m) {
         rYPphi[tIdx+m] = -m * aY[tIdx-m];
     }
 }
-static inline void calYPtheta(double aCosPhi, double aSinPhi, double *rYPtheta, double *aY, jint aL) {
+static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPtheta, jdouble *aY, jint aL) {
     switch(aL) {
     case 0: {
         rYPtheta[0] = 0.0;
         return;
     }
     case 1: {
-        double tMul = SQRT_LPM_LMM1[2]*SQRT2_INV;
+        jdouble tMul = SQRT_LPM_LMM1[2]*SQRT2_INV;
         rYPtheta[1] = -tMul * aSinPhi*aY[2];
         rYPtheta[2] =  tMul * (aCosPhi*aY[3] + aSinPhi*aY[1]);
         rYPtheta[3] = -tMul * aCosPhi*aY[2];
@@ -519,7 +519,7 @@ static inline void calYPtheta(double aCosPhi, double aSinPhi, double *rYPtheta, 
     default: {
         const jint tStart = aL*aL;
         const jint tIdx = tStart+aL;
-        double tMul = SQRT_LPM_LMM1[tIdx]*SQRT2_INV;
+        jdouble tMul = SQRT_LPM_LMM1[tIdx]*SQRT2_INV;
         rYPtheta[tIdx] = tMul * (aCosPhi*aY[tIdx+1] + aSinPhi*aY[tIdx-1]);
         rYPtheta[tIdx+1] = -tMul * aCosPhi*aY[tIdx];
         rYPtheta[tIdx-1] = -tMul * aSinPhi*aY[tIdx];
@@ -536,44 +536,44 @@ static inline void calYPtheta(double aCosPhi, double aSinPhi, double *rYPtheta, 
         return;
     }}
 }
-static inline void calYPxyz(double aCosTheta, double aSinTheta, double aCosPhi, double aSinPhi, double aDis, double aDxy, jboolean aDxyCloseZero,
-                            double *rYPx, double *rYPy, double *rYPz, double *aYPtheta, double *aYPphi, jint aLength) {
-    const double thetaPx = -aCosTheta * aCosPhi / aDis;
-    const double thetaPy = -aCosTheta * aSinPhi / aDis;
-    const double thetaPz =  aSinTheta / aDis;
-    const double phiPx = aDxyCloseZero ? 0.0 :  aSinPhi / aDxy;
-    const double phiPy = aDxyCloseZero ? 0.0 : -aCosPhi / aDxy;
+static inline void calYPxyz(jdouble aCosTheta, jdouble aSinTheta, jdouble aCosPhi, jdouble aSinPhi, jdouble aDis, jdouble aDxy, jboolean aDxyCloseZero,
+                            jdouble *rYPx, jdouble *rYPy, jdouble *rYPz, jdouble *aYPtheta, jdouble *aYPphi, jint aLength) {
+    const jdouble thetaPx = -aCosTheta * aCosPhi / aDis;
+    const jdouble thetaPy = -aCosTheta * aSinPhi / aDis;
+    const jdouble thetaPz =  aSinTheta / aDis;
+    const jdouble phiPx = aDxyCloseZero ? 0.0 :  aSinPhi / aDxy;
+    const jdouble phiPy = aDxyCloseZero ? 0.0 : -aCosPhi / aDxy;
     for (jint i = 0; i < aLength; ++i) {
-        const double tYPtheta = aYPtheta[i];
-        const double tYPphi = aYPphi[i];
+        const jdouble tYPtheta = aYPtheta[i];
+        const jdouble tYPphi = aYPphi[i];
         rYPx[i] = tYPtheta*thetaPx + tYPphi*phiPx;
         rYPy[i] = tYPtheta*thetaPy + tYPphi*phiPy;
         rYPz[i] = tYPtheta*thetaPz;
     }
 }
-static inline void calCnlmPxyz(double *rCnlmPx, double *rCnlmPy, double *rCnlmPz,
-                               double *aY, double *aYPx, double *aYPy, double *aYPz,
-                               double aFc, double aFcPx, double aFcPy, double aFcPz,
-                               double aRn, double aRnPx, double aRnPy, double aRnPz, jint aLength) {
-    const double tMul = aFc*aRn;
-    const double tMulX = aFc*aRnPx + aFcPx*aRn;
-    const double tMulY = aFc*aRnPy + aFcPy*aRn;
-    const double tMulZ = aFc*aRnPz + aFcPz*aRn;
+static inline void calCnlmPxyz(jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                               jdouble *aY, jdouble *aYPx, jdouble *aYPy, jdouble *aYPz,
+                               jdouble aFc, jdouble aFcPx, jdouble aFcPy, jdouble aFcPz,
+                               jdouble aRn, jdouble aRnPx, jdouble aRnPy, jdouble aRnPz, jint aLength) {
+    const jdouble tMul = aFc*aRn;
+    const jdouble tMulX = aFc*aRnPx + aFcPx*aRn;
+    const jdouble tMulY = aFc*aRnPy + aFcPy*aRn;
+    const jdouble tMulZ = aFc*aRnPz + aFcPz*aRn;
     for (jint i = 0; i < aLength; ++i) {
-        const double tY = aY[i];
+        const jdouble tY = aY[i];
         rCnlmPx[i] = tMulX*tY + tMul*aYPx[i];
         rCnlmPy[i] = tMulY*tY + tMul*aYPy[i];
         rCnlmPz[i] = tMulZ*tY + tMul*aYPz[i];
     }
 }
 
-static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                           double *rFpPx, double *rFpPy, double *rFpPz,
-                           double aWt, jint aLMax, jboolean aNoRadial) {
+static inline void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                           jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz,
+                           jdouble aWt, jint aLMax, jboolean aNoRadial) {
     // l = 0
-    double tCnl0;
-    double tMul;
-    double *tFpPx = rFpPx, *tFpPy = rFpPy, *tFpPz = rFpPz;
+    jdouble tCnl0;
+    jdouble tMul;
+    jdouble *tFpPx = rFpPx, *tFpPy = rFpPy, *tFpPz = rFpPz;
     if (!aNoRadial) {
         tCnl0 = aCnlm[0];
         tMul = aWt*(PI4+PI4);
@@ -587,14 +587,14 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         const jint tStart = l*l;
         const jint tLen = l+l+1;
         const jint tEnd = tStart+tLen;
-        double rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
+        jdouble rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
         for (jint i = tStart; i < tEnd; ++i) {
-            double tCnlm = aCnlm[i];
+            jdouble tCnlm = aCnlm[i];
             rDotPx += tCnlm*aCnlmPx[i];
             rDotPy += tCnlm*aCnlmPy[i];
             rDotPz += tCnlm*aCnlmPz[i];
         }
-        tMul = PI4/(double)tLen;
+        tMul = PI4/(jdouble)tLen;
         tMul = aWt*(tMul+tMul);
         tFpPx[l-1] = tMul * rDotPx;
         tFpPy[l-1] = tMul * rDotPy;
@@ -602,17 +602,17 @@ static inline void calL2p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
     }
 }
 
-static inline void calL2f_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                           double *aFpGrad, double *rFx, double *rFy, double *rFz,
-                           double aWt, jint aLMax, jboolean aNoRadial) {
+static inline void calL2f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                           jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                           jdouble aWt, jint aLMax, jboolean aNoRadial) {
     // l = 0
-    double tCnl0;
-    double tMul;
-    double *tFpGrad = aFpGrad;
+    jdouble tCnl0;
+    jdouble tMul;
+    jdouble *tFpGrad = aFpGrad;
     if (!aNoRadial) {
         tCnl0 = aCnlm[0];
         tMul = aWt*(PI4+PI4);
-        const double subFpGrad = tFpGrad[0];
+        const jdouble subFpGrad = tFpGrad[0];
         *rFx += subFpGrad * tMul * (tCnl0*aCnlmPx[0]);
         *rFy += subFpGrad * tMul * (tCnl0*aCnlmPy[0]);
         *rFz += subFpGrad * tMul * (tCnl0*aCnlmPz[0]);
@@ -623,39 +623,39 @@ static inline void calL2f_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         const jint tStart = l*l;
         const jint tLen = l+l+1;
         const jint tEnd = tStart+tLen;
-        double rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
+        jdouble rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
         for (jint i = tStart; i < tEnd; ++i) {
-            double tCnlm = aCnlm[i];
+            jdouble tCnlm = aCnlm[i];
             rDotPx += tCnlm*aCnlmPx[i];
             rDotPy += tCnlm*aCnlmPy[i];
             rDotPz += tCnlm*aCnlmPz[i];
         }
-        tMul = PI4/(double)tLen;
+        tMul = PI4/(jdouble)tLen;
         tMul = aWt*(tMul+tMul);
-        const double subFpGrad = tFpGrad[l-1];
+        const jdouble subFpGrad = tFpGrad[l-1];
         *rFx += subFpGrad * tMul * rDotPx;
         *rFy += subFpGrad * tMul * rDotPy;
         *rFz += subFpGrad * tMul * rDotPz;
     }
 }
 
-static inline void calL3_222_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_222_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx = 2*2+2;
-    const double c20  = aCnlm[tIdx  ];
-    const double c21  = aCnlm[tIdx+1];
-    const double c2n1 = aCnlm[tIdx-1];
-    const double c22  = aCnlm[tIdx+2];
-    const double c2n2 = aCnlm[tIdx-2];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c20  = aCnlm[tIdx  ];
+    const jdouble c21  = aCnlm[tIdx+1];
+    const jdouble c2n1 = aCnlm[tIdx-1];
+    const jdouble c22  = aCnlm[tIdx+2];
+    const jdouble c2n2 = aCnlm[tIdx-2];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = (3.0*WIGNER_222_000)*c20*c20 - (3.0*WIGNER_222_011)*(c21*c21 + c2n1*c2n1) + (3.0*WIGNER_222_022)*(c22*c22 + c2n2*c2n2);
+    jdouble tMul = (3.0*WIGNER_222_000)*c20*c20 - (3.0*WIGNER_222_011)*(c21*c21 + c2n1*c2n1) + (3.0*WIGNER_222_022)*(c22*c22 + c2n2*c2n2);
     rFp3Px += tMul*aCnlmPx[tIdx];
     rFp3Py += tMul*aCnlmPy[tIdx];
     rFp3Pz += tMul*aCnlmPz[tIdx];
     
-    double tMul1 = (-6.0*WIGNER_222_011)*c20*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c22*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c2n1*c2n2;
-    double tMul2 = (-6.0*WIGNER_222_011)*c20*c2n1 - (6.0*SQRT2_INV*WIGNER_222_112)*c22*c2n1 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n2;
+    jdouble tMul1 = (-6.0*WIGNER_222_011)*c20*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c22*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c2n1*c2n2;
+    jdouble tMul2 = (-6.0*WIGNER_222_011)*c20*c2n1 - (6.0*SQRT2_INV*WIGNER_222_112)*c22*c2n1 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n2;
     rFp3Px += tMul1*aCnlmPx[tIdx+1] + tMul2*aCnlmPx[tIdx-1];
     rFp3Py += tMul1*aCnlmPy[tIdx+1] + tMul2*aCnlmPy[tIdx-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx+1] + tMul2*aCnlmPz[tIdx-1];
@@ -669,21 +669,21 @@ static inline void calL3_222_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_112_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
-    const double c10  = aCnlm[tIdx1  ];
-    const double c11  = aCnlm[tIdx1+1];
-    const double c1n1 = aCnlm[tIdx1-1];
-    const double c20  = aCnlm[tIdx2  ];
-    const double c21  = aCnlm[tIdx2+1];
-    const double c2n1 = aCnlm[tIdx2-1];
-    const double c22  = aCnlm[tIdx2+2];
-    const double c2n2 = aCnlm[tIdx2-2];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c10  = aCnlm[tIdx1  ];
+    const jdouble c11  = aCnlm[tIdx1+1];
+    const jdouble c1n1 = aCnlm[tIdx1-1];
+    const jdouble c20  = aCnlm[tIdx2  ];
+    const jdouble c21  = aCnlm[tIdx2+1];
+    const jdouble c2n1 = aCnlm[tIdx2-1];
+    const jdouble c22  = aCnlm[tIdx2+2];
+    const jdouble c2n2 = aCnlm[tIdx2-2];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_112_000*c10*c10 - WIGNER_112_110*(c11*c11 + c1n1*c1n1);
+    jdouble tMul = WIGNER_112_000*c10*c10 - WIGNER_112_110*(c11*c11 + c1n1*c1n1);
     rFp3Px += tMul*aCnlmPx[tIdx2];
     rFp3Py += tMul*aCnlmPy[tIdx2];
     rFp3Pz += tMul*aCnlmPz[tIdx2];
@@ -692,8 +692,8 @@ static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx1];
     rFp3Pz += tMul*aCnlmPz[tIdx1];
     
-    double tMul1 = (-2.0*WIGNER_112_110)*c20*c11  - (2.0*WIGNER_112_011)*c10*c21  + (2.0*SQRT2_INV*WIGNER_112_112)*c22*c11  + (2.0*SQRT2_INV*WIGNER_112_112)*c1n1*c2n2;
-    double tMul2 = (-2.0*WIGNER_112_110)*c20*c1n1 - (2.0*WIGNER_112_011)*c10*c2n1 - (2.0*SQRT2_INV*WIGNER_112_112)*c22*c1n1 + (2.0*SQRT2_INV*WIGNER_112_112)*c11*c2n2;
+    jdouble tMul1 = (-2.0*WIGNER_112_110)*c20*c11  - (2.0*WIGNER_112_011)*c10*c21  + (2.0*SQRT2_INV*WIGNER_112_112)*c22*c11  + (2.0*SQRT2_INV*WIGNER_112_112)*c1n1*c2n2;
+    jdouble tMul2 = (-2.0*WIGNER_112_110)*c20*c1n1 - (2.0*WIGNER_112_011)*c10*c2n1 - (2.0*SQRT2_INV*WIGNER_112_112)*c22*c1n1 + (2.0*SQRT2_INV*WIGNER_112_112)*c11*c2n2;
     rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
     rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
@@ -713,25 +713,25 @@ static inline void calL3_112_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_233_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx3 = 3*3+3;
-    const double c20  = aCnlm[tIdx2  ];
-    const double c21  = aCnlm[tIdx2+1];
-    const double c2n1 = aCnlm[tIdx2-1];
-    const double c22  = aCnlm[tIdx2+2];
-    const double c2n2 = aCnlm[tIdx2-2];
-    const double c30  = aCnlm[tIdx3  ];
-    const double c31  = aCnlm[tIdx3+1];
-    const double c3n1 = aCnlm[tIdx3-1];
-    const double c32  = aCnlm[tIdx3+2];
-    const double c3n2 = aCnlm[tIdx3-2];
-    const double c33  = aCnlm[tIdx3+3];
-    const double c3n3 = aCnlm[tIdx3-3];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c20  = aCnlm[tIdx2  ];
+    const jdouble c21  = aCnlm[tIdx2+1];
+    const jdouble c2n1 = aCnlm[tIdx2-1];
+    const jdouble c22  = aCnlm[tIdx2+2];
+    const jdouble c2n2 = aCnlm[tIdx2-2];
+    const jdouble c30  = aCnlm[tIdx3  ];
+    const jdouble c31  = aCnlm[tIdx3+1];
+    const jdouble c3n1 = aCnlm[tIdx3-1];
+    const jdouble c32  = aCnlm[tIdx3+2];
+    const jdouble c3n2 = aCnlm[tIdx3-2];
+    const jdouble c33  = aCnlm[tIdx3+3];
+    const jdouble c3n3 = aCnlm[tIdx3-3];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_233_000*c30*c30 - WIGNER_233_011*(c31*c31 + c3n1*c3n1) + WIGNER_233_022*(c32*c32 + c3n2*c3n2) - WIGNER_233_033*(c33*c33 + c3n3*c3n3);
+    jdouble tMul = WIGNER_233_000*c30*c30 - WIGNER_233_011*(c31*c31 + c3n1*c3n1) + WIGNER_233_022*(c32*c32 + c3n2*c3n2) - WIGNER_233_033*(c33*c33 + c3n3*c3n3);
     rFp3Px += tMul*aCnlmPx[tIdx2];
     rFp3Py += tMul*aCnlmPy[tIdx2];
     rFp3Pz += tMul*aCnlmPz[tIdx2];
@@ -740,8 +740,8 @@ static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx3];
     rFp3Pz += tMul*aCnlmPz[tIdx3];
     
-    double tMul1 = (-2.0*WIGNER_233_110) * c30*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c33 + c3n2*c3n3);
-    double tMul2 = (-2.0*WIGNER_233_110) * c30*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c3n3 - c3n2*c33);
+    jdouble tMul1 = (-2.0*WIGNER_233_110) * c30*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c33 + c3n2*c3n3);
+    jdouble tMul2 = (-2.0*WIGNER_233_110) * c30*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c3n3 - c3n2*c33);
     rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
     rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
@@ -771,29 +771,29 @@ static inline void calL3_233_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_123_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
     const jint tIdx3 = 3*3+3;
-    const double c10  = aCnlm[tIdx1  ];
-    const double c11  = aCnlm[tIdx1+1];
-    const double c1n1 = aCnlm[tIdx1-1];
-    const double c20  = aCnlm[tIdx2  ];
-    const double c21  = aCnlm[tIdx2+1];
-    const double c2n1 = aCnlm[tIdx2-1];
-    const double c22  = aCnlm[tIdx2+2];
-    const double c2n2 = aCnlm[tIdx2-2];
-    const double c30  = aCnlm[tIdx3  ];
-    const double c31  = aCnlm[tIdx3+1];
-    const double c3n1 = aCnlm[tIdx3-1];
-    const double c32  = aCnlm[tIdx3+2];
-    const double c3n2 = aCnlm[tIdx3-2];
-    const double c33  = aCnlm[tIdx3+3];
-    const double c3n3 = aCnlm[tIdx3-3];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c10  = aCnlm[tIdx1  ];
+    const jdouble c11  = aCnlm[tIdx1+1];
+    const jdouble c1n1 = aCnlm[tIdx1-1];
+    const jdouble c20  = aCnlm[tIdx2  ];
+    const jdouble c21  = aCnlm[tIdx2+1];
+    const jdouble c2n1 = aCnlm[tIdx2-1];
+    const jdouble c22  = aCnlm[tIdx2+2];
+    const jdouble c2n2 = aCnlm[tIdx2-2];
+    const jdouble c30  = aCnlm[tIdx3  ];
+    const jdouble c31  = aCnlm[tIdx3+1];
+    const jdouble c3n1 = aCnlm[tIdx3-1];
+    const jdouble c32  = aCnlm[tIdx3+2];
+    const jdouble c3n2 = aCnlm[tIdx3-2];
+    const jdouble c33  = aCnlm[tIdx3+3];
+    const jdouble c3n3 = aCnlm[tIdx3-3];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_123_000*c20*c30 - WIGNER_123_011*(c21*c31 + c2n1*c3n1) + WIGNER_123_022*(c22*c32 + c2n2*c3n2);
+    jdouble tMul = WIGNER_123_000*c20*c30 - WIGNER_123_011*(c21*c31 + c2n1*c3n1) + WIGNER_123_022*(c22*c32 + c2n2*c3n2);
     rFp3Px += tMul*aCnlmPx[tIdx1];
     rFp3Py += tMul*aCnlmPy[tIdx1];
     rFp3Pz += tMul*aCnlmPz[tIdx1];
@@ -806,8 +806,8 @@ static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx3];
     rFp3Pz += tMul*aCnlmPz[tIdx3];
     
-    double tMul1 = (-WIGNER_123_101)*c20*c31  - WIGNER_123_110*c30*c21  + (SQRT2_INV*WIGNER_123_112)*(c21*c32 + c2n1*c3n2) + (SQRT2_INV*WIGNER_123_121)*(c22*c31 + c2n2*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c33 + c2n2*c3n3);
-    double tMul2 = (-WIGNER_123_101)*c20*c3n1 - WIGNER_123_110*c30*c2n1 + (SQRT2_INV*WIGNER_123_112)*(c21*c3n2 - c2n1*c32) + (SQRT2_INV*WIGNER_123_121)*(c2n2*c31 - c22*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c3n3 - c2n2*c33);
+    jdouble tMul1 = (-WIGNER_123_101)*c20*c31  - WIGNER_123_110*c30*c21  + (SQRT2_INV*WIGNER_123_112)*(c21*c32 + c2n1*c3n2) + (SQRT2_INV*WIGNER_123_121)*(c22*c31 + c2n2*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c33 + c2n2*c3n3);
+    jdouble tMul2 = (-WIGNER_123_101)*c20*c3n1 - WIGNER_123_110*c30*c2n1 + (SQRT2_INV*WIGNER_123_112)*(c21*c3n2 - c2n1*c32) + (SQRT2_INV*WIGNER_123_121)*(c2n2*c31 - c22*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c3n3 - c2n2*c33);
     rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
     rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
@@ -843,27 +843,27 @@ static inline void calL3_123_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                             double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_444_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx = 4*4+4;
-    const double c40  = aCnlm[tIdx  ];
-    const double c41  = aCnlm[tIdx+1];
-    const double c4n1 = aCnlm[tIdx-1];
-    const double c42  = aCnlm[tIdx+2];
-    const double c4n2 = aCnlm[tIdx-2];
-    const double c43  = aCnlm[tIdx+3];
-    const double c4n3 = aCnlm[tIdx-3];
-    const double c44  = aCnlm[tIdx+4];
-    const double c4n4 = aCnlm[tIdx-4];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c40  = aCnlm[tIdx  ];
+    const jdouble c41  = aCnlm[tIdx+1];
+    const jdouble c4n1 = aCnlm[tIdx-1];
+    const jdouble c42  = aCnlm[tIdx+2];
+    const jdouble c4n2 = aCnlm[tIdx-2];
+    const jdouble c43  = aCnlm[tIdx+3];
+    const jdouble c4n3 = aCnlm[tIdx-3];
+    const jdouble c44  = aCnlm[tIdx+4];
+    const jdouble c4n4 = aCnlm[tIdx-4];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = (3.0*WIGNER_444_000)*c40*c40 - (3.0*WIGNER_444_011)*(c41*c41 + c4n1*c4n1) + (3.0*WIGNER_444_022)*(c42*c42 + c4n2*c4n2) - (3.0*WIGNER_444_033)*(c43*c43 + c4n3*c4n3) + (3.0*WIGNER_444_044)*(c44*c44 + c4n4*c4n4);
+    jdouble tMul = (3.0*WIGNER_444_000)*c40*c40 - (3.0*WIGNER_444_011)*(c41*c41 + c4n1*c4n1) + (3.0*WIGNER_444_022)*(c42*c42 + c4n2*c4n2) - (3.0*WIGNER_444_033)*(c43*c43 + c4n3*c4n3) + (3.0*WIGNER_444_044)*(c44*c44 + c4n4*c4n4);
     rFp3Px += tMul*aCnlmPx[tIdx];
     rFp3Py += tMul*aCnlmPy[tIdx];
     rFp3Pz += tMul*aCnlmPz[tIdx];
     
-    double tMul1 = (-6.0*WIGNER_444_011)*c40*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c42*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c4n1*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c43 + c4n2*c4n3) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c44 + c4n3*c4n4);
-    double tMul2 = (-6.0*WIGNER_444_011)*c40*c4n1 - (6.0*SQRT2_INV*WIGNER_444_112)*c42*c4n1 + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n2  - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c4n3 - c4n2*c43) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c4n4 - c4n3*c44);
+    jdouble tMul1 = (-6.0*WIGNER_444_011)*c40*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c42*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c4n1*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c43 + c4n2*c4n3) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c44 + c4n3*c4n4);
+    jdouble tMul2 = (-6.0*WIGNER_444_011)*c40*c4n1 - (6.0*SQRT2_INV*WIGNER_444_112)*c42*c4n1 + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n2  - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c4n3 - c4n2*c43) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c4n4 - c4n3*c44);
     rFp3Px += tMul1*aCnlmPx[tIdx+1] + tMul2*aCnlmPx[tIdx-1];
     rFp3Py += tMul1*aCnlmPy[tIdx+1] + tMul2*aCnlmPy[tIdx-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx+1] + tMul2*aCnlmPz[tIdx-1];
@@ -887,27 +887,27 @@ static inline void calL3_444_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_224_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
-    const double c20  = aCnlm[tIdx2  ];
-    const double c21  = aCnlm[tIdx2+1];
-    const double c2n1 = aCnlm[tIdx2-1];
-    const double c22  = aCnlm[tIdx2+2];
-    const double c2n2 = aCnlm[tIdx2-2];
-    const double c40  = aCnlm[tIdx4  ];
-    const double c41  = aCnlm[tIdx4+1];
-    const double c4n1 = aCnlm[tIdx4-1];
-    const double c42  = aCnlm[tIdx4+2];
-    const double c4n2 = aCnlm[tIdx4-2];
-    const double c43  = aCnlm[tIdx4+3];
-    const double c4n3 = aCnlm[tIdx4-3];
-    const double c44  = aCnlm[tIdx4+4];
-    const double c4n4 = aCnlm[tIdx4-4];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c20  = aCnlm[tIdx2  ];
+    const jdouble c21  = aCnlm[tIdx2+1];
+    const jdouble c2n1 = aCnlm[tIdx2-1];
+    const jdouble c22  = aCnlm[tIdx2+2];
+    const jdouble c2n2 = aCnlm[tIdx2-2];
+    const jdouble c40  = aCnlm[tIdx4  ];
+    const jdouble c41  = aCnlm[tIdx4+1];
+    const jdouble c4n1 = aCnlm[tIdx4-1];
+    const jdouble c42  = aCnlm[tIdx4+2];
+    const jdouble c4n2 = aCnlm[tIdx4-2];
+    const jdouble c43  = aCnlm[tIdx4+3];
+    const jdouble c4n3 = aCnlm[tIdx4-3];
+    const jdouble c44  = aCnlm[tIdx4+4];
+    const jdouble c4n4 = aCnlm[tIdx4-4];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_224_000*c20*c20 - WIGNER_224_110*(c21*c21 + c2n1*c2n1) + WIGNER_224_220*(c22*c22 + c2n2*c2n2);
+    jdouble tMul = WIGNER_224_000*c20*c20 - WIGNER_224_110*(c21*c21 + c2n1*c2n1) + WIGNER_224_220*(c22*c22 + c2n2*c2n2);
     rFp3Px += tMul*aCnlmPx[tIdx4];
     rFp3Py += tMul*aCnlmPy[tIdx4];
     rFp3Pz += tMul*aCnlmPz[tIdx4];
@@ -916,8 +916,8 @@ static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx2];
     rFp3Pz += tMul*aCnlmPz[tIdx2];
     
-    double tMul1 = (-2.0*WIGNER_224_110)*c40*c21  - (2.0*WIGNER_224_011)*c20*c41  + (2.0*SQRT2_INV*WIGNER_224_112)*c42*c21  + (2.0*SQRT2_INV*WIGNER_224_112)*c2n1*c4n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c22*c41 + c2n2*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c43 + c2n2*c4n3);
-    double tMul2 = (-2.0*WIGNER_224_110)*c40*c2n1 - (2.0*WIGNER_224_011)*c20*c4n1 - (2.0*SQRT2_INV*WIGNER_224_112)*c42*c2n1 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c4n2  + (2.0*SQRT2_INV*WIGNER_224_121)*(c2n2*c41 - c22*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c4n3 - c2n2*c43);
+    jdouble tMul1 = (-2.0*WIGNER_224_110)*c40*c21  - (2.0*WIGNER_224_011)*c20*c41  + (2.0*SQRT2_INV*WIGNER_224_112)*c42*c21  + (2.0*SQRT2_INV*WIGNER_224_112)*c2n1*c4n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c22*c41 + c2n2*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c43 + c2n2*c4n3);
+    jdouble tMul2 = (-2.0*WIGNER_224_110)*c40*c2n1 - (2.0*WIGNER_224_011)*c20*c4n1 - (2.0*SQRT2_INV*WIGNER_224_112)*c42*c2n1 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c4n2  + (2.0*SQRT2_INV*WIGNER_224_121)*(c2n2*c41 - c22*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c4n3 - c2n2*c43);
     rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
     rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
@@ -952,29 +952,29 @@ static inline void calL3_224_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_334_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx3 = 3*3+3;
     const jint tIdx4 = 4*4+4;
-    const double c30  = aCnlm[tIdx3  ];
-    const double c31  = aCnlm[tIdx3+1];
-    const double c3n1 = aCnlm[tIdx3-1];
-    const double c32  = aCnlm[tIdx3+2];
-    const double c3n2 = aCnlm[tIdx3-2];
-    const double c33  = aCnlm[tIdx3+3];
-    const double c3n3 = aCnlm[tIdx3-3];
-    const double c40  = aCnlm[tIdx4  ];
-    const double c41  = aCnlm[tIdx4+1];
-    const double c4n1 = aCnlm[tIdx4-1];
-    const double c42  = aCnlm[tIdx4+2];
-    const double c4n2 = aCnlm[tIdx4-2];
-    const double c43  = aCnlm[tIdx4+3];
-    const double c4n3 = aCnlm[tIdx4-3];
-    const double c44  = aCnlm[tIdx4+4];
-    const double c4n4 = aCnlm[tIdx4-4];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c30  = aCnlm[tIdx3  ];
+    const jdouble c31  = aCnlm[tIdx3+1];
+    const jdouble c3n1 = aCnlm[tIdx3-1];
+    const jdouble c32  = aCnlm[tIdx3+2];
+    const jdouble c3n2 = aCnlm[tIdx3-2];
+    const jdouble c33  = aCnlm[tIdx3+3];
+    const jdouble c3n3 = aCnlm[tIdx3-3];
+    const jdouble c40  = aCnlm[tIdx4  ];
+    const jdouble c41  = aCnlm[tIdx4+1];
+    const jdouble c4n1 = aCnlm[tIdx4-1];
+    const jdouble c42  = aCnlm[tIdx4+2];
+    const jdouble c4n2 = aCnlm[tIdx4-2];
+    const jdouble c43  = aCnlm[tIdx4+3];
+    const jdouble c4n3 = aCnlm[tIdx4-3];
+    const jdouble c44  = aCnlm[tIdx4+4];
+    const jdouble c4n4 = aCnlm[tIdx4-4];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_334_000*c30*c30 - WIGNER_334_110*(c31*c31 + c3n1*c3n1) + WIGNER_334_220*(c32*c32 + c3n2*c3n2) - WIGNER_334_330*(c33*c33 + c3n3*c3n3);
+    jdouble tMul = WIGNER_334_000*c30*c30 - WIGNER_334_110*(c31*c31 + c3n1*c3n1) + WIGNER_334_220*(c32*c32 + c3n2*c3n2) - WIGNER_334_330*(c33*c33 + c3n3*c3n3);
     rFp3Px += tMul*aCnlmPx[tIdx4];
     rFp3Py += tMul*aCnlmPy[tIdx4];
     rFp3Pz += tMul*aCnlmPz[tIdx4];
@@ -983,8 +983,8 @@ static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx3];
     rFp3Pz += tMul*aCnlmPz[tIdx3];
     
-    double tMul1 = (-2.0*WIGNER_334_110)*c40*c31  - (2.0*WIGNER_334_011)*c30*c41  + (2.0*SQRT2_INV*WIGNER_334_112)*c42*c31  + (2.0*SQRT2_INV*WIGNER_334_112)*c3n1*c4n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c32*c41 + c3n2*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c43 + c3n2*c4n3) - (2.0*SQRT2_INV*WIGNER_334_132)*(c33*c42 + c3n3*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c44 + c3n3*c4n4);
-    double tMul2 = (-2.0*WIGNER_334_110)*c40*c3n1 - (2.0*WIGNER_334_011)*c30*c4n1 - (2.0*SQRT2_INV*WIGNER_334_112)*c42*c3n1 + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c4n2  + (2.0*SQRT2_INV*WIGNER_334_121)*(c3n2*c41 - c32*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c4n3 - c3n2*c43) - (2.0*SQRT2_INV*WIGNER_334_132)*(c3n3*c42 - c33*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c4n4 - c3n3*c44);
+    jdouble tMul1 = (-2.0*WIGNER_334_110)*c40*c31  - (2.0*WIGNER_334_011)*c30*c41  + (2.0*SQRT2_INV*WIGNER_334_112)*c42*c31  + (2.0*SQRT2_INV*WIGNER_334_112)*c3n1*c4n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c32*c41 + c3n2*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c43 + c3n2*c4n3) - (2.0*SQRT2_INV*WIGNER_334_132)*(c33*c42 + c3n3*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c44 + c3n3*c4n4);
+    jdouble tMul2 = (-2.0*WIGNER_334_110)*c40*c3n1 - (2.0*WIGNER_334_011)*c30*c4n1 - (2.0*SQRT2_INV*WIGNER_334_112)*c42*c3n1 + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c4n2  + (2.0*SQRT2_INV*WIGNER_334_121)*(c3n2*c41 - c32*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c4n3 - c3n2*c43) - (2.0*SQRT2_INV*WIGNER_334_132)*(c3n3*c42 - c33*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c4n4 - c3n3*c44);
     rFp3Px += tMul1*aCnlmPx[tIdx3+1] + tMul2*aCnlmPx[tIdx3-1];
     rFp3Py += tMul1*aCnlmPy[tIdx3+1] + tMul2*aCnlmPy[tIdx3-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx3+1] + tMul2*aCnlmPz[tIdx3-1];
@@ -1024,27 +1024,27 @@ static inline void calL3_334_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_244_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
-    const double c20  = aCnlm[tIdx2  ];
-    const double c21  = aCnlm[tIdx2+1];
-    const double c2n1 = aCnlm[tIdx2-1];
-    const double c22  = aCnlm[tIdx2+2];
-    const double c2n2 = aCnlm[tIdx2-2];
-    const double c40  = aCnlm[tIdx4  ];
-    const double c41  = aCnlm[tIdx4+1];
-    const double c4n1 = aCnlm[tIdx4-1];
-    const double c42  = aCnlm[tIdx4+2];
-    const double c4n2 = aCnlm[tIdx4-2];
-    const double c43  = aCnlm[tIdx4+3];
-    const double c4n3 = aCnlm[tIdx4-3];
-    const double c44  = aCnlm[tIdx4+4];
-    const double c4n4 = aCnlm[tIdx4-4];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c20  = aCnlm[tIdx2  ];
+    const jdouble c21  = aCnlm[tIdx2+1];
+    const jdouble c2n1 = aCnlm[tIdx2-1];
+    const jdouble c22  = aCnlm[tIdx2+2];
+    const jdouble c2n2 = aCnlm[tIdx2-2];
+    const jdouble c40  = aCnlm[tIdx4  ];
+    const jdouble c41  = aCnlm[tIdx4+1];
+    const jdouble c4n1 = aCnlm[tIdx4-1];
+    const jdouble c42  = aCnlm[tIdx4+2];
+    const jdouble c4n2 = aCnlm[tIdx4-2];
+    const jdouble c43  = aCnlm[tIdx4+3];
+    const jdouble c4n3 = aCnlm[tIdx4-3];
+    const jdouble c44  = aCnlm[tIdx4+4];
+    const jdouble c4n4 = aCnlm[tIdx4-4];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_244_000*c40*c40 - WIGNER_244_011*(c41*c41 + c4n1*c4n1) + WIGNER_244_022*(c42*c42 + c4n2*c4n2) - WIGNER_244_033*(c43*c43 + c4n3*c4n3) + WIGNER_244_044*(c44*c44 + c4n4*c4n4);
+    jdouble tMul = WIGNER_244_000*c40*c40 - WIGNER_244_011*(c41*c41 + c4n1*c4n1) + WIGNER_244_022*(c42*c42 + c4n2*c4n2) - WIGNER_244_033*(c43*c43 + c4n3*c4n3) + WIGNER_244_044*(c44*c44 + c4n4*c4n4);
     rFp3Px += tMul*aCnlmPx[tIdx2];
     rFp3Py += tMul*aCnlmPy[tIdx2];
     rFp3Pz += tMul*aCnlmPz[tIdx2];
@@ -1053,8 +1053,8 @@ static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx4];
     rFp3Pz += tMul*aCnlmPz[tIdx4];
     
-    double tMul1 = (-2.0*WIGNER_244_110)*c40*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c42 + c4n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c43 + c4n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c44 + c4n3*c4n4);
-    double tMul2 = (-2.0*WIGNER_244_110)*c40*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c4n2 - c4n1*c42) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c4n3 - c4n2*c43) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c4n4 - c4n3*c44);
+    jdouble tMul1 = (-2.0*WIGNER_244_110)*c40*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c42 + c4n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c43 + c4n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c44 + c4n3*c4n4);
+    jdouble tMul2 = (-2.0*WIGNER_244_110)*c40*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c4n2 - c4n1*c42) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c4n3 - c4n2*c43) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c4n4 - c4n3*c44);
     rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
     rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
@@ -1089,33 +1089,33 @@ static inline void calL3_244_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                              double *rFpPx, double *rFpPy, double *rFpPz, double aWt) {
+static inline void calL3_134_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
     const jint tIdx1 = 1+1;
     const jint tIdx3 = 3*3+3;
     const jint tIdx4 = 4*4+4;
-    const double c10  = aCnlm[tIdx1  ];
-    const double c11  = aCnlm[tIdx1+1];
-    const double c1n1 = aCnlm[tIdx1-1];
-    const double c30  = aCnlm[tIdx3  ];
-    const double c31  = aCnlm[tIdx3+1];
-    const double c3n1 = aCnlm[tIdx3-1];
-    const double c32  = aCnlm[tIdx3+2];
-    const double c3n2 = aCnlm[tIdx3-2];
-    const double c33  = aCnlm[tIdx3+3];
-    const double c3n3 = aCnlm[tIdx3-3];
-    const double c40  = aCnlm[tIdx4  ];
-    const double c41  = aCnlm[tIdx4+1];
-    const double c4n1 = aCnlm[tIdx4-1];
-    const double c42  = aCnlm[tIdx4+2];
-    const double c4n2 = aCnlm[tIdx4-2];
-    const double c43  = aCnlm[tIdx4+3];
-    const double c4n3 = aCnlm[tIdx4-3];
-    const double c44  = aCnlm[tIdx4+4];
-    const double c4n4 = aCnlm[tIdx4-4];
-    double rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
+    const jdouble c10  = aCnlm[tIdx1  ];
+    const jdouble c11  = aCnlm[tIdx1+1];
+    const jdouble c1n1 = aCnlm[tIdx1-1];
+    const jdouble c30  = aCnlm[tIdx3  ];
+    const jdouble c31  = aCnlm[tIdx3+1];
+    const jdouble c3n1 = aCnlm[tIdx3-1];
+    const jdouble c32  = aCnlm[tIdx3+2];
+    const jdouble c3n2 = aCnlm[tIdx3-2];
+    const jdouble c33  = aCnlm[tIdx3+3];
+    const jdouble c3n3 = aCnlm[tIdx3-3];
+    const jdouble c40  = aCnlm[tIdx4  ];
+    const jdouble c41  = aCnlm[tIdx4+1];
+    const jdouble c4n1 = aCnlm[tIdx4-1];
+    const jdouble c42  = aCnlm[tIdx4+2];
+    const jdouble c4n2 = aCnlm[tIdx4-2];
+    const jdouble c43  = aCnlm[tIdx4+3];
+    const jdouble c4n3 = aCnlm[tIdx4-3];
+    const jdouble c44  = aCnlm[tIdx4+4];
+    const jdouble c4n4 = aCnlm[tIdx4-4];
+    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
     
-    double tMul = WIGNER_134_000*c30*c40 - WIGNER_134_011*(c31*c41 + c3n1*c4n1) + WIGNER_134_022*(c32*c42 + c3n2*c4n2) - WIGNER_134_033*(c33*c43 + c3n3*c4n3);
+    jdouble tMul = WIGNER_134_000*c30*c40 - WIGNER_134_011*(c31*c41 + c3n1*c4n1) + WIGNER_134_022*(c32*c42 + c3n2*c4n2) - WIGNER_134_033*(c33*c43 + c3n3*c4n3);
     rFp3Px += tMul*aCnlmPx[tIdx1];
     rFp3Py += tMul*aCnlmPy[tIdx1];
     rFp3Pz += tMul*aCnlmPz[tIdx1];
@@ -1128,8 +1128,8 @@ static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     rFp3Py += tMul*aCnlmPy[tIdx3];
     rFp3Pz += tMul*aCnlmPz[tIdx3];
     
-    double tMul1 = (-WIGNER_134_110)*c40*c31  - WIGNER_134_101*c30*c41  + (SQRT2_INV*WIGNER_134_112)*(c31*c42 + c3n1*c4n2) + (SQRT2_INV*WIGNER_134_121)*(c32*c41 + c3n2*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c43 + c3n2*c4n3) - (SQRT2_INV*WIGNER_134_132)*(c33*c42 + c3n3*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c44 + c3n3*c4n4);
-    double tMul2 = (-WIGNER_134_110)*c40*c3n1 - WIGNER_134_101*c30*c4n1 + (SQRT2_INV*WIGNER_134_112)*(c31*c4n2 - c3n1*c42) + (SQRT2_INV*WIGNER_134_121)*(c3n2*c41 - c32*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c4n3 - c3n2*c43) - (SQRT2_INV*WIGNER_134_132)*(c3n3*c42 - c33*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c4n4 - c3n3*c44);
+    jdouble tMul1 = (-WIGNER_134_110)*c40*c31  - WIGNER_134_101*c30*c41  + (SQRT2_INV*WIGNER_134_112)*(c31*c42 + c3n1*c4n2) + (SQRT2_INV*WIGNER_134_121)*(c32*c41 + c3n2*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c43 + c3n2*c4n3) - (SQRT2_INV*WIGNER_134_132)*(c33*c42 + c3n3*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c44 + c3n3*c4n4);
+    jdouble tMul2 = (-WIGNER_134_110)*c40*c3n1 - WIGNER_134_101*c30*c4n1 + (SQRT2_INV*WIGNER_134_112)*(c31*c4n2 - c3n1*c42) + (SQRT2_INV*WIGNER_134_121)*(c3n2*c41 - c32*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c4n3 - c3n2*c43) - (SQRT2_INV*WIGNER_134_132)*(c3n3*c42 - c33*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c4n4 - c3n3*c44);
     rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
     rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
     rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
@@ -1175,12 +1175,12 @@ static inline void calL3_134_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, d
     *rFpPy = aWt*rFp3Py;
     *rFpPz = aWt*rFp3Pz;
 }
-static inline void calL3p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                           double *rFpPx, double *rFpPy, double *rFpPz,
-                           double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void calL3p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                           jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz,
+                           jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Max <= 1) return;
     jint tShiftFp = aNoRadial ? aLMax : (aLMax+1);
-    double *tFpPx = rFpPx+tShiftFp, *tFpPy = rFpPy+tShiftFp, *tFpPz = rFpPz+tShiftFp;
+    jdouble *tFpPx = rFpPx+tShiftFp, *tFpPy = rFpPy+tShiftFp, *tFpPz = rFpPz+tShiftFp;
     calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
     ++tFpPx; ++tFpPy; ++tFpPz;
     if (aL3Cross) {
@@ -1208,15 +1208,15 @@ static inline void calL3p_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         ++tFpPx; ++tFpPy; ++tFpPz;
     }
 }
-static inline void calL3f_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                           double *aFpGrad, double *rFx, double *rFy, double *rFz,
-                           double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void calL3f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                           jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                           jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Max <= 1) return;
     jint tShiftFp = aNoRadial ? aLMax : (aLMax+1);
-    double *tFpGrad = aFpGrad+tShiftFp;
-    double tFpPx, tFpPy, tFpPz;
+    jdouble *tFpGrad = aFpGrad+tShiftFp;
+    jdouble tFpPx, tFpPy, tFpPz;
     calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-    double subFpGrad = *tFpGrad;
+    jdouble subFpGrad = *tFpGrad;
     *rFx += subFpGrad * tFpPx;
     *rFy += subFpGrad * tFpPy;
     *rFz += subFpGrad * tFpPz;
@@ -1278,9 +1278,9 @@ static inline void calL3f_(double *aCnlm, double *aCnlmPx, double *aCnlmPy, doub
         ++tFpGrad;
     }
 }
-static inline void cnlm2fpPxyz(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                               double *rFpPx, double *rFpPy, double *rFpPz,
-                               double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void cnlm2fpPxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                               jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz,
+                               jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     calL2p_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
             rFpPx, rFpPy, rFpPz,
             aWt, aLMax, aNoRadial);
@@ -1288,9 +1288,9 @@ static inline void cnlm2fpPxyz(double *aCnlm, double *aCnlmPx, double *aCnlmPy, 
             rFpPx, rFpPy, rFpPz,
             aWt, aLMax, aNoRadial, aL3Max, aL3Cross);
 }
-static inline void cnlm2fxyz(double *aCnlm, double *aCnlmPx, double *aCnlmPy, double *aCnlmPz,
-                             double *aFpGrad, double *rFx, double *rFy, double *rFz,
-                             double aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void cnlm2fxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                             jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                             jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     calL2f_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
             aFpGrad, rFx, rFy, rFz,
             aWt, aLMax, aNoRadial);
@@ -1300,26 +1300,26 @@ static inline void cnlm2fxyz(double *aCnlm, double *aCnlmPx, double *aCnlmPy, do
 }
 
 
-static inline void calCnlm(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlType, jint aNN,
-                           double *rNlRn, double *rNlY, double *rCnlm, jboolean aBufferNl,
-                           jint aTypeNum, double aRCut, jint aNMax, jint aLMaxMax, jint aLMAll, jint aWType) {
+static inline void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                           jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jboolean aBufferNl,
+                           jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMaxMax, jint aLMAll, jint aWType) {
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         jint type = aNlType[j];
-        double dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
         // cal fc
-        double fc = pow4_jse(1.0 - pow2_jse(dis/aRCut));
+        jdouble fc = pow4_jse(1.0 - pow2_jse(dis/aRCut));
         // cal Rn
-        double tRnX = 1.0 - 2.0*dis/aRCut;
-        double *tRn = aBufferNl ? (rNlRn + j*(aNMax+1)) : rNlRn;
+        jdouble tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = aBufferNl ? (rNlRn + j*(aNMax+1)) : rNlRn;
         chebyshevFull(aNMax, tRnX, tRn);
         switch(aWType) {
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             for (jint n = 0; n <= aNMax; ++n) {
                 tRn[n] *= wt;
             }
@@ -1329,7 +1329,7 @@ static inline void calCnlm(double *aNlDx, double *aNlDy, double *aNlDz, jint *aN
             break;
         }}
         // cal Y
-        double *tY = aBufferNl ? (rNlY + j*aLMAll) : rNlY;
+        jdouble *tY = aBufferNl ? (rNlY + j*aLMAll) : rNlY;
         realSphericalHarmonicsFull4(aLMaxMax, dx, dy, dz, dis, tY);
         // cal cnlm
         switch(aWType) {
@@ -1370,7 +1370,7 @@ static inline void calCnlm(double *aNlDx, double *aNlDy, double *aNlDz, jint *aN
                 }
             } else {
                 // cal weight of type here
-                double wt = ((type&1)==1) ? type : -type;
+                jdouble wt = ((type&1)==1) ? type : -type;
                 jint tShiftWt = (aNMax+1)*aLMAll;
                 for (jint tN = 0; tN <= aNMax; ++tN, tShift+=aLMAll, tShiftWt+=aLMAll) {
                     mplusCnlmWt(rCnlm+tShift, rCnlm+tShiftWt, tY, fc, tRn[tN], wt, aLMAll);
@@ -1384,7 +1384,7 @@ static inline void calCnlm(double *aNlDx, double *aNlDy, double *aNlDz, jint *aN
     }
 }
 
-static inline void cnlm2fp(double *aCnlm, double *rFp, jint aSizeN, jint aSizeL, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint tLMAll) {
+static inline void cnlm2fp(jdouble *aCnlm, jdouble *rFp, jint aSizeN, jint aSizeL, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint tLMAll) {
     jint tShift = 0, tShiftFP = 0;
     for (jint tN = 0; tN < aSizeN; ++tN, tShift+=tLMAll, tShiftFP+=aSizeL) {
         calL2_(aCnlm+tShift, rFp+tShiftFP, aLMax, aNoRadial);
@@ -1398,14 +1398,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
         jdoubleArray rNlRn, jdoubleArray rNlY, jdoubleArray rCnlm, jdoubleArray rFp, jint aShiftFp, jboolean aBufferNl,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, rNlRn);
-    double *tNlY = (double *)getJArrayBuf(aEnv, rNlY);
-    double *tCnlm = (double *)getJArrayBuf(aEnv, rCnlm);
-    double *tFp = (double *)getJArrayBuf(aEnv, rFp);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, rNlRn);
+    jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, rNlY);
+    jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, rCnlm);
+    jdouble *tFp = (jdouble *)getJArrayBuf(aEnv, rFp);
     
     // const init
     jint tSizeN;
@@ -1436,7 +1436,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     const jint tLMAll = (tLMax+1)*(tLMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
     // clear cnlm first
-    double *tFp_ = tFp + aShiftFp;
+    jdouble *tFp_ = tFp + aShiftFp;
     for (jint i = 0; i < tSizeCnlm; ++i) {
         tCnlm[i] = 0.0;
     }
@@ -1465,28 +1465,28 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
         jint aShiftFp, jint aRestFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, aNlRn);
-    double *tRnPx = (double *)getJArrayBuf(aEnv, rRnPx);
-    double *tRnPy = (double *)getJArrayBuf(aEnv, rRnPy);
-    double *tRnPz = (double *)getJArrayBuf(aEnv, rRnPz);
-    double *tCheby2 = (double *)getJArrayBuf(aEnv, rCheby2);
-    double *tNlY = (double *)getJArrayBuf(aEnv, aNlY);
-    double *tYPtheta = (double *)getJArrayBuf(aEnv, rYPtheta);
-    double *tYPphi = (double *)getJArrayBuf(aEnv, rYPphi);
-    double *tYPx = (double *)getJArrayBuf(aEnv, rYPx);
-    double *tYPy = (double *)getJArrayBuf(aEnv, rYPy);
-    double *tYPz = (double *)getJArrayBuf(aEnv, rYPz);
-    double *tCnlm = (double *)getJArrayBuf(aEnv, aCnlm);
-    double *tCnlmPx = (double *)getJArrayBuf(aEnv, rCnlmPx);
-    double *tCnlmPy = (double *)getJArrayBuf(aEnv, rCnlmPy);
-    double *tCnlmPz = (double *)getJArrayBuf(aEnv, rCnlmPz);
-    double *tFpPx = (double *)getJArrayBuf(aEnv, rFpPx);
-    double *tFpPy = (double *)getJArrayBuf(aEnv, rFpPy);
-    double *tFpPz = (double *)getJArrayBuf(aEnv, rFpPz);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
+    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
+    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
+    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
+    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
+    jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, aNlY);
+    jdouble *tYPtheta = (jdouble *)getJArrayBuf(aEnv, rYPtheta);
+    jdouble *tYPphi = (jdouble *)getJArrayBuf(aEnv, rYPphi);
+    jdouble *tYPx = (jdouble *)getJArrayBuf(aEnv, rYPx);
+    jdouble *tYPy = (jdouble *)getJArrayBuf(aEnv, rYPy);
+    jdouble *tYPz = (jdouble *)getJArrayBuf(aEnv, rYPz);
+    jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, aCnlm);
+    jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
+    jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
+    jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
+    jdouble *tFpPx = (jdouble *)getJArrayBuf(aEnv, rFpPx);
+    jdouble *tFpPy = (jdouble *)getJArrayBuf(aEnv, rFpPy);
+    jdouble *tFpPz = (jdouble *)getJArrayBuf(aEnv, rFpPz);
     
     // const init
     jint tSizeN;
@@ -1521,13 +1521,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     for (jint j = 0; j < aNN; ++j) {
         // init fpPxyz
         jint tShiftFpP = j*(aShiftFp+tSize+aRestFp) + aShiftFp;
-        double *tFpPx_ = tFpPx+tShiftFpP;
-        double *tFpPy_ = tFpPy+tShiftFpP;
-        double *tFpPz_ = tFpPz+tShiftFpP;
+        jdouble *tFpPx_ = tFpPx+tShiftFpP;
+        jdouble *tFpPy_ = tFpPy+tShiftFpP;
+        jdouble *tFpPz_ = tFpPz+tShiftFpP;
         // init nl
         jint type = tNlType[j];
-        double dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) {
             // clear fpPxyz here
@@ -1539,21 +1539,21 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
             continue;
         }
         // cal fc
-        double fcMul = 1.0 - pow2_jse(dis/aRCut);
-        double fcMul3 = pow3_jse(fcMul);
-        double fc = fcMul3 * fcMul;
-        double fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
-        double fcPx = dx * fcPMul;
-        double fcPy = dy * fcPMul;
-        double fcPz = dz * fcPMul;
+        jdouble fcMul = 1.0 - pow2_jse(dis/aRCut);
+        jdouble fcMul3 = pow3_jse(fcMul);
+        jdouble fc = fcMul3 * fcMul;
+        jdouble fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
+        jdouble fcPx = dx * fcPMul;
+        jdouble fcPy = dy * fcPMul;
+        jdouble fcPz = dz * fcPMul;
         // cal Rn
-        double *tRn = tNlRn + j*(aNMax+1);
-        const double tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = tNlRn + j*(aNMax+1);
+        const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         chebyshev2Full(aNMax-1, tRnX, tCheby2);
         switch(aWType) {
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             calRnPxyz(tRnPx, tRnPy, tRnPz, tCheby2, aNMax, dis, aRCut, wt, dx, dy, dz);
             break;
         }
@@ -1568,11 +1568,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
             break;
         }}
         // cal Ylm
-        double dxy = hypot(dx, dy);
-        double cosTheta = dz / dis;
-        double sinTheta = dxy / dis;
-        double cosPhi;
-        double sinPhi;
+        jdouble dxy = hypot(dx, dy);
+        jdouble cosTheta = dz / dis;
+        jdouble sinTheta = dxy / dis;
+        jdouble cosPhi;
+        jdouble sinPhi;
         jboolean dxyCloseZero = numericEqual_jse(dxy, 0.0);
         if (dxyCloseZero) {
             cosPhi = 1.0;
@@ -1581,7 +1581,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
             cosPhi = dx / dxy;
             sinPhi = dy / dxy;
         }
-        double *tY = tNlY + j*tLMAll;
+        jdouble *tY = tNlY + j*tLMAll;
         if (dxyCloseZero) {
             // fix singularity
             for (jint k = 0; k < tLMAll; ++k) tYPphi[k] = 0.0;
@@ -1655,7 +1655,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
         }
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             for (jint tN=0, tShift=0, tShiftFp=0; tN <= aNMax; ++tN, tShift+=tLMAll, tShiftFp+=tSizeL) {
                 // cal cnlmPxyz first
                 calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
@@ -1714,32 +1714,32 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
         jdoubleArray aFpGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, aNlRn);
-    double *tRnPx = (double *)getJArrayBuf(aEnv, rRnPx);
-    double *tRnPy = (double *)getJArrayBuf(aEnv, rRnPy);
-    double *tRnPz = (double *)getJArrayBuf(aEnv, rRnPz);
-    double *tCheby2 = (double *)getJArrayBuf(aEnv, rCheby2);
-    double *tNlY = (double *)getJArrayBuf(aEnv, aNlY);
-    double *tYPtheta = (double *)getJArrayBuf(aEnv, rYPtheta);
-    double *tYPphi = (double *)getJArrayBuf(aEnv, rYPphi);
-    double *tYPx = (double *)getJArrayBuf(aEnv, rYPx);
-    double *tYPy = (double *)getJArrayBuf(aEnv, rYPy);
-    double *tYPz = (double *)getJArrayBuf(aEnv, rYPz);
-    double *tCnlm = (double *)getJArrayBuf(aEnv, aCnlm);
-    double *tCnlmPx = (double *)getJArrayBuf(aEnv, rCnlmPx);
-    double *tCnlmPy = (double *)getJArrayBuf(aEnv, rCnlmPy);
-    double *tCnlmPz = (double *)getJArrayBuf(aEnv, rCnlmPz);
-    double *tFpGrad = (double *)getJArrayBuf(aEnv, aFpGrad);
-    double *tFx = (double *)getJArrayBuf(aEnv, rFx);
-    double *tFy = (double *)getJArrayBuf(aEnv, rFy);
-    double *tFz = (double *)getJArrayBuf(aEnv, rFz);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
+    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
+    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
+    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
+    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
+    jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, aNlY);
+    jdouble *tYPtheta = (jdouble *)getJArrayBuf(aEnv, rYPtheta);
+    jdouble *tYPphi = (jdouble *)getJArrayBuf(aEnv, rYPphi);
+    jdouble *tYPx = (jdouble *)getJArrayBuf(aEnv, rYPx);
+    jdouble *tYPy = (jdouble *)getJArrayBuf(aEnv, rYPy);
+    jdouble *tYPz = (jdouble *)getJArrayBuf(aEnv, rYPz);
+    jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, aCnlm);
+    jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
+    jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
+    jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
+    jdouble *tFpGrad = (jdouble *)getJArrayBuf(aEnv, aFpGrad);
+    jdouble *tFx = (jdouble *)getJArrayBuf(aEnv, rFx);
+    jdouble *tFy = (jdouble *)getJArrayBuf(aEnv, rFy);
+    jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
 
     // init fpGrad
-    double *tFpGrad_ = tFpGrad + aShiftFp;
+    jdouble *tFpGrad_ = tFpGrad + aShiftFp;
     
     // const init
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
@@ -1750,30 +1750,30 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
     for (jint j = 0; j < aNN; ++j) {
         // init nl
         jint type = tNlType[j];
-        double dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
         // init fxyz
-        double *tFx_ = tFx + j;
-        double *tFy_ = tFy + j;
-        double *tFz_ = tFz + j;
+        jdouble *tFx_ = tFx + j;
+        jdouble *tFy_ = tFy + j;
+        jdouble *tFz_ = tFz + j;
         // cal fc
-        double fcMul = 1.0 - pow2_jse(dis/aRCut);
-        double fcMul3 = pow3_jse(fcMul);
-        double fc = fcMul3 * fcMul;
-        double fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
-        double fcPx = dx * fcPMul;
-        double fcPy = dy * fcPMul;
-        double fcPz = dz * fcPMul;
+        jdouble fcMul = 1.0 - pow2_jse(dis/aRCut);
+        jdouble fcMul3 = pow3_jse(fcMul);
+        jdouble fc = fcMul3 * fcMul;
+        jdouble fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
+        jdouble fcPx = dx * fcPMul;
+        jdouble fcPy = dy * fcPMul;
+        jdouble fcPz = dz * fcPMul;
         // cal Rn
-        double *tRn = tNlRn + j*(aNMax+1);
-        const double tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = tNlRn + j*(aNMax+1);
+        const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         chebyshev2Full(aNMax-1, tRnX, tCheby2);
         switch(aWType) {
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             calRnPxyz(tRnPx, tRnPy, tRnPz, tCheby2, aNMax, dis, aRCut, wt, dx, dy, dz);
             break;
         }
@@ -1788,11 +1788,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
             break;
         }}
         // cal Ylm
-        double dxy = hypot(dx, dy);
-        double cosTheta = dz / dis;
-        double sinTheta = dxy / dis;
-        double cosPhi;
-        double sinPhi;
+        jdouble dxy = hypot(dx, dy);
+        jdouble cosTheta = dz / dis;
+        jdouble sinTheta = dxy / dis;
+        jdouble cosPhi;
+        jdouble sinPhi;
         jboolean dxyCloseZero = numericEqual_jse(dxy, 0.0);
         if (dxyCloseZero) {
             cosPhi = 1.0;
@@ -1801,7 +1801,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
             cosPhi = dx / dxy;
             sinPhi = dy / dxy;
         }
-        double *tY = tNlY + j*tLMAll;
+        jdouble *tY = tNlY + j*tLMAll;
         if (dxyCloseZero) {
             // fix singularity
             for (jint k = 0; k < tLMAll; ++k) tYPphi[k] = 0.0;
@@ -1875,7 +1875,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
         }
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             for (jint tN=0, tShift=0, tShiftFp=0; tN <= aNMax; ++tN, tShift+=tLMAll, tShiftFp+=tSizeL) {
                 // cal cnlmPxyz first
                 calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,

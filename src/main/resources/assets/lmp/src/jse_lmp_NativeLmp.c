@@ -574,11 +574,11 @@ JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsScatter_1(JNIEnv *aEnv, jcla
 }
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsCreateAtoms_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr, jint aAtomNum, jintArray aID, jintArray aType, jdoubleArray aXYZ, jdoubleArray aVel, jintArray aImage, jboolean aShrinkExceed) {
     jint tAtomNum3 = aAtomNum * 3;
-    intbig  *tID    = aID   ==NULL ? NULL : MALLOCN_TP(intbig , aAtomNum ); parsejint2intbig   (aEnv, aID   , tID   , aAtomNum );
-    int     *tType  = aType ==NULL ? NULL : MALLOCN_TP(int    , aAtomNum ); parsejint2int      (aEnv, aType , tType , aAtomNum );
-    intbig  *tImage = aImage==NULL ? NULL : MALLOCN_TP(intbig , aAtomNum ); parsejint2intbig   (aEnv, aImage, tImage, aAtomNum );
-    jdouble *tXYZ   = aXYZ  ==NULL ? NULL : MALLOCN_TP(jdouble, tAtomNum3); parsejdouble2double(aEnv, aXYZ  , tXYZ  , tAtomNum3);
-    jdouble *tVel   = aVel  ==NULL ? NULL : MALLOCN_TP(jdouble, tAtomNum3); parsejdouble2double(aEnv, aVel  , tVel  , tAtomNum3);
+    intbig *tID    = aID   ==NULL ? NULL : MALLOCN_TP(intbig, aAtomNum ); parsejint2intbig   (aEnv, aID   , tID   , aAtomNum );
+    int    *tType  = aType ==NULL ? NULL : MALLOCN_TP(int   , aAtomNum ); parsejint2int      (aEnv, aType , tType , aAtomNum );
+    intbig *tImage = aImage==NULL ? NULL : MALLOCN_TP(intbig, aAtomNum ); parsejint2intbig   (aEnv, aImage, tImage, aAtomNum );
+    double *tXYZ   = aXYZ  ==NULL ? NULL : MALLOCN_TP(double, tAtomNum3); parsejdouble2double(aEnv, aXYZ  , tXYZ  , tAtomNum3);
+    double *tVel   = aVel  ==NULL ? NULL : MALLOCN_TP(double, tAtomNum3); parsejdouble2double(aEnv, aVel  , tVel  , tAtomNum3);
     lammps_create_atoms((void *)(intptr_t)aLmpPtr, aAtomNum, tID, tType, tXYZ, tVel, tImage, aShrinkExceed);
     exceptionCheckLMP(aEnv, (void *)(intptr_t)aLmpPtr);
     if (tID    != NULL) FREE(tID   );

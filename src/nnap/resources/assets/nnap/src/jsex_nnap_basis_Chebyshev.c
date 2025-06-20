@@ -5,26 +5,26 @@
 extern "C" {
 #endif
 
-static inline void calFp(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlType, jint aNN,
-                         double *rNlRn, double *rFp, jboolean aBufferNl,
-                         jint aTypeNum, double aRCut, jint aNMax, jint aWType) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType) {
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         jint type = aNlType[j];
-        double dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
         // cal fc
-        double fc = pow4_jse(1.0 - pow2_jse(dis/aRCut));
+        jdouble fc = pow4_jse(1.0 - pow2_jse(dis/aRCut));
         // cal Rn
-        double tRnX = 1.0 - 2.0*dis/aRCut;
-        double *tRn = aBufferNl ? (rNlRn + j*(aNMax+1)) : rNlRn;
+        jdouble tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = aBufferNl ? (rNlRn + j*(aNMax+1)) : rNlRn;
         chebyshevFull(aNMax, tRnX, tRn);
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             for (jint n = 0; n <= aNMax; ++n) {
                 tRn[n] *= wt;
             }
@@ -41,9 +41,9 @@ static inline void calFp(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlT
                     rFp[tN] += fc*tRn[tN];
                 }
             } else {
-                double *tFpWt = rFp + (aNMax+1)*type;
+                jdouble *tFpWt = rFp + (aNMax+1)*type;
                 for (jint tN = 0; tN <= aNMax; ++tN) {
-                    double tFpn = fc*tRn[tN];
+                    jdouble tFpn = fc*tRn[tN];
                     rFp[tN] += tFpn;
                     tFpWt[tN] += tFpn;
                 }
@@ -51,7 +51,7 @@ static inline void calFp(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlT
             break;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL: {
-            double *tFp = rFp + (aNMax+1)*(type-1);
+            jdouble *tFp = rFp + (aNMax+1)*(type-1);
             for (jint tN = 0; tN <= aNMax; ++tN) {
                 tFp[tN] += fc*tRn[tN];
             }
@@ -71,10 +71,10 @@ static inline void calFp(double *aNlDx, double *aNlDy, double *aNlDz, jint *aNlT
                 }
             } else {
                 // cal weight of type here
-                double wt = ((type&1)==1) ? type : -type;
-                double *tFpWt = rFp + (aNMax+1);
+                jdouble wt = ((type&1)==1) ? type : -type;
+                jdouble *tFpWt = rFp + (aNMax+1);
                 for (jint tN = 0; tN <= aNMax; ++tN) {
-                    double tFpn = fc*tRn[tN];
+                    jdouble tFpn = fc*tRn[tN];
                     rFp[tN] += tFpn;
                     tFpWt[tN] += wt*tFpn;
                 }
@@ -93,12 +93,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1(JNIEnv *aEnv, jclass
         jdoubleArray rNlRn, jdoubleArray rFp, jint aShiftFp, jboolean aBufferNl,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, rNlRn);
-    double *tFp = (double *)getJArrayBuf(aEnv, rFp);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, rNlRn);
+    jdouble *tFp = (jdouble *)getJArrayBuf(aEnv, rFp);
     
     // const init
     jint tSize;
@@ -125,7 +125,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1(JNIEnv *aEnv, jclass
         break;
     }}
     // clear fp first
-    double *tFp_ = tFp + aShiftFp;
+    jdouble *tFp_ = tFp + aShiftFp;
     for (jint i = 0; i < tSize; ++i) {
         tFp_[i] = 0.0;
     }
@@ -149,18 +149,18 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
         jint aShiftFp, jint aRestFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, aNlRn);
-    double *tRnPx = (double *)getJArrayBuf(aEnv, rRnPx);
-    double *tRnPy = (double *)getJArrayBuf(aEnv, rRnPy);
-    double *tRnPz = (double *)getJArrayBuf(aEnv, rRnPz);
-    double *tCheby2 = (double *)getJArrayBuf(aEnv, rCheby2);
-    double *tFpPx = (double *)getJArrayBuf(aEnv, rFpPx);
-    double *tFpPy = (double *)getJArrayBuf(aEnv, rFpPy);
-    double *tFpPz = (double *)getJArrayBuf(aEnv, rFpPz);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
+    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
+    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
+    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
+    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
+    jdouble *tFpPx = (jdouble *)getJArrayBuf(aEnv, rFpPx);
+    jdouble *tFpPy = (jdouble *)getJArrayBuf(aEnv, rFpPy);
+    jdouble *tFpPz = (jdouble *)getJArrayBuf(aEnv, rFpPz);
     
     // const init
     jint tSize;
@@ -191,13 +191,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
     for (jint j = 0; j < aNN; ++j) {
         // init fpPxyz
         jint tShiftFpP = j*(aShiftFp+tSize+aRestFp) + aShiftFp;
-        double *tFpPx_ = tFpPx+tShiftFpP;
-        double *tFpPy_ = tFpPy+tShiftFpP;
-        double *tFpPz_ = tFpPz+tShiftFpP;
+        jdouble *tFpPx_ = tFpPx+tShiftFpP;
+        jdouble *tFpPy_ = tFpPy+tShiftFpP;
+        jdouble *tFpPz_ = tFpPz+tShiftFpP;
         // init nl
         jint type = tNlType[j];
-        double dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) {
             // clear fpPxyz here
@@ -209,21 +209,21 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
             continue;
         }
         // cal fc
-        double fcMul = 1.0 - pow2_jse(dis/aRCut);
-        double fcMul3 = pow3_jse(fcMul);
-        double fc = fcMul3 * fcMul;
-        double fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
-        double fcPx = dx * fcPMul;
-        double fcPy = dy * fcPMul;
-        double fcPz = dz * fcPMul;
+        jdouble fcMul = 1.0 - pow2_jse(dis/aRCut);
+        jdouble fcMul3 = pow3_jse(fcMul);
+        jdouble fc = fcMul3 * fcMul;
+        jdouble fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
+        jdouble fcPx = dx * fcPMul;
+        jdouble fcPy = dy * fcPMul;
+        jdouble fcPz = dz * fcPMul;
         // cal Rn
-        double *tRn = tNlRn + j*(aNMax+1);
-        const double tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = tNlRn + j*(aNMax+1);
+        const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         chebyshev2Full(aNMax-1, tRnX, tCheby2);
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             calRnPxyz(tRnPx, tRnPy, tRnPz, tCheby2, aNMax, dis, aRCut, wt, dx, dy, dz);
             break;
         }
@@ -243,22 +243,22 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz and set to fp
-                    const double tRnn = tRn[n];
+                    const jdouble tRnn = tRn[n];
                     tFpPx_[n] = (fc*tRnPx[n] + fcPx*tRnn);
                     tFpPy_[n] = (fc*tRnPy[n] + fcPy*tRnn);
                     tFpPz_[n] = (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 jint tShiftFp = (aNMax+1)*type;
-                double *tFpPxWt = tFpPx_+tShiftFp;
-                double *tFpPyWt = tFpPy_+tShiftFp;
-                double *tFpPzWt = tFpPz_+tShiftFp;
+                jdouble *tFpPxWt = tFpPx_+tShiftFp;
+                jdouble *tFpPyWt = tFpPy_+tShiftFp;
+                jdouble *tFpPzWt = tFpPz_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[n];
-                    const double subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const double subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const double subFpPz = fc*tRnPz[n] + fcPz*tRnn;
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
+                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
+                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
                     // set to fp
                     tFpPx_[n] = subFpPx; tFpPxWt[n] = subFpPx;
                     tFpPy_[n] = subFpPy; tFpPyWt[n] = subFpPy;
@@ -269,12 +269,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL: {
             jint tShiftFp = (aNMax+1)*(type-1);
-            double *tFpPxWt = tFpPx_+tShiftFp;
-            double *tFpPyWt = tFpPy_+tShiftFp;
-            double *tFpPzWt = tFpPz_+tShiftFp;
+            jdouble *tFpPxWt = tFpPx_+tShiftFp;
+            jdouble *tFpPyWt = tFpPy_+tShiftFp;
+            jdouble *tFpPzWt = tFpPz_+tShiftFp;
             for (jint n = 0; n <= aNMax; ++n) {
                 // cal subFpPxyz and set to fp
-                const double tRnn = tRn[n];
+                const jdouble tRnn = tRn[n];
                 tFpPxWt[n] = (fc*tRnPx[n] + fcPx*tRnn);
                 tFpPyWt[n] = (fc*tRnPy[n] + fcPy*tRnn);
                 tFpPzWt[n] = (fc*tRnPz[n] + fcPz*tRnn);
@@ -285,7 +285,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             for (jint n = 0; n <= aNMax; ++n) {
                 // cal subFpPxyz and set to fp
-                const double tRnn = tRn[n];
+                const jdouble tRnn = tRn[n];
                 tFpPx_[n] = (fc*tRnPx[n] + fcPx*tRnn);
                 tFpPy_[n] = (fc*tRnPy[n] + fcPy*tRnn);
                 tFpPz_[n] = (fc*tRnPz[n] + fcPz*tRnn);
@@ -296,24 +296,24 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1(JNIEnv *aEnv,
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz and set to fp
-                    const double tRnn = tRn[n];
+                    const jdouble tRnn = tRn[n];
                     tFpPx_[n] = (fc*tRnPx[n] + fcPx*tRnn);
                     tFpPy_[n] = (fc*tRnPy[n] + fcPy*tRnn);
                     tFpPz_[n] = (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 // cal weight of type here
-                double wt = ((type&1)==1) ? type : -type;
+                jdouble wt = ((type&1)==1) ? type : -type;
                 jint tShiftFp = aNMax+1;
-                double *tFpPxWt = tFpPx_+tShiftFp;
-                double *tFpPyWt = tFpPy_+tShiftFp;
-                double *tFpPzWt = tFpPz_+tShiftFp;
+                jdouble *tFpPxWt = tFpPx_+tShiftFp;
+                jdouble *tFpPyWt = tFpPy_+tShiftFp;
+                jdouble *tFpPzWt = tFpPz_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[n];
-                    const double subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const double subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const double subFpPz = fc*tRnPz[n] + fcPz*tRnn;
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
+                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
+                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
                     // set to fp
                     tFpPx_[n] = subFpPx; tFpPxWt[n] = wt*subFpPx;
                     tFpPy_[n] = subFpPy; tFpPyWt[n] = wt*subFpPy;
@@ -348,47 +348,47 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1(JN
         jdoubleArray aFpGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType) {
     // java array init
-    double *tNlDx = (double *)getJArrayBuf(aEnv, aNlDx);
-    double *tNlDy = (double *)getJArrayBuf(aEnv, aNlDy);
-    double *tNlDz = (double *)getJArrayBuf(aEnv, aNlDz);
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    double *tNlRn = (double *)getJArrayBuf(aEnv, aNlRn);
-    double *tRnPx = (double *)getJArrayBuf(aEnv, rRnPx);
-    double *tRnPy = (double *)getJArrayBuf(aEnv, rRnPy);
-    double *tRnPz = (double *)getJArrayBuf(aEnv, rRnPz);
-    double *tCheby2 = (double *)getJArrayBuf(aEnv, rCheby2);
-    double *tFpGrad = (double *)getJArrayBuf(aEnv, aFpGrad);
-    double *tFx = (double *)getJArrayBuf(aEnv, rFx);
-    double *tFy = (double *)getJArrayBuf(aEnv, rFy);
-    double *tFz = (double *)getJArrayBuf(aEnv, rFz);
+    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
+    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
+    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
+    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
+    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
+    jdouble *tFpGrad = (jdouble *)getJArrayBuf(aEnv, aFpGrad);
+    jdouble *tFx = (jdouble *)getJArrayBuf(aEnv, rFx);
+    jdouble *tFy = (jdouble *)getJArrayBuf(aEnv, rFy);
+    jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
     
     // init fpGrad
-    double *tFpGrad_ = tFpGrad + aShiftFp;
+    jdouble *tFpGrad_ = tFpGrad + aShiftFp;
     
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         // init nl
         jint type = tNlType[j];
-        double dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
-        double dis = sqrt(dx*dx + dy*dy + dz*dz);
+        jdouble dx = tNlDx[j], dy = tNlDy[j], dz = tNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
         // cal fc
-        double fcMul = 1.0 - pow2_jse(dis/aRCut);
-        double fcMul3 = pow3_jse(fcMul);
-        double fc = fcMul3 * fcMul;
-        double fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
-        double fcPx = dx * fcPMul;
-        double fcPy = dy * fcPMul;
-        double fcPz = dz * fcPMul;
+        jdouble fcMul = 1.0 - pow2_jse(dis/aRCut);
+        jdouble fcMul3 = pow3_jse(fcMul);
+        jdouble fc = fcMul3 * fcMul;
+        jdouble fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
+        jdouble fcPx = dx * fcPMul;
+        jdouble fcPy = dy * fcPMul;
+        jdouble fcPz = dz * fcPMul;
         // cal Rn
-        double *tRn = tNlRn + j*(aNMax+1);
-        const double tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = tNlRn + j*(aNMax+1);
+        const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         chebyshev2Full(aNMax-1, tRnX, tCheby2);
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             // cal weight of type here
-            double wt = ((type&1)==1) ? type : -type;
+            jdouble wt = ((type&1)==1) ? type : -type;
             calRnPxyz(tRnPx, tRnPy, tRnPz, tCheby2, aNMax, dis, aRCut, wt, dx, dy, dz);
             break;
         }
@@ -408,23 +408,23 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1(JN
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz and accumulate to force
-                    const double tRnn = tRn[n];
-                    const double subFpGrad = tFpGrad_[n];
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpGrad = tFpGrad_[n];
                     tFx[j] += subFpGrad * (fc*tRnPx[n] + fcPx*tRnn);
                     tFy[j] += subFpGrad * (fc*tRnPy[n] + fcPy*tRnn);
                     tFz[j] += subFpGrad * (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 jint tShiftFp = (aNMax+1)*type;
-                double *tFpGradWt = tFpGrad_+tShiftFp;
+                jdouble *tFpGradWt = tFpGrad_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[n];
-                    const double subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const double subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const double subFpPz = fc*tRnPz[n] + fcPz*tRnn;
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
+                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
+                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
                     // accumulate to force
-                    const double subFpGrad = tFpGrad_[n], subFpGradWt = tFpGradWt[n];
+                    const jdouble subFpGrad = tFpGrad_[n], subFpGradWt = tFpGradWt[n];
                     tFx[j] += (subFpGrad + subFpGradWt) * subFpPx;
                     tFy[j] += (subFpGrad + subFpGradWt) * subFpPy;
                     tFz[j] += (subFpGrad + subFpGradWt) * subFpPz;
@@ -434,11 +434,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1(JN
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL: {
             jint tShiftFp = (aNMax+1)*(type-1);
-            double *tFpGradWt = tFpGrad_+tShiftFp;
+            jdouble *tFpGradWt = tFpGrad_+tShiftFp;
             for (jint n = 0; n <= aNMax; ++n) {
                 // cal subFpPxyz and accumulate to force
-                const double tRnn = tRn[n];
-                const double subFpGradWt = tFpGradWt[n];
+                const jdouble tRnn = tRn[n];
+                const jdouble subFpGradWt = tFpGradWt[n];
                 tFx[j] += subFpGradWt * (fc*tRnPx[n] + fcPx*tRnn);
                 tFy[j] += subFpGradWt * (fc*tRnPy[n] + fcPy*tRnn);
                 tFz[j] += subFpGradWt * (fc*tRnPz[n] + fcPz*tRnn);
@@ -449,8 +449,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1(JN
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             for (jint n = 0; n <= aNMax; ++n) {
                 // cal subFpPxyz and accumulate to force
-                const double tRnn = tRn[n];
-                const double subFpGrad = tFpGrad_[n];
+                const jdouble tRnn = tRn[n];
+                const jdouble subFpGrad = tFpGrad_[n];
                 tFx[j] += subFpGrad * (fc*tRnPx[n] + fcPx*tRnn);
                 tFy[j] += subFpGrad * (fc*tRnPy[n] + fcPy*tRnn);
                 tFz[j] += subFpGrad * (fc*tRnPz[n] + fcPz*tRnn);
@@ -461,25 +461,25 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1(JN
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz and accumulate to force
-                    const double tRnn = tRn[n];
-                    const double subFpGrad = tFpGrad_[n];
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpGrad = tFpGrad_[n];
                     tFx[j] += subFpGrad * (fc*tRnPx[n] + fcPx*tRnn);
                     tFy[j] += subFpGrad * (fc*tRnPy[n] + fcPy*tRnn);
                     tFz[j] += subFpGrad * (fc*tRnPz[n] + fcPz*tRnn);
                 }
             } else {
                 // cal weight of type here
-                double wt = ((type&1)==1) ? type : -type;
+                jdouble wt = ((type&1)==1) ? type : -type;
                 jint tShiftFp = aNMax+1;
-                double *tFpGradWt = tFpGrad_+tShiftFp;
+                jdouble *tFpGradWt = tFpGrad_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
                     // cal subFpPxyz first
-                    const double tRnn = tRn[n];
-                    const double subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const double subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const double subFpPz = fc*tRnPz[n] + fcPz*tRnn;
+                    const jdouble tRnn = tRn[n];
+                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
+                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
+                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
                     // accumulate to force
-                    const double subFpGrad = tFpGrad_[n], subFpGradWt = tFpGradWt[n];
+                    const jdouble subFpGrad = tFpGrad_[n], subFpGradWt = tFpGradWt[n];
                     tFx[j] += (subFpGrad + wt*subFpGradWt) * subFpPx;
                     tFy[j] += (subFpGrad + wt*subFpGradWt) * subFpPy;
                     tFz[j] += (subFpGrad + wt*subFpGradWt) * subFpPz;

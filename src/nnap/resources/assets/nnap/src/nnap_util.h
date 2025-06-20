@@ -27,40 +27,40 @@ extern "C" {
 #undef PI4
 #define PI4 (12.566370614359172)
 
-static inline double pow2_jse(double value) {
+static inline jdouble pow2_jse(jdouble value) {
     return value * value;
 }
-static inline double pow3_jse(double value) {
+static inline jdouble pow3_jse(jdouble value) {
     return value * value * value;
 }
-static inline double pow4_jse(double value) {
-    double value2 = value * value;
+static inline jdouble pow4_jse(jdouble value) {
+    jdouble value2 = value * value;
     return value2 * value2;
 }
-static inline jboolean numericEqual_jse(double aLHS, double aRHS) {
-    double tNorm = fabs(aLHS) + fabs(aRHS);
+static inline jboolean numericEqual_jse(jdouble aLHS, jdouble aRHS) {
+    jdouble tNorm = fabs((double)aLHS) + fabs((double)aRHS);
     if (tNorm < JSE_DBL_MIN_NORMAL * JSE_EPS_MUL) return JNI_TRUE;
-    double tDiff = fabs(aLHS - aRHS);
+    jdouble tDiff = fabs((double)(aLHS - aRHS));
     return (tDiff <= tNorm * JSE_DBL_EPSILON) ? JNI_TRUE : JNI_FALSE;
 }
 
-static inline double dot_jse(double *aArray, jint aLen) {
-    double rDot = 0.0;
+static inline jdouble dot_jse(jdouble *aArray, jint aLen) {
+    jdouble rDot = 0.0;
     for (int i = 0; i < aLen; ++i) {
-        double tValue = aArray[i];
+        jdouble tValue = aArray[i];
         rDot += tValue*tValue;
     }
     return rDot;
 }
-static inline double dotAB_jse(double *aArrayL, double *aArrayR, jint aLen) {
-    double rDot = 0.0;
+static inline jdouble dotAB_jse(jdouble *aArrayL, jdouble *aArrayR, jint aLen) {
+    jdouble rDot = 0.0;
     for (int i = 0; i < aLen; ++i) {
         rDot += aArrayL[i]*aArrayR[i];
     }
     return rDot;
 }
 
-static inline void chebyshevFull(jint aN, double aX, double *rDest) {
+static inline void chebyshevFull(jint aN, jdouble aX, jdouble *rDest) {
     if (aN < 0) return;
     rDest[0] = 1.0;
     if (aN == 0) return;
@@ -69,7 +69,7 @@ static inline void chebyshevFull(jint aN, double aX, double *rDest) {
         rDest[n] = 2.0*aX*rDest[n-1] - rDest[n-2];
     }
 }
-static inline void chebyshev2Full(jint aN, double aX, double *rDest) {
+static inline void chebyshev2Full(jint aN, jdouble aX, jdouble *rDest) {
     if (aN < 0) return;
     rDest[0] = 1.0;
     if (aN == 0) return;
@@ -79,12 +79,12 @@ static inline void chebyshev2Full(jint aN, double aX, double *rDest) {
     }
 }
 
-static inline void calRnPxyz(double *rRnPx, double *rRnPy, double *rRnPz, double *aCheby2, jint aNMax,
-                             double aDis, double aRCut, double aWt, double aDx, double aDy, double aDz) {
-    const double tRnPMul = 2.0 * aWt / (aDis*aRCut);
+static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *aCheby2, jint aNMax,
+                             jdouble aDis, jdouble aRCut, jdouble aWt, jdouble aDx, jdouble aDy, jdouble aDz) {
+    const jdouble tRnPMul = 2.0 * aWt / (aDis*aRCut);
     rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
     for (jint n = 1; n <= aNMax; ++n) {
-        const double tRnP = n*tRnPMul*aCheby2[n-1];
+        const jdouble tRnP = n*tRnPMul*aCheby2[n-1];
         rRnPx[n] = tRnP*aDx;
         rRnPy[n] = tRnP*aDy;
         rRnPz[n] = tRnP*aDz;
