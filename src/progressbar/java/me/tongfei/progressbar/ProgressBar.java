@@ -54,6 +54,7 @@ public class ProgressBar implements AutoCloseable {
      * @param speedFormat Speed number format
      * @deprecated Use {@link ProgressBarBuilder} instead.
      */
+    @Deprecated
     public ProgressBar(
             String task,
             long initialMax,
@@ -94,6 +95,7 @@ public class ProgressBar implements AutoCloseable {
      * @param consumer Progress bar consumer
      * @deprecated Use {@link ProgressBarBuilder} instead. Will be private in future versions.
      */
+    @Deprecated
     public ProgressBar(
             String task,
             long initialMax,

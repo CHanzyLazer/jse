@@ -286,7 +286,7 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      */
     public double birho(int aTypeA, int aTypeB) {return Fast.sqrt(rho(aTypeA)*rho(aTypeB));}
     /** @deprecated use {@link #birho(int, int)} */
-    public final double birou(int aTypeA, int aTypeB) {return birho(aTypeA, aTypeB);}
+    @Deprecated public final double birou(int aTypeA, int aTypeB) {return birho(aTypeA, aTypeB);}
     /**
      * 和另一个 APC 的混合原子数密度，即 {@code sqrt(rho()*aAPC.rho())}
      * @param aAPC 另一个参数计算器
@@ -294,7 +294,7 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
      */
     public double birho(AtomicParameterCalculator aAPC) {return Fast.sqrt(mRho*aAPC.mRho);}
     /** @deprecated use {@link #birho(AtomicParameterCalculator)} */
-    public final double birou(AtomicParameterCalculator aAPC) {return birho(aAPC);}
+    @Deprecated public final double birou(AtomicParameterCalculator aAPC) {return birho(aAPC);}
 
     /// 现在支持合法修改 APC 中的原子位置和种类
     /**
