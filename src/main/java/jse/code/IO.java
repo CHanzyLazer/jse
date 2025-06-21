@@ -2513,7 +2513,7 @@ public class IO {
      */
     public static List<String[]> csv2str(String aFilePath, CSVFormat aFormat) throws IOException {
         List<String[]> rLines = new ArrayList<>();
-        try (CSVParser tParser = new CSVParser(toReader(aFilePath), aFormat)) {
+        try (CSVParser tParser = CSVParser.builder().setReader(toReader(aFilePath)).setFormat(aFormat).get()) {
             for (CSVRecord tRecord : tParser) rLines.add(tRecord.values());
         }
         return rLines;
@@ -2548,7 +2548,7 @@ public class IO {
             }
         }
     }
-    private final static CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT.builder().setRecordSeparator('\n').setCommentMarker('#').setTrim(true).build();
+    private final static CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT.builder().setRecordSeparator('\n').setCommentMarker('#').setTrim(true).get();
     /**
      * 读取输入的 csv 文件路径，每行分割为字符串数组
      * {@code String[]}，并按行组装成列表 {@link List}
