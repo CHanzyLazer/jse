@@ -552,7 +552,7 @@ public class SP {
         
         
         /** 包的版本 */
-        public final static String JEP_VERSION = "4.2.0", ASE_VERSION = "3.25.0";
+        public final static String JEP_VERSION = "4.2.2", ASE_VERSION = "3.25.0";
         /** 检测到的 python prefix 路径位置，已经合法化可以直接拼接路径 */
         public final static String PYTHON_PREFIX_DIR;
         /** 是否有 numpy 支持，除了检测 numpy 包，也会据此强制要求 jni 编译时开启相应支持 */
