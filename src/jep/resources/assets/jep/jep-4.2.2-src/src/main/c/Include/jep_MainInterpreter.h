@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     jep_MainInterpreter
  * Method:    setInitParams
- * Signature: (IIIIIIILjava/lang/String;)V
+ * Signature: (IIIIIIILjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_jep_MainInterpreter_setInitParams
-  (JNIEnv *, jclass, jint, jint, jint, jint, jint, jint, jint, jstring);
+  (JNIEnv *, jclass, jint, jint, jint, jint, jint, jint, jint, jstring, jstring);
 
 /*
  * Class:     jep_MainInterpreter
