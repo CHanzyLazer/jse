@@ -150,7 +150,7 @@ endif()
 # jep defines
 add_definitions(-DPACKAGE=jep)
 add_definitions(-DUSE_DEALLOC=1)
-add_definitions(-DVERSION="4.2.0")
+add_definitions(-DVERSION="4.2.2")
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions(-DWIN32=1)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)

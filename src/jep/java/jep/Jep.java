@@ -152,7 +152,9 @@ public abstract class Jep implements Interpreter {
         boolean hasSharedModules = config.sharedModules != null
                 && !config.sharedModules.isEmpty();
 
-        if (hasSharedModules && config.subInterpOptions.useMainObmalloc == 0) {
+        if (hasSharedModules && config.subInterpOptions.isolated) {
+            throw new JepException("Shared modules cannot be used with isolated interpreters.");
+        } else if (hasSharedModules && config.subInterpOptions.useMainObmalloc == 0) {
             throw new JepException("Shared modules can only be used with a shared allocator.");
         }
 
@@ -160,10 +162,10 @@ public abstract class Jep implements Interpreter {
         SubInterpreterOptions interpOptions = config.subInterpOptions;
         this.tstate = init(this.classLoader, hasSharedModules,
                 useSubInterpreter, interpOptions.isolated,
-		interpOptions.useMainObmalloc,
+                interpOptions.useMainObmalloc,
                 interpOptions.allowFork, interpOptions.allowExec,
                 interpOptions.allowThreads, interpOptions.allowDaemonThreads,
-                interpOptions.checkMultiInterpeExtensions,
+                interpOptions.checkMultiInterpExtensions,
                 interpOptions.ownGIL);
         threadUsed.set(true);
         this.thread = Thread.currentThread();
@@ -439,17 +441,40 @@ public abstract class Jep implements Interpreter {
         }
 
         if (isSubInterpreter) {
-            exec("import sys");
-            Boolean hasThreads = getValue("'threading' in sys.modules",
-                    Boolean.class);
-            if (hasThreads) {
-                Integer count = getValue(
-                        "sys.modules['threading'].active_count()",
-                        Integer.class);
-                if (count > 1) {
-                    throw new JepException(
-                            "All threads must be stopped before closing Jep.");
-                }
+            /*
+             * All background threads must complete before closing an
+             * interpreter.
+             *
+             * If threading is not already imported then there are no other
+             * threads so avoid importing threading because that creates new
+             * objects that aren't needed.
+             *
+             * In recent Python versions(>=3.13) there will always be at least
+             * 2 active threads here, the main thread on the main interpreter
+             * and this thread running the sub-interpreter.
+             *
+             * In older versions of python the minimum number of active threads
+             * should be 1 because each sub-interpreter would treat the first
+             * thread on that interpreter as the main thread.
+             *
+             * This behavior change in python was caused by
+             * https://github.com/python/cpython/issues/114271
+             */  
+            exec("def _check_single_thread():\n" +
+                 "  import sys\n" +
+                 "  if 'threading' in sys.modules:\n" +
+                 "    import threading\n" +
+                 "    if sys.version_info.major == 3 \\\n" +
+                 "          and sys.version_info.minor < 13:\n" +
+                 "      return threading.active_count() <= 1\n" +
+                 "    else:\n" +
+                 "      return threading.active_count() <= 2\n" +
+                 "  else:\n" +
+                 "    return True\n");
+            Boolean singleThread = getValue("_check_single_thread()", Boolean.class);
+            if (!singleThread) {
+                throw new JepException(
+                        "All threads must be stopped before closing Jep.");
             }
         }
 

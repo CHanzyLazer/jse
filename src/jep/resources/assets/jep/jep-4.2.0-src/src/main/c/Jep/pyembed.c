@@ -240,7 +240,8 @@ void pyembed_preinit(JNIEnv *env,
                      jint optimizeFlag,
                      jint dontWriteBytecodeFlag,
                      jint hashRandomizationFlag,
-                     jstring pythonHome)
+                     jstring pythonHome,
+                     jstring programName)
 {
     if (noSiteFlag >= 0) {
         Py_NoSiteFlag = noSiteFlag;
@@ -268,6 +269,14 @@ void pyembed_preinit(JNIEnv *env,
         wchar_t* homeForPython = Py_DecodeLocale(homeAsUTF, NULL);
         (*env)->ReleaseStringUTFChars(env, pythonHome, homeAsUTF);
         Py_SetPythonHome(homeForPython);
+        // Python documentation says that the string should not be changed for
+        // the duration of the program so it can never be freed.
+    }
+    if (programName) {
+        const char* nameAsUTF = (*env)->GetStringUTFChars(env, programName, NULL);
+        wchar_t* nameForPython = Py_DecodeLocale(nameAsUTF, NULL);
+        (*env)->ReleaseStringUTFChars(env, programName, nameAsUTF);
+        Py_SetProgramName(nameForPython);
         // Python documentation says that the string should not be changed for
         // the duration of the program so it can never be freed.
     }
@@ -562,7 +571,7 @@ void pyembed_shared_import(JNIEnv *env, jstring module)
 intptr_t pyembed_thread_init(JNIEnv *env, jobject cl, jobject caller,
                              jboolean hasSharedModules, jboolean usesubinterpreter,
                              jboolean isolated, jint useMainObmalloc, jint allowFork,
-			     jint allowExec, jint allowThreads, jint allowDaemonThreads,
+                             jint allowExec, jint allowThreads, jint allowDaemonThreads,
                              jint checkMultiInterpExtensions, jint ownGIL)
 {
     JepThread *jepThread;
@@ -588,8 +597,8 @@ intptr_t pyembed_thread_init(JNIEnv *env, jobject cl, jobject caller,
         PyEval_AcquireThread(mainThreadState);
 
 #if PY_MAJOR_VERSION > 3 || PY_MINOR_VERSION >= 12
-        PyInterpreterConfig config; 
-	if (isolated) {
+        PyInterpreterConfig config;
+        if (isolated) {
             config = (PyInterpreterConfig) _PyInterpreterConfig_INIT;
         } else {
             config = (PyInterpreterConfig) _PyInterpreterConfig_LEGACY_INIT;
@@ -704,6 +713,7 @@ void pyembed_thread_close(JNIEnv *env, intptr_t _jepThread)
     Py_DECREF(key);
 
     Py_CLEAR(jepThread->globals);
+    PyGC_Collect();
 
     if (jepThread->classloader) {
         (*env)->DeleteGlobalRef(env, jepThread->classloader);
