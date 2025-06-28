@@ -30,7 +30,6 @@ sourceSets {
                 'assets/mpi/src/.*/', 'assets/mpi/src/build/', 'assets/mpi/src/*build*/',
                 'assets/lmp/src/.*/', 'assets/lmp/src/build/', 'assets/lmp/src/*build*/',
                 'assets/lmp/plugin/src/.*/', 'assets/lmp/plugin/src/build/', 'assets/lmp/plugin/src/*build*/',
-                'assets/jep/jep*-src/',
                 'assets/nnap/src/.*/', 'assets/nnap/src/build/', 'assets/nnap/src/*build*/',
                 'assets/nnap/torch/src/.*/', 'assets/nnap/torch/src/build/', 'assets/nnap/torch/src/*build*/',
                 'assets/jsexpy/.*/',
@@ -44,6 +43,7 @@ sourceSets {
         }
         resources {
             srcDirs = ['src/jep/resources']
+            exclude('assets/jep/jep*-src/')
         }
     }
     progressbar {
@@ -54,7 +54,7 @@ sourceSets {
 }
 
 tasks.register('zipJep', Zip) {
-    def dir = 'src/main/resources/assets/jep/'
+    def dir = 'src/jep/resources/assets/jep/'
     def name = file(dir).list().find {it.contains('jep')}
     from(dir + name) {
         exclude('.*', 'build', '*build*')
@@ -62,7 +62,7 @@ tasks.register('zipJep', Zip) {
     archiveFileName = name.replace('-src', '.zip')
     destinationDirectory = file(dir)
 }
-processResources {
+processJepResources {
     dependsOn(zipJep)
 }
 
