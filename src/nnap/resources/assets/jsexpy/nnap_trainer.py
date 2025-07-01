@@ -47,7 +47,7 @@ class TotalModel(torch.nn.Module):
         eng, _, _ = self.cal_eng_force_stress(fp, indices, atom_nums)
         return eng
     
-    def cal_eng_force_stress(self, fp, indices, atom_nums, xyz_grad=None, nn=None, indices_f=None, indices_s=None, dxyz=None, volumes=None, create_graph=False):
+    def cal_eng_force_stress(self, fp, indices, atom_nums, xyz_grad=None, indices_f=None, indices_s=None, dxyz=None, volumes=None, create_graph=False):
         eng_all = self.forward(fp)
         eng_len = len(atom_nums)
         eng = torch.zeros(eng_len, device=atom_nums.device, dtype=atom_nums.dtype)
@@ -65,13 +65,19 @@ class TotalModel(torch.nn.Module):
             stress = torch.zeros(stress_len, device=atom_nums.device, dtype=atom_nums.dtype)
         for i in range(self.ntypes):
             fp_grad = torch.autograd.grad(eng_all[i].sum(), fp[i], create_graph=create_graph)[0]
-            fp_grad = torch.repeat_interleave(fp_grad, repeats=nn[i]*3+3, dim=0)
-            force_all = torch.einsum('ij,ij->i', xyz_grad[i], fp_grad)
+            split_ = xyz_grad[0][i].shape[0]
+            force_all = torch.bmm(xyz_grad[0][i], fp_grad[:split_, :].unsqueeze(-1))
             if indices_f is not None:
-                force.scatter_add_(0, indices_f[i], force_all)
+                force.scatter_add_(0, indices_f[0][i].flatten(), force_all.flatten())
             if indices_s is not None:
-                stress_all = force_all.unsqueeze(-1) * (dxyz[i].reshape(force_all.shape[0], 2))
-                stress.scatter_add_(0, indices_s[i], stress_all.flatten())
+                stress_all = force_all * dxyz[0][i]
+                stress.scatter_add_(0, indices_s[0][i].flatten(), stress_all.flatten())
+            force_all = torch.bmm(xyz_grad[1][i], fp_grad[split_:, :].unsqueeze(-1))
+            if indices_f is not None:
+                force.scatter_add_(0, indices_f[1][i].flatten(), force_all.flatten())
+            if indices_s is not None:
+                stress_all = force_all * dxyz[1][i]
+                stress.scatter_add_(0, indices_s[1][i].flatten(), stress_all.flatten())
         if indices_s is not None:
             stress = stress.reshape(eng_len, 6)
             stress /= volumes.unsqueeze(-1)
@@ -84,7 +90,7 @@ class DataSet:
         self.trainer = trainer
         self.fp = []
         self.eng_indices = []
-        self.fp_partial = []
+        self.fp_partial = ([], [])
         self.force_indices = None
         self.stress_indices = None
         self.stress_dxyz = None
@@ -93,7 +99,6 @@ class DataSet:
         self.stress = None
         self.atom_num = None
         self.volume = None
-        self.nn = []
     
     
     def init_eng_part(self, data_j):
@@ -129,40 +134,42 @@ class DataSet:
         else:
             dtype_ = torch.float64
         
-        for i in range(data_j.mAtomTypeNumber):
-            self.nn.append(torch.tensor(data_j.mNN[i].asList(), dtype=torch.int64))
-        
         if self.trainer.has_force:
-            self.force_indices = []
+            self.force_indices = ([], [])
             self.force = torch.tensor(data_j.mForce.asList(), dtype=dtype_)
             self.force /= self.trainer.norm_sigma_eng
         
         if self.trainer.has_stress:
-            self.stress_indices = []
-            self.stress_dxyz = []
+            self.stress_indices = ([], [])
+            self.stress_dxyz = ([], [])
             self.stress = torch.tensor(data_j.mStress.asList(), dtype=dtype_)
             self.volume = torch.tensor(data_j.mVolume.asList(), dtype=dtype_)
             self.stress /= self.trainer.norm_sigma_eng
             self.stress = -self.stress # negative here
     
     
-    def init_force_part2(self, data_j, i: int):
-        self.fp_partial.append(torch.cat(list(data_j.mFpPartial[i]), dim=0))
+    def init_force_part2(self, data_j, i: int, sort_indices, split_: int):
+        self.fp[i] = self.fp[i][sort_indices, :]
+        self.eng_indices[i] = self.eng_indices[i][sort_indices]
+        
+        self.fp_partial[0].append(torch.nn.utils.rnn.pad_sequence(data_j.mFpPartial[i][:split_], batch_first=True))
+        self.fp_partial[1].append(torch.nn.utils.rnn.pad_sequence(data_j.mFpPartial[i][split_:], batch_first=True))
         
         if self.trainer.has_force:
-            self.force_indices.append(torch.from_numpy(data_j.mForceIndices[i].numpy()).long())
+            self.force_indices[0].append(torch.nn.utils.rnn.pad_sequence(data_j.mForceIndices[i][:split_], batch_first=True).long())
+            self.force_indices[1].append(torch.nn.utils.rnn.pad_sequence(data_j.mForceIndices[i][split_:], batch_first=True).long())
         
         if self.trainer.has_stress:
-            self.stress_indices.append(torch.from_numpy(data_j.mStressIndices[i].numpy()).long())
-            sub_stress_dxyz = torch.from_numpy(data_j.mStressDxyz[i].numpy())
-            if self.trainer.train_in_float:
-                sub_stress_dxyz = sub_stress_dxyz.float()
-            self.stress_dxyz.append(sub_stress_dxyz)
+            self.stress_indices[0].append(torch.nn.utils.rnn.pad_sequence(data_j.mStressIndices[i][:split_], batch_first=True).long())
+            self.stress_indices[1].append(torch.nn.utils.rnn.pad_sequence(data_j.mStressIndices[i][split_:], batch_first=True).long())
+            self.stress_dxyz[0].append(torch.nn.utils.rnn.pad_sequence(data_j.mStressDxyz[i][:split_], batch_first=True))
+            self.stress_dxyz[1].append(torch.nn.utils.rnn.pad_sequence(data_j.mStressDxyz[i][split_:], batch_first=True))
     
     
     def init_force_part3(self, data_j):
         for i in range(data_j.mAtomTypeNumber):
-            self.fp_partial[i] /= self.trainer.norm_sigma[i]
+            self.fp_partial[0][i] /= self.trainer.norm_sigma[i]
+            self.fp_partial[1][i] /= self.trainer.norm_sigma[i]
         
         for sub_fp in self.fp:
             sub_fp.requires_grad_(True)
@@ -178,8 +185,8 @@ class Trainer:
         
         self.model: Optional[TotalModel] = None
         self.model_state_dict = None
-        self.train_data = None
-        self.test_data = None
+        self.train_data = DataSet(self)
+        self.test_data = DataSet(self)
         
         self.has_force = False
         self.has_stress = False
@@ -228,7 +235,7 @@ class Trainer:
                 pred = self.model.cal_eng(data.fp, data.eng_indices, data.atom_num)
                 loss_ = self.loss_fn(pred, data.eng)
             else:
-                pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.nn, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume, create_graph=True)
+                pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume, create_graph=True)
                 loss_ = self.loss_fn(pred, data.eng, pred_f, data.force, pred_s, data.stress)
             loss_ += self.l2_loss_weight * self.model.cal_l2_loss()
             loss_.backward()
@@ -245,7 +252,7 @@ class Trainer:
                 pred = self.model.cal_eng(data.fp, data.eng_indices, data.atom_num)
                 loss = self.loss_fn(pred, data.eng)
                 return loss.item()
-        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.nn, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
+        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
         loss = self.loss_fn(pred, data.eng, pred_f, data.force, pred_s, data.stress)
         return loss.item()
     
@@ -274,7 +281,7 @@ class Trainer:
             with torch.no_grad():
                 pred = self.model.cal_eng(data.fp, data.eng_indices, data.atom_num)
                 return (data.eng - pred).abs().mean().item() * self.norm_sigma_eng, None, None
-        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.nn, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
+        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
         mae = (data.eng - pred).abs().mean().item() * self.norm_sigma_eng
         mae_f = None if pred_f is None else (data.force - pred_f).abs().mean().item() * self.norm_sigma_eng
         mae_s = None if pred_s is None else (data.stress - pred_s).abs().mean().item() * self.norm_sigma_eng
@@ -289,7 +296,7 @@ class Trainer:
                 pred = self.model.cal_eng(data.fp, data.eng_indices, data.atom_num)
                 loss_e = self.loss_fn(pred, data.eng)
                 return loss_l2.item(), loss_e.item(), None, None
-        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.nn, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
+        pred, pred_f, pred_s = self.model.cal_eng_force_stress(data.fp, data.eng_indices, data.atom_num, data.fp_partial, data.force_indices, data.stress_indices, data.stress_dxyz, data.volume)
         loss_e, loss_f, loss_s = self.loss_fn(pred, data.eng, pred_f, data.force, pred_s, data.stress, detail=True)
         return loss_l2.item(), loss_e.item(), loss_f.item(), loss_s.item()
 

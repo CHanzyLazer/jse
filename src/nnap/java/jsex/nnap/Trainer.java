@@ -54,7 +54,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
     protected final static boolean DEFAULT_TRAIN_IN_FLOAT = true;
     protected final static boolean DEFAULT_CLEAR_DATA_ON_TRAINING = true;
     protected final static PyObject TORCH;
-    protected final static PyCallable TRAINER, DATASET;
+    protected final static PyCallable TRAINER;
     
     /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
     public final static class InitHelper {
@@ -103,7 +103,6 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         // 初始化 nnap trainer
         SP.Python.exec("from jsexpy import nnap_trainer");
         TRAINER = SP.Python.getAs(PyCallable.class, "nnap_trainer.Trainer");
-        DATASET = SP.Python.getAs(PyCallable.class, "nnap_trainer.DataSet");
     }
     
     private boolean mDead = false;
@@ -139,43 +138,43 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         public final RowMatrix[] mFpMat;
         /** 每个 fp 对应的能量的索引，按照种类排序 */
         public final IntList[] mEngIndices;
-        /** 按照种类排序，内部是每个原子的所有基组偏导值，每个基组偏导值按行排列，和交叉项以及 xyz 共同组成一个矩阵；由于内存占用过大，这里直接存成 torch */
+        /** 按照种类排序，内部是每个原子的所有基组偏导值，每个基组偏导值按行排列，和交叉项以及 xyz 共同组成一个矩阵；为了减少内存占用现在统一直接存 torch tensor */
         public final List<List<PyObject>> mFpPartial;
-        /** 每个 fp partial 对应的力的索引，按照种类排序 */
-        public final IntList[] mForceIndices;
-        /** 每个 fp partial 对应的应力的索引，按照种类排序 */
-        public final IntList[] mStressIndices;
-        /** 每个 fp partial 对应的用于计算应力的 dxyz 值，按照种类排序；现在使用这种 DoubleList 展开的形式存 */
-        public final DoubleList[] mStressDxyz;
+        /** 每个 fp partial 对应的力的索引，按照种类排序；为了减少内存占用现在统一直接存 torch tensor */
+        public final List<List<PyObject>> mForceIndices;
+        /** 每个 fp partial 对应的应力的索引，按照种类排序；为了减少内存占用现在统一直接存 torch tensor */
+        public final List<List<PyObject>> mStressIndices;
+        /** 每个 fp partial 对应的用于计算应力的 dxyz 值，按照种类排序；为了减少内存占用现在统一直接存 torch tensor */
+        public final List<List<PyObject>> mStressDxyz;
         /** 每个原子的近邻原子数列表 */
         public final IntList[] mNN;
         /** 每个原子数据结构对应的能量值 */
-        public DoubleList mEng = new DoubleList(64);
+        public final DoubleList mEng = new DoubleList(64);
         /** 这里的力数值直接展开成单个向量，通过 mForceIndices 来获取对应的索引 */
-        public DoubleList mForce = new DoubleList(64);
+        public final DoubleList mForce = new DoubleList(64);
         /** 这里的应力数值直接展开成单个向量，通过 mStressIndices 来获取对应的索引 */
-        public DoubleList mStress = new DoubleList(64);
+        public final DoubleList mStress = new DoubleList(64);
         /** 每个原子数据结构对应的原子数 */
-        public DoubleList mAtomNum = new DoubleList(64);
+        public final DoubleList mAtomNum = new DoubleList(64);
         /** 每个原子数据结构对应的体积大小，目前主要用来计算应力 */
-        public DoubleList mVolume = new DoubleList(64);
+        public final DoubleList mVolume = new DoubleList(64);
         
         protected DataSet(int aAtomTypeNum) {
             mAtomTypeNumber = aAtomTypeNum;
             mFp = new DoubleList[aAtomTypeNum];
             mEngIndices = new IntList[aAtomTypeNum];
             mFpPartial = new ArrayList<>(aAtomTypeNum);
-            mForceIndices = new IntList[aAtomTypeNum];
-            mStressIndices = new IntList[aAtomTypeNum];
-            mStressDxyz = new DoubleList[aAtomTypeNum];
+            mForceIndices = new ArrayList<>(aAtomTypeNum);
+            mStressIndices = new ArrayList<>(aAtomTypeNum);
+            mStressDxyz = new ArrayList<>(aAtomTypeNum);
             mNN = new IntList[aAtomTypeNum];
             for (int i = 0; i < aAtomTypeNum; ++i) {
                 mFp[i] = new DoubleList(64);
                 mEngIndices[i] = new IntList(64);
                 mFpPartial.add(new ArrayList<>(64));
-                mForceIndices[i] = new IntList(64);
-                mStressIndices[i] = new IntList(64);
-                mStressDxyz[i] = new DoubleList(64);
+                mForceIndices.add(new ArrayList<>(64));
+                mStressIndices.add(new ArrayList<>(64));
+                mStressDxyz.add(new ArrayList<>(64));
                 mNN[i] = new IntList(64);
             }
             mFpMat = new RowMatrix[aAtomTypeNum];
@@ -192,20 +191,20 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
             }
         }
         @ApiStatus.Internal
-        protected void setData2Py_(String aPyDataSetName, boolean aClearData) {
-            try (PyObject tDataSet = DATASET.callAs(PyObject.class, mTrainer)) {
-                mTrainer.setAttr(aPyDataSetName, tDataSet);
+        protected void putData2Py_(String aPyDataSetName, boolean aClearData) {
+            try (PyObject tDataSet = mTrainer.getAttr(aPyDataSetName, PyObject.class)) {
                 try (PyCallable fInitEngPart = tDataSet.getAttr("init_eng_part", PyCallable.class)) {
                     fInitEngPart.call(this);
                 }
                 if (aClearData) {
                     for (int i = 0; i < mAtomTypeNumber; ++i) {
-                        mFp[i] = new DoubleList(64);
+                        mFp[i].clear();
+                        mEngIndices[i].clear();
+                        mFp[i].clear();
                         mFpMat[i] = null;
-                        mEngIndices[i] = new IntList(64);
                     }
-                    mEng = new DoubleList(64);
-                    mAtomNum = new DoubleList(64);
+                    mEng.clear();
+                    mAtomNum.clear();
                 }
                 // 训练力和应力需要的额外数据
                 if (!mHasForce && !mHasStress) return;
@@ -213,29 +212,49 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     fInitForcePart.call(this);
                 }
                 if (aClearData) {
-                    if (mHasForce) {
-                        mForce = new DoubleList(64);
-                    }
-                    if (mHasStress) {
-                        mStress = new DoubleList(64);
-                        mVolume = new DoubleList(64);
-                    }
+                    if (mHasForce) {mForce.clear();}
+                    if (mHasStress) {mStress.clear(); mVolume.clear();}
                 }
                 for (int i = 0; i < mAtomTypeNumber; ++i) {
+                    // 先根据近邻数排序 FpPartial 和 Indices，拆分成两份来减少内存占用
+                    final List<PyObject> tSubFpPartial = mFpPartial.get(i);
+                    final List<PyObject> tSubForceIndices = mHasForce ? mForceIndices.get(i) : null;
+                    final List<PyObject> tSubStressIndices = mHasStress ? mStressIndices.get(i) : null;
+                    final List<PyObject> tSubStressDxyz = mHasStress ? mStressDxyz.get(i) : null;
+                    IntVector tSubNN = mNN[i].asVec();
+                    IntVector tSortIndices = Vectors.range(tSubNN.size());
+                    tSubNN.operation().biSort((ii, jj) -> {
+                        tSortIndices.swap(ii, jj);
+                        Collections.swap(tSubFpPartial, ii, jj);
+                        if (mHasForce) {
+                            assert tSubForceIndices != null;
+                            Collections.swap(tSubForceIndices, ii, jj);
+                        }
+                        if (mHasStress) {
+                            assert tSubStressIndices != null;
+                            Collections.swap(tSubStressIndices, ii, jj);
+                            Collections.swap(tSubStressDxyz, ii, jj);
+                        }
+                    });
                     try (PyCallable fInitForcePart = tDataSet.getAttr("init_force_part2", PyCallable.class)) {
-                        fInitForcePart.call(this, i);
+                        fInitForcePart.call(this, i, tSortIndices.numpy(), calBestSplit_(tSubNN));
                     }
                     // 遍历过程中清空数据，进一步减少转换过程的内存占用峰值
                     if (aClearData) {
-                        mFpPartial.get(i).forEach(PyObject::close);
-                        mFpPartial.set(i, new ArrayList<>(64));
-                        mNN[i] = new IntList(64);
+                        tSubFpPartial.forEach(PyObject::close);
+                        tSubFpPartial.clear();
+                        mNN[i].clear();
                         if (mHasForce) {
-                            mForceIndices[i] = new IntList(64);
+                            assert tSubForceIndices != null;
+                            tSubForceIndices.forEach(PyObject::close);
+                            tSubForceIndices.clear();
                         }
                         if (mHasStress) {
-                            mStressIndices[i] = new IntList(64);
-                            mStressDxyz[i] = new DoubleList(64);
+                            assert tSubStressIndices != null;
+                            tSubStressIndices.forEach(PyObject::close);
+                            tSubStressIndices.clear();
+                            tSubStressDxyz.forEach(PyObject::close);
+                            tSubStressDxyz.clear();
                         }
                     }
                 }
@@ -427,7 +446,21 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         }
         mNormSigmaEng = tEng34 - tEng14;
     }
-    
+    @ApiStatus.Internal
+    protected int calBestSplit_(IIntVector aSortedNN) {
+        final int tSize = aSortedNN.size();
+        final int tSizeMM = tSize-1;
+        long tMinSizeOut = (long)aSortedNN.last()*tSize;
+        int tBest = 0;
+        for (int split = 1; split < tSizeMM; ++split) {
+            long tSizeOut = (long)aSortedNN.get(split-1)*split + (long)aSortedNN.get(tSizeMM)*(tSize-split);
+            if (tSizeOut < tMinSizeOut) {
+                tBest = split;
+                tMinSizeOut = tSizeOut;
+            }
+        }
+        return tBest;
+    }
     /** 开始训练模型，这里直接训练给定的步数 */
     public void train(int aEpochs, boolean aEarlyStop, boolean aPrintLog) {
         // 在这里初始化模型，可以避免构造函数中调用多态方法的一些歧义
@@ -450,8 +483,8 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
         }
         mTrainer.setAttr("norm_mu_eng", mNormMuEng);
         mTrainer.setAttr("norm_sigma_eng", mNormSigmaEng);
-        mTrainData.setData2Py_("train_data", mClearDataOnTraining);
-        if (mHasTest) mTestData.setData2Py_("test_data", mClearDataOnTraining);
+        mTrainData.putData2Py_("train_data", mClearDataOnTraining);
+        if (mHasTest) mTestData.putData2Py_("test_data", mClearDataOnTraining);
         // 开始训练
         try (PyCallable fTrainStep = mTrainer.getAttr("train_step", PyCallable.class);
              PyCallable fTestLoss = mTrainer.getAttr("test_loss", PyCallable.class);
@@ -630,18 +663,18 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     tForceIndices.set(1, tShiftF + 3*i + 1);
                     tForceIndices.set(2, tShiftF + 3*i + 2);
                 }
-                final IntVector tStressIndices = mHasStress ? IntVectorCache.getVec(tRowNum*2) : null;
-                final Vector tStressDxyz = mHasStress ? VectorCache.getVec(tRowNum*2) : null;
+                final RowIntMatrix tStressIndices = mHasStress ? IntMatrixCache.getMatRow(tRowNum, 2) : null;
+                final RowMatrix tStressDxyz = mHasStress ? MatrixCache.getMatRow(tRowNum, 2) : null;
                 final int tShiftS = mHasStress ? rData.mStress.size() : -1;
                 if (mHasStress) {
                     // 按照目前展开约定，会是这个顺序
-                    tStressIndices.set(0, tShiftS);   tStressIndices.set(1, tShiftS+3);
-                    tStressIndices.set(2, tShiftS+1); tStressIndices.set(3, tShiftS+5);
-                    tStressIndices.set(4, tShiftS+2); tStressIndices.set(5, tShiftS+4);
+                    tStressIndices.set(0, 0, tShiftS);   tStressIndices.set(0, 1, tShiftS+3);
+                    tStressIndices.set(1, 0, tShiftS+1); tStressIndices.set(1, 1, tShiftS+5);
+                    tStressIndices.set(2, 0, tShiftS+2); tStressIndices.set(2, 1, tShiftS+4);
                     // 第二列用来计算交叉项，原子自身力不贡献应力
-                    tStressDxyz.set(0, 0.0); tStressDxyz.set(1, 0.0);
-                    tStressDxyz.set(2, 0.0); tStressDxyz.set(3, 0.0);
-                    tStressDxyz.set(4, 0.0); tStressDxyz.set(5, 0.0);
+                    tStressDxyz.set(0, 0, 0.0); tStressDxyz.set(0, 1, 0.0);
+                    tStressDxyz.set(1, 0, 0.0); tStressDxyz.set(1, 1, 0.0);
+                    tStressDxyz.set(2, 0, 0.0); tStressDxyz.set(2, 1, 0.0);
                 }
                 final int[] j = {0};
                 tAPC.nl_().forEachNeighbor(i, tBasis.rcut(), (dx, dy, dz, idx) -> {
@@ -657,24 +690,39 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                     if (mHasStress) {
                         assert tStressIndices != null;
                         // 按照目前展开约定，会是这个顺序
-                        tStressIndices.set(6 + 6*j[0], tShiftS);   tStressIndices.set(7 + 6*j[0], tShiftS+3);
-                        tStressIndices.set(8 + 6*j[0], tShiftS+1); tStressIndices.set(9 + 6*j[0], tShiftS+5);
-                        tStressIndices.set(10+ 6*j[0], tShiftS+2); tStressIndices.set(11+ 6*j[0], tShiftS+4);
+                        tStressIndices.set(3 + 3*j[0], 0, tShiftS);   tStressIndices.set(3 + 3*j[0], 1, tShiftS+3);
+                        tStressIndices.set(4 + 3*j[0], 0, tShiftS+1); tStressIndices.set(4 + 3*j[0], 1, tShiftS+5);
+                        tStressIndices.set(5 + 3*j[0], 0, tShiftS+2); tStressIndices.set(5 + 3*j[0], 1, tShiftS+4);
                         assert tStressDxyz != null;
                         // 第二列用来计算交叉项
-                        tStressDxyz.set(6 + 6*j[0], dx); tStressDxyz.set(7 + 6*j[0], dy);
-                        tStressDxyz.set(8 + 6*j[0], dy); tStressDxyz.set(9 + 6*j[0], dz);
-                        tStressDxyz.set(10+ 6*j[0], dz); tStressDxyz.set(11+ 6*j[0], dx);
+                        tStressDxyz.set(3 + 3*j[0], 0, dx); tStressDxyz.set(3 + 3*j[0], 1, dy);
+                        tStressDxyz.set(4 + 3*j[0], 0, dy); tStressDxyz.set(4 + 3*j[0], 1, dz);
+                        tStressDxyz.set(5 + 3*j[0], 0, dz); tStressDxyz.set(5 + 3*j[0], 1, dx);
                     }
                     ++j[0];
                 });
                 // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
-                PyObject tPyFpPartial;
+                PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
                 try (PyCallable fFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
                     tPyFpPartial = fFromNumpy.callAs(PyObject.class, tFpPartial.numpy());
                     if (tTrainInFloat) {
                         try (PyObject oPyFpPartial = tPyFpPartial; PyCallable fFloat = oPyFpPartial.getAttr("float", PyCallable.class)) {
                             tPyFpPartial = fFloat.callAs(PyObject.class);
+                        }
+                    }
+                    if (mHasForce) {
+                        assert tForceIndices != null;
+                        tPyForceIndices = fFromNumpy.callAs(PyObject.class, tForceIndices.numpy());
+                    }
+                    if (mHasStress) {
+                        assert tStressIndices != null;
+                        tPyStressIndices = fFromNumpy.callAs(PyObject.class, tStressIndices.numpy());
+                        assert tStressDxyz != null;
+                        tPyStressDxyz = fFromNumpy.callAs(PyObject.class, tStressDxyz.numpy());
+                        if (tTrainInFloat) {
+                            try (PyObject oPyStressDxyz = tPyStressDxyz; PyCallable fFloat = oPyStressDxyz.getAttr("float", PyCallable.class)) {
+                                tPyStressDxyz = fFloat.callAs(PyObject.class);
+                            }
                         }
                     }
                 }
@@ -683,16 +731,16 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 MatrixCache.returnMat(tFpPartial);
                 if (mHasForce) {
                     assert tForceIndices != null;
-                    rData.mForceIndices[tType-1].addAll(tForceIndices);
+                    rData.mForceIndices.get(tType-1).add(tPyForceIndices);
                     IntVectorCache.returnVec(tForceIndices);
                 }
                 if (mHasStress) {
                     assert tStressIndices != null;
-                    rData.mStressIndices[tType-1].addAll(tStressIndices);
-                    IntVectorCache.returnVec(tStressIndices);
+                    rData.mStressIndices.get(tType-1).add(tPyStressIndices);
+                    IntMatrixCache.returnMat(tStressIndices);
                     assert tStressDxyz != null;
-                    rData.mStressDxyz[tType-1].addAll(tStressDxyz);
-                    VectorCache.returnVec(tStressDxyz);
+                    rData.mStressDxyz.get(tType-1).add(tPyStressDxyz);
+                    MatrixCache.returnMat(tStressDxyz);
                 }
             }
         }
