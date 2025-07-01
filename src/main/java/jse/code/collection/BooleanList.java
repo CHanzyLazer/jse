@@ -1,5 +1,6 @@
 package jse.code.collection;
 
+import jep.NDArray;
 import jse.code.functional.IBooleanConsumer;
 import jse.code.iterator.IBooleanIterator;
 import jse.math.IDataShell;
@@ -24,6 +25,15 @@ public class BooleanList implements IDataShell<boolean[]> {
     private BooleanList(int aSize, boolean[] aData) {mSize = aSize; mData = aData;}
     public BooleanList() {mData = ZL_BOOL;}
     public BooleanList(int aInitSize) {mData = new boolean[aInitSize];}
+    
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    public final NDArray<boolean[]> numpy() {
+        return new NDArray<>(mData, mSize);
+    }
     
     public boolean get(int aIdx) {
         rangeCheck(aIdx, mSize);

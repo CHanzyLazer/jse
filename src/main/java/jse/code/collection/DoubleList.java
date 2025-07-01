@@ -1,5 +1,6 @@
 package jse.code.collection;
 
+import jep.NDArray;
 import jse.code.iterator.IDoubleIterator;
 import jse.math.IDataShell;
 import jse.math.vector.*;
@@ -27,6 +28,15 @@ public class DoubleList implements IDataShell<double[]> {
     private DoubleList(int aSize, double[] aData) {mSize = aSize; mData = aData;}
     public DoubleList() {mData = ZL_VEC;}
     public DoubleList(int aInitSize) {mData = new double[aInitSize];}
+    
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    public final NDArray<double[]> numpy() {
+        return new NDArray<>(mData, mSize);
+    }
     
     public double get(int aIdx) {
         rangeCheck(aIdx, mSize);

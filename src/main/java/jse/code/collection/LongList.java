@@ -1,5 +1,6 @@
 package jse.code.collection;
 
+import jep.NDArray;
 import jse.code.iterator.ILongIterator;
 import jse.math.IDataShell;
 import jse.math.vector.*;
@@ -24,6 +25,15 @@ public class LongList implements IDataShell<long[]> {
     private LongList(int aSize, long[] aData) {mSize = aSize; mData = aData;}
     public LongList() {mData = ZL_LONG;}
     public LongList(int aInitSize) {mData = new long[aInitSize];}
+    
+    /**
+     * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
+     * {@link NDArray} 内部实现特性，在 python 中总是会再经历一次值拷贝，此时使用不会有引用问题。
+     * @return numpy 的数组 {@link NDArray}
+     */
+    public final NDArray<long[]> numpy() {
+        return new NDArray<>(mData, mSize);
+    }
     
     public long get(int aIdx) {
         rangeCheck(aIdx, mSize);
