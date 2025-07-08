@@ -28,7 +28,6 @@ import java.util.function.IntUnaryOperator;
  * @see IPotential IPotential: 通用的势函数接口
  * @author liqa
  */
-@ApiStatus.Experimental
 public interface IPairPotential extends IPotential, IHasSymbol {
     
     /** @return 此势函数支持的原子种类数目，默认为 {@code -1} 表示没有种类数目限制 */

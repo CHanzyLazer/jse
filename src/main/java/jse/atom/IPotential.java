@@ -31,7 +31,6 @@ import java.util.Map;
  * @see IPairPotential IPairPotential: 通用的基于截断半径内原子相互作用（pair）实现的势函数
  * @author liqa
  */
-@ApiStatus.Experimental
 public interface IPotential extends IAutoShutdown {
     /**
      * 检测此势函数是否已经关闭，默认永远为 {@code false}（即使手动调用了
