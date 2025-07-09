@@ -636,7 +636,7 @@ public class Trainer implements IHasSymbol, IAutoShutdown, ISavable {
                 DoubleList tFpPxCross = mFpPxCross[tType-1];
                 DoubleList tFpPyCross = mFpPyCross[tType-1];
                 DoubleList tFpPzCross = mFpPzCross[tType-1];
-                tBasis.evalPartial(tAPC, i, tTypeMap, tFp, tFpPxCross, tFpPyCross, tFpPzCross);
+                tBasis.evalGrad(tAPC, i, tTypeMap, tFp, tFpPxCross, tFpPyCross, tFpPzCross);
                 // 基组和索引
                 rData.mFp[tType-1].addAll(tFp);
                 rData.mEngIndices[tType-1].add(rData.mEng.size());

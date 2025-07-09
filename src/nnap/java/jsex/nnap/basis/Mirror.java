@@ -71,19 +71,19 @@ public class Mirror extends Basis {
         if (!aBufferNl) mMirrorNlTypeValid = false;
     }
     @Override
-    protected void evalPartial_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
+    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        // 由于 evalPartial_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
+        // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
         if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalPartial_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFpPx, rFpPy, rFpPz);
+        mMirrorBasis.evalGrad_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFpPx, rFpPy, rFpPz);
         mMirrorNlTypeValid = false;
     }
     @Override
-    protected void evalPartialAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aFpGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    protected void evalGradAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        // 由于 evalPartial_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
+        // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
         if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalPartialAndForceDot_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aFpGrad, rFx, rFy, rFz);
+        mMirrorBasis.evalGradAndForceDot_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz);
         mMirrorNlTypeValid = false;
     }
 }

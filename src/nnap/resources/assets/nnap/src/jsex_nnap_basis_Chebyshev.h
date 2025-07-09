@@ -31,18 +31,18 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1
 
 /*
  * Class:     jsex_nnap_basis_Chebyshev
- * Method:    evalPartial1
+ * Method:    evalGrad1
  * Signature: ([D[D[D[II[D[D[D[D[DII[D[D[DIDII)V
  */
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartial1
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGrad1
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint);
 
 /*
  * Class:     jsex_nnap_basis_Chebyshev
- * Method:    evalPartialAndForceDot1
+ * Method:    evalGradAndForceDot1
  * Signature: ([D[D[D[II[D[D[D[D[D[DI[D[D[DIDII)V
  */
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalPartialAndForceDot1
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradAndForceDot1
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint);
 
 #ifdef __cplusplus

@@ -129,17 +129,17 @@ public class FeedForward extends NeuralNetwork {
                                           double[] aHiddenWeights, double[] aHiddenBiases, double[] aOutputWeight, double aOutputBias,
                                           double[] rHiddenOutputs);
     
-    @Override public double backward(DoubleArrayVector aX, DoubleArrayVector rGradX) {
-        return backward0(aX, rGradX);
+    @Override public double backward(DoubleArrayVector aX, DoubleArrayVector rGrad) {
+        return backward0(aX, rGrad);
     }
-    double backward0(IDataShell<double[]> aX, IDataShell<double[]> rGradX) {
+    double backward0(IDataShell<double[]> aX, IDataShell<double[]> rGrad) {
         if (mHiddenDims.length < mHiddenNumber) throw new IllegalArgumentException("data size mismatch");
-        return backward1(aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), rGradX.internalDataWithLengthCheck(mInputDim), rGradX.internalDataShift(), mInputDim, mHiddenDims, mHiddenNumber,
+        return backward1(aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), rGrad.internalDataWithLengthCheck(mInputDim), rGrad.internalDataShift(), mInputDim, mHiddenDims, mHiddenNumber,
                          mHiddenWeights.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenWeightsBackward.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenBiases.internalDataWithLengthCheck(mHiddenBiasesSize, 0),
                          mOutputWeight.internalDataWithLengthCheck(mOutputWeightSize, 0), mOutputBias,
                          mHiddenOutputs.internalDataWithLengthCheck(mHiddenBiasesSize, 0), mHiddenGrads.internalDataWithLengthCheck(mHiddenBiasesSize, 0));
     }
-    private static native double backward1(double[] aX, int aShiftX, double [] rGradX, int aShiftGradX, int aInputDim, int[] aHiddenDims, int aHiddenNumber,
+    private static native double backward1(double[] aX, int aShiftX, double [] rGrad, int aShiftGrad, int aInputDim, int[] aHiddenDims, int aHiddenNumber,
                                            double[] aHiddenWeights, double[] aHiddenWeightsBackward, double[] aHiddenBiases, double[] aOutputWeight, double aOutputBias,
                                            double[] rHiddenOutputs, double[] rHiddenGrads);
 }

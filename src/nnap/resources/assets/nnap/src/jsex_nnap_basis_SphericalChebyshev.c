@@ -603,20 +603,20 @@ static inline void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, j
 }
 
 static inline void calL2f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                           jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                           jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
                            jdouble aWt, jint aLMax, jboolean aNoRadial) {
     // l = 0
     jdouble tCnl0;
     jdouble tMul;
-    jdouble *tFpGrad = aFpGrad;
+    jdouble *tNNGrad = aNNGrad;
     if (!aNoRadial) {
         tCnl0 = aCnlm[0];
         tMul = aWt*(PI4+PI4);
-        const jdouble subFpGrad = tFpGrad[0];
-        *rFx += subFpGrad * tMul * (tCnl0*aCnlmPx[0]);
-        *rFy += subFpGrad * tMul * (tCnl0*aCnlmPy[0]);
-        *rFz += subFpGrad * tMul * (tCnl0*aCnlmPz[0]);
-        ++tFpGrad;
+        const jdouble subNNGrad = tNNGrad[0];
+        *rFx += subNNGrad * tMul * (tCnl0*aCnlmPx[0]);
+        *rFy += subNNGrad * tMul * (tCnl0*aCnlmPy[0]);
+        *rFz += subNNGrad * tMul * (tCnl0*aCnlmPz[0]);
+        ++tNNGrad;
     }
     // else
     for (jint l = 1; l <= aLMax; ++l) {
@@ -632,10 +632,10 @@ static inline void calL2f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, j
         }
         tMul = PI4/(jdouble)tLen;
         tMul = aWt*(tMul+tMul);
-        const jdouble subFpGrad = tFpGrad[l-1];
-        *rFx += subFpGrad * tMul * rDotPx;
-        *rFy += subFpGrad * tMul * rDotPy;
-        *rFz += subFpGrad * tMul * rDotPz;
+        const jdouble subNNGrad = tNNGrad[l-1];
+        *rFx += subNNGrad * tMul * rDotPx;
+        *rFy += subNNGrad * tMul * rDotPy;
+        *rFz += subNNGrad * tMul * rDotPz;
     }
 }
 
@@ -1209,73 +1209,73 @@ static inline void calL3p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, j
     }
 }
 static inline void calL3f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                           jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                           jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
                            jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Max <= 1) return;
     jint tShiftFp = aNoRadial ? aLMax : (aLMax+1);
-    jdouble *tFpGrad = aFpGrad+tShiftFp;
+    jdouble *tNNGrad = aNNGrad+tShiftFp;
     jdouble tFpPx, tFpPy, tFpPz;
     calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-    jdouble subFpGrad = *tFpGrad;
-    *rFx += subFpGrad * tFpPx;
-    *rFy += subFpGrad * tFpPy;
-    *rFz += subFpGrad * tFpPz;
-    ++tFpGrad;
+    jdouble subNNGrad = *tNNGrad;
+    *rFx += subNNGrad * tFpPx;
+    *rFy += subNNGrad * tFpPy;
+    *rFz += subNNGrad * tFpPz;
+    ++tNNGrad;
     if (aL3Cross) {
         calL3_112_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
     }
     if (aL3Max == 2) return;
     if (aL3Cross) {
         calL3_233_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
         calL3_123_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
     }
     if (aL3Max == 3) return;
     calL3_444_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-    subFpGrad = *tFpGrad;
-    *rFx += subFpGrad * tFpPx;
-    *rFy += subFpGrad * tFpPy;
-    *rFz += subFpGrad * tFpPz;
-    ++tFpGrad;
+    subNNGrad = *tNNGrad;
+    *rFx += subNNGrad * tFpPx;
+    *rFy += subNNGrad * tFpPy;
+    *rFz += subNNGrad * tFpPz;
+    ++tNNGrad;
     if (aL3Cross) {
         calL3_224_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
         calL3_334_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
         calL3_244_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
         calL3_134_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, &tFpPx, &tFpPy, &tFpPz, aWt);
-        subFpGrad = *tFpGrad;
-        *rFx += subFpGrad * tFpPx;
-        *rFy += subFpGrad * tFpPy;
-        *rFz += subFpGrad * tFpPz;
-        ++tFpGrad;
+        subNNGrad = *tNNGrad;
+        *rFx += subNNGrad * tFpPx;
+        *rFy += subNNGrad * tFpPy;
+        *rFz += subNNGrad * tFpPz;
+        ++tNNGrad;
     }
 }
 static inline void cnlm2fpPxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
@@ -1289,13 +1289,13 @@ static inline void cnlm2fpPxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmP
             aWt, aLMax, aNoRadial, aL3Max, aL3Cross);
 }
 static inline void cnlm2fxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                             jdouble *aFpGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
                              jdouble aWt, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     calL2f_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-            aFpGrad, rFx, rFy, rFz,
+            aNNGrad, rFx, rFy, rFz,
             aWt, aLMax, aNoRadial);
     calL3f_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-            aFpGrad, rFx, rFy, rFz,
+            aNNGrad, rFx, rFy, rFz,
             aWt, aLMax, aNoRadial, aL3Max, aL3Cross);
 }
 
@@ -1457,7 +1457,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     releaseJArrayBuf(aEnv, rFp, tFp, 0);
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGrad1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
@@ -1706,12 +1706,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartial1(JNIE
     releaseJArrayBuf(aEnv, rFpPz, tFpPz, 0);
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndForceDot1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceDot1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
         jdoubleArray aCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
-        jdoubleArray aFpGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
+        jdoubleArray aNNGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
@@ -1733,13 +1733,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
     jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
     jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
     jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
-    jdouble *tFpGrad = (jdouble *)getJArrayBuf(aEnv, aFpGrad);
+    jdouble *tNNGrad = (jdouble *)getJArrayBuf(aEnv, aNNGrad);
     jdouble *tFx = (jdouble *)getJArrayBuf(aEnv, rFx);
     jdouble *tFy = (jdouble *)getJArrayBuf(aEnv, rFy);
     jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
 
-    // init fpGrad
-    jdouble *tFpGrad_ = tFpGrad + aShiftFp;
+    // init nnGrad
+    jdouble *tNNGrad_ = tNNGrad + aShiftFp;
     
     // const init
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
@@ -1828,13 +1828,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
                             tLMAll);
                 // accumulate to force
                 cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tFpGrad_+tShiftFp, tFx_, tFy_, tFz_,
+                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
                           1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll*type;
                     jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL*type;
                     cnlm2fxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                              tFpGrad_+tShiftFp0, tFx_, tFy_, tFz_,
+                              tNNGrad_+tShiftFp0, tFx_, tFy_, tFz_,
                               1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 }
             }
@@ -1852,7 +1852,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
                             tLMAll);
                 // accumulate to force
                 cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tFpGrad_+tShiftFp, tFx_, tFy_, tFz_,
+                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
                           1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
             }
             break;
@@ -1868,7 +1868,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
                             tLMAll);
                 // accumulate to force
                 cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tFpGrad_+tShiftFp, tFx_, tFy_, tFz_,
+                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
                           1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
             }
             break;
@@ -1885,13 +1885,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
                             tLMAll);
                 // accumulate to force
                 cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tFpGrad_+tShiftFp,  tFx_, tFy_, tFz_,
+                          tNNGrad_+tShiftFp,  tFx_, tFy_, tFz_,
                           1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
                 if (aTypeNum > 1) {
                     jint tShift0 = tShift + (aNMax+1)*tLMAll;
                     jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL;
                     cnlm2fxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                              tFpGrad_+tShiftFp0,  tFx_, tFy_, tFz_,
+                              tNNGrad_+tShiftFp0,  tFx_, tFy_, tFz_,
                               wt, aLMax, aNoRadial, aL3Max, aL3Cross);
                 }
             }
@@ -1921,7 +1921,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalPartialAndFor
     releaseJArrayBuf(aEnv, rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
     releaseJArrayBuf(aEnv, rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
     releaseJArrayBuf(aEnv, rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, aFpGrad, tFpGrad, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aNNGrad, tNNGrad, JNI_ABORT);
     releaseJArrayBuf(aEnv, rFx, tFx, 0);
     releaseJArrayBuf(aEnv, rFy, tFy, 0);
     releaseJArrayBuf(aEnv, rFz, tFz, 0);
