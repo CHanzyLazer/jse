@@ -2,6 +2,7 @@ package jse.opt;
 
 import jse.math.MathEX;
 import jse.math.vector.IVector;
+import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 
 import static jse.math.MathEX.Code.DBL_EPSILON;
@@ -12,7 +13,8 @@ import static jse.math.MathEX.Code.DBL_EPSILON;
  * @author liqa
  */
 public abstract class AbstractOptimizer implements IOptimizer {
-    protected IVector mParameter = null, mParameterStep = null;
+    protected IVector mParameter = null;
+    protected Vector mParameterStep = null;
     
     private ILossFunc mLossFunc = null;
     private ILossFuncGrad mLossFuncGrad = null;
@@ -20,7 +22,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
     protected double mGamma = Double.NaN, mC1 = Double.NaN;
     protected boolean mLineSearch = false;
     
-    private IVector mGrad = null;
+    private Vector mGrad = null;
     private boolean mGradValid = false;
     
     
@@ -49,7 +51,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
      * 获取当前的梯度值，如果缓存不合法则自动重新计算
      * @return 当前的梯度值
      */
-    protected IVector grad() {
+    protected Vector grad() {
         if (!mGradValid) eval(true);
         return mGrad;
     }

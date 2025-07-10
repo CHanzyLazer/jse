@@ -23,6 +23,14 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_forward1
 JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_backward1
   (JNIEnv *, jclass, jdoubleArray, jint, jdoubleArray, jint, jint, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdouble, jdoubleArray, jdoubleArray);
 
+/*
+ * Class:     jsex_nnap_nn_FeedForward
+ * Method:    backwardFull1
+ * Signature: ([DI[DI[DII[II[D[D[D[DD[D[D)D
+ */
+JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_backwardFull1
+  (JNIEnv *, jclass, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jint, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdouble, jdoubleArray, jdoubleArray);
+
 #ifdef __cplusplus
 }
 #endif

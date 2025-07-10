@@ -1,6 +1,7 @@
 package jse.opt;
 
 import jse.math.vector.IVector;
+import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 public interface IOptimizer {
     @FunctionalInterface interface ILossFunc {double call(IVector aParameter);}
-    @FunctionalInterface interface ILossFuncGrad {double call(IVector aParameter, IVector rGrad);}
+    @FunctionalInterface interface ILossFuncGrad {double call(IVector aParameter, Vector rGrad);}
     
     /**
      * 设置需要优化的参数

@@ -50,15 +50,104 @@ static inline jdouble forward(jdouble *aX, jint aInputDim, jint *aHiddenDims, ji
         jdouble rDot = dotAB_jse(tInput, tWeights, tInSize) + tBiases[j];
         jdouble tOutputWeight = aOutputWeight[j];
         if (tGrad == NULL) {
-            rOut += silu(rDot) * tOutputWeight;
+            tOutput[j] = silu(rDot);
+            rOut += tOutput[j] * tOutputWeight;
         } else {
             jdouble rGradDot;
-            rOut += siluGrad(rDot, &rGradDot) * tOutputWeight;
+            tOutput[j] = siluGrad(rDot, &rGradDot);
+            rOut += tOutput[j] * tOutputWeight;
             tGrad[j] = rGradDot * tOutputWeight;
         }
         tWeights += tInSize;
     }
     return rOut;
+}
+static inline jdouble backward(jdouble *aX, jdouble *rGradX, jdouble *rGradPara, jint aInputDim, jint *aHiddenDims, jint aHiddenNumber,
+                               jdouble *aHiddenWeights, jdouble *aHiddenWeightsBackward, jdouble *aHiddenBiases, jdouble *aOutputWeight, jdouble aOutputBias,
+                               jdouble *rHiddenOutputs, jdouble *rHiddenGrads) {
+    jdouble tOut = forward(aX, aInputDim, aHiddenDims, aHiddenNumber,
+                           aHiddenWeights, aHiddenBiases, aOutputWeight, aOutputBias,
+                           rHiddenOutputs, rHiddenGrads);
+    // switch to last layer
+    const jint tEnd = aHiddenNumber - 1;
+    jdouble *tGrad = rHiddenGrads;
+    jdouble *tOutput = rHiddenOutputs;
+    jdouble *rGradWeights = NULL, *rGradBiases = NULL;
+    jint tInSize = -1;
+    if (rGradPara != NULL) {
+        rGradWeights = rGradPara;
+        tInSize = aInputDim;
+    }
+    for (jint i = 0; i < tEnd; ++i) {
+        const jint tOutSize = aHiddenDims[i];
+        tGrad += tOutSize;
+        tOutput += tOutSize;
+        if (rGradPara != NULL) {
+            rGradWeights += tInSize*tOutSize;
+            tInSize = tOutSize;
+        }
+    }
+    if (rGradPara != NULL) {
+        jint tLastHiddenSize = aHiddenDims[tEnd];
+        rGradWeights += tInSize*tLastHiddenSize;
+        rGradBiases = rGradWeights;
+        for (jint i = 0; i < aHiddenNumber; ++i) {
+            rGradBiases += aHiddenDims[i];
+        }
+        jdouble *rGradOutWeights = rGradBiases;
+        for (jint j = 0; j < tLastHiddenSize; ++j) {
+            rGradOutWeights[j] = tOutput[j]; // rGradOutWeights is the last output
+        }
+        rGradOutWeights[tLastHiddenSize] = 1.0; // rGradOutBias always 1
+    }
+    // begin backward, last layer has been specially optimized
+    jdouble *tInput = tGrad;
+    jdouble *tWeights = aHiddenWeightsBackward;
+    tInSize = aHiddenDims[tEnd];
+    for (jint i = tEnd-1; i >= 0; --i) {
+        const jint tOutSize = aHiddenDims[i];
+        tGrad -= tOutSize;
+        tOutput -= tOutSize;
+        if (rGradPara != NULL) {
+            jint tWeightSize = tOutSize*tInSize;
+            rGradWeights -= tWeightSize;
+            rGradBiases -= tInSize;
+            for (jint j = 0; j < tInSize; ++j) {
+                jdouble tSubInput = tInput[j];
+                rGradBiases[j] = tSubInput;
+                for (jint k = 0; k < tOutSize; ++k) {
+                    rGradWeights[k] = tSubInput * tOutput[k];
+                }
+                rGradWeights += tOutSize;
+            }
+            rGradWeights -= tWeightSize;
+        }
+        for (jint j = 0; j < tOutSize; ++j) {
+            tOutput[j] = dotAB_jse(tInput, tWeights, tInSize) * tGrad[j];
+            tWeights += tInSize;
+        }
+        tInput = tOutput;
+        tInSize = tOutSize;
+    }
+    // to input layer
+    if (rGradPara != NULL) {
+        rGradWeights -= aInputDim*tInSize;
+        rGradBiases -= tInSize;
+        for (jint j = 0; j < tInSize; ++j) {
+            jdouble tSubInput = tInput[j];
+            rGradBiases[j] = tSubInput;
+            for (jint k = 0; k < aInputDim; ++k) {
+                rGradWeights[k] = tSubInput * aX[k];
+            }
+            rGradWeights += aInputDim;
+        }
+    }
+    for (jint j = 0; j < aInputDim; ++j) {
+        rGradX[j] = dotAB_jse(tInput, tWeights, tInSize);
+        tWeights += tInSize;
+    }
+    
+    return tOut;
 }
 
 JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_forward1(JNIEnv *aEnv, jclass aClazz,
@@ -72,10 +161,9 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_forward1(JNIEnv *aEnv, j
     jdouble *tOutputWeight = (jdouble *)getJArrayBuf(aEnv, aOutputWeight);
     jdouble *tHiddenOutputs = (jdouble *)getJArrayBuf(aEnv, rHiddenOutputs);
     
-    jdouble *tX_ = tX + aShiftX;
-    jdouble tOut = forward(tX_, aInputDim, tHiddenDims, aHiddenNumber,
-                          tHiddenWeights, tHiddenBiases, tOutputWeight, aOutputBias,
-                          tHiddenOutputs, NULL);
+    jdouble tOut = forward(tX+aShiftX, aInputDim, tHiddenDims, aHiddenNumber,
+                           tHiddenWeights, tHiddenBiases, tOutputWeight, aOutputBias,
+                           tHiddenOutputs, NULL);
     
     // release java array
     releaseJArrayBuf(aEnv, aX, tX, JNI_ABORT);
@@ -89,7 +177,7 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_forward1(JNIEnv *aEnv, j
 }
 
 JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_backward1(JNIEnv *aEnv, jclass aClazz,
-        jdoubleArray aX, jint aShiftX, jdoubleArray rGradX, jint aShiftGrad, jint aInputDim, jintArray aHiddenDims, jint aHiddenNumber,
+        jdoubleArray aX, jint aShiftX, jdoubleArray rGradX, jint aShiftGradX, jint aInputDim, jintArray aHiddenDims, jint aHiddenNumber,
         jdoubleArray aHiddenWeights, jdoubleArray aHiddenWeightsBackward, jdoubleArray aHiddenBiases, jdoubleArray aOutputWeight, jdouble aOutputBias, jdoubleArray rHiddenOutputs, jdoubleArray rHiddenGrads) {
     // java array init
     jdouble *tX = (jdouble *)getJArrayBuf(aEnv, aX);
@@ -102,44 +190,47 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_backward1(JNIEnv *aEnv, 
     jdouble *tHiddenOutputs = (jdouble *)getJArrayBuf(aEnv, rHiddenOutputs);
     jdouble *tHiddenGrads = (jdouble *)getJArrayBuf(aEnv, rHiddenGrads);
     
-    jdouble *tX_ = tX + aShiftX;
-    jdouble *tGradX_ = tGradX + aShiftGrad;
-    jdouble tOut = forward(tX_, aInputDim, tHiddenDims, aHiddenNumber,
-                          tHiddenWeights, tHiddenBiases, tOutputWeight, aOutputBias,
-                          tHiddenOutputs, tHiddenGrads);
-    // switch to last layer
-    const jint tEnd = aHiddenNumber - 1;
-    jdouble *tGrad = tHiddenGrads;
-    jdouble *tOutput = tHiddenOutputs;
-    for (jint i = 0; i < tEnd; ++i) {
-        const jint tOutSize = tHiddenDims[i];
-        tGrad += tOutSize;
-        tOutput += tOutSize;
-    }
-    // begin backward, last layer has been specially optimized
-    jdouble *tInput = tGrad;
-    jdouble *tWeights = tHiddenWeightsBackward;
-    jint tInSize = tHiddenDims[tEnd];
-    for (jint i = tEnd-1; i >= 0; --i) {
-        const jint tOutSize = tHiddenDims[i];
-        tGrad -= tOutSize;
-        tOutput -= tOutSize;
-        for (jint j = 0; j < tOutSize; ++j) {
-            tOutput[j] = dotAB_jse(tInput, tWeights, tInSize) * tGrad[j];
-            tWeights += tInSize;
-        }
-        tInput = tOutput;
-        tInSize = tOutSize;
-    }
-    // to input layer
-    for (jint j = 0; j < aInputDim; ++j) {
-        tGradX_[j] = dotAB_jse(tInput, tWeights, tInSize);
-        tWeights += tInSize;
-    }
+    jdouble tOut = backward(tX+aShiftX, tGradX+aShiftGradX, NULL, aInputDim, tHiddenDims, aHiddenNumber,
+                           tHiddenWeights, tHiddenWeightsBackward, tHiddenBiases, tOutputWeight, aOutputBias,
+                           tHiddenOutputs, tHiddenGrads);
     
     // release java array
     releaseJArrayBuf(aEnv, aX, tX, JNI_ABORT);
     releaseJArrayBuf(aEnv, rGradX, tGradX, 0);
+    releaseJArrayBuf(aEnv, aHiddenDims, tHiddenDims, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aHiddenWeights, tHiddenWeights, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aHiddenWeightsBackward, tHiddenWeightsBackward, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aHiddenBiases, tHiddenBiases, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aOutputWeight, tOutputWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rHiddenOutputs, tHiddenOutputs, JNI_ABORT); // buffer only
+    releaseJArrayBuf(aEnv, rHiddenGrads, tHiddenGrads, JNI_ABORT); // buffer only
+    
+    return tOut;
+}
+
+JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_backwardFull1(JNIEnv *aEnv, jclass aClazz,
+        jdoubleArray aX, jint aShiftX, jdoubleArray rGradX, jint aShiftGradX, jdoubleArray rGradPara, jint aShiftGradPara, jint aInputDim, jintArray aHiddenDims, jint aHiddenNumber,
+        jdoubleArray aHiddenWeights, jdoubleArray aHiddenWeightsBackward, jdoubleArray aHiddenBiases, jdoubleArray aOutputWeight, jdouble aOutputBias, jdoubleArray rHiddenOutputs, jdoubleArray rHiddenGrads) {
+    // java array init
+    jdouble *tX = (jdouble *)getJArrayBuf(aEnv, aX);
+    jdouble *tGradX = (jdouble *)getJArrayBuf(aEnv, rGradX);
+    jdouble *tGradPara = (jdouble *)getJArrayBuf(aEnv, rGradPara);
+    jint *tHiddenDims = (jint *)getJArrayBuf(aEnv, aHiddenDims);
+    jdouble *tHiddenWeights = (jdouble *)getJArrayBuf(aEnv, aHiddenWeights);
+    jdouble *tHiddenWeightsBackward = (jdouble *)getJArrayBuf(aEnv, aHiddenWeightsBackward);
+    jdouble *tHiddenBiases = (jdouble *)getJArrayBuf(aEnv, aHiddenBiases);
+    jdouble *tOutputWeight = (jdouble *)getJArrayBuf(aEnv, aOutputWeight);
+    jdouble *tHiddenOutputs = (jdouble *)getJArrayBuf(aEnv, rHiddenOutputs);
+    jdouble *tHiddenGrads = (jdouble *)getJArrayBuf(aEnv, rHiddenGrads);
+    
+    jdouble tOut = backward(tX+aShiftX, tGradX+aShiftGradX, tGradPara+aShiftGradPara, aInputDim, tHiddenDims, aHiddenNumber,
+                           tHiddenWeights, tHiddenWeightsBackward, tHiddenBiases, tOutputWeight, aOutputBias,
+                           tHiddenOutputs, tHiddenGrads);
+    
+    // release java array
+    releaseJArrayBuf(aEnv, aX, tX, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rGradX, tGradX, 0);
+    releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
     releaseJArrayBuf(aEnv, aHiddenDims, tHiddenDims, JNI_ABORT);
     releaseJArrayBuf(aEnv, aHiddenWeights, tHiddenWeights, JNI_ABORT);
     releaseJArrayBuf(aEnv, aHiddenWeightsBackward, tHiddenWeightsBackward, JNI_ABORT);
