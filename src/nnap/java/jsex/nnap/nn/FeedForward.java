@@ -1,17 +1,14 @@
 package jsex.nnap.nn;
 
 import jse.code.UT;
-import jse.code.collection.DoubleList;
 import jse.math.IDataShell;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
-import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.Vector;
-import jse.math.vector.Vectors;
+import jse.math.vector.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleSupplier;
 
 /**
  * 简单的前馈神经网络 (FFNN) 实现，原生实现在非 batch 的情况下可以有最快的性能
@@ -24,16 +21,17 @@ import java.util.Map;
 public class FeedForward extends NeuralNetwork {
     private final int mInputDim;
     private final int[] mHiddenDims;
-    private final IDataShell<double[]> mHiddenWeights, mHiddenWeightsBackward;
-    private final IDataShell<double[]> mHiddenBiases;
-    private final IDataShell<double[]> mOutputWeight;
-    private final double mOutputBias;
+    private final Vector mHiddenWeights, mHiddenWeightsBackward;
+    private final IntVector mIndexToBackward;
+    private final Vector mHiddenBiases;
+    private final Vector mOutputWeight;
+    private double mOutputBias;
     private final int mHiddenNumber, mHiddenWeightsSize, mHiddenBiasesSize, mOutputWeightSize;
     
     /// 缓存中间变量
-    private final IDataShell<double[]> mHiddenOutputs, mHiddenGrads;
+    private final Vector mHiddenOutputs, mHiddenGrads;
     
-    FeedForward(int aInputDim, int[] aHiddenDims, IDataShell<double[]> aHiddenWeights, IDataShell<double[]> aHiddenWeightsBackward, IDataShell<double[]> aHiddenBiases, IDataShell<double[]> aOutputWeight, double aOutputBias) {
+    FeedForward(int aInputDim, int[] aHiddenDims, Vector aHiddenWeights, Vector aHiddenWeightsBackward, IntVector aIndexToBackward, Vector aHiddenBiases, Vector aOutputWeight, double aOutputBias) {
         mInputDim = aInputDim;
         mHiddenDims = aHiddenDims;
         mHiddenNumber = aHiddenDims.length;
@@ -50,6 +48,7 @@ public class FeedForward extends NeuralNetwork {
         mHiddenBiasesSize = tHiddenBiasesSize;
         mHiddenWeights = aHiddenWeights;
         mHiddenWeightsBackward = aHiddenWeightsBackward;
+        mIndexToBackward = aIndexToBackward;
         mHiddenBiases = aHiddenBiases;
         if (mHiddenWeights.internalDataSize() != mHiddenWeightsSize) throw new IllegalArgumentException("The size of hidden weights mismatch");
         if (mHiddenWeightsBackward.internalDataSize() != mHiddenWeightsSize) throw new IllegalArgumentException("The size of backward hidden weights mismatch");
@@ -60,6 +59,45 @@ public class FeedForward extends NeuralNetwork {
         if (mOutputWeight.internalDataSize() != mOutputWeightSize) throw new IllegalArgumentException("The size of output weight mismatch");
         mHiddenOutputs = Vectors.zeros(mHiddenBiasesSize);
         mHiddenGrads = Vectors.zeros(mHiddenBiasesSize);
+    }
+    
+    public static FeedForward init(int aInputDim, int[] aHiddenDims, final DoubleSupplier aSup) {
+        int tHiddenNumber = aHiddenDims.length;
+        if (tHiddenNumber == 0) throw new IllegalArgumentException("At least one hidden layer is required");
+        int tHiddenWeightsSize = 0;
+        int tHiddenBiasesSize = 0;
+        int tColNum = aInputDim;
+        for (int tHiddenDim : aHiddenDims) {
+            tHiddenWeightsSize += tColNum * tHiddenDim;
+            tHiddenBiasesSize += tHiddenDim;
+            tColNum = tHiddenDim;
+        }
+        Vector aHiddenWeights = Vectors.zeros(tHiddenWeightsSize);
+        Vector aHiddenWeightsBackward = Vectors.zeros(tHiddenWeightsSize);
+        IntVector aIndexToBackward = IntVector.zeros(tHiddenWeightsSize);
+        tColNum = aInputDim;
+        int tShift = 0;
+        for (int tHiddenDim : aHiddenDims) {
+            int tSize = tHiddenDim*tColNum;
+            aHiddenWeights.subVec(tShift, tShift+tSize).fill(i -> aSup.getAsDouble());
+            final int fColNum = tColNum;
+            final int tShiftB = tHiddenWeightsSize-tShift-tSize;
+            aIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
+                int row = ii / fColNum;
+                int col = ii % fColNum;
+                return col*tHiddenDim + row + tShiftB;
+            });
+            tShift += tSize;
+            tColNum = tHiddenDim;
+        }
+        for (int i = 0; i < tHiddenWeightsSize; ++i) {
+            aHiddenWeightsBackward.set(aIndexToBackward.get(i), aHiddenWeights.get(i));
+        }
+        Vector aHiddenBiases = Vectors.from(tHiddenBiasesSize, i -> aSup.getAsDouble());
+        Vector aOutputWeight = Vectors.from(aHiddenDims[tHiddenNumber-1], i -> aSup.getAsDouble());
+        double aOutputBias = aSup.getAsDouble();
+        
+        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, aOutputBias);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -82,34 +120,92 @@ public class FeedForward extends NeuralNetwork {
         }
         List<?> tHiddenWeights = (List<?>)UT.Code.get(aMap, "hidden_weights");
         if (tHiddenWeights.size() != tHiddenNumber) throw new IllegalArgumentException("The number of hidden weights mismatch");
-        DoubleList aHiddenWeights = new DoubleList(tHiddenWeightsSize);
-        DoubleList aHiddenWeightsBackward = new DoubleList(tHiddenWeightsSize);
-        List<RowMatrix> tWeightList = new ArrayList<>(tHiddenNumber);
+        Vector aHiddenWeights = Vectors.zeros(tHiddenWeightsSize);
+        Vector aHiddenWeightsBackward = Vectors.zeros(tHiddenWeightsSize);
+        IntVector aIndexToBackward = IntVector.zeros(tHiddenWeightsSize);
         tColNum = aInputDim;
+        int tShift = 0;
         for (int i = 0; i < tHiddenNumber; ++i) {
+            int tHiddenDim = aHiddenDims[i];
+            int tSize = tHiddenDim*tColNum;
             RowMatrix tWeight = Matrices.fromRows((List<?>)tHiddenWeights.get(i));
             if (tWeight.columnNumber() != tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+i+"' mismatch");
-            if (tWeight.rowNumber() != aHiddenDims[i]) throw new IllegalArgumentException("Row number of hidden weight '"+i+"' mismatch");
-            aHiddenWeights.addAll(tWeight.asVecRow());
-            tWeightList.add(tWeight);
-            tColNum = aHiddenDims[i];
+            if (tWeight.rowNumber() != tHiddenDim) throw new IllegalArgumentException("Row number of hidden weight '"+i+"' mismatch");
+            aHiddenWeights.subVec(tShift, tShift+tSize).fill(tWeight.asVecRow());
+            final int fColNum = tColNum;
+            final int tShiftB = tHiddenWeightsSize-tShift-tSize;
+            aIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
+                int row = ii / fColNum;
+                int col = ii % fColNum;
+                return col*tHiddenDim + row + tShiftB;
+            });
+            tShift += tSize;
+            tColNum = tHiddenDim;
         }
-        for (int i = tHiddenNumber-1; i >=0 ; --i) {
-            aHiddenWeightsBackward.addAll(tWeightList.get(i).asVecCol());
+        for (int i = 0; i < tHiddenWeightsSize; ++i) {
+            aHiddenWeightsBackward.set(aIndexToBackward.get(i), aHiddenWeights.get(i));
         }
         List<?> tHiddenBiases = (List<?>)UT.Code.get(aMap, "hidden_biases");
         if (tHiddenBiases.size() != tHiddenNumber) throw new IllegalArgumentException("The number of hidden biases mismatch");
-        DoubleList aHiddenBiases = new DoubleList(tHiddenBiasesSize);
+        Vector aHiddenBiases = Vectors.zeros(tHiddenBiasesSize);
+        tShift = 0;
         for (int i = 0; i < tHiddenNumber; ++i) {
+            int tHiddenDim = aHiddenDims[i];
             Vector tBias = Vectors.from((List<? extends Number>)tHiddenBiases.get(i));
-            if (tBias.size() != aHiddenDims[i]) throw new IllegalArgumentException("Size of hidden bias '"+i+"' mismatch");
-            aHiddenBiases.addAll(tBias);
+            if (tBias.size() != tHiddenDim) throw new IllegalArgumentException("Size of hidden bias '"+i+"' mismatch");
+            aHiddenBiases.subVec(tShift, tShift+tHiddenDim).fill(tBias);
+            tShift += tHiddenDim;
         }
         Vector aOutputWeight = Vectors.from((List<? extends Number>)aMap.get("output_weight"));
         double aOutputBias = ((Number)aMap.get("output_bias")).doubleValue();
         if (aOutputWeight.size() != aHiddenDims[tHiddenNumber-1]) throw new IllegalArgumentException("Size of output weight mismatch");
         
-        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aHiddenBiases, aOutputWeight, aOutputBias);
+        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, aOutputBias);
+    }
+    
+    public IVector parameters() {
+        final int tEndHW = mHiddenWeights.internalDataSize();
+        final int tEndHB = tEndHW + mHiddenBiases.internalDataSize();
+        final int tEndOW = tEndHB + mOutputWeight.internalDataSize();
+        final int tEndOB = tEndOW + 1;
+        return new RefVector() {
+            @Override public double get(int aIdx) {
+                if (aIdx < tEndHW) {
+                    return mHiddenWeights.get(aIdx);
+                } else
+                if (aIdx < tEndHB) {
+                    return mHiddenBiases.get(aIdx-tEndHW);
+                } else
+                if (aIdx < tEndOW) {
+                    return mOutputWeight.get(aIdx-tEndHB);
+                } else
+                if (aIdx < tEndOB) {
+                    return mOutputBias;
+                } else {
+                    throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+                }
+            }
+            @Override public void set(int aIdx, double aValue) {
+                if (aIdx < tEndHW) {
+                    mHiddenWeights.set(aIdx, aValue);
+                    mHiddenWeightsBackward.set(mIndexToBackward.get(aIdx), aValue);
+                } else
+                if (aIdx < tEndHB) {
+                    mHiddenBiases.set(aIdx-tEndHW, aValue);
+                } else
+                if (aIdx < tEndOW) {
+                    mOutputWeight.set(aIdx-tEndHB, aValue);
+                } else
+                if (aIdx < tEndOB) {
+                    mOutputBias = aValue;
+                } else {
+                    throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+                }
+            }
+            @Override public int size() {
+                return tEndOB;
+            }
+        };
     }
     
     @Override public int inputSize() {
