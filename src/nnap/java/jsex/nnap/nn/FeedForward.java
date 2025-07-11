@@ -5,6 +5,7 @@ import jse.math.IDataShell;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -226,25 +227,14 @@ public class FeedForward extends NeuralNetwork {
                                           double[] rHiddenOutputs);
     
     @Override public double backward(DoubleArrayVector aX, DoubleArrayVector rGradX) {
-        return backward0(aX, rGradX);
+        return backwardFull(aX, rGradX, null);
     }
-    double backward0(IDataShell<double[]> aX, IDataShell<double[]> rGradX) {
-        if (mHiddenDims.length < mHiddenNumber) throw new IllegalArgumentException("data size mismatch");
-        return backward1(aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), rGradX.internalDataWithLengthCheck(mInputDim), rGradX.internalDataShift(), mInputDim, mHiddenDims, mHiddenNumber,
-                         mHiddenWeights.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenWeightsBackward.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenBiases.internalDataWithLengthCheck(mHiddenBiasesSize, 0),
-                         mOutputWeight.internalDataWithLengthCheck(mOutputWeightSize, 0), mOutputBias,
-                         mHiddenOutputs.internalDataWithLengthCheck(mHiddenBiasesSize, 0), mHiddenGrads.internalDataWithLengthCheck(mHiddenBiasesSize, 0));
-    }
-    private static native double backward1(double[] aX, int aShiftX, double[] rGradX, int aShiftGradX, int aInputDim, int[] aHiddenDims, int aHiddenNumber,
-                                           double[] aHiddenWeights, double[] aHiddenWeightsBackward, double[] aHiddenBiases, double[] aOutputWeight, double aOutputBias,
-                                           double[] rHiddenOutputs, double[] rHiddenGrads);
-    
-    public double backwardFull(DoubleArrayVector aX, DoubleArrayVector rGradX, DoubleArrayVector rGradPara) {
+    public double backwardFull(DoubleArrayVector aX, @Nullable DoubleArrayVector rGradX, @Nullable DoubleArrayVector rGradPara) {
         return backwardFull0(aX, rGradX, rGradPara);
     }
-    double backwardFull0(IDataShell<double[]> aX, IDataShell<double[]> rGradX, IDataShell<double[]> rGradPara) {
+    double backwardFull0(IDataShell<double[]> aX, @Nullable IDataShell<double[]> rGradX, @Nullable IDataShell<double[]> rGradPara) {
         if (mHiddenDims.length < mHiddenNumber) throw new IllegalArgumentException("data size mismatch");
-        return backwardFull1(aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), rGradX.internalDataWithLengthCheck(mInputDim), rGradX.internalDataShift(), rGradPara.internalDataWithLengthCheck(mHiddenWeightsSize+mHiddenBiasesSize+mOutputWeightSize+1), rGradPara.internalDataShift(),
+        return backwardFull1(aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), rGradX==null ? null : rGradX.internalDataWithLengthCheck(mInputDim), rGradX==null ? 0 : rGradX.internalDataShift(), rGradPara==null ? null : rGradPara.internalDataWithLengthCheck(mHiddenWeightsSize+mHiddenBiasesSize+mOutputWeightSize+1), rGradPara==null ? 0 : rGradPara.internalDataShift(),
                              mInputDim, mHiddenDims, mHiddenNumber,
                              mHiddenWeights.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenWeightsBackward.internalDataWithLengthCheck(mHiddenWeightsSize, 0), mHiddenBiases.internalDataWithLengthCheck(mHiddenBiasesSize, 0),
                              mOutputWeight.internalDataWithLengthCheck(mOutputWeightSize, 0), mOutputBias,

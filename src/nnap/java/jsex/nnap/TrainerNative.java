@@ -1,8 +1,11 @@
 package jsex.nnap;
 
+import jse.atom.AtomicParameterCalculator;
+import jse.atom.IAtomData;
 import jse.code.collection.DoubleList;
-import jse.math.matrix.RowMatrix;
+import jse.math.vector.IVector;
 import jse.math.vector.Vector;
+import jse.math.vector.Vectors;
 import jse.opt.Adam;
 import jse.opt.IOptimizer;
 import jsex.nnap.basis.Basis;
@@ -11,7 +14,6 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static jse.code.CS.RANDOM;
 
@@ -39,8 +41,12 @@ public class TrainerNative {
     protected final FeedForward mNN;
     protected final DataSet mTrainData;
     protected final DataSet mTestData;
+    protected final double mRefEng;
     
-    TrainerNative(Basis aBasis, FeedForward aNN, IOptimizer aOptimizer) {
+    private final Vector mGradParaBuf1, mGradParaBuf2;
+    
+    TrainerNative(double aRefEng, Basis aBasis, FeedForward aNN, IOptimizer aOptimizer) {
+        mRefEng = aRefEng;
         mBasis = aBasis;
         mNN = aNN;
         
@@ -48,7 +54,10 @@ public class TrainerNative {
         mTestData = new DataSet();
         
         mOptimizer = aOptimizer;
-        mOptimizer.setParameter(mNN.parameters());
+        IVector tPara = mNN.parameters();
+        mGradParaBuf1 = Vectors.zeros(tPara.size());
+        mGradParaBuf2 = Vectors.zeros(tPara.size());
+        mOptimizer.setParameter(tPara);
         mOptimizer.setLossFunc(para -> {
             double rLoss = 0.0;
             for (int i = 0; i < mTrainData.mSize; ++i) {
@@ -63,11 +72,55 @@ public class TrainerNative {
             }
             return rLoss / mTrainData.mSize;
         });
+        mOptimizer.setLossFuncGrad((para, grad) -> {
+            grad.fill(0.0);
+            double rLoss = 0.0;
+            for (int i = 0; i < mTrainData.mSize; ++i) {
+                double rEng = 0.0;
+                Vector[] tFp = mTrainData.mFp.get(i);
+                mGradParaBuf2.fill(0.0);
+                for (Vector tSubFp : tFp) {
+                    rEng += aNN.backwardFull(tSubFp, null, mGradParaBuf1);
+                    mGradParaBuf2.plus2this(mGradParaBuf1);
+                }
+                rEng /= tFp.length;
+                double tErr = rEng - mTrainData.mEng.get(i);
+                grad.operation().mplus2this(mGradParaBuf2, 2.0 * tErr / tFp.length);
+                rLoss += tErr*tErr;
+            }
+            grad.div2this(mTrainData.mSize);
+            return rLoss / mTrainData.mSize;
+        });
     }
-    public TrainerNative(Basis aBasis, IOptimizer aOptimizer) {
-        this(aBasis, FeedForward.init(aBasis.size(), new int[]{32, 32}, RANDOM::nextGaussian), aOptimizer);
+    public TrainerNative(double aRefEng, Basis aBasis, IOptimizer aOptimizer) {
+        this(aRefEng, aBasis, FeedForward.init(aBasis.size(), new int[]{32, 32}, RANDOM::nextGaussian), aOptimizer);
     }
-    public TrainerNative(Basis aBasis) {
-        this(aBasis, new Adam());
+    public TrainerNative(double aRefEng, Basis aBasis) {
+        this(aRefEng, aBasis, new Adam());
+    }
+    
+    
+    public void addTrainData(IAtomData aAtomData, double aEnergy) {
+        // 由于数据集不完整因此这里不去做归一化
+        final int tAtomNum = aAtomData.atomNumber();
+        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+            Vector[] rFp = new Vector[tAtomNum];
+            mTrainData.mFp.add(rFp);
+            for (int i = 0; i < tAtomNum; ++i) {
+                Vector tFp = Vectors.zeros(mBasis.size());
+                mBasis.eval(tAPC, i, tFp);
+                rFp[i] = tFp;
+                // 计算相对能量值
+                aEnergy -= mRefEng;
+            }
+        }
+        // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
+        mTrainData.mEng.add(aEnergy/tAtomNum);
+        ++mTrainData.mSize;
+    }
+    
+    /** 开始训练模型，这里直接训练给定的步数 */
+    public void train(int aEpochs, boolean aPrintLog) {
+        mOptimizer.run(aEpochs, aPrintLog);
     }
 }
