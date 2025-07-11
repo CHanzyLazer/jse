@@ -1,6 +1,5 @@
 package jsex.nnap.nn;
 
-import jse.code.CS;
 import jse.code.UT;
 import jse.math.IDataShell;
 import jse.math.MathEX;
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.DoubleSupplier;
 
 import static jse.code.CS.RANDOM;
 

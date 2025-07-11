@@ -14,12 +14,13 @@ import static jse.math.MathEX.Code.DBL_EPSILON;
  */
 public abstract class AbstractOptimizer implements IOptimizer {
     protected IVector mParameter = null;
-    protected Vector mParameterStep = null;
+    protected Vector mParameterStep = null, mGradBuf = null;
     
     private ILossFunc mLossFunc = null;
     private ILossFuncGrad mLossFuncGrad = null;
     
-    protected double mGamma = Double.NaN, mC1 = Double.NaN;
+    protected double mC1 = Double.NaN, mC2 = Double.NaN;
+    protected int mMaxIter = -1;
     protected boolean mLineSearch = false;
     
     private Vector mGrad = null;
@@ -35,10 +36,10 @@ public abstract class AbstractOptimizer implements IOptimizer {
         if (aRequireGrad) {
             if (mLossFuncGrad == null) throw new IllegalStateException("no loss func gradient set");
             mGradValid = true;
-            return mLossFuncGrad.call(mParameter, mGrad);
+            return mLossFuncGrad.call(mGrad);
         }
         if (mLossFunc == null) throw new IllegalStateException("no loss func set");
-        return mLossFunc.call(mParameter);
+        return mLossFunc.call();
     }
     /**
      * 调用此方法来进行损失函数值计算
@@ -71,8 +72,11 @@ public abstract class AbstractOptimizer implements IOptimizer {
      */
     @Override public AbstractOptimizer setParameter(IVector aParameter) {
         mParameter = aParameter;
-        if (aParameter != null) mParameterStep = Vectors.zeros(aParameter.size());
-        if (aParameter != null) mGrad = Vectors.zeros(aParameter.size());
+        if (aParameter != null) {
+            mParameterStep = Vectors.zeros(aParameter.size());
+            mGrad = Vectors.zeros(aParameter.size());
+            mGradBuf = Vectors.zeros(aParameter.size());
+        }
         invalidGrad();
         reset();
         return this;
@@ -97,19 +101,21 @@ public abstract class AbstractOptimizer implements IOptimizer {
     }
     /**
      * 设置需要使用
-     * <a href="https://en.wikipedia.org/wiki/Backtracking_line_search">Armijo 线搜索</a>
-     * @param aGamma Armijo 线搜索中的参数 gamma，默认为 {@code 0.5}
+     * <a href="https://en.wikipedia.org/wiki/Wolfe_conditions">strong Wolfe 线搜索</a>
      * @param aC1 Armijo 线搜索中的参数 c1，默认为 {@code 0.0001}
+     * @param aC2 Wolfe 线搜索中的参数 c2，默认为 {@code 0.1}
+     * @param aMaxIter 限制的最大迭代次数，默认为 {@code 20}
      * @return 自身方便链式调用
      */
-    public AbstractOptimizer setLineSearchArmijo(double aGamma, double aC1) {
-        mGamma = aGamma;
+    public AbstractOptimizer setLineSearchStrongWolfe(double aC1, double aC2, int aMaxIter) {
         mC1 = aC1;
+        mC2 = aC2;
+        mMaxIter = aMaxIter;
         mLineSearch = true;
         return this;
     }
     @Override public AbstractOptimizer setLineSearch() {
-        return setLineSearchArmijo(0.5, 0.0001);
+        return setLineSearchStrongWolfe(0.0001, 0.1, 20);
     }
     @Override public AbstractOptimizer setNoLineSearch() {
         mLineSearch = false;
@@ -149,26 +155,57 @@ public abstract class AbstractOptimizer implements IOptimizer {
      */
     protected abstract double calStep(int aStep);
     /**
-     * 应用线搜索，这里使用 Armijo 线搜索。
+     * 应用线搜索，现在统一使用 strong Wolfe 条件的线搜索。
      * 将线搜索结果写入 {@link #mParameterStep}
      * @param aStep 当前的迭代步数
      * @return 进行线搜索的步数
      */
     protected int lineSearch(int aStep, double aLoss) {
+        double tGradA0 = grad().operation().dot(mParameterStep);
+        if (tGradA0 >= 0) throw new IllegalStateException("positive gradient");
         int tStep = 0;
-        IVector tGrad = grad();
-        while (true) {
-            double tGradA = tGrad.operation().dot(mParameterStep);
-            if (tGradA >= 0) throw new IllegalStateException("positive gradient");
-            double tTarget = aLoss + mC1*tGradA;
-            mParameter.plus2this(mParameterStep);
-            double tLoss = eval();
-            mParameter.minus2this(mParameterStep);
-            if (tLoss <= tTarget) return tStep;
-            mParameterStep.multiply2this(mGamma);
-            ++tStep;
+        double tAlpha = 1.0;
+        double tAlphaL = 0.0, tAlphaR = Double.NaN;
+        double tLossL = aLoss, tLossR = Double.NaN, tGradL = tGradA0;
+        for (; tStep < mMaxIter; ++tStep) {
+            // 先简单判断中间分点是否满足 Armijo + strong Wolfe
+            mParameter.operation().mplus2this(mParameterStep, tAlpha);
+            double tLoss = mLossFuncGrad.call(mGradBuf);
+            mParameter.operation().mplus2this(mParameterStep, -tAlpha);
+            double tGradA = mGradBuf.operation().dot(mParameterStep);
+            final boolean tArmijoOK = tLoss <= aLoss + mC1*tGradA0*tAlpha;
+            if (tArmijoOK) {
+                if (Math.abs(tGradA) <= -mC2*tGradA0) {
+                    mParameterStep.multiply2this(tAlpha);
+                    return tStep;
+                }
+            }
+            // 判断中间点是可以作为左端还是右端
+            if (!tArmijoOK || tGradA>0) {
+                // 如果中间点不满足 Armijo 则一定为右端点
+                // 如果中间点斜率为正则一定为右端点
+                tAlphaR = tAlpha; tLossR = tLoss;
+                tAlpha = lineSearchChoose(tAlphaL, tAlphaR, tLossL, tLossR, tGradL);
+            } else
+            if (tGradA < mC2*tGradA0) {
+                // 如果中间点斜率过低则总是可以作为左端点
+                tAlphaL = tAlpha; tLossL = tLoss; tGradL = tGradA;
+                tAlpha = Double.isNaN(tAlphaR) ? tAlphaL*2.0 :
+                    lineSearchChoose(tAlphaL, tAlphaR, tLossL, tLossR, tGradL);
+            }
         }
+        return tStep;
     }
+    protected double lineSearchChoose(double aAlphaL, double aAlphaR, double aLossL, double aLossR, double aGradL) {
+        // 采用二次样条插值，例外情况这里简单回退到二分
+        double tAlphaGap = aAlphaR - aAlphaL;
+        double tA = (aLossR - aLossL - aGradL*tAlphaGap) / (tAlphaGap*tAlphaGap);
+        if (tA <= 0) return (aAlphaL+aAlphaR) * 0.5;
+        double tAlpha = aAlphaL - aGradL / (2*tA);
+        if (tAlpha<aAlphaL || tAlpha>aAlphaR) return (aAlphaL+aAlphaR) * 0.5;
+        return tAlpha;
+    }
+    
     /**
      * 应用迭代步长，默认直接运算 {@code mParameter.plus2this(mParameterStep)}。
      * 重写来实现自定义的更新策略

@@ -2,7 +2,6 @@ package jsex.nnap;
 
 import jse.atom.AtomicParameterCalculator;
 import jse.atom.IAtomData;
-import jse.cache.VectorCache;
 import jse.code.collection.DoubleList;
 import jse.math.MathEX;
 import jse.math.vector.IVector;
@@ -11,14 +10,11 @@ import jse.math.vector.Vectors;
 import jse.opt.Adam;
 import jse.opt.IOptimizer;
 import jsex.nnap.basis.Basis;
-import jsex.nnap.basis.Mirror;
 import jsex.nnap.nn.FeedForward;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static jse.code.CS.RANDOM;
 
 /**
  * 纯 jse 实现的 nnap 训练器，不借助 pytorch
@@ -68,7 +64,7 @@ public class TrainerNative {
         mGradParaBuf1 = Vectors.zeros(tPara.size());
         mGradParaBuf2 = Vectors.zeros(tPara.size());
         mOptimizer.setParameter(tPara);
-        mOptimizer.setLossFunc(para -> {
+        mOptimizer.setLossFunc(() -> {
             double rLoss = 0.0;
             for (int i = 0; i < mTrainData.mSize; ++i) {
                 double rEng = 0.0;
@@ -83,7 +79,7 @@ public class TrainerNative {
             }
             return rLoss / mTrainData.mSize;
         });
-        mOptimizer.setLossFuncGrad((para, grad) -> {
+        mOptimizer.setLossFuncGrad(grad -> {
             grad.fill(0.0);
             double rLoss = 0.0;
             for (int i = 0; i < mTrainData.mSize; ++i) {

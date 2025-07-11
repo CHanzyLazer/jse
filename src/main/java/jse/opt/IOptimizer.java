@@ -10,8 +10,8 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @ApiStatus.Experimental
 public interface IOptimizer {
-    @FunctionalInterface interface ILossFunc {double call(IVector aParameter);}
-    @FunctionalInterface interface ILossFuncGrad {double call(IVector aParameter, Vector rGrad);}
+    @FunctionalInterface interface ILossFunc {double call();}
+    @FunctionalInterface interface ILossFuncGrad {double call(Vector rGrad);}
     
     /**
      * 设置需要优化的参数
@@ -36,7 +36,7 @@ public interface IOptimizer {
     
     /**
      * 设置需要线搜索，这里默认使用
-     * <a href="https://en.wikipedia.org/wiki/Backtracking_line_search">Armijo 线搜索</a>
+     * <a href="https://en.wikipedia.org/wiki/Wolfe_conditions">strong Wolfe 线搜索</a>
      * @return 自身方便链式调用
      */
     IOptimizer setLineSearch();
