@@ -13,8 +13,8 @@ import static jse.math.MathEX.Code.DBL_EPSILON;
  * @author liqa
  */
 public abstract class AbstractOptimizer implements IOptimizer {
-    protected IVector mParameter = null;
-    protected Vector mParameterStep = null, mGradBuf = null;
+    private IVector mParameter = null;
+    private Vector mParameterStep = null;
     
     private ILossFunc mLossFunc = null;
     private ILossFuncGrad mLossFuncGrad = null;
@@ -25,6 +25,8 @@ public abstract class AbstractOptimizer implements IOptimizer {
     
     private Vector mGrad = null;
     private boolean mGradValid = false;
+    private double mLoss = Double.NaN;
+    private boolean mLossValid = false;
     
     
     /**
@@ -36,10 +38,14 @@ public abstract class AbstractOptimizer implements IOptimizer {
         if (aRequireGrad) {
             if (mLossFuncGrad == null) throw new IllegalStateException("no loss func gradient set");
             mGradValid = true;
-            return mLossFuncGrad.call(mGrad);
+            mLoss = mLossFuncGrad.call(mGrad);
+            mLossValid = true;
+            return mLoss;
         }
         if (mLossFunc == null) throw new IllegalStateException("no loss func set");
-        return mLossFunc.call();
+        mLoss = mLossFunc.call();
+        mLossValid = true;
+        return mLoss;
     }
     /**
      * 调用此方法来进行损失函数值计算
@@ -57,11 +63,27 @@ public abstract class AbstractOptimizer implements IOptimizer {
         return mGrad;
     }
     /**
+     * 获取当前的 loss 值，如果缓存不合法则自动重新计算
+     * @return 当前的 loss 值
+     */
+    protected double loss() {
+        if (!mLossValid) return eval();
+        return mLoss;
+    }
+    /**
      * 清空当前缓存的梯度值，表明此时已经不合法；
      * 之后需要梯度时则会自动重新计算
      */
     protected void invalidGrad() {
         mGradValid = false;
+    }
+    /**
+     * 清空当前缓存的 loss 值，会顺便清空梯度值，表明此时已经不合法；
+     * 之后需要loss 或梯度时则会自动重新计算
+     */
+    protected void invalidLoss() {
+        mGradValid = false;
+        mLossValid = false;
     }
     
     
@@ -75,9 +97,8 @@ public abstract class AbstractOptimizer implements IOptimizer {
         if (aParameter != null) {
             mParameterStep = Vectors.zeros(aParameter.size());
             mGrad = Vectors.zeros(aParameter.size());
-            mGradBuf = Vectors.zeros(aParameter.size());
         }
-        invalidGrad();
+        invalidLoss();
         reset();
         return this;
     }
@@ -88,6 +109,8 @@ public abstract class AbstractOptimizer implements IOptimizer {
      */
     @Override public AbstractOptimizer setLossFunc(ILossFunc aLossFunc) {
         mLossFunc = aLossFunc;
+        invalidLoss();
+        reset();
         return this;
     }
     /**
@@ -97,6 +120,8 @@ public abstract class AbstractOptimizer implements IOptimizer {
      */
     @Override public AbstractOptimizer setLossFuncGrad(ILossFuncGrad aLossFuncGrad) {
         mLossFuncGrad = aLossFuncGrad;
+        invalidLoss();
+        reset();
         return this;
     }
     /**
@@ -132,11 +157,17 @@ public abstract class AbstractOptimizer implements IOptimizer {
         checkSetting();
         double oLoss = Double.NaN;
         for (int step = 0; step < aMaxStep; ++step) {
-            double tLoss = calStep(step);
-            int tLineSearchStep = mLineSearch ? lineSearch(step, tLoss) : 0;
-            if (checkBreak(step, tLoss, oLoss)) break;
-            applyStep(step);
+            calStep(step, mParameter, mParameterStep);
+            double tLoss = loss();
+            int tLineSearchStep;
+            if (mLineSearch) {
+                tLineSearchStep = lineSearch(step, tLoss, mParameter, mParameterStep);
+            } else {
+                applyStep(step);
+                tLineSearchStep = 0;
+            }
             printLog(step, tLineSearchStep, tLoss);
+            if (checkBreak(step, tLoss, oLoss, mParameterStep)) break;
             oLoss = tLoss;
         }
     }
@@ -148,38 +179,57 @@ public abstract class AbstractOptimizer implements IOptimizer {
         if (mParameter == null) throw new IllegalStateException("no parameter set");
     }
     /**
-     * 计算参数需要的迭代长度，并将计算结果写入 {@link #mParameterStep}。
+     * 计算参数需要的迭代长度，并将计算结果写入 {@code rParameterStep}。
      * 会借用内部缓存的梯度从而避免重复计算
      * @param aStep 当前的迭代步数
-     * @return 顺便返回得到的 loss 值
+     * @param aParameter 当前的参数值
+     * @param rParameterStep 需要写入的迭代步长
      */
-    protected abstract double calStep(int aStep);
+    protected abstract void calStep(int aStep, IVector aParameter, Vector rParameterStep);
     /**
      * 应用线搜索，现在统一使用 strong Wolfe 条件的线搜索。
-     * 将线搜索结果写入 {@link #mParameterStep}
+     * 将线搜索结果写入 {@code rParameterStep}，并且自动更新 {@code rParameter}
      * @param aStep 当前的迭代步数
+     * @param rParameter 需要实时更新的参数列表
+     * @param rParameterStep 需要写入的更新后的迭代步长
      * @return 进行线搜索的步数
      */
-    protected int lineSearch(int aStep, double aLoss) {
-        double tGradA0 = grad().operation().dot(mParameterStep);
+    protected int lineSearch(int aStep, double aLoss, IVector rParameter, Vector rParameterStep) {
+        IVector tGrad = grad();
+        double tGradA0 = tGrad.operation().dot(rParameterStep);
         if (tGradA0 >= 0) throw new IllegalStateException("positive gradient");
         int tStep = 0;
         double tAlpha = 1.0;
         double tAlphaL = 0.0, tAlphaR = Double.NaN;
         double tLossL = aLoss, tLossR = Double.NaN, tGradL = tGradA0;
-        for (; tStep < mMaxIter; ++tStep) {
+        // 总是线搜索，开启后会在最开始总执行一次 Armijo 线搜索，从而找到合适的步长
+        if (lineSearchAlways()) {
+            // 这步由于总是会被抛弃，因此只计算能量
+            rParameter.plus2this(rParameterStep);
+            double tLoss = eval();
+            rParameter.minus2this(rParameterStep);
+            invalidLoss();
+            // 二次样条拟合
+            double tA = (tLoss - aLoss - tGradA0*tAlpha) / (tAlpha*tAlpha);
+            // 若拟合得到 tA < 0，则说明此区域不是正定的，这里会直接中断
+            if (tA <= 0) return tStep;
+            // 获取适合的 tAlpha
+            tAlpha = Math.min(-tGradA0 / (2*tA), 2.0*tAlpha);
+            ++tStep;
+        }
+        while (true) {
             // 先简单判断中间分点是否满足 Armijo + strong Wolfe
-            mParameter.operation().mplus2this(mParameterStep, tAlpha);
-            double tLoss = mLossFuncGrad.call(mGradBuf);
-            mParameter.operation().mplus2this(mParameterStep, -tAlpha);
-            double tGradA = mGradBuf.operation().dot(mParameterStep);
+            rParameter.operation().mplus2this(rParameterStep, tAlpha);
+            double tLoss = eval(true);
+            double tGradA = tGrad.operation().dot(rParameterStep);
             final boolean tArmijoOK = tLoss <= aLoss + mC1*tGradA0*tAlpha;
-            if (tArmijoOK) {
-                if (Math.abs(tGradA) <= -mC2*tGradA0) {
-                    mParameterStep.multiply2this(tAlpha);
-                    return tStep;
-                }
+            if (tStep>=mMaxIter || (tArmijoOK && Math.abs(tGradA)<=-mC2*tGradA0)) {
+                rParameterStep.multiply2this(tAlpha);
+                updateLearningRate(tAlpha);
+                return tStep;
             }
+            // 此时不满足线搜索条件，需要重新设置参数
+            rParameter.operation().mplus2this(rParameterStep, -tAlpha);
             // 判断中间点是可以作为左端还是右端
             if (!tArmijoOK || tGradA>0) {
                 // 如果中间点不满足 Armijo 则一定为右端点
@@ -193,8 +243,8 @@ public abstract class AbstractOptimizer implements IOptimizer {
                 tAlpha = Double.isNaN(tAlphaR) ? tAlphaL*2.0 :
                     lineSearchChoose(tAlphaL, tAlphaR, tLossL, tLossR, tGradL);
             }
+            ++tStep;
         }
-        return tStep;
     }
     protected double lineSearchChoose(double aAlphaL, double aAlphaR, double aLossL, double aLossR, double aGradL) {
         // 采用二次样条插值，例外情况这里简单回退到二分
@@ -205,6 +255,13 @@ public abstract class AbstractOptimizer implements IOptimizer {
         if (tAlpha<aAlphaL || tAlpha>aAlphaR) return (aAlphaL+aAlphaR) * 0.5;
         return tAlpha;
     }
+    protected boolean lineSearchAlways() {
+        return false;
+    }
+    protected void updateLearningRate(double aLR) {
+        /**/
+    }
+    
     
     /**
      * 应用迭代步长，默认直接运算 {@code mParameter.plus2this(mParameterStep)}。
@@ -241,9 +298,10 @@ public abstract class AbstractOptimizer implements IOptimizer {
      * @param aStep 当前的迭代步数
      * @param aLoss 当前的 loss 值
      * @param aLastLoss 上一步的 loss 值，如果是第一步则为 {@link Double#NaN}
+     * @param aParameterStep 这次迭代的步长
      * @return 是否进行中断
      */
-    protected boolean checkBreak(int aStep, double aLoss, double aLastLoss) {
+    protected boolean checkBreak(int aStep, double aLoss, double aLastLoss, Vector aParameterStep) {
         if (aStep==0 || Double.isNaN(aLastLoss)) return false;
         return Math.abs(aLastLoss-aLoss) < Math.abs(aLastLoss)*DBL_EPSILON;
     }

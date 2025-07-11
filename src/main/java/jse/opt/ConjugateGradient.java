@@ -66,84 +66,43 @@ public class ConjugateGradient extends AbstractOptimizer {
         return this;
     }
     
-    /**
-     * {@link ConjugateGradient} 需要使用更加精确的线搜索来保证收敛速度
-     * @param aStep {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override protected int lineSearch(int aStep, double aLoss) {
-        int tStep = 0;
-        double tAlpha = 1.0;
-        double tGradA = grad().operation().dot(mParameterStep);
-        if (tGradA >= 0) throw new IllegalStateException("positive gradient");
-        // CG 总是会执行一次线搜索，从而找到合适的长度
-        mParameter.plus2this(mParameterStep);
-        double tLoss = eval();
-        mParameter.minus2this(mParameterStep);
-        // 二次样条拟合
-        double tA = (tLoss - aLoss - tGradA*tAlpha) / (tAlpha*tAlpha);
-        // 若拟合得到 tA < 0，则说明此区域不是正定的，保留原本步长即可
-        if (tA <= 0) return tStep;
-        // 获取适合的 tAlpha
-        tAlpha = Math.min(-tGradA / (2*tA), 3.0*tAlpha);
-        ++tStep;
-        while (true) {
-            double tTarget = aLoss + mC1*tGradA*tAlpha;
-            mParameter.operation().mplus2this(mParameterStep, tAlpha);
-            tLoss = eval();
-            mParameter.operation().mplus2this(mParameterStep, -tAlpha);
-            if (tLoss <= tTarget) {
-                mParameterStep.multiply2this(tAlpha);
-                if (mAdaptiveEta) {
-                    if (tAlpha > 2.0) mEta *= 2.0;
-                    else if (tAlpha < 0.5) mEta *= 0.5;
-                }
-                return tStep;
-            }
-            // 不满足则再次二次样条拟合
-            tA = (tLoss - aLoss - tGradA*tAlpha) / (tAlpha*tAlpha);
-            // 若拟合得到 tA < 0，则说明此区域不是正定的，保留原本步长即可
-            if (tA <= 0) {
-                mParameterStep.multiply2this(tAlpha);
-                if (mAdaptiveEta) {
-                    if (tAlpha > 2.0) mEta *= 2.0;
-                    else if (tAlpha < 0.5) mEta *= 0.5;
-                }
-                return tStep;
-            }
-            // 获取适合的 tAlpha
-            tAlpha = Math.min(-tGradA / (2*tA), 3.0*tAlpha);
-            ++tStep;
+    @Override protected boolean lineSearchAlways() {
+        return true;
+    }
+    @Override protected void updateLearningRate(double aLR) {
+        if (mAdaptiveEta) {
+            if (aLR > 1.5) mEta *= 1.5;
+            else if (aLR < 0.7) mEta *= 0.7;
         }
     }
     
     /**
      * {@inheritDoc}
      * @param aStep {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aParameter {@inheritDoc}
+     * @param rParameterStep {@inheritDoc}
      */
-    @Override protected double calStep(int aStep) {
+    @Override protected void calStep(int aStep, IVector aParameter, Vector rParameterStep) {
         double tLoss = eval(true);
         IVector tGrad = grad();
         if (mIsFirst) {
             mIsFirst = false;
             tGrad.operation().multiply2dest(-1, mLastStep);
-            tGrad.operation().multiply2dest(-mEta, mParameterStep);
+            tGrad.operation().multiply2dest(-mEta, rParameterStep);
             mLastGrad.fill(tGrad);
-            return tLoss;
+            return;
         }
         double tDiv = mLastGrad.operation().dot();
         mLastGrad.operation().lminus2this(tGrad);
         final double tBeta = tGrad.operation().dot(mLastGrad) / tDiv;
         if (tBeta < 0) {
             tGrad.operation().multiply2dest(-1, mLastStep);
-            tGrad.operation().multiply2dest(-mEta, mParameterStep);
+            tGrad.operation().multiply2dest(-mEta, rParameterStep);
             mLastGrad.fill(tGrad);
-            return tLoss;
+            return;
         }
         mLastStep.operation().operate2this(tGrad, (p, r) -> -r + tBeta*p);
-        mLastStep.operation().multiply2dest(mEta, mParameterStep);
+        mLastStep.operation().multiply2dest(mEta, rParameterStep);
         mLastGrad.fill(tGrad);
-        return tLoss;
     }
 }

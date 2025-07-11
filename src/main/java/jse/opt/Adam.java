@@ -77,17 +77,16 @@ public class Adam extends AbstractOptimizer {
     /**
      * {@inheritDoc}
      * @param aStep {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aParameter {@inheritDoc}
+     * @param rParameterStep {@inheritDoc}
      */
-    @Override protected double calStep(int aStep) {
-        double tLoss = eval(true);
+    @Override protected void calStep(int aStep, IVector aParameter, Vector rParameterStep) {
         IVector tGrad = grad();
         mMomentum.operation().operate2this(tGrad, (l, r) -> mBeta1*l + (1-mBeta1)*r);
         mVariance.operation().operate2this(tGrad, (l, r) -> mBeta2*l + (1-mBeta2)*r*r);
         mBeta1Prod *= mBeta1;
         mBeta2Prod *= mBeta2;
-        mMomentum.operation().operate2dest(mVariance, mParameterStep,
+        mMomentum.operation().operate2dest(mVariance, rParameterStep,
                                            (m, v) -> -mEta * m/(1-mBeta1Prod) / (MathEX.Fast.sqrt(v/(1-mBeta2Prod)) + mEps));
-        return tLoss;
     }
 }

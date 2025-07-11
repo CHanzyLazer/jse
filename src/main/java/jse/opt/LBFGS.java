@@ -94,20 +94,20 @@ public class LBFGS extends AbstractOptimizer {
     /**
      * {@inheritDoc}
      * @param aStep {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aParameter {@inheritDoc}
+     * @param rParameterStep {@inheritDoc}
      */
-    @Override protected double calStep(int aStep) {
-        double tLoss = eval(true);
+    @Override protected void calStep(int aStep, IVector aParameter, Vector rParameterStep) {
         IVector tGrad = grad();
         if (mIsFirst) {
             mIsFirst = false;
-            tGrad.operation().multiply2dest(-FIRST_ETA, mParameterStep); // 实际第一步会减小步长来确保收敛
-            mLastPara.fill(mParameter);
+            tGrad.operation().multiply2dest(-FIRST_ETA, rParameterStep); // 实际第一步会减小步长来确保收敛
+            mLastPara.fill(aParameter);
             mLastGrad.fill(tGrad);
-            return tLoss;
+            return;
         }
         // 优先更新步长
-        mLastPara.operation().lminus2this(mParameter);
+        mLastPara.operation().lminus2this(aParameter);
         mLastGrad.operation().lminus2this(tGrad);
         double tDotSY = mLastPara.operation().dot(mLastGrad);
         double tDotYY = mLastGrad.operation().dot(mLastGrad);
@@ -132,11 +132,11 @@ public class LBFGS extends AbstractOptimizer {
             mMemS[mUsedMemorySize].fill(mLastPara);
             mMemY[mUsedMemorySize].fill(mLastGrad);
             ++mUsedMemorySize;
-            mLastPara.fill(mParameter);
+            mLastPara.fill(aParameter);
             mLastGrad.fill(tGrad);
         } else {
             // 否则需要回滚缓存
-            mLastPara.operation().lminus2this(mParameter);
+            mLastPara.operation().lminus2this(aParameter);
             mLastGrad.operation().lminus2this(tGrad);
             // dot 值后续还需要使用
             if (mUsedMemorySize > 0) {
@@ -146,21 +146,20 @@ public class LBFGS extends AbstractOptimizer {
         }
         // 特殊处理没有缓存的情况
         if (mUsedMemorySize == 0) {
-            tGrad.operation().multiply2dest(-FIRST_ETA, mParameterStep); // 实际第一步会减小步长来确保收敛
-            return tLoss;
+            tGrad.operation().multiply2dest(-FIRST_ETA, rParameterStep); // 实际第一步会减小步长来确保收敛
+            return;
         }
         // 开始两轮循环的 LBFGS 过程
-        mParameterStep.fill(tGrad);
+        rParameterStep.fill(tGrad);
         for (int m = mUsedMemorySize-1; m >= 0; --m) {
-            mAlpha[m] = mMemRho[m] * mMemS[m].operation().dot(mParameterStep);
-            mParameterStep.operation().mplus2this(mMemY[m], -mAlpha[m]);
+            mAlpha[m] = mMemRho[m] * mMemS[m].operation().dot(rParameterStep);
+            rParameterStep.operation().mplus2this(mMemY[m], -mAlpha[m]);
         }
-        mParameterStep.multiply2this(tDotSY / tDotYY);
+        rParameterStep.multiply2this(tDotSY / tDotYY);
         for (int m = 0; m < mUsedMemorySize; ++m) {
-            double tBeta = mMemRho[m] * mMemY[m].operation().dot(mParameterStep);
-            mParameterStep.operation().mplus2this(mMemS[m], mAlpha[m] - tBeta);
+            double tBeta = mMemRho[m] * mMemY[m].operation().dot(rParameterStep);
+            rParameterStep.operation().mplus2this(mMemS[m], mAlpha[m] - tBeta);
         }
-        mParameterStep.negative2this();
-        return tLoss;
+        rParameterStep.negative2this();
     }
 }

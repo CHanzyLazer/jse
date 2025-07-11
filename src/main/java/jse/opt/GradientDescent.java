@@ -1,5 +1,8 @@
 package jse.opt;
 
+import jse.math.vector.IVector;
+import jse.math.vector.Vector;
+
 /**
  * 最简单的梯度下降算法实现优化器：
  * <pre> {@code
@@ -26,11 +29,10 @@ public class GradientDescent extends AbstractOptimizer {
     /**
      * {@inheritDoc}
      * @param aStep {@inheritDoc}
-     * @return {@inheritDoc}
+     * @param aParameter {@inheritDoc}
+     * @param rParameterStep {@inheritDoc}
      */
-    @Override protected double calStep(int aStep) {
-        double tLoss = eval(true);
-        grad().operation().multiply2dest(-mEta, mParameterStep);
-        return tLoss;
+    @Override protected void calStep(int aStep, IVector aParameter, Vector rParameterStep) {
+        grad().operation().multiply2dest(-mEta, rParameterStep);
     }
 }
