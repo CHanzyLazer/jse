@@ -22,11 +22,13 @@ import jse.math.vector.Vectors;
  *   for i in k..>(k-m):
  *     a_i <- rho_i (s_i · q)
  *     q <- q - a_i y_i
- *   r <- (s_(k-m+1) · y_(k-m+1)) / (y_(k-m+1) · y_(k-m+1)) q
+ *   r <- (s_k · y_k) / (y_k · y_k) q
  *   for i in (k-m)<..k:
  *     b_i <- rho_i (y_i · r)
  *     r <- r + s_i (a_i - b_i)
  * } </pre>
+ * 这里实际使用了 Nocedal & Wright 的 Numerical Optimization
+ * 中的 7.4 的实现
  *
  * @see IOptimizer
  * @author liqa
@@ -43,7 +45,7 @@ public class LBFGS extends AbstractOptimizer {
     
     /**
      * 创建一个 LBFGS 优化器
-     * @param aM 使用的缓存长度，默认为 {@code 100}
+     * @param aM 使用的缓存长度，默认为 {@code 20}
      */
     public LBFGS(int aM) {
         mMemorySize = aM;
@@ -55,7 +57,7 @@ public class LBFGS extends AbstractOptimizer {
     /**
      * 创建一个 LBFGS 优化器
      */
-    public LBFGS() {this(100);}
+    public LBFGS() {this(20);}
     
     /**
      * {@inheritDoc}
@@ -100,9 +102,10 @@ public class LBFGS extends AbstractOptimizer {
         // 优先更新步长
         mLastPara.operation().lminus2this(mParameter);
         mLastGrad.operation().lminus2this(tGrad);
-        double tDot = mLastPara.operation().dot(mLastGrad);
+        double tDotSY = mLastPara.operation().dot(mLastGrad);
+        double tDotYY = mLastGrad.operation().dot(mLastGrad);
         // 判断一次大小用于确保数值稳定
-        if (tDot > UPDATE_EPS) {
+        if (tDotSY > UPDATE_EPS) {
             // 容量满了简单移除最开头的
             if (mUsedMemorySize == mMemorySize) {
                 --mUsedMemorySize;
@@ -118,7 +121,7 @@ public class LBFGS extends AbstractOptimizer {
                 mMemS[mUsedMemorySize] = tS0;
                 mMemY[mUsedMemorySize] = tY0;
             }
-            mMemRho[mUsedMemorySize] = 1.0 / tDot;
+            mMemRho[mUsedMemorySize] = 1.0 / tDotSY;
             mMemS[mUsedMemorySize].fill(mLastPara);
             mMemY[mUsedMemorySize].fill(mLastGrad);
             ++mUsedMemorySize;
@@ -128,6 +131,11 @@ public class LBFGS extends AbstractOptimizer {
             // 否则需要回滚缓存
             mLastPara.operation().lminus2this(mParameter);
             mLastGrad.operation().lminus2this(tGrad);
+            // dot 值后续还需要使用
+            if (mUsedMemorySize > 0) {
+                tDotSY = mMemS[mUsedMemorySize-1].operation().dot(mMemY[mUsedMemorySize-1]);
+                tDotYY = mMemY[mUsedMemorySize-1].operation().dot(mMemY[mUsedMemorySize-1]);
+            }
         }
         // 特殊处理没有缓存的情况
         if (mUsedMemorySize == 0) {
@@ -140,7 +148,7 @@ public class LBFGS extends AbstractOptimizer {
             mAlpha[m] = mMemRho[m] * mMemS[m].operation().dot(mParameterStep);
             mParameterStep.operation().mplus2this(mMemY[m], -mAlpha[m]);
         }
-        mParameterStep.multiply2this(mMemS[0].operation().dot(mMemY[0]) / mMemY[0].operation().dot(mMemY[0]));
+        mParameterStep.multiply2this(tDotSY / tDotYY);
         for (int m = 0; m < mUsedMemorySize; ++m) {
             double tBeta = mMemRho[m] * mMemY[m].operation().dot(mParameterStep);
             mParameterStep.operation().mplus2this(mMemS[m], mAlpha[m] - tBeta);
