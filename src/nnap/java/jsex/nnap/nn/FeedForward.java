@@ -1,7 +1,9 @@
 package jsex.nnap.nn;
 
+import jse.code.CS;
 import jse.code.UT;
 import jse.math.IDataShell;
+import jse.math.MathEX;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
@@ -10,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
+
+import static jse.code.CS.RANDOM;
 
 /**
  * 简单的前馈神经网络 (FFNN) 实现，原生实现在非 batch 的情况下可以有最快的性能
@@ -62,7 +66,7 @@ public class FeedForward extends NeuralNetwork {
         mHiddenGrads = Vectors.zeros(mHiddenBiasesSize);
     }
     
-    public static FeedForward init(int aInputDim, int[] aHiddenDims, final DoubleSupplier aSup) {
+    public static FeedForward init(int aInputDim, int[] aHiddenDims) {
         int tHiddenNumber = aHiddenDims.length;
         if (tHiddenNumber == 0) throw new IllegalArgumentException("At least one hidden layer is required");
         int tHiddenWeightsSize = 0;
@@ -80,7 +84,8 @@ public class FeedForward extends NeuralNetwork {
         int tShift = 0;
         for (int tHiddenDim : aHiddenDims) {
             int tSize = tHiddenDim*tColNum;
-            aHiddenWeights.subVec(tShift, tShift+tSize).fill(i -> aSup.getAsDouble());
+            double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
+            aHiddenWeights.subVec(tShift, tShift+tSize).fill(i -> RANDOM.nextDouble(-tBound, tBound));
             final int fColNum = tColNum;
             final int tShiftB = tHiddenWeightsSize-tShift-tSize;
             aIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
@@ -94,9 +99,19 @@ public class FeedForward extends NeuralNetwork {
         for (int i = 0; i < tHiddenWeightsSize; ++i) {
             aHiddenWeightsBackward.set(aIndexToBackward.get(i), aHiddenWeights.get(i));
         }
-        Vector aHiddenBiases = Vectors.from(tHiddenBiasesSize, i -> aSup.getAsDouble());
-        Vector aOutputWeight = Vectors.from(aHiddenDims[tHiddenNumber-1], i -> aSup.getAsDouble());
-        double aOutputBias = aSup.getAsDouble();
+        Vector aHiddenBiases = Vectors.zeros(tHiddenBiasesSize);
+        tShift = 0;
+        tColNum = aInputDim;
+        for (int tHiddenDim : aHiddenDims) {
+            double tBound = MathEX.Fast.sqrt(1.0 / tColNum); // Kaiming 均匀初始化
+            aHiddenBiases.subVec(tShift, tShift+tHiddenDim).fill(i -> RANDOM.nextDouble(-tBound, tBound));
+            tShift += tHiddenDim;
+            tColNum = tHiddenDim;
+        }
+        double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
+        Vector aOutputWeight = Vectors.from(aHiddenDims[tHiddenNumber-1], i -> RANDOM.nextDouble(-tBound, tBound));
+        double tBoundB = MathEX.Fast.sqrt(1.0 / tColNum); // Kaiming 均匀初始化
+        double aOutputBias = RANDOM.nextDouble(-tBoundB, tBoundB);
         
         return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, aOutputBias);
     }

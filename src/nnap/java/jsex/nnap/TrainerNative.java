@@ -2,13 +2,16 @@ package jsex.nnap;
 
 import jse.atom.AtomicParameterCalculator;
 import jse.atom.IAtomData;
+import jse.cache.VectorCache;
 import jse.code.collection.DoubleList;
+import jse.math.MathEX;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 import jse.opt.Adam;
 import jse.opt.IOptimizer;
 import jsex.nnap.basis.Basis;
+import jsex.nnap.basis.Mirror;
 import jsex.nnap.nn.FeedForward;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -41,8 +44,11 @@ public class TrainerNative {
     protected final FeedForward mNN;
     protected final DataSet mTrainData;
     protected final DataSet mTestData;
+    protected final Vector mNormMu, mNormSigma;
+    protected double mNormMuEng = 0.0, mNormSigmaEng = 0.0;
     protected final double mRefEng;
     
+    private final Vector mFpBuf;
     private final Vector mGradParaBuf1, mGradParaBuf2;
     
     TrainerNative(double aRefEng, Basis aBasis, FeedForward aNN, IOptimizer aOptimizer) {
@@ -52,6 +58,10 @@ public class TrainerNative {
         
         mTrainData = new DataSet();
         mTestData = new DataSet();
+        int tSize = mBasis.size();
+        mNormMu = Vector.zeros(tSize);
+        mNormSigma = Vector.zeros(tSize);
+        mFpBuf = Vector.zeros(tSize);
         
         mOptimizer = aOptimizer;
         IVector tPara = mNN.parameters();
@@ -64,10 +74,11 @@ public class TrainerNative {
                 double rEng = 0.0;
                 Vector[] tFp = mTrainData.mFp.get(i);
                 for (Vector tSubFp : tFp) {
-                    rEng += aNN.forward(tSubFp);
+                    mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
+                    rEng += mNN.forward(mFpBuf);
                 }
                 rEng /= tFp.length;
-                double tErr = rEng - mTrainData.mEng.get(i);
+                double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
                 rLoss += tErr*tErr;
             }
             return rLoss / mTrainData.mSize;
@@ -80,11 +91,12 @@ public class TrainerNative {
                 Vector[] tFp = mTrainData.mFp.get(i);
                 mGradParaBuf2.fill(0.0);
                 for (Vector tSubFp : tFp) {
-                    rEng += aNN.backwardFull(tSubFp, null, mGradParaBuf1);
+                    mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
+                    rEng += aNN.backwardFull(mFpBuf, null, mGradParaBuf1);
                     mGradParaBuf2.plus2this(mGradParaBuf1);
                 }
                 rEng /= tFp.length;
-                double tErr = rEng - mTrainData.mEng.get(i);
+                double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
                 grad.operation().mplus2this(mGradParaBuf2, 2.0 * tErr / tFp.length);
                 rLoss += tErr*tErr;
             }
@@ -93,7 +105,7 @@ public class TrainerNative {
         });
     }
     public TrainerNative(double aRefEng, Basis aBasis, IOptimizer aOptimizer) {
-        this(aRefEng, aBasis, FeedForward.init(aBasis.size(), new int[]{32, 32}, RANDOM::nextGaussian), aOptimizer);
+        this(aRefEng, aBasis, FeedForward.init(aBasis.size(), new int[]{32, 32}), aOptimizer);
     }
     public TrainerNative(double aRefEng, Basis aBasis) {
         this(aRefEng, aBasis, new Adam());
@@ -119,8 +131,60 @@ public class TrainerNative {
         ++mTrainData.mSize;
     }
     
+    protected void initNormBasis() {
+        mNormMu.fill(0.0);
+        mNormSigma.fill(0.0);
+        double tDiv = 0.0;
+        for (Vector[] tFp : mTrainData.mFp) for (Vector tSubFp : tFp) {
+            mNormMu.plus2this(tSubFp);
+            mNormSigma.operation().operate2this(tSubFp, (lhs, rhs) -> lhs + rhs*rhs);
+            ++tDiv;
+        }
+        mNormMu.div2this(tDiv);
+        mNormSigma.div2this(tDiv);
+        mNormSigma.operation().operate2this(mNormMu, (lhs, rhs) -> lhs - rhs*rhs);
+        mNormSigma.operation().map2this(MathEX.Fast::sqrt);
+    }
+    protected void initNormEng() {
+        // 这里采用中位数和上下四分位数来归一化能量
+        Vector tSortedEng = mTrainData.mEng.copy2vec();
+        tSortedEng.sort();
+        int tSize = tSortedEng.size();
+        int tSize2 = tSize/2;
+        mNormMuEng = tSortedEng.get(tSize2);
+        if ((tSize&1)==1) {
+            mNormMuEng = (mNormMuEng + tSortedEng.get(tSize2+1))*0.5;
+        }
+        int tSize4 = tSize2/2;
+        double tEng14 = tSortedEng.get(tSize4);
+        double tEng14R = tSortedEng.get(tSize4+1);
+        int tSize34 = tSize2+tSize4;
+        if ((tSize&1)==1) ++tSize34;
+        double tEng34 = tSortedEng.get(tSize34);
+        double tEng34R = tSortedEng.get(tSize34+1);
+        if ((tSize&1)==1) {
+            if ((tSize2&1)==1) {
+                tEng14 = (tEng14 + 3*tEng14R)*0.25;
+                tEng34 = (3*tEng34 + tEng34R)*0.25;
+            } else {
+                tEng14 = (3*tEng14 + tEng14R)*0.25;
+                tEng34 = (tEng34 + 3*tEng34R)*0.25;
+            }
+        } else {
+            if ((tSize2&1)==1) {
+                tEng14 = (tEng14 + tEng14R)*0.5;
+                tEng34 = (tEng34 + tEng34R)*0.5;
+            }
+        }
+        mNormSigmaEng = tEng34 - tEng14;
+    }
+    
     /** 开始训练模型，这里直接训练给定的步数 */
     public void train(int aEpochs, boolean aPrintLog) {
+        // 重新构建归一化参数
+        initNormBasis();
+        initNormEng();
+        // 开始训练
         mOptimizer.run(aEpochs, aPrintLog);
     }
 }
