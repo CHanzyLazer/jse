@@ -215,8 +215,7 @@ public class TrainerNative {
                     mGradParaBuf2.fill(0.0);
                     for (Vector tSubFp : tFp) {
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += aNN.forwardBackward(mFpBuf, mGradParaBuf1);
-                        mGradParaBuf2.plus2this(mGradParaBuf1);
+                        rEng += aNN.forwardBackward(mFpBuf, mGradParaBuf2);
                     }
                     rEng /= tFp.length;
                     double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
@@ -241,8 +240,8 @@ public class TrainerNative {
                         // cal energy
                         Vector tSubFp = tFp[k];
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += aNN.forwardGradBackward(mFpBuf, mGradFpBuf, mGradParaBuf1, mGradFpGradParaBuf.asVecRow());
-                        mGradParaBuf2.plus2this(mGradParaBuf1);
+                        mGradFpGradParaBuf.fill(0.0);
+                        rEng += aNN.forwardGradBackward(mFpBuf, mGradFpBuf, mGradParaBuf2, mGradFpGradParaBuf.asVecRow());
                         // cal force
                         Vector tSubFpPx = tFpPx[k], tSubFpPy = tFpPy[k], tSubFpPz = tFpPz[k];
                         IntVector tSubFpGradNlIndex = tFpGradNlIndex[k], tSubFpGradFpIndex = tFpGradFpIndex[k];

@@ -150,10 +150,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1(JNIEnv *aEnv, jclass
     JSE_NNAP_CONSTANT_INIT_Chebyshev
     // clear fp first
     jdouble *tFp_ = tFp + aShiftFp;
-    jint *tFpGradNlSize_ = tFpGradNlSize==NULL ? NULL : (tFpGradNlSize+aShiftFpGradNlSize);
     for (jint i = 0; i < tSize; ++i) {
         tFp_[i] = 0.0;
-        if (tFpGradNlSize_!=NULL) tFpGradNlSize_[i] = 0;
+    }
+    jint *tFpGradNlSize_ = tFpGradNlSize==NULL ? NULL : (tFpGradNlSize+aShiftFpGradNlSize);
+    if (tFpGradNlSize_ != NULL) {
+        for (jint i = 0; i < tSize; ++i) {
+            tFpGradNlSize_[i] = 0;
+        }
     }
     // do cal
     calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN,

@@ -1466,12 +1466,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     const jint tLMax = aLMax>aL3Max ? aLMax : aL3Max;
     const jint tLMAll = (tLMax+1)*(tLMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
+    const jint tSize = tSizeN*tSizeL;
     // clear cnlm first
     jdouble *tFp_ = tFp + aShiftFp;
-    jint *tFpGradNlSize_ = tFpGradNlSize==NULL ? NULL : (tFpGradNlSize+aShiftFpGradNlSize);
     for (jint i = 0; i < tSizeCnlm; ++i) {
         tCnlm[i] = 0.0;
-        if (tFpGradNlSize_!=NULL) tFpGradNlSize_[i] = 0;
+    }
+    jint *tFpGradNlSize_ = tFpGradNlSize==NULL ? NULL : (tFpGradNlSize+aShiftFpGradNlSize);
+    if (tFpGradNlSize_!=NULL) {
+        for (jint i = 0; i < tSize; ++i) {
+            tFpGradNlSize_[i] = 0;
+        }
     }
     // do cal
     calCnlm(tNlDx, tNlDy, tNlDz, tNlType, aNN,
