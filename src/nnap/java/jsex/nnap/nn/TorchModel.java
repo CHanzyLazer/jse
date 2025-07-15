@@ -128,12 +128,12 @@ public class TorchModel extends NeuralNetwork {
     @Override public int inputSize() {
         return mInputDim;
     }
-    @Override public double forward(DoubleArrayVector aX) throws TorchException {
+    @Override public double eval(DoubleArrayVector aX) throws TorchException {
         if (isShutdown()) throw new IllegalStateException("This Model is dead");
         return forward0(mPtr.mPtr, aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(), mInputDim);
     }
     
-    @Override public double backward(DoubleArrayVector aX, DoubleArrayVector rGradX) throws TorchException {
+    @Override public double evalGrad(DoubleArrayVector aX, DoubleArrayVector rGradX) throws TorchException {
         if (isShutdown()) throw new IllegalStateException("This Model is dead");
         return backward0(mPtr.mPtr, aX.internalDataWithLengthCheck(mInputDim), aX.internalDataShift(),
                          rGradX.internalDataWithLengthCheck(mInputDim), rGradX.internalDataShift(), mInputDim);

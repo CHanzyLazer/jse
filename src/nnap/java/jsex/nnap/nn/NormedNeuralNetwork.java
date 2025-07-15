@@ -30,14 +30,14 @@ public class NormedNeuralNetwork extends NeuralNetwork {
     @Override public int inputSize() {
         return mNN.inputSize();
     }
-    @Override public double forward(DoubleArrayVector aX) throws Exception {
+    @Override public double eval(DoubleArrayVector aX) throws Exception {
         mNormedX.fill(i -> (aX.get(i) - mNormMu.get(i)) / mNormSigma.get(i));
-        double tPred = mNN.forward(mNormedX);
+        double tPred = mNN.eval(mNormedX);
         return tPred*mNormSigmaEng + mNormMuEng;
     }
-    @Override public double backward(DoubleArrayVector aX, DoubleArrayVector rGradX) throws Exception {
+    @Override public double evalGrad(DoubleArrayVector aX, DoubleArrayVector rGradX) throws Exception {
         mNormedX.fill(i -> (aX.get(i) - mNormMu.get(i)) / mNormSigma.get(i));
-        double tPred = mNN.backward(mNormedX, rGradX);
+        double tPred = mNN.evalGrad(mNormedX, rGradX);
         rGradX.div2this(mNormSigma);
         rGradX.multiply2this(mNormSigmaEng);
         return tPred*mNormSigmaEng + mNormMuEng;

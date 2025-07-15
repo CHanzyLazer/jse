@@ -134,7 +134,7 @@ public class TrainerNative {
                     Vector[] tFp = mTrainData.mFp.get(i);
                     for (Vector tSubFp : tFp) {
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += mNN.forward(mFpBuf);
+                        rEng += mNN.eval(mFpBuf);
                     }
                     rEng /= tFp.length;
                     double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
@@ -156,7 +156,7 @@ public class TrainerNative {
                         // cal energy
                         Vector tSubFp = tFp[k];
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += mNN.backward(mFpBuf, mGradFpBuf);
+                        rEng += mNN.evalGrad(mFpBuf, mGradFpBuf);
                         // cal force
                         Vector tSubFpPx = tFpPx[k], tSubFpPy = tFpPy[k], tSubFpPz = tFpPz[k];
                         IntVector tSubFpGradNlIndex = tFpGradNlIndex[k], tSubFpGradFpIndex = tFpGradFpIndex[k];
@@ -215,7 +215,7 @@ public class TrainerNative {
                     mGradParaBuf2.fill(0.0);
                     for (Vector tSubFp : tFp) {
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += aNN.backwardFull(mFpBuf, null, mGradParaBuf1);
+                        rEng += aNN.forwardBackward(mFpBuf, mGradParaBuf1);
                         mGradParaBuf2.plus2this(mGradParaBuf1);
                     }
                     rEng /= tFp.length;
@@ -241,7 +241,7 @@ public class TrainerNative {
                         // cal energy
                         Vector tSubFp = tFp[k];
                         mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                        rEng += aNN.backwardDoubleFull(mFpBuf, mGradFpBuf, mGradParaBuf1, mGradFpGradParaBuf.asVecRow());
+                        rEng += aNN.forwardGradBackward(mFpBuf, mGradFpBuf, mGradParaBuf1, mGradFpGradParaBuf.asVecRow());
                         mGradParaBuf2.plus2this(mGradParaBuf1);
                         // cal force
                         Vector tSubFpPx = tFpPx[k], tSubFpPy = tFpPy[k], tSubFpPz = tFpPz[k];

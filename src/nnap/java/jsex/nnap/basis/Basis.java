@@ -126,7 +126,7 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     public final double evalEnergy(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN) throws Exception {
         initCacheFp_();
         eval_(aNlDx, aNlDy, aNlDz, aNlType, mFp, null, false);
-        return aNN.forward(mFp);
+        return aNN.eval(mFp);
     }
     
     /**
@@ -147,7 +147,7 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     public final double evalEnergyForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN, DoubleList rFx, DoubleList rFy, DoubleList rFz) throws Exception {
         initCacheFp_();
         eval_(aNlDx, aNlDy, aNlDz, aNlType, mFp, null, true);
-        double tEng = aNN.backward(mFp, mNNGrad);
+        double tEng = aNN.evalGrad(mFp, mNNGrad);
         evalGradAndForceDot_(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz);
         return tEng;
     }
