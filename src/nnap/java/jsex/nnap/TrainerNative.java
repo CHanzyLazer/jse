@@ -83,7 +83,9 @@ public class TrainerNative implements ISavable {
     private final Vector mLossGradFp;
     private final int mBasisSize, mParaSize;
     
-    protected boolean mHalfCache = true;
+    protected boolean mFullCache = false;
+    public TrainerNative setFullCache(boolean aFlag) {mFullCache = aFlag; return this;}
+    
     protected double mForceWeight = DEFAULT_FORCE_WEIGHT;
     public TrainerNative setForceWeight(double aWeight) {mForceWeight = aWeight; return this;}
     
@@ -143,7 +145,7 @@ public class TrainerNative implements ISavable {
     }
     
     protected double calLoss(@Nullable Vector rGrad) {
-        final boolean tHalfCache = mHalfCache;
+        final boolean tFullCache = mFullCache;
         if (rGrad!=null) rGrad.fill(0.0);
         double rLoss = 0.0;
         for (int i = 0; i < mTrainData.mSize; ++i) {
@@ -193,14 +195,14 @@ public class TrainerNative implements ISavable {
                     mForceNlXBuf.clear(); mForceNlXBuf.addZeros(tNlSize);
                     mForceNlYBuf.clear(); mForceNlYBuf.addZeros(tNlSize);
                     mForceNlZBuf.clear(); mForceNlZBuf.addZeros(tNlSize);
-                    if (tHalfCache) {
-                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), mGradFpBuf.internalData(),
-                                              ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
-                                              ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
-                    } else {
+                    if (tFullCache) {
                         forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), mGradFpBuf.internalData(),
                                               ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), mNormSigma.internalData(),
                                               ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
+                    } else {
+                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), mGradFpBuf.internalData(),
+                                              ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                                              ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
                     }
                     INDEX1_TIMER.to();
                     NL_TIMER.from();
@@ -266,14 +268,14 @@ public class TrainerNative implements ISavable {
                     NL_TIMER.to();
                     mLossGradFp.fill(0.0);
                     INDEX2_TIMER.from();
-                    if (tHalfCache) {
-                        backwardForceIndexFMA_(mLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
-                                               ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
-                                               ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
-                    } else {
+                    if (tFullCache) {
                         backwardForceIndexFMA_(mLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
                                                ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), mNormSigma.internalData(),
                                                ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
+                    } else {
+                        backwardForceIndexFMA_(mLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
+                                               ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                                               ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
                     }
                     INDEX2_TIMER.to();
                     MPLUS_TIMER.from();
@@ -378,14 +380,14 @@ public class TrainerNative implements ISavable {
                 IntList tFpGradNlIndex = new IntList(1024), tFpGradFpIndex = new IntList(1024);
                 mBasis.evalGrad(tAPC, i, tFp, tFpGradNlIndex, tFpGradFpIndex, tFpPx, tFpPy, tFpPz);
                 rFp[i] = tFp;
-                if (mHalfCache) {
-                    rFpPx[i] = floatFrom_(tFpPx); rFpPy[i] = floatFrom_(tFpPy); rFpPz[i] = floatFrom_(tFpPz);
-                    rFpGradNlIndex[i] = shortFrom_(tFpGradNlIndex); rFpGradFpIndex[i] = shortFrom_(tFpGradFpIndex);
-                } else {
+                if (mFullCache) {
                     tFpPx.trimToSize(); tFpPy.trimToSize(); tFpPz.trimToSize();
                     tFpGradNlIndex.trimToSize(); tFpGradFpIndex.trimToSize();
                     rFpPx[i] = tFpPx; rFpPy[i] = tFpPy; rFpPz[i] = tFpPz;
                     rFpGradNlIndex[i] = tFpGradNlIndex; rFpGradFpIndex[i] = tFpGradFpIndex;
+                } else {
+                    rFpPx[i] = floatFrom_(tFpPx); rFpPy[i] = floatFrom_(tFpPy); rFpPz[i] = floatFrom_(tFpPz);
+                    rFpGradNlIndex[i] = shortFrom_(tFpGradNlIndex); rFpGradFpIndex[i] = shortFrom_(tFpGradFpIndex);
                 }
                 // 计算相对能量值
                 aEnergy -= mRefEng;
