@@ -266,7 +266,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
         /**/
     }
     
-    public final static DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    protected final static DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
     
     /**
      * 应用迭代步长，默认直接运算 {@code mParameter.plus2this(mParameterStep)}。

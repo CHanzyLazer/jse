@@ -137,7 +137,7 @@ public class RowMatrix extends DoubleArrayMatrix {
                 for (int i = 0; i < rEnd; ++i) aCon.accept(mData[i]);
             }
             @Override public ColumnMatrix refTranspose() {
-                return new ColumnMatrix(mRowNum, mColNum, mData);
+                return new ColumnMatrix(mColNum, mRowNum, mData);
             }
         };
     }
