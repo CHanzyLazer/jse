@@ -1,6 +1,7 @@
 package jsex.nnap.nn;
 
 import jse.code.UT;
+import jse.code.io.ISavable;
 import jse.math.IDataShell;
 import jse.math.MathEX;
 import jse.math.matrix.Matrices;
@@ -8,6 +9,7 @@ import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +23,7 @@ import static jse.code.CS.RANDOM;
  * 由于内部会缓存中间结果，因此此类一般来说相同实例线程不安全，而不同实例之间线程安全
  * @author liqa
  */
-public class FeedForward extends NeuralNetwork {
+public class FeedForward extends NeuralNetwork implements ISavable {
     private final int mInputDim;
     private final int[] mHiddenDims;
     private final Vector mHiddenWeights, mHiddenWeightsBackward;
@@ -182,6 +184,37 @@ public class FeedForward extends NeuralNetwork {
         if (aOutputWeight.size() != aHiddenDims[tHiddenNumber-1]) throw new IllegalArgumentException("Size of output weight mismatch");
         
         return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, aOutputBias);
+    }
+    
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override public void save(Map rSaveTo) {
+        rSaveTo.put("type", "feed_forward");
+        rSaveTo.put("input_dim", mInputDim);
+        rSaveTo.put("hidden_dims", mHiddenDims);
+        List<List<List<Double>>> rHiddenWeights = new ArrayList<>(mHiddenNumber);
+        int tColNum = mInputDim;
+        int tShift = 0;
+        for (int i = 0; i < mHiddenNumber; ++i) {
+            int tHiddenDim = mHiddenDims[i];
+            List<List<Double>> tWeights = new ArrayList<>(tHiddenDim);
+            rHiddenWeights.add(tWeights);
+            for (int j = 0; j < tHiddenDim; ++j) {
+                tWeights.add(mHiddenWeights.subVec(tShift, tShift+tColNum).asList());
+                tShift += tColNum;
+            }
+            tColNum = tHiddenDim;
+        }
+        rSaveTo.put("hidden_weights", rHiddenWeights);
+        List<List<Double>> rHiddenBiases = new ArrayList<>(mHiddenNumber);
+        tShift = 0;
+        for (int i = 0; i < mHiddenNumber; ++i) {
+            int tHiddenDim = mHiddenDims[i];
+            rHiddenBiases.add(mHiddenBiases.subVec(tShift, tShift+tHiddenDim).asList());
+            tShift += tHiddenDim;
+        }
+        rSaveTo.put("hidden_biases", rHiddenBiases);
+        rSaveTo.put("output_weight", mOutputWeight.asList());
+        rSaveTo.put("output_bias", mOutputBias);
     }
     
     public IVector parameters() {
