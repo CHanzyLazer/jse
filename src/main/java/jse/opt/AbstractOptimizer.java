@@ -133,7 +133,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
      * <a href="https://en.wikipedia.org/wiki/Wolfe_conditions">strong Wolfe 线搜索</a>
      * @param aC1 Armijo 线搜索中的参数 c1，默认为 {@code 0.0001}
      * @param aC2 Wolfe 线搜索中的参数 c2，默认为 {@code 0.1}
-     * @param aMaxIter 限制的最大迭代次数，默认为 {@code 20}
+     * @param aMaxIter 限制的最大迭代次数，默认为 {@code 10}
      * @return 自身方便链式调用
      */
     public AbstractOptimizer setLineSearchStrongWolfe(double aC1, double aC2, int aMaxIter) {
@@ -144,7 +144,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
         return this;
     }
     @Override public AbstractOptimizer setLineSearch() {
-        return setLineSearchStrongWolfe(0.0001, 0.1, 20);
+        return setLineSearchStrongWolfe(0.0001, 0.1, 10);
     }
     @Override public AbstractOptimizer setNoLineSearch() {
         mLineSearch = false;

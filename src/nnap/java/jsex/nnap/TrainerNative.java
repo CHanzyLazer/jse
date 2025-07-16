@@ -2,30 +2,30 @@ package jsex.nnap;
 
 import jse.atom.AtomicParameterCalculator;
 import jse.atom.IAtomData;
+import jse.atom.IHasSymbol;
+import jse.cache.IntVectorCache;
 import jse.code.IO;
-import jse.code.collection.DoubleList;
-import jse.code.collection.FloatList;
-import jse.code.collection.IntList;
-import jse.code.collection.ShortList;
+import jse.code.UT;
+import jse.code.collection.*;
 import jse.code.io.ISavable;
 import jse.code.timer.AccumulatedTimer;
 import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
-import jse.opt.Adam;
+import jse.math.vector.Vector;
 import jse.opt.IOptimizer;
+import jse.opt.LBFGS;
 import jsex.nnap.basis.Basis;
 import jsex.nnap.nn.FeedForward;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.IntUnaryOperator;
 
 /**
  * 纯 jse 实现的 nnap 训练器，不借助 pytorch
@@ -36,7 +36,7 @@ import java.util.Map;
  * @author liqa
  */
 @ApiStatus.Experimental
-public class TrainerNative implements ISavable {
+public class TrainerNative implements IHasSymbol, ISavable {
     protected final static String DEFAULT_UNITS = "metal";
     protected final static int[] DEFAULT_HIDDEN_DIMS = {32, 32}; // 现在统一默认为 32, 32
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
@@ -60,28 +60,32 @@ public class TrainerNative implements ISavable {
         public final List<Vector> mForceX = new ArrayList<>(64), mForceY = new ArrayList<>(64), mForceZ = new ArrayList<>(64);
         /** 近邻列表，每个原子结构一组，每个原子对应一个近邻列表向量 */
         public final List<IntVector[]> mNl = new ArrayList<>(64);
+        /** 原子种类，每个原子结构一组 */
+        public final List<IntVector> mAtomType = new ArrayList<>(64);
     }
     
-    protected IOptimizer mOptimizer;
-    protected final Basis mBasis;
-    protected final FeedForward mNN;
+    protected final IOptimizer mOptimizer;
+    protected final int mTypeNum;
+    protected final String[] mSymbols;
+    protected final IVector mRefEngs;
+    protected final Basis[] mBasis;
+    protected final FeedForward[] mNN;
     protected final DataSet mTrainData;
     protected final DataSet mTestData;
     protected boolean mHasData = false;
     protected boolean mHasForce = false;
-    protected final Vector mNormMu, mNormSigma;
+    protected final Vector[] mNormMu, mNormSigma;
     protected double mNormMuEng = 0.0, mNormSigmaEng = 0.0;
-    protected final double mRefEng;
     
-    private final Vector mFpBuf, mGradFpBuf;
-    private final Vector mGradParaBuf;
-    private final List<RowMatrix> mGradFpGradParaBuf;
+    private final Vector[] mFpBuf, mGradFpBuf;
+    private final Vector[] mGradParaBuf;
+    private final List<List<RowMatrix>> mGradFpGradParaBuf;
     private final DoubleList mForceNlXBuf, mForceNlYBuf, mForceNlZBuf;
     private final DoubleList mForceXBuf, mForceYBuf, mForceZBuf;
     private final DoubleList mLossGradForceXBuf, mLossGradForceYBuf, mLossGradForceZBuf;
     private final DoubleList mLossGradForceNlXBuf, mLossGradForceNlYBuf, mLossGradForceNlZBuf;
-    private final Vector mLossGradFp;
-    private final int mBasisSize, mParaSize;
+    private final Vector[] mLossGradFp;
+    private final int[] mBasisSizes, mParaSizes;
     
     protected boolean mFullCache = false;
     public TrainerNative setFullCache(boolean aFlag) {mFullCache = aFlag; return this;}
@@ -92,28 +96,48 @@ public class TrainerNative implements ISavable {
     protected String mUnits = DEFAULT_UNITS;
     public TrainerNative setUnits(String aUnits) {mUnits = aUnits; return this;}
     
-    private static void validSize_(DoubleList aData, int aSize) {
-        aData.ensureCapacity(aSize);
-        aData.setInternalDataSize(aSize);
-    }
-    private void validGradFpGradPara_(int aSize) {
-        int tSize = Math.min(mGradFpGradParaBuf.size(), aSize);
-        for (int i = 0; i < tSize; ++i) mGradFpGradParaBuf.get(i).fill(0.0);
-        while (mGradFpGradParaBuf.size() < aSize) mGradFpGradParaBuf.add(RowMatrix.zeros(mBasisSize, mParaSize));
+    private void validGradFpGradPara_(IntVector aAtomType) {
+        int tAtomNum = aAtomType.size();
+        for (int typei = 0; typei < mTypeNum; ++typei) {
+            List<RowMatrix> tGradFpGradParaBuf = mGradFpGradParaBuf.get(typei);
+            while (tGradFpGradParaBuf.size() < tAtomNum) {
+                tGradFpGradParaBuf.add(RowMatrix.zeros(mBasisSizes[typei], mParaSizes[typei]));
+            }
+            for (int i = 0; i < tAtomNum; ++i) if (typei == aAtomType.get(i)-1) {
+                tGradFpGradParaBuf.get(i).fill(0.0);
+            }
+        }
     }
     
-    TrainerNative(double aRefEng, Basis aBasis, FeedForward aNN, IOptimizer aOptimizer) {
-        mRefEng = aRefEng;
+    TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, FeedForward[] aNN, IOptimizer aOptimizer) {
+        if (aSymbols.length != aRefEngs.size()) throw new IllegalArgumentException("Symbols length does not match reference energies length.");
+        if (aSymbols.length != aBasis.length) throw new IllegalArgumentException("Symbols length does not match reference basis length.");
+        if (aSymbols.length != aNN.length) throw new IllegalArgumentException("Symbols length does not match neural network length.");
+        mSymbols = aSymbols;
+        mRefEngs = aRefEngs;
         mBasis = aBasis;
         mNN = aNN;
+        mTypeNum = mSymbols.length;
         
         mTrainData = new DataSet();
         mTestData = new DataSet();
-        mBasisSize = mBasis.size();
-        mNormMu = Vector.zeros(mBasisSize);
-        mNormSigma = Vector.zeros(mBasisSize);
-        mFpBuf = Vector.zeros(mBasisSize);
-        mGradFpBuf = Vector.zeros(mBasisSize);
+        mBasisSizes = new int[mTypeNum];
+        mNormMu = new Vector[mTypeNum];
+        mNormSigma = new Vector[mTypeNum];
+        mFpBuf = new Vector[mTypeNum];
+        mGradFpBuf = new Vector[mTypeNum];
+        mLossGradFp = new Vector[mTypeNum];
+        mGradFpGradParaBuf = new ArrayList<>(mTypeNum);
+        for (int i = 0; i < mTypeNum; ++i) {
+            int tBasisSize = mBasis[i].size();
+            mBasisSizes[i] = tBasisSize;
+            mNormMu[i] = Vector.zeros(tBasisSize);
+            mNormSigma[i] = Vector.zeros(tBasisSize);
+            mFpBuf[i] = Vector.zeros(tBasisSize);
+            mGradFpBuf[i] = Vector.zeros(tBasisSize);
+            mLossGradFp[i] = Vector.zeros(tBasisSize);
+            mGradFpGradParaBuf.add(new ArrayList<>(16));
+        }
         mForceNlXBuf = new DoubleList(16);
         mForceNlYBuf = new DoubleList(16);
         mForceNlZBuf = new DoubleList(16);
@@ -126,67 +150,149 @@ public class TrainerNative implements ISavable {
         mLossGradForceXBuf = new DoubleList(16);
         mLossGradForceYBuf = new DoubleList(16);
         mLossGradForceZBuf = new DoubleList(16);
-        mLossGradFp = Vector.zeros(mBasisSize);
         
+        mParaSizes = new int[mTypeNum];
+        mGradParaBuf = new Vector[mTypeNum];
+        final IVector[] tParas = new IVector[mTypeNum];
+        int rTotParaSize = 0;
+        for (int i = 0; i < mTypeNum; ++i) {
+            IVector tPara = mNN[i].parameters();
+            int tParaSize = tPara.size();
+            tParas[i] = tPara;
+            mParaSizes[i] = tParaSize;
+            mGradParaBuf[i] = Vectors.zeros(tParaSize);
+            rTotParaSize += tParaSize;
+        }
+        final int fTotParaSize = rTotParaSize;
         mOptimizer = aOptimizer;
-        IVector tPara = mNN.parameters();
-        mParaSize = tPara.size();
-        mGradParaBuf = Vectors.zeros(mParaSize);
-        mGradFpGradParaBuf = new ArrayList<>(16);
-        mOptimizer.setParameter(tPara);
-        mOptimizer.setLossFunc(() -> calLoss(null));
-        mOptimizer.setLossFuncGrad(this::calLoss);
+        mOptimizer.setParameter(new RefVector() {
+            @Override public double get(int aIdx) {
+                int tIdx = aIdx;
+                for (int i = 0; i < mTypeNum; ++i) {
+                    int tParaSize = mParaSizes[i];
+                    if (tIdx < tParaSize) {
+                        return tParas[i].get(tIdx);
+                    }
+                    tIdx -= tParaSize;
+                }
+                throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+            }
+            @Override public void set(int aIdx, double aValue) {
+                int tIdx = aIdx;
+                for (int i = 0; i < mTypeNum; ++i) {
+                    int tParaSize = mParaSizes[i];
+                    if (tIdx < tParaSize) {
+                        tParas[i].set(tIdx, aValue);
+                        return;
+                    }
+                    tIdx -= tParaSize;
+                }
+                throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+            }
+            @Override public int size() {
+                return fTotParaSize;
+            }
+        });
+        mOptimizer.setLossFunc(() -> calLoss(mTrainData, null));
+        mOptimizer.setLossFuncGrad(grad -> calLoss(mTrainData, grad));
     }
-    public TrainerNative(double aRefEng, Basis aBasis, IOptimizer aOptimizer) {
-        this(aRefEng, aBasis, FeedForward.init(aBasis.size(), DEFAULT_HIDDEN_DIMS), aOptimizer);
+    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, IOptimizer aOptimizer) {
+        this(aSymbols, aRefEngs, aBasis, nnFrom_(aBasis), aOptimizer);
     }
-    public TrainerNative(double aRefEng, Basis aBasis) {
-        this(aRefEng, aBasis, new Adam());
+    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis) {
+        this(aSymbols, aRefEngs, aBasis, new LBFGS(100).setLineSearch());
+    }
+    private static FeedForward[] nnFrom_(Basis[] aBasis) {
+        FeedForward[] rOut = new FeedForward[aBasis.length];
+        for (int i = 0; i < rOut.length; ++i) {
+            rOut[i] = FeedForward.init(aBasis[i].size(), DEFAULT_HIDDEN_DIMS);
+        }
+        return rOut;
+    }
+    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
+    public TrainerNative(String[] aSymbols, double[] aRefEngs, Basis[] aBasis) {this(aSymbols, Vectors.from(aRefEngs), aBasis);}
+    public TrainerNative(String[] aSymbols, double[] aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
+    private static Basis[] repeatBasis_(Basis aBasis, int aLen) {
+        Basis[] rOut = new Basis[aLen];
+        Arrays.fill(rOut, aBasis);
+        return rOut;
     }
     
-    protected double calLoss(@Nullable Vector rGrad) {
+    @Override public int atomTypeNumber() {return mTypeNum;}
+    @Override public boolean hasSymbol() {return true;}
+    @Override public String symbol(int aType) {return mSymbols[aType-1];}
+    public Basis basis(int aType) {return mBasis[aType-1];}
+    public @Unmodifiable List<Basis> basis() {return AbstractCollections.from(mBasis);}
+    public FeedForward model(int aType) {return mNN[aType-1];}
+    public @Unmodifiable List<FeedForward> models() {return AbstractCollections.from(mNN);}
+    public String units() {return mUnits;}
+    
+    protected double calLoss(DataSet aData, @Nullable Vector rGrad) {
         final boolean tFullCache = mFullCache;
         if (rGrad!=null) rGrad.fill(0.0);
         double rLoss = 0.0;
-        for (int i = 0; i < mTrainData.mSize; ++i) {
+        for (int i = 0; i < aData.mSize; ++i) {
             //noinspection IfStatementWithIdenticalBranches
             if (!mHasForce) {
-                double rEng = 0.0;
-                Vector[] tFp = mTrainData.mFp.get(i);
-                if (rGrad!=null) mGradParaBuf.fill(0.0);
-                for (Vector tSubFp : tFp) {
-                    mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
-                    rEng += rGrad==null ? mNN.eval(mFpBuf) : mNN.forwardBackward(mFpBuf, mGradParaBuf);
+                IntVector tAtomType = aData.mAtomType.get(i);
+                Vector[] tFp = aData.mFp.get(i);
+                final int tAtomNum = tFp.length;
+                if (rGrad != null) {
+                    for (Vector tGradPara : mGradParaBuf) tGradPara.fill(0.0);
                 }
-                rEng /= tFp.length;
-                double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
-                if (rGrad!=null) rGrad.operation().mplus2this(mGradParaBuf, 2.0 * tErr / tFp.length);
+                double rEng = 0.0;
+                for (int k = 0; k < tAtomNum; ++k) {
+                    int tType = tAtomType.get(k);
+                    Vector tSubFp = tFp[k];
+                    Vector tFpBuf = mFpBuf[tType-1];
+                    Vector tNormMu = mNormMu[tType-1];
+                    Vector tNormSigma = mNormSigma[tType-1];
+                    tFpBuf.fill(j -> (tSubFp.get(j) - tNormMu.get(j)) / tNormSigma.get(j));
+                    rEng += rGrad==null ? mNN[tType-1].eval(tFpBuf) : mNN[tType-1].forwardBackward(tFpBuf, mGradParaBuf[tType-1]);
+                }
+                rEng /= tAtomNum;
+                double tErr = rEng - (aData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
+                if (rGrad!=null) {
+                    double tMul = 2.0 * tErr / tAtomNum;
+                    int tShift = 0;
+                    for (int typei = 0; typei < mTypeNum; ++typei) {
+                        int tParaSize = mParaSizes[typei];
+                        rGrad.subVec(tShift, tShift+tParaSize).operation().mplus2this(mGradParaBuf[typei], tMul);
+                        tShift += tParaSize;
+                    }
+                }
                 rLoss += tErr*tErr;
             } else {
-                double rEng = 0.0;
-                Vector[] tFp = mTrainData.mFp.get(i);
-                Object[] tFpPx = mTrainData.mFpPx.get(i);
-                Object[] tFpPy = mTrainData.mFpPy.get(i);
-                Object[] tFpPz = mTrainData.mFpPz.get(i);
-                Object[] tFpGradNlIndex = mTrainData.mFpGradNlIndex.get(i);
-                Object[] tFpGradFpIndex = mTrainData.mFpGradFpIndex.get(i);
-                IntVector[] tNl = mTrainData.mNl.get(i);
+                IntVector tAtomType = aData.mAtomType.get(i);
+                Vector[] tFp = aData.mFp.get(i);
+                Object[] tFpPx = aData.mFpPx.get(i);
+                Object[] tFpPy = aData.mFpPy.get(i);
+                Object[] tFpPz = aData.mFpPz.get(i);
+                Object[] tFpGradNlIndex = aData.mFpGradNlIndex.get(i);
+                Object[] tFpGradFpIndex = aData.mFpGradFpIndex.get(i);
+                IntVector[] tNl = aData.mNl.get(i);
                 final int tAtomNum = tFp.length;
                 mForceXBuf.clear(); mForceXBuf.addZeros(tAtomNum);
                 mForceYBuf.clear(); mForceYBuf.addZeros(tAtomNum);
                 mForceZBuf.clear(); mForceZBuf.addZeros(tAtomNum);
-                if (rGrad!=null) {
-                    mGradParaBuf.fill(0.0);
+                if (rGrad != null) {
+                    for (Vector tGradPara : mGradParaBuf) tGradPara.fill(0.0);
                     INIT_TIMER.from();
-                    validGradFpGradPara_(tAtomNum);
+                    validGradFpGradPara_(tAtomType);
                     INIT_TIMER.to();
                 }
+                double rEng = 0.0;
                 for (int k = 0; k < tAtomNum; ++k) {
-                    // cal energy
+                    int tType = tAtomType.get(k);
                     Vector tSubFp = tFp[k];
-                    mFpBuf.fill(j -> (tSubFp.get(j) - mNormMu.get(j)) / mNormSigma.get(j));
+                    Vector tFpBuf = mFpBuf[tType-1];
+                    Vector tNormMu = mNormMu[tType-1];
+                    Vector tNormSigma = mNormSigma[tType-1];
+                    Vector tGradFpBuf = mGradFpBuf[tType-1];
+                    tFpBuf.fill(j -> (tSubFp.get(j) - tNormMu.get(j)) / tNormSigma.get(j));
+                    // cal energy
                     NN_TIMER.from();
-                    rEng += rGrad==null ? mNN.evalGrad(mFpBuf, mGradFpBuf) : mNN.forwardGradBackward(mFpBuf, mGradFpBuf, mGradParaBuf, mGradFpGradParaBuf.get(k).asVecRow());
+                    rEng += rGrad==null ? mNN[tType-1].evalGrad(tFpBuf, tGradFpBuf) : mNN[tType-1].forwardGradBackward(tFpBuf, tGradFpBuf, mGradParaBuf[tType-1], mGradFpGradParaBuf.get(tType-1).get(k).asVecRow());
                     NN_TIMER.to();
                     // cal force
                     IntVector tSubNl = tNl[k];
@@ -196,12 +302,12 @@ public class TrainerNative implements ISavable {
                     mForceNlYBuf.clear(); mForceNlYBuf.addZeros(tNlSize);
                     mForceNlZBuf.clear(); mForceNlZBuf.addZeros(tNlSize);
                     if (tFullCache) {
-                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), mGradFpBuf.internalData(),
-                                              ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), tGradFpBuf.internalData(),
+                                              ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), tNormSigma.internalData(),
                                               ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
                     } else {
-                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), mGradFpBuf.internalData(),
-                                              ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                        forwardForceIndexFMA_(mForceNlXBuf.internalData(), mForceNlYBuf.internalData(), mForceNlZBuf.internalData(), tGradFpBuf.internalData(),
+                                              ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), tNormSigma.internalData(),
                                               ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
                     }
                     INDEX1_TIMER.to();
@@ -222,19 +328,26 @@ public class TrainerNative implements ISavable {
                 }
                 // energy error
                 rEng /= tAtomNum;
-                double tErr = rEng - (mTrainData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
-                if (rGrad!=null) rGrad.operation().mplus2this(mGradParaBuf, 2.0 * tErr / tAtomNum);
+                double tErr = rEng - (aData.mEng.get(i) - mNormMuEng)/mNormSigmaEng;
+                if (rGrad != null) {
+                    double tMul = 2.0 * tErr / tAtomNum;
+                    int tShift = 0;
+                    for (int typei = 0; typei < mTypeNum; ++typei) {
+                        int tParaSize = mParaSizes[typei];
+                        rGrad.subVec(tShift, tShift+tParaSize).operation().mplus2this(mGradParaBuf[typei], tMul);
+                        tShift += tParaSize;
+                    }
+                }
                 rLoss += tErr*tErr;
                 // force error
                 double tLossForce = 0.0;
-                mGradParaBuf.fill(0.0);
                 if (rGrad != null) {
                     mLossGradForceXBuf.clear(); mLossGradForceXBuf.addZeros(tAtomNum);
                     mLossGradForceYBuf.clear(); mLossGradForceYBuf.addZeros(tAtomNum);
                     mLossGradForceZBuf.clear(); mLossGradForceZBuf.addZeros(tAtomNum);
                 }
                 double tForceLossMul = mForceWeight / (tAtomNum*3);
-                Vector tForceX = mTrainData.mForceX.get(i), tForceY = mTrainData.mForceY.get(i), tForceZ = mTrainData.mForceZ.get(i);
+                Vector tForceX = aData.mForceX.get(i), tForceY = aData.mForceY.get(i), tForceZ = aData.mForceZ.get(i);
                 for (int k = 0; k < tAtomNum; ++k) {
                     double tErrX = mForceXBuf.get(k) - tForceX.get(k)/mNormSigmaEng;
                     double tErrY = mForceYBuf.get(k) - tForceY.get(k)/mNormSigmaEng;
@@ -250,6 +363,9 @@ public class TrainerNative implements ISavable {
                 // backward for force error
                 if (rGrad==null) continue;
                 for (int k = 0; k < tAtomNum; ++k) {
+                    int tType = tAtomType.get(k);
+                    Vector tNormSigma = mNormSigma[tType-1];
+                    Vector tLossGradFp = mLossGradFp[tType-1];
                     IntVector tSubNl = tNl[k];
                     int tNlSize = tSubNl.size();
                     double tLossGradForceX = mLossGradForceXBuf.get(k);
@@ -266,26 +382,30 @@ public class TrainerNative implements ISavable {
                         mLossGradForceNlZBuf.set(j, mLossGradForceZBuf.get(nlk) - tLossGradForceZ);
                     }
                     NL_TIMER.to();
-                    mLossGradFp.fill(0.0);
+                    tLossGradFp.fill(0.0);
                     INDEX2_TIMER.from();
                     if (tFullCache) {
-                        backwardForceIndexFMA_(mLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
-                                               ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                        backwardForceIndexFMA_(tLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
+                                               ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), tNormSigma.internalData(),
                                                ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
                     } else {
-                        backwardForceIndexFMA_(mLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
-                                               ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), mNormSigma.internalData(),
+                        backwardForceIndexFMA_(tLossGradFp.internalData(), mLossGradForceNlXBuf.internalData(), mLossGradForceNlYBuf.internalData(), mLossGradForceNlZBuf.internalData(),
+                                               ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), tNormSigma.internalData(),
                                                ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
                     }
                     INDEX2_TIMER.to();
+                    int rShiftPara = 0;
+                    for (int typei = 0; typei < tType-1; ++typei) {
+                        rShiftPara += mParaSizes[typei];
+                    }
                     MPLUS_TIMER.from();
-                    backwardForceParaFMA_(rGrad.internalData(), mLossGradFp.internalData(), mGradFpGradParaBuf.get(k).internalData(), mBasisSize, mParaSize);
+                    backwardForceParaFMA_(rGrad.internalData(), rShiftPara, tLossGradFp.internalData(), mGradFpGradParaBuf.get(tType-1).get(k).internalData(), mBasisSizes[tType-1], mParaSizes[tType-1]);
                     MPLUS_TIMER.to();
                 }
             }
         }
-        if (rGrad!=null) rGrad.div2this(mTrainData.mSize);
-        return rLoss / mTrainData.mSize;
+        if (rGrad!=null) rGrad.div2this(aData.mSize);
+        return rLoss / aData.mSize;
     }
     
     static void forwardForceIndexFMA_(double[] rForceNlX, double[] rForceNlY, double[] rForceNlZ, double[] aGradFp,
@@ -332,11 +452,11 @@ public class TrainerNative implements ISavable {
                                + aLossGradForceNlZ[j]*aFpPz[ii])/tNormSigma;
         }
     }
-    static void backwardForceParaFMA_(double[] rGradPara, double[] aLossGradFp, double[] aGradFpGradPara, int aBasisSize, int aParaSize) {
+    static void backwardForceParaFMA_(double[] rGradPara, int tShiftPara, double[] aLossGradFp, double[] aGradFpGradPara, int aBasisSize, int aParaSize) {
         for (int fpi = 0, tShift = 0; fpi < aBasisSize; ++fpi, tShift+=aParaSize) {
             double tLossGradFp = aLossGradFp[fpi];
-            for (int parai = 0, i = tShift; parai < aParaSize; ++parai, ++i) {
-                rGradPara[parai] += tLossGradFp * aGradFpGradPara[i];
+            for (int parai = 0, i = tShift, j = tShiftPara; parai < aParaSize; ++parai, ++i, ++j) {
+                rGradPara[j] += tLossGradFp * aGradFpGradPara[i];
             }
         }
     }
@@ -344,17 +464,23 @@ public class TrainerNative implements ISavable {
     
     @ApiStatus.Internal
     protected void calRefEngFpAndAdd_(IAtomData aAtomData, double aEnergy, DataSet rData) {
+        IntUnaryOperator tTypeMap = typeMap(aAtomData);
         // 由于数据集不完整因此这里不去做归一化
         final int tAtomNum = aAtomData.atomNumber();
-        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+            IntVector rAtomType = IntVector.zeros(tAtomNum);
             Vector[] rFp = new Vector[tAtomNum];
+            rData.mAtomType.add(rAtomType);
             rData.mFp.add(rFp);
             for (int i = 0; i < tAtomNum; ++i) {
-                Vector tFp = Vectors.zeros(mBasis.size());
-                mBasis.eval(tAPC, i, tFp);
+                int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
+                rAtomType.set(i, tType);
+                Basis tBasis = basis(tType);
+                Vector tFp = Vectors.zeros(tBasis.size());
+                tBasis.eval(tAPC, i, tTypeMap, tFp);
                 rFp[i] = tFp;
                 // 计算相对能量值
-                aEnergy -= mRefEng;
+                aEnergy -= mRefEngs.get(tType-1);
             }
         }
         // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
@@ -363,22 +489,28 @@ public class TrainerNative implements ISavable {
     }
     @ApiStatus.Internal
     protected void calRefEngFpPartialAndAdd_(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, DataSet rData) {
+        IntUnaryOperator tTypeMap = typeMap(aAtomData);
         // 由于数据集不完整因此这里不去做归一化
         final int tAtomNum = aAtomData.atomNumber();
-        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+            IntVector rAtomType = IntVector.zeros(tAtomNum);
             Vector[] rFp = new Vector[tAtomNum];
             Object[] rFpPx = new Object[tAtomNum], rFpPy = new Object[tAtomNum], rFpPz = new Object[tAtomNum];
             Object[] rFpGradNlIndex = new Object[tAtomNum], rFpGradFpIndex = new Object[tAtomNum];
             IntVector[] rNl = new IntVector[tAtomNum];
+            rData.mAtomType.add(rAtomType);
             rData.mFp.add(rFp);
             rData.mFpPx.add(rFpPx); rData.mFpPy.add(rFpPy); rData.mFpPz.add(rFpPz);
             rData.mFpGradNlIndex.add(rFpGradNlIndex); rData.mFpGradFpIndex.add(rFpGradFpIndex);
             rData.mNl.add(rNl);
             for (int i = 0; i < tAtomNum; ++i) {
-                Vector tFp = Vectors.zeros(mBasis.size());
+                int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
+                rAtomType.set(i, tType);
+                Basis tBasis = basis(tType);
+                Vector tFp = Vectors.zeros(tBasis.size());
                 DoubleList tFpPx = new DoubleList(1024), tFpPy = new DoubleList(1024), tFpPz = new DoubleList(1024);
                 IntList tFpGradNlIndex = new IntList(1024), tFpGradFpIndex = new IntList(1024);
-                mBasis.evalGrad(tAPC, i, tFp, tFpGradNlIndex, tFpGradFpIndex, tFpPx, tFpPy, tFpPz);
+                tBasis.evalGrad(tAPC, i, tTypeMap, tFp, tFpGradNlIndex, tFpGradFpIndex, tFpPx, tFpPy, tFpPz);
                 rFp[i] = tFp;
                 if (mFullCache) {
                     tFpPx.trimToSize(); tFpPy.trimToSize(); tFpPz.trimToSize();
@@ -390,9 +522,9 @@ public class TrainerNative implements ISavable {
                     rFpGradNlIndex[i] = shortFrom_(tFpGradNlIndex); rFpGradFpIndex[i] = shortFrom_(tFpGradFpIndex);
                 }
                 // 计算相对能量值
-                aEnergy -= mRefEng;
+                aEnergy -= mRefEngs.get(tType-1);
                 // 增加近邻列表，这里直接重新添加
-                rNl[i] = tAPC.getNeighborList(i, mBasis.rcut());
+                rNl[i] = tAPC.getNeighborList(i, tBasis.rcut());
             }
         }
         // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
@@ -436,18 +568,37 @@ public class TrainerNative implements ISavable {
     }
     
     protected void initNormBasis() {
-        mNormMu.fill(0.0);
-        mNormSigma.fill(0.0);
-        double tDiv = 0.0;
-        for (Vector[] tFp : mTrainData.mFp) for (Vector tSubFp : tFp) {
-            mNormMu.plus2this(tSubFp);
-            mNormSigma.operation().operate2this(tSubFp, (lhs, rhs) -> lhs + rhs*rhs);
-            ++tDiv;
+        for (int i = 0; i < mTypeNum; ++i) {
+            mNormMu[i].fill(0.0);
+            mNormSigma[i].fill(0.0);
         }
-        mNormMu.div2this(tDiv);
-        mNormSigma.div2this(tDiv);
-        mNormSigma.operation().operate2this(mNormMu, (lhs, rhs) -> lhs - rhs*rhs);
-        mNormSigma.operation().map2this(MathEX.Fast::sqrt);
+        IntVector tDiv = IntVectorCache.getZeros(mTypeNum);
+        for (int i = 0; i < mTrainData.mSize; ++i) {
+            IntVector tAtomType = mTrainData.mAtomType.get(i);
+            Vector[] tFp = mTrainData.mFp.get(i);
+            int tAtomNum = tFp.length;
+            for (int k = 0; k < tAtomNum; ++k) {
+                int tType = tAtomType.get(k);
+                Vector tSubFp = tFp[k];
+                mNormMu[tType-1].plus2this(tSubFp);
+                mNormSigma[tType-1].operation().operate2this(tSubFp, (lhs, rhs) -> lhs + rhs * rhs);
+                tDiv.increment(tType-1);
+            }
+        }
+        for (int i = 0; i < mTypeNum; ++i) {
+            int tDivI = tDiv.get(i);
+            if (tDivI == 0) {
+                UT.Code.warning("number of atoms of type `"+mSymbols[i]+"` is zero, check your input or dataset.");
+                mNormMu[i].fill(0.0);
+                mNormSigma[i].fill(1.0);
+            } else {
+                mNormMu[i].div2this(tDivI);
+                mNormSigma[i].div2this(tDivI);
+                mNormSigma[i].operation().operate2this(mNormMu[i], (lhs, rhs) -> lhs - rhs*rhs);
+                mNormSigma[i].operation().map2this(v -> MathEX.Code.numericEqual(v, 0.0) ? 1.0 : MathEX.Fast.sqrt(v));
+            }
+        }
+        IntVectorCache.returnVec(tDiv);
     }
     protected void initNormEng() {
         // 这里采用中位数和上下四分位数来归一化能量
@@ -497,20 +648,22 @@ public class TrainerNative implements ISavable {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
         List rModels = new ArrayList();
-        Map rBasis = new LinkedHashMap();
-        mBasis.save(rBasis);
-        Map rNN = new LinkedHashMap();
-        mNN.save(rNN);
-        rModels.add(Maps.of(
-            "symbol", "Cu", //TODO
-            "basis", rBasis,
-            "ref_eng", mRefEng,
-            "norm_mu", mNormMu.asList(),
-            "norm_sigma", mNormSigma.asList(),
-            "norm_mu_eng", mNormMuEng,
-            "norm_sigma_eng", mNormSigmaEng,
-            "nn", rNN
-        ));
+        for (int i = 0; i < mTypeNum; ++i) {
+            Map rBasis = new LinkedHashMap();
+            mBasis[i].save(rBasis);
+            Map rNN = new LinkedHashMap();
+            mNN[i].save(rNN);
+            rModels.add(Maps.of(
+                "symbol", mSymbols[i],
+                "basis", rBasis,
+                "ref_eng", mRefEngs.get(i),
+                "norm_mu", mNormMu[i].asList(),
+                "norm_sigma", mNormSigma[i].asList(),
+                "norm_mu_eng", mNormMuEng,
+                "norm_sigma_eng", mNormSigmaEng,
+                "nn", rNN
+            ));
+        }
         rSaveTo.put("version", NNAP.VERSION);
         rSaveTo.put("units", mUnits);
         rSaveTo.put("models", rModels);

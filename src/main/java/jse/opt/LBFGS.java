@@ -80,7 +80,7 @@ public class LBFGS extends AbstractOptimizer {
      * 对于 LBFGS，线搜索的 wolfe 条件默认设为 {@code 0.9}
      */
     @Override public LBFGS setLineSearch() {
-        return (LBFGS)setLineSearchStrongWolfe(0.0001, 0.9, 20);
+        return (LBFGS)setLineSearchStrongWolfe(0.0001, 0.9, 10);
     }
     
     /**
