@@ -40,7 +40,7 @@ import java.util.function.IntUnaryOperator;
 /**
  * jse 实现的 nnap 训练器，这里简单起见直接通过 python 训练。
  * 这里直接通过全局的 python 解释器执行
- * @deprecated 现在使用纯 jse 实现 {@link TrainerNative}，效率更高
+ * @deprecated 现在使用纯 jse 实现 {@link Trainer}，效率更高
  * @author liqa
  */
 @Deprecated

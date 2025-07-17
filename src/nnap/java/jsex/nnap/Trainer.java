@@ -35,7 +35,7 @@ import java.util.function.IntUnaryOperator;
  * @author liqa
  */
 @ApiStatus.Experimental
-public class TrainerNative implements IHasSymbol, ISavable {
+public class Trainer implements IHasSymbol, ISavable {
     protected final static String DEFAULT_UNITS = "metal";
     protected final static int[] DEFAULT_HIDDEN_DIMS = {32, 32}; // 现在统一默认为 32, 32
     protected final static double DEFAULT_FORCE_WEIGHT = 0.1;
@@ -83,13 +83,13 @@ public class TrainerNative implements IHasSymbol, ISavable {
     private final int[] mParaSizes, mHiddenSizes;
     
     protected boolean mFullCache = false;
-    public TrainerNative setFullCache(boolean aFlag) {mFullCache = aFlag; return this;}
+    public Trainer setFullCache(boolean aFlag) {mFullCache = aFlag; return this;}
     
     protected double mForceWeight = DEFAULT_FORCE_WEIGHT;
-    public TrainerNative setForceWeight(double aWeight) {mForceWeight = aWeight; return this;}
+    public Trainer setForceWeight(double aWeight) {mForceWeight = aWeight; return this;}
     
     protected String mUnits = DEFAULT_UNITS;
-    public TrainerNative setUnits(String aUnits) {mUnits = aUnits; return this;}
+    public Trainer setUnits(String aUnits) {mUnits = aUnits; return this;}
     
     private void validHiddenBuf_(IntVector aAtomType, boolean aRequireGradBackward) {
         int tAtomNum = aAtomType.size();
@@ -118,7 +118,7 @@ public class TrainerNative implements IHasSymbol, ISavable {
         }
     }
     
-    TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, FeedForward[] aNN, IOptimizer aOptimizer) {
+    Trainer(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, FeedForward[] aNN, IOptimizer aOptimizer) {
         if (aSymbols.length != aRefEngs.size()) throw new IllegalArgumentException("Symbols length does not match reference energies length.");
         if (aSymbols.length != aBasis.length) throw new IllegalArgumentException("Symbols length does not match reference basis length.");
         if (aSymbols.length != aNN.length) throw new IllegalArgumentException("Symbols length does not match neural network length.");
@@ -211,10 +211,10 @@ public class TrainerNative implements IHasSymbol, ISavable {
         mOptimizer.setLossFunc(() -> calLoss(mTrainData, null));
         mOptimizer.setLossFuncGrad(grad -> calLoss(mTrainData, grad));
     }
-    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, IOptimizer aOptimizer) {
+    public Trainer(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, IOptimizer aOptimizer) {
         this(aSymbols, aRefEngs, aBasis, nnFrom_(aBasis), aOptimizer);
     }
-    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis[] aBasis) {
+    public Trainer(String[] aSymbols, IVector aRefEngs, Basis[] aBasis) {
         this(aSymbols, aRefEngs, aBasis, new LBFGS(100).setLineSearch());
     }
     private static FeedForward[] nnFrom_(Basis[] aBasis) {
@@ -224,9 +224,9 @@ public class TrainerNative implements IHasSymbol, ISavable {
         }
         return rOut;
     }
-    public TrainerNative(String[] aSymbols, IVector aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
-    public TrainerNative(String[] aSymbols, double[] aRefEngs, Basis[] aBasis) {this(aSymbols, Vectors.from(aRefEngs), aBasis);}
-    public TrainerNative(String[] aSymbols, double[] aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
+    public Trainer(String[] aSymbols, IVector aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
+    public Trainer(String[] aSymbols, double[] aRefEngs, Basis[] aBasis) {this(aSymbols, Vectors.from(aRefEngs), aBasis);}
+    public Trainer(String[] aSymbols, double[] aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length));}
     private static Basis[] repeatBasis_(Basis aBasis, int aLen) {
         Basis[] rOut = new Basis[aLen];
         Arrays.fill(rOut, aBasis);
