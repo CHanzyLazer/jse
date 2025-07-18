@@ -267,26 +267,109 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         mOptimizer.setLossFunc(() -> calLoss(mTrainData, null));
         mOptimizer.setLossFuncGrad(grad -> calLoss(mTrainData, grad));
     }
-    public Trainer(String[] aSymbols, IVector aRefEngs, Basis[] aBasis, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) {
-        this(aThreadNumber, aSymbols, aRefEngs, aBasis, nnFrom_(aBasis), new LBFGS(100).setLineSearch());
+    /**
+     * 创建一个 nnap 的训练器
+     * @param aBasis 执行的每个种类对应的基组
+     * @param aArgs 其余训练其参数，具体为：
+     * <dl>
+     *   <dt>symbols:</dt>
+     *     <dd>指定元素列表</dd>
+     *   <dt>ref_engs (可选):</dt>
+     *     <dd>指定每个元素的参考能量</dd>
+     *   <dt>thread_number (可选，默认为 4):</dt>
+     *     <dd>指定训练时使用的线程数</dd>
+     *   <dt>nn (可选):</dt>
+     *     <dd>指定神经网络具体结构，包含：
+     *       <dl>
+     *       <dt>hidden_dims (可选，默认为 [32, 32]):</dt>
+     *          <dd>指定神经网络每个隐藏层的神经元数目</dd>
+     *       </dl>
+     *     </dd>
+     * </dl>
+     */
+    public Trainer(Basis[] aBasis, Map<String, ?> aArgs) {
+        this(threadNumberFrom_(aArgs), symbolsFrom_(aArgs), refEngsFrom_(aArgs), aBasis, nnFrom_(aBasis, aArgs), new LBFGS(100).setLineSearch());
     }
-    public Trainer(String[] aSymbols, IVector aRefEngs, Basis aBasis, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length), aThreadNumber);}
-    public Trainer(String[] aSymbols, double[] aRefEngs, Basis[] aBasis, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) {this(aSymbols, Vectors.from(aRefEngs), aBasis, aThreadNumber);}
-    public Trainer(String[] aSymbols, double[] aRefEngs, Basis aBasis, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length), aThreadNumber);}
-    public Trainer(String[] aSymbols, IVector aRefEngs, Basis[] aBasis) {this(aSymbols, aRefEngs, aBasis, DEFAULT_THREAD_NUMBER);}
-    public Trainer(String[] aSymbols, IVector aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, aBasis, DEFAULT_THREAD_NUMBER);}
-    public Trainer(String[] aSymbols, double[] aRefEngs, Basis[] aBasis) {this(aSymbols, aRefEngs, aBasis, DEFAULT_THREAD_NUMBER);}
-    public Trainer(String[] aSymbols, double[] aRefEngs, Basis aBasis) {this(aSymbols, aRefEngs, aBasis, DEFAULT_THREAD_NUMBER);}
-    private static FeedForward[] nnFrom_(Basis[] aBasis) {
-        FeedForward[] rOut = new FeedForward[aBasis.length];
-        for (int i = 0; i < rOut.length; ++i) {
-            rOut[i] = FeedForward.init(aBasis[i].size(), DEFAULT_HIDDEN_DIMS);
-        }
-        return rOut;
+    public Trainer(Basis aBasis, Map<String, ?> aArgs) {
+        this(repeatBasis_(aBasis, typeNumberFrom_(aArgs)), aArgs);
     }
+    
     private static Basis[] repeatBasis_(Basis aBasis, int aLen) {
         Basis[] rOut = new Basis[aLen];
         Arrays.fill(rOut, aBasis);
+        return rOut;
+    }
+    private static int typeNumberFrom_(Map<String, ?> aArgs) {
+        @Nullable Object tSymbols = UT.Code.get(aArgs, "symbols", "elems", "species");
+        if (tSymbols == null) throw new IllegalArgumentException("args of trainer MUST contain `symbols`");
+        if (tSymbols instanceof Collection) {
+            return ((Collection<?>)tSymbols).size();
+        } else
+        if (tSymbols instanceof Object[]) {
+            return ((Object[])tSymbols).length;
+        } else {
+            throw new IllegalArgumentException("invalid type of symbols: " + tSymbols.getClass().getName());
+        }
+    }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static String[] symbolsFrom_(Map<String, ?> aArgs) {
+        @Nullable Object tSymbols = UT.Code.get(aArgs, "symbols", "elems", "species");
+        if (tSymbols == null) throw new IllegalArgumentException("args of trainer MUST contain `symbols`");
+        if (tSymbols instanceof Collection) {
+            return IO.Text.toArray((Collection)tSymbols);
+        } else
+        if (tSymbols instanceof Object[]) {
+            return IO.Text.toArray((List)AbstractCollections.from((Object[])tSymbols));
+        } else {
+            throw new IllegalArgumentException("invalid type of symbols: " + tSymbols.getClass().getName());
+        }
+    }
+    @SuppressWarnings("unchecked")
+    private static IVector refEngsFrom_(Map<String, ?> aArgs) {
+        @Nullable Object refEngs = UT.Code.get(aArgs, "ref_engs", "reference_energies", "erefs");
+        if (refEngs == null) return Vectors.zeros(typeNumberFrom_(aArgs));
+        if (refEngs instanceof Collection) {
+            return Vectors.from((Collection<? extends Number>)refEngs);
+        } else
+        if (refEngs instanceof double[]) {
+            return Vectors.from((double[])refEngs);
+        } else
+        if (refEngs instanceof IVector) {
+            return Vectors.from((IVector)refEngs);
+        } else {
+            throw new IllegalArgumentException("invalid type of ref_engs: " + refEngs.getClass().getName());
+        }
+    }
+    private static int threadNumberFrom_(Map<String, ?> aArgs) {
+        return ((Number)UT.Code.getWithDefault(aArgs, DEFAULT_THREAD_NUMBER, "thread_number", "thread_num", "nthreads")).intValue();
+    }
+    private static FeedForward[] nnFrom_(Basis[] aBasis, Map<String, ?> aArgs) {
+        @Nullable Map<?, ?> tNNSetting = (Map<?, ?>)UT.Code.get(aArgs, "nn");
+        @Nullable List<?> tHiddenDims = tNNSetting==null ? null : (List<?>)UT.Code.get(tNNSetting, "hidden_dims", "nnarch");
+        List<int[]> tHiddenDimsArr;
+        if (tHiddenDims == null) {
+            tHiddenDimsArr = NewCollections.from(aBasis.length, i -> DEFAULT_HIDDEN_DIMS);
+        } else
+        if (tHiddenDims.get(0) instanceof Number) {
+            final int[] tSubDimsArr = new int[tHiddenDims.size()];
+            for (int i = 0; i < tSubDimsArr.length; ++i) {
+                tSubDimsArr[i] = ((Number)tHiddenDims.get(i)).intValue();
+            }
+            tHiddenDimsArr = NewCollections.from(aBasis.length, i -> tSubDimsArr);
+        } else {
+            tHiddenDimsArr = NewCollections.from(aBasis.length, i -> {
+                List<?> tSubDims = (List<?>)tHiddenDims.get(i);
+                int[] tSubDimsArr = new int[tSubDims.size()];
+                for (int j = 0; j < tSubDimsArr.length; ++j) {
+                    tSubDimsArr[j] = ((Number)tSubDims.get(j)).intValue();
+                }
+                return tSubDimsArr;
+            });
+        }
+        FeedForward[] rOut = new FeedForward[aBasis.length];
+        for (int i = 0; i < rOut.length; ++i) {
+            rOut[i] = FeedForward.init(aBasis[i].size(), tHiddenDimsArr.get(i));
+        }
         return rOut;
     }
     
