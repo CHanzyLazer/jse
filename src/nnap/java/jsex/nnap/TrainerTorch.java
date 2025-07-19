@@ -521,7 +521,7 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
             }
             if (aEarlyStop && tSelectEpoch>=0) {
                 fLoadCheckpoint.call();
-                if (aPrintLog) System.out.printf("Model at epoch = %d selected, test loss = %.4g\n", tSelectEpoch, tMinLoss);
+                if (aPrintLog) System.out.printf("Model at epoch = %d selected, test loss = %.4g\n", tSelectEpoch+1, tMinLoss);
             }
             if (!aPrintLog) return;
             List<?> tLossDetail = fCalLossDetail.callAs(List.class);
@@ -788,7 +788,6 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
         }
         mTrainData.mAtomNum.add(aAtomData.atomNumber());
         mTrainData.mVolume.add(aAtomData.volume());
-        mHasData = true;
     }
     /**
      * {@code addTrainData(aAtomData, aEnergy, aForces, null)}

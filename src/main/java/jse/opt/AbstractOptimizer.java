@@ -7,7 +7,6 @@ import jse.math.vector.Vectors;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 import static jse.math.MathEX.Code.DBL_EPSILON;
 
@@ -22,6 +21,9 @@ public abstract class AbstractOptimizer implements IOptimizer {
     
     private ILossFunc mLossFunc = null;
     private ILossFuncGrad mLossFuncGrad = null;
+    
+    private ILogPrinter mLogPrinter = null;
+    private IBreakChecker mBreakChecker = null;
     
     protected double mC1 = Double.NaN, mC2 = Double.NaN;
     protected int mMaxIter = -1;
@@ -143,13 +145,40 @@ public abstract class AbstractOptimizer implements IOptimizer {
         mLineSearch = true;
         return this;
     }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override public AbstractOptimizer setLineSearch() {
         return setLineSearchStrongWolfe(0.0001, 0.1, 10);
     }
+    /**
+     * {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override public AbstractOptimizer setNoLineSearch() {
         mLineSearch = false;
         return this;
     }
+    /**
+     * {@inheritDoc}
+     * @param aLogPrinter {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public AbstractOptimizer setLogPrinter(ILogPrinter aLogPrinter) {
+        mLogPrinter = aLogPrinter;
+        return this;
+    }
+    /**
+     * {@inheritDoc}
+     * @param aBreakChecker {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public AbstractOptimizer setBreakChecker(IBreakChecker aBreakChecker) {
+        mBreakChecker = aBreakChecker;
+        return this;
+    }
+    
     
     /**
      * {@inheritDoc}
@@ -170,7 +199,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
                 applyStep(step);
                 tLineSearchStep = 0;
             }
-            printLog(step, tLineSearchStep, tLoss);
+            printLog(step, tLineSearchStep, tLoss, aPrintLog);
             if (checkBreak(step, tLoss, oLoss, mParameterStep)) break;
             oLoss = tLoss;
         }
@@ -262,9 +291,7 @@ public abstract class AbstractOptimizer implements IOptimizer {
     protected boolean lineSearchAlways() {
         return false;
     }
-    protected void updateLearningRate(double aLR) {
-        /**/
-    }
+    protected void updateLearningRate(double aLR) {/**/}
     
     protected final static DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
     
@@ -282,8 +309,14 @@ public abstract class AbstractOptimizer implements IOptimizer {
      * @param aStep 当前的迭代步数
      * @param aLineSearchStep 当前步进行的线搜索步数
      * @param aLoss 当前的 loss 值
+     * @param aPrintLog 是否进行打印，作为参数传入确保无论如何一定会调用
      */
-    protected void printLog(int aStep, int aLineSearchStep, double aLoss) {
+    protected void printLog(int aStep, int aLineSearchStep, double aLoss, boolean aPrintLog) {
+        if (mLogPrinter != null) {
+            mLogPrinter.call(aStep, aLineSearchStep, aLoss, aPrintLog);
+            return;
+        }
+        if (!aPrintLog) return;
         if (aStep == 0) System.out.printf("%12s %12s %18s %12s\n", "step", "time", "loss", "max_step");
         double tMaxStep = 0.0;
         final int tSize = mParameterStep.size();
@@ -308,6 +341,9 @@ public abstract class AbstractOptimizer implements IOptimizer {
      * @return 是否进行中断
      */
     protected boolean checkBreak(int aStep, double aLoss, double aLastLoss, Vector aParameterStep) {
+        if (mBreakChecker != null) {
+            return mBreakChecker.call(aStep, aLoss, aLastLoss, aParameterStep);
+        }
         if (aStep==0 || Double.isNaN(aLastLoss)) return false;
         return Math.abs(aLastLoss-aLoss) < Math.abs(aLastLoss)*DBL_EPSILON;
     }

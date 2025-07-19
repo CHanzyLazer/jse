@@ -1,6 +1,7 @@
 package jsex.nnap.nn;
 
 import jse.code.UT;
+import jse.code.collection.AbstractCollections;
 import jse.code.io.ISavable;
 import jse.math.IDataShell;
 import jse.math.MathEX;
@@ -193,7 +194,7 @@ public class FeedForward extends NeuralNetwork implements ISavable {
     @Override public void save(Map rSaveTo) {
         rSaveTo.put("type", "feed_forward");
         rSaveTo.put("input_dim", mInputDim);
-        rSaveTo.put("hidden_dims", mHiddenDims);
+        rSaveTo.put("hidden_dims", AbstractCollections.from(mHiddenDims));
         List<List<List<Double>>> rHiddenWeights = new ArrayList<>(mHiddenNumber);
         int tColNum = mInputDim;
         int tShift = 0;
@@ -222,6 +223,9 @@ public class FeedForward extends NeuralNetwork implements ISavable {
     
     public int parameterSize() {
         return mHiddenWeightsSize+mOutputWeightSize + mHiddenBiasesSize+1;
+    }
+    public int parameterWeightSize() {
+        return mHiddenWeightsSize+mOutputWeightSize;
     }
     public int hiddenSize() {
         return mHiddenBiasesSize;

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.ApiStatus;
 public interface IOptimizer {
     @FunctionalInterface interface ILossFunc {double call();}
     @FunctionalInterface interface ILossFuncGrad {double call(Vector rGrad);}
+    @FunctionalInterface interface ILogPrinter {void call(int aStep, int aLineSearchStep, double aLoss, boolean aPrintLog);}
+    @FunctionalInterface interface IBreakChecker {boolean call(int aStep, double aLoss, double aLastLoss, Vector aParameterStep);}
     
     /**
      * 设置需要优化的参数
@@ -45,6 +47,19 @@ public interface IOptimizer {
      * @return 自身方便链式调用
      */
     IOptimizer setNoLineSearch();
+    
+    /**
+     * 设置优化过程中间变量打印器
+     * @param aLogPrinter 自定义的中间变量打印器 {@link ILogPrinter}
+     * @return 自身方便链式调用
+     */
+    IOptimizer setLogPrinter(ILogPrinter aLogPrinter);
+    /**
+     * 设置优化中断的检测器
+     * @param aBreakChecker 自定义的中断的检测器 {@link IBreakChecker}
+     * @return 自身方便链式调用
+     */
+    IOptimizer setBreakChecker(IBreakChecker aBreakChecker);
     
     
     /**
