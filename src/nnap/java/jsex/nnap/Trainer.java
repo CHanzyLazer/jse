@@ -962,7 +962,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         for (int i = 0; i < mTypeNum; ++i) {
             IVector tParas = mParas[i];
             int tWeightSize = mParaWeightSizes[i];
-            double tMul = mL2LossWeight/tWeightSize;
+            double tMul = mL2LossWeight/MathEX.Fast.sqrt(tWeightSize);
             for (int j = 0; j < tWeightSize; ++j) {
                 double tSubPara = tParas.get(j);
                 rLoss.add(3, tMul*(tSubPara*tSubPara));
