@@ -8,10 +8,7 @@ import jse.cache.DoubleArrayCache;
 import jse.cache.IntArrayCache;
 import jse.cache.IntMatrixCache;
 import jse.cache.MatrixCache;
-import jse.clib.CPointer;
-import jse.clib.Dlfcn;
-import jse.clib.JNIUtil;
-import jse.clib.MiMalloc;
+import jse.clib.*;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
@@ -83,7 +80,7 @@ public class NativeLmp implements IAutoShutdown {
          * 这里简单实现，不使用 git 来自动识别最新稳定版本
          */
         public static String LMP_TAG = OS.env("JSE_LMP_TAG");
-        private final static String DEFAULT_LMP_TAG = "stable_29Aug2024_update4";
+        private final static String DEFAULT_LMP_TAG = "stable_2Aug2023_update4";
         
         /**
          * 自定义构建 lammps 的 cmake 参数设置，
@@ -382,9 +379,9 @@ public class NativeLmp implements IAutoShutdown {
      * 获取 LAMMPS 的字符串版本，为 version.h 中定义的 {@code LAMMPS_VERSION}
      *
      * 主要用于 {@link LmpPlugin} 初始化使用
-     * @return 字符串版本
+     * @return 字符串版本，如果 lammps 不支持则返回 {@code null}
      */
-    public String versionStr() throws LmpException {
+    public @Nullable String versionStr() throws LmpException {
         checkThread();
         return lammpsVersionStr_(mLmpPtr.mPtr);
     }

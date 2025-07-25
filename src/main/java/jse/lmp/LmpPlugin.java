@@ -57,6 +57,7 @@ public class LmpPlugin {
         
         /** 插件依赖的 lammps 版本字符串，默认自动检测 */
         public static String LMP_VERSION = null;
+        private final static String DEFAULT_LMP_VERSION = "2 Aug 2023";
         
         /** 重定向 lmpplugin 动态库的路径，用于自定义编译这个库的过程，或者重新实现 lmpplugin 的接口 */
         public static @Nullable String REDIRECT_LMPPLUGIN_LIB = OS.env("JSE_REDIRECT_LMPPLUGIN_LIB");
@@ -81,7 +82,6 @@ public class LmpPlugin {
         , "fix_jse.cpp"
         , "fix_jse.h"
         , "lammpsplugin.h"
-        , "version.h"
         , "neigh_request.h"
         , "STUBS/mpi.h"
     };
@@ -95,20 +95,21 @@ public class LmpPlugin {
         CPointer.InitHelper.init();
         // 依赖 lmpjni
         NativeLmp.InitHelper.init();
-        // 获取 lammps 版本字符串
-        final String tLmpVersion;
-        if (Conf.LMP_VERSION != null) {
-            tLmpVersion = Conf.LMP_VERSION;
-        } else {
-            try (NativeLmp tLmp = new NativeLmp()) {
-                tLmpVersion = tLmp.versionStr();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        final String[] fLmpVersion = new String[1];
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LIB_PATH = new JNIUtil.LibBuilder("lmpplugin", "LMPPLUGIN", LIB_DIR, Conf.CMAKE_SETTING)
             .setMPIChecker() // 现在也会检测 mpi
+            .setEnvChecker(() -> {
+                // 获取 lammps 版本字符串
+                if (Conf.LMP_VERSION != null) {
+                    fLmpVersion[0] = Conf.LMP_VERSION;
+                } else {
+                    try (NativeLmp tLmp = new NativeLmp("-log", "none", "-screen", "none")) {
+                        String tLmpVersion = tLmp.versionStr();
+                        fLmpVersion[0] = tLmpVersion==null ? Conf.DEFAULT_LMP_VERSION : tLmpVersion;
+                    }
+                }
+            })
             .setSrc("lmp/plugin", SRC_NAME)
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
             .setCmakeLineOpt(line -> {
@@ -116,7 +117,7 @@ public class LmpPlugin {
                 line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NativeLmp.NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题
                            .replace("$ENV{JSE_LMP_LIB_PATH}"   , NativeLmp.NATIVELMP_LLIB_PATH  .replace("\\", "\\\\")); // 注意反斜杠的转义问题
                 // 替换 lammps 版本为设置值
-                line = line.replace("$ENV{JSE_LMP_VERSION}", tLmpVersion);
+                line = line.replace("$ENV{JSE_LMP_VERSION}", fLmpVersion[0]);
                 // 替换其中的 jvm 库路径为自动检测到的路径
                 line = line.replace("$ENV{JSE_JVM_LIB_PATH_DEF}", JVM.LIB_PATH.replace("\\", "\\\\\\\\")); // 注意反斜杠的转义问题
                 // 替换 jvm 启动设置

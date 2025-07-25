@@ -139,7 +139,7 @@ public class JNIUtil {
     @ApiStatus.Internal
     public static class LibBuilder implements Supplier<String> {
         private final String mProjectName, mInfoProjectName;
-        private IEnvChecker mEnvChecker = null;
+        private final List<IEnvChecker> mEnvChecker = new ArrayList<>();
         private IDirIniter mSrcDirIniter = null;
         private IDirIniter mBuildDirIniter = sd -> {
             String tBuildDir = sd + BUILD_DIR_NAME + "/";
@@ -164,7 +164,7 @@ public class JNIUtil {
         public LibBuilder setMPIChecker() {return setMPIChecker(false);}
         public LibBuilder setMPIChecker(final boolean aForce) {
             // 通用的检测 mpi 接口
-            mEnvChecker = () -> {
+            mEnvChecker.add(() -> {
                 EXEC.setNoSTDOutput().setNoERROutput();
                 boolean tNoMpi = EXEC.system("mpiexec --version") != 0;
                 if (tNoMpi) {
@@ -197,10 +197,10 @@ public class JNIUtil {
                         System.out.println("build "+ mProjectName +" without MPI support? (y/N)");
                     }
                 }
-            };
+            });
             return this;
         }
-        public LibBuilder setEnvChecker(IEnvChecker aEnvChecker) {mEnvChecker = aEnvChecker; return this;}
+        public LibBuilder setEnvChecker(IEnvChecker aEnvChecker) {mEnvChecker.add(aEnvChecker); return this;}
         public LibBuilder setSrc(final String aAssetsDirName, final String[] aSrcNames) {
             mSrcDirIniter = wd -> {
                 for (String tName : aSrcNames) {IO.copy(IO.getResource(aAssetsDirName+"/src/"+tName), wd+tName);}
@@ -257,6 +257,10 @@ public class JNIUtil {
             if (mUseMiMalloc != null) {
                 rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(mUseMiMalloc ?"ON":"OFF"));
             }
+            // windows 下统一开启 /MT 保证静态链接
+            if (IS_WINDOWS) {
+                rCommand.add("-D"); rCommand.add("CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded");
+            }
             // 设置构建输出目录为 lib
             IO.makeDir(mLibDir); // 初始化一下这个目录避免意料外的问题
             rCommand.add("-D"); rCommand.add("CMAKE_ARCHIVE_OUTPUT_DIRECTORY:PATH='"+ mLibDir +"'");
@@ -275,7 +279,7 @@ public class JNIUtil {
         }
         private @NotNull String initLib_() throws Exception {
             // 优先检测环境
-            if (mEnvChecker != null) mEnvChecker.check();
+            if (!mEnvChecker.isEmpty()) for (IEnvChecker tChecker : mEnvChecker) tChecker.check();
             // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
             EXEC.setNoSTDOutput().setNoERROutput();
             boolean tNoCmake = EXEC.system("cmake --version") != 0;

@@ -104,9 +104,9 @@ JNIEXPORT jint JNICALL Java_jse_lmp_NativeLmp_lammpsVersion_1(JNIEnv *aEnv, jcla
 JNIEXPORT jstring JNICALL Java_jse_lmp_NativeLmp_lammpsVersionStr_1(JNIEnv *aEnv, jclass aClazz, jlong aLmpPtr) {
     char *tVersionStr = (char *)lammps_extract_global((void *)(intptr_t)aLmpPtr, "lammps_version");
 #ifdef __cplusplus
-    return aEnv->NewStringUTF(tVersionStr);
+    return tVersionStr!=NULL ? aEnv->NewStringUTF(tVersionStr) : NULL;
 #else
-    return (*aEnv)->NewStringUTF(aEnv, tVersionStr);
+    return tVersionStr!=NULL ? (*aEnv)->NewStringUTF(aEnv, tVersionStr) : NULL;
 #endif
 }
 
