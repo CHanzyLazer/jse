@@ -1995,6 +1995,7 @@ public class ARRAY {
     }
     
     public static double norm1OfThis(double[] aThis, int aShift, int aLength) {
+        if (NATIVE_OPERATION) return Native.norm1OfThis(aThis, aShift, aLength);
         switch(aLength) {
         case 0:  {return 0.0;}
         case 1:  {return norm1OfThis1(aThis, aShift);}
@@ -2277,5 +2278,11 @@ public class ARRAY {
             return dotOfThis_(aThis, aShift, aLength);
         }
         private native static double dotOfThis_(double[] aThis, int aShift, int aLength);
+        
+        public static double norm1OfThis(double[] aThis, int aShift, int aLength) {
+            lengthCheck(aLength+aShift, aThis.length);
+            return norm1OfThis_(aThis, aShift, aLength);
+        }
+        private native static double norm1OfThis_(double[] aThis, int aShift, int aLength);
     }
 }

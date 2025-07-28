@@ -1,5 +1,7 @@
 #include "jse_math_operation_ARRAY_Native.h"
+
 #include "jniutil.h"
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +34,13 @@ static inline jdouble dotAB_jse(jdouble *aArrayL, jdouble *aArrayR, jint aLen) {
         rDot += aArrayL[i]*aArrayR[i];
     }
     return rDot;
+}
+static inline jdouble norm1_jse(jdouble *aArray, jint aLen) {
+    jdouble rNorm = 0.0;
+    for (jint i = 0; i < aLen; ++i) {
+        rNorm += fabs((double)aArray[i]);
+    }
+    return rNorm;
 }
 
 JNIEXPORT jdouble JNICALL Java_jse_math_operation_ARRAY_00024Native_sumOfThis_1(JNIEnv *aEnv, jclass aClazz,
@@ -78,6 +87,18 @@ JNIEXPORT jdouble JNICALL Java_jse_math_operation_ARRAY_00024Native_dotOfThis_1(
     jdouble *tThis = (jdouble *)getJArrayBuf(aEnv, aThis);
     
     jdouble tOut = dot_jse(tThis+aShift, aLength);
+    
+    // release java array
+    releaseJArrayBuf(aEnv, aThis, tThis, JNI_ABORT);
+    return tOut;
+}
+
+JNIEXPORT jdouble JNICALL Java_jse_math_operation_ARRAY_00024Native_norm1OfThis_1(JNIEnv *aEnv, jclass aClazz,
+    jdoubleArray aThis, jint aShift, jint aLength) {
+    // java array init
+    jdouble *tThis = (jdouble *)getJArrayBuf(aEnv, aThis);
+    
+    jdouble tOut = norm1_jse(tThis+aShift, aLength);
     
     // release java array
     releaseJArrayBuf(aEnv, aThis, tThis, JNI_ABORT);
