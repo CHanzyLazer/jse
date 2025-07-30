@@ -2293,14 +2293,24 @@ public class ARRAY {
         }
         private native static double norm1OfThis_(double[] aThis, int aShift, int aLength);
         
-        public static void matmulRC2Dest(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
-                                         double[] rDestRow, int rShift, int aRowNum, int aColNum, int aMidNum) {
+        public static void matmulRCR2Dest(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
+                                          double[] rDestRow, int rShiftD, int aRowNum, int aColNum, int aMidNum) {
             lengthCheck(aRowNum*aMidNum + aShiftL, aDataRowL.length);
             lengthCheck(aMidNum*aColNum + aShiftR, aDataColR.length);
-            lengthCheck(aRowNum*aColNum + rShift, rDestRow.length);
-            matmulRC2Dest_(aDataRowL, aShiftL, aDataColR, aShiftR, rDestRow, rShift, aRowNum, aColNum, aMidNum);
+            lengthCheck(aRowNum*aColNum + rShiftD, rDestRow.length);
+            matmulRCR2Dest_(aDataRowL, aShiftL, aDataColR, aShiftR, rDestRow, rShiftD, aRowNum, aColNum, aMidNum);
         }
-        private native static void matmulRC2Dest_(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
-                                                  double[] rDestRow, int rShift, int aRowNum, int aColNum, int aMidNum);
+        private native static void matmulRCR2Dest_(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
+                                                   double[] rDestRow, int rShiftD, int aRowNum, int aColNum, int aMidNum);
+        
+        public static void matmulRCC2Dest(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
+                                          double[] rDestCol, int rShiftD, int aRowNum, int aColNum, int aMidNum) {
+            lengthCheck(aRowNum*aMidNum + aShiftL, aDataRowL.length);
+            lengthCheck(aMidNum*aColNum + aShiftR, aDataColR.length);
+            lengthCheck(aRowNum*aColNum + rShiftD, rDestCol.length);
+            matmulRCC2Dest_(aDataRowL, aShiftL, aDataColR, aShiftR, rDestCol, rShiftD, aRowNum, aColNum, aMidNum);
+        }
+        private native static void matmulRCC2Dest_(double[] aDataRowL, int aShiftL, double[] aDataColR, int aShiftR,
+                                                   double[] rDestCol, int rShiftD, int aRowNum, int aColNum, int aMidNum);
     }
 }

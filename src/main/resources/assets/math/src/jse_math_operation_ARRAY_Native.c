@@ -67,20 +67,35 @@ JNIEXPORT jdouble JNICALL Java_jse_math_operation_ARRAY_00024Native_norm1OfThis_
     return tOut;
 }
 
-JNIEXPORT void JNICALL Java_jse_math_operation_ARRAY_00024Native_matmulRC2Dest_1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jse_math_operation_ARRAY_00024Native_matmulRCR2Dest_1(JNIEnv *aEnv, jclass aClazz,
     jdoubleArray aDataRowL, jint aShiftL, jdoubleArray aDataColR, jint aShiftR,
-    jdoubleArray rDestRow, jint rShift, jint aRowNum, jint aColNum, jint aMidNum) {
+    jdoubleArray rDestRow, jint rShiftD, jint aRowNum, jint aColNum, jint aMidNum) {
     // java array init
     jdouble *tDataRowL = (jdouble *)getJArrayBuf(aEnv, aDataRowL);
     jdouble *tDataColR = (jdouble *)getJArrayBuf(aEnv, aDataColR);
     jdouble *tDestRow = (jdouble *)getJArrayBuf(aEnv, rDestRow);
     
-    matmulRC_jse(tDataRowL+aShiftL, tDataColR+aShiftR, tDestRow+rShift, aRowNum, aColNum, aMidNum);
+    matmulRCR_jse(tDataRowL+aShiftL, tDataColR+aShiftR, tDestRow+rShiftD, aRowNum, aColNum, aMidNum);
     
     // release java array
     releaseJArrayBuf(aEnv, aDataRowL, tDataRowL, JNI_ABORT);
     releaseJArrayBuf(aEnv, aDataColR, tDataColR, JNI_ABORT);
     releaseJArrayBuf(aEnv, rDestRow, tDestRow, 0);
+}
+JNIEXPORT void JNICALL Java_jse_math_operation_ARRAY_00024Native_matmulRCC2Dest_1(JNIEnv *aEnv, jclass aClazz,
+    jdoubleArray aDataRowL, jint aShiftL, jdoubleArray aDataColR, jint aShiftR,
+    jdoubleArray rDestCol, jint rShiftD, jint aRowNum, jint aColNum, jint aMidNum) {
+    // java array init
+    jdouble *tDataRowL = (jdouble *)getJArrayBuf(aEnv, aDataRowL);
+    jdouble *tDataColR = (jdouble *)getJArrayBuf(aEnv, aDataColR);
+    jdouble *tDestCol = (jdouble *)getJArrayBuf(aEnv, rDestCol);
+    
+    matmulRCC_jse(tDataRowL+aShiftL, tDataColR+aShiftR, tDestCol+rShiftD, aRowNum, aColNum, aMidNum);
+    
+    // release java array
+    releaseJArrayBuf(aEnv, aDataRowL, tDataRowL, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aDataColR, tDataColR, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rDestCol, tDestCol, 0);
 }
 
 #ifdef __cplusplus

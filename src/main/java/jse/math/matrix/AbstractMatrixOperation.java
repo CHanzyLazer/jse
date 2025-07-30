@@ -417,24 +417,32 @@ public abstract class AbstractMatrixOperation implements IMatrixOperation {
         final int tRowNum = aLHS.rowNumber();
         final int tColNum = aRHS.columnNumber();
         final int tMidNum = aLHS.columnNumber();
-        // 尝试使用 native 接口
-        if (Conf.NATIVE_OPERATION) {
-            if (aLHS instanceof RowMatrix && aRHS instanceof ColumnMatrix) {
-                RowMatrix rBuf = rDest.toBufRow(true);
-                ARRAY.Native.matmulRC2Dest(((RowMatrix)aLHS).internalData(), 0,
-                                           ((ColumnMatrix)aRHS).internalData(), 0,
-                                           rBuf.internalData(), 0, tRowNum, tColNum, tMidNum);
-                rDest.releaseBuf(rBuf);
-                return;
-            }
-        }
         // 特殊情况处理
         if (tMidNum == 0) return;
         // 现在对于串行的版本默认都不进行分块，更加简洁且很多情况下都更快
         // 判断行列顺序优先，这个问题没有那么简单
         // 一般情况下，行和列更短的一方对应矩阵更小，应该优先全部遍历（内存友好）
         boolean tRowFirst = tColNum > tRowNum;
-        // 但是在中间很短的情况下，应该翻转这个操作，从而更好利用上 SIMD 加速
+        // 尝试使用 native 接口
+        if (Conf.NATIVE_OPERATION) {
+            RowMatrix tLHS = aLHS.toBufRow();
+            ColumnMatrix tRHS = aRHS.toBufCol();
+            if (tRowFirst) {
+                ColumnMatrix rBuf = rDest.toBufCol(true);
+                ARRAY.Native.matmulRCC2Dest(tLHS.internalData(), 0, tRHS.internalData(), 0,
+                                            rBuf.internalData(), 0, tRowNum, tColNum, tMidNum);
+                rDest.releaseBuf(rBuf);
+            } else {
+                RowMatrix rBuf = rDest.toBufRow(true);
+                ARRAY.Native.matmulRCR2Dest(tLHS.internalData(), 0, tRHS.internalData(), 0,
+                                            rBuf.internalData(), 0, tRowNum, tColNum, tMidNum);
+                rDest.releaseBuf(rBuf);
+            }
+            aLHS.releaseBuf(tLHS, true);
+            aRHS.releaseBuf(tRHS, true);
+            return;
+        }
+        // 在 jse 实现中，中间很短的情况下应该翻转这个操作，从而更好利用上 SIMD 加速
         if (tMidNum <= 4) tRowFirst = !tRowFirst;
         // 根据上述判断决定遍历顺序
         if (tRowFirst) {

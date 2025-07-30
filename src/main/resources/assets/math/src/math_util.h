@@ -84,7 +84,7 @@ static inline void fill_jse(jdouble *rArray, jdouble aValue, jint aLen) {
     }
 }
 
-static inline void matmulRC_jse(jdouble *aDataRowL, jdouble *aDataColR, jdouble *rDestRow, jint aRowNum, jint aColNum, jint aMidNum) {
+static inline void matmulRCR_jse(jdouble *aDataRowL, jdouble *aDataColR, jdouble *rDestRow, jint aRowNum, jint aColNum, jint aMidNum) {
     jdouble *tBufL = aDataRowL;
     for (jint i = 0; i < aRowNum; ++i, tBufL+=aMidNum) {
         jdouble *tBufR = aDataColR;
@@ -98,7 +98,20 @@ static inline void matmulRC_jse(jdouble *aDataRowL, jdouble *aDataColR, jdouble 
         rDestRow += aColNum;
     }
 }
-
+static inline void matmulRCC_jse(jdouble *aDataRowL, jdouble *aDataColR, jdouble *rDestCol, jint aRowNum, jint aColNum, jint aMidNum) {
+    jdouble *tBufR = aDataColR;
+    for (jint j = 0; j < aColNum; ++j, tBufR+=aMidNum) {
+        jdouble *tBufL = aDataRowL;
+        for (jint i = 0; i < aRowNum; ++i, tBufL+=aMidNum) {
+            jdouble rDot = 0.0;
+            for (jint k = 0; k < aMidNum; ++k) {
+                rDot += tBufL[k]*tBufR[k];
+            }
+            rDestCol[i] = rDot;
+        }
+        rDestCol += aRowNum;
+    }
+}
 
 static inline void blockMatmul_jse(jdouble *aBlockL, jdouble *aBlockR, jdouble *rBlockD, jint aColNum, jint aMidNum) {
     jdouble *tBufL = aBlockL;
