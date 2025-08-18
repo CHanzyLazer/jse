@@ -3,6 +3,8 @@ package jse.code;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
+import groovy.toml.TomlBuilder;
+import groovy.toml.TomlSlurper;
 import groovy.yaml.YamlBuilder;
 import groovy.yaml.YamlSlurper;
 import jse.cache.ByteArrayCache;
@@ -598,6 +600,30 @@ public class IO {
          */
         public static String map2yaml(Map<?, ?> aMap) {
             YamlBuilder tBuilder = new YamlBuilder();
+            tBuilder.call(aMap);
+            return tBuilder.toString();
+        }
+        /**
+         * 将一个 toml 字符串转换成 {@link Map}，这里直接调用了
+         * {@link TomlSlurper#parseText(String)}
+         * @param aText 需要解析的 toml 字符串
+         * @return 解析得到的 {@link Map}
+         * @see IO#toml2map(String)
+         * @see IO.Text#map2toml(Map)
+         */
+        public static Map<?, ?> toml2map(String aText) {
+            return (Map<?, ?>) (new TomlSlurper()).parseText(aText);
+        }
+        /**
+         * 将一个 {@link Map} 转换成 toml 格式的字符串，这里直接调用了
+         * {@link TomlBuilder#toString()}
+         * @param aMap 需要编码成 toml 的 {@link Map}
+         * @return 编码得到的 toml 字符串
+         * @see IO#map2toml(Map, String)
+         * @see IO.Text#toml2map(String)
+         */
+        public static String map2toml(Map<?, ?> aMap) {
+            TomlBuilder tBuilder = new TomlBuilder();
             tBuilder.call(aMap);
             return tBuilder.toString();
         }
@@ -1797,7 +1823,45 @@ public class IO {
             tBuilder.writeTo(tWriter);
         }
     }
-    
+    /**
+     * 将一个 toml 文件转换成 {@link Map}，这里直接调用了
+     * {@link TomlSlurper#parse(Reader)} 实现
+     * @param aFilePath 需要读取并解析的 toml 文件
+     * @return 解析得到的 {@link Map}
+     * @throws IOException 输入文件不存在或触发权限不够时
+     * @see IO.Text#toml2map(String)
+     * @see IO#map2toml(Map, String)
+     */
+    public static Map<?, ?> toml2map(String aFilePath) throws IOException {
+        try (Reader tReader = toReader(aFilePath)) {return toml2map(tReader);}
+    }
+    /**
+     * 将一个 toml 文件的读取流 {@link Reader} 转换成 {@link Map}，这里直接调用了
+     * {@link TomlSlurper#parse(Reader)} 实现；主要用于内部使用
+     * @param aReader 需要解析的 toml 文件读取流，不会自动关闭
+     * @return 解析得到的 {@link Map}
+     * @see IO#toml2map(String)
+     */
+    public static Map<?, ?> toml2map(Reader aReader) {
+        return (Map<?, ?>) (new TomlSlurper()).parse(aReader);
+    }
+    /**
+     * 将一个 {@link Map} 保存成 toml 格式的文本文件，这里直接调用了
+     * {@link TomlBuilder#writeTo(Writer)}；
+     * 会覆盖已有文件，如果文件不存在会创建，如果输出目录不存在会递归创建。
+     * @param aMap 需要编码成 toml 的 {@link Map}
+     * @param aFilePath 需要保存的 toml 文件路径
+     * @throws IOException 目标路径有同名的文件夹或触发权限不够时
+     * @see IO.Text#map2toml(Map)
+     * @see IO#toml2map(String)
+     */
+    public static void map2toml(Map<?, ?> aMap, String aFilePath) throws IOException {
+        try (Writer tWriter = toWriter(aFilePath)) {
+            TomlBuilder tBuilder = new TomlBuilder();
+            tBuilder.call(aMap);
+            tBuilder.writeTo(tWriter);
+        }
+    }
     
     /**
      * 保存输入的二维数据为 csv 格式的文件；

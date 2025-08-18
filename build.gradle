@@ -93,7 +93,8 @@ dependencies {
     implementation('org.apache.groovy:groovy-groovysh:4.0.27')      // 用于直接通过命令行交互试的操作
     implementation('org.apache.groovy:groovy-json:4.0.27')          // 直接使用 groovy 的 json 包来支持 json，可以让 groovy 脚本使用原生的 json 功能
     implementation('org.apache.groovy:groovy-xml:4.0.27')           // groovy 的 xml
-    implementation('org.apache.groovy:groovy-yaml:4.0.27')          // groovy 的 yaml，暂时没有用到，并且这个包有些复杂，所以不提供支持
+    implementation('org.apache.groovy:groovy-yaml:4.0.27')          // groovy 的 yaml
+    implementation('org.apache.groovy:groovy-toml:4.0.27')          // groovy 的 toml
     implementation('jline:jline:2.14.6')                            // groovysh 前置，用来重写 sh 相关方法；现在需要手动包含此包才能让 groovy 版的 SP 通过编译
     
     // 跨语言编程
