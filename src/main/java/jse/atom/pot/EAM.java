@@ -269,7 +269,6 @@ public class EAM implements IPairPotential {
             default: {
                 throw new IllegalArgumentException("Invalid EAM format: " + aFormat);
             }}
-            
         }
     }
     /**
@@ -292,6 +291,109 @@ public class EAM implements IPairPotential {
         return rOut;
     }
     
+    /**
+     * 输出成 lammps 支持的 eam 势函数文件
+     * @param aFilePath 需要输出的路径
+     * @param aFormat 可选的 EAM 势函数文件格式，可选 {@code "eam", "alloy", "fs", "adp"}，默认根据后缀名自动检测
+     * @throws IOException 如果写入文件失败
+     */
+    public void write(String aFilePath, @Nullable String aFormat) throws IOException {
+        if (aFormat == null) {
+            if (aFilePath.endsWith(".eam")) {
+                aFormat = "eam";
+            } else
+            if (aFilePath.endsWith(".alloy")) {
+                aFormat = "alloy";
+            } else
+            if (aFilePath.endsWith(".fs")) {
+                aFormat = "fs";
+            } else
+            if (aFilePath.endsWith(".adp")) {
+                aFormat = "adp";
+            } else {
+                throw new IllegalArgumentException("Unsupported EAM format: " + aFilePath);
+            }
+        }
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln, aFormat);}
+    }
+    /**
+     * 输出成 lammps 支持的 eam 势函数文件
+     * @param aFilePath 需要输出的路径
+     * @throws IOException 如果写入文件失败
+     */
+    public void write(String aFilePath) throws IOException {
+        write(aFilePath, null);
+    }
+    /** 提供 {@link IO.IWriteln} 的接口来实现边写入边处理，此方法不会自动关闭流 */
+    void write_(IO.IWriteln aWriteln, String aFormat) throws IOException {
+        String[] tHeaders = mHeader.split("\n");
+        String tDNCut = String.format("%d %f %d %f %f", mNRho, mDRho, mNR, mDR, mCut);
+        switch(aFormat) {
+        case "eam": {
+            if (mTypeNum != 1) throw new IllegalStateException();
+            aWriteln.writeln(tHeaders.length<1 ? "" : tHeaders[0]);
+            aWriteln.writeln(String.format("%d %f %f %s", mAtomicNumbers[0], mMasses[0], mLatticeConsts[0], mLatticeTypes[0]));
+            aWriteln.writeln(tDNCut);
+            for (int i = 0; i < mNRho; ++i) {
+            aWriteln.writeln(String.valueOf(mFRho[0].get(i)));
+            }
+            for (int i = 0; i < mNR; ++i) {
+            aWriteln.writeln(String.valueOf(MathEX.Fast.sqrt(mRPhiR[0][0].get(i)/EAM_MUL)));
+            }
+            for (int i = 0; i < mNR; ++i) {
+            aWriteln.writeln(String.valueOf(mRhoR[0][0].get(i)));
+            }
+            break;
+        }
+        case "alloy": case "fs": case "adp": {
+            boolean tIsFs = aFormat.equals("fs");
+            boolean tIsAdp = aFormat.equals("adp");
+            if (!tIsFs && mRhoR.length!=1) throw new IllegalStateException();
+            if (!tIsAdp && (mUR!=null || mWR!=null)) throw new IllegalStateException();
+            aWriteln.writeln(tHeaders.length<1 ? "" : tHeaders[0]);
+            aWriteln.writeln(tHeaders.length<2 ? "" : tHeaders[1]);
+            aWriteln.writeln(tHeaders.length<3 ? "" : tHeaders[2]);
+            aWriteln.writeln(String.format("%d %s", mTypeNum, String.join(" ", mSymbols)));
+            aWriteln.writeln(tDNCut);
+            for (int i = 0; i < mTypeNum; ++i) {
+                aWriteln.writeln(String.format("%d %f %f %s", mAtomicNumbers[i], mMasses[i], mLatticeConsts[i], mLatticeTypes[i]));
+                for (int k = 0; k < mNRho; ++k) {
+                aWriteln.writeln(String.valueOf(mFRho[i].get(k)));
+                }
+                if (tIsFs) {
+                    for (int j = 0; j < mTypeNum; ++j) {
+                        for (int k = 0; k < mNR; ++k) {
+                        aWriteln.writeln(String.valueOf(mRhoR[mRhoR.length==1?0:j][i].get(k)));
+                        }
+                    }
+                } else {
+                    for (int k = 0; k < mNR; ++k) {
+                    aWriteln.writeln(String.valueOf(mRhoR[0][i].get(k)));
+                    }
+                }
+            }
+            for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
+                for (int k = 0; k < mNR; ++k) {
+                aWriteln.writeln(String.valueOf(mRPhiR[i][j].get(k)));
+                }
+            }
+            if (!tIsAdp) break;
+            for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
+                for (int k = 0; k < mNR; ++k) {
+                aWriteln.writeln(mUR==null ? "0.0" : String.valueOf(mUR[i][j].get(k)));
+                }
+            }
+            for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
+                for (int k = 0; k < mNR; ++k) {
+                aWriteln.writeln(mWR==null ? "0.0" : String.valueOf(mWR[i][j].get(k)));
+                }
+            }
+            break;
+        }
+        default: {
+            throw new IllegalArgumentException("Invalid EAM format: " + aFormat);
+        }}
+    }
     
     /** @return {@inheritDoc} */
     @Override public int atomTypeNumber() {return mTypeNum;}
