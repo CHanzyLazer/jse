@@ -455,12 +455,12 @@ public class EAM implements IPairPotential {
     /** 提供 {@link IO.IWriteln} 的接口来实现边写入边处理，此方法不会自动关闭流 */
     void write_(IO.IWriteln aWriteln, String aFormat) throws IOException {
         String[] tHeaders = mHeader.split("\n");
-        String tDNCut = String.format("%d %f %d %f %f", mNRho, mDRho, mNR, mDR, mCut);
+        String tDNCut = mNRho+" "+mDRho+" "+mNR+" "+mDR+" "+mCut;
         switch(aFormat) {
         case "eam": {
             if (mTypeNum != 1) throw new IllegalStateException();
             aWriteln.writeln(tHeaders.length<1 ? "" : tHeaders[0]);
-            aWriteln.writeln(String.format("%d %f %f %s", mAtomicNumbers[0], mMasses[0], mLatticeConsts[0], mLatticeTypes[0]));
+            aWriteln.writeln(mAtomicNumbers[0]+" "+mMasses[0]+" "+mLatticeConsts[0]+" "+mLatticeTypes[0]);
             aWriteln.writeln(tDNCut);
             for (int i = 0; i < mNRho; ++i) {
             aWriteln.writeln(String.valueOf(mFRho[0].get(i)));
@@ -481,10 +481,10 @@ public class EAM implements IPairPotential {
             aWriteln.writeln(tHeaders.length<1 ? "" : tHeaders[0]);
             aWriteln.writeln(tHeaders.length<2 ? "" : tHeaders[1]);
             aWriteln.writeln(tHeaders.length<3 ? "" : tHeaders[2]);
-            aWriteln.writeln(String.format("%d %s", mTypeNum, String.join(" ", mSymbols)));
+            aWriteln.writeln(mTypeNum+" "+String.join(" ", mSymbols));
             aWriteln.writeln(tDNCut);
             for (int i = 0; i < mTypeNum; ++i) {
-                aWriteln.writeln(String.format("%d %f %f %s", mAtomicNumbers[i], mMasses[i], mLatticeConsts[i], mLatticeTypes[i]));
+                aWriteln.writeln(mAtomicNumbers[i]+" "+mMasses[i]+" "+mLatticeConsts[i]+" "+mLatticeTypes[i]);
                 for (int k = 0; k < mNRho; ++k) {
                 aWriteln.writeln(String.valueOf(mFRho[i].get(k)));
                 }

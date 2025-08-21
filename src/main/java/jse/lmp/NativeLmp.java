@@ -992,16 +992,16 @@ public class NativeLmp implements IAutoShutdown {
         checkThread();
         LmpBox tBox = aLmpdat.box();
         if (tBox.isPrism()) {
-        command(String.format("region          box prism %f %f %f %f %f %f %f %f %f", tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi(), tBox.xy(), tBox.xz(), tBox.yz()));
+        command("region          box prism "+tBox.xlo()+" "+tBox.xhi()+" "+tBox.ylo()+" "+tBox.yhi()+" "+tBox.zlo()+" "+tBox.zhi()+" "+tBox.xy()+" "+tBox.xz()+" "+tBox.yz());
         } else {
-        command(String.format("region          box block %f %f %f %f %f %f",          tBox.xlo(), tBox.xhi(), tBox.ylo(), tBox.yhi(), tBox.zlo(), tBox.zhi()));
+        command("region          box block "+tBox.xlo()+" "+tBox.xhi()+" "+tBox.ylo()+" "+tBox.yhi()+" "+tBox.zlo()+" "+tBox.zhi());
         }
         int tAtomTypeNum = aLmpdat.atomTypeNumber();
-        command(String.format("create_box      %d box", tAtomTypeNum));
+        command("create_box      "+tAtomTypeNum+" box");
         if (aLmpdat.hasMass()) for (int tType = 1; tType <= tAtomTypeNum; ++tType) {
         double tMass = aLmpdat.mass(tType);
         if (!Double.isNaN(tMass)) {
-        command(String.format("mass            %d %f", tType, tMass));
+        command("mass            "+tType+" "+tMass);
         }}
         IIntVector tIDs = aLmpdat.ids();
         @Nullable IntVector tBufIDs = aDiscardID ? null : tIDs.toBuf();
@@ -1028,16 +1028,16 @@ public class NativeLmp implements IAutoShutdown {
         if (aAtomData instanceof Lmpdat) {loadLmpdat((Lmpdat)aAtomData, aDiscardID); return;}
         IBox tBox = aAtomData.box();
         if (tBox.isPrism()) {
-        command(String.format("region          box prism 0 %f 0 %f 0 %f %f %f %f", tBox.x(), tBox.y(), tBox.z(), tBox.xy(), tBox.xz(), tBox.yz()));
+        command("region          box prism 0 "+tBox.x()+" 0 "+tBox.y()+" 0 "+tBox.z()+" "+tBox.xy()+" "+tBox.xz()+" "+tBox.yz());
         } else {
-        command(String.format("region          box block 0 %f 0 %f 0 %f",          tBox.x(), tBox.y(), tBox.z()));
+        command("region          box block 0 "+tBox.x()+" 0 "+tBox.y()+" 0 "+tBox.z());
         }
         int tAtomTypeNum = aAtomData.atomTypeNumber();
-        command(String.format("create_box      %d box", tAtomTypeNum));
+        command("create_box      "+tAtomTypeNum+" box");
         if (aAtomData.hasMass()) for (int tType = 1; tType <= tAtomTypeNum; ++tType) {
         double tMass = aAtomData.mass(tType);
         if (!Double.isNaN(tMass)) {
-        command(String.format("mass            %d %f", tType, tMass));
+        command("mass            "+tType+" "+tMass);
         }}
         creatAtoms(aAtomData.atoms(), false, aDiscardID);
     }

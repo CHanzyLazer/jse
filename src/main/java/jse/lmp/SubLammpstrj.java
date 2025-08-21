@@ -738,16 +738,16 @@ public class SubLammpstrj extends AbstractSettableAtomData {
     /** 改为 {@link IO.IWriteln} 而不是 {@code List<String>} 来避免过多内存占用；不会自动关闭流，只写入一帧的数据然后停止写入 */
     void write_(IO.IWriteln aWriteln) throws IOException {
         aWriteln.writeln("ITEM: TIMESTEP");
-        aWriteln.writeln(String.format("%d", mTimeStep));
+        aWriteln.writeln(String.valueOf(mTimeStep));
         aWriteln.writeln("ITEM: NUMBER OF ATOMS");
-        aWriteln.writeln(String.format("%d", atomNumber()));
+        aWriteln.writeln(String.valueOf(atomNumber()));
         if (!isPrism()) {
-        aWriteln.writeln(String.format("ITEM: BOX BOUNDS %s", String.join(" ", boxBounds())));
-        aWriteln.writeln(String.format("%f %f", mBox.xlo(), mBox.xhi()));
-        aWriteln.writeln(String.format("%f %f", mBox.ylo(), mBox.yhi()));
-        aWriteln.writeln(String.format("%f %f", mBox.zlo(), mBox.zhi()));
+        aWriteln.writeln("ITEM: BOX BOUNDS "+String.join(" ", boxBounds()));
+        aWriteln.writeln(mBox.xlo()+" "+mBox.xhi());
+        aWriteln.writeln(mBox.ylo()+" "+mBox.yhi());
+        aWriteln.writeln(mBox.zlo()+" "+mBox.zhi());
         } else {
-        aWriteln.writeln(String.format("ITEM: BOX BOUNDS xy xz yz %s", String.join(" ", boxBounds())));
+        aWriteln.writeln("ITEM: BOX BOUNDS xy xz yz "+String.join(" ", boxBounds()));
         double tXlo = mBox.xlo(), tYlo = mBox.ylo(), tZlo = mBox.zlo();
         double tXhi = mBox.xhi(), tYhi = mBox.yhi(), tZhi = mBox.zhi();
         double tXY  = mBox.xy() , tXZ  = mBox.xz() , tYZ  = mBox.yz() ;
@@ -755,11 +755,11 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         tXhi += Math.max(Math.max(0.0, tXY), Math.max(tXZ, tXY+tXZ));
         tYlo += Math.min(0.0, tYZ);
         tYhi += Math.max(0.0, tYZ);
-        aWriteln.writeln(String.format("%f %f %f", tXlo, tXhi, tXY));
-        aWriteln.writeln(String.format("%f %f %f", tYlo, tYhi, tXZ));
-        aWriteln.writeln(String.format("%f %f %f", tZlo, tZhi, tYZ));
+        aWriteln.writeln(tXlo+" "+tXhi+" "+tXY);
+        aWriteln.writeln(tYlo+" "+tYhi+" "+tXZ);
+        aWriteln.writeln(tZlo+" "+tZhi+" "+tYZ);
         }
-        aWriteln.writeln(String.format("ITEM: ATOMS %s", String.join(" ", mAtomData.heads())));
+        aWriteln.writeln("ITEM: ATOMS "+String.join(" ", mAtomData.heads()));
         for (IVector subAtomData : mAtomData.rows()) {
         aWriteln.writeln(String.join(" ", AbstractCollections.map(subAtomData, SubLammpstrj::double2str_)));
         }

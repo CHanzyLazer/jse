@@ -132,17 +132,17 @@ public class NativeLmpFullPathGenerator implements IFullPathGenerator<IAtomData>
             mLmp.command("pair_coeff      "+mPairCoeff); // MARK: 好像卡在这里，但是不一定
             // 逻辑上只要没有速度还是需要重新分配速度
             if (!mNext.hasVelocity()) {
-                mLmp.command(String.format("velocity        all create %f %d dist gaussian mom yes rot yes", mTemperature, mRNG.nextInt(MAX_SEED)+1));
+                mLmp.command("velocity        all create "+mTemperature+" "+(mRNG.nextInt(MAX_SEED)+1)+" dist gaussian mom yes rot yes");
             }
             switch(mThermostat) {
             case LANGEVIN: {
                 mLmp.command("fix             1 all nve");
-                mLmp.command(String.format("fix             2 all langevin %f %f %f %d", mTemperature, mTemperature, mTimestep*100.0*1000.0, mRNG.nextInt(MAX_SEED)+1));
-                mLmp.command(String.format("fix             3 all press/berendsen iso 0.0 0.0 %f", mTimestep*1000.0*1000.0));
+                mLmp.command("fix             2 all langevin "+mTemperature+" "+mTemperature+" "+(mTimestep*100.0*1000.0)+" "+(mRNG.nextInt(MAX_SEED)+1));
+                mLmp.command("fix             3 all press/berendsen iso 0.0 0.0 "+(mTimestep*1000.0*1000.0));
                 break;
             }
             case NOSE_HOOVER: default: {
-                mLmp.command(String.format("fix             1 all npt temp %f %f %f iso 0.0 0.0 %f", mTemperature, mTemperature, mTimestep*100.0, mTimestep*1000.0));
+                mLmp.command("fix             1 all npt temp "+mTemperature+" "+mTemperature+" "+(mTimestep*100.0)+" iso 0.0 0.0 "+(mTimestep*1000.0));
                 break;
             }}
         }
