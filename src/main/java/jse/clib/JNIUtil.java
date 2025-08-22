@@ -1,5 +1,6 @@
 package jse.clib;
 
+import jse.code.Conf;
 import jse.code.IO;
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
@@ -109,6 +110,15 @@ public class JNIUtil {
     static {
         InitHelper.INITIALIZED = true;
         
+        // windows 上建议使用微软构建的 jdk
+        if (Conf.JDK_CHECK && IS_WINDOWS) {
+            boolean tIsMsJdk = System.getProperty("java.vendor").toLowerCase().contains("microsoft");
+            if (!tIsMsJdk) {
+                UT.Code.warning("There may be CRT conflict issues when calling JNI on Windows, \n" +
+                                "using Microsoft Build of OpenJDK can to some extent avoid this: \n" +
+                                "https://learn.microsoft.com/zh-cn/java/openjdk/download");
+            }
+        }
         // 如果不存在 jniutil.h 则需要重新通过源码编译
         if (!IO.isFile(HEADER_PATH)) {
             System.out.println("JNIUTIL INIT INFO: jniutil.h not found. Reinstalling...");
@@ -150,6 +160,7 @@ public class JNIUtil {
         private String mCmakeInitDir = "..";
         private @Nullable String mCmakeCCompiler = null, mCmakeCxxCompiler = null, mCmakeCFlags = null, mCmakeCxxFlags = null;
         private @Nullable Boolean mUseMiMalloc = null;
+        private boolean mMT = false;
         private boolean mRebuild = false;
         private final Map<String, String> mCmakeSettings;
         private @Nullable String mRedirectLibPath = null;
@@ -161,6 +172,8 @@ public class JNIUtil {
             mLibDir = aLibDir;
             mCmakeSettings = aCmakeSettings;
         }
+        public LibBuilder setMT() {return setMT(true);}
+        public LibBuilder setMT(boolean aMT) {mMT = aMT; return this;}
         public LibBuilder setMPIChecker() {return setMPIChecker(false);}
         public LibBuilder setMPIChecker(final boolean aForce) {
             // 通用的检测 mpi 接口
@@ -257,8 +270,8 @@ public class JNIUtil {
             if (mUseMiMalloc != null) {
                 rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(mUseMiMalloc ?"ON":"OFF"));
             }
-            // windows 下统一开启 /MT 保证静态链接
-            if (IS_WINDOWS) {
+            // windows 下可选开启 /MT 保证静态链接
+            if (IS_WINDOWS && mMT) {
                 rCommand.add("-D"); rCommand.add("CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded");
             }
             // 设置构建输出目录为 lib

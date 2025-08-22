@@ -37,6 +37,14 @@ public class Conf {
      */
     public static boolean DEBUG = OS.envZ("JSE_DEBUG", false);
     /**
+     * 是否开启 jdk 版本检测，主要提供一些兼容性的警告信息，关闭即可抑制警告
+     * <p>
+     * 默认为 {@code true}
+     * <p>
+     * 也可使用环境变量 {@code JDK_CHECK} 来设置
+     */
+    public static boolean JDK_CHECK = OS.envZ("JDK_CHECK", true);
+    /**
      * 运算是否开启边界检测，在 {@code jse 2.7.7} 以及更早的版本下不会主动检测
      * <p>
      * 默认为 {@code true}

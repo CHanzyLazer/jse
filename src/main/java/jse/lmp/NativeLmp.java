@@ -83,6 +83,14 @@ public class NativeLmp implements IAutoShutdown {
         private final static String DEFAULT_LMP_TAG = "stable_2Aug2023_update4";
         
         /**
+         * 控制在 windows 上编译时是否开启 /MT 选项，
+         * 新版 lammps 有时需要开启 /MT 才能正常运行，但这个应该非常不安全；
+         * 更加安全的做法是更换兼容的 jdk 版本，例如
+         * <a href="https://learn.microsoft.com/zh-cn/java/openjdk/download">微软构建的 OpenJDK</a>
+         */
+        public static boolean USE_MT = false;
+        
+        /**
          * 自定义构建 lammps 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
@@ -210,6 +218,7 @@ public class NativeLmp implements IAutoShutdown {
         rCmakeSettingNativeLmp.put("CMAKE_BUILD_TYPE",       "Release");
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         NATIVELMP_LIB_PATH = new JNIUtil.LibBuilder("lammps", "NATIVE_LMP", NATIVELMP_LIB_DIR, rCmakeSettingNativeLmp)
+            .setMT(Conf.USE_MT)
             .setMPIChecker() // 现在也会检测 mpi
             .setSrcDirIniter(wd -> {
                 // 如果有 NATIVELMP_SRC_DIR 但是不合法，则需要下载 lammps
