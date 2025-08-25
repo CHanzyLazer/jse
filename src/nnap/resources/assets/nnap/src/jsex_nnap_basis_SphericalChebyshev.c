@@ -649,6 +649,579 @@ static inline void calL2f_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, j
         *rFz += subNNGrad * tMul * rDotPz;
     }
 }
+static inline void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial) {
+    // l = 0
+    jdouble *tNNGrad = aNNGrad;
+    if (!aNoRadial) {
+        rGradCnlm[0] += (PI4+PI4) * aCnlm[0] * tNNGrad[0];
+        ++tNNGrad;
+    }
+    // else
+    for (jint l = 1; l <= aLMax; ++l) {
+        const jint tStart = l*l;
+        const jint tLen = l+l+1;
+        const jint tEnd = tStart+tLen;
+        jdouble tMul = PI4/(jdouble)tLen;
+        tMul = tMul+tMul;
+        jdouble subNNGrad = tNNGrad[l-1];
+        for (jint i = tStart; i < tEnd; ++i) {
+            rGradCnlm[i] += tMul * aCnlm[i] * subNNGrad;
+        }
+    }
+}
+static inline void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+    if (aL3Max <= 1) return;
+    jint tIdxFP = aNoRadial ? aLMax : (aLMax+1);
+    /// l1 = l2 = l3 = 2
+    jdouble c20  = aCnlm[(2*2+2)  ]; jdouble *gc20  = rGradCnlm + (2*2+2);
+    jdouble c21  = aCnlm[(2*2+2)+1]; jdouble *gc21  = rGradCnlm + (2*2+2)+1;
+    jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble *gc2n1 = rGradCnlm + (2*2+2)-1;
+    jdouble c22  = aCnlm[(2*2+2)+2]; jdouble *gc22  = rGradCnlm + (2*2+2)+2;
+    jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble *gc2n2 = rGradCnlm + (2*2+2)-2;
+    jdouble subNNGrad = aNNGrad[tIdxFP];
+    *gc20  += (WIGNER_222_000*3.0) * c20*c20 * subNNGrad;
+    *gc20  -= (3.0*WIGNER_222_011) * (c21*c21 + c2n1*c2n1) * subNNGrad;
+    *gc21  -= (3.0*WIGNER_222_011*2.0) * c20*c21 * subNNGrad;
+    *gc2n1 -= (3.0*WIGNER_222_011*2.0) * c20*c2n1 * subNNGrad;
+    *gc20  += (3.0*WIGNER_222_022) * (c22*c22 + c2n2*c2n2) * subNNGrad;
+    *gc22  += (3.0*WIGNER_222_022*2.0) * c20*c22 * subNNGrad;
+    *gc2n2 += (3.0*WIGNER_222_022*2.0) * c20*c2n2 * subNNGrad;
+    *gc22  += (3.0*SQRT2_INV*WIGNER_222_112) * (c21*c21 - c2n1*c2n1) * subNNGrad;
+    *gc21  += (3.0*SQRT2_INV*WIGNER_222_112*2.0) * c22*c21 * subNNGrad;
+    *gc2n1 -= (3.0*SQRT2_INV*WIGNER_222_112*2.0) * c22*c2n1 * subNNGrad;
+    *gc21  += (6.0*SQRT2_INV*WIGNER_222_112) * c2n1*c2n2 * subNNGrad;
+    *gc2n1 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n2 * subNNGrad;
+    *gc2n2 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1 * subNNGrad;
+    ++tIdxFP;
+    jdouble c10, c11, c1n1;
+    jdouble *gc10, *gc11, *gc1n1;
+    if (aL3Cross) {
+        /// l1 = l2 = 1, l3 = 2
+        c10  = aCnlm[(1+1)  ]; gc10  = rGradCnlm + (1+1);
+        c11  = aCnlm[(1+1)+1]; gc11  = rGradCnlm + (1+1)+1;
+        c1n1 = aCnlm[(1+1)-1]; gc1n1 = rGradCnlm + (1+1)-1;
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc10  += (WIGNER_112_000*2.0) * c10*c20 * subNNGrad;
+        *gc20  += WIGNER_112_000 * c10*c10 * subNNGrad;
+        *gc20  -= WIGNER_112_110 * (c11*c11 + c1n1*c1n1) * subNNGrad;
+        *gc11  -= (WIGNER_112_110*2.0) * c20*c11 * subNNGrad;
+        *gc1n1 -= (WIGNER_112_110*2.0) * c20*c1n1 * subNNGrad;
+        *gc10  -= (2.0*WIGNER_112_011) * (c11*c21 + c1n1*c2n1) * subNNGrad;
+        *gc11  -= (2.0*WIGNER_112_011) * c10*c21 * subNNGrad;
+        *gc21  -= (2.0*WIGNER_112_011) * c10*c11 * subNNGrad;
+        *gc1n1 -= (2.0*WIGNER_112_011) * c10*c2n1 * subNNGrad;
+        *gc2n1 -= (2.0*WIGNER_112_011) * c10*c1n1 * subNNGrad;
+        *gc22  += (SQRT2_INV*WIGNER_112_112) * (c11*c11 - c1n1*c1n1)* subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_112_112*2.0) * c22*c11 * subNNGrad;
+        *gc1n1 -= (SQRT2_INV*WIGNER_112_112*2.0) * c22*c1n1 * subNNGrad;
+        *gc11  += (2.0*SQRT2_INV*WIGNER_112_112) * c1n1*c2n2 * subNNGrad;
+        *gc1n1 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c2n2 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c1n1 * subNNGrad;
+        ++tIdxFP;
+    } else {
+        c10 = c11 = c1n1 = 0.0;
+        gc10 = gc11 = gc1n1 = NULL;
+    }
+    if (aL3Max == 2) return;
+    jdouble c30, c31, c3n1, c32, c3n2, c33, c3n3;
+    jdouble *gc30, *gc31, *gc3n1, *gc32, *gc3n2, *gc33, *gc3n3;
+    if (aL3Cross) {
+        /// l1 = 2, l2 = l3 = 3
+        c30  = aCnlm[(3*3+3)  ]; gc30  = rGradCnlm + (3*3+3);
+        c31  = aCnlm[(3*3+3)+1]; gc31  = rGradCnlm + (3*3+3)+1;
+        c3n1 = aCnlm[(3*3+3)-1]; gc3n1 = rGradCnlm + (3*3+3)-1;
+        c32  = aCnlm[(3*3+3)+2]; gc32  = rGradCnlm + (3*3+3)+2;
+        c3n2 = aCnlm[(3*3+3)-2]; gc3n2 = rGradCnlm + (3*3+3)-2;
+        c33  = aCnlm[(3*3+3)+3]; gc33  = rGradCnlm + (3*3+3)+3;
+        c3n3 = aCnlm[(3*3+3)-3]; gc3n3 = rGradCnlm + (3*3+3)-3;
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc20  += WIGNER_233_000 * c30*c30 * subNNGrad;
+        *gc30  += (WIGNER_233_000*2.0) * c20*c30 * subNNGrad;
+        *gc20  -= WIGNER_233_011 * (c31*c31 + c3n1*c3n1) * subNNGrad;
+        *gc31  -= (WIGNER_233_011*2.0) * c20*c31 * subNNGrad;
+        *gc3n1 -= (WIGNER_233_011*2.0) * c20*c3n1 * subNNGrad;
+        *gc20  += WIGNER_233_022 * (c32*c32 + c3n2*c3n2) * subNNGrad;
+        *gc32  += (WIGNER_233_022*2.0) * c20*c32 * subNNGrad;
+        *gc3n2 += (WIGNER_233_022*2.0) * c20*c3n2 * subNNGrad;
+        *gc20  -= WIGNER_233_033 * (c33*c33 + c3n3*c3n3) * subNNGrad;
+        *gc33  -= (WIGNER_233_033*2.0) * c20*c33 * subNNGrad;
+        *gc3n3 -= (WIGNER_233_033*2.0) * c20*c3n3 * subNNGrad;
+        *gc30  -= (2.0*WIGNER_233_110) * (c21*c31 + c2n1*c3n1) * subNNGrad;
+        *gc21  -= (2.0*WIGNER_233_110) * c30*c31 * subNNGrad;
+        *gc31  -= (2.0*WIGNER_233_110) * c30*c21 * subNNGrad;
+        *gc2n1 -= (2.0*WIGNER_233_110) * c30*c3n1 * subNNGrad;
+        *gc3n1 -= (2.0*WIGNER_233_110) * c30*c2n1 * subNNGrad;
+        *gc30  += (2.0*WIGNER_233_220) * (c22*c32 + c2n2*c3n2) * subNNGrad;
+        *gc22  += (2.0*WIGNER_233_220) * c30*c32 * subNNGrad;
+        *gc32  += (2.0*WIGNER_233_220) * c30*c22 * subNNGrad;
+        *gc2n2 += (2.0*WIGNER_233_220) * c30*c3n2 * subNNGrad;
+        *gc3n2 += (2.0*WIGNER_233_220) * c30*c2n2 * subNNGrad;
+        *gc22  += (SQRT2_INV*WIGNER_233_211) * (c31*c31 - c3n1*c3n1) * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_233_211*2.0) * c22*c31 * subNNGrad;
+        *gc3n1 -= (SQRT2_INV*WIGNER_233_211*2.0) * c22*c3n1 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_233_211) * c31*c3n1 * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_233_211) * c2n2*c3n1 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_233_211) * c2n2*c31 * subNNGrad;
+        *gc21  += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c32 + c3n1*c3n2) * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_233_112) * c21*c32 * subNNGrad;
+        *gc32  += (2.0*SQRT2_INV*WIGNER_233_112) * c21*c31 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_233_112) * c21*c3n2 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_233_112) * c21*c3n1 * subNNGrad;
+        *gc2n1 += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c3n2 - c3n1*c32) * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_233_112) * c2n1*c3n2 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_233_112) * c2n1*c31 * subNNGrad;
+        *gc3n1 -= (2.0*SQRT2_INV*WIGNER_233_112) * c2n1*c32 * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_233_112) * c2n1*c3n1 * subNNGrad;
+        *gc21  -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c33 + c3n2*c3n3) * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_233_123) * c21*c33 * subNNGrad;
+        *gc33  -= (2.0*SQRT2_INV*WIGNER_233_123) * c21*c32 * subNNGrad;
+        *gc3n2 -= (2.0*SQRT2_INV*WIGNER_233_123) * c21*c3n3 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c21*c3n2 * subNNGrad;
+        *gc2n1 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c3n3 - c3n2*c33) * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_233_123) * c2n1*c3n3 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c2n1*c32 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_233_123) * c2n1*c33 * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_233_123) * c2n1*c3n2 * subNNGrad;
+        *gc22  -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c33 + c3n1*c3n3) * subNNGrad;
+        *gc31  -= (2.0*SQRT2_INV*WIGNER_233_213) * c22*c33 * subNNGrad;
+        *gc33  -= (2.0*SQRT2_INV*WIGNER_233_213) * c22*c31 * subNNGrad;
+        *gc3n1 -= (2.0*SQRT2_INV*WIGNER_233_213) * c22*c3n3 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c22*c3n1 * subNNGrad;
+        *gc2n2 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c3n3 - c3n1*c33) * subNNGrad;
+        *gc31  -= (2.0*SQRT2_INV*WIGNER_233_213) * c2n2*c3n3 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c2n2*c31 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_233_213) * c2n2*c33 * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_233_213) * c2n2*c3n1 * subNNGrad;
+        ++tIdxFP;
+        /// l1 = 1, l2 = 2, l3 = 3
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc10  += WIGNER_123_000 * c20*c30 * subNNGrad;
+        *gc20  += WIGNER_123_000 * c10*c30 * subNNGrad;
+        *gc30  += WIGNER_123_000 * c10*c20 * subNNGrad;
+        *gc10  -= WIGNER_123_011 * (c21*c31 + c2n1*c3n1) * subNNGrad;
+        *gc21  -= WIGNER_123_011 * c10*c31 * subNNGrad;
+        *gc31  -= WIGNER_123_011 * c10*c21 * subNNGrad;
+        *gc2n1 -= WIGNER_123_011 * c10*c3n1 * subNNGrad;
+        *gc3n1 -= WIGNER_123_011 * c10*c2n1 * subNNGrad;
+        *gc10  += WIGNER_123_022 * (c22*c32 + c2n2*c3n2) * subNNGrad;
+        *gc22  += WIGNER_123_022 * c10*c32 * subNNGrad;
+        *gc32  += WIGNER_123_022 * c10*c22 * subNNGrad;
+        *gc2n2  += WIGNER_123_022 * c10*c3n2 * subNNGrad;
+        *gc3n2  += WIGNER_123_022 * c10*c2n2 * subNNGrad;
+        *gc20  -= WIGNER_123_101 * (c11*c31 + c1n1*c3n1) * subNNGrad;
+        *gc11  -= WIGNER_123_101 * c20*c31 * subNNGrad;
+        *gc31  -= WIGNER_123_101 * c20*c11 * subNNGrad;
+        *gc1n1 -= WIGNER_123_101 * c20*c3n1 * subNNGrad;
+        *gc3n1 -= WIGNER_123_101 * c20*c1n1 * subNNGrad;
+        *gc30  -= WIGNER_123_110 * (c11*c21 + c1n1*c2n1) * subNNGrad;
+        *gc11  -= WIGNER_123_110 * c30*c21 * subNNGrad;
+        *gc21  -= WIGNER_123_110 * c30*c11 * subNNGrad;
+        *gc1n1 -= WIGNER_123_110 * c30*c2n1 * subNNGrad;
+        *gc2n1 -= WIGNER_123_110 * c30*c1n1 * subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_123_112) * (c21*c32 + c2n1*c3n2) * subNNGrad;
+        *gc21  += (SQRT2_INV*WIGNER_123_112) * c11*c32 * subNNGrad;
+        *gc32  += (SQRT2_INV*WIGNER_123_112) * c11*c21 * subNNGrad;
+        *gc2n1 += (SQRT2_INV*WIGNER_123_112) * c11*c3n2 * subNNGrad;
+        *gc3n2 += (SQRT2_INV*WIGNER_123_112) * c11*c2n1 * subNNGrad;
+        *gc1n1 += (SQRT2_INV*WIGNER_123_112) * (c21*c3n2 - c2n1*c32) * subNNGrad;
+        *gc21  += (SQRT2_INV*WIGNER_123_112) * c1n1*c3n2 * subNNGrad;
+        *gc3n2 += (SQRT2_INV*WIGNER_123_112) * c1n1*c21 * subNNGrad;
+        *gc2n1 -= (SQRT2_INV*WIGNER_123_112) * c1n1*c32 * subNNGrad;
+        *gc32  -= (SQRT2_INV*WIGNER_123_112) * c1n1*c2n1 * subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_123_121) * (c22*c31 + c2n2*c3n1) * subNNGrad;
+        *gc22  += (SQRT2_INV*WIGNER_123_121) * c11*c31 * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_123_121) * c11*c22 * subNNGrad;
+        *gc2n2 += (SQRT2_INV*WIGNER_123_121) * c11*c3n1 * subNNGrad;
+        *gc3n1 += (SQRT2_INV*WIGNER_123_121) * c11*c2n2 * subNNGrad;
+        *gc1n1 += (SQRT2_INV*WIGNER_123_121) * (c2n2*c31 - c22*c3n1) * subNNGrad;
+        *gc2n2 += (SQRT2_INV*WIGNER_123_121) * c1n1*c31 * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_123_121) * c1n1*c2n2 * subNNGrad;
+        *gc22  -= (SQRT2_INV*WIGNER_123_121) * c1n1*c3n1 * subNNGrad;
+        *gc3n1 -= (SQRT2_INV*WIGNER_123_121) * c1n1*c22 * subNNGrad;
+        *gc11  -= (SQRT2_INV*WIGNER_123_123) * (c22*c33 + c2n2*c3n3) * subNNGrad;
+        *gc22  -= (SQRT2_INV*WIGNER_123_123) * c11*c33 * subNNGrad;
+        *gc33  -= (SQRT2_INV*WIGNER_123_123) * c11*c22 * subNNGrad;
+        *gc2n2 -= (SQRT2_INV*WIGNER_123_123) * c11*c3n3 * subNNGrad;
+        *gc3n3 -= (SQRT2_INV*WIGNER_123_123) * c11*c2n2 * subNNGrad;
+        *gc1n1 -= (SQRT2_INV*WIGNER_123_123) * (c22*c3n3 - c2n2*c33) * subNNGrad;
+        *gc22  -= (SQRT2_INV*WIGNER_123_123) * c1n1*c3n3 * subNNGrad;
+        *gc3n3 -= (SQRT2_INV*WIGNER_123_123) * c1n1*c22 * subNNGrad;
+        *gc2n2 += (SQRT2_INV*WIGNER_123_123) * c1n1*c33 * subNNGrad;
+        *gc33  += (SQRT2_INV*WIGNER_123_123) * c1n1*c2n2 * subNNGrad;
+        ++tIdxFP;
+    } else {
+        c30 = c31 = c3n1 = c32 = c3n2 = c33 = c3n3 = 0.0;
+        gc30 = gc31 = gc3n1 = gc32 = gc3n2 = gc33 = gc3n3 = NULL;
+    }
+    if (aL3Max == 3) return;
+    /// l1 = l2 = l3 = 4
+    jdouble c40  = aCnlm[(4*4+4)  ]; jdouble *gc40  = rGradCnlm + (4*4+4);
+    jdouble c41  = aCnlm[(4*4+4)+1]; jdouble *gc41  = rGradCnlm + (4*4+4)+1;
+    jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble *gc4n1 = rGradCnlm + (4*4+4)-1;
+    jdouble c42  = aCnlm[(4*4+4)+2]; jdouble *gc42  = rGradCnlm + (4*4+4)+2;
+    jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble *gc4n2 = rGradCnlm + (4*4+4)-2;
+    jdouble c43  = aCnlm[(4*4+4)+3]; jdouble *gc43  = rGradCnlm + (4*4+4)+3;
+    jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble *gc4n3 = rGradCnlm + (4*4+4)-3;
+    jdouble c44  = aCnlm[(4*4+4)+4]; jdouble *gc44  = rGradCnlm + (4*4+4)+4;
+    jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble *gc4n4 = rGradCnlm + (4*4+4)-4;
+    subNNGrad = aNNGrad[tIdxFP];
+    *gc40  += (WIGNER_444_000*3.0) * c40*c40 * subNNGrad;
+    *gc40  -= (3.0*WIGNER_444_011) * (c41*c41 + c4n1*c4n1) * subNNGrad;
+    *gc41  -= (3.0*WIGNER_444_011*2.0) * c40*c41 * subNNGrad;
+    *gc4n1 -= (3.0*WIGNER_444_011*2.0) * c40*c4n1 * subNNGrad;
+    *gc40  += (3.0*WIGNER_444_022) * (c42*c42 + c4n2*c4n2) * subNNGrad;
+    *gc42  += (3.0*WIGNER_444_022*2.0) * c40*c42 * subNNGrad;
+    *gc4n2 += (3.0*WIGNER_444_022*2.0) * c40*c4n2 * subNNGrad;
+    *gc40  -= (3.0*WIGNER_444_033) * (c43*c43 + c4n3*c4n3) * subNNGrad;
+    *gc43  -= (3.0*WIGNER_444_033*2.0) * c40*c43 * subNNGrad;
+    *gc4n3 -= (3.0*WIGNER_444_033*2.0) * c40*c4n3 * subNNGrad;
+    *gc40  += (3.0*WIGNER_444_044) * (c44*c44 + c4n4*c4n4) * subNNGrad;
+    *gc44  += (3.0*WIGNER_444_044*2.0) * c40*c44 * subNNGrad;
+    *gc4n4 += (3.0*WIGNER_444_044*2.0) * c40*c4n4 * subNNGrad;
+    *gc42  += (3.0*SQRT2_INV*WIGNER_444_112) * (c41*c41 - c4n1*c4n1) * subNNGrad;
+    *gc41  += (3.0*SQRT2_INV*WIGNER_444_112*2.0) * c42*c41 * subNNGrad;
+    *gc4n1 -= (3.0*SQRT2_INV*WIGNER_444_112*2.0) * c42*c4n1 * subNNGrad;
+    *gc41  += (6.0*SQRT2_INV*WIGNER_444_112) * c4n1*c4n2 * subNNGrad;
+    *gc4n1 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n2 * subNNGrad;
+    *gc4n2 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n1 * subNNGrad;
+    *gc44  += (3.0*SQRT2_INV*WIGNER_444_224) * (c42*c42 - c4n2*c4n2) * subNNGrad;
+    *gc42  += (3.0*SQRT2_INV*WIGNER_444_224*2.0) * c44*c42 * subNNGrad;
+    *gc4n2 -= (3.0*SQRT2_INV*WIGNER_444_224*2.0) * c44*c4n2 * subNNGrad;
+    *gc42  += (6.0*SQRT2_INV*WIGNER_444_224) * c4n2*c4n4 * subNNGrad;
+    *gc4n2 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n4 * subNNGrad;
+    *gc4n4 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n2 * subNNGrad;
+    *gc41  -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c43 + c4n2*c4n3) * subNNGrad;
+    *gc42  -= (6.0*SQRT2_INV*WIGNER_444_123) * c41*c43 * subNNGrad;
+    *gc43  -= (6.0*SQRT2_INV*WIGNER_444_123) * c41*c42 * subNNGrad;
+    *gc4n2 -= (6.0*SQRT2_INV*WIGNER_444_123) * c41*c4n3 * subNNGrad;
+    *gc4n3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c41*c4n2 * subNNGrad;
+    *gc4n1 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c4n3 - c4n2*c43) * subNNGrad;
+    *gc42  -= (6.0*SQRT2_INV*WIGNER_444_123) * c4n1*c4n3 * subNNGrad;
+    *gc4n3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c4n1*c42 * subNNGrad;
+    *gc4n2 += (6.0*SQRT2_INV*WIGNER_444_123) * c4n1*c43 * subNNGrad;
+    *gc43  += (6.0*SQRT2_INV*WIGNER_444_123) * c4n1*c4n2 * subNNGrad;
+    *gc41  += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c44 + c4n3*c4n4) * subNNGrad;
+    *gc43  += (6.0*SQRT2_INV*WIGNER_444_134) * c41*c44 * subNNGrad;
+    *gc44  += (6.0*SQRT2_INV*WIGNER_444_134) * c41*c43 * subNNGrad;
+    *gc4n3 += (6.0*SQRT2_INV*WIGNER_444_134) * c41*c4n4 * subNNGrad;
+    *gc4n4 += (6.0*SQRT2_INV*WIGNER_444_134) * c41*c4n3 * subNNGrad;
+    *gc4n1 += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c4n4 - c4n3*c44) * subNNGrad;
+    *gc43  += (6.0*SQRT2_INV*WIGNER_444_134) * c4n1*c4n4 * subNNGrad;
+    *gc4n4 += (6.0*SQRT2_INV*WIGNER_444_134) * c4n1*c43 * subNNGrad;
+    *gc4n3 -= (6.0*SQRT2_INV*WIGNER_444_134) * c4n1*c44 * subNNGrad;
+    *gc44  -= (6.0*SQRT2_INV*WIGNER_444_134) * c4n1*c4n3 * subNNGrad;
+    ++tIdxFP;
+    if (aL3Cross) {
+        /// l1 = l2 = 2, l3 = 4
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc20  += (WIGNER_224_000*2.0) * c20*c40 * subNNGrad;
+        *gc40  += WIGNER_224_000 * c20*c20 * subNNGrad;
+        *gc40  -= WIGNER_224_110 * (c21*c21 + c2n1*c2n1) * subNNGrad;
+        *gc21  -= (WIGNER_224_110*2.0) * c40*c21 * subNNGrad;
+        *gc2n1 -= (WIGNER_224_110*2.0) * c40*c2n1 * subNNGrad;
+        *gc40  += WIGNER_224_220 * (c22*c22 + c2n2*c2n2) * subNNGrad;
+        *gc22  += (WIGNER_224_220*2.0) * c40*c22 * subNNGrad;
+        *gc2n2 += (WIGNER_224_220*2.0) * c40*c2n2 * subNNGrad;
+        *gc20  -= (2.0*WIGNER_224_011) * (c21*c41 + c2n1*c4n1) * subNNGrad;
+        *gc21  -= (2.0*WIGNER_224_011) * c20*c41 * subNNGrad;
+        *gc41  -= (2.0*WIGNER_224_011) * c20*c21 * subNNGrad;
+        *gc2n1 -= (2.0*WIGNER_224_011) * c20*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*WIGNER_224_011) * c20*c2n1 * subNNGrad;
+        *gc20  += (2.0*WIGNER_224_022) * (c22*c42 + c2n2*c4n2) * subNNGrad;
+        *gc22  += (2.0*WIGNER_224_022) * c20*c42 * subNNGrad;
+        *gc42  += (2.0*WIGNER_224_022) * c20*c22 * subNNGrad;
+        *gc2n2 += (2.0*WIGNER_224_022) * c20*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*WIGNER_224_022) * c20*c2n2 * subNNGrad;
+        *gc42  += (SQRT2_INV*WIGNER_224_112) * (c21*c21 - c2n1*c2n1) * subNNGrad;
+        *gc21  += (SQRT2_INV*WIGNER_224_112*2.0) * c42*c21 * subNNGrad;
+        *gc2n1 -= (SQRT2_INV*WIGNER_224_112*2.0) * c42*c2n1 * subNNGrad;
+        *gc21  += (2.0*SQRT2_INV*WIGNER_224_112) * c2n1*c4n2 * subNNGrad;
+        *gc2n1 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c2n1 * subNNGrad;
+        *gc44  += (SQRT2_INV*WIGNER_224_224) * (c22*c22 - c2n2*c2n2) * subNNGrad;
+        *gc22  += (SQRT2_INV*WIGNER_224_224*2.0) * c44*c22 * subNNGrad;
+        *gc2n2 -= (SQRT2_INV*WIGNER_224_224*2.0) * c44*c2n2 * subNNGrad;
+        *gc22  += (2.0*SQRT2_INV*WIGNER_224_224) * c2n2*c4n4 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c2n2 * subNNGrad;
+        *gc21  += (2.0*SQRT2_INV*WIGNER_224_121) * (c22*c41 + c2n2*c4n1) * subNNGrad;
+        *gc22  += (2.0*SQRT2_INV*WIGNER_224_121) * c21*c41 * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_224_121) * c21*c22 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_224_121) * c21*c4n1 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_224_121) * c21*c2n2 * subNNGrad;
+        *gc2n1 += (2.0*SQRT2_INV*WIGNER_224_121) * (c2n2*c41 - c22*c4n1) * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_224_121) * c2n1*c41 * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_224_121) * c2n1*c2n2 * subNNGrad;
+        *gc22  -= (2.0*SQRT2_INV*WIGNER_224_121) * c2n1*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*SQRT2_INV*WIGNER_224_121) * c2n1*c22 * subNNGrad;
+        *gc21  -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c43 + c2n2*c4n3) * subNNGrad;
+        *gc22  -= (2.0*SQRT2_INV*WIGNER_224_123) * c21*c43 * subNNGrad;
+        *gc43  -= (2.0*SQRT2_INV*WIGNER_224_123) * c21*c22 * subNNGrad;
+        *gc2n2 -= (2.0*SQRT2_INV*WIGNER_224_123) * c21*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c21*c2n2 * subNNGrad;
+        *gc2n1 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c4n3 - c2n2*c43) * subNNGrad;
+        *gc22  -= (2.0*SQRT2_INV*WIGNER_224_123) * c2n1*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c2n1*c22 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_224_123) * c2n1*c43 * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_224_123) * c2n1*c2n2 * subNNGrad;
+        ++tIdxFP;
+        /// l1 = l2 = 3, l3 = 4
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc30  += (WIGNER_334_000*2.0) * c30*c40 * subNNGrad;
+        *gc40  += WIGNER_334_000 * c30*c30 * subNNGrad;
+        *gc40  -= WIGNER_334_110 * (c31*c31 + c3n1*c3n1) * subNNGrad;
+        *gc31  -= (WIGNER_334_110*2.0) * c40*c31 * subNNGrad;
+        *gc3n1 -= (WIGNER_334_110*2.0) * c40*c3n1 * subNNGrad;
+        *gc40  += WIGNER_334_220 * (c32*c32 + c3n2*c3n2) * subNNGrad;
+        *gc32  += (WIGNER_334_220*2.0) * c40*c32 * subNNGrad;
+        *gc3n2  += (WIGNER_334_220*2.0) * c40*c3n2 * subNNGrad;
+        *gc40  -= WIGNER_334_330 * (c33*c33 + c3n3*c3n3) * subNNGrad;
+        *gc33  -= (WIGNER_334_330*2.0) * c40*c33 * subNNGrad;
+        *gc3n3 -= (WIGNER_334_330*2.0) * c40*c3n3 * subNNGrad;
+        *gc30  -= (2.0*WIGNER_334_011) * (c31*c41 + c3n1*c4n1) * subNNGrad;
+        *gc31  -= (2.0*WIGNER_334_011) * c30*c41 * subNNGrad;
+        *gc41  -= (2.0*WIGNER_334_011) * c30*c31 * subNNGrad;
+        *gc3n1 -= (2.0*WIGNER_334_011) * c30*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*WIGNER_334_011) * c30*c3n1 * subNNGrad;
+        *gc30  += (2.0*WIGNER_334_022) * (c32*c42 + c3n2*c4n2) * subNNGrad;
+        *gc32  += (2.0*WIGNER_334_022) * c30*c42 * subNNGrad;
+        *gc42  += (2.0*WIGNER_334_022) * c30*c32 * subNNGrad;
+        *gc3n2 += (2.0*WIGNER_334_022) * c30*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*WIGNER_334_022) * c30*c3n2 * subNNGrad;
+        *gc30  -= (2.0*WIGNER_334_033) * (c33*c43 + c3n3*c4n3) * subNNGrad;
+        *gc33  -= (2.0*WIGNER_334_033) * c30*c43 * subNNGrad;
+        *gc43  -= (2.0*WIGNER_334_033) * c30*c33 * subNNGrad;
+        *gc3n3 -= (2.0*WIGNER_334_033) * c30*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*WIGNER_334_033) * c30*c3n3 * subNNGrad;
+        *gc42  += (SQRT2_INV*WIGNER_334_112) * (c31*c31 - c3n1*c3n1) * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_334_112*2.0) * c42*c31 * subNNGrad;
+        *gc3n1 -= (SQRT2_INV*WIGNER_334_112*2.0) * c42*c3n1 * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_334_112) * c3n1*c4n2 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c3n1 * subNNGrad;
+        *gc44  += (SQRT2_INV*WIGNER_334_224) * (c32*c32 - c3n2*c3n2) * subNNGrad;
+        *gc32  += (SQRT2_INV*WIGNER_334_224*2.0) * c44*c32 * subNNGrad;
+        *gc3n2 -= (SQRT2_INV*WIGNER_334_224*2.0) * c44*c3n2 * subNNGrad;
+        *gc32  += (2.0*SQRT2_INV*WIGNER_334_224) * c3n2*c4n4 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c3n2 * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_334_121) * (c32*c41 + c3n2*c4n1) * subNNGrad;
+        *gc32  += (2.0*SQRT2_INV*WIGNER_334_121) * c31*c41 * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_334_121) * c31*c32 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_334_121) * c31*c4n1 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_334_121) * c31*c3n2 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_334_121) * (c3n2*c41 - c32*c4n1) * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_334_121) * c3n1*c41 * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_334_121) * c3n1*c3n2 * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_334_121) * c3n1*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*SQRT2_INV*WIGNER_334_121) * c3n1*c32 * subNNGrad;
+        *gc31  -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c43 + c3n2*c4n3) * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_334_123) * c31*c43 * subNNGrad;
+        *gc43  -= (2.0*SQRT2_INV*WIGNER_334_123) * c31*c32 * subNNGrad;
+        *gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_123) * c31*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c31*c3n2 * subNNGrad;
+        *gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c4n3 - c3n2*c43) * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_334_123) * c3n1*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c3n1*c32 * subNNGrad;
+        *gc3n2 += (2.0*SQRT2_INV*WIGNER_334_123) * c3n1*c43 * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_334_123) * c3n1*c3n2 * subNNGrad;
+        *gc31  -= (2.0*SQRT2_INV*WIGNER_334_132) * (c33*c42 + c3n3*c4n2) * subNNGrad;
+        *gc33  -= (2.0*SQRT2_INV*WIGNER_334_132) * c31*c42 * subNNGrad;
+        *gc42  -= (2.0*SQRT2_INV*WIGNER_334_132) * c31*c33 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c31*c4n2 * subNNGrad;
+        *gc4n2 -= (2.0*SQRT2_INV*WIGNER_334_132) * c31*c3n3 * subNNGrad;
+        *gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c3n3*c42 - c33*c4n2) * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c3n1*c42 * subNNGrad;
+        *gc42  -= (2.0*SQRT2_INV*WIGNER_334_132) * c3n1*c3n3 * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_334_132) * c3n1*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_334_132) * c3n1*c33 * subNNGrad;
+        *gc32  -= (2.0*SQRT2_INV*WIGNER_334_231) * (c33*c41 + c3n3*c4n1) * subNNGrad;
+        *gc33  -= (2.0*SQRT2_INV*WIGNER_334_231) * c32*c41 * subNNGrad;
+        *gc41  -= (2.0*SQRT2_INV*WIGNER_334_231) * c32*c33 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c32*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*SQRT2_INV*WIGNER_334_231) * c32*c3n3 * subNNGrad;
+        *gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c3n3*c41 - c33*c4n1) * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c3n2*c41 * subNNGrad;
+        *gc41  -= (2.0*SQRT2_INV*WIGNER_334_231) * c3n2*c3n3 * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_334_231) * c3n2*c4n1 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_334_231) * c3n2*c33 * subNNGrad;
+        *gc31  += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c44 + c3n3*c4n4) * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_334_134) * c31*c44 * subNNGrad;
+        *gc44  += (2.0*SQRT2_INV*WIGNER_334_134) * c31*c33 * subNNGrad;
+        *gc3n3 += (2.0*SQRT2_INV*WIGNER_334_134) * c31*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_334_134) * c31*c3n3 * subNNGrad;
+        *gc3n1 += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c4n4 - c3n3*c44) * subNNGrad;
+        *gc33  += (2.0*SQRT2_INV*WIGNER_334_134) * c3n1*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_334_134) * c3n1*c33 * subNNGrad;
+        *gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_134) * c3n1*c44 * subNNGrad;
+        *gc44  -= (2.0*SQRT2_INV*WIGNER_334_134) * c3n1*c3n3 * subNNGrad;
+        ++tIdxFP;
+        /// l1 = 2, l2 = l3 = 4
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc20  += WIGNER_244_000 * c40*c40 * subNNGrad;
+        *gc40  += (WIGNER_244_000*2.0) * c20*c40 * subNNGrad;
+        *gc20  -= WIGNER_244_011 * (c41*c41 + c4n1*c4n1) * subNNGrad;
+        *gc41  -= (WIGNER_244_011*2.0) * c20*c41 * subNNGrad;
+        *gc4n1 -= (WIGNER_244_011*2.0) * c20*c4n1 * subNNGrad;
+        *gc20  += WIGNER_244_022 * (c42*c42 + c4n2*c4n2) * subNNGrad;
+        *gc42  += (WIGNER_244_022*2.0) * c20*c42 * subNNGrad;
+        *gc4n2 += (WIGNER_244_022*2.0) * c20*c4n2 * subNNGrad;
+        *gc20  -= WIGNER_244_033 * (c43*c43 + c4n3*c4n3) * subNNGrad;
+        *gc43  -= (WIGNER_244_033*2.0) * c20*c43 * subNNGrad;
+        *gc4n3 -= (WIGNER_244_033*2.0) * c20*c4n3 * subNNGrad;
+        *gc20  += WIGNER_244_044 * (c44*c44 + c4n4*c4n4) * subNNGrad;
+        *gc44  += (WIGNER_244_044*2.0) * c20*c44 * subNNGrad;
+        *gc4n4 += (WIGNER_244_044*2.0) * c20*c4n4 * subNNGrad;
+        *gc40  -= (2.0*WIGNER_244_110) * (c21*c41 + c2n1*c4n1) * subNNGrad;
+        *gc21  -= (2.0*WIGNER_244_110) * c40*c41 * subNNGrad;
+        *gc41  -= (2.0*WIGNER_244_110) * c40*c21 * subNNGrad;
+        *gc2n1 -= (2.0*WIGNER_244_110) * c40*c4n1 * subNNGrad;
+        *gc4n1 -= (2.0*WIGNER_244_110) * c40*c2n1 * subNNGrad;
+        *gc40  += (2.0*WIGNER_244_220) * (c22*c42 + c2n2*c4n2) * subNNGrad;
+        *gc22  += (2.0*WIGNER_244_220) * c40*c42 * subNNGrad;
+        *gc42  += (2.0*WIGNER_244_220) * c40*c22 * subNNGrad;
+        *gc2n2 += (2.0*WIGNER_244_220) * c40*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*WIGNER_244_220) * c40*c2n2 * subNNGrad;
+        *gc22  += (SQRT2_INV*WIGNER_244_211) * (c41*c41 - c4n1*c4n1) * subNNGrad;
+        *gc41  += (SQRT2_INV*WIGNER_244_211*2.0) * c22*c41 * subNNGrad;
+        *gc4n1 -= (SQRT2_INV*WIGNER_244_211*2.0) * c22*c4n1 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_244_211) * c41*c4n1 * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_244_211) * c2n2*c4n1 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_244_211) * c2n2*c41 * subNNGrad;
+        *gc21  += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c42 + c4n1*c4n2) * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_244_112) * c21*c42 * subNNGrad;
+        *gc42  += (2.0*SQRT2_INV*WIGNER_244_112) * c21*c41 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_244_112) * c21*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_244_112) * c21*c4n1 * subNNGrad;
+        *gc2n1 += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c4n2 - c4n1*c42) * subNNGrad;
+        *gc41  += (2.0*SQRT2_INV*WIGNER_244_112) * c2n1*c4n2 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_244_112) * c2n1*c41 * subNNGrad;
+        *gc4n1 -= (2.0*SQRT2_INV*WIGNER_244_112) * c2n1*c42 * subNNGrad;
+        *gc42  -= (2.0*SQRT2_INV*WIGNER_244_112) * c2n1*c4n1 * subNNGrad;
+        *gc22  += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c44 + c4n2*c4n4) * subNNGrad;
+        *gc42  += (2.0*SQRT2_INV*WIGNER_244_224) * c22*c44 * subNNGrad;
+        *gc44  += (2.0*SQRT2_INV*WIGNER_244_224) * c22*c42 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_244_224) * c22*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_244_224) * c22*c4n2 * subNNGrad;
+        *gc2n2 += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c4n4 - c4n2*c44) * subNNGrad;
+        *gc42  += (2.0*SQRT2_INV*WIGNER_244_224) * c2n2*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_244_224) * c2n2*c42 * subNNGrad;
+        *gc4n2 -= (2.0*SQRT2_INV*WIGNER_244_224) * c2n2*c44 * subNNGrad;
+        *gc44  -= (2.0*SQRT2_INV*WIGNER_244_224) * c2n2*c4n2 * subNNGrad;
+        *gc21  -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c43 + c4n2*c4n3) * subNNGrad;
+        *gc42  -= (2.0*SQRT2_INV*WIGNER_244_123) * c21*c43 * subNNGrad;
+        *gc43  -= (2.0*SQRT2_INV*WIGNER_244_123) * c21*c42 * subNNGrad;
+        *gc4n2 -= (2.0*SQRT2_INV*WIGNER_244_123) * c21*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c21*c4n2 * subNNGrad;
+        *gc2n1 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c4n3 - c4n2*c43) * subNNGrad;
+        *gc42  -= (2.0*SQRT2_INV*WIGNER_244_123) * c2n1*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c2n1*c42 * subNNGrad;
+        *gc4n2 += (2.0*SQRT2_INV*WIGNER_244_123) * c2n1*c43 * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_244_123) * c2n1*c4n2 * subNNGrad;
+        *gc22  -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c43 + c4n1*c4n3) * subNNGrad;
+        *gc41  -= (2.0*SQRT2_INV*WIGNER_244_213) * c22*c43 * subNNGrad;
+        *gc43  -= (2.0*SQRT2_INV*WIGNER_244_213) * c22*c41 * subNNGrad;
+        *gc4n1 -= (2.0*SQRT2_INV*WIGNER_244_213) * c22*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c22*c4n1 * subNNGrad;
+        *gc2n2 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c4n3 - c4n1*c43) * subNNGrad;
+        *gc41  -= (2.0*SQRT2_INV*WIGNER_244_213) * c2n2*c4n3 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c2n2*c41 * subNNGrad;
+        *gc4n1 += (2.0*SQRT2_INV*WIGNER_244_213) * c2n2*c43 * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_244_213) * c2n2*c4n1 * subNNGrad;
+        *gc21  += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c44 + c4n3*c4n4) * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_244_134) * c21*c44 * subNNGrad;
+        *gc44  += (2.0*SQRT2_INV*WIGNER_244_134) * c21*c43 * subNNGrad;
+        *gc4n3 += (2.0*SQRT2_INV*WIGNER_244_134) * c21*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_244_134) * c21*c4n3 * subNNGrad;
+        *gc2n1 += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c4n4 - c4n3*c44) * subNNGrad;
+        *gc43  += (2.0*SQRT2_INV*WIGNER_244_134) * c2n1*c4n4 * subNNGrad;
+        *gc4n4 += (2.0*SQRT2_INV*WIGNER_244_134) * c2n1*c43 * subNNGrad;
+        *gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_134) * c2n1*c44 * subNNGrad;
+        *gc44  -= (2.0*SQRT2_INV*WIGNER_244_134) * c2n1*c4n3 * subNNGrad;
+        ++tIdxFP;
+        /// l1 = 1, l2 = 3, l3 = 4
+        subNNGrad = aNNGrad[tIdxFP];
+        *gc10  += WIGNER_134_000 * c30*c40 * subNNGrad;
+        *gc30  += WIGNER_134_000 * c10*c40 * subNNGrad;
+        *gc40  += WIGNER_134_000 * c10*c30 * subNNGrad;
+        *gc10  -= WIGNER_134_011 * (c31*c41 + c3n1*c4n1) * subNNGrad;
+        *gc31  -= WIGNER_134_011 * c10*c41 * subNNGrad;
+        *gc41  -= WIGNER_134_011 * c10*c31 * subNNGrad;
+        *gc3n1 -= WIGNER_134_011 * c10*c4n1 * subNNGrad;
+        *gc4n1 -= WIGNER_134_011 * c10*c3n1 * subNNGrad;
+        *gc10  += WIGNER_134_022 * (c32*c42 + c3n2*c4n2) * subNNGrad;
+        *gc32  += WIGNER_134_022 * c10*c42 * subNNGrad;
+        *gc42  += WIGNER_134_022 * c10*c32 * subNNGrad;
+        *gc3n2 += WIGNER_134_022 * c10*c4n2 * subNNGrad;
+        *gc4n2 += WIGNER_134_022 * c10*c3n2 * subNNGrad;
+        *gc10  -= WIGNER_134_033 * (c33*c43 + c3n3*c4n3) * subNNGrad;
+        *gc33  -= WIGNER_134_033 * c10*c43 * subNNGrad;
+        *gc43  -= WIGNER_134_033 * c10*c33 * subNNGrad;
+        *gc3n3 -= WIGNER_134_033 * c10*c4n3 * subNNGrad;
+        *gc4n3 -= WIGNER_134_033 * c10*c3n3 * subNNGrad;
+        *gc40  -= WIGNER_134_110 * (c11*c31 + c1n1*c3n1) * subNNGrad;
+        *gc11  -= WIGNER_134_110 * c40*c31 * subNNGrad;
+        *gc31  -= WIGNER_134_110 * c40*c11 * subNNGrad;
+        *gc1n1 -= WIGNER_134_110 * c40*c3n1 * subNNGrad;
+        *gc3n1 -= WIGNER_134_110 * c40*c1n1 * subNNGrad;
+        *gc30  -= WIGNER_134_101 * (c11*c41 + c1n1*c4n1) * subNNGrad;
+        *gc11  -= WIGNER_134_101 * c30*c41 * subNNGrad;
+        *gc41  -= WIGNER_134_101 * c30*c11 * subNNGrad;
+        *gc1n1 -= WIGNER_134_101 * c30*c4n1 * subNNGrad;
+        *gc4n1 -= WIGNER_134_101 * c30*c1n1 * subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_134_112) * (c31*c42 + c3n1*c4n2) * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_134_112) * c11*c42 * subNNGrad;
+        *gc42  += (SQRT2_INV*WIGNER_134_112) * c11*c31 * subNNGrad;
+        *gc3n1 += (SQRT2_INV*WIGNER_134_112) * c11*c4n2 * subNNGrad;
+        *gc4n2 += (SQRT2_INV*WIGNER_134_112) * c11*c3n1 * subNNGrad;
+        *gc1n1 += (SQRT2_INV*WIGNER_134_112) * (c31*c4n2 - c3n1*c42) * subNNGrad;
+        *gc31  += (SQRT2_INV*WIGNER_134_112) * c1n1*c4n2 * subNNGrad;
+        *gc4n2 += (SQRT2_INV*WIGNER_134_112) * c1n1*c31 * subNNGrad;
+        *gc3n1 -= (SQRT2_INV*WIGNER_134_112) * c1n1*c42 * subNNGrad;
+        *gc42  -= (SQRT2_INV*WIGNER_134_112) * c1n1*c3n1 * subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_134_121) * (c32*c41 + c3n2*c4n1) * subNNGrad;
+        *gc32  += (SQRT2_INV*WIGNER_134_121) * c11*c41 * subNNGrad;
+        *gc41  += (SQRT2_INV*WIGNER_134_121) * c11*c32 * subNNGrad;
+        *gc3n2 += (SQRT2_INV*WIGNER_134_121) * c11*c4n1 * subNNGrad;
+        *gc4n1 += (SQRT2_INV*WIGNER_134_121) * c11*c3n2 * subNNGrad;
+        *gc1n1 += (SQRT2_INV*WIGNER_134_121) * (c3n2*c41 - c32*c4n1) * subNNGrad;
+        *gc3n2 += (SQRT2_INV*WIGNER_134_121) * c1n1*c41 * subNNGrad;
+        *gc41  += (SQRT2_INV*WIGNER_134_121) * c1n1*c3n2 * subNNGrad;
+        *gc32  -= (SQRT2_INV*WIGNER_134_121) * c1n1*c4n1 * subNNGrad;
+        *gc4n1 -= (SQRT2_INV*WIGNER_134_121) * c1n1*c32 * subNNGrad;
+        *gc11  -= (SQRT2_INV*WIGNER_134_123) * (c32*c43 + c3n2*c4n3) * subNNGrad;
+        *gc32  -= (SQRT2_INV*WIGNER_134_123) * c11*c43 * subNNGrad;
+        *gc43  -= (SQRT2_INV*WIGNER_134_123) * c11*c32 * subNNGrad;
+        *gc3n2 -= (SQRT2_INV*WIGNER_134_123) * c11*c4n3 * subNNGrad;
+        *gc4n3 -= (SQRT2_INV*WIGNER_134_123) * c11*c3n2 * subNNGrad;
+        *gc1n1 -= (SQRT2_INV*WIGNER_134_123) * (c32*c4n3 - c3n2*c43) * subNNGrad;
+        *gc32  -= (SQRT2_INV*WIGNER_134_123) * c1n1*c4n3 * subNNGrad;
+        *gc4n3 -= (SQRT2_INV*WIGNER_134_123) * c1n1*c32 * subNNGrad;
+        *gc3n2 += (SQRT2_INV*WIGNER_134_123) * c1n1*c43 * subNNGrad;
+        *gc43  += (SQRT2_INV*WIGNER_134_123) * c1n1*c3n2 * subNNGrad;
+        *gc11  -= (SQRT2_INV*WIGNER_134_132) * (c33*c42 + c3n3*c4n2) * subNNGrad;
+        *gc33  -= (SQRT2_INV*WIGNER_134_132) * c11*c42 * subNNGrad;
+        *gc42  -= (SQRT2_INV*WIGNER_134_132) * c11*c33 * subNNGrad;
+        *gc3n3 -= (SQRT2_INV*WIGNER_134_132) * c11*c4n2 * subNNGrad;
+        *gc4n2 -= (SQRT2_INV*WIGNER_134_132) * c11*c3n3 * subNNGrad;
+        *gc1n1 -= (SQRT2_INV*WIGNER_134_132) * (c3n3*c42 - c33*c4n2) * subNNGrad;
+        *gc3n3 -= (SQRT2_INV*WIGNER_134_132) * c1n1*c42 * subNNGrad;
+        *gc42  -= (SQRT2_INV*WIGNER_134_132) * c1n1*c3n3 * subNNGrad;
+        *gc33  += (SQRT2_INV*WIGNER_134_132) * c1n1*c4n2 * subNNGrad;
+        *gc4n2 += (SQRT2_INV*WIGNER_134_132) * c1n1*c33 * subNNGrad;
+        *gc11  += (SQRT2_INV*WIGNER_134_134) * (c33*c44 + c3n3*c4n4) * subNNGrad;
+        *gc33  += (SQRT2_INV*WIGNER_134_134) * c11*c44 * subNNGrad;
+        *gc44  += (SQRT2_INV*WIGNER_134_134) * c11*c33 * subNNGrad;
+        *gc3n3 += (SQRT2_INV*WIGNER_134_134) * c11*c4n4 * subNNGrad;
+        *gc4n4 += (SQRT2_INV*WIGNER_134_134) * c11*c3n3 * subNNGrad;
+        *gc1n1 += (SQRT2_INV*WIGNER_134_134) * (c33*c4n4 - c3n3*c44) * subNNGrad;
+        *gc33  += (SQRT2_INV*WIGNER_134_134) * c1n1*c4n4 * subNNGrad;
+        *gc4n4 += (SQRT2_INV*WIGNER_134_134) * c1n1*c33 * subNNGrad;
+        *gc3n3 -= (SQRT2_INV*WIGNER_134_134) * c1n1*c44 * subNNGrad;
+        *gc44  -= (SQRT2_INV*WIGNER_134_134) * c1n1*c3n3 * subNNGrad;
+        ++tIdxFP;
+    }
+}
 
 static inline void calL3_222_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
                               jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
@@ -1970,7 +2543,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
-        jdoubleArray aCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
+        jdoubleArray aCnlm, jdoubleArray rGradCnlm,
         jdoubleArray aNNGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     // java array init
@@ -1990,9 +2563,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
     jdouble *tYPy = (jdouble *)getJArrayBuf(aEnv, rYPy);
     jdouble *tYPz = (jdouble *)getJArrayBuf(aEnv, rYPz);
     jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, aCnlm);
-    jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
-    jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
-    jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
+    jdouble *tGradCnlm = (jdouble *)getJArrayBuf(aEnv, rGradCnlm);
     jdouble *tNNGrad = (jdouble *)getJArrayBuf(aEnv, aNNGrad);
     jdouble *tFx = (jdouble *)getJArrayBuf(aEnv, rFx);
     jdouble *tFy = (jdouble *)getJArrayBuf(aEnv, rFy);
@@ -2002,9 +2573,20 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
     jdouble *tNNGrad_ = tNNGrad + aShiftFp;
     
     // const init
+    JSE_NNAP_CONSTANT_INIT_SphericalChebyshev
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
     const jint tLMax = aLMax>aL3Max ? aLMax : aL3Max;
     const jint tLMAll = (tLMax+1)*(tLMax+1);
+    const jint tSizeCnlm = tSizeN*tLMAll;
+    
+    // init gradCnlm here
+    for (jint i = 0; i < tSizeCnlm; ++i) {
+        tGradCnlm[i] = 0.0;
+    }
+    for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
+        calGradL2_(tCnlm+tShift, tGradCnlm+tShift, tNNGrad_+tShiftFp, aLMax, aNoRadial);
+        calGradL3_(tCnlm+tShift, tGradCnlm+tShift, tNNGrad_+tShiftFp, aLMax, aNoRadial, aL3Max, aL3Cross);
+    }
     
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
@@ -2076,83 +2658,151 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
         calYPxyz(cosTheta, sinTheta, cosPhi, sinPhi, dis, dxy, dxyCloseZero,
                  tYPx, tYPy, tYPz,
                  tYPtheta, tYPphi, tLMAll);
-        // cal cnlmPxyz
+        // clear gradY here
+        jdouble *tGradY = tYPtheta;
+        for (jint k = 0; k < tLMAll; ++k) {
+            tGradY[k] = 0;
+        }
+        // cal fpxyz
+        jdouble tGradFc = 0.0;
         switch(aWType) {
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-            for (jint n=0, tShift=0, tShiftFp=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                // cal cnlmPxyz first
-                calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
-                            tY, tYPx, tYPy, tYPz,
-                            fc, fcPx, fcPy, fcPz,
-                            tRn[n], tRnPx[n], tRnPy[n], tRnPz[n],
-                            tLMAll);
-                // accumulate to force
-                cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
-                          1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
-                if (aTypeNum > 1) {
-                    jint tShift0 = tShift + (aNMax+1)*tLMAll*type;
-                    jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL*type;
-                    cnlm2fxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                              tNNGrad_+tShiftFp0, tFx_, tFy_, tFz_,
-                              1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
+            if (aTypeNum == 1) {
+                jdouble *tGradCnlm_ = tGradCnlm;
+                for (jint n = 0; n <= aNMax; ++n, tGradCnlm_+=tLMAll) {
+                    jdouble tRnn = tRn[n];
+                    jdouble tMul = fc * tRnn;
+                    jdouble tGradRn = 0.0;
+                    for (jint l = 0; l <= tLMax; ++l) {
+                        const jint tStart = l*l;
+                        const jint tEnd = tStart + (l+l+1);
+                        for (jint k = tStart; k < tEnd; ++k) {
+                            jdouble subGradCnlm = tGradCnlm_[k];
+                            tGradY[k] += tMul * subGradCnlm;
+                            tGradRn += tY[k] * subGradCnlm;
+                        }
+                    }
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
+                }
+            } else {
+                jdouble *tGradCnlm_ = tGradCnlm, *tGradCnlmWt = tGradCnlm + (aNMax+1)*tLMAll*type;
+                for (jint n = 0; n <= aNMax; ++n, tGradCnlm_+=tLMAll, tGradCnlmWt+=tLMAll) {
+                    jdouble tRnn = tRn[n];
+                    jdouble tMul = fc * tRnn;
+                    jdouble tGradRn = 0.0;
+                    for (jint l = 0; l <= tLMax; ++l) {
+                        const jint tStart = l*l;
+                        const jint tEnd = tStart + (l+l+1);
+                        for (jint k = tStart; k < tEnd; ++k) {
+                            jdouble subGradCnlm = tGradCnlm_[k] + tGradCnlmWt[k];
+                            tGradY[k] += tMul * subGradCnlm;
+                            tGradRn += tY[k] * subGradCnlm;
+                        }
+                    }
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             }
             break;
         }
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-            jint tShift = (aNMax+1)*tLMAll*(type-1);
-            jint tShiftFp = (aNMax+1)*tSizeL*(type-1);
-            for (jint n=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                // cal cnlmPxyz first
-                calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
-                            tY, tYPx, tYPy, tYPz,
-                            fc, fcPx, fcPy, fcPz,
-                            tRn[n], tRnPx[n], tRnPy[n], tRnPz[n],
-                            tLMAll);
-                // accumulate to force
-                cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
-                          1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
+            jdouble *tGradCnlmWt = tGradCnlm + (aNMax+1)*tLMAll*(type-1);
+            for (jint n = 0; n <= aNMax; ++n, tGradCnlmWt+=tLMAll) {
+                jdouble tRnn = tRn[n];
+                jdouble tMul = fc * tRnn;
+                jdouble tGradRn = 0.0;
+                for (jint l = 0; l <= tLMax; ++l) {
+                    const jint tStart = l*l;
+                    const jint tEnd = tStart + (l+l+1);
+                    for (jint k = tStart; k < tEnd; ++k) {
+                        jdouble subGradCnlm = tGradCnlmWt[k];
+                        tGradY[k] += tMul * subGradCnlm;
+                        tGradRn += tY[k] * subGradCnlm;
+                    }
+                }
+                tGradFc += tRnn * tGradRn;
+                tGradRn *= fc;
+                tFx[j] += tGradRn*tRnPx[n];
+                tFy[j] += tGradRn*tRnPy[n];
+                tFz[j] += tGradRn*tRnPz[n];
             }
             break;
         }
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE:
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
-            for (jint n=0, tShift=0, tShiftFp=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                // cal cnlmPxyz first
-                calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
-                            tY, tYPx, tYPy, tYPz,
-                            fc, fcPx, fcPy, fcPz,
-                            tRn[n], tRnPx[n], tRnPy[n], tRnPz[n],
-                            tLMAll);
-                // accumulate to force
-                cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tNNGrad_+tShiftFp, tFx_, tFy_, tFz_,
-                          1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
+            jdouble *tGradCnlm_ = tGradCnlm;
+            for (jint n = 0; n <= aNMax; ++n, tGradCnlm_+=tLMAll) {
+                jdouble tRnn = tRn[n];
+                jdouble tMul = fc * tRnn;
+                jdouble tGradRn = 0.0;
+                for (jint l = 0; l <= tLMax; ++l) {
+                    const jint tStart = l*l;
+                    const jint tEnd = tStart + (l+l+1);
+                    for (jint k = tStart; k < tEnd; ++k) {
+                        jdouble subGradCnlm = tGradCnlm_[k];
+                        tGradY[k] += tMul * subGradCnlm;
+                        tGradRn += tY[k] * subGradCnlm;
+                    }
+                }
+                tGradFc += tRnn * tGradRn;
+                tGradRn *= fc;
+                tFx[j] += tGradRn*tRnPx[n];
+                tFy[j] += tGradRn*tRnPy[n];
+                tFz[j] += tGradRn*tRnPz[n];
             }
             break;
         }
         case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-            // cal weight of type here
-            jdouble wt = ((type&1)==1) ? type : -type;
-            for (jint n=0, tShift=0, tShiftFp=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                // cal cnlmPxyz first
-                calCnlmPxyz(tCnlmPx, tCnlmPy, tCnlmPz,
-                            tY, tYPx, tYPy, tYPz,
-                            fc, fcPx, fcPy, fcPz,
-                            tRn[n], tRnPx[n], tRnPy[n], tRnPz[n],
-                            tLMAll);
-                // accumulate to force
-                cnlm2fxyz(tCnlm+tShift, tCnlmPx, tCnlmPy, tCnlmPz,
-                          tNNGrad_+tShiftFp,  tFx_, tFy_, tFz_,
-                          1.0, aLMax, aNoRadial, aL3Max, aL3Cross);
-                if (aTypeNum > 1) {
-                    jint tShift0 = tShift + (aNMax+1)*tLMAll;
-                    jint tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL;
-                    cnlm2fxyz(tCnlm+tShift0, tCnlmPx, tCnlmPy, tCnlmPz,
-                              tNNGrad_+tShiftFp0,  tFx_, tFy_, tFz_,
-                              wt, aLMax, aNoRadial, aL3Max, aL3Cross);
+            if (aTypeNum == 1) {
+                jdouble *tGradCnlm_ = tGradCnlm;
+                for (jint n = 0; n <= aNMax; ++n, tGradCnlm_+=tLMAll) {
+                    jdouble tRnn = tRn[n];
+                    jdouble tMul = fc * tRnn;
+                    jdouble tGradRn = 0.0;
+                    for (jint l = 0; l <= tLMax; ++l) {
+                        const jint tStart = l*l;
+                        const jint tEnd = tStart + (l+l+1);
+                        for (jint k = tStart; k < tEnd; ++k) {
+                            jdouble subGradCnlm = tGradCnlm_[k];
+                            tGradY[k] += tMul * subGradCnlm;
+                            tGradRn += tY[k] * subGradCnlm;
+                        }
+                    }
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
+                }
+            } else {
+                // cal weight of type here
+                jdouble wt = ((type&1)==1) ? type : -type;
+                jdouble *tGradCnlm_ = tGradCnlm, *tGradCnlmWt = tGradCnlm + (aNMax+1)*tLMAll;
+                for (jint n = 0; n <= aNMax; ++n, tGradCnlm_+=tLMAll, tGradCnlmWt+=tLMAll) {
+                    jdouble tRnn = tRn[n];
+                    jdouble tMul = fc * tRnn;
+                    jdouble tGradRn = 0.0;
+                    for (jint l = 0; l <= tLMax; ++l) {
+                        const jint tStart = l*l;
+                        const jint tEnd = tStart + (l+l+1);
+                        for (jint k = tStart; k < tEnd; ++k) {
+                            jdouble subGradCnlm = tGradCnlm_[k] + wt*tGradCnlmWt[k];
+                            tGradY[k] += tMul * subGradCnlm;
+                            tGradRn += tY[k] * subGradCnlm;
+                        }
+                    }
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             }
             break;
@@ -2160,6 +2810,19 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
         default: {
             break;
         }}
+        for (jint l = 0; l <= tLMax; ++l) {
+            const jint tStart = l*l;
+            const jint tEnd = tStart + (l+l+1);
+            for (jint k = tStart; k < tEnd; ++k) {
+                jdouble subGradY = tGradY[k];
+                tFx[j] += subGradY*tYPx[k];
+                tFy[j] += subGradY*tYPy[k];
+                tFz[j] += subGradY*tYPz[k];
+            }
+        }
+        tFx[j] += fcPx*tGradFc;
+        tFy[j] += fcPy*tGradFc;
+        tFz[j] += fcPz*tGradFc;
     }
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -2178,9 +2841,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
     releaseJArrayBuf(aEnv, rYPy, tYPy, JNI_ABORT); // buffer only
     releaseJArrayBuf(aEnv, rYPz, tYPz, JNI_ABORT); // buffer only
     releaseJArrayBuf(aEnv, aCnlm, tCnlm, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
+    releaseJArrayBuf(aEnv, rGradCnlm, tGradCnlm, JNI_ABORT); // buffer only
     releaseJArrayBuf(aEnv, aNNGrad, tNNGrad, JNI_ABORT);
     releaseJArrayBuf(aEnv, rFx, tFx, 0);
     releaseJArrayBuf(aEnv, rFy, tFy, 0);

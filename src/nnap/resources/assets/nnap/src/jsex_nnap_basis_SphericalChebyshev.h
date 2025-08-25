@@ -48,10 +48,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGrad1
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev
  * Method:    evalGradAndForceDot1
- * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[DI[D[D[DIDIIZIZI)V
+ * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[D[D[D[D[D[DI[D[D[DIDIIZIZI)V
  */
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceDot1
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jboolean, jint, jboolean, jint);
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jboolean, jint, jboolean, jint);
 
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev

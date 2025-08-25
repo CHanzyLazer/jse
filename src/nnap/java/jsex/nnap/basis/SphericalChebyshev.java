@@ -46,7 +46,7 @@ public class SphericalChebyshev extends WTypeBasis {
     final int mLMaxMax, mLMAll;
     
     /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
-    private final IDataShell<double[]> mCnlm;
+    private final IDataShell<double[]> mCnlm, mGradCnlm;
     private final IDataShell<double[]> mCnlmPx, mCnlmPy, mCnlmPz;
     private final IDataShell<double[]> mRnPx, mRnPy, mRnPz, mCheby2;
     private final IDataShell<double[]> mYPx, mYPy, mYPz, mYPphi, mYPtheta;
@@ -77,6 +77,7 @@ public class SphericalChebyshev extends WTypeBasis {
         mLMAll = (mLMaxMax+1)*(mLMaxMax+1);
         
         mCnlm = Vectors.zeros(mSizeN*mLMAll);
+        mGradCnlm = Vectors.zeros(mSizeN*mLMAll);
         mCnlmPx = Vectors.zeros(mLMAll);
         mCnlmPy = Vectors.zeros(mLMAll);
         mCnlmPz = Vectors.zeros(mLMAll);
@@ -246,14 +247,14 @@ public class SphericalChebyshev extends WTypeBasis {
                              mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
                              mNlY.internalDataWithLengthCheck(tNN*mLMAll, 0), mYPtheta.internalDataWithLengthCheck(mLMAll, 0), mYPphi.internalDataWithLengthCheck(mLMAll, 0),
                              mYPx.internalDataWithLengthCheck(mLMAll, 0), mYPy.internalDataWithLengthCheck(mLMAll, 0), mYPz.internalDataWithLengthCheck(mLMAll, 0),
-                             mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mCnlmPx.internalDataWithLengthCheck(mLMAll, 0), mCnlmPy.internalDataWithLengthCheck(mLMAll, 0), mCnlmPz.internalDataWithLengthCheck(mLMAll, 0),
+                             mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mGradCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0),
                              aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
                              mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType);
     }
     private static native void evalGradAndForceDot1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                                     double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                                     double[] aNlY, double[] rYPtheta, double[] rYPphi, double[] rYPx, double[] rYPy, double[] rYPz,
-                                                    double[] aCnlm, double[] rCnlmPx, double[] rCnlmPy, double[] rCnlmPz,
+                                                    double[] aCnlm, double[] rGradCnlm,
                                                     double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
                                                     int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType);
     

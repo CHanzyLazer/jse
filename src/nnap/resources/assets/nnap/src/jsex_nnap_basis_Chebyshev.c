@@ -600,32 +600,31 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradAndForceDot1(JNIEn
         default: {
             break;
         }}
-        // cal fpPxyz
+        // cal fpxyz
+        jdouble tGradFc = 0.0;
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL: {
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
-                    // cal subFpPxyz and accumulate to force
-                    const jdouble tRnn = tRn[n];
-                    const jdouble subNNGrad = tNNGrad_[n];
-                    tFx[j] += subNNGrad * (fc*tRnPx[n] + fcPx*tRnn);
-                    tFy[j] += subNNGrad * (fc*tRnPy[n] + fcPy*tRnn);
-                    tFz[j] += subNNGrad * (fc*tRnPz[n] + fcPz*tRnn);
+                    jdouble tGradRn = tNNGrad_[n];
+                    jdouble tRnn = tRn[n];
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             } else {
                 jint tShiftFp = (aNMax+1)*type;
                 jdouble *tNNGradWt = tNNGrad_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
-                    // cal subFpPxyz first
-                    const jdouble tRnn = tRn[n];
-                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
-                    // accumulate to force
-                    const jdouble subNNGrad = tNNGrad_[n], subNNGradWt = tNNGradWt[n];
-                    tFx[j] += (subNNGrad + subNNGradWt) * subFpPx;
-                    tFy[j] += (subNNGrad + subNNGradWt) * subFpPy;
-                    tFz[j] += (subNNGrad + subNNGradWt) * subFpPz;
+                    jdouble tGradRn = tNNGrad_[n] + tNNGradWt[n];
+                    jdouble tRnn = tRn[n];
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             }
             break;
@@ -634,36 +633,39 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradAndForceDot1(JNIEn
             jint tShiftFp = (aNMax+1)*(type-1);
             jdouble *tNNGradWt = tNNGrad_+tShiftFp;
             for (jint n = 0; n <= aNMax; ++n) {
-                // cal subFpPxyz and accumulate to force
-                const jdouble tRnn = tRn[n];
-                const jdouble subNNGradWt = tNNGradWt[n];
-                tFx[j] += subNNGradWt * (fc*tRnPx[n] + fcPx*tRnn);
-                tFy[j] += subNNGradWt * (fc*tRnPy[n] + fcPy*tRnn);
-                tFz[j] += subNNGradWt * (fc*tRnPz[n] + fcPz*tRnn);
+                jdouble tGradRn = tNNGradWt[n];
+                jdouble tRnn = tRn[n];
+                tGradFc += tRnn * tGradRn;
+                tGradRn *= fc;
+                tFx[j] += tGradRn*tRnPx[n];
+                tFy[j] += tGradRn*tRnPy[n];
+                tFz[j] += tGradRn*tRnPz[n];
             }
             break;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE:
         case jsex_nnap_basis_Chebyshev_WTYPE_SINGLE: {
             for (jint n = 0; n <= aNMax; ++n) {
-                // cal subFpPxyz and accumulate to force
-                const jdouble tRnn = tRn[n];
-                const jdouble subNNGrad = tNNGrad_[n];
-                tFx[j] += subNNGrad * (fc*tRnPx[n] + fcPx*tRnn);
-                tFy[j] += subNNGrad * (fc*tRnPy[n] + fcPy*tRnn);
-                tFz[j] += subNNGrad * (fc*tRnPz[n] + fcPz*tRnn);
+                jdouble tGradRn = tNNGrad_[n];
+                jdouble tRnn = tRn[n];
+                tGradFc += tRnn * tGradRn;
+                tGradRn *= fc;
+                tFx[j] += tGradRn*tRnPx[n];
+                tFy[j] += tGradRn*tRnPy[n];
+                tFz[j] += tGradRn*tRnPz[n];
             }
             break;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
             if (aTypeNum == 1) {
                 for (jint n = 0; n <= aNMax; ++n) {
-                    // cal subFpPxyz and accumulate to force
-                    const jdouble tRnn = tRn[n];
-                    const jdouble subNNGrad = tNNGrad_[n];
-                    tFx[j] += subNNGrad * (fc*tRnPx[n] + fcPx*tRnn);
-                    tFy[j] += subNNGrad * (fc*tRnPy[n] + fcPy*tRnn);
-                    tFz[j] += subNNGrad * (fc*tRnPz[n] + fcPz*tRnn);
+                    jdouble tGradRn = tNNGrad_[n];
+                    jdouble tRnn = tRn[n];
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             } else {
                 // cal weight of type here
@@ -671,16 +673,13 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradAndForceDot1(JNIEn
                 jint tShiftFp = aNMax+1;
                 jdouble *tNNGradWt = tNNGrad_+tShiftFp;
                 for (jint n = 0; n <= aNMax; ++n) {
-                    // cal subFpPxyz first
-                    const jdouble tRnn = tRn[n];
-                    const jdouble subFpPx = fc*tRnPx[n] + fcPx*tRnn;
-                    const jdouble subFpPy = fc*tRnPy[n] + fcPy*tRnn;
-                    const jdouble subFpPz = fc*tRnPz[n] + fcPz*tRnn;
-                    // accumulate to force
-                    const jdouble subNNGrad = tNNGrad_[n], subNNGradWt = tNNGradWt[n];
-                    tFx[j] += (subNNGrad + wt*subNNGradWt) * subFpPx;
-                    tFy[j] += (subNNGrad + wt*subNNGradWt) * subFpPy;
-                    tFz[j] += (subNNGrad + wt*subNNGradWt) * subFpPz;
+                    jdouble tGradRn = tNNGrad_[n] + wt*tNNGradWt[n];
+                    jdouble tRnn = tRn[n];
+                    tGradFc += tRnn * tGradRn;
+                    tGradRn *= fc;
+                    tFx[j] += tGradRn*tRnPx[n];
+                    tFy[j] += tGradRn*tRnPy[n];
+                    tFz[j] += tGradRn*tRnPz[n];
                 }
             }
             break;
@@ -688,6 +687,9 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradAndForceDot1(JNIEn
         default: {
             break;
         }}
+        tFx[j] += fcPx*tGradFc;
+        tFy[j] += fcPy*tGradFc;
+        tFz[j] += fcPz*tGradFc;
     }
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
