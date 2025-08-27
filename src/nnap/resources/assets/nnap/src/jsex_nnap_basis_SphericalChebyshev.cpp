@@ -1760,20 +1760,24 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
             }
             continue;
         }
+        jdouble wt;
         jint tShift = 0, tShiftFp = 0;
         jint tShiftWt, tShiftFpWt;
         if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
+            wt = 1.0;
             tShiftWt = (aNMax+1)*LMALL*type;
             tShiftFpWt = (aNMax+1)*SIZE_L*type;
         } else
         if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
+            // cal weight of type here
+            wt = ((type&1)==1) ? type : -type;
             tShiftWt = (aNMax+1)*LMALL;
             tShiftFpWt = (aNMax+1)*SIZE_L;
         } else {
             continue;
         }
         for (jint n = 0; n <= aNMax; ++n) {
-            mplusCnlmWt<LMALL>(rCnlm+tShift, rCnlm+tShiftWt, tY, fc, tRn[n], 1.0);
+            mplusCnlmWt<LMALL>(rCnlm+tShift, rCnlm+tShiftWt, tY, fc, tRn[n], wt);
             tShift += LMALL;
             tShiftWt += LMALL;
             if (NL_SIZE) {
@@ -2585,19 +2589,19 @@ static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNl
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     default: {
