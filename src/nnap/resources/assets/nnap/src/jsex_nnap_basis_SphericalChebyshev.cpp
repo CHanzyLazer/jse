@@ -623,6 +623,24 @@ static inline void calCnlmPxyz(jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnl
     }
 }
 
+template <jint L>
+static inline void calL2pSub_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+    const jint tStart = L*L;
+    const jint tLen = L+L+1;
+    const jint tEnd = tStart+tLen;
+    jdouble rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
+    for (jint i = tStart; i < tEnd; ++i) {
+        jdouble tCnlm = aCnlm[i];
+        rDotPx += tCnlm*aCnlmPx[i];
+        rDotPy += tCnlm*aCnlmPy[i];
+        rDotPz += tCnlm*aCnlmPz[i];
+    }
+    const jdouble tMul = aWt * (2.0*PI4/(jdouble)tLen);
+    rFpPx[L-1] = tMul * rDotPx;
+    rFpPy[L-1] = tMul * rDotPy;
+    rFpPz[L-1] = tMul * rDotPz;
+}
 template <jint LMAX, jboolean NO_RADIAL>
 static void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
                     jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
@@ -638,24 +656,22 @@ static void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble 
         tFpPz[0] = tMul * (tCnl0*aCnlmPz[0]);
         ++tFpPx; ++tFpPy; ++tFpPz;
     }
-    // else
-    for (jint l = 1; l <= LMAX; ++l) {
-        const jint tStart = l*l;
-        const jint tLen = l+l+1;
-        const jint tEnd = tStart+tLen;
-        jdouble rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
-        for (jint i = tStart; i < tEnd; ++i) {
-            jdouble tCnlm = aCnlm[i];
-            rDotPx += tCnlm*aCnlmPx[i];
-            rDotPy += tCnlm*aCnlmPy[i];
-            rDotPz += tCnlm*aCnlmPz[i];
-        }
-        tMul = PI4/(jdouble)tLen;
-        tMul = aWt*(tMul+tMul);
-        tFpPx[l-1] = tMul * rDotPx;
-        tFpPy[l-1] = tMul * rDotPy;
-        tFpPz[l-1] = tMul * rDotPz;
-    }
+    if (LMAX == 0) return;
+    calL2pSub_<1>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 1) return;
+    calL2pSub_<2>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 2) return;
+    calL2pSub_<3>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 3) return;
+    calL2pSub_<4>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 4) return;
+    calL2pSub_<5>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 5) return;
+    calL2pSub_<6>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 6) return;
+    calL2pSub_<7>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
+    if (LMAX == 7) return;
+    calL2pSub_<8>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
 }
 template <jint L>
 static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) {
