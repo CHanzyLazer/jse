@@ -147,12 +147,12 @@ public class Chebyshev extends WTypeBasis {
     }
     
     @Override
-    protected void evalGradAndForceDotAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                                  DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    protected void evalForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
+                                        DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 现在直接计算力
-        evalGradAndForceDot0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz);
+        evalForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz);
     }
     
     
@@ -183,18 +183,18 @@ public class Chebyshev extends WTypeBasis {
                                          double[] rFpPx, int aShiftFpPx, double[] rFpPy, int aShiftFpPy, double[] rFpPz, int aShiftFpPz,
                                          int aTypeNum, double aRCut, int aNMax, int aWType);
     
-    void evalGradAndForceDot0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
-                              IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz) {
+    void evalForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
+                    IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz) {
         int tNN = aNlDx.internalDataSize();
-        evalGradAndForceDot1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                             mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
-                             aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
-                             mTypeNum, mRCut, mNMax, mWType);
+        evalForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
+                   mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
+                   aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
+                   mTypeNum, mRCut, mNMax, mWType);
     }
-    private static native void evalGradAndForceDot1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                                    double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                                    double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
-                                                    int aTypeNum, double aRCut, int aNMax, int aWType);
+    private static native void evalForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                          double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
+                                          double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
+                                          int aTypeNum, double aRCut, int aNMax, int aWType);
     
     @Override @Deprecated
     protected void evalGradWithShift_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,

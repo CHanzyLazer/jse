@@ -25,13 +25,13 @@ public abstract class MergeableBasis extends Basis {
             tFz[i] = 0.0;
         }
     }
-    @Override protected final void evalGradAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    @Override protected final void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         // 这里需要手动清空旧值
         clearForce_(rFx,  rFy, rFz);
-        evalGradAndForceDotAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz);
+        evalForceAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz);
     }
     /** 累加版本的计算力，此时不会清空计算的力值，防止多次写入时旧值被自动清理 */
-    protected abstract void evalGradAndForceDotAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz);
+    protected abstract void evalForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz);
     
     
     @Override @Deprecated

@@ -81,11 +81,11 @@ public class Mirror extends Basis {
         mMirrorNlTypeValid = false;
     }
     @Override
-    protected void evalGradAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
         if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalGradAndForceDot_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz);
+        mMirrorBasis.evalForce_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz);
         mMirrorNlTypeValid = false;
     }
     

@@ -208,14 +208,14 @@ public class Merge extends Basis {
         }
     }
     @Override
-    protected void evalGradAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         // 这里需要手动清空旧值
         MergeableBasis.clearForce_(rFx, rFy, rFz);
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tNNGrad = mNNGradShell[i];
             tNNGrad.setInternalData(aNNGrad.internalData());
-            mMergeBasis[i].evalGradAndForceDotAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, tNNGrad, rFx, rFy, rFz);
+            mMergeBasis[i].evalForceAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, tNNGrad, rFx, rFy, rFz);
         }
     }
     @Override @Deprecated

@@ -47,10 +47,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGrad1
 
 /*
  * Class:     jsex_nnap_basis_SphericalChebyshev
- * Method:    evalGradAndForceDot1
+ * Method:    evalForce1
  * Signature: ([D[D[D[II[D[D[D[D[D[D[D[D[D[D[D[D[D[DI[D[D[DIDIIZIZI)V
  */
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceDot1
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalForce1
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdouble, jint, jint, jboolean, jint, jboolean, jint);
 
 /*

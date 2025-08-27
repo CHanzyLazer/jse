@@ -1847,131 +1847,6 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     }
     cnlm2fp<tSizeL, LMAX, NO_RADIAL, L3MAX, L3CROSS, tLMAll>(rCnlm, rFp, tSizeN);
 }
-template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
-    switch (aLMax) {
-    case 0: {
-        calFp<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 1: {
-        calFp<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 2: {
-        calFp<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 3: {
-        calFp<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 4: {
-        calFp<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 5: {
-        calFp<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 6: {
-        calFp<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 7: {
-        calFp<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 8: {
-        calFp<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
-template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial) {
-    if (aNoRadial) {
-        calFp<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax);
-    } else {
-        calFp<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax);
-    }
-}
-template <jboolean L3CROSS, jint WTYPE>
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
-    switch (aL3Max) {
-    case 0: {
-        calFp<0, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 1: {
-        calFp<1, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 2: {
-        calFp<2, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 3: {
-        calFp<3, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 4: {
-        calFp<4, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
-template <jint WTYPE>
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
-    if (aL3Cross) {
-        calFp<JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
-    } else {
-        calFp<JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
-    }
-}
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
-    switch(aWType) {
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
 
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
 static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
@@ -2162,155 +2037,13 @@ static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlT
         }
     }
 }
-template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
-    switch (aLMax) {
-    case 0: {
-        calFpGrad<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 1: {
-        calFpGrad<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 2: {
-        calFpGrad<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 3: {
-        calFpGrad<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 4: {
-        calFpGrad<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 5: {
-        calFpGrad<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 6: {
-        calFpGrad<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 7: {
-        calFpGrad<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    case 8: {
-        calFpGrad<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
-template <jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial) {
-    if (aNoRadial) {
-        calFpGrad<JNI_TRUE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax);
-    } else {
-        calFpGrad<JNI_FALSE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax);
-    }
-}
-template <jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
-    switch (aL3Max) {
-    case 0: {
-        calFpGrad<0, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 1: {
-        calFpGrad<1, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 2: {
-        calFpGrad<2, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 3: {
-        calFpGrad<3, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    case 4: {
-        calFpGrad<4, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
-template <jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
-    if (aL3Cross) {
-        calFpGrad<JNI_TRUE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
-    } else {
-        calFpGrad<JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
-    }
-}
-template <jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
-    switch(aWType) {
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
 
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
-static void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rGradCnlm,
-                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax) {
+static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                     jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                     jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                     jdouble *aCnlm, jdouble *rGradCnlm,
+                     jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax) {
     // const init
     jint tSizeN;
     switch(WTYPE) {
@@ -2472,47 +2205,46 @@ static void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         rFz[j] += fcPz*tGradFc;
     }
 }
+
 template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
-static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                    jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                                    jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                                    jdouble *aCnlm, jdouble *rGradCnlm,
-                                    jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
     switch (aLMax) {
     case 0: {
-        calFpAndForceDot<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 1: {
-        calFpAndForceDot<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 2: {
-        calFpAndForceDot<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 3: {
-        calFpAndForceDot<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 4: {
-        calFpAndForceDot<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 5: {
-        calFpAndForceDot<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 6: {
-        calFpAndForceDot<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 7: {
-        calFpAndForceDot<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     case 8: {
-        calFpAndForceDot<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        calFp<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
         return;
     }
     default: {
@@ -2520,44 +2252,39 @@ static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNl
     }}
 }
 template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
-static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                    jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                                    jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                                    jdouble *aCnlm, jdouble *rGradCnlm,
-                                    jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                                    jint aNMax, jint aLMax, jboolean aNoRadial) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial) {
     if (aNoRadial) {
-        calFpAndForceDot<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax);
+        calFp<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax);
     } else {
-        calFpAndForceDot<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax);
+        calFp<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax);
     }
 }
 template <jboolean L3CROSS, jint WTYPE>
-static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                    jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                                    jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                                    jdouble *aCnlm, jdouble *rGradCnlm,
-                                    jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                                    jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
+                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
     switch (aL3Max) {
     case 0: {
-        calFpAndForceDot<0, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        calFp<0, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
         return;
     }
     case 1: {
-        calFpAndForceDot<1, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        calFp<1, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
         return;
     }
     case 2: {
-        calFpAndForceDot<2, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        calFp<2, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
         return;
     }
     case 3: {
-        calFpAndForceDot<3, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        calFp<3, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
         return;
     }
     case 4: {
-        calFpAndForceDot<4, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        calFp<4, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
         return;
     }
     default: {
@@ -2565,43 +2292,321 @@ static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNl
     }}
 }
 template <jint WTYPE>
-static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                    jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                                    jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                                    jdouble *aCnlm, jdouble *rGradCnlm,
-                                    jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                                    jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
+                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
     if (aL3Cross) {
-        calFpAndForceDot<JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+        calFp<JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
     } else {
-        calFpAndForceDot<JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+        calFp<JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
     }
 }
-static inline void calFpAndForceDot(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                    jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                                    jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                                    jdouble *aCnlm, jdouble *rGradCnlm,
-                                    jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                                    jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
+                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
     switch(aWType) {
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFpAndForceDot<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+
+
+template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
+static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+    switch (aLMax) {
+    case 0: {
+        calFpGrad<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 1: {
+        calFpGrad<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 2: {
+        calFpGrad<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 3: {
+        calFpGrad<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 4: {
+        calFpGrad<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 5: {
+        calFpGrad<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 6: {
+        calFpGrad<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 7: {
+        calFpGrad<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 8: {
+        calFpGrad<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+template <jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
+static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
+                             jint aNMax, jint aLMax, jboolean aNoRadial) {
+    if (aNoRadial) {
+        calFpGrad<JNI_TRUE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax);
+    } else {
+        calFpGrad<JNI_FALSE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax);
+    }
+}
+template <jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
+static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
+                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
+    switch (aL3Max) {
+    case 0: {
+        calFpGrad<0, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 1: {
+        calFpGrad<1, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 2: {
+        calFpGrad<2, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 3: {
+        calFpGrad<3, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 4: {
+        calFpGrad<4, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+template <jint WTYPE, jboolean SPARSE>
+static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
+                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+    if (aL3Cross) {
+        calFpGrad<JNI_TRUE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+    } else {
+        calFpGrad<JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+    }
+}
+template <jboolean SPARSE>
+static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
+                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
+                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+    switch(aWType) {
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
+        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
+        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
+        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
+        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
+        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+
+
+template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                            jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                            jdouble *aCnlm, jdouble *rGradCnlm,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+    switch (aLMax) {
+    case 0: {
+        calForce<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 1: {
+        calForce<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 2: {
+        calForce<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 3: {
+        calForce<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 4: {
+        calForce<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 5: {
+        calForce<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 6: {
+        calForce<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 7: {
+        calForce<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    case 8: {
+        calForce<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                            jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                            jdouble *aCnlm, jdouble *rGradCnlm,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
+                            jint aNMax, jint aLMax, jboolean aNoRadial) {
+    if (aNoRadial) {
+        calForce<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax);
+    } else {
+        calForce<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax);
+    }
+}
+template <jboolean L3CROSS, jint WTYPE>
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                            jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                            jdouble *aCnlm, jdouble *rGradCnlm,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
+                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max) {
+    switch (aL3Max) {
+    case 0: {
+        calForce<0, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 1: {
+        calForce<1, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 2: {
+        calForce<2, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 3: {
+        calForce<3, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    case 4: {
+        calForce<4, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+template <jint WTYPE>
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                            jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                            jdouble *aCnlm, jdouble *rGradCnlm,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
+                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+    if (aL3Cross) {
+        calForce<JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+    } else {
+        calForce<JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max);
+    }
+}
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                            jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
+                            jdouble *aCnlm, jdouble *rGradCnlm,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
+                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+    switch(aWType) {
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
+        calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
+        calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
+        calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE: {
+        calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_SINGLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
+        return;
+    }
+    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
+        calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
         return;
     }
     default: {
@@ -2780,7 +2785,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradWithShift
 }
 
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceDot1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalForce1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
         jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
@@ -2810,12 +2815,12 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradAndForceD
     jdouble *tFy = (jdouble *)getJArrayBuf(aEnv, rFy);
     jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
     
-    calFpAndForceDot(tNlDx, tNlDy, tNlDz, tNlType, aNN,
-                     tNlRn, tRnPx, tRnPy, tRnPz, tCheby2,
-                     tNlY, tYPtheta, tYPphi, tYPx, tYPy, tYPz,
-                     tCnlm, tGradCnlm,
-                     tNNGrad+aShiftFp, tFx, tFy, tFz,
-                     aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType);
+    calForce(tNlDx, tNlDy, tNlDz, tNlType, aNN,
+             tNlRn, tRnPx, tRnPy, tRnPz, tCheby2,
+             tNlY, tYPtheta, tYPphi, tYPx, tYPy, tYPz,
+             tCnlm, tGradCnlm,
+             tNNGrad+aShiftFp, tFx, tFy, tFz,
+             aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);

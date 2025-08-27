@@ -109,7 +109,7 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     
     protected abstract void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, @Nullable IntArrayVector rFpGradNlSize, boolean aBufferNl);
     protected abstract void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, IntArrayVector aFpGradNlSize, IntArrayVector rFpGradNlIndex, IntArrayVector rFpGradFpIndex, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz);
-    protected abstract void evalGradAndForceDot_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz);
+    protected abstract void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz);
     @Deprecated
     protected abstract void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz);
     
@@ -148,7 +148,7 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
         initCacheFp_();
         eval_(aNlDx, aNlDy, aNlDz, aNlType, mFp, null, true);
         double tEng = aNN.evalGrad(mFp, mNNGrad);
-        evalGradAndForceDot_(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz);
+        evalForce_(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz);
         return tEng;
     }
     
