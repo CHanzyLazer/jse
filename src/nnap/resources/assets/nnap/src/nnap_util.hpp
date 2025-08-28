@@ -152,13 +152,65 @@ static inline jdouble dot(jdouble *aArray, jint aLen) {
     case 97: {return dot<97>(aArray);}
     case 98: {return dot<98>(aArray);}
     case 99: {return dot<99>(aArray);}
+    case 100: {return dot<100>(aArray);}
+    case 101: {return dot<101>(aArray);}
+    case 102: {return dot<102>(aArray);}
+    case 103: {return dot<103>(aArray);}
+    case 104: {return dot<104>(aArray);}
+    case 105: {return dot<105>(aArray);}
+    case 106: {return dot<106>(aArray);}
+    case 107: {return dot<107>(aArray);}
+    case 108: {return dot<108>(aArray);}
+    case 109: {return dot<109>(aArray);}
+    case 110: {return dot<110>(aArray);}
+    case 111: {return dot<111>(aArray);}
+    case 112: {return dot<112>(aArray);}
+    case 113: {return dot<113>(aArray);}
+    case 114: {return dot<114>(aArray);}
+    case 115: {return dot<115>(aArray);}
+    case 116: {return dot<116>(aArray);}
+    case 117: {return dot<117>(aArray);}
+    case 118: {return dot<118>(aArray);}
+    case 119: {return dot<119>(aArray);}
+    case 120: {return dot<120>(aArray);}
+    case 121: {return dot<121>(aArray);}
+    case 122: {return dot<122>(aArray);}
+    case 123: {return dot<123>(aArray);}
+    case 124: {return dot<124>(aArray);}
+    case 125: {return dot<125>(aArray);}
+    case 126: {return dot<126>(aArray);}
+    case 127: {return dot<127>(aArray);}
+    case 128: {return dot<128>(aArray);}
     default: {break;}
     }
     jdouble rDot = 0.0;
-    for (jint i = 0; i < aLen; ++i) {
-        rDot += aArray[i]*aArray[i];
+    jint tEnd = aLen - (16-1);
+    jint i = 0;
+    jdouble *tBuf = aArray;
+    for (; i < tEnd; i+=16, tBuf+=16) {
+        for (jint j = 0; j < 16; ++j) {
+            rDot += tBuf[j]*tBuf[j];
+        }
     }
-    return rDot;
+    switch (aLen-i) {
+    case 0: {return rDot;}
+    case 1: {return rDot+dot<1>(tBuf);}
+    case 2: {return rDot+dot<2>(tBuf);}
+    case 3: {return rDot+dot<3>(tBuf);}
+    case 4: {return rDot+dot<4>(tBuf);}
+    case 5: {return rDot+dot<5>(tBuf);}
+    case 6: {return rDot+dot<6>(tBuf);}
+    case 7: {return rDot+dot<7>(tBuf);}
+    case 8: {return rDot+dot<8>(tBuf);}
+    case 9: {return rDot+dot<9>(tBuf);}
+    case 10: {return rDot+dot<10>(tBuf);}
+    case 11: {return rDot+dot<11>(tBuf);}
+    case 12: {return rDot+dot<12>(tBuf);}
+    case 13: {return rDot+dot<13>(tBuf);}
+    case 14: {return rDot+dot<14>(tBuf);}
+    case 15: {return rDot+dot<15>(tBuf);}
+    default: {return rDot;}
+    }
 }
 template <jint N>
 static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR) {
@@ -270,13 +322,65 @@ static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR, jint aLen) {
     case 97: {return dot<97>(aArrayL, aArrayR);}
     case 98: {return dot<98>(aArrayL, aArrayR);}
     case 99: {return dot<99>(aArrayL, aArrayR);}
+    case 100: {return dot<100>(aArrayL, aArrayR);}
+    case 101: {return dot<101>(aArrayL, aArrayR);}
+    case 102: {return dot<102>(aArrayL, aArrayR);}
+    case 103: {return dot<103>(aArrayL, aArrayR);}
+    case 104: {return dot<104>(aArrayL, aArrayR);}
+    case 105: {return dot<105>(aArrayL, aArrayR);}
+    case 106: {return dot<106>(aArrayL, aArrayR);}
+    case 107: {return dot<107>(aArrayL, aArrayR);}
+    case 108: {return dot<108>(aArrayL, aArrayR);}
+    case 109: {return dot<109>(aArrayL, aArrayR);}
+    case 110: {return dot<110>(aArrayL, aArrayR);}
+    case 111: {return dot<111>(aArrayL, aArrayR);}
+    case 112: {return dot<112>(aArrayL, aArrayR);}
+    case 113: {return dot<113>(aArrayL, aArrayR);}
+    case 114: {return dot<114>(aArrayL, aArrayR);}
+    case 115: {return dot<115>(aArrayL, aArrayR);}
+    case 116: {return dot<116>(aArrayL, aArrayR);}
+    case 117: {return dot<117>(aArrayL, aArrayR);}
+    case 118: {return dot<118>(aArrayL, aArrayR);}
+    case 119: {return dot<119>(aArrayL, aArrayR);}
+    case 120: {return dot<120>(aArrayL, aArrayR);}
+    case 121: {return dot<121>(aArrayL, aArrayR);}
+    case 122: {return dot<122>(aArrayL, aArrayR);}
+    case 123: {return dot<123>(aArrayL, aArrayR);}
+    case 124: {return dot<124>(aArrayL, aArrayR);}
+    case 125: {return dot<125>(aArrayL, aArrayR);}
+    case 126: {return dot<126>(aArrayL, aArrayR);}
+    case 127: {return dot<127>(aArrayL, aArrayR);}
+    case 128: {return dot<128>(aArrayL, aArrayR);}
     default: {break;}
     }
     jdouble rDot = 0.0;
-    for (jint i = 0; i < aLen; ++i) {
-        rDot += aArrayL[i]*aArrayR[i];
+    jint tEnd = aLen - (16-1);
+    jint i = 0;
+    jdouble *tBufL = aArrayL, *tBufR = aArrayR;
+    for (; i < tEnd; i+=16, tBufL+=16, tBufR+=16) {
+        for (jint j = 0; j < 16; ++j) {
+            rDot += tBufL[j]*tBufR[j];
+        }
     }
-    return rDot;
+    switch (aLen-i) {
+    case 0: {return rDot;}
+    case 1: {return rDot+dot<1>(tBufL, tBufR);}
+    case 2: {return rDot+dot<2>(tBufL, tBufR);}
+    case 3: {return rDot+dot<3>(tBufL, tBufR);}
+    case 4: {return rDot+dot<4>(tBufL, tBufR);}
+    case 5: {return rDot+dot<5>(tBufL, tBufR);}
+    case 6: {return rDot+dot<6>(tBufL, tBufR);}
+    case 7: {return rDot+dot<7>(tBufL, tBufR);}
+    case 8: {return rDot+dot<8>(tBufL, tBufR);}
+    case 9: {return rDot+dot<9>(tBufL, tBufR);}
+    case 10: {return rDot+dot<10>(tBufL, tBufR);}
+    case 11: {return rDot+dot<11>(tBufL, tBufR);}
+    case 12: {return rDot+dot<12>(tBufL, tBufR);}
+    case 13: {return rDot+dot<13>(tBufL, tBufR);}
+    case 14: {return rDot+dot<14>(tBufL, tBufR);}
+    case 15: {return rDot+dot<15>(tBufL, tBufR);}
+    default: {return rDot;}
+    }
 }
 
 template <jint N>
