@@ -2,15 +2,15 @@
 #include "nnap_util.hpp"
 
 
-static inline jdouble silu(jdouble aX) {
+static inline jdouble silu(jdouble aX) noexcept {
     return aX / (1.0 + exp(-aX));
 }
-static inline jdouble siluGrad(jdouble aX, jdouble *rGrad) {
+static inline jdouble siluGrad(jdouble aX, jdouble *rGrad) noexcept {
     jdouble tSigmoid = 1.0 / (1.0 + exp(-aX));
     *rGrad = tSigmoid * (1 + aX * (1 - tSigmoid));
     return aX * tSigmoid;
 }
-static inline jdouble siluGradGrad(jdouble aX, jdouble *rGrad, jdouble *rGradGrad) {
+static inline jdouble siluGradGrad(jdouble aX, jdouble *rGrad, jdouble *rGradGrad) noexcept {
     jdouble tSigmoid = 1.0 / (1.0 + exp(-aX));
     *rGrad = tSigmoid * (1 + aX * (1 - tSigmoid));
     *rGradGrad = tSigmoid * (1 - tSigmoid) * (2 + aX * (1 - tSigmoid - tSigmoid));
@@ -19,7 +19,7 @@ static inline jdouble siluGradGrad(jdouble aX, jdouble *rGrad, jdouble *rGradGra
 
 static inline jdouble forward(jdouble *aX, jint aInputDim, jint *aHiddenDims, jint aHiddenNumber,
                               jdouble *aHiddenWeights, jdouble *aHiddenBiases, jdouble *aOutputWeight, jdouble aOutputBias,
-                              jdouble *rHiddenOutputs, jdouble *rHiddenGrads, jdouble *rHiddenGradGrads) {
+                              jdouble *rHiddenOutputs, jdouble *rHiddenGrads, jdouble *rHiddenGradGrads) noexcept {
     jdouble *tInput = aX;
     jdouble *rOutput = rHiddenOutputs;
     jdouble *rGrad = rHiddenGrads;
@@ -80,7 +80,7 @@ static inline jdouble forward(jdouble *aX, jint aInputDim, jint *aHiddenDims, ji
 }
 static inline void backward(jdouble aYGrad, jdouble *aX, jdouble *rGradX, jdouble *rGradPara,
                             jint aInputDim, jint *aHiddenDims, jint aHiddenNumber, jdouble *aHiddenWeightsBackward, jdouble *aOutputWeight,
-                            jdouble *aHiddenOutputs, jdouble *aHiddenGrads, jdouble *rHiddenGrads2, jdouble *rHiddenGrads3) {
+                            jdouble *aHiddenOutputs, jdouble *aHiddenGrads, jdouble *rHiddenGrads2, jdouble *rHiddenGrads3) noexcept {
     // switch to last layer
     const jint tEnd = aHiddenNumber - 1;
     jdouble *tGrad = aHiddenGrads;
@@ -175,7 +175,7 @@ static inline void backward(jdouble aYGrad, jdouble *aX, jdouble *rGradX, jdoubl
 static inline void gradBackward(jdouble *aGradXGrad, jdouble *aX, jdouble *rGradPara,
                                 jint aInputDim, jint *aHiddenDims, jint aHiddenNumber, jdouble *aHiddenWeights, jdouble *aHiddenWeightsBackward, jdouble *aOutputWeight,
                                 jdouble *aHiddenOutputs, jdouble *aHiddenGrads, jdouble *aHiddenGrads2, jdouble *aHiddenGrads3, jdouble *aHiddenGradGrads,
-                                jdouble *rHiddenOutputs2, jdouble *rHiddenGrads4, jdouble *rHiddenGrads5) {
+                                jdouble *rHiddenOutputs2, jdouble *rHiddenGrads4, jdouble *rHiddenGrads5) noexcept {
     // ptr init
     jdouble *tGrad = aHiddenGrads;
     jdouble *tGrad2 = aHiddenGrads2;

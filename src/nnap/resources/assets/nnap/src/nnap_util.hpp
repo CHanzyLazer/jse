@@ -25,17 +25,17 @@ namespace JSE_NNAP {
 #undef PI4
 #define PI4 (12.566370614359172)
 
-static inline jdouble pow2(jdouble value) {
+static inline jdouble pow2(jdouble value) noexcept {
     return value * value;
 }
-static inline jdouble pow3(jdouble value) {
+static inline jdouble pow3(jdouble value) noexcept {
     return value * value * value;
 }
-static inline jdouble pow4(jdouble value) {
+static inline jdouble pow4(jdouble value) noexcept {
     jdouble value2 = value * value;
     return value2 * value2;
 }
-static inline jboolean numericEqual(jdouble aLHS, jdouble aRHS) {
+static inline jboolean numericEqual(jdouble aLHS, jdouble aRHS) noexcept {
     jdouble tNorm = fabs((double)aLHS) + fabs((double)aRHS);
     if (tNorm < JSE_DBL_MIN_NORMAL * JSE_EPS_MUL) return JNI_TRUE;
     jdouble tDiff = fabs((double)(aLHS - aRHS));
@@ -43,14 +43,14 @@ static inline jboolean numericEqual(jdouble aLHS, jdouble aRHS) {
 }
 
 template <jint N>
-static inline jdouble dot(jdouble *aArray) {
+static inline jdouble dot(jdouble *aArray) noexcept {
     jdouble rDot = 0.0;
     for (jint i = 0; i < N; ++i) {
         rDot += aArray[i]*aArray[i];
     }
     return rDot;
 }
-static inline jdouble dot(jdouble *aArray, jint aLen) {
+static inline jdouble dot(jdouble *aArray, jint aLen) noexcept {
     switch (aLen) {
     case 0: {return 0.0;}
     case 1: {return dot<1>(aArray);}
@@ -213,14 +213,14 @@ static inline jdouble dot(jdouble *aArray, jint aLen) {
     }
 }
 template <jint N>
-static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR) {
+static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR) noexcept {
     jdouble rDot = 0.0;
     for (jint i = 0; i < N; ++i) {
         rDot += aArrayL[i]*aArrayR[i];
     }
     return rDot;
 }
-static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR, jint aLen) {
+static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR, jint aLen) noexcept {
     switch (aLen) {
     case 0: {return 0.0;}
     case 1: {return dot<1>(aArrayL, aArrayR);}
@@ -384,7 +384,7 @@ static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR, jint aLen) {
 }
 
 template <jint N>
-static inline void chebyshevFull(jdouble aX, jdouble *rDest) {
+static inline void chebyshevFull(jdouble aX, jdouble *rDest) noexcept {
     if (N < 0) return;
     rDest[0] = 1.0;
     if (N == 0) return;
@@ -393,7 +393,7 @@ static inline void chebyshevFull(jdouble aX, jdouble *rDest) {
         rDest[n] = 2.0*aX*rDest[n-1] - rDest[n-2];
     }
 }
-static inline void chebyshevFull(jint aN, jdouble aX, jdouble *rDest) {
+static inline void chebyshevFull(jint aN, jdouble aX, jdouble *rDest) noexcept {
     if (aN < 0) return;
     rDest[0] = 1.0;
     if (aN == 0) return;
@@ -403,7 +403,7 @@ static inline void chebyshevFull(jint aN, jdouble aX, jdouble *rDest) {
     }
 }
 template <jint N>
-static inline void chebyshev2Full(jdouble aX, jdouble *rDest) {
+static inline void chebyshev2Full(jdouble aX, jdouble *rDest) noexcept {
     if (N < 0) return;
     rDest[0] = 1.0;
     if (N == 0) return;
@@ -412,7 +412,7 @@ static inline void chebyshev2Full(jdouble aX, jdouble *rDest) {
         rDest[n] = 2.0*aX*rDest[n-1] - rDest[n-2];
     }
 }
-static inline void chebyshev2Full(jint aN, jdouble aX, jdouble *rDest) {
+static inline void chebyshev2Full(jint aN, jdouble aX, jdouble *rDest) noexcept {
     if (aN < 0) return;
     rDest[0] = 1.0;
     if (aN == 0) return;
@@ -424,7 +424,7 @@ static inline void chebyshev2Full(jint aN, jdouble aX, jdouble *rDest) {
 
 template <jint N>
 static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *aCheby2,
-                             jdouble aDis, jdouble aRCut, jdouble aWt, jdouble aDx, jdouble aDy, jdouble aDz) {
+                             jdouble aDis, jdouble aRCut, jdouble aWt, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
     const jdouble tRnPMul = 2.0 * aWt / (aDis*aRCut);
     rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
     for (jint n = 1; n <= N; ++n) {
@@ -435,7 +435,7 @@ static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdo
     }
 }
 static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *aCheby2, jint aNMax,
-                             jdouble aDis, jdouble aRCut, jdouble aWt, jdouble aDx, jdouble aDy, jdouble aDz) {
+                             jdouble aDis, jdouble aRCut, jdouble aWt, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
     const jdouble tRnPMul = 2.0 * aWt / (aDis*aRCut);
     rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
     for (jint n = 1; n <= aNMax; ++n) {

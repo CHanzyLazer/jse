@@ -191,7 +191,7 @@ static const jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
 };
 
 template <jint LMAX>
-static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *rDest) {
+static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *rDest) noexcept {
     jdouble tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
     rDest[0] = tPll;
     if (LMAX > 0) {
@@ -226,7 +226,7 @@ static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *r
     }
 }
 template <jint LMAX>
-static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble aZ, jdouble aDis, jdouble *rDest) {
+static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble aZ, jdouble aDis, jdouble *rDest) noexcept {
     jdouble tXY = hypot(aX, aY);
     jdouble tCosTheta = aZ / aDis;
     jdouble tSinTheta = tXY / aDis;
@@ -266,14 +266,14 @@ static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble a
 
 
 template <jint N>
-static inline void mplusCnlm(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble aRn) {
+static inline void mplusCnlm(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble aRn) noexcept {
     jdouble tMul = aFc*aRn;
     for (jint i = 0; i < N; ++i) {
         rCnlm[i] += tMul*aY[i];
     }
 }
 template <jint N>
-static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jdouble aFc, jdouble aRn, jdouble aWt) {
+static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jdouble aFc, jdouble aRn, jdouble aWt) noexcept {
     jdouble tMul = aFc*aRn;
     for (jint i = 0; i < N; ++i) {
         jdouble tCnli = tMul*aY[i];
@@ -282,13 +282,13 @@ static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jd
     }
 }
 template <jint N>
-static inline void countFpGradNlSize(jint *rFpGradNlSize) {
+static inline void countFpGradNlSize(jint *rFpGradNlSize) noexcept {
     for (jint i = 0; i < N; ++i) {
         ++rFpGradNlSize[i];
     }
 }
 template <jint N>
-static inline void countFpGradNlSizeWt(jint *rFpGradNlSize, jint *rFpGradNlSizeWt) {
+static inline void countFpGradNlSizeWt(jint *rFpGradNlSize, jint *rFpGradNlSizeWt) noexcept {
     for (jint i = 0; i < N; ++i) {
         ++rFpGradNlSize[i];
         ++rFpGradNlSizeWt[i];
@@ -296,13 +296,13 @@ static inline void countFpGradNlSizeWt(jint *rFpGradNlSize, jint *rFpGradNlSizeW
 }
 
 template <jint L>
-static inline void calL2Sub_(jdouble *aCnlm, jdouble *rFp) {
+static inline void calL2Sub_(jdouble *aCnlm, jdouble *rFp) noexcept {
     const jint tLen = L+L+1;
     jdouble rDot = JSE_NNAP::dot<tLen>(aCnlm + (L*L));
     rFp[L-1] = (PI4/(jdouble)tLen) * rDot;
 }
 template <jint LMAX, jboolean NO_RADIAL>
-static void calL2_(jdouble *aCnlm, jdouble *rFp) {
+static void calL2_(jdouble *aCnlm, jdouble *rFp) noexcept {
     // l == 0
     jdouble tCnl0;
     jdouble tMul;
@@ -331,7 +331,7 @@ static void calL2_(jdouble *aCnlm, jdouble *rFp) {
     calL2Sub_<8>(aCnlm, tFp);
 }
 template <jint L3MAX, jboolean L3CROSS>
-static void calL3_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial) {
+static void calL3_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial) noexcept {
     if (L3MAX <= 1) return;
     jint tIdxFP = aNoRadial ? aLMax : (aLMax+1);
     /// l1 = l2 = l3 = 2
@@ -528,7 +528,7 @@ static void calL3_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial)
 }
 
 template <jint L>
-static inline void calYPphi(jdouble *rYPphi, jdouble *aY) {
+static inline void calYPphi(jdouble *rYPphi, jdouble *aY) noexcept {
     const jint tStart = L*L;
     const jint tIdx = tStart+L;
     for (jint m = -L; m <= L; ++m) {
@@ -536,7 +536,7 @@ static inline void calYPphi(jdouble *rYPphi, jdouble *aY) {
     }
 }
 template <jint L>
-static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPtheta, jdouble *aY) {
+static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPtheta, jdouble *aY) noexcept {
     switch(L) {
     case 0: {
         rYPtheta[0] = 0.0;
@@ -570,7 +570,7 @@ static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPthet
     }}
 }
 template <jint LMAX>
-static void calYPphiPtheta(jdouble *rYPphi, jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPtheta, jdouble *aY) {
+static void calYPphiPtheta(jdouble *rYPphi, jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPtheta, jdouble *aY) noexcept {
     calYPphi<0>(rYPphi, aY); calYPtheta<0>(aCosPhi, aSinPhi, rYPtheta, aY);
     if (LMAX == 0) return;
     calYPphi<1>(rYPphi, aY); calYPtheta<1>(aCosPhi, aSinPhi, rYPtheta, aY);
@@ -592,7 +592,7 @@ static void calYPphiPtheta(jdouble *rYPphi, jdouble aCosPhi, jdouble aSinPhi, jd
 
 template <jint N>
 static inline void calYPxyz(jdouble aCosTheta, jdouble aSinTheta, jdouble aCosPhi, jdouble aSinPhi, jdouble aDis, jdouble aDxy, jboolean aDxyCloseZero,
-                            jdouble *rYPx, jdouble *rYPy, jdouble *rYPz, jdouble *aYPtheta, jdouble *aYPphi) {
+                            jdouble *rYPx, jdouble *rYPy, jdouble *rYPz, jdouble *aYPtheta, jdouble *aYPphi) noexcept {
     const jdouble thetaPx = -aCosTheta * aCosPhi / aDis;
     const jdouble thetaPy = -aCosTheta * aSinPhi / aDis;
     const jdouble thetaPz =  aSinTheta / aDis;
@@ -610,7 +610,7 @@ template <jint N>
 static inline void calCnlmPxyz(jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                                jdouble *aY, jdouble *aYPx, jdouble *aYPy, jdouble *aYPz,
                                jdouble aFc, jdouble aFcPx, jdouble aFcPy, jdouble aFcPz,
-                               jdouble aRn, jdouble aRnPx, jdouble aRnPy, jdouble aRnPz) {
+                               jdouble aRn, jdouble aRnPx, jdouble aRnPy, jdouble aRnPz) noexcept {
     const jdouble tMul = aFc*aRn;
     const jdouble tMulX = aFc*aRnPx + aFcPx*aRn;
     const jdouble tMulY = aFc*aRnPy + aFcPy*aRn;
@@ -625,7 +625,7 @@ static inline void calCnlmPxyz(jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnl
 
 template <jint L>
 static inline void calL2pSub_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tStart = L*L;
     const jint tLen = L+L+1;
     const jint tEnd = tStart+tLen;
@@ -643,7 +643,7 @@ static inline void calL2pSub_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy
 }
 template <jint LMAX, jboolean NO_RADIAL>
 static void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     // l = 0
     jdouble tCnl0;
     jdouble tMul;
@@ -674,7 +674,7 @@ static void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble 
     calL2pSub_<8>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
 }
 template <jint L>
-static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) {
+static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     const jint tStart = L*L;
     const jint tLen = L+L+1;
     const jint tEnd = tStart+tLen;
@@ -685,7 +685,7 @@ static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aN
     }
 }
 template <jint LMAX, jboolean NO_RADIAL>
-static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) {
+static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     // l = 0
     jdouble *tNNGrad = aNNGrad;
     if (!NO_RADIAL) {
@@ -710,7 +710,7 @@ static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) {
     calGradL2Sub_<8>(aCnlm, rGradCnlm, tNNGrad);
 }
 template <jint L3MAX, jboolean L3CROSS>
-static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial) {
+static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial) noexcept {
     if (L3MAX <= 1) return;
     jint tIdxFP = aNoRadial ? aLMax : (aLMax+1);
     /// l1 = l2 = l3 = 2
@@ -1145,7 +1145,7 @@ static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jin
 }
 
 static void calL3_222_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx = 2*2+2;
     const jdouble c20  = aCnlm[tIdx  ];
     const jdouble c21  = aCnlm[tIdx+1];
@@ -1175,7 +1175,7 @@ static void calL3_222_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_112_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
     const jdouble c10  = aCnlm[tIdx1  ];
@@ -1219,7 +1219,7 @@ static void calL3_112_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_233_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx2 = 2*2+2;
     const jint tIdx3 = 3*3+3;
     const jdouble c20  = aCnlm[tIdx2  ];
@@ -1277,7 +1277,7 @@ static void calL3_233_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_123_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx1 = 1+1;
     const jint tIdx2 = 2*2+2;
     const jint tIdx3 = 3*3+3;
@@ -1349,7 +1349,7 @@ static void calL3_123_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_444_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx = 4*4+4;
     const jdouble c40  = aCnlm[tIdx  ];
     const jdouble c41  = aCnlm[tIdx+1];
@@ -1393,7 +1393,7 @@ static void calL3_444_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_224_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
     const jdouble c20  = aCnlm[tIdx2  ];
@@ -1458,7 +1458,7 @@ static void calL3_224_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_334_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx3 = 3*3+3;
     const jint tIdx4 = 4*4+4;
     const jdouble c30  = aCnlm[tIdx3  ];
@@ -1530,7 +1530,7 @@ static void calL3_334_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_244_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx2 = 2*2+2;
     const jint tIdx4 = 4*4+4;
     const jdouble c20  = aCnlm[tIdx2  ];
@@ -1595,7 +1595,7 @@ static void calL3_244_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
     *rFpPz = aWt*rFp3Pz;
 }
 static void calL3_134_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     const jint tIdx1 = 1+1;
     const jint tIdx3 = 3*3+3;
     const jint tIdx4 = 4*4+4;
@@ -1682,7 +1682,7 @@ static void calL3_134_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdoub
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calL3p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt, jint aLMax, jboolean aNoRadial) {
+                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt, jint aLMax, jboolean aNoRadial) noexcept {
     if (L3MAX <= 1) return;
     jint tShiftFp = aNoRadial ? aLMax : (aLMax+1);
     jdouble *tFpPx = rFpPx+tShiftFp, *tFpPy = rFpPy+tShiftFp, *tFpPz = rFpPz+tShiftFp;
@@ -1715,13 +1715,13 @@ static void calL3p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble 
 }
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS>
 static inline void cnlm2fpPxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                               jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) {
+                               jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
     calL2p_<LMAX, NO_RADIAL>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
                              rFpPx, rFpPy, rFpPz, aWt);
     calL3p_<L3MAX, L3CROSS>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
                             rFpPx, rFpPy, rFpPz, aWt, LMAX, NO_RADIAL);
 }
-static inline void assignGradIndex(jint *rFpGradNlIndex, jint aNlIndex, jint *rFpGradFpIndex, jint aFpIndexStart, jint aLength) {
+static inline void assignGradIndex(jint *rFpGradNlIndex, jint aNlIndex, jint *rFpGradFpIndex, jint aFpIndexStart, jint aLength) noexcept {
     for (jint i = 0, j = aFpIndexStart; i < aLength; ++i, ++j) {
         rFpGradNlIndex[i] = aNlIndex;
         rFpGradFpIndex[i] = j;
@@ -1731,7 +1731,7 @@ static inline void assignGradIndex(jint *rFpGradNlIndex, jint aNlIndex, jint *rF
 template <jint SIZE_L, jint LMAXMAX, jint LMALL, jint WTYPE, jboolean NL_SIZE>
 static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                     jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jint *rFpGradNlSize,
-                    jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax) {
+                    jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax) noexcept {
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         jint type = aNlType[j];
@@ -1805,7 +1805,7 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
     }
 }
 template <jint SIZE_L, jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint LMALL>
-static inline void cnlm2fp(jdouble *aCnlm, jdouble *rFp, jint aSizeN) {
+static inline void cnlm2fp(jdouble *aCnlm, jdouble *rFp, jint aSizeN) noexcept {
     jint tShift = 0, tShiftFP = 0;
     for (jint n = 0; n < aSizeN; ++n, tShift+=LMALL, tShiftFP+=SIZE_L) {
         calL2_<LMAX, NO_RADIAL>(aCnlm+tShift, rFp+tShiftFP);
@@ -1816,7 +1816,7 @@ static inline void cnlm2fp(jdouble *aCnlm, jdouble *rFp, jint aSizeN) {
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax) {
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax) noexcept {
     // const init
     jint tSizeN;
     switch(WTYPE) {
@@ -1870,7 +1870,7 @@ static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlT
                       jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                       jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                       jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                      jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax) {
+                      jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax) noexcept {
     // const init
     jint tSizeN;
     switch(WTYPE) {
@@ -2059,7 +2059,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
                      jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
                      jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                      jdouble *aCnlm, jdouble *rGradCnlm,
-                     jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax) {
+                     jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax) noexcept {
     // const init
     jint tSizeN;
     switch(WTYPE) {
@@ -2227,7 +2227,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
 template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) noexcept {
     switch (aLMax) {
     case 0: {
         calFp<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax);
@@ -2272,7 +2272,7 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
 template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial) {
+                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial) noexcept {
     if (aNoRadial) {
         calFp<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax);
     } else {
@@ -2283,7 +2283,7 @@ template <jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
                          jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) noexcept {
     if (aL3Cross) {
         switch (aL3Max) {
         case 0: case 1: {
@@ -2327,7 +2327,7 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
                          jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) noexcept {
     switch(aWType) {
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
         calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
@@ -2361,7 +2361,7 @@ static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
                              jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                              jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                              jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) noexcept {
     switch (aLMax) {
     case 0: {
         calFpGrad<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax);
@@ -2410,7 +2410,7 @@ static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
                              jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                              jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial) {
+                             jint aNMax, jint aLMax, jboolean aNoRadial) noexcept {
     if (aNoRadial) {
         calFpGrad<JNI_TRUE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax);
     } else {
@@ -2424,7 +2424,7 @@ static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
                              jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                              jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) noexcept {
     if (aL3Cross) {
         switch (aL3Max) {
         case 0: case 1: {
@@ -2472,7 +2472,7 @@ static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
                              jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
                              jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) noexcept {
     switch(aWType) {
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
         calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
@@ -2505,7 +2505,7 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                             jdouble *aCnlm, jdouble *rGradCnlm,
-                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) {
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax) noexcept {
     switch (aLMax) {
     case 0: {
         calForce<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax);
@@ -2553,7 +2553,7 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                             jdouble *aCnlm, jdouble *rGradCnlm,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                            jint aNMax, jint aLMax, jboolean aNoRadial) {
+                            jint aNMax, jint aLMax, jboolean aNoRadial) noexcept {
     if (aNoRadial) {
         calForce<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax);
     } else {
@@ -2566,7 +2566,7 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                             jdouble *aCnlm, jdouble *rGradCnlm,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) {
+                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross) noexcept {
     if (aL3Cross) {
         switch (aL3Max) {
         case 0: case 1: {
@@ -2612,7 +2612,7 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
                             jdouble *aCnlm, jdouble *rGradCnlm,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut,
-                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) {
+                            jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType) noexcept {
     switch(aWType) {
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
         calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rGradCnlm, aNNGrad, rFx, rFy, rFz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross);
