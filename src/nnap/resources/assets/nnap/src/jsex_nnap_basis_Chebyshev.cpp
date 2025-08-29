@@ -311,6 +311,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
         }
         // cal fxyz
         jdouble tGradFc = 0.0;
+        double rFxj = 0.0, rFyj = 0.0, rFzj = 0.0;
         if (WTYPE==jsex_nnap_basis_Chebyshev_WTYPE_NONE ||
             WTYPE==jsex_nnap_basis_Chebyshev_WTYPE_SINGLE ||
             WTYPE==jsex_nnap_basis_Chebyshev_WTYPE_FULL || aTypeNum==1) {
@@ -326,9 +327,9 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
                 jdouble tRnn = tRn[n];
                 tGradFc += tRnn * tGradRn;
                 tGradRn *= fc;
-                rFx[j] += tGradRn*rRnPx[n];
-                rFy[j] += tGradRn*rRnPy[n];
-                rFz[j] += tGradRn*rRnPz[n];
+                rFxj += tGradRn*rRnPx[n];
+                rFyj += tGradRn*rRnPy[n];
+                rFzj += tGradRn*rRnPz[n];
             }
         } else {
             jdouble wt;
@@ -349,14 +350,15 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
                 jdouble tRnn = tRn[n];
                 tGradFc += tRnn * tGradRn;
                 tGradRn *= fc;
-                rFx[j] += tGradRn*rRnPx[n];
-                rFy[j] += tGradRn*rRnPy[n];
-                rFz[j] += tGradRn*rRnPz[n];
+                rFxj += tGradRn*rRnPx[n];
+                rFyj += tGradRn*rRnPy[n];
+                rFzj += tGradRn*rRnPz[n];
             }
         }
-        rFx[j] += fcPx*tGradFc;
-        rFy[j] += fcPy*tGradFc;
-        rFz[j] += fcPz*tGradFc;
+        rFxj += fcPx*tGradFc;
+        rFyj += fcPy*tGradFc;
+        rFzj += fcPz*tGradFc;
+        rFx[j] += rFxj; rFy[j] += rFyj; rFz[j] += rFzj;
     }
 }
 
