@@ -40,17 +40,18 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
         }
     }
     // loop for neighbor
-    for (jint j = 0; j < aNN; ++j) {
+    for (jint j = 0, ji = -1; j < aNN; ++j) {
         jint type = aNlType[j];
         jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
+        ++ji;
         // cal fc
         jdouble fc = JSE_NNAP::pow4(1.0 - JSE_NNAP::pow2(dis/aRCut));
         // cal Rn
         jdouble tRnX = 1.0 - 2.0*dis/aRCut;
-        jdouble *tRn = aBufferNl ? (rNlRn + j*(NMAX+1)) : rNlRn;
+        jdouble *tRn = aBufferNl ? (rNlRn + ji*(NMAX+1)) : rNlRn;
         JSE_NNAP::chebyshevFull<NMAX>(tRnX, tRn);
         if (WTYPE == jsex_nnap_basis_Chebyshev_WTYPE_SINGLE) {
             // cal weight of type here
@@ -144,7 +145,7 @@ static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlT
     
     jint tShiftFpP = 0;
     // loop for neighbor
-    for (jint j = 0; j < aNN; ++j) {
+    for (jint j = 0, ji = -1; j < aNN; ++j) {
         jdouble *tFpPx, *tFpPy, *tFpPz;
         jint *tFpGradNlIndex, *tFpGradFpIndex;
         if (!SPARSE) {
@@ -166,6 +167,7 @@ static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlT
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
+        ++ji;
         if (SPARSE) {
             // init fpPxyz
             tFpGradNlIndex = rFpGradNlIndex + tShiftFpP;
@@ -183,7 +185,7 @@ static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlT
         jdouble fcPy = dy * fcPMul;
         jdouble fcPz = dz * fcPMul;
         // cal Rn
-        jdouble *tRn = aNlRn + j*(NMAX+1);
+        jdouble *tRn = aNlRn + ji*(NMAX+1);
         const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         JSE_NNAP::chebyshev2Full<NMAX-1>(tRnX, rCheby2);
         if (WTYPE == jsex_nnap_basis_Chebyshev_WTYPE_SINGLE) {
@@ -283,13 +285,14 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
                      jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
                      jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz, jint aTypeNum, jdouble aRCut) noexcept {
     // loop for neighbor
-    for (jint j = 0; j < aNN; ++j) {
+    for (jint j = 0, ji = -1; j < aNN; ++j) {
         // init nl
         jint type = aNlType[j];
         jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
+        ++ji;
         // cal fc
         jdouble fcMul = 1.0 - JSE_NNAP::pow2(dis/aRCut);
         jdouble fcMul3 = JSE_NNAP::pow3(fcMul);
@@ -299,7 +302,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
         jdouble fcPy = dy * fcPMul;
         jdouble fcPz = dz * fcPMul;
         // cal Rn
-        jdouble *tRn = aNlRn + j*(NMAX+1);
+        jdouble *tRn = aNlRn + ji*(NMAX+1);
         const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
         JSE_NNAP::chebyshev2Full<NMAX-1>(tRnX, rCheby2);
         if (WTYPE == jsex_nnap_basis_Chebyshev_WTYPE_SINGLE) {
