@@ -55,16 +55,16 @@ public class FeedForward extends NeuralNetwork implements ISavable {
         }
         mHiddenWeightsSize = tHiddenWeightsSize;
         mHiddenBiasesSize = tHiddenBiasesSize;
-        mHiddenWeights = aHiddenWeights;
-        mHiddenWeightsBackward = aHiddenWeightsBackward;
-        mIndexToBackward = aIndexToBackward;
-        mHiddenBiases = aHiddenBiases;
+        mHiddenWeights = aHiddenWeights==null ? Vectors.zeros(mHiddenWeightsSize) : aHiddenWeights;
+        mHiddenWeightsBackward = aHiddenWeightsBackward==null ? Vectors.zeros(mHiddenWeightsSize) : aHiddenWeightsBackward;
+        mIndexToBackward = aIndexToBackward==null ? IntVector.zeros(mHiddenWeightsSize) : aIndexToBackward;
+        mHiddenBiases = aHiddenBiases==null ? Vectors.zeros(mHiddenBiasesSize) : aHiddenBiases;
         if (mHiddenWeights.internalDataSize() != mHiddenWeightsSize) throw new IllegalArgumentException("The size of hidden weights mismatch");
         if (mHiddenWeightsBackward.internalDataSize() != mHiddenWeightsSize) throw new IllegalArgumentException("The size of backward hidden weights mismatch");
         if (mHiddenBiases.internalDataSize() != mHiddenBiasesSize) throw new IllegalArgumentException("The size of hidden biases mismatch");
-        mOutputWeight = aOutputWeight;
-        mOutputBias = aOutputBias;
         mOutputWeightSize = mHiddenDims[mHiddenNumber-1];
+        mOutputWeight = aOutputWeight==null ? Vectors.zeros(mOutputWeightSize) : aOutputWeight;
+        mOutputBias = aOutputBias==null ? new double[1] : aOutputBias;
         if (mOutputWeight.internalDataSize() != mOutputWeightSize) throw new IllegalArgumentException("The size of output weight mismatch");
         if (mOutputBias.length != 1) throw new IllegalArgumentException("The size of output biases mismatch");
         mHiddenOutputs = Vectors.zeros(mHiddenBiasesSize);
@@ -72,34 +72,15 @@ public class FeedForward extends NeuralNetwork implements ISavable {
         mHiddenGrads2 = Vectors.zeros(mHiddenBiasesSize);
         mHiddenGrads3 = Vectors.zeros(mHiddenBiasesSize);
     }
-    
-    public FeedForward threadSafeRef() {
-        return new FeedForward(mInputDim, mHiddenDims, mHiddenWeights, mHiddenWeightsBackward, mIndexToBackward, mHiddenBiases, mOutputWeight, mOutputBias);
-    }
-    
-    public static FeedForward init(int aInputDim, int[] aHiddenDims) {
-        int tHiddenNumber = aHiddenDims.length;
-        if (tHiddenNumber == 0) throw new IllegalArgumentException("At least one hidden layer is required");
-        int tHiddenWeightsSize = 0;
-        int tHiddenBiasesSize = 0;
-        int tColNum = aInputDim;
-        for (int tHiddenDim : aHiddenDims) {
-            tHiddenWeightsSize += tColNum * tHiddenDim;
-            tHiddenBiasesSize += tHiddenDim;
-            tColNum = tHiddenDim;
-        }
-        Vector aHiddenWeights = Vectors.zeros(tHiddenWeightsSize);
-        Vector aHiddenWeightsBackward = Vectors.zeros(tHiddenWeightsSize);
-        IntVector aIndexToBackward = IntVector.zeros(tHiddenWeightsSize);
-        tColNum = aInputDim;
+    public FeedForward(int aInputDim, int[] aHiddenDims, Vector aHiddenWeights, Vector aHiddenBiases, Vector aOutputWeight, double[] aOutputBias) {
+        this(aInputDim, aHiddenDims, aHiddenWeights, null, null, aHiddenBiases, aOutputWeight, aOutputBias);
+        int tColNum = mInputDim;
         int tShift = 0;
-        for (int tHiddenDim : aHiddenDims) {
+        for (int tHiddenDim : mHiddenDims) {
             int tSize = tHiddenDim*tColNum;
-            double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
-            aHiddenWeights.subVec(tShift, tShift+tSize).fill(i -> RANDOM.nextDouble(-tBound, tBound));
             final int fColNum = tColNum;
-            final int tShiftB = tHiddenWeightsSize-tShift-tSize;
-            aIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
+            final int tShiftB = mHiddenWeightsSize-tShift-tSize;
+            mIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
                 int row = ii / fColNum;
                 int col = ii % fColNum;
                 return col*tHiddenDim + row + tShiftB;
@@ -107,24 +88,43 @@ public class FeedForward extends NeuralNetwork implements ISavable {
             tShift += tSize;
             tColNum = tHiddenDim;
         }
-        for (int i = 0; i < tHiddenWeightsSize; ++i) {
-            aHiddenWeightsBackward.set(aIndexToBackward.get(i), aHiddenWeights.get(i));
+        for (int i = 0; i < mHiddenWeightsSize; ++i) {
+            mHiddenWeightsBackward.set(mIndexToBackward.get(i), mHiddenWeights.get(i));
         }
-        Vector aHiddenBiases = Vectors.zeros(tHiddenBiasesSize);
+    }
+    public FeedForward(int aInputDim, int[] aHiddenDims) {
+        this(aInputDim, aHiddenDims, null, null, null, null);
+    }
+    
+    public FeedForward threadSafeRef() {
+        return new FeedForward(mInputDim, mHiddenDims, mHiddenWeights, mHiddenWeightsBackward, mIndexToBackward, mHiddenBiases, mOutputWeight, mOutputBias);
+    }
+    
+    public void initParameters() {
+        int tColNum = mInputDim;
+        int tShift = 0;
+        for (int tHiddenDim : mHiddenDims) {
+            int tSize = tHiddenDim*tColNum;
+            double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
+            mHiddenWeights.subVec(tShift, tShift+tSize).assign(() -> RANDOM.nextDouble(-tBound, tBound));
+            tShift += tSize;
+            tColNum = tHiddenDim;
+        }
+        for (int i = 0; i < mHiddenWeightsSize; ++i) {
+            mHiddenWeightsBackward.set(mIndexToBackward.get(i), mHiddenWeights.get(i));
+        }
         tShift = 0;
-        tColNum = aInputDim;
-        for (int tHiddenDim : aHiddenDims) {
+        tColNum = mInputDim;
+        for (int tHiddenDim : mHiddenDims) {
             double tBound = MathEX.Fast.sqrt(1.0 / tColNum); // Kaiming 均匀初始化
-            aHiddenBiases.subVec(tShift, tShift+tHiddenDim).fill(i -> RANDOM.nextDouble(-tBound, tBound));
+            mHiddenBiases.subVec(tShift, tShift+tHiddenDim).assign(() -> RANDOM.nextDouble(-tBound, tBound));
             tShift += tHiddenDim;
             tColNum = tHiddenDim;
         }
         double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
-        Vector aOutputWeight = Vectors.from(aHiddenDims[tHiddenNumber-1], i -> RANDOM.nextDouble(-tBound, tBound));
+        mOutputWeight.assign(() -> RANDOM.nextDouble(-tBound, tBound));
         double tBoundB = MathEX.Fast.sqrt(1.0 / tColNum); // Kaiming 均匀初始化
-        double aOutputBias = RANDOM.nextDouble(-tBoundB, tBoundB);
-        
-        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, new double[]{aOutputBias});
+        mOutputBias[0] = RANDOM.nextDouble(-tBoundB, tBoundB);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -148,8 +148,6 @@ public class FeedForward extends NeuralNetwork implements ISavable {
         List<?> tHiddenWeights = (List<?>)UT.Code.get(aMap, "hidden_weights");
         if (tHiddenWeights.size() != tHiddenNumber) throw new IllegalArgumentException("The number of hidden weights mismatch");
         Vector aHiddenWeights = Vectors.zeros(tHiddenWeightsSize);
-        Vector aHiddenWeightsBackward = Vectors.zeros(tHiddenWeightsSize);
-        IntVector aIndexToBackward = IntVector.zeros(tHiddenWeightsSize);
         tColNum = aInputDim;
         int tShift = 0;
         for (int i = 0; i < tHiddenNumber; ++i) {
@@ -159,18 +157,8 @@ public class FeedForward extends NeuralNetwork implements ISavable {
             if (tWeight.columnNumber() != tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+i+"' mismatch");
             if (tWeight.rowNumber() != tHiddenDim) throw new IllegalArgumentException("Row number of hidden weight '"+i+"' mismatch");
             aHiddenWeights.subVec(tShift, tShift+tSize).fill(tWeight.asVecRow());
-            final int fColNum = tColNum;
-            final int tShiftB = tHiddenWeightsSize-tShift-tSize;
-            aIndexToBackward.subVec(tShift, tShift+tSize).fill(ii -> {
-                int row = ii / fColNum;
-                int col = ii % fColNum;
-                return col*tHiddenDim + row + tShiftB;
-            });
             tShift += tSize;
             tColNum = tHiddenDim;
-        }
-        for (int i = 0; i < tHiddenWeightsSize; ++i) {
-            aHiddenWeightsBackward.set(aIndexToBackward.get(i), aHiddenWeights.get(i));
         }
         List<?> tHiddenBiases = (List<?>)UT.Code.get(aMap, "hidden_biases");
         if (tHiddenBiases.size() != tHiddenNumber) throw new IllegalArgumentException("The number of hidden biases mismatch");
@@ -187,7 +175,7 @@ public class FeedForward extends NeuralNetwork implements ISavable {
         double aOutputBias = ((Number)aMap.get("output_bias")).doubleValue();
         if (aOutputWeight.size() != aHiddenDims[tHiddenNumber-1]) throw new IllegalArgumentException("Size of output weight mismatch");
         
-        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenWeightsBackward, aIndexToBackward, aHiddenBiases, aOutputWeight, new double[]{aOutputBias});
+        return new FeedForward(aInputDim, aHiddenDims, aHiddenWeights, aHiddenBiases, aOutputWeight, new double[]{aOutputBias});
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})

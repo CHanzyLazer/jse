@@ -135,7 +135,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     private final Vector[] mGradParaBuf;
     
     protected boolean mCacheFpGrad = true;
-    public Trainer setCacheFpGrad(boolean aFlag) {mCacheFpGrad = aFlag; return this;}
+    public Trainer setCacheFpGrad(boolean aFlag) {
+        if (mTrainData.mSize!=0 || mTestData.mSize!=0) throw new IllegalStateException("CacheFpGrad can only be set when NO data is added");
+        mCacheFpGrad = aFlag;
+        return this;
+    }
     protected boolean mFullCache = false;
     public Trainer setFullCache(boolean aFlag) {mFullCache = aFlag; return this;}
     
@@ -544,14 +548,18 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 break; // mirror 情况延迟初始化
             }
             case "spherical_chebyshev": {
-                for (int ti = 0; ti < aThreadNum; ++ti) {
-                    rBasis[ti][i] = SphericalChebyshev.load(aSymbols, tBasisMap);
+                SphericalChebyshev tSubBasis = SphericalChebyshev.load(aSymbols, tBasisMap);
+                rBasis[0][i] = tSubBasis; tSubBasis.initParameters();
+                for (int ti = 1; ti < aThreadNum; ++ti) {
+                    rBasis[ti][i] = tSubBasis.threadSafeRef();
                 }
                 break;
             }
             case "chebyshev": {
-                for (int ti = 0; ti < aThreadNum; ++ti) {
-                    rBasis[ti][i] = Chebyshev.load(aSymbols, tBasisMap);
+                Chebyshev tSubBasis = Chebyshev.load(aSymbols, tBasisMap);
+                rBasis[0][i] = tSubBasis; tSubBasis.initParameters();
+                for (int ti = 1; ti < aThreadNum; ++ti) {
+                    rBasis[ti][i] = tSubBasis.threadSafeRef();
                 }
                 break;
             }
@@ -614,7 +622,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             } else {
                 throw new IllegalArgumentException("invalid type of hidden_dims: " + tHiddenDims.getClass().getName());
             }
-            rOut[i] = FeedForward.init(aBasis[i].size(), tHiddenDimsArr);
+            //noinspection resource
+            rOut[i] = new FeedForward(aBasis[i].size(), tHiddenDimsArr);
+            rOut[i].initParameters();
         }
         for (int i = 0; i < rOut.length; ++i) if (aBasis[i] instanceof Mirror) {
             @Nullable Map<?, ?> tNNSettingMap = (Map<?, ?>)tNNSettingList.get(i);

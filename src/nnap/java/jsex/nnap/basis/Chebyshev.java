@@ -4,6 +4,7 @@ import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.IDataShell;
+import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
 import jse.math.vector.IntArrayVector;
 import jse.math.vector.Vectors;
@@ -23,17 +24,15 @@ import java.util.Map;
  * References:
  * <a href="https://link.springer.com/article/10.1007/s40843-024-2953-9">
  * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
- * @author Su Rui, liqa
+ * @author liqa
  */
 public class Chebyshev extends WTypeBasis {
     public final static int DEFAULT_NMAX = 5;
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
-    final int mTypeNum;
     final String @Nullable[] mSymbols;
     final int mNMax;
     final double mRCut;
-    final int mWType;
     
     final int mSize;
     
@@ -41,22 +40,19 @@ public class Chebyshev extends WTypeBasis {
     final IDataShell<double[]> mRnPx, mRnPy, mRnPz, mCheby2;
     final DoubleList mNlRn = new DoubleList(128);
     
-    Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType) {
-        if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Positive, input: "+aTypeNum);
+    Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType, @Nullable RowMatrix aDenseWeight) {
+        super(aTypeNum, aWType, aDenseWeight);
         if (aNMax<0 || aNMax>20) throw new IllegalArgumentException("Input nmax MUST be in [0, 20], input: "+aNMax);
-        if (!ALL_WTYPE.containsValue(aWType)) throw new IllegalArgumentException("Input wtype MUST be in {-1, 0, 1, 2, 3}, input: "+ aWType);
         mSymbols = aSymbols;
-        mTypeNum = aTypeNum;
         mNMax = aNMax;
         mRCut = aRCut;
-        mWType = aWType;
         
-        mSize = sizeN_(mNMax, mTypeNum, mWType);
+        mSize = sizeN_(mNMax);
         
         mRnPx = Vectors.zeros(mNMax+1);
         mRnPy = Vectors.zeros(mNMax+1);
         mRnPz = Vectors.zeros(mNMax+1);
-        mCheby2 = Vectors.zeros(mNMax);
+        mCheby2 = Vectors.zeros(mNMax+1);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -64,7 +60,7 @@ public class Chebyshev extends WTypeBasis {
      * @param aRCut 截断半径
      */
     public Chebyshev(String @NotNull[] aSymbols, int aNMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aRCut, WTYPE_DEFAULT);
+        this(aSymbols, aSymbols.length, aNMax, aRCut, WTYPE_DEFAULT, null);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -72,7 +68,11 @@ public class Chebyshev extends WTypeBasis {
      * @param aRCut 截断半径
      */
     public Chebyshev(int aTypeNum, int aNMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aRCut, WTYPE_DEFAULT);
+        this(null, aTypeNum, aNMax, aRCut, WTYPE_DEFAULT, null);
+    }
+    
+    public Chebyshev threadSafeRef() {
+        return new Chebyshev(mSymbols, mTypeNum, mNMax, mRCut, mWType, mDenseWeight);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -81,24 +81,29 @@ public class Chebyshev extends WTypeBasis {
         rSaveTo.put("nmax", mNMax);
         rSaveTo.put("rcut", mRCut);
         rSaveTo.put("wtype", ALL_WTYPE.inverse().get(mWType));
+        if (mDenseWeight!=null) rSaveTo.put("dense_weight", mDenseWeight.asListRows());
     }
     
     @SuppressWarnings("rawtypes")
     public static Chebyshev load(String @NotNull[] aSymbols, Map aMap) {
+        int aWType = getWType_(aMap);
+        RowMatrix aDenseWeight = getDenseWeight_(aMap, aWType, aSymbols.length);
         return new Chebyshev(
             aSymbols, aSymbols.length,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
-            getWType_(UT.Code.get(aMap, "wtype"))
+            aWType, aDenseWeight
         );
     }
     @SuppressWarnings("rawtypes")
     public static Chebyshev load(int aTypeNum, Map aMap) {
+        int aWType = getWType_(aMap);
+        RowMatrix aDenseWeight = getDenseWeight_(aMap, aWType, aTypeNum);
         return new Chebyshev(
             null, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
-            getWType_(UT.Code.get(aMap, "wtype"))
+            aWType, aDenseWeight
         );
     }
     
@@ -161,40 +166,40 @@ public class Chebyshev extends WTypeBasis {
         eval1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
               mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
               rFpNlSize==null?null:rFpNlSize.internalDataWithLengthCheck(mSize), rFpNlSize==null?0:rFpNlSize.internalDataShift(),
-              aBufferNl, mTypeNum, mRCut, mNMax, mWType);
+              aBufferNl, mTypeNum, mRCut, mNMax, mWType, mDenseWeight==null?null:mDenseWeight.internalDataWithLengthCheck(), mDenseWeight==null?1:mDenseWeight.rowNumber());
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rNlRn, double[] rFp, int aShiftFp, int @Nullable[] rFpNlSize, int aShiftFpNlSize,
-                                     boolean aBufferNl, int aTypeNum, double aRCut, int aNMax, int aWType);
+                                     boolean aBufferNl, int aTypeNum, double aRCut, int aNMax, int aWType, double[] aDenseWeight, int aDenseSize);
     
     void evalGrad0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                    IDataShell<int[]> rFpGradNlIndex, IDataShell<int[]> rFpGradFpIndex, IDataShell<double[]> rFpPx, IDataShell<double[]> rFpPy, IDataShell<double[]> rFpPz) {
         int tNN = aNlDx.internalDataSize();
         int tSizeAll = rFpGradNlIndex.internalDataSize();
         evalGrad1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                  mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
+                  mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                   rFpGradNlIndex.internalDataWithLengthCheck(tSizeAll), rFpGradNlIndex.internalDataShift(), rFpGradFpIndex.internalDataWithLengthCheck(tSizeAll), rFpGradFpIndex.internalDataShift(),
                   rFpPx.internalDataWithLengthCheck(tSizeAll), rFpPx.internalDataShift(), rFpPy.internalDataWithLengthCheck(tSizeAll), rFpPy.internalDataShift(), rFpPz.internalDataWithLengthCheck(tSizeAll), rFpPz.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mWType);
+                  mTypeNum, mRCut, mNMax, mWType, mDenseWeight==null?null:mDenseWeight.internalDataWithLengthCheck(), mDenseWeight==null?1:mDenseWeight.rowNumber());
     }
     private static native void evalGrad1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                          int[] rFpGradNlIndex, int aShiftFpGradNlIndex, int[] rFpGradFpIndex, int aShiftFpGradFpIndex,
                                          double[] rFpPx, int aShiftFpPx, double[] rFpPy, int aShiftFpPy, double[] rFpPz, int aShiftFpPz,
-                                         int aTypeNum, double aRCut, int aNMax, int aWType);
+                                         int aTypeNum, double aRCut, int aNMax, int aWType, double[] aDenseWeight, int aDenseSize);
     
     void evalForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                     IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz) {
         int tNN = aNlDx.internalDataSize();
         evalForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                   mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
+                   mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                    aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
-                   mTypeNum, mRCut, mNMax, mWType);
+                   mTypeNum, mRCut, mNMax, mWType, mDenseWeight==null?null:mDenseWeight.internalDataWithLengthCheck(), mDenseWeight==null?1:mDenseWeight.rowNumber());
     }
     private static native void evalForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                           double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                           double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
-                                          int aTypeNum, double aRCut, int aNMax, int aWType);
+                                          int aTypeNum, double aRCut, int aNMax, int aWType, double[] aDenseWeight, int aDenseSize);
     
     @Override @Deprecated
     protected void evalGradWithShift_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
@@ -210,13 +215,13 @@ public class Chebyshev extends WTypeBasis {
         int tNN = aNlDx.internalDataSize();
         int tSizeTot = aShiftFp + aRestFp + mSize;
         evalGradWithShift1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                           mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax, 0),
+                           mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                            aShiftFp, aRestFp, rFpPx.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPy.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPz.internalDataWithLengthCheck(tNN*tSizeTot, 0),
-                           mTypeNum, mRCut, mNMax, mWType);
+                           mTypeNum, mRCut, mNMax, mWType, mDenseWeight==null?null:mDenseWeight.internalDataWithLengthCheck(), mDenseWeight==null?1:mDenseWeight.rowNumber());
     }
     @Deprecated
     private static native void evalGradWithShift1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                                   double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                                   int aShiftFp, int aRestFp, double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                                  int aTypeNum, double aRCut, int aNMax, int aWType);
+                                                  int aTypeNum, double aRCut, int aNMax, int aWType, double[] aDenseWeight, int aDenseSize);
 }
