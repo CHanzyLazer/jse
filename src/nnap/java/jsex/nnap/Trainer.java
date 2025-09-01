@@ -77,9 +77,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         /** 按照原子结构排列，每个原子结构中每个原子对应一个向量（不同种类可能长度不等）*/
         public final List<Vector[]> mFp = new ArrayList<>(64);
         /** 按照原子结构排列，每个原子结构中每个原子对应一个向量，根据近邻列表展开（不同原子长度不等）*/
-        public final List<Object[]> mFpPx = new ArrayList<>(64), mFpPy = new ArrayList<>(64), mFpPz = new ArrayList<>(64);
+        public final List<FloatList[]> mFpPx = new ArrayList<>(64), mFpPy = new ArrayList<>(64), mFpPz = new ArrayList<>(64);
         /** 按照原子结构排列，每个原子结构中每个原子对应一个向量，根据近邻列表展开（不同原子长度不等）*/
-        public final List<Object[]> mFpGradNlIndex = new ArrayList<>(64), mFpGradFpIndex = new ArrayList<>(64);
+        public final List<ShortList[]> mFpGradNlIndex = new ArrayList<>(64), mFpGradFpIndex = new ArrayList<>(64);
         /** 每个原子数据结构对应的每原子能量值 */
         public final DoubleList mEng = new DoubleList(64);
         /** 这里力数据使用 List 存储，每个原子结构一组 */
@@ -90,9 +90,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         /** 原子种类，每个原子结构一组 */
         public final List<IntVector> mAtomType = new ArrayList<>(64);
         /** 近邻列表，每个原子结构一组，每个原子对应一个近邻列表向量 */
-        public final List<Object[]> mNl = new ArrayList<>(64);
+        public final List<ShortList[]> mNl = new ArrayList<>(64);
         /** 近邻原子坐标差，每个原子结构一组，每个原子对应一个近邻列表向量 */
-        public final List<Object[]> mNlDx = new ArrayList<>(64), mNlDy = new ArrayList<>(64), mNlDz = new ArrayList<>(64);
+        public final List<FloatList[]> mNlDx = new ArrayList<>(64), mNlDy = new ArrayList<>(64), mNlDz = new ArrayList<>(64);
         /** 每个原子数据结构对应的总体积值 */
         public final DoubleList mVolume = new DoubleList(64);
     }
@@ -142,11 +142,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     public Trainer setCacheFpGrad(boolean aFlag) {
         if (!aFlag) clearFp();
         mCacheFpGrad = aFlag;
-        return this;
-    }
-    protected boolean mFullCache = false;
-    public Trainer setFullCache(boolean aFlag) {
-        mFullCache = aFlag;
         return this;
     }
     protected boolean mTrainBasis = false;
@@ -683,6 +678,22 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         return rShiftPara;
     }
     
+    protected void initNl(ShortList aNl, FloatList aNlDx, FloatList aNlDy, FloatList aNlDz, IntVector aAtomType, IntList rNlTypeBuf, DoubleList rNlDxBuf, DoubleList rNlDyBuf, DoubleList rNlDzBuf) {
+        int tNlSize = aNl.size();
+        rNlTypeBuf.clear(); rNlTypeBuf.ensureCapacity(tNlSize);
+        for (int j = 0; j < tNlSize; ++j) {
+            rNlTypeBuf.add(aAtomType.get(aNl.get(j)));
+        }
+        rNlDxBuf.clear(); rNlDxBuf.ensureCapacity(tNlSize);
+        rNlDyBuf.clear(); rNlDyBuf.ensureCapacity(tNlSize);
+        rNlDzBuf.clear(); rNlDzBuf.ensureCapacity(tNlSize);
+        for (int j = 0; j < tNlSize; ++j) {
+            rNlDxBuf.add(aNlDx.get(j));
+            rNlDyBuf.add(aNlDy.get(j));
+            rNlDzBuf.add(aNlDz.get(j));
+        }
+    }
+    
     @FunctionalInterface public interface ILossFunc {double call(double aPred, double aReal);}
     @FunctionalInterface public interface ILossFuncGrad {double call(double aPred, double aReal, DoubleWrapper rGrad);}
     
@@ -718,7 +729,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         final DataSet tData = aTest ? mTestData : mTrainData;
         final boolean tRequireGrad = rGrad!=null;
         final boolean tCacheFpGrad = mCacheFpGrad;
-        final boolean tFullCache = mFullCache;
         final int tThreadNum = threadNumber();
         if (tRequireGrad) {
             mGradParaBuf[0] = rGrad;
@@ -735,8 +745,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             List<List<Vector>> tHiddenGradsBuf = mHiddenGradsBuf.get(threadID);
             IntVector tAtomType = tData.mAtomType.get(i);
             int tAtomNum = tAtomType.size();
-            Object[] tNl = tData.mNl.get(i);
-            Object[] tNlDx = tData.mNlDx.get(i), tNlDy = tData.mNlDy.get(i), tNlDz = tData.mNlDz.get(i);
+            ShortList[] tNl = tData.mNl.get(i);
+            FloatList[] tNlDx = tData.mNlDx.get(i), tNlDy = tData.mNlDy.get(i), tNlDz = tData.mNlDz.get(i);
             IntList tNlTypeBuf = mNlTypeBuf[threadID];
             DoubleList tNlDxBuf = mNlDxBuf[threadID], tNlDyBuf = mNlDyBuf[threadID], tNlDzBuf = mNlDzBuf[threadID];
             double tVolume = tData.mVolume.get(i);
@@ -753,39 +763,12 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     if (tBasis[tType-1] instanceof Mirror) {
                         tType = ((Mirror)tBasis[tType-1]).mirrorType();
                     }
-                    IntList tSubNl = null;
-                    ShortList tSubNlS = null;
-                    DoubleList tSubNlDx = null, tSubNlDy = null, tSubNlDz = null;
-                    FloatList tSubNlDxF = null, tSubNlDyF = null, tSubNlDzF = null;
-                    if (tFullCache) {
-                        tSubNl = (IntList)tNl[k];
-                        tSubNlDx = (DoubleList)tNlDx[k]; tSubNlDy = (DoubleList)tNlDy[k]; tSubNlDz = (DoubleList)tNlDz[k];
-                    } else {
-                        tSubNlS = (ShortList)tNl[k];
-                        tSubNlDxF = (FloatList)tNlDx[k]; tSubNlDyF = (FloatList)tNlDy[k]; tSubNlDzF = (FloatList)tNlDz[k];
-                    }
-                    int tNlSize = tFullCache ? tSubNl.size() : tSubNlS.size();
-                    tNlTypeBuf.clear(); tNlTypeBuf.ensureCapacity(tNlSize);
-                    for (int j = 0; j < tNlSize; ++j) {
-                        int nlk = tFullCache ? tSubNl.get(j) : tSubNlS.get(j);
-                        tNlTypeBuf.add(tAtomType.get(nlk));
-                    }
-                    if (!tFullCache) {
-                        tSubNlDx = tNlDxBuf; tSubNlDy = tNlDyBuf; tSubNlDz = tNlDzBuf;
-                        tSubNlDx.clear(); tSubNlDx.ensureCapacity(tNlSize);
-                        tSubNlDy.clear(); tSubNlDy.ensureCapacity(tNlSize);
-                        tSubNlDz.clear(); tSubNlDz.ensureCapacity(tNlSize);
-                        for (int j = 0; j < tNlSize; ++j) {
-                            tSubNlDx.add(tSubNlDxF.get(j));
-                            tSubNlDy.add(tSubNlDyF.get(j));
-                            tSubNlDz.add(tSubNlDzF.get(j));
-                        }
-                    }
+                    initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
                     DoubleList tSubFpBuf = tFpBuf.get(k);
                     Basis tSubBasis = tBasis[tType-1];
                     tSubFpBuf.ensureCapacity(tSubBasis.size()); tSubFpBuf.setInternalDataSize(tSubBasis.size());
                     Vector tSubFpBuf_ = tSubFpBuf.asVec();
-                    tSubBasis.eval(tSubNlDx, tSubNlDy, tSubNlDz, tNlTypeBuf, tSubFpBuf_);
+                    tSubBasis.eval(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFpBuf_);
                     Vector tNormMu = mNormMu[tType-1];
                     Vector tNormSigma = mNormSigma[tType-1];
                     tSubFpBuf_.fill(j -> (tSubFpBuf.get(j) - tNormMu.get(j)) / tNormSigma.get(j));
@@ -874,11 +857,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             DoubleList tLossGradForceNlXBuf = mLossGradForceNlXBuf[threadID];
             DoubleList tLossGradForceNlYBuf = mLossGradForceNlYBuf[threadID];
             DoubleList tLossGradForceNlZBuf = mLossGradForceNlZBuf[threadID];
-            Object[] tFpPx = tCacheFpGrad ? tData.mFpPx.get(i) : null;
-            Object[] tFpPy = tCacheFpGrad ? tData.mFpPy.get(i) : null;
-            Object[] tFpPz = tCacheFpGrad ? tData.mFpPz.get(i) : null;
-            Object[] tFpGradNlIndex = tCacheFpGrad ? tData.mFpGradNlIndex.get(i) : null;
-            Object[] tFpGradFpIndex = tCacheFpGrad ? tData.mFpGradFpIndex.get(i) : null;
+            FloatList[] tFpPx = tCacheFpGrad ? tData.mFpPx.get(i) : null;
+            FloatList[] tFpPy = tCacheFpGrad ? tData.mFpPy.get(i) : null;
+            FloatList[] tFpPz = tCacheFpGrad ? tData.mFpPz.get(i) : null;
+            ShortList[] tFpGradNlIndex = tCacheFpGrad ? tData.mFpGradNlIndex.get(i) : null;
+            ShortList[] tFpGradFpIndex = tCacheFpGrad ? tData.mFpGradFpIndex.get(i) : null;
             List<DoubleList> tFpPxBuf = mFpPxBuf.get(threadID);
             List<DoubleList> tFpPyBuf = mFpPyBuf.get(threadID);
             List<DoubleList> tFpPzBuf = mFpPzBuf.get(threadID);
@@ -917,49 +900,19 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                                                                 tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
                                      : tNN[tType-1].evalGrad(tSubFpBuf, tSubGradFpBuf);
                 // cal force
-                IntList tSubNl = null;
-                ShortList tSubNlS = null;
-                DoubleList tSubNlDx = null, tSubNlDy = null, tSubNlDz = null;
-                FloatList tSubNlDxF = null, tSubNlDyF = null, tSubNlDzF = null;
-                if (tFullCache) {
-                    tSubNl = (IntList)tNl[k];
-                    tSubNlDx = (DoubleList)tNlDx[k]; tSubNlDy = (DoubleList)tNlDy[k]; tSubNlDz = (DoubleList)tNlDz[k];
-                } else {
-                    tSubNlS = (ShortList)tNl[k];
-                    tSubNlDxF = (FloatList)tNlDx[k]; tSubNlDyF = (FloatList)tNlDy[k]; tSubNlDzF = (FloatList)tNlDz[k];
-                }
-                int tNlSize = tFullCache ? tSubNl.size() : tSubNlS.size();
+                ShortList tSubNl = tNl[k];
+                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
+                int tNlSize = tSubNl.size();
                 tForceNlXBuf.clear(); tForceNlXBuf.addZeros(tNlSize);
                 tForceNlYBuf.clear(); tForceNlYBuf.addZeros(tNlSize);
                 tForceNlZBuf.clear(); tForceNlZBuf.addZeros(tNlSize);
                 if (tCacheFpGrad) {
-                    if (tFullCache) {
-                        forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
-                                              ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), tSubNormSigma.internalData(),
-                                              ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
-                    } else {
-                        forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
-                                              ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), tSubNormSigma.internalData(),
-                                              ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
-                    }
+                    forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
+                                          tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
+                                          tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
                 } else {
-                    tNlTypeBuf.clear(); tNlTypeBuf.ensureCapacity(tNlSize);
-                    for (int j = 0; j < tNlSize; ++j) {
-                        int nlk = tFullCache ? tSubNl.get(j) : tSubNlS.get(j);
-                        tNlTypeBuf.add(tAtomType.get(nlk));
-                    }
-                    if (!tFullCache) {
-                        tSubNlDx = tNlDxBuf; tSubNlDy = tNlDyBuf; tSubNlDz = tNlDzBuf;
-                        tSubNlDx.clear(); tSubNlDx.ensureCapacity(tNlSize);
-                        tSubNlDy.clear(); tSubNlDy.ensureCapacity(tNlSize);
-                        tSubNlDz.clear(); tSubNlDz.ensureCapacity(tNlSize);
-                        for (int j = 0; j < tNlSize; ++j) {
-                            tSubNlDx.add(tSubNlDxF.get(j));
-                            tSubNlDy.add(tSubNlDyF.get(j));
-                            tSubNlDz.add(tSubNlDzF.get(j));
-                        }
-                    }
-                    tBasis[tType-1].evalGrad(tSubNlDx, tSubNlDy, tSubNlDz, tNlTypeBuf, tSubFpBuf, tFpGradNlIndexBuf.get(k), tFpGradFpIndexBuf.get(k), tFpPxBuf.get(k), tFpPyBuf.get(k), tFpPzBuf.get(k));
+                    initNl(tSubNl, tSubNlDx, tSubNlDy, tSubNlDz, tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
+                    tBasis[tType-1].evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFpBuf, tFpGradNlIndexBuf.get(k), tFpGradFpIndexBuf.get(k), tFpPxBuf.get(k), tFpPyBuf.get(k), tFpPzBuf.get(k));
                     forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
                                           tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
                                           tFpGradNlIndexBuf.get(k).internalData(), tFpGradFpIndexBuf.get(k).internalData(), tFpPxBuf.get(k).size());
@@ -968,7 +921,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     double fx = tForceNlXBuf.get(j);
                     double fy = tForceNlYBuf.get(j);
                     double fz = tForceNlZBuf.get(j);
-                    int nlk = tFullCache ? tSubNl.get(j) : tSubNlS.get(j);
+                    int nlk = tSubNl.get(j);
                     if (mHasForce) {
                         tForceXBuf.set(k, tForceXBuf.get(k) - fx);
                         tForceYBuf.set(k, tForceYBuf.get(k) - fy);
@@ -979,9 +932,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     }
                     // cal stress here
                     if (mHasStress) {
-                        double dx = tFullCache ? tSubNlDx.get(j) : tSubNlDxF.get(j);
-                        double dy = tFullCache ? tSubNlDy.get(j) : tSubNlDyF.get(j);
-                        double dz = tFullCache ? tSubNlDz.get(j) : tSubNlDzF.get(j);
+                        double dx = tSubNlDx.get(j);
+                        double dy = tSubNlDy.get(j);
+                        double dz = tSubNlDz.get(j);
                         rStressXX += dx * fx; rStressYY += dy * fy; rStressZZ += dz * fz;
                         rStressXY += dx * fy; rStressXZ += dx * fz; rStressYZ += dy * fz;
                     }
@@ -1073,22 +1026,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                                       tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
                 // force loss grad
                 Vector tSubLossGradFp = tLossGradFp[tType-1];
-                IntList tSubNl = null;
-                ShortList tSubNlS = null;
-                DoubleList tSubNlDx = null, tSubNlDy = null, tSubNlDz = null;
-                FloatList tSubNlDxF = null, tSubNlDyF = null, tSubNlDzF = null;
-                if (tFullCache) {
-                    tSubNl = (IntList)tNl[k];
-                    if (mHasStress) {
-                        tSubNlDx = (DoubleList)tNlDx[k]; tSubNlDy = (DoubleList)tNlDy[k]; tSubNlDz = (DoubleList)tNlDz[k];
-                    }
-                } else {
-                    tSubNlS = (ShortList)tNl[k];
-                    if (mHasStress) {
-                        tSubNlDxF = (FloatList)tNlDx[k]; tSubNlDyF = (FloatList)tNlDy[k]; tSubNlDzF = (FloatList)tNlDz[k];
-                    }
-                }
-                int tNlSize = tFullCache ? tSubNl.size() : tSubNlS.size();
+                ShortList tSubNl = tNl[k];
+                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
+                int tNlSize = tSubNl.size();
                 double tLossGradForceX = 0.0, tLossGradForceY = 0.0, tLossGradForceZ = 0.0;
                 if (mHasForce) {
                     tLossGradForceX = tLossGradForceXBuf.get(k);
@@ -1099,7 +1039,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 tLossGradForceNlYBuf.clear(); tLossGradForceNlYBuf.addZeros(tNlSize);
                 tLossGradForceNlZBuf.clear(); tLossGradForceNlZBuf.addZeros(tNlSize);
                 for (int j = 0; j < tNlSize; ++j) {
-                    int nlk = tFullCache ? tSubNl.get(j) : tSubNlS.get(j);
+                    int nlk = tSubNl.get(j);
                     double rLossGradForceNlX = 0.0, rLossGradForceNlY = 0.0, rLossGradForceNlZ = 0.0;
                     if (mHasForce) {
                         rLossGradForceNlX += tLossGradForceXBuf.get(nlk) - tLossGradForceX;
@@ -1108,9 +1048,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     }
                     // stress loss grad here
                     if (mHasStress) {
-                        double dx = tFullCache ? tSubNlDx.get(j) : tSubNlDxF.get(j);
-                        double dy = tFullCache ? tSubNlDy.get(j) : tSubNlDyF.get(j);
-                        double dz = tFullCache ? tSubNlDz.get(j) : tSubNlDzF.get(j);
+                        double dx = tSubNlDx.get(j);
+                        double dy = tSubNlDy.get(j);
+                        double dz = tSubNlDz.get(j);
                         rLossGradForceNlX += dx*tLossGradStressXX;
                         rLossGradForceNlY += dy*tLossGradStressYY + dx*tLossGradStressXY;
                         rLossGradForceNlZ += dz*tLossGradStressZZ + dx*tLossGradStressXZ + dy*tLossGradStressYZ;
@@ -1121,15 +1061,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 }
                 tSubLossGradFp.fill(0.0);
                 if (tCacheFpGrad) {
-                    if (tFullCache) {
-                        backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
-                                               ((DoubleList)tFpPx[k]).internalData(), ((DoubleList)tFpPy[k]).internalData(), ((DoubleList)tFpPz[k]).internalData(), tSubNormSigma.internalData(),
-                                               ((IntList)tFpGradNlIndex[k]).internalData(), ((IntList)tFpGradFpIndex[k]).internalData(), ((DoubleList)tFpPx[k]).size());
-                    } else {
-                        backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
-                                               ((FloatList)tFpPx[k]).internalData(), ((FloatList)tFpPy[k]).internalData(), ((FloatList)tFpPz[k]).internalData(), tSubNormSigma.internalData(),
-                                               ((ShortList)tFpGradNlIndex[k]).internalData(), ((ShortList)tFpGradFpIndex[k]).internalData(), ((FloatList)tFpPx[k]).size());
-                    }
+                    backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
+                                           tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
+                                           tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
                 } else {
                     backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
                                            tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
@@ -1224,8 +1158,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         final int tAtomNum = aAtomData.atomNumber();
         try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
             IntVector rAtomType = IntVector.zeros(tAtomNum);
-            Object[] rNl = new Object[tAtomNum];
-            Object[] rNlDx = new Object[tAtomNum], rNlDy = new Object[tAtomNum], rNlDz = new Object[tAtomNum];
+            ShortList[] rNl = new ShortList[tAtomNum];
+            FloatList[] rNlDx = new FloatList[tAtomNum], rNlDy = new FloatList[tAtomNum], rNlDz = new FloatList[tAtomNum];
             rData.mAtomType.add(rAtomType);
             rData.mNl.add(rNl);
             rData.mNlDx.add(rNlDx); rData.mNlDy.add(rNlDy); rData.mNlDz.add(rNlDz);
@@ -1243,15 +1177,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     tNl.add(idx);
                     tNlDx.add(dx); tNlDy.add(dy); tNlDz.add(dz);
                 });
-                if (mFullCache) {
-                    tNl.trimToSize();
-                    rNl[i] = tNl;
-                    tNlDx.trimToSize(); tNlDy.trimToSize(); tNlDz.trimToSize();
-                    rNlDx[i] = tNlDx; rNlDy[i] = tNlDy; rNlDz[i] = tNlDz;
-                } else {
-                    rNl[i] = shortFrom_(tNl);
-                    rNlDx[i] = floatFrom_(tNlDx); rNlDy[i] = floatFrom_(tNlDy); rNlDz[i] = floatFrom_(tNlDz);
-                }
+                rNl[i] = shortFrom_(tNl);
+                rNlDx[i] = floatFrom_(tNlDx); rNlDy[i] = floatFrom_(tNlDy); rNlDz[i] = floatFrom_(tNlDz);
             }
         }
         // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
@@ -1386,78 +1313,43 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         if (aData.mFpInit) return;
         if (aData==mTestData) mOptimizer.markLossFuncChanged();
         clearFp_(aData);
-        final boolean tFullCache = mFullCache;
         final boolean tNeedGrad = (!mTrainBasis) && (mCacheFpGrad && (mHasForce || mHasStress));
         for (IntVector tAtomType : aData.mAtomType) {
             int tAtomNum = tAtomType.size();
             aData.mFp.add(new Vector[tAtomNum]);
             if (tNeedGrad) {
-                aData.mFpPx.add(new Object[tAtomNum]); aData.mFpPy.add(new Object[tAtomNum]); aData.mFpPz.add(new Object[tAtomNum]);
-                aData.mFpGradNlIndex.add(new Object[tAtomNum]); aData.mFpGradFpIndex.add(new Object[tAtomNum]);
+                aData.mFpPx.add(new FloatList[tAtomNum]); aData.mFpPy.add(new FloatList[tAtomNum]); aData.mFpPz.add(new FloatList[tAtomNum]);
+                aData.mFpGradNlIndex.add(new ShortList[tAtomNum]); aData.mFpGradFpIndex.add(new ShortList[tAtomNum]);
             }
         }
         pool().parfor(aData.mSize, (i, threadID) -> {
             Basis[] tBasis = mBasis[threadID];
-            Object[] tNl = aData.mNl.get(i);
-            Object[] tNlDx = aData.mNlDx.get(i), tNlDy = aData.mNlDy.get(i), tNlDz = aData.mNlDz.get(i);
+            ShortList[] tNl = aData.mNl.get(i);
+            FloatList[] tNlDx = aData.mNlDx.get(i), tNlDy = aData.mNlDy.get(i), tNlDz = aData.mNlDz.get(i);
             IntList tNlTypeBuf = mNlTypeBuf[threadID];
             DoubleList tNlDxBuf = mNlDxBuf[threadID], tNlDyBuf = mNlDyBuf[threadID], tNlDzBuf = mNlDzBuf[threadID];
             IntVector tAtomType = aData.mAtomType.get(i);
             int tAtomNum = tAtomType.size();
             Vector[] rFp = aData.mFp.get(i);
-            Object[] rFpPx = null, rFpPy = null, rFpPz = null;
-            Object[] rFpGradNlIndex = null, rFpGradFpIndex = null;
+            FloatList[] rFpPx = null, rFpPy = null, rFpPz = null;
+            ShortList[] rFpGradNlIndex = null, rFpGradFpIndex = null;
             if (tNeedGrad) {
                 rFpPx = aData.mFpPx.get(i); rFpPy = aData.mFpPy.get(i); rFpPz = aData.mFpPz.get(i);
                 rFpGradNlIndex = aData.mFpGradNlIndex.get(i); rFpGradFpIndex = aData.mFpGradFpIndex.get(i);
             }
             for (int k = 0; k < tAtomNum; ++k) {
-                IntList tSubNl = null;
-                ShortList tSubNlS = null;
-                DoubleList tSubNlDx = null, tSubNlDy = null, tSubNlDz = null;
-                FloatList tSubNlDxF = null, tSubNlDyF = null, tSubNlDzF = null;
-                if (tFullCache) {
-                    tSubNl = (IntList)tNl[k];
-                    tSubNlDx = (DoubleList)tNlDx[k]; tSubNlDy = (DoubleList)tNlDy[k]; tSubNlDz = (DoubleList)tNlDz[k];
-                } else {
-                    tSubNlS = (ShortList)tNl[k];
-                    tSubNlDxF = (FloatList)tNlDx[k]; tSubNlDyF = (FloatList)tNlDy[k]; tSubNlDzF = (FloatList)tNlDz[k];
-                }
-                int tNlSize = tFullCache ? tSubNl.size() : tSubNlS.size();
-                tNlTypeBuf.clear(); tNlTypeBuf.ensureCapacity(tNlSize);
-                for (int j = 0; j < tNlSize; ++j) {
-                    int nlk = tFullCache ? tSubNl.get(j) : tSubNlS.get(j);
-                    tNlTypeBuf.add(tAtomType.get(nlk));
-                }
-                if (!tFullCache) {
-                    tSubNlDx = tNlDxBuf; tSubNlDy = tNlDyBuf; tSubNlDz = tNlDzBuf;
-                    tSubNlDx.clear(); tSubNlDx.ensureCapacity(tNlSize);
-                    tSubNlDy.clear(); tSubNlDy.ensureCapacity(tNlSize);
-                    tSubNlDz.clear(); tSubNlDz.ensureCapacity(tNlSize);
-                    for (int j = 0; j < tNlSize; ++j) {
-                        tSubNlDx.add(tSubNlDxF.get(j));
-                        tSubNlDy.add(tSubNlDyF.get(j));
-                        tSubNlDz.add(tSubNlDzF.get(j));
-                    }
-                }
+                initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
                 int tType = tAtomType.get(k);
                 Vector tSubFp = Vectors.zeros(tBasis[tType-1].size());
                 if (tNeedGrad) {
                     DoubleList tSubFpPx = new DoubleList(1024), tSubFpPy = new DoubleList(1024), tSubFpPz = new DoubleList(1024);
                     IntList tSubFpGradNlIndex = new IntList(1024), tSubFpGradFpIndex = new IntList(1024);
-                    tBasis[tType-1].evalGrad(tSubNlDx, tSubNlDy, tSubNlDz, tNlTypeBuf, tSubFp, tSubFpGradNlIndex, tSubFpGradFpIndex, tSubFpPx, tSubFpPy, tSubFpPz);
+                    tBasis[tType-1].evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFp, tSubFpGradNlIndex, tSubFpGradFpIndex, tSubFpPx, tSubFpPy, tSubFpPz);
                     rFp[k] = tSubFp;
-                    if (mFullCache) {
-                        tSubFpPx.trimToSize(); tSubFpPy.trimToSize(); tSubFpPz.trimToSize();
-                        tSubFpGradNlIndex.trimToSize(); tSubFpGradFpIndex.trimToSize();
-                        rFpPx[k] = tSubFpPx; rFpPy[k] = tSubFpPy; rFpPz[k] = tSubFpPz;
-                        rFpGradNlIndex[k] = tSubFpGradNlIndex; rFpGradFpIndex[k] = tSubFpGradFpIndex;
-                    } else {
-                        rFpPx[k] = floatFrom_(tSubFpPx); rFpPy[k] = floatFrom_(tSubFpPy); rFpPz[k] = floatFrom_(tSubFpPz);
-                        rFpGradNlIndex[k] = shortFrom_(tSubFpGradNlIndex); rFpGradFpIndex[k] = shortFrom_(tSubFpGradFpIndex);
-                    }
+                    rFpPx[k] = floatFrom_(tSubFpPx); rFpPy[k] = floatFrom_(tSubFpPy); rFpPz[k] = floatFrom_(tSubFpPz);
+                    rFpGradNlIndex[k] = shortFrom_(tSubFpGradNlIndex); rFpGradFpIndex[k] = shortFrom_(tSubFpGradFpIndex);
                 } else {
-                    tBasis[tType-1].eval(tSubNlDx, tSubNlDy, tSubNlDz, tNlTypeBuf, tSubFp);
+                    tBasis[tType-1].eval(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFp);
                     rFp[k] = tSubFp;
                 }
             }
