@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import static jse.code.CS.RANDOM;
-import static jse.code.CS.ZL_VEC;
 
 abstract class WTypeBasis extends MergeableBasis {
     public final static int WTYPE_DEFAULT = 0, WTYPE_NONE = -1, WTYPE_SINGLE = 1, WTYPE_FULL = 2, WTYPE_EXFULL = 3, WTYPE_DENSE = 4;
@@ -91,7 +90,7 @@ abstract class WTypeBasis extends MergeableBasis {
         mDenseWeight.assignRow(() -> RANDOM.nextDouble(-1, 1));
     }
     @Override public IVector parameters() {
-        if (mWType != WTYPE_DENSE) return ZL_VEC;
+        if (mWType != WTYPE_DENSE) return null;
         assert mDenseWeight != null;
         return mDenseWeight.asVecRow();
     }

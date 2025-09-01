@@ -79,4 +79,10 @@ public interface IOptimizer {
      * 可以使其忘记之前优化过程的信息
      */
     default void reset() {}
+    
+    /**
+     * 标记损失函数状态发生变化；
+     * 会清空档期缓存的 loss 值以及梯度，防止算法出现问题。
+     */
+    void markLossFuncChanged();
 }

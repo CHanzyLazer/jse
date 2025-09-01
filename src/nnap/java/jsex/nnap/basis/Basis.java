@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
 
-import static jse.code.CS.ZL_VEC;
-
 /**
  * 通用的 nnap 基组/描述符实现
  * <p>
@@ -91,7 +89,7 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     public void initParameters() {/**/}
     
     /** @return 内部可能存在的可拟合参数组成的向量 */
-    public IVector parameters() {return ZL_VEC;}
+    public @Nullable IVector parameters() {return null;}
     /** @return 是否确实存在可拟合的参数 */
     public boolean hasParameters() {return false;}
     

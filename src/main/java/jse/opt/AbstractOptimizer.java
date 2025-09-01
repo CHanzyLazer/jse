@@ -92,6 +92,11 @@ public abstract class AbstractOptimizer implements IOptimizer {
         mLossValid = false;
     }
     
+    /** {@inheritDoc} */
+    @Override public void markLossFuncChanged() {
+        invalidLoss();
+        reset();
+    }
     
     /**
      * {@inheritDoc}
