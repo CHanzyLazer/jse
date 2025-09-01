@@ -4,17 +4,13 @@ import jse.code.Conf;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
-import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.IntArrayVector;
-import jse.math.vector.ShiftIntVector;
-import jse.math.vector.ShiftVector;
+import jse.math.vector.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static jse.code.CS.RANDOM;
-import static jse.code.CS.ZL_STR;
+import static jse.code.CS.*;
 
 /**
  * 使用多个基组的合并基组，用于实现自定义的高效基组
@@ -102,6 +98,52 @@ public class Merge extends Basis {
     }
     @Override public void initParameters() {
         for (Basis tBasis : mMergeBasis) tBasis.initParameters();
+    }
+    @Override public IVector parameters() {
+        final int tMergeSize = mMergeBasis.length;
+        final IVector[] tParas = new IVector[tMergeSize];
+        final int[] tParaSizes = new int[tMergeSize];
+        int tTotParaSize = 0;
+        for (int i = 0; i < tMergeSize; ++i) {
+            tParas[i] = mMergeBasis[i].parameters();
+            tParaSizes[i] = tParas[i].size();
+            tTotParaSize += tParaSizes[i];
+        }
+        final int fTotParaSize = tTotParaSize;
+        return new RefVector() {
+            @Override public double get(int aIdx) {
+                int tIdx = aIdx;
+                for (int i = 0; i < tMergeSize; ++i) {
+                    int tParaSize = tParaSizes[i];
+                    if (tIdx < tParaSize) {
+                        return tParas[i].get(tIdx);
+                    }
+                    tIdx -= tParaSize;
+                }
+                throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+            }
+            @Override public void set(int aIdx, double aValue) {
+                int tIdx = aIdx;
+                for (int i = 0; i < tMergeSize; ++i) {
+                    int tParaSize = tParaSizes[i];
+                    if (tIdx < tParaSize) {
+                        tParas[i].set(tIdx, aValue);
+                        return;
+                    }
+                    tIdx -= tParaSize;
+                }
+                throw new IndexOutOfBoundsException(String.valueOf(aIdx));
+            }
+            @Override public int size() {
+                return fTotParaSize;
+            }
+        };
+    }
+    @Override public boolean hasParameters() {
+        for (Basis tBasis : mMergeBasis) {
+            if (tBasis.hasParameters()) return true;
+        }
+        return false;
     }
     
     @Override public double rcut() {return mRCut;}

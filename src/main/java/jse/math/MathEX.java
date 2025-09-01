@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Range;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jse.code.CS.ZL_MAT;
+import static jse.code.CS.ZL_DOUBLE_BI;
 
 
 /**
@@ -116,7 +116,7 @@ public class MathEX {
         public static double[][] interRayBox2D(double aBoxXMin, double aBoxYMin, double aBoxXMax, double aBoxYMax, double aRayXFrom, double aRayYFrom, double aRayXTo, double aRayYTo) {
             double tSizeX = aBoxXMax - aBoxXMin;
             double tSizeY = aBoxYMax - aBoxYMin;
-            if (tSizeX < 0 || tSizeY < 0) return ZL_MAT;
+            if (tSizeX < 0 || tSizeY < 0) return ZL_DOUBLE_BI;
             // 增加刚好在边界的处理，这里使用增加微扰的方法来简单处理，from 优先往盒内，to 优先往盒外
             if      (aRayXFrom == aBoxXMin) aRayXFrom += tSizeX*1.0e-12;
             else if (aRayXFrom == aBoxXMax) aRayXFrom -= tSizeX*1.0e-12;
@@ -135,7 +135,7 @@ public class MathEX {
             byte tPos2 = posBox2D(aRayXTo, aRayYTo, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax);
             // 获取交点可能的位置的情况
             byte tInterPos = PosBox2D.INTER_POS[tPos1][tPos2];
-            if (tInterPos == PosBox2D.N) return ZL_MAT;
+            if (tInterPos == PosBox2D.N) return ZL_DOUBLE_BI;
             if (tInterPos == PosBox2D.E) return null; // 非法情况，输出 null，注意刚好在边界的情况也会输出 null
             double[] tInterPoint = _interRayBox2D_(tInterPos, aBoxXMin, aBoxYMin, aBoxXMax, aBoxYMax, aRayXFrom, aRayYFrom, aRayXTo, aRayYTo);
             // 获取另一个方向的结果

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.*;
 import java.util.function.DoubleConsumer;
 
-import static jse.code.CS.ZL_VEC;
+import static jse.code.CS.ZL_DOUBLE;
 
 /**
  * 通用的使用 {@code double[]} 存储内部元素的 list，
@@ -26,7 +26,7 @@ public class DoubleList implements IDataShell<double[]> {
     protected double[] mData;
     protected int mSize = 0;
     private DoubleList(int aSize, double[] aData) {mSize = aSize; mData = aData;}
-    public DoubleList() {mData = ZL_VEC;}
+    public DoubleList() {mData = ZL_DOUBLE;}
     public DoubleList(int aInitSize) {mData = new double[aInitSize];}
     
     /**

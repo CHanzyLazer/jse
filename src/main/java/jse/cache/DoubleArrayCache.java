@@ -11,7 +11,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import static jse.cache.ByteArrayCache.entryInvalid;
-import static jse.code.CS.ZL_VEC;
+import static jse.code.CS.ZL_DOUBLE;
 import static jse.code.Conf.NO_CACHE;
 
 /**
@@ -46,7 +46,7 @@ public class DoubleArrayCache {
      * @return 大于等于要求长度的 {@code double[]}，并且所有成员都为 0.0
      */
     public static double @NotNull[] getZeros(int aMinSize) {
-        if (aMinSize <= 0) return ZL_VEC;
+        if (aMinSize <= 0) return ZL_DOUBLE;
         if (NO_CACHE) return new double[aMinSize];
         Map.Entry<Integer, IObjectPool<double[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (entryInvalid(tEntry, aMinSize)) return new double[aMinSize];
@@ -64,7 +64,7 @@ public class DoubleArrayCache {
      * @return 大于等于要求长度的 {@code double[]}，成员为任意值
      */
     public static double @NotNull[] getArray(int aMinSize) {
-        if (aMinSize <= 0) return ZL_VEC;
+        if (aMinSize <= 0) return ZL_DOUBLE;
         if (NO_CACHE) return new double[aMinSize];
         Map.Entry<Integer, IObjectPool<double[]>> tEntry = CACHE.get().ceilingEntry(aMinSize);
         if (entryInvalid(tEntry, aMinSize)) return new double[aMinSize];
@@ -111,7 +111,7 @@ public class DoubleArrayCache {
     public static void getZerosTo(int aMinSize, int aMultiple, IListSetter<double @NotNull[]> aZerosConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {
-            for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, ZL_VEC);
+            for (int i = 0; i < aMultiple; ++i) aZerosConsumer.set(i, ZL_DOUBLE);
             return;
         }
         if (NO_CACHE) {
@@ -151,7 +151,7 @@ public class DoubleArrayCache {
     public static void getArrayTo(int aMinSize, int aMultiple, IListSetter<double @NotNull[]> aArrayConsumer) {
         if (aMultiple <= 0) return;
         if (aMinSize <= 0) {
-            for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, ZL_VEC);
+            for (int i = 0; i < aMultiple; ++i) aArrayConsumer.set(i, ZL_DOUBLE);
             return;
         }
         if (NO_CACHE) {

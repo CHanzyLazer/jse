@@ -32,6 +32,7 @@ public class Mirror extends Basis {
         return new Mirror(mMirrorBasis.threadSafeRef(), mMirrorType, mThisType);
     }
     // mirror 本身没有参数，因此 initPara 依旧是 no-op
+    // mirror 本身没有参数，因此不提供参数接口
     
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {

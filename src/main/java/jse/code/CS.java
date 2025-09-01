@@ -7,6 +7,10 @@ import jse.code.collection.AbstractCollections;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.random.IRandom;
 import jse.math.SliceType;
+import jse.math.matrix.Matrices;
+import jse.math.matrix.RowMatrix;
+import jse.math.vector.Vector;
+import jse.math.vector.Vectors;
 import jse.parallel.CompletedFuture;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -26,8 +30,8 @@ import java.util.regex.Pattern;
  */
 public class CS {
     /** version of jse */
-    public final static String VERSION = "3.11.0";
-    public final static int VERSION_NUMBER = 3_11_00_00;
+    public final static String VERSION = "3.11.0b";
+    public final static int VERSION_NUMBER = 3_11_00_01;
     
     /** 内部使用的全局随机数生成器 */
     @ApiStatus.Internal public final static Random RANDOM_ = new Random();
@@ -109,21 +113,25 @@ public class CS {
     /** {@code Object[0]} */
     public final static Object[] ZL_OBJ = new Object[0];
     /** {@code double[0][]} */
-    public final static double[][] ZL_MAT = new double[0][];
+    public final static double[][] ZL_DOUBLE_BI = new double[0][];
     /** {@code double[0]} */
-    public final static double[]   ZL_VEC = new double[0];
+    public final static double[] ZL_DOUBLE = new double[0];
     /** {@code float[0]} */
-    public final static float[]  ZL_FLOAT = new float[0];
+    public final static float[]   ZL_FLOAT = new float[0];
     /** {@code int[0]} */
-    public final static int[]      ZL_INT = new int[0];
+    public final static int[]       ZL_INT = new int[0];
     /** {@code long[0]} */
-    public final static long[]    ZL_LONG = new long[0];
+    public final static long[]     ZL_LONG = new long[0];
     /** {@code short[0]} */
-    public final static short[]  ZL_SHORT = new short[0];
+    public final static short[]   ZL_SHORT = new short[0];
     /** {@code byte[0]} */
-    public final static byte[]    ZL_BYTE = new byte[0];
+    public final static byte[]     ZL_BYTE = new byte[0];
     /** {@code boolean[0]} */
-    public final static boolean[] ZL_BOOL = new boolean[0];
+    public final static boolean[]  ZL_BOOL = new boolean[0];
+    /** {@code Vectors.zeros(0)} */
+    public final static Vector ZL_VEC = Vectors.zeros(0);
+    /** {@code Matrices.zeros(0)} */
+    public final static RowMatrix ZL_MAT = Matrices.zeros(0);
     
     /// Patterns
     /** 匹配空字符串或者空格的正则表达式，{@code \s*} */
