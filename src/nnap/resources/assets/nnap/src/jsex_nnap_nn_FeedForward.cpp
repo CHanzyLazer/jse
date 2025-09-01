@@ -378,13 +378,15 @@ JNIEXPORT jdouble JNICALL Java_jsex_nnap_nn_FeedForward_forwardGrad1(JNIEnv *aEn
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_nn_FeedForward_backward1(JNIEnv *aEnv, jclass aClazz,
-        jdouble aYGrad, jdoubleArray aX, jint aShiftX, jdoubleArray rGradPara, jint aShiftGradPara, jint aInputDim, jintArray aHiddenDims, jint aHiddenNumber,
+        jdouble aYGrad, jdoubleArray aX, jint aShiftX, jdoubleArray rGradPara, jint aShiftGradPara, jdoubleArray rGradX, jint aShiftGradX,
+        jint aInputDim, jintArray aHiddenDims, jint aHiddenNumber,
         jdoubleArray aHiddenWeightsBackward, jdoubleArray aOutputWeight,
         jdoubleArray aHiddenOutputs, jint aShiftOutputs, jdoubleArray aHiddenGrads, jint aShiftGrads,
         jdoubleArray rHiddenGrads2, jdoubleArray rHiddenGrads3) {
     // java array init
     jdouble *tX = (jdouble *)getJArrayBuf(aEnv, aX);
     jdouble *tGradPara = (jdouble *)getJArrayBuf(aEnv, rGradPara);
+    jdouble *tGradX = rGradX==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, rGradX);
     jint *tHiddenDims = (jint *)getJArrayBuf(aEnv, aHiddenDims);
     jdouble *tHiddenWeightsBackward = (jdouble *)getJArrayBuf(aEnv, aHiddenWeightsBackward);
     jdouble *tOutputWeight = (jdouble *)getJArrayBuf(aEnv, aOutputWeight);
@@ -393,13 +395,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_nn_FeedForward_backward1(JNIEnv *aEnv, jcl
     jdouble *tHiddenGrads2 = (jdouble *)getJArrayBuf(aEnv, rHiddenGrads2);
     jdouble *tHiddenGrads3 = (jdouble *)getJArrayBuf(aEnv, rHiddenGrads3);
     
-    backward(aYGrad, tX+aShiftX, NULL, tGradPara+aShiftGradPara,
+    backward(aYGrad, tX+aShiftX, tGradX==NULL?NULL:tGradX+aShiftGradX, tGradPara+aShiftGradPara,
              aInputDim, tHiddenDims, aHiddenNumber, tHiddenWeightsBackward, tOutputWeight,
              tHiddenOutputs+aShiftOutputs, tHiddenGrads+aShiftGrads, tHiddenGrads2, tHiddenGrads3);
     
     // release java array
     releaseJArrayBuf(aEnv, aX, tX, JNI_ABORT);
     releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
+    if (rGradX!=NULL) releaseJArrayBuf(aEnv, rGradX, tGradX, 0);
     releaseJArrayBuf(aEnv, aHiddenDims, tHiddenDims, JNI_ABORT);
     releaseJArrayBuf(aEnv, aHiddenWeightsBackward, tHiddenWeightsBackward, JNI_ABORT);
     releaseJArrayBuf(aEnv, aOutputWeight, tOutputWeight, JNI_ABORT);

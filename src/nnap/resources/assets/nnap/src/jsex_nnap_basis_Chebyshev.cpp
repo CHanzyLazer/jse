@@ -131,6 +131,42 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
     }
 }
 
+template <jint NMAX, jint WTYPE>
+static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                        jdouble *rRn, jdouble *aGradFp, jdouble *rGradPara,
+                        jint aTypeNum, jdouble aRCut, jint aDenseSize) noexcept {
+    // loop for neighbor
+    for (jint j = 0, ji = -1; j < aNN; ++j) {
+        jint type = aNlType[j];
+        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
+        // check rcut for merge
+        if (dis >= aRCut) continue;
+        ++ji;
+        // cal fc
+        jdouble fc = JSE_NNAP::pow4(1.0 - JSE_NNAP::pow2(dis/aRCut));
+        // cal Rn
+        jdouble tRnX = 1.0 - 2.0*dis/aRCut;
+        jdouble *tRn = rRn;
+        JSE_NNAP::chebyshevFull<NMAX>(tRnX, tRn);
+        // plus to para
+        if (WTYPE == jsex_nnap_basis_Chebyshev_WTYPE_DENSE) {
+            jdouble *tGradFp = aGradFp;
+            jdouble *tGradPara = rGradPara;
+            for (jint k = 0; k < aDenseSize; ++k) {
+                jdouble tGradPara_ = 0.0;
+                for (jint n = 0; n <= NMAX; ++n) {
+                    tGradPara_ += fc*tRn[n]*tGradFp[n];
+                }
+                tGradPara[type-1] += tGradPara_;
+                tGradFp += (NMAX+1);
+                tGradPara += aTypeNum;
+            }
+            continue;
+        }
+    }
+}
+
 template <jint NMAX, jint WTYPE, jboolean SPARSE>
 static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                       jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
@@ -591,6 +627,108 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
 }
 
 
+template <jint WTYPE>
+static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                               jdouble *rRn, jdouble *aGradFp, jdouble *rGradPara,
+                               jint aTypeNum, jdouble aRCut, jint aNMax, jint aDenseSize) noexcept {
+    switch (aNMax) {
+    case 0: {
+        calBackward<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 1: {
+        calBackward<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 2: {
+        calBackward<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 3: {
+        calBackward<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 4: {
+        calBackward<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 5: {
+        calBackward<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 6: {
+        calBackward<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 7: {
+        calBackward<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 8: {
+        calBackward<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 9: {
+        calBackward<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 10: {
+        calBackward<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 11: {
+        calBackward<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 12: {
+        calBackward<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 13: {
+        calBackward<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 14: {
+        calBackward<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 15: {
+        calBackward<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 16: {
+        calBackward<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 17: {
+        calBackward<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 18: {
+        calBackward<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 19: {
+        calBackward<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    case 20: {
+        calBackward<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aDenseSize);
+        return;
+    }
+    default: {
+        return;
+    }}
+}
+static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                               jdouble *rRn, jdouble *aGradFp, jdouble *rGradPara,
+                               jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jint aDenseSize) noexcept {
+    if (aWType == jsex_nnap_basis_Chebyshev_WTYPE_DENSE) {
+        calBackward<jsex_nnap_basis_Chebyshev_WTYPE_DENSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, aGradFp, rGradPara, aTypeNum, aRCut, aNMax, aDenseSize);
+    }
+}
+
+
 template <jint WTYPE, jboolean SPARSE>
 static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                              jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
@@ -885,6 +1023,33 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1(JNIEnv *aEnv, jclass
     if (aDenseWeight!=NULL) releaseJArrayBuf(aEnv, aDenseWeight, tDenseWeight, JNI_ABORT);
 }
 
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backward1(JNIEnv *aEnv, jclass aClazz,
+        jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
+        jdoubleArray rRn, jdoubleArray aGradFp, jint aShiftGradFp, jdoubleArray rGradPara, jint aShiftGradPara,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jint aDenseSize) {
+    // java array init
+    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
+    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
+    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
+    jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
+    jdouble *tRn = (jdouble *)getJArrayBuf(aEnv, rRn);
+    jdouble *tGradFp = (jdouble *)getJArrayBuf(aEnv, aGradFp);
+    jdouble *tGradPara = (jdouble *)getJArrayBuf(aEnv, rGradPara);
+    
+    // do cal
+    calBackward(tNlDx, tNlDy, tNlDz, tNlType, aNN,
+                tRn, tGradFp+aShiftGradFp, tGradPara+aShiftGradPara,
+                aTypeNum, aRCut, aNMax, aWType, aDenseSize);
+    
+    // release java array
+    releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aNlDy, tNlDy, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aNlDz, tNlDz, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aNlType, tNlType, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rRn, tRn, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aGradFp, tGradFp, JNI_ABORT);
+    releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
+}
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGrad1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
@@ -976,7 +1141,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalGradWithShift1(JNIEnv 
     releaseJArrayBuf(aEnv, rFpPz, tFpPz, 0);
     if (aDenseWeight!=NULL) releaseJArrayBuf(aEnv, aDenseWeight, tDenseWeight, JNI_ABORT);
 }
-
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_evalForce1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,

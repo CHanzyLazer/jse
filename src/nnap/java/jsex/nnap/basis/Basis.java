@@ -229,6 +229,18 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
         eval_(aNlDx, aNlDy, aNlDz, aNlType, rFp, null, false);
     }
     /**
+     * 内部使用的反向传播计算关于可拟合参量梯度的方法，这里为了实现以及训练器中使用简单不采取缓存而是包含所需的向前过程。
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aGradFp 输入已有的（loss）关于基组的梯度
+     * @param rGradPara 计算输出的（loss）关于可拟合参数的梯度
+     */
+    @ApiStatus.Internal
+    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {/**/}
+    
+    /**
      * 通用的计算基组的接口，可以自定义任何近邻列表获取器来实现
      * @param aNL 近邻列表遍历器
      * @param rFp 计算输出的原子描述符向量

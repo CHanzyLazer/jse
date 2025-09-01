@@ -35,6 +35,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_eval1
 
 /*
  * Class:     jsex_nnap_basis_Chebyshev
+ * Method:    backward1
+ * Signature: ([D[D[D[II[D[DI[DIIDIII)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backward1
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jdoubleArray, jint, jdoubleArray, jint, jint, jdouble, jint, jint, jint);
+
+/*
+ * Class:     jsex_nnap_basis_Chebyshev
  * Method:    evalGrad1
  * Signature: ([D[D[D[II[D[D[D[D[D[II[II[DI[DI[DIIDII[DI)V
  */

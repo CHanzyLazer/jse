@@ -114,6 +114,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     protected final DoubleList mTrainLoss = new DoubleList(64);
     protected final DoubleList mTestLoss = new DoubleList(64);
     
+    private final int mTotParaSize, mTotBasisParaSize;
     private final IVector[] mParas;
     private final int[] mParaSizes, mHiddenSizes, mParaWeightSizes;
     private final @Nullable IVector[] mBasisParas;
@@ -403,6 +404,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mParaWeightSizes[i] = mNN[0][i].parameterWeightSize();
             mSelectParas[i] = Vector.zeros(tParaSize);
         }
+        mTotParaSize = rTotParaSize;
+        
+        rTotParaSize = 0;
         mBasisParaSizes = new int[mTypeNum];
         mBasisParas = new IVector[mTypeNum];
         for (int i = 0; i < mTypeNum; ++i) {
@@ -412,57 +416,66 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mBasisParaSizes[i] = tBasisParaSize;
             rTotParaSize += tBasisParaSize;
         }
+        mTotBasisParaSize = rTotParaSize;
+        
         mGradParaBuf = new Vector[aThreadNumber];
         for (int ti = 1; ti < aThreadNumber; ++ti) {
-            mGradParaBuf[ti] = Vector.zeros(rTotParaSize);
+            mGradParaBuf[ti] = Vector.zeros(mTotParaSize+mTotBasisParaSize);
         }
         
-        final int fTotParaSize = rTotParaSize;
         mOptimizer.setParameter(new RefVector() {
             @Override public double get(int aIdx) {
                 int tIdx = aIdx;
-                for (int i = 0; i < mTypeNum; ++i) {
-                    int tParaSize = mParaSizes[i];
-                    if (tIdx < tParaSize) {
-                        return mParas[i].get(tIdx);
+                if (tIdx < mTotParaSize) {
+                    for (int i = 0; i < mTypeNum; ++i) {
+                        int tParaSize = mParaSizes[i];
+                        if (tIdx < tParaSize) {
+                            return mParas[i].get(tIdx);
+                        }
+                        tIdx -= tParaSize;
                     }
-                    tIdx -= tParaSize;
-                }
-                for (int i = 0; i < mTypeNum; ++i) {
-                    int tBasisParaSize = mBasisParaSizes[i];
-                    if (tIdx < tBasisParaSize) {
-                        IVector tPara = mBasisParas[i];
-                        assert tPara != null;
-                        return tPara.get(tIdx);
+                } else {
+                    tIdx -= mTotParaSize;
+                    for (int i = 0; i < mTypeNum; ++i) {
+                        int tBasisParaSize = mBasisParaSizes[i];
+                        if (tIdx < tBasisParaSize) {
+                            IVector tPara = mBasisParas[i];
+                            assert tPara != null;
+                            return tPara.get(tIdx);
+                        }
+                        tIdx -= tBasisParaSize;
                     }
-                    tIdx -= tBasisParaSize;
                 }
                 throw new IndexOutOfBoundsException(String.valueOf(aIdx));
             }
             @Override public void set(int aIdx, double aValue) {
                 int tIdx = aIdx;
-                for (int i = 0; i < mTypeNum; ++i) {
-                    int tParaSize = mParaSizes[i];
-                    if (tIdx < tParaSize) {
-                        mParas[i].set(tIdx, aValue);
-                        return;
+                if (tIdx < mTotParaSize) {
+                    for (int i = 0; i < mTypeNum; ++i) {
+                        int tParaSize = mParaSizes[i];
+                        if (tIdx < tParaSize) {
+                            mParas[i].set(tIdx, aValue);
+                            return;
+                        }
+                        tIdx -= tParaSize;
                     }
-                    tIdx -= tParaSize;
-                }
-                for (int i = 0; i < mTypeNum; ++i) {
-                    int tBasisParaSize = mBasisParaSizes[i];
-                    if (tIdx < tBasisParaSize) {
-                        IVector tPara = mBasisParas[i];
-                        assert tPara != null;
-                        tPara.set(tIdx, aValue);
-                        return;
+                } else {
+                    tIdx -= mTotParaSize;
+                    for (int i = 0; i < mTypeNum; ++i) {
+                        int tBasisParaSize = mBasisParaSizes[i];
+                        if (tIdx < tBasisParaSize) {
+                            IVector tPara = mBasisParas[i];
+                            assert tPara != null;
+                            tPara.set(tIdx, aValue);
+                            return;
+                        }
+                        tIdx -= tBasisParaSize;
                     }
-                    tIdx -= tBasisParaSize;
                 }
                 throw new IndexOutOfBoundsException(String.valueOf(aIdx));
             }
             @Override public int size() {
-                return fTotParaSize;
+                return mTotParaSize+mTotBasisParaSize;
             }
         })
         .setLossFunc(() -> calLoss(false))
@@ -677,6 +690,13 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         }
         return rShiftPara;
     }
+    protected int basisParaShift(int aType) {
+        int rShiftPara = mTotParaSize;
+        for (int typei = 0; typei < aType-1; ++typei) {
+            rShiftPara += mBasisParaSizes[typei];
+        }
+        return rShiftPara;
+    }
     
     protected void initNl(ShortList aNl, FloatList aNlDx, FloatList aNlDy, FloatList aNlDz, IntVector aAtomType, IntList rNlTypeBuf, DoubleList rNlDxBuf, DoubleList rNlDyBuf, DoubleList rNlDzBuf) {
         int tNlSize = aNl.size();
@@ -781,16 +801,22 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 rLoss.add(0, mEnergyWeight * tLossEng / tData.mSize);
                 /// backward
                 if (!tRequireGrad) return;
+                Vector[] tGradFpBuf = mFpBuf[threadID];
                 double tLossGradEng = mEnergyWeight * rLossGradEng.value() / (tAtomNum*tData.mSize);
                 for (int k = 0; k < tAtomNum; ++k) {
                     int tType = tAtomType.get(k);
                     if (tBasis[tType-1] instanceof Mirror) {
                         tType = ((Mirror)tBasis[tType-1]).mirrorType();
                     }
+                    Vector tSubGradFpBuf = tGradFpBuf[tType-1];
                     Vector tSubFpBuf = tFpBuf.get(k).asVec();
                     int tShiftPara = paraShift(tType);
-                    tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+                    tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]), tSubGradFpBuf,
                                           tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                    tSubGradFpBuf.div2this(mNormSigma[tType-1]);
+                    int tShiftBasisPara = basisParaShift(tType);
+                    initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
+                    tBasis[tType-1].backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubGradFpBuf, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
                 }
                 return;
             }
@@ -1436,13 +1462,21 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     /** 开始训练模型，这里直接训练给定的步数 */
     public void train(int aEpochs, boolean aEarlyStop, boolean aPrintLog) {
         if (aPrintLog) System.out.println("Init train data...");
+        // 清空旧的早停存储
+        mMinLoss = Double.POSITIVE_INFINITY;
         // 在这里初始化所有的 fp
         initFp();
         // 重新构建归一化参数
         initNormBasis();
         initNormEng();
         // 开始训练
-        if (aPrintLog) UT.Timer.progressBar("train", aEpochs);
+        if (aPrintLog) {
+            UT.Timer.progressBar(Maps.of(
+                "name", mTrainBasis ? "train(B)" : "train",
+                "max", aEpochs,
+                "length", 100
+            ));
+        }
         mOptimizer.run(aEpochs, aPrintLog);
         if (aPrintLog) for (int i = mEpoch +1; i < aEpochs; ++i) {
             UT.Timer.progressBar(mHasTest ? String.format("loss: %.4g | %.4g", mTrainLoss.last(), mTestLoss.last()) : String.format("loss: %.4g", mTrainLoss.last()));

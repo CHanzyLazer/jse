@@ -8,6 +8,7 @@ import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
 import jse.math.vector.IntArrayVector;
 import jse.math.vector.Vectors;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -141,6 +142,16 @@ public class Chebyshev extends WTypeBasis {
         eval0(aNlDx, aNlDy, aNlDz, aNlType, rFp, rFpGradNlSize, aBufferNl);
     }
     
+    @Override @ApiStatus.Internal
+    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
+        
+        // 如果不是 dense 直接返回不走 native
+        if (mWType != WTYPE_DENSE) return;
+        
+        backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara);
+    }
+    
     @Override
     protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
                              IntArrayVector aFpGradNlSize, IntArrayVector rFpGradNlIndex, IntArrayVector rFpGradFpIndex,
@@ -171,6 +182,18 @@ public class Chebyshev extends WTypeBasis {
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rNlRn, double[] rFp, int aShiftFp, int @Nullable[] rFpNlSize, int aShiftFpNlSize,
                                      boolean aBufferNl, int aTypeNum, double aRCut, int aNMax, int aWType, double[] aDenseWeight, int aDenseSize);
+    
+    void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara) {
+        assert mDenseWeight != null;
+        int tNN = aNlDx.internalDataSize();
+        backward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
+                  mRnPx.internalDataWithLengthCheck(mNMax+1, 0), aGradFp.internalDataWithLengthCheck(mSize), aGradFp.internalDataShift(),
+                  rGradPara.internalDataWithLengthCheck(mDenseWeight.internalDataSize()), rGradPara.internalDataShift(),
+                  mTypeNum, mRCut, mNMax, mWType, mDenseWeight.rowNumber());
+    }
+    private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                         double[] rRn, double[] aGradFp, int aShiftGradFp, double[] aGradPara, int aShiftGradPara,
+                                         int aTypeNum, double aRCut, int aNMax, int aWType, int aDenseSize);
     
     void evalGrad0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                    IDataShell<int[]> rFpGradNlIndex, IDataShell<int[]> rFpGradFpIndex, IDataShell<double[]> rFpPx, IDataShell<double[]> rFpPy, IDataShell<double[]> rFpPz) {

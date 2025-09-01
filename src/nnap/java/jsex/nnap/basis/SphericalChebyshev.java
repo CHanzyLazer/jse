@@ -8,6 +8,7 @@ import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
 import jse.math.vector.IntArrayVector;
 import jse.math.vector.Vectors;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -200,6 +201,16 @@ public class SphericalChebyshev extends WTypeBasis {
         
         // 现在直接计算基组偏导
         evalGrad0(aNlDx, aNlDy, aNlDz, aNlType, rFpGradNlIndex, rFpGradFpIndex, rFpPx, rFpPy, rFpPz);
+    }
+    
+    @Override @ApiStatus.Internal
+    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
+        
+        // 如果不是 dense 直接返回不走 native
+        if (mWType != WTYPE_DENSE) return;
+        
+//        backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara);
     }
     
     @Override
