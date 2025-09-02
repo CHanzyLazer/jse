@@ -117,6 +117,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     protected double mNormMuEng = 0.0, mNormSigmaEng = 0.0;
     protected final DoubleList mTrainLoss = new DoubleList(64);
     protected final DoubleList mTestLoss = new DoubleList(64);
+    protected boolean mNormBasisAnyInit = false;
+    protected boolean mNormEngAnyInit = false;
     protected boolean mNormEngInit = false;
     
     private final int mTotParaSize, mTotBasisParaSize;
@@ -155,6 +157,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         clearFp();
         mOptimizer.markLossFuncChanged();
         mTrainBasis = aFlag;
+        return this;
+    }
+    protected boolean mFixNorm = false;
+    public Trainer setFixNorm(boolean aFlag) {
+        mFixNorm = aFlag;
         return this;
     }
     
@@ -832,10 +839,16 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                         tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
                                               tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
                     } else {
-                        Vector tSubGradNormFp = rGradNormFp[k];
-                        tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]), tSubGradNormFp,
+                        Vector rSubGradNormFp = rGradNormFp[k];
+                        Vector rSubGradFp = rGradFp[k];
+                        tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]), rSubGradNormFp,
                                               tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
-                        tSubGradNormFp.operation().div2dest(tSubNormSigma, rGradFp[k]);
+                        rSubGradNormFp.operation().div2dest(tSubNormSigma, rSubGradFp);
+                        if (mFixNorm) {
+                            int tShiftBasisPara = basisParaShift(tType);
+                            initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
+                            tBasis[tType-1].backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, rSubGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
+                        }
                     }
                 }
                 return;
@@ -1077,8 +1090,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                                           tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
             }
         });
-        // 在这里进行 train basis 归一化部分的反向传播
-        if (mTrainBasis && tRequireGrad) {
+        // 如果没有固定归一化向量，在这里进行 train basis 归一化部分的反向传播
+        if (mTrainBasis && (!mFixNorm) && tRequireGrad) {
             for (int ti = 0; ti < tThreadNum; ++ti) {
                 for (int i = 0; i < mTypeNum; ++i) {
                     mGradSigma[ti][i].fill(0.0);
@@ -1527,6 +1540,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         }
     }
     private void initNormBasis_() {
+        if (mFixNorm && mNormBasisAnyInit) return;
+        mNormBasisAnyInit = true;
         for (int i = 0; i < mTypeNum; ++i) {
             mNormMu[i].fill(0.0);
             mNormSigma[i].fill(0.0);
@@ -1558,7 +1573,19 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 mNormMu[i].div2this(tDivI);
                 mNormSigma[i].div2this(tDivI);
                 mNormSigma[i].operation().operate2this(mNormMu[i], (lhs, rhs) -> lhs - rhs*rhs);
-                mNormSigma[i].operation().map2this(v -> MathEX.Code.numericEqual(v, 0.0) ? 1.0 : MathEX.Fast.sqrt(v));
+                mNormSigma[i].operation().map2this(v -> {
+                    double rOut;
+                    if (MathEX.Code.numericEqual(v, 0.0)) {
+                        if (mTrainBasis && !mFixNorm) {
+                            throw new IllegalArgumentException("The input basis causes ill normalization sigma, which can lead to incorrect results when optimizing the basis with adaptive normalization coefficient.\n" +
+                                                               "Check your input or dataset or turn-on it with `setFixNorm(true)`");
+                        }
+                        rOut = 1.0;
+                    } else {
+                        rOut = MathEX.Fast.sqrt(v);
+                    }
+                    return rOut;
+                });
             }
         }
         for (int i = 0; i < mTypeNum; ++i) if (mBasis[0][i] instanceof Mirror) {
@@ -1569,7 +1596,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     }
     protected void initNormEng() {
         if (mNormEngInit) return;
-        mNormEngInit = true;
+        if (mFixNorm && mNormEngAnyInit) return;
+        mNormEngAnyInit = mNormEngInit = true;
         // 这里采用中位数和上下四分位数来归一化能量
         Vector tSortedEng = mTrainData.mEng.copy2vec();
         tSortedEng.sort();
