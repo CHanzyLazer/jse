@@ -75,11 +75,11 @@ public class Mirror extends Basis {
     }
     
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, @Nullable IntArrayVector rFpGradNlSize, boolean aBufferNl) {
+    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         if (mMirrorNlTypeValid) throw new IllegalStateException();
         buildNlType_(aNlType);
-        mMirrorBasis.eval_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFp, rFpGradNlSize, aBufferNl);
+        mMirrorBasis.eval_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFp, aBufferNl);
         if (!aBufferNl) mMirrorNlTypeValid = false;
     }
     @Override @ApiStatus.Internal
@@ -92,28 +92,11 @@ public class Mirror extends Basis {
         mMirrorNlTypeValid = false;
     }
     @Override
-    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, IntArrayVector aFpGradNlSize, IntArrayVector rFpGradNlIndex, IntArrayVector rFpGradFpIndex, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
-        if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalGrad_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aFpGradNlSize, rFpGradNlIndex, rFpGradFpIndex, rFpPx, rFpPy, rFpPz);
-        mMirrorNlTypeValid = false;
-    }
-    @Override
     protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
         if (!mMirrorNlTypeValid) throw new IllegalStateException();
         mMirrorBasis.evalForce_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz);
-        mMirrorNlTypeValid = false;
-    }
-    
-    @Override @Deprecated
-    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
-        if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalGrad_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFpPx, rFpPy, rFpPz);
         mMirrorNlTypeValid = false;
     }
 }

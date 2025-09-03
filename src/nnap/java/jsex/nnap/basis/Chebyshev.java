@@ -6,7 +6,6 @@ import jse.code.collection.IntList;
 import jse.math.IDataShell;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.IntArrayVector;
 import jse.math.vector.Vectors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -130,16 +129,15 @@ public class Chebyshev extends WTypeBasis {
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, @Nullable IntArrayVector rFpGradNlSize, boolean aBufferNl) {
+    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 确保 Rn 的长度
         validSize_(mNlRn, aNlDx.size()*(mNMax+1));
         
         // 现在直接计算基组
-        eval0(aNlDx, aNlDy, aNlDz, aNlType, rFp, rFpGradNlSize, aBufferNl);
+        eval0(aNlDx, aNlDy, aNlDz, aNlType, rFp, aBufferNl);
     }
-    
     @Override @ApiStatus.Internal
     public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
@@ -149,17 +147,6 @@ public class Chebyshev extends WTypeBasis {
         
         backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara);
     }
-    
-    @Override
-    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                             IntArrayVector aFpGradNlSize, IntArrayVector rFpGradNlIndex, IntArrayVector rFpGradFpIndex,
-                             DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        
-        // 现在直接计算基组偏导
-        evalGrad0(aNlDx, aNlDy, aNlDz, aNlType, rFpGradNlIndex, rFpGradFpIndex, rFpPx, rFpPy, rFpPz);
-    }
-    
     @Override
     protected void evalForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
                                         DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
@@ -170,15 +157,14 @@ public class Chebyshev extends WTypeBasis {
     }
     
     
-    void eval0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, @Nullable IDataShell<int[]> rFpNlSize, boolean aBufferNl) {
+    void eval0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, boolean aBufferNl) {
         int tNN = aNlDx.internalDataSize();
         eval1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
               mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
-              rFpNlSize==null?null:rFpNlSize.internalDataWithLengthCheck(mSize), rFpNlSize==null?0:rFpNlSize.internalDataShift(),
               aBufferNl, mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                     double[] rNlRn, double[] rFp, int aShiftFp, int @Nullable[] rFpNlSize, int aShiftFpNlSize,
+                                     double[] rNlRn, double[] rFp, int aShiftFp,
                                      boolean aBufferNl, int aTypeNum, double aRCut, int aNMax, int aWType, double[] aFuseWeight, int aFuseSize);
     
     void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara) {
@@ -193,22 +179,6 @@ public class Chebyshev extends WTypeBasis {
                                          double[] rRn, double[] aGradFp, int aShiftGradFp, double[] aGradPara, int aShiftGradPara,
                                          int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseSize);
     
-    void evalGrad0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
-                   IDataShell<int[]> rFpGradNlIndex, IDataShell<int[]> rFpGradFpIndex, IDataShell<double[]> rFpPx, IDataShell<double[]> rFpPy, IDataShell<double[]> rFpPz) {
-        int tNN = aNlDx.internalDataSize();
-        int tSizeAll = rFpGradNlIndex.internalDataSize();
-        evalGrad1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                  mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
-                  rFpGradNlIndex.internalDataWithLengthCheck(tSizeAll), rFpGradNlIndex.internalDataShift(), rFpGradFpIndex.internalDataWithLengthCheck(tSizeAll), rFpGradFpIndex.internalDataShift(),
-                  rFpPx.internalDataWithLengthCheck(tSizeAll), rFpPx.internalDataShift(), rFpPy.internalDataWithLengthCheck(tSizeAll), rFpPy.internalDataShift(), rFpPz.internalDataWithLengthCheck(tSizeAll), rFpPz.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
-    }
-    private static native void evalGrad1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                         double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                         int[] rFpGradNlIndex, int aShiftFpGradNlIndex, int[] rFpGradFpIndex, int aShiftFpGradFpIndex,
-                                         double[] rFpPx, int aShiftFpPx, double[] rFpPy, int aShiftFpPy, double[] rFpPz, int aShiftFpPz,
-                                         int aTypeNum, double aRCut, int aNMax, int aWType, double[] aFuseWeight, int aFuseSize);
-    
     void evalForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                     IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz) {
         int tNN = aNlDx.internalDataSize();
@@ -221,28 +191,4 @@ public class Chebyshev extends WTypeBasis {
                                           double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
                                           double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
                                           int aTypeNum, double aRCut, int aNMax, int aWType, double[] aFuseWeight, int aFuseSize);
-    
-    @Override @Deprecated
-    protected void evalGradWithShift_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                      int aShiftFp, int aRestFp, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        
-        // 现在直接计算基组偏导
-        evalGradWithShift0(aNlDx, aNlDy, aNlDz, aNlType, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz);
-    }
-    @Deprecated
-    void evalGradWithShift0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
-                            int aShiftFp, int aRestFp, IDataShell<double[]> rFpPx, IDataShell<double[]> rFpPy, IDataShell<double[]> rFpPz) {
-        int tNN = aNlDx.internalDataSize();
-        int tSizeTot = aShiftFp + aRestFp + mSize;
-        evalGradWithShift1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                           mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
-                           aShiftFp, aRestFp, rFpPx.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPy.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPz.internalDataWithLengthCheck(tNN*tSizeTot, 0),
-                           mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
-    }
-    @Deprecated
-    private static native void evalGradWithShift1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                                  double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                                  int aShiftFp, int aRestFp, double[] rFpPx, double[] rFpPy, double[] rFpPz,
-                                                  int aTypeNum, double aRCut, int aNMax, int aWType, double[] aFuseWeight, int aFuseSize);
 }

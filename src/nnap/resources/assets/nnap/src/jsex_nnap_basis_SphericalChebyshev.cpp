@@ -294,19 +294,6 @@ static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jd
         rCnlmWt[i] += aWt*tCnli;
     }
 }
-template <jint N>
-static inline void countFpGradNlSize(jint *rFpGradNlSize) noexcept {
-    for (jint i = 0; i < N; ++i) {
-        ++rFpGradNlSize[i];
-    }
-}
-template <jint N>
-static inline void countFpGradNlSizeWt(jint *rFpGradNlSize, jint *rFpGradNlSizeWt) noexcept {
-    for (jint i = 0; i < N; ++i) {
-        ++rFpGradNlSize[i];
-        ++rFpGradNlSizeWt[i];
-    }
-}
 
 template <jint L>
 static inline void calL2Sub_(jdouble *aCnlm, jdouble *rFp) noexcept {
@@ -619,73 +606,7 @@ static inline void calYPxyz(jdouble aCosTheta, jdouble aSinTheta, jdouble aCosPh
         rYPz[i] = tYPtheta*thetaPz;
     }
 }
-template <jint N>
-static inline void calCnlmPxyz(jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                               jdouble *aY, jdouble *aYPx, jdouble *aYPy, jdouble *aYPz,
-                               jdouble aFc, jdouble aFcPx, jdouble aFcPy, jdouble aFcPz,
-                               jdouble aRn, jdouble aRnPx, jdouble aRnPy, jdouble aRnPz) noexcept {
-    const jdouble tMul = aFc*aRn;
-    const jdouble tMulX = aFc*aRnPx + aFcPx*aRn;
-    const jdouble tMulY = aFc*aRnPy + aFcPy*aRn;
-    const jdouble tMulZ = aFc*aRnPz + aFcPz*aRn;
-    for (jint i = 0; i < N; ++i) {
-        const jdouble tY = aY[i];
-        rCnlmPx[i] = tMulX*tY + tMul*aYPx[i];
-        rCnlmPy[i] = tMulY*tY + tMul*aYPy[i];
-        rCnlmPz[i] = tMulZ*tY + tMul*aYPz[i];
-    }
-}
 
-template <jint L>
-static inline void calL2pSub_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                              jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tStart = L*L;
-    const jint tLen = L+L+1;
-    const jint tEnd = tStart+tLen;
-    jdouble rDotPx = 0.0, rDotPy = 0.0, rDotPz = 0.0;
-    for (jint i = tStart; i < tEnd; ++i) {
-        jdouble tCnlm = aCnlm[i];
-        rDotPx += tCnlm*aCnlmPx[i];
-        rDotPy += tCnlm*aCnlmPy[i];
-        rDotPz += tCnlm*aCnlmPz[i];
-    }
-    const jdouble tMul = aWt * (2.0*PI4/(jdouble)tLen);
-    rFpPx[L-1] = tMul * rDotPx;
-    rFpPy[L-1] = tMul * rDotPy;
-    rFpPz[L-1] = tMul * rDotPz;
-}
-template <jint LMAX, jboolean NO_RADIAL>
-static void calL2p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    // l = 0
-    jdouble tCnl0;
-    jdouble tMul;
-    jdouble *tFpPx = rFpPx, *tFpPy = rFpPy, *tFpPz = rFpPz;
-    if (!NO_RADIAL) {
-        tCnl0 = aCnlm[0];
-        tMul = aWt*(PI4+PI4);
-        tFpPx[0] = tMul * (tCnl0*aCnlmPx[0]);
-        tFpPy[0] = tMul * (tCnl0*aCnlmPy[0]);
-        tFpPz[0] = tMul * (tCnl0*aCnlmPz[0]);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-    }
-    if (LMAX == 0) return;
-    calL2pSub_<1>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 1) return;
-    calL2pSub_<2>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 2) return;
-    calL2pSub_<3>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 3) return;
-    calL2pSub_<4>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 4) return;
-    calL2pSub_<5>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 5) return;
-    calL2pSub_<6>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 6) return;
-    calL2pSub_<7>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    if (LMAX == 7) return;
-    calL2pSub_<8>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-}
 template <jint L>
 static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     const jint tStart = L*L;
@@ -1157,599 +1078,15 @@ static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jin
     }
 }
 
-static void calL3_222_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx = 2*2+2;
-    const jdouble c20  = aCnlm[tIdx  ];
-    const jdouble c21  = aCnlm[tIdx+1];
-    const jdouble c2n1 = aCnlm[tIdx-1];
-    const jdouble c22  = aCnlm[tIdx+2];
-    const jdouble c2n2 = aCnlm[tIdx-2];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = (3.0*WIGNER_222_000)*c20*c20 - (3.0*WIGNER_222_011)*(c21*c21 + c2n1*c2n1) + (3.0*WIGNER_222_022)*(c22*c22 + c2n2*c2n2);
-    rFp3Px += tMul*aCnlmPx[tIdx];
-    rFp3Py += tMul*aCnlmPy[tIdx];
-    rFp3Pz += tMul*aCnlmPz[tIdx];
-    
-    jdouble tMul1 = (-6.0*WIGNER_222_011)*c20*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c22*c21  + (6.0*SQRT2_INV*WIGNER_222_112)*c2n1*c2n2;
-    jdouble tMul2 = (-6.0*WIGNER_222_011)*c20*c2n1 - (6.0*SQRT2_INV*WIGNER_222_112)*c22*c2n1 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx+1] + tMul2*aCnlmPx[tIdx-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx+1] + tMul2*aCnlmPy[tIdx-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+1] + tMul2*aCnlmPz[tIdx-1];
-    tMul1 = (6.0*WIGNER_222_022)*c20*c22  + (3.0*SQRT2_INV*WIGNER_222_112)*(c21*c21 - c2n1*c2n1);
-    tMul2 = (6.0*WIGNER_222_022)*c20*c2n2 + (6.0*SQRT2_INV*WIGNER_222_112)*c21*c2n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx+2] + tMul2*aCnlmPx[tIdx-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx+2] + tMul2*aCnlmPy[tIdx-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+2] + tMul2*aCnlmPz[tIdx-2];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_112_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx1 = 1+1;
-    const jint tIdx2 = 2*2+2;
-    const jdouble c10  = aCnlm[tIdx1  ];
-    const jdouble c11  = aCnlm[tIdx1+1];
-    const jdouble c1n1 = aCnlm[tIdx1-1];
-    const jdouble c20  = aCnlm[tIdx2  ];
-    const jdouble c21  = aCnlm[tIdx2+1];
-    const jdouble c2n1 = aCnlm[tIdx2-1];
-    const jdouble c22  = aCnlm[tIdx2+2];
-    const jdouble c2n2 = aCnlm[tIdx2-2];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_112_000*c10*c10 - WIGNER_112_110*(c11*c11 + c1n1*c1n1);
-    rFp3Px += tMul*aCnlmPx[tIdx2];
-    rFp3Py += tMul*aCnlmPy[tIdx2];
-    rFp3Pz += tMul*aCnlmPz[tIdx2];
-    tMul = (2.0*WIGNER_112_000)*c10*c20 - (2.0*WIGNER_112_011)*(c11*c21 + c1n1*c2n1);
-    rFp3Px += tMul*aCnlmPx[tIdx1];
-    rFp3Py += tMul*aCnlmPy[tIdx1];
-    rFp3Pz += tMul*aCnlmPz[tIdx1];
-    
-    jdouble tMul1 = (-2.0*WIGNER_112_110)*c20*c11  - (2.0*WIGNER_112_011)*c10*c21  + (2.0*SQRT2_INV*WIGNER_112_112)*c22*c11  + (2.0*SQRT2_INV*WIGNER_112_112)*c1n1*c2n2;
-    jdouble tMul2 = (-2.0*WIGNER_112_110)*c20*c1n1 - (2.0*WIGNER_112_011)*c10*c2n1 - (2.0*SQRT2_INV*WIGNER_112_112)*c22*c1n1 + (2.0*SQRT2_INV*WIGNER_112_112)*c11*c2n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
-    
-    tMul1 = (-2.0*WIGNER_112_011)*c10*c11;
-    tMul2 = (-2.0*WIGNER_112_011)*c10*c1n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
-    tMul1 = (SQRT2_INV*WIGNER_112_112)*(c11*c11 - c1n1*c1n1);
-    tMul2 = (2.0*SQRT2_INV*WIGNER_112_112)*c11*c1n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx2+2] + tMul2*aCnlmPx[tIdx2-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_233_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx2 = 2*2+2;
-    const jint tIdx3 = 3*3+3;
-    const jdouble c20  = aCnlm[tIdx2  ];
-    const jdouble c21  = aCnlm[tIdx2+1];
-    const jdouble c2n1 = aCnlm[tIdx2-1];
-    const jdouble c22  = aCnlm[tIdx2+2];
-    const jdouble c2n2 = aCnlm[tIdx2-2];
-    const jdouble c30  = aCnlm[tIdx3  ];
-    const jdouble c31  = aCnlm[tIdx3+1];
-    const jdouble c3n1 = aCnlm[tIdx3-1];
-    const jdouble c32  = aCnlm[tIdx3+2];
-    const jdouble c3n2 = aCnlm[tIdx3-2];
-    const jdouble c33  = aCnlm[tIdx3+3];
-    const jdouble c3n3 = aCnlm[tIdx3-3];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_233_000*c30*c30 - WIGNER_233_011*(c31*c31 + c3n1*c3n1) + WIGNER_233_022*(c32*c32 + c3n2*c3n2) - WIGNER_233_033*(c33*c33 + c3n3*c3n3);
-    rFp3Px += tMul*aCnlmPx[tIdx2];
-    rFp3Py += tMul*aCnlmPy[tIdx2];
-    rFp3Pz += tMul*aCnlmPz[tIdx2];
-    tMul = (2.0*WIGNER_233_000)*c20*c30 - (2.0*WIGNER_233_110)*(c21*c31 + c2n1*c3n1) + (2.0*WIGNER_233_220)*(c22*c32 + c2n2*c3n2);
-    rFp3Px += tMul*aCnlmPx[tIdx3];
-    rFp3Py += tMul*aCnlmPy[tIdx3];
-    rFp3Pz += tMul*aCnlmPz[tIdx3];
-    
-    jdouble tMul1 = (-2.0*WIGNER_233_110) * c30*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c33 + c3n2*c3n3);
-    jdouble tMul2 = (-2.0*WIGNER_233_110) * c30*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_233_123)*(c32*c3n3 - c3n2*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
-    tMul1 = (2.0*WIGNER_233_220) * c30*c32  - (2.0*SQRT2_INV*WIGNER_233_213)*(c31*c33 + c3n1*c3n3) + (SQRT2_INV*WIGNER_233_211)*(c31*c31 - c3n1*c3n1);
-    tMul2 = (2.0*WIGNER_233_220) * c30*c3n2 - (2.0*SQRT2_INV*WIGNER_233_213)*(c31*c3n3 - c3n1*c33) + (2.0*SQRT2_INV*WIGNER_233_211)*c31*c3n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx2+2] + tMul2*aCnlmPx[tIdx2-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
-    
-    tMul1 = (-2.0*WIGNER_233_011)*c20*c31  - (2.0*WIGNER_233_110)*c30*c21  + (2.0*SQRT2_INV*WIGNER_233_211)*c22*c31  + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c32 + c2n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c33 + c2n2*c3n3) + (2.0*SQRT2_INV*WIGNER_233_211)*c2n2*c3n1;
-    tMul2 = (-2.0*WIGNER_233_011)*c20*c3n1 - (2.0*WIGNER_233_110)*c30*c2n1 - (2.0*SQRT2_INV*WIGNER_233_211)*c22*c3n1 + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c3n2 - c2n1*c32) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c3n3 - c2n2*c33) + (2.0*SQRT2_INV*WIGNER_233_211)*c31*c2n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx3+1] + tMul2*aCnlmPx[tIdx3-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+1] + tMul2*aCnlmPy[tIdx3-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+1] + tMul2*aCnlmPz[tIdx3-1];
-    tMul1 = (2.0*WIGNER_233_022)*c20*c32  + (2.0*WIGNER_233_220)*c30*c22  + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c31 - c2n1*c3n1) - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c33 + c2n1*c3n3);
-    tMul2 = (2.0*WIGNER_233_022)*c20*c3n2 + (2.0*WIGNER_233_220)*c30*c2n2 + (2.0*SQRT2_INV*WIGNER_233_112)*(c21*c3n1 + c2n1*c31) - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c3n3 - c2n1*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+2] + tMul2*aCnlmPx[tIdx3-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+2] + tMul2*aCnlmPy[tIdx3-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+2] + tMul2*aCnlmPz[tIdx3-2];
-    tMul1 = (-2.0*WIGNER_233_033)*c20*c33  - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c32 - c2n1*c3n2) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c31 - c2n2*c3n1);
-    tMul2 = (-2.0*WIGNER_233_033)*c20*c3n3 - (2.0*SQRT2_INV*WIGNER_233_123)*(c21*c3n2 + c2n1*c32) - (2.0*SQRT2_INV*WIGNER_233_213)*(c22*c3n1 + c2n2*c31);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+3] + tMul2*aCnlmPx[tIdx3-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_123_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx1 = 1+1;
-    const jint tIdx2 = 2*2+2;
-    const jint tIdx3 = 3*3+3;
-    const jdouble c10  = aCnlm[tIdx1  ];
-    const jdouble c11  = aCnlm[tIdx1+1];
-    const jdouble c1n1 = aCnlm[tIdx1-1];
-    const jdouble c20  = aCnlm[tIdx2  ];
-    const jdouble c21  = aCnlm[tIdx2+1];
-    const jdouble c2n1 = aCnlm[tIdx2-1];
-    const jdouble c22  = aCnlm[tIdx2+2];
-    const jdouble c2n2 = aCnlm[tIdx2-2];
-    const jdouble c30  = aCnlm[tIdx3  ];
-    const jdouble c31  = aCnlm[tIdx3+1];
-    const jdouble c3n1 = aCnlm[tIdx3-1];
-    const jdouble c32  = aCnlm[tIdx3+2];
-    const jdouble c3n2 = aCnlm[tIdx3-2];
-    const jdouble c33  = aCnlm[tIdx3+3];
-    const jdouble c3n3 = aCnlm[tIdx3-3];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_123_000*c20*c30 - WIGNER_123_011*(c21*c31 + c2n1*c3n1) + WIGNER_123_022*(c22*c32 + c2n2*c3n2);
-    rFp3Px += tMul*aCnlmPx[tIdx1];
-    rFp3Py += tMul*aCnlmPy[tIdx1];
-    rFp3Pz += tMul*aCnlmPz[tIdx1];
-    tMul = WIGNER_123_000*c10*c30 - WIGNER_123_101*(c11*c31 + c1n1*c3n1);
-    rFp3Px += tMul*aCnlmPx[tIdx2];
-    rFp3Py += tMul*aCnlmPy[tIdx2];
-    rFp3Pz += tMul*aCnlmPz[tIdx2];
-    tMul = WIGNER_123_000*c10*c20 - WIGNER_123_110*(c11*c21 + c1n1*c2n1);
-    rFp3Px += tMul*aCnlmPx[tIdx3];
-    rFp3Py += tMul*aCnlmPy[tIdx3];
-    rFp3Pz += tMul*aCnlmPz[tIdx3];
-    
-    jdouble tMul1 = (-WIGNER_123_101)*c20*c31  - WIGNER_123_110*c30*c21  + (SQRT2_INV*WIGNER_123_112)*(c21*c32 + c2n1*c3n2) + (SQRT2_INV*WIGNER_123_121)*(c22*c31 + c2n2*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c33 + c2n2*c3n3);
-    jdouble tMul2 = (-WIGNER_123_101)*c20*c3n1 - WIGNER_123_110*c30*c2n1 + (SQRT2_INV*WIGNER_123_112)*(c21*c3n2 - c2n1*c32) + (SQRT2_INV*WIGNER_123_121)*(c2n2*c31 - c22*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c22*c3n3 - c2n2*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
-    
-    tMul1 = (-WIGNER_123_011)*c10*c31  - WIGNER_123_110*c30*c11  + (SQRT2_INV*WIGNER_123_112)*(c11*c32 + c1n1*c3n2);
-    tMul2 = (-WIGNER_123_011)*c10*c3n1 - WIGNER_123_110*c30*c1n1 + (SQRT2_INV*WIGNER_123_112)*(c11*c3n2 - c1n1*c32);
-    rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
-    tMul1 = WIGNER_123_022*c10*c32  + (SQRT2_INV*WIGNER_123_121)*(c11*c31 - c1n1*c3n1) - (SQRT2_INV*WIGNER_123_123)*(c11*c33 + c1n1*c3n3);
-    tMul2 = WIGNER_123_022*c10*c3n2 + (SQRT2_INV*WIGNER_123_121)*(c11*c3n1 + c1n1*c31) - (SQRT2_INV*WIGNER_123_123)*(c11*c3n3 - c1n1*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx2+2] + tMul2*aCnlmPx[tIdx2-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
-    
-    tMul1 = (-WIGNER_123_011)*c10*c21  - WIGNER_123_101*c20*c11  + (SQRT2_INV*WIGNER_123_121)*(c11*c22 + c1n1*c2n2);
-    tMul2 = (-WIGNER_123_011)*c10*c2n1 - WIGNER_123_101*c20*c1n1 + (SQRT2_INV*WIGNER_123_121)*(c11*c2n2 - c1n1*c22);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+1] + tMul2*aCnlmPx[tIdx3-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+1] + tMul2*aCnlmPy[tIdx3-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+1] + tMul2*aCnlmPz[tIdx3-1];
-    tMul1 = WIGNER_123_022*c10*c22  + (SQRT2_INV*WIGNER_123_112)*(c11*c21 - c1n1*c2n1);
-    tMul2 = WIGNER_123_022*c10*c2n2 + (SQRT2_INV*WIGNER_123_112)*(c11*c2n1 + c1n1*c21);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+2] + tMul2*aCnlmPx[tIdx3-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+2] + tMul2*aCnlmPy[tIdx3-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+2] + tMul2*aCnlmPz[tIdx3-2];
-    tMul1 = (-SQRT2_INV*WIGNER_123_123)*(c11*c22 - c1n1*c2n2);
-    tMul2 = (-SQRT2_INV*WIGNER_123_123)*(c11*c2n2 + c1n1*c22);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+3] + tMul2*aCnlmPx[tIdx3-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_444_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx = 4*4+4;
-    const jdouble c40  = aCnlm[tIdx  ];
-    const jdouble c41  = aCnlm[tIdx+1];
-    const jdouble c4n1 = aCnlm[tIdx-1];
-    const jdouble c42  = aCnlm[tIdx+2];
-    const jdouble c4n2 = aCnlm[tIdx-2];
-    const jdouble c43  = aCnlm[tIdx+3];
-    const jdouble c4n3 = aCnlm[tIdx-3];
-    const jdouble c44  = aCnlm[tIdx+4];
-    const jdouble c4n4 = aCnlm[tIdx-4];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = (3.0*WIGNER_444_000)*c40*c40 - (3.0*WIGNER_444_011)*(c41*c41 + c4n1*c4n1) + (3.0*WIGNER_444_022)*(c42*c42 + c4n2*c4n2) - (3.0*WIGNER_444_033)*(c43*c43 + c4n3*c4n3) + (3.0*WIGNER_444_044)*(c44*c44 + c4n4*c4n4);
-    rFp3Px += tMul*aCnlmPx[tIdx];
-    rFp3Py += tMul*aCnlmPy[tIdx];
-    rFp3Pz += tMul*aCnlmPz[tIdx];
-    
-    jdouble tMul1 = (-6.0*WIGNER_444_011)*c40*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c42*c41  + (6.0*SQRT2_INV*WIGNER_444_112)*c4n1*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c43 + c4n2*c4n3) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c44 + c4n3*c4n4);
-    jdouble tMul2 = (-6.0*WIGNER_444_011)*c40*c4n1 - (6.0*SQRT2_INV*WIGNER_444_112)*c42*c4n1 + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n2  - (6.0*SQRT2_INV*WIGNER_444_123)*(c42*c4n3 - c4n2*c43) + (6.0*SQRT2_INV*WIGNER_444_134)*(c43*c4n4 - c4n3*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx+1] + tMul2*aCnlmPx[tIdx-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx+1] + tMul2*aCnlmPy[tIdx-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+1] + tMul2*aCnlmPz[tIdx-1];
-    tMul1 = (6.0*WIGNER_444_022)*c40*c42  + (6.0*SQRT2_INV*WIGNER_444_224)*c44*c42  - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c43 + c4n1*c4n3) + (6.0*SQRT2_INV*WIGNER_444_224)*c4n2*c4n4 + (3.0*SQRT2_INV*WIGNER_444_112)*(c41*c41 - c4n1*c4n1);
-    tMul2 = (6.0*WIGNER_444_022)*c40*c4n2 - (6.0*SQRT2_INV*WIGNER_444_224)*c44*c4n2 - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c4n3 - c4n1*c43) + (6.0*SQRT2_INV*WIGNER_444_224)*c42*c4n4  + (6.0*SQRT2_INV*WIGNER_444_112)*c41*c4n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx+2] + tMul2*aCnlmPx[tIdx-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx+2] + tMul2*aCnlmPy[tIdx-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+2] + tMul2*aCnlmPz[tIdx-2];
-    tMul1 = (-6.0*WIGNER_444_033)*c40*c43  - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c42 - c4n1*c4n2) + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c44 + c4n1*c4n4);
-    tMul2 = (-6.0*WIGNER_444_033)*c40*c4n3 - (6.0*SQRT2_INV*WIGNER_444_123)*(c41*c4n2 + c4n1*c42) + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c4n4 - c4n1*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx+3] + tMul2*aCnlmPx[tIdx-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx+3] + tMul2*aCnlmPy[tIdx-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+3] + tMul2*aCnlmPz[tIdx-3];
-    tMul1 = (6.0*WIGNER_444_044)*c40*c44  + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c43 - c4n1*c4n3) + (3.0*SQRT2_INV*WIGNER_444_224)*(c42*c42 - c4n2*c4n2);
-    tMul2 = (6.0*WIGNER_444_044)*c40*c4n4 + (6.0*SQRT2_INV*WIGNER_444_134)*(c41*c4n3 + c4n1*c43) + (6.0*SQRT2_INV*WIGNER_444_224)*c42*c4n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx+4] + tMul2*aCnlmPx[tIdx-4];
-    rFp3Py += tMul1*aCnlmPy[tIdx+4] + tMul2*aCnlmPy[tIdx-4];
-    rFp3Pz += tMul1*aCnlmPz[tIdx+4] + tMul2*aCnlmPz[tIdx-4];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_224_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx2 = 2*2+2;
-    const jint tIdx4 = 4*4+4;
-    const jdouble c20  = aCnlm[tIdx2  ];
-    const jdouble c21  = aCnlm[tIdx2+1];
-    const jdouble c2n1 = aCnlm[tIdx2-1];
-    const jdouble c22  = aCnlm[tIdx2+2];
-    const jdouble c2n2 = aCnlm[tIdx2-2];
-    const jdouble c40  = aCnlm[tIdx4  ];
-    const jdouble c41  = aCnlm[tIdx4+1];
-    const jdouble c4n1 = aCnlm[tIdx4-1];
-    const jdouble c42  = aCnlm[tIdx4+2];
-    const jdouble c4n2 = aCnlm[tIdx4-2];
-    const jdouble c43  = aCnlm[tIdx4+3];
-    const jdouble c4n3 = aCnlm[tIdx4-3];
-    const jdouble c44  = aCnlm[tIdx4+4];
-    const jdouble c4n4 = aCnlm[tIdx4-4];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_224_000*c20*c20 - WIGNER_224_110*(c21*c21 + c2n1*c2n1) + WIGNER_224_220*(c22*c22 + c2n2*c2n2);
-    rFp3Px += tMul*aCnlmPx[tIdx4];
-    rFp3Py += tMul*aCnlmPy[tIdx4];
-    rFp3Pz += tMul*aCnlmPz[tIdx4];
-    tMul = (2.0*WIGNER_224_000)*c20*c40 - (2.0*WIGNER_224_011)*(c21*c41 + c2n1*c4n1) + (2.0*WIGNER_224_022)*(c22*c42 + c2n2*c4n2);
-    rFp3Px += tMul*aCnlmPx[tIdx2];
-    rFp3Py += tMul*aCnlmPy[tIdx2];
-    rFp3Pz += tMul*aCnlmPz[tIdx2];
-    
-    jdouble tMul1 = (-2.0*WIGNER_224_110)*c40*c21  - (2.0*WIGNER_224_011)*c20*c41  + (2.0*SQRT2_INV*WIGNER_224_112)*c42*c21  + (2.0*SQRT2_INV*WIGNER_224_112)*c2n1*c4n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c22*c41 + c2n2*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c43 + c2n2*c4n3);
-    jdouble tMul2 = (-2.0*WIGNER_224_110)*c40*c2n1 - (2.0*WIGNER_224_011)*c20*c4n1 - (2.0*SQRT2_INV*WIGNER_224_112)*c42*c2n1 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c4n2  + (2.0*SQRT2_INV*WIGNER_224_121)*(c2n2*c41 - c22*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c22*c4n3 - c2n2*c43);
-    rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
-    tMul1 = (2.0*WIGNER_224_220)*c40*c22  + (2.0*WIGNER_224_022)*c20*c42  + (2.0*SQRT2_INV*WIGNER_224_224)*c44*c22  + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c41 - c2n1*c4n1) - (2.0*SQRT2_INV*WIGNER_224_123)*(c21*c43 + c2n1*c4n3) + (2.0*SQRT2_INV*WIGNER_224_224)*c2n2*c4n4;
-    tMul2 = (2.0*WIGNER_224_220)*c40*c2n2 + (2.0*WIGNER_224_022)*c20*c4n2 - (2.0*SQRT2_INV*WIGNER_224_224)*c44*c2n2 + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c4n1 + c2n1*c41) - (2.0*SQRT2_INV*WIGNER_224_123)*(c21*c4n3 - c2n1*c43) + (2.0*SQRT2_INV*WIGNER_224_224)*c22*c4n4;
-    rFp3Px += tMul1*aCnlmPx[tIdx2+2] + tMul2*aCnlmPx[tIdx2-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
-    
-    tMul1 = (-2.0*WIGNER_224_011)*c20*c21  + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c22 + c2n1*c2n2);
-    tMul2 = (-2.0*WIGNER_224_011)*c20*c2n1 + (2.0*SQRT2_INV*WIGNER_224_121)*(c21*c2n2 - c2n1*c22);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+1] + tMul2*aCnlmPx[tIdx4-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+1] + tMul2*aCnlmPy[tIdx4-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+1] + tMul2*aCnlmPz[tIdx4-1];
-    tMul1 = (2.0*WIGNER_224_022)*c20*c22  + (SQRT2_INV*WIGNER_224_112)*(c21*c21 - c2n1*c2n1);
-    tMul2 = (2.0*WIGNER_224_022)*c20*c2n2 + (2.0*SQRT2_INV*WIGNER_224_112)*c21*c2n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx4+2] + tMul2*aCnlmPx[tIdx4-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+2] + tMul2*aCnlmPy[tIdx4-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+2] + tMul2*aCnlmPz[tIdx4-2];
-    tMul1 = (-2.0*SQRT2_INV*WIGNER_224_123)*(c21*c22 - c2n1*c2n2);
-    tMul2 = (-2.0*SQRT2_INV*WIGNER_224_123)*(c21*c2n2 + c2n1*c22);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+3] + tMul2*aCnlmPx[tIdx4-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+3] + tMul2*aCnlmPy[tIdx4-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+3] + tMul2*aCnlmPz[tIdx4-3];
-    tMul1 = (2.0*SQRT2_INV*WIGNER_224_224)*c22*c2n2;
-    tMul2 = (SQRT2_INV*WIGNER_224_224)*(c22*c22 - c2n2*c2n2);
-    rFp3Px += tMul1*aCnlmPx[tIdx4-4] + tMul2*aCnlmPx[tIdx4+4];
-    rFp3Py += tMul1*aCnlmPy[tIdx4-4] + tMul2*aCnlmPy[tIdx4+4];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4-4] + tMul2*aCnlmPz[tIdx4+4];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_334_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx3 = 3*3+3;
-    const jint tIdx4 = 4*4+4;
-    const jdouble c30  = aCnlm[tIdx3  ];
-    const jdouble c31  = aCnlm[tIdx3+1];
-    const jdouble c3n1 = aCnlm[tIdx3-1];
-    const jdouble c32  = aCnlm[tIdx3+2];
-    const jdouble c3n2 = aCnlm[tIdx3-2];
-    const jdouble c33  = aCnlm[tIdx3+3];
-    const jdouble c3n3 = aCnlm[tIdx3-3];
-    const jdouble c40  = aCnlm[tIdx4  ];
-    const jdouble c41  = aCnlm[tIdx4+1];
-    const jdouble c4n1 = aCnlm[tIdx4-1];
-    const jdouble c42  = aCnlm[tIdx4+2];
-    const jdouble c4n2 = aCnlm[tIdx4-2];
-    const jdouble c43  = aCnlm[tIdx4+3];
-    const jdouble c4n3 = aCnlm[tIdx4-3];
-    const jdouble c44  = aCnlm[tIdx4+4];
-    const jdouble c4n4 = aCnlm[tIdx4-4];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_334_000*c30*c30 - WIGNER_334_110*(c31*c31 + c3n1*c3n1) + WIGNER_334_220*(c32*c32 + c3n2*c3n2) - WIGNER_334_330*(c33*c33 + c3n3*c3n3);
-    rFp3Px += tMul*aCnlmPx[tIdx4];
-    rFp3Py += tMul*aCnlmPy[tIdx4];
-    rFp3Pz += tMul*aCnlmPz[tIdx4];
-    tMul = (2.0*WIGNER_334_000)*c30*c40 - (2.0*WIGNER_334_011)*(c31*c41 + c3n1*c4n1) + (2.0*WIGNER_334_022)*(c32*c42 + c3n2*c4n2) - (2.0*WIGNER_334_033)*(c33*c43 + c3n3*c4n3);
-    rFp3Px += tMul*aCnlmPx[tIdx3];
-    rFp3Py += tMul*aCnlmPy[tIdx3];
-    rFp3Pz += tMul*aCnlmPz[tIdx3];
-    
-    jdouble tMul1 = (-2.0*WIGNER_334_110)*c40*c31  - (2.0*WIGNER_334_011)*c30*c41  + (2.0*SQRT2_INV*WIGNER_334_112)*c42*c31  + (2.0*SQRT2_INV*WIGNER_334_112)*c3n1*c4n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c32*c41 + c3n2*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c43 + c3n2*c4n3) - (2.0*SQRT2_INV*WIGNER_334_132)*(c33*c42 + c3n3*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c44 + c3n3*c4n4);
-    jdouble tMul2 = (-2.0*WIGNER_334_110)*c40*c3n1 - (2.0*WIGNER_334_011)*c30*c4n1 - (2.0*SQRT2_INV*WIGNER_334_112)*c42*c3n1 + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c4n2  + (2.0*SQRT2_INV*WIGNER_334_121)*(c3n2*c41 - c32*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c32*c4n3 - c3n2*c43) - (2.0*SQRT2_INV*WIGNER_334_132)*(c3n3*c42 - c33*c4n2) + (2.0*SQRT2_INV*WIGNER_334_134)*(c33*c4n4 - c3n3*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+1] + tMul2*aCnlmPx[tIdx3-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+1] + tMul2*aCnlmPy[tIdx3-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+1] + tMul2*aCnlmPz[tIdx3-1];
-    tMul1 = (2.0*WIGNER_334_220)*c40*c32  + (2.0*WIGNER_334_022)*c30*c42  + (2.0*SQRT2_INV*WIGNER_334_224)*c44*c32  + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c41 - c3n1*c4n1) - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c43 + c3n1*c4n3) + (2.0*SQRT2_INV*WIGNER_334_224)*c3n2*c4n4 - (2.0*SQRT2_INV*WIGNER_334_231)*(c33*c41 + c3n3*c4n1);
-    tMul2 = (2.0*WIGNER_334_220)*c40*c3n2 + (2.0*WIGNER_334_022)*c30*c4n2 - (2.0*SQRT2_INV*WIGNER_334_224)*c44*c3n2 + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c4n1 + c3n1*c41) - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c4n3 - c3n1*c43) + (2.0*SQRT2_INV*WIGNER_334_224)*c32*c4n4  - (2.0*SQRT2_INV*WIGNER_334_231)*(c3n3*c41 - c33*c4n1);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+2] + tMul2*aCnlmPx[tIdx3-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+2] + tMul2*aCnlmPy[tIdx3-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+2] + tMul2*aCnlmPz[tIdx3-2];
-    tMul1 = (-2.0*WIGNER_334_330)*c40*c33  - (2.0*WIGNER_334_033)*c30*c43  - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c42 - c3n1*c4n2) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c41 - c3n2*c4n1) + (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c44 + c3n1*c4n4);
-    tMul2 = (-2.0*WIGNER_334_330)*c40*c3n3 - (2.0*WIGNER_334_033)*c30*c4n3 - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c4n2 + c3n1*c42) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c4n1 + c3n2*c41) + (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c4n4 - c3n1*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+3] + tMul2*aCnlmPx[tIdx3-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
-    
-    tMul1 = (-2.0*WIGNER_334_011)*c30*c31  + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c32 + c3n1*c3n2) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c33 + c3n2*c3n3);
-    tMul2 = (-2.0*WIGNER_334_011)*c30*c3n1 + (2.0*SQRT2_INV*WIGNER_334_121)*(c31*c3n2 - c3n1*c32) - (2.0*SQRT2_INV*WIGNER_334_231)*(c32*c3n3 - c3n2*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+1] + tMul2*aCnlmPx[tIdx4-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+1] + tMul2*aCnlmPy[tIdx4-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+1] + tMul2*aCnlmPz[tIdx4-1];
-    tMul1 = (2.0*WIGNER_334_022)*c30*c32  - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c33 + c3n1*c3n3) + (SQRT2_INV*WIGNER_334_112)*(c31*c31 - c3n1*c3n1);
-    tMul2 = (2.0*WIGNER_334_022)*c30*c3n2 - (2.0*SQRT2_INV*WIGNER_334_132)*(c31*c3n3 - c3n1*c33) + (2.0*SQRT2_INV*WIGNER_334_112)*c31*c3n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx4+2] + tMul2*aCnlmPx[tIdx4-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+2] + tMul2*aCnlmPy[tIdx4-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+2] + tMul2*aCnlmPz[tIdx4-2];
-    tMul1 = (-2.0*WIGNER_334_033)*c30*c33  - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c32 - c3n1*c3n2);
-    tMul2 = (-2.0*WIGNER_334_033)*c30*c3n3 - (2.0*SQRT2_INV*WIGNER_334_123)*(c31*c3n2 + c3n1*c32);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+3] + tMul2*aCnlmPx[tIdx4-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+3] + tMul2*aCnlmPy[tIdx4-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+3] + tMul2*aCnlmPz[tIdx4-3];
-    tMul1 = (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c33 - c3n1*c3n3) + (SQRT2_INV*WIGNER_334_224)*(c32*c32 - c3n2*c3n2);
-    tMul2 = (2.0*SQRT2_INV*WIGNER_334_134)*(c31*c3n3 + c3n1*c33) + (2.0*SQRT2_INV*WIGNER_334_224)*c32*c3n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx4+4] + tMul2*aCnlmPx[tIdx4-4];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_244_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx2 = 2*2+2;
-    const jint tIdx4 = 4*4+4;
-    const jdouble c20  = aCnlm[tIdx2  ];
-    const jdouble c21  = aCnlm[tIdx2+1];
-    const jdouble c2n1 = aCnlm[tIdx2-1];
-    const jdouble c22  = aCnlm[tIdx2+2];
-    const jdouble c2n2 = aCnlm[tIdx2-2];
-    const jdouble c40  = aCnlm[tIdx4  ];
-    const jdouble c41  = aCnlm[tIdx4+1];
-    const jdouble c4n1 = aCnlm[tIdx4-1];
-    const jdouble c42  = aCnlm[tIdx4+2];
-    const jdouble c4n2 = aCnlm[tIdx4-2];
-    const jdouble c43  = aCnlm[tIdx4+3];
-    const jdouble c4n3 = aCnlm[tIdx4-3];
-    const jdouble c44  = aCnlm[tIdx4+4];
-    const jdouble c4n4 = aCnlm[tIdx4-4];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_244_000*c40*c40 - WIGNER_244_011*(c41*c41 + c4n1*c4n1) + WIGNER_244_022*(c42*c42 + c4n2*c4n2) - WIGNER_244_033*(c43*c43 + c4n3*c4n3) + WIGNER_244_044*(c44*c44 + c4n4*c4n4);
-    rFp3Px += tMul*aCnlmPx[tIdx2];
-    rFp3Py += tMul*aCnlmPy[tIdx2];
-    rFp3Pz += tMul*aCnlmPz[tIdx2];
-    tMul = (2.0*WIGNER_244_000)*c20*c40 - (2.0*WIGNER_244_110)*(c21*c41 + c2n1*c4n1) + (2.0*WIGNER_244_220)*(c22*c42 + c2n2*c4n2);
-    rFp3Px += tMul*aCnlmPx[tIdx4];
-    rFp3Py += tMul*aCnlmPy[tIdx4];
-    rFp3Pz += tMul*aCnlmPz[tIdx4];
-    
-    jdouble tMul1 = (-2.0*WIGNER_244_110)*c40*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c42 + c4n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c43 + c4n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c44 + c4n3*c4n4);
-    jdouble tMul2 = (-2.0*WIGNER_244_110)*c40*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c41*c4n2 - c4n1*c42) - (2.0*SQRT2_INV*WIGNER_244_123)*(c42*c4n3 - c4n2*c43) + (2.0*SQRT2_INV*WIGNER_244_134)*(c43*c4n4 - c4n3*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx2+1] + tMul2*aCnlmPx[tIdx2-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+1] + tMul2*aCnlmPy[tIdx2-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+1] + tMul2*aCnlmPz[tIdx2-1];
-    tMul1 = (2.0*WIGNER_244_220)*c40*c42  + (2.0*SQRT2_INV*WIGNER_244_224)*(c42*c44 + c4n2*c4n4) - (2.0*SQRT2_INV*WIGNER_244_213)*(c41*c43 + c4n1*c4n3) + (SQRT2_INV*WIGNER_244_211)*(c41*c41 - c4n1*c4n1);
-    tMul2 = (2.0*WIGNER_244_220)*c40*c4n2 + (2.0*SQRT2_INV*WIGNER_244_224)*(c42*c4n4 - c4n2*c44) - (2.0*SQRT2_INV*WIGNER_244_213)*(c41*c4n3 - c4n1*c43) + (2.0*SQRT2_INV*WIGNER_244_211)*c41*c4n1;
-    rFp3Px += tMul1*aCnlmPx[tIdx2+2] + tMul2*aCnlmPx[tIdx2-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx2+2] + tMul2*aCnlmPy[tIdx2-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx2+2] + tMul2*aCnlmPz[tIdx2-2];
-    
-    tMul1 = (-2.0*WIGNER_244_011)*c20*c41  - (2.0*WIGNER_244_110)*c40*c21  + (2.0*SQRT2_INV*WIGNER_244_211)*c22*c41  + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c42 + c2n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c43 + c2n2*c4n3) + (2.0*SQRT2_INV*WIGNER_244_211)*c2n2*c4n1;
-    tMul2 = (-2.0*WIGNER_244_011)*c20*c4n1 - (2.0*WIGNER_244_110)*c40*c2n1 - (2.0*SQRT2_INV*WIGNER_244_211)*c22*c4n1 + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c4n2 - c2n1*c42) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c4n3 - c2n2*c43) + (2.0*SQRT2_INV*WIGNER_244_211)*c41*c2n2;
-    rFp3Px += tMul1*aCnlmPx[tIdx4+1] + tMul2*aCnlmPx[tIdx4-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+1] + tMul2*aCnlmPy[tIdx4-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+1] + tMul2*aCnlmPz[tIdx4-1];
-    tMul1 = (2.0*WIGNER_244_022)*c20*c42  + (2.0*WIGNER_244_220)*c40*c22  + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c41 - c2n1*c4n1) + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c44 + c2n2*c4n4) - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c43 + c2n1*c4n3);
-    tMul2 = (2.0*WIGNER_244_022)*c20*c4n2 + (2.0*WIGNER_244_220)*c40*c2n2 + (2.0*SQRT2_INV*WIGNER_244_112)*(c21*c4n1 + c2n1*c41) + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c4n4 - c2n2*c44) - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c4n3 - c2n1*c43);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+2] + tMul2*aCnlmPx[tIdx4-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+2] + tMul2*aCnlmPy[tIdx4-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+2] + tMul2*aCnlmPz[tIdx4-2];
-    tMul1 = (-2.0*WIGNER_244_033)*c20*c43  - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c42 - c2n1*c4n2) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c41 - c2n2*c4n1) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c44 + c2n1*c4n4);
-    tMul2 = (-2.0*WIGNER_244_033)*c20*c4n3 - (2.0*SQRT2_INV*WIGNER_244_123)*(c21*c4n2 + c2n1*c42) - (2.0*SQRT2_INV*WIGNER_244_213)*(c22*c4n1 + c2n2*c41) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c4n4 - c2n1*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+3] + tMul2*aCnlmPx[tIdx4-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+3] + tMul2*aCnlmPy[tIdx4-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+3] + tMul2*aCnlmPz[tIdx4-3];
-    tMul1 = (2.0*WIGNER_244_044)*c20*c44  + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c42 - c2n2*c4n2) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c43 - c2n1*c4n3);
-    tMul2 = (2.0*WIGNER_244_044)*c20*c4n4 + (2.0*SQRT2_INV*WIGNER_244_224)*(c22*c4n2 + c2n2*c42) + (2.0*SQRT2_INV*WIGNER_244_134)*(c21*c4n3 + c2n1*c43);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+4] + tMul2*aCnlmPx[tIdx4-4];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-static void calL3_134_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                       jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    const jint tIdx1 = 1+1;
-    const jint tIdx3 = 3*3+3;
-    const jint tIdx4 = 4*4+4;
-    const jdouble c10  = aCnlm[tIdx1  ];
-    const jdouble c11  = aCnlm[tIdx1+1];
-    const jdouble c1n1 = aCnlm[tIdx1-1];
-    const jdouble c30  = aCnlm[tIdx3  ];
-    const jdouble c31  = aCnlm[tIdx3+1];
-    const jdouble c3n1 = aCnlm[tIdx3-1];
-    const jdouble c32  = aCnlm[tIdx3+2];
-    const jdouble c3n2 = aCnlm[tIdx3-2];
-    const jdouble c33  = aCnlm[tIdx3+3];
-    const jdouble c3n3 = aCnlm[tIdx3-3];
-    const jdouble c40  = aCnlm[tIdx4  ];
-    const jdouble c41  = aCnlm[tIdx4+1];
-    const jdouble c4n1 = aCnlm[tIdx4-1];
-    const jdouble c42  = aCnlm[tIdx4+2];
-    const jdouble c4n2 = aCnlm[tIdx4-2];
-    const jdouble c43  = aCnlm[tIdx4+3];
-    const jdouble c4n3 = aCnlm[tIdx4-3];
-    const jdouble c44  = aCnlm[tIdx4+4];
-    const jdouble c4n4 = aCnlm[tIdx4-4];
-    jdouble rFp3Px = 0.0, rFp3Py = 0.0, rFp3Pz = 0.0;
-    
-    jdouble tMul = WIGNER_134_000*c30*c40 - WIGNER_134_011*(c31*c41 + c3n1*c4n1) + WIGNER_134_022*(c32*c42 + c3n2*c4n2) - WIGNER_134_033*(c33*c43 + c3n3*c4n3);
-    rFp3Px += tMul*aCnlmPx[tIdx1];
-    rFp3Py += tMul*aCnlmPy[tIdx1];
-    rFp3Pz += tMul*aCnlmPz[tIdx1];
-    tMul = WIGNER_134_000*c10*c30 - WIGNER_134_110*(c11*c31 + c1n1*c3n1);
-    rFp3Px += tMul*aCnlmPx[tIdx4];
-    rFp3Py += tMul*aCnlmPy[tIdx4];
-    rFp3Pz += tMul*aCnlmPz[tIdx4];
-    tMul = WIGNER_134_000*c10*c40 - WIGNER_134_101*(c11*c41 + c1n1*c4n1);
-    rFp3Px += tMul*aCnlmPx[tIdx3];
-    rFp3Py += tMul*aCnlmPy[tIdx3];
-    rFp3Pz += tMul*aCnlmPz[tIdx3];
-    
-    jdouble tMul1 = (-WIGNER_134_110)*c40*c31  - WIGNER_134_101*c30*c41  + (SQRT2_INV*WIGNER_134_112)*(c31*c42 + c3n1*c4n2) + (SQRT2_INV*WIGNER_134_121)*(c32*c41 + c3n2*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c43 + c3n2*c4n3) - (SQRT2_INV*WIGNER_134_132)*(c33*c42 + c3n3*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c44 + c3n3*c4n4);
-    jdouble tMul2 = (-WIGNER_134_110)*c40*c3n1 - WIGNER_134_101*c30*c4n1 + (SQRT2_INV*WIGNER_134_112)*(c31*c4n2 - c3n1*c42) + (SQRT2_INV*WIGNER_134_121)*(c3n2*c41 - c32*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c32*c4n3 - c3n2*c43) - (SQRT2_INV*WIGNER_134_132)*(c3n3*c42 - c33*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c33*c4n4 - c3n3*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx1+1] + tMul2*aCnlmPx[tIdx1-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx1+1] + tMul2*aCnlmPy[tIdx1-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx1+1] + tMul2*aCnlmPz[tIdx1-1];
-    
-    tMul1 = (-WIGNER_134_011)*c10*c41  - WIGNER_134_110*c40*c11  + (SQRT2_INV*WIGNER_134_112)*(c11*c42 + c1n1*c4n2);
-    tMul2 = (-WIGNER_134_011)*c10*c4n1 - WIGNER_134_110*c40*c1n1 + (SQRT2_INV*WIGNER_134_112)*(c11*c4n2 - c1n1*c42);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+1] + tMul2*aCnlmPx[tIdx3-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+1] + tMul2*aCnlmPy[tIdx3-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+1] + tMul2*aCnlmPz[tIdx3-1];
-    tMul1 = WIGNER_134_022*c10*c42  + (SQRT2_INV*WIGNER_134_121)*(c11*c41 - c1n1*c4n1) - (SQRT2_INV*WIGNER_134_123)*(c11*c43 + c1n1*c4n3);
-    tMul2 = WIGNER_134_022*c10*c4n2 + (SQRT2_INV*WIGNER_134_121)*(c11*c4n1 + c1n1*c41) - (SQRT2_INV*WIGNER_134_123)*(c11*c4n3 - c1n1*c43);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+2] + tMul2*aCnlmPx[tIdx3-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+2] + tMul2*aCnlmPy[tIdx3-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+2] + tMul2*aCnlmPz[tIdx3-2];
-    tMul1 = (-WIGNER_134_033)*c10*c43  - (SQRT2_INV*WIGNER_134_132)*(c11*c42 - c1n1*c4n2) + (SQRT2_INV*WIGNER_134_134)*(c11*c44 + c1n1*c4n4);
-    tMul2 = (-WIGNER_134_033)*c10*c4n3 - (SQRT2_INV*WIGNER_134_132)*(c11*c4n2 + c1n1*c42) + (SQRT2_INV*WIGNER_134_134)*(c11*c4n4 - c1n1*c44);
-    rFp3Px += tMul1*aCnlmPx[tIdx3+3] + tMul2*aCnlmPx[tIdx3-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx3+3] + tMul2*aCnlmPy[tIdx3-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx3+3] + tMul2*aCnlmPz[tIdx3-3];
-    
-    tMul1 = (-WIGNER_134_011)*c10*c31  - WIGNER_134_101*c30*c11  + (SQRT2_INV*WIGNER_134_121)*(c11*c32 + c1n1*c3n2);
-    tMul2 = (-WIGNER_134_011)*c10*c3n1 - WIGNER_134_101*c30*c1n1 + (SQRT2_INV*WIGNER_134_121)*(c11*c3n2 - c1n1*c32);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+1] + tMul2*aCnlmPx[tIdx4-1];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+1] + tMul2*aCnlmPy[tIdx4-1];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+1] + tMul2*aCnlmPz[tIdx4-1];
-    tMul1 = WIGNER_134_022*c10*c32  + (SQRT2_INV*WIGNER_134_112)*(c11*c31 - c1n1*c3n1) - (SQRT2_INV*WIGNER_134_132)*(c11*c33 + c1n1*c3n3);
-    tMul2 = WIGNER_134_022*c10*c3n2 + (SQRT2_INV*WIGNER_134_112)*(c11*c3n1 + c1n1*c31) - (SQRT2_INV*WIGNER_134_132)*(c11*c3n3 - c1n1*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+2] + tMul2*aCnlmPx[tIdx4-2];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+2] + tMul2*aCnlmPy[tIdx4-2];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+2] + tMul2*aCnlmPz[tIdx4-2];
-    tMul1 = (-WIGNER_134_033)*c10*c33  - (SQRT2_INV*WIGNER_134_123)*(c11*c32 - c1n1*c3n2);
-    tMul2 = (-WIGNER_134_033)*c10*c3n3 - (SQRT2_INV*WIGNER_134_123)*(c11*c3n2 + c1n1*c32);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+3] + tMul2*aCnlmPx[tIdx4-3];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+3] + tMul2*aCnlmPy[tIdx4-3];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+3] + tMul2*aCnlmPz[tIdx4-3];
-    tMul1 = (SQRT2_INV*WIGNER_134_134)*(c11*c33 - c1n1*c3n3);
-    tMul2 = (SQRT2_INV*WIGNER_134_134)*(c11*c3n3 + c1n1*c33);
-    rFp3Px += tMul1*aCnlmPx[tIdx4+4] + tMul2*aCnlmPx[tIdx4-4];
-    rFp3Py += tMul1*aCnlmPy[tIdx4+4] + tMul2*aCnlmPy[tIdx4-4];
-    rFp3Pz += tMul1*aCnlmPz[tIdx4+4] + tMul2*aCnlmPz[tIdx4-4];
-    
-    *rFpPx = aWt*rFp3Px;
-    *rFpPy = aWt*rFp3Py;
-    *rFpPz = aWt*rFp3Pz;
-}
-template <jint L3MAX, jboolean L3CROSS>
-static void calL3p_(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                    jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt, jint aLMax, jboolean aNoRadial) noexcept {
-    if (L3MAX <= 1) return;
-    jint tShiftFp = aNoRadial ? aLMax : (aLMax+1);
-    jdouble *tFpPx = rFpPx+tShiftFp, *tFpPy = rFpPy+tShiftFp, *tFpPz = rFpPz+tShiftFp;
-    calL3_222_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    ++tFpPx; ++tFpPy; ++tFpPz;
-    if (L3CROSS) {
-        calL3_112_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-    }
-    if (L3MAX == 2) return;
-    if (L3CROSS) {
-        calL3_233_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-        calL3_123_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-    }
-    if (L3MAX == 3) return;
-    calL3_444_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-    ++tFpPx; ++tFpPy; ++tFpPz;
-    if (L3CROSS) {
-        calL3_224_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-        calL3_334_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-        calL3_244_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-        calL3_134_(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz, tFpPx, tFpPy, tFpPz, aWt);
-        ++tFpPx; ++tFpPy; ++tFpPz;
-    }
-}
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS>
-static inline void cnlm2fpPxyz(jdouble *aCnlm, jdouble *aCnlmPx, jdouble *aCnlmPy, jdouble *aCnlmPz,
-                               jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jdouble aWt) noexcept {
-    calL2p_<LMAX, NO_RADIAL>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-                             rFpPx, rFpPy, rFpPz, aWt);
-    calL3p_<L3MAX, L3CROSS>(aCnlm, aCnlmPx, aCnlmPy, aCnlmPz,
-                            rFpPx, rFpPy, rFpPz, aWt, LMAX, NO_RADIAL);
-}
-static inline void assignGradIndex(jint *rFpGradNlIndex, jint aNlIndex, jint *rFpGradFpIndex, jint aFpIndexStart, jint aLength) noexcept {
-    for (jint i = 0, j = aFpIndexStart; i < aLength; ++i, ++j) {
-        rFpGradNlIndex[i] = aNlIndex;
-        rFpGradFpIndex[i] = j;
-    }
-}
 
-template <jint SIZE_L, jint LMAXMAX, jint LMALL, jint WTYPE, jboolean NL_SIZE, jboolean NL_BNLM>
+template <jint LMAXMAX, jint LMALL, jint WTYPE, jboolean NL_BNLM>
 static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                    jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jint *rFpGradNlSize, jdouble *rNlBnlm,
-                    jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                    jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rNlBnlm, jboolean aBufferNl,
+                    jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     static_assert((!NL_BNLM) || (WTYPE!=jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT &&
                                  WTYPE!=jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE &&
                                  WTYPE!=jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL &&
                                  WTYPE!=jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL), "WTYPE INVALID");
-    static_assert((!NL_BNLM) || (!NL_SIZE), "BNLM INVALID");
     // loop for neighbor
     for (jint j = 0, ji = -1; j < aNN; ++j) {
         jint type = aNlType[j];
@@ -1780,7 +1117,7 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
         // cal cnlm
         if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
             jdouble *tFuseWeight = aFuseWeight;
-            jint tShift = 0, tShiftFp = 0;
+            jint tShift = 0;
             for (jint k = 0; k < aFuseSize; ++k) {
                 jdouble fcWt = tFuseWeight[type-1];
                 if (!NL_BNLM) fcWt *= fc;
@@ -1793,10 +1130,6 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
                         mplusCnlm<LMALL>(rCnlm+tShift, tY, fcWt, tRn[n]);
                     }
                     tShift += LMALL;
-                    if (NL_SIZE) {
-                        countFpGradNlSize<SIZE_L>(rFpGradNlSize+tShiftFp);
-                        tShiftFp += SIZE_L;
-                    }
                 }
                 tFuseWeight += aTypeNum;
             }
@@ -1804,36 +1137,29 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
         }
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE ||
             WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL || aTypeNum==1) {
-            jint tShift, tShiftFp;
+            jint tShift;
             if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
                 tShift = (aNMax+1)*LMALL*(type-1);
-                tShiftFp = (aNMax+1)*SIZE_L*(type-1);
             } else {
-                tShift = 0; tShiftFp = 0;
+                tShift = 0;
             }
             for (jint n = 0; n <= aNMax; ++n) {
                 mplusCnlm<LMALL>(rCnlm+tShift, tY, fc, tRn[n]);
                 tShift += LMALL;
-                if (NL_SIZE) {
-                    countFpGradNlSize<SIZE_L>(rFpGradNlSize+tShiftFp);
-                    tShiftFp += SIZE_L;
-                }
             }
             continue;
         }
         jdouble wt;
-        jint tShift = 0, tShiftFp = 0;
-        jint tShiftWt, tShiftFpWt;
+        jint tShiftWt;
+        jint tShift = 0;
         if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
             wt = 1.0;
             tShiftWt = (aNMax+1)*LMALL*type;
-            tShiftFpWt = (aNMax+1)*SIZE_L*type;
         } else
         if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
             // cal weight of type here
             wt = ((type&1)==1) ? type : -type;
             tShiftWt = (aNMax+1)*LMALL;
-            tShiftFpWt = (aNMax+1)*SIZE_L;
         } else {
             continue;
         }
@@ -1841,11 +1167,6 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
             mplusCnlmWt<LMALL>(rCnlm+tShift, rCnlm+tShiftWt, tY, fc, tRn[n], wt);
             tShift += LMALL;
             tShiftWt += LMALL;
-            if (NL_SIZE) {
-                countFpGradNlSizeWt<SIZE_L>(rFpGradNlSize+tShiftFp, rFpGradNlSize+tShiftFpWt);
-                tShiftFp += SIZE_L;
-                tShiftFpWt += SIZE_L;
-            }
         }
     }
 }
@@ -1860,8 +1181,8 @@ static inline void cnlm2fp(jdouble *aCnlm, jdouble *rFp, jint aSizeN) noexcept {
 
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     // const init
     jint tSizeN;
     switch(WTYPE) {
@@ -1893,22 +1214,12 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     const jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
     const jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
-    const jint tSize = tSizeN*tSizeL;
     // clear cnlm first
     for (jint i = 0; i < tSizeCnlm; ++i) {
         rCnlm[i] = 0.0;
     }
-    if (rFpGradNlSize != NULL) {
-        for (jint i = 0; i < tSize; ++i) {
-            rFpGradNlSize[i] = 0;
-        }
-    }
     // do cal
-    if (rFpGradNlSize == NULL) {
-        calCnlm<tSizeL, tLMaxMax, tLMAll, WTYPE, JNI_FALSE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFpGradNlSize, NULL, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-    } else {
-        calCnlm<tSizeL, tLMaxMax, tLMAll, WTYPE, JNI_TRUE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFpGradNlSize, NULL, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-    }
+    calCnlm<tLMaxMax, tLMAll, WTYPE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, NULL, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
     cnlm2fp<tSizeL, LMAX, NO_RADIAL, L3MAX, L3CROSS, tLMAll>(rCnlm, rFp, tSizeN);
 }
 
@@ -1938,7 +1249,7 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
         rGradCnlm[i] = 0.0;
     }
     // cal cnlm first
-    calCnlm<tSizeL, tLMaxMax, tLMAll, WTYPE, JNI_FALSE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, rY, rCnlm, NULL, rNlBnlm, JNI_FALSE, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+    calCnlm<tLMaxMax, tLMAll, WTYPE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, rY, rCnlm, rNlBnlm, JNI_FALSE, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
     // cal grad cnlm
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradL2_<LMAX, NO_RADIAL>(rCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp);
@@ -1974,205 +1285,6 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     }
 }
 
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                      jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                      jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                      jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                      jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                      jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz,
-                      jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    // const init
-    jint tSizeN;
-    switch(WTYPE) {
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        tSizeN = aTypeNum>1 ? (aTypeNum+1)*(aNMax+1) : (aNMax+1);
-        break;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        tSizeN = aTypeNum*(aNMax+1);
-        break;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        tSizeN = aNMax+1;
-        break;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        tSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
-        break;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
-        tSizeN = aFuseSize*(aNMax+1);
-        break;
-    }
-    default: {
-        tSizeN = 0;
-        break;
-    }}
-    const jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
-    const jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
-    const jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
-    const jint tSizeFp = tSizeN*tSizeL;
-    
-    jint tShiftFpP = 0;
-    // loop for neighbor
-    for (jint j = 0, ji = -1; j < aNN; ++j) {
-        jdouble *tFpPx, *tFpPy, *tFpPz;
-        jint *tFpGradNlIndex, *tFpGradFpIndex;
-        if (!SPARSE) {
-            // init fpPxyz
-            tShiftFpP = j*(aShiftFp+tSizeFp+aRestFp) + aShiftFp;
-            tFpPx = rFpPx + tShiftFpP;
-            tFpPy = rFpPy + tShiftFpP;
-            tFpPz = rFpPz + tShiftFpP;
-            // always clear fpPxyz
-            for (jint i = 0; i < tSizeFp; ++i) {
-                tFpPx[i] = 0.0;
-                tFpPy[i] = 0.0;
-                tFpPz[i] = 0.0;
-            }
-        }
-        // init nl
-        jint type = aNlType[j];
-        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
-        // check rcut for merge
-        if (dis >= aRCut) continue;
-        ++ji;
-        if (SPARSE) {
-            // init fpPxyz
-            tFpGradNlIndex = rFpGradNlIndex + tShiftFpP;
-            tFpGradFpIndex = rFpGradFpIndex + tShiftFpP;
-            tFpPx = rFpPx + tShiftFpP;
-            tFpPy = rFpPy + tShiftFpP;
-            tFpPz = rFpPz + tShiftFpP;
-        }
-        // cal fc
-        jdouble fcMul = 1.0 - JSE_NNAP::pow2(dis/aRCut);
-        jdouble fcMul3 = JSE_NNAP::pow3(fcMul);
-        jdouble fc = fcMul3 * fcMul;
-        jdouble fcPMul = 8.0 * fcMul3 / (aRCut*aRCut);
-        jdouble fcPx = dx * fcPMul;
-        jdouble fcPy = dy * fcPMul;
-        jdouble fcPz = dz * fcPMul;
-        // cal Rn
-        jdouble *tRn = aNlRn + ji*(aNMax+1);
-        const jdouble tRnX = 1.0 - 2.0*dis/aRCut;
-        JSE_NNAP::chebyshev2Full(aNMax-1, tRnX, rCheby2);
-        JSE_NNAP::calRnPxyz(rRnPx, rRnPy, rRnPz, rCheby2, aNMax, dis, aRCut, dx, dy, dz);
-        // cal Ylm
-        jdouble dxy = hypot(dx, dy);
-        jdouble cosTheta = dz / dis;
-        jdouble sinTheta = dxy / dis;
-        jdouble cosPhi;
-        jdouble sinPhi;
-        jboolean dxyCloseZero = JSE_NNAP::numericEqual(dxy, 0.0);
-        if (dxyCloseZero) {
-            cosPhi = 1.0;
-            sinPhi = 0.0;
-        } else {
-            cosPhi = dx / dxy;
-            sinPhi = dy / dxy;
-        }
-        jdouble *tY = aNlY + ji*tLMAll;
-        calYPphiPtheta<tLMaxMax>(rYPphi, cosPhi, sinPhi, rYPtheta, tY);
-        if (dxyCloseZero) {
-            // fix singularity
-            for (jint k = 0; k < tLMAll; ++k) rYPphi[k] = 0.0;
-        }
-        // conert to Pxyz
-        calYPxyz<tLMAll>(cosTheta, sinTheta, cosPhi, sinPhi, dis, dxy, dxyCloseZero,
-                         rYPx, rYPy, rYPz,
-                         rYPtheta, rYPphi);
-        // cal cnlmPxyz first
-        for (jint n=0, tShift=0; n <= aNMax; ++n, tShift+=tLMAll) {
-            calCnlmPxyz<tLMAll>(rCnlmPx+tShift, rCnlmPy+tShift, rCnlmPz+tShift,
-                                tY, rYPx, rYPy, rYPz,
-                                fc, fcPx, fcPy, fcPz,
-                                tRn[n], rRnPx[n], rRnPy[n], rRnPz[n]);
-        }
-        // cal fpPxyz
-        if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-            jdouble *tFuseWeight = aFuseWeight;
-            jint tShift = 0, tShiftFp = 0;
-            for (jint k = 0; k < aFuseSize; ++k) {
-                jdouble wt = tFuseWeight[type-1];
-                for (jint n=0, tShift_=0; n <= aNMax; ++n, tShift_+=tLMAll, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                    cnlm2fpPxyz<LMAX, NO_RADIAL, L3MAX, L3CROSS>(aCnlm+tShift, rCnlmPx+tShift_, rCnlmPy+tShift_, rCnlmPz+tShift_,
-                                                                 tFpPx+tShiftFp, tFpPy+tShiftFp, tFpPz+tShiftFp, wt);
-                }
-                tFuseWeight += aTypeNum;
-            }
-            if (SPARSE) {
-                assignGradIndex(tFpGradNlIndex, j, tFpGradFpIndex, 0, tSizeFp);
-                tShiftFpP += tSizeFp;
-            }
-            continue;
-        }
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE ||
-            WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL || aTypeNum==1) {
-            jint tShift, tShiftFp;
-            if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
-                tShift = (aNMax+1)*tLMAll*(type-1);
-                tShiftFp = SPARSE ? 0 : (aNMax+1)*tSizeL*(type-1);
-            } else {
-                tShift = 0; tShiftFp = 0;
-            }
-            for (jint n=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-                cnlm2fpPxyz<LMAX, NO_RADIAL, L3MAX, L3CROSS>(aCnlm+tShift, rCnlmPx+tShift, rCnlmPy+tShift, rCnlmPz+tShift,
-                                                             tFpPx+tShiftFp, tFpPy+tShiftFp, tFpPz+tShiftFp, 1.0);
-            }
-            if (SPARSE) {
-                jint tSizeFpP = tSizeL*(aNMax+1);
-                jint tStartFpP;
-                if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
-                    tStartFpP = tSizeFpP*(type-1);
-                } else {
-                    tStartFpP = 0;
-                }
-                assignGradIndex(tFpGradNlIndex, j, tFpGradFpIndex, tStartFpP, tSizeFpP);
-                tShiftFpP += tSizeFpP;
-            }
-            continue;
-        }
-        jdouble wt;
-        if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
-            wt = 1.0;
-        } else
-        if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
-            // cal weight of type here
-            wt = ((type&1)==1) ? type : -type;
-        } else {
-            continue;
-        }
-        for (jint n=0, tShift=0, tShiftFp=0; n <= aNMax; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
-            cnlm2fpPxyz<LMAX, NO_RADIAL, L3MAX, L3CROSS>(aCnlm+tShift, rCnlmPx+tShift, rCnlmPy+tShift, rCnlmPz+tShift,
-                                                         tFpPx+tShiftFp, tFpPy+tShiftFp, tFpPz+tShiftFp, 1.0);
-            jint tShift0, tShiftFp0;
-            if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
-                tShift0 = tShift + (aNMax+1)*tLMAll*type;
-                tShiftFp0 = SPARSE ? (tShiftFp + (aNMax+1)*tSizeL) : (tShiftFp + (aNMax+1)*tSizeL*type);
-            } else {
-                tShift0 = tShift + (aNMax+1)*tLMAll;
-                tShiftFp0 = tShiftFp + (aNMax+1)*tSizeL;
-            }
-            cnlm2fpPxyz<LMAX, NO_RADIAL, L3MAX, L3CROSS>(aCnlm+tShift0, rCnlmPx+tShift, rCnlmPy+tShift, rCnlmPz+tShift,
-                                                         tFpPx+tShiftFp0, tFpPy+tShiftFp0, tFpPz+tShiftFp0, wt);
-        }
-        if (SPARSE) {
-            jint tSizeFpP = tSizeL*(aNMax+1);
-            jint tStartFpP;
-            if (WTYPE == jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
-                tStartFpP = tSizeFpP*type;
-            } else {
-                tStartFpP = tSizeFpP;
-            }
-            assignGradIndex(tFpGradNlIndex, j, tFpGradFpIndex, 0, tSizeFpP);
-            assignGradIndex(tFpGradNlIndex+tSizeFpP, j, tFpGradFpIndex+tSizeFpP, tStartFpP, tSizeFpP);
-            tShiftFpP += tSizeFpP+tSizeFpP;
-        }
-    }
-}
 
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
@@ -2382,43 +1494,43 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
 
 template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aLMax) {
     case 0: {
-        calFp<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 1: {
-        calFp<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 2: {
-        calFp<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 3: {
-        calFp<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 4: {
-        calFp<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 5: {
-        calFp<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 6: {
-        calFp<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 7: {
-        calFp<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 8: {
-        calFp<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calFp<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     default: {
@@ -2427,35 +1539,35 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
 }
 template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aNoRadial) {
-        calFp<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
+        calFp<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
     } else {
-        calFp<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
+        calFp<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
     }
 }
 template <jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial,
+                         jint aL3Max, jboolean aL3Cross, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aL3Cross) {
         switch (aL3Max) {
         case 0: case 1: {
-            calFp<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 2: {
-            calFp<2, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<2, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 3: {
-            calFp<3, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<3, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 4: {
-            calFp<4, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<4, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -2464,15 +1576,15 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     } else {
         switch (aL3Max) {
         case 0: case 1: {
-            calFp<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 2: case 3: {
-            calFp<2, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<2, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 4: {
-            calFp<4, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calFp<4, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -2481,28 +1593,28 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     }
 }
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jint *rFpGradNlSize,
-                         jboolean aBufferNl, jint aTypeNum, jdouble aRCut,
-                         jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+                         jdouble *rNlRn, jdouble *rNlY, jdouble *rCnlm, jdouble *rFp, jboolean aBufferNl,
+                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial,
+                         jint aL3Max, jboolean aL3Cross, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch(aWType) {
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
         return;
     }
     case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
-        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, rFpGradNlSize, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+        calFp<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rNlRn, rNlY, rCnlm, rFp, aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
         return;
     }
     default: {
@@ -2622,152 +1734,6 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     if (aWType == jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
         calBackward<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rRn, rY, rCnlm, rNlBnlm, rGradCnlm, aGradFp, rGradPara, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
     }
-}
-
-
-template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz,
-                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    switch (aLMax) {
-    case 0: {
-        calFpGrad<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 1: {
-        calFpGrad<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 2: {
-        calFpGrad<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 3: {
-        calFpGrad<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 4: {
-        calFpGrad<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 5: {
-        calFpGrad<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 6: {
-        calFpGrad<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 7: {
-        calFpGrad<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 8: {
-        calFpGrad<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
-}
-template <jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aNoRadial) {
-        calFpGrad<JNI_TRUE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
-    } else {
-        calFpGrad<JNI_FALSE, L3MAX, L3CROSS, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
-    }
-}
-template <jint WTYPE, jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aL3Cross) {
-        switch (aL3Max) {
-        case 0: case 1: {
-            calFpGrad<0, JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        case 2: {
-            calFpGrad<2, JNI_TRUE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        case 3: {
-            calFpGrad<3, JNI_TRUE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        case 4: {
-            calFpGrad<4, JNI_TRUE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        default: {
-            return;
-        }}
-    } else {
-        switch (aL3Max) {
-        case 0: case 1: {
-            calFpGrad<0, JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        case 2: case 3: {
-            calFpGrad<2, JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        case 4: {
-            calFpGrad<4, JNI_FALSE, WTYPE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        default: {
-            return;
-        }}
-    }
-}
-template <jboolean SPARSE>
-static inline void calFpGrad(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                             jdouble *aNlRn, jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
-                             jdouble *aNlY, jdouble *rYPtheta, jdouble *rYPphi, jdouble *rYPx, jdouble *rYPy, jdouble *rYPz,
-                             jdouble *aCnlm, jdouble *rCnlmPx, jdouble *rCnlmPy, jdouble *rCnlmPz,
-                             jint *rFpGradNlIndex, jint *rFpGradFpIndex, jint aShiftFp, jint aRestFp,
-                             jdouble *rFpPx, jdouble *rFpPy, jdouble *rFpPz, jint aTypeNum, jdouble aRCut,
-                             jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    switch(aWType) {
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-        return;
-    }
-    case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
-        calFpGrad<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE, SPARSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNlRn, rRnPx, rRnPy, rRnPz, rCheby2, aNlY, rYPtheta, rYPphi, rYPx, rYPy, rYPz, aCnlm, rCnlmPx, rCnlmPy, rCnlmPz, rFpGradNlIndex, rFpGradFpIndex, aShiftFp, aRestFp, rFpPx, rFpPy, rFpPz, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
 }
 
 
@@ -2916,8 +1882,8 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
-        jdoubleArray rNlRn, jdoubleArray rNlY, jdoubleArray rCnlm, jdoubleArray rFp, jint aShiftFp, jintArray rFpGradNlSize, jint aShiftFpGradNlSize,
-        jboolean aBufferNl, jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdoubleArray aFuseWeight, jint aFuseSize) {
+        jdoubleArray rNlRn, jdoubleArray rNlY, jdoubleArray rCnlm, jdoubleArray rFp, jint aShiftFp, jboolean aBufferNl,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdoubleArray aFuseWeight, jint aFuseSize) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
     jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
@@ -2927,12 +1893,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, rNlY);
     jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, rCnlm);
     jdouble *tFp = (jdouble *)getJArrayBuf(aEnv, rFp);
-    jint *tFpGradNlSize = rFpGradNlSize==NULL ? NULL : (jint *)getJArrayBuf(aEnv, rFpGradNlSize);
     jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
     
     calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN,
-          tNlRn, tNlY, tCnlm, tFp+aShiftFp, tFpGradNlSize==NULL?NULL:(tFpGradNlSize+aShiftFpGradNlSize),
-          aBufferNl, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, tFuseWeight, aFuseSize);
+          tNlRn, tNlY, tCnlm, tFp+aShiftFp, aBufferNl,
+          aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, tFuseWeight, aFuseSize);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -2943,7 +1908,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_eval1(JNIEnv *aEn
     releaseJArrayBuf(aEnv, rNlY, tNlY, aBufferNl?0:JNI_ABORT);
     releaseJArrayBuf(aEnv, rCnlm, tCnlm, aBufferNl?0:JNI_ABORT);
     releaseJArrayBuf(aEnv, rFp, tFp, 0);
-    if (rFpGradNlSize!=NULL) releaseJArrayBuf(aEnv, rFpGradNlSize, tFpGradNlSize, 0);
     if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
 }
 
@@ -2984,145 +1948,6 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_backward1(JNIEnv 
     releaseJArrayBuf(aEnv, aGradFp, tGradFp, JNI_ABORT);
     releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
     releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
-}
-
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGrad1(JNIEnv *aEnv, jclass aClazz,
-        jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
-        jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
-        jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
-        jdoubleArray aCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
-        jintArray rFpGradNlIndex, jint aShiftFpGradNlIndex, jintArray rFpGradFpIndex, jint aShiftFpGradFpIndex,
-        jdoubleArray rFpPx, jint aShiftFpPx, jdoubleArray rFpPy, jint aShiftFpPy, jdoubleArray rFpPz, jint aShiftFpPz,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdoubleArray aFuseWeight, jint aFuseSize) {
-    // java array init
-    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
-    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
-    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
-    jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
-    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
-    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
-    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
-    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
-    jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, aNlY);
-    jdouble *tYPtheta = (jdouble *)getJArrayBuf(aEnv, rYPtheta);
-    jdouble *tYPphi = (jdouble *)getJArrayBuf(aEnv, rYPphi);
-    jdouble *tYPx = (jdouble *)getJArrayBuf(aEnv, rYPx);
-    jdouble *tYPy = (jdouble *)getJArrayBuf(aEnv, rYPy);
-    jdouble *tYPz = (jdouble *)getJArrayBuf(aEnv, rYPz);
-    jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, aCnlm);
-    jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
-    jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
-    jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
-    jint *tFpGradNlIndex = (jint *)getJArrayBuf(aEnv, rFpGradNlIndex);
-    jint *tFpGradFpIndex = (jint *)getJArrayBuf(aEnv, rFpGradFpIndex);
-    jdouble *tFpPx = (jdouble *)getJArrayBuf(aEnv, rFpPx);
-    jdouble *tFpPy = (jdouble *)getJArrayBuf(aEnv, rFpPy);
-    jdouble *tFpPz = (jdouble *)getJArrayBuf(aEnv, rFpPz);
-    jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
-    
-    calFpGrad<JNI_TRUE>(tNlDx, tNlDy, tNlDz, tNlType, aNN,
-                        tNlRn, tRnPx, tRnPy, tRnPz, tCheby2,
-                        tNlY, tYPtheta, tYPphi, tYPx, tYPy, tYPz,
-                        tCnlm, tCnlmPx, tCnlmPy, tCnlmPz,
-                        tFpGradNlIndex+aShiftFpGradNlIndex, tFpGradFpIndex+aShiftFpGradFpIndex,
-                        0, 0,
-                        tFpPx+aShiftFpPx, tFpPy+aShiftFpPy, tFpPz+aShiftFpPz,
-                        aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, tFuseWeight, aFuseSize);
-    
-    // release java array
-    releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlDy, tNlDy, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlDz, tNlDz, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlType, tNlType, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlRn, tNlRn, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rRnPx, tRnPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rRnPy, tRnPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rRnPz, tRnPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCheby2, tCheby2, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, aNlY, tNlY, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rYPtheta, tYPtheta, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPphi, tYPphi, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPx, tYPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPy, tYPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPz, tYPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, aCnlm, tCnlm, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rFpGradNlIndex, tFpGradNlIndex, 0);
-    releaseJArrayBuf(aEnv, rFpGradFpIndex, tFpGradFpIndex, 0);
-    releaseJArrayBuf(aEnv, rFpPx, tFpPx, 0);
-    releaseJArrayBuf(aEnv, rFpPy, tFpPy, 0);
-    releaseJArrayBuf(aEnv, rFpPz, tFpPz, 0);
-    if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
-}
-
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalGradWithShift1(JNIEnv *aEnv, jclass aClazz,
-        jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
-        jdoubleArray aNlRn, jdoubleArray rRnPx, jdoubleArray rRnPy, jdoubleArray rRnPz, jdoubleArray rCheby2,
-        jdoubleArray aNlY, jdoubleArray rYPtheta, jdoubleArray rYPphi, jdoubleArray rYPx, jdoubleArray rYPy, jdoubleArray rYPz,
-        jdoubleArray aCnlm, jdoubleArray rCnlmPx, jdoubleArray rCnlmPy, jdoubleArray rCnlmPz,
-        jint aShiftFp, jint aRestFp, jdoubleArray rFpPx, jdoubleArray rFpPy, jdoubleArray rFpPz,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jint aL3Max, jboolean aL3Cross, jint aWType, jdoubleArray aFuseWeight, jint aFuseSize) {
-    // java array init
-    jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
-    jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
-    jdouble *tNlDz = (jdouble *)getJArrayBuf(aEnv, aNlDz);
-    jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
-    jdouble *tNlRn = (jdouble *)getJArrayBuf(aEnv, aNlRn);
-    jdouble *tRnPx = (jdouble *)getJArrayBuf(aEnv, rRnPx);
-    jdouble *tRnPy = (jdouble *)getJArrayBuf(aEnv, rRnPy);
-    jdouble *tRnPz = (jdouble *)getJArrayBuf(aEnv, rRnPz);
-    jdouble *tCheby2 = (jdouble *)getJArrayBuf(aEnv, rCheby2);
-    jdouble *tNlY = (jdouble *)getJArrayBuf(aEnv, aNlY);
-    jdouble *tYPtheta = (jdouble *)getJArrayBuf(aEnv, rYPtheta);
-    jdouble *tYPphi = (jdouble *)getJArrayBuf(aEnv, rYPphi);
-    jdouble *tYPx = (jdouble *)getJArrayBuf(aEnv, rYPx);
-    jdouble *tYPy = (jdouble *)getJArrayBuf(aEnv, rYPy);
-    jdouble *tYPz = (jdouble *)getJArrayBuf(aEnv, rYPz);
-    jdouble *tCnlm = (jdouble *)getJArrayBuf(aEnv, aCnlm);
-    jdouble *tCnlmPx = (jdouble *)getJArrayBuf(aEnv, rCnlmPx);
-    jdouble *tCnlmPy = (jdouble *)getJArrayBuf(aEnv, rCnlmPy);
-    jdouble *tCnlmPz = (jdouble *)getJArrayBuf(aEnv, rCnlmPz);
-    jdouble *tFpPx = (jdouble *)getJArrayBuf(aEnv, rFpPx);
-    jdouble *tFpPy = (jdouble *)getJArrayBuf(aEnv, rFpPy);
-    jdouble *tFpPz = (jdouble *)getJArrayBuf(aEnv, rFpPz);
-    jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
-    
-    calFpGrad<JNI_FALSE>(tNlDx, tNlDy, tNlDz, tNlType, aNN,
-                         tNlRn, tRnPx, tRnPy, tRnPz, tCheby2,
-                         tNlY, tYPtheta, tYPphi, tYPx, tYPy, tYPz,
-                         tCnlm, tCnlmPx, tCnlmPy, tCnlmPz,
-                         NULL, NULL,
-                         aShiftFp, aRestFp,
-                         tFpPx, tFpPy, tFpPz,
-                         aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, tFuseWeight, aFuseSize);
-    
-    // release java array
-    releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlDy, tNlDy, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlDz, tNlDz, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlType, tNlType, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aNlRn, tNlRn, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rRnPx, tRnPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rRnPy, tRnPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rRnPz, tRnPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCheby2, tCheby2, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, aNlY, tNlY, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rYPtheta, tYPtheta, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPphi, tYPphi, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPx, tYPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPy, tYPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rYPz, tYPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, aCnlm, tCnlm, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rCnlmPx, tCnlmPx, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPy, tCnlmPy, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rCnlmPz, tCnlmPz, JNI_ABORT); // buffer only
-    releaseJArrayBuf(aEnv, rFpPx, tFpPx, 0);
-    releaseJArrayBuf(aEnv, rFpPy, tFpPy, 0);
-    releaseJArrayBuf(aEnv, rFpPz, tFpPz, 0);
-    if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_evalForce1(JNIEnv *aEnv, jclass aClazz,

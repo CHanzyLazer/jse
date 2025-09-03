@@ -881,243 +881,243 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 }
                 return;
             }
-            DoubleWrapper rLossGradForceX = new DoubleWrapper(0.0), rLossGradForceY = new DoubleWrapper(0.0), rLossGradForceZ = new DoubleWrapper(0.0);
-            DoubleWrapper rLossGradStressXX = new DoubleWrapper(0.0), rLossGradStressYY = new DoubleWrapper(0.0), rLossGradStressZZ = new DoubleWrapper(0.0);
-            DoubleWrapper rLossGradStressXY = new DoubleWrapper(0.0), rLossGradStressXZ = new DoubleWrapper(0.0), rLossGradStressYZ = new DoubleWrapper(0.0);
-            Vector[] tLossGradFp = mLossGradFp[threadID];
-            List<List<Vector>> tHiddenGrads2Buf = mHiddenGrads2Buf.get(threadID);
-            List<List<Vector>> tHiddenGrads3Buf = mHiddenGrads3Buf.get(threadID);
-            List<List<Vector>> tHiddenGradGradsBuf = mHiddenGradGradsBuf.get(threadID);
-            DoubleList tForceXBuf = mForceXBuf[threadID];
-            DoubleList tForceYBuf = mForceYBuf[threadID];
-            DoubleList tForceZBuf = mForceZBuf[threadID];
-            DoubleList tForceNlXBuf = mForceNlXBuf[threadID];
-            DoubleList tForceNlYBuf = mForceNlYBuf[threadID];
-            DoubleList tForceNlZBuf = mForceNlZBuf[threadID];
-            DoubleList tLossGradForceXBuf = mLossGradForceXBuf[threadID];
-            DoubleList tLossGradForceYBuf = mLossGradForceYBuf[threadID];
-            DoubleList tLossGradForceZBuf = mLossGradForceZBuf[threadID];
-            DoubleList tLossGradForceNlXBuf = mLossGradForceNlXBuf[threadID];
-            DoubleList tLossGradForceNlYBuf = mLossGradForceNlYBuf[threadID];
-            DoubleList tLossGradForceNlZBuf = mLossGradForceNlZBuf[threadID];
-            FloatList[] tFpPx = tCacheFpGrad ? tData.mFpPx.get(i) : null;
-            FloatList[] tFpPy = tCacheFpGrad ? tData.mFpPy.get(i) : null;
-            FloatList[] tFpPz = tCacheFpGrad ? tData.mFpPz.get(i) : null;
-            ShortList[] tFpGradNlIndex = tCacheFpGrad ? tData.mFpGradNlIndex.get(i) : null;
-            ShortList[] tFpGradFpIndex = tCacheFpGrad ? tData.mFpGradFpIndex.get(i) : null;
-            List<DoubleList> tFpPxBuf = mFpPxBuf.get(threadID);
-            List<DoubleList> tFpPyBuf = mFpPyBuf.get(threadID);
-            List<DoubleList> tFpPzBuf = mFpPzBuf.get(threadID);
-            List<IntList> tFpGradNlIndexBuf = mFpGradNlIndexBuf.get(threadID);
-            List<IntList> tFpGradFpIndexBuf = mFpGradFpIndexBuf.get(threadID);
-            if (!tCacheFpGrad) {
-                while (tFpPxBuf.size() < tAtomNum) tFpPxBuf.add(new DoubleList(256));
-                while (tFpPyBuf.size() < tAtomNum) tFpPyBuf.add(new DoubleList(256));
-                while (tFpPzBuf.size() < tAtomNum) tFpPzBuf.add(new DoubleList(256));
-                while (tFpGradNlIndexBuf.size() < tAtomNum) tFpGradNlIndexBuf.add(new IntList(256));
-                while (tFpGradFpIndexBuf.size() < tAtomNum) tFpGradFpIndexBuf.add(new IntList(256));
-            }
-            if (mHasForce) {
-                tForceXBuf.clear(); tForceXBuf.addZeros(tAtomNum);
-                tForceYBuf.clear(); tForceYBuf.addZeros(tAtomNum);
-                tForceZBuf.clear(); tForceZBuf.addZeros(tAtomNum);
-            }
-            if (tRequireGrad) {
-                validHiddenBuf_(threadID, tAtomType, true);
-            }
-            double rEng = 0.0;
-            double rStressXX = 0.0, rStressYY = 0.0, rStressZZ = 0.0, rStressXY = 0.0, rStressXZ = 0.0, rStressYZ = 0.0;
-            for (int k = 0; k < tAtomNum; ++k) {
-                int tType = tAtomType.get(k);
-                Basis tSubBasis = tBasis[tType-1];
-                if (tSubBasis instanceof Mirror) {
-                    tType = ((Mirror)tSubBasis).mirrorType();
-                }
-                Vector tSubFp = tFp[k];
-                Vector tSubFpBuf = tFpBuf[tType-1];
-                Vector tSubNormMu = mNormMu[tType-1];
-                Vector tSubNormSigma = mNormSigma[tType-1];
-                Vector tSubGradFpBuf = tGradFpBuf[tType-1];
-                tSubFpBuf.fill(j -> (tSubFp.get(j) - tSubNormMu.get(j)) / tSubNormSigma.get(j));
-                // cal energy
-                rEng += tRequireGrad ? tNN[tType-1].forwardGrad(tSubFpBuf, tSubGradFpBuf, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
-                                                                tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
-                                     : tNN[tType-1].evalGrad(tSubFpBuf, tSubGradFpBuf);
-                // cal force
-                ShortList tSubNl = tNl[k];
-                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
-                int tNlSize = tSubNl.size();
-                tForceNlXBuf.clear(); tForceNlXBuf.addZeros(tNlSize);
-                tForceNlYBuf.clear(); tForceNlYBuf.addZeros(tNlSize);
-                tForceNlZBuf.clear(); tForceNlZBuf.addZeros(tNlSize);
-                if (tCacheFpGrad) {
-                    forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
-                                          tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
-                                          tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
-                } else {
-                    initNl(tSubNl, tSubNlDx, tSubNlDy, tSubNlDz, tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
-                    tSubBasis.evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFpBuf, tFpGradNlIndexBuf.get(k), tFpGradFpIndexBuf.get(k), tFpPxBuf.get(k), tFpPyBuf.get(k), tFpPzBuf.get(k));
-                    forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
-                                          tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
-                                          tFpGradNlIndexBuf.get(k).internalData(), tFpGradFpIndexBuf.get(k).internalData(), tFpPxBuf.get(k).size());
-                }
-                for (int j = 0; j < tNlSize; ++j) {
-                    double fx = tForceNlXBuf.get(j);
-                    double fy = tForceNlYBuf.get(j);
-                    double fz = tForceNlZBuf.get(j);
-                    int nlk = tSubNl.get(j);
-                    if (mHasForce) {
-                        tForceXBuf.set(k, tForceXBuf.get(k) - fx);
-                        tForceYBuf.set(k, tForceYBuf.get(k) - fy);
-                        tForceZBuf.set(k, tForceZBuf.get(k) - fz);
-                        tForceXBuf.set(nlk, tForceXBuf.get(nlk) + fx);
-                        tForceYBuf.set(nlk, tForceYBuf.get(nlk) + fy);
-                        tForceZBuf.set(nlk, tForceZBuf.get(nlk) + fz);
-                    }
-                    // cal stress here
-                    if (mHasStress) {
-                        double dx = tSubNlDx.get(j);
-                        double dy = tSubNlDy.get(j);
-                        double dz = tSubNlDz.get(j);
-                        rStressXX += dx * fx; rStressYY += dy * fy; rStressZZ += dz * fz;
-                        rStressXY += dx * fy; rStressXZ += dx * fz; rStressYZ += dy * fz;
-                    }
-                }
-            }
-            // cal stress here
-            if (mHasStress) {
-                rStressXX = -rStressXX/tVolume; rStressYY = -rStressYY/tVolume; rStressZZ = -rStressZZ/tVolume;
-                rStressXY = -rStressXY/tVolume; rStressXZ = -rStressXZ/tVolume; rStressYZ = -rStressYZ/tVolume;
-            }
-            // energy error
-            rEng /= tAtomNum;
-            double tLossEng = tRequireGrad ? aLossFuncGradEng.call(rEng, (tData.mEng.get(i) - mNormMuEng)/mNormSigmaEng, rLossGradEng)
-                                           : aLossFuncEng.call(rEng, (tData.mEng.get(i) - mNormMuEng)/mNormSigmaEng);
-            rLoss.add(0, mEnergyWeight * tLossEng / tData.mSize);
-            // force error
-            if (mHasForce) {
-                double tLossForce = 0.0;
-                if (tRequireGrad) {
-                    tLossGradForceXBuf.clear(); tLossGradForceXBuf.addZeros(tAtomNum);
-                    tLossGradForceYBuf.clear(); tLossGradForceYBuf.addZeros(tAtomNum);
-                    tLossGradForceZBuf.clear(); tLossGradForceZBuf.addZeros(tAtomNum);
-                }
-                double tForceLossMul = mForceWeight / (tData.mAtomSize*3);
-                Vector tForceX = tData.mForceX.get(i), tForceY = tData.mForceY.get(i), tForceZ = tData.mForceZ.get(i);
-                for (int k = 0; k < tAtomNum; ++k) {
-                    if (tRequireGrad) {
-                        tLossForce += aLossFuncGradForce.call(tForceXBuf.get(k), tForceX.get(k)/mNormSigmaEng, rLossGradForceX);
-                        tLossForce += aLossFuncGradForce.call(tForceYBuf.get(k), tForceY.get(k)/mNormSigmaEng, rLossGradForceY);
-                        tLossForce += aLossFuncGradForce.call(tForceZBuf.get(k), tForceZ.get(k)/mNormSigmaEng, rLossGradForceZ);
-                        tLossGradForceXBuf.set(k, tForceLossMul*rLossGradForceX.value());
-                        tLossGradForceYBuf.set(k, tForceLossMul*rLossGradForceY.value());
-                        tLossGradForceZBuf.set(k, tForceLossMul*rLossGradForceZ.value());
-                    } else {
-                        tLossForce += aLossFuncForce.call(tForceXBuf.get(k), tForceX.get(k)/mNormSigmaEng);
-                        tLossForce += aLossFuncForce.call(tForceYBuf.get(k), tForceY.get(k)/mNormSigmaEng);
-                        tLossForce += aLossFuncForce.call(tForceZBuf.get(k), tForceZ.get(k)/mNormSigmaEng);
-                    }
-                }
-                rLoss.add(1, tForceLossMul*tLossForce);
-            }
-            // stress error
-            if (mHasStress) {
-                double tLossStress = 0.0;
-                if (tRequireGrad) {
-                    tLossStress += aLossFuncGradStress.call(rStressXX, tData.mStressXX.get(i)/mNormSigmaEng, rLossGradStressXX);
-                    tLossStress += aLossFuncGradStress.call(rStressYY, tData.mStressYY.get(i)/mNormSigmaEng, rLossGradStressYY);
-                    tLossStress += aLossFuncGradStress.call(rStressZZ, tData.mStressZZ.get(i)/mNormSigmaEng, rLossGradStressZZ);
-                    tLossStress += aLossFuncGradStress.call(rStressXY, tData.mStressXY.get(i)/mNormSigmaEng, rLossGradStressXY);
-                    tLossStress += aLossFuncGradStress.call(rStressXZ, tData.mStressXZ.get(i)/mNormSigmaEng, rLossGradStressXZ);
-                    tLossStress += aLossFuncGradStress.call(rStressYZ, tData.mStressYZ.get(i)/mNormSigmaEng, rLossGradStressYZ);
-                } else {
-                    tLossStress += aLossFuncStress.call(rStressXX, tData.mStressXX.get(i)/mNormSigmaEng);
-                    tLossStress += aLossFuncStress.call(rStressYY, tData.mStressYY.get(i)/mNormSigmaEng);
-                    tLossStress += aLossFuncStress.call(rStressZZ, tData.mStressZZ.get(i)/mNormSigmaEng);
-                    tLossStress += aLossFuncStress.call(rStressXY, tData.mStressXY.get(i)/mNormSigmaEng);
-                    tLossStress += aLossFuncStress.call(rStressXZ, tData.mStressXZ.get(i)/mNormSigmaEng);
-                    tLossStress += aLossFuncStress.call(rStressYZ, tData.mStressYZ.get(i)/mNormSigmaEng);
-                }
-                rLoss.add(2, mStressWeight*tLossStress/(tData.mSize*6));
-            }
-            /// backward
-            if (!tRequireGrad) return;
-            double tLossGradEng = mEnergyWeight * rLossGradEng.value() / (tAtomNum*tData.mSize);
-            double tLossGradStressXX = 0.0, tLossGradStressYY = 0.0, tLossGradStressZZ = 0.0;
-            double tLossGradStressXY = 0.0, tLossGradStressXZ = 0.0, tLossGradStressYZ = 0.0;
-            if (mHasStress) {
-                double tMul = -mStressWeight / (tVolume*tData.mSize*6);
-                tLossGradStressXX = tMul * rLossGradStressXX.value();
-                tLossGradStressYY = tMul * rLossGradStressYY.value();
-                tLossGradStressZZ = tMul * rLossGradStressZZ.value();
-                tLossGradStressXY = tMul * rLossGradStressXY.value();
-                tLossGradStressXZ = tMul * rLossGradStressXZ.value();
-                tLossGradStressYZ = tMul * rLossGradStressYZ.value();
-            }
-            for (int k = 0; k < tAtomNum; ++k) {
-                // energy loss grad
-                int tType = tAtomType.get(k);
-                Basis tSubBasis = tBasis[tType-1];
-                if (tSubBasis instanceof Mirror) {
-                    tType = ((Mirror)tSubBasis).mirrorType();
-                }
-                Vector tSubFp = tFp[k];
-                Vector tSubFpBuf = tFpBuf[tType-1];
-                Vector tSubNormMu = mNormMu[tType-1];
-                Vector tSubNormSigma = mNormSigma[tType-1];
-                tSubFpBuf.fill(j -> (tSubFp.get(j) - tSubNormMu.get(j)) / tSubNormSigma.get(j));
-                int tShiftPara = paraShift(tType);
-                tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
-                                      tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
-                // force loss grad
-                Vector tSubLossGradFp = tLossGradFp[tType-1];
-                ShortList tSubNl = tNl[k];
-                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
-                int tNlSize = tSubNl.size();
-                double tLossGradForceX = 0.0, tLossGradForceY = 0.0, tLossGradForceZ = 0.0;
-                if (mHasForce) {
-                    tLossGradForceX = tLossGradForceXBuf.get(k);
-                    tLossGradForceY = tLossGradForceYBuf.get(k);
-                    tLossGradForceZ = tLossGradForceZBuf.get(k);
-                }
-                tLossGradForceNlXBuf.clear(); tLossGradForceNlXBuf.addZeros(tNlSize);
-                tLossGradForceNlYBuf.clear(); tLossGradForceNlYBuf.addZeros(tNlSize);
-                tLossGradForceNlZBuf.clear(); tLossGradForceNlZBuf.addZeros(tNlSize);
-                for (int j = 0; j < tNlSize; ++j) {
-                    int nlk = tSubNl.get(j);
-                    double rLossGradForceNlX = 0.0, rLossGradForceNlY = 0.0, rLossGradForceNlZ = 0.0;
-                    if (mHasForce) {
-                        rLossGradForceNlX += tLossGradForceXBuf.get(nlk) - tLossGradForceX;
-                        rLossGradForceNlY += tLossGradForceYBuf.get(nlk) - tLossGradForceY;
-                        rLossGradForceNlZ += tLossGradForceZBuf.get(nlk) - tLossGradForceZ;
-                    }
-                    // stress loss grad here
-                    if (mHasStress) {
-                        double dx = tSubNlDx.get(j);
-                        double dy = tSubNlDy.get(j);
-                        double dz = tSubNlDz.get(j);
-                        rLossGradForceNlX += dx*tLossGradStressXX;
-                        rLossGradForceNlY += dy*tLossGradStressYY + dx*tLossGradStressXY;
-                        rLossGradForceNlZ += dz*tLossGradStressZZ + dx*tLossGradStressXZ + dy*tLossGradStressYZ;
-                    }
-                    tLossGradForceNlXBuf.set(j, rLossGradForceNlX);
-                    tLossGradForceNlYBuf.set(j, rLossGradForceNlY);
-                    tLossGradForceNlZBuf.set(j, rLossGradForceNlZ);
-                }
-                tSubLossGradFp.fill(0.0);
-                if (tCacheFpGrad) {
-                    backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
-                                           tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
-                                           tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
-                } else {
-                    backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
-                                           tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
-                                           tFpGradNlIndexBuf.get(k).internalData(), tFpGradFpIndexBuf.get(k).internalData(), tFpPxBuf.get(k).size());
-                }
-                tNN[tType-1].gradBackward(tSubLossGradFp, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
-                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
-                                          tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
-            }
+//            DoubleWrapper rLossGradForceX = new DoubleWrapper(0.0), rLossGradForceY = new DoubleWrapper(0.0), rLossGradForceZ = new DoubleWrapper(0.0);
+//            DoubleWrapper rLossGradStressXX = new DoubleWrapper(0.0), rLossGradStressYY = new DoubleWrapper(0.0), rLossGradStressZZ = new DoubleWrapper(0.0);
+//            DoubleWrapper rLossGradStressXY = new DoubleWrapper(0.0), rLossGradStressXZ = new DoubleWrapper(0.0), rLossGradStressYZ = new DoubleWrapper(0.0);
+//            Vector[] tLossGradFp = mLossGradFp[threadID];
+//            List<List<Vector>> tHiddenGrads2Buf = mHiddenGrads2Buf.get(threadID);
+//            List<List<Vector>> tHiddenGrads3Buf = mHiddenGrads3Buf.get(threadID);
+//            List<List<Vector>> tHiddenGradGradsBuf = mHiddenGradGradsBuf.get(threadID);
+//            DoubleList tForceXBuf = mForceXBuf[threadID];
+//            DoubleList tForceYBuf = mForceYBuf[threadID];
+//            DoubleList tForceZBuf = mForceZBuf[threadID];
+//            DoubleList tForceNlXBuf = mForceNlXBuf[threadID];
+//            DoubleList tForceNlYBuf = mForceNlYBuf[threadID];
+//            DoubleList tForceNlZBuf = mForceNlZBuf[threadID];
+//            DoubleList tLossGradForceXBuf = mLossGradForceXBuf[threadID];
+//            DoubleList tLossGradForceYBuf = mLossGradForceYBuf[threadID];
+//            DoubleList tLossGradForceZBuf = mLossGradForceZBuf[threadID];
+//            DoubleList tLossGradForceNlXBuf = mLossGradForceNlXBuf[threadID];
+//            DoubleList tLossGradForceNlYBuf = mLossGradForceNlYBuf[threadID];
+//            DoubleList tLossGradForceNlZBuf = mLossGradForceNlZBuf[threadID];
+//            FloatList[] tFpPx = tCacheFpGrad ? tData.mFpPx.get(i) : null;
+//            FloatList[] tFpPy = tCacheFpGrad ? tData.mFpPy.get(i) : null;
+//            FloatList[] tFpPz = tCacheFpGrad ? tData.mFpPz.get(i) : null;
+//            ShortList[] tFpGradNlIndex = tCacheFpGrad ? tData.mFpGradNlIndex.get(i) : null;
+//            ShortList[] tFpGradFpIndex = tCacheFpGrad ? tData.mFpGradFpIndex.get(i) : null;
+//            List<DoubleList> tFpPxBuf = mFpPxBuf.get(threadID);
+//            List<DoubleList> tFpPyBuf = mFpPyBuf.get(threadID);
+//            List<DoubleList> tFpPzBuf = mFpPzBuf.get(threadID);
+//            List<IntList> tFpGradNlIndexBuf = mFpGradNlIndexBuf.get(threadID);
+//            List<IntList> tFpGradFpIndexBuf = mFpGradFpIndexBuf.get(threadID);
+//            if (!tCacheFpGrad) {
+//                while (tFpPxBuf.size() < tAtomNum) tFpPxBuf.add(new DoubleList(256));
+//                while (tFpPyBuf.size() < tAtomNum) tFpPyBuf.add(new DoubleList(256));
+//                while (tFpPzBuf.size() < tAtomNum) tFpPzBuf.add(new DoubleList(256));
+//                while (tFpGradNlIndexBuf.size() < tAtomNum) tFpGradNlIndexBuf.add(new IntList(256));
+//                while (tFpGradFpIndexBuf.size() < tAtomNum) tFpGradFpIndexBuf.add(new IntList(256));
+//            }
+//            if (mHasForce) {
+//                tForceXBuf.clear(); tForceXBuf.addZeros(tAtomNum);
+//                tForceYBuf.clear(); tForceYBuf.addZeros(tAtomNum);
+//                tForceZBuf.clear(); tForceZBuf.addZeros(tAtomNum);
+//            }
+//            if (tRequireGrad) {
+//                validHiddenBuf_(threadID, tAtomType, true);
+//            }
+//            double rEng = 0.0;
+//            double rStressXX = 0.0, rStressYY = 0.0, rStressZZ = 0.0, rStressXY = 0.0, rStressXZ = 0.0, rStressYZ = 0.0;
+//            for (int k = 0; k < tAtomNum; ++k) {
+//                int tType = tAtomType.get(k);
+//                Basis tSubBasis = tBasis[tType-1];
+//                if (tSubBasis instanceof Mirror) {
+//                    tType = ((Mirror)tSubBasis).mirrorType();
+//                }
+//                Vector tSubFp = tFp[k];
+//                Vector tSubFpBuf = tFpBuf[tType-1];
+//                Vector tSubNormMu = mNormMu[tType-1];
+//                Vector tSubNormSigma = mNormSigma[tType-1];
+//                Vector tSubGradFpBuf = tGradFpBuf[tType-1];
+//                tSubFpBuf.fill(j -> (tSubFp.get(j) - tSubNormMu.get(j)) / tSubNormSigma.get(j));
+//                // cal energy
+//                rEng += tRequireGrad ? tNN[tType-1].forwardGrad(tSubFpBuf, tSubGradFpBuf, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+//                                                                tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
+//                                     : tNN[tType-1].evalGrad(tSubFpBuf, tSubGradFpBuf);
+//                // cal force
+//                ShortList tSubNl = tNl[k];
+//                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
+//                int tNlSize = tSubNl.size();
+//                tForceNlXBuf.clear(); tForceNlXBuf.addZeros(tNlSize);
+//                tForceNlYBuf.clear(); tForceNlYBuf.addZeros(tNlSize);
+//                tForceNlZBuf.clear(); tForceNlZBuf.addZeros(tNlSize);
+//                if (tCacheFpGrad) {
+//                    forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
+//                                          tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
+//                                          tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
+//                } else {
+//                    initNl(tSubNl, tSubNlDx, tSubNlDy, tSubNlDz, tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
+//                    tSubBasis.evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFpBuf, tFpGradNlIndexBuf.get(k), tFpGradFpIndexBuf.get(k), tFpPxBuf.get(k), tFpPyBuf.get(k), tFpPzBuf.get(k));
+//                    forwardForceIndexFMA_(tForceNlXBuf.internalData(), tForceNlYBuf.internalData(), tForceNlZBuf.internalData(), tSubGradFpBuf.internalData(),
+//                                          tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
+//                                          tFpGradNlIndexBuf.get(k).internalData(), tFpGradFpIndexBuf.get(k).internalData(), tFpPxBuf.get(k).size());
+//                }
+//                for (int j = 0; j < tNlSize; ++j) {
+//                    double fx = tForceNlXBuf.get(j);
+//                    double fy = tForceNlYBuf.get(j);
+//                    double fz = tForceNlZBuf.get(j);
+//                    int nlk = tSubNl.get(j);
+//                    if (mHasForce) {
+//                        tForceXBuf.set(k, tForceXBuf.get(k) - fx);
+//                        tForceYBuf.set(k, tForceYBuf.get(k) - fy);
+//                        tForceZBuf.set(k, tForceZBuf.get(k) - fz);
+//                        tForceXBuf.set(nlk, tForceXBuf.get(nlk) + fx);
+//                        tForceYBuf.set(nlk, tForceYBuf.get(nlk) + fy);
+//                        tForceZBuf.set(nlk, tForceZBuf.get(nlk) + fz);
+//                    }
+//                    // cal stress here
+//                    if (mHasStress) {
+//                        double dx = tSubNlDx.get(j);
+//                        double dy = tSubNlDy.get(j);
+//                        double dz = tSubNlDz.get(j);
+//                        rStressXX += dx * fx; rStressYY += dy * fy; rStressZZ += dz * fz;
+//                        rStressXY += dx * fy; rStressXZ += dx * fz; rStressYZ += dy * fz;
+//                    }
+//                }
+//            }
+//            // cal stress here
+//            if (mHasStress) {
+//                rStressXX = -rStressXX/tVolume; rStressYY = -rStressYY/tVolume; rStressZZ = -rStressZZ/tVolume;
+//                rStressXY = -rStressXY/tVolume; rStressXZ = -rStressXZ/tVolume; rStressYZ = -rStressYZ/tVolume;
+//            }
+//            // energy error
+//            rEng /= tAtomNum;
+//            double tLossEng = tRequireGrad ? aLossFuncGradEng.call(rEng, (tData.mEng.get(i) - mNormMuEng)/mNormSigmaEng, rLossGradEng)
+//                                           : aLossFuncEng.call(rEng, (tData.mEng.get(i) - mNormMuEng)/mNormSigmaEng);
+//            rLoss.add(0, mEnergyWeight * tLossEng / tData.mSize);
+//            // force error
+//            if (mHasForce) {
+//                double tLossForce = 0.0;
+//                if (tRequireGrad) {
+//                    tLossGradForceXBuf.clear(); tLossGradForceXBuf.addZeros(tAtomNum);
+//                    tLossGradForceYBuf.clear(); tLossGradForceYBuf.addZeros(tAtomNum);
+//                    tLossGradForceZBuf.clear(); tLossGradForceZBuf.addZeros(tAtomNum);
+//                }
+//                double tForceLossMul = mForceWeight / (tData.mAtomSize*3);
+//                Vector tForceX = tData.mForceX.get(i), tForceY = tData.mForceY.get(i), tForceZ = tData.mForceZ.get(i);
+//                for (int k = 0; k < tAtomNum; ++k) {
+//                    if (tRequireGrad) {
+//                        tLossForce += aLossFuncGradForce.call(tForceXBuf.get(k), tForceX.get(k)/mNormSigmaEng, rLossGradForceX);
+//                        tLossForce += aLossFuncGradForce.call(tForceYBuf.get(k), tForceY.get(k)/mNormSigmaEng, rLossGradForceY);
+//                        tLossForce += aLossFuncGradForce.call(tForceZBuf.get(k), tForceZ.get(k)/mNormSigmaEng, rLossGradForceZ);
+//                        tLossGradForceXBuf.set(k, tForceLossMul*rLossGradForceX.value());
+//                        tLossGradForceYBuf.set(k, tForceLossMul*rLossGradForceY.value());
+//                        tLossGradForceZBuf.set(k, tForceLossMul*rLossGradForceZ.value());
+//                    } else {
+//                        tLossForce += aLossFuncForce.call(tForceXBuf.get(k), tForceX.get(k)/mNormSigmaEng);
+//                        tLossForce += aLossFuncForce.call(tForceYBuf.get(k), tForceY.get(k)/mNormSigmaEng);
+//                        tLossForce += aLossFuncForce.call(tForceZBuf.get(k), tForceZ.get(k)/mNormSigmaEng);
+//                    }
+//                }
+//                rLoss.add(1, tForceLossMul*tLossForce);
+//            }
+//            // stress error
+//            if (mHasStress) {
+//                double tLossStress = 0.0;
+//                if (tRequireGrad) {
+//                    tLossStress += aLossFuncGradStress.call(rStressXX, tData.mStressXX.get(i)/mNormSigmaEng, rLossGradStressXX);
+//                    tLossStress += aLossFuncGradStress.call(rStressYY, tData.mStressYY.get(i)/mNormSigmaEng, rLossGradStressYY);
+//                    tLossStress += aLossFuncGradStress.call(rStressZZ, tData.mStressZZ.get(i)/mNormSigmaEng, rLossGradStressZZ);
+//                    tLossStress += aLossFuncGradStress.call(rStressXY, tData.mStressXY.get(i)/mNormSigmaEng, rLossGradStressXY);
+//                    tLossStress += aLossFuncGradStress.call(rStressXZ, tData.mStressXZ.get(i)/mNormSigmaEng, rLossGradStressXZ);
+//                    tLossStress += aLossFuncGradStress.call(rStressYZ, tData.mStressYZ.get(i)/mNormSigmaEng, rLossGradStressYZ);
+//                } else {
+//                    tLossStress += aLossFuncStress.call(rStressXX, tData.mStressXX.get(i)/mNormSigmaEng);
+//                    tLossStress += aLossFuncStress.call(rStressYY, tData.mStressYY.get(i)/mNormSigmaEng);
+//                    tLossStress += aLossFuncStress.call(rStressZZ, tData.mStressZZ.get(i)/mNormSigmaEng);
+//                    tLossStress += aLossFuncStress.call(rStressXY, tData.mStressXY.get(i)/mNormSigmaEng);
+//                    tLossStress += aLossFuncStress.call(rStressXZ, tData.mStressXZ.get(i)/mNormSigmaEng);
+//                    tLossStress += aLossFuncStress.call(rStressYZ, tData.mStressYZ.get(i)/mNormSigmaEng);
+//                }
+//                rLoss.add(2, mStressWeight*tLossStress/(tData.mSize*6));
+//            }
+//            /// backward
+//            if (!tRequireGrad) return;
+//            double tLossGradEng = mEnergyWeight * rLossGradEng.value() / (tAtomNum*tData.mSize);
+//            double tLossGradStressXX = 0.0, tLossGradStressYY = 0.0, tLossGradStressZZ = 0.0;
+//            double tLossGradStressXY = 0.0, tLossGradStressXZ = 0.0, tLossGradStressYZ = 0.0;
+//            if (mHasStress) {
+//                double tMul = -mStressWeight / (tVolume*tData.mSize*6);
+//                tLossGradStressXX = tMul * rLossGradStressXX.value();
+//                tLossGradStressYY = tMul * rLossGradStressYY.value();
+//                tLossGradStressZZ = tMul * rLossGradStressZZ.value();
+//                tLossGradStressXY = tMul * rLossGradStressXY.value();
+//                tLossGradStressXZ = tMul * rLossGradStressXZ.value();
+//                tLossGradStressYZ = tMul * rLossGradStressYZ.value();
+//            }
+//            for (int k = 0; k < tAtomNum; ++k) {
+//                // energy loss grad
+//                int tType = tAtomType.get(k);
+//                Basis tSubBasis = tBasis[tType-1];
+//                if (tSubBasis instanceof Mirror) {
+//                    tType = ((Mirror)tSubBasis).mirrorType();
+//                }
+//                Vector tSubFp = tFp[k];
+//                Vector tSubFpBuf = tFpBuf[tType-1];
+//                Vector tSubNormMu = mNormMu[tType-1];
+//                Vector tSubNormSigma = mNormSigma[tType-1];
+//                tSubFpBuf.fill(j -> (tSubFp.get(j) - tSubNormMu.get(j)) / tSubNormSigma.get(j));
+//                int tShiftPara = paraShift(tType);
+//                tNN[tType-1].backward(tLossGradEng, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+//                                      tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+//                // force loss grad
+//                Vector tSubLossGradFp = tLossGradFp[tType-1];
+//                ShortList tSubNl = tNl[k];
+//                FloatList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
+//                int tNlSize = tSubNl.size();
+//                double tLossGradForceX = 0.0, tLossGradForceY = 0.0, tLossGradForceZ = 0.0;
+//                if (mHasForce) {
+//                    tLossGradForceX = tLossGradForceXBuf.get(k);
+//                    tLossGradForceY = tLossGradForceYBuf.get(k);
+//                    tLossGradForceZ = tLossGradForceZBuf.get(k);
+//                }
+//                tLossGradForceNlXBuf.clear(); tLossGradForceNlXBuf.addZeros(tNlSize);
+//                tLossGradForceNlYBuf.clear(); tLossGradForceNlYBuf.addZeros(tNlSize);
+//                tLossGradForceNlZBuf.clear(); tLossGradForceNlZBuf.addZeros(tNlSize);
+//                for (int j = 0; j < tNlSize; ++j) {
+//                    int nlk = tSubNl.get(j);
+//                    double rLossGradForceNlX = 0.0, rLossGradForceNlY = 0.0, rLossGradForceNlZ = 0.0;
+//                    if (mHasForce) {
+//                        rLossGradForceNlX += tLossGradForceXBuf.get(nlk) - tLossGradForceX;
+//                        rLossGradForceNlY += tLossGradForceYBuf.get(nlk) - tLossGradForceY;
+//                        rLossGradForceNlZ += tLossGradForceZBuf.get(nlk) - tLossGradForceZ;
+//                    }
+//                    // stress loss grad here
+//                    if (mHasStress) {
+//                        double dx = tSubNlDx.get(j);
+//                        double dy = tSubNlDy.get(j);
+//                        double dz = tSubNlDz.get(j);
+//                        rLossGradForceNlX += dx*tLossGradStressXX;
+//                        rLossGradForceNlY += dy*tLossGradStressYY + dx*tLossGradStressXY;
+//                        rLossGradForceNlZ += dz*tLossGradStressZZ + dx*tLossGradStressXZ + dy*tLossGradStressYZ;
+//                    }
+//                    tLossGradForceNlXBuf.set(j, rLossGradForceNlX);
+//                    tLossGradForceNlYBuf.set(j, rLossGradForceNlY);
+//                    tLossGradForceNlZBuf.set(j, rLossGradForceNlZ);
+//                }
+//                tSubLossGradFp.fill(0.0);
+//                if (tCacheFpGrad) {
+//                    backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
+//                                           tFpPx[k].internalData(), tFpPy[k].internalData(), tFpPz[k].internalData(), tSubNormSigma.internalData(),
+//                                           tFpGradNlIndex[k].internalData(), tFpGradFpIndex[k].internalData(), tFpPx[k].size());
+//                } else {
+//                    backwardForceIndexFMA_(tSubLossGradFp.internalData(), tLossGradForceNlXBuf.internalData(), tLossGradForceNlYBuf.internalData(), tLossGradForceNlZBuf.internalData(),
+//                                           tFpPxBuf.get(k).internalData(), tFpPyBuf.get(k).internalData(), tFpPzBuf.get(k).internalData(), tSubNormSigma.internalData(),
+//                                           tFpGradNlIndexBuf.get(k).internalData(), tFpGradFpIndexBuf.get(k).internalData(), tFpPxBuf.get(k).size());
+//                }
+//                tNN[tType-1].gradBackward(tSubLossGradFp, tSubFpBuf, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+//                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+//                                          tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
+//            }
         });
         // 如果没有固定归一化向量，在这里进行 train basis 归一化部分的反向传播
         if (mTrainBasis && (!mFixNorm) && tRequireGrad) {
@@ -1486,11 +1486,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     }
                 }
                 if (tNeedGrad) {
-                    DoubleList tSubFpPx = new DoubleList(1024), tSubFpPy = new DoubleList(1024), tSubFpPz = new DoubleList(1024);
-                    IntList tSubFpGradNlIndex = new IntList(1024), tSubFpGradFpIndex = new IntList(1024);
-                    tBasis[tType-1].evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFp, tSubFpGradNlIndex, tSubFpGradFpIndex, tSubFpPx, tSubFpPy, tSubFpPz);
-                    rFpPx[k] = floatFrom_(tSubFpPx); rFpPy[k] = floatFrom_(tSubFpPy); rFpPz[k] = floatFrom_(tSubFpPz);
-                    rFpGradNlIndex[k] = shortFrom_(tSubFpGradNlIndex); rFpGradFpIndex[k] = shortFrom_(tSubFpGradFpIndex);
+//                    DoubleList tSubFpPx = new DoubleList(1024), tSubFpPy = new DoubleList(1024), tSubFpPz = new DoubleList(1024);
+//                    IntList tSubFpGradNlIndex = new IntList(1024), tSubFpGradFpIndex = new IntList(1024);
+//                    tBasis[tType-1].evalGrad(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFp, tSubFpGradNlIndex, tSubFpGradFpIndex, tSubFpPx, tSubFpPy, tSubFpPz);
+//                    rFpPx[k] = floatFrom_(tSubFpPx); rFpPy[k] = floatFrom_(tSubFpPy); rFpPz[k] = floatFrom_(tSubFpPz);
+//                    rFpGradNlIndex[k] = shortFrom_(tSubFpGradNlIndex); rFpGradFpIndex[k] = shortFrom_(tSubFpGradFpIndex);
                 } else {
                     tBasis[tType-1].eval(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, tSubFp);
                 }

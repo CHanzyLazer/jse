@@ -1,5 +1,6 @@
 package jsex.nnap;
 
+import groovy.lang.DeprecationException;
 import jep.python.PyCallable;
 import jep.python.PyObject;
 import jse.atom.IAtomData;
@@ -312,24 +313,6 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
             }
             mRefEngs.set(i, tRefEng);
         }
-        mFp = new Vector[mSymbols.length];
-        mFpPx = new Vector[mSymbols.length];
-        mFpPy = new Vector[mSymbols.length];
-        mFpPz = new Vector[mSymbols.length];
-        mFpPxCross = new DoubleList[mSymbols.length];
-        mFpPyCross = new DoubleList[mSymbols.length];
-        mFpPzCross = new DoubleList[mSymbols.length];
-        for (int i = 0; i < mSymbols.length; ++i) {
-            int tBasisSize = mBasis[i].size();
-            mFp[i] = Vectors.zeros(tBasisSize);
-            mFpPx[i] = Vectors.zeros(tBasisSize);
-            mFpPy[i] = Vectors.zeros(tBasisSize);
-            mFpPz[i] = Vectors.zeros(tBasisSize);
-            mFpPxCross[i] = new DoubleList(1024);
-            mFpPyCross[i] = new DoubleList(1024);
-            mFpPzCross[i] = new DoubleList(1024);
-        }
-        
     }
     public TrainerTorch(String[] aSymbols, IVector aRefEngs, Basis aBasis, Map<String, ?> aModelSetting) {this(aSymbols, aRefEngs, repeatBasis_(aBasis, aSymbols.length), aModelSetting);}
     public TrainerTorch(String[] aSymbols, double[] aRefEngs, Basis[] aBasis, Map<String, ?> aModelSetting) {this(aSymbols, Vectors.from(aRefEngs), aBasis, aModelSetting);}
@@ -592,10 +575,6 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
     public void train(int aEpochs, boolean aEarlyStop) {train(aEpochs, aEarlyStop, true);}
     public void train(int aEpochs) {train(aEpochs, true);}
     
-    /// 现在全局缓存这些变量
-    private final Vector[] mFp, mFpPx, mFpPy, mFpPz;
-    private final DoubleList[] mFpPxCross, mFpPyCross, mFpPzCross;
-    
     @ApiStatus.Internal
     protected void calRefEngFpAndAdd_(IAtomData aAtomData, double aEnergy, DataSet rData) {
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
@@ -617,145 +596,6 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
         }
         // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
         rData.mEng.add(aEnergy);
-    }
-    @ApiStatus.Internal
-    protected void calRefEngFpPartialAndAdd_(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress, DataSet rData) {
-        final boolean tTrainInFloat = mTrainer.getAttr("train_in_float", Boolean.class);
-        IntUnaryOperator tTypeMap = typeMap(aAtomData);
-        // 由于数据集不完整因此这里不去做归一化
-        final int tAtomNum = aAtomData.atomNumber();
-        try (final AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
-            for (int i = 0; i < tAtomNum; ++i) {
-                int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
-                Basis tBasis = basis(tType);
-                final int tBasisSize = tBasis.size();
-                Vector tFp = mFp[tType-1];
-                Vector tFpPx = mFpPx[tType-1];
-                Vector tFpPy = mFpPy[tType-1];
-                Vector tFpPz = mFpPz[tType-1];
-                DoubleList tFpPxCross = mFpPxCross[tType-1];
-                DoubleList tFpPyCross = mFpPyCross[tType-1];
-                DoubleList tFpPzCross = mFpPzCross[tType-1];
-                tBasis.evalGrad(tAPC, i, tTypeMap, tFp, tFpPxCross, tFpPyCross, tFpPzCross);
-                // 基组和索引
-                rData.mFp[tType-1].addAll(tFp);
-                rData.mEngIndices[tType-1].add(rData.mEng.size());
-                // 计算相对能量值
-                aEnergy -= mRefEngs.get(tType-1);
-                // 基组偏导和索引
-                final int tNN = tFpPxCross.size()/tBasisSize;
-                // 为了减少后续优化过程中的近邻求和次数，因此这里还是使用旧的求力方法
-                tFpPx.fill(0.0); tFpPy.fill(0.0); tFpPz.fill(0.0);
-                for (int j = 0; j < tNN; ++j) {
-                    tFpPx.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPxCross.internalData()));
-                    tFpPy.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPyCross.internalData()));
-                    tFpPz.minus2this(new ShiftVector(tBasisSize, tBasisSize*j, tFpPzCross.internalData()));
-                }
-                int tRowNum = tNN*3 + 3;
-                final RowMatrix tFpPartial = MatrixCache.getMatRow(tRowNum, tBasis.size());
-                tFpPartial.row(0).fill(tFpPx);
-                tFpPartial.row(1).fill(tFpPy);
-                tFpPartial.row(2).fill(tFpPz);
-                final IntVector tForceIndices = mHasForce ? IntVectorCache.getVec(tRowNum) : null;
-                final int tShiftF = mHasForce ? rData.mForce.size() : -1;
-                if (mHasForce) {
-                    tForceIndices.set(0, tShiftF + 3*i);
-                    tForceIndices.set(1, tShiftF + 3*i + 1);
-                    tForceIndices.set(2, tShiftF + 3*i + 2);
-                }
-                final RowIntMatrix tStressIndices = mHasStress ? IntMatrixCache.getMatRow(tRowNum, 2) : null;
-                final RowMatrix tStressDxyz = mHasStress ? MatrixCache.getMatRow(tRowNum, 2) : null;
-                final int tShiftS = mHasStress ? rData.mStress.size() : -1;
-                if (mHasStress) {
-                    // 按照目前展开约定，会是这个顺序
-                    tStressIndices.set(0, 0, tShiftS);   tStressIndices.set(0, 1, tShiftS+3);
-                    tStressIndices.set(1, 0, tShiftS+1); tStressIndices.set(1, 1, tShiftS+5);
-                    tStressIndices.set(2, 0, tShiftS+2); tStressIndices.set(2, 1, tShiftS+4);
-                    // 第二列用来计算交叉项，原子自身力不贡献应力
-                    tStressDxyz.set(0, 0, 0.0); tStressDxyz.set(0, 1, 0.0);
-                    tStressDxyz.set(1, 0, 0.0); tStressDxyz.set(1, 1, 0.0);
-                    tStressDxyz.set(2, 0, 0.0); tStressDxyz.set(2, 1, 0.0);
-                }
-                final int[] j = {0};
-                tAPC.nl_().forEachNeighbor(i, tBasis.rcut(), (dx, dy, dz, idx) -> {
-                    tFpPartial.row(3 + 3*j[0]).fill(new ShiftVector(tBasisSize, tBasisSize*j[0], tFpPxCross.internalData()));
-                    tFpPartial.row(4 + 3*j[0]).fill(new ShiftVector(tBasisSize, tBasisSize*j[0], tFpPyCross.internalData()));
-                    tFpPartial.row(5 + 3*j[0]).fill(new ShiftVector(tBasisSize, tBasisSize*j[0], tFpPzCross.internalData()));
-                    if (mHasForce) {
-                        assert tForceIndices != null;
-                        tForceIndices.set(3 + 3*j[0], tShiftF + 3*idx);
-                        tForceIndices.set(4 + 3*j[0], tShiftF + 3*idx + 1);
-                        tForceIndices.set(5 + 3*j[0], tShiftF + 3*idx + 2);
-                    }
-                    if (mHasStress) {
-                        assert tStressIndices != null;
-                        // 按照目前展开约定，会是这个顺序
-                        tStressIndices.set(3 + 3*j[0], 0, tShiftS);   tStressIndices.set(3 + 3*j[0], 1, tShiftS+3);
-                        tStressIndices.set(4 + 3*j[0], 0, tShiftS+1); tStressIndices.set(4 + 3*j[0], 1, tShiftS+5);
-                        tStressIndices.set(5 + 3*j[0], 0, tShiftS+2); tStressIndices.set(5 + 3*j[0], 1, tShiftS+4);
-                        assert tStressDxyz != null;
-                        // 第二列用来计算交叉项
-                        tStressDxyz.set(3 + 3*j[0], 0, dx); tStressDxyz.set(3 + 3*j[0], 1, dy);
-                        tStressDxyz.set(4 + 3*j[0], 0, dy); tStressDxyz.set(4 + 3*j[0], 1, dz);
-                        tStressDxyz.set(5 + 3*j[0], 0, dz); tStressDxyz.set(5 + 3*j[0], 1, dx);
-                    }
-                    ++j[0];
-                });
-                // 将数据转换为 torch 的 tensor，这里最快的方式是利用 torch 的 from_numpy 进行转换
-                PyObject tPyFpPartial, tPyForceIndices=null, tPyStressIndices=null, tPyStressDxyz=null;
-                try (PyCallable fFromNumpy = TORCH.getAttr("from_numpy", PyCallable.class)) {
-                    tPyFpPartial = fFromNumpy.callAs(PyObject.class, tFpPartial.numpy());
-                    if (tTrainInFloat) {
-                        try (PyObject oPyFpPartial = tPyFpPartial; PyCallable fFloat = oPyFpPartial.getAttr("float", PyCallable.class)) {
-                            tPyFpPartial = fFloat.callAs(PyObject.class);
-                        }
-                    }
-                    if (mHasForce) {
-                        assert tForceIndices != null;
-                        tPyForceIndices = fFromNumpy.callAs(PyObject.class, tForceIndices.numpy());
-                    }
-                    if (mHasStress) {
-                        assert tStressIndices != null;
-                        tPyStressIndices = fFromNumpy.callAs(PyObject.class, tStressIndices.numpy());
-                        assert tStressDxyz != null;
-                        tPyStressDxyz = fFromNumpy.callAs(PyObject.class, tStressDxyz.numpy());
-                        if (tTrainInFloat) {
-                            try (PyObject oPyStressDxyz = tPyStressDxyz; PyCallable fFloat = oPyStressDxyz.getAttr("float", PyCallable.class)) {
-                                tPyStressDxyz = fFloat.callAs(PyObject.class);
-                            }
-                        }
-                    }
-                }
-                rData.mFpPartial.get(tType-1).add(tPyFpPartial);
-                rData.mNN[tType-1].add(tNN);
-                MatrixCache.returnMat(tFpPartial);
-                if (mHasForce) {
-                    assert tForceIndices != null;
-                    rData.mForceIndices.get(tType-1).add(tPyForceIndices);
-                    IntVectorCache.returnVec(tForceIndices);
-                }
-                if (mHasStress) {
-                    assert tStressIndices != null;
-                    rData.mStressIndices.get(tType-1).add(tPyStressIndices);
-                    IntMatrixCache.returnMat(tStressIndices);
-                    assert tStressDxyz != null;
-                    rData.mStressDxyz.get(tType-1).add(tPyStressDxyz);
-                    MatrixCache.returnMat(tStressDxyz);
-                }
-            }
-        }
-        // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
-        rData.mEng.add(aEnergy);
-        // 这里后添加力，这样 rData.mForce.size() 对应正确的索引
-        if (mHasForce) {
-            assert aForces != null;
-            rData.mForce.addAll(aForces.asVecRow());
-        }
-        // 这里后添加应力应力，这样 rData.mStress.size() 对应正确的索引
-        if (mHasStress) {
-            assert aStress != null;
-            rData.mStress.addAll(aStress);
-        }
     }
     
     /**
@@ -782,7 +622,7 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
         }
         // 添加数据
         if (mHasForce || mHasStress) {
-            calRefEngFpPartialAndAdd_(aAtomData, aEnergy, aForces, aStress, mTrainData);
+            throw new DeprecationException("TorchTrainer no longer provides force fitting support, use Trainer instead");
         } else {
             calRefEngFpAndAdd_(aAtomData, aEnergy, mTrainData);
         }
@@ -823,7 +663,7 @@ public class TrainerTorch implements IHasSymbol, IAutoShutdown, ISavable {
         }
         // 添加数据
         if (mHasForce || mHasStress) {
-            calRefEngFpPartialAndAdd_(aAtomData, aEnergy, aForces, aStress, mTestData);
+            throw new DeprecationException("TorchTrainer no longer provides force fitting support, use Trainer instead");
         } else {
             calRefEngFpAndAdd_(aAtomData, aEnergy, mTestData);
         }

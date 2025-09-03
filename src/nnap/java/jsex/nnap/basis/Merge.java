@@ -26,8 +26,6 @@ public class Merge extends Basis {
     private final int[] mParaSizes;
     private final String @Nullable[] mSymbols;
     private final ShiftVector[] mFpShell, mNNGradShell, mParaShell;
-    private final ShiftIntVector[] mFpNlSizeShell, mFpGradNlIndexShell, mFpGradFpIndexShell;
-    private final ShiftVector[] mFpPxShell, mFpPyShell, mFpPzShell;
     
     public Merge(MergeableBasis... aMergeBasis) {
         if (aMergeBasis==null || aMergeBasis.length==0) throw new IllegalArgumentException("Merge basis can not be null or empty");
@@ -86,22 +84,10 @@ public class Merge extends Basis {
         // init fp shell
         mFpShell = new ShiftVector[mMergeBasis.length];
         mNNGradShell = new ShiftVector[mMergeBasis.length];
-        mFpNlSizeShell = new ShiftIntVector[mMergeBasis.length];
-        mFpGradNlIndexShell = new ShiftIntVector[mMergeBasis.length];
-        mFpGradFpIndexShell = new ShiftIntVector[mMergeBasis.length];
-        mFpPxShell = new ShiftVector[mMergeBasis.length];
-        mFpPyShell = new ShiftVector[mMergeBasis.length];
-        mFpPzShell = new ShiftVector[mMergeBasis.length];
         for (int i = 0; i < mMergeBasis.length; ++i) {
             int tSizeFp = mMergeBasis[i].size();
             mFpShell[i] = new ShiftVector(tSizeFp, 0, null);
             mNNGradShell[i] = new ShiftVector(tSizeFp, 0, null);
-            mFpNlSizeShell[i] = new ShiftIntVector(tSizeFp, 0, null);
-            mFpGradNlIndexShell[i]  = new ShiftIntVector(0, 0, null);
-            mFpGradFpIndexShell[i]  = new ShiftIntVector(0, 0, null);
-            mFpPxShell[i] = new ShiftVector(0, 0, null);
-            mFpPyShell[i] = new ShiftVector(0, 0, null);
-            mFpPzShell[i] = new ShiftVector(0, 0, null);
         }
     }
     @Override public Merge threadSafeRef() {
@@ -232,24 +218,18 @@ public class Merge extends Basis {
     }
     
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, @Nullable IntArrayVector rFpGradNlSize, boolean aBufferNl) {
+    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         if (Conf.OPERATION_CHECK) {
             if (mSize != rFp.size()) throw new IllegalArgumentException("data size mismatch");
         } else {
             if (mSize > rFp.size()) throw new IllegalArgumentException("data size mismatch");
         }
-        int tFpShift0 = rFp.internalDataShift();
-        int tFpShift = 0;
+        int tFpShift = rFp.internalDataShift();
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tFp = mFpShell[i];
-            tFp.setInternalData(rFp.internalData()); tFp.setInternalDataShift(tFpShift0+tFpShift);
-            ShiftIntVector tFpNlSize = rFpGradNlSize ==null ? null : mFpNlSizeShell[i];
-            if (tFpNlSize != null) {
-                tFpNlSize.setInternalData(rFpGradNlSize.internalData());
-                tFpNlSize.setInternalDataShift(tFpShift); // 这里输入的 rFpGradNlSize 没有 shift
-            }
-            mMergeBasis[i].eval_(aNlDx, aNlDy, aNlDz, aNlType, tFp, tFpNlSize, aBufferNl);
+            tFp.setInternalData(rFp.internalData()); tFp.setInternalDataShift(tFpShift);
+            mMergeBasis[i].eval_(aNlDx, aNlDy, aNlDz, aNlType, tFp, aBufferNl);
             tFpShift += tFp.internalDataSize();
         }
     }
@@ -275,30 +255,6 @@ public class Merge extends Basis {
         }
     }
     @Override
-    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, IntArrayVector aFpGradNlSize, IntArrayVector rFpGradNlIndex, IntArrayVector rFpGradFpIndex, DoubleArrayVector rFpPx, DoubleArrayVector rFpPy, DoubleArrayVector rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        int tFpShift = 0, tNlShift = 0; // 这里输入都是没有 shift
-        for (int i = 0; i < mMergeBasis.length; ++i) {
-            ShiftIntVector tFpNlSize = mFpNlSizeShell[i];
-            tFpNlSize.setInternalData(aFpGradNlSize.internalData()); tFpNlSize.setInternalDataShift(tFpShift);
-            int tSubSizeAll = tFpNlSize.sum();
-            ShiftIntVector tFpGradNlIndex = mFpGradNlIndexShell[i];
-            ShiftIntVector tFpGradFpIndex = mFpGradFpIndexShell[i];
-            tFpGradNlIndex.setInternalData(rFpGradNlIndex.internalData()); tFpGradNlIndex.setInternalDataShift(tNlShift); tFpGradNlIndex.setInternalDataSize(tSubSizeAll);
-            tFpGradFpIndex.setInternalData(rFpGradFpIndex.internalData()); tFpGradFpIndex.setInternalDataShift(tNlShift); tFpGradFpIndex.setInternalDataSize(tSubSizeAll);
-            ShiftVector tFpPx = mFpPxShell[i];
-            ShiftVector tFpPy = mFpPyShell[i];
-            ShiftVector tFpPz = mFpPzShell[i];
-            tFpPx.setInternalData(rFpPx.internalData()); tFpPx.setInternalDataShift(tNlShift); tFpPx.setInternalDataSize(tSubSizeAll);
-            tFpPy.setInternalData(rFpPy.internalData()); tFpPy.setInternalDataShift(tNlShift); tFpPy.setInternalDataSize(tSubSizeAll);
-            tFpPz.setInternalData(rFpPz.internalData()); tFpPz.setInternalDataShift(tNlShift); tFpPz.setInternalDataSize(tSubSizeAll);
-            mMergeBasis[i].evalGrad_(aNlDx, aNlDy, aNlDz, aNlType, tFpNlSize, tFpGradNlIndex, tFpGradFpIndex, tFpPx, tFpPy, tFpPz);
-            tFpGradFpIndex.plus2this(tFpNlSize.internalDataShift());
-            tNlShift += tSubSizeAll;
-            tFpShift += tFpNlSize.internalDataSize();
-        }
-    }
-    @Override
     protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         // 这里需要手动清空旧值
@@ -309,16 +265,6 @@ public class Merge extends Basis {
             tNNGrad.setInternalData(aNNGrad.internalData()); tNNGrad.setInternalDataShift(tFpShift);
             mMergeBasis[i].evalForceAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, tNNGrad, rFx, rFy, rFz);
             tFpShift += tNNGrad.internalDataSize();
-        }
-    }
-    @Override @Deprecated
-    protected void evalGrad_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleList rFpPx, DoubleList rFpPy, DoubleList rFpPz) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        int tFpShift = 0;
-        for (int i = 0; i < mMergeBasis.length; ++i) {
-            int tFpSize = mFpShell[i].internalDataSize();
-            mMergeBasis[i].evalGradWithShift_(aNlDx, aNlDy, aNlDz, aNlType, tFpShift, mSize-tFpShift-tFpSize, rFpPx, rFpPy, rFpPz);
-            tFpShift += tFpSize;
         }
     }
 }
