@@ -38,11 +38,11 @@ public class SphericalChebyshev extends WTypeBasis {
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
     final String @Nullable[] mSymbols;
-    final int mNMax, mLMax, mL3Max;
+    final int mLMax, mL3Max;
     final boolean mNoRadial, mL3Cross;
     final double mRCut;
     
-    final int mSizeN, mSizeL, mSize;
+    final int mSizeL, mSize;
     final int mLMaxMax, mLMAll;
     
     /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
@@ -56,19 +56,16 @@ public class SphericalChebyshev extends WTypeBasis {
     private final DoubleList mNlRn = new DoubleList(128);
     
     SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, double aRCut, int aWType, @Nullable RowMatrix aFuseWeight) {
-        super(aTypeNum, aWType, aFuseWeight);
-        if (aNMax<0 || aNMax>20) throw new IllegalArgumentException("Input nmax MUST be in [0, 20], input: "+aNMax);
+        super(aTypeNum, aNMax, aWType, aFuseWeight);
         if (aLMax<0 || aLMax>8) throw new IllegalArgumentException("Input lmax MUST be in [0, 8], input: "+aLMax);
         if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
         mSymbols = aSymbols;
-        mNMax = aNMax;
         mLMax = aLMax;
         mL3Max = aL3Max;
         mNoRadial = aNoRadial;
         mL3Cross = aL3Cross;
         mRCut = aRCut;
         
-        mSizeN = sizeN_(mNMax);
         mSizeL = (mNoRadial?mLMax:(mLMax+1)) + (mL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[mL3Max];
         mSize = mSizeN*mSizeL;
         mLMaxMax = Math.max(mLMax, mL3Max);
@@ -129,11 +126,12 @@ public class SphericalChebyshev extends WTypeBasis {
     
     @SuppressWarnings("rawtypes")
     public static SphericalChebyshev load(String @NotNull[] aSymbols, Map aMap) {
+        int aTypeNum = aSymbols.length;
+        int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
-        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aSymbols.length);
+        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum, aNMax);
         return new SphericalChebyshev(
-            aSymbols, aSymbols.length,
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
+            aSymbols, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_NORADIAL, "noradial"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
@@ -144,11 +142,11 @@ public class SphericalChebyshev extends WTypeBasis {
     }
     @SuppressWarnings("rawtypes")
     public static SphericalChebyshev load(int aTypeNum, Map aMap) {
+        int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
-        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum);
+        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum, aNMax);
         return new SphericalChebyshev(
-            null, aTypeNum,
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
+            null, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_LMAX, "lmax")).intValue(),
             (Boolean)UT.Code.getWithDefault(aMap, DEFAULT_NORADIAL, "noradial"),
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_L3MAX, "l3max")).intValue(),
@@ -234,7 +232,7 @@ public class SphericalChebyshev extends WTypeBasis {
               mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mNlY.internalDataWithLengthCheck(tNN*mLMAll, 0), mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0),
               rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
               rFpNlSize==null?null:rFpNlSize.internalDataWithLengthCheck(mSize), rFpNlSize==null?0:rFpNlSize.internalDataShift(),
-              aBufferNl, mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+              aBufferNl, mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rNlRn, double[] rNlY, double[] rCnlm, double[] rFp, int aShiftFp, int @Nullable[] rFpNlSize, int aShiftFpNlSize,
@@ -247,7 +245,7 @@ public class SphericalChebyshev extends WTypeBasis {
                   mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mYPx.internalDataWithLengthCheck(mLMAll, 0), mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mNlBnlm.internalDataWithLengthCheck(tNN*(mNMax+1)*mLMAll, 0),
                   mGradCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), aGradFp.internalDataWithLengthCheck(mSize), aGradFp.internalDataShift(),
                   rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), rGradPara.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight.internalDataWithLengthCheck(), mFuseWeight.rowNumber());
+                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] rRn, double[] rY, double[] rCnlm, double[] rNlBnlm, double[] rGradCnlm,
@@ -265,7 +263,7 @@ public class SphericalChebyshev extends WTypeBasis {
                   mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mCnlmPx.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0), mCnlmPy.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0), mCnlmPz.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0),
                   rFpGradNlIndex.internalDataWithLengthCheck(tSizeAll), rFpGradNlIndex.internalDataShift(), rFpGradFpIndex.internalDataWithLengthCheck(tSizeAll), rFpGradFpIndex.internalDataShift(),
                   rFpPx.internalDataWithLengthCheck(tSizeAll), rFpPx.internalDataShift(), rFpPy.internalDataWithLengthCheck(tSizeAll), rFpPy.internalDataShift(), rFpPz.internalDataWithLengthCheck(tSizeAll), rFpPz.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void evalGrad1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
@@ -284,7 +282,7 @@ public class SphericalChebyshev extends WTypeBasis {
                    mYPx.internalDataWithLengthCheck(mLMAll, 0), mYPy.internalDataWithLengthCheck(mLMAll, 0), mYPz.internalDataWithLengthCheck(mLMAll, 0),
                    mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mGradCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mCnlmPx.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0),
                    aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
-                   mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                   mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void evalForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                           double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
@@ -313,7 +311,7 @@ public class SphericalChebyshev extends WTypeBasis {
                            mYPx.internalDataWithLengthCheck(mLMAll, 0), mYPy.internalDataWithLengthCheck(mLMAll, 0), mYPz.internalDataWithLengthCheck(mLMAll, 0),
                            mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mCnlmPx.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0), mCnlmPy.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0), mCnlmPz.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0),
                            aShiftFp, aRestFp, rFpPx.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPy.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPz.internalDataWithLengthCheck(tNN*tSizeTot, 0),
-                           mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                           mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     @Deprecated
     private static native void evalGradWithShift1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,

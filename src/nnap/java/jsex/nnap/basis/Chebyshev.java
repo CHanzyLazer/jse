@@ -32,7 +32,6 @@ public class Chebyshev extends WTypeBasis {
     public final static double DEFAULT_RCUT = 6.0; // 现在默认值统一为 6
     
     final String @Nullable[] mSymbols;
-    final int mNMax;
     final double mRCut;
     
     final int mSize;
@@ -42,13 +41,11 @@ public class Chebyshev extends WTypeBasis {
     private final DoubleList mNlRn = new DoubleList(128);
     
     Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType, @Nullable RowMatrix aFuseWeight) {
-        super(aTypeNum, aWType, aFuseWeight);
-        if (aNMax<0 || aNMax>20) throw new IllegalArgumentException("Input nmax MUST be in [0, 20], input: "+aNMax);
+        super(aTypeNum, aNMax, aWType, aFuseWeight);
         mSymbols = aSymbols;
-        mNMax = aNMax;
         mRCut = aRCut;
         
-        mSize = sizeN_(mNMax);
+        mSize = mSizeN;
         
         mRnPx = Vectors.zeros(mNMax+1);
         mRnPy = Vectors.zeros(mNMax+1);
@@ -87,22 +84,23 @@ public class Chebyshev extends WTypeBasis {
     
     @SuppressWarnings("rawtypes")
     public static Chebyshev load(String @NotNull[] aSymbols, Map aMap) {
+        int aTypeNum = aSymbols.length;
+        int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
-        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aSymbols.length);
+        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum, aNMax);
         return new Chebyshev(
-            aSymbols, aSymbols.length,
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
+            aSymbols, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
             aWType, aFuseWeight
         );
     }
     @SuppressWarnings("rawtypes")
     public static Chebyshev load(int aTypeNum, Map aMap) {
+        int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
-        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum);
+        RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aTypeNum, aNMax);
         return new Chebyshev(
-            null, aTypeNum,
-            ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue(),
+            null, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
             aWType, aFuseWeight
         );
@@ -147,7 +145,7 @@ public class Chebyshev extends WTypeBasis {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 如果不是 fuse 直接返回不走 native
-        if (mWType != WTYPE_FUSE) return;
+        if (mWType!=WTYPE_FUSE) return;
         
         backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara);
     }
@@ -177,7 +175,7 @@ public class Chebyshev extends WTypeBasis {
         eval1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
               mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
               rFpNlSize==null?null:rFpNlSize.internalDataWithLengthCheck(mSize), rFpNlSize==null?0:rFpNlSize.internalDataShift(),
-              aBufferNl, mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+              aBufferNl, mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                      double[] rNlRn, double[] rFp, int aShiftFp, int @Nullable[] rFpNlSize, int aShiftFpNlSize,
@@ -189,7 +187,7 @@ public class Chebyshev extends WTypeBasis {
         backward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                   mRnPx.internalDataWithLengthCheck(mNMax+1, 0), aGradFp.internalDataWithLengthCheck(mSize), aGradFp.internalDataShift(),
                   rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), rGradPara.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mWType, mFuseWeight.rowNumber());
+                  mTypeNum, mRCut, mNMax, mWType, mFuseSize);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] rRn, double[] aGradFp, int aShiftGradFp, double[] aGradPara, int aShiftGradPara,
@@ -203,7 +201,7 @@ public class Chebyshev extends WTypeBasis {
                   mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                   rFpGradNlIndex.internalDataWithLengthCheck(tSizeAll), rFpGradNlIndex.internalDataShift(), rFpGradFpIndex.internalDataWithLengthCheck(tSizeAll), rFpGradFpIndex.internalDataShift(),
                   rFpPx.internalDataWithLengthCheck(tSizeAll), rFpPx.internalDataShift(), rFpPy.internalDataWithLengthCheck(tSizeAll), rFpPy.internalDataShift(), rFpPz.internalDataWithLengthCheck(tSizeAll), rFpPz.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                  mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void evalGrad1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
@@ -217,7 +215,7 @@ public class Chebyshev extends WTypeBasis {
         evalForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                    mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                    aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
-                   mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                   mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void evalForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                           double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
@@ -240,7 +238,7 @@ public class Chebyshev extends WTypeBasis {
         evalGradWithShift1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                            mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
                            aShiftFp, aRestFp, rFpPx.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPy.internalDataWithLengthCheck(tNN*tSizeTot, 0), rFpPz.internalDataWithLengthCheck(tNN*tSizeTot, 0),
-                           mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseWeight==null?1:mFuseWeight.rowNumber());
+                           mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     @Deprecated
     private static native void evalGradWithShift1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
