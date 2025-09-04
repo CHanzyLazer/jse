@@ -10,7 +10,6 @@ import jse.code.io.ISavable;
 import jse.math.vector.*;
 import jse.parallel.IAutoShutdown;
 import jsex.nnap.NNAP;
-import jsex.nnap.nn.NeuralNetwork;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -168,60 +167,13 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     @ApiStatus.Internal
     public abstract void forwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleList aForwardCache, DoubleList rForwardForceCache, boolean aFullCache);
     
-    
-    private final DoubleList mForwardCache = new DoubleList(128), mForwardForceCache = new DoubleList(128);
-    /**
-     * 内部使用的直接计算能量的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
-     * @param aNlDx 由近邻原子的 dx 组成的列表
-     * @param aNlDy 由近邻原子的 dy 组成的列表
-     * @param aNlDz 由近邻原子的 dz 组成的列表
-     * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aNN 需要进行计算的神经网络
-     * @return 计算得到的能量值
-     */
-    @ApiStatus.Internal
-    public final double evalEnergy(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN) throws Exception {
-        initCacheFp_();
-        forward(aNlDx, aNlDy, aNlDz, aNlType, mFp, mForwardCache, false);
-        return aNN.eval(mFp);
-    }
-    /**
-     * 内部使用的直接计算能量和力的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
-     * <p>
-     * 直接给出能量和力可以避免大量偏导数的缓存，并且简化稀疏偏导的细节处理
-     * @param aNlDx 由近邻原子的 dx 组成的列表
-     * @param aNlDy 由近邻原子的 dy 组成的列表
-     * @param aNlDz 由近邻原子的 dz 组成的列表
-     * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aNN 需要进行计算的神经网络
-     * @param rFx 计算得到的原子对于近邻原子 x 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @param rFy 计算得到的原子对于近邻原子 y 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @param rFz 计算得到的原子对于近邻原子 z 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @return 计算得到的能量值
-     */
-    @ApiStatus.Internal
-    public final double evalEnergyForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN, DoubleList rFx, DoubleList rFy, DoubleList rFz) throws Exception {
-        initCacheFp_();
-        forward(aNlDx, aNlDy, aNlDz, aNlType, mFp, mForwardCache, true);
-        double tEng = aNN.evalGrad(mFp, mNNGrad);
-        forwardForce(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz, mForwardCache, mForwardForceCache, false);
-        return tEng;
-    }
-    
-    
     @FunctionalInterface public interface IDxyzTypeIterable {void forEachDxyzType(IDxyzTypeDo aDxyzTypeDo);}
     @FunctionalInterface public interface IDxyzTypeDo {void run(double aDx, double aDy, double aDz, int aType);}
     
     private DoubleList mNlDx = null, mNlDy = null, mNlDz = null;
     private IntList mNlType = null;
-    private Vector mFp = null, mNNGrad = null;
+    private final DoubleList mForwardCache = new DoubleList(128);
     
-    private void initCacheFp_() {
-        if (mFp != null) return;
-        int tSize = size();
-        mFp = Vectors.zeros(tSize);
-        mNNGrad = Vectors.zeros(tSize);
-    }
     private void initCacheNl_() {
         if (mNlDx != null) return;
         mNlDx = new DoubleList(16);

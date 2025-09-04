@@ -11,6 +11,7 @@ import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
 import jse.math.vector.IVector;
+import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 import jsex.nnap.basis.*;
 import jsex.nnap.nn.*;
@@ -228,9 +229,10 @@ public class NNAP implements IPairPotential {
     }
     
     @SuppressWarnings("SameParameterValue")
-    public static class SingleNNAP {
+    public class SingleNNAP {
         private final NeuralNetwork[] mNN;
         private final Basis[] mBasis;
+        private final Vector[] mFp, mGradFp;
         
         public Basis basis() {return basis(0);}
         public Basis basis(int aThreadID) {return mBasis[aThreadID];}
@@ -240,6 +242,13 @@ public class NNAP implements IPairPotential {
         private SingleNNAP(Basis[] aBasis, NeuralNetwork[] aNN) {
             mBasis = aBasis;
             mNN = aNN;
+            mFp = new Vector[mThreadNumber];
+            mGradFp = new Vector[mThreadNumber];
+            for (int i = 0; i < mThreadNumber; ++i) {
+                int tSize = mBasis[0].size();
+                mFp[i] = Vectors.zeros(tSize);
+                mGradFp[i] = Vectors.zeros(tSize);
+            }
         }
     }
     private boolean mIsTorch = false;
@@ -258,6 +267,7 @@ public class NNAP implements IPairPotential {
     /// 现在使用全局的缓存实现，可以进一步减少内存池的调用操作
     private final DoubleList[] mNlDx, mNlDy, mNlDz;
     private final IntList[] mNlType, mNlIdx;
+    private final DoubleList[] mForwardCache, mForwardForceCache;
     
     private final DoubleList[] mForceX, mForceY, mForceZ;
     private DoubleList bufForceX(int aThreadID, int aSizeMin) {
@@ -321,6 +331,8 @@ public class NNAP implements IPairPotential {
         mForceX = new DoubleList[mThreadNumber];
         mForceY = new DoubleList[mThreadNumber];
         mForceZ = new DoubleList[mThreadNumber];
+        mForwardCache = new DoubleList[mThreadNumber];
+        mForwardForceCache = new DoubleList[mThreadNumber];
         for (int i = 0; i < mThreadNumber; ++i) {
             mNlDx[i] = new DoubleList(16);
             mNlDy[i] = new DoubleList(16);
@@ -330,6 +342,8 @@ public class NNAP implements IPairPotential {
             mForceX[i] = new DoubleList(16);
             mForceY[i] = new DoubleList(16);
             mForceZ[i] = new DoubleList(16);
+            mForwardCache[i] = new DoubleList(1024);
+            mForwardForceCache[i] = new DoubleList(1024);
         }
     }
     public NNAP(String aModelPath, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) throws Exception {
@@ -396,8 +410,10 @@ public class NNAP implements IPairPotential {
             DoubleList tNlDz = mNlDz[threadID];
             IntList tNlType = mNlType[threadID];
             IntList tNlIdx = mNlIdx[threadID];
+            Vector tFp = tModel.mFp[threadID];
             buildNL_(nl, tBasis.rcut(), tNlDx, tNlDy, tNlDz, tNlType, tNlIdx);
-            double tEng = tBasis.evalEnergy(tNlDx, tNlDy, tNlDz, tNlType, tNN);
+            tBasis.forward(tNlDx, tNlDy, tNlDz, tNlType, tFp, mForwardCache[threadID], false);
+            double tEng = tNN.eval(tFp);
             rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
         });
     }
@@ -424,13 +440,18 @@ public class NNAP implements IPairPotential {
             DoubleList tNlDz = mNlDz[threadID];
             IntList tNlType = mNlType[threadID];
             IntList tNlIdx = mNlIdx[threadID];
+            Vector tFp = tModel.mFp[threadID];
+            Vector tGradFp = tModel.mGradFp[threadID];
+            DoubleList tForwardCache = mForwardCache[threadID];
+            DoubleList tForwardForceCache = mForwardForceCache[threadID];
             buildNL_(nl, tBasis.rcut(), tNlDx, tNlDy, tNlDz, tNlType, tNlIdx);
             final int tNeiNum = tNlDx.size();
             DoubleList tForceX = bufForceX(threadID, tNeiNum);
             DoubleList tForceY = bufForceY(threadID, tNeiNum);
             DoubleList tForceZ = bufForceZ(threadID, tNeiNum);
-            double tEng = tBasis.evalEnergyForce(tNlDx, tNlDy, tNlDz, tNlType, tNN, tForceX, tForceY, tForceZ);
-            
+            tBasis.forward(tNlDx, tNlDy, tNlDz, tNlType, tFp, tForwardCache, true);
+            double tEng = tNN.evalGrad(tFp, tGradFp);
+            tBasis.forwardForce(tNlDx, tNlDy, tNlDz, tNlType, tGradFp, tForceX, tForceY, tForceZ, tForwardCache, tForwardForceCache, false);
             if (rEnergyAccumulator != null) {
                 rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
             }
