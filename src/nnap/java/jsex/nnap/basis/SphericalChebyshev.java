@@ -169,6 +169,9 @@ public class SphericalChebyshev extends WTypeBasis {
         return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
                           : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
     }
+    @Override protected int backwardForceCacheSize_(int aNN) {
+        return 0;
+    }
     
     @Override
     protected void forward_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleArrayVector rForwardCache, boolean aFullCache) {
@@ -194,6 +197,16 @@ public class SphericalChebyshev extends WTypeBasis {
         
         // 现在直接计算力
         forwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache);
+    }
+    @Override
+    protected void backwardForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList aGradFx, DoubleList aGradFy, DoubleList aGradFz, DoubleArrayVector rGradNNGrad, DoubleArrayVector rGradPara,
+                                  DoubleArrayVector aForwardCache, DoubleArrayVector aForwardForceCache, DoubleArrayVector rBackwardCache, DoubleArrayVector rBackwardForceCache, boolean aKeepCache, boolean aFixBasis) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
+        
+        // 如果不保留旧值则在这里清空
+        if (!aKeepCache) rBackwardForceCache.fill(0.0);
+        
+//        backwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, aFixBasis);
     }
     
     
@@ -221,7 +234,7 @@ public class SphericalChebyshev extends WTypeBasis {
                   mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseSize);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                         double[] aGradFp, int aShiftGradFp, double[] aGradPara, int aShiftGradPara,
+                                         double[] aGradFp, int aShiftGradFp, double[] rGradPara, int aShiftGradPara,
                                          double[] aForwardCache, int aForwardCacheShift, double[] rBackwardCache, int aBackwardCacheShift,
                                          int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial,
                                          int aL3Max, boolean aL3Cross, int aWType, int aFuseSize);
@@ -236,7 +249,7 @@ public class SphericalChebyshev extends WTypeBasis {
                       mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void forwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                             double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
+                                             double[] aNNGrad, int aShiftNNGrad, double[] rFx, double[] rFy, double[] rFz,
                                              double[] aForwardCache, int aForwardCacheShift, double[] rForwardForceCache, int aForwardForceCacheShift, boolean aFullCache,
                                              int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial,
                                              int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);

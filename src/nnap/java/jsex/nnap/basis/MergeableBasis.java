@@ -11,6 +11,7 @@ public abstract class MergeableBasis extends Basis {
     private final Vector mForwardCacheShell = new Vector(0, null);
     private final Vector mBackwardCacheShell = new Vector(0, null);
     private final Vector mForwardForceCacheShell = new Vector(0, null);
+    private final Vector mBackwardForceCacheShell = new Vector(0, null);
     
     /** @return {@inheritDoc} */
     @Override public abstract MergeableBasis threadSafeRef();
@@ -19,6 +20,7 @@ public abstract class MergeableBasis extends Basis {
     protected abstract int forwardCacheSize_(int aNN, boolean aFullCache);
     protected abstract int backwardCacheSize_(int aNN);
     protected abstract int forwardForceCacheSize_(int aNN, boolean aFullCache);
+    protected abstract int backwardForceCacheSize_(int aNN);
     
     @Override
     public final void forward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rForwardCache, boolean aFullCache) {
@@ -67,4 +69,18 @@ public abstract class MergeableBasis extends Basis {
     }
     /** 累加版本的计算力，此时不会清空计算的力值，防止多次写入时旧值被自动清理 */
     protected abstract void forwardForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleArrayVector aForwardCache, DoubleArrayVector rForwardForceCache, boolean aFullCache);
+    
+    @Override
+    public final void backwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList aGradFx, DoubleList aGradFy, DoubleList aGradFz, DoubleArrayVector rGradNNGrad, DoubleArrayVector rGradPara,
+                                    DoubleList aForwardCache, DoubleList aForwardForceCache, DoubleList rBackwardCache, DoubleList rBackwardForceCache, boolean aKeepCache, boolean aFixBasis) {
+        // backward 都进行累加，因此不需要清空旧值
+        mForwardCacheShell.setInternalData(aForwardCache.internalData()); mForwardCacheShell.setInternalDataSize(aForwardCache.size());
+        mForwardForceCacheShell.setInternalData(aForwardForceCache.internalData()); mForwardForceCacheShell.setInternalDataSize(aForwardForceCache.size());
+        mBackwardCacheShell.setInternalData(rBackwardCache.internalData()); mBackwardCacheShell.setInternalDataSize(rBackwardCache.size());
+        validCache_(rBackwardForceCache, backwardForceCacheSize_(aNlDx.size()));
+        mBackwardForceCacheShell.setInternalData(rBackwardForceCache.internalData()); mBackwardForceCacheShell.setInternalDataSize(rBackwardForceCache.size());
+        backwardForce_(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, mForwardCacheShell, mForwardForceCacheShell, mBackwardCacheShell, mBackwardForceCacheShell, aKeepCache, aFixBasis);
+    }
+    protected abstract void backwardForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList aGradFx, DoubleList aGradFy, DoubleList aGradFz, DoubleArrayVector rGradNNGrad, DoubleArrayVector rGradPara,
+                                           DoubleArrayVector aForwardCache, DoubleArrayVector aForwardForceCache, DoubleArrayVector rBackwardCache, DoubleArrayVector rBackwardForceCache, boolean aKeepCache, boolean aFixBasis);
 }

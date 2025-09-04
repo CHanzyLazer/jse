@@ -95,4 +95,13 @@ public class Mirror extends Basis {
         mMirrorBasis.forwardForce(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache);
         mMirrorNlTypeValid = false;
     }
+    @Override
+    public final void backwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList aGradFx, DoubleList aGradFy, DoubleList aGradFz, DoubleArrayVector rGradNNGrad, DoubleArrayVector rGradPara,
+                                    DoubleList aForwardCache, DoubleList aForwardForceCache, DoubleList rBackwardCache, DoubleList rBackwardForceCache, boolean aKeepCache, boolean aFixBasis) {
+        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
+        // 由于 backwardForce 总是在 forwardForce 之后调用，此时不需要重新构造 mMirrorNlType
+        if (!mMirrorNlTypeValid) throw new IllegalStateException();
+        mMirrorBasis.backwardForce(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aKeepCache, aFixBasis);
+        mMirrorNlTypeValid = false;
+    }
 }

@@ -141,8 +141,8 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
      * @param aNlDy 由近邻原子的 dy 组成的列表
      * @param aNlDz 由近邻原子的 dz 组成的列表
      * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aGradFp 输入已有的（loss）关于基组的梯度
-     * @param rGradPara 计算输出的（loss）关于可拟合参数的梯度
+     * @param aGradFp 输入已有的 (loss) 关于基组的梯度
+     * @param rGradPara 计算输出的 (loss) 关于可拟合参数的梯度
      * @param aForwardCache 需要的向前传播的完整缓存值
      * @param rBackwardCache 计算反向传播过程中需要使用的缓存，会自动扩容到合适长度
      * @param aKeepCache 标记是否保留输入的 {@code rBackwardCache} 旧值，在某些情况需要这些值来实现带有依赖的反向传播
@@ -166,6 +166,30 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
      */
     @ApiStatus.Internal
     public abstract void forwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleList aForwardCache, DoubleList rForwardForceCache, boolean aFullCache);
+    
+    /**
+     * 计算力的反向传播版本，用于拟合力时反向传播 loss 的梯度
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aNNGrad 神经网络输出关于基组的梯度
+     * @param aGradFx (loss) 关于近邻原子 x 方向力的梯度
+     * @param aGradFy (loss) 关于近邻原子 y 方向力的梯度
+     * @param aGradFz (loss) 关于近邻原子 z 方向力的梯度
+     * @param rGradNNGrad 反向传播计算得到的 (loss) 关于网络梯度的梯度
+     * @param rGradPara 可选计算输出的 (loss) 关于可拟合参数的梯度
+     * @param aForwardCache 需要的向前传播的完整缓存值
+     * @param aForwardForceCache 需要的力向前传播的完整缓存值
+     * @param rBackwardCache 可选计算输出的对于 backward 缓存使用的修改，部分基组会存在此依赖项
+     * @param rBackwardForceCache 计算力反向传播过程中需要使用的缓存，会自动扩容到合适长度
+     * @param aKeepCache 标记是否保留输入的 {@code rBackwardForceCache} 旧值
+     * @param aFixBasis 标记是否固定基组，当固定基组时不会进行考虑基组可变的反向传播分支（rGradPara, rBackwardCache）
+     */
+    @ApiStatus.Internal
+    public abstract void backwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList aGradFx, DoubleList aGradFy, DoubleList aGradFz, DoubleArrayVector rGradNNGrad, DoubleArrayVector rGradPara,
+                                       DoubleList aForwardCache, DoubleList aForwardForceCache, DoubleList rBackwardCache, DoubleList rBackwardForceCache, boolean aKeepCache, boolean aFixBasis);
+    
     
     @FunctionalInterface public interface IDxyzTypeIterable {void forEachDxyzType(IDxyzTypeDo aDxyzTypeDo);}
     @FunctionalInterface public interface IDxyzTypeDo {void run(double aDx, double aDy, double aDz, int aType);}
