@@ -134,6 +134,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     private final DoubleList[] mBasisBackwardBuf, mBasisBackwardForceBuf;
     
     private final List<List<List<Vector>>> mGradFpBuf;
+    private final Vector[][] mLossGradGradFpBuf;
     private final DoubleList[] mForceNlXBuf, mForceNlYBuf, mForceNlZBuf;
     private final DoubleList[] mForceXBuf, mForceYBuf, mForceZBuf;
     private final DoubleList[] mLossGradForceXBuf, mLossGradForceYBuf, mLossGradForceZBuf;
@@ -315,6 +316,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         }
         mNormFp = new Vector[aThreadNumber][];
         mLossGradNormFp = new Vector[aThreadNumber][];
+        mLossGradGradFpBuf  = new Vector[aThreadNumber][];
         mGradFpBuf = new ArrayList<>(aThreadNumber);
         mHiddenOutputsBuf = new ArrayList<>(aThreadNumber);
         mHiddenGradsBuf = new ArrayList<>(aThreadNumber);
@@ -328,6 +330,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         for (int ti = 0; ti < aThreadNumber; ++ti) {
             Vector[] tNormFpBuf = new Vector[mTypeNum];
             Vector[] tLossGradNormFp = new Vector[mTypeNum];
+            Vector[] tLossGradGradFp = new Vector[mTypeNum];
             List<List<Vector>> tGradFpBuf = new ArrayList<>(mTypeNum);
             List<List<Vector>> tHiddenOutputsBuf = new ArrayList<>(mTypeNum);
             List<List<Vector>> tHiddenGradsBuf = new ArrayList<>(mTypeNum);
@@ -340,6 +343,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             DoubleList tBasisBackwardForceBuf = new DoubleList(16);
             mNormFp[ti] = tNormFpBuf;
             mLossGradNormFp[ti] = tLossGradNormFp;
+            mLossGradGradFpBuf[ti] = tLossGradGradFp;
             mGradFpBuf.add(tGradFpBuf);
             mHiddenOutputsBuf.add(tHiddenOutputsBuf);
             mHiddenGradsBuf.add(tHiddenGradsBuf);
@@ -362,6 +366,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 } else {
                     tNormFpBuf[i] = Vector.zeros(tBasisSize);
                     tLossGradNormFp[i] = Vector.zeros(tBasisSize);
+                    tLossGradGradFp[i] = Vector.zeros(tBasisSize);
                     tGradFpBuf.add(new ArrayList<>(16));
                     tHiddenOutputsBuf.add(new ArrayList<>(16));
                     tHiddenGradsBuf.add(new ArrayList<>(16));
@@ -911,6 +916,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             DoubleList tLossGradForceNlXBuf = mLossGradForceNlXBuf[threadID];
             DoubleList tLossGradForceNlYBuf = mLossGradForceNlYBuf[threadID];
             DoubleList tLossGradForceNlZBuf = mLossGradForceNlZBuf[threadID];
+            Vector[] tLossGradGradFp = mLossGradGradFpBuf[threadID];
             List<List<Vector>> tGradFpBuf = mGradFpBuf.get(threadID);
             for (int typei = 0; typei < mTypeNum; ++typei) if (!(mBasis[0][typei] instanceof Mirror)) {
                 int tSize = mBasis[0][typei].size();
@@ -1057,7 +1063,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     tType = ((Mirror)tSubBasis).mirrorType();
                 }
                 // force loss grad
-                Vector tSubLossGradNormFp = tLossGradNormFp[tType-1];
+                Vector tSubLossGradGradFp = tLossGradGradFp[tType-1];
                 IntList tSubNl = tNl[k];
                 DoubleList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
                 int tNlSize = tSubNl.size();
@@ -1091,29 +1097,49 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     tLossGradForceNlYBuf.set(j, rLossGradForceNlY);
                     tLossGradForceNlZBuf.set(j, rLossGradForceNlZ);
                 }
-                tSubLossGradNormFp.fill(0.0);
+                tSubLossGradGradFp.fill(0.0);
                 int tShiftBasisPara = basisParaShift(tType);
                 initNl(tSubNl, tAtomType, tNlType);
                 tSubBasis.backwardForce(tSubNlDx, tSubNlDy, tSubNlDz, tNlType, tGradFpBuf.get(tType-1).get(k), tLossGradForceNlXBuf, tLossGradForceNlYBuf, tLossGradForceNlZBuf,
-                                        tSubLossGradNormFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]),
-                                        tBaisForwardBuf.get(k), tBaisForwardForceBuf.get(k), tBaisBackwardBuf, tBaisBackwardForceBuf, false, !mTrainBasis);
+                                        tSubLossGradGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]),
+                                        tBaisForwardBuf.get(k), tBaisForwardForceBuf.get(k), tBaisBackwardBuf, tBaisBackwardForceBuf, false, !tTrainBasis);
                 Vector tSubNormMu = mNormMu[tType-1];
                 Vector tSubNormSigma = mNormSigma[tType-1];
                 Vector tSubFp = tFp[k];
                 Vector tSubNormFp = tNormFp[tType-1];
                 tSubNormFp.fill(j -> (tSubFp.get(j) - tSubNormMu.get(j)) / tSubNormSigma.get(j));
-                tSubLossGradNormFp.div2this(tSubNormSigma);
+                tSubLossGradGradFp.div2this(tSubNormSigma);
                 int tShiftPara = paraShift(tType);
-                tNN[tType-1].gradBackward(tSubLossGradNormFp, tSubNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
-                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
-                                          tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
-                // energy loss grad
-                tNN[tType-1].backward(tLossGradEng, tSubNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
-                                      tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                if (!tTrainBasis) {
+                    tNN[tType-1].gradBackward(tSubLossGradGradFp, tSubNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+                                              tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                              tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
+                    // energy loss grad
+                    tNN[tType-1].backward(tLossGradEng, tSubNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                } else {
+                    Vector rSubLossGradNormFp = tLossGradNormFp[tType-1];
+                    Vector rSubLossGradFp = rLossGradFp[k];
+                    rSubLossGradNormFp.fill(0.0);
+                    tNN[tType-1].gradBackward(tSubLossGradGradFp, tSubNormFp, rSubLossGradNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+                                              tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                              tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
+                    // energy loss grad
+                    tNN[tType-1].backward(tLossGradEng, tSubNormFp, rSubLossGradNormFp, tGradPara.subVec(tShiftPara, tShiftPara+mParaSizes[tType-1]),
+                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                    rSubLossGradNormFp.operation().div2dest(tSubNormSigma, rSubLossGradFp);
+                    if (tFixNorm) {
+                        tSubBasis.backward(tSubNlDx, tSubNlDy, tSubNlDz, tNlType, rSubLossGradFp,
+                                           tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]),
+                                           tBaisForwardBuf.get(k), tBaisBackwardBuf, true);
+                    } else {
+                    
+                    }
+                }
             }
         });
         // 如果没有固定归一化向量，在这里进行 train basis 归一化部分的反向传播
-        if (mTrainBasis && (!mFixNorm) && tRequireGrad) {
+        if (tTrainBasis && (!tFixNorm) && tRequireGrad) {
             for (int ti = 1; ti < tThreadNum; ++ti) {
                 for (int i = 0; i < mTypeNum; ++i) {
                     mLossGradSigma[0][i].plus2this(mLossGradSigma[ti][i]);
