@@ -422,24 +422,35 @@ static inline void chebyshev2Full(jint aN, jdouble aX, jdouble *rDest) noexcept 
     }
 }
 
-template <jint N>
-static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *aCheby2,
-                             jdouble aDis, jdouble aRCut, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
-    const jdouble tRnPMul = 2.0 / (aDis*aRCut);
-    rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
-    for (jint n = 1; n <= N; ++n) {
-        const jdouble tRnP = n*tRnPMul*aCheby2[n-1];
-        rRnPx[n] = tRnP*aDx;
-        rRnPy[n] = tRnP*aDy;
-        rRnPz[n] = tRnP*aDz;
-    }
-}
 static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *aCheby2, jint aNMax,
                              jdouble aDis, jdouble aRCut, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
     const jdouble tRnPMul = 2.0 / (aDis*aRCut);
     rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
     for (jint n = 1; n <= aNMax; ++n) {
         const jdouble tRnP = n*tRnPMul*aCheby2[n-1];
+        rRnPx[n] = tRnP*aDx;
+        rRnPy[n] = tRnP*aDy;
+        rRnPz[n] = tRnP*aDz;
+    }
+}
+
+static inline void calFcPxyz(jdouble *rFcPx, jdouble *rFcPy, jdouble *rFcPz,
+                             jdouble aDis, jdouble aRCut, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
+    jdouble fcMul = 1.0 - pow2(aDis/aRCut);
+    jdouble fcPMul = 8.0 * pow3(fcMul) / (aRCut*aRCut);
+    *rFcPx = aDx * fcPMul;
+    *rFcPy = aDy * fcPMul;
+    *rFcPz = aDz * fcPMul;
+}
+template <jint N>
+static inline void calRnPxyz(jdouble *rRnPx, jdouble *rRnPy, jdouble *rRnPz, jdouble *rCheby2,
+                             jdouble aDis, jdouble aRCut, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
+    const jdouble tRnX = 1.0 - 2.0*aDis/aRCut;
+    JSE_NNAP::chebyshev2Full<N-1>(tRnX, rCheby2);
+    const jdouble tRnPMul = 2.0 / (aDis*aRCut);
+    rRnPx[0] = 0.0; rRnPy[0] = 0.0; rRnPz[0] = 0.0;
+    for (jint n = 1; n <= N; ++n) {
+        const jdouble tRnP = n*tRnPMul*rCheby2[n-1];
         rRnPx[n] = tRnP*aDx;
         rRnPy[n] = tRnP*aDy;
         rRnPz[n] = tRnP*aDz;
