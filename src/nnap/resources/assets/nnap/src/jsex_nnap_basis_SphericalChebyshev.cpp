@@ -166,7 +166,7 @@ static constexpr jdouble SQRT_LPM_LMM1[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     0.0, 6.164414002968976, 8.602325267042627, 10.392304845413264, 11.832159566199232, 13.038404810405298, 14.071247279470288, 14.966629547095765, 15.748015748023622, 16.431676725154983, 17.029386365926403, 17.549928774784245, 18.0, 18.384776310850235, 18.708286933869708, 18.973665961010276, 19.183326093250876, 19.339079605813716, 19.44222209522358, 19.493588689617926, 19.493588689617926, 19.44222209522358, 19.339079605813716, 19.183326093250876, 18.973665961010276, 18.708286933869708, 18.384776310850235, 18.0, 17.549928774784245, 17.029386365926403, 16.431676725154983, 15.748015748023622, 14.966629547095765, 14.071247279470288, 13.038404810405298, 11.832159566199232, 10.392304845413264, 8.602325267042627, 6.164414002968976,
     0.0, 6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759
 };
-static const jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
+static constexpr jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     0.0,
     1.4142135623730951, 1.4142135623730951, 0.0,
     2.0, 2.449489742783178, 2.449489742783178, 2.0, 0.0,
@@ -189,41 +189,110 @@ static const jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     6.164414002968976, 8.602325267042627, 10.392304845413264, 11.832159566199232, 13.038404810405298, 14.071247279470288, 14.966629547095765, 15.748015748023622, 16.431676725154983, 17.029386365926403, 17.549928774784245, 18.0, 18.384776310850235, 18.708286933869708, 18.973665961010276, 19.183326093250876, 19.339079605813716, 19.44222209522358, 19.493588689617926, 19.493588689617926, 19.44222209522358, 19.339079605813716, 19.183326093250876, 18.973665961010276, 18.708286933869708, 18.384776310850235, 18.0, 17.549928774784245, 17.029386365926403, 16.431676725154983, 15.748015748023622, 14.966629547095765, 14.071247279470288, 13.038404810405298, 11.832159566199232, 10.392304845413264, 8.602325267042627, 6.164414002968976, 0.0,
     6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759, 0.0
 };
+static constexpr jdouble SQRT_2LM1P3[SH_LARGEST_L+1] = {
+    1.0,
+    1.7320508075688772,
+    2.23606797749979,
+    2.6457513110645907,
+    3.0,
+    3.3166247903554,
+    3.605551275463989,
+    3.872983346207417,
+    4.123105625617661,
+    4.358898943540674,
+    4.58257569495584,
+    4.795831523312719,
+    5.0,
+    5.196152422706632,
+    5.385164807134504,
+    5.5677643628300215,
+    5.744562646538029,
+    5.916079783099616,
+    6.082762530298219,
+    6.244997998398398,
+    6.4031242374328485
+};
+static constexpr jdouble SQRT_1P1D2L[SH_LARGEST_L+1] = {
+    -1.0,
+    1.224744871391589,
+    1.118033988749895,
+    1.0801234497346435,
+    1.0606601717798212,
+    1.0488088481701516,
+    1.0408329997330663,
+    1.0350983390135313,
+    1.0307764064044151,
+    1.0274023338281628,
+    1.02469507659596,
+    1.02247471629109,
+    1.0206207261596576,
+    1.0190493307301363,
+    1.0177004891982149,
+    1.0165300454651272,
+    1.015504800579495,
+    1.0145993123917847,
+    1.0137937550497031,
+    1.0130724502589556,
+    1.0124228365658292,
+};
 
+template <jint L>
+static inline void realNormalizedLegendreInterLoop_(jdouble aX, jdouble aY, jdouble *rDest, jdouble &rPll) noexcept {
+    static_assert(L > 1, "INVALID L");
+    const jint tStartL = L*L + L;
+    const jint tStartLmm = (L-1)*(L-1) + (L-1);
+    const jint tStartLm2 = (L-2)*(L-2) + (L-2);
+    const jint tStartAB = L*(L+1)/2;
+    rDest[tStartL] = SH_Alm[tStartAB] * (aX*rDest[tStartLmm] + SH_Blm[tStartAB]*rDest[tStartLm2]);
+    for (jint m = 1; m < L-1; ++m) {
+        jdouble tPlm = SH_Alm[tStartAB+m] * (aX*rDest[tStartLmm+m] + SH_Blm[tStartAB+m]*rDest[tStartLm2+m]);
+        rDest[tStartL+m] = tPlm;
+        rDest[tStartL-m] = tPlm;
+    }
+    jdouble tPlm = aX * SQRT_2LM1P3[L] * rPll;
+    rDest[tStartL+(L-1)] = tPlm;
+    rDest[tStartL-(L-1)] = tPlm;
+    rPll *= (-SQRT_1P1D2L[L] * aY);
+    rDest[tStartL+L] = rPll;
+    rDest[tStartL-L] = rPll;
+}
 template <jint LMAX>
 static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *rDest) noexcept {
     jdouble tPll = 0.28209479177387814347403972578039; // = sqrt(1/(4*PI))
     rDest[0] = tPll;
-    if (LMAX > 0) {
-        rDest[2] = SQRT3 * aX * tPll;
-        tPll *= (-SQRT3DIV2 * aY);
-        rDest[2+1] = tPll;
-        rDest[2-1] = tPll;
-        jint tStartL = 6, tStartLmm = 2, tStartLm2 = 0;
-        jint tStartAB = 3;
-        for (jint l = 2; l <= LMAX; ++l) {
-            for (jint m = 0; m < l-1; ++m) {
-                jint tIdxAB = tStartAB+m;
-                jdouble tPlm = SH_Alm[tIdxAB] * (aX*rDest[tStartLmm+m] + SH_Blm[tIdxAB]*rDest[tStartLm2+m]);
-                if (m == 0) {
-                    rDest[tStartL] = tPlm;
-                } else {
-                    rDest[tStartL+m] = tPlm;
-                    rDest[tStartL-m] = tPlm;
-                }
-            }
-            jdouble tPlm = aX * sqrt(2.0*(l-1) + 3.0) * tPll;
-            rDest[tStartL+(l-1)] = tPlm;
-            rDest[tStartL-(l-1)] = tPlm;
-            tPll *= (-sqrt(1.0 + 0.5/(double)l) * aY);
-            rDest[tStartL+l] = tPll;
-            rDest[tStartL-l] = tPll;
-            tStartLm2 = tStartLmm;
-            tStartLmm = tStartL;
-            tStartL += l+l+1+1;
-            tStartAB += l+1;
-        }
+    if (LMAX == 0) return;
+    rDest[2] = SQRT3 * aX * tPll;
+    tPll *= (-SQRT3DIV2 * aY);
+    rDest[2+1] = tPll;
+    rDest[2-1] = tPll;
+    if (LMAX == 1) return;
+    realNormalizedLegendreInterLoop_<2>(aX, aY, rDest, tPll);
+    if (LMAX == 2) return;
+    realNormalizedLegendreInterLoop_<3>(aX, aY, rDest, tPll);
+    if (LMAX == 3) return;
+    realNormalizedLegendreInterLoop_<4>(aX, aY, rDest, tPll);
+    if (LMAX == 4) return;
+    realNormalizedLegendreInterLoop_<5>(aX, aY, rDest, tPll);
+    if (LMAX == 5) return;
+    realNormalizedLegendreInterLoop_<6>(aX, aY, rDest, tPll);
+    if (LMAX == 6) return;
+    realNormalizedLegendreInterLoop_<7>(aX, aY, rDest, tPll);
+    if (LMAX == 7) return;
+    realNormalizedLegendreInterLoop_<8>(aX, aY, rDest, tPll);
+}
+
+template <jint M, jint LMAX>
+static inline void realSphericalHarmonicsFull4InterLoop_(jdouble aCosPhi2, jdouble &rSinMPhi, jdouble &rSinMmmPhi, jdouble &rCosMPhi, jdouble &rCosMmmPhi, jdouble *rDest) noexcept {
+    const jdouble fSqrt2CosMPhi = SQRT2*rCosMPhi;
+    const jdouble fSqrt2SinMPhi = SQRT2*rSinMPhi;
+    for (jint l = M; l <= LMAX; ++l) {
+        rDest[l*l+l + M] *= fSqrt2CosMPhi;
+        rDest[l*l+l - M] *= fSqrt2SinMPhi;
     }
+    jdouble tSinMppPhi = aCosPhi2 * rSinMPhi - rSinMmmPhi;
+    jdouble tCosMppPhi = aCosPhi2 * rCosMPhi - rCosMmmPhi;
+    rSinMmmPhi = rSinMPhi; rCosMmmPhi = rCosMPhi;
+    rSinMPhi = tSinMppPhi; rCosMPhi = tCosMppPhi;
 }
 template <jint LMAX>
 static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble aZ, jdouble aDis, jdouble *rDest) noexcept {
@@ -242,26 +311,28 @@ static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble a
     }
     // cal real Legendre
     realNormalizedLegendreFull<LMAX>(tCosTheta, tSinTheta, rDest);
+    if (LMAX == 0) return;
     // cal sinMPhi & conMPhi
-    jdouble tSinMmmPhi = 0.0;
-    jdouble tCosMmmPhi = 1.0;
-    jdouble tSinMPhi = tSinPhi;
-    jdouble tCosMPhi = tCosPhi;
-    const jdouble tCosPhi2 = tCosMPhi+tCosMPhi;
-    for (jint m = 1; m <= LMAX; ++m) {
-        jint tStartL = m*m+m;
-        const jdouble fSqrt2CosMPhi = SQRT2*tCosMPhi;
-        const jdouble fSqrt2SinMPhi = SQRT2*tSinMPhi;
-        for (jint l = m; l <= LMAX; ++l) {
-            rDest[tStartL+m] *= fSqrt2CosMPhi;
-            rDest[tStartL-m] *= fSqrt2SinMPhi;
-            tStartL += l+l+2;
-        }
-        jdouble tSinMppPhi = tCosPhi2 * tSinMPhi - tSinMmmPhi;
-        jdouble tCosMppPhi = tCosPhi2 * tCosMPhi - tCosMmmPhi;
-        tSinMmmPhi = tSinMPhi; tCosMmmPhi = tCosMPhi;
-        tSinMPhi = tSinMppPhi; tCosMPhi = tCosMppPhi;
-    }
+    jdouble rSinMmmPhi = 0.0;
+    jdouble rCosMmmPhi = 1.0;
+    jdouble rSinMPhi = tSinPhi;
+    jdouble rCosMPhi = tCosPhi;
+    const jdouble tCosPhi2 = rCosMPhi+rCosMPhi;
+    realSphericalHarmonicsFull4InterLoop_<1, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 1) return;
+    realSphericalHarmonicsFull4InterLoop_<2, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 2) return;
+    realSphericalHarmonicsFull4InterLoop_<3, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 3) return;
+    realSphericalHarmonicsFull4InterLoop_<4, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 4) return;
+    realSphericalHarmonicsFull4InterLoop_<5, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 5) return;
+    realSphericalHarmonicsFull4InterLoop_<6, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 6) return;
+    realSphericalHarmonicsFull4InterLoop_<7, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
+    if (LMAX == 7) return;
+    realSphericalHarmonicsFull4InterLoop_<8, LMAX>(tCosPhi2, rSinMPhi, rSinMmmPhi, rCosMPhi, rCosMmmPhi, rDest);
 }
 
 template <jint NMAX, jint LMALL>
@@ -776,7 +847,7 @@ static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPthet
         return;
     }
     case 1: {
-        jdouble tMul = SQRT_LPM_LMM1[2]*SQRT2_INV;
+        const jdouble tMul = SQRT_LPM_LMM1[2]*SQRT2_INV;
         rYPtheta[1] = -tMul * aSinPhi*aY[2];
         rYPtheta[2] =  tMul * (aCosPhi*aY[3] + aSinPhi*aY[1]);
         rYPtheta[3] = -tMul * aCosPhi*aY[2];
@@ -785,19 +856,19 @@ static inline void calYPtheta(jdouble aCosPhi, jdouble aSinPhi, jdouble *rYPthet
     default: {
         const jint tStart = L*L;
         const jint tIdx = tStart+L;
-        jdouble tMul = SQRT_LPM_LMM1[tIdx]*SQRT2_INV;
+        const jdouble tMul = SQRT_LPM_LMM1[tIdx]*SQRT2_INV;
         rYPtheta[tIdx] = tMul * (aCosPhi*aY[tIdx+1] + aSinPhi*aY[tIdx-1]);
         rYPtheta[tIdx+1] = -tMul * aCosPhi*aY[tIdx];
         rYPtheta[tIdx-1] = -tMul * aSinPhi*aY[tIdx];
         for (jint m = 2; m <= L; ++m) {
-            tMul = -0.5*SQRT_LPM_LMM1[tIdx+m];
-            rYPtheta[tIdx+m] = tMul * (aCosPhi*aY[tIdx+m-1] - aSinPhi*aY[tIdx-m+1]);
-            rYPtheta[tIdx-m] = tMul * (aCosPhi*aY[tIdx-m+1] + aSinPhi*aY[tIdx+m-1]);
+            const jdouble tMul2 = -0.5*SQRT_LPM_LMM1[tIdx+m];
+            rYPtheta[tIdx+m] = tMul2 * (aCosPhi*aY[tIdx+m-1] - aSinPhi*aY[tIdx-m+1]);
+            rYPtheta[tIdx-m] = tMul2 * (aCosPhi*aY[tIdx-m+1] + aSinPhi*aY[tIdx+m-1]);
         }
         for (jint m = 1; m < L; ++m) {
-            tMul = 0.5*SQRT_LPM1_LMM[tIdx+m];
-            rYPtheta[tIdx+m] += tMul * (aCosPhi*aY[tIdx+m+1] + aSinPhi*aY[tIdx-m-1]);
-            rYPtheta[tIdx-m] += tMul * (aCosPhi*aY[tIdx-m-1] - aSinPhi*aY[tIdx+m+1]);
+            const jdouble tMul2 = 0.5*SQRT_LPM1_LMM[tIdx+m];
+            rYPtheta[tIdx+m] += tMul2 * (aCosPhi*aY[tIdx+m+1] + aSinPhi*aY[tIdx-m-1]);
+            rYPtheta[tIdx-m] += tMul2 * (aCosPhi*aY[tIdx-m-1] - aSinPhi*aY[tIdx+m+1]);
         }
         return;
     }}
