@@ -6,8 +6,6 @@ import jse.code.collection.IntList;
 import jse.math.IDataShell;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.Vectors;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,15 +42,6 @@ public class SphericalChebyshev extends WTypeBasis {
     final int mSizeL, mSize;
     final int mLMaxMax, mLMAll;
     
-    /** 一些缓存的中间变量，现在统一作为对象存储，对于这种大规模的缓存情况可以进一步提高效率 */
-    private final IDataShell<double[]> mCnlm, mGradCnlm, mGradBnlm;
-    private final IDataShell<double[]> mRnPx, mRnPy, mRnPz, mCheby2;
-    private final IDataShell<double[]> mYPx, mYPy, mYPz, mYPphi, mYPtheta;
-    
-    private final DoubleList mNlBnlm = new DoubleList(1024);
-    private final DoubleList mNlY = new DoubleList(1024);
-    private final DoubleList mNlRn = new DoubleList(128);
-    
     SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, double aRCut, int aWType, @Nullable RowMatrix aFuseWeight) {
         super(aTypeNum, aNMax, aWType, aFuseWeight);
         if (aLMax<0 || aLMax>8) throw new IllegalArgumentException("Input lmax MUST be in [0, 8], input: "+aLMax);
@@ -68,21 +57,6 @@ public class SphericalChebyshev extends WTypeBasis {
         mSize = mSizeN*mSizeL;
         mLMaxMax = Math.max(mLMax, mL3Max);
         mLMAll = (mLMaxMax+1)*(mLMaxMax+1);
-        
-        mCnlm = Vectors.zeros(mSizeN*mLMAll);
-        mGradCnlm = Vectors.zeros(mSizeN*mLMAll);
-        mGradBnlm = Vectors.zeros((mNMax+1)*mLMAll);
-        
-        mRnPx = Vectors.zeros(mNMax+1);
-        mRnPy = Vectors.zeros(mNMax+1);
-        mRnPz = Vectors.zeros(mNMax+1);
-        mCheby2 = Vectors.zeros(mNMax+1);
-        
-        mYPx = Vectors.zeros(mLMAll);
-        mYPy = Vectors.zeros(mLMAll);
-        mYPz = Vectors.zeros(mLMAll);
-        mYPphi = Vectors.zeros(mLMAll);
-        mYPtheta = Vectors.zeros(mLMAll);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -175,81 +149,85 @@ public class SphericalChebyshev extends WTypeBasis {
      */
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
+    @Override protected int forwardCacheSize_(int aNN, boolean aFullCache) {
+        return aFullCache ? aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll)
+                          : (mNMax+1 + mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
+    }
+    @Override protected int backwardCacheSize_(int aNN) {
+        return mSizeN*mLMAll;
+    }
+    @Override protected int forwardForceCacheSize_(int aNN, boolean aFullCache) {
+        return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
+                          : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
+    }
+    
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
+    protected void forward_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleArrayVector rForwardCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
-        final int tNN = aNlDx.size();
-        // 确保 Rn Y 的长度
-        validSize_(mNlY, tNN*mLMAll);
-        validSize_(mNlRn, tNN*(mNMax+1));
-        
         // 现在直接计算基组
-        eval0(aNlDx, aNlDy, aNlDz, aNlType, rFp, aBufferNl);
+        forward0(aNlDx, aNlDy, aNlDz, aNlType, rFp, rForwardCache, aFullCache);
     }
-    @Override @ApiStatus.Internal
-    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
+    @Override
+    protected void backward_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara, DoubleArrayVector aForwardCache, DoubleArrayVector rBackwardCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 如果不是 fuse 直接返回不走 native
-        if (mWType != WTYPE_FUSE) return;
+        if (mWType!=WTYPE_FUSE) return;
         
-        final int tNN = aNlDx.size();
-        // 确保 bnlm 的长度
-        validSize_(mNlBnlm, tNN*(mNMax+1)*mLMAll);
-        
-        backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara);
+        backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara, aForwardCache, rBackwardCache);
     }
     @Override
-    protected void evalForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                        DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    protected void forwardForceAccumulate_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleArrayVector aForwardCache, DoubleArrayVector rForwardForceCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 现在直接计算力
-        evalForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz);
+        forwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache);
     }
     
     
-    void eval0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, boolean aBufferNl) {
+    void forward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, IDataShell<double[]> rForwardCache, boolean aFullCache) {
         int tNN = aNlDx.internalDataSize();
-        eval1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-              mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mNlY.internalDataWithLengthCheck(tNN*mLMAll, 0), mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0),
-              rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
-              aBufferNl, mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
+        forward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
+                 rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
+                 rForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, aFullCache)), rForwardCache.internalDataShift(), aFullCache,
+                 mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType,
+                 mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
-    private static native void eval1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                     double[] rNlRn, double[] rNlY, double[] rCnlm, double[] rFp, int aShiftFp,
-                                     boolean aBufferNl, int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);
+    private static native void forward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN, double[] rFp, int aShiftFp,
+                                        double[] rForwardCache, int aForwardCacheShift, boolean aFullCache,
+                                        int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType,
+                                        double[] aFuseWeight, int aFuseSize);
     
-    void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara) {
+    void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> rBackwardCache) {
         assert mFuseWeight != null;
         int tNN = aNlDx.internalDataSize();
         backward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                  mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mYPx.internalDataWithLengthCheck(mLMAll, 0), mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mNlBnlm.internalDataWithLengthCheck(tNN*(mNMax+1)*mLMAll, 0),
-                  mGradCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), aGradFp.internalDataWithLengthCheck(mSize), aGradFp.internalDataShift(),
+                  aGradFp.internalDataWithLengthCheck(mSize), aGradFp.internalDataShift(),
                   rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), rGradPara.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
+                  aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
+                  rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
+                  mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType,
+                  mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                         double[] rRn, double[] rY, double[] rCnlm, double[] rNlBnlm, double[] rGradCnlm,
                                          double[] aGradFp, int aShiftGradFp, double[] aGradPara, int aShiftGradPara,
-                                         int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);
+                                         double[] aForwardCache, int aForwardCacheShift, double[] rBackwardCache, int aBackwardCacheShift,
+                                         int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType,
+                                         double[] aFuseWeight, int aFuseSize);
     
-    void evalForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
-                    IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz) {
+    void forwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, IDataShell<double[]> aForwardCache, IDataShell<double[]> rForwardForceCache, boolean aFullCache) {
         int tNN = aNlDx.internalDataSize();
-        evalForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                   mNlRn.internalDataWithLengthCheck(tNN*(mNMax+1), 0), mRnPx.internalDataWithLengthCheck(mNMax+1, 0), mRnPy.internalDataWithLengthCheck(mNMax+1, 0), mRnPz.internalDataWithLengthCheck(mNMax+1, 0), mCheby2.internalDataWithLengthCheck(mNMax+1, 0),
-                   mNlY.internalDataWithLengthCheck(tNN*mLMAll, 0), mYPtheta.internalDataWithLengthCheck(mLMAll, 0), mYPphi.internalDataWithLengthCheck(mLMAll, 0),
-                   mYPx.internalDataWithLengthCheck(mLMAll, 0), mYPy.internalDataWithLengthCheck(mLMAll, 0), mYPz.internalDataWithLengthCheck(mLMAll, 0),
-                   mCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mGradCnlm.internalDataWithLengthCheck(mSizeN*mLMAll, 0), mGradBnlm.internalDataWithLengthCheck((mNMax+1)*mLMAll, 0),
-                   aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
-                   mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
+        forwardForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
+                      aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
+                      aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
+                      rForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, aFullCache)), rForwardForceCache.internalDataShift(), aFullCache,
+                      mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType,
+                      mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
-    private static native void evalForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                          double[] aNlRn, double[] rRnPx, double[] rRnPy, double[] rRnPz, double[] rCheby2,
-                                          double[] aNlY, double[] rYPtheta, double[] rYPphi, double[] rYPx, double[] rYPy, double[] rYPz,
-                                          double[] aCnlm, double[] rGradCnlm, double[] rGradBnlm,
-                                          double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
-                                          int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);
+    private static native void forwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                             double[] aNNGrad, int aShiftFp, double[] rFx, double[] rFy, double[] rFz,
+                                             double[] aForwardCache, int aForwardCacheShift, double[] rForwardForceCache, int aForwardForceCacheShift, boolean aFullCache,
+                                             int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, int aWType,
+                                             double[] aFuseWeight, int aFuseSize);
 }

@@ -861,7 +861,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                         if (mFixNorm) {
                             int tShiftBasisPara = basisParaShift(tType);
                             initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
-                            tSubBasis.backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, rSubGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
+//                            tSubBasis.backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, rSubGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
                         } else {
                             Vector rSubGradSigma = rGradSigma[tType-1];
                             Vector rSubGradMu = rGradMu[tType-1];
@@ -1190,7 +1190,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     Vector rSubGradFp = rGradFp[k];
                     int tShiftBasisPara = basisParaShift(tType);
                     initNl(tNl[k], tNlDx[k], tNlDy[k], tNlDz[k], tAtomType, tNlTypeBuf, tNlDxBuf, tNlDyBuf, tNlDzBuf);
-                    tSubBasis.backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, rSubGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
+//                    tSubBasis.backward(tNlDxBuf, tNlDyBuf, tNlDzBuf, tNlTypeBuf, rSubGradFp, tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]));
                 }
             });
         }

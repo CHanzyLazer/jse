@@ -4,9 +4,6 @@ import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.vector.DoubleArrayVector;
 import jse.math.vector.IVector;
-import jse.math.vector.IntArrayVector;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -75,28 +72,27 @@ public class Mirror extends Basis {
     }
     
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
+    public final void forward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rForwardCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         if (mMirrorNlTypeValid) throw new IllegalStateException();
         buildNlType_(aNlType);
-        mMirrorBasis.eval_(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFp, aBufferNl);
-        if (!aBufferNl) mMirrorNlTypeValid = false;
+        mMirrorBasis.forward(aNlDx, aNlDy, aNlDz, mMirrorNlType, rFp, rForwardCache, aFullCache);
+        if (rForwardCache==null) mMirrorNlTypeValid = false;
     }
-    @Override @ApiStatus.Internal
-    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
+    @Override
+    public final void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara, DoubleList aForwardCache, DoubleList rBackwardCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        if (mMirrorNlTypeValid) throw new IllegalStateException();
-        buildNlType_(aNlType);
-        mMirrorBasis.backward(aNlDx, aNlDy, aNlDz, mMirrorNlType, aGradFp, rGradPara);
-        // backward 总是独立的
+        // 由于 backward 总是在 forward 之后调用，此时不需要重新构造 mMirrorNlType
+        if (!mMirrorNlTypeValid) throw new IllegalStateException();
+        mMirrorBasis.backward(aNlDx, aNlDy, aNlDz, mMirrorNlType, aGradFp, rGradPara, aForwardCache, rBackwardCache);
         mMirrorNlTypeValid = false;
     }
     @Override
-    protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    public final void forwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleList aForwardCache, DoubleList rForwardForceCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        // 由于 evalGrad_ 总是在 eval_ 之后调用的，此时不需要重新构造 mMirrorNlType
+        // 由于 forwardForce 总是在 forward 之后调用，此时不需要重新构造 mMirrorNlType
         if (!mMirrorNlTypeValid) throw new IllegalStateException();
-        mMirrorBasis.evalForce_(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz);
+        mMirrorBasis.forwardForce(aNlDx, aNlDy, aNlDz, mMirrorNlType, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache);
         mMirrorNlTypeValid = false;
     }
 }

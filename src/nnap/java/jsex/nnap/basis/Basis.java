@@ -123,6 +123,93 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     protected void shutdown_() {/**/}
     
     
+    /**
+     * 单纯的向前传播获取输出基组，并可选输出先前传播过程中的缓存值
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param rFp 计算输出的原子描述符向量
+     * @param rForwardCache 计算向前传播过程中需要使用的缓存，会自动扩容到合适长度
+     * @param aFullCache 是否进行完整缓存，以供反向传播使用
+     */
+    @ApiStatus.Internal
+    public abstract void forward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rForwardCache, boolean aFullCache);
+    
+    /**
+     * 单纯的反向传播计算关于可拟合参量梯度，默认没有实现因为一般不存在可拟合参数。
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aGradFp 输入已有的（loss）关于基组的梯度
+     * @param rGradPara 计算输出的（loss）关于可拟合参数的梯度
+     * @param aForwardCache 需要的向前传播的完整缓存值
+     * @param rBackwardCache 计算反向传播过程中需要使用的缓存，会自动扩容到合适长度
+     */
+    @ApiStatus.Internal
+    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara, DoubleList aForwardCache, DoubleList rBackwardCache) {/**/}
+    
+    /**
+     * 结合了反向传播的向前传播计算力，并可选输出传播过程中的缓存值
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aNNGrad 神经网络输出关于基组的梯度
+     * @param rFx 计算得到的原子对于近邻原子 x 方向的力，要求已经是合适的大小
+     * @param rFy 计算得到的原子对于近邻原子 y 方向的力，要求已经是合适的大小
+     * @param rFz 计算得到的原子对于近邻原子 z 方向的力，要求已经是合适的大小
+     * @param aForwardCache 需要的向前传播的完整缓存值
+     * @param rForwardForceCache 计算输出的力向前传播过程中的缓存值，会自动扩容到合适长度
+     * @param aFullCache 是否进行完整缓存，以供反向传播使用
+     */
+    @ApiStatus.Internal
+    public abstract void forwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleList aForwardCache, DoubleList rForwardForceCache, boolean aFullCache);
+    
+    
+    private final DoubleList mForwardCache = new DoubleList(128), mForwardForceCache = new DoubleList(128);
+    /**
+     * 内部使用的直接计算能量的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aNN 需要进行计算的神经网络
+     * @return 计算得到的能量值
+     */
+    @ApiStatus.Internal
+    public final double evalEnergy(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN) throws Exception {
+        initCacheFp_();
+        mForwardCache.clear();
+        forward(aNlDx, aNlDy, aNlDz, aNlType, mFp, mForwardCache, false);
+        return aNN.eval(mFp);
+    }
+    /**
+     * 内部使用的直接计算能量和力的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
+     * <p>
+     * 直接给出能量和力可以避免大量偏导数的缓存，并且简化稀疏偏导的细节处理
+     * @param aNlDx 由近邻原子的 dx 组成的列表
+     * @param aNlDy 由近邻原子的 dy 组成的列表
+     * @param aNlDz 由近邻原子的 dz 组成的列表
+     * @param aNlType 由近邻原子的 type 组成的列表
+     * @param aNN 需要进行计算的神经网络
+     * @param rFx 计算得到的原子对于近邻原子 x 方向的力，要求已经是合适的大小，后续实现不会实际扩容
+     * @param rFy 计算得到的原子对于近邻原子 y 方向的力，要求已经是合适的大小，后续实现不会实际扩容
+     * @param rFz 计算得到的原子对于近邻原子 z 方向的力，要求已经是合适的大小，后续实现不会实际扩容
+     * @return 计算得到的能量值
+     */
+    @ApiStatus.Internal
+    public final double evalEnergyForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN, DoubleList rFx, DoubleList rFy, DoubleList rFz) throws Exception {
+        initCacheFp_();
+        mForwardCache.clear(); mForwardForceCache.clear();
+        forward(aNlDx, aNlDy, aNlDz, aNlType, mFp, mForwardCache, true);
+        double tEng = aNN.evalGrad(mFp, mNNGrad);
+        forwardForce(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz, mForwardCache, mForwardForceCache, false);
+        return tEng;
+    }
+    
+    
     @FunctionalInterface public interface IDxyzTypeIterable {void forEachDxyzType(IDxyzTypeDo aDxyzTypeDo);}
     @FunctionalInterface public interface IDxyzTypeDo {void run(double aDx, double aDy, double aDz, int aType);}
     
@@ -158,57 +245,18 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
             mNlType.add(type);
         });
     }
-    static void validSize_(DoubleList aData, int aSize) {
-        aData.ensureCapacity(aSize);
-        aData.setInternalDataSize(aSize);
+    static void validCache_(DoubleList rCache, int aSize) {
+        // 合法化缓存，由于部分缓存使用会利用旧值，为了保证清空逻辑，这里在长度不够时使用 addZeros 来扩容
+        int tSize = rCache.size();
+        if (tSize > aSize) {
+            rCache.setInternalDataSize(aSize);
+        } else {
+            int tRest = aSize - tSize;
+            if (tRest > 0) {
+                rCache.addZeros(tRest);
+            }
+        }
     }
-    static void validSize_(IntList aData, int aSize) {
-        aData.ensureCapacity(aSize);
-        aData.setInternalDataSize(aSize);
-    }
-    
-    protected abstract void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl);
-    protected abstract void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz);
-    
-    /**
-     * 内部使用的直接计算能量的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
-     * @param aNlDx 由近邻原子的 dx 组成的列表
-     * @param aNlDy 由近邻原子的 dy 组成的列表
-     * @param aNlDz 由近邻原子的 dz 组成的列表
-     * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aNN 需要进行计算的神经网络
-     * @return 计算得到的能量值
-     */
-    @ApiStatus.Internal
-    public final double evalEnergy(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN) throws Exception {
-        initCacheFp_();
-        eval_(aNlDx, aNlDy, aNlDz, aNlType, mFp, false);
-        return aNN.eval(mFp);
-    }
-    
-    /**
-     * 内部使用的直接计算能量和力的接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
-     * <p>
-     * 直接给出能量和力可以避免大量偏导数的缓存，并且简化稀疏偏导的细节处理
-     * @param aNlDx 由近邻原子的 dx 组成的列表
-     * @param aNlDy 由近邻原子的 dy 组成的列表
-     * @param aNlDz 由近邻原子的 dz 组成的列表
-     * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aNN 需要进行计算的神经网络
-     * @param rFx 计算得到的原子对于近邻原子 x 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @param rFy 计算得到的原子对于近邻原子 y 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @param rFz 计算得到的原子对于近邻原子 z 方向的力，要求已经是合适的大小，后续实现不会实际扩容
-     * @return 计算得到的能量值
-     */
-    @ApiStatus.Internal
-    public final double evalEnergyForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, NeuralNetwork aNN, DoubleList rFx, DoubleList rFy, DoubleList rFz) throws Exception {
-        initCacheFp_();
-        eval_(aNlDx, aNlDy, aNlDz, aNlType, mFp, true);
-        double tEng = aNN.evalGrad(mFp, mNNGrad);
-        evalForce_(aNlDx, aNlDy, aNlDz, aNlType, mNNGrad, rFx, rFy, rFz);
-        return tEng;
-    }
-    
     
     /**
      * 内部使用的计算基组接口，现在统一采用外部预先构造的近邻列表，从而可以避免重复遍历近邻
@@ -220,21 +268,9 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
      */
     @ApiStatus.Internal
     public final void eval(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp) {
-        eval_(aNlDx, aNlDy, aNlDz, aNlType, rFp, false);
+        mForwardCache.clear();
+        forward(aNlDx, aNlDy, aNlDz, aNlType, rFp, mForwardCache, false);
     }
-    
-    /**
-     * 内部使用的反向传播计算关于可拟合参量梯度的方法，这里为了实现以及训练器中使用简单不采取缓存而是包含所需的向前过程。
-     * @param aNlDx 由近邻原子的 dx 组成的列表
-     * @param aNlDy 由近邻原子的 dy 组成的列表
-     * @param aNlDz 由近邻原子的 dz 组成的列表
-     * @param aNlType 由近邻原子的 type 组成的列表
-     * @param aGradFp 输入已有的（loss）关于基组的梯度
-     * @param rGradPara 计算输出的（loss）关于可拟合参数的梯度
-     */
-    @ApiStatus.Internal
-    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {/**/}
-    
     /**
      * 通用的计算基组的接口，可以自定义任何近邻列表获取器来实现
      * @param aNL 近邻列表遍历器

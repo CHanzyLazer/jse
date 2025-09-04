@@ -5,7 +5,6 @@ import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
 import jse.math.vector.*;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +17,6 @@ import static jse.code.CS.*;
  * @author liqa
  */
 public class Merge extends Basis {
-    
     private final MergeableBasis[] mMergeBasis;
     private final double mRCut;
     private final int mSize, mTotParaSize, mTypeNum;
@@ -26,6 +24,7 @@ public class Merge extends Basis {
     private final int[] mParaSizes;
     private final String @Nullable[] mSymbols;
     private final ShiftVector[] mFpShell, mNNGradShell, mParaShell;
+    private final ShiftVector[] mForwardCacheShell, mBackwardCacheShell, mForwardForceCacheShell;
     
     public Merge(MergeableBasis... aMergeBasis) {
         if (aMergeBasis==null || aMergeBasis.length==0) throw new IllegalArgumentException("Merge basis can not be null or empty");
@@ -84,10 +83,16 @@ public class Merge extends Basis {
         // init fp shell
         mFpShell = new ShiftVector[mMergeBasis.length];
         mNNGradShell = new ShiftVector[mMergeBasis.length];
+        mForwardCacheShell = new ShiftVector[mMergeBasis.length];
+        mBackwardCacheShell = new ShiftVector[mMergeBasis.length];
+        mForwardForceCacheShell = new ShiftVector[mMergeBasis.length];
         for (int i = 0; i < mMergeBasis.length; ++i) {
             int tSizeFp = mMergeBasis[i].size();
             mFpShell[i] = new ShiftVector(tSizeFp, 0, null);
             mNNGradShell[i] = new ShiftVector(tSizeFp, 0, null);
+            mForwardCacheShell[i] = new ShiftVector(0, 0, null);
+            mBackwardCacheShell[i] = new ShiftVector(0, 0, null);
+            mForwardForceCacheShell[i] = new ShiftVector(0, 0, null);
         }
     }
     @Override public Merge threadSafeRef() {
@@ -217,24 +222,59 @@ public class Merge extends Basis {
         return new Merge(tMergeBasis);
     }
     
+    private int initForwardCacheShell_(int aNN, boolean aFullCache) {
+        int rTotSize = 0;
+        for (int i = 0; i < mMergeBasis.length; ++i) {
+            int tSize = mMergeBasis[i].forwardCacheSize_(aNN, aFullCache);
+            mForwardCacheShell[i].setInternalDataSize(tSize);
+            rTotSize += tSize;
+        }
+        return rTotSize;
+    }
+    private int initBackwardCacheShell_(int aNN) {
+        int rTotSize = 0;
+        for (int i = 0; i < mMergeBasis.length; ++i) {
+            int tSize = mMergeBasis[i].backwardCacheSize_(aNN);
+            mBackwardCacheShell[i].setInternalDataSize(tSize);
+            rTotSize += tSize;
+        }
+        return rTotSize;
+    }
+    private int initForwardForceCacheShell_(int aNN, boolean aFullCache) {
+        int rTotSize = 0;
+        for (int i = 0; i < mMergeBasis.length; ++i) {
+            int tSize = mMergeBasis[i].forwardForceCacheSize_(aNN, aFullCache);
+            mForwardForceCacheShell[i].setInternalDataSize(tSize);
+            rTotSize += tSize;
+        }
+        return rTotSize;
+    }
+    
     @Override
-    protected void eval_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, boolean aBufferNl) {
+    public final void forward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleList rForwardCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         if (Conf.OPERATION_CHECK) {
             if (mSize != rFp.size()) throw new IllegalArgumentException("data size mismatch");
         } else {
             if (mSize > rFp.size()) throw new IllegalArgumentException("data size mismatch");
         }
+        validCache_(rForwardCache, initForwardCacheShell_(aNlDx.size(), aFullCache));
         int tFpShift = rFp.internalDataShift();
+        int tCacheShift = 0;
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tFp = mFpShell[i];
-            tFp.setInternalData(rFp.internalData()); tFp.setInternalDataShift(tFpShift);
-            mMergeBasis[i].eval_(aNlDx, aNlDy, aNlDz, aNlType, tFp, aBufferNl);
+            tFp.setInternalData(rFp.internalData());
+            tFp.setInternalDataShift(tFpShift);
+            ShiftVector tForwardCache = mForwardCacheShell[i];
+            tForwardCache.setInternalData(rForwardCache.internalData());
+            tForwardCache.setInternalDataShift(tCacheShift);
+            mMergeBasis[i].forward_(aNlDx, aNlDy, aNlDz, aNlType, tFp, tForwardCache, aFullCache);
             tFpShift += tFp.internalDataSize();
+            tCacheShift += tForwardCache.internalDataSize();
         }
     }
-    @Override @ApiStatus.Internal
-    public void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara) {
+    @Override
+    public final void backward(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aGradFp, DoubleArrayVector rGradPara, DoubleList aForwardCache, DoubleList rBackwardCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         if (Conf.OPERATION_CHECK) {
             if (mSize != aGradFp.size()) throw new IllegalArgumentException("data size mismatch");
@@ -243,28 +283,53 @@ public class Merge extends Basis {
             if (mSize > aGradFp.size()) throw new IllegalArgumentException("data size mismatch");
             if (mTotParaSize > rGradPara.size()) throw new IllegalArgumentException("data size mismatch");
         }
+        initForwardCacheShell_(aNlDx.size(), true);
+        validCache_(rBackwardCache, initBackwardCacheShell_(aNlDx.size()));
         int tFpShift = aGradFp.internalDataShift(), tParaShift = rGradPara.internalDataShift();
+        int tCacheShift = 0, tBackwardCacheShift = 0;
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tGradFp = mFpShell[i];
-            tGradFp.setInternalData(aGradFp.internalData()); tGradFp.setInternalDataShift(tFpShift);
+            tGradFp.setInternalData(aGradFp.internalData());
+            tGradFp.setInternalDataShift(tFpShift);
             ShiftVector tGradPara = mParaShell[i];
-            tGradPara.setInternalData(rGradPara.internalData()); tGradPara.setInternalDataShift(tParaShift);
-            mMergeBasis[i].backward(aNlDx, aNlDy, aNlDz, aNlType, tGradFp, tGradPara);
+            tGradPara.setInternalData(rGradPara.internalData());
+            tGradPara.setInternalDataShift(tParaShift);
+            ShiftVector tForwardCache = mForwardCacheShell[i];
+            tForwardCache.setInternalData(aForwardCache.internalData());
+            tForwardCache.setInternalDataShift(tCacheShift);
+            ShiftVector tBackwardCache = mBackwardCacheShell[i];
+            tBackwardCache.setInternalData(rBackwardCache.internalData());
+            tBackwardCache.setInternalDataShift(tBackwardCacheShift);
+            mMergeBasis[i].backward_(aNlDx, aNlDy, aNlDz, aNlType, tGradFp, tGradPara, tForwardCache, tBackwardCache);
             tFpShift += tGradFp.internalDataSize();
             tParaShift += tGradPara.internalDataSize();
+            tCacheShift += tForwardCache.internalDataSize();
+            tBackwardCacheShift += tBackwardCache.internalDataSize();
         }
     }
     @Override
-    protected void evalForce_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz) {
+    public final void forwardForce(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector aNNGrad, DoubleList rFx, DoubleList rFy, DoubleList rFz, DoubleList aForwardCache, DoubleList rForwardForceCache, boolean aFullCache) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         // 这里需要手动清空旧值
         MergeableBasis.clearForce_(rFx, rFy, rFz);
+        initForwardCacheShell_(aNlDx.size(), true);
+        validCache_(rForwardForceCache, initForwardForceCacheShell_(aNlDx.size(), aFullCache));
         int tFpShift = aNNGrad.internalDataShift();
+        int tCacheShift = 0, tForceCacheShift = 0;
         for (int i = 0; i < mMergeBasis.length; ++i) {
             ShiftVector tNNGrad = mNNGradShell[i];
-            tNNGrad.setInternalData(aNNGrad.internalData()); tNNGrad.setInternalDataShift(tFpShift);
-            mMergeBasis[i].evalForceAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, tNNGrad, rFx, rFy, rFz);
+            tNNGrad.setInternalData(aNNGrad.internalData());
+            tNNGrad.setInternalDataShift(tFpShift);
+            ShiftVector tForwardCache = mForwardCacheShell[i];
+            tForwardCache.setInternalData(aForwardCache.internalData());
+            tForwardCache.setInternalDataShift(tCacheShift);
+            ShiftVector tForwardForceCache = mForwardForceCacheShell[i];
+            tForwardForceCache.setInternalData(rForwardForceCache.internalData());
+            tForwardForceCache.setInternalDataShift(tForceCacheShift);
+            mMergeBasis[i].forwardForceAccumulate_(aNlDx, aNlDy, aNlDz, aNlType, tNNGrad, rFx, rFy, rFz, tForwardCache, tForwardForceCache, aFullCache);
             tFpShift += tNNGrad.internalDataSize();
+            tCacheShift += tForwardCache.internalDataSize();
+            tForceCacheShift += tForwardForceCache.internalDataSize();
         }
     }
 }
