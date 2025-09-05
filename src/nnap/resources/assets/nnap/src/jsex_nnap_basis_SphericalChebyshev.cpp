@@ -1938,6 +1938,30 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     }
 }
 
+template <jint LMALL, jint WTYPE>
+static void calBackwardMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                                jdouble *rGradPara, jdouble *aNlBnlm,  jdouble *aGradCnlm,
+                                jint aTypeNum, jdouble aRCut, jint aNMax, jint aFuseSize) {
+    const jint tSizeBnlm = (aNMax+1)*LMALL;
+    for (jint j = 0; j < aNN; ++j) {
+        jint type = aNlType[j];
+        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
+        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
+        // check rcut for merge
+        if (dis >= aRCut) continue;
+        jdouble *tBnlm = aNlBnlm + j*tSizeBnlm;
+        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
+            jdouble *tGradPara = rGradPara;
+            jdouble *tGradCnlm = aGradCnlm;
+            for (jint fi = 0; fi < aFuseSize; ++fi) {
+                tGradPara[type-1] += dotBnlmGradCnlm<LMALL>(tBnlm, tGradCnlm, aNMax);
+                tGradPara += aTypeNum;
+                tGradCnlm += tSizeBnlm;
+            }
+            continue;
+        }
+    }
+}
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                         jdouble *aGradFp, jdouble *rGradPara, jdouble *aForwardCache, jdouble *rBackwardCache,
@@ -1957,7 +1981,6 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     const jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
     const jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
-    const jint tSizeBnlm = (aNMax+1)*tLMAll;
     // init cache
     jdouble *tCnlm = aForwardCache;
     jdouble *tNlBnlm = tCnlm + tSizeCnlm + aNN*(aNMax+1 + 1 + tLMAll);
@@ -1968,30 +1991,131 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
         calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
     }
     // plus to para
+    calBackwardMainLoop<tLMAll, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, tNlBnlm, rGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize);
+}
+
+template <jint LMAXMAX, jint LMALL, jint WTYPE, jboolean FULL_CACHE>
+static void calForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                             jdouble *aGradCnlm, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                             jdouble *aForwardCache, jdouble *rForwardForceCache,
+                             jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) {
+    const jint tSizeBnlm = (aNMax+1)*LMALL;
+    // init cache
+    jdouble *tNlRn = aForwardCache;
+    jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
+    jdouble *tNlY = tNlFc + aNN;
+    jdouble *rRnPx = NULL, *rRnPy = NULL, *rRnPz = NULL, *rCheby2 = NULL;
+    jdouble *rYPx = NULL, *rYPy = NULL, *rYPz = NULL, *rYPtheta = NULL, *rYPphi = NULL;
+    jdouble *rGradBnlm = NULL;
+    jdouble *rNlRnPx = NULL, *rNlRnPy = NULL, *rNlRnPz = NULL;
+    jdouble *rNlFcPx = NULL, *rNlFcPy = NULL, *rNlFcPz = NULL;
+    jdouble *rNlYPx = NULL, *rNlYPy = NULL, *rNlYPz = NULL;
+    jdouble *rNlGradBnlm = NULL;
+    if (FULL_CACHE) {
+        rNlRnPx = rForwardForceCache;
+        rNlRnPy = rNlRnPx + aNN*(aNMax+1);
+        rNlRnPz = rNlRnPy + aNN*(aNMax+1);
+        rNlFcPx = rNlRnPz + aNN*(aNMax+1);
+        rNlFcPy = rNlFcPx + aNN;
+        rNlFcPz = rNlFcPy + aNN;
+        rNlYPx = rNlFcPz + aNN;
+        rNlYPy = rNlYPx + aNN*LMALL;
+        rNlYPz = rNlYPy + aNN*LMALL;
+        rYPtheta = rNlYPz + aNN*LMALL;
+        rYPphi = rYPtheta + LMALL;
+        rCheby2 = rYPphi + LMALL;
+    } else {
+        rRnPx = rForwardForceCache;
+        rRnPy = rRnPx + (aNMax+1);
+        rRnPz = rRnPy + (aNMax+1);
+        rYPx = rRnPz + (aNMax+1);
+        rYPy = rYPx + LMALL;
+        rYPz = rYPy + LMALL;
+        rYPtheta = rYPz + LMALL;
+        rYPphi = rYPtheta + LMALL;
+        rCheby2 = rYPphi + LMALL;
+    }
+    if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
+        if (FULL_CACHE) {
+            rNlGradBnlm = rCheby2 + (aNMax+1);
+        } else {
+            rGradBnlm = rCheby2 + (aNMax+1);
+        }
+    }
+    // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
+        // init nl
         jint type = aNlType[j];
         jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
-        jdouble *tBnlm = tNlBnlm + j*tSizeBnlm;
+        // get fc Rn Y
+        jdouble fc = tNlFc[j];
+        jdouble *tRn = tNlRn + j*(aNMax+1);
+        jdouble *tY = tNlY + j*LMALL;
+        // cal fcPxyz
+        jdouble fcPx, fcPy, fcPz;
+        JSE_NNAP::calFcPxyz(&fcPx, &fcPy, &fcPz, dis, aRCut, dx, dy, dz);
+        if (FULL_CACHE) {
+            rNlFcPx[j] = fcPx;
+            rNlFcPy[j] = fcPy;
+            rNlFcPz[j] = fcPz;
+        }
+        // cal RnPxyz
+        if (FULL_CACHE) {
+            rRnPx = rNlRnPx + j*(aNMax+1);
+            rRnPy = rNlRnPy + j*(aNMax+1);
+            rRnPz = rNlRnPz + j*(aNMax+1);
+        }
+        JSE_NNAP::calRnPxyz(rRnPx, rRnPy, rRnPz, rCheby2, aNMax, dis, aRCut, dx, dy, dz);
+        // cal Ylm
+        if (FULL_CACHE) {
+            rYPx = rNlYPx + j*LMALL;
+            rYPy = rNlYPy + j*LMALL;
+            rYPz = rNlYPz + j*LMALL;
+        }
+        calYPxyz<LMAXMAX, LMALL>(tY, dx, dy, dz, dis, rYPx, rYPy, rYPz, rYPtheta, rYPphi);
+        // cal fxyz
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-            jdouble *tGradPara = rGradPara;
-            jdouble *tGradCnlm = rGradCnlm;
-            for (jint fi = 0; fi < aFuseSize; ++fi) {
-                tGradPara[type-1] += dotBnlmGradCnlm<tLMAll>(tBnlm, tGradCnlm, aNMax);
-                tGradPara += aTypeNum;
+            if (FULL_CACHE) {
+                rGradBnlm = rNlGradBnlm + j*tSizeBnlm;
+            }
+            for (jint k = 0; k < tSizeBnlm; ++k) {
+                rGradBnlm[k] = 0.0;
+            }
+            jdouble *tFuseWeight = aFuseWeight;
+            jdouble *tGradCnlm = aGradCnlm;
+            for (jint k = 0; k < aFuseSize; ++k) {
+                jdouble wt = tFuseWeight[type-1];
+                mplusBnlm2Cnlm<LMALL>(rGradBnlm, tGradCnlm, wt, aNMax);
+                tFuseWeight += aTypeNum;
                 tGradCnlm += tSizeBnlm;
             }
-            continue;
+            gradBnlm2Fxyz<LMALL>(j, rGradBnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+        } else
+        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE) {
+            gradBnlm2Fxyz<LMALL>(j, aGradCnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+        } else
+        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
+            jdouble *tGradBnlm = aGradCnlm + tSizeBnlm*(type-1);
+            gradBnlm2Fxyz<LMALL>(j, tGradBnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+        } else
+        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
+            jdouble *tGradCnlmWt = aGradCnlm + tSizeBnlm*type;
+            gradCnlmWt2Fxyz<LMALL>(j, aGradCnlm, tGradCnlmWt, rYPtheta, tY, fc, tRn, 1.0, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+        } else
+        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
+            jdouble wt = ((type&1)==1) ? type : -type;
+            jdouble *tGradCnlmWt = aGradCnlm + tSizeBnlm;
+            gradCnlmWt2Fxyz<LMALL>(j, aGradCnlm, tGradCnlmWt, rYPtheta, tY, fc, tRn, wt, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
         }
     }
 }
-
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean FULL_CACHE>
+template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                      jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                     jdouble *aForwardCache, jdouble *rForwardForceCache,
+                     jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                      jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     // const init
     jint tSizeN;
@@ -2024,51 +2148,11 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     const jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
     const jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
-    const jint tSizeBnlm = (aNMax+1)*tLMAll;
     // init cache
     jdouble *tCnlm = aForwardCache;
-    jdouble *tNlRn = tCnlm + tSizeCnlm;
-    jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
-    jdouble *tNlY = tNlFc + aNN;
+    jdouble *tForwardCacheElse = tCnlm + tSizeCnlm;
     jdouble *rGradCnlm = rForwardForceCache;
-    jdouble *rRnPx = NULL, *rRnPy = NULL, *rRnPz = NULL, *rCheby2 = NULL;
-    jdouble *rYPx = NULL, *rYPy = NULL, *rYPz = NULL, *rYPtheta = NULL, *rYPphi = NULL;
-    jdouble *rGradBnlm = NULL;
-    jdouble *rNlRnPx = NULL, *rNlRnPy = NULL, *rNlRnPz = NULL;
-    jdouble *rNlFcPx = NULL, *rNlFcPy = NULL, *rNlFcPz = NULL;
-    jdouble *rNlYPx = NULL, *rNlYPy = NULL, *rNlYPz = NULL;
-    jdouble *rNlGradBnlm = NULL;
-    if (FULL_CACHE) {
-        rNlRnPx = rGradCnlm + tSizeCnlm;
-        rNlRnPy = rNlRnPx + aNN*(aNMax+1);
-        rNlRnPz = rNlRnPy + aNN*(aNMax+1);
-        rNlFcPx = rNlRnPz + aNN*(aNMax+1);
-        rNlFcPy = rNlFcPx + aNN;
-        rNlFcPz = rNlFcPy + aNN;
-        rNlYPx = rNlFcPz + aNN;
-        rNlYPy = rNlYPx + aNN*tLMAll;
-        rNlYPz = rNlYPy + aNN*tLMAll;
-        rYPtheta = rNlYPz + aNN*tLMAll;
-        rYPphi = rYPtheta + tLMAll;
-        rCheby2 = rYPphi + tLMAll;
-    } else {
-        rRnPx = rGradCnlm + tSizeCnlm;;
-        rRnPy = rRnPx + (aNMax+1);
-        rRnPz = rRnPy + (aNMax+1);
-        rYPx = rRnPz + (aNMax+1);
-        rYPy = rYPx + tLMAll;
-        rYPz = rYPy + tLMAll;
-        rYPtheta = rYPz + tLMAll;
-        rYPphi = rYPtheta + tLMAll;
-        rCheby2 = rYPphi + tLMAll;
-    }
-    if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-        if (FULL_CACHE) {
-            rNlGradBnlm = rCheby2 + (aNMax+1);
-        } else {
-            rGradBnlm = rCheby2 + (aNMax+1);
-        }
-    }
+    jdouble *rForwardForceCacheElse = rGradCnlm + tSizeCnlm;
     // forward need init gradCnlm here
     for (jint i = 0; i < tSizeCnlm; ++i) {
         rGradCnlm[i] = 0.0;
@@ -2076,6 +2160,39 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradL2_<LMAX, NO_RADIAL>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp);
         calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+    }
+    if (aFullCache) {
+        calForceMainLoop<tLMaxMax, tLMAll, WTYPE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradCnlm, rFx, rFy, rFz, tForwardCacheElse, rForwardForceCacheElse, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+    } else {
+        calForceMainLoop<tLMaxMax, tLMAll, WTYPE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradCnlm, rFx, rFy, rFz, tForwardCacheElse, rForwardForceCacheElse, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+    }
+}
+
+template <jint LMALL, jint WTYPE>
+static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                                     jdouble *rGradNNGradCnlm, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,
+                                     jdouble *aNNGradCnlm, jdouble *rGradPara,
+                                     jdouble *aForwardCache, jdouble *aForwardForceCache,
+                                     jdouble *rBackwardForceCache, jboolean aFixBasis,
+                                     jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+    const jint tSizeBnlm = (aNMax+1)*LMALL;
+    // init cache
+    jdouble *tNlRn = aForwardCache;
+    jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
+    jdouble *tNlY = tNlFc + aNN;
+    jdouble *tNlRnPx = aForwardForceCache;
+    jdouble *tNlRnPy = tNlRnPx + aNN*(aNMax+1);
+    jdouble *tNlRnPz = tNlRnPy + aNN*(aNMax+1);
+    jdouble *tNlFcPx = tNlRnPz + aNN*(aNMax+1);
+    jdouble *tNlFcPy = tNlFcPx + aNN;
+    jdouble *tNlFcPz = tNlFcPy + aNN;
+    jdouble *tNlYPx = tNlFcPz + aNN;
+    jdouble *tNlYPy = tNlYPx + aNN*LMALL;
+    jdouble *tNlYPz = tNlYPy + aNN*LMALL;
+    jdouble *rGradNNGradY = rBackwardForceCache;
+    jdouble *rGradNNGradBnlm = NULL;
+    if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
+        rGradNNGradBnlm = rGradNNGradY + LMALL;
     }
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
@@ -2085,69 +2202,59 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // get gradFxyz
+        jdouble tGradFx = aGradFx[j], tGradFy = aGradFy[j], tGradFz = aGradFz[j];
         // get fc Rn Y
         jdouble fc = tNlFc[j];
         jdouble *tRn = tNlRn + j*(aNMax+1);
-        jdouble *tY = tNlY + j*tLMAll;
-        // cal fcPxyz
-        jdouble fcPx, fcPy, fcPz;
-        JSE_NNAP::calFcPxyz(&fcPx, &fcPy, &fcPz, dis, aRCut, dx, dy, dz);
-        if (FULL_CACHE) {
-            rNlFcPx[j] = fcPx;
-            rNlFcPy[j] = fcPy;
-            rNlFcPz[j] = fcPz;
-        }
-        // cal RnPxyz
-        if (FULL_CACHE) {
-            rRnPx = rNlRnPx + j*(aNMax+1);
-            rRnPy = rNlRnPy + j*(aNMax+1);
-            rRnPz = rNlRnPz + j*(aNMax+1);
-        }
-        JSE_NNAP::calRnPxyz(rRnPx, rRnPy, rRnPz, rCheby2, aNMax, dis, aRCut, dx, dy, dz);
-        // cal Ylm
-        if (FULL_CACHE) {
-            rYPx = rNlYPx + j*tLMAll;
-            rYPy = rNlYPy + j*tLMAll;
-            rYPz = rNlYPz + j*tLMAll;
-        }
-        calYPxyz<tLMaxMax, tLMAll>(tY, dx, dy, dz, dis, rYPx, rYPy, rYPz, rYPtheta, rYPphi);
-        // cal fxyz
+        jdouble *tY = tNlY + j*LMALL;
+        // get fcPxyz RnPxyz YPxyz
+        jdouble fcPx = tNlFcPx[j], fcPy = tNlFcPy[j], fcPz = tNlFcPz[j];
+        jdouble *tRnPx = tNlRnPx + j*(aNMax+1);
+        jdouble *tRnPy = tNlRnPy + j*(aNMax+1);
+        jdouble *tRnPz = tNlRnPz + j*(aNMax+1);
+        jdouble *tYPx = tNlYPx + j*LMALL;
+        jdouble *tYPy = tNlYPy + j*LMALL;
+        jdouble *tYPz = tNlYPz + j*LMALL;
+        // mplus to gradNNgrad
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-            if (FULL_CACHE) {
-                rGradBnlm = rNlGradBnlm + j*tSizeBnlm;
-            }
-            for (jint k = 0; k < tSizeBnlm; ++k) {
-                rGradBnlm[k] = 0.0;
-            }
+            calGradNNGradBnlm<LMALL>(rGradNNGradBnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
             jdouble *tFuseWeight = aFuseWeight;
-            jdouble *tGradCnlm = rGradCnlm;
+            jdouble *tGradNNGradCnlm = rGradNNGradCnlm;
             for (jint k = 0; k < aFuseSize; ++k) {
                 jdouble wt = tFuseWeight[type-1];
-                mplusBnlm2Cnlm<tLMAll>(rGradBnlm, tGradCnlm, wt, aNMax);
+                mplusBnlm2Cnlm<LMALL>(tGradNNGradCnlm, rGradNNGradBnlm, wt, aNMax);
+                tGradNNGradCnlm += tSizeBnlm;
                 tFuseWeight += aTypeNum;
-                tGradCnlm += tSizeBnlm;
             }
-            gradBnlm2Fxyz<tLMAll>(j, rGradBnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+            if (!aFixBasis) {
+                jdouble *tGradPara = rGradPara;
+                jdouble *tNNGradCnlm = aNNGradCnlm;
+                for (jint k = 0; k < aFuseSize; ++k) {
+                    tGradPara[type-1] += dotBnlmGradCnlm<LMALL>(tNNGradCnlm, rGradNNGradBnlm, aNMax);
+                    tNNGradCnlm += tSizeBnlm;
+                    tGradPara += aTypeNum;
+                }
+            }
         } else
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE) {
-            gradBnlm2Fxyz<tLMAll>(j, rGradCnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+            mplusGradNNGradCnlm<LMALL>(rGradNNGradCnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
         } else
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
-            jdouble *tGradBnlm = rGradCnlm + tSizeBnlm*(type-1);
-            gradBnlm2Fxyz<tLMAll>(j, tGradBnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+            jdouble *tGradNNGradCnlm = rGradNNGradCnlm + tSizeBnlm*(type-1);
+            mplusGradNNGradCnlm<LMALL>(tGradNNGradCnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
         } else
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
-            jdouble *tGradCnlmWt = rGradCnlm + tSizeBnlm*type;
-            gradCnlmWt2Fxyz<tLMAll>(j, rGradCnlm, tGradCnlmWt, rYPtheta, tY, fc, tRn, 1.0, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+            jdouble *rGradNNGradCnlmWt = rGradNNGradCnlm + tSizeBnlm*type;
+            mplusGradNNGradCnlmWt<LMALL>(rGradNNGradCnlm, rGradNNGradCnlmWt, tY, fc, tRn, 1.0, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
         } else
         if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
             jdouble wt = ((type&1)==1) ? type : -type;
-            jdouble *tGradCnlmWt = rGradCnlm + tSizeBnlm;
-            gradCnlmWt2Fxyz<tLMAll>(j, rGradCnlm, tGradCnlmWt, rYPtheta, tY, fc, tRn, wt, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+            jdouble *rGradNNGradCnlmWt = rGradNNGradCnlm + tSizeBnlm;
+            mplusGradNNGradCnlmWt<LMALL>(rGradNNGradCnlm, rGradNNGradCnlmWt, tY, fc, tRn, wt, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
         }
     }
 }
-
 template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                              jdouble *aNNGrad, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,
@@ -2186,89 +2293,18 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
     const jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
     const jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
-    const jint tSizeBnlm = (aNMax+1)*tLMAll;
     // init cache
     jdouble *tCnlm = aForwardCache;
-    jdouble *tNlRn = tCnlm + tSizeCnlm;
-    jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
-    jdouble *tNlY = tNlFc + aNN;
+    jdouble *tForwardCacheElse = tCnlm + tSizeCnlm;
     jdouble *tNNGradCnlm = aForwardForceCache;
-    jdouble *tNlRnPx = tNNGradCnlm + tSizeCnlm;
-    jdouble *tNlRnPy = tNlRnPx + aNN*(aNMax+1);
-    jdouble *tNlRnPz = tNlRnPy + aNN*(aNMax+1);
-    jdouble *tNlFcPx = tNlRnPz + aNN*(aNMax+1);
-    jdouble *tNlFcPy = tNlFcPx + aNN;
-    jdouble *tNlFcPz = tNlFcPy + aNN;
-    jdouble *tNlYPx = tNlFcPz + aNN;
-    jdouble *tNlYPy = tNlYPx + aNN*tLMAll;
-    jdouble *tNlYPz = tNlYPy + aNN*tLMAll;
+    jdouble *tForwardForceCacheElse = tNNGradCnlm + tSizeCnlm;
     jdouble *rGradCnlm = rBackwardCache;
-    jdouble *rGradNNGradY = rBackwardForceCache;
-    jdouble *rGradNNGradCnlm = rGradNNGradY + tLMAll;
-    jdouble *rGradNNGradBnlm = NULL;
-    if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-        rGradNNGradBnlm = rGradNNGradCnlm + tSizeCnlm;
-    }
-    // loop for neighbor
-    for (jint j = 0; j < aNN; ++j) {
-        // init nl
-        jint type = aNlType[j];
-        jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
-        // check rcut for merge
-        if (dis >= aRCut) continue;
-        // get gradFxyz
-        jdouble tGradFx = aGradFx[j], tGradFy = aGradFy[j], tGradFz = aGradFz[j];
-        // get fc Rn Y
-        jdouble fc = tNlFc[j];
-        jdouble *tRn = tNlRn + j*(aNMax+1);
-        jdouble *tY = tNlY + j*tLMAll;
-        // get fcPxyz RnPxyz YPxyz
-        jdouble fcPx = tNlFcPx[j], fcPy = tNlFcPy[j], fcPz = tNlFcPz[j];
-        jdouble *tRnPx = tNlRnPx + j*(aNMax+1);
-        jdouble *tRnPy = tNlRnPy + j*(aNMax+1);
-        jdouble *tRnPz = tNlRnPz + j*(aNMax+1);
-        jdouble *tYPx = tNlYPx + j*tLMAll;
-        jdouble *tYPy = tNlYPy + j*tLMAll;
-        jdouble *tYPz = tNlYPz + j*tLMAll;
-        // mplus to gradNNgrad
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE) {
-            calGradNNGradBnlm<tLMAll>(rGradNNGradBnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
-            jdouble *tFuseWeight = aFuseWeight;
-            jdouble *tGradNNGradCnlm = rGradNNGradCnlm;
-            for (jint k = 0; k < aFuseSize; ++k) {
-                jdouble wt = tFuseWeight[type-1];
-                mplusBnlm2Cnlm<tLMAll>(tGradNNGradCnlm, rGradNNGradBnlm, wt, aNMax);
-                tGradNNGradCnlm += tSizeBnlm;
-                tFuseWeight += aTypeNum;
-            }
-            if (!aFixBasis) {
-                jdouble *tGradPara = rGradPara;
-                jdouble *tNNGradCnlm_ = tNNGradCnlm;
-                for (jint k = 0; k < aFuseSize; ++k) {
-                    tGradPara[type-1] += dotBnlmGradCnlm<tLMAll>(tNNGradCnlm_, rGradNNGradBnlm, aNMax);
-                    tNNGradCnlm_ += tSizeBnlm;
-                    tGradPara += aTypeNum;
-                }
-            }
-        } else
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE) {
-            mplusGradNNGradCnlm<tLMAll>(rGradNNGradCnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
-        } else
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL) {
-            jdouble *tGradNNGradCnlm = rGradNNGradCnlm + tSizeBnlm*(type-1);
-            mplusGradNNGradCnlm<tLMAll>(tGradNNGradCnlm, tY, fc, tRn, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
-        } else
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL) {
-            jdouble *rGradNNGradCnlmWt = rGradNNGradCnlm + tSizeBnlm*type;
-            mplusGradNNGradCnlmWt<tLMAll>(rGradNNGradCnlm, rGradNNGradCnlmWt, tY, fc, tRn, 1.0, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
-        } else
-        if (WTYPE==jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT) {
-            jdouble wt = ((type&1)==1) ? type : -type;
-            jdouble *rGradNNGradCnlmWt = rGradNNGradCnlm + tSizeBnlm;
-            mplusGradNNGradCnlmWt<tLMAll>(rGradNNGradCnlm, rGradNNGradCnlmWt, tY, fc, tRn, wt, aNMax, tYPx, tYPy, tYPz, rGradNNGradY, fcPx, fcPy, fcPz, tRnPx, tRnPy, tRnPz, tGradFx, tGradFy, tGradFz);
-        }
-    }
+    jdouble *rGradNNGradCnlm = rBackwardForceCache;
+    jdouble *rBackwardForceCacheElse = rGradNNGradCnlm + tSizeCnlm;
+    
+    // cal rGradNNGradCnlm
+    calBackwardForceMainLoop<tLMAll, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, tNNGradCnlm, rGradPara, tForwardCacheElse, tForwardForceCacheElse, rBackwardForceCacheElse, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+    
     // grad grad cnlm to grad grad fp
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradNNGradL2_<LMAX, NO_RADIAL>(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp);
@@ -2541,85 +2577,85 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
 }
 
 
-template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean FULL_CACHE>
+template <jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aLMax) {
     case 0: {
-        calForce<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<0, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 1: {
-        calForce<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<1, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 2: {
-        calForce<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<2, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 3: {
-        calForce<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<3, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 4: {
-        calForce<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<4, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 5: {
-        calForce<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<5, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 6: {
-        calForce<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<6, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 7: {
-        calForce<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<7, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     case 8: {
-        calForce<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+        calForce<8, NO_RADIAL, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
         return;
     }
     default: {
         return;
     }}
 }
-template <jint L3MAX, jboolean L3CROSS, jint WTYPE, jboolean FULL_CACHE>
+template <jint L3MAX, jboolean L3CROSS, jint WTYPE>
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aNoRadial) {
-        calForce<JNI_TRUE, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
+        calForce<JNI_TRUE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
     } else {
-        calForce<JNI_FALSE, L3MAX, L3CROSS, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
+        calForce<JNI_FALSE, L3MAX, L3CROSS, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aFuseWeight, aFuseSize);
     }
 }
-template <jint WTYPE, jboolean FULL_CACHE>
+template <jint WTYPE>
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial,
                             jint aL3Max, jboolean aL3Cross, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aL3Cross) {
         switch (aL3Max) {
         case 0: case 1: {
-            calForce<0, JNI_FALSE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 2: {
-            calForce<2, JNI_TRUE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<2, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 3: {
-            calForce<3, JNI_TRUE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<3, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 4: {
-            calForce<4, JNI_TRUE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<4, JNI_TRUE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -2628,64 +2664,15 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
     } else {
         switch (aL3Max) {
         case 0: case 1: {
-            calForce<0, JNI_FALSE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<0, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 2: case 3: {
-            calForce<2, JNI_FALSE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
+            calForce<2, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         case 4: {
-            calForce<4, JNI_FALSE, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
-            return;
-        }
-        default: {
-            return;
-        }}
-    }
-}
-template <jboolean FULL_CACHE>
-static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
-                            jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial,
-                            jint aL3Max, jboolean aL3Cross, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aTypeNum == 1) {
-        switch(aWType) {
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE:
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL:
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL:
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        default: {
-            return;
-        }}
-    } else {
-        switch(aWType) {
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
-            return;
-        }
-        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
-            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            calForce<4, JNI_FALSE, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -2698,10 +2685,47 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jboolean aNoRadial,
                             jint aL3Max, jboolean aL3Cross, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aFullCache) {
-        calForce<JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, aFuseWeight, aFuseSize);
+    if (aTypeNum == 1) {
+        switch(aWType) {
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE:
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL:
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL:
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        default: {
+            return;
+        }}
     } else {
-        calForce<JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aWType, aFuseWeight, aFuseSize);
+        switch(aWType) {
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE: {
+            calForce<jsex_nnap_basis_SphericalChebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        default: {
+            return;
+        }}
     }
 }
 

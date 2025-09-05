@@ -361,114 +361,123 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
 }
 
 
-template <jint WTYPE, jboolean FULL_CACHE>
+template <jint NMAX, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rFp, jdouble *rForwardCache,
+                         jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
+                         jint aTypeNum, jdouble aRCut, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+    if (aFullCache) {
+        calFp<NMAX, WTYPE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+    } else {
+        calFp<NMAX, WTYPE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+    }
+}
+template <jint WTYPE>
+static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                         jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
                          jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aNMax) {
     case 0: {
-        calFp<0, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 1: {
-        calFp<1, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 2: {
-        calFp<2, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 3: {
-        calFp<3, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 4: {
-        calFp<4, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 5: {
-        calFp<5, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 6: {
-        calFp<6, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 7: {
-        calFp<7, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 8: {
-        calFp<8, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 9: {
-        calFp<9, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 10: {
-        calFp<10, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 11: {
-        calFp<11, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 12: {
-        calFp<12, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 13: {
-        calFp<13, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 14: {
-        calFp<14, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 15: {
-        calFp<15, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 16: {
-        calFp<16, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 17: {
-        calFp<17, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 18: {
-        calFp<18, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 19: {
-        calFp<19, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 20: {
-        calFp<20, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calFp<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     default: {
         return;
     }}
 }
-template <jboolean FULL_CACHE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rFp, jdouble *rForwardCache,
+                         jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
                          jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aTypeNum == 1) {
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_FUSE: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE:
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL:
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL:
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -477,23 +486,23 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     } else {
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_EXFULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FUSE: {
-            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calFp<jsex_nnap_basis_Chebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -501,15 +510,7 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
         }}
     }
 }
-static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                         jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
-                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aFullCache) {
-        calFp<JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aWType, aFuseWeight, aFuseSize);
-    } else {
-        calFp<JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aTypeNum, aRCut, aNMax, aWType, aFuseWeight, aFuseSize);
-    }
-}
+
 
 template <jint WTYPE>
 static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
@@ -613,116 +614,126 @@ static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, j
 }
 
 
-template <jint WTYPE, jboolean FULL_CACHE>
+template <jint NMAX, jint WTYPE>
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
+                            jint aTypeNum, jdouble aRCut, jdouble *aFuseWeight, jint aFuseSize) noexcept {
+    if (aFullCache) {
+        calForce<NMAX, WTYPE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+    } else {
+        calForce<NMAX, WTYPE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+    }
+}
+template <jint WTYPE>
+static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
+                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aNMax) {
     case 0: {
-        calForce<0, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 1: {
-        calForce<1, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 2: {
-        calForce<2, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 3: {
-        calForce<3, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 4: {
-        calForce<4, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 5: {
-        calForce<5, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 6: {
-        calForce<6, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 7: {
-        calForce<7, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 8: {
-        calForce<8, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 9: {
-        calForce<9, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 10: {
-        calForce<10, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 11: {
-        calForce<11, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 12: {
-        calForce<12, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 13: {
-        calForce<13, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 14: {
-        calForce<14, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 15: {
-        calForce<15, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 16: {
-        calForce<16, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 17: {
-        calForce<17, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 18: {
-        calForce<18, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 19: {
-        calForce<19, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     case 20: {
-        calForce<20, WTYPE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
+        calForce<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
         return;
     }
     default: {
         return;
     }}
 }
-template <jboolean FULL_CACHE>
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache,
+                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     if (aTypeNum == 1) {
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_FUSE: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE:
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL:
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL:
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         default: {
@@ -731,38 +742,28 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
     } else {
         switch(aWType) {
         case jsex_nnap_basis_Chebyshev_WTYPE_NONE: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_NONE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_NONE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_EXFULL: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_EXFULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_EXFULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FULL: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FULL, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FULL>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_DEFAULT>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         case jsex_nnap_basis_Chebyshev_WTYPE_FUSE: {
-            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FUSE, FULL_CACHE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
+            calForce<jsex_nnap_basis_Chebyshev_WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
             return;
         }
         default: {
             return;
         }}
-    }
-}
-static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                            jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
-                            jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
-                            jint aTypeNum, jdouble aRCut, jint aNMax, jint aWType, jdouble *aFuseWeight, jint aFuseSize) noexcept {
-    if (aFullCache) {
-        calForce<JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aWType, aFuseWeight, aFuseSize);
-    } else {
-        calForce<JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aTypeNum, aRCut, aNMax, aWType, aFuseWeight, aFuseSize);
     }
 }
 
