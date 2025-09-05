@@ -270,9 +270,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
             jdouble *tNNGrad = aNNGrad;
             for (jint k = 0; k < aFuseSize; ++k) {
                 jdouble wt = tFuseWeight[type-1];
-                for (jint n = 0; n <= NMAX; ++n) {
-                    tGradRn[n] += wt*tNNGrad[n];
-                }
+                mplusFp<NMAX>(tGradRn, wt, tNNGrad);
                 tNNGrad += (NMAX+1);
                 tFuseWeight += aTypeNum;
             }

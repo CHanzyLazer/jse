@@ -337,11 +337,13 @@ static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble a
 
 template <jint NMAX, jint LMALL>
 static inline void calBnlm(jdouble *rBnlm, jdouble *aY, jdouble aFc, jdouble *aRn) noexcept {
-    for (jint n = 0, i = 0; n <= NMAX; ++n) {
+    jdouble *tBnlm = rBnlm;
+    for (jint n = 0; n <= NMAX; ++n) {
         jdouble tMul = aFc*aRn[n];
-        for (jint k = 0; k < LMALL; ++k, ++i) {
-            rBnlm[i] = tMul*aY[k];
+        for (jint k = 0; k < LMALL; ++k) {
+            tBnlm[k] = tMul*aY[k];
         }
+        tBnlm += LMALL;
     }
 }
 template <jint LMALL>
@@ -407,11 +409,13 @@ static inline void mplusBnlm2Cnlm(jdouble *rCnlm, jdouble *aBnlm, jdouble aWt, j
 
 template <jint NMAX, jint LMALL>
 static inline void mplusCnlm(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn) noexcept {
-    for (jint n = 0, i = 0; n <= NMAX; ++n) {
+    jdouble *tCnlm = rCnlm;
+    for (jint n = 0; n <= NMAX; ++n) {
         jdouble tMul = aFc*aRn[n];
-        for (jint k = 0; k < LMALL; ++k, ++i) {
-            rCnlm[i] += tMul*aY[k];
+        for (jint k = 0; k < LMALL; ++k) {
+            tCnlm[k] += tMul*aY[k];
         }
+        tCnlm += LMALL;
     }
 }
 template <jint LMALL>
@@ -443,14 +447,18 @@ static inline void mplusCnlm(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *
 }
 template <jint NMAX, jint LMALL>
 static inline void mplusCnlmWt(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY, jdouble aFc, jdouble *aRn, jdouble aWt) noexcept {
-    for (jint n = 0, i = 0; n <= NMAX; ++n) {
+    jdouble *tCnlm = rCnlm;
+    jdouble *tCnlmWt = rCnlmWt;
+    for (jint n = 0; n <= NMAX; ++n) {
         jdouble tMul = aFc*aRn[n];
         jdouble tMulWt = aWt*tMul;
-        for (jint k = 0; k < LMALL; ++k, ++i) {
+        for (jint k = 0; k < LMALL; ++k) {
             jdouble subY = aY[k];
-            rCnlm[i] += tMul*subY;
-            rCnlmWt[i] += tMulWt*subY;
+            tCnlm[k] += tMul*subY;
+            tCnlmWt[k] += tMulWt*subY;
         }
+        tCnlm += LMALL;
+        tCnlmWt += LMALL;
     }
 }
 template <jint LMALL>
