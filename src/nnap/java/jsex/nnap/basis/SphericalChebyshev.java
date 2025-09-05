@@ -170,7 +170,10 @@ public class SphericalChebyshev extends WTypeBasis {
                           : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
-        return 0;
+        if (mWType != WTYPE_FUSE) {
+            return mLMAll + mSizeN*mLMAll;
+        }
+        return mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll;
     }
     
     @Override
@@ -209,7 +212,7 @@ public class SphericalChebyshev extends WTypeBasis {
             rBackwardForceCache.fill(0.0);
         }
         
-//        backwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, aFixBasis);
+        backwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis);
     }
     
     
@@ -256,4 +259,31 @@ public class SphericalChebyshev extends WTypeBasis {
                                              double[] aForwardCache, int aForwardCacheShift, double[] rForwardForceCache, int aForwardForceCacheShift, boolean aFullCache,
                                              int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial,
                                              int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);
+    
+    void backwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
+                        IDataShell<double[]> aNNGrad, IDataShell<double[]> aGradFx, IDataShell<double[]> aGradFy, IDataShell<double[]> aGradFz,
+                        IDataShell<double[]> rGradNNGrad, @Nullable IDataShell<double[]> rGradPara,
+                        IDataShell<double[]> aForwardCache, IDataShell<double[]> aForwardForceCache,
+                        IDataShell<double[]> rBackwardCache, IDataShell<double[]> rBackwardForceCache, boolean aFixBasis) {
+        int tNN = aNlDx.internalDataSize();
+        if (mFuseWeight!=null && !aFixBasis && rGradPara==null) throw new NullPointerException();
+        boolean tNoPassGradPara = mFuseWeight==null || aFixBasis;
+        backwardForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
+                       aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), aGradFx.internalDataWithLengthCheck(tNN, 0), aGradFy.internalDataWithLengthCheck(tNN, 0), aGradFz.internalDataWithLengthCheck(tNN, 0),
+                       rGradNNGrad.internalDataWithLengthCheck(mSize), rGradNNGrad.internalDataShift(),
+                       tNoPassGradPara?null:rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), tNoPassGradPara?0:rGradPara.internalDataShift(),
+                       aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
+                       aForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, true)), aForwardForceCache.internalDataShift(),
+                       rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
+                       rBackwardForceCache.internalDataWithLengthCheck(backwardForceCacheSize_(tNN)), rBackwardForceCache.internalDataShift(), aFixBasis,
+                       mTypeNum, mRCut, mNMax, mLMax, mNoRadial, mL3Max, mL3Cross, mWType,
+                       mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
+    }
+    private static native void backwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
+                                              double[] aNNGrad, int aShiftNNGrad, double[] aGradFx, double[] aGradFy, double[] aGradFz,
+                                              double[] rGradNNGrad, int aShiftGradNNGrad, double[] rGradPara, int aShiftGradPara,
+                                              double[] aForwardCache, int aForwardCacheShift, double[] aForwardForceCache, int aForwardForceCacheShift,
+                                              double[] rBackwardCache, int aBackwardCacheShift, double[] rBackwardForceCache, int aBackwardForceCacheShift, boolean aFixBasis,
+                                              int aTypeNum, double aRCut, int aNMax, int aLMax, boolean aNoRadial,
+                                              int aL3Max, boolean aL3Cross, int aWType, double[] aFuseWeight, int aFuseSize);
 }

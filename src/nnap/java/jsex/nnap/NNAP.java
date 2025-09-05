@@ -343,7 +343,7 @@ public class NNAP implements IPairPotential {
             mForceY[i] = new DoubleList(16);
             mForceZ[i] = new DoubleList(16);
             mForwardCache[i] = new DoubleList(128);
-            mForwardForceCache[i] = new DoubleList(64);
+            mForwardForceCache[i] = new DoubleList(32);
         }
     }
     public NNAP(String aModelPath, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber) throws Exception {

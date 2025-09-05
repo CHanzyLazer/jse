@@ -127,7 +127,7 @@ public class Chebyshev extends WTypeBasis {
         return aFullCache ? (3*aNN*(mNMax+1 + 1) + (mNMax+1)) : 4*(mNMax+1);
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
-        return 0;
+        return mWType==WTYPE_FUSE ? (mNMax+1) : 0;
     }
     
     @Override
@@ -158,7 +158,12 @@ public class Chebyshev extends WTypeBasis {
                                   DoubleArrayVector aForwardCache, DoubleArrayVector aForwardForceCache, DoubleArrayVector rBackwardCache, DoubleArrayVector rBackwardForceCache, boolean aKeepCache, boolean aFixBasis) {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
-        backwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, aFixBasis);
+        // 如果不保留旧值则在这里清空
+        if (!aKeepCache) {
+            rBackwardForceCache.fill(0.0);
+        }
+        
+        backwardForce0(aNlDx, aNlDy, aNlDz, aNlType, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis);
     }
     
     void forward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, IDataShell<double[]> rForwardCache, boolean aFullCache) {
@@ -201,7 +206,8 @@ public class Chebyshev extends WTypeBasis {
     
     void backwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                         IDataShell<double[]> aNNGrad, IDataShell<double[]> aGradFx, IDataShell<double[]> aGradFy, IDataShell<double[]> aGradFz,
-                        IDataShell<double[]> rGradNNGrad, @Nullable IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> aForwardForceCache, boolean aFixBasis) {
+                        IDataShell<double[]> rGradNNGrad, @Nullable IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> aForwardForceCache,
+                        IDataShell<double[]> rBackwardForceCache, boolean aFixBasis) {
         int tNN = aNlDx.internalDataSize();
         if (mFuseWeight!=null && !aFixBasis && rGradPara==null) throw new NullPointerException();
         boolean tNoPassGradPara = mFuseWeight==null || aFixBasis;
@@ -210,12 +216,14 @@ public class Chebyshev extends WTypeBasis {
                        rGradNNGrad.internalDataWithLengthCheck(mSize), rGradNNGrad.internalDataShift(),
                        tNoPassGradPara?null:rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), tNoPassGradPara?0:rGradPara.internalDataShift(),
                        aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
-                       aForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, true)), aForwardForceCache.internalDataShift(), aFixBasis,
+                       aForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, true)), aForwardForceCache.internalDataShift(),
+                       rBackwardForceCache.internalDataWithLengthCheck(backwardForceCacheSize_(tNN)), rBackwardForceCache.internalDataShift(), aFixBasis,
                        mTypeNum, mRCut, mNMax, mWType, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void backwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                               double[] aNNGrad, int aShiftNNGrad, double[] aGradFx, double[] aGradFy, double[] aGradFz,
                                               double[] rGradNNGrad, int aShiftGradNNGrad, double[] rGradPara, int aShiftGradPara,
-                                              double[] aForwardCache, int aForwardCacheShift, double[] aForwardForceCache, int aForwardForceCacheShift, boolean aFixBasis,
+                                              double[] aForwardCache, int aForwardCacheShift, double[] aForwardForceCache, int aForwardForceCacheShift,
+                                              double[] rBackwardForceCache, int rBackwardForceCacheShift, boolean aFixBasis,
                                               int aTypeNum, double aRCut, int aNMax, int aWType, double[] aFuseWeight, int aFuseSize);
 }

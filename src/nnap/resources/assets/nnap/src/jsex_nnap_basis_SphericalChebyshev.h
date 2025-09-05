@@ -55,6 +55,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_backward1
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_forwardForce1
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jint, jboolean, jint, jdouble, jint, jint, jboolean, jint, jboolean, jint, jdoubleArray, jint);
 
+/*
+ * Class:     jsex_nnap_basis_SphericalChebyshev
+ * Method:    backwardForce1
+ * Signature: ([D[D[D[II[DI[D[D[D[DI[DI[DI[DI[DI[DIZIDIIZIZI[DI)V
+ */
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_SphericalChebyshev_backwardForce1
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jboolean, jint, jdouble, jint, jint, jboolean, jint, jboolean, jint, jdoubleArray, jint);
+
 #ifdef __cplusplus
 }
 #endif

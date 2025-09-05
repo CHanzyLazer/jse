@@ -50,10 +50,10 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_forwardForce1
 /*
  * Class:     jsex_nnap_basis_Chebyshev
  * Method:    backwardForce1
- * Signature: ([D[D[D[II[DI[D[D[D[DI[DI[DI[DIZIDII[DI)V
+ * Signature: ([D[D[D[II[DI[D[D[D[DI[DI[DI[DI[DIZIDII[DI)V
  */
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backwardForce1
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jboolean, jint, jdouble, jint, jint, jdoubleArray, jint);
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jintArray, jint, jdoubleArray, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jdoubleArray, jint, jboolean, jint, jdouble, jint, jint, jdoubleArray, jint);
 
 #ifdef __cplusplus
 }
