@@ -376,93 +376,29 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
                          jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
                          jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aNMax) {
-    case 0: {
-        calFp<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
+    case 0: {calFp<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 1: {calFp<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 2: {calFp<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 3: {calFp<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 4: {calFp<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 5: {calFp<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 6: {calFp<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 7: {calFp<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 8: {calFp<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 9: {calFp<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 10: {calFp<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 11: {calFp<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 12: {calFp<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 13: {calFp<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 14: {calFp<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 15: {calFp<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 16: {calFp<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 17: {calFp<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 18: {calFp<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 19: {calFp<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 20: {calFp<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    default: {return;}
     }
-    case 1: {
-        calFp<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 2: {
-        calFp<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 3: {
-        calFp<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 4: {
-        calFp<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 5: {
-        calFp<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 6: {
-        calFp<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 7: {
-        calFp<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 8: {
-        calFp<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 9: {
-        calFp<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 10: {
-        calFp<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 11: {
-        calFp<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 12: {
-        calFp<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 13: {
-        calFp<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 14: {
-        calFp<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 15: {
-        calFp<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 16: {
-        calFp<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 17: {
-        calFp<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 18: {
-        calFp<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 19: {
-        calFp<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 20: {
-        calFp<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
 }
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                          jdouble *rFp, jdouble *rForwardCache, jboolean aFullCache,
@@ -517,93 +453,29 @@ static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, j
                                jdouble *aGradFp, jdouble *rGradPara, jdouble *aForwardCache,
                                jint aTypeNum, jdouble aRCut, jint aNMax, jint aFuseSize) noexcept {
     switch (aNMax) {
-    case 0: {
-        calBackward<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
+    case 0: {calBackward<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 1: {calBackward<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 2: {calBackward<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 3: {calBackward<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 4: {calBackward<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 5: {calBackward<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 6: {calBackward<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 7: {calBackward<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 8: {calBackward<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 9: {calBackward<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 10: {calBackward<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 11: {calBackward<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 12: {calBackward<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 13: {calBackward<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 14: {calBackward<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 15: {calBackward<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 16: {calBackward<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 17: {calBackward<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 18: {calBackward<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 19: {calBackward<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    case 20: {calBackward<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize); return;}
+    default: {return;}
     }
-    case 1: {
-        calBackward<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 2: {
-        calBackward<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 3: {
-        calBackward<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 4: {
-        calBackward<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 5: {
-        calBackward<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 6: {
-        calBackward<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 7: {
-        calBackward<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 8: {
-        calBackward<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 9: {
-        calBackward<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 10: {
-        calBackward<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 11: {
-        calBackward<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 12: {
-        calBackward<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 13: {
-        calBackward<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 14: {
-        calBackward<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 15: {
-        calBackward<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 16: {
-        calBackward<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 17: {
-        calBackward<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 18: {
-        calBackward<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 19: {
-        calBackward<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    case 20: {
-        calBackward<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, aTypeNum, aRCut, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
 }
 static inline void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                                jdouble *aGradFp, jdouble *rGradPara, jdouble *aForwardCache,
@@ -631,93 +503,29 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
                             jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
                             jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aNMax) {
-    case 0: {
-        calForce<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
+    case 0: {calForce<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 1: {calForce<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 2: {calForce<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 3: {calForce<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 4: {calForce<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 5: {calForce<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 6: {calForce<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 7: {calForce<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 8: {calForce<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 9: {calForce<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 10: {calForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 11: {calForce<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 12: {calForce<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 13: {calForce<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 14: {calForce<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 15: {calForce<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 16: {calForce<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 17: {calForce<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 18: {calForce<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 19: {calForce<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 20: {calForce<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    default: {return;}
     }
-    case 1: {
-        calForce<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 2: {
-        calForce<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 3: {
-        calForce<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 4: {
-        calForce<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 5: {
-        calForce<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 6: {
-        calForce<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 7: {
-        calForce<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 8: {
-        calForce<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 9: {
-        calForce<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 10: {
-        calForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 11: {
-        calForce<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 12: {
-        calForce<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 13: {
-        calForce<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 14: {
-        calForce<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 15: {
-        calForce<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 16: {
-        calForce<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 17: {
-        calForce<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 18: {
-        calForce<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 19: {
-        calForce<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 20: {
-        calForce<20, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
 }
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                             jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
@@ -776,93 +584,29 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
                              jdouble *rBackwardForceCache, jboolean aFixBasis,
                              jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aNMax) {
-    case 0: {
-        calBackwardForce<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
+    case 0: {calBackwardForce<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 1: {calBackwardForce<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 2: {calBackwardForce<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 3: {calBackwardForce<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 4: {calBackwardForce<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 5: {calBackwardForce<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 6: {calBackwardForce<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 7: {calBackwardForce<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 8: {calBackwardForce<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 9: {calBackwardForce<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 10: {calBackwardForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 11: {calBackwardForce<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 12: {calBackwardForce<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 13: {calBackwardForce<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 14: {calBackwardForce<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 15: {calBackwardForce<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 16: {calBackwardForce<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 17: {calBackwardForce<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 18: {calBackwardForce<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 19: {calBackwardForce<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    case 20: {calBackwardForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize); return;}
+    default: {return;}
     }
-    case 1: {
-        calBackwardForce<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 2: {
-        calBackwardForce<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 3: {
-        calBackwardForce<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 4: {
-        calBackwardForce<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 5: {
-        calBackwardForce<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 6: {
-        calBackwardForce<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 7: {
-        calBackwardForce<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 8: {
-        calBackwardForce<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 9: {
-        calBackwardForce<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 10: {
-        calBackwardForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 11: {
-        calBackwardForce<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 12: {
-        calBackwardForce<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 13: {
-        calBackwardForce<13, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 14: {
-        calBackwardForce<14, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 15: {
-        calBackwardForce<15, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 16: {
-        calBackwardForce<16, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 17: {
-        calBackwardForce<17, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 18: {
-        calBackwardForce<18, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 19: {
-        calBackwardForce<19, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    case 20: {
-        calBackwardForce<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aFuseWeight, aFuseSize);
-        return;
-    }
-    default: {
-        return;
-    }}
 }
 static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                              jdouble *aNNGrad, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,

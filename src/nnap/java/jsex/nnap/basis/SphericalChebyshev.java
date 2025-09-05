@@ -44,7 +44,7 @@ public class SphericalChebyshev extends WTypeBasis {
     
     SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, double aRCut, int aWType, @Nullable RowMatrix aFuseWeight) {
         super(aTypeNum, aNMax, aWType, aFuseWeight);
-        if (aLMax<0 || aLMax>8) throw new IllegalArgumentException("Input lmax MUST be in [0, 8], input: "+aLMax);
+        if (aLMax<0 || aLMax>12) throw new IllegalArgumentException("Input lmax MUST be in [0, 12], input: "+aLMax);
         if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
         mSymbols = aSymbols;
         mLMax = aLMax;
