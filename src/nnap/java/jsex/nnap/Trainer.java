@@ -1,8 +1,6 @@
 package jsex.nnap;
 
-import jse.atom.AtomicParameterCalculator;
-import jse.atom.IAtomData;
-import jse.atom.IHasSymbol;
+import jse.atom.*;
 import jse.cache.IntVectorCache;
 import jse.cache.VectorCache;
 import jse.code.IO;
@@ -144,6 +142,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     private boolean mFullBufInit = false;
     private final List<Vector[]> mLossGradFpFullBuf = new ArrayList<>(64);
     private final List<DoubleList[]> mBasisBackwardFullBuf = new ArrayList<>(64);
+    
+    private IntList[] mTypeIlist;
     
     
     /**
@@ -370,6 +370,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         }
         mTrainData = new DataSet();
         mTestData = new DataSet();
+        
+        mTypeIlist = new IntList[mTypeNum];
+        for (int i = 0; i < mTypeNum; ++i) {
+            mTypeIlist[i] = new IntList();
+        }
         
         mNormDiv = IntVector.zeros(mTypeNum);
         mNormMu = new Vector[mTypeNum];
@@ -1469,17 +1474,32 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     @ApiStatus.Internal
     protected void calNlAndAddData_(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress, DataSet rData) {
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
-        // 由于数据集不完整因此这里不去做归一化
         final int tAtomNum = aAtomData.atomNumber();
-        // 先统一初始化 type
-        IntVector rAtomType = IntVector.zeros(tAtomNum);
-        rData.mAtomType.add(rAtomType);
+        // 添加数据时按照种类进行排序，从而提高缓存命中率
+        for (int ti = 0; ti < mTypeNum; ++ti) {
+            mTypeIlist[ti].clear();
+        }
         for (int i = 0; i < tAtomNum; ++i) {
             int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
-            rAtomType.set(i, tType);
-            // 计算相对能量值
-            aEnergy -= mRefEngs.get(tType-1);
+            mTypeIlist[tType-1].add(i);
         }
+        // 统一初始化 type
+        IntList rAtomType = new IntList(tAtomNum);
+        // 这里简单处理，直接重新构造新的 atomdata
+        AtomDataBuilder<AtomData> tBuilder = AtomData.builder().setBox(aAtomData.box()).setAtomTypeNumber(aAtomData.atomTypeNumber());
+        for (int ti = 0; ti < mTypeNum; ++ti) {
+            IntList tSubIlist = mTypeIlist[ti];
+            int tSubSize = tSubIlist.size();
+            for (int ii = 0; ii < tSubSize; ++ii) {
+                int i = tSubIlist.get(ii);
+                tBuilder.add(aAtomData.atom(i), ti+1);
+                rAtomType.add(ti+1);
+            }
+            // 计算相对能量值
+            aEnergy -= tSubSize*mRefEngs.get(ti);
+        }
+        rData.mAtomType.add(rAtomType.asVec());
+        AtomData tAtomData = tBuilder.build();
         // 再遍历一次初始化近邻列表
         IntList[] rNl = new IntList[tAtomNum];
         IntList[] rNlType = new IntList[tAtomNum];
@@ -1487,7 +1507,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         rData.mNl.add(rNl);
         rData.mNlType.add(rNlType);
         rData.mNlDx.add(rNlDx); rData.mNlDy.add(rNlDy); rData.mNlDz.add(rNlDz);
-        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(tAtomData)) {
             for (int i = 0; i < tAtomNum; ++i) {
                 int tType = rAtomType.get(i);
                 // 增加近邻列表，这里直接重新添加
@@ -1508,16 +1528,29 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 tNlDz.trimToSize(); rNlDz[i] = tNlDz;
             }
         }
-        // 这里后添加能量，这样 rData.mEng.size() 对应正确的索引
+        // 添加能量
         rData.mEng.add(aEnergy/tAtomNum);
-        // 这里后添加力，这样 rData.mForce.size() 对应正确的索引
+        // 添加力，注意需要同样调整顺序
         if (mHasForce) {
             assert aForces != null;
-            rData.mForceX.add(Vectors.from(aForces.col(0)));
-            rData.mForceY.add(Vectors.from(aForces.col(1)));
-            rData.mForceZ.add(Vectors.from(aForces.col(2)));
+            DoubleList rForceX = new DoubleList(tAtomNum);
+            DoubleList rForceY = new DoubleList(tAtomNum);
+            DoubleList rForceZ = new DoubleList(tAtomNum);
+            for (int ti = 0; ti < mTypeNum; ++ti) {
+                IntList tSubIlist = mTypeIlist[ti];
+                int tSubSize = tSubIlist.size();
+                for (int ii = 0; ii < tSubSize; ++ii) {
+                    int i = tSubIlist.get(ii);
+                    rForceX.add(aForces.get(i, 0));
+                    rForceY.add(aForces.get(i, 1));
+                    rForceZ.add(aForces.get(i, 2));
+                }
+            }
+            rData.mForceX.add(rForceX.asVec());
+            rData.mForceY.add(rForceY.asVec());
+            rData.mForceZ.add(rForceZ.asVec());
         }
-        // 这里后添加应力应力，这样 rData.mStress.size() 对应正确的索引
+        // 应力
         if (mHasStress) {
             assert aStress != null;
             rData.mStressXX.add(aStress.get(0));
@@ -1529,7 +1562,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         }
         ++rData.mSize;
         rData.mAtomSize += tAtomNum;
-        rData.mVolume.add(aAtomData.volume());
+        rData.mVolume.add(tAtomData.volume());
     }
     
     /**
