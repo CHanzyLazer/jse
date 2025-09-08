@@ -153,11 +153,20 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         mOptimizer.markLossFuncChanged();
         return this;
     }
-    protected boolean mFixNorm = false;
-    public Trainer setFixNorm(boolean aFlag) {
-        if (mFixNorm == aFlag) return this;
-        if (aFlag) clearFullBuf_();
-        mFixNorm = aFlag;
+    
+    protected boolean mForceNormFormula = false;
+    /**
+     * 设置强制要求归一化系数满足表达式定义，此时反向传播会穿透归一化系数的计算公式，
+     * 从而导致更高的计算复杂度，理论上这应该会有更好的收敛速度。
+     * @param aFlag 设置值
+     * @return 自身方便链式调用
+     * @deprecated 实测下来虽然收敛更快，但在考虑力后相关梯度数值非常不稳定，从而导致无法收敛到最优解
+     */
+    @Deprecated
+    public Trainer setForceNormFormula(boolean aFlag) {
+        if (mForceNormFormula == aFlag) return this;
+        if (!aFlag) clearFullBuf_();
+        mForceNormFormula = aFlag;
         mOptimizer.markLossFuncChanged();
         return this;
     }
@@ -565,7 +574,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         })
         .setBreakChecker((step, loss, lastLoss, parameterStep) -> {
             if (step==0 || Double.isNaN(lastLoss)) return false;
-            return Math.abs(lastLoss-loss) < Math.abs(lastLoss)*1e-7;
+            return Math.abs(lastLoss-loss) < Math.abs(lastLoss)*1e-8;
         });
     }
     /**
@@ -808,9 +817,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         final boolean tRequireGrad = rGrad!=null;
         if (aTest && tRequireGrad) throw new IllegalStateException();
         final boolean tTrainBasis = mTrainBasis;
-        final boolean tFixNorm = mFixNorm;
+        final boolean tForceNormFormula = mForceNormFormula;
         final int tThreadNum = threadNumber();
-        if (tTrainBasis && !tFixNorm) {
+        if (tTrainBasis && tForceNormFormula) {
             if (mBasisParaChanged) {
                 // 这里简单每次调用重新计算 fp 并更新归一化系数
                 initNormBasis();
@@ -853,7 +862,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             
             Vector[] rLossGradMu = null, rLossGradSigma = null;
             Vector[] rLossGradFpFullBuf = null;
-            if (tRequireGrad && tTrainBasis && !tFixNorm) {
+            if (tRequireGrad && tTrainBasis && tForceNormFormula) {
                 rLossGradMu = mLossGradMu[threadID];
                 rLossGradSigma = mLossGradSigma[threadID];
                 rLossGradFpFullBuf = mLossGradFpFullBuf.get(i);
@@ -907,14 +916,14 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     int tShiftPara = paraShift(tType);
                     tNN[tType-1].backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tGradPara.subVec(tShiftPara, tShiftPara+ mNNParaSizes[tType-1]),
                                           tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
-                    if (tTrainBasis && tFixNorm) {
+                    if (tTrainBasis && !tForceNormFormula) {
                         rSubLossGradFp.div2this(tNormSigma);
                         int tShiftBasisPara = basisParaShift(tType);
                         tSubBasis.backward(tNlDx[k], tNlDy[k], tNlDz[k], tNlType[k], rSubLossGradFp,
                                            tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]),
                                            tBaisForwardBuf.get(k), tBaisBackwardBuf, false);
                     }
-                    if (tTrainBasis && !tFixNorm) {
+                    if (tTrainBasis && tForceNormFormula) {
                         Vector rSubGradSigma = rLossGradSigma[tType-1];
                         Vector rSubGradMu = rLossGradMu[tType-1];
                         final int tSizeFp = mBasisSizes[tType-1];
@@ -946,7 +955,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             while (tBaisForwardForceBuf.size() < tAtomNum) tBaisForwardForceBuf.add(new DoubleList(128));
             
             DoubleList[] tBasisBackwardFullBuf = null;
-            if (tRequireGrad && tTrainBasis && !tFixNorm) {
+            if (tRequireGrad && tTrainBasis && tForceNormFormula) {
                 tBasisBackwardFullBuf = mBasisBackwardFullBuf.get(i);
             }
             Vector[] tGradFp = mGradFpBuf[threadID];
@@ -1142,7 +1151,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     tLossGradBasisPara = tGradPara.subVec(tShiftBasisPara, tShiftBasisPara+mBasisParaSizes[tType-1]);
                 }
                 DoubleList tSubBaisForwardBuf;
-                if (tTrainBasis && !tFixNorm) {
+                if (tTrainBasis && tForceNormFormula) {
                     tSubBaisForwardBuf = tBasisBackwardFullBuf[k];
                 } else {
                     tSubBaisForwardBuf = tBaisBackwardBuf;
@@ -1160,7 +1169,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 tSubLossGradGradFp.fill(0.0);
                 tSubBasis.backwardForce(tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType, tSubGradFp, tLossGradForceNlXBuf, tLossGradForceNlYBuf, tLossGradForceNlZBuf,
                                         tSubLossGradGradFp, tLossGradBasisPara, tBaisForwardBuf.get(k), tBaisForwardForceBuf.get(k), tSubBaisForwardBuf, tBaisBackwardForceBuf, false, !tTrainBasis);
-                if (tTrainBasis && !tFixNorm) {
+                if (tTrainBasis && tForceNormFormula) {
                     Vector rSubGradSigma = rLossGradSigma[tType-1];
                     final int tSizeFp = mBasisSizes[tType-1];
                     for (int ii = 0; ii < tSizeFp; ++ii) {
@@ -1184,12 +1193,12 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 // energy loss grad
                 tNN[tType-1].backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tLossGradNNPara,
                                       tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
-                if (tTrainBasis && tFixNorm) {
+                if (tTrainBasis && !tForceNormFormula) {
                     rSubLossGradFp.div2this(tNormSigma);
                     tSubBasis.backward(tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType, rSubLossGradFp,
                                        tLossGradBasisPara, tBaisForwardBuf.get(k), tSubBaisForwardBuf, true);
                 }
-                if (tTrainBasis && !tFixNorm) {
+                if (tTrainBasis && tForceNormFormula) {
                     Vector rSubGradSigma = rLossGradSigma[tType-1];
                     Vector rSubGradMu = rLossGradMu[tType-1];
                     final int tSizeFp = mBasisSizes[tType-1];
@@ -1206,7 +1215,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             }
         });
         // 如果没有固定归一化向量，在这里进行 train basis 归一化部分的反向传播
-        if (tTrainBasis && (!tFixNorm) && tRequireGrad) {
+        if (tTrainBasis && tForceNormFormula && tRequireGrad) {
             final boolean tHasGradGrad = mHasForce||mHasStress;
             for (int ti = 1; ti < tThreadNum; ++ti) {
                 for (int i = 0; i < mTypeNum; ++i) {
@@ -1526,9 +1535,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 mNormSigma[i].operation().map2this(v -> {
                     double rOut;
                     if (MathEX.Code.numericEqual(v, 0.0)) {
-                        if (mTrainBasis && !mFixNorm) {
-                            throw new IllegalArgumentException("The input basis causes ill normalization sigma, which can lead to incorrect results when optimizing the basis with adaptive normalization coefficient.\n" +
-                                                               "Check your input or dataset or turn-on it with `setFixNorm(true)`");
+                        if (mTrainBasis && mForceNormFormula) {
+                            throw new IllegalArgumentException("The input basis causes ill normalization sigma, which can lead to incorrect results when optimizing the basis with force formula normalization coefficient.\n" +
+                                                               "Check your input or dataset or turn-off it with `setForceNormFormula(false)`");
                         }
                         rOut = 1.0;
                     } else {
