@@ -2,101 +2,121 @@
 #include "nnap_util.hpp"
 
 
-#define SH_LARGEST_L (20)
-
-#define WIGNER_222_000 (-0.23904572186687872)
-#define WIGNER_222_011 (0.11952286093343936)
-#define WIGNER_222_022 (0.23904572186687872)
-#define WIGNER_222_112 (-0.29277002188455997)
-
-#define WIGNER_112_000 (0.3651483716701107)
-#define WIGNER_112_011 (-0.3162277660168379)
-#define WIGNER_112_110 (0.18257418583505536)
-#define WIGNER_112_112 (0.44721359549995787)
-
-#define WIGNER_233_000 (0.19518001458970663)
-#define WIGNER_233_011 (-0.14638501094227996)
-#define WIGNER_233_022 (-0.0)
-#define WIGNER_233_033 (0.2439750182371333)
-#define WIGNER_233_110 (-0.06900655593423542)
-#define WIGNER_233_220 (-0.2182178902359924)
-#define WIGNER_233_112 (0.1889822365046136)
-#define WIGNER_233_211 (0.23904572186687872)
-#define WIGNER_233_123 (-0.2439750182371333)
-#define WIGNER_233_213 (0.15430334996209188)
-
-#define WIGNER_123_000 (-0.29277002188455997)
-#define WIGNER_123_011 (0.2760262237369417)
-#define WIGNER_123_022 (-0.2182178902359924)
-#define WIGNER_123_110 (-0.1690308509457033)
-#define WIGNER_123_101 (0.23904572186687872)
-#define WIGNER_123_112 (-0.3086066999241838)
-#define WIGNER_123_121 ( 0.09759000729485331)
-#define WIGNER_123_123 (0.3779644730092272)
-
-#define WIGNER_444_000 (0.13409704688030227)
-#define WIGNER_444_011 (-0.06704852344015112)
-#define WIGNER_444_022 (-0.08194819531574027)
-#define WIGNER_444_033 (0.15644655469368596)
-#define WIGNER_444_044 (0.10429770312912397)
-#define WIGNER_444_112 (0.14135069854804388)
-#define WIGNER_444_224 (0.18698939800169143)
-#define WIGNER_444_123 (-0.06232979933389714)
-#define WIGNER_444_134 (-0.1649091483060512)
-
-#define WIGNER_224_000 (0.23904572186687872)
-#define WIGNER_224_011 (-0.21821789023599236)
-#define WIGNER_224_022 (0.15430334996209188)
-#define WIGNER_224_110 (0.15936381457791915)
-#define WIGNER_224_220 (0.03984095364447979)
-#define WIGNER_224_112 (0.25197631533948484)
-#define WIGNER_224_224 (0.3333333333333333)
-#define WIGNER_224_121 (-0.0890870806374748)
-#define WIGNER_224_123 (-0.23570226039551587)
-
-#define WIGNER_334_000 (-0.16116459280507608)
-#define WIGNER_334_011 (0.10403129732205986)
-#define WIGNER_334_022 (0.046524210519923545)
-#define WIGNER_334_033 (-0.21320071635561044)
-#define WIGNER_334_110 (0.02686076546751269)
-#define WIGNER_334_220 (0.18802535827258873)
-#define WIGNER_334_330 (0.08058229640253803)
-#define WIGNER_334_112 (-0.1698823971458752)
-#define WIGNER_334_224 (-0.2247332874877474)
-#define WIGNER_334_121 (-0.15194743527951726)
-#define WIGNER_334_123 (0.10050378152592121)
-#define WIGNER_334_132 (0.1973855084879307)
-#define WIGNER_334_231 (-0.14712247158412492)
-#define WIGNER_334_134 (0.17407765595569782)
-
-#define WIGNER_244_000 (-0.1698823971458752)
-#define WIGNER_244_011 (0.14440003757399392)
-#define WIGNER_244_022 (-0.06795295885835007)
-#define WIGNER_244_033 (-0.059458839001056314)
-#define WIGNER_244_044 (0.23783535600422528)
-#define WIGNER_244_110 (0.046524210519923545)
-#define WIGNER_244_220 (0.19738550848793068)
-#define WIGNER_244_211 (-0.20806259464411975)
-#define WIGNER_244_112 (-0.13241022442571243)
-#define WIGNER_244_224 (0.11009637651263607)
-#define WIGNER_244_123 (0.19462473604038075)
-#define WIGNER_244_213 (-0.1651445647689541)
-#define WIGNER_244_134 (-0.2059714602177749)
-
-#define WIGNER_134_000 (0.25197631533948484)
-#define WIGNER_134_011 (-0.2439750182371333)
-#define WIGNER_134_022 (0.2182178902359924)
-#define WIGNER_134_033 (-0.16666666666666669)
-#define WIGNER_134_110 (0.1543033499620919)
-#define WIGNER_134_101 (-0.19920476822239896)
-#define WIGNER_134_112 (0.2439750182371333)
-#define WIGNER_134_121 (-0.1091089451179962)
-#define WIGNER_134_123 (-0.2886751345948129)
-#define WIGNER_134_132 (0.06299407883487121)
-#define WIGNER_134_134 (0.33333333333333337)
+static constexpr jint SH_LARGEST_L = 20;
 
 static constexpr jint L3NCOLS[5] = {0, 0, 2, 4, 9};
 static constexpr jint L3NCOLS_NOCROSS[5] = {0, 0, 1, 1, 2};
+
+static constexpr jint L3_SIZE_222 = 8;
+static constexpr jint L3_INDEX_222[L3_SIZE_222][3] = {
+    {0, 2, 2}, {-2, -2, 0}, {1, 1, 2}, {-1, -1, 2}, {-1, -2, 1}, {0, 1, 1}, {-1, -1, 0}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_222[L3_SIZE_222] = {
+    0.7171371656006361, 0.7171371656006361, -0.6210590034081187, 0.6210590034081187, -1.2421180068162376, -0.35856858280031806, -0.35856858280031806, -0.23904572186687872
+};
+
+static constexpr jint L3_SIZE_112 = 8;
+static constexpr jint L3_INDEX_112[L3_SIZE_112][3] = {
+    {1, 1, 2}, {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_112[L3_SIZE_112] = {
+    0.3162277660168378, 0.6324555320336755, -0.3162277660168378, 0.6324555320336757, 0.6324555320336757, -0.18257418583505533, -0.18257418583505533, 0.3651483716701107
+};
+
+static constexpr jint L3_SIZE_233 = 24;
+static constexpr jint L3_INDEX_233[L3_SIZE_233][3] = {
+    {2, 1, 3}, {2, -1, -3}, {-2, -3, 1}, {-2, -1, 3}, {2, 0, 2}, {-2, -2, 0}, {2, 1, 1}, {2, -1, -1},
+    {-2, -1, 1}, {1, 2, 3}, {1, -2, -3}, {-1, -3, 2}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, -2, 1},
+    {-1, -1, 2}, {1, 0, 1}, {-1, -1, 0}, {0, 3, 3}, {0, -3, -3}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_233[L3_SIZE_233] = {
+    -0.21821789023599228, -0.21821789023599228, -0.21821789023599228, 0.21821789023599228, -0.4364357804719847, -0.4364357804719847, 0.16903085094570328, -0.16903085094570328,
+    0.33806170189140655, 0.345032779671177, 0.345032779671177, 0.345032779671177, -0.345032779671177, 0.2672612419124243, 0.2672612419124243, 0.2672612419124243,
+    -0.2672612419124243, 0.13801311186847082, 0.13801311186847082, -0.24397501823713325, -0.24397501823713325, 0.14638501094227993, 0.14638501094227993, 0.19518001458970663
+};
+
+static constexpr jint L3_SIZE_123 = 21;
+static constexpr jint L3_INDEX_123[L3_SIZE_123][3] = {
+    {1, 2, 3}, {1, -2, -3}, {-1, 2, -3}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, 1, -2}, {-1, -1, 2},
+    {1, 0, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {1, 2, 1}, {1, -2, -1}, {-1, 2, -1}, {-1, -2, 1},
+    {0, 2, 2}, {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_123[L3_SIZE_123] = {
+    -0.2672612419124243, -0.2672612419124243, -0.2672612419124243, 0.2672612419124243, -0.21821789023599233, -0.21821789023599233, -0.21821789023599233, 0.21821789023599233,
+    -0.2390457218668787, -0.2390457218668787, 0.16903085094570328, 0.16903085094570328, 0.0690065559342354, 0.0690065559342354, -0.0690065559342354, 0.0690065559342354,
+    -0.21821789023599236, -0.21821789023599236, -0.27602622373694163, -0.27602622373694163, -0.29277002188455997
+};
+
+static constexpr jint L3_SIZE_444 = 23;
+static constexpr jint L3_INDEX_444[L3_SIZE_444][3] = {
+    {0, 4, 4}, {-4, -4, 0}, {1, 3, 4}, {-1, -3, 4}, {-3, -4, 1}, {-1, -4, 3}, {2, 2, 4}, {-2, -2, 4},
+    {-2, -4, 2}, {0, 3, 3}, {-3, -3, 0}, {1, 2, 3}, {-1, -2, 3}, {-2, -3, 1}, {-1, -3, 2}, {0, 2, 2},
+    {-2, -2, 0}, {1, 1, 2}, {-1, -1, 2}, {-1, -2, 1}, {0, 1, 1}, {-1, -1, 0}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_444[L3_SIZE_444] = {
+    0.3128931093873718, 0.3128931093873718, -0.699650262281441, 0.699650262281441, -0.699650262281441, -0.699650262281441, 0.3966644140109587, -0.3966644140109587,
+    0.7933288280219174, -0.4693396640810578, -0.4693396640810578, 0.2644429426739724, -0.2644429426739724, 0.2644429426739724, 0.2644429426739724, -0.24584458594722075,
+    -0.24584458594722075, 0.29985011240633186, -0.29985011240633186, 0.5997002248126637, 0.20114557032045333, 0.20114557032045333, 0.13409704688030227
+};
+
+static constexpr jint L3_SIZE_224 = 23;
+static constexpr jint L3_INDEX_224[L3_SIZE_224][3] = {
+    {2, 2, 4}, {-2, 2, -4}, {-2, -2, 4}, {1, 2, 3}, {-1, 2, -3}, {-2, 1, -3}, {-1, -2, 3}, {0, 2, 2},
+    {-2, 0, -2}, {1, 2, 1}, {-1, 2, -1}, {-2, 1, -1}, {-1, -2, 1}, {2, 2, 0}, {-2, -2, 0}, {1, 1, 2},
+    {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_224[L3_SIZE_224] = {
+    0.23570226039551576, 0.4714045207910315, -0.23570226039551576, 0.33333333333333326, 0.33333333333333326, 0.33333333333333326, -0.33333333333333326, 0.3086066999241837,
+    0.3086066999241837, -0.1259881576697424, 0.1259881576697424, -0.1259881576697424, -0.1259881576697424, 0.03984095364447978, 0.03984095364447978, 0.17817416127494956,
+    0.3563483225498991, -0.17817416127494956, 0.43643578047198467, 0.43643578047198467, -0.15936381457791912, -0.15936381457791912, 0.23904572186687872
+};
+
+static constexpr jint L3_SIZE_334 = 39;
+static constexpr jint L3_INDEX_334[L3_SIZE_334][3] = {
+    {1, 3, 4}, {-1, 3, -4}, {-3, 1, -4}, {-1, -3, 4}, {0, 3, 3}, {-3, 0, -3}, {1, 3, 2}, {-1, 3, -2},
+    {-3, 1, -2}, {-1, -3, 2}, {2, 3, 1}, {-2, 3, -1}, {-3, 2, -1}, {-2, -3, 1}, {3, 3, 0}, {-3, -3, 0},
+    {2, 2, 4}, {-2, 2, -4}, {-2, -2, 4}, {1, 2, 3}, {-1, 2, -3}, {-2, 1, -3}, {-1, -2, 3}, {0, 2, 2},
+    {-2, 0, -2}, {1, 2, 1}, {-1, 2, -1}, {-2, 1, -1}, {-1, -2, 1}, {2, 2, 0}, {-2, -2, 0}, {1, 1, 2},
+    {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_334[L3_SIZE_334] = {
+    0.2461829819586654, 0.2461829819586654, 0.2461829819586654, -0.2461829819586654, 0.42640143271122083, 0.42640143271122083, -0.2791452631195412, 0.2791452631195412,
+    -0.2791452631195412, -0.2791452631195412, 0.2080625946441197, -0.2080625946441197, 0.2080625946441197, 0.2080625946441197, -0.08058229640253801, -0.08058229640253801,
+    -0.15891043154093204, -0.3178208630818641, 0.15891043154093204, -0.14213381090374025, -0.14213381090374025, -0.14213381090374025, 0.14213381090374025, 0.09304842103984708,
+    0.09304842103984708, -0.21488612374010135, 0.21488612374010135, -0.21488612374010135, -0.21488612374010135, 0.1880253582725887, 0.1880253582725887, -0.1201249950260745,
+    -0.240249990052149, 0.1201249950260745, -0.2080625946441197, -0.2080625946441197, -0.026860765467512683, -0.026860765467512683, -0.16116459280507608
+};
+
+static constexpr jint L3_SIZE_244 = 36;
+static constexpr jint L3_INDEX_244[L3_SIZE_244][3] = {
+    {2, 2, 4}, {2, -2, -4}, {-2, -4, 2}, {-2, -2, 4}, {2, 1, 3}, {2, -1, -3}, {-2, -3, 1}, {-2, -1, 3},
+    {2, 0, 2}, {-2, -2, 0}, {2, 1, 1}, {2, -1, -1}, {-2, -1, 1}, {1, 3, 4}, {1, -3, -4}, {-1, -4, 3},
+    {-1, -3, 4}, {1, 2, 3}, {1, -2, -3}, {-1, -3, 2}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, -2, 1},
+    {-1, -1, 2}, {1, 0, 1}, {-1, -1, 0}, {0, 4, 4}, {0, -4, -4}, {0, 3, 3}, {0, -3, -3}, {0, 2, 2},
+    {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_244[L3_SIZE_244] = {
+    0.15569978883230456, 0.15569978883230456, 0.15569978883230456, -0.15569978883230456, 0.23354968324845682, 0.23354968324845682, 0.23354968324845682, -0.23354968324845682,
+    0.3947710169758613, 0.3947710169758613, -0.14712247158412486, 0.14712247158412486, -0.29424494316824973, -0.2912876325017676, -0.2912876325017676, -0.2912876325017676,
+    0.2912876325017676, -0.2752409412815901, -0.2752409412815901, -0.2752409412815901, 0.2752409412815901, -0.18725633517970772, -0.18725633517970772, -0.18725633517970772,
+    0.18725633517970772, -0.09304842103984708, -0.09304842103984708, 0.23783535600422526, 0.23783535600422526, 0.0594588390010563, 0.0594588390010563, -0.06795295885835007,
+    -0.06795295885835007, -0.1444000375739939, -0.1444000375739939, -0.1698823971458752
+};
+
+static constexpr jint L3_SIZE_134 = 31;
+static constexpr jint L3_INDEX_134[L3_SIZE_134][3] = {
+    {1, 3, 4}, {1, -3, -4}, {-1, 3, -4}, {-1, -3, 4}, {1, 2, 3}, {1, -2, -3}, {-1, 2, -3}, {-1, -2, 3},
+    {1, 1, 2}, {1, -1, -2}, {-1, 1, -2}, {-1, -1, 2}, {1, 0, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0},
+    {1, 2, 1}, {1, -2, -1}, {-1, 2, -1}, {-1, -2, 1}, {1, 3, 2}, {1, -3, -2}, {-1, 3, -2}, {-1, -3, 2},
+    {0, 3, 3}, {0, -3, -3}, {0, 2, 2}, {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+};
+static constexpr jdouble L3_COEFF_134[L3_SIZE_134] = {
+    0.2357022603955158, 0.2357022603955158, 0.2357022603955158, -0.2357022603955158, 0.20412414523193148, 0.20412414523193148, 0.20412414523193148, -0.20412414523193148,
+    0.1725163898355885, 0.1725163898355885, 0.1725163898355885, -0.1725163898355885, 0.19920476822239894, 0.19920476822239894, -0.15430334996209188, -0.15430334996209188,
+    -0.07715167498104594, -0.07715167498104594, 0.07715167498104594, -0.07715167498104594, -0.04454354031873739, -0.04454354031873739, 0.04454354031873739, -0.04454354031873739,
+    0.16666666666666666, 0.16666666666666666, 0.21821789023599236, 0.21821789023599236, 0.24397501823713325, 0.24397501823713325, 0.25197631533948484
+};
+
 static constexpr jdouble SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     0.0,
     0.0, 0.0,
@@ -190,50 +210,12 @@ static constexpr jdouble SQRT_LPM1_LMM[(SH_LARGEST_L+1)*(SH_LARGEST_L+1)] = {
     6.324555320336759, 8.831760866327848, 10.677078252031311, 12.165525060596439, 13.416407864998739, 14.491376746189438, 15.427248620541512, 16.24807680927192, 16.97056274847714, 17.60681686165901, 18.16590212458495, 18.65475810617763, 19.078784028338912, 19.44222209522358, 19.748417658131498, 20.0, 20.199009876724155, 20.346989949375804, 20.445048300260872, 20.493901531919196, 20.493901531919196, 20.445048300260872, 20.346989949375804, 20.199009876724155, 20.0, 19.748417658131498, 19.44222209522358, 19.078784028338912, 18.65475810617763, 18.16590212458495, 17.60681686165901, 16.97056274847714, 16.24807680927192, 15.427248620541512, 14.491376746189438, 13.416407864998739, 12.165525060596439, 10.677078252031311, 8.831760866327848, 6.324555320336759, 0.0
 };
 static constexpr jdouble SQRT_2LM1P3[SH_LARGEST_L+1] = {
-    1.0,
-    1.7320508075688772,
-    2.23606797749979,
-    2.6457513110645907,
-    3.0,
-    3.3166247903554,
-    3.605551275463989,
-    3.872983346207417,
-    4.123105625617661,
-    4.358898943540674,
-    4.58257569495584,
-    4.795831523312719,
-    5.0,
-    5.196152422706632,
-    5.385164807134504,
-    5.5677643628300215,
-    5.744562646538029,
-    5.916079783099616,
-    6.082762530298219,
-    6.244997998398398,
-    6.4031242374328485
+    1.0, 1.7320508075688772, 2.23606797749979, 2.6457513110645907, 3.0, 3.3166247903554, 3.605551275463989, 3.872983346207417, 4.123105625617661, 4.358898943540674, 4.58257569495584, 4.795831523312719,
+    5.0, 5.196152422706632, 5.385164807134504, 5.5677643628300215, 5.744562646538029, 5.916079783099616, 6.082762530298219, 6.244997998398398, 6.4031242374328485
 };
 static constexpr jdouble SQRT_1P1D2L[SH_LARGEST_L+1] = {
-    -1.0,
-    1.224744871391589,
-    1.118033988749895,
-    1.0801234497346435,
-    1.0606601717798212,
-    1.0488088481701516,
-    1.0408329997330663,
-    1.0350983390135313,
-    1.0307764064044151,
-    1.0274023338281628,
-    1.02469507659596,
-    1.02247471629109,
-    1.0206207261596576,
-    1.0190493307301363,
-    1.0177004891982149,
-    1.0165300454651272,
-    1.015504800579495,
-    1.0145993123917847,
-    1.0137937550497031,
-    1.0130724502589556,
-    1.0124228365658292,
+    -1.0, 1.224744871391589, 1.118033988749895, 1.0801234497346435, 1.0606601717798212, 1.0488088481701516, 1.0408329997330663, 1.0350983390135313, 1.0307764064044151, 1.0274023338281628, 1.02469507659596,
+    1.02247471629109, 1.0206207261596576, 1.0190493307301363, 1.0177004891982149, 1.0165300454651272, 1.015504800579495, 1.0145993123917847, 1.0137937550497031, 1.0130724502589556, 1.0124228365658292
 };
 
 template <jint L>
@@ -304,9 +286,9 @@ static inline void realSphericalHarmonicsFull4InterLoop_(jdouble aCosPhi2, jdoub
 }
 template <jint LMAX>
 static inline void realSphericalHarmonicsFull4(jdouble aX, jdouble aY, jdouble aZ, jdouble aDis, jdouble *rDest) noexcept {
-    jdouble tXY = hypot(aX, aY);
-    jdouble tCosTheta = aZ / aDis;
-    jdouble tSinTheta = tXY / aDis;
+    const jdouble tXY = hypot(aX, aY);
+    const jdouble tCosTheta = aZ / aDis;
+    const jdouble tSinTheta = tXY / aDis;
     jdouble tCosPhi;
     jdouble tSinPhi;
     // avoid nan
@@ -356,9 +338,9 @@ static inline void setormplusCnlm_(jdouble *rCnlm, jdouble *rCnlmWt, jdouble *aY
     jdouble *tCnlm = rCnlm;
     jdouble *tCnlmWt = rCnlmWt;
     for (jint n = 0; n <= NMAX; ++n) {
-        jdouble tMul = aFc*aRn[n];
+        const jdouble tMul = aFc*aRn[n];
         for (jint k = 0; k < LMALL; ++k) {
-            jdouble tValue = tMul*aY[k];
+            const jdouble tValue = tMul*aY[k];
             if (MPLUS) {
                 tCnlm[k] += tValue;
                 if (WT) tCnlmWt[k] += aWt*tValue;
@@ -489,8 +471,8 @@ static inline void gradCnlm2Fxyz_(jint j, jdouble *aGradCnlm, jdouble *aGradCnlm
     jdouble *tGradCnlm = aGradCnlm;
     jdouble *tGradCnlmWt = aGradCnlmWt;
     for (jint n = 0; n <= aNMax; ++n) {
-        jdouble tRnn = aRn[n];
-        jdouble tMul = aFc * tRnn;
+        const jdouble tRnn = aRn[n];
+        const jdouble tMul = aFc * tRnn;
         jdouble tGradRn = 0.0;
         for (jint k = 0; k < LMALL; ++k) {
             jdouble subGradBnlm = tGradCnlm[k];
@@ -508,7 +490,7 @@ static inline void gradCnlm2Fxyz_(jint j, jdouble *aGradCnlm, jdouble *aGradCnlm
         rFzj += tGradRn*aRnPz[n];
     }
     for (jint k = 0; k < LMALL; ++k) {
-        jdouble subGradY = rGradY[k];
+        const jdouble subGradY = rGradY[k];
         rFxj += subGradY*aYPx[k];
         rFyj += subGradY*aYPy[k];
         rFzj += subGradY*aYPz[k];
@@ -537,7 +519,7 @@ static inline void setormplusGradNNGradCnlm_(jdouble *rGradNNGradCnlm, jdouble *
     for (jint k = 0; k < LMALL; ++k) {
         rGradNNGradY[k] = aYPx[k]*aGradFx + aYPy[k]*aGradFy + aYPz[k]*aGradFz;
     }
-    jdouble tGradNNGradFc = aFcPx*aGradFx + aFcPy*aGradFy + aFcPz*aGradFz;
+    const jdouble tGradNNGradFc = aFcPx*aGradFx + aFcPy*aGradFy + aFcPz*aGradFz;
     jdouble *tGradNNGradCnlm = rGradNNGradCnlm;
     jdouble *tGradNNGradCnlmWt = rGradNNGradCnlmWt;
     for (jint n = 0; n <= aNMax; ++n) {
@@ -616,268 +598,111 @@ static void calL2_(jdouble *aCnlm, jdouble *rFp) noexcept {
     calL2Sub_<12>(aCnlm, tFp);
 }
 static jdouble calL3_222_(jdouble *aCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_222_000 * c20*c20*c20;
-    rFp3 -= (3.0*WIGNER_222_011) * c20 * (c21*c21 + c2n1*c2n1);
-    rFp3 += (3.0*WIGNER_222_022) * c20 * (c22*c22 + c2n2*c2n2);
-    rFp3 += (3.0*SQRT2_INV*WIGNER_222_112) * c22 * (c21*c21 - c2n1*c2n1);
-    rFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1*c2n2;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_222; ++i) {
+        const jint m1 = L3_INDEX_222[i][0];
+        const jint m2 = L3_INDEX_222[i][1];
+        const jint m3 = L3_INDEX_222[i][2];
+        rFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s2+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_112_(jdouble *aCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1];
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_112_000 * c10*c10*c20;
-    rFp3 -= WIGNER_112_110 * c20 * (c11*c11 + c1n1*c1n1);
-    rFp3 -= (2.0*WIGNER_112_011) * c10 * (c11*c21 + c1n1*c2n1);
-    rFp3 += (SQRT2_INV*WIGNER_112_112) * c22 * (c11*c11 - c1n1*c1n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c1n1*c2n2;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_112; ++i) {
+        const jint m1 = L3_INDEX_112[i][0];
+        const jint m2 = L3_INDEX_112[i][1];
+        const jint m3 = L3_INDEX_112[i][2];
+        rFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aCnlm[s1+m2]*aCnlm[s2+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_233_(jdouble *aCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
-    const jdouble c30  = aCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_233_000 * c20*c30*c30;
-    rFp3 -= WIGNER_233_011 * c20 * (c31*c31 + c3n1*c3n1);
-    rFp3 += WIGNER_233_022 * c20 * (c32*c32 + c3n2*c3n2);
-    rFp3 -= WIGNER_233_033 * c20 * (c33*c33 + c3n3*c3n3);
-    rFp3 -= (2.0*WIGNER_233_110) * c30 * (c21*c31 + c2n1*c3n1);
-    rFp3 += (2.0*WIGNER_233_220) * c30 * (c22*c32 + c2n2*c3n2);
-    rFp3 += (SQRT2_INV*WIGNER_233_211) * c22 * (c31*c31 - c3n1*c3n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_233_211) * c2n2*c31*c3n1;
-    rFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * c21 * (c31*c32 + c3n1*c3n2);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * c2n1 * (c31*c3n2 - c3n1*c32);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c21 * (c32*c33 + c3n2*c3n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * c2n1 * (c32*c3n3 - c3n2*c33);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c22 * (c31*c33 + c3n1*c3n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * c2n2 * (c31*c3n3 - c3n1*c33);
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_233; ++i) {
+        const jint m1 = L3_INDEX_233[i][0];
+        const jint m2 = L3_INDEX_233[i][1];
+        const jint m3 = L3_INDEX_233[i][2];
+        rFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aCnlm[s3+m2]*aCnlm[s3+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_123_(jdouble *aCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1];
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
-    const jdouble c30  = aCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_123_000 * c10*c20*c30;
-    rFp3 -= WIGNER_123_011 * c10 * (c21*c31 + c2n1*c3n1);
-    rFp3 += WIGNER_123_022 * c10 * (c22*c32 + c2n2*c3n2);
-    rFp3 -= WIGNER_123_101 * c20 * (c11*c31 + c1n1*c3n1);
-    rFp3 -= WIGNER_123_110 * c30 * (c11*c21 + c1n1*c2n1);
-    rFp3 += (SQRT2_INV*WIGNER_123_112) * c11 * (c21*c32 + c2n1*c3n2);
-    rFp3 += (SQRT2_INV*WIGNER_123_112) * c1n1 * (c21*c3n2 - c2n1*c32);
-    rFp3 += (SQRT2_INV*WIGNER_123_121) * c11 * (c22*c31 + c2n2*c3n1);
-    rFp3 += (SQRT2_INV*WIGNER_123_121) * c1n1 * (c2n2*c31 - c22*c3n1);
-    rFp3 -= (SQRT2_INV*WIGNER_123_123) * c11 * (c22*c33 + c2n2*c3n3);
-    rFp3 -= (SQRT2_INV*WIGNER_123_123) * c1n1 * (c22*c3n3 - c2n2*c33);
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_123; ++i) {
+        const jint m1 = L3_INDEX_123[i][0];
+        const jint m2 = L3_INDEX_123[i][1];
+        const jint m3 = L3_INDEX_123[i][2];
+        rFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aCnlm[s2+m2]*aCnlm[s3+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_444_(jdouble *aCnlm) noexcept {
-    const jdouble c40  = aCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_444_000 * c40*c40*c40;
-    rFp3 -= (3.0*WIGNER_444_011) * c40 * (c41*c41 + c4n1*c4n1);
-    rFp3 += (3.0*WIGNER_444_022) * c40 * (c42*c42 + c4n2*c4n2);
-    rFp3 -= (3.0*WIGNER_444_033) * c40 * (c43*c43 + c4n3*c4n3);
-    rFp3 += (3.0*WIGNER_444_044) * c40 * (c44*c44 + c4n4*c4n4);
-    rFp3 += (3.0*SQRT2_INV*WIGNER_444_112) * c42 * (c41*c41 - c4n1*c4n1);
-    rFp3 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n1*c4n2;
-    rFp3 += (3.0*SQRT2_INV*WIGNER_444_224) * c44 * (c42*c42 - c4n2*c4n2);
-    rFp3 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n2*c4n4;
-    rFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c41 * (c42*c43 + c4n2*c4n3);
-    rFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * c4n1 * (c42*c4n3 - c4n2*c43);
-    rFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * c41 * (c43*c44 + c4n3*c4n4);
-    rFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * c4n1 * (c43*c4n4 - c4n3*c44);
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_444; ++i) {
+        const jint m1 = L3_INDEX_444[i][0];
+        const jint m2 = L3_INDEX_444[i][1];
+        const jint m3 = L3_INDEX_444[i][2];
+        rFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_224_(jdouble *aCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
-    const jdouble c40  = aCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_224_000 * c20*c20*c40;
-    rFp3 -= WIGNER_224_110 * c40 * (c21*c21 + c2n1*c2n1);
-    rFp3 += WIGNER_224_220 * c40 * (c22*c22 + c2n2*c2n2);
-    rFp3 -= (2.0*WIGNER_224_011) * c20 * (c21*c41 + c2n1*c4n1);
-    rFp3 += (2.0*WIGNER_224_022) * c20 * (c22*c42 + c2n2*c4n2);
-    rFp3 += (SQRT2_INV*WIGNER_224_112) * c42 * (c21*c21 - c2n1*c2n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c2n1*c4n2;
-    rFp3 += (SQRT2_INV*WIGNER_224_224) * c44 * (c22*c22 - c2n2*c2n2);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c2n2*c4n4;
-    rFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * c21 * (c22*c41 + c2n2*c4n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * c2n1 * (c2n2*c41 - c22*c4n1);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c21 * (c22*c43 + c2n2*c4n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * c2n1 * (c22*c4n3 - c2n2*c43);
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_224; ++i) {
+        const jint m1 = L3_INDEX_224[i][0];
+        const jint m2 = L3_INDEX_224[i][1];
+        const jint m3 = L3_INDEX_224[i][2];
+        rFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s4+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_334_(jdouble *aCnlm) noexcept {
-    const jdouble c30  = aCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3];
-    const jdouble c40  = aCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_334_000 * c30*c30*c40;
-    rFp3 -= WIGNER_334_110 * c40 * (c31*c31 + c3n1*c3n1);
-    rFp3 += WIGNER_334_220 * c40 * (c32*c32 + c3n2*c3n2);
-    rFp3 -= WIGNER_334_330 * c40 * (c33*c33 + c3n3*c3n3);
-    rFp3 -= (2.0*WIGNER_334_011) * c30 * (c31*c41 + c3n1*c4n1);
-    rFp3 += (2.0*WIGNER_334_022) * c30 * (c32*c42 + c3n2*c4n2);
-    rFp3 -= (2.0*WIGNER_334_033) * c30 * (c33*c43 + c3n3*c4n3);
-    rFp3 += (SQRT2_INV*WIGNER_334_112) * c42 * (c31*c31 - c3n1*c3n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c3n1*c4n2;
-    rFp3 += (SQRT2_INV*WIGNER_334_224) * c44 * (c32*c32 - c3n2*c3n2);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c3n2*c4n4;
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * c31 * (c32*c41 + c3n2*c4n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * c3n1 * (c3n2*c41 - c32*c4n1);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c31 * (c32*c43 + c3n2*c4n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * c3n1 * (c32*c4n3 - c3n2*c43);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c31 * (c33*c42 + c3n3*c4n2);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * c3n1 * (c3n3*c42 - c33*c4n2);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c32 * (c33*c41 + c3n3*c4n1);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * c3n2 * (c3n3*c41 - c33*c4n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * c31 * (c33*c44 + c3n3*c4n4);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * c3n1 * (c33*c4n4 - c3n3*c44);
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_334; ++i) {
+        const jint m1 = L3_INDEX_334[i][0];
+        const jint m2 = L3_INDEX_334[i][1];
+        const jint m3 = L3_INDEX_334[i][2];
+        rFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_244_(jdouble *aCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2];
-    const jdouble c40  = aCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_244_000 * c20*c40*c40;
-    rFp3 -= WIGNER_244_011 * c20 * (c41*c41 + c4n1*c4n1);
-    rFp3 += WIGNER_244_022 * c20 * (c42*c42 + c4n2*c4n2);
-    rFp3 -= WIGNER_244_033 * c20 * (c43*c43 + c4n3*c4n3);
-    rFp3 += WIGNER_244_044 * c20 * (c44*c44 + c4n4*c4n4);
-    rFp3 -= (2.0*WIGNER_244_110) * c40 * (c21*c41 + c2n1*c4n1);
-    rFp3 += (2.0*WIGNER_244_220) * c40 * (c22*c42 + c2n2*c4n2);
-    rFp3 += (SQRT2_INV*WIGNER_244_211) * c22 * (c41*c41 - c4n1*c4n1);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_211) * c2n2*c41*c4n1;
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * c21 * (c41*c42 + c4n1*c4n2);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * c2n1 * (c41*c4n2 - c4n1*c42);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * c22 * (c42*c44 + c4n2*c4n4);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * c2n2 * (c42*c4n4 - c4n2*c44);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c21 * (c42*c43 + c4n2*c4n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * c2n1 * (c42*c4n3 - c4n2*c43);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c22 * (c41*c43 + c4n1*c4n3);
-    rFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * c2n2 * (c41*c4n3 - c4n1*c43);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * c21 * (c43*c44 + c4n3*c4n4);
-    rFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * c2n1 * (c43*c4n4 - c4n3*c44);
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_244; ++i) {
+        const jint m1 = L3_INDEX_244[i][0];
+        const jint m2 = L3_INDEX_244[i][1];
+        const jint m3 = L3_INDEX_244[i][2];
+        rFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+    }
     return rFp3;
 }
 static jdouble calL3_134_(jdouble *aCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1];
-    const jdouble c30  = aCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3];
-    const jdouble c40  = aCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4];
     jdouble rFp3 = 0.0;
-    rFp3 += WIGNER_134_000 * c10*c30*c40;
-    rFp3 -= WIGNER_134_011 * c10 * (c31*c41 + c3n1*c4n1);
-    rFp3 += WIGNER_134_022 * c10 * (c32*c42 + c3n2*c4n2);
-    rFp3 -= WIGNER_134_033 * c10 * (c33*c43 + c3n3*c4n3);
-    rFp3 -= WIGNER_134_110 * c40 * (c11*c31 + c1n1*c3n1);
-    rFp3 -= WIGNER_134_101 * c30 * (c11*c41 + c1n1*c4n1);
-    rFp3 += (SQRT2_INV*WIGNER_134_112) * c11 * (c31*c42 + c3n1*c4n2);
-    rFp3 += (SQRT2_INV*WIGNER_134_112) * c1n1 * (c31*c4n2 - c3n1*c42);
-    rFp3 += (SQRT2_INV*WIGNER_134_121) * c11 * (c32*c41 + c3n2*c4n1);
-    rFp3 += (SQRT2_INV*WIGNER_134_121) * c1n1 * (c3n2*c41 - c32*c4n1);
-    rFp3 -= (SQRT2_INV*WIGNER_134_123) * c11 * (c32*c43 + c3n2*c4n3);
-    rFp3 -= (SQRT2_INV*WIGNER_134_123) * c1n1 * (c32*c4n3 - c3n2*c43);
-    rFp3 -= (SQRT2_INV*WIGNER_134_132) * c11 * (c33*c42 + c3n3*c4n2);
-    rFp3 -= (SQRT2_INV*WIGNER_134_132) * c1n1 * (c3n3*c42 - c33*c4n2);
-    rFp3 += (SQRT2_INV*WIGNER_134_134) * c11 * (c33*c44 + c3n3*c4n4);
-    rFp3 += (SQRT2_INV*WIGNER_134_134) * c1n1 * (c33*c4n4 - c3n3*c44);
+    const jint s1 = 1+1;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_134; ++i) {
+        const jint m1 = L3_INDEX_134[i][0];
+        const jint m2 = L3_INDEX_134[i][1];
+        const jint m3 = L3_INDEX_134[i][2];
+        rFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+    }
     return rFp3;
 }
 template <jint L3MAX, jboolean L3CROSS>
@@ -1059,606 +884,121 @@ static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noe
     calGradL2Sub_<12>(aCnlm, rGradCnlm, tNNGrad);
 }
 static void calGradL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    gc20  += (WIGNER_222_000*3.0) * c20*c20;
-    gc20  -= (3.0*WIGNER_222_011) * (c21*c21 + c2n1*c2n1);
-    gc21  -= (6.0*WIGNER_222_011) * c20*c21;
-    gc2n1 -= (6.0*WIGNER_222_011) * c20*c2n1;
-    gc20  += (3.0*WIGNER_222_022) * (c22*c22 + c2n2*c2n2);
-    gc22  += (6.0*WIGNER_222_022) * c20*c22;
-    gc2n2 += (6.0*WIGNER_222_022) * c20*c2n2;
-    gc22  += (3.0*SQRT2_INV*WIGNER_222_112) * (c21*c21 - c2n1*c2n1);
-    gc21  += (6.0*SQRT2_INV*WIGNER_222_112) * (c22*c21 + c2n1*c2n2);
-    gc2n1 += (6.0*SQRT2_INV*WIGNER_222_112) * (c21*c2n2 - c22*c2n1);
-    gc2n2 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1;
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_222; ++i) {
+        const jint m1 = L3_INDEX_222[i][0];
+        const jint m2 = L3_INDEX_222[i][1];
+        const jint m3 = L3_INDEX_222[i][2];
+        const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * aCnlm[s2+m2]*aCnlm[s2+m3];
+        rGradCnlm[s2+m2] += tMul * aCnlm[s2+m1]*aCnlm[s2+m3];
+        rGradCnlm[s2+m3] += tMul * aCnlm[s2+m1]*aCnlm[s2+m2];
+    }
 }
 static void calGradL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    gc10  += (WIGNER_112_000*2.0) * c10*c20;
-    gc20  += WIGNER_112_000 * c10*c10;
-    gc20  -= WIGNER_112_110 * (c11*c11 + c1n1*c1n1);
-    gc11  -= (WIGNER_112_110*2.0) * c20*c11;
-    gc1n1 -= (WIGNER_112_110*2.0) * c20*c1n1;
-    gc10  -= (2.0*WIGNER_112_011) * (c11*c21 + c1n1*c2n1);
-    gc11  -= (2.0*WIGNER_112_011) * c10*c21;
-    gc21  -= (2.0*WIGNER_112_011) * c10*c11;
-    gc1n1 -= (2.0*WIGNER_112_011) * c10*c2n1;
-    gc2n1 -= (2.0*WIGNER_112_011) * c10*c1n1;
-    gc22  += (SQRT2_INV*WIGNER_112_112) * (c11*c11 - c1n1*c1n1);
-    gc11  += (2.0*SQRT2_INV*WIGNER_112_112) * (c22*c11 + c1n1*c2n2);
-    gc1n1 += (2.0*SQRT2_INV*WIGNER_112_112) * (c11*c2n2 - c22*c1n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c1n1;
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_112; ++i) {
+        const jint m1 = L3_INDEX_112[i][0];
+        const jint m2 = L3_INDEX_112[i][1];
+        const jint m3 = L3_INDEX_112[i][2];
+        const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * aCnlm[s1+m2]*aCnlm[s2+m3];
+        rGradCnlm[s1+m2] += tMul * aCnlm[s1+m1]*aCnlm[s2+m3];
+        rGradCnlm[s2+m3] += tMul * aCnlm[s1+m1]*aCnlm[s1+m2];
+    }
 }
 static void calGradL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    gc20  += WIGNER_233_000 * c30*c30;
-    gc30  += (WIGNER_233_000*2.0) * c20*c30;
-    gc20  -= WIGNER_233_011 * (c31*c31 + c3n1*c3n1);
-    gc31  -= (WIGNER_233_011*2.0) * c20*c31;
-    gc3n1 -= (WIGNER_233_011*2.0) * c20*c3n1;
-    gc20  += WIGNER_233_022 * (c32*c32 + c3n2*c3n2);
-    gc32  += (WIGNER_233_022*2.0) * c20*c32;
-    gc3n2 += (WIGNER_233_022*2.0) * c20*c3n2;
-    gc20  -= WIGNER_233_033 * (c33*c33 + c3n3*c3n3);
-    gc33  -= (WIGNER_233_033*2.0) * c20*c33;
-    gc3n3 -= (WIGNER_233_033*2.0) * c20*c3n3;
-    gc30  -= (2.0*WIGNER_233_110) * (c21*c31 + c2n1*c3n1);
-    gc21  -= (2.0*WIGNER_233_110) * c30*c31;
-    gc31  -= (2.0*WIGNER_233_110) * c30*c21;
-    gc2n1 -= (2.0*WIGNER_233_110) * c30*c3n1;
-    gc3n1 -= (2.0*WIGNER_233_110) * c30*c2n1;
-    gc30  += (2.0*WIGNER_233_220) * (c22*c32 + c2n2*c3n2);
-    gc22  += (2.0*WIGNER_233_220) * c30*c32;
-    gc32  += (2.0*WIGNER_233_220) * c30*c22;
-    gc2n2 += (2.0*WIGNER_233_220) * c30*c3n2;
-    gc3n2 += (2.0*WIGNER_233_220) * c30*c2n2;
-    gc22  += (SQRT2_INV*WIGNER_233_211) * (c31*c31 - c3n1*c3n1);
-    gc31  += (2.0*SQRT2_INV*WIGNER_233_211) * (c22*c31 + c2n2*c3n1);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_233_211) * (c2n2*c31 - c22*c3n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_233_211) * c31*c3n1;
-    gc21  += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c32 + c3n1*c3n2);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c3n2 - c3n1*c32);
-    gc31  += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c32 + c2n1*c3n2);
-    gc32  += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c31 - c2n1*c3n1);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c3n2 - c2n1*c32);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c3n1 + c2n1*c31);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c33 + c3n2*c3n3);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c3n3 - c3n2*c33);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c33 + c2n1*c3n3);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c32 - c2n1*c3n2);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c3n3 - c2n1*c33);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c3n2 + c2n1*c32);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c33 + c3n1*c3n3);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c3n3 - c3n1*c33);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c33 + c2n2*c3n3);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c31 - c2n2*c3n1);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c3n3 - c2n2*c33);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c3n1 + c2n2*c31);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_233; ++i) {
+        const jint m1 = L3_INDEX_233[i][0];
+        const jint m2 = L3_INDEX_233[i][1];
+        const jint m3 = L3_INDEX_233[i][2];
+        const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * aCnlm[s3+m2]*aCnlm[s3+m3];
+        rGradCnlm[s3+m2] += tMul * aCnlm[s2+m1]*aCnlm[s3+m3];
+        rGradCnlm[s3+m3] += tMul * aCnlm[s2+m1]*aCnlm[s3+m2];
+    }
 }
 static void calGradL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    gc10  += WIGNER_123_000 * c20*c30;
-    gc20  += WIGNER_123_000 * c10*c30;
-    gc30  += WIGNER_123_000 * c10*c20;
-    gc10  -= WIGNER_123_011 * (c21*c31 + c2n1*c3n1);
-    gc21  -= WIGNER_123_011 * c10*c31;
-    gc31  -= WIGNER_123_011 * c10*c21;
-    gc2n1 -= WIGNER_123_011 * c10*c3n1;
-    gc3n1 -= WIGNER_123_011 * c10*c2n1;
-    gc10  += WIGNER_123_022 * (c22*c32 + c2n2*c3n2);
-    gc22  += WIGNER_123_022 * c10*c32;
-    gc32  += WIGNER_123_022 * c10*c22;
-    gc2n2  += WIGNER_123_022 * c10*c3n2;
-    gc3n2  += WIGNER_123_022 * c10*c2n2;
-    gc20  -= WIGNER_123_101 * (c11*c31 + c1n1*c3n1);
-    gc11  -= WIGNER_123_101 * c20*c31;
-    gc31  -= WIGNER_123_101 * c20*c11;
-    gc1n1 -= WIGNER_123_101 * c20*c3n1;
-    gc3n1 -= WIGNER_123_101 * c20*c1n1;
-    gc30  -= WIGNER_123_110 * (c11*c21 + c1n1*c2n1);
-    gc11  -= WIGNER_123_110 * c30*c21;
-    gc21  -= WIGNER_123_110 * c30*c11;
-    gc1n1 -= WIGNER_123_110 * c30*c2n1;
-    gc2n1 -= WIGNER_123_110 * c30*c1n1;
-    gc11  += (SQRT2_INV*WIGNER_123_112) * (c21*c32 + c2n1*c3n2);
-    gc1n1 += (SQRT2_INV*WIGNER_123_112) * (c21*c3n2 - c2n1*c32);
-    gc21  += (SQRT2_INV*WIGNER_123_112) * (c11*c32 + c1n1*c3n2);
-    gc32  += (SQRT2_INV*WIGNER_123_112) * (c11*c21 - c1n1*c2n1);
-    gc2n1 += (SQRT2_INV*WIGNER_123_112) * (c11*c3n2 - c1n1*c32);
-    gc3n2 += (SQRT2_INV*WIGNER_123_112) * (c11*c2n1 + c1n1*c21);
-    gc11  += (SQRT2_INV*WIGNER_123_121) * (c22*c31 + c2n2*c3n1);
-    gc1n1 += (SQRT2_INV*WIGNER_123_121) * (c2n2*c31 - c22*c3n1);
-    gc22  += (SQRT2_INV*WIGNER_123_121) * (c11*c31 - c1n1*c3n1);
-    gc31  += (SQRT2_INV*WIGNER_123_121) * (c11*c22 + c1n1*c2n2);
-    gc2n2 += (SQRT2_INV*WIGNER_123_121) * (c11*c3n1 + c1n1*c31);
-    gc3n1 += (SQRT2_INV*WIGNER_123_121) * (c11*c2n2 - c1n1*c22);
-    gc11  -= (SQRT2_INV*WIGNER_123_123) * (c22*c33 + c2n2*c3n3);
-    gc1n1 -= (SQRT2_INV*WIGNER_123_123) * (c22*c3n3 - c2n2*c33);
-    gc22  -= (SQRT2_INV*WIGNER_123_123) * (c11*c33 + c1n1*c3n3);
-    gc33  -= (SQRT2_INV*WIGNER_123_123) * (c11*c22 - c1n1*c2n2);
-    gc2n2 -= (SQRT2_INV*WIGNER_123_123) * (c11*c3n3 - c1n1*c33);
-    gc3n3 -= (SQRT2_INV*WIGNER_123_123) * (c11*c2n2 + c1n1*c22);
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_123; ++i) {
+        const jint m1 = L3_INDEX_123[i][0];
+        const jint m2 = L3_INDEX_123[i][1];
+        const jint m3 = L3_INDEX_123[i][2];
+        const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * aCnlm[s2+m2]*aCnlm[s3+m3];
+        rGradCnlm[s2+m2] += tMul * aCnlm[s1+m1]*aCnlm[s3+m3];
+        rGradCnlm[s3+m3] += tMul * aCnlm[s1+m1]*aCnlm[s2+m2];
+    }
 }
 static void calGradL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c40  = aCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc40  += (WIGNER_444_000*3.0) * c40*c40;
-    gc40  -= (3.0*WIGNER_444_011) * (c41*c41 + c4n1*c4n1);
-    gc41  -= (3.0*WIGNER_444_011*2.0) * c40*c41;
-    gc4n1 -= (3.0*WIGNER_444_011*2.0) * c40*c4n1;
-    gc40  += (3.0*WIGNER_444_022) * (c42*c42 + c4n2*c4n2);
-    gc42  += (3.0*WIGNER_444_022*2.0) * c40*c42;
-    gc4n2 += (3.0*WIGNER_444_022*2.0) * c40*c4n2;
-    gc40  -= (3.0*WIGNER_444_033) * (c43*c43 + c4n3*c4n3);
-    gc43  -= (3.0*WIGNER_444_033*2.0) * c40*c43;
-    gc4n3 -= (3.0*WIGNER_444_033*2.0) * c40*c4n3;
-    gc40  += (3.0*WIGNER_444_044) * (c44*c44 + c4n4*c4n4);
-    gc44  += (3.0*WIGNER_444_044*2.0) * c40*c44;
-    gc4n4 += (3.0*WIGNER_444_044*2.0) * c40*c4n4;
-    gc42  += (3.0*SQRT2_INV*WIGNER_444_112) * (c41*c41 - c4n1*c4n1);
-    gc4n2 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n1;
-    gc41  += (6.0*SQRT2_INV*WIGNER_444_112) * (c42*c41 + c4n1*c4n2);
-    gc4n1 += (6.0*SQRT2_INV*WIGNER_444_112) * (c41*c4n2 - c42*c4n1);
-    gc44  += (3.0*SQRT2_INV*WIGNER_444_224) * (c42*c42 - c4n2*c4n2);
-    gc4n4 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n2;
-    gc42  += (6.0*SQRT2_INV*WIGNER_444_224) * (c44*c42 + c4n2*c4n4);
-    gc4n2 += (6.0*SQRT2_INV*WIGNER_444_224) * (c42*c4n4 - c44*c4n2);
-    gc41  -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c43 + c4n2*c4n3);
-    gc4n1 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c4n3 - c4n2*c43);
-    gc42  -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c43 + c4n1*c4n3);
-    gc43  -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c42 - c4n1*c4n2);
-    gc4n2 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c4n3 - c4n1*c43);
-    gc4n3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c4n2 + c4n1*c42);
-    gc41  += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c44 + c4n3*c4n4);
-    gc4n1 += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c4n4 - c4n3*c44);
-    gc43  += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c44 + c4n1*c4n4);
-    gc44  += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c43 - c4n1*c4n3);
-    gc4n3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c4n4 - c4n1*c44);
-    gc4n4 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c4n3 + c4n1*c43);
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_444; ++i) {
+        const jint m1 = L3_INDEX_444[i][0];
+        const jint m2 = L3_INDEX_444[i][1];
+        const jint m3 = L3_INDEX_444[i][2];
+        const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
+        rGradCnlm[s4+m1] += tMul * aCnlm[s4+m2]*aCnlm[s4+m3];
+        rGradCnlm[s4+m2] += tMul * aCnlm[s4+m1]*aCnlm[s4+m3];
+        rGradCnlm[s4+m3] += tMul * aCnlm[s4+m1]*aCnlm[s4+m2];
+    }
 }
 static void calGradL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc20  += (WIGNER_224_000*2.0) * c20*c40;
-    gc40  += WIGNER_224_000 * c20*c20;
-    gc40  -= WIGNER_224_110 * (c21*c21 + c2n1*c2n1);
-    gc21  -= (WIGNER_224_110*2.0) * c40*c21;
-    gc2n1 -= (WIGNER_224_110*2.0) * c40*c2n1;
-    gc40  += WIGNER_224_220 * (c22*c22 + c2n2*c2n2);
-    gc22  += (WIGNER_224_220*2.0) * c40*c22;
-    gc2n2 += (WIGNER_224_220*2.0) * c40*c2n2;
-    gc20  -= (2.0*WIGNER_224_011) * (c21*c41 + c2n1*c4n1);
-    gc21  -= (2.0*WIGNER_224_011) * c20*c41;
-    gc41  -= (2.0*WIGNER_224_011) * c20*c21;
-    gc2n1 -= (2.0*WIGNER_224_011) * c20*c4n1;
-    gc4n1 -= (2.0*WIGNER_224_011) * c20*c2n1;
-    gc20  += (2.0*WIGNER_224_022) * (c22*c42 + c2n2*c4n2);
-    gc22  += (2.0*WIGNER_224_022) * c20*c42;
-    gc42  += (2.0*WIGNER_224_022) * c20*c22;
-    gc2n2 += (2.0*WIGNER_224_022) * c20*c4n2;
-    gc4n2 += (2.0*WIGNER_224_022) * c20*c2n2;
-    gc42  += (SQRT2_INV*WIGNER_224_112) * (c21*c21 - c2n1*c2n1);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c2n1;
-    gc21  += (2.0*SQRT2_INV*WIGNER_224_112) * (c42*c21 + c2n1*c4n2);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_224_112) * (c21*c4n2 - c42*c2n1);
-    gc44  += (SQRT2_INV*WIGNER_224_224) * (c22*c22 - c2n2*c2n2);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c2n2;
-    gc22  += (2.0*SQRT2_INV*WIGNER_224_224) * (c44*c22 + c2n2*c4n4);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_224_224) * (c22*c4n4 - c44*c2n2);
-    gc21  += (2.0*SQRT2_INV*WIGNER_224_121) * (c22*c41 + c2n2*c4n1);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_224_121) * (c2n2*c41 - c22*c4n1);
-    gc22  += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c41 - c2n1*c4n1);
-    gc41  += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c22 + c2n1*c2n2);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c4n1 + c2n1*c41);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c2n2 - c2n1*c22);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c43 + c2n2*c4n3);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c4n3 - c2n2*c43);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c43 + c2n1*c4n3);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c22 - c2n1*c2n2);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c4n3 - c2n1*c43);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c2n2 + c2n1*c22);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_224; ++i) {
+        const jint m1 = L3_INDEX_224[i][0];
+        const jint m2 = L3_INDEX_224[i][1];
+        const jint m3 = L3_INDEX_224[i][2];
+        const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * aCnlm[s2+m2]*aCnlm[s4+m3];
+        rGradCnlm[s2+m2] += tMul * aCnlm[s2+m1]*aCnlm[s4+m3];
+        rGradCnlm[s4+m3] += tMul * aCnlm[s2+m1]*aCnlm[s2+m2];
+    }
 }
 static void calGradL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c30  = aCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc30  += (WIGNER_334_000*2.0) * c30*c40;
-    gc40  += WIGNER_334_000 * c30*c30;
-    gc40  -= WIGNER_334_110 * (c31*c31 + c3n1*c3n1);
-    gc31  -= (WIGNER_334_110*2.0) * c40*c31;
-    gc3n1 -= (WIGNER_334_110*2.0) * c40*c3n1;
-    gc40  += WIGNER_334_220 * (c32*c32 + c3n2*c3n2);
-    gc32  += (WIGNER_334_220*2.0) * c40*c32;
-    gc3n2 += (WIGNER_334_220*2.0) * c40*c3n2;
-    gc40  -= WIGNER_334_330 * (c33*c33 + c3n3*c3n3);
-    gc33  -= (WIGNER_334_330*2.0) * c40*c33;
-    gc3n3 -= (WIGNER_334_330*2.0) * c40*c3n3;
-    gc30  -= (2.0*WIGNER_334_011) * (c31*c41 + c3n1*c4n1);
-    gc31  -= (2.0*WIGNER_334_011) * c30*c41;
-    gc41  -= (2.0*WIGNER_334_011) * c30*c31;
-    gc3n1 -= (2.0*WIGNER_334_011) * c30*c4n1;
-    gc4n1 -= (2.0*WIGNER_334_011) * c30*c3n1;
-    gc30  += (2.0*WIGNER_334_022) * (c32*c42 + c3n2*c4n2);
-    gc32  += (2.0*WIGNER_334_022) * c30*c42;
-    gc42  += (2.0*WIGNER_334_022) * c30*c32;
-    gc3n2 += (2.0*WIGNER_334_022) * c30*c4n2;
-    gc4n2 += (2.0*WIGNER_334_022) * c30*c3n2;
-    gc30  -= (2.0*WIGNER_334_033) * (c33*c43 + c3n3*c4n3);
-    gc33  -= (2.0*WIGNER_334_033) * c30*c43;
-    gc43  -= (2.0*WIGNER_334_033) * c30*c33;
-    gc3n3 -= (2.0*WIGNER_334_033) * c30*c4n3;
-    gc4n3 -= (2.0*WIGNER_334_033) * c30*c3n3;
-    gc42  += (SQRT2_INV*WIGNER_334_112) * (c31*c31 - c3n1*c3n1);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c3n1;
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_112) * (c42*c31 + c3n1*c4n2);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_334_112) * (c31*c4n2 - c42*c3n1);
-    gc44  += (SQRT2_INV*WIGNER_334_224) * (c32*c32 - c3n2*c3n2);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c3n2;
-    gc32  += (2.0*SQRT2_INV*WIGNER_334_224) * (c44*c32 + c3n2*c4n4);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_334_224) * (c32*c4n4 - c44*c3n2);
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_121) * (c32*c41 + c3n2*c4n1);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_334_121) * (c3n2*c41 - c32*c4n1);
-    gc32  += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c41 - c3n1*c4n1);
-    gc41  += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c32 + c3n1*c3n2);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c4n1 + c3n1*c41);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c3n2 - c3n1*c32);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c43 + c3n2*c4n3);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c4n3 - c3n2*c43);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c43 + c3n1*c4n3);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c32 - c3n1*c3n2);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c4n3 - c3n1*c43);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c3n2 + c3n1*c32);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_334_132) * (c33*c42 + c3n3*c4n2);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c3n3*c42 - c33*c4n2);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c42 - c3n1*c4n2);
-    gc42  -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c33 + c3n1*c3n3);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c4n2 + c3n1*c42);
-    gc4n2 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c3n3 - c3n1*c33);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_334_231) * (c33*c41 + c3n3*c4n1);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c3n3*c41 - c33*c4n1);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c41 - c3n2*c4n1);
-    gc41  -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c33 + c3n2*c3n3);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c4n1 + c3n2*c41);
-    gc4n1 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c3n3 - c3n2*c33);
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c44 + c3n3*c4n4);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c4n4 - c3n3*c44);
-    gc33  += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c44 + c3n1*c4n4);
-    gc44  += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c33 - c3n1*c3n3);
-    gc3n3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c4n4 - c3n1*c44);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c3n3 + c3n1*c33);
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_334; ++i) {
+        const jint m1 = L3_INDEX_334[i][0];
+        const jint m2 = L3_INDEX_334[i][1];
+        const jint m3 = L3_INDEX_334[i][2];
+        const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
+        rGradCnlm[s3+m1] += tMul * aCnlm[s3+m2]*aCnlm[s4+m3];
+        rGradCnlm[s3+m2] += tMul * aCnlm[s3+m1]*aCnlm[s4+m3];
+        rGradCnlm[s4+m3] += tMul * aCnlm[s3+m1]*aCnlm[s3+m2];
+    }
 }
 static void calGradL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc20  += WIGNER_244_000 * c40*c40;
-    gc40  += (WIGNER_244_000*2.0) * c20*c40;
-    gc20  -= WIGNER_244_011 * (c41*c41 + c4n1*c4n1);
-    gc41  -= (WIGNER_244_011*2.0) * c20*c41;
-    gc4n1 -= (WIGNER_244_011*2.0) * c20*c4n1;
-    gc20  += WIGNER_244_022 * (c42*c42 + c4n2*c4n2);
-    gc42  += (WIGNER_244_022*2.0) * c20*c42;
-    gc4n2 += (WIGNER_244_022*2.0) * c20*c4n2;
-    gc20  -= WIGNER_244_033 * (c43*c43 + c4n3*c4n3);
-    gc43  -= (WIGNER_244_033*2.0) * c20*c43;
-    gc4n3 -= (WIGNER_244_033*2.0) * c20*c4n3;
-    gc20  += WIGNER_244_044 * (c44*c44 + c4n4*c4n4);
-    gc44  += (WIGNER_244_044*2.0) * c20*c44;
-    gc4n4 += (WIGNER_244_044*2.0) * c20*c4n4;
-    gc40  -= (2.0*WIGNER_244_110) * (c21*c41 + c2n1*c4n1);
-    gc21  -= (2.0*WIGNER_244_110) * c40*c41;
-    gc41  -= (2.0*WIGNER_244_110) * c40*c21;
-    gc2n1 -= (2.0*WIGNER_244_110) * c40*c4n1;
-    gc4n1 -= (2.0*WIGNER_244_110) * c40*c2n1;
-    gc40  += (2.0*WIGNER_244_220) * (c22*c42 + c2n2*c4n2);
-    gc22  += (2.0*WIGNER_244_220) * c40*c42;
-    gc42  += (2.0*WIGNER_244_220) * c40*c22;
-    gc2n2 += (2.0*WIGNER_244_220) * c40*c4n2;
-    gc4n2 += (2.0*WIGNER_244_220) * c40*c2n2;
-    gc22  += (SQRT2_INV*WIGNER_244_211) * (c41*c41 - c4n1*c4n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_244_211) * c41*c4n1;
-    gc41  += (2.0*SQRT2_INV*WIGNER_244_211) * (c22*c41 + c2n2*c4n1);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_244_211) * (c2n2*c41 - c22*c4n1);
-    gc21  += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c42 + c4n1*c4n2);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c4n2 - c4n1*c42);
-    gc41  += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c42 + c2n1*c4n2);
-    gc42  += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c41 - c2n1*c4n1);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c4n2 - c2n1*c42);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c4n1 + c2n1*c41);
-    gc22  += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c44 + c4n2*c4n4);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c4n4 - c4n2*c44);
-    gc42  += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c44 + c2n2*c4n4);
-    gc44  += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c42 - c2n2*c4n2);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c4n4 - c2n2*c44);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c4n2 + c2n2*c42);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c43 + c4n2*c4n3);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c4n3 - c4n2*c43);
-    gc42  -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c43 + c2n1*c4n3);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c42 - c2n1*c4n2);
-    gc4n2 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c4n3 - c2n1*c43);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c4n2 + c2n1*c42);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c43 + c4n1*c4n3);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c4n3 - c4n1*c43);
-    gc41  -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c43 + c2n2*c4n3);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c41 - c2n2*c4n1);
-    gc4n1 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c4n3 - c2n2*c43);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c4n1 + c2n2*c41);
-    gc21  += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c44 + c4n3*c4n4);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c4n4 - c4n3*c44);
-    gc43  += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c44 + c2n1*c4n4);
-    gc44  += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c43 - c2n1*c4n3);
-    gc4n3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c4n4 - c2n1*c44);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c4n3 + c2n1*c43);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_244; ++i) {
+        const jint m1 = L3_INDEX_244[i][0];
+        const jint m2 = L3_INDEX_244[i][1];
+        const jint m3 = L3_INDEX_244[i][2];
+        const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * aCnlm[s4+m2]*aCnlm[s4+m3];
+        rGradCnlm[s4+m2] += tMul * aCnlm[s2+m1]*aCnlm[s4+m3];
+        rGradCnlm[s4+m3] += tMul * aCnlm[s2+m1]*aCnlm[s4+m2];
+    }
 }
 static void calGradL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc10  += WIGNER_134_000 * c30*c40;
-    gc30  += WIGNER_134_000 * c10*c40;
-    gc40  += WIGNER_134_000 * c10*c30;
-    gc10  -= WIGNER_134_011 * (c31*c41 + c3n1*c4n1);
-    gc31  -= WIGNER_134_011 * c10*c41;
-    gc41  -= WIGNER_134_011 * c10*c31;
-    gc3n1 -= WIGNER_134_011 * c10*c4n1;
-    gc4n1 -= WIGNER_134_011 * c10*c3n1;
-    gc10  += WIGNER_134_022 * (c32*c42 + c3n2*c4n2);
-    gc32  += WIGNER_134_022 * c10*c42;
-    gc42  += WIGNER_134_022 * c10*c32;
-    gc3n2 += WIGNER_134_022 * c10*c4n2;
-    gc4n2 += WIGNER_134_022 * c10*c3n2;
-    gc10  -= WIGNER_134_033 * (c33*c43 + c3n3*c4n3);
-    gc33  -= WIGNER_134_033 * c10*c43;
-    gc43  -= WIGNER_134_033 * c10*c33;
-    gc3n3 -= WIGNER_134_033 * c10*c4n3;
-    gc4n3 -= WIGNER_134_033 * c10*c3n3;
-    gc40  -= WIGNER_134_110 * (c11*c31 + c1n1*c3n1);
-    gc11  -= WIGNER_134_110 * c40*c31;
-    gc31  -= WIGNER_134_110 * c40*c11;
-    gc1n1 -= WIGNER_134_110 * c40*c3n1;
-    gc3n1 -= WIGNER_134_110 * c40*c1n1;
-    gc30  -= WIGNER_134_101 * (c11*c41 + c1n1*c4n1);
-    gc11  -= WIGNER_134_101 * c30*c41;
-    gc41  -= WIGNER_134_101 * c30*c11;
-    gc1n1 -= WIGNER_134_101 * c30*c4n1;
-    gc4n1 -= WIGNER_134_101 * c30*c1n1;
-    gc11  += (SQRT2_INV*WIGNER_134_112) * (c31*c42 + c3n1*c4n2);
-    gc1n1 += (SQRT2_INV*WIGNER_134_112) * (c31*c4n2 - c3n1*c42);
-    gc31  += (SQRT2_INV*WIGNER_134_112) * (c11*c42 + c1n1*c4n2);
-    gc42  += (SQRT2_INV*WIGNER_134_112) * (c11*c31 - c1n1*c3n1);
-    gc3n1 += (SQRT2_INV*WIGNER_134_112) * (c11*c4n2 - c1n1*c42);
-    gc4n2 += (SQRT2_INV*WIGNER_134_112) * (c11*c3n1 + c1n1*c31);
-    gc11  += (SQRT2_INV*WIGNER_134_121) * (c32*c41 + c3n2*c4n1);
-    gc1n1 += (SQRT2_INV*WIGNER_134_121) * (c3n2*c41 - c32*c4n1);
-    gc32  += (SQRT2_INV*WIGNER_134_121) * (c11*c41 - c1n1*c4n1);
-    gc41  += (SQRT2_INV*WIGNER_134_121) * (c11*c32 + c1n1*c3n2);
-    gc3n2 += (SQRT2_INV*WIGNER_134_121) * (c11*c4n1 + c1n1*c41);
-    gc4n1 += (SQRT2_INV*WIGNER_134_121) * (c11*c3n2 - c1n1*c32);
-    gc11  -= (SQRT2_INV*WIGNER_134_123) * (c32*c43 + c3n2*c4n3);
-    gc1n1 -= (SQRT2_INV*WIGNER_134_123) * (c32*c4n3 - c3n2*c43);
-    gc32  -= (SQRT2_INV*WIGNER_134_123) * (c11*c43 + c1n1*c4n3);
-    gc43  -= (SQRT2_INV*WIGNER_134_123) * (c11*c32 - c1n1*c3n2);
-    gc3n2 -= (SQRT2_INV*WIGNER_134_123) * (c11*c4n3 - c1n1*c43);
-    gc4n3 -= (SQRT2_INV*WIGNER_134_123) * (c11*c3n2 + c1n1*c32);
-    gc11  -= (SQRT2_INV*WIGNER_134_132) * (c33*c42 + c3n3*c4n2);
-    gc1n1 -= (SQRT2_INV*WIGNER_134_132) * (c3n3*c42 - c33*c4n2);
-    gc33  -= (SQRT2_INV*WIGNER_134_132) * (c11*c42 - c1n1*c4n2);
-    gc42  -= (SQRT2_INV*WIGNER_134_132) * (c11*c33 + c1n1*c3n3);
-    gc3n3 -= (SQRT2_INV*WIGNER_134_132) * (c11*c4n2 + c1n1*c42);
-    gc4n2 -= (SQRT2_INV*WIGNER_134_132) * (c11*c3n3 - c1n1*c33);
-    gc11  += (SQRT2_INV*WIGNER_134_134) * (c33*c44 + c3n3*c4n4);
-    gc1n1 += (SQRT2_INV*WIGNER_134_134) * (c33*c4n4 - c3n3*c44);
-    gc33  += (SQRT2_INV*WIGNER_134_134) * (c11*c44 + c1n1*c4n4);
-    gc44  += (SQRT2_INV*WIGNER_134_134) * (c11*c33 - c1n1*c3n3);
-    gc3n3 += (SQRT2_INV*WIGNER_134_134) * (c11*c4n4 - c1n1*c44);
-    gc4n4 += (SQRT2_INV*WIGNER_134_134) * (c11*c3n3 + c1n1*c33);
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s1 = 1+1;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_134; ++i) {
+        const jint m1 = L3_INDEX_134[i][0];
+        const jint m2 = L3_INDEX_134[i][1];
+        const jint m3 = L3_INDEX_134[i][2];
+        const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * aCnlm[s3+m2]*aCnlm[s4+m3];
+        rGradCnlm[s3+m2] += tMul * aCnlm[s1+m1]*aCnlm[s4+m3];
+        rGradCnlm[s4+m3] += tMul * aCnlm[s1+m1]*aCnlm[s3+m2];
+    }
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
@@ -1723,511 +1063,129 @@ static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *
     calGradNNGradL2Sub_<12>(aCnlm, aGradNNGradCnlm, tGradNNGrad);
 }
 static jdouble calGradNNGradL3_222_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += (WIGNER_222_000*3.0) * c20*c20 * gc20;
-    rGGFp3 -= (3.0*WIGNER_222_011) * (c21*c21 + c2n1*c2n1) * gc20;
-    rGGFp3 -= (6.0*WIGNER_222_011) * c20*c21 * gc21;
-    rGGFp3 -= (6.0*WIGNER_222_011) * c20*c2n1 * gc2n1;
-    rGGFp3 += (3.0*WIGNER_222_022) * (c22*c22 + c2n2*c2n2) * gc20;
-    rGGFp3 += (6.0*WIGNER_222_022) * c20*c22 * gc22;
-    rGGFp3 += (6.0*WIGNER_222_022) * c20*c2n2 * gc2n2;
-    rGGFp3 += (3.0*SQRT2_INV*WIGNER_222_112) * (c21*c21 - c2n1*c2n1) * gc22;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * (c22*c21 + c2n1*c2n2) * gc21;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * (c21*c2n2 - c22*c2n1) * gc2n1;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_222_112) * c21*c2n1 * gc2n2;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_222; ++i) {
+        const jint m1 = L3_INDEX_222[i][0];
+        const jint m2 = L3_INDEX_222[i][1];
+        const jint m3 = L3_INDEX_222[i][2];
+        rGGFp3 += L3_COEFF_222[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s2+m3];
+        rGGFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s2+m3];
+        rGGFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s2+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_112_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], gc10  = aGradNNGradCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1], gc11  = aGradNNGradCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1], gc1n1 = aGradNNGradCnlm[(1+1)-1];
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += (WIGNER_112_000*2.0) * c10*c20 * gc10;
-    rGGFp3 += WIGNER_112_000 * c10*c10 * gc20;
-    rGGFp3 -= WIGNER_112_110 * (c11*c11 + c1n1*c1n1) * gc20;
-    rGGFp3 -= (WIGNER_112_110*2.0) * c20*c11 * gc11;
-    rGGFp3 -= (WIGNER_112_110*2.0) * c20*c1n1 * gc1n1;
-    rGGFp3 -= (2.0*WIGNER_112_011) * (c11*c21 + c1n1*c2n1) * gc10;
-    rGGFp3 -= (2.0*WIGNER_112_011) * c10*c21 * gc11;
-    rGGFp3 -= (2.0*WIGNER_112_011) * c10*c11 * gc21;
-    rGGFp3 -= (2.0*WIGNER_112_011) * c10*c2n1 * gc1n1;
-    rGGFp3 -= (2.0*WIGNER_112_011) * c10*c1n1 * gc2n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_112_112) * (c11*c11 - c1n1*c1n1)* gc22;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_112_112) * (c22*c11 + c1n1*c2n2) * gc11;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_112_112) * (c11*c2n2 - c22*c1n1) * gc1n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_112_112) * c11*c1n1 * gc2n2;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_112; ++i) {
+        const jint m1 = L3_INDEX_112[i][0];
+        const jint m2 = L3_INDEX_112[i][1];
+        const jint m3 = L3_INDEX_112[i][2];
+        rGGFp3 += L3_COEFF_112[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s1+m2]*aCnlm[s2+m3];
+        rGGFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s1+m2]*aCnlm[s2+m3];
+        rGGFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aCnlm[s1+m2]*aGradNNGradCnlm[s2+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_233_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
-    const jdouble c30  = aCnlm[(3*3+3)  ], gc30  = aGradNNGradCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1], gc31  = aGradNNGradCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], gc3n1 = aGradNNGradCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2], gc32  = aGradNNGradCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], gc3n2 = aGradNNGradCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3], gc33  = aGradNNGradCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], gc3n3 = aGradNNGradCnlm[(3*3+3)-3];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += WIGNER_233_000 * c30*c30 * gc20;
-    rGGFp3 += (WIGNER_233_000*2.0) * c20*c30 * gc30;
-    rGGFp3 -= WIGNER_233_011 * (c31*c31 + c3n1*c3n1) * gc20;
-    rGGFp3 -= (WIGNER_233_011*2.0) * c20*c31 * gc31;
-    rGGFp3 -= (WIGNER_233_011*2.0) * c20*c3n1 * gc3n1;
-    rGGFp3 += WIGNER_233_022 * (c32*c32 + c3n2*c3n2) * gc20;
-    rGGFp3 += (WIGNER_233_022*2.0) * c20*c32 * gc32;
-    rGGFp3 += (WIGNER_233_022*2.0) * c20*c3n2 * gc3n2;
-    rGGFp3 -= WIGNER_233_033 * (c33*c33 + c3n3*c3n3) * gc20;
-    rGGFp3 -= (WIGNER_233_033*2.0) * c20*c33 * gc33;
-    rGGFp3 -= (WIGNER_233_033*2.0) * c20*c3n3 * gc3n3;
-    rGGFp3 -= (2.0*WIGNER_233_110) * (c21*c31 + c2n1*c3n1) * gc30;
-    rGGFp3 -= (2.0*WIGNER_233_110) * c30*c31 * gc21;
-    rGGFp3 -= (2.0*WIGNER_233_110) * c30*c21 * gc31;
-    rGGFp3 -= (2.0*WIGNER_233_110) * c30*c3n1 * gc2n1;
-    rGGFp3 -= (2.0*WIGNER_233_110) * c30*c2n1 * gc3n1;
-    rGGFp3 += (2.0*WIGNER_233_220) * (c22*c32 + c2n2*c3n2) * gc30;
-    rGGFp3 += (2.0*WIGNER_233_220) * c30*c32 * gc22;
-    rGGFp3 += (2.0*WIGNER_233_220) * c30*c22 * gc32;
-    rGGFp3 += (2.0*WIGNER_233_220) * c30*c3n2 * gc2n2;
-    rGGFp3 += (2.0*WIGNER_233_220) * c30*c2n2 * gc3n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_233_211) * (c31*c31 - c3n1*c3n1) * gc22;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_211) * (c22*c31 + c2n2*c3n1) * gc31;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_211) * (c2n2*c31 - c22*c3n1) * gc3n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_211) * c31*c3n1 * gc2n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c32 + c3n1*c3n2) * gc21;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c31*c3n2 - c3n1*c32) * gc2n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c32 + c2n1*c3n2) * gc31;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c31 - c2n1*c3n1) * gc32;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c3n2 - c2n1*c32) * gc3n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_233_112) * (c21*c3n1 + c2n1*c31) * gc3n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c33 + c3n2*c3n3) * gc21;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c32*c3n3 - c3n2*c33) * gc2n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c33 + c2n1*c3n3) * gc32;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c32 - c2n1*c3n2) * gc33;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c3n3 - c2n1*c33) * gc3n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (c21*c3n2 + c2n1*c32) * gc3n3;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c33 + c3n1*c3n3) * gc22;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c31*c3n3 - c3n1*c33) * gc2n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c33 + c2n2*c3n3) * gc31;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c31 - c2n2*c3n1) * gc33;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c3n3 - c2n2*c33) * gc3n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (c22*c3n1 + c2n2*c31) * gc3n3;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_233; ++i) {
+        const jint m1 = L3_INDEX_233[i][0];
+        const jint m2 = L3_INDEX_233[i][1];
+        const jint m3 = L3_INDEX_233[i][2];
+        rGGFp3 += L3_COEFF_233[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s3+m2]*aCnlm[s3+m3];
+        rGGFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s3+m3];
+        rGGFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s3+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_123_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], gc10  = aGradNNGradCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1], gc11  = aGradNNGradCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1], gc1n1 = aGradNNGradCnlm[(1+1)-1];
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
-    const jdouble c30  = aCnlm[(3*3+3)  ], gc30  = aGradNNGradCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1], gc31  = aGradNNGradCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], gc3n1 = aGradNNGradCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2], gc32  = aGradNNGradCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], gc3n2 = aGradNNGradCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3], gc33  = aGradNNGradCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], gc3n3 = aGradNNGradCnlm[(3*3+3)-3];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += WIGNER_123_000 * c20*c30 * gc10;
-    rGGFp3 += WIGNER_123_000 * c10*c30 * gc20;
-    rGGFp3 += WIGNER_123_000 * c10*c20 * gc30;
-    rGGFp3 -= WIGNER_123_011 * (c21*c31 + c2n1*c3n1) * gc10;
-    rGGFp3 -= WIGNER_123_011 * c10*c31 * gc21;
-    rGGFp3 -= WIGNER_123_011 * c10*c21 * gc31;
-    rGGFp3 -= WIGNER_123_011 * c10*c3n1 * gc2n1;
-    rGGFp3 -= WIGNER_123_011 * c10*c2n1 * gc3n1;
-    rGGFp3 += WIGNER_123_022 * (c22*c32 + c2n2*c3n2) * gc10;
-    rGGFp3 += WIGNER_123_022 * c10*c32 * gc22;
-    rGGFp3 += WIGNER_123_022 * c10*c22 * gc32;
-    rGGFp3 += WIGNER_123_022 * c10*c3n2 * gc2n2;
-    rGGFp3 += WIGNER_123_022 * c10*c2n2 * gc3n2;
-    rGGFp3 -= WIGNER_123_101 * (c11*c31 + c1n1*c3n1) * gc20;
-    rGGFp3 -= WIGNER_123_101 * c20*c31 * gc11;
-    rGGFp3 -= WIGNER_123_101 * c20*c11 * gc31;
-    rGGFp3 -= WIGNER_123_101 * c20*c3n1 * gc1n1;
-    rGGFp3 -= WIGNER_123_101 * c20*c1n1 * gc3n1;
-    rGGFp3 -= WIGNER_123_110 * (c11*c21 + c1n1*c2n1) * gc30;
-    rGGFp3 -= WIGNER_123_110 * c30*c21 * gc11;
-    rGGFp3 -= WIGNER_123_110 * c30*c11 * gc21;
-    rGGFp3 -= WIGNER_123_110 * c30*c2n1 * gc1n1;
-    rGGFp3 -= WIGNER_123_110 * c30*c1n1 * gc2n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c21*c32 + c2n1*c3n2) * gc11 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c21*c3n2 - c2n1*c32) * gc1n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c11*c32 + c1n1*c3n2) * gc21 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c11*c21 - c1n1*c2n1) * gc32 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c11*c3n2 - c1n1*c32) * gc2n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_112) * (c11*c2n1 + c1n1*c21) * gc3n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c22*c31 + c2n2*c3n1) * gc11 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c2n2*c31 - c22*c3n1) * gc1n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c11*c31 - c1n1*c3n1) * gc22 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c11*c22 + c1n1*c2n2) * gc31 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c11*c3n1 + c1n1*c31) * gc2n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_123_121) * (c11*c2n2 - c1n1*c22) * gc3n1;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c22*c33 + c2n2*c3n3) * gc11 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c22*c3n3 - c2n2*c33) * gc1n1;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c11*c33 + c1n1*c3n3) * gc22 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c11*c22 - c1n1*c2n2) * gc33 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c11*c3n3 - c1n1*c33) * gc2n2;
-    rGGFp3 -= (SQRT2_INV*WIGNER_123_123) * (c11*c2n2 + c1n1*c22) * gc3n3;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_123; ++i) {
+        const jint m1 = L3_INDEX_123[i][0];
+        const jint m2 = L3_INDEX_123[i][1];
+        const jint m3 = L3_INDEX_123[i][2];
+        rGGFp3 += L3_COEFF_123[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s2+m2]*aCnlm[s3+m3];
+        rGGFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s3+m3];
+        rGGFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s3+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_444_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c40  = aCnlm[(4*4+4)  ], gc40  = aGradNNGradCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1], gc41  = aGradNNGradCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], gc4n1 = aGradNNGradCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2], gc42  = aGradNNGradCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], gc4n2 = aGradNNGradCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3], gc43  = aGradNNGradCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], gc4n3 = aGradNNGradCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4], gc44  = aGradNNGradCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], gc4n4 = aGradNNGradCnlm[(4*4+4)-4];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += (WIGNER_444_000*3.0) * c40*c40 * gc40;
-    rGGFp3 -= (3.0*WIGNER_444_011) * (c41*c41 + c4n1*c4n1) * gc40;
-    rGGFp3 -= (3.0*WIGNER_444_011*2.0) * c40*c41 * gc41;
-    rGGFp3 -= (3.0*WIGNER_444_011*2.0) * c40*c4n1 * gc4n1;
-    rGGFp3 += (3.0*WIGNER_444_022) * (c42*c42 + c4n2*c4n2) * gc40;
-    rGGFp3 += (3.0*WIGNER_444_022*2.0) * c40*c42 * gc42;
-    rGGFp3 += (3.0*WIGNER_444_022*2.0) * c40*c4n2 * gc4n2;
-    rGGFp3 -= (3.0*WIGNER_444_033) * (c43*c43 + c4n3*c4n3) * gc40;
-    rGGFp3 -= (3.0*WIGNER_444_033*2.0) * c40*c43 * gc43;
-    rGGFp3 -= (3.0*WIGNER_444_033*2.0) * c40*c4n3 * gc4n3;
-    rGGFp3 += (3.0*WIGNER_444_044) * (c44*c44 + c4n4*c4n4) * gc40;
-    rGGFp3 += (3.0*WIGNER_444_044*2.0) * c40*c44 * gc44;
-    rGGFp3 += (3.0*WIGNER_444_044*2.0) * c40*c4n4 * gc4n4;
-    rGGFp3 += (3.0*SQRT2_INV*WIGNER_444_112) * (c41*c41 - c4n1*c4n1) * gc42;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_112) * c41*c4n1 * gc4n2;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_112) * (c42*c41 + c4n1*c4n2) * gc41;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_112) * (c41*c4n2 - c42*c4n1) * gc4n1;
-    rGGFp3 += (3.0*SQRT2_INV*WIGNER_444_224) * (c42*c42 - c4n2*c4n2) * gc44;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_224) * c42*c4n2 * gc4n4;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_224) * (c44*c42 + c4n2*c4n4) * gc42 ;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_224) * (c42*c4n4 - c44*c4n2) * gc4n2;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c43 + c4n2*c4n3) * gc41 ;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c42*c4n3 - c4n2*c43) * gc4n1;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c43 + c4n1*c4n3) * gc42 ;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c42 - c4n1*c4n2) * gc43 ;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c4n3 - c4n1*c43) * gc4n2;
-    rGGFp3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (c41*c4n2 + c4n1*c42) * gc4n3;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c44 + c4n3*c4n4) * gc41 ;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c43*c4n4 - c4n3*c44) * gc4n1;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c44 + c4n1*c4n4) * gc43 ;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c43 - c4n1*c4n3) * gc44 ;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c4n4 - c4n1*c44) * gc4n3;
-    rGGFp3 += (6.0*SQRT2_INV*WIGNER_444_134) * (c41*c4n3 + c4n1*c43) * gc4n4;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_444; ++i) {
+        const jint m1 = L3_INDEX_444[i][0];
+        const jint m2 = L3_INDEX_444[i][1];
+        const jint m3 = L3_INDEX_444[i][2];
+        rGGFp3 += L3_COEFF_444[i] * aGradNNGradCnlm[s4+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_224_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
-    const jdouble c40  = aCnlm[(4*4+4)  ], gc40  = aGradNNGradCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1], gc41  = aGradNNGradCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], gc4n1 = aGradNNGradCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2], gc42  = aGradNNGradCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], gc4n2 = aGradNNGradCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3], gc43  = aGradNNGradCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], gc4n3 = aGradNNGradCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4], gc44  = aGradNNGradCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], gc4n4 = aGradNNGradCnlm[(4*4+4)-4];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += (WIGNER_224_000*2.0) * c20*c40 * gc20;
-    rGGFp3 += WIGNER_224_000 * c20*c20 * gc40;
-    rGGFp3 -= WIGNER_224_110 * (c21*c21 + c2n1*c2n1) * gc40;
-    rGGFp3 -= (WIGNER_224_110*2.0) * c40*c21 * gc21;
-    rGGFp3 -= (WIGNER_224_110*2.0) * c40*c2n1 * gc2n1;
-    rGGFp3 += WIGNER_224_220 * (c22*c22 + c2n2*c2n2) * gc40;
-    rGGFp3 += (WIGNER_224_220*2.0) * c40*c22 * gc22;
-    rGGFp3 += (WIGNER_224_220*2.0) * c40*c2n2 * gc2n2;
-    rGGFp3 -= (2.0*WIGNER_224_011) * (c21*c41 + c2n1*c4n1) * gc20;
-    rGGFp3 -= (2.0*WIGNER_224_011) * c20*c41 * gc21;
-    rGGFp3 -= (2.0*WIGNER_224_011) * c20*c21 * gc41;
-    rGGFp3 -= (2.0*WIGNER_224_011) * c20*c4n1 * gc2n1;
-    rGGFp3 -= (2.0*WIGNER_224_011) * c20*c2n1 * gc4n1;
-    rGGFp3 += (2.0*WIGNER_224_022) * (c22*c42 + c2n2*c4n2) * gc20;
-    rGGFp3 += (2.0*WIGNER_224_022) * c20*c42 * gc22;
-    rGGFp3 += (2.0*WIGNER_224_022) * c20*c22 * gc42;
-    rGGFp3 += (2.0*WIGNER_224_022) * c20*c4n2 * gc2n2;
-    rGGFp3 += (2.0*WIGNER_224_022) * c20*c2n2 * gc4n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_224_112) * (c21*c21 - c2n1*c2n1) * gc42;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_112) * c21*c2n1 * gc4n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_112) * (c42*c21 + c2n1*c4n2) * gc21;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_112) * (c21*c4n2 - c42*c2n1) * gc2n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_224_224) * (c22*c22 - c2n2*c2n2) * gc44;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_224) * c22*c2n2 * gc4n4;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_224) * (c44*c22 + c2n2*c4n4) * gc22 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_224) * (c22*c4n4 - c44*c2n2) * gc2n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c22*c41 + c2n2*c4n1) * gc21 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c2n2*c41 - c22*c4n1) * gc2n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c41 - c2n1*c4n1) * gc22 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c22 + c2n1*c2n2) * gc41 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c4n1 + c2n1*c41) * gc2n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_224_121) * (c21*c2n2 - c2n1*c22) * gc4n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c43 + c2n2*c4n3) * gc21 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c22*c4n3 - c2n2*c43) * gc2n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c43 + c2n1*c4n3) * gc22 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c22 - c2n1*c2n2) * gc43 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c4n3 - c2n1*c43) * gc2n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (c21*c2n2 + c2n1*c22) * gc4n3;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_224; ++i) {
+        const jint m1 = L3_INDEX_224[i][0];
+        const jint m2 = L3_INDEX_224[i][1];
+        const jint m3 = L3_INDEX_224[i][2];
+        rGGFp3 += L3_COEFF_224[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s4+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_334_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c30  = aCnlm[(3*3+3)  ], gc30  = aGradNNGradCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1], gc31  = aGradNNGradCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], gc3n1 = aGradNNGradCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2], gc32  = aGradNNGradCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], gc3n2 = aGradNNGradCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3], gc33  = aGradNNGradCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], gc3n3 = aGradNNGradCnlm[(3*3+3)-3];
-    const jdouble c40  = aCnlm[(4*4+4)  ], gc40  = aGradNNGradCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1], gc41  = aGradNNGradCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], gc4n1 = aGradNNGradCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2], gc42  = aGradNNGradCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], gc4n2 = aGradNNGradCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3], gc43  = aGradNNGradCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], gc4n3 = aGradNNGradCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4], gc44  = aGradNNGradCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], gc4n4 = aGradNNGradCnlm[(4*4+4)-4];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += (WIGNER_334_000*2.0) * c30*c40 * gc30;
-    rGGFp3 += WIGNER_334_000 * c30*c30 * gc40;
-    rGGFp3 -= WIGNER_334_110 * (c31*c31 + c3n1*c3n1) * gc40;
-    rGGFp3 -= (WIGNER_334_110*2.0) * c40*c31 * gc31;
-    rGGFp3 -= (WIGNER_334_110*2.0) * c40*c3n1 * gc3n1;
-    rGGFp3 += WIGNER_334_220 * (c32*c32 + c3n2*c3n2) * gc40;
-    rGGFp3 += (WIGNER_334_220*2.0) * c40*c32 * gc32;
-    rGGFp3 += (WIGNER_334_220*2.0) * c40*c3n2 * gc3n2;
-    rGGFp3 -= WIGNER_334_330 * (c33*c33 + c3n3*c3n3) * gc40;
-    rGGFp3 -= (WIGNER_334_330*2.0) * c40*c33 * gc33;
-    rGGFp3 -= (WIGNER_334_330*2.0) * c40*c3n3 * gc3n3;
-    rGGFp3 -= (2.0*WIGNER_334_011) * (c31*c41 + c3n1*c4n1) * gc30;
-    rGGFp3 -= (2.0*WIGNER_334_011) * c30*c41 * gc31;
-    rGGFp3 -= (2.0*WIGNER_334_011) * c30*c31 * gc41;
-    rGGFp3 -= (2.0*WIGNER_334_011) * c30*c4n1 * gc3n1;
-    rGGFp3 -= (2.0*WIGNER_334_011) * c30*c3n1 * gc4n1;
-    rGGFp3 += (2.0*WIGNER_334_022) * (c32*c42 + c3n2*c4n2) * gc30;
-    rGGFp3 += (2.0*WIGNER_334_022) * c30*c42 * gc32;
-    rGGFp3 += (2.0*WIGNER_334_022) * c30*c32 * gc42;
-    rGGFp3 += (2.0*WIGNER_334_022) * c30*c4n2 * gc3n2;
-    rGGFp3 += (2.0*WIGNER_334_022) * c30*c3n2 * gc4n2;
-    rGGFp3 -= (2.0*WIGNER_334_033) * (c33*c43 + c3n3*c4n3) * gc30;
-    rGGFp3 -= (2.0*WIGNER_334_033) * c30*c43 * gc33;
-    rGGFp3 -= (2.0*WIGNER_334_033) * c30*c33 * gc43;
-    rGGFp3 -= (2.0*WIGNER_334_033) * c30*c4n3 * gc3n3;
-    rGGFp3 -= (2.0*WIGNER_334_033) * c30*c3n3 * gc4n3;
-    rGGFp3 += (SQRT2_INV*WIGNER_334_112) * (c31*c31 - c3n1*c3n1) * gc42;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_112) * c31*c3n1 * gc4n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_112) * (c42*c31 + c3n1*c4n2) * gc31;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_112) * (c31*c4n2 - c42*c3n1) * gc3n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_334_224) * (c32*c32 - c3n2*c3n2) * gc44;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_224) * c32*c3n2 * gc4n4;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_224) * (c44*c32 + c3n2*c4n4) * gc32 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_224) * (c32*c4n4 - c44*c3n2) * gc3n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c32*c41 + c3n2*c4n1) * gc31 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c3n2*c41 - c32*c4n1) * gc3n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c41 - c3n1*c4n1) * gc32 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c32 + c3n1*c3n2) * gc41 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c4n1 + c3n1*c41) * gc3n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_121) * (c31*c3n2 - c3n1*c32) * gc4n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c43 + c3n2*c4n3) * gc31 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c32*c4n3 - c3n2*c43) * gc3n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c43 + c3n1*c4n3) * gc32 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c32 - c3n1*c3n2) * gc43 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c4n3 - c3n1*c43) * gc3n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (c31*c3n2 + c3n1*c32) * gc4n3;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c33*c42 + c3n3*c4n2) * gc31 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c3n3*c42 - c33*c4n2) * gc3n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c42 - c3n1*c4n2) * gc33 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c33 + c3n1*c3n3) * gc42 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c4n2 + c3n1*c42) * gc3n3;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (c31*c3n3 - c3n1*c33) * gc4n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c33*c41 + c3n3*c4n1) * gc32 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c3n3*c41 - c33*c4n1) * gc3n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c41 - c3n2*c4n1) * gc33 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c33 + c3n2*c3n3) * gc41 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c4n1 + c3n2*c41) * gc3n3;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (c32*c3n3 - c3n2*c33) * gc4n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c44 + c3n3*c4n4) * gc31 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c33*c4n4 - c3n3*c44) * gc3n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c44 + c3n1*c4n4) * gc33 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c33 - c3n1*c3n3) * gc44 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c4n4 - c3n1*c44) * gc3n3;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_334_134) * (c31*c3n3 + c3n1*c33) * gc4n4;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_334; ++i) {
+        const jint m1 = L3_INDEX_334[i][0];
+        const jint m2 = L3_INDEX_334[i][1];
+        const jint m3 = L3_INDEX_334[i][2];
+        rGGFp3 += L3_COEFF_334[i] * aGradNNGradCnlm[s3+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_244_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], gc20  = aGradNNGradCnlm[(2*2+2)  ];
-    const jdouble c21  = aCnlm[(2*2+2)+1], gc21  = aGradNNGradCnlm[(2*2+2)+1];
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], gc2n1 = aGradNNGradCnlm[(2*2+2)-1];
-    const jdouble c22  = aCnlm[(2*2+2)+2], gc22  = aGradNNGradCnlm[(2*2+2)+2];
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], gc2n2 = aGradNNGradCnlm[(2*2+2)-2];
-    const jdouble c40  = aCnlm[(4*4+4)  ], gc40  = aGradNNGradCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1], gc41  = aGradNNGradCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], gc4n1 = aGradNNGradCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2], gc42  = aGradNNGradCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], gc4n2 = aGradNNGradCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3], gc43  = aGradNNGradCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], gc4n3 = aGradNNGradCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4], gc44  = aGradNNGradCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], gc4n4 = aGradNNGradCnlm[(4*4+4)-4];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += WIGNER_244_000 * c40*c40 * gc20;
-    rGGFp3 += (WIGNER_244_000*2.0) * c20*c40 * gc40;
-    rGGFp3 -= WIGNER_244_011 * (c41*c41 + c4n1*c4n1) * gc20;
-    rGGFp3 -= (WIGNER_244_011*2.0) * c20*c41 * gc41;
-    rGGFp3 -= (WIGNER_244_011*2.0) * c20*c4n1 * gc4n1;
-    rGGFp3 += WIGNER_244_022 * (c42*c42 + c4n2*c4n2) * gc20;
-    rGGFp3 += (WIGNER_244_022*2.0) * c20*c42 * gc42;
-    rGGFp3 += (WIGNER_244_022*2.0) * c20*c4n2 * gc4n2;
-    rGGFp3 -= WIGNER_244_033 * (c43*c43 + c4n3*c4n3) * gc20;
-    rGGFp3 -= (WIGNER_244_033*2.0) * c20*c43 * gc43;
-    rGGFp3 -= (WIGNER_244_033*2.0) * c20*c4n3 * gc4n3;
-    rGGFp3 += WIGNER_244_044 * (c44*c44 + c4n4*c4n4) * gc20;
-    rGGFp3 += (WIGNER_244_044*2.0) * c20*c44 * gc44;
-    rGGFp3 += (WIGNER_244_044*2.0) * c20*c4n4 * gc4n4;
-    rGGFp3 -= (2.0*WIGNER_244_110) * (c21*c41 + c2n1*c4n1) * gc40;
-    rGGFp3 -= (2.0*WIGNER_244_110) * c40*c41 * gc21;
-    rGGFp3 -= (2.0*WIGNER_244_110) * c40*c21 * gc41;
-    rGGFp3 -= (2.0*WIGNER_244_110) * c40*c4n1 * gc2n1;
-    rGGFp3 -= (2.0*WIGNER_244_110) * c40*c2n1 * gc4n1;
-    rGGFp3 += (2.0*WIGNER_244_220) * (c22*c42 + c2n2*c4n2) * gc40;
-    rGGFp3 += (2.0*WIGNER_244_220) * c40*c42 * gc22;
-    rGGFp3 += (2.0*WIGNER_244_220) * c40*c22 * gc42;
-    rGGFp3 += (2.0*WIGNER_244_220) * c40*c4n2 * gc2n2;
-    rGGFp3 += (2.0*WIGNER_244_220) * c40*c2n2 * gc4n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_244_211) * (c41*c41 - c4n1*c4n1) * gc22;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_211) * c41*c4n1 * gc2n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_211) * (c22*c41 + c2n2*c4n1) * gc41 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_211) * (c2n2*c41 - c22*c4n1) * gc4n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c42 + c4n1*c4n2) * gc21 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c41*c4n2 - c4n1*c42) * gc2n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c42 + c2n1*c4n2) * gc41 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c41 - c2n1*c4n1) * gc42 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c4n2 - c2n1*c42) * gc4n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_112) * (c21*c4n1 + c2n1*c41) * gc4n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c44 + c4n2*c4n4) * gc22 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c42*c4n4 - c4n2*c44) * gc2n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c44 + c2n2*c4n4) * gc42 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c42 - c2n2*c4n2) * gc44 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c4n4 - c2n2*c44) * gc4n2;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_224) * (c22*c4n2 + c2n2*c42) * gc4n4;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c43 + c4n2*c4n3) * gc21 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c42*c4n3 - c4n2*c43) * gc2n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c43 + c2n1*c4n3) * gc42 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c42 - c2n1*c4n2) * gc43 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c4n3 - c2n1*c43) * gc4n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (c21*c4n2 + c2n1*c42) * gc4n3;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c43 + c4n1*c4n3) * gc22 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c41*c4n3 - c4n1*c43) * gc2n2;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c43 + c2n2*c4n3) * gc41 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c41 - c2n2*c4n1) * gc43 ;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c4n3 - c2n2*c43) * gc4n1;
-    rGGFp3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (c22*c4n1 + c2n2*c41) * gc4n3;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c44 + c4n3*c4n4) * gc21 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c43*c4n4 - c4n3*c44) * gc2n1;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c44 + c2n1*c4n4) * gc43 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c43 - c2n1*c4n3) * gc44 ;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c4n4 - c2n1*c44) * gc4n3;
-    rGGFp3 += (2.0*SQRT2_INV*WIGNER_244_134) * (c21*c4n3 + c2n1*c43) * gc4n4;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_244; ++i) {
+        const jint m1 = L3_INDEX_244[i][0];
+        const jint m2 = L3_INDEX_244[i][1];
+        const jint m3 = L3_INDEX_244[i][2];
+        rGGFp3 += L3_COEFF_244[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3];
+    }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_134_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], gc10  = aGradNNGradCnlm[(1+1)  ];
-    const jdouble c11  = aCnlm[(1+1)+1], gc11  = aGradNNGradCnlm[(1+1)+1];
-    const jdouble c1n1 = aCnlm[(1+1)-1], gc1n1 = aGradNNGradCnlm[(1+1)-1];
-    const jdouble c30  = aCnlm[(3*3+3)  ], gc30  = aGradNNGradCnlm[(3*3+3)  ];
-    const jdouble c31  = aCnlm[(3*3+3)+1], gc31  = aGradNNGradCnlm[(3*3+3)+1];
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], gc3n1 = aGradNNGradCnlm[(3*3+3)-1];
-    const jdouble c32  = aCnlm[(3*3+3)+2], gc32  = aGradNNGradCnlm[(3*3+3)+2];
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], gc3n2 = aGradNNGradCnlm[(3*3+3)-2];
-    const jdouble c33  = aCnlm[(3*3+3)+3], gc33  = aGradNNGradCnlm[(3*3+3)+3];
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], gc3n3 = aGradNNGradCnlm[(3*3+3)-3];
-    const jdouble c40  = aCnlm[(4*4+4)  ], gc40  = aGradNNGradCnlm[(4*4+4)  ];
-    const jdouble c41  = aCnlm[(4*4+4)+1], gc41  = aGradNNGradCnlm[(4*4+4)+1];
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], gc4n1 = aGradNNGradCnlm[(4*4+4)-1];
-    const jdouble c42  = aCnlm[(4*4+4)+2], gc42  = aGradNNGradCnlm[(4*4+4)+2];
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], gc4n2 = aGradNNGradCnlm[(4*4+4)-2];
-    const jdouble c43  = aCnlm[(4*4+4)+3], gc43  = aGradNNGradCnlm[(4*4+4)+3];
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], gc4n3 = aGradNNGradCnlm[(4*4+4)-3];
-    const jdouble c44  = aCnlm[(4*4+4)+4], gc44  = aGradNNGradCnlm[(4*4+4)+4];
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], gc4n4 = aGradNNGradCnlm[(4*4+4)-4];
     jdouble rGGFp3 = 0.0;
-    rGGFp3 += WIGNER_134_000 * c30*c40 * gc10;
-    rGGFp3 += WIGNER_134_000 * c10*c40 * gc30;
-    rGGFp3 += WIGNER_134_000 * c10*c30 * gc40;
-    rGGFp3 -= WIGNER_134_011 * (c31*c41 + c3n1*c4n1) * gc10;
-    rGGFp3 -= WIGNER_134_011 * c10*c41 * gc31;
-    rGGFp3 -= WIGNER_134_011 * c10*c31 * gc41;
-    rGGFp3 -= WIGNER_134_011 * c10*c4n1 * gc3n1;
-    rGGFp3 -= WIGNER_134_011 * c10*c3n1 * gc4n1;
-    rGGFp3 += WIGNER_134_022 * (c32*c42 + c3n2*c4n2) * gc10;
-    rGGFp3 += WIGNER_134_022 * c10*c42 * gc32;
-    rGGFp3 += WIGNER_134_022 * c10*c32 * gc42;
-    rGGFp3 += WIGNER_134_022 * c10*c4n2 * gc3n2;
-    rGGFp3 += WIGNER_134_022 * c10*c3n2 * gc4n2;
-    rGGFp3 -= WIGNER_134_033 * (c33*c43 + c3n3*c4n3) * gc10;
-    rGGFp3 -= WIGNER_134_033 * c10*c43 * gc33;
-    rGGFp3 -= WIGNER_134_033 * c10*c33 * gc43;
-    rGGFp3 -= WIGNER_134_033 * c10*c4n3 * gc3n3;
-    rGGFp3 -= WIGNER_134_033 * c10*c3n3 * gc4n3;
-    rGGFp3 -= WIGNER_134_110 * (c11*c31 + c1n1*c3n1) * gc40;
-    rGGFp3 -= WIGNER_134_110 * c40*c31 * gc11;
-    rGGFp3 -= WIGNER_134_110 * c40*c11 * gc31;
-    rGGFp3 -= WIGNER_134_110 * c40*c3n1 * gc1n1;
-    rGGFp3 -= WIGNER_134_110 * c40*c1n1 * gc3n1;
-    rGGFp3 -= WIGNER_134_101 * (c11*c41 + c1n1*c4n1) * gc30;
-    rGGFp3 -= WIGNER_134_101 * c30*c41 * gc11;
-    rGGFp3 -= WIGNER_134_101 * c30*c11 * gc41;
-    rGGFp3 -= WIGNER_134_101 * c30*c4n1 * gc1n1;
-    rGGFp3 -= WIGNER_134_101 * c30*c1n1 * gc4n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c31*c42 + c3n1*c4n2) * gc11 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c31*c4n2 - c3n1*c42) * gc1n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c11*c42 + c1n1*c4n2) * gc31 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c11*c31 - c1n1*c3n1) * gc42 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c11*c4n2 - c1n1*c42) * gc3n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_112) * (c11*c3n1 + c1n1*c31) * gc4n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c32*c41 + c3n2*c4n1) * gc11 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c3n2*c41 - c32*c4n1) * gc1n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c11*c41 - c1n1*c4n1) * gc32 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c11*c32 + c1n1*c3n2) * gc41 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c11*c4n1 + c1n1*c41) * gc3n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_121) * (c11*c3n2 - c1n1*c32) * gc4n1;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c32*c43 + c3n2*c4n3) * gc11 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c32*c4n3 - c3n2*c43) * gc1n1;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c11*c43 + c1n1*c4n3) * gc32 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c11*c32 - c1n1*c3n2) * gc43 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c11*c4n3 - c1n1*c43) * gc3n2;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_123) * (c11*c3n2 + c1n1*c32) * gc4n3;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c33*c42 + c3n3*c4n2) * gc11 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c3n3*c42 - c33*c4n2) * gc1n1;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c11*c42 - c1n1*c4n2) * gc33 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c11*c33 + c1n1*c3n3) * gc42 ;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c11*c4n2 + c1n1*c42) * gc3n3;
-    rGGFp3 -= (SQRT2_INV*WIGNER_134_132) * (c11*c3n3 - c1n1*c33) * gc4n2;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c33*c44 + c3n3*c4n4) * gc11 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c33*c4n4 - c3n3*c44) * gc1n1;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c11*c44 + c1n1*c4n4) * gc33 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c11*c33 - c1n1*c3n3) * gc44 ;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c11*c4n4 - c1n1*c44) * gc3n3;
-    rGGFp3 += (SQRT2_INV*WIGNER_134_134) * (c11*c3n3 + c1n1*c33) * gc4n4;
+    const jint s1 = 1+1;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_134; ++i) {
+        const jint m1 = L3_INDEX_134[i][0];
+        const jint m2 = L3_INDEX_134[i][1];
+        const jint m3 = L3_INDEX_134[i][2];
+        rGGFp3 += L3_COEFF_134[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3];
+        rGGFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3];
+    }
     return rGGFp3;
 }
 template <jint L3MAX, jboolean L3CROSS>
@@ -2257,606 +1215,121 @@ static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble
     calGradL2_<LMAX, NO_RADIAL>(aGradNNGradCnlm, rGradCnlm, aNNGrad);
 }
 static void calGradCnlmL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    gc20  += (6.0*WIGNER_222_000) * ggc20*c20;
-    gc21  -= (6.0*WIGNER_222_011) * (ggc20*c21  + ggc21*c20);
-    gc2n1 -= (6.0*WIGNER_222_011) * (ggc20*c2n1 + ggc2n1*c20);
-    gc20  -= (6.0*WIGNER_222_011) * (ggc21*c21  + ggc2n1*c2n1);
-    gc22  += (6.0*WIGNER_222_022) * (ggc20*c22  + ggc22*c20);
-    gc2n2 += (6.0*WIGNER_222_022) * (ggc20*c2n2 + ggc2n2*c20);
-    gc20  += (6.0*WIGNER_222_022) * (ggc22*c22  + ggc2n2*c2n2);
-    gc21  += (6.0*SQRT2_INV*WIGNER_222_112) * (ggc22*c21 + ggc21*c22 + ggc2n1*c2n2 + ggc2n2*c2n1);
-    gc2n1 -= (6.0*SQRT2_INV*WIGNER_222_112) * (ggc22*c2n1 - ggc21*c2n2 + ggc2n1*c22 - ggc2n2*c21);
-    gc22  += (6.0*SQRT2_INV*WIGNER_222_112) * (ggc21*c21 - ggc2n1*c2n1);
-    gc2n2 += (6.0*SQRT2_INV*WIGNER_222_112) * (ggc21*c2n1 + ggc2n1*c21);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_222; ++i) {
+        const jint m1 = L3_INDEX_222[i][0];
+        const jint m2 = L3_INDEX_222[i][1];
+        const jint m3 = L3_INDEX_222[i][2];
+        const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s2+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s2+m3]);
+        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m3]);
+        rGradCnlm[s2+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]);
+    }
 }
 static void calGradCnlmL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], ggc10  = aGradNNGradCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1], ggc11  = aGradNNGradCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1], ggc1n1 = aGradNNGradCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    gc10  += (2.0*WIGNER_112_000) * (ggc10*c20 + ggc20*c10);
-    gc20  += (2.0*WIGNER_112_000) * ggc10*c10;
-    gc11  -= (2.0*WIGNER_112_110) * (ggc20*c11 + ggc11*c20);
-    gc1n1 -= (2.0*WIGNER_112_110) * (ggc20*c1n1 + ggc1n1*c20);
-    gc20  -= (2.0*WIGNER_112_110) * (ggc11*c11 + ggc1n1*c1n1);
-    gc11  -= (2.0*WIGNER_112_011) * (ggc10*c21 + ggc21*c10);
-    gc1n1 -= (2.0*WIGNER_112_011) * (ggc10*c2n1 + ggc2n1*c10);
-    gc21  -= (2.0*WIGNER_112_011) * (ggc11*c10 + ggc10*c11);
-    gc2n1 -= (2.0*WIGNER_112_011) * (ggc1n1*c10 + ggc10*c1n1);
-    gc10  -= (2.0*WIGNER_112_011) * (ggc11*c21 + ggc21*c11 + ggc1n1*c2n1 + ggc2n1*c1n1);
-    gc11  += (2.0*SQRT2_INV*WIGNER_112_112) * (ggc22*c11 + ggc11*c22 + ggc1n1*c2n2 + ggc2n2*c1n1);
-    gc1n1 -= (2.0*SQRT2_INV*WIGNER_112_112) * (ggc22*c1n1 - ggc11*c2n2 + ggc1n1*c22 - ggc2n2*c11);
-    gc22  += (2.0*SQRT2_INV*WIGNER_112_112) * (ggc11*c11 - ggc1n1*c1n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_112_112) * (ggc11*c1n1 + ggc1n1*c11);
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    for (jint i = 0; i < L3_SIZE_112; ++i) {
+        const jint m1 = L3_INDEX_112[i][0];
+        const jint m2 = L3_INDEX_112[i][1];
+        const jint m3 = L3_INDEX_112[i][2];
+        const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s1+m2]*aCnlm[s2+m3] + aCnlm[s1+m2]*aGradNNGradCnlm[s2+m3]);
+        rGradCnlm[s1+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s2+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s2+m3]);
+        rGradCnlm[s2+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s1+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s1+m2]);
+    }
 }
 static void calGradCnlmL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ], ggc30  = aGradNNGradCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1], ggc31  = aGradNNGradCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], ggc3n1 = aGradNNGradCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2], ggc32  = aGradNNGradCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], ggc3n2 = aGradNNGradCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3], ggc33  = aGradNNGradCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], ggc3n3 = aGradNNGradCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    gc30  += (2.0*WIGNER_233_000) * (ggc20*c30 + ggc30*c20);
-    gc20  += (2.0*WIGNER_233_000) * ggc30*c30;
-    gc31  -= (2.0*WIGNER_233_011) * (ggc20*c31 + ggc31*c20);
-    gc3n1 -= (2.0*WIGNER_233_011) * (ggc20*c3n1 + ggc3n1*c20);
-    gc20  -= (2.0*WIGNER_233_011) * (ggc31*c31 + ggc3n1*c3n1);
-    gc32  += (2.0*WIGNER_233_022) * (ggc20*c32 + ggc32*c20);
-    gc3n2 += (2.0*WIGNER_233_022) * (ggc20*c3n2 + ggc3n2*c20);
-    gc20  += (2.0*WIGNER_233_022) * (ggc32*c32 + ggc3n2*c3n2);
-    gc33  -= (2.0*WIGNER_233_033) * (ggc20*c33 + ggc33*c20);
-    gc3n3 -= (2.0*WIGNER_233_033) * (ggc20*c3n3 + ggc3n3*c20);
-    gc20  -= (2.0*WIGNER_233_033) * (ggc33*c33 + ggc3n3*c3n3);
-    gc21  -= (2.0*WIGNER_233_110) * (ggc30*c31 + ggc31*c30);
-    gc2n1 -= (2.0*WIGNER_233_110) * (ggc30*c3n1 + ggc3n1*c30);
-    gc31  -= (2.0*WIGNER_233_110) * (ggc30*c21 + ggc21*c30);
-    gc3n1 -= (2.0*WIGNER_233_110) * (ggc30*c2n1 + ggc2n1*c30);
-    gc30  -= (2.0*WIGNER_233_110) * (ggc21*c31 + ggc31*c21 + ggc2n1*c3n1 + ggc3n1*c2n1);
-    gc32  += (2.0*WIGNER_233_220) * (ggc30*c22 + ggc22*c30);
-    gc3n2 += (2.0*WIGNER_233_220) * (ggc30*c2n2 + ggc2n2*c30);
-    gc22  += (2.0*WIGNER_233_220) * (ggc30*c32 + ggc32*c30);
-    gc2n2 += (2.0*WIGNER_233_220) * (ggc30*c3n2 + ggc3n2*c30);
-    gc30  += (2.0*WIGNER_233_220) * (ggc22*c32 + ggc32*c22 + ggc2n2*c3n2 + ggc3n2*c2n2);
-    gc31  += (2.0*SQRT2_INV*WIGNER_233_211) * (ggc22*c31 + ggc31*c22 + ggc3n1*c2n2 + ggc2n2*c3n1);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_233_211) * (ggc22*c3n1 - ggc31*c2n2 + ggc3n1*c22 - ggc2n2*c31);
-    gc22  += (2.0*SQRT2_INV*WIGNER_233_211) * (ggc31*c31 - ggc3n1*c3n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_233_211) * (ggc31*c3n1 + ggc3n1*c31);
-    gc31  += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc21*c32 + ggc2n1*c3n2 + ggc32*c21 + ggc3n2*c2n1);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc21*c3n2 - ggc2n1*c32 - ggc32*c2n1 + ggc3n2*c21);
-    gc32  += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc21*c31 - ggc2n1*c3n1 + ggc31*c21 - ggc3n1*c2n1);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc21*c3n1 + ggc2n1*c31 + ggc31*c2n1 + ggc3n1*c21);
-    gc21  += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc31*c32 + ggc32*c31 + ggc3n1*c3n2 + ggc3n2*c3n1);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_233_112) * (ggc31*c3n2 - ggc32*c3n1 - ggc3n1*c32 + ggc3n2*c31);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc21*c33 + ggc2n1*c3n3 + ggc33*c21 + ggc3n3*c2n1);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc21*c3n3 - ggc2n1*c33 - ggc33*c2n1 + ggc3n3*c21);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc21*c32 - ggc2n1*c3n2 + ggc32*c21 - ggc3n2*c2n1);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc21*c3n2 + ggc2n1*c32 + ggc32*c2n1 + ggc3n2*c21);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc32*c33 + ggc33*c32 + ggc3n2*c3n3 + ggc3n3*c3n2);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_233_123) * (ggc32*c3n3 - ggc33*c3n2 - ggc3n2*c33 + ggc3n3*c32);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc22*c33 + ggc2n2*c3n3 + ggc33*c22 + ggc3n3*c2n2);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc22*c31 - ggc2n2*c3n1 + ggc31*c22 - ggc3n1*c2n2);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc22*c3n3 - ggc2n2*c33 - ggc33*c2n2 + ggc3n3*c22);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc22*c3n1 + ggc2n2*c31 + ggc31*c2n2 + ggc3n1*c22);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc31*c33 + ggc33*c31 + ggc3n1*c3n3 + ggc3n3*c3n1);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_233_213) * (ggc31*c3n3 - ggc33*c3n1 - ggc3n1*c33 + ggc3n3*c31);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_233; ++i) {
+        const jint m1 = L3_INDEX_233[i][0];
+        const jint m2 = L3_INDEX_233[i][1];
+        const jint m3 = L3_INDEX_233[i][2];
+        const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s3+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s3+m3]);
+        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s3+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s3+m3]);
+        rGradCnlm[s3+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s3+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s3+m2]);
+    }
 }
 static void calGradCnlmL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], ggc10  = aGradNNGradCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1], ggc11  = aGradNNGradCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1], ggc1n1 = aGradNNGradCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ], ggc30  = aGradNNGradCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1], ggc31  = aGradNNGradCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], ggc3n1 = aGradNNGradCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2], ggc32  = aGradNNGradCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], ggc3n2 = aGradNNGradCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3], ggc33  = aGradNNGradCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], ggc3n3 = aGradNNGradCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    gc20  += WIGNER_123_000 * (ggc10*c30 + ggc30*c10);
-    gc30  += WIGNER_123_000 * (ggc10*c20 + ggc20*c10);
-    gc10  += WIGNER_123_000 * (ggc20*c30 + ggc30*c20);
-    gc21  -= WIGNER_123_011 * (ggc10*c31 + ggc31*c10);
-    gc2n1 -= WIGNER_123_011 * (ggc10*c3n1 + ggc3n1*c10);
-    gc31  -= WIGNER_123_011 * (ggc10*c21 + ggc21*c10);
-    gc3n1 -= WIGNER_123_011 * (ggc10*c2n1 + ggc2n1*c10);
-    gc10  -= WIGNER_123_011 * (ggc21*c31 + ggc31*c21 + ggc2n1*c3n1 + ggc3n1*c2n1);
-    gc22  += WIGNER_123_022 * (ggc10*c32 + ggc32*c10);
-    gc2n2 += WIGNER_123_022 * (ggc10*c3n2 + ggc3n2*c10);
-    gc32  += WIGNER_123_022 * (ggc10*c22 + ggc22*c10);
-    gc3n2 += WIGNER_123_022 * (ggc10*c2n2 + ggc2n2*c10);
-    gc10  += WIGNER_123_022 * (ggc22*c32 + ggc32*c22 + ggc2n2*c3n2 + ggc3n2*c2n2);
-    gc11  -= WIGNER_123_101 * (ggc20*c31 + ggc31*c20);
-    gc1n1 -= WIGNER_123_101 * (ggc20*c3n1 + ggc3n1*c20);
-    gc31  -= WIGNER_123_101 * (ggc20*c11 + ggc11*c20);
-    gc3n1 -= WIGNER_123_101 * (ggc20*c1n1 + ggc1n1*c20);
-    gc20  -= WIGNER_123_101 * (ggc11*c31 + ggc31*c11 + ggc1n1*c3n1 + ggc3n1*c1n1);
-    gc11  -= WIGNER_123_110 * (ggc30*c21 + ggc21*c30);
-    gc1n1 -= WIGNER_123_110 * (ggc30*c2n1 + ggc2n1*c30);
-    gc21  -= WIGNER_123_110 * (ggc30*c11 + ggc11*c30);
-    gc2n1 -= WIGNER_123_110 * (ggc30*c1n1 + ggc1n1*c30);
-    gc30  -= WIGNER_123_110 * (ggc11*c21 + ggc21*c11 + ggc1n1*c2n1 + ggc2n1*c1n1);
-    gc21  += (SQRT2_INV*WIGNER_123_112) * (ggc11*c32 + ggc1n1*c3n2 + ggc32*c11 + ggc3n2*c1n1);
-    gc2n1 += (SQRT2_INV*WIGNER_123_112) * (ggc11*c3n2 - ggc1n1*c32 - ggc32*c1n1 + ggc3n2*c11);
-    gc32  += (SQRT2_INV*WIGNER_123_112) * (ggc11*c21 - ggc1n1*c2n1 + ggc21*c11 - ggc2n1*c1n1);
-    gc3n2 += (SQRT2_INV*WIGNER_123_112) * (ggc11*c2n1 + ggc1n1*c21 + ggc21*c1n1 + ggc2n1*c11);
-    gc11  += (SQRT2_INV*WIGNER_123_112) * (ggc21*c32 + ggc32*c21 + ggc2n1*c3n2 + ggc3n2*c2n1);
-    gc1n1 += (SQRT2_INV*WIGNER_123_112) * (ggc21*c3n2 - ggc32*c2n1 - ggc2n1*c32 + ggc3n2*c21);
-    gc22  += (SQRT2_INV*WIGNER_123_121) * (ggc11*c31 - ggc1n1*c3n1 + ggc31*c11 - ggc3n1*c1n1);
-    gc2n2 += (SQRT2_INV*WIGNER_123_121) * (ggc11*c3n1 + ggc1n1*c31 + ggc31*c1n1 + ggc3n1*c11);
-    gc31  += (SQRT2_INV*WIGNER_123_121) * (ggc11*c22 + ggc1n1*c2n2 + ggc22*c11 + ggc2n2*c1n1);
-    gc3n1 += (SQRT2_INV*WIGNER_123_121) * (ggc11*c2n2 - ggc1n1*c22 - ggc22*c1n1 + ggc2n2*c11);
-    gc11  += (SQRT2_INV*WIGNER_123_121) * (ggc22*c31 + ggc31*c22 + ggc2n2*c3n1 + ggc3n1*c2n2);
-    gc1n1 -= (SQRT2_INV*WIGNER_123_121) * (ggc22*c3n1 - ggc31*c2n2 - ggc2n2*c31 + ggc3n1*c22);
-    gc22  -= (SQRT2_INV*WIGNER_123_123) * (ggc11*c33 + ggc1n1*c3n3 + ggc33*c11 + ggc3n3*c1n1);
-    gc2n2 -= (SQRT2_INV*WIGNER_123_123) * (ggc11*c3n3 - ggc1n1*c33 - ggc33*c1n1 + ggc3n3*c11);
-    gc33  -= (SQRT2_INV*WIGNER_123_123) * (ggc11*c22 - ggc1n1*c2n2 + ggc22*c11 - ggc2n2*c1n1);
-    gc3n3 -= (SQRT2_INV*WIGNER_123_123) * (ggc11*c2n2 + ggc1n1*c22 + ggc22*c1n1 + ggc2n2*c11);
-    gc11  -= (SQRT2_INV*WIGNER_123_123) * (ggc22*c33 + ggc33*c22 + ggc2n2*c3n3 + ggc3n3*c2n2);
-    gc1n1 -= (SQRT2_INV*WIGNER_123_123) * (ggc22*c3n3 - ggc33*c2n2 - ggc2n2*c33 + ggc3n3*c22);
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
+    const jint s1 = 1+1;
+    const jint s2 = 2*2+2;
+    const jint s3 = 3*3+3;
+    for (jint i = 0; i < L3_SIZE_123; ++i) {
+        const jint m1 = L3_INDEX_123[i][0];
+        const jint m2 = L3_INDEX_123[i][1];
+        const jint m3 = L3_INDEX_123[i][2];
+        const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s3+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s3+m3]);
+        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s3+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s3+m3]);
+        rGradCnlm[s3+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s2+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s2+m2]);
+    }
 }
 static void calGradCnlmL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c40  = aCnlm[(4*4+4)  ], ggc40  = aGradNNGradCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1], ggc41  = aGradNNGradCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], ggc4n1 = aGradNNGradCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2], ggc42  = aGradNNGradCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], ggc4n2 = aGradNNGradCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3], ggc43  = aGradNNGradCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], ggc4n3 = aGradNNGradCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4], ggc44  = aGradNNGradCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], ggc4n4 = aGradNNGradCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc40  += (6.0*WIGNER_444_000) * ggc40*c40;
-    gc41  -= (6.0*WIGNER_444_011) * (ggc40*c41 + ggc41*c40);
-    gc4n1 -= (6.0*WIGNER_444_011) * (ggc40*c4n1 + ggc4n1*c40);
-    gc40  -= (6.0*WIGNER_444_011) * (ggc41*c41 + ggc4n1*c4n1);
-    gc42  += (6.0*WIGNER_444_022) * (ggc40*c42 + ggc42*c40);
-    gc4n2 += (6.0*WIGNER_444_022) * (ggc40*c4n2 + ggc4n2*c40);
-    gc40  += (6.0*WIGNER_444_022) * (ggc42*c42 + ggc4n2*c4n2);
-    gc43  -= (6.0*WIGNER_444_033) * (ggc40*c43 + ggc43*c40);
-    gc4n3 -= (6.0*WIGNER_444_033) * (ggc40*c4n3 + ggc4n3*c40);
-    gc40  -= (6.0*WIGNER_444_033) * (ggc43*c43 + ggc4n3*c4n3);
-    gc44  += (6.0*WIGNER_444_044) * (ggc40*c44 + ggc44*c40);
-    gc4n4 += (6.0*WIGNER_444_044) * (ggc40*c4n4 + ggc4n4*c40);
-    gc40  += (6.0*WIGNER_444_044) * (ggc44*c44 + ggc4n4*c4n4);
-    gc41  += (6.0*SQRT2_INV*WIGNER_444_112) * (ggc42*c41 + ggc4n2*c4n1 + ggc41*c42 + ggc4n1*c4n2);
-    gc4n1 -= (6.0*SQRT2_INV*WIGNER_444_112) * (ggc42*c4n1 - ggc4n2*c41 - ggc41*c4n2 + ggc4n1*c42);
-    gc42  += (6.0*SQRT2_INV*WIGNER_444_112) * (ggc41*c41 - ggc4n1*c4n1);
-    gc4n2 += (6.0*SQRT2_INV*WIGNER_444_112) * (ggc41*c4n1 + ggc4n1*c41);
-    gc42  += (6.0*SQRT2_INV*WIGNER_444_224) * (ggc44*c42 + ggc4n4*c4n2 + ggc42*c44 + ggc4n2*c4n4);
-    gc4n2 -= (3.0*SQRT2_INV*WIGNER_444_224) * (ggc44*c4n2 - ggc4n4*c42 - ggc42*c4n4 + ggc4n2*c44);
-    gc44  += (6.0*SQRT2_INV*WIGNER_444_224) * (ggc42*c42 - ggc4n2*c4n2);
-    gc4n4 += (6.0*SQRT2_INV*WIGNER_444_224) * (ggc42*c4n2 + ggc4n2*c42);
-    gc42  -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc41*c43 + ggc4n1*c4n3 + ggc43*c41 + ggc4n3*c4n1);
-    gc4n2 -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc41*c4n3 - ggc4n1*c43 - ggc43*c4n1 + ggc4n3*c41);
-    gc43  -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc41*c42 - ggc4n1*c4n2 + ggc42*c41 - ggc4n2*c4n1);
-    gc4n3 -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc41*c4n2 + ggc4n1*c42 + ggc4n2*c41 + ggc42*c4n1);
-    gc41  -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc42*c43 + ggc43*c42 + ggc4n2*c4n3 + ggc4n3*c4n2);
-    gc4n1 -= (6.0*SQRT2_INV*WIGNER_444_123) * (ggc42*c4n3 - ggc43*c4n2 - ggc4n2*c43 + ggc4n3*c42);
-    gc43  += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc41*c44 + ggc4n1*c4n4 + ggc44*c41 + ggc4n4*c4n1);
-    gc44  += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc41*c43 - ggc4n1*c4n3 + ggc43*c41 - ggc4n3*c4n1);
-    gc4n3 += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc41*c4n4 - ggc4n1*c44 - ggc44*c4n1 + ggc4n4*c41);
-    gc4n4 += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc41*c4n3 + ggc4n1*c43 + ggc43*c4n1 + ggc4n3*c41);
-    gc41  += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc43*c44 + ggc44*c43 + ggc4n3*c4n4 + ggc4n4*c4n3);
-    gc4n1 += (6.0*SQRT2_INV*WIGNER_444_134) * (ggc43*c4n4 - ggc44*c4n3 - ggc4n3*c44 + ggc4n4*c43);
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_444; ++i) {
+        const jint m1 = L3_INDEX_444[i][0];
+        const jint m2 = L3_INDEX_444[i][1];
+        const jint m3 = L3_INDEX_444[i][2];
+        const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
+        rGradCnlm[s4+m1] += tMul * (aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3] + aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m2] += tMul * (aGradNNGradCnlm[s4+m1]*aCnlm[s4+m3] + aCnlm[s4+m1]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s4+m1]*aCnlm[s4+m2] + aCnlm[s4+m1]*aGradNNGradCnlm[s4+m2]);
+    }
 }
 static void calGradCnlmL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ], ggc40  = aGradNNGradCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1], ggc41  = aGradNNGradCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], ggc4n1 = aGradNNGradCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2], ggc42  = aGradNNGradCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], ggc4n2 = aGradNNGradCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3], ggc43  = aGradNNGradCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], ggc4n3 = aGradNNGradCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4], ggc44  = aGradNNGradCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], ggc4n4 = aGradNNGradCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc20  += (2.0*WIGNER_224_000) * (ggc20*c40 + ggc40*c20);
-    gc40  += (2.0*WIGNER_224_000) * ggc20*c20;
-    gc21  -= (2.0*WIGNER_224_110) * (ggc40*c21 + ggc21*c40);
-    gc2n1 -= (2.0*WIGNER_224_110) * (ggc40*c2n1 + ggc2n1*c40);
-    gc40  -= (2.0*WIGNER_224_110) * (ggc21*c21 + ggc2n1*c2n1);
-    gc22  += (2.0*WIGNER_224_220) * (ggc40*c22 + ggc22*c40);
-    gc2n2 += (2.0*WIGNER_224_220) * (ggc40*c2n2 + ggc2n2*c40);
-    gc40  += (2.0*WIGNER_224_220) * (ggc22*c22 + ggc2n2*c2n2);
-    gc21  -= (2.0*WIGNER_224_011) * (ggc20*c41 + ggc41*c20);
-    gc2n1 -= (2.0*WIGNER_224_011) * (ggc20*c4n1 + ggc4n1*c20);
-    gc41  -= (2.0*WIGNER_224_011) * (ggc20*c21 + ggc21*c20);
-    gc4n1 -= (2.0*WIGNER_224_011) * (ggc20*c2n1 + ggc2n1*c20);
-    gc20  -= (2.0*WIGNER_224_011) * (ggc21*c41 + ggc41*c21 + ggc2n1*c4n1 + ggc4n1*c2n1);
-    gc22  += (2.0*WIGNER_224_022) * (ggc20*c42 + ggc42*c20);
-    gc2n2 += (2.0*WIGNER_224_022) * (ggc20*c4n2 + ggc4n2*c20);
-    gc42  += (2.0*WIGNER_224_022) * (ggc20*c22 + ggc22*c20);
-    gc4n2 += (2.0*WIGNER_224_022) * (ggc20*c2n2 + ggc2n2*c20);
-    gc20  += (2.0*WIGNER_224_022) * (ggc22*c42 + ggc42*c22 + ggc2n2*c4n2 + ggc4n2*c2n2);
-    gc21  += (2.0*SQRT2_INV*WIGNER_224_112) * (ggc42*c21 + ggc4n2*c2n1 + ggc21*c42 + ggc2n1*c4n2);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_224_112) * (ggc42*c2n1 - ggc4n2*c21 - ggc21*c4n2 + ggc2n1*c42);
-    gc42  += (2.0*SQRT2_INV*WIGNER_224_112) * (ggc21*c21 - ggc2n1*c2n1);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_224_112) * (ggc21*c2n1 + ggc2n1*c21);
-    gc22  += (2.0*SQRT2_INV*WIGNER_224_224) * (ggc44*c22 + ggc4n4*c2n2 + ggc22*c44 + ggc2n2*c4n4);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_224_224) * (ggc44*c2n2 - ggc4n4*c22 - ggc22*c4n4 + ggc2n2*c44);
-    gc44  += (2.0*SQRT2_INV*WIGNER_224_224) * (ggc22*c22 - ggc2n2*c2n2);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_224_224) * (ggc22*c2n2 + ggc2n2*c22);
-    gc22  += (2.0*SQRT2_INV*WIGNER_224_121) * (ggc21*c41 - ggc2n1*c4n1 + ggc41*c21 - ggc4n1*c2n1);
-    gc41  += (2.0*SQRT2_INV*WIGNER_224_121) * (ggc21*c22 + ggc2n1*c2n2 + ggc22*c21 + ggc2n2*c2n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_224_121) * (ggc21*c4n1 + ggc2n1*c41 + ggc41*c2n1 + ggc4n1*c21);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_224_121) * (ggc21*c2n2 - ggc2n1*c22 - ggc22*c2n1 + ggc2n2*c21);
-    gc21  += (2.0*SQRT2_INV*WIGNER_224_121) * (ggc22*c41 + ggc41*c22 + ggc2n2*c4n1 + ggc4n1*c2n2);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_224_121) * (ggc22*c4n1 - ggc41*c2n2 - ggc2n2*c41 + ggc4n1*c22);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc21*c43 + ggc2n1*c4n3 + ggc43*c21 + ggc4n3*c2n1);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc21*c4n3 - ggc2n1*c43 - ggc43*c2n1 + ggc4n3*c21);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc21*c22 - ggc2n1*c2n2 + ggc22*c21 - ggc2n2*c2n1);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc21*c2n2 + ggc2n1*c22 + ggc22*c2n1 + ggc2n2*c21);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc22*c43 + ggc43*c22 + ggc2n2*c4n3 + ggc4n3*c2n2);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_224_123) * (ggc22*c4n3 - ggc43*c2n2 - ggc2n2*c43 + ggc4n3*c22);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_224; ++i) {
+        const jint m1 = L3_INDEX_224[i][0];
+        const jint m2 = L3_INDEX_224[i][1];
+        const jint m3 = L3_INDEX_224[i][2];
+        const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s4+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]);
+    }
 }
 static void calGradCnlmL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c30  = aCnlm[(3*3+3)  ], ggc30  = aGradNNGradCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1], ggc31  = aGradNNGradCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], ggc3n1 = aGradNNGradCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2], ggc32  = aGradNNGradCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], ggc3n2 = aGradNNGradCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3], ggc33  = aGradNNGradCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], ggc3n3 = aGradNNGradCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ], ggc40  = aGradNNGradCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1], ggc41  = aGradNNGradCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], ggc4n1 = aGradNNGradCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2], ggc42  = aGradNNGradCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], ggc4n2 = aGradNNGradCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3], ggc43  = aGradNNGradCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], ggc4n3 = aGradNNGradCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4], ggc44  = aGradNNGradCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], ggc4n4 = aGradNNGradCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc30  += (2.0*WIGNER_334_000) * (ggc30*c40 + ggc40*c30);
-    gc40  += (2.0*WIGNER_334_000) * ggc30*c30;
-    gc31  -= (2.0*WIGNER_334_110) * (ggc40*c31 + ggc31*c40);
-    gc3n1 -= (2.0*WIGNER_334_110) * (ggc40*c3n1 + ggc3n1*c40);
-    gc40  -= (2.0*WIGNER_334_110) * (ggc31*c31 + ggc3n1*c3n1);
-    gc32  += (2.0*WIGNER_334_220) * (ggc40*c32 + ggc32*c40);
-    gc3n2 += (2.0*WIGNER_334_220) * (ggc40*c3n2 + ggc3n2*c40);
-    gc40  += (2.0*WIGNER_334_220) * (ggc32*c32 + ggc3n2*c3n2);
-    gc33  -= (2.0*WIGNER_334_330) * (ggc40*c33 + ggc33*c40);
-    gc3n3 -= (2.0*WIGNER_334_330) * (ggc40*c3n3 + ggc3n3*c40);
-    gc40  -= (2.0*WIGNER_334_330) * (ggc33*c33 + ggc3n3*c3n3);
-    gc31  -= (2.0*WIGNER_334_011) * (ggc30*c41 + ggc41*c30);
-    gc3n1 -= (2.0*WIGNER_334_011) * (ggc30*c4n1 + ggc4n1*c30);
-    gc41  -= (2.0*WIGNER_334_011) * (ggc30*c31 + ggc31*c30);
-    gc4n1 -= (2.0*WIGNER_334_011) * (ggc30*c3n1 + ggc3n1*c30);
-    gc30  -= (2.0*WIGNER_334_011) * (ggc31*c41 + ggc41*c31 + ggc3n1*c4n1 + ggc4n1*c3n1);
-    gc32  += (2.0*WIGNER_334_022) * (ggc30*c42 + ggc42*c30);
-    gc3n2 += (2.0*WIGNER_334_022) * (ggc30*c4n2 + ggc4n2*c30);
-    gc42  += (2.0*WIGNER_334_022) * (ggc30*c32 + ggc32*c30);
-    gc4n2 += (2.0*WIGNER_334_022) * (ggc30*c3n2 + ggc3n2*c30);
-    gc30  += (2.0*WIGNER_334_022) * (ggc32*c42 + ggc42*c32 + ggc3n2*c4n2 + ggc4n2*c3n2);
-    gc33  -= (2.0*WIGNER_334_033) * (ggc30*c43 + ggc43*c30);
-    gc3n3 -= (2.0*WIGNER_334_033) * (ggc30*c4n3 + ggc4n3*c30);
-    gc43  -= (2.0*WIGNER_334_033) * (ggc30*c33 + ggc33*c30);
-    gc4n3 -= (2.0*WIGNER_334_033) * (ggc30*c3n3 + ggc3n3*c30);
-    gc30  -= (2.0*WIGNER_334_033) * (ggc33*c43 + ggc43*c33 + ggc3n3*c4n3 + ggc4n3*c3n3);
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_112) * (ggc42*c31 + ggc4n2*c3n1 + ggc31*c42 + ggc3n1*c4n2);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_112) * (ggc42*c3n1 - ggc4n2*c31 - ggc31*c4n2 + ggc3n1*c42);
-    gc42  += (2.0*SQRT2_INV*WIGNER_334_112) * (ggc31*c31 - ggc3n1*c3n1);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_334_112) * (ggc31*c3n1 + ggc3n1*c31);
-    gc32  += (2.0*SQRT2_INV*WIGNER_334_224) * (ggc44*c32 + ggc4n4*c3n2 + ggc32*c44 + ggc3n2*c4n4);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_224) * (ggc44*c3n2 - ggc4n4*c32 - ggc32*c4n4 + ggc3n2*c44);
-    gc44  += (2.0*SQRT2_INV*WIGNER_334_224) * (ggc32*c32 - ggc3n2*c3n2);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_334_224) * (ggc32*c3n2 + ggc3n2*c32);
-    gc32  += (2.0*SQRT2_INV*WIGNER_334_121) * (ggc31*c41 - ggc3n1*c4n1 + ggc41*c31 - ggc4n1*c3n1);
-    gc41  += (2.0*SQRT2_INV*WIGNER_334_121) * (ggc31*c32 + ggc3n1*c3n2 + ggc32*c31 + ggc3n2*c3n1);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_334_121) * (ggc31*c4n1 + ggc3n1*c41 + ggc41*c3n1 + ggc4n1*c31);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_334_121) * (ggc31*c3n2 - ggc3n1*c32 - ggc32*c3n1 + ggc3n2*c31);
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_121) * (ggc32*c41 + ggc41*c32 + ggc3n2*c4n1 + ggc4n1*c3n2);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_121) * (ggc32*c4n1 - ggc41*c3n2 - ggc3n2*c41 + ggc4n1*c32);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc31*c43 + ggc3n1*c4n3 + ggc43*c31 + ggc4n3*c3n1);
-    gc3n2 -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc31*c4n3 - ggc3n1*c43 - ggc43*c3n1 + ggc4n3*c31);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc31*c32 - ggc3n1*c3n2 + ggc32*c31 - ggc3n2*c3n1);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc31*c3n2 + ggc3n1*c32 + ggc32*c3n1 + ggc3n2*c31);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc32*c43 + ggc43*c32 + ggc3n2*c4n3 + ggc4n3*c3n2);
-    gc3n1 -= (2.0*SQRT2_INV*WIGNER_334_123) * (ggc32*c4n3 - ggc43*c3n2 - ggc3n2*c43 + ggc4n3*c32);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_334_132) * (ggc31*c42 - ggc3n1*c4n2 + ggc42*c31 - ggc4n2*c3n1);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_132) * (ggc31*c4n2 + ggc3n1*c42 + ggc42*c3n1 + ggc4n2*c31);
-    gc42  -= (2.0*SQRT2_INV*WIGNER_334_132) * (ggc31*c33 + ggc3n1*c3n3 + ggc33*c31 + ggc3n3*c3n1);
-    gc4n2 -= (2.0*SQRT2_INV*WIGNER_334_132) * (ggc31*c3n3 - ggc3n1*c33 - ggc33*c3n1 + ggc3n3*c31);
-    gc31  -= (2.0*SQRT2_INV*WIGNER_334_132) * (ggc33*c42 + ggc42*c33 + ggc3n3*c4n2 + ggc4n2*c3n3);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_334_132) * (ggc33*c4n2 - ggc42*c3n3 - ggc3n3*c42 + ggc4n2*c33);
-    gc33  -= (2.0*SQRT2_INV*WIGNER_334_231) * (ggc32*c41 - ggc3n2*c4n1 + ggc41*c32 - ggc4n1*c3n2);
-    gc3n3 -= (2.0*SQRT2_INV*WIGNER_334_231) * (ggc32*c4n1 + ggc3n2*c41 + ggc41*c3n2 + ggc4n1*c32);
-    gc41  -= (2.0*SQRT2_INV*WIGNER_334_231) * (ggc32*c33 + ggc3n2*c3n3 + ggc33*c32 + ggc3n3*c3n2);
-    gc4n1 -= (2.0*SQRT2_INV*WIGNER_334_231) * (ggc32*c3n3 - ggc3n2*c33 - ggc33*c3n2 + ggc3n3*c32);
-    gc32  -= (2.0*SQRT2_INV*WIGNER_334_231) * (ggc33*c41 + ggc41*c33 + ggc3n3*c4n1 + ggc4n1*c3n3);
-    gc3n2 += (2.0*SQRT2_INV*WIGNER_334_231) * (ggc33*c4n1 - ggc41*c3n3 - ggc3n3*c41 + ggc4n1*c33);
-    gc33  += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc31*c44 + ggc3n1*c4n4 + ggc44*c31 + ggc4n4*c3n1);
-    gc3n3 += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc31*c4n4 - ggc3n1*c44 - ggc44*c3n1 + ggc4n4*c31);
-    gc44  += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc31*c33 - ggc3n1*c3n3 + ggc33*c31 - ggc3n3*c3n1);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc31*c3n3 + ggc3n1*c33 + ggc33*c3n1 + ggc3n3*c31);
-    gc31  += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc33*c44 + ggc44*c33 + ggc3n3*c4n4 + ggc4n4*c3n3);
-    gc3n1 += (2.0*SQRT2_INV*WIGNER_334_134) * (ggc33*c4n4 - ggc44*c3n3 - ggc3n3*c44 + ggc4n4*c33);
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_334; ++i) {
+        const jint m1 = L3_INDEX_334[i][0];
+        const jint m2 = L3_INDEX_334[i][1];
+        const jint m3 = L3_INDEX_334[i][2];
+        const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
+        rGradCnlm[s3+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s3+m1]*aCnlm[s4+m3] + aCnlm[s3+m1]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s3+m1]*aCnlm[s3+m2] + aCnlm[s3+m1]*aGradNNGradCnlm[s3+m2]);
+    }
 }
 static void calGradCnlmL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c20  = aCnlm[(2*2+2)  ], ggc20  = aGradNNGradCnlm[(2*2+2)  ]; jdouble gc20  = 0.0;
-    const jdouble c21  = aCnlm[(2*2+2)+1], ggc21  = aGradNNGradCnlm[(2*2+2)+1]; jdouble gc21  = 0.0;
-    const jdouble c2n1 = aCnlm[(2*2+2)-1], ggc2n1 = aGradNNGradCnlm[(2*2+2)-1]; jdouble gc2n1 = 0.0;
-    const jdouble c22  = aCnlm[(2*2+2)+2], ggc22  = aGradNNGradCnlm[(2*2+2)+2]; jdouble gc22  = 0.0;
-    const jdouble c2n2 = aCnlm[(2*2+2)-2], ggc2n2 = aGradNNGradCnlm[(2*2+2)-2]; jdouble gc2n2 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ], ggc40  = aGradNNGradCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1], ggc41  = aGradNNGradCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], ggc4n1 = aGradNNGradCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2], ggc42  = aGradNNGradCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], ggc4n2 = aGradNNGradCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3], ggc43  = aGradNNGradCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], ggc4n3 = aGradNNGradCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4], ggc44  = aGradNNGradCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], ggc4n4 = aGradNNGradCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc40  += (2.0*WIGNER_244_000) * (ggc20*c40 + ggc40*c20);
-    gc20  += (2.0*WIGNER_244_000) * ggc40*c40;
-    gc41  -= (2.0*WIGNER_244_011) * (ggc20*c41 + ggc41*c20);
-    gc4n1 -= (2.0*WIGNER_244_011) * (ggc20*c4n1 + ggc4n1*c20);
-    gc20  -= (2.0*WIGNER_244_011) * (ggc41*c41 + ggc4n1*c4n1);
-    gc42  += (2.0*WIGNER_244_022) * (ggc20*c42 + ggc42*c20);
-    gc4n2 += (2.0*WIGNER_244_022) * (ggc20*c4n2 + ggc4n2*c20);
-    gc20  += (2.0*WIGNER_244_022) * (ggc42*c42 + ggc4n2*c4n2);
-    gc43  -= (2.0*WIGNER_244_033) * (ggc20*c43 + ggc43*c20);
-    gc4n3 -= (2.0*WIGNER_244_033) * (ggc20*c4n3 + ggc4n3*c20);
-    gc20  -= (2.0*WIGNER_244_033) * (ggc43*c43 + ggc4n3*c4n3);
-    gc44  += (2.0*WIGNER_244_044) * (ggc20*c44 + ggc44*c20);
-    gc4n4 += (2.0*WIGNER_244_044) * (ggc20*c4n4 + ggc4n4*c20);
-    gc20  += (2.0*WIGNER_244_044) * (ggc44*c44 + ggc4n4*c4n4);
-    gc21  -= (2.0*WIGNER_244_110) * (ggc40*c41 + ggc41*c40);
-    gc2n1 -= (2.0*WIGNER_244_110) * (ggc40*c4n1 + ggc4n1*c40);
-    gc41  -= (2.0*WIGNER_244_110) * (ggc40*c21 + ggc21*c40);
-    gc4n1 -= (2.0*WIGNER_244_110) * (ggc40*c2n1 + ggc2n1*c40);
-    gc40  -= (2.0*WIGNER_244_110) * (ggc21*c41 + ggc41*c21 + ggc2n1*c4n1 + ggc4n1*c2n1);
-    gc22  += (2.0*WIGNER_244_220) * (ggc40*c42 + ggc42*c40);
-    gc2n2 += (2.0*WIGNER_244_220) * (ggc40*c4n2 + ggc4n2*c40);
-    gc42  += (2.0*WIGNER_244_220) * (ggc40*c22 + ggc22*c40);
-    gc4n2 += (2.0*WIGNER_244_220) * (ggc40*c2n2 + ggc2n2*c40);
-    gc40  += (2.0*WIGNER_244_220) * (ggc22*c42 + ggc42*c22 + ggc2n2*c4n2 + ggc4n2*c2n2);
-    gc41  += (2.0*SQRT2_INV*WIGNER_244_211) * (ggc22*c41 + ggc2n2*c4n1 + ggc41*c22 + ggc4n1*c2n2);
-    gc4n1 -= (2.0*SQRT2_INV*WIGNER_244_211) * (ggc22*c4n1 - ggc2n2*c41 - ggc41*c2n2 + ggc4n1*c22);
-    gc22  += (2.0*SQRT2_INV*WIGNER_244_211) * (ggc41*c41 - ggc4n1*c4n1);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_244_211) * (ggc41*c4n1 + ggc4n1*c41);
-    gc41  += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc21*c42 + ggc2n1*c4n2 + ggc42*c21 + ggc4n2*c2n1);
-    gc42  += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc21*c41 - ggc2n1*c4n1 + ggc41*c21 - ggc4n1*c2n1);
-    gc4n1 += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc21*c4n2 - ggc2n1*c42 - ggc42*c2n1 + ggc4n2*c21);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc21*c4n1 + ggc2n1*c41 + ggc41*c2n1 + ggc4n1*c21);
-    gc21  += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc41*c42 + ggc42*c41 + ggc4n1*c4n2 + ggc4n2*c4n1);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_244_112) * (ggc41*c4n2 - ggc42*c4n1 - ggc4n1*c42 + ggc4n2*c41);
-    gc42  += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc22*c44 + ggc2n2*c4n4 + ggc44*c22 + ggc4n4*c2n2);
-    gc44  += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc22*c42 - ggc2n2*c4n2 + ggc42*c22 - ggc4n2*c2n2);
-    gc4n2 += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc22*c4n4 - ggc2n2*c44 - ggc44*c2n2 + ggc4n4*c22);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc22*c4n2 + ggc2n2*c42 + ggc42*c2n2 + ggc4n2*c22);
-    gc22  += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc42*c44 + ggc44*c42 + ggc4n2*c4n4 + ggc4n4*c4n2);
-    gc2n2 += (2.0*SQRT2_INV*WIGNER_244_224) * (ggc42*c4n4 - ggc44*c4n2 - ggc4n2*c44 + ggc4n4*c42);
-    gc42  -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc21*c43 + ggc2n1*c4n3 + ggc43*c21 + ggc4n3*c2n1);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc21*c42 - ggc2n1*c4n2 + ggc42*c21 - ggc4n2*c2n1);
-    gc4n2 -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc21*c4n3 - ggc2n1*c43 - ggc43*c2n1 + ggc4n3*c21);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc21*c4n2 + ggc2n1*c42 + ggc42*c2n1 + ggc4n2*c21);
-    gc21  -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc42*c43 + ggc43*c42 + ggc4n2*c4n3 + ggc4n3*c4n2);
-    gc2n1 -= (2.0*SQRT2_INV*WIGNER_244_123) * (ggc42*c4n3 - ggc43*c4n2 - ggc4n2*c43 + ggc4n3*c42);
-    gc41  -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc22*c43 + ggc2n2*c4n3 + ggc43*c22 + ggc4n3*c2n2);
-    gc43  -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc22*c41 - ggc2n2*c4n1 + ggc41*c22 - ggc4n1*c2n2);
-    gc4n1 -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc22*c4n3 - ggc2n2*c43 - ggc43*c2n2 + ggc4n3*c22);
-    gc4n3 -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc22*c4n1 + ggc2n2*c41 + ggc41*c2n2 + ggc4n1*c22);
-    gc22  -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc41*c43 + ggc43*c41 + ggc4n1*c4n3 + ggc4n3*c4n1);
-    gc2n2 -= (2.0*SQRT2_INV*WIGNER_244_213) * (ggc41*c4n3 - ggc43*c4n1 - ggc4n1*c43 + ggc4n3*c41);
-    gc43  += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc21*c44 + ggc2n1*c4n4 + ggc44*c21 + ggc4n4*c2n1);
-    gc44  += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc21*c43 - ggc2n1*c4n3 + ggc43*c21 - ggc4n3*c2n1);
-    gc4n3 += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc21*c4n4 - ggc2n1*c44 - ggc44*c2n1 + ggc4n4*c21);
-    gc4n4 += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc4n3*c21 + ggc21*c4n3 + ggc2n1*c43 + ggc43*c2n1);
-    gc21  += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc43*c44 + ggc44*c43 + ggc4n3*c4n4 + ggc4n4*c4n3);
-    gc2n1 += (2.0*SQRT2_INV*WIGNER_244_134) * (ggc43*c4n4 - ggc44*c4n3 - ggc4n3*c44 + ggc4n4*c43);
-    rGradCnlm[(2*2+2)  ] += aSubNNGrad * gc20 ;
-    rGradCnlm[(2*2+2)+1] += aSubNNGrad * gc21 ;
-    rGradCnlm[(2*2+2)-1] += aSubNNGrad * gc2n1;
-    rGradCnlm[(2*2+2)+2] += aSubNNGrad * gc22 ;
-    rGradCnlm[(2*2+2)-2] += aSubNNGrad * gc2n2;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s2 = 2*2+2;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_244; ++i) {
+        const jint m1 = L3_INDEX_244[i][0];
+        const jint m2 = L3_INDEX_244[i][1];
+        const jint m3 = L3_INDEX_244[i][2];
+        const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
+        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3] + aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m2]);
+    }
 }
 static void calGradCnlmL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    const jdouble c10  = aCnlm[(1+1)  ], ggc10  = aGradNNGradCnlm[(1+1)  ]; jdouble gc10  = 0.0;
-    const jdouble c11  = aCnlm[(1+1)+1], ggc11  = aGradNNGradCnlm[(1+1)+1]; jdouble gc11  = 0.0;
-    const jdouble c1n1 = aCnlm[(1+1)-1], ggc1n1 = aGradNNGradCnlm[(1+1)-1]; jdouble gc1n1 = 0.0;
-    const jdouble c30  = aCnlm[(3*3+3)  ], ggc30  = aGradNNGradCnlm[(3*3+3)  ]; jdouble gc30  = 0.0;
-    const jdouble c31  = aCnlm[(3*3+3)+1], ggc31  = aGradNNGradCnlm[(3*3+3)+1]; jdouble gc31  = 0.0;
-    const jdouble c3n1 = aCnlm[(3*3+3)-1], ggc3n1 = aGradNNGradCnlm[(3*3+3)-1]; jdouble gc3n1 = 0.0;
-    const jdouble c32  = aCnlm[(3*3+3)+2], ggc32  = aGradNNGradCnlm[(3*3+3)+2]; jdouble gc32  = 0.0;
-    const jdouble c3n2 = aCnlm[(3*3+3)-2], ggc3n2 = aGradNNGradCnlm[(3*3+3)-2]; jdouble gc3n2 = 0.0;
-    const jdouble c33  = aCnlm[(3*3+3)+3], ggc33  = aGradNNGradCnlm[(3*3+3)+3]; jdouble gc33  = 0.0;
-    const jdouble c3n3 = aCnlm[(3*3+3)-3], ggc3n3 = aGradNNGradCnlm[(3*3+3)-3]; jdouble gc3n3 = 0.0;
-    const jdouble c40  = aCnlm[(4*4+4)  ], ggc40  = aGradNNGradCnlm[(4*4+4)  ]; jdouble gc40  = 0.0;
-    const jdouble c41  = aCnlm[(4*4+4)+1], ggc41  = aGradNNGradCnlm[(4*4+4)+1]; jdouble gc41  = 0.0;
-    const jdouble c4n1 = aCnlm[(4*4+4)-1], ggc4n1 = aGradNNGradCnlm[(4*4+4)-1]; jdouble gc4n1 = 0.0;
-    const jdouble c42  = aCnlm[(4*4+4)+2], ggc42  = aGradNNGradCnlm[(4*4+4)+2]; jdouble gc42  = 0.0;
-    const jdouble c4n2 = aCnlm[(4*4+4)-2], ggc4n2 = aGradNNGradCnlm[(4*4+4)-2]; jdouble gc4n2 = 0.0;
-    const jdouble c43  = aCnlm[(4*4+4)+3], ggc43  = aGradNNGradCnlm[(4*4+4)+3]; jdouble gc43  = 0.0;
-    const jdouble c4n3 = aCnlm[(4*4+4)-3], ggc4n3 = aGradNNGradCnlm[(4*4+4)-3]; jdouble gc4n3 = 0.0;
-    const jdouble c44  = aCnlm[(4*4+4)+4], ggc44  = aGradNNGradCnlm[(4*4+4)+4]; jdouble gc44  = 0.0;
-    const jdouble c4n4 = aCnlm[(4*4+4)-4], ggc4n4 = aGradNNGradCnlm[(4*4+4)-4]; jdouble gc4n4 = 0.0;
-    gc30  += WIGNER_134_000 * (ggc10*c40 + ggc40*c10);
-    gc40  += WIGNER_134_000 * (ggc10*c30 + ggc30*c10);
-    gc10  += WIGNER_134_000 * (ggc30*c40 + ggc40*c30);
-    gc31  -= WIGNER_134_011 * (ggc10*c41 + ggc41*c10);
-    gc3n1 -= WIGNER_134_011 * (ggc10*c4n1 + ggc4n1*c10);
-    gc41  -= WIGNER_134_011 * (ggc10*c31 + ggc31*c10);
-    gc4n1 -= WIGNER_134_011 * (ggc10*c3n1 + ggc3n1*c10);
-    gc10  -= WIGNER_134_011 * (ggc31*c41 + ggc41*c31 + ggc3n1*c4n1 + ggc4n1*c3n1);
-    gc32  += WIGNER_134_022 * (ggc10*c42 + ggc42*c10);
-    gc3n2 += WIGNER_134_022 * (ggc10*c4n2 + ggc4n2*c10);
-    gc42  += WIGNER_134_022 * (ggc10*c32 + ggc32*c10);
-    gc4n2 += WIGNER_134_022 * (ggc10*c3n2 + ggc3n2*c10);
-    gc10  += WIGNER_134_022 * (ggc32*c42 + ggc42*c32 + ggc3n2*c4n2 + ggc4n2*c3n2);
-    gc33  -= WIGNER_134_033 * (ggc10*c43 + ggc43*c10);
-    gc3n3 -= WIGNER_134_033 * (ggc10*c4n3 + ggc4n3*c10);
-    gc43  -= WIGNER_134_033 * (ggc10*c33 + ggc33*c10);
-    gc4n3 -= WIGNER_134_033 * (ggc10*c3n3 + ggc3n3*c10);
-    gc10  -= WIGNER_134_033 * (ggc33*c43 + ggc43*c33 + ggc3n3*c4n3 + ggc4n3*c3n3);
-    gc11  -= WIGNER_134_110 * (ggc40*c31 + ggc31*c40);
-    gc1n1 -= WIGNER_134_110 * (ggc40*c3n1 + ggc3n1*c40);
-    gc31  -= WIGNER_134_110 * (ggc40*c11 + ggc11*c40);
-    gc3n1 -= WIGNER_134_110 * (ggc40*c1n1 + ggc1n1*c40);
-    gc40  -= WIGNER_134_110 * (ggc11*c31 + ggc31*c11 + ggc1n1*c3n1 + ggc3n1*c1n1);
-    gc11  -= WIGNER_134_101 * (ggc30*c41 + ggc41*c30);
-    gc1n1 -= WIGNER_134_101 * (ggc30*c4n1 + ggc4n1*c30);
-    gc41  -= WIGNER_134_101 * (ggc30*c11 + ggc11*c30);
-    gc4n1 -= WIGNER_134_101 * (ggc30*c1n1 + ggc1n1*c30);
-    gc30  -= WIGNER_134_101 * (ggc11*c41 + ggc41*c11 + ggc1n1*c4n1 + ggc4n1*c1n1);
-    gc31  += (SQRT2_INV*WIGNER_134_112) * (ggc11*c42 + ggc1n1*c4n2 + ggc42*c11 + ggc4n2*c1n1);
-    gc3n1 += (SQRT2_INV*WIGNER_134_112) * (ggc11*c4n2 - ggc1n1*c42 - ggc42*c1n1 + ggc4n2*c11);
-    gc42  += (SQRT2_INV*WIGNER_134_112) * (ggc11*c31 - ggc1n1*c3n1 + ggc31*c11 - ggc3n1*c1n1);
-    gc4n2 += (SQRT2_INV*WIGNER_134_112) * (ggc11*c3n1 + ggc1n1*c31 + ggc31*c1n1 + ggc3n1*c11);
-    gc11  += (SQRT2_INV*WIGNER_134_112) * (ggc31*c42 + ggc42*c31 + ggc3n1*c4n2 + ggc4n2*c3n1);
-    gc1n1 += (SQRT2_INV*WIGNER_134_112) * (ggc31*c4n2 - ggc42*c3n1 - ggc3n1*c42 + ggc4n2*c31);
-    gc32  += (SQRT2_INV*WIGNER_134_121) * (ggc11*c41 - ggc1n1*c4n1 + ggc41*c11 - ggc4n1*c1n1);
-    gc3n2 += (SQRT2_INV*WIGNER_134_121) * (ggc11*c4n1 + ggc1n1*c41 + ggc41*c1n1 + ggc4n1*c11);
-    gc41  += (SQRT2_INV*WIGNER_134_121) * (ggc11*c32 + ggc1n1*c3n2 + ggc32*c11 + ggc3n2*c1n1);
-    gc4n1 += (SQRT2_INV*WIGNER_134_121) * (ggc11*c3n2 - ggc1n1*c32 - ggc32*c1n1 + ggc3n2*c11);
-    gc11  += (SQRT2_INV*WIGNER_134_121) * (ggc32*c41 + ggc41*c32 + ggc3n2*c4n1 + ggc4n1*c3n2);
-    gc1n1 -= (SQRT2_INV*WIGNER_134_121) * (ggc32*c4n1 - ggc41*c3n2 - ggc3n2*c41 + ggc4n1*c32);
-    gc32  -= (SQRT2_INV*WIGNER_134_123) * (ggc11*c43 + ggc1n1*c4n3 + ggc43*c11 + ggc4n3*c1n1);
-    gc3n2 -= (SQRT2_INV*WIGNER_134_123) * (ggc11*c4n3 - ggc1n1*c43 - ggc43*c1n1 + ggc4n3*c11);
-    gc43  -= (SQRT2_INV*WIGNER_134_123) * (ggc11*c32 - ggc1n1*c3n2 + ggc32*c11 - ggc3n2*c1n1);
-    gc4n3 -= (SQRT2_INV*WIGNER_134_123) * (ggc11*c3n2 + ggc1n1*c32 + ggc32*c1n1 + ggc3n2*c11);
-    gc11  -= (SQRT2_INV*WIGNER_134_123) * (ggc32*c43 + ggc43*c32 + ggc3n2*c4n3 + ggc4n3*c3n2);
-    gc1n1 -= (SQRT2_INV*WIGNER_134_123) * (ggc32*c4n3 - ggc43*c3n2 - ggc3n2*c43 + ggc4n3*c32);
-    gc33  -= (SQRT2_INV*WIGNER_134_132) * (ggc11*c42 - ggc1n1*c4n2 + ggc42*c11 - ggc4n2*c1n1);
-    gc3n3 -= (SQRT2_INV*WIGNER_134_132) * (ggc11*c4n2 + ggc1n1*c42 + ggc42*c1n1 + ggc4n2*c11);
-    gc42  -= (SQRT2_INV*WIGNER_134_132) * (ggc11*c33 + ggc1n1*c3n3 + ggc33*c11 + ggc3n3*c1n1);
-    gc4n2 -= (SQRT2_INV*WIGNER_134_132) * (ggc11*c3n3 - ggc1n1*c33 - ggc33*c1n1 + ggc3n3*c11);
-    gc11  -= (SQRT2_INV*WIGNER_134_132) * (ggc33*c42 + ggc42*c33 + ggc3n3*c4n2 + ggc4n2*c3n3);
-    gc1n1 += (SQRT2_INV*WIGNER_134_132) * (ggc33*c4n2 - ggc42*c3n3 - ggc3n3*c42 + ggc4n2*c33);
-    gc33  += (SQRT2_INV*WIGNER_134_134) * (ggc11*c44 + ggc1n1*c4n4 + ggc44*c11 + ggc4n4*c1n1);
-    gc3n3 += (SQRT2_INV*WIGNER_134_134) * (ggc11*c4n4 - ggc1n1*c44 - ggc44*c1n1 + ggc4n4*c11);
-    gc44  += (SQRT2_INV*WIGNER_134_134) * (ggc11*c33 - ggc1n1*c3n3 + ggc33*c11 - ggc3n3*c1n1);
-    gc4n4 += (SQRT2_INV*WIGNER_134_134) * (ggc11*c3n3 + ggc1n1*c33 + ggc33*c1n1 + ggc3n3*c11);
-    gc11  += (SQRT2_INV*WIGNER_134_134) * (ggc33*c44 + ggc44*c33 + ggc3n3*c4n4 + ggc4n4*c3n3);
-    gc1n1 += (SQRT2_INV*WIGNER_134_134) * (ggc33*c4n4 - ggc44*c3n3 - ggc3n3*c44 + ggc4n4*c33);
-    rGradCnlm[(1+1)  ] += aSubNNGrad * gc10 ;
-    rGradCnlm[(1+1)+1] += aSubNNGrad * gc11 ;
-    rGradCnlm[(1+1)-1] += aSubNNGrad * gc1n1;
-    rGradCnlm[(3*3+3)  ] += aSubNNGrad * gc30 ;
-    rGradCnlm[(3*3+3)+1] += aSubNNGrad * gc31 ;
-    rGradCnlm[(3*3+3)-1] += aSubNNGrad * gc3n1;
-    rGradCnlm[(3*3+3)+2] += aSubNNGrad * gc32 ;
-    rGradCnlm[(3*3+3)-2] += aSubNNGrad * gc3n2;
-    rGradCnlm[(3*3+3)+3] += aSubNNGrad * gc33 ;
-    rGradCnlm[(3*3+3)-3] += aSubNNGrad * gc3n3;
-    rGradCnlm[(4*4+4)  ] += aSubNNGrad * gc40 ;
-    rGradCnlm[(4*4+4)+1] += aSubNNGrad * gc41 ;
-    rGradCnlm[(4*4+4)-1] += aSubNNGrad * gc4n1;
-    rGradCnlm[(4*4+4)+2] += aSubNNGrad * gc42 ;
-    rGradCnlm[(4*4+4)-2] += aSubNNGrad * gc4n2;
-    rGradCnlm[(4*4+4)+3] += aSubNNGrad * gc43 ;
-    rGradCnlm[(4*4+4)-3] += aSubNNGrad * gc4n3;
-    rGradCnlm[(4*4+4)+4] += aSubNNGrad * gc44 ;
-    rGradCnlm[(4*4+4)-4] += aSubNNGrad * gc4n4;
+    const jint s1 = 1+1;
+    const jint s3 = 3*3+3;
+    const jint s4 = 4*4+4;
+    for (jint i = 0; i < L3_SIZE_134; ++i) {
+        const jint m1 = L3_INDEX_134[i][0];
+        const jint m2 = L3_INDEX_134[i][1];
+        const jint m3 = L3_INDEX_134[i][2];
+        const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
+        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s4+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s4+m3]);
+        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s3+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s3+m2]);
+    }
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calGradCnlmL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad) noexcept {

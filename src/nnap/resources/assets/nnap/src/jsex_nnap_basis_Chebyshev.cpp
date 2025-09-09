@@ -9,9 +9,9 @@ static inline void mplusFp(jdouble *rFp, jdouble aFc, jdouble *aRn) noexcept {
 }
 template <jint NMAX>
 static inline void mplusFpWt(jdouble *rFp, jdouble *rFpWt, jdouble aFc, jdouble *aRn, jdouble aWt) noexcept {
-    jdouble tFcWt = aFc*aWt;
+    const jdouble tFcWt = aFc*aWt;
     for (jint n = 0; n <= NMAX; ++n) {
-        jdouble tRnn = aRn[n];
+        const jdouble tRnn = aRn[n];
         rFp[n] += aFc*tRnn;
         rFpWt[n] += tFcWt*tRnn;
     }
@@ -22,7 +22,7 @@ static inline void mplusGradNNGrad_(jdouble *rGradNNGrad, jdouble *rGradNNGradWt
                                     jdouble aFcPx, jdouble aFcPy, jdouble aFcPz, jdouble *aRnPx, jdouble *aRnPy, jdouble *aRnPz,
                                     jdouble aGradFx, jdouble aGradFy, jdouble aGradFz) {
     // cal gradNNgradFc
-    jdouble tGradNNGradFc = aFcPx*aGradFx + aFcPy*aGradFy + aFcPz*aGradFz;
+    const jdouble tGradNNGradFc = aFcPx*aGradFx + aFcPy*aGradFy + aFcPz*aGradFz;
     // cal gradNNgrad
     for (jint n = 0; n <= NMAX; ++n) {
         jdouble tGradNNGradRn = aRnPx[n]*aGradFx + aRnPy[n]*aGradFy + aRnPz[n]*aGradFz;
@@ -50,7 +50,7 @@ static inline void gradRn2Fxyz_(jint j, jdouble *aGradRn, jdouble *aGradRnWt, jd
     for (jint n = 0; n <= NMAX; ++n) {
         jdouble tGradRnn = aGradRn[n];
         if (WT) tGradRnn += aWt*aGradRnWt[n];
-        jdouble tRnn = aRn[n];
+        const jdouble tRnn = aRn[n];
         tGradFc += tRnn * tGradRnn;
         tGradRnn *= aFc;
         rFxj += tGradRnn*aRnPx[n];
