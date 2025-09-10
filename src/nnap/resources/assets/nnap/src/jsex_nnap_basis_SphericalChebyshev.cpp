@@ -7,115 +7,90 @@ static constexpr jint SH_LARGEST_L = 20;
 static constexpr jint L3NCOLS[5] = {0, 0, 2, 4, 9};
 static constexpr jint L3NCOLS_NOCROSS[5] = {0, 0, 1, 1, 2};
 
-static constexpr jint L3_SIZE_222 = 8;
-static constexpr jint L3_INDEX_222[L3_SIZE_222][3] = {
+// l = 2: 222 112
+// l = 3: 233 123
+// l = 4: 444 224 334 244 134
+// l = 5: 255 455 235 145 345
+// l = 6: 666 336 446 556 266 466 246 156 356
+static constexpr jint L3_SIZE[9] = {
+    8, 8, 24, 21, 23, 23, 39, 36, 31
+};
+static constexpr jint L3_INDEX[9][100][3] = {{
     {4, 4, 6}, {4, 5, 7}, {5, 5, 6}, {5, 5, 8}, {6, 6, 6}, {6, 7, 7}, {6, 8, 8}, {7, 7, 8}
-};
-static constexpr jdouble L3_COEFF_222[L3_SIZE_222] = {
-    0.7171371656006361, -1.2421180068162376, -0.35856858280031806, 0.6210590034081187, -0.23904572186687872, -0.35856858280031806, 0.7171371656006361, -0.6210590034081187
-};
-
-static constexpr jint L3_SIZE_112 = 8;
-static constexpr jint L3_INDEX_112[L3_SIZE_112][3] = {
+},{
     {1, 1, 6}, {1, 1, 8}, {1, 2, 5}, {1, 3, 4}, {2, 2, 6}, {2, 3, 7}, {3, 3, 6}, {3, 3, 8}
-};
-static constexpr jdouble L3_COEFF_112[L3_SIZE_112] = {
-    -0.18257418583505533, -0.3162277660168378, 0.6324555320336757, 0.6324555320336755, 0.3651483716701107, 0.6324555320336757, -0.18257418583505533, 0.3162277660168378
-};
-
-static constexpr jint L3_SIZE_233 = 24;
-static constexpr jint L3_INDEX_233[L3_SIZE_233][3] = {
+}, {
     {4, 9, 13}, {4, 10, 12}, {4, 11, 13}, {4, 11, 15}, {5, 9, 14}, {5, 10, 13}, {5, 10, 15}, {5, 11, 12},
     {5, 11, 14}, {6, 9, 9}, {6, 11, 11}, {6, 12, 12}, {6, 13, 13}, {6, 15, 15}, {7, 9, 10}, {7, 10, 11},
     {7, 12, 13}, {7, 13, 14}, {7, 14, 15}, {8, 9, 11}, {8, 11, 11}, {8, 12, 14}, {8, 13, 13}, {8, 13, 15}
-};
-static constexpr jdouble L3_COEFF_233[L3_SIZE_233] = {
-    -0.21821789023599228, -0.4364357804719847, 0.33806170189140655, 0.21821789023599228, 0.345032779671177, 0.2672612419124243, -0.345032779671177, 0.13801311186847082,
-    -0.2672612419124243, -0.24397501823713325, 0.14638501094227993, 0.19518001458970663, 0.14638501094227993, -0.24397501823713325, 0.345032779671177, 0.2672612419124243,
-    0.13801311186847082, 0.2672612419124243, 0.345032779671177, -0.21821789023599228, -0.16903085094570328, -0.4364357804719847, 0.16903085094570328, -0.21821789023599228
-};
-
-static constexpr jint L3_SIZE_123 = 21;
-static constexpr jint L3_INDEX_123[L3_SIZE_123][3] = {
+}, {
     {1, 4, 13}, {1, 4, 15}, {1, 5, 12}, {1, 5, 14}, {1, 6, 11}, {1, 7, 10}, {1, 8, 9}, {1, 8, 11},
     {2, 4, 10}, {2, 5, 11}, {2, 6, 12}, {2, 7, 13}, {2, 8, 14}, {3, 4, 9}, {3, 4, 11}, {3, 5, 10},
     {3, 6, 13}, {3, 7, 12}, {3, 7, 14}, {3, 8, 13}, {3, 8, 15}
-};
-static constexpr jdouble L3_COEFF_123[L3_SIZE_123] = {
-    0.0690065559342354, 0.2672612419124243, 0.16903085094570328, 0.21821789023599233, -0.2390457218668787, -0.21821789023599233, -0.2672612419124243, -0.0690065559342354,
-    -0.21821789023599236, -0.27602622373694163, -0.29277002188455997, -0.27602622373694163, -0.21821789023599236, -0.2672612419124243, 0.0690065559342354, -0.21821789023599233,
-    -0.2390457218668787, 0.16903085094570328, -0.21821789023599233, 0.0690065559342354, -0.2672612419124243
-};
-
-static constexpr jint L3_SIZE_444 = 23;
-static constexpr jint L3_INDEX_444[L3_SIZE_444][3] = {
+}, {
     {16, 16, 20}, {16, 17, 21}, {16, 18, 22}, {16, 19, 23}, {17, 17, 20}, {17, 18, 21}, {17, 19, 22}, {17, 19, 24},
     {18, 18, 20}, {18, 18, 24}, {18, 19, 21}, {18, 19, 23}, {19, 19, 20}, {19, 19, 22}, {20, 20, 20}, {20, 21, 21},
     {20, 22, 22}, {20, 23, 23}, {20, 24, 24}, {21, 21, 22}, {21, 22, 23}, {21, 23, 24}, {22, 22, 24}
-};
-static constexpr jdouble L3_COEFF_444[L3_SIZE_444] = {
-    0.3128931093873718, -0.699650262281441, 0.7933288280219174, -0.699650262281441, -0.4693396640810578, 0.2644429426739724, 0.2644429426739724, 0.699650262281441,
-    -0.24584458594722075, -0.3966644140109587, 0.5997002248126637, -0.2644429426739724, 0.20114557032045333, -0.29985011240633186, 0.13409704688030227, 0.20114557032045333,
-    -0.24584458594722075, -0.4693396640810578, 0.3128931093873718, 0.29985011240633186, 0.2644429426739724, -0.699650262281441, 0.3966644140109587
-};
-
-static constexpr jint L3_SIZE_224 = 23;
-static constexpr jint L3_INDEX_224[L3_SIZE_224][3] = {
+}, {
     {4, 4, 20}, {4, 4, 24}, {4, 5, 21}, {4, 5, 23}, {4, 6, 18}, {4, 7, 17}, {4, 7, 19}, {4, 8, 16},
     {5, 5, 20}, {5, 5, 22}, {5, 6, 19}, {5, 7, 18}, {5, 8, 17}, {5, 8, 19}, {6, 6, 20}, {6, 7, 21},
     {6, 8, 22}, {7, 7, 20}, {7, 7, 22}, {7, 8, 21}, {7, 8, 23}, {8, 8, 20}, {8, 8, 24}
-};
-static constexpr jdouble L3_COEFF_224[L3_SIZE_224] = {
-    0.03984095364447978, -0.23570226039551576, -0.1259881576697424, -0.33333333333333326, 0.3086066999241837, 0.33333333333333326, -0.1259881576697424, 0.4714045207910315,
-    -0.15936381457791912, -0.17817416127494956, 0.43643578047198467, 0.3563483225498991, 0.33333333333333326, 0.1259881576697424, 0.23904572186687872, 0.43643578047198467,
-    0.3086066999241837, -0.15936381457791912, 0.17817416127494956, -0.1259881576697424, 0.33333333333333326, 0.03984095364447978, 0.23570226039551576
-};
-
-static constexpr jint L3_SIZE_334 = 39;
-static constexpr jint L3_INDEX_334[L3_SIZE_334][3] = {
+}, {
     {9, 9, 20}, {9, 10, 21}, {9, 11, 22}, {9, 11, 24}, {9, 12, 17}, {9, 13, 16}, {9, 13, 18}, {9, 14, 19},
     {10, 10, 20}, {10, 10, 24}, {10, 11, 21}, {10, 11, 23}, {10, 12, 18}, {10, 13, 17}, {10, 13, 19}, {10, 14, 16},
     {10, 15, 19}, {11, 11, 20}, {11, 11, 22}, {11, 12, 19}, {11, 13, 18}, {11, 14, 17}, {11, 14, 19}, {11, 15, 16},
     {11, 15, 18}, {12, 12, 20}, {12, 13, 21}, {12, 14, 22}, {12, 15, 23}, {13, 13, 20}, {13, 13, 22}, {13, 14, 21},
     {13, 14, 23}, {13, 15, 22}, {13, 15, 24}, {14, 14, 20}, {14, 14, 24}, {14, 15, 21}, {15, 15, 20},
-};
-static constexpr jdouble L3_COEFF_334[L3_SIZE_334] = {
-    -0.08058229640253801, 0.2080625946441197, -0.2791452631195412, -0.2461829819586654, 0.42640143271122083, 0.2461829819586654, -0.2791452631195412, 0.2080625946441197,
-    0.1880253582725887, 0.15891043154093204, -0.21488612374010135, 0.14213381090374025, 0.09304842103984708, -0.14213381090374025, -0.21488612374010135, -0.3178208630818641,
-    -0.2080625946441197, -0.026860765467512683, 0.1201249950260745, -0.2080625946441197, -0.240249990052149, -0.14213381090374025, 0.21488612374010135, 0.2461829819586654,
-    0.2791452631195412, -0.16116459280507608, -0.2080625946441197, 0.09304842103984708, 0.42640143271122083, -0.026860765467512683, -0.1201249950260745, -0.21488612374010135,
-    -0.14213381090374025, -0.2791452631195412, 0.2461829819586654, 0.1880253582725887, -0.15891043154093204, 0.2080625946441197, -0.08058229640253801,
-};
-
-static constexpr jint L3_SIZE_244 = 36;
-static constexpr jint L3_INDEX_244[L3_SIZE_244][3] = {
+}, {
     {4, 16, 22}, {4, 17, 21}, {4, 18, 20}, {4, 18, 24}, {4, 19, 21}, {4, 19, 23}, {5, 16, 23}, {5, 17, 22},
     {5, 17, 24}, {5, 18, 21}, {5, 18, 23}, {5, 19, 20}, {5, 19, 22}, {6, 16, 16}, {6, 17, 17}, {6, 18, 18},
     {6, 19, 19}, {6, 20, 20}, {6, 21, 21}, {6, 22, 22}, {6, 23, 23}, {6, 24, 24}, {7, 16, 17}, {7, 17, 18},
     {7, 18, 19}, {7, 20, 21}, {7, 21, 22}, {7, 22, 23}, {7, 23, 24}, {8, 16, 18}, {8, 17, 19}, {8, 19, 19},
     {8, 20, 22}, {8, 21, 21}, {8, 21, 23}, {8, 22, 24},
-};
-static constexpr jdouble L3_COEFF_244[L3_SIZE_244] = {
-    0.15569978883230456, 0.23354968324845682, 0.3947710169758613, -0.15569978883230456, -0.29424494316824973, -0.23354968324845682, -0.2912876325017676, -0.2752409412815901,
-    0.2912876325017676, -0.18725633517970772, 0.2752409412815901, -0.09304842103984708, 0.18725633517970772, 0.23783535600422526, 0.0594588390010563, -0.06795295885835007,
-    -0.1444000375739939, -0.1698823971458752, -0.1444000375739939, -0.06795295885835007, 0.0594588390010563, 0.23783535600422526, -0.2912876325017676, -0.2752409412815901,
-    -0.18725633517970772, -0.09304842103984708, -0.18725633517970772, -0.2752409412815901, -0.2912876325017676, 0.15569978883230456, 0.23354968324845682, 0.14712247158412486,
-    0.3947710169758613, -0.14712247158412486, 0.23354968324845682, 0.15569978883230456,
-};
-
-static constexpr jint L3_SIZE_134 = 31;
-static constexpr jint L3_INDEX_134[L3_SIZE_134][3] = {
+}, {
     {1, 9, 22}, {1, 9, 24}, {1, 10, 21}, {1, 10, 23}, {1, 11, 20}, {1, 11, 22}, {1, 12, 19}, {1, 13, 18},
     {1, 14, 17}, {1, 14, 19}, {1, 15, 16}, {1, 15, 18}, {2, 9, 17}, {2, 10, 18}, {2, 11, 19}, {2, 12, 20},
     {2, 13, 21}, {2, 14, 22}, {2, 15, 23}, {3, 9, 16}, {3, 9, 18}, {3, 10, 17}, {3, 10, 19}, {3, 11, 18},
     {3, 12, 21}, {3, 13, 20}, {3, 13, 22}, {3, 14, 21}, {3, 14, 23}, {3, 15, 22}, {3, 15, 24},
-};
-static constexpr jdouble L3_COEFF_134[L3_SIZE_134] = {
+}};
+static constexpr jdouble L3_COEFF[9][100] = {{
+    0.7171371656006361, -1.2421180068162376, -0.35856858280031806, 0.6210590034081187, -0.23904572186687872, -0.35856858280031806, 0.7171371656006361, -0.6210590034081187
+}, {
+    -0.18257418583505533, -0.3162277660168378, 0.6324555320336757, 0.6324555320336755, 0.3651483716701107, 0.6324555320336757, -0.18257418583505533, 0.3162277660168378
+}, {
+    -0.21821789023599228, -0.4364357804719847, 0.33806170189140655, 0.21821789023599228, 0.345032779671177, 0.2672612419124243, -0.345032779671177, 0.13801311186847082,
+    -0.2672612419124243, -0.24397501823713325, 0.14638501094227993, 0.19518001458970663, 0.14638501094227993, -0.24397501823713325, 0.345032779671177, 0.2672612419124243,
+    0.13801311186847082, 0.2672612419124243, 0.345032779671177, -0.21821789023599228, -0.16903085094570328, -0.4364357804719847, 0.16903085094570328, -0.21821789023599228
+}, {
+    0.0690065559342354, 0.2672612419124243, 0.16903085094570328, 0.21821789023599233, -0.2390457218668787, -0.21821789023599233, -0.2672612419124243, -0.0690065559342354,
+    -0.21821789023599236, -0.27602622373694163, -0.29277002188455997, -0.27602622373694163, -0.21821789023599236, -0.2672612419124243, 0.0690065559342354, -0.21821789023599233,
+    -0.2390457218668787, 0.16903085094570328, -0.21821789023599233, 0.0690065559342354, -0.2672612419124243
+}, {
+    0.3128931093873718, -0.699650262281441, 0.7933288280219174, -0.699650262281441, -0.4693396640810578, 0.2644429426739724, 0.2644429426739724, 0.699650262281441,
+    -0.24584458594722075, -0.3966644140109587, 0.5997002248126637, -0.2644429426739724, 0.20114557032045333, -0.29985011240633186, 0.13409704688030227, 0.20114557032045333,
+    -0.24584458594722075, -0.4693396640810578, 0.3128931093873718, 0.29985011240633186, 0.2644429426739724, -0.699650262281441, 0.3966644140109587
+}, {
+    0.03984095364447978, -0.23570226039551576, -0.1259881576697424, -0.33333333333333326, 0.3086066999241837, 0.33333333333333326, -0.1259881576697424, 0.4714045207910315,
+    -0.15936381457791912, -0.17817416127494956, 0.43643578047198467, 0.3563483225498991, 0.33333333333333326, 0.1259881576697424, 0.23904572186687872, 0.43643578047198467,
+    0.3086066999241837, -0.15936381457791912, 0.17817416127494956, -0.1259881576697424, 0.33333333333333326, 0.03984095364447978, 0.23570226039551576
+}, {
+    -0.08058229640253801, 0.2080625946441197, -0.2791452631195412, -0.2461829819586654, 0.42640143271122083, 0.2461829819586654, -0.2791452631195412, 0.2080625946441197,
+    0.1880253582725887, 0.15891043154093204, -0.21488612374010135, 0.14213381090374025, 0.09304842103984708, -0.14213381090374025, -0.21488612374010135, -0.3178208630818641,
+    -0.2080625946441197, -0.026860765467512683, 0.1201249950260745, -0.2080625946441197, -0.240249990052149, -0.14213381090374025, 0.21488612374010135, 0.2461829819586654,
+    0.2791452631195412, -0.16116459280507608, -0.2080625946441197, 0.09304842103984708, 0.42640143271122083, -0.026860765467512683, -0.1201249950260745, -0.21488612374010135,
+    -0.14213381090374025, -0.2791452631195412, 0.2461829819586654, 0.1880253582725887, -0.15891043154093204, 0.2080625946441197, -0.08058229640253801
+}, {
+    0.15569978883230456, 0.23354968324845682, 0.3947710169758613, -0.15569978883230456, -0.29424494316824973, -0.23354968324845682, -0.2912876325017676, -0.2752409412815901,
+    0.2912876325017676, -0.18725633517970772, 0.2752409412815901, -0.09304842103984708, 0.18725633517970772, 0.23783535600422526, 0.0594588390010563, -0.06795295885835007,
+    -0.1444000375739939, -0.1698823971458752, -0.1444000375739939, -0.06795295885835007, 0.0594588390010563, 0.23783535600422526, -0.2912876325017676, -0.2752409412815901,
+    -0.18725633517970772, -0.09304842103984708, -0.18725633517970772, -0.2752409412815901, -0.2912876325017676, 0.15569978883230456, 0.23354968324845682, 0.14712247158412486,
+    0.3947710169758613, -0.14712247158412486, 0.23354968324845682, 0.15569978883230456
+}, {
     -0.04454354031873739, -0.2357022603955158, -0.07715167498104594, -0.20412414523193148, -0.15430334996209188, -0.1725163898355885, 0.19920476822239894, 0.1725163898355885,
     0.20412414523193148, 0.07715167498104594, 0.2357022603955158, 0.04454354031873739, 0.16666666666666666, 0.21821789023599236, 0.24397501823713325, 0.25197631533948484,
     0.24397501823713325, 0.21821789023599236, 0.16666666666666666, 0.2357022603955158, -0.04454354031873739, 0.20412414523193148, -0.07715167498104594, 0.1725163898355885,
-    0.19920476822239894, -0.15430334996209188, 0.1725163898355885, -0.07715167498104594, 0.20412414523193148, -0.04454354031873739, 0.2357022603955158,
-};
+    0.19920476822239894, -0.15430334996209188, 0.1725163898355885, -0.07715167498104594, 0.20412414523193148, -0.04454354031873739, 0.2357022603955158
+}};
 
 static constexpr jdouble SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
     0.0,
@@ -597,115 +572,139 @@ static void calL2_(jdouble *aCnlm, jdouble *rFp) noexcept {
     if (LMAX == 11) return;
     calL2Sub_<12>(aCnlm, tFp);
 }
-static jdouble calL3_222_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint i1 = L3_INDEX_222[i][0];
-        const jint i2 = L3_INDEX_222[i][1];
-        const jint i3 = L3_INDEX_222[i][2];
-        rFp3 += L3_COEFF_222[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
+template <jint L3IDX, jint SUBIDX>
+static inline jdouble calL3SubSub_(jdouble *aCnlm) noexcept {
+    constexpr jint i1 = L3_INDEX[L3IDX][SUBIDX][0];
+    constexpr jint i2 = L3_INDEX[L3IDX][SUBIDX][1];
+    constexpr jint i3 = L3_INDEX[L3IDX][SUBIDX][2];
+    constexpr jdouble coeff = L3_COEFF[L3IDX][SUBIDX];
+    return coeff * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
 }
-static jdouble calL3_112_(jdouble *aCnlm) noexcept {
+template <jint L3IDX>
+static jdouble calL3Sub_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint i1 = L3_INDEX_112[i][0];
-        const jint i2 = L3_INDEX_112[i][1];
-        const jint i3 = L3_INDEX_112[i][2];
-        rFp3 += L3_COEFF_112[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_233_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint i1 = L3_INDEX_233[i][0];
-        const jint i2 = L3_INDEX_233[i][1];
-        const jint i3 = L3_INDEX_233[i][2];
-        rFp3 += L3_COEFF_233[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_123_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint i1 = L3_INDEX_123[i][0];
-        const jint i2 = L3_INDEX_123[i][1];
-        const jint i3 = L3_INDEX_123[i][2];
-        rFp3 += L3_COEFF_123[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_444_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint i1 = L3_INDEX_444[i][0];
-        const jint i2 = L3_INDEX_444[i][1];
-        const jint i3 = L3_INDEX_444[i][2];
-        rFp3 += L3_COEFF_444[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_224_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint i1 = L3_INDEX_224[i][0];
-        const jint i2 = L3_INDEX_224[i][1];
-        const jint i3 = L3_INDEX_224[i][2];
-        rFp3 += L3_COEFF_224[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_334_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint i1 = L3_INDEX_334[i][0];
-        const jint i2 = L3_INDEX_334[i][1];
-        const jint i3 = L3_INDEX_334[i][2];
-        rFp3 += L3_COEFF_334[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_244_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint i1 = L3_INDEX_244[i][0];
-        const jint i2 = L3_INDEX_244[i][1];
-        const jint i3 = L3_INDEX_244[i][2];
-        rFp3 += L3_COEFF_244[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
-    return rFp3;
-}
-static jdouble calL3_134_(jdouble *aCnlm) noexcept {
-    jdouble rFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint i1 = L3_INDEX_134[i][0];
-        const jint i2 = L3_INDEX_134[i][1];
-        const jint i3 = L3_INDEX_134[i][2];
-        rFp3 += L3_COEFF_134[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-    }
+    constexpr jint tSize = L3_SIZE[L3IDX];
+    if (tSize==0) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 0>(aCnlm);
+    if (tSize==1) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 1>(aCnlm);
+    if (tSize==2) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 2>(aCnlm);
+    if (tSize==3) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 3>(aCnlm);
+    if (tSize==4) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 4>(aCnlm);
+    if (tSize==5) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 5>(aCnlm);
+    if (tSize==6) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 6>(aCnlm);
+    if (tSize==7) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 7>(aCnlm);
+    if (tSize==8) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 8>(aCnlm);
+    if (tSize==9) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 9>(aCnlm);
+    if (tSize==10) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 10>(aCnlm);
+    if (tSize==11) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 11>(aCnlm);
+    if (tSize==12) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 12>(aCnlm);
+    if (tSize==13) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 13>(aCnlm);
+    if (tSize==14) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 14>(aCnlm);
+    if (tSize==15) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 15>(aCnlm);
+    if (tSize==16) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 16>(aCnlm);
+    if (tSize==17) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 17>(aCnlm);
+    if (tSize==18) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 18>(aCnlm);
+    if (tSize==19) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 19>(aCnlm);
+    if (tSize==20) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 20>(aCnlm);
+    if (tSize==21) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 21>(aCnlm);
+    if (tSize==22) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 22>(aCnlm);
+    if (tSize==23) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 23>(aCnlm);
+    if (tSize==24) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 24>(aCnlm);
+    if (tSize==25) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 25>(aCnlm);
+    if (tSize==26) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 26>(aCnlm);
+    if (tSize==27) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 27>(aCnlm);
+    if (tSize==28) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 28>(aCnlm);
+    if (tSize==29) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 29>(aCnlm);
+    if (tSize==30) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 30>(aCnlm);
+    if (tSize==31) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 31>(aCnlm);
+    if (tSize==32) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 32>(aCnlm);
+    if (tSize==33) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 33>(aCnlm);
+    if (tSize==34) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 34>(aCnlm);
+    if (tSize==35) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 35>(aCnlm);
+    if (tSize==36) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 36>(aCnlm);
+    if (tSize==37) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 37>(aCnlm);
+    if (tSize==38) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 38>(aCnlm);
+    if (tSize==39) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 39>(aCnlm);
+    if (tSize==40) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 40>(aCnlm);
+    if (tSize==41) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 41>(aCnlm);
+    if (tSize==42) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 42>(aCnlm);
+    if (tSize==43) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 43>(aCnlm);
+    if (tSize==44) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 44>(aCnlm);
+    if (tSize==45) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 45>(aCnlm);
+    if (tSize==46) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 46>(aCnlm);
+    if (tSize==47) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 47>(aCnlm);
+    if (tSize==48) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 48>(aCnlm);
+    if (tSize==49) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 49>(aCnlm);
+    if (tSize==50) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 50>(aCnlm);
+    if (tSize==51) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 51>(aCnlm);
+    if (tSize==52) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 52>(aCnlm);
+    if (tSize==53) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 53>(aCnlm);
+    if (tSize==54) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 54>(aCnlm);
+    if (tSize==55) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 55>(aCnlm);
+    if (tSize==56) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 56>(aCnlm);
+    if (tSize==57) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 57>(aCnlm);
+    if (tSize==58) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 58>(aCnlm);
+    if (tSize==59) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 59>(aCnlm);
+    if (tSize==60) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 60>(aCnlm);
+    if (tSize==61) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 61>(aCnlm);
+    if (tSize==62) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 62>(aCnlm);
+    if (tSize==63) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 63>(aCnlm);
+    if (tSize==64) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 64>(aCnlm);
+    if (tSize==65) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 65>(aCnlm);
+    if (tSize==66) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 66>(aCnlm);
+    if (tSize==67) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 67>(aCnlm);
+    if (tSize==68) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 68>(aCnlm);
+    if (tSize==69) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 69>(aCnlm);
+    if (tSize==70) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 70>(aCnlm);
+    if (tSize==71) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 71>(aCnlm);
+    if (tSize==72) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 72>(aCnlm);
+    if (tSize==73) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 73>(aCnlm);
+    if (tSize==74) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 74>(aCnlm);
+    if (tSize==75) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 75>(aCnlm);
+    if (tSize==76) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 76>(aCnlm);
+    if (tSize==77) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 77>(aCnlm);
+    if (tSize==78) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 78>(aCnlm);
+    if (tSize==79) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 79>(aCnlm);
+    if (tSize==80) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 80>(aCnlm);
+    if (tSize==81) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 81>(aCnlm);
+    if (tSize==82) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 82>(aCnlm);
+    if (tSize==83) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 83>(aCnlm);
+    if (tSize==84) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 84>(aCnlm);
+    if (tSize==85) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 85>(aCnlm);
+    if (tSize==86) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 86>(aCnlm);
+    if (tSize==87) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 87>(aCnlm);
+    if (tSize==88) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 88>(aCnlm);
+    if (tSize==89) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 89>(aCnlm);
+    if (tSize==90) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 90>(aCnlm);
+    if (tSize==91) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 91>(aCnlm);
+    if (tSize==92) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 92>(aCnlm);
+    if (tSize==93) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 93>(aCnlm);
+    if (tSize==94) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 94>(aCnlm);
+    if (tSize==95) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 95>(aCnlm);
+    if (tSize==96) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 96>(aCnlm);
+    if (tSize==97) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 97>(aCnlm);
+    if (tSize==98) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 98>(aCnlm);
+    if (tSize==99) {return rFp3;} rFp3 += calL3SubSub_<L3IDX, 99>(aCnlm);
     return rFp3;
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calL3_(jdouble *aCnlm, jdouble *rFp) noexcept {
     if (L3MAX <= 1) return;
-    *rFp = calL3_222_(aCnlm); ++rFp;
+    *rFp = calL3Sub_<0>(aCnlm); ++rFp;
     if (L3CROSS) {
-        *rFp = calL3_112_(aCnlm); ++rFp;
+        *rFp = calL3Sub_<1>(aCnlm); ++rFp;
     }
     if (L3MAX == 2) return;
     if (L3CROSS) {
-        *rFp = calL3_233_(aCnlm); ++rFp;
-        *rFp = calL3_123_(aCnlm); ++rFp;
+        *rFp = calL3Sub_<2>(aCnlm); ++rFp;
+        *rFp = calL3Sub_<3>(aCnlm); ++rFp;
     }
     if (L3MAX == 3) return;
-    *rFp = calL3_444_(aCnlm); ++rFp;
+    *rFp = calL3Sub_<4>(aCnlm); ++rFp;
     if (L3CROSS) {
-        *rFp = calL3_224_(aCnlm); ++rFp;
-        *rFp = calL3_334_(aCnlm); ++rFp;
-        *rFp = calL3_244_(aCnlm); ++rFp;
-        *rFp = calL3_134_(aCnlm); ++rFp;
+        *rFp = calL3Sub_<5>(aCnlm); ++rFp;
+        *rFp = calL3Sub_<6>(aCnlm); ++rFp;
+        *rFp = calL3Sub_<7>(aCnlm); ++rFp;
+        *rFp = calL3Sub_<8>(aCnlm); ++rFp;
     }
 }
 
@@ -865,124 +864,140 @@ static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noe
     if (LMAX == 11) return;
     calGradL2Sub_<12>(aCnlm, rGradCnlm, tNNGrad);
 }
-static void calGradL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint i1 = L3_INDEX_222[i][0];
-        const jint i2 = L3_INDEX_222[i][1];
-        const jint i3 = L3_INDEX_222[i][2];
-        const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
+template <jint L3IDX, jint SUBIDX>
+static inline void calGradL3SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint i1 = L3_INDEX[L3IDX][SUBIDX][0];
+    constexpr jint i2 = L3_INDEX[L3IDX][SUBIDX][1];
+    constexpr jint i3 = L3_INDEX[L3IDX][SUBIDX][2];
+    constexpr jdouble coeff = L3_COEFF[L3IDX][SUBIDX];
+    const jdouble tMul = coeff * aSubNNGrad;
+    rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+    rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+    rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
 }
-static void calGradL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint i1 = L3_INDEX_112[i][0];
-        const jint i2 = L3_INDEX_112[i][1];
-        const jint i3 = L3_INDEX_112[i][2];
-        const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint i1 = L3_INDEX_233[i][0];
-        const jint i2 = L3_INDEX_233[i][1];
-        const jint i3 = L3_INDEX_233[i][2];
-        const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint i1 = L3_INDEX_123[i][0];
-        const jint i2 = L3_INDEX_123[i][1];
-        const jint i3 = L3_INDEX_123[i][2];
-        const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint i1 = L3_INDEX_444[i][0];
-        const jint i2 = L3_INDEX_444[i][1];
-        const jint i3 = L3_INDEX_444[i][2];
-        const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint i1 = L3_INDEX_224[i][0];
-        const jint i2 = L3_INDEX_224[i][1];
-        const jint i3 = L3_INDEX_224[i][2];
-        const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint i1 = L3_INDEX_334[i][0];
-        const jint i2 = L3_INDEX_334[i][1];
-        const jint i3 = L3_INDEX_334[i][2];
-        const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint i1 = L3_INDEX_244[i][0];
-        const jint i2 = L3_INDEX_244[i][1];
-        const jint i3 = L3_INDEX_244[i][2];
-        const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
-}
-static void calGradL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint i1 = L3_INDEX_134[i][0];
-        const jint i2 = L3_INDEX_134[i][1];
-        const jint i3 = L3_INDEX_134[i][2];
-        const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
-        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
-        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
-    }
+template <jint L3IDX>
+static void calGradL3Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint tSize = L3_SIZE[L3IDX];
+    if (tSize==0) {return;} calGradL3SubSub_<L3IDX, 0>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==1) {return;} calGradL3SubSub_<L3IDX, 1>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==2) {return;} calGradL3SubSub_<L3IDX, 2>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==3) {return;} calGradL3SubSub_<L3IDX, 3>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==4) {return;} calGradL3SubSub_<L3IDX, 4>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==5) {return;} calGradL3SubSub_<L3IDX, 5>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==6) {return;} calGradL3SubSub_<L3IDX, 6>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==7) {return;} calGradL3SubSub_<L3IDX, 7>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==8) {return;} calGradL3SubSub_<L3IDX, 8>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==9) {return;} calGradL3SubSub_<L3IDX, 9>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==10) {return;} calGradL3SubSub_<L3IDX, 10>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==11) {return;} calGradL3SubSub_<L3IDX, 11>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==12) {return;} calGradL3SubSub_<L3IDX, 12>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==13) {return;} calGradL3SubSub_<L3IDX, 13>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==14) {return;} calGradL3SubSub_<L3IDX, 14>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==15) {return;} calGradL3SubSub_<L3IDX, 15>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==16) {return;} calGradL3SubSub_<L3IDX, 16>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==17) {return;} calGradL3SubSub_<L3IDX, 17>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==18) {return;} calGradL3SubSub_<L3IDX, 18>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==19) {return;} calGradL3SubSub_<L3IDX, 19>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==20) {return;} calGradL3SubSub_<L3IDX, 20>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==21) {return;} calGradL3SubSub_<L3IDX, 21>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==22) {return;} calGradL3SubSub_<L3IDX, 22>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==23) {return;} calGradL3SubSub_<L3IDX, 23>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==24) {return;} calGradL3SubSub_<L3IDX, 24>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==25) {return;} calGradL3SubSub_<L3IDX, 25>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==26) {return;} calGradL3SubSub_<L3IDX, 26>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==27) {return;} calGradL3SubSub_<L3IDX, 27>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==28) {return;} calGradL3SubSub_<L3IDX, 28>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==29) {return;} calGradL3SubSub_<L3IDX, 29>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==30) {return;} calGradL3SubSub_<L3IDX, 30>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==31) {return;} calGradL3SubSub_<L3IDX, 31>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==32) {return;} calGradL3SubSub_<L3IDX, 32>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==33) {return;} calGradL3SubSub_<L3IDX, 33>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==34) {return;} calGradL3SubSub_<L3IDX, 34>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==35) {return;} calGradL3SubSub_<L3IDX, 35>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==36) {return;} calGradL3SubSub_<L3IDX, 36>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==37) {return;} calGradL3SubSub_<L3IDX, 37>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==38) {return;} calGradL3SubSub_<L3IDX, 38>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==39) {return;} calGradL3SubSub_<L3IDX, 39>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==40) {return;} calGradL3SubSub_<L3IDX, 40>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==41) {return;} calGradL3SubSub_<L3IDX, 41>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==42) {return;} calGradL3SubSub_<L3IDX, 42>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==43) {return;} calGradL3SubSub_<L3IDX, 43>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==44) {return;} calGradL3SubSub_<L3IDX, 44>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==45) {return;} calGradL3SubSub_<L3IDX, 45>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==46) {return;} calGradL3SubSub_<L3IDX, 46>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==47) {return;} calGradL3SubSub_<L3IDX, 47>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==48) {return;} calGradL3SubSub_<L3IDX, 48>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==49) {return;} calGradL3SubSub_<L3IDX, 49>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==50) {return;} calGradL3SubSub_<L3IDX, 50>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==51) {return;} calGradL3SubSub_<L3IDX, 51>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==52) {return;} calGradL3SubSub_<L3IDX, 52>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==53) {return;} calGradL3SubSub_<L3IDX, 53>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==54) {return;} calGradL3SubSub_<L3IDX, 54>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==55) {return;} calGradL3SubSub_<L3IDX, 55>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==56) {return;} calGradL3SubSub_<L3IDX, 56>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==57) {return;} calGradL3SubSub_<L3IDX, 57>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==58) {return;} calGradL3SubSub_<L3IDX, 58>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==59) {return;} calGradL3SubSub_<L3IDX, 59>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==60) {return;} calGradL3SubSub_<L3IDX, 60>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==61) {return;} calGradL3SubSub_<L3IDX, 61>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==62) {return;} calGradL3SubSub_<L3IDX, 62>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==63) {return;} calGradL3SubSub_<L3IDX, 63>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==64) {return;} calGradL3SubSub_<L3IDX, 64>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==65) {return;} calGradL3SubSub_<L3IDX, 65>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==66) {return;} calGradL3SubSub_<L3IDX, 66>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==67) {return;} calGradL3SubSub_<L3IDX, 67>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==68) {return;} calGradL3SubSub_<L3IDX, 68>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==69) {return;} calGradL3SubSub_<L3IDX, 69>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==70) {return;} calGradL3SubSub_<L3IDX, 70>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==71) {return;} calGradL3SubSub_<L3IDX, 71>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==72) {return;} calGradL3SubSub_<L3IDX, 72>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==73) {return;} calGradL3SubSub_<L3IDX, 73>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==74) {return;} calGradL3SubSub_<L3IDX, 74>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==75) {return;} calGradL3SubSub_<L3IDX, 75>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==76) {return;} calGradL3SubSub_<L3IDX, 76>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==77) {return;} calGradL3SubSub_<L3IDX, 77>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==78) {return;} calGradL3SubSub_<L3IDX, 78>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==79) {return;} calGradL3SubSub_<L3IDX, 79>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==80) {return;} calGradL3SubSub_<L3IDX, 80>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==81) {return;} calGradL3SubSub_<L3IDX, 81>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==82) {return;} calGradL3SubSub_<L3IDX, 82>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==83) {return;} calGradL3SubSub_<L3IDX, 83>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==84) {return;} calGradL3SubSub_<L3IDX, 84>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==85) {return;} calGradL3SubSub_<L3IDX, 85>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==86) {return;} calGradL3SubSub_<L3IDX, 86>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==87) {return;} calGradL3SubSub_<L3IDX, 87>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==88) {return;} calGradL3SubSub_<L3IDX, 88>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==89) {return;} calGradL3SubSub_<L3IDX, 89>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==90) {return;} calGradL3SubSub_<L3IDX, 90>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==91) {return;} calGradL3SubSub_<L3IDX, 91>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==92) {return;} calGradL3SubSub_<L3IDX, 92>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==93) {return;} calGradL3SubSub_<L3IDX, 93>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==94) {return;} calGradL3SubSub_<L3IDX, 94>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==95) {return;} calGradL3SubSub_<L3IDX, 95>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==96) {return;} calGradL3SubSub_<L3IDX, 96>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==97) {return;} calGradL3SubSub_<L3IDX, 97>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==98) {return;} calGradL3SubSub_<L3IDX, 98>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==99) {return;} calGradL3SubSub_<L3IDX, 99>(aCnlm, rGradCnlm, aSubNNGrad);
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     if (L3MAX <= 1) return;
-    calGradL3_222_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<0>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     if (L3CROSS) {
-        calGradL3_112_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<1>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     }
     if (L3MAX == 2) return;
     if (L3CROSS) {
-        calGradL3_233_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradL3_123_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<2>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<3>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     }
     if (L3MAX == 3) return;
-    calGradL3_444_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<4>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     if (L3CROSS) {
-        calGradL3_224_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradL3_334_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradL3_244_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradL3_134_(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<5>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<6>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<7>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL3Sub_<8>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     }
 }
 
@@ -1026,133 +1041,143 @@ static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *
     if (LMAX == 11) return;
     calGradNNGradL2Sub_<12>(aCnlm, aGradNNGradCnlm, tGradNNGrad);
 }
-static jdouble calGradNNGradL3_222_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
+template <jint L3IDX, jint SUBIDX>
+static inline jdouble calGradNNGradL3SubSub_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint i1 = L3_INDEX_222[i][0];
-        const jint i2 = L3_INDEX_222[i][1];
-        const jint i3 = L3_INDEX_222[i][2];
-        rGGFp3 += L3_COEFF_222[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_222[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_222[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
+    constexpr jint i1 = L3_INDEX[L3IDX][SUBIDX][0];
+    constexpr jint i2 = L3_INDEX[L3IDX][SUBIDX][1];
+    constexpr jint i3 = L3_INDEX[L3IDX][SUBIDX][2];
+    constexpr jdouble coeff = L3_COEFF[L3IDX][SUBIDX];
+    rGGFp3 += coeff * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+    rGGFp3 += coeff * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+    rGGFp3 += coeff * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     return rGGFp3;
 }
-static jdouble calGradNNGradL3_112_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
+template <jint L3IDX>
+static jdouble calGradNNGradL3Sub_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint i1 = L3_INDEX_112[i][0];
-        const jint i2 = L3_INDEX_112[i][1];
-        const jint i3 = L3_INDEX_112[i][2];
-        rGGFp3 += L3_COEFF_112[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_112[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_112[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_233_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint i1 = L3_INDEX_233[i][0];
-        const jint i2 = L3_INDEX_233[i][1];
-        const jint i3 = L3_INDEX_233[i][2];
-        rGGFp3 += L3_COEFF_233[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_233[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_233[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_123_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint i1 = L3_INDEX_123[i][0];
-        const jint i2 = L3_INDEX_123[i][1];
-        const jint i3 = L3_INDEX_123[i][2];
-        rGGFp3 += L3_COEFF_123[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_123[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_123[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_444_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint i1 = L3_INDEX_444[i][0];
-        const jint i2 = L3_INDEX_444[i][1];
-        const jint i3 = L3_INDEX_444[i][2];
-        rGGFp3 += L3_COEFF_444[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_444[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_444[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_224_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint i1 = L3_INDEX_224[i][0];
-        const jint i2 = L3_INDEX_224[i][1];
-        const jint i3 = L3_INDEX_224[i][2];
-        rGGFp3 += L3_COEFF_224[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_224[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_224[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_334_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint i1 = L3_INDEX_334[i][0];
-        const jint i2 = L3_INDEX_334[i][1];
-        const jint i3 = L3_INDEX_334[i][2];
-        rGGFp3 += L3_COEFF_334[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_334[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_334[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_244_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint i1 = L3_INDEX_244[i][0];
-        const jint i2 = L3_INDEX_244[i][1];
-        const jint i3 = L3_INDEX_244[i][2];
-        rGGFp3 += L3_COEFF_244[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_244[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_244[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
-    return rGGFp3;
-}
-static jdouble calGradNNGradL3_134_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
-    jdouble rGGFp3 = 0.0;
-    for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint i1 = L3_INDEX_134[i][0];
-        const jint i2 = L3_INDEX_134[i][1];
-        const jint i3 = L3_INDEX_134[i][2];
-        rGGFp3 += L3_COEFF_134[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_134[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
-        rGGFp3 += L3_COEFF_134[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
-    }
+    constexpr jint tSize = L3_SIZE[L3IDX];
+    if (tSize==0) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 0>(aCnlm, aGradNNGradCnlm);
+    if (tSize==1) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 1>(aCnlm, aGradNNGradCnlm);
+    if (tSize==2) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 2>(aCnlm, aGradNNGradCnlm);
+    if (tSize==3) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 3>(aCnlm, aGradNNGradCnlm);
+    if (tSize==4) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 4>(aCnlm, aGradNNGradCnlm);
+    if (tSize==5) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 5>(aCnlm, aGradNNGradCnlm);
+    if (tSize==6) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 6>(aCnlm, aGradNNGradCnlm);
+    if (tSize==7) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 7>(aCnlm, aGradNNGradCnlm);
+    if (tSize==8) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 8>(aCnlm, aGradNNGradCnlm);
+    if (tSize==9) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 9>(aCnlm, aGradNNGradCnlm);
+    if (tSize==10) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 10>(aCnlm, aGradNNGradCnlm);
+    if (tSize==11) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 11>(aCnlm, aGradNNGradCnlm);
+    if (tSize==12) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 12>(aCnlm, aGradNNGradCnlm);
+    if (tSize==13) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 13>(aCnlm, aGradNNGradCnlm);
+    if (tSize==14) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 14>(aCnlm, aGradNNGradCnlm);
+    if (tSize==15) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 15>(aCnlm, aGradNNGradCnlm);
+    if (tSize==16) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 16>(aCnlm, aGradNNGradCnlm);
+    if (tSize==17) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 17>(aCnlm, aGradNNGradCnlm);
+    if (tSize==18) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 18>(aCnlm, aGradNNGradCnlm);
+    if (tSize==19) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 19>(aCnlm, aGradNNGradCnlm);
+    if (tSize==20) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 20>(aCnlm, aGradNNGradCnlm);
+    if (tSize==21) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 21>(aCnlm, aGradNNGradCnlm);
+    if (tSize==22) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 22>(aCnlm, aGradNNGradCnlm);
+    if (tSize==23) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 23>(aCnlm, aGradNNGradCnlm);
+    if (tSize==24) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 24>(aCnlm, aGradNNGradCnlm);
+    if (tSize==25) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 25>(aCnlm, aGradNNGradCnlm);
+    if (tSize==26) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 26>(aCnlm, aGradNNGradCnlm);
+    if (tSize==27) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 27>(aCnlm, aGradNNGradCnlm);
+    if (tSize==28) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 28>(aCnlm, aGradNNGradCnlm);
+    if (tSize==29) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 29>(aCnlm, aGradNNGradCnlm);
+    if (tSize==30) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 30>(aCnlm, aGradNNGradCnlm);
+    if (tSize==31) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 31>(aCnlm, aGradNNGradCnlm);
+    if (tSize==32) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 32>(aCnlm, aGradNNGradCnlm);
+    if (tSize==33) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 33>(aCnlm, aGradNNGradCnlm);
+    if (tSize==34) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 34>(aCnlm, aGradNNGradCnlm);
+    if (tSize==35) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 35>(aCnlm, aGradNNGradCnlm);
+    if (tSize==36) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 36>(aCnlm, aGradNNGradCnlm);
+    if (tSize==37) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 37>(aCnlm, aGradNNGradCnlm);
+    if (tSize==38) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 38>(aCnlm, aGradNNGradCnlm);
+    if (tSize==39) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 39>(aCnlm, aGradNNGradCnlm);
+    if (tSize==40) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 40>(aCnlm, aGradNNGradCnlm);
+    if (tSize==41) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 41>(aCnlm, aGradNNGradCnlm);
+    if (tSize==42) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 42>(aCnlm, aGradNNGradCnlm);
+    if (tSize==43) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 43>(aCnlm, aGradNNGradCnlm);
+    if (tSize==44) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 44>(aCnlm, aGradNNGradCnlm);
+    if (tSize==45) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 45>(aCnlm, aGradNNGradCnlm);
+    if (tSize==46) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 46>(aCnlm, aGradNNGradCnlm);
+    if (tSize==47) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 47>(aCnlm, aGradNNGradCnlm);
+    if (tSize==48) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 48>(aCnlm, aGradNNGradCnlm);
+    if (tSize==49) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 49>(aCnlm, aGradNNGradCnlm);
+    if (tSize==50) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 50>(aCnlm, aGradNNGradCnlm);
+    if (tSize==51) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 51>(aCnlm, aGradNNGradCnlm);
+    if (tSize==52) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 52>(aCnlm, aGradNNGradCnlm);
+    if (tSize==53) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 53>(aCnlm, aGradNNGradCnlm);
+    if (tSize==54) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 54>(aCnlm, aGradNNGradCnlm);
+    if (tSize==55) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 55>(aCnlm, aGradNNGradCnlm);
+    if (tSize==56) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 56>(aCnlm, aGradNNGradCnlm);
+    if (tSize==57) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 57>(aCnlm, aGradNNGradCnlm);
+    if (tSize==58) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 58>(aCnlm, aGradNNGradCnlm);
+    if (tSize==59) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 59>(aCnlm, aGradNNGradCnlm);
+    if (tSize==60) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 60>(aCnlm, aGradNNGradCnlm);
+    if (tSize==61) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 61>(aCnlm, aGradNNGradCnlm);
+    if (tSize==62) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 62>(aCnlm, aGradNNGradCnlm);
+    if (tSize==63) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 63>(aCnlm, aGradNNGradCnlm);
+    if (tSize==64) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 64>(aCnlm, aGradNNGradCnlm);
+    if (tSize==65) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 65>(aCnlm, aGradNNGradCnlm);
+    if (tSize==66) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 66>(aCnlm, aGradNNGradCnlm);
+    if (tSize==67) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 67>(aCnlm, aGradNNGradCnlm);
+    if (tSize==68) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 68>(aCnlm, aGradNNGradCnlm);
+    if (tSize==69) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 69>(aCnlm, aGradNNGradCnlm);
+    if (tSize==70) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 70>(aCnlm, aGradNNGradCnlm);
+    if (tSize==71) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 71>(aCnlm, aGradNNGradCnlm);
+    if (tSize==72) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 72>(aCnlm, aGradNNGradCnlm);
+    if (tSize==73) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 73>(aCnlm, aGradNNGradCnlm);
+    if (tSize==74) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 74>(aCnlm, aGradNNGradCnlm);
+    if (tSize==75) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 75>(aCnlm, aGradNNGradCnlm);
+    if (tSize==76) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 76>(aCnlm, aGradNNGradCnlm);
+    if (tSize==77) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 77>(aCnlm, aGradNNGradCnlm);
+    if (tSize==78) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 78>(aCnlm, aGradNNGradCnlm);
+    if (tSize==79) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 79>(aCnlm, aGradNNGradCnlm);
+    if (tSize==80) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 80>(aCnlm, aGradNNGradCnlm);
+    if (tSize==81) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 81>(aCnlm, aGradNNGradCnlm);
+    if (tSize==82) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 82>(aCnlm, aGradNNGradCnlm);
+    if (tSize==83) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 83>(aCnlm, aGradNNGradCnlm);
+    if (tSize==84) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 84>(aCnlm, aGradNNGradCnlm);
+    if (tSize==85) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 85>(aCnlm, aGradNNGradCnlm);
+    if (tSize==86) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 86>(aCnlm, aGradNNGradCnlm);
+    if (tSize==87) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 87>(aCnlm, aGradNNGradCnlm);
+    if (tSize==88) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 88>(aCnlm, aGradNNGradCnlm);
+    if (tSize==89) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 89>(aCnlm, aGradNNGradCnlm);
+    if (tSize==90) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 90>(aCnlm, aGradNNGradCnlm);
+    if (tSize==91) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 91>(aCnlm, aGradNNGradCnlm);
+    if (tSize==92) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 92>(aCnlm, aGradNNGradCnlm);
+    if (tSize==93) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 93>(aCnlm, aGradNNGradCnlm);
+    if (tSize==94) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 94>(aCnlm, aGradNNGradCnlm);
+    if (tSize==95) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 95>(aCnlm, aGradNNGradCnlm);
+    if (tSize==96) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 96>(aCnlm, aGradNNGradCnlm);
+    if (tSize==97) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 97>(aCnlm, aGradNNGradCnlm);
+    if (tSize==98) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 98>(aCnlm, aGradNNGradCnlm);
+    if (tSize==99) {return rGGFp3;} rGGFp3 += calGradNNGradL3SubSub_<L3IDX, 99>(aCnlm, aGradNNGradCnlm);
     return rGGFp3;
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calGradNNGradL3_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad) noexcept {
     if (L3MAX <= 1) return;
-    *rGradNNGrad += calGradNNGradL3_222_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    *rGradNNGrad += calGradNNGradL3Sub_<0>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     if (L3CROSS) {
-        *rGradNNGrad += calGradNNGradL3_112_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<1>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     }
     if (L3MAX == 2) return;
     if (L3CROSS) {
-        *rGradNNGrad += calGradNNGradL3_233_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
-        *rGradNNGrad += calGradNNGradL3_123_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<2>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<3>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     }
     if (L3MAX == 3) return;
-    *rGradNNGrad += calGradNNGradL3_444_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    *rGradNNGrad += calGradNNGradL3Sub_<4>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     if (L3CROSS) {
-        *rGradNNGrad += calGradNNGradL3_224_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
-        *rGradNNGrad += calGradNNGradL3_334_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
-        *rGradNNGrad += calGradNNGradL3_244_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
-        *rGradNNGrad += calGradNNGradL3_134_(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<5>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<6>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<7>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL3Sub_<8>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     }
 }
 
@@ -1160,124 +1185,140 @@ template <jint LMAX, jboolean NO_RADIAL>
 static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad) noexcept {
     calGradL2_<LMAX, NO_RADIAL>(aGradNNGradCnlm, rGradCnlm, aNNGrad);
 }
-static void calGradCnlmL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint i1 = L3_INDEX_222[i][0];
-        const jint i2 = L3_INDEX_222[i][1];
-        const jint i3 = L3_INDEX_222[i][2];
-        const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
+template <jint L3IDX, jint SUBIDX>
+static inline void calGradCnlmL3SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint i1 = L3_INDEX[L3IDX][SUBIDX][0];
+    constexpr jint i2 = L3_INDEX[L3IDX][SUBIDX][1];
+    constexpr jint i3 = L3_INDEX[L3IDX][SUBIDX][2];
+    constexpr jdouble coeff = L3_COEFF[L3IDX][SUBIDX];
+    const jdouble tMul = coeff * aSubNNGrad;
+    rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+    rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+    rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
 }
-static void calGradCnlmL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint i1 = L3_INDEX_112[i][0];
-        const jint i2 = L3_INDEX_112[i][1];
-        const jint i3 = L3_INDEX_112[i][2];
-        const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint i1 = L3_INDEX_233[i][0];
-        const jint i2 = L3_INDEX_233[i][1];
-        const jint i3 = L3_INDEX_233[i][2];
-        const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint i1 = L3_INDEX_123[i][0];
-        const jint i2 = L3_INDEX_123[i][1];
-        const jint i3 = L3_INDEX_123[i][2];
-        const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint i1 = L3_INDEX_444[i][0];
-        const jint i2 = L3_INDEX_444[i][1];
-        const jint i3 = L3_INDEX_444[i][2];
-        const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint i1 = L3_INDEX_224[i][0];
-        const jint i2 = L3_INDEX_224[i][1];
-        const jint i3 = L3_INDEX_224[i][2];
-        const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint i1 = L3_INDEX_334[i][0];
-        const jint i2 = L3_INDEX_334[i][1];
-        const jint i3 = L3_INDEX_334[i][2];
-        const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint i1 = L3_INDEX_244[i][0];
-        const jint i2 = L3_INDEX_244[i][1];
-        const jint i3 = L3_INDEX_244[i][2];
-        const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
-}
-static void calGradCnlmL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint i1 = L3_INDEX_134[i][0];
-        const jint i2 = L3_INDEX_134[i][1];
-        const jint i3 = L3_INDEX_134[i][2];
-        const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
-        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
-        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
-    }
+template <jint L3IDX>
+static void calGradCnlmL3Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint tSize = L3_SIZE[L3IDX];
+    if (tSize==0) {return;} calGradCnlmL3SubSub_<L3IDX, 0>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==1) {return;} calGradCnlmL3SubSub_<L3IDX, 1>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==2) {return;} calGradCnlmL3SubSub_<L3IDX, 2>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==3) {return;} calGradCnlmL3SubSub_<L3IDX, 3>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==4) {return;} calGradCnlmL3SubSub_<L3IDX, 4>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==5) {return;} calGradCnlmL3SubSub_<L3IDX, 5>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==6) {return;} calGradCnlmL3SubSub_<L3IDX, 6>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==7) {return;} calGradCnlmL3SubSub_<L3IDX, 7>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==8) {return;} calGradCnlmL3SubSub_<L3IDX, 8>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==9) {return;} calGradCnlmL3SubSub_<L3IDX, 9>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==10) {return;} calGradCnlmL3SubSub_<L3IDX, 10>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==11) {return;} calGradCnlmL3SubSub_<L3IDX, 11>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==12) {return;} calGradCnlmL3SubSub_<L3IDX, 12>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==13) {return;} calGradCnlmL3SubSub_<L3IDX, 13>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==14) {return;} calGradCnlmL3SubSub_<L3IDX, 14>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==15) {return;} calGradCnlmL3SubSub_<L3IDX, 15>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==16) {return;} calGradCnlmL3SubSub_<L3IDX, 16>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==17) {return;} calGradCnlmL3SubSub_<L3IDX, 17>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==18) {return;} calGradCnlmL3SubSub_<L3IDX, 18>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==19) {return;} calGradCnlmL3SubSub_<L3IDX, 19>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==20) {return;} calGradCnlmL3SubSub_<L3IDX, 20>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==21) {return;} calGradCnlmL3SubSub_<L3IDX, 21>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==22) {return;} calGradCnlmL3SubSub_<L3IDX, 22>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==23) {return;} calGradCnlmL3SubSub_<L3IDX, 23>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==24) {return;} calGradCnlmL3SubSub_<L3IDX, 24>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==25) {return;} calGradCnlmL3SubSub_<L3IDX, 25>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==26) {return;} calGradCnlmL3SubSub_<L3IDX, 26>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==27) {return;} calGradCnlmL3SubSub_<L3IDX, 27>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==28) {return;} calGradCnlmL3SubSub_<L3IDX, 28>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==29) {return;} calGradCnlmL3SubSub_<L3IDX, 29>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==30) {return;} calGradCnlmL3SubSub_<L3IDX, 30>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==31) {return;} calGradCnlmL3SubSub_<L3IDX, 31>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==32) {return;} calGradCnlmL3SubSub_<L3IDX, 32>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==33) {return;} calGradCnlmL3SubSub_<L3IDX, 33>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==34) {return;} calGradCnlmL3SubSub_<L3IDX, 34>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==35) {return;} calGradCnlmL3SubSub_<L3IDX, 35>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==36) {return;} calGradCnlmL3SubSub_<L3IDX, 36>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==37) {return;} calGradCnlmL3SubSub_<L3IDX, 37>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==38) {return;} calGradCnlmL3SubSub_<L3IDX, 38>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==39) {return;} calGradCnlmL3SubSub_<L3IDX, 39>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==40) {return;} calGradCnlmL3SubSub_<L3IDX, 40>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==41) {return;} calGradCnlmL3SubSub_<L3IDX, 41>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==42) {return;} calGradCnlmL3SubSub_<L3IDX, 42>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==43) {return;} calGradCnlmL3SubSub_<L3IDX, 43>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==44) {return;} calGradCnlmL3SubSub_<L3IDX, 44>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==45) {return;} calGradCnlmL3SubSub_<L3IDX, 45>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==46) {return;} calGradCnlmL3SubSub_<L3IDX, 46>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==47) {return;} calGradCnlmL3SubSub_<L3IDX, 47>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==48) {return;} calGradCnlmL3SubSub_<L3IDX, 48>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==49) {return;} calGradCnlmL3SubSub_<L3IDX, 49>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==50) {return;} calGradCnlmL3SubSub_<L3IDX, 50>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==51) {return;} calGradCnlmL3SubSub_<L3IDX, 51>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==52) {return;} calGradCnlmL3SubSub_<L3IDX, 52>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==53) {return;} calGradCnlmL3SubSub_<L3IDX, 53>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==54) {return;} calGradCnlmL3SubSub_<L3IDX, 54>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==55) {return;} calGradCnlmL3SubSub_<L3IDX, 55>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==56) {return;} calGradCnlmL3SubSub_<L3IDX, 56>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==57) {return;} calGradCnlmL3SubSub_<L3IDX, 57>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==58) {return;} calGradCnlmL3SubSub_<L3IDX, 58>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==59) {return;} calGradCnlmL3SubSub_<L3IDX, 59>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==60) {return;} calGradCnlmL3SubSub_<L3IDX, 60>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==61) {return;} calGradCnlmL3SubSub_<L3IDX, 61>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==62) {return;} calGradCnlmL3SubSub_<L3IDX, 62>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==63) {return;} calGradCnlmL3SubSub_<L3IDX, 63>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==64) {return;} calGradCnlmL3SubSub_<L3IDX, 64>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==65) {return;} calGradCnlmL3SubSub_<L3IDX, 65>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==66) {return;} calGradCnlmL3SubSub_<L3IDX, 66>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==67) {return;} calGradCnlmL3SubSub_<L3IDX, 67>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==68) {return;} calGradCnlmL3SubSub_<L3IDX, 68>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==69) {return;} calGradCnlmL3SubSub_<L3IDX, 69>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==70) {return;} calGradCnlmL3SubSub_<L3IDX, 70>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==71) {return;} calGradCnlmL3SubSub_<L3IDX, 71>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==72) {return;} calGradCnlmL3SubSub_<L3IDX, 72>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==73) {return;} calGradCnlmL3SubSub_<L3IDX, 73>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==74) {return;} calGradCnlmL3SubSub_<L3IDX, 74>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==75) {return;} calGradCnlmL3SubSub_<L3IDX, 75>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==76) {return;} calGradCnlmL3SubSub_<L3IDX, 76>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==77) {return;} calGradCnlmL3SubSub_<L3IDX, 77>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==78) {return;} calGradCnlmL3SubSub_<L3IDX, 78>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==79) {return;} calGradCnlmL3SubSub_<L3IDX, 79>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==80) {return;} calGradCnlmL3SubSub_<L3IDX, 80>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==81) {return;} calGradCnlmL3SubSub_<L3IDX, 81>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==82) {return;} calGradCnlmL3SubSub_<L3IDX, 82>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==83) {return;} calGradCnlmL3SubSub_<L3IDX, 83>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==84) {return;} calGradCnlmL3SubSub_<L3IDX, 84>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==85) {return;} calGradCnlmL3SubSub_<L3IDX, 85>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==86) {return;} calGradCnlmL3SubSub_<L3IDX, 86>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==87) {return;} calGradCnlmL3SubSub_<L3IDX, 87>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==88) {return;} calGradCnlmL3SubSub_<L3IDX, 88>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==89) {return;} calGradCnlmL3SubSub_<L3IDX, 89>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==90) {return;} calGradCnlmL3SubSub_<L3IDX, 90>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==91) {return;} calGradCnlmL3SubSub_<L3IDX, 91>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==92) {return;} calGradCnlmL3SubSub_<L3IDX, 92>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==93) {return;} calGradCnlmL3SubSub_<L3IDX, 93>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==94) {return;} calGradCnlmL3SubSub_<L3IDX, 94>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==95) {return;} calGradCnlmL3SubSub_<L3IDX, 95>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==96) {return;} calGradCnlmL3SubSub_<L3IDX, 96>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==97) {return;} calGradCnlmL3SubSub_<L3IDX, 97>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==98) {return;} calGradCnlmL3SubSub_<L3IDX, 98>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==99) {return;} calGradCnlmL3SubSub_<L3IDX, 99>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
 }
 template <jint L3MAX, jboolean L3CROSS>
 static void calGradCnlmL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad) noexcept {
     if (L3MAX <= 1) return;
-    calGradCnlmL3_222_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradCnlmL3Sub_<0>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     if (L3CROSS) {
-        calGradCnlmL3_112_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<1>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     }
     if (L3MAX == 2) return;
     if (L3CROSS) {
-        calGradCnlmL3_233_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradCnlmL3_123_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<2>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<3>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     }
     if (L3MAX == 3) return;
-    calGradCnlmL3_444_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradCnlmL3Sub_<4>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     if (L3CROSS) {
-        calGradCnlmL3_224_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradCnlmL3_334_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradCnlmL3_244_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
-        calGradCnlmL3_134_(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<5>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<6>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<7>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL3Sub_<8>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     }
 }
 
