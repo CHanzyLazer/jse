@@ -25,7 +25,7 @@ import java.util.Map;
  * @author Su Rui, liqa
  */
 public class SphericalChebyshev extends WTypeBasis {
-    final static int[] L3NCOLS = {0, 0, 2, 4, 9}, L3NCOLS_NOCROSS = {0, 0, 1, 1, 2};
+    final static int[] L3NCOLS = {0, 0, 2, 4, 9, 14, 23}, L3NCOLS_NOCROSS = {0, 0, 1, 1, 2, 2, 3};
     
     public final static int DEFAULT_NMAX = 5;
     public final static int DEFAULT_LMAX = 6;
@@ -45,7 +45,7 @@ public class SphericalChebyshev extends WTypeBasis {
     SphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, boolean aNoRadial, int aL3Max, boolean aL3Cross, double aRCut, int aWType, @Nullable RowMatrix aFuseWeight) {
         super(aTypeNum, aNMax, aWType, aFuseWeight);
         if (aLMax<0 || aLMax>12) throw new IllegalArgumentException("Input lmax MUST be in [0, 12], input: "+aLMax);
-        if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
+        if (aL3Max<0 || aL3Max>6) throw new IllegalArgumentException("Input l3max MUST be in [0, 6], input: "+aL3Max);
         mSymbols = aSymbols;
         mLMax = aLMax;
         mL3Max = aL3Max;
