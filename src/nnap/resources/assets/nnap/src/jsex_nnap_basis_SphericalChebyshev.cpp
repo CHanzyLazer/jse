@@ -9,112 +9,112 @@ static constexpr jint L3NCOLS_NOCROSS[5] = {0, 0, 1, 1, 2};
 
 static constexpr jint L3_SIZE_222 = 8;
 static constexpr jint L3_INDEX_222[L3_SIZE_222][3] = {
-    {0, 2, 2}, {-2, -2, 0}, {1, 1, 2}, {-1, -1, 2}, {-1, -2, 1}, {0, 1, 1}, {-1, -1, 0}, {0, 0, 0}
+    {4, 4, 6}, {4, 5, 7}, {5, 5, 6}, {5, 5, 8}, {6, 6, 6}, {6, 7, 7}, {6, 8, 8}, {7, 7, 8}
 };
 static constexpr jdouble L3_COEFF_222[L3_SIZE_222] = {
-    0.7171371656006361, 0.7171371656006361, -0.6210590034081187, 0.6210590034081187, -1.2421180068162376, -0.35856858280031806, -0.35856858280031806, -0.23904572186687872
+    0.7171371656006361, -1.2421180068162376, -0.35856858280031806, 0.6210590034081187, -0.23904572186687872, -0.35856858280031806, 0.7171371656006361, -0.6210590034081187
 };
 
 static constexpr jint L3_SIZE_112 = 8;
 static constexpr jint L3_INDEX_112[L3_SIZE_112][3] = {
-    {1, 1, 2}, {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+    {1, 1, 6}, {1, 1, 8}, {1, 2, 5}, {1, 3, 4}, {2, 2, 6}, {2, 3, 7}, {3, 3, 6}, {3, 3, 8}
 };
 static constexpr jdouble L3_COEFF_112[L3_SIZE_112] = {
-    0.3162277660168378, 0.6324555320336755, -0.3162277660168378, 0.6324555320336757, 0.6324555320336757, -0.18257418583505533, -0.18257418583505533, 0.3651483716701107
+    -0.18257418583505533, -0.3162277660168378, 0.6324555320336757, 0.6324555320336755, 0.3651483716701107, 0.6324555320336757, -0.18257418583505533, 0.3162277660168378
 };
 
 static constexpr jint L3_SIZE_233 = 24;
 static constexpr jint L3_INDEX_233[L3_SIZE_233][3] = {
-    {2, 1, 3}, {2, -1, -3}, {-2, -3, 1}, {-2, -1, 3}, {2, 0, 2}, {-2, -2, 0}, {2, 1, 1}, {2, -1, -1},
-    {-2, -1, 1}, {1, 2, 3}, {1, -2, -3}, {-1, -3, 2}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, -2, 1},
-    {-1, -1, 2}, {1, 0, 1}, {-1, -1, 0}, {0, 3, 3}, {0, -3, -3}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+    {4, 9, 13}, {4, 10, 12}, {4, 11, 13}, {4, 11, 15}, {5, 9, 14}, {5, 10, 13}, {5, 10, 15}, {5, 11, 12},
+    {5, 11, 14}, {6, 9, 9}, {6, 11, 11}, {6, 12, 12}, {6, 13, 13}, {6, 15, 15}, {7, 9, 10}, {7, 10, 11},
+    {7, 12, 13}, {7, 13, 14}, {7, 14, 15}, {8, 9, 11}, {8, 11, 11}, {8, 12, 14}, {8, 13, 13}, {8, 13, 15}
 };
 static constexpr jdouble L3_COEFF_233[L3_SIZE_233] = {
-    -0.21821789023599228, -0.21821789023599228, -0.21821789023599228, 0.21821789023599228, -0.4364357804719847, -0.4364357804719847, 0.16903085094570328, -0.16903085094570328,
-    0.33806170189140655, 0.345032779671177, 0.345032779671177, 0.345032779671177, -0.345032779671177, 0.2672612419124243, 0.2672612419124243, 0.2672612419124243,
-    -0.2672612419124243, 0.13801311186847082, 0.13801311186847082, -0.24397501823713325, -0.24397501823713325, 0.14638501094227993, 0.14638501094227993, 0.19518001458970663
+    -0.21821789023599228, -0.4364357804719847, 0.33806170189140655, 0.21821789023599228, 0.345032779671177, 0.2672612419124243, -0.345032779671177, 0.13801311186847082,
+    -0.2672612419124243, -0.24397501823713325, 0.14638501094227993, 0.19518001458970663, 0.14638501094227993, -0.24397501823713325, 0.345032779671177, 0.2672612419124243,
+    0.13801311186847082, 0.2672612419124243, 0.345032779671177, -0.21821789023599228, -0.16903085094570328, -0.4364357804719847, 0.16903085094570328, -0.21821789023599228
 };
 
 static constexpr jint L3_SIZE_123 = 21;
 static constexpr jint L3_INDEX_123[L3_SIZE_123][3] = {
-    {1, 2, 3}, {1, -2, -3}, {-1, 2, -3}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, 1, -2}, {-1, -1, 2},
-    {1, 0, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {1, 2, 1}, {1, -2, -1}, {-1, 2, -1}, {-1, -2, 1},
-    {0, 2, 2}, {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+    {1, 4, 13}, {1, 4, 15}, {1, 5, 12}, {1, 5, 14}, {1, 6, 11}, {1, 7, 10}, {1, 8, 9}, {1, 8, 11},
+    {2, 4, 10}, {2, 5, 11}, {2, 6, 12}, {2, 7, 13}, {2, 8, 14}, {3, 4, 9}, {3, 4, 11}, {3, 5, 10},
+    {3, 6, 13}, {3, 7, 12}, {3, 7, 14}, {3, 8, 13}, {3, 8, 15}
 };
 static constexpr jdouble L3_COEFF_123[L3_SIZE_123] = {
-    -0.2672612419124243, -0.2672612419124243, -0.2672612419124243, 0.2672612419124243, -0.21821789023599233, -0.21821789023599233, -0.21821789023599233, 0.21821789023599233,
-    -0.2390457218668787, -0.2390457218668787, 0.16903085094570328, 0.16903085094570328, 0.0690065559342354, 0.0690065559342354, -0.0690065559342354, 0.0690065559342354,
-    -0.21821789023599236, -0.21821789023599236, -0.27602622373694163, -0.27602622373694163, -0.29277002188455997
+    0.0690065559342354, 0.2672612419124243, 0.16903085094570328, 0.21821789023599233, -0.2390457218668787, -0.21821789023599233, -0.2672612419124243, -0.0690065559342354,
+    -0.21821789023599236, -0.27602622373694163, -0.29277002188455997, -0.27602622373694163, -0.21821789023599236, -0.2672612419124243, 0.0690065559342354, -0.21821789023599233,
+    -0.2390457218668787, 0.16903085094570328, -0.21821789023599233, 0.0690065559342354, -0.2672612419124243
 };
 
 static constexpr jint L3_SIZE_444 = 23;
 static constexpr jint L3_INDEX_444[L3_SIZE_444][3] = {
-    {0, 4, 4}, {-4, -4, 0}, {1, 3, 4}, {-1, -3, 4}, {-3, -4, 1}, {-1, -4, 3}, {2, 2, 4}, {-2, -2, 4},
-    {-2, -4, 2}, {0, 3, 3}, {-3, -3, 0}, {1, 2, 3}, {-1, -2, 3}, {-2, -3, 1}, {-1, -3, 2}, {0, 2, 2},
-    {-2, -2, 0}, {1, 1, 2}, {-1, -1, 2}, {-1, -2, 1}, {0, 1, 1}, {-1, -1, 0}, {0, 0, 0}
+    {16, 16, 20}, {16, 17, 21}, {16, 18, 22}, {16, 19, 23}, {17, 17, 20}, {17, 18, 21}, {17, 19, 22}, {17, 19, 24},
+    {18, 18, 20}, {18, 18, 24}, {18, 19, 21}, {18, 19, 23}, {19, 19, 20}, {19, 19, 22}, {20, 20, 20}, {20, 21, 21},
+    {20, 22, 22}, {20, 23, 23}, {20, 24, 24}, {21, 21, 22}, {21, 22, 23}, {21, 23, 24}, {22, 22, 24}
 };
 static constexpr jdouble L3_COEFF_444[L3_SIZE_444] = {
-    0.3128931093873718, 0.3128931093873718, -0.699650262281441, 0.699650262281441, -0.699650262281441, -0.699650262281441, 0.3966644140109587, -0.3966644140109587,
-    0.7933288280219174, -0.4693396640810578, -0.4693396640810578, 0.2644429426739724, -0.2644429426739724, 0.2644429426739724, 0.2644429426739724, -0.24584458594722075,
-    -0.24584458594722075, 0.29985011240633186, -0.29985011240633186, 0.5997002248126637, 0.20114557032045333, 0.20114557032045333, 0.13409704688030227
+    0.3128931093873718, -0.699650262281441, 0.7933288280219174, -0.699650262281441, -0.4693396640810578, 0.2644429426739724, 0.2644429426739724, 0.699650262281441,
+    -0.24584458594722075, -0.3966644140109587, 0.5997002248126637, -0.2644429426739724, 0.20114557032045333, -0.29985011240633186, 0.13409704688030227, 0.20114557032045333,
+    -0.24584458594722075, -0.4693396640810578, 0.3128931093873718, 0.29985011240633186, 0.2644429426739724, -0.699650262281441, 0.3966644140109587
 };
 
 static constexpr jint L3_SIZE_224 = 23;
 static constexpr jint L3_INDEX_224[L3_SIZE_224][3] = {
-    {2, 2, 4}, {-2, 2, -4}, {-2, -2, 4}, {1, 2, 3}, {-1, 2, -3}, {-2, 1, -3}, {-1, -2, 3}, {0, 2, 2},
-    {-2, 0, -2}, {1, 2, 1}, {-1, 2, -1}, {-2, 1, -1}, {-1, -2, 1}, {2, 2, 0}, {-2, -2, 0}, {1, 1, 2},
-    {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+    {4, 4, 20}, {4, 4, 24}, {4, 5, 21}, {4, 5, 23}, {4, 6, 18}, {4, 7, 17}, {4, 7, 19}, {4, 8, 16},
+    {5, 5, 20}, {5, 5, 22}, {5, 6, 19}, {5, 7, 18}, {5, 8, 17}, {5, 8, 19}, {6, 6, 20}, {6, 7, 21},
+    {6, 8, 22}, {7, 7, 20}, {7, 7, 22}, {7, 8, 21}, {7, 8, 23}, {8, 8, 20}, {8, 8, 24}
 };
 static constexpr jdouble L3_COEFF_224[L3_SIZE_224] = {
-    0.23570226039551576, 0.4714045207910315, -0.23570226039551576, 0.33333333333333326, 0.33333333333333326, 0.33333333333333326, -0.33333333333333326, 0.3086066999241837,
-    0.3086066999241837, -0.1259881576697424, 0.1259881576697424, -0.1259881576697424, -0.1259881576697424, 0.03984095364447978, 0.03984095364447978, 0.17817416127494956,
-    0.3563483225498991, -0.17817416127494956, 0.43643578047198467, 0.43643578047198467, -0.15936381457791912, -0.15936381457791912, 0.23904572186687872
+    0.03984095364447978, -0.23570226039551576, -0.1259881576697424, -0.33333333333333326, 0.3086066999241837, 0.33333333333333326, -0.1259881576697424, 0.4714045207910315,
+    -0.15936381457791912, -0.17817416127494956, 0.43643578047198467, 0.3563483225498991, 0.33333333333333326, 0.1259881576697424, 0.23904572186687872, 0.43643578047198467,
+    0.3086066999241837, -0.15936381457791912, 0.17817416127494956, -0.1259881576697424, 0.33333333333333326, 0.03984095364447978, 0.23570226039551576
 };
 
 static constexpr jint L3_SIZE_334 = 39;
 static constexpr jint L3_INDEX_334[L3_SIZE_334][3] = {
-    {1, 3, 4}, {-1, 3, -4}, {-3, 1, -4}, {-1, -3, 4}, {0, 3, 3}, {-3, 0, -3}, {1, 3, 2}, {-1, 3, -2},
-    {-3, 1, -2}, {-1, -3, 2}, {2, 3, 1}, {-2, 3, -1}, {-3, 2, -1}, {-2, -3, 1}, {3, 3, 0}, {-3, -3, 0},
-    {2, 2, 4}, {-2, 2, -4}, {-2, -2, 4}, {1, 2, 3}, {-1, 2, -3}, {-2, 1, -3}, {-1, -2, 3}, {0, 2, 2},
-    {-2, 0, -2}, {1, 2, 1}, {-1, 2, -1}, {-2, 1, -1}, {-1, -2, 1}, {2, 2, 0}, {-2, -2, 0}, {1, 1, 2},
-    {-1, 1, -2}, {-1, -1, 2}, {0, 1, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0}, {0, 0, 0}
+    {9, 9, 20}, {9, 10, 21}, {9, 11, 22}, {9, 11, 24}, {9, 12, 17}, {9, 13, 16}, {9, 13, 18}, {9, 14, 19},
+    {10, 10, 20}, {10, 10, 24}, {10, 11, 21}, {10, 11, 23}, {10, 12, 18}, {10, 13, 17}, {10, 13, 19}, {10, 14, 16},
+    {10, 15, 19}, {11, 11, 20}, {11, 11, 22}, {11, 12, 19}, {11, 13, 18}, {11, 14, 17}, {11, 14, 19}, {11, 15, 16},
+    {11, 15, 18}, {12, 12, 20}, {12, 13, 21}, {12, 14, 22}, {12, 15, 23}, {13, 13, 20}, {13, 13, 22}, {13, 14, 21},
+    {13, 14, 23}, {13, 15, 22}, {13, 15, 24}, {14, 14, 20}, {14, 14, 24}, {14, 15, 21}, {15, 15, 20},
 };
 static constexpr jdouble L3_COEFF_334[L3_SIZE_334] = {
-    0.2461829819586654, 0.2461829819586654, 0.2461829819586654, -0.2461829819586654, 0.42640143271122083, 0.42640143271122083, -0.2791452631195412, 0.2791452631195412,
-    -0.2791452631195412, -0.2791452631195412, 0.2080625946441197, -0.2080625946441197, 0.2080625946441197, 0.2080625946441197, -0.08058229640253801, -0.08058229640253801,
-    -0.15891043154093204, -0.3178208630818641, 0.15891043154093204, -0.14213381090374025, -0.14213381090374025, -0.14213381090374025, 0.14213381090374025, 0.09304842103984708,
-    0.09304842103984708, -0.21488612374010135, 0.21488612374010135, -0.21488612374010135, -0.21488612374010135, 0.1880253582725887, 0.1880253582725887, -0.1201249950260745,
-    -0.240249990052149, 0.1201249950260745, -0.2080625946441197, -0.2080625946441197, -0.026860765467512683, -0.026860765467512683, -0.16116459280507608
+    -0.08058229640253801, 0.2080625946441197, -0.2791452631195412, -0.2461829819586654, 0.42640143271122083, 0.2461829819586654, -0.2791452631195412, 0.2080625946441197,
+    0.1880253582725887, 0.15891043154093204, -0.21488612374010135, 0.14213381090374025, 0.09304842103984708, -0.14213381090374025, -0.21488612374010135, -0.3178208630818641,
+    -0.2080625946441197, -0.026860765467512683, 0.1201249950260745, -0.2080625946441197, -0.240249990052149, -0.14213381090374025, 0.21488612374010135, 0.2461829819586654,
+    0.2791452631195412, -0.16116459280507608, -0.2080625946441197, 0.09304842103984708, 0.42640143271122083, -0.026860765467512683, -0.1201249950260745, -0.21488612374010135,
+    -0.14213381090374025, -0.2791452631195412, 0.2461829819586654, 0.1880253582725887, -0.15891043154093204, 0.2080625946441197, -0.08058229640253801,
 };
 
 static constexpr jint L3_SIZE_244 = 36;
 static constexpr jint L3_INDEX_244[L3_SIZE_244][3] = {
-    {2, 2, 4}, {2, -2, -4}, {-2, -4, 2}, {-2, -2, 4}, {2, 1, 3}, {2, -1, -3}, {-2, -3, 1}, {-2, -1, 3},
-    {2, 0, 2}, {-2, -2, 0}, {2, 1, 1}, {2, -1, -1}, {-2, -1, 1}, {1, 3, 4}, {1, -3, -4}, {-1, -4, 3},
-    {-1, -3, 4}, {1, 2, 3}, {1, -2, -3}, {-1, -3, 2}, {-1, -2, 3}, {1, 1, 2}, {1, -1, -2}, {-1, -2, 1},
-    {-1, -1, 2}, {1, 0, 1}, {-1, -1, 0}, {0, 4, 4}, {0, -4, -4}, {0, 3, 3}, {0, -3, -3}, {0, 2, 2},
-    {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+    {4, 16, 22}, {4, 17, 21}, {4, 18, 20}, {4, 18, 24}, {4, 19, 21}, {4, 19, 23}, {5, 16, 23}, {5, 17, 22},
+    {5, 17, 24}, {5, 18, 21}, {5, 18, 23}, {5, 19, 20}, {5, 19, 22}, {6, 16, 16}, {6, 17, 17}, {6, 18, 18},
+    {6, 19, 19}, {6, 20, 20}, {6, 21, 21}, {6, 22, 22}, {6, 23, 23}, {6, 24, 24}, {7, 16, 17}, {7, 17, 18},
+    {7, 18, 19}, {7, 20, 21}, {7, 21, 22}, {7, 22, 23}, {7, 23, 24}, {8, 16, 18}, {8, 17, 19}, {8, 19, 19},
+    {8, 20, 22}, {8, 21, 21}, {8, 21, 23}, {8, 22, 24},
 };
 static constexpr jdouble L3_COEFF_244[L3_SIZE_244] = {
-    0.15569978883230456, 0.15569978883230456, 0.15569978883230456, -0.15569978883230456, 0.23354968324845682, 0.23354968324845682, 0.23354968324845682, -0.23354968324845682,
-    0.3947710169758613, 0.3947710169758613, -0.14712247158412486, 0.14712247158412486, -0.29424494316824973, -0.2912876325017676, -0.2912876325017676, -0.2912876325017676,
-    0.2912876325017676, -0.2752409412815901, -0.2752409412815901, -0.2752409412815901, 0.2752409412815901, -0.18725633517970772, -0.18725633517970772, -0.18725633517970772,
-    0.18725633517970772, -0.09304842103984708, -0.09304842103984708, 0.23783535600422526, 0.23783535600422526, 0.0594588390010563, 0.0594588390010563, -0.06795295885835007,
-    -0.06795295885835007, -0.1444000375739939, -0.1444000375739939, -0.1698823971458752
+    0.15569978883230456, 0.23354968324845682, 0.3947710169758613, -0.15569978883230456, -0.29424494316824973, -0.23354968324845682, -0.2912876325017676, -0.2752409412815901,
+    0.2912876325017676, -0.18725633517970772, 0.2752409412815901, -0.09304842103984708, 0.18725633517970772, 0.23783535600422526, 0.0594588390010563, -0.06795295885835007,
+    -0.1444000375739939, -0.1698823971458752, -0.1444000375739939, -0.06795295885835007, 0.0594588390010563, 0.23783535600422526, -0.2912876325017676, -0.2752409412815901,
+    -0.18725633517970772, -0.09304842103984708, -0.18725633517970772, -0.2752409412815901, -0.2912876325017676, 0.15569978883230456, 0.23354968324845682, 0.14712247158412486,
+    0.3947710169758613, -0.14712247158412486, 0.23354968324845682, 0.15569978883230456,
 };
 
 static constexpr jint L3_SIZE_134 = 31;
 static constexpr jint L3_INDEX_134[L3_SIZE_134][3] = {
-    {1, 3, 4}, {1, -3, -4}, {-1, 3, -4}, {-1, -3, 4}, {1, 2, 3}, {1, -2, -3}, {-1, 2, -3}, {-1, -2, 3},
-    {1, 1, 2}, {1, -1, -2}, {-1, 1, -2}, {-1, -1, 2}, {1, 0, 1}, {-1, 0, -1}, {1, 1, 0}, {-1, -1, 0},
-    {1, 2, 1}, {1, -2, -1}, {-1, 2, -1}, {-1, -2, 1}, {1, 3, 2}, {1, -3, -2}, {-1, 3, -2}, {-1, -3, 2},
-    {0, 3, 3}, {0, -3, -3}, {0, 2, 2}, {0, -2, -2}, {0, 1, 1}, {0, -1, -1}, {0, 0, 0}
+    {1, 9, 22}, {1, 9, 24}, {1, 10, 21}, {1, 10, 23}, {1, 11, 20}, {1, 11, 22}, {1, 12, 19}, {1, 13, 18},
+    {1, 14, 17}, {1, 14, 19}, {1, 15, 16}, {1, 15, 18}, {2, 9, 17}, {2, 10, 18}, {2, 11, 19}, {2, 12, 20},
+    {2, 13, 21}, {2, 14, 22}, {2, 15, 23}, {3, 9, 16}, {3, 9, 18}, {3, 10, 17}, {3, 10, 19}, {3, 11, 18},
+    {3, 12, 21}, {3, 13, 20}, {3, 13, 22}, {3, 14, 21}, {3, 14, 23}, {3, 15, 22}, {3, 15, 24},
 };
 static constexpr jdouble L3_COEFF_134[L3_SIZE_134] = {
-    0.2357022603955158, 0.2357022603955158, 0.2357022603955158, -0.2357022603955158, 0.20412414523193148, 0.20412414523193148, 0.20412414523193148, -0.20412414523193148,
-    0.1725163898355885, 0.1725163898355885, 0.1725163898355885, -0.1725163898355885, 0.19920476822239894, 0.19920476822239894, -0.15430334996209188, -0.15430334996209188,
-    -0.07715167498104594, -0.07715167498104594, 0.07715167498104594, -0.07715167498104594, -0.04454354031873739, -0.04454354031873739, 0.04454354031873739, -0.04454354031873739,
-    0.16666666666666666, 0.16666666666666666, 0.21821789023599236, 0.21821789023599236, 0.24397501823713325, 0.24397501823713325, 0.25197631533948484
+    -0.04454354031873739, -0.2357022603955158, -0.07715167498104594, -0.20412414523193148, -0.15430334996209188, -0.1725163898355885, 0.19920476822239894, 0.1725163898355885,
+    0.20412414523193148, 0.07715167498104594, 0.2357022603955158, 0.04454354031873739, 0.16666666666666666, 0.21821789023599236, 0.24397501823713325, 0.25197631533948484,
+    0.24397501823713325, 0.21821789023599236, 0.16666666666666666, 0.2357022603955158, -0.04454354031873739, 0.20412414523193148, -0.07715167498104594, 0.1725163898355885,
+    0.19920476822239894, -0.15430334996209188, 0.1725163898355885, -0.07715167498104594, 0.20412414523193148, -0.04454354031873739, 0.2357022603955158,
 };
 
 static constexpr jdouble SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
@@ -599,109 +599,91 @@ static void calL2_(jdouble *aCnlm, jdouble *rFp) noexcept {
 }
 static jdouble calL3_222_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint m1 = L3_INDEX_222[i][0];
-        const jint m2 = L3_INDEX_222[i][1];
-        const jint m3 = L3_INDEX_222[i][2];
-        rFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s2+m3];
+        const jint i1 = L3_INDEX_222[i][0];
+        const jint i2 = L3_INDEX_222[i][1];
+        const jint i3 = L3_INDEX_222[i][2];
+        rFp3 += L3_COEFF_222[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_112_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint m1 = L3_INDEX_112[i][0];
-        const jint m2 = L3_INDEX_112[i][1];
-        const jint m3 = L3_INDEX_112[i][2];
-        rFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aCnlm[s1+m2]*aCnlm[s2+m3];
+        const jint i1 = L3_INDEX_112[i][0];
+        const jint i2 = L3_INDEX_112[i][1];
+        const jint i3 = L3_INDEX_112[i][2];
+        rFp3 += L3_COEFF_112[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_233_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint m1 = L3_INDEX_233[i][0];
-        const jint m2 = L3_INDEX_233[i][1];
-        const jint m3 = L3_INDEX_233[i][2];
-        rFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aCnlm[s3+m2]*aCnlm[s3+m3];
+        const jint i1 = L3_INDEX_233[i][0];
+        const jint i2 = L3_INDEX_233[i][1];
+        const jint i3 = L3_INDEX_233[i][2];
+        rFp3 += L3_COEFF_233[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_123_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint m1 = L3_INDEX_123[i][0];
-        const jint m2 = L3_INDEX_123[i][1];
-        const jint m3 = L3_INDEX_123[i][2];
-        rFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aCnlm[s2+m2]*aCnlm[s3+m3];
+        const jint i1 = L3_INDEX_123[i][0];
+        const jint i2 = L3_INDEX_123[i][1];
+        const jint i3 = L3_INDEX_123[i][2];
+        rFp3 += L3_COEFF_123[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_444_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint m1 = L3_INDEX_444[i][0];
-        const jint m2 = L3_INDEX_444[i][1];
-        const jint m3 = L3_INDEX_444[i][2];
-        rFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+        const jint i1 = L3_INDEX_444[i][0];
+        const jint i2 = L3_INDEX_444[i][1];
+        const jint i3 = L3_INDEX_444[i][2];
+        rFp3 += L3_COEFF_444[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_224_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint m1 = L3_INDEX_224[i][0];
-        const jint m2 = L3_INDEX_224[i][1];
-        const jint m3 = L3_INDEX_224[i][2];
-        rFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s4+m3];
+        const jint i1 = L3_INDEX_224[i][0];
+        const jint i2 = L3_INDEX_224[i][1];
+        const jint i3 = L3_INDEX_224[i][2];
+        rFp3 += L3_COEFF_224[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_334_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint m1 = L3_INDEX_334[i][0];
-        const jint m2 = L3_INDEX_334[i][1];
-        const jint m3 = L3_INDEX_334[i][2];
-        rFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+        const jint i1 = L3_INDEX_334[i][0];
+        const jint i2 = L3_INDEX_334[i][1];
+        const jint i3 = L3_INDEX_334[i][2];
+        rFp3 += L3_COEFF_334[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_244_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint m1 = L3_INDEX_244[i][0];
-        const jint m2 = L3_INDEX_244[i][1];
-        const jint m3 = L3_INDEX_244[i][2];
-        rFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
+        const jint i1 = L3_INDEX_244[i][0];
+        const jint i2 = L3_INDEX_244[i][1];
+        const jint i3 = L3_INDEX_244[i][2];
+        rFp3 += L3_COEFF_244[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
 static jdouble calL3_134_(jdouble *aCnlm) noexcept {
     jdouble rFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint m1 = L3_INDEX_134[i][0];
-        const jint m2 = L3_INDEX_134[i][1];
-        const jint m3 = L3_INDEX_134[i][2];
-        rFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
+        const jint i1 = L3_INDEX_134[i][0];
+        const jint i2 = L3_INDEX_134[i][1];
+        const jint i3 = L3_INDEX_134[i][2];
+        rFp3 += L3_COEFF_134[i] * aCnlm[i1]*aCnlm[i2]*aCnlm[i3];
     }
     return rFp3;
 }
@@ -884,120 +866,102 @@ static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noe
     calGradL2Sub_<12>(aCnlm, rGradCnlm, tNNGrad);
 }
 static void calGradL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint m1 = L3_INDEX_222[i][0];
-        const jint m2 = L3_INDEX_222[i][1];
-        const jint m3 = L3_INDEX_222[i][2];
+        const jint i1 = L3_INDEX_222[i][0];
+        const jint i2 = L3_INDEX_222[i][1];
+        const jint i3 = L3_INDEX_222[i][2];
         const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * aCnlm[s2+m2]*aCnlm[s2+m3];
-        rGradCnlm[s2+m2] += tMul * aCnlm[s2+m1]*aCnlm[s2+m3];
-        rGradCnlm[s2+m3] += tMul * aCnlm[s2+m1]*aCnlm[s2+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint m1 = L3_INDEX_112[i][0];
-        const jint m2 = L3_INDEX_112[i][1];
-        const jint m3 = L3_INDEX_112[i][2];
+        const jint i1 = L3_INDEX_112[i][0];
+        const jint i2 = L3_INDEX_112[i][1];
+        const jint i3 = L3_INDEX_112[i][2];
         const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * aCnlm[s1+m2]*aCnlm[s2+m3];
-        rGradCnlm[s1+m2] += tMul * aCnlm[s1+m1]*aCnlm[s2+m3];
-        rGradCnlm[s2+m3] += tMul * aCnlm[s1+m1]*aCnlm[s1+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint m1 = L3_INDEX_233[i][0];
-        const jint m2 = L3_INDEX_233[i][1];
-        const jint m3 = L3_INDEX_233[i][2];
+        const jint i1 = L3_INDEX_233[i][0];
+        const jint i2 = L3_INDEX_233[i][1];
+        const jint i3 = L3_INDEX_233[i][2];
         const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * aCnlm[s3+m2]*aCnlm[s3+m3];
-        rGradCnlm[s3+m2] += tMul * aCnlm[s2+m1]*aCnlm[s3+m3];
-        rGradCnlm[s3+m3] += tMul * aCnlm[s2+m1]*aCnlm[s3+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint m1 = L3_INDEX_123[i][0];
-        const jint m2 = L3_INDEX_123[i][1];
-        const jint m3 = L3_INDEX_123[i][2];
+        const jint i1 = L3_INDEX_123[i][0];
+        const jint i2 = L3_INDEX_123[i][1];
+        const jint i3 = L3_INDEX_123[i][2];
         const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * aCnlm[s2+m2]*aCnlm[s3+m3];
-        rGradCnlm[s2+m2] += tMul * aCnlm[s1+m1]*aCnlm[s3+m3];
-        rGradCnlm[s3+m3] += tMul * aCnlm[s1+m1]*aCnlm[s2+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint m1 = L3_INDEX_444[i][0];
-        const jint m2 = L3_INDEX_444[i][1];
-        const jint m3 = L3_INDEX_444[i][2];
+        const jint i1 = L3_INDEX_444[i][0];
+        const jint i2 = L3_INDEX_444[i][1];
+        const jint i3 = L3_INDEX_444[i][2];
         const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
-        rGradCnlm[s4+m1] += tMul * aCnlm[s4+m2]*aCnlm[s4+m3];
-        rGradCnlm[s4+m2] += tMul * aCnlm[s4+m1]*aCnlm[s4+m3];
-        rGradCnlm[s4+m3] += tMul * aCnlm[s4+m1]*aCnlm[s4+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint m1 = L3_INDEX_224[i][0];
-        const jint m2 = L3_INDEX_224[i][1];
-        const jint m3 = L3_INDEX_224[i][2];
+        const jint i1 = L3_INDEX_224[i][0];
+        const jint i2 = L3_INDEX_224[i][1];
+        const jint i3 = L3_INDEX_224[i][2];
         const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * aCnlm[s2+m2]*aCnlm[s4+m3];
-        rGradCnlm[s2+m2] += tMul * aCnlm[s2+m1]*aCnlm[s4+m3];
-        rGradCnlm[s4+m3] += tMul * aCnlm[s2+m1]*aCnlm[s2+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint m1 = L3_INDEX_334[i][0];
-        const jint m2 = L3_INDEX_334[i][1];
-        const jint m3 = L3_INDEX_334[i][2];
+        const jint i1 = L3_INDEX_334[i][0];
+        const jint i2 = L3_INDEX_334[i][1];
+        const jint i3 = L3_INDEX_334[i][2];
         const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
-        rGradCnlm[s3+m1] += tMul * aCnlm[s3+m2]*aCnlm[s4+m3];
-        rGradCnlm[s3+m2] += tMul * aCnlm[s3+m1]*aCnlm[s4+m3];
-        rGradCnlm[s4+m3] += tMul * aCnlm[s3+m1]*aCnlm[s3+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint m1 = L3_INDEX_244[i][0];
-        const jint m2 = L3_INDEX_244[i][1];
-        const jint m3 = L3_INDEX_244[i][2];
+        const jint i1 = L3_INDEX_244[i][0];
+        const jint i2 = L3_INDEX_244[i][1];
+        const jint i3 = L3_INDEX_244[i][2];
         const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * aCnlm[s4+m2]*aCnlm[s4+m3];
-        rGradCnlm[s4+m2] += tMul * aCnlm[s2+m1]*aCnlm[s4+m3];
-        rGradCnlm[s4+m3] += tMul * aCnlm[s2+m1]*aCnlm[s4+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 static void calGradL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint m1 = L3_INDEX_134[i][0];
-        const jint m2 = L3_INDEX_134[i][1];
-        const jint m3 = L3_INDEX_134[i][2];
+        const jint i1 = L3_INDEX_134[i][0];
+        const jint i2 = L3_INDEX_134[i][1];
+        const jint i3 = L3_INDEX_134[i][2];
         const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * aCnlm[s3+m2]*aCnlm[s4+m3];
-        rGradCnlm[s3+m2] += tMul * aCnlm[s1+m1]*aCnlm[s4+m3];
-        rGradCnlm[s4+m3] += tMul * aCnlm[s1+m1]*aCnlm[s3+m2];
+        rGradCnlm[i1] += tMul * aCnlm[i2]*aCnlm[i3];
+        rGradCnlm[i2] += tMul * aCnlm[i1]*aCnlm[i3];
+        rGradCnlm[i3] += tMul * aCnlm[i1]*aCnlm[i2];
     }
 }
 template <jint L3MAX, jboolean L3CROSS>
@@ -1064,127 +1028,109 @@ static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *
 }
 static jdouble calGradNNGradL3_222_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint m1 = L3_INDEX_222[i][0];
-        const jint m2 = L3_INDEX_222[i][1];
-        const jint m3 = L3_INDEX_222[i][2];
-        rGGFp3 += L3_COEFF_222[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s2+m3];
-        rGGFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s2+m3];
-        rGGFp3 += L3_COEFF_222[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s2+m3];
+        const jint i1 = L3_INDEX_222[i][0];
+        const jint i2 = L3_INDEX_222[i][1];
+        const jint i3 = L3_INDEX_222[i][2];
+        rGGFp3 += L3_COEFF_222[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_222[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_222[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_112_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint m1 = L3_INDEX_112[i][0];
-        const jint m2 = L3_INDEX_112[i][1];
-        const jint m3 = L3_INDEX_112[i][2];
-        rGGFp3 += L3_COEFF_112[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s1+m2]*aCnlm[s2+m3];
-        rGGFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s1+m2]*aCnlm[s2+m3];
-        rGGFp3 += L3_COEFF_112[i] * aCnlm[s1+m1]*aCnlm[s1+m2]*aGradNNGradCnlm[s2+m3];
+        const jint i1 = L3_INDEX_112[i][0];
+        const jint i2 = L3_INDEX_112[i][1];
+        const jint i3 = L3_INDEX_112[i][2];
+        rGGFp3 += L3_COEFF_112[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_112[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_112[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_233_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint m1 = L3_INDEX_233[i][0];
-        const jint m2 = L3_INDEX_233[i][1];
-        const jint m3 = L3_INDEX_233[i][2];
-        rGGFp3 += L3_COEFF_233[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s3+m2]*aCnlm[s3+m3];
-        rGGFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s3+m3];
-        rGGFp3 += L3_COEFF_233[i] * aCnlm[s2+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s3+m3];
+        const jint i1 = L3_INDEX_233[i][0];
+        const jint i2 = L3_INDEX_233[i][1];
+        const jint i3 = L3_INDEX_233[i][2];
+        rGGFp3 += L3_COEFF_233[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_233[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_233[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_123_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint m1 = L3_INDEX_123[i][0];
-        const jint m2 = L3_INDEX_123[i][1];
-        const jint m3 = L3_INDEX_123[i][2];
-        rGGFp3 += L3_COEFF_123[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s2+m2]*aCnlm[s3+m3];
-        rGGFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s3+m3];
-        rGGFp3 += L3_COEFF_123[i] * aCnlm[s1+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s3+m3];
+        const jint i1 = L3_INDEX_123[i][0];
+        const jint i2 = L3_INDEX_123[i][1];
+        const jint i3 = L3_INDEX_123[i][2];
+        rGGFp3 += L3_COEFF_123[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_123[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_123[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_444_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint m1 = L3_INDEX_444[i][0];
-        const jint m2 = L3_INDEX_444[i][1];
-        const jint m3 = L3_INDEX_444[i][2];
-        rGGFp3 += L3_COEFF_444[i] * aGradNNGradCnlm[s4+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_444[i] * aCnlm[s4+m1]*aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3];
+        const jint i1 = L3_INDEX_444[i][0];
+        const jint i2 = L3_INDEX_444[i][1];
+        const jint i3 = L3_INDEX_444[i][2];
+        rGGFp3 += L3_COEFF_444[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_444[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_444[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_224_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint m1 = L3_INDEX_224[i][0];
-        const jint m2 = L3_INDEX_224[i][1];
-        const jint m3 = L3_INDEX_224[i][2];
-        rGGFp3 += L3_COEFF_224[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_224[i] * aCnlm[s2+m1]*aCnlm[s2+m2]*aGradNNGradCnlm[s4+m3];
+        const jint i1 = L3_INDEX_224[i][0];
+        const jint i2 = L3_INDEX_224[i][1];
+        const jint i3 = L3_INDEX_224[i][2];
+        rGGFp3 += L3_COEFF_224[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_224[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_224[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_334_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint m1 = L3_INDEX_334[i][0];
-        const jint m2 = L3_INDEX_334[i][1];
-        const jint m3 = L3_INDEX_334[i][2];
-        rGGFp3 += L3_COEFF_334[i] * aGradNNGradCnlm[s3+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_334[i] * aCnlm[s3+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3];
+        const jint i1 = L3_INDEX_334[i][0];
+        const jint i2 = L3_INDEX_334[i][1];
+        const jint i3 = L3_INDEX_334[i][2];
+        rGGFp3 += L3_COEFF_334[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_334[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_334[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_244_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint m1 = L3_INDEX_244[i][0];
-        const jint m2 = L3_INDEX_244[i][1];
-        const jint m3 = L3_INDEX_244[i][2];
-        rGGFp3 += L3_COEFF_244[i] * aGradNNGradCnlm[s2+m1]*aCnlm[s4+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_244[i] * aCnlm[s2+m1]*aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3];
+        const jint i1 = L3_INDEX_244[i][0];
+        const jint i2 = L3_INDEX_244[i][1];
+        const jint i3 = L3_INDEX_244[i][2];
+        rGGFp3 += L3_COEFF_244[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_244[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_244[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
 static jdouble calGradNNGradL3_134_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
     jdouble rGGFp3 = 0.0;
-    constexpr jint s1 = 1+1;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint m1 = L3_INDEX_134[i][0];
-        const jint m2 = L3_INDEX_134[i][1];
-        const jint m3 = L3_INDEX_134[i][2];
-        rGGFp3 += L3_COEFF_134[i] * aGradNNGradCnlm[s1+m1]*aCnlm[s3+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3];
-        rGGFp3 += L3_COEFF_134[i] * aCnlm[s1+m1]*aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3];
+        const jint i1 = L3_INDEX_134[i][0];
+        const jint i2 = L3_INDEX_134[i][1];
+        const jint i3 = L3_INDEX_134[i][2];
+        rGGFp3 += L3_COEFF_134[i] * aGradNNGradCnlm[i1]*aCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_134[i] * aCnlm[i1]*aGradNNGradCnlm[i2]*aCnlm[i3];
+        rGGFp3 += L3_COEFF_134[i] * aCnlm[i1]*aCnlm[i2]*aGradNNGradCnlm[i3];
     }
     return rGGFp3;
 }
@@ -1215,120 +1161,102 @@ static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble
     calGradL2_<LMAX, NO_RADIAL>(aGradNNGradCnlm, rGradCnlm, aNNGrad);
 }
 static void calGradCnlmL3_222_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_222; ++i) {
-        const jint m1 = L3_INDEX_222[i][0];
-        const jint m2 = L3_INDEX_222[i][1];
-        const jint m3 = L3_INDEX_222[i][2];
+        const jint i1 = L3_INDEX_222[i][0];
+        const jint i2 = L3_INDEX_222[i][1];
+        const jint i3 = L3_INDEX_222[i][2];
         const jdouble tMul = L3_COEFF_222[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s2+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s2+m3]);
-        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m3]);
-        rGradCnlm[s2+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_112_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
     for (jint i = 0; i < L3_SIZE_112; ++i) {
-        const jint m1 = L3_INDEX_112[i][0];
-        const jint m2 = L3_INDEX_112[i][1];
-        const jint m3 = L3_INDEX_112[i][2];
+        const jint i1 = L3_INDEX_112[i][0];
+        const jint i2 = L3_INDEX_112[i][1];
+        const jint i3 = L3_INDEX_112[i][2];
         const jdouble tMul = L3_COEFF_112[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s1+m2]*aCnlm[s2+m3] + aCnlm[s1+m2]*aGradNNGradCnlm[s2+m3]);
-        rGradCnlm[s1+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s2+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s2+m3]);
-        rGradCnlm[s2+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s1+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s1+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_233_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_233; ++i) {
-        const jint m1 = L3_INDEX_233[i][0];
-        const jint m2 = L3_INDEX_233[i][1];
-        const jint m3 = L3_INDEX_233[i][2];
+        const jint i1 = L3_INDEX_233[i][0];
+        const jint i2 = L3_INDEX_233[i][1];
+        const jint i3 = L3_INDEX_233[i][2];
         const jdouble tMul = L3_COEFF_233[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s3+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s3+m3]);
-        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s3+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s3+m3]);
-        rGradCnlm[s3+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s3+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s3+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_123_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s3 = 3*3+3;
     for (jint i = 0; i < L3_SIZE_123; ++i) {
-        const jint m1 = L3_INDEX_123[i][0];
-        const jint m2 = L3_INDEX_123[i][1];
-        const jint m3 = L3_INDEX_123[i][2];
+        const jint i1 = L3_INDEX_123[i][0];
+        const jint i2 = L3_INDEX_123[i][1];
+        const jint i3 = L3_INDEX_123[i][2];
         const jdouble tMul = L3_COEFF_123[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s3+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s3+m3]);
-        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s3+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s3+m3]);
-        rGradCnlm[s3+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s2+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s2+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_444_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_444; ++i) {
-        const jint m1 = L3_INDEX_444[i][0];
-        const jint m2 = L3_INDEX_444[i][1];
-        const jint m3 = L3_INDEX_444[i][2];
+        const jint i1 = L3_INDEX_444[i][0];
+        const jint i2 = L3_INDEX_444[i][1];
+        const jint i3 = L3_INDEX_444[i][2];
         const jdouble tMul = L3_COEFF_444[i] * aSubNNGrad;
-        rGradCnlm[s4+m1] += tMul * (aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3] + aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m2] += tMul * (aGradNNGradCnlm[s4+m1]*aCnlm[s4+m3] + aCnlm[s4+m1]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s4+m1]*aCnlm[s4+m2] + aCnlm[s4+m1]*aGradNNGradCnlm[s4+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_224_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_224; ++i) {
-        const jint m1 = L3_INDEX_224[i][0];
-        const jint m2 = L3_INDEX_224[i][1];
-        const jint m3 = L3_INDEX_224[i][2];
+        const jint i1 = L3_INDEX_224[i][0];
+        const jint i2 = L3_INDEX_224[i][1];
+        const jint i3 = L3_INDEX_224[i][2];
         const jdouble tMul = L3_COEFF_224[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s2+m2]*aCnlm[s4+m3] + aCnlm[s2+m2]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s2+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s2+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s2+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_334_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_334; ++i) {
-        const jint m1 = L3_INDEX_334[i][0];
-        const jint m2 = L3_INDEX_334[i][1];
-        const jint m3 = L3_INDEX_334[i][2];
+        const jint i1 = L3_INDEX_334[i][0];
+        const jint i2 = L3_INDEX_334[i][1];
+        const jint i3 = L3_INDEX_334[i][2];
         const jdouble tMul = L3_COEFF_334[i] * aSubNNGrad;
-        rGradCnlm[s3+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s3+m1]*aCnlm[s4+m3] + aCnlm[s3+m1]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s3+m1]*aCnlm[s3+m2] + aCnlm[s3+m1]*aGradNNGradCnlm[s3+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_244_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s2 = 2*2+2;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_244; ++i) {
-        const jint m1 = L3_INDEX_244[i][0];
-        const jint m2 = L3_INDEX_244[i][1];
-        const jint m3 = L3_INDEX_244[i][2];
+        const jint i1 = L3_INDEX_244[i][0];
+        const jint i2 = L3_INDEX_244[i][1];
+        const jint i3 = L3_INDEX_244[i][2];
         const jdouble tMul = L3_COEFF_244[i] * aSubNNGrad;
-        rGradCnlm[s2+m1] += tMul * (aGradNNGradCnlm[s4+m2]*aCnlm[s4+m3] + aCnlm[s4+m2]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m2] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m3] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s2+m1]*aCnlm[s4+m2] + aCnlm[s2+m1]*aGradNNGradCnlm[s4+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 static void calGradCnlmL3_134_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
-    constexpr jint s1 = 1+1;
-    constexpr jint s3 = 3*3+3;
-    constexpr jint s4 = 4*4+4;
     for (jint i = 0; i < L3_SIZE_134; ++i) {
-        const jint m1 = L3_INDEX_134[i][0];
-        const jint m2 = L3_INDEX_134[i][1];
-        const jint m3 = L3_INDEX_134[i][2];
+        const jint i1 = L3_INDEX_134[i][0];
+        const jint i2 = L3_INDEX_134[i][1];
+        const jint i3 = L3_INDEX_134[i][2];
         const jdouble tMul = L3_COEFF_134[i] * aSubNNGrad;
-        rGradCnlm[s1+m1] += tMul * (aGradNNGradCnlm[s3+m2]*aCnlm[s4+m3] + aCnlm[s3+m2]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s3+m2] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s4+m3] + aCnlm[s1+m1]*aGradNNGradCnlm[s4+m3]);
-        rGradCnlm[s4+m3] += tMul * (aGradNNGradCnlm[s1+m1]*aCnlm[s3+m2] + aCnlm[s1+m1]*aGradNNGradCnlm[s3+m2]);
+        rGradCnlm[i1] += tMul * (aGradNNGradCnlm[i2]*aCnlm[i3] + aCnlm[i2]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i2] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i3] + aCnlm[i1]*aGradNNGradCnlm[i3]);
+        rGradCnlm[i3] += tMul * (aGradNNGradCnlm[i1]*aCnlm[i2] + aCnlm[i1]*aGradNNGradCnlm[i2]);
     }
 }
 template <jint L3MAX, jboolean L3CROSS>
