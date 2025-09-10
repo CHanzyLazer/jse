@@ -193,25 +193,58 @@ static constexpr jdouble SQRT_1P1D2L[SH_LARGEST_L+1] = {
     1.02247471629109, 1.0206207261596576, 1.0190493307301363, 1.0177004891982149, 1.0165300454651272, 1.015504800579495, 1.0145993123917847, 1.0137937550497031, 1.0130724502589556, 1.0124228365658292
 };
 
+template <jint M, jint L>
+static inline void realNormalizedLegendreInterLoopSubSub_(jdouble aX, jdouble *rDest) noexcept {
+    constexpr jdouble tSHAlm = SH_Alm[L*(L+1)/2 + M];
+    constexpr jdouble tSHBlm = SH_Blm[L*(L+1)/2 + M];
+    const jdouble tPlm = tSHAlm * (aX*rDest[(L-1)*(L-1)+(L-1) + M] + tSHBlm*rDest[(L-2)*(L-2)+(L-2) + M]);
+    if (M == 0) {
+        rDest[L*L+L] = tPlm;
+    } else {
+        rDest[L*L+L + M] = tPlm;
+        rDest[L*L+L - M] = tPlm;
+    }
+}
+template <jint L>
+static inline void realNormalizedLegendreInterLoopSub_(jdouble aX, jdouble *rDest) noexcept {
+    if (L-1==0) return;
+    realNormalizedLegendreInterLoopSubSub_<0, L>(aX, rDest);
+    if (L-1==1) return;
+    realNormalizedLegendreInterLoopSubSub_<1, L>(aX, rDest);
+    if (L-1==2) return;
+    realNormalizedLegendreInterLoopSubSub_<2, L>(aX, rDest);
+    if (L-1==3) return;
+    realNormalizedLegendreInterLoopSubSub_<3, L>(aX, rDest);
+    if (L-1==4) return;
+    realNormalizedLegendreInterLoopSubSub_<4, L>(aX, rDest);
+    if (L-1==5) return;
+    realNormalizedLegendreInterLoopSubSub_<5, L>(aX, rDest);
+    if (L-1==6) return;
+    realNormalizedLegendreInterLoopSubSub_<6, L>(aX, rDest);
+    if (L-1==7) return;
+    realNormalizedLegendreInterLoopSubSub_<7, L>(aX, rDest);
+    if (L-1==8) return;
+    realNormalizedLegendreInterLoopSubSub_<8, L>(aX, rDest);
+    if (L-1==9) return;
+    realNormalizedLegendreInterLoopSubSub_<9, L>(aX, rDest);
+    if (L-1==10) return;
+    realNormalizedLegendreInterLoopSubSub_<10, L>(aX, rDest);
+    if (L-1==11) return;
+    realNormalizedLegendreInterLoopSubSub_<11, L>(aX, rDest);
+    if (L-1==12) return;
+    realNormalizedLegendreInterLoopSubSub_<12, L>(aX, rDest);
+}
 template <jint L>
 static inline void realNormalizedLegendreInterLoop_(jdouble aX, jdouble aY, jdouble *rDest, jdouble &rPll) noexcept {
-    static_assert(L > 1, "INVALID L");
-    constexpr jint tStartL = L*L + L;
-    constexpr jint tStartLmm = (L-1)*(L-1) + (L-1);
-    constexpr jint tStartLm2 = (L-2)*(L-2) + (L-2);
-    constexpr jint tStartAB = L*(L+1)/2;
-    rDest[tStartL] = SH_Alm[tStartAB] * (aX*rDest[tStartLmm] + SH_Blm[tStartAB]*rDest[tStartLm2]);
-    for (jint m = 1; m < L-1; ++m) {
-        jdouble tPlm = SH_Alm[tStartAB+m] * (aX*rDest[tStartLmm+m] + SH_Blm[tStartAB+m]*rDest[tStartLm2+m]);
-        rDest[tStartL+m] = tPlm;
-        rDest[tStartL-m] = tPlm;
-    }
-    jdouble tPlm = aX * SQRT_2LM1P3[L] * rPll;
-    rDest[tStartL+(L-1)] = tPlm;
-    rDest[tStartL-(L-1)] = tPlm;
-    rPll *= (-SQRT_1P1D2L[L] * aY);
-    rDest[tStartL+L] = rPll;
-    rDest[tStartL-L] = rPll;
+    realNormalizedLegendreInterLoopSub_<L>(aX, rDest);
+    constexpr jdouble tMul1 = SQRT_2LM1P3[L];
+    const jdouble tPlm = tMul1 * aX * rPll;
+    rDest[L*L+L + (L-1)] = tPlm;
+    rDest[L*L+L - (L-1)] = tPlm;
+    constexpr jdouble tMul2 = -SQRT_1P1D2L[L];
+    rPll *= tMul2 * aY;
+    rDest[L*L+L + L] = rPll;
+    rDest[L*L+L - L] = rPll;
 }
 template <jint LMAX>
 static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *rDest) noexcept {
@@ -246,14 +279,44 @@ static inline void realNormalizedLegendreFull(jdouble aX, jdouble aY, jdouble *r
     realNormalizedLegendreInterLoop_<12>(aX, aY, rDest, tPll);
 }
 
+template <jint M, jint L>
+static inline void realSphericalHarmonicsFull4InterLoopSubSub_(jdouble aSqrt2CosMPhi, jdouble aSqrt2SinMPhi, jdouble *rDest) noexcept {
+    rDest[L*L+L + M] *= aSqrt2CosMPhi;
+    rDest[L*L+L - M] *= aSqrt2SinMPhi;
+}
+template <jint M, jint LMAX>
+static inline void realSphericalHarmonicsFull4InterLoopSub_(jdouble aSqrt2CosMPhi, jdouble aSqrt2SinMPhi, jdouble *rDest) noexcept {
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+0>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+0) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+1>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+1) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+2>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+2) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+3>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+3) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+4>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+4) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+5>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+5) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+6>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+6) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+7>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+7) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+8>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+8) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+9>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+9) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+10>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+10) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+11>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+    if (LMAX==M+11) return;
+    realSphericalHarmonicsFull4InterLoopSubSub_<M, M+12>(aSqrt2CosMPhi, aSqrt2SinMPhi, rDest);
+}
 template <jint M, jint LMAX>
 static inline void realSphericalHarmonicsFull4InterLoop_(jdouble aCosPhi2, jdouble &rSinMPhi, jdouble &rSinMmmPhi, jdouble &rCosMPhi, jdouble &rCosMmmPhi, jdouble *rDest) noexcept {
     const jdouble fSqrt2CosMPhi = SQRT2*rCosMPhi;
     const jdouble fSqrt2SinMPhi = SQRT2*rSinMPhi;
-    for (jint l = M; l <= LMAX; ++l) {
-        rDest[l*l+l + M] *= fSqrt2CosMPhi;
-        rDest[l*l+l - M] *= fSqrt2SinMPhi;
-    }
+    realSphericalHarmonicsFull4InterLoopSub_<M, LMAX>(fSqrt2CosMPhi, fSqrt2SinMPhi, rDest);
     const jdouble tSinMppPhi = aCosPhi2 * rSinMPhi - rSinMmmPhi;
     const jdouble tCosMppPhi = aCosPhi2 * rCosMPhi - rCosMmmPhi;
     rSinMmmPhi = rSinMPhi; rCosMmmPhi = rCosMPhi;
