@@ -6,24 +6,22 @@
 
 namespace JSE_NNAP {
 
-#undef JSE_DBL_MIN_NORMAL
-#define JSE_DBL_MIN_NORMAL (2.2250738585072014E-308)
-#undef JSE_EPS_MUL
-#define JSE_EPS_MUL (8)
-#undef JSE_DBL_EPSILON
-#define JSE_DBL_EPSILON (1.0e-10)
+static constexpr jint WTYPE_DEFAULT = 0;
+static constexpr jint WTYPE_NONE = -1;
+static constexpr jint WTYPE_SINGLE = 1; // unused
+static constexpr jint WTYPE_FULL = 2;
+static constexpr jint WTYPE_EXFULL = 3;
+static constexpr jint WTYPE_FUSE = 4;
 
-#undef SQRT2
-#define SQRT2 (1.4142135623730951)
-#undef SQRT2_INV
-#define SQRT2_INV (0.7071067811865475)
-#undef SQRT3
-#define SQRT3 (1.7320508075688772)
-#undef SQRT3DIV2
-#define SQRT3DIV2 (1.224744871391589)
+static constexpr jdouble JSE_DBL_MIN_NORMAL = 2.2250738585072014E-308;
+static constexpr jint JSE_EPS_MUL = 8;
+static constexpr jdouble JSE_DBL_EPSILON = 1.0e-10;
 
-#undef PI4
-#define PI4 (12.566370614359172)
+static constexpr jdouble SQRT2 = 1.4142135623730951;
+static constexpr jdouble SQRT2_INV = 0.7071067811865475;
+static constexpr jdouble SQRT3 = 1.7320508075688772;
+static constexpr jdouble SQRT3DIV2 = 1.224744871391589;
+static constexpr jdouble PI4 = 12.566370614359172;
 
 static inline jdouble pow2(jdouble value) noexcept {
     return value * value;
