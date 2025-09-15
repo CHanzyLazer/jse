@@ -10,6 +10,9 @@ static constexpr jint SH_LARGEST_L = 20;
 static constexpr jint L3NCOLS[7] = {0, 0, 2, 4, 9, 14, 23};
 static constexpr jint L3NCOLS_NOCROSS[7] = {0, 0, 1, 1, 2, 2, 3};
 
+static constexpr jint L4NCOLS[4] = {0, 1, 3, 9};
+static constexpr jint L4NCOLS_NOCROSS[4] = {0, 1, 2, 3};
+
 // l = 2: 222 112
 // l = 3: 233 123
 // l = 4: 444 224 334 244 134
@@ -371,6 +374,131 @@ static constexpr jdouble L3_COEFF[23][110] = {{
     0.1032279548185018, -0.1048284836721918, 0.08655927155716765, -0.12838814775327387, 0.05474489014513589, -0.02234950781338371, -0.04469901562676742, 0.0741249316661101,
     0.10482848367219182, -0.09032446046618912, 0.1182624791978165, 0.10795837927188258, 0.16724840200141813, -0.10795837927188258, 0.1182624791978165, 0.09032446046618912,
     0.10482848367219182, -0.09656090991705352, 0.0741249316661101, -0.04469901562676742, -0.02234950781338371
+}};
+
+// l = 1: 1111
+// l = 2: 2222 1122
+// l = 3: 3333 1133 2233 1113 1333 1223
+static constexpr jint L4_SIZE[9] = {
+    6,
+    15, 25,
+    45, 41, 95, 16, 48, 70
+};
+static constexpr jint L4_INDEX[9][100][4] = {{
+    {1, 1, 1, 1}, {1, 1, 2, 2}, {1, 1, 3, 3}, {2, 2, 2, 2}, {2, 2, 3, 3}, {3, 3, 3, 3}
+}, {
+    {4, 4, 4, 4}, {4, 4, 5, 5}, {4, 4, 6, 6}, {4, 4, 7, 7}, {4, 4, 8, 8}, {5, 5, 5, 5}, {5, 5, 6, 6}, {5, 5, 7, 7},
+    {5, 5, 8, 8}, {6, 6, 6, 6}, {6, 6, 7, 7}, {6, 6, 8, 8}, {7, 7, 7, 7}, {7, 7, 8, 8}, {8, 8, 8, 8}
+}, {
+    {1, 1, 4, 4}, {1, 1, 5, 5}, {1, 1, 6, 6}, {1, 1, 6, 8}, {1, 1, 7, 7}, {1, 1, 8, 8}, {1, 2, 4, 7}, {1, 2, 5, 6},
+    {1, 2, 5, 8}, {1, 3, 4, 6}, {1, 3, 5, 7}, {2, 2, 4, 4}, {2, 2, 5, 5}, {2, 2, 6, 6}, {2, 2, 7, 7}, {2, 2, 8, 8},
+    {2, 3, 4, 5}, {2, 3, 6, 7}, {2, 3, 7, 8}, {3, 3, 4, 4}, {3, 3, 5, 5}, {3, 3, 6, 6}, {3, 3, 6, 8}, {3, 3, 7, 7},
+    {3, 3, 8, 8}
+}, {
+    {9, 9, 9, 9}, {9, 9, 10, 10}, {9, 9, 11, 11}, {9, 9, 12, 12}, {9, 9, 13, 13}, {9, 9, 14, 14}, {9, 9, 15, 15}, {9, 10, 10, 11},
+    {9, 10, 12, 13}, {9, 10, 13, 14}, {9, 11, 11, 11}, {9, 11, 12, 14}, {9, 11, 13, 13}, {9, 11, 14, 14}, {10, 10, 10, 10}, {10, 10, 11, 11},
+    {10, 10, 12, 12}, {10, 10, 13, 13}, {10, 10, 13, 15}, {10, 10, 14, 14}, {10, 10, 15, 15}, {10, 11, 12, 13}, {10, 11, 12, 15}, {10, 11, 14, 15},
+    {11, 11, 11, 11}, {11, 11, 12, 12}, {11, 11, 12, 14}, {11, 11, 13, 13}, {11, 11, 13, 15}, {11, 11, 14, 14}, {11, 11, 15, 15}, {12, 12, 12, 12},
+    {12, 12, 13, 13}, {12, 12, 14, 14}, {12, 12, 15, 15}, {12, 13, 13, 14}, {12, 13, 14, 15}, {13, 13, 13, 13}, {13, 13, 13, 15}, {13, 13, 14, 14},
+    {13, 13, 15, 15}, {13, 14, 14, 15}, {14, 14, 14, 14}, {14, 14, 15, 15}, {15, 15, 15, 15}
+}, {
+    {1, 1, 9, 9}, {1, 1, 9, 11}, {1, 1, 10, 10}, {1, 1, 11, 11}, {1, 1, 12, 12}, {1, 1, 12, 14}, {1, 1, 13, 13}, {1, 1, 13, 15},
+    {1, 1, 14, 14}, {1, 1, 15, 15}, {1, 2, 9, 14}, {1, 2, 10, 13}, {1, 2, 10, 15}, {1, 2, 11, 12}, {1, 2, 11, 14}, {1, 3, 9, 13},
+    {1, 3, 10, 12}, {1, 3, 11, 13}, {1, 3, 11, 15}, {2, 2, 9, 9}, {2, 2, 10, 10}, {2, 2, 11, 11}, {2, 2, 12, 12}, {2, 2, 13, 13},
+    {2, 2, 14, 14}, {2, 2, 15, 15}, {2, 3, 9, 10}, {2, 3, 10, 11}, {2, 3, 12, 13}, {2, 3, 13, 14}, {2, 3, 14, 15}, {3, 3, 9, 9},
+    {3, 3, 9, 11}, {3, 3, 10, 10}, {3, 3, 11, 11}, {3, 3, 12, 12}, {3, 3, 12, 14}, {3, 3, 13, 13}, {3, 3, 13, 15}, {3, 3, 14, 14},
+    {3, 3, 15, 15}
+}, {
+    {4, 4, 9, 9}, {4, 4, 9, 11}, {4, 4, 10, 10}, {4, 4, 11, 11}, {4, 4, 12, 12}, {4, 4, 13, 13}, {4, 4, 13, 15}, {4, 4, 14, 14},
+    {4, 4, 15, 15}, {4, 5, 9, 10}, {4, 5, 10, 11}, {4, 5, 12, 13}, {4, 5, 12, 15}, {4, 5, 13, 14}, {4, 5, 14, 15}, {4, 6, 9, 13},
+    {4, 6, 10, 12}, {4, 6, 11, 13}, {4, 6, 11, 15}, {4, 7, 9, 12}, {4, 7, 9, 14}, {4, 7, 10, 13}, {4, 7, 10, 15}, {4, 7, 11, 12},
+    {4, 7, 11, 14}, {4, 8, 9, 13}, {4, 8, 10, 14}, {4, 8, 11, 15}, {5, 5, 9, 9}, {5, 5, 9, 11}, {5, 5, 10, 10}, {5, 5, 11, 11},
+    {5, 5, 12, 12}, {5, 5, 12, 14}, {5, 5, 13, 13}, {5, 5, 13, 15}, {5, 5, 14, 14}, {5, 5, 15, 15}, {5, 6, 9, 14}, {5, 6, 10, 13},
+    {5, 6, 10, 15}, {5, 6, 11, 12}, {5, 6, 11, 14}, {5, 7, 9, 13}, {5, 7, 10, 12}, {5, 7, 11, 13}, {5, 7, 11, 15}, {5, 8, 9, 12},
+    {5, 8, 9, 14}, {5, 8, 10, 13}, {5, 8, 10, 15}, {5, 8, 11, 12}, {5, 8, 11, 14}, {6, 6, 9, 9}, {6, 6, 10, 10}, {6, 6, 11, 11},
+    {6, 6, 12, 12}, {6, 6, 13, 13}, {6, 6, 14, 14}, {6, 6, 15, 15}, {6, 7, 9, 10}, {6, 7, 10, 11}, {6, 7, 12, 13}, {6, 7, 13, 14},
+    {6, 7, 14, 15}, {6, 8, 9, 11}, {6, 8, 11, 11}, {6, 8, 12, 14}, {6, 8, 13, 13}, {6, 8, 13, 15}, {7, 7, 9, 9}, {7, 7, 9, 11},
+    {7, 7, 10, 10}, {7, 7, 11, 11}, {7, 7, 12, 12}, {7, 7, 12, 14}, {7, 7, 13, 13}, {7, 7, 13, 15}, {7, 7, 14, 14}, {7, 7, 15, 15},
+    {7, 8, 9, 10}, {7, 8, 10, 11}, {7, 8, 12, 13}, {7, 8, 12, 15}, {7, 8, 13, 14}, {7, 8, 14, 15}, {8, 8, 9, 9}, {8, 8, 9, 11},
+    {8, 8, 10, 10}, {8, 8, 11, 11}, {8, 8, 12, 12}, {8, 8, 13, 13}, {8, 8, 13, 15}, {8, 8, 14, 14}, {8, 8, 15, 15}
+}, {
+    {1, 1, 1, 9}, {1, 1, 1, 11}, {1, 1, 2, 12}, {1, 1, 2, 14}, {1, 1, 3, 13}, {1, 1, 3, 15}, {1, 2, 2, 11}, {1, 2, 3, 10},
+    {1, 3, 3, 9}, {1, 3, 3, 11}, {2, 2, 2, 12}, {2, 2, 3, 13}, {2, 3, 3, 12}, {2, 3, 3, 14}, {3, 3, 3, 13}, {3, 3, 3, 15}
+}, {
+    {1, 9, 9, 11}, {1, 9, 10, 10}, {1, 9, 11, 11}, {1, 9, 12, 14}, {1, 9, 13, 13}, {1, 9, 14, 14}, {1, 10, 10, 11}, {1, 10, 12, 13},
+    {1, 10, 12, 15}, {1, 10, 14, 15}, {1, 11, 11, 11}, {1, 11, 12, 12}, {1, 11, 12, 14}, {1, 11, 13, 13}, {1, 11, 13, 15}, {1, 11, 14, 14},
+    {1, 11, 15, 15}, {2, 9, 9, 12}, {2, 9, 10, 13}, {2, 9, 11, 14}, {2, 10, 10, 12}, {2, 10, 11, 13}, {2, 10, 11, 15}, {2, 11, 11, 12},
+    {2, 11, 11, 14}, {2, 12, 12, 12}, {2, 12, 13, 13}, {2, 12, 14, 14}, {2, 12, 15, 15}, {2, 13, 13, 14}, {2, 13, 14, 15}, {3, 9, 9, 13},
+    {3, 9, 10, 12}, {3, 9, 10, 14}, {3, 9, 11, 13}, {3, 10, 10, 13}, {3, 10, 10, 15}, {3, 10, 11, 12}, {3, 11, 11, 13}, {3, 11, 11, 15},
+    {3, 12, 12, 13}, {3, 12, 13, 14}, {3, 12, 14, 15}, {3, 13, 13, 13}, {3, 13, 13, 15}, {3, 13, 14, 14}, {3, 13, 15, 15}, {3, 14, 14, 15}
+}, {
+    {1, 4, 4, 9}, {1, 4, 4, 11}, {1, 4, 5, 10}, {1, 4, 6, 13}, {1, 4, 6, 15}, {1, 4, 7, 12}, {1, 4, 7, 14}, {1, 4, 8, 15},
+    {1, 5, 5, 9}, {1, 5, 5, 11}, {1, 5, 6, 12}, {1, 5, 6, 14}, {1, 5, 7, 13}, {1, 5, 7, 15}, {1, 5, 8, 12}, {1, 5, 8, 14},
+    {1, 6, 6, 11}, {1, 6, 7, 10}, {1, 6, 8, 9}, {1, 6, 8, 11}, {1, 7, 7, 9}, {1, 7, 7, 11}, {1, 7, 8, 10}, {1, 8, 8, 9},
+    {1, 8, 8, 11}, {2, 4, 4, 12}, {2, 4, 5, 13}, {2, 4, 5, 15}, {2, 4, 6, 10}, {2, 4, 7, 9}, {2, 4, 7, 11}, {2, 5, 5, 12},
+    {2, 5, 5, 14}, {2, 5, 6, 11}, {2, 5, 7, 10}, {2, 5, 8, 9}, {2, 5, 8, 11}, {2, 6, 6, 12}, {2, 6, 7, 13}, {2, 6, 8, 14},
+    {2, 7, 7, 12}, {2, 7, 7, 14}, {2, 7, 8, 13}, {2, 7, 8, 15}, {2, 8, 8, 12}, {3, 4, 4, 13}, {3, 4, 4, 15}, {3, 4, 5, 12},
+    {3, 4, 5, 14}, {3, 4, 6, 9}, {3, 4, 6, 11}, {3, 4, 7, 10}, {3, 4, 8, 9}, {3, 5, 5, 13}, {3, 5, 5, 15}, {3, 5, 6, 10},
+    {3, 5, 7, 9}, {3, 5, 7, 11}, {3, 5, 8, 10}, {3, 6, 6, 13}, {3, 6, 7, 12}, {3, 6, 7, 14}, {3, 6, 8, 13}, {3, 6, 8, 15},
+    {3, 7, 7, 13}, {3, 7, 7, 15}, {3, 7, 8, 12}, {3, 7, 8, 14}, {3, 8, 8, 13}, {3, 8, 8, 15}
+}};
+static constexpr jdouble L4_COEFF[9][100] = {{
+    0.4666666666666665, 0.933333333333333, 0.9333333333333328, 0.4666666666666666, 0.933333333333333, 0.4666666666666665
+}, {
+    0.31428571428571417, 0.6285714285714283, 0.6285714285714283, 0.6285714285714283, 0.6285714285714284, 0.31428571428571417, 0.6285714285714284, 0.6285714285714283,
+    0.6285714285714283, 0.3142857142857143, 0.6285714285714284, 0.6285714285714283, 0.31428571428571417, 0.6285714285714283, 0.31428571428571417
+}, {
+    -0.3018424677943595, -0.3018424677943594, -0.2145553116999626, -0.15118578920369083, -0.1709117336527641, -0.3018424677943595, -0.26186146828319073, -0.15118578920369083,
+    0.26186146828319073, 0.30237157840738166, -0.26186146828319073, -0.17091173365276413, -0.3018424677943595, -0.34548604584155806, -0.3018424677943595, -0.17091173365276413,
+    -0.26186146828319073, -0.15118578920369083, -0.26186146828319073, -0.3018424677943595, -0.1709117336527641, -0.2145553116999626, 0.15118578920369083, -0.3018424677943594,
+    -0.3018424677943595
+}, {
+    0.24741924741924734, 0.4948384948384948, 0.44688644688644663, 0.4229104229104228, 0.44688644688644663, 0.4948384948384948, 0.4948384948384948, 0.061905827711607055,
+    0.09590409590409593, 0.12381165542321398, 0.024762331084642798, 0.09590409590409593, -0.0742869932539284, -0.061905827711607055, 0.22743922743922734, 0.47885447885447846,
+    0.5188145188145188, 0.47885447885447846, -0.061905827711607055, 0.45487845487845474, 0.4948384948384948, -0.049524662169285694, -0.09590409590409593, 0.12381165542321398,
+    0.2442224442224441, 0.4804528804528803, 0.024762331084642847, 0.4884448884448882, 0.0742869932539284, 0.47885447885447846, 0.44688644688644663, 0.24022644022644019,
+    0.4804528804528803, 0.5188145188145188, 0.4229104229104228, -0.024762331084642847, 0.09590409590409593, 0.2442224442224441, -0.024762331084642798, 0.47885447885447846,
+    0.44688644688644663, 0.061905827711607055, 0.22743922743922734, 0.4948384948384948, 0.24741924741924734
+}, {
+    0.26276143055472967, 0.06900655593423537, 0.21821789023599225, 0.24494401442723468, 0.18258305798100238, 0.1380131118684708, 0.13803951766226497, 0.06900655593423537,
+    0.21821789023599225, 0.26276143055472967, 0.21821789023599228, 0.16903085094570325, -0.21821789023599228, 0.08728715609439688, -0.16903085094570325, -0.13801311186847073,
+    -0.2760262237369416, 0.2138089935299394, 0.13801311186847073, 0.12913080959851755, 0.21821789023599233, 0.2716701386184771, 0.2894875547459722, 0.2716701386184771,
+    0.21821789023599233, 0.12913080959851755, 0.21821789023599228, 0.16903085094570325, 0.08728715609439688, 0.16903085094570325, 0.21821789023599228, 0.26276143055472967,
+    -0.06900655593423537, 0.21821789023599225, 0.13803951766226497, 0.18258305798100238, -0.1380131118684708, 0.24494401442723468, -0.06900655593423537, 0.21821789023599225,
+    0.26276143055472967
+}, {
+    -0.23056251083322293, 0.058025885318565916, -0.1989952892774029, -0.13510829884636139, -0.12879485453519743, -0.13510829884636139, -0.058025885318565916, -0.12408419344815379,
+    -0.23056251083322293, -0.16907056583634186, -0.13096149716360336, -0.030929434163658072, -0.14213381090374028, -0.036205623227776505, -0.16907056583634186, -0.19047420464224973,
+    -0.17994084623265716, 0.08748165054154199, 0.19047420464224973, 0.14213381090374028, -0.16907056583634186, -0.13096149716360336, 0.16907056583634186, -0.030929434163658072,
+    0.036205623227776505, 0.11605177063713182, -0.1498221916584982, 0.11605177063713182, -0.12702835662755607, 0.0045610779849368285, -0.19899528927740284, -0.23864245305202825,
+    -0.16667552040218145, -0.10692961466725821, -0.1258506913557951, 0.0045610779849368285, -0.19899528927740284, -0.12702835662755607, 0.008327350996300352, -0.1576716496271046,
+    -0.008327350996300352, -0.12379740483422552, 0.1576716496271046, -0.009122155969873659, 0.21385922933451645, -0.22558352339246632, 0.009122155969873659, 0.14213381090374028,
+    0.16907056583634186, 0.036205623227776505, -0.16907056583634186, 0.030929434163658072, -0.13096149716360336, -0.12997251980695837, -0.12408419344815382, -0.21044451262797,
+    -0.2542135048537586, -0.21044451262797, -0.12408419344815382, -0.12997251980695837, 0.008327350996300352, -0.1576716496271046, -0.12379740483422552, -0.1576716496271046,
+    0.008327350996300352, -0.19047420464224973, -0.04374082527077099, -0.17994084623265716, 0.04374082527077099, -0.19047420464224973, -0.12702835662755607, -0.0045610779849368285,
+    -0.19899528927740284, -0.1258506913557951, -0.16667552040218145, 0.10692961466725821, -0.23864245305202825, -0.0045610779849368285, -0.19899528927740284, -0.12702835662755607,
+    -0.16907056583634186, -0.036205623227776505, -0.030929434163658072, 0.14213381090374028, -0.13096149716360336, -0.16907056583634186, -0.23056251083322293, -0.058025885318565916,
+    -0.12408419344815379, -0.13510829884636139, -0.12879485453519743, -0.13510829884636139, 0.058025885318565916, -0.1989952892774029, -0.23056251083322293
+}, {
+    0.08451542547285161, 0.06546536707079768, 0.16035674514745457, 0.20701966780270617, 0.0654653670707977, 0.2535462764185548, -0.2618614682831908, -0.41403933560541245,
+    -0.2535462764185548, 0.06546536707079768, -0.10690449676496976, -0.2618614682831908, 0.16035674514745457, -0.20701966780270617, 0.06546536707079768, -0.08451542547285161
+}, {
+    0.19953649058762643, -0.12880025083442503, 0.10304020066754002, 0.2993047358814397, -0.10304020066754002, 0.12880025083442503, -0.09976824529381322, -0.025760050166885026,
+    -0.2993047358814397, -0.25760050166885007, -0.03990729811752528, -0.039907298117525296, 0.025760050166885026, -0.03990729811752528, 0.20608040133508, -0.09976824529381322,
+    0.19953649058762643, 0.1221906467513358, -0.08146043116755719, -0.08146043116755719, 0.1629208623351144, -0.3785938719441895, 0.08146043116755719, -0.13848273298484726,
+    0.18929693597209474, -0.09775251740106866, -0.13848273298484726, 0.1629208623351144, 0.1221906467513358, -0.18929693597209474, -0.08146043116755719, 0.19953649058762643,
+    0.2993047358814397, -0.25760050166885007, -0.20608040133508, -0.09976824529381322, 0.12880025083442503, -0.025760050166885026, -0.03990729811752528, 0.10304020066754002,
+    -0.039907298117525296, -0.025760050166885026, 0.2993047358814397, -0.03990729811752528, -0.10304020066754002, -0.09976824529381322, 0.19953649058762643, -0.12880025083442503
+}, {
+    -0.05754138002994433, 0.08937274226122793, -0.21178422322480248, -0.10306595170917678, -0.19984352703167396, 0.12765498978703646, 0.07083720305586505, -0.11508276005988866,
+    0.07214944058816983, -0.0780573872087486, -0.03135406339098164, 0.04089787825294385, -0.022170670841515982, 0.14429888117633966, -0.12765498978703646, -0.21178422322480248,
+    -0.044801380946474643, -0.04089787825294385, 0.19984352703167396, 0.10306595170917678, -0.07214944058816983, -0.055886716367232615, -0.07083720305586505, 0.05754138002994433,
+    0.08937274226122793, 0.09126262566624607, -0.13417412320770258, 0.05754138002994437, 0.0817957565058877, -0.05754138002994437, -0.13417412320770258, -0.00923894871233266,
+    0.10589211161240125, -0.20613190341835358, -0.2117842232248025, -0.05754138002994437, 0.13417412320770258, -0.1640473539078269, -0.20613190341835358, 0.0817957565058877,
+    -0.00923894871233266, -0.10589211161240125, -0.13417412320770258, -0.05754138002994437, 0.09126262566624607, 0.08937274226122793, 0.05754138002994433, 0.12765498978703646,
+    -0.07083720305586505, 0.19984352703167396, -0.10306595170917678, -0.21178422322480248, -0.11508276005988866, -0.055886716367232615, 0.07214944058816983, -0.04089787825294385,
+    -0.14429888117633966, -0.02217067084151598, 0.07083720305586505, -0.044801380946474643, -0.03135406339098164, -0.04089787825294385, -0.10306595170917678, 0.19984352703167396,
+    -0.0780573872087486, -0.07214944058816983, 0.12765498978703646, -0.21178422322480248, 0.08937274226122793, -0.05754138002994433
 }};
 
 static constexpr jdouble SH_Alm[(SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2] = {
@@ -1198,6 +1326,140 @@ static void calL3_(jdouble *aCnlm, jdouble *rFp) noexcept {
         *rFp = calL3Sub_<22>(aCnlm); ++rFp;
     }
 }
+template <jint L4IDX, jint SUBIDX>
+static inline jdouble calL4SubSub_(jdouble *aCnlm) noexcept {
+    constexpr jint i1 = L4_INDEX[L4IDX][SUBIDX][0];
+    constexpr jint i2 = L4_INDEX[L4IDX][SUBIDX][1];
+    constexpr jint i3 = L4_INDEX[L4IDX][SUBIDX][2];
+    constexpr jint i4 = L4_INDEX[L4IDX][SUBIDX][3];
+    constexpr jdouble coeff = L4_COEFF[L4IDX][SUBIDX];
+    return coeff * aCnlm[i1]*aCnlm[i2]*aCnlm[i3]*aCnlm[i4];
+}
+template <jint L4IDX>
+static jdouble calL4Sub_(jdouble *aCnlm) noexcept {
+    jdouble rFp4 = 0.0;
+    constexpr jint tSize = L4_SIZE[L4IDX];
+    if (tSize==0) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 0>(aCnlm);
+    if (tSize==1) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 1>(aCnlm);
+    if (tSize==2) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 2>(aCnlm);
+    if (tSize==3) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 3>(aCnlm);
+    if (tSize==4) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 4>(aCnlm);
+    if (tSize==5) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 5>(aCnlm);
+    if (tSize==6) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 6>(aCnlm);
+    if (tSize==7) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 7>(aCnlm);
+    if (tSize==8) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 8>(aCnlm);
+    if (tSize==9) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 9>(aCnlm);
+    if (tSize==10) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 10>(aCnlm);
+    if (tSize==11) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 11>(aCnlm);
+    if (tSize==12) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 12>(aCnlm);
+    if (tSize==13) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 13>(aCnlm);
+    if (tSize==14) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 14>(aCnlm);
+    if (tSize==15) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 15>(aCnlm);
+    if (tSize==16) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 16>(aCnlm);
+    if (tSize==17) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 17>(aCnlm);
+    if (tSize==18) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 18>(aCnlm);
+    if (tSize==19) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 19>(aCnlm);
+    if (tSize==20) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 20>(aCnlm);
+    if (tSize==21) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 21>(aCnlm);
+    if (tSize==22) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 22>(aCnlm);
+    if (tSize==23) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 23>(aCnlm);
+    if (tSize==24) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 24>(aCnlm);
+    if (tSize==25) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 25>(aCnlm);
+    if (tSize==26) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 26>(aCnlm);
+    if (tSize==27) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 27>(aCnlm);
+    if (tSize==28) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 28>(aCnlm);
+    if (tSize==29) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 29>(aCnlm);
+    if (tSize==30) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 30>(aCnlm);
+    if (tSize==31) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 31>(aCnlm);
+    if (tSize==32) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 32>(aCnlm);
+    if (tSize==33) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 33>(aCnlm);
+    if (tSize==34) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 34>(aCnlm);
+    if (tSize==35) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 35>(aCnlm);
+    if (tSize==36) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 36>(aCnlm);
+    if (tSize==37) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 37>(aCnlm);
+    if (tSize==38) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 38>(aCnlm);
+    if (tSize==39) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 39>(aCnlm);
+    if (tSize==40) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 40>(aCnlm);
+    if (tSize==41) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 41>(aCnlm);
+    if (tSize==42) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 42>(aCnlm);
+    if (tSize==43) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 43>(aCnlm);
+    if (tSize==44) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 44>(aCnlm);
+    if (tSize==45) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 45>(aCnlm);
+    if (tSize==46) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 46>(aCnlm);
+    if (tSize==47) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 47>(aCnlm);
+    if (tSize==48) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 48>(aCnlm);
+    if (tSize==49) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 49>(aCnlm);
+    if (tSize==50) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 50>(aCnlm);
+    if (tSize==51) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 51>(aCnlm);
+    if (tSize==52) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 52>(aCnlm);
+    if (tSize==53) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 53>(aCnlm);
+    if (tSize==54) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 54>(aCnlm);
+    if (tSize==55) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 55>(aCnlm);
+    if (tSize==56) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 56>(aCnlm);
+    if (tSize==57) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 57>(aCnlm);
+    if (tSize==58) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 58>(aCnlm);
+    if (tSize==59) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 59>(aCnlm);
+    if (tSize==60) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 60>(aCnlm);
+    if (tSize==61) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 61>(aCnlm);
+    if (tSize==62) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 62>(aCnlm);
+    if (tSize==63) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 63>(aCnlm);
+    if (tSize==64) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 64>(aCnlm);
+    if (tSize==65) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 65>(aCnlm);
+    if (tSize==66) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 66>(aCnlm);
+    if (tSize==67) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 67>(aCnlm);
+    if (tSize==68) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 68>(aCnlm);
+    if (tSize==69) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 69>(aCnlm);
+    if (tSize==70) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 70>(aCnlm);
+    if (tSize==71) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 71>(aCnlm);
+    if (tSize==72) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 72>(aCnlm);
+    if (tSize==73) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 73>(aCnlm);
+    if (tSize==74) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 74>(aCnlm);
+    if (tSize==75) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 75>(aCnlm);
+    if (tSize==76) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 76>(aCnlm);
+    if (tSize==77) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 77>(aCnlm);
+    if (tSize==78) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 78>(aCnlm);
+    if (tSize==79) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 79>(aCnlm);
+    if (tSize==80) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 80>(aCnlm);
+    if (tSize==81) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 81>(aCnlm);
+    if (tSize==82) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 82>(aCnlm);
+    if (tSize==83) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 83>(aCnlm);
+    if (tSize==84) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 84>(aCnlm);
+    if (tSize==85) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 85>(aCnlm);
+    if (tSize==86) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 86>(aCnlm);
+    if (tSize==87) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 87>(aCnlm);
+    if (tSize==88) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 88>(aCnlm);
+    if (tSize==89) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 89>(aCnlm);
+    if (tSize==90) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 90>(aCnlm);
+    if (tSize==91) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 91>(aCnlm);
+    if (tSize==92) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 92>(aCnlm);
+    if (tSize==93) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 93>(aCnlm);
+    if (tSize==94) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 94>(aCnlm);
+    if (tSize==95) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 95>(aCnlm);
+    if (tSize==96) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 96>(aCnlm);
+    if (tSize==97) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 97>(aCnlm);
+    if (tSize==98) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 98>(aCnlm);
+    if (tSize==99) {return rFp4;} rFp4 += calL4SubSub_<L4IDX, 99>(aCnlm);
+    return rFp4;
+}
+template <jint L4MAX, jboolean L4CROSS>
+static void calL4_(jdouble *aCnlm, jdouble *rFp) noexcept {
+    if (L4MAX < 1) return;
+    *rFp = calL4Sub_<0>(aCnlm); ++rFp;
+    if (L4MAX == 1) return;
+    *rFp = calL4Sub_<1>(aCnlm); ++rFp;
+    if (L4CROSS) {
+        *rFp = calL4Sub_<2>(aCnlm); ++rFp;
+    }
+    if (L4MAX == 2) return;
+    *rFp = calL4Sub_<3>(aCnlm); ++rFp;
+    if (L4CROSS) {
+        *rFp = calL4Sub_<4>(aCnlm); ++rFp;
+        *rFp = calL4Sub_<5>(aCnlm); ++rFp;
+        *rFp = calL4Sub_<6>(aCnlm); ++rFp;
+        *rFp = calL4Sub_<7>(aCnlm); ++rFp;
+        *rFp = calL4Sub_<8>(aCnlm); ++rFp;
+    }
+}
 
 template <jint L>
 static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
@@ -1410,6 +1672,146 @@ static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noe
         calGradL3Sub_<20>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
         calGradL3Sub_<21>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
         calGradL3Sub_<22>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    }
+}
+template <jint L4IDX, jint SUBIDX>
+static inline void calGradL4SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint i1 = L4_INDEX[L4IDX][SUBIDX][0];
+    constexpr jint i2 = L4_INDEX[L4IDX][SUBIDX][1];
+    constexpr jint i3 = L4_INDEX[L4IDX][SUBIDX][2];
+    constexpr jint i4 = L4_INDEX[L4IDX][SUBIDX][3];
+    constexpr jdouble coeff = L4_COEFF[L4IDX][SUBIDX];
+    const jdouble tMul = coeff * aSubNNGrad;
+    const jdouble tCnlm1 = aCnlm[i1];
+    const jdouble tCnlm2 = aCnlm[i2];
+    const jdouble tCnlm3 = aCnlm[i3];
+    const jdouble tCnlm4 = aCnlm[i4];
+    rGradCnlm[i1] += tMul * tCnlm2*tCnlm3*tCnlm4;
+    rGradCnlm[i2] += tMul * tCnlm1*tCnlm3*tCnlm4;
+    rGradCnlm[i3] += tMul * tCnlm1*tCnlm2*tCnlm4;
+    rGradCnlm[i4] += tMul * tCnlm1*tCnlm2*tCnlm3;
+}
+template <jint L4IDX>
+static void calGradL4Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint tSize = L4_SIZE[L4IDX];
+    if (tSize==0) {return;} calGradL4SubSub_<L4IDX, 0>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==1) {return;} calGradL4SubSub_<L4IDX, 1>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==2) {return;} calGradL4SubSub_<L4IDX, 2>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==3) {return;} calGradL4SubSub_<L4IDX, 3>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==4) {return;} calGradL4SubSub_<L4IDX, 4>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==5) {return;} calGradL4SubSub_<L4IDX, 5>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==6) {return;} calGradL4SubSub_<L4IDX, 6>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==7) {return;} calGradL4SubSub_<L4IDX, 7>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==8) {return;} calGradL4SubSub_<L4IDX, 8>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==9) {return;} calGradL4SubSub_<L4IDX, 9>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==10) {return;} calGradL4SubSub_<L4IDX, 10>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==11) {return;} calGradL4SubSub_<L4IDX, 11>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==12) {return;} calGradL4SubSub_<L4IDX, 12>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==13) {return;} calGradL4SubSub_<L4IDX, 13>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==14) {return;} calGradL4SubSub_<L4IDX, 14>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==15) {return;} calGradL4SubSub_<L4IDX, 15>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==16) {return;} calGradL4SubSub_<L4IDX, 16>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==17) {return;} calGradL4SubSub_<L4IDX, 17>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==18) {return;} calGradL4SubSub_<L4IDX, 18>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==19) {return;} calGradL4SubSub_<L4IDX, 19>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==20) {return;} calGradL4SubSub_<L4IDX, 20>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==21) {return;} calGradL4SubSub_<L4IDX, 21>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==22) {return;} calGradL4SubSub_<L4IDX, 22>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==23) {return;} calGradL4SubSub_<L4IDX, 23>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==24) {return;} calGradL4SubSub_<L4IDX, 24>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==25) {return;} calGradL4SubSub_<L4IDX, 25>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==26) {return;} calGradL4SubSub_<L4IDX, 26>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==27) {return;} calGradL4SubSub_<L4IDX, 27>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==28) {return;} calGradL4SubSub_<L4IDX, 28>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==29) {return;} calGradL4SubSub_<L4IDX, 29>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==30) {return;} calGradL4SubSub_<L4IDX, 30>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==31) {return;} calGradL4SubSub_<L4IDX, 31>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==32) {return;} calGradL4SubSub_<L4IDX, 32>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==33) {return;} calGradL4SubSub_<L4IDX, 33>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==34) {return;} calGradL4SubSub_<L4IDX, 34>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==35) {return;} calGradL4SubSub_<L4IDX, 35>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==36) {return;} calGradL4SubSub_<L4IDX, 36>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==37) {return;} calGradL4SubSub_<L4IDX, 37>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==38) {return;} calGradL4SubSub_<L4IDX, 38>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==39) {return;} calGradL4SubSub_<L4IDX, 39>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==40) {return;} calGradL4SubSub_<L4IDX, 40>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==41) {return;} calGradL4SubSub_<L4IDX, 41>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==42) {return;} calGradL4SubSub_<L4IDX, 42>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==43) {return;} calGradL4SubSub_<L4IDX, 43>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==44) {return;} calGradL4SubSub_<L4IDX, 44>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==45) {return;} calGradL4SubSub_<L4IDX, 45>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==46) {return;} calGradL4SubSub_<L4IDX, 46>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==47) {return;} calGradL4SubSub_<L4IDX, 47>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==48) {return;} calGradL4SubSub_<L4IDX, 48>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==49) {return;} calGradL4SubSub_<L4IDX, 49>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==50) {return;} calGradL4SubSub_<L4IDX, 50>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==51) {return;} calGradL4SubSub_<L4IDX, 51>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==52) {return;} calGradL4SubSub_<L4IDX, 52>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==53) {return;} calGradL4SubSub_<L4IDX, 53>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==54) {return;} calGradL4SubSub_<L4IDX, 54>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==55) {return;} calGradL4SubSub_<L4IDX, 55>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==56) {return;} calGradL4SubSub_<L4IDX, 56>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==57) {return;} calGradL4SubSub_<L4IDX, 57>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==58) {return;} calGradL4SubSub_<L4IDX, 58>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==59) {return;} calGradL4SubSub_<L4IDX, 59>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==60) {return;} calGradL4SubSub_<L4IDX, 60>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==61) {return;} calGradL4SubSub_<L4IDX, 61>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==62) {return;} calGradL4SubSub_<L4IDX, 62>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==63) {return;} calGradL4SubSub_<L4IDX, 63>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==64) {return;} calGradL4SubSub_<L4IDX, 64>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==65) {return;} calGradL4SubSub_<L4IDX, 65>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==66) {return;} calGradL4SubSub_<L4IDX, 66>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==67) {return;} calGradL4SubSub_<L4IDX, 67>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==68) {return;} calGradL4SubSub_<L4IDX, 68>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==69) {return;} calGradL4SubSub_<L4IDX, 69>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==70) {return;} calGradL4SubSub_<L4IDX, 70>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==71) {return;} calGradL4SubSub_<L4IDX, 71>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==72) {return;} calGradL4SubSub_<L4IDX, 72>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==73) {return;} calGradL4SubSub_<L4IDX, 73>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==74) {return;} calGradL4SubSub_<L4IDX, 74>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==75) {return;} calGradL4SubSub_<L4IDX, 75>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==76) {return;} calGradL4SubSub_<L4IDX, 76>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==77) {return;} calGradL4SubSub_<L4IDX, 77>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==78) {return;} calGradL4SubSub_<L4IDX, 78>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==79) {return;} calGradL4SubSub_<L4IDX, 79>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==80) {return;} calGradL4SubSub_<L4IDX, 80>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==81) {return;} calGradL4SubSub_<L4IDX, 81>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==82) {return;} calGradL4SubSub_<L4IDX, 82>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==83) {return;} calGradL4SubSub_<L4IDX, 83>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==84) {return;} calGradL4SubSub_<L4IDX, 84>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==85) {return;} calGradL4SubSub_<L4IDX, 85>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==86) {return;} calGradL4SubSub_<L4IDX, 86>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==87) {return;} calGradL4SubSub_<L4IDX, 87>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==88) {return;} calGradL4SubSub_<L4IDX, 88>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==89) {return;} calGradL4SubSub_<L4IDX, 89>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==90) {return;} calGradL4SubSub_<L4IDX, 90>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==91) {return;} calGradL4SubSub_<L4IDX, 91>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==92) {return;} calGradL4SubSub_<L4IDX, 92>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==93) {return;} calGradL4SubSub_<L4IDX, 93>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==94) {return;} calGradL4SubSub_<L4IDX, 94>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==95) {return;} calGradL4SubSub_<L4IDX, 95>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==96) {return;} calGradL4SubSub_<L4IDX, 96>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==97) {return;} calGradL4SubSub_<L4IDX, 97>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==98) {return;} calGradL4SubSub_<L4IDX, 98>(aCnlm, rGradCnlm, aSubNNGrad);
+    if (tSize==99) {return;} calGradL4SubSub_<L4IDX, 99>(aCnlm, rGradCnlm, aSubNNGrad);
+}
+template <jint L4MAX, jboolean L4CROSS>
+static void calGradL4_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
+    if (L4MAX < 1) return;
+    calGradL4Sub_<0>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4MAX == 1) return;
+    calGradL4Sub_<1>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4CROSS) {
+        calGradL4Sub_<2>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    }
+    if (L4MAX == 2) return;
+    calGradL4Sub_<3>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4CROSS) {
+        calGradL4Sub_<4>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL4Sub_<5>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL4Sub_<6>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL4Sub_<7>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradL4Sub_<8>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
     }
 }
 
@@ -1625,6 +2027,149 @@ static void calGradNNGradL3_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *
         *rGradNNGrad += calGradNNGradL3Sub_<22>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
     }
 }
+template <jint L4IDX, jint SUBIDX>
+static inline jdouble calGradNNGradL4SubSub_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
+    jdouble rGGFp4 = 0.0;
+    constexpr jint i1 = L4_INDEX[L4IDX][SUBIDX][0];
+    constexpr jint i2 = L4_INDEX[L4IDX][SUBIDX][1];
+    constexpr jint i3 = L4_INDEX[L4IDX][SUBIDX][2];
+    constexpr jint i4 = L4_INDEX[L4IDX][SUBIDX][3];
+    constexpr jdouble coeff = L4_COEFF[L4IDX][SUBIDX];
+    const jdouble tCnlm1 = aCnlm[i1];
+    const jdouble tCnlm2 = aCnlm[i2];
+    const jdouble tCnlm3 = aCnlm[i3];
+    const jdouble tCnlm4 = aCnlm[i4];
+    rGGFp4 += coeff * aGradNNGradCnlm[i1]*tCnlm2*tCnlm3*tCnlm4;
+    rGGFp4 += coeff * tCnlm1*aGradNNGradCnlm[i2]*tCnlm3*tCnlm4;
+    rGGFp4 += coeff * tCnlm1*tCnlm2*aGradNNGradCnlm[i3]*tCnlm4;
+    rGGFp4 += coeff * tCnlm1*tCnlm2*tCnlm3*aGradNNGradCnlm[i4];
+    return rGGFp4;
+}
+template <jint L4IDX>
+static jdouble calGradNNGradL4Sub_(jdouble *aCnlm, jdouble *aGradNNGradCnlm) noexcept {
+    jdouble rGGFp4 = 0.0;
+    constexpr jint tSize = L4_SIZE[L4IDX];
+    if (tSize==0) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 0>(aCnlm, aGradNNGradCnlm);
+    if (tSize==1) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 1>(aCnlm, aGradNNGradCnlm);
+    if (tSize==2) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 2>(aCnlm, aGradNNGradCnlm);
+    if (tSize==3) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 3>(aCnlm, aGradNNGradCnlm);
+    if (tSize==4) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 4>(aCnlm, aGradNNGradCnlm);
+    if (tSize==5) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 5>(aCnlm, aGradNNGradCnlm);
+    if (tSize==6) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 6>(aCnlm, aGradNNGradCnlm);
+    if (tSize==7) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 7>(aCnlm, aGradNNGradCnlm);
+    if (tSize==8) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 8>(aCnlm, aGradNNGradCnlm);
+    if (tSize==9) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 9>(aCnlm, aGradNNGradCnlm);
+    if (tSize==10) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 10>(aCnlm, aGradNNGradCnlm);
+    if (tSize==11) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 11>(aCnlm, aGradNNGradCnlm);
+    if (tSize==12) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 12>(aCnlm, aGradNNGradCnlm);
+    if (tSize==13) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 13>(aCnlm, aGradNNGradCnlm);
+    if (tSize==14) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 14>(aCnlm, aGradNNGradCnlm);
+    if (tSize==15) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 15>(aCnlm, aGradNNGradCnlm);
+    if (tSize==16) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 16>(aCnlm, aGradNNGradCnlm);
+    if (tSize==17) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 17>(aCnlm, aGradNNGradCnlm);
+    if (tSize==18) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 18>(aCnlm, aGradNNGradCnlm);
+    if (tSize==19) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 19>(aCnlm, aGradNNGradCnlm);
+    if (tSize==20) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 20>(aCnlm, aGradNNGradCnlm);
+    if (tSize==21) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 21>(aCnlm, aGradNNGradCnlm);
+    if (tSize==22) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 22>(aCnlm, aGradNNGradCnlm);
+    if (tSize==23) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 23>(aCnlm, aGradNNGradCnlm);
+    if (tSize==24) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 24>(aCnlm, aGradNNGradCnlm);
+    if (tSize==25) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 25>(aCnlm, aGradNNGradCnlm);
+    if (tSize==26) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 26>(aCnlm, aGradNNGradCnlm);
+    if (tSize==27) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 27>(aCnlm, aGradNNGradCnlm);
+    if (tSize==28) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 28>(aCnlm, aGradNNGradCnlm);
+    if (tSize==29) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 29>(aCnlm, aGradNNGradCnlm);
+    if (tSize==30) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 30>(aCnlm, aGradNNGradCnlm);
+    if (tSize==31) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 31>(aCnlm, aGradNNGradCnlm);
+    if (tSize==32) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 32>(aCnlm, aGradNNGradCnlm);
+    if (tSize==33) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 33>(aCnlm, aGradNNGradCnlm);
+    if (tSize==34) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 34>(aCnlm, aGradNNGradCnlm);
+    if (tSize==35) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 35>(aCnlm, aGradNNGradCnlm);
+    if (tSize==36) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 36>(aCnlm, aGradNNGradCnlm);
+    if (tSize==37) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 37>(aCnlm, aGradNNGradCnlm);
+    if (tSize==38) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 38>(aCnlm, aGradNNGradCnlm);
+    if (tSize==39) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 39>(aCnlm, aGradNNGradCnlm);
+    if (tSize==40) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 40>(aCnlm, aGradNNGradCnlm);
+    if (tSize==41) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 41>(aCnlm, aGradNNGradCnlm);
+    if (tSize==42) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 42>(aCnlm, aGradNNGradCnlm);
+    if (tSize==43) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 43>(aCnlm, aGradNNGradCnlm);
+    if (tSize==44) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 44>(aCnlm, aGradNNGradCnlm);
+    if (tSize==45) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 45>(aCnlm, aGradNNGradCnlm);
+    if (tSize==46) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 46>(aCnlm, aGradNNGradCnlm);
+    if (tSize==47) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 47>(aCnlm, aGradNNGradCnlm);
+    if (tSize==48) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 48>(aCnlm, aGradNNGradCnlm);
+    if (tSize==49) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 49>(aCnlm, aGradNNGradCnlm);
+    if (tSize==50) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 50>(aCnlm, aGradNNGradCnlm);
+    if (tSize==51) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 51>(aCnlm, aGradNNGradCnlm);
+    if (tSize==52) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 52>(aCnlm, aGradNNGradCnlm);
+    if (tSize==53) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 53>(aCnlm, aGradNNGradCnlm);
+    if (tSize==54) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 54>(aCnlm, aGradNNGradCnlm);
+    if (tSize==55) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 55>(aCnlm, aGradNNGradCnlm);
+    if (tSize==56) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 56>(aCnlm, aGradNNGradCnlm);
+    if (tSize==57) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 57>(aCnlm, aGradNNGradCnlm);
+    if (tSize==58) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 58>(aCnlm, aGradNNGradCnlm);
+    if (tSize==59) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 59>(aCnlm, aGradNNGradCnlm);
+    if (tSize==60) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 60>(aCnlm, aGradNNGradCnlm);
+    if (tSize==61) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 61>(aCnlm, aGradNNGradCnlm);
+    if (tSize==62) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 62>(aCnlm, aGradNNGradCnlm);
+    if (tSize==63) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 63>(aCnlm, aGradNNGradCnlm);
+    if (tSize==64) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 64>(aCnlm, aGradNNGradCnlm);
+    if (tSize==65) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 65>(aCnlm, aGradNNGradCnlm);
+    if (tSize==66) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 66>(aCnlm, aGradNNGradCnlm);
+    if (tSize==67) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 67>(aCnlm, aGradNNGradCnlm);
+    if (tSize==68) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 68>(aCnlm, aGradNNGradCnlm);
+    if (tSize==69) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 69>(aCnlm, aGradNNGradCnlm);
+    if (tSize==70) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 70>(aCnlm, aGradNNGradCnlm);
+    if (tSize==71) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 71>(aCnlm, aGradNNGradCnlm);
+    if (tSize==72) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 72>(aCnlm, aGradNNGradCnlm);
+    if (tSize==73) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 73>(aCnlm, aGradNNGradCnlm);
+    if (tSize==74) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 74>(aCnlm, aGradNNGradCnlm);
+    if (tSize==75) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 75>(aCnlm, aGradNNGradCnlm);
+    if (tSize==76) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 76>(aCnlm, aGradNNGradCnlm);
+    if (tSize==77) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 77>(aCnlm, aGradNNGradCnlm);
+    if (tSize==78) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 78>(aCnlm, aGradNNGradCnlm);
+    if (tSize==79) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 79>(aCnlm, aGradNNGradCnlm);
+    if (tSize==80) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 80>(aCnlm, aGradNNGradCnlm);
+    if (tSize==81) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 81>(aCnlm, aGradNNGradCnlm);
+    if (tSize==82) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 82>(aCnlm, aGradNNGradCnlm);
+    if (tSize==83) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 83>(aCnlm, aGradNNGradCnlm);
+    if (tSize==84) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 84>(aCnlm, aGradNNGradCnlm);
+    if (tSize==85) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 85>(aCnlm, aGradNNGradCnlm);
+    if (tSize==86) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 86>(aCnlm, aGradNNGradCnlm);
+    if (tSize==87) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 87>(aCnlm, aGradNNGradCnlm);
+    if (tSize==88) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 88>(aCnlm, aGradNNGradCnlm);
+    if (tSize==89) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 89>(aCnlm, aGradNNGradCnlm);
+    if (tSize==90) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 90>(aCnlm, aGradNNGradCnlm);
+    if (tSize==91) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 91>(aCnlm, aGradNNGradCnlm);
+    if (tSize==92) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 92>(aCnlm, aGradNNGradCnlm);
+    if (tSize==93) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 93>(aCnlm, aGradNNGradCnlm);
+    if (tSize==94) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 94>(aCnlm, aGradNNGradCnlm);
+    if (tSize==95) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 95>(aCnlm, aGradNNGradCnlm);
+    if (tSize==96) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 96>(aCnlm, aGradNNGradCnlm);
+    if (tSize==97) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 97>(aCnlm, aGradNNGradCnlm);
+    if (tSize==98) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 98>(aCnlm, aGradNNGradCnlm);
+    if (tSize==99) {return rGGFp4;} rGGFp4 += calGradNNGradL4SubSub_<L4IDX, 99>(aCnlm, aGradNNGradCnlm);
+    return rGGFp4;
+}
+template <jint L4MAX, jboolean L4CROSS>
+static void calGradNNGradL4_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad) noexcept {
+    if (L4MAX < 1) return;
+    *rGradNNGrad += calGradNNGradL4Sub_<0>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    if (L4MAX == 1) return;
+    *rGradNNGrad += calGradNNGradL4Sub_<1>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    if (L4CROSS) {
+        *rGradNNGrad += calGradNNGradL4Sub_<2>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    }
+    if (L4MAX == 2) return;
+    *rGradNNGrad += calGradNNGradL4Sub_<3>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    if (L4CROSS) {
+        *rGradNNGrad += calGradNNGradL4Sub_<4>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL4Sub_<5>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL4Sub_<6>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL4Sub_<7>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+        *rGradNNGrad += calGradNNGradL4Sub_<8>(aCnlm, aGradNNGradCnlm); ++rGradNNGrad;
+    }
+}
 
 template <jint LMAX, jboolean NO_RADIAL>
 static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad) noexcept {
@@ -1637,12 +2182,9 @@ static inline void calGradCnlmL3SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdou
     constexpr jint i3 = L3_INDEX[L3IDX][SUBIDX][2];
     constexpr jdouble coeff = L3_COEFF[L3IDX][SUBIDX];
     const jdouble tMul = coeff * aSubNNGrad;
-    const jdouble tCnlm1 = aCnlm[i1];
-    const jdouble tCnlm2 = aCnlm[i2];
-    const jdouble tCnlm3 = aCnlm[i3];
-    const jdouble tGGCnlm1 = aGradNNGradCnlm[i1];
-    const jdouble tGGCnlm2 = aGradNNGradCnlm[i2];
-    const jdouble tGGCnlm3 = aGradNNGradCnlm[i3];
+    const jdouble tCnlm1 = aCnlm[i1], tGGCnlm1 = aGradNNGradCnlm[i1];
+    const jdouble tCnlm2 = aCnlm[i2], tGGCnlm2 = aGradNNGradCnlm[i2];
+    const jdouble tCnlm3 = aCnlm[i3], tGGCnlm3 = aGradNNGradCnlm[i3];
     rGradCnlm[i1] += tMul * (tGGCnlm2*tCnlm3 + tCnlm2*tGGCnlm3);
     rGradCnlm[i2] += tMul * (tGGCnlm1*tCnlm3 + tCnlm1*tGGCnlm3);
     rGradCnlm[i3] += tMul * (tGGCnlm1*tCnlm2 + tCnlm1*tGGCnlm2);
@@ -1800,6 +2342,147 @@ static void calGradCnlmL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNG
         calGradCnlmL3Sub_<20>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
         calGradCnlmL3Sub_<21>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
         calGradCnlmL3Sub_<22>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    }
+}
+
+template <jint L4IDX, jint SUBIDX>
+static inline void calGradCnlmL4SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint i1 = L4_INDEX[L4IDX][SUBIDX][0];
+    constexpr jint i2 = L4_INDEX[L4IDX][SUBIDX][1];
+    constexpr jint i3 = L4_INDEX[L4IDX][SUBIDX][2];
+    constexpr jint i4 = L4_INDEX[L4IDX][SUBIDX][3];
+    constexpr jdouble coeff = L4_COEFF[L4IDX][SUBIDX];
+    const jdouble tMul = coeff * aSubNNGrad;
+    const jdouble tCnlm1 = aCnlm[i1], tGGCnlm1 = aGradNNGradCnlm[i1];
+    const jdouble tCnlm2 = aCnlm[i2], tGGCnlm2 = aGradNNGradCnlm[i2];
+    const jdouble tCnlm3 = aCnlm[i3], tGGCnlm3 = aGradNNGradCnlm[i3];
+    const jdouble tCnlm4 = aCnlm[i4], tGGCnlm4 = aGradNNGradCnlm[i4];
+    rGradCnlm[i1] += tMul * (tGGCnlm2*tCnlm3*tCnlm4 + tCnlm2*tGGCnlm3*tCnlm4 + tCnlm2*tCnlm3*tGGCnlm4);
+    rGradCnlm[i2] += tMul * (tGGCnlm1*tCnlm3*tCnlm4 + tCnlm1*tGGCnlm3*tCnlm4 + tCnlm1*tCnlm3*tGGCnlm4);
+    rGradCnlm[i3] += tMul * (tGGCnlm1*tCnlm2*tCnlm4 + tCnlm1*tGGCnlm2*tCnlm4 + tCnlm1*tCnlm2*tGGCnlm4);
+    rGradCnlm[i4] += tMul * (tGGCnlm1*tCnlm2*tCnlm3 + tCnlm1*tGGCnlm2*tCnlm3 + tCnlm1*tCnlm2*tGGCnlm3);
+}
+template <jint L4IDX>
+static void calGradCnlmL4Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {
+    constexpr jint tSize = L4_SIZE[L4IDX];
+    if (tSize==0) {return;} calGradCnlmL4SubSub_<L4IDX, 0>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==1) {return;} calGradCnlmL4SubSub_<L4IDX, 1>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==2) {return;} calGradCnlmL4SubSub_<L4IDX, 2>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==3) {return;} calGradCnlmL4SubSub_<L4IDX, 3>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==4) {return;} calGradCnlmL4SubSub_<L4IDX, 4>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==5) {return;} calGradCnlmL4SubSub_<L4IDX, 5>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==6) {return;} calGradCnlmL4SubSub_<L4IDX, 6>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==7) {return;} calGradCnlmL4SubSub_<L4IDX, 7>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==8) {return;} calGradCnlmL4SubSub_<L4IDX, 8>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==9) {return;} calGradCnlmL4SubSub_<L4IDX, 9>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==10) {return;} calGradCnlmL4SubSub_<L4IDX, 10>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==11) {return;} calGradCnlmL4SubSub_<L4IDX, 11>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==12) {return;} calGradCnlmL4SubSub_<L4IDX, 12>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==13) {return;} calGradCnlmL4SubSub_<L4IDX, 13>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==14) {return;} calGradCnlmL4SubSub_<L4IDX, 14>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==15) {return;} calGradCnlmL4SubSub_<L4IDX, 15>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==16) {return;} calGradCnlmL4SubSub_<L4IDX, 16>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==17) {return;} calGradCnlmL4SubSub_<L4IDX, 17>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==18) {return;} calGradCnlmL4SubSub_<L4IDX, 18>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==19) {return;} calGradCnlmL4SubSub_<L4IDX, 19>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==20) {return;} calGradCnlmL4SubSub_<L4IDX, 20>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==21) {return;} calGradCnlmL4SubSub_<L4IDX, 21>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==22) {return;} calGradCnlmL4SubSub_<L4IDX, 22>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==23) {return;} calGradCnlmL4SubSub_<L4IDX, 23>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==24) {return;} calGradCnlmL4SubSub_<L4IDX, 24>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==25) {return;} calGradCnlmL4SubSub_<L4IDX, 25>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==26) {return;} calGradCnlmL4SubSub_<L4IDX, 26>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==27) {return;} calGradCnlmL4SubSub_<L4IDX, 27>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==28) {return;} calGradCnlmL4SubSub_<L4IDX, 28>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==29) {return;} calGradCnlmL4SubSub_<L4IDX, 29>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==30) {return;} calGradCnlmL4SubSub_<L4IDX, 30>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==31) {return;} calGradCnlmL4SubSub_<L4IDX, 31>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==32) {return;} calGradCnlmL4SubSub_<L4IDX, 32>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==33) {return;} calGradCnlmL4SubSub_<L4IDX, 33>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==34) {return;} calGradCnlmL4SubSub_<L4IDX, 34>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==35) {return;} calGradCnlmL4SubSub_<L4IDX, 35>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==36) {return;} calGradCnlmL4SubSub_<L4IDX, 36>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==37) {return;} calGradCnlmL4SubSub_<L4IDX, 37>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==38) {return;} calGradCnlmL4SubSub_<L4IDX, 38>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==39) {return;} calGradCnlmL4SubSub_<L4IDX, 39>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==40) {return;} calGradCnlmL4SubSub_<L4IDX, 40>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==41) {return;} calGradCnlmL4SubSub_<L4IDX, 41>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==42) {return;} calGradCnlmL4SubSub_<L4IDX, 42>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==43) {return;} calGradCnlmL4SubSub_<L4IDX, 43>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==44) {return;} calGradCnlmL4SubSub_<L4IDX, 44>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==45) {return;} calGradCnlmL4SubSub_<L4IDX, 45>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==46) {return;} calGradCnlmL4SubSub_<L4IDX, 46>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==47) {return;} calGradCnlmL4SubSub_<L4IDX, 47>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==48) {return;} calGradCnlmL4SubSub_<L4IDX, 48>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==49) {return;} calGradCnlmL4SubSub_<L4IDX, 49>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==50) {return;} calGradCnlmL4SubSub_<L4IDX, 50>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==51) {return;} calGradCnlmL4SubSub_<L4IDX, 51>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==52) {return;} calGradCnlmL4SubSub_<L4IDX, 52>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==53) {return;} calGradCnlmL4SubSub_<L4IDX, 53>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==54) {return;} calGradCnlmL4SubSub_<L4IDX, 54>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==55) {return;} calGradCnlmL4SubSub_<L4IDX, 55>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==56) {return;} calGradCnlmL4SubSub_<L4IDX, 56>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==57) {return;} calGradCnlmL4SubSub_<L4IDX, 57>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==58) {return;} calGradCnlmL4SubSub_<L4IDX, 58>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==59) {return;} calGradCnlmL4SubSub_<L4IDX, 59>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==60) {return;} calGradCnlmL4SubSub_<L4IDX, 60>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==61) {return;} calGradCnlmL4SubSub_<L4IDX, 61>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==62) {return;} calGradCnlmL4SubSub_<L4IDX, 62>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==63) {return;} calGradCnlmL4SubSub_<L4IDX, 63>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==64) {return;} calGradCnlmL4SubSub_<L4IDX, 64>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==65) {return;} calGradCnlmL4SubSub_<L4IDX, 65>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==66) {return;} calGradCnlmL4SubSub_<L4IDX, 66>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==67) {return;} calGradCnlmL4SubSub_<L4IDX, 67>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==68) {return;} calGradCnlmL4SubSub_<L4IDX, 68>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==69) {return;} calGradCnlmL4SubSub_<L4IDX, 69>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==70) {return;} calGradCnlmL4SubSub_<L4IDX, 70>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==71) {return;} calGradCnlmL4SubSub_<L4IDX, 71>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==72) {return;} calGradCnlmL4SubSub_<L4IDX, 72>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==73) {return;} calGradCnlmL4SubSub_<L4IDX, 73>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==74) {return;} calGradCnlmL4SubSub_<L4IDX, 74>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==75) {return;} calGradCnlmL4SubSub_<L4IDX, 75>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==76) {return;} calGradCnlmL4SubSub_<L4IDX, 76>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==77) {return;} calGradCnlmL4SubSub_<L4IDX, 77>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==78) {return;} calGradCnlmL4SubSub_<L4IDX, 78>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==79) {return;} calGradCnlmL4SubSub_<L4IDX, 79>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==80) {return;} calGradCnlmL4SubSub_<L4IDX, 80>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==81) {return;} calGradCnlmL4SubSub_<L4IDX, 81>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==82) {return;} calGradCnlmL4SubSub_<L4IDX, 82>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==83) {return;} calGradCnlmL4SubSub_<L4IDX, 83>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==84) {return;} calGradCnlmL4SubSub_<L4IDX, 84>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==85) {return;} calGradCnlmL4SubSub_<L4IDX, 85>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==86) {return;} calGradCnlmL4SubSub_<L4IDX, 86>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==87) {return;} calGradCnlmL4SubSub_<L4IDX, 87>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==88) {return;} calGradCnlmL4SubSub_<L4IDX, 88>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==89) {return;} calGradCnlmL4SubSub_<L4IDX, 89>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==90) {return;} calGradCnlmL4SubSub_<L4IDX, 90>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==91) {return;} calGradCnlmL4SubSub_<L4IDX, 91>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==92) {return;} calGradCnlmL4SubSub_<L4IDX, 92>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==93) {return;} calGradCnlmL4SubSub_<L4IDX, 93>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==94) {return;} calGradCnlmL4SubSub_<L4IDX, 94>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==95) {return;} calGradCnlmL4SubSub_<L4IDX, 95>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==96) {return;} calGradCnlmL4SubSub_<L4IDX, 96>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==97) {return;} calGradCnlmL4SubSub_<L4IDX, 97>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==98) {return;} calGradCnlmL4SubSub_<L4IDX, 98>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+    if (tSize==99) {return;} calGradCnlmL4SubSub_<L4IDX, 99>(aCnlm, rGradCnlm, aGradNNGradCnlm, aSubNNGrad);
+}
+template <jint L4MAX, jboolean L4CROSS>
+static void calGradCnlmL4_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad) noexcept {
+    if (L4MAX < 1) return;
+    calGradCnlmL4Sub_<0>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4MAX == 1) return;
+    calGradCnlmL4Sub_<1>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4CROSS) {
+        calGradCnlmL4Sub_<2>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    }
+    if (L4MAX == 2) return;
+    calGradCnlmL4Sub_<3>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+    if (L4CROSS) {
+        calGradCnlmL4Sub_<4>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL4Sub_<5>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL4Sub_<6>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL4Sub_<7>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
+        calGradCnlmL4Sub_<8>(aCnlm, rGradCnlm, aGradNNGradCnlm, *aNNGrad); ++aNNGrad;
     }
 }
 

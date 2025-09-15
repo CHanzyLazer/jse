@@ -80,7 +80,7 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
     }
 }
 
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
+template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint L4MAX, jboolean L4CROSS, jint WTYPE>
 static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN, jdouble *rFp,
                          jdouble *rForwardCache, jboolean aFullCache,
                          jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
@@ -111,8 +111,8 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
         tSizeN = 0;
         break;
     }}
-    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
-    constexpr jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
+    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX] + (L4CROSS?L4NCOLS:L4NCOLS_NOCROSS)[L4MAX];
+    constexpr jint tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
     // init cache
@@ -128,9 +128,12 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
     } else {
         calCnlm<tLMaxMax, tLMAll, WTYPE, JNI_FALSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rCnlm, rForwardCacheElse, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
     }
+    constexpr jint tShiftL3 = NO_RADIAL?LMAX:(LMAX+1);
+    constexpr jint tShiftL4 = tShiftL3 + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calL2_<LMAX, NO_RADIAL>(rCnlm+tShift, rFp+tShiftFp);
-        calL3_<L3MAX, L3CROSS>(rCnlm+tShift, rFp+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+        calL3_<L3MAX, L3CROSS>(rCnlm+tShift, rFp+tShiftFp+tShiftL3);
+        calL4_<L4MAX, L4CROSS>(rCnlm+tShift, rFp+tShiftFp+tShiftL4);
     }
 }
 
@@ -158,7 +161,7 @@ static void calBackwardMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, 
         }
     }
 }
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
+template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint L4MAX, jboolean L4CROSS, jint WTYPE>
 static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                         jdouble *aGradFp, jdouble *rGradPara, jdouble *aForwardCache, jdouble *rBackwardCache,
                         jint aTypeNum, jdouble aRCut, jint aNMax, jint aFuseSize) noexcept {
@@ -173,8 +176,8 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     } else {
         tSizeN = 0;
     }
-    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
-    constexpr jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
+    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX] + (L4CROSS?L4NCOLS:L4NCOLS_NOCROSS)[L4MAX];
+    constexpr jint tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
     // init cache
@@ -182,9 +185,12 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     jdouble *tNlBnlm = tCnlm + tSizeCnlm + aNN*(aNMax+1 + 1 + tLMAll);
     jdouble *rGradCnlm = rBackwardCache;
     // cal grad cnlm
+    constexpr jint tShiftL3 = NO_RADIAL?LMAX:(LMAX+1);
+    constexpr jint tShiftL4 = tShiftL3 + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradL2_<LMAX, NO_RADIAL>(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp);
-        calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+        calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp+tShiftL3);
+        calGradL4_<L4MAX, L4CROSS>(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp+tShiftL4);
     }
     // plus to para
     calBackwardMainLoop<tLMAll, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, tNlBnlm, rGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize);
@@ -308,7 +314,7 @@ static void calForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         }
     }
 }
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
+template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint L4MAX, jboolean L4CROSS, jint WTYPE>
 static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                      jdouble *aNNGrad, jdouble *rFx, jdouble *rFy, jdouble *rFz,
                      jdouble *aForwardCache, jdouble *rForwardForceCache, jboolean aFullCache,
@@ -340,8 +346,8 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
         tSizeN = 0;
         break;
     }}
-    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
-    constexpr jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
+    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX] + (L4CROSS?L4NCOLS:L4NCOLS_NOCROSS)[L4MAX];
+    constexpr jint tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
     // init cache
@@ -353,9 +359,12 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     for (jint i = 0; i < tSizeCnlm; ++i) {
         rGradCnlm[i] = 0.0;
     }
+    constexpr jint tShiftL3 = NO_RADIAL?LMAX:(LMAX+1);
+    constexpr jint tShiftL4 = tShiftL3 + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradL2_<LMAX, NO_RADIAL>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp);
-        calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+        calGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp+tShiftL3);
+        calGradL4_<L4MAX, L4CROSS>(tCnlm+tShift, rGradCnlm+tShift, aNNGrad+tShiftFp+tShiftL4);
     }
     if (aFullCache) {
         calForceMainLoop<tLMaxMax, tLMAll, WTYPE, JNI_TRUE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradCnlm, rFx, rFy, rFz, tForwardCacheElse, rForwardForceCacheElse, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
@@ -451,7 +460,7 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
         }
     }
 }
-template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint WTYPE>
+template <jint LMAX, jboolean NO_RADIAL, jint L3MAX, jboolean L3CROSS, jint L4MAX, jboolean L4CROSS, jint WTYPE>
 static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
                              jdouble *aNNGrad, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,
                              jdouble *rGradNNGrad, jdouble *rGradPara,
@@ -485,8 +494,8 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         tSizeN = 0;
         break;
     }}
-    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
-    constexpr jint tLMaxMax = LMAX>L3MAX ? LMAX : L3MAX;
+    constexpr jint tSizeL = (NO_RADIAL?LMAX:(LMAX+1)) + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX] + (L4CROSS?L4NCOLS:L4NCOLS_NOCROSS)[L4MAX];
+    constexpr jint tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr jint tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     const jint tSizeCnlm = tSizeN*tLMAll;
     // init cache
@@ -502,14 +511,18 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
     calBackwardForceMainLoop<tLMAll, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, tNNGradCnlm, rGradPara, tForwardCacheElse, tForwardForceCacheElse, rBackwardForceCacheElse, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize);
     
     // grad grad cnlm to grad grad fp
+    constexpr jint tShiftL3 = NO_RADIAL?LMAX:(LMAX+1);
+    constexpr jint tShiftL4 = tShiftL3 + (L3CROSS?L3NCOLS:L3NCOLS_NOCROSS)[L3MAX];
     for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradNNGradL2_<LMAX, NO_RADIAL>(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp);
-        calGradNNGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+        calGradNNGradL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp+tShiftL3);
+        calGradNNGradL4_<L4MAX, L4CROSS>(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp+tShiftL4);
     }
     if (WTYPE==WTYPE_FUSE) if (!aFixBasis) {
         for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
             calGradCnlmL2_<LMAX, NO_RADIAL>(rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp);
-            calGradCnlmL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp+(NO_RADIAL?LMAX:(LMAX+1)));
+            calGradCnlmL3_<L3MAX, L3CROSS>(tCnlm+tShift, rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp+tShiftL3);
+            calGradCnlmL4_<L4MAX, L4CROSS>(tCnlm+tShift, rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp+tShiftL4);
         }
     }
 }

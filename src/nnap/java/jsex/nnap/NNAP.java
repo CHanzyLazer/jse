@@ -92,6 +92,10 @@ public class NNAP implements IPairPotential {
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "nnap_util.hpp"
+        , "nn_FeedForward.hpp"
+        , "basis_Chebyshev.hpp"
+        , "basis_SphericalChebyshev.hpp"
+        , "basis_SphericalUtil.hpp"
         , "jsex_nnap_nn_FeedForward.cpp"
         , "jsex_nnap_nn_FeedForward.h"
         , "jsex_nnap_basis_SphericalChebyshev.cpp"
