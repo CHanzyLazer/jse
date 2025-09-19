@@ -383,6 +383,297 @@ static inline jdouble dot(jdouble *aArrayL, jdouble *aArrayR, jint aLen) noexcep
 }
 
 template <jint N>
+static inline void mplus(jdouble *rArrayL, jdouble aMul, jdouble *aArrayR) noexcept {
+    for (jint i = 0; i < N; ++i) {
+        rArrayL[i] += aMul*aArrayR[i];
+    }
+}
+static inline void mplus(jdouble *rArrayL, jdouble aMul, jdouble *aArrayR, jint aLen) noexcept {
+    switch (aLen) {
+    case 0: {return;}
+    case 1: {mplus<1>(rArrayL, aMul, aArrayR); return;}
+    case 2: {mplus<2>(rArrayL, aMul, aArrayR); return;}
+    case 3: {mplus<3>(rArrayL, aMul, aArrayR); return;}
+    case 4: {mplus<4>(rArrayL, aMul, aArrayR); return;}
+    case 5: {mplus<5>(rArrayL, aMul, aArrayR); return;}
+    case 6: {mplus<6>(rArrayL, aMul, aArrayR); return;}
+    case 7: {mplus<7>(rArrayL, aMul, aArrayR); return;}
+    case 8: {mplus<8>(rArrayL, aMul, aArrayR); return;}
+    case 9: {mplus<9>(rArrayL, aMul, aArrayR); return;}
+    case 10: {mplus<10>(rArrayL, aMul, aArrayR); return;}
+    case 11: {mplus<11>(rArrayL, aMul, aArrayR); return;}
+    case 12: {mplus<12>(rArrayL, aMul, aArrayR); return;}
+    case 13: {mplus<13>(rArrayL, aMul, aArrayR); return;}
+    case 14: {mplus<14>(rArrayL, aMul, aArrayR); return;}
+    case 15: {mplus<15>(rArrayL, aMul, aArrayR); return;}
+    case 16: {mplus<16>(rArrayL, aMul, aArrayR); return;}
+    case 17: {mplus<17>(rArrayL, aMul, aArrayR); return;}
+    case 18: {mplus<18>(rArrayL, aMul, aArrayR); return;}
+    case 19: {mplus<19>(rArrayL, aMul, aArrayR); return;}
+    case 20: {mplus<20>(rArrayL, aMul, aArrayR); return;}
+    case 21: {mplus<21>(rArrayL, aMul, aArrayR); return;}
+    case 22: {mplus<22>(rArrayL, aMul, aArrayR); return;}
+    case 23: {mplus<23>(rArrayL, aMul, aArrayR); return;}
+    case 24: {mplus<24>(rArrayL, aMul, aArrayR); return;}
+    case 25: {mplus<25>(rArrayL, aMul, aArrayR); return;}
+    case 26: {mplus<26>(rArrayL, aMul, aArrayR); return;}
+    case 27: {mplus<27>(rArrayL, aMul, aArrayR); return;}
+    case 28: {mplus<28>(rArrayL, aMul, aArrayR); return;}
+    case 29: {mplus<29>(rArrayL, aMul, aArrayR); return;}
+    case 30: {mplus<30>(rArrayL, aMul, aArrayR); return;}
+    case 31: {mplus<31>(rArrayL, aMul, aArrayR); return;}
+    case 32: {mplus<32>(rArrayL, aMul, aArrayR); return;}
+    case 33: {mplus<33>(rArrayL, aMul, aArrayR); return;}
+    case 34: {mplus<34>(rArrayL, aMul, aArrayR); return;}
+    case 35: {mplus<35>(rArrayL, aMul, aArrayR); return;}
+    case 36: {mplus<36>(rArrayL, aMul, aArrayR); return;}
+    case 37: {mplus<37>(rArrayL, aMul, aArrayR); return;}
+    case 38: {mplus<38>(rArrayL, aMul, aArrayR); return;}
+    case 39: {mplus<39>(rArrayL, aMul, aArrayR); return;}
+    case 40: {mplus<40>(rArrayL, aMul, aArrayR); return;}
+    case 41: {mplus<41>(rArrayL, aMul, aArrayR); return;}
+    case 42: {mplus<42>(rArrayL, aMul, aArrayR); return;}
+    case 43: {mplus<43>(rArrayL, aMul, aArrayR); return;}
+    case 44: {mplus<44>(rArrayL, aMul, aArrayR); return;}
+    case 45: {mplus<45>(rArrayL, aMul, aArrayR); return;}
+    case 46: {mplus<46>(rArrayL, aMul, aArrayR); return;}
+    case 47: {mplus<47>(rArrayL, aMul, aArrayR); return;}
+    case 48: {mplus<48>(rArrayL, aMul, aArrayR); return;}
+    case 49: {mplus<49>(rArrayL, aMul, aArrayR); return;}
+    case 50: {mplus<50>(rArrayL, aMul, aArrayR); return;}
+    case 51: {mplus<51>(rArrayL, aMul, aArrayR); return;}
+    case 52: {mplus<52>(rArrayL, aMul, aArrayR); return;}
+    case 53: {mplus<53>(rArrayL, aMul, aArrayR); return;}
+    case 54: {mplus<54>(rArrayL, aMul, aArrayR); return;}
+    case 55: {mplus<55>(rArrayL, aMul, aArrayR); return;}
+    case 56: {mplus<56>(rArrayL, aMul, aArrayR); return;}
+    case 57: {mplus<57>(rArrayL, aMul, aArrayR); return;}
+    case 58: {mplus<58>(rArrayL, aMul, aArrayR); return;}
+    case 59: {mplus<59>(rArrayL, aMul, aArrayR); return;}
+    case 60: {mplus<60>(rArrayL, aMul, aArrayR); return;}
+    case 61: {mplus<61>(rArrayL, aMul, aArrayR); return;}
+    case 62: {mplus<62>(rArrayL, aMul, aArrayR); return;}
+    case 63: {mplus<63>(rArrayL, aMul, aArrayR); return;}
+    case 64: {mplus<64>(rArrayL, aMul, aArrayR); return;}
+    case 65: {mplus<65>(rArrayL, aMul, aArrayR); return;}
+    case 66: {mplus<66>(rArrayL, aMul, aArrayR); return;}
+    case 67: {mplus<67>(rArrayL, aMul, aArrayR); return;}
+    case 68: {mplus<68>(rArrayL, aMul, aArrayR); return;}
+    case 69: {mplus<69>(rArrayL, aMul, aArrayR); return;}
+    case 70: {mplus<70>(rArrayL, aMul, aArrayR); return;}
+    case 71: {mplus<71>(rArrayL, aMul, aArrayR); return;}
+    case 72: {mplus<72>(rArrayL, aMul, aArrayR); return;}
+    case 73: {mplus<73>(rArrayL, aMul, aArrayR); return;}
+    case 74: {mplus<74>(rArrayL, aMul, aArrayR); return;}
+    case 75: {mplus<75>(rArrayL, aMul, aArrayR); return;}
+    case 76: {mplus<76>(rArrayL, aMul, aArrayR); return;}
+    case 77: {mplus<77>(rArrayL, aMul, aArrayR); return;}
+    case 78: {mplus<78>(rArrayL, aMul, aArrayR); return;}
+    case 79: {mplus<79>(rArrayL, aMul, aArrayR); return;}
+    case 80: {mplus<80>(rArrayL, aMul, aArrayR); return;}
+    case 81: {mplus<81>(rArrayL, aMul, aArrayR); return;}
+    case 82: {mplus<82>(rArrayL, aMul, aArrayR); return;}
+    case 83: {mplus<83>(rArrayL, aMul, aArrayR); return;}
+    case 84: {mplus<84>(rArrayL, aMul, aArrayR); return;}
+    case 85: {mplus<85>(rArrayL, aMul, aArrayR); return;}
+    case 86: {mplus<86>(rArrayL, aMul, aArrayR); return;}
+    case 87: {mplus<87>(rArrayL, aMul, aArrayR); return;}
+    case 88: {mplus<88>(rArrayL, aMul, aArrayR); return;}
+    case 89: {mplus<89>(rArrayL, aMul, aArrayR); return;}
+    case 90: {mplus<90>(rArrayL, aMul, aArrayR); return;}
+    case 91: {mplus<91>(rArrayL, aMul, aArrayR); return;}
+    case 92: {mplus<92>(rArrayL, aMul, aArrayR); return;}
+    case 93: {mplus<93>(rArrayL, aMul, aArrayR); return;}
+    case 94: {mplus<94>(rArrayL, aMul, aArrayR); return;}
+    case 95: {mplus<95>(rArrayL, aMul, aArrayR); return;}
+    case 96: {mplus<96>(rArrayL, aMul, aArrayR); return;}
+    case 97: {mplus<97>(rArrayL, aMul, aArrayR); return;}
+    case 98: {mplus<98>(rArrayL, aMul, aArrayR); return;}
+    case 99: {mplus<99>(rArrayL, aMul, aArrayR); return;}
+    case 100: {mplus<100>(rArrayL, aMul, aArrayR); return;}
+    case 101: {mplus<101>(rArrayL, aMul, aArrayR); return;}
+    case 102: {mplus<102>(rArrayL, aMul, aArrayR); return;}
+    case 103: {mplus<103>(rArrayL, aMul, aArrayR); return;}
+    case 104: {mplus<104>(rArrayL, aMul, aArrayR); return;}
+    case 105: {mplus<105>(rArrayL, aMul, aArrayR); return;}
+    case 106: {mplus<106>(rArrayL, aMul, aArrayR); return;}
+    case 107: {mplus<107>(rArrayL, aMul, aArrayR); return;}
+    case 108: {mplus<108>(rArrayL, aMul, aArrayR); return;}
+    case 109: {mplus<109>(rArrayL, aMul, aArrayR); return;}
+    case 110: {mplus<110>(rArrayL, aMul, aArrayR); return;}
+    case 111: {mplus<111>(rArrayL, aMul, aArrayR); return;}
+    case 112: {mplus<112>(rArrayL, aMul, aArrayR); return;}
+    case 113: {mplus<113>(rArrayL, aMul, aArrayR); return;}
+    case 114: {mplus<114>(rArrayL, aMul, aArrayR); return;}
+    case 115: {mplus<115>(rArrayL, aMul, aArrayR); return;}
+    case 116: {mplus<116>(rArrayL, aMul, aArrayR); return;}
+    case 117: {mplus<117>(rArrayL, aMul, aArrayR); return;}
+    case 118: {mplus<118>(rArrayL, aMul, aArrayR); return;}
+    case 119: {mplus<119>(rArrayL, aMul, aArrayR); return;}
+    case 120: {mplus<120>(rArrayL, aMul, aArrayR); return;}
+    case 121: {mplus<121>(rArrayL, aMul, aArrayR); return;}
+    case 122: {mplus<122>(rArrayL, aMul, aArrayR); return;}
+    case 123: {mplus<123>(rArrayL, aMul, aArrayR); return;}
+    case 124: {mplus<124>(rArrayL, aMul, aArrayR); return;}
+    case 125: {mplus<125>(rArrayL, aMul, aArrayR); return;}
+    case 126: {mplus<126>(rArrayL, aMul, aArrayR); return;}
+    case 127: {mplus<127>(rArrayL, aMul, aArrayR); return;}
+    case 128: {mplus<128>(rArrayL, aMul, aArrayR); return;}
+    default: {break;}
+    }
+    for (jint i = 0; i < aLen; ++i) {
+        rArrayL[i] += aMul*aArrayR[i];
+    }
+}
+template <jint N>
+static inline void mplus2(jdouble *rArrayL1, jdouble *rArrayL2, jdouble aMul1, jdouble aMul2, jdouble *aArrayR) noexcept {
+    for (jint i = 0; i < N; ++i) {
+        const jdouble tRHS = aArrayR[i];
+        rArrayL1[i] += aMul1*tRHS;
+        rArrayL2[i] += aMul2*tRHS;
+    }
+}
+static inline void mplus2(jdouble *rArrayL1, jdouble *rArrayL2, jdouble aMul1, jdouble aMul2, jdouble *aArrayR, jint aLen) noexcept {
+    switch (aLen) {
+    case 0: {return;}
+    case 1: {mplus2<1>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 2: {mplus2<2>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 3: {mplus2<3>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 4: {mplus2<4>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 5: {mplus2<5>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 6: {mplus2<6>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 7: {mplus2<7>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 8: {mplus2<8>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 9: {mplus2<9>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 10: {mplus2<10>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 11: {mplus2<11>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 12: {mplus2<12>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 13: {mplus2<13>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 14: {mplus2<14>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 15: {mplus2<15>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 16: {mplus2<16>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 17: {mplus2<17>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 18: {mplus2<18>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 19: {mplus2<19>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 20: {mplus2<20>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 21: {mplus2<21>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 22: {mplus2<22>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 23: {mplus2<23>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 24: {mplus2<24>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 25: {mplus2<25>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 26: {mplus2<26>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 27: {mplus2<27>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 28: {mplus2<28>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 29: {mplus2<29>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 30: {mplus2<30>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 31: {mplus2<31>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 32: {mplus2<32>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 33: {mplus2<33>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 34: {mplus2<34>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 35: {mplus2<35>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 36: {mplus2<36>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 37: {mplus2<37>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 38: {mplus2<38>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 39: {mplus2<39>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 40: {mplus2<40>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 41: {mplus2<41>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 42: {mplus2<42>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 43: {mplus2<43>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 44: {mplus2<44>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 45: {mplus2<45>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 46: {mplus2<46>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 47: {mplus2<47>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 48: {mplus2<48>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 49: {mplus2<49>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 50: {mplus2<50>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 51: {mplus2<51>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 52: {mplus2<52>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 53: {mplus2<53>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 54: {mplus2<54>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 55: {mplus2<55>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 56: {mplus2<56>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 57: {mplus2<57>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 58: {mplus2<58>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 59: {mplus2<59>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 60: {mplus2<60>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 61: {mplus2<61>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 62: {mplus2<62>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 63: {mplus2<63>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 64: {mplus2<64>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 65: {mplus2<65>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 66: {mplus2<66>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 67: {mplus2<67>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 68: {mplus2<68>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 69: {mplus2<69>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 70: {mplus2<70>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 71: {mplus2<71>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 72: {mplus2<72>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 73: {mplus2<73>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 74: {mplus2<74>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 75: {mplus2<75>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 76: {mplus2<76>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 77: {mplus2<77>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 78: {mplus2<78>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 79: {mplus2<79>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 80: {mplus2<80>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 81: {mplus2<81>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 82: {mplus2<82>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 83: {mplus2<83>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 84: {mplus2<84>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 85: {mplus2<85>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 86: {mplus2<86>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 87: {mplus2<87>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 88: {mplus2<88>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 89: {mplus2<89>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 90: {mplus2<90>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 91: {mplus2<91>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 92: {mplus2<92>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 93: {mplus2<93>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 94: {mplus2<94>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 95: {mplus2<95>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 96: {mplus2<96>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 97: {mplus2<97>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 98: {mplus2<98>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 99: {mplus2<99>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 100: {mplus2<100>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 101: {mplus2<101>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 102: {mplus2<102>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 103: {mplus2<103>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 104: {mplus2<104>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 105: {mplus2<105>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 106: {mplus2<106>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 107: {mplus2<107>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 108: {mplus2<108>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 109: {mplus2<109>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 110: {mplus2<110>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 111: {mplus2<111>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 112: {mplus2<112>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 113: {mplus2<113>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 114: {mplus2<114>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 115: {mplus2<115>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 116: {mplus2<116>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 117: {mplus2<117>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 118: {mplus2<118>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 119: {mplus2<119>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 120: {mplus2<120>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 121: {mplus2<121>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 122: {mplus2<122>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 123: {mplus2<123>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 124: {mplus2<124>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 125: {mplus2<125>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 126: {mplus2<126>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 127: {mplus2<127>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    case 128: {mplus2<128>(rArrayL1, rArrayL2, aMul1, aMul2, aArrayR); return;}
+    default: {break;}
+    }
+    for (jint i = 0; i < aLen; ++i) {
+        const jdouble tRHS = aArrayR[i];
+        rArrayL1[i] += aMul1*tRHS;
+        rArrayL2[i] += aMul2*tRHS;
+    }
+}
+
+template <jint N>
 static inline void chebyshevFull(jdouble aX, jdouble *rDest) noexcept {
     if (N < 0) return;
     rDest[0] = 1.0;

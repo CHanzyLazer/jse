@@ -94,6 +94,7 @@ public class NNAP implements IPairPotential {
           "nnap_util.hpp"
         , "nn_FeedForward.hpp"
         , "basis_Chebyshev.hpp"
+        , "basis_ChebyshevUtil.hpp"
         , "basis_SphericalChebyshev.hpp"
         , "basis_SphericalUtil.hpp"
         , "jsex_nnap_nn_FeedForward.cpp"
