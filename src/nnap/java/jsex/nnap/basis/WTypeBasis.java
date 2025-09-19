@@ -112,7 +112,7 @@ abstract class WTypeBasis extends MergeableBasis {
             return ColumnMatrix.zeros(tFuseSize, aTypeNum);
         }
         // aWType == WTYPE_RFUSE
-        int tFuseSize = ((Number) UT.Code.getWithDefault(aMap, aNMax+1, "fuse_size", "rfuse_nmax", "fuse_nmax")).intValue();
+        int tFuseSize = ((Number) UT.Code.getWithDefault(aMap, aNMax+1, "fuse_size")).intValue();
         return ColumnMatrix.zeros(tFuseSize*(aNMax+1), aTypeNum);
     }
     

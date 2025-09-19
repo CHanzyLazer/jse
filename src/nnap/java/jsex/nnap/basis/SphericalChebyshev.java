@@ -162,30 +162,46 @@ public class SphericalChebyshev extends WTypeBasis {
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
     @Override protected int forwardCacheSize_(int aNN, boolean aFullCache) {
-        if (mWType != WTYPE_FUSE) {
-            return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll) + mSizeN*mLMAll)
-                              : (mNMax+1 + mLMAll + mSizeN*mLMAll);
+        if (mWType == WTYPE_FUSE) {
+            return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + mSizeN*mLMAll)
+                              : (mNMax+1 + mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
         }
-        return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + mSizeN*mLMAll)
-                          : (mNMax+1 + mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
+        if (mWType == WTYPE_RFUSE) {
+            return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll + mFuseSize) + mSizeN*mLMAll)
+                              : (mNMax+1 + mLMAll + mFuseSize + mSizeN*mLMAll);
+        }
+        return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll) + mSizeN*mLMAll)
+                          : (mNMax+1 + mLMAll + mSizeN*mLMAll);
     }
     @Override protected int backwardCacheSize_(int aNN) {
-        if (mWType != WTYPE_FUSE) return 0;
-        return mSizeN*mLMAll;
+        if (mWType == WTYPE_FUSE) {
+            return mSizeN*mLMAll;
+        }
+        if (mWType == WTYPE_RFUSE) {
+            return aNN*mFuseSize + mSizeN*mLMAll;
+        }
+        return 0;
     }
     @Override protected int forwardForceCacheSize_(int aNN, boolean aFullCache) {
-        if (mWType != WTYPE_FUSE) {
-            return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
-                              : (4*(mNMax+1) + 5*mLMAll + mSizeN*mLMAll);
+        if (mWType == WTYPE_FUSE) {
+            return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
+                              : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
         }
-        return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
-                          : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll);
+        if (mWType == WTYPE_RFUSE) {
+            return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + mFuseSize) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
+                              : (4*(mNMax+1) + 5*mLMAll + mFuseSize + mSizeN*mLMAll);
+        }
+        return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll)
+                          : (4*(mNMax+1) + 5*mLMAll + mSizeN*mLMAll);
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
-        if (mWType != WTYPE_FUSE) {
-            return mLMAll + mSizeN*mLMAll;
+        if (mWType == WTYPE_FUSE) {
+            return mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll;
         }
-        return mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll;
+        if (mWType == WTYPE_RFUSE) {
+            return mLMAll + mNMax+1 + mSizeN*mLMAll;
+        }
+        return mLMAll + mSizeN*mLMAll;
     }
     
     @Override
@@ -200,7 +216,7 @@ public class SphericalChebyshev extends WTypeBasis {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 如果不是 fuse 直接返回不走 native
-        if (mWType!=WTYPE_FUSE) return;
+        if (mWType!=WTYPE_FUSE && mWType!=WTYPE_RFUSE) return;
         // 如果不保留旧值则在这里清空
         if (!aKeepCache) rBackwardCache.fill(0.0);
         

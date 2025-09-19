@@ -118,9 +118,6 @@ public class Chebyshev extends WTypeBasis {
     @Override public @Nullable String symbol(int aType) {return mSymbols==null ? null : mSymbols[aType-1];}
     
     @Override protected int forwardCacheSize_(int aNN, boolean aFullCache) {
-        if (mWType == WTYPE_RFUSE) {
-            return aFullCache ? (aNN*(mNMax+1 + 1) + mNMax+1) : 2*(mNMax+1);
-        }
         return aFullCache ? aNN*(mNMax+1 + 1) : (mNMax+1);
     }
     @Override protected int backwardCacheSize_(int aNN) {

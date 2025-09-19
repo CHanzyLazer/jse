@@ -14,8 +14,10 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
     // init cache
     jdouble *rRn = NULL, *rY = NULL;
     jdouble *rBnlm = NULL;
+    jdouble *rRnp = NULL;
     jdouble *rNlRn = NULL, *rNlFc = NULL, *rNlY = NULL;
     jdouble *rNlBnlm = NULL;
+    jdouble *rNlRnp = NULL;
     if (FULL_CACHE) {
         rNlRn = rForwardCache;
         rNlFc = rNlRn + aNN*(aNMax+1);
@@ -29,6 +31,13 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
             rNlBnlm = rNlY + aNN*tLMAll;
         } else {
             rBnlm = rY + tLMAll;
+        }
+    }
+    if (WTYPE==WTYPE_RFUSE) {
+        if (FULL_CACHE) {
+            rNlRnp = rNlY + aNN*tLMAll;
+        } else {
+            rRnp = rY + tLMAll;
         }
     }
     // loop for neighbor
@@ -56,9 +65,26 @@ static void calCnlm(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTyp
             jdouble *tFuseWeight = aFuseWeight + aFuseSize*(type-1);
             jdouble *tCnlm = rCnlm;
             for (jint k = 0; k < aFuseSize; ++k) {
-                jdouble wt = tFuseWeight[k];
-                mplusBnlm2Cnlm<tLMAll>(tCnlm, rBnlm, wt, aNMax);
+                mplusBnlm2Cnlm<tLMAll>(tCnlm, rBnlm, tFuseWeight[k], aNMax);
                 tCnlm += tSizeBnlm;
+            }
+        } else
+        if (WTYPE==WTYPE_RFUSE) {
+            // cal Rnp
+            if (FULL_CACHE) rRnp = rNlRnp + j*aFuseSize;
+            jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aNMax+1)*(type-1);
+            for (jint np = 0; np < aFuseSize; ++np) {
+                rRnp[np] = fc*dot(tFuseWeight, rRn, aNMax+1);
+                tFuseWeight += (aNMax+1);
+            }
+            // mplus2cnlm
+            jdouble *tCnlm = rCnlm;
+            for (jint np = 0; np < aFuseSize; ++np) {
+                const jdouble tRnp_ = rRnp[np];
+                for (jint k = 0; k < tLMAll; ++k) {
+                    tCnlm[k] += tRnp_*rY[k];
+                }
+                tCnlm += tLMAll;
             }
         } else
         if (WTYPE==WTYPE_NONE) {
@@ -127,6 +153,7 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
     case WTYPE_NONE:    {tSizeN = aNMax+1;                break;}
     case WTYPE_DEFAULT: {tSizeN = (aNMax+aNMax+2);        break;}
     case WTYPE_FUSE:    {tSizeN = aFuseSize*(aNMax+1);    break;}
+    case WTYPE_RFUSE:   {tSizeN = aFuseSize;              break;}
     default:            {tSizeN = 0;                      break;}
     }
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max] + (aL4Cross?L4NCOLS:L4NCOLS_NOCROSS)[aL4Max];
@@ -153,46 +180,83 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
 
 template <jint LMAXMAX, jint WTYPE>
 static void calBackwardMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                jdouble *rGradPara, jdouble *aNlBnlm,  jdouble *aGradCnlm,
+                                jdouble *rGradPara, jdouble *aGradCnlm, jdouble *aForwardCache, jdouble *rBackwardCache,
                                 jint aTypeNum, jdouble aRCut, jint aNMax, jint aFuseSize) {
     constexpr jint tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     const jint tSizeBnlm = (aNMax+1)*tLMAll;
+    jdouble *tNlRn = NULL;
+    jdouble *tNlFc = NULL;
+    jdouble *tNlY = NULL;
+    jdouble *tNlBnlm = NULL;
+    jdouble *rNlGradRnp = NULL;
+    if (WTYPE==WTYPE_FUSE) {
+        tNlBnlm = aForwardCache + aNN*(aNMax+1 + 1 + tLMAll);
+    }
+    if (WTYPE==WTYPE_RFUSE) {
+        tNlRn = aForwardCache;
+        tNlFc = tNlRn + aNN*(aNMax+1);
+        tNlY = tNlFc + aNN;
+        rNlGradRnp = rBackwardCache;
+    }
     for (jint j = 0; j < aNN; ++j) {
         jint type = aNlType[j];
         jdouble dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
         jdouble dis = sqrt((double)(dx*dx + dy*dy + dz*dz));
         // check rcut for merge
         if (dis >= aRCut) continue;
-        jdouble *tBnlm = aNlBnlm + j*tSizeBnlm;
         if (WTYPE==WTYPE_FUSE) {
+            // get bnlm
+            jdouble *tBnlm = tNlBnlm + j*tSizeBnlm;
+            // mplus to gradPara
             jdouble *tGradPara = rGradPara + aFuseSize*(type-1);
             jdouble *tGradCnlm = aGradCnlm;
             for (jint k = 0; k < aFuseSize; ++k) {
                 tGradPara[k] += dotBnlmGradCnlm<tLMAll>(tBnlm, tGradCnlm, aNMax);
                 tGradCnlm += tSizeBnlm;
             }
-            continue;
+        } else
+        if (WTYPE==WTYPE_RFUSE) {
+            // get Rn, fc, Y
+            jdouble *tRn = tNlRn + j*(aNMax+1);
+            jdouble fc = tNlFc[j];
+            jdouble *tY = tNlY + j*tLMAll;
+            // cal gradRnp
+            jdouble *rGradRnp = rNlGradRnp + j*aFuseSize;
+            jdouble *tGradCnlm = aGradCnlm;
+            for (jint np = 0; np < aFuseSize; ++np) {
+                rGradRnp[np] += dot<tLMAll>(tY, tGradCnlm);
+                tGradCnlm += tLMAll;
+            }
+            // mplus to gradPara
+            jdouble *tGradPara = rGradPara + aFuseSize*(aNMax+1)*(type-1);
+            for (jint np = 0; np < aFuseSize; ++np) {
+                const jdouble tMul = fc*rGradRnp[np];
+                for (jint n = 0; n <= aNMax; ++n) {
+                    tGradPara[n] += tMul*tRn[n];
+                }
+                tGradPara += (aNMax+1);
+            }
         }
     }
 }
 template <jint WTYPE>
 static void calBackwardMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
-                                jdouble *rGradPara, jdouble *aNlBnlm,  jdouble *aGradCnlm,
+                                jdouble *rGradPara, jdouble *aGradCnlm, jdouble *aForwardCache, jdouble *rBackwardCache,
                                 jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMaxMax, jint aFuseSize) {
     switch (aLMaxMax) {
-    case 0: {calBackwardMainLoop<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 1: {calBackwardMainLoop<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 2: {calBackwardMainLoop<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 3: {calBackwardMainLoop<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 4: {calBackwardMainLoop<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 5: {calBackwardMainLoop<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 6: {calBackwardMainLoop<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 7: {calBackwardMainLoop<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 8: {calBackwardMainLoop<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 9: {calBackwardMainLoop<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 10: {calBackwardMainLoop<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 11: {calBackwardMainLoop<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
-    case 12: {calBackwardMainLoop<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aNlBnlm, aGradCnlm, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 0: {calBackwardMainLoop<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 1: {calBackwardMainLoop<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 2: {calBackwardMainLoop<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 3: {calBackwardMainLoop<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 4: {calBackwardMainLoop<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 5: {calBackwardMainLoop<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 6: {calBackwardMainLoop<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 7: {calBackwardMainLoop<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 8: {calBackwardMainLoop<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 9: {calBackwardMainLoop<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 10: {calBackwardMainLoop<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 11: {calBackwardMainLoop<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
+    case 12: {calBackwardMainLoop<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, aGradCnlm, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aFuseSize); return;}
     default: {return;}
     }
 }
@@ -206,6 +270,9 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     jint tSizeN;
     if (WTYPE==WTYPE_FUSE) {
         tSizeN = aFuseSize*(aNMax+1);
+    } else
+    if (WTYPE==WTYPE_RFUSE) {
+        tSizeN = aFuseSize;
     } else {
         tSizeN = 0;
     }
@@ -215,8 +282,9 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     const jint tSizeCnlm = tSizeN*tLMAll;
     // init cache
     jdouble *tCnlm = aForwardCache;
-    jdouble *tNlBnlm = tCnlm + tSizeCnlm + aNN*(aNMax+1 + 1 + tLMAll);
+    jdouble *tForwardCacheElse = tCnlm + tSizeCnlm;
     jdouble *rGradCnlm = rBackwardCache;
+    jdouble *rBackwardCacheElse = rGradCnlm + tSizeCnlm;
     // cal grad cnlm
     const jint tShiftL3 = aNoRadial?aLMax:(aLMax+1);
     const jint tShiftL4 = tShiftL3 + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
@@ -226,7 +294,7 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
         calGradL4_(tCnlm+tShift, rGradCnlm+tShift, aGradFp+tShiftFp+tShiftL4, aL4Max, aL4Cross);
     }
     // plus to para
-    calBackwardMainLoop<WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, tNlBnlm, rGradCnlm, aTypeNum, aRCut, aNMax, tLMaxMax, aFuseSize);
+    calBackwardMainLoop<WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, rGradCnlm, tForwardCacheElse, rBackwardCacheElse, aTypeNum, aRCut, aNMax, tLMaxMax, aFuseSize);
 }
 
 template <jint LMAXMAX, jint WTYPE, jboolean FULL_CACHE>
@@ -240,13 +308,16 @@ static void calForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
     jdouble *tNlRn = aForwardCache;
     jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
     jdouble *tNlY = tNlFc + aNN;
+    jdouble *tNlRnp = NULL;
     jdouble *rRnPx = NULL, *rRnPy = NULL, *rRnPz = NULL, *rCheby2 = NULL;
     jdouble *rYPx = NULL, *rYPy = NULL, *rYPz = NULL, *rYPtheta = NULL, *rYPphi = NULL;
     jdouble *rGradBnlm = NULL;
+    jdouble *rGradRnp = NULL;
     jdouble *rNlRnPx = NULL, *rNlRnPy = NULL, *rNlRnPz = NULL;
     jdouble *rNlFcPx = NULL, *rNlFcPy = NULL, *rNlFcPz = NULL;
     jdouble *rNlYPx = NULL, *rNlYPy = NULL, *rNlYPz = NULL;
     jdouble *rNlGradBnlm = NULL;
+    jdouble *rNlGradRnp = NULL;
     if (FULL_CACHE) {
         rNlRnPx = rForwardForceCache;
         rNlRnPy = rNlRnPx + aNN*(aNMax+1);
@@ -276,6 +347,14 @@ static void calForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
             rNlGradBnlm = rCheby2 + (aNMax+1);
         } else {
             rGradBnlm = rCheby2 + (aNMax+1);
+        }
+    }
+    if (WTYPE==WTYPE_RFUSE) {
+        tNlRnp = tNlY + aNN*tLMAll;
+        if (FULL_CACHE) {
+            rNlGradRnp = rCheby2 + (aNMax+1);
+        } else {
+            rGradRnp = rCheby2 + (aNMax+1);
         }
     }
     // loop for neighbor
@@ -323,11 +402,64 @@ static void calForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
             jdouble *tFuseWeight = aFuseWeight + aFuseSize*(type-1);
             jdouble *tGradCnlm = aGradCnlm;
             for (jint k = 0; k < aFuseSize; ++k) {
-                jdouble wt = tFuseWeight[k];
-                mplusBnlm2Cnlm<tLMAll>(rGradBnlm, tGradCnlm, wt, aNMax);
+                mplusBnlm2Cnlm<tLMAll>(rGradBnlm, tGradCnlm, tFuseWeight[k], aNMax);
                 tGradCnlm += tSizeBnlm;
             }
             gradBnlm2Fxyz<tLMAll>(j, rGradBnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
+        } else
+        if (WTYPE==WTYPE_RFUSE) {
+            // get Rnp
+            jdouble *tRnp = tNlRnp + j*aFuseSize;
+            if (FULL_CACHE) {
+                rGradRnp = rNlGradRnp + j*aFuseSize;
+            }
+            // clear gradY, grad Rn here
+            jdouble *rGradY = rYPtheta;
+            for (jint k = 0; k < tLMAll; ++k) {
+                rGradY[k] = 0.0;
+            }
+            jdouble *tGradRn = rCheby2;
+            for (jint n = 0; n <= aNMax; ++n) {
+                tGradRn[n] = 0.0;
+            }
+            jdouble *tGradCnlm = aGradCnlm;
+            jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aNMax+1)*(type-1);
+            for (jint np = 0; np < aFuseSize; ++np) {
+                const jdouble tRnp_ = tRnp[np];
+                jdouble tGradRnp_ = 0.0;
+                for (jint k = 0; k < tLMAll; ++k) {
+                    jdouble subGradCnlm = tGradCnlm[k];
+                    rGradY[k] += tRnp_ * subGradCnlm;
+                    tGradRnp_ += tY[k] * subGradCnlm;
+                }
+                tGradCnlm += tLMAll;
+                rGradRnp[np] = tGradRnp_;
+                for (jint n = 0; n <= aNMax; ++n) {
+                    tGradRn[n] += tGradRnp_*tFuseWeight[n];
+                }
+                tFuseWeight += (aNMax+1);
+            }
+            jdouble tGradFc = 0.0;
+            jdouble rFxj = 0.0, rFyj = 0.0, rFzj = 0.0;
+            for (jint n = 0; n <= aNMax; ++n) {
+                const jdouble tRnn = tRn[n];
+                jdouble subGradRn = tGradRn[n];
+                tGradFc += tRnn * subGradRn;
+                subGradRn *= fc;
+                rFxj += subGradRn*rRnPx[n];
+                rFyj += subGradRn*rRnPy[n];
+                rFzj += subGradRn*rRnPz[n];
+            }
+            for (jint k = 0; k < tLMAll; ++k) {
+                const jdouble subGradY = rGradY[k];
+                rFxj += subGradY*rYPx[k];
+                rFyj += subGradY*rYPy[k];
+                rFzj += subGradY*rYPz[k];
+            }
+            rFxj += fcPx*tGradFc;
+            rFyj += fcPy*tGradFc;
+            rFzj += fcPz*tGradFc;
+            rFx[j] += rFxj; rFy[j] += rFyj; rFz[j] += rFzj;
         } else
         if (WTYPE==WTYPE_NONE) {
             gradBnlm2Fxyz<tLMAll>(j, aGradCnlm, rYPtheta, tY, fc, tRn, aNMax, fcPx, fcPy, fcPz, rRnPx, rRnPy, rRnPz, rYPx, rYPy, rYPz, rFx, rFy, rFz);
@@ -396,6 +528,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     case WTYPE_NONE:    {tSizeN = aNMax+1;                break;}
     case WTYPE_DEFAULT: {tSizeN = (aNMax+aNMax+2);        break;}
     case WTYPE_FUSE:    {tSizeN = aFuseSize*(aNMax+1);    break;}
+    case WTYPE_RFUSE:   {tSizeN = aFuseSize;              break;}
     default:            {tSizeN = 0;                      break;}
     }
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max] + (aL4Cross?L4NCOLS:L4NCOLS_NOCROSS)[aL4Max];
@@ -426,7 +559,7 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
                                      jdouble *rGradNNGradCnlm, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,
                                      jdouble *aNNGradCnlm, jdouble *rGradPara,
                                      jdouble *aForwardCache, jdouble *aForwardForceCache,
-                                     jdouble *rBackwardForceCache, jboolean aFixBasis,
+                                     jdouble *rBackwardCache, jdouble *rBackwardForceCache, jboolean aFixBasis,
                                      jint aTypeNum, jdouble aRCut, jint aNMax, jdouble *aFuseWeight, jint aFuseSize) noexcept {
     constexpr jint tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     const jint tSizeBnlm = (aNMax+1)*tLMAll;
@@ -434,6 +567,7 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
     jdouble *tNlRn = aForwardCache;
     jdouble *tNlFc = tNlRn + aNN*(aNMax+1);
     jdouble *tNlY = tNlFc + aNN;
+    jdouble *tNlRnp = NULL;
     jdouble *tNlRnPx = aForwardForceCache;
     jdouble *tNlRnPy = tNlRnPx + aNN*(aNMax+1);
     jdouble *tNlRnPz = tNlRnPy + aNN*(aNMax+1);
@@ -443,10 +577,19 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
     jdouble *tNlYPx = tNlFcPz + aNN;
     jdouble *tNlYPy = tNlYPx + aNN*tLMAll;
     jdouble *tNlYPz = tNlYPy + aNN*tLMAll;
+    jdouble *tNlNNGradRnp = NULL;
+    jdouble *rNlGradRnp = NULL;
     jdouble *rGradNNGradY = rBackwardForceCache;
     jdouble *rGradNNGradBnlm = NULL;
+    jdouble *rGradNNGradRn = NULL;
     if (WTYPE==WTYPE_FUSE) {
         rGradNNGradBnlm = rGradNNGradY + tLMAll;
+    }
+    if (WTYPE==WTYPE_RFUSE) {
+        tNlRnp = tNlY + aNN*tLMAll;
+        tNlNNGradRnp =  tNlYPz + (aNN*tLMAll) + tLMAll + tLMAll + (aNMax+1);
+        rNlGradRnp = rBackwardCache;
+        rGradNNGradRn = rGradNNGradY + tLMAll;
     }
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
@@ -476,8 +619,7 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
             jdouble *tFuseWeight = aFuseWeight + aFuseSize*(type-1);
             jdouble *tGradNNGradCnlm = rGradNNGradCnlm;
             for (jint k = 0; k < aFuseSize; ++k) {
-                jdouble wt = tFuseWeight[k];
-                mplusBnlm2Cnlm<tLMAll>(tGradNNGradCnlm, rGradNNGradBnlm, wt, aNMax);
+                mplusBnlm2Cnlm<tLMAll>(tGradNNGradCnlm, rGradNNGradBnlm, tFuseWeight[k], aNMax);
                 tGradNNGradCnlm += tSizeBnlm;
             }
             if (!aFixBasis) {
@@ -486,6 +628,51 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
                 for (jint k = 0; k < aFuseSize; ++k) {
                     tGradPara[k] += dotBnlmGradCnlm<tLMAll>(tNNGradCnlm, rGradNNGradBnlm, aNMax);
                     tNNGradCnlm += tSizeBnlm;
+                }
+            }
+        } else
+        if (WTYPE==WTYPE_RFUSE) {
+            for (jint k = 0; k < tLMAll; ++k) {
+                rGradNNGradY[k] = tYPx[k]*tGradFx + tYPy[k]*tGradFy + tYPz[k]*tGradFz;
+            }
+            const jdouble tGradNNGradFc = fcPx*tGradFx + fcPy*tGradFy + fcPz*tGradFz;
+            for (jint n = 0; n <= aNMax; ++n) {
+                jdouble subGradNNGradRn = tRnPx[n]*tGradFx + tRnPy[n]*tGradFy + tRnPz[n]*tGradFz;
+                jdouble tRnn = tRn[n];
+                rGradNNGradRn[n] = tRnn*tGradNNGradFc + fc*subGradNNGradRn;
+            }
+            jdouble *tRnp = tNlRnp + j*aFuseSize;
+            jdouble *tGradNNGradCnlm = rGradNNGradCnlm;
+            jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aNMax+1)*(type-1);
+            for (jint np = 0; np < aFuseSize; ++np) {
+                jdouble tGradNNGradRnp = 0.0;
+                for (jint n = 0; n <= aNMax; ++n) {
+                    tGradNNGradRnp += tFuseWeight[n]*rGradNNGradRn[n];
+                }
+                tFuseWeight += (aNMax+1);
+                jdouble subRnp = tRnp[np];
+                for (jint k = 0; k < tLMAll; ++k) {
+                    tGradNNGradCnlm[k] += tY[k]*tGradNNGradRnp + subRnp*rGradNNGradY[k];
+                }
+                tGradNNGradCnlm += tLMAll;
+            }
+            if (!aFixBasis) {
+                jdouble *tNNGradRnp = tNlNNGradRnp + j*aFuseSize;
+                jdouble *tGradRnp = rNlGradRnp + j*aFuseSize;
+                jdouble *tGradPara = rGradPara + aFuseSize*(aNMax+1)*(type-1);
+                jdouble *tNNGradCnlm = aNNGradCnlm;
+                for (jint np = 0; np < aFuseSize; ++np) {
+                    const jdouble subNNGradRnp = tNNGradRnp[np];
+                    for (jint n = 0; n <= aNMax; ++n) {
+                        tGradPara[n] += subNNGradRnp*rGradNNGradRn[n];
+                    }
+                    tGradPara += (aNMax+1);
+                    jdouble subGradRnp = 0.0;
+                    for (jint k = 0; k < tLMAll; ++k) {
+                        subGradRnp += tNNGradCnlm[k]*rGradNNGradY[k];
+                    }
+                    tGradRnp[np] += subGradRnp;
+                    tNNGradCnlm += tLMAll;
                 }
             }
         } else
@@ -512,23 +699,23 @@ static void calBackwardForceMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aN
                                      jdouble *rGradNNGradCnlm, jdouble *aGradFx, jdouble *aGradFy, jdouble *aGradFz,
                                      jdouble *aNNGradCnlm, jdouble *rGradPara,
                                      jdouble *aForwardCache, jdouble *aForwardForceCache,
-                                     jdouble *rBackwardForceCache, jboolean aFixBasis,
+                                     jdouble *rBackwardCache, jdouble *rBackwardForceCache, jboolean aFixBasis,
                                      jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMaxMax,
                                      jdouble *aFuseWeight, jint aFuseSize) noexcept {
     switch (aLMaxMax) {
-    case 0: {calBackwardForceMainLoop<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 1: {calBackwardForceMainLoop<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 2: {calBackwardForceMainLoop<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 3: {calBackwardForceMainLoop<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 4: {calBackwardForceMainLoop<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 5: {calBackwardForceMainLoop<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 6: {calBackwardForceMainLoop<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 7: {calBackwardForceMainLoop<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 8: {calBackwardForceMainLoop<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 9: {calBackwardForceMainLoop<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 10: {calBackwardForceMainLoop<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 11: {calBackwardForceMainLoop<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
-    case 12: {calBackwardForceMainLoop<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 0: {calBackwardForceMainLoop<0, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 1: {calBackwardForceMainLoop<1, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 2: {calBackwardForceMainLoop<2, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 3: {calBackwardForceMainLoop<3, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 4: {calBackwardForceMainLoop<4, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 5: {calBackwardForceMainLoop<5, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 6: {calBackwardForceMainLoop<6, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 7: {calBackwardForceMainLoop<7, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 8: {calBackwardForceMainLoop<8, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 9: {calBackwardForceMainLoop<9, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 10: {calBackwardForceMainLoop<10, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 11: {calBackwardForceMainLoop<11, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
+    case 12: {calBackwardForceMainLoop<12, WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, aNNGradCnlm, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aFuseWeight, aFuseSize); return;}
     default: {return;}
     }
 }
@@ -549,6 +736,7 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
     case WTYPE_NONE:    {tSizeN = aNMax+1;                break;}
     case WTYPE_DEFAULT: {tSizeN = (aNMax+aNMax+2);        break;}
     case WTYPE_FUSE:    {tSizeN = aFuseSize*(aNMax+1);    break;}
+    case WTYPE_RFUSE:   {tSizeN = aFuseSize;              break;}
     default:            {tSizeN = 0;                      break;}
     }
     const jint tSizeL = (aNoRadial?aLMax:(aLMax+1)) + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max] + (aL4Cross?L4NCOLS:L4NCOLS_NOCROSS)[aL4Max];
@@ -561,11 +749,12 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
     jdouble *tNNGradCnlm = aForwardForceCache;
     jdouble *tForwardForceCacheElse = tNNGradCnlm + tSizeCnlm;
     jdouble *rGradCnlm = rBackwardCache;
+    jdouble *rBackwardCacheElse = rGradCnlm + tSizeCnlm;
     jdouble *rGradNNGradCnlm = rBackwardForceCache;
     jdouble *rBackwardForceCacheElse = rGradNNGradCnlm + tSizeCnlm;
     
     // cal rGradNNGradCnlm
-    calBackwardForceMainLoop<WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, tNNGradCnlm, rGradPara, tForwardCacheElse, tForwardForceCacheElse, rBackwardForceCacheElse, aFixBasis, aTypeNum, aRCut, aNMax, tLMaxMax, aFuseWeight, aFuseSize);
+    calBackwardForceMainLoop<WTYPE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradNNGradCnlm, aGradFx, aGradFy, aGradFz, tNNGradCnlm, rGradPara, tForwardCacheElse, tForwardForceCacheElse, rBackwardCacheElse, rBackwardForceCacheElse, aFixBasis, aTypeNum, aRCut, aNMax, tLMaxMax, aFuseWeight, aFuseSize);
     
     // grad grad cnlm to grad grad fp
     const jint tShiftL3 = aNoRadial?aLMax:(aLMax+1);
@@ -575,7 +764,7 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         calGradNNGradL3_(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp+tShiftL3, aL3Max, aL3Cross);
         calGradNNGradL4_(tCnlm+tShift, rGradNNGradCnlm+tShift, rGradNNGrad+tShiftFp+tShiftL4, aL4Max, aL4Cross);
     }
-    if (WTYPE==WTYPE_FUSE) if (!aFixBasis) {
+    if (WTYPE==WTYPE_FUSE || WTYPE==WTYPE_RFUSE) if (!aFixBasis) {
         for (jint n=0, tShift=0, tShiftFp=0; n<tSizeN; ++n, tShift+=tLMAll, tShiftFp+=tSizeL) {
             calGradCnlmL2_(rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp, aLMax, aNoRadial);
             calGradCnlmL3_(tCnlm+tShift, rGradCnlm+tShift, rGradNNGradCnlm+tShift, aNNGrad+tShiftFp+tShiftL3, aL3Max, aL3Cross);
@@ -594,6 +783,10 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
         switch(aWType) {
         case WTYPE_FUSE: {
             calFp<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case WTYPE_RFUSE: {
+            calFp<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
         case WTYPE_NONE:
@@ -628,6 +821,10 @@ static inline void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *a
             calFp<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
+        case WTYPE_RFUSE: {
+            calFp<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rFp, rForwardCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
         default: {
             return;
         }}
@@ -639,6 +836,9 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
                         jint aL3Max, jboolean aL3Cross, jint aL4Max, jboolean aL4Cross, jint aWType, jint aFuseSize) noexcept {
     if (aWType==WTYPE_FUSE) {
         calBackward<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseSize);
+    } else
+    if (aWType==WTYPE_RFUSE) {
+        calBackward<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aGradFp, rGradPara, aForwardCache, rBackwardCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseSize);
     }
 }
 static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType, jint aNN,
@@ -650,6 +850,10 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
         switch(aWType) {
         case WTYPE_FUSE: {
             calForce<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case WTYPE_RFUSE: {
+            calForce<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
         case WTYPE_NONE:
@@ -684,6 +888,10 @@ static inline void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint
             calForce<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
+        case WTYPE_RFUSE: {
+            calForce<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, rFx, rFy, rFz, aForwardCache, rForwardForceCache, aFullCache, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
         default: {
             return;
         }}
@@ -701,6 +909,10 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         switch(aWType) {
         case WTYPE_FUSE: {
             calBackwardForce<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case WTYPE_RFUSE: {
+            calBackwardForce<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
         case WTYPE_NONE:
@@ -733,6 +945,10 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         }
         case WTYPE_FUSE: {
             calBackwardForce<WTYPE_FUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
+            return;
+        }
+        case WTYPE_RFUSE: {
+            calBackwardForce<WTYPE_RFUSE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, aNNGrad, aGradFx, aGradFy, aGradFz, rGradNNGrad, rGradPara, aForwardCache, aForwardForceCache, rBackwardCache, rBackwardForceCache, aFixBasis, aTypeNum, aRCut, aNMax, aLMax, aNoRadial, aL3Max, aL3Cross, aL4Max, aL4Cross, aFuseWeight, aFuseSize);
             return;
         }
         default: {

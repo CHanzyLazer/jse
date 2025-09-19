@@ -93,19 +93,11 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
     // init cache
     jdouble *rRn = NULL;
     jdouble *rNlRn = NULL, *rNlFc = NULL;
-    jdouble *rRnFc = NULL;
     if (FULL_CACHE) {
         rNlRn = rForwardCache;
         rNlFc = rNlRn + aNN*(NMAX+1);
     } else {
         rRn = rForwardCache;
-    }
-    if (WTYPE==WTYPE_RFUSE) {
-        if (FULL_CACHE) {
-            rRnFc = rNlFc + aNN;
-        } else {
-            rRnFc = rRn + (NMAX+1);
-        }
     }
     // clear fp first
     for (jint i = 0; i < tSizeFp; ++i) {
@@ -134,12 +126,9 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
             }
         } else
         if (WTYPE==WTYPE_RFUSE) {
-            for (jint n = 0; n <= NMAX; ++n) {
-                rRnFc[n] = fc * rRn[n];
-            }
             jdouble *tFuseWeight = aFuseWeight + aFuseSize*(NMAX+1)*(type-1);
             for (jint np = 0; np < aFuseSize; ++np) {
-                rFp[np] += dot<NMAX+1>(tFuseWeight, rRnFc);
+                rFp[np] += fc*dot<NMAX+1>(tFuseWeight, rRn);
                 tFuseWeight += (NMAX+1);
             }
         } else
