@@ -18,6 +18,8 @@ import jse.parallel.AbstractThreadPool;
 import jse.parallel.ParforThreadPool;
 import jsex.nnap.basis.*;
 import jsex.nnap.nn.FeedForward;
+import jsex.nnap.nn.NeuralNetwork;
+import jsex.nnap.nn.SharedFeedForward;
 import org.apache.groovy.util.Maps;
 import org.jetbrains.annotations.*;
 
@@ -94,7 +96,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     protected final String[] mSymbols;
     protected final IVector mRefEngs;
     protected final Basis[][] mBasis;
-    protected final FeedForward[][] mNN;
+    protected final NeuralNetwork[][] mNN;
     protected final DataSet mTrainData;
     protected final DataSet mTestData;
     protected final boolean mIsRetrain;
@@ -394,9 +396,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     }
     
     @SuppressWarnings("unchecked")
-    Trainer(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber, Map<String, ?> aArgs, @Nullable Map<String, ?> aModelInfo) {
+    Trainer(@Range(from=1, to=Integer.MAX_VALUE) int aThreadNumber, Map<String, ?> aArgs, @Nullable Map<String, ?> aModelInfo) throws Exception {
         super(new ParforThreadPool(aThreadNumber));
-        final FeedForward[] tNN;
         final @Nullable List<? extends Map<String, ?>> tModelInfos;
         if (aModelInfo != null) {
             mIsRetrain = true;
@@ -413,7 +414,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mTypeNum = mSymbols.length;
             mBasis = basisFromModelInfo_(mSymbols, aThreadNumber, aArgs, tModelInfos);
             mRefEngs = refEngsFromModelInfo_(mBasis[0], aArgs, tModelInfos);
-            tNN = nnFromModelInfo_(mBasis[0], aArgs, tModelInfos);
+            mNN = nnFromModelInfo_(mBasis[0], aThreadNumber, aArgs, tModelInfos);
         } else {
             mIsRetrain = false;
             tModelInfos = null;
@@ -421,12 +422,12 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mTypeNum = mSymbols.length;
             mRefEngs = refEngsFrom_(mTypeNum, aArgs);
             mBasis = basisFrom_(mSymbols, aThreadNumber, aArgs);
-            tNN = nnFrom_(mBasis[0], aArgs);
+            mNN = nnFrom_(mBasis[0], aThreadNumber, aArgs);
         }
         
         if (mTypeNum != mRefEngs.size()) throw new IllegalArgumentException("Symbols length does not match reference energies length.");
         if (mTypeNum != mBasis[0].length) throw new IllegalArgumentException("Symbols length does not match reference basis length.");
-        if (mTypeNum != tNN.length) throw new IllegalArgumentException("Symbols length does not match neural network length.");
+        if (mTypeNum != mNN[0].length) throw new IllegalArgumentException("Symbols length does not match neural network length.");
         
         // 简单遍历 basis 验证 mirror 的情况
         for (int i = 0; i < mSymbols.length; ++i) if (mBasis[0][i] instanceof MirrorBasis) {
@@ -440,13 +441,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mRefEngs.set(i, tRefEng);
         }
         
-        mNN = new FeedForward[aThreadNumber][mTypeNum];
-        for (int i = 0; i < mTypeNum; ++i) {
-            mNN[0][i] = tNN[i];
-            for (int ti = 1; ti < aThreadNumber; ++ti) if (tNN[i] != null) {
-                mNN[ti][i] = tNN[i].threadSafeRef();
-            }
-        }
         mTrainData = new DataSet();
         mTestData = new DataSet();
         
@@ -593,13 +587,24 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         mNNParas = new IVector[mTypeNum];
         int rTotParaSize = 0;
         for (int i = 0; i < mTypeNum; ++i) if (!(mBasis[0][i] instanceof MirrorBasis)) {
-            IVector tPara = mNN[0][i].parameters();
+            IVector tPara;
+            NeuralNetwork tNN = mNN[0][i];
+            if (tNN instanceof FeedForward) {
+                tPara = ((FeedForward)tNN).parameters();
+                mHiddenSizes[i] = ((FeedForward)tNN).hiddenSize();
+                mNNParaWeightSizes[i] = ((FeedForward)tNN).parameterWeightSize();
+            } else
+            if (tNN instanceof SharedFeedForward) {
+                tPara = ((SharedFeedForward)tNN).parameters(false);
+                mHiddenSizes[i] = ((SharedFeedForward)tNN).hiddenSize(true);
+                mNNParaWeightSizes[i] = ((SharedFeedForward)tNN).parameterWeightSize(false);
+            } else {
+                throw new IllegalStateException();
+            }
             int tParaSize = tPara.size();
             mNNParas[i] = tPara;
             mNNParaSizes[i] = tParaSize;
             rTotParaSize += tParaSize;
-            mHiddenSizes[i] = mNN[0][i].hiddenSize();
-            mNNParaWeightSizes[i] = mNN[0][i].parameterWeightSize();
         }
         mTotNNParaSize = rTotParaSize;
         
@@ -732,7 +737,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
      * </dl>
      */
     @SuppressWarnings("unchecked")
-    public Trainer(Map<String, ?> aArgs, @Nullable Map<String, ?> aModelInfo) {
+    public Trainer(Map<String, ?> aArgs, @Nullable Map<String, ?> aModelInfo) throws Exception {
         this(threadNumberFrom_(aArgs), aArgs, aModelInfo);
         @Nullable Map<String, ?> tOptim = (Map<String, ?>)UT.Code.get(aArgs, "optimizer", "optim", "opt");
         if (tOptim != null) {
@@ -818,7 +823,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
      *     </dd>
      * </dl>
      */
-    public Trainer(Map<String, ?> aArgs) {
+    public Trainer(Map<String, ?> aArgs) throws Exception {
         this(aArgs, null);
     }
     
@@ -890,9 +895,9 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             // 现在这种情况其余的种类采用 share 基组
             Map<?, ?> tSubBasis = (Map<?, ?>)tBasis;
             tBasis = new ArrayList(aSymbols.length);
-            ((ArrayList)tBasis).add(tSubBasis);
+            ((List)tBasis).add(tSubBasis);
             for (int i = 1; i < aSymbols.length; ++i) {
-                ((ArrayList)tBasis).add(Maps.of("type", "share", "share", 1));
+                ((List)tBasis).add(Maps.of("type", "share", "share", 1));
             }
         }
         Basis[][] rBasis = new Basis[aThreadNum][];
@@ -927,93 +932,129 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     private static int threadNumberFrom_(Map<String, ?> aArgs) {
         return ((Number)UT.Code.getWithDefault(aArgs, DEFAULT_THREAD_NUMBER, "thread_number", "thread_num", "nthreads")).intValue();
     }
-    private static FeedForward[] nnFrom_(Basis[] aBasis, Map<String, ?> aArgs) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static NeuralNetwork[][] nnFrom_(Basis[] aBasis, int aThreadNum, Map<String, ?> aArgs) throws Exception {
         @Nullable Object tNNSetting = UT.Code.get(aArgs, "nn");
         if (tNNSetting == null) {
             tNNSetting = new LinkedHashMap<>();
         }
         if (tNNSetting instanceof Map) {
-            Map<?, ?> tSubNNSetting = (Map<?, ?>)tNNSetting;
-            tNNSetting = NewCollections.from(aBasis.length, i -> (aBasis[i] instanceof MirrorBasis) ? null : tSubNNSetting);
+            Map tSubNNSetting = (Map)tNNSetting;
+            tNNSetting = new ArrayList(aBasis.length);
+            // 单 map 输入下特殊处理，只需要单个 shared_flags 即可
+            @Nullable Object tSharedFlags = tSubNNSetting.remove("shared_flags");
+            tSubNNSetting.put("type", "feed_forward");
+            ((List)tNNSetting).add(tSubNNSetting);
+            if (tSharedFlags != null) {
+                tSubNNSetting = Maps.of("type", "shared_feed_forward", "share", 1, "shared_flags", tSharedFlags);
+            }
+            for (int i = 1; i < aBasis.length; ++i) {
+                ((List)tNNSetting).add(tSubNNSetting);
+            }
         }
-        FeedForward[] rOut = new FeedForward[aBasis.length];
+        NeuralNetwork[][] rOut = new NeuralNetwork[aThreadNum][aBasis.length];
         List<?> tNNSettingList = (List<?>)tNNSetting;
         if (aBasis.length!=tNNSettingList.size()) {
             throw new IllegalArgumentException("Input size of symbols and nn mismatch");
         }
-        for (int i = 0; i < rOut.length; ++i) {
+        for (int i = 0; i < aBasis.length; ++i) {
             // mirror 情况延迟初始化
             if (aBasis[i] instanceof MirrorBasis) {
                 continue;
             }
             Map<?, ?> tNNSettingMap = (Map<?, ?>)tNNSettingList.get(i);
-            @Nullable Object tHiddenDims = UT.Code.get(tNNSettingMap, "hidden_dims", "nnarch");
-            int[] tHiddenDimsArr;
-            if (tHiddenDims == null) {
-                tHiddenDimsArr = DEFAULT_HIDDEN_DIMS;
-            } else
-            if (tHiddenDims instanceof int[]) {
-                tHiddenDimsArr = Arrays.copyOf((int[])tHiddenDims, ((int[])tHiddenDims).length);
-            } else
-            if (tHiddenDims instanceof List) {
-                tHiddenDimsArr = new int[((List<?>)tHiddenDims).size()];
-                for (int j = 0; j < tHiddenDimsArr.length; ++j) {
-                    tHiddenDimsArr[j] = ((Number)((List<?>)tHiddenDims).get(j)).intValue();
-                }
-            } else {
-                throw new IllegalArgumentException("invalid type of hidden_dims: " + tHiddenDims.getClass().getName());
-            }
-            //noinspection resource
-            rOut[i] = new FeedForward(aBasis[i].size(), tHiddenDimsArr);
-            rOut[i].initParameters();
-        }
-        for (int i = 0; i < rOut.length; ++i) if (aBasis[i] instanceof MirrorBasis) {
-            @Nullable Map<?, ?> tNNSettingMap = (Map<?, ?>)tNNSettingList.get(i);
-            if (tNNSettingMap == null) continue;
-            @Nullable Object tHiddenDims = UT.Code.get(tNNSettingMap, "hidden_dims", "nnarch");
-            if (tHiddenDims == null) continue;
-            UT.Code.warning("hidden_dims of mirror for type: "+(i+1)+" will be overwritten with mirror values automatically");
-        }
-        return rOut;
-    }
-    @SuppressWarnings("unchecked")
-    private static FeedForward[] nnFromModelInfo_(Basis[] aBasis, Map<String, ?> aArgs, List<? extends Map<String, ?>> aModelInfos) {
-        @Nullable Object tObj = UT.Code.get(aArgs, "nn");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `nn` for retraining");
-        final int tTypeNum = aBasis.length;
-        FeedForward[] rOut = new FeedForward[tTypeNum];
-        for (int i = 0; i < tTypeNum; ++i) {
-            // mirror 情况延迟初始化
-            if (aBasis[i] instanceof MirrorBasis) {
-                continue;
-            }
-            Map<String, ?> tModelInfo = aModelInfos.get(i);
-            Object tModelObj = tModelInfo.get("torch");
-            if (tModelObj != null) throw new IllegalArgumentException("nn type in Model info can NOT be torch");
-            Map<String, ?> tModel = (Map<String, ?>)tModelInfo.get("nn");
-            Object tModelType = tModel.get("type");
+            Object tModelType = tNNSettingMap.get("type");
             if (tModelType == null) {
                 tModelType = "feed_forward";
             }
             switch(tModelType.toString()) {
-            case "feed_forward": {
-                rOut[i] = FeedForward.load(tModel);
+            case "shared_feed_forward": {
+                // share 情况延迟初始化
                 break;
             }
-            case "torch": {
-                throw new IllegalArgumentException("nn type in Model info can NOT be torch");
+            case "feed_forward": {
+                @Nullable Object tHiddenDims = UT.Code.get(tNNSettingMap, "hidden_dims", "nnarch");
+                int[] tHiddenDimsArr;
+                if (tHiddenDims == null) {
+                    tHiddenDimsArr = DEFAULT_HIDDEN_DIMS;
+                } else
+                if (tHiddenDims instanceof int[]) {
+                    tHiddenDimsArr = Arrays.copyOf((int[])tHiddenDims, ((int[])tHiddenDims).length);
+                } else
+                if (tHiddenDims instanceof List) {
+                    tHiddenDimsArr = new int[((List<?>)tHiddenDims).size()];
+                    for (int j = 0; j < tHiddenDimsArr.length; ++j) {
+                        tHiddenDimsArr[j] = ((Number)((List<?>)tHiddenDims).get(j)).intValue();
+                    }
+                } else {
+                    throw new IllegalArgumentException("invalid type of hidden_dims: " + tHiddenDims.getClass().getName());
+                }
+                //noinspection resource
+                FeedForward tNN = new FeedForward(aBasis[i].size(), tHiddenDimsArr);
+                tNN.initParameters();
+                rOut[0][i] = tNN;
+                break;
             }
             default: {
-                throw new IllegalArgumentException("Unsupported model type: " + tModelType);
+                throw new IllegalArgumentException("Unsupported nn type: " + tModelType);
             }}
         }
-        for (int i = 0; i < rOut.length; ++i) if (aBasis[i] instanceof MirrorBasis) {
-            Map<String, ?> tModelInfo = aModelInfos.get(i);
-            // mirror 会强制这些额外值缺省
-            Object tModel = tModelInfo.get("torch");
-            if (tModel != null) throw new IllegalArgumentException("torch data in mirror ModelInfo MUST be empty");
-            tModel = tModelInfo.get("model");
-            if (tModel != null) throw new IllegalArgumentException("model data in mirror ModelInfo MUST be empty");
+        for (int i = 0; i < aBasis.length; ++i) {
+            Map<?, ?> tNNSettingMap = (Map<?, ?>)tNNSettingList.get(i);
+            if (aBasis[i] instanceof MirrorBasis) {
+                if (tNNSettingMap == null) continue;
+                @Nullable Object tHiddenDims = UT.Code.get(tNNSettingMap, "hidden_dims", "nnarch");
+                if (tHiddenDims == null) continue;
+                UT.Code.warning("hidden_dims of mirror for type: "+(i+1)+" will be overwritten with mirror values automatically");
+                continue;
+            }
+            Object tModelType = tNNSettingMap.get("type");
+            if (tModelType.equals("shared_feed_forward")) {
+                Object tShare = tNNSettingMap.get("share");
+                if (tShare == null) throw new IllegalArgumentException("Key `share` required for shared_feed_forward");
+                int tSharedType = ((Number)tShare).intValue();
+                Object tSharedFlags = UT.Code.get(tNNSettingMap, "shared_flags");
+                boolean[] tSharedFlagsArr;
+                if (tSharedFlags instanceof boolean[]) {
+                    tSharedFlagsArr = Arrays.copyOf((boolean[])tSharedFlags, ((boolean[])tSharedFlags).length);
+                } else
+                if (tSharedFlags instanceof List) {
+                    tSharedFlagsArr = new boolean[((List<?>)tSharedFlags).size()];
+                    for (int j = 0; j < tSharedFlagsArr.length; ++j) {
+                        tSharedFlagsArr[j] = (Boolean)((List<?>)tSharedFlags).get(j);
+                    }
+                } else {
+                    throw new IllegalArgumentException("invalid type of shared_flags: " + tSharedFlags.getClass().getName());
+                }
+                SharedFeedForward tNN = new SharedFeedForward(aBasis[i].size(), (FeedForward)rOut[0][tSharedType-1].threadSafeRef(), tSharedType, tSharedFlagsArr);
+                tNN.initParameters(false);
+                rOut[0][i] = tNN;
+            }
+        }
+        for (int ti = 1; ti < aThreadNum; ++ti) for (int i = 0; i < aBasis.length; ++i) {
+            rOut[ti][i] = rOut[0][i].threadSafeRef();
+        }
+        return rOut;
+    }
+    @SuppressWarnings("deprecation")
+    private static NeuralNetwork[][] nnFromModelInfo_(Basis[] aBasis, int aThreadNum, Map<String, ?> aArgs, List<? extends Map<String, ?>> aModelInfos) throws Exception {
+        @Nullable Object tObj = UT.Code.get(aArgs, "nn");
+        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `nn` for retraining");
+        final int tTypeNum = aBasis.length;
+        NeuralNetwork[][] rOut = new NeuralNetwork[aThreadNum][];
+        rOut[0] = NeuralNetwork.load(aBasis, NewCollections.map(aModelInfos, info -> {
+            Object tModelInfo = info.get("torch");
+            if (tModelInfo != null) throw new IllegalArgumentException("nn type in Model info can NOT be torch");
+            return info.get("nn");
+        }));
+        for (int i = 0; i < tTypeNum; ++i) {
+            if (rOut[0][i] instanceof jsex.nnap.nn.TorchModel) throw new IllegalArgumentException("nn type in Model info can NOT be torch");
+        }
+        for (int ti = 1; ti < aThreadNum; ++ti) {
+            rOut[ti] = new NeuralNetwork[tTypeNum];
+            for (int i = 0; i < tTypeNum; ++i) {
+                rOut[ti][i] = rOut[0][i].threadSafeRef();
+            }
         }
         return rOut;
     }
@@ -1129,8 +1170,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     @Override public String symbol(int aType) {return mSymbols[aType-1];}
     public Basis basis(int aType) {return mBasis[0][aType-1];}
     public @Unmodifiable List<Basis> basis() {return AbstractCollections.from(mBasis[0]);}
-    public FeedForward model(int aType) {return mNN[0][aType-1];}
-    public @Unmodifiable List<FeedForward> models() {return AbstractCollections.from(mNN[0]);}
+    public NeuralNetwork model(int aType) {return mNN[0][aType-1];}
+    public @Unmodifiable List<NeuralNetwork> models() {return AbstractCollections.from(mNN[0]);}
     public String units() {return mUnits;}
     
     protected int paraShift(int aType) {
@@ -1251,7 +1292,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         pool().parfor(tSliceSize, (si, threadID) -> {
             final int i = aSlice.get(si);
             Basis[] tBasis = mBasis[threadID];
-            FeedForward[] tNN = mNN[threadID];
+            NeuralNetwork[] tNN = mNN[threadID];
             Vector rLoss = rLossPar.get(threadID);
             Vector tGradPara = mGradParaBuf[threadID];
             DoubleWrapper rLossGradEng = new DoubleWrapper(0.0);
@@ -1292,6 +1333,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     Vector tSubNormFp = tNormFp[tType-1];
                     Vector tNormMu = mNormMu[tType-1];
                     Vector tNormSigma = mNormSigma[tType-1];
+                    
                     tSubBasis.forward(tNlDx[k], tNlDy[k], tNlDz[k], tNlType[k], tSubFp, tBaisForwardBuf.get(k), tRequireGrad);
                     tSubNormFp.fill(ii -> (tSubFp.get(ii) - tNormMu.get(ii)) / tNormSigma.get(ii));
                     if (tTrainNorm) {
@@ -1299,8 +1341,18 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                         Vector tNormSigma2 = mNormSigma2[tType-1];
                         tSubNormFp.fill(ii -> (tSubNormFp.get(ii) - tNormMu2.get(ii)) / tNormSigma2.get(ii));
                     }
-                    rEng += tRequireGrad ? tNN[tType-1].forward(tSubNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k))
-                                         : tNN[tType-1].eval(tSubNormFp);
+                    if (tNN[tType-1] instanceof FeedForward) {
+                        FeedForward tSubNN = (FeedForward)tNN[tType-1];
+                        rEng += tRequireGrad ? tSubNN.forward(tSubNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k))
+                                             : tSubNN.eval(tSubNormFp);
+                    } else
+                    if (tNN[tType-1] instanceof SharedFeedForward) {
+                        SharedFeedForward tSubNN = (SharedFeedForward)tNN[tType-1];
+                        rEng += tRequireGrad ? tSubNN.forward(tSubNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k))
+                                             : tSubNN.eval(tSubNormFp);
+                    } else {
+                        throw new IllegalStateException();
+                    }
                 }
                 rEng /= tAtomNum;
                 double tLossEng = tRequireGrad ? aLossFuncGradEng.call(rEng, (tData.mEng.get(i) - mNormMuEng)/mNormSigmaEng, rLossGradEng)
@@ -1331,8 +1383,21 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                         rSubLossGradFp.fill(0.0);
                     }
                     int tShiftPara = paraShift(tType);
-                    tNN[tType-1].backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tGradPara.subVec(tShiftPara, tShiftPara+ mNNParaSizes[tType-1]),
-                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                    if (tNN[tType-1] instanceof FeedForward) {
+                        FeedForward tSubNN = (FeedForward) tNN[tType-1];
+                        tSubNN.backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tGradPara.subVec(tShiftPara, tShiftPara+mNNParaSizes[tType-1]),
+                                        tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                    } else
+                    if (tNN[tType-1] instanceof SharedFeedForward) {
+                        SharedFeedForward tSubNN = (SharedFeedForward)tNN[tType-1];
+                        int tSharedType = tSubNN.sharedType();
+                        int tShiftSharedPara = paraShift(tSharedType);
+                        tSubNN.backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tGradPara.subVec(tShiftPara, tShiftPara+mNNParaSizes[tType-1]),
+                                        tGradPara.subVec(tShiftSharedPara, tShiftSharedPara+mNNParaSizes[tSharedType-1]),
+                                        tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                    } else {
+                        throw new IllegalStateException();
+                    }
                     if (tTrainNorm) {
                         int tShiftNormPara = normShift(tType);
                         int tBasisSize = mBasisSizes[tType-1];
@@ -1446,9 +1511,20 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     tSubNormFp.fill(ii -> (tSubNormFp.get(ii) - tNormMu2.get(ii)) / tNormSigma2.get(ii));
                 }
                 // cal energy
-                rEng += tRequireGrad ? tNN[tType-1].forwardGrad(tSubNormFp, tSubGradNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
-                                                                tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
-                                     : tNN[tType-1].evalGrad(tSubNormFp, tSubGradNormFp);
+                if (tNN[tType-1] instanceof FeedForward) {
+                    FeedForward tSubNN = (FeedForward)tNN[tType-1];
+                    rEng += tRequireGrad ? tSubNN.forwardGrad(tSubNormFp, tSubGradNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                                              tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
+                                         : tSubNN.evalGrad(tSubNormFp, tSubGradNormFp);
+                } else
+                if (tNN[tType-1] instanceof SharedFeedForward) {
+                    SharedFeedForward tSubNN = (SharedFeedForward)tNN[tType-1];
+                    rEng += tRequireGrad ? tSubNN.forwardGrad(tSubNormFp, tSubGradNormFp, tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                                              tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k))
+                                         : tSubNN.evalGrad(tSubNormFp, tSubGradNormFp);
+                } else {
+                    throw new IllegalStateException();
+                }
                 tSubGradNormFp.operation().div2dest(tNormSigma, tSubGradFp);
                 if (tTrainNorm) {
                     tSubGradFp.div2this(mNormSigma2[tType-1]);
@@ -1663,12 +1739,29 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                     rSubLossGradFp = tLossGradFp[tType-1];
                     rSubLossGradFp.fill(0.0);
                 }
-                tNN[tType-1].gradBackward(tSubLossGradGradFp, tSubNormFp, rSubLossGradFp, tLossGradNNPara,
-                                          tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
-                                          tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
-                // energy loss grad
-                tNN[tType-1].backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tLossGradNNPara,
-                                      tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                if (tNN[tType-1] instanceof FeedForward) {
+                    FeedForward tSubNN = (FeedForward) tNN[tType-1];
+                    tSubNN.gradBackward(tSubLossGradGradFp, tSubNormFp, rSubLossGradFp, tLossGradNNPara,
+                                        tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                        tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
+                    // energy loss grad
+                    tSubNN.backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tLossGradNNPara,
+                                    tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                } else
+                if (tNN[tType-1] instanceof SharedFeedForward) {
+                    SharedFeedForward tSubNN = (SharedFeedForward)tNN[tType-1];
+                    int tSharedType = tSubNN.sharedType();
+                    int tShiftSharedPara = paraShift(tSharedType);
+                    DoubleArrayVector tLossGradNNSharedPara = tGradPara.subVec(tShiftSharedPara, tShiftSharedPara+mNNParaSizes[tSharedType-1]);
+                    tSubNN.gradBackward(tSubLossGradGradFp, tSubNormFp, rSubLossGradFp, tLossGradNNPara, tLossGradNNSharedPara,
+                                        tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k),
+                                        tHiddenGrads2Buf.get(tType-1).get(k), tHiddenGrads3Buf.get(tType-1).get(k), tHiddenGradGradsBuf.get(tType-1).get(k));
+                    // energy loss grad
+                    tSubNN.backward(tLossGradEng, tSubNormFp, rSubLossGradFp, tLossGradNNPara, tLossGradNNSharedPara,
+                                    tHiddenOutputsBuf.get(tType-1).get(k), tHiddenGradsBuf.get(tType-1).get(k));
+                } else {
+                    throw new IllegalStateException();
+                }
                 if (tTrainNorm) {
                     int tBasisSize = mBasisSizes[tType-1];
                     Vector tNormMu2 = mNormMu2[tType-1];

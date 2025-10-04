@@ -16,15 +16,16 @@ public class NormedNeuralNetwork extends NeuralNetwork {
     private final IVector mNormMu, mNormSigma;
     private final double mNormMuEng, mNormSigmaEng;
     private final Vector mNormedX;
-    private final int mInputDim;
     public NormedNeuralNetwork(NeuralNetwork aNN, IVector aNormMu, IVector aNormSigma, double aNormMuEng, double aNormSigmaEng) {
         mNN = aNN;
         mNormMu = aNormMu;
         mNormSigma = aNormSigma;
         mNormMuEng = aNormMuEng;
         mNormSigmaEng = aNormSigmaEng;
-        mInputDim = mNN.inputSize();
-        mNormedX = Vectors.zeros(mInputDim);
+        mNormedX = Vectors.zeros(mNN.inputSize());
+    }
+    @Override public NormedNeuralNetwork threadSafeRef() throws Exception {
+        return new NormedNeuralNetwork(mNN.threadSafeRef(), mNormMu,  mNormSigma, mNormMuEng, mNormSigmaEng);
     }
     
     @Override public int inputSize() {

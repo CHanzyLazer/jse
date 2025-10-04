@@ -71,16 +71,16 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
             Map tBasisMap = (Map)aData.get(i);
             Object tBasisType = tBasisMap.get("type");
             switch(tBasisType.toString()) {
-            case "mirror": {
+            case "mirror": case "mirror_basis": {
                 Object tMirror = tBasisMap.get("mirror");
-                if (tMirror == null) throw new IllegalArgumentException("Key `mirror` required for basis mirror");
+                if (tMirror == null) throw new IllegalArgumentException("Key `mirror` required for mirror_basis");
                 int tMirrorType = ((Number)tMirror).intValue();
                 rBasis[i] = new MirrorBasis(rBasis[tMirrorType-1].threadSafeRef(), tMirrorType, i+1);
                 break;
             }
-            case "share": {
+            case "share": case "shared_basis": {
                 Object tShare = tBasisMap.get("share");
-                if (tShare == null) throw new IllegalArgumentException("Key `share` required for basis share");
+                if (tShare == null) throw new IllegalArgumentException("Key `share` required for shared_basis");
                 int tSharedType = ((Number)tShare).intValue();
                 rBasis[i] = new SharedBasis(rBasis[tSharedType-1].threadSafeRef(), tSharedType);
                 break;

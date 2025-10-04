@@ -27,7 +27,7 @@ import static jse.code.CS.RANDOM;
  *
  * @author liqa
  */
-public class SharedFeedForward extends NeuralNetwork implements ISavable {
+public class SharedFeedForward extends NeuralNetwork {
     private final FeedForward mShare;
     private final int mSharedType;
     public FeedForward sharedNeuralNetwork() {return mShare;}
@@ -106,7 +106,7 @@ public class SharedFeedForward extends NeuralNetwork implements ISavable {
         this(aInputDim, aSharedFeedForward, aSharedType, aSharedFlags, null, null, null, null);
     }
     
-    public SharedFeedForward threadSafeRef() {
+    @Override public SharedFeedForward threadSafeRef() {
         return new SharedFeedForward(mInputDim, mShare.threadSafeRef(), mSharedType, mSharedFlags, mHiddenWeights, mHiddenWeightsBackward, mIndexToBackward, mHiddenBiases, mOutputWeight, mOutputBias);
     }
     
@@ -185,15 +185,17 @@ public class SharedFeedForward extends NeuralNetwork implements ISavable {
         Vector aHiddenWeights = Vectors.zeros(tHiddenWeightsSize);
         tColNum = aInputDim;
         int tShift = 0;
+        int tIdx = 0;
         for (int i = 0; i < tHiddenNumber; ++i) {
             int tHiddenDim = aSharedFeedForward.mHiddenDims[i];
             if (!aSharedFlags[i]) {
                 int tSize = tHiddenDim*tColNum;
-                RowMatrix tWeight = Matrices.fromRows((List<?>)tHiddenWeights.get(i));
-                if (tWeight.columnNumber() != tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+i+"' mismatch");
-                if (tWeight.rowNumber() != tHiddenDim) throw new IllegalArgumentException("Row number of hidden weight '"+i+"' mismatch");
+                RowMatrix tWeight = Matrices.fromRows((List<?>)tHiddenWeights.get(tIdx));
+                if (tWeight.columnNumber() != tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+tIdx+"' mismatch");
+                if (tWeight.rowNumber() != tHiddenDim) throw new IllegalArgumentException("Row number of hidden weight '"+tIdx+"' mismatch");
                 aHiddenWeights.subVec(tShift, tShift+tSize).fill(tWeight.asVecRow());
                 tShift += tSize;
+                ++tIdx;
             }
             tColNum = tHiddenDim;
         }
@@ -201,13 +203,15 @@ public class SharedFeedForward extends NeuralNetwork implements ISavable {
         if (tHiddenBiases.size() != tNoSharedHiddenNumber) throw new IllegalArgumentException("The number of hidden biases mismatch");
         Vector aHiddenBiases = Vectors.zeros(tHiddenBiasesSize);
         tShift = 0;
+        tIdx = 0;
         for (int i = 0; i < tHiddenNumber; ++i) {
             int tHiddenDim = aSharedFeedForward.mHiddenDims[i];
             if (!aSharedFlags[i]) {
-                Vector tBias = Vectors.from((List<? extends Number>)tHiddenBiases.get(i));
-                if (tBias.size() != tHiddenDim) throw new IllegalArgumentException("Size of hidden bias '"+i+"' mismatch");
+                Vector tBias = Vectors.from((List<? extends Number>)tHiddenBiases.get(tIdx));
+                if (tBias.size() != tHiddenDim) throw new IllegalArgumentException("Size of hidden bias '"+tIdx+"' mismatch");
                 aHiddenBiases.subVec(tShift, tShift+tHiddenDim).fill(tBias);
                 tShift += tHiddenDim;
+                ++tIdx;
             }
         }
         Vector aOutputWeight = Vectors.from((List<? extends Number>)aMap.get("output_weight"));

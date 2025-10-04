@@ -151,84 +151,38 @@ public class NNAP implements IPairPotential {
     }
     
     @SuppressWarnings("unchecked")
-    private @Nullable SingleNNAP initSingleNNAPFrom(Basis aBasis, Map<String, ?> aModelInfo) throws Exception {
-        // mirror 情况延迟初始化
-        if (aBasis instanceof MirrorBasis) return null;
-        
-        Basis[] aBasisPar = new Basis[mThreadNumber];
-        aBasisPar[0] = aBasis;
-        for (int i = 1; i < mThreadNumber; ++i) {
-            aBasisPar[i] = aBasis.threadSafeRef();
+    private SingleNNAP initSingleNNAPFrom(int aType, Basis aBasis, NeuralNetwork aNN, List<? extends Map<String, ?>> aModelInfos) throws Exception {
+        Map<String, ?> tModelInfo = aModelInfos.get(aType-1);
+        if (aBasis instanceof MirrorBasis) {
+            // mirror 会强制这些额外值缺省
+            Number tRefEng = (Number)tModelInfo.get("ref_eng");
+            if (tRefEng != null) throw new IllegalArgumentException("ref_eng in mirror ModelInfo MUST be empty");
+            Object tNormObj = UT.Code.get(tModelInfo, "norm_vec", "norm_sigma", "norm_mu");
+            if (tNormObj != null) throw new IllegalArgumentException("norm_vec/norm_sigma/norm_mu in mirror ModelInfo MUST be empty");
+            // 读取 mirror 的属性
+            tModelInfo = aModelInfos.get(((MirrorBasis)aBasis).mirrorType()-1);
         }
-        Number tRefEng = (Number)aModelInfo.get("ref_eng");
+        Number tRefEng = (Number)tModelInfo.get("ref_eng");
         double aRefEng = tRefEng==null ? 0.0 : tRefEng.doubleValue();
-        List<? extends Number> tNormSigma = (List<? extends Number>)UT.Code.get(aModelInfo, "norm_sigma", "norm_vec");
+        List<? extends Number> tNormSigma = (List<? extends Number>)UT.Code.get(tModelInfo, "norm_sigma", "norm_vec");
         if (tNormSigma == null) throw new IllegalArgumentException("No norm_sigma/norm_vec in ModelInfo");
         IVector aNormSigma = Vectors.from(tNormSigma);
-        List<? extends Number> tNormMu = (List<? extends Number>)aModelInfo.get("norm_mu");
+        List<? extends Number> tNormMu = (List<? extends Number>)tModelInfo.get("norm_mu");
         IVector aNormMu = tNormMu==null ? Vectors.zeros(tNormSigma.size()) : Vectors.from(tNormMu);
-        double aNormSigmaEng = mNormSigmaEng;
-        double aNormMuEng = mNormMuEng + aRefEng;
-        
-        NeuralNetwork[] aNN = new NeuralNetwork[mThreadNumber];
-        Object tModelObj = aModelInfo.get("torch");
-        if (tModelObj != null) {
-            mIsTorch = true;
-            for (int i = 0; i < mThreadNumber; ++i) {
-                NeuralNetwork tNN = new TorchModel(aBasis.size(), tModelObj.toString());
-                aNN[i] = new NormedNeuralNetwork(tNN, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng);
-            }
-            return new SingleNNAP(aBasisPar, aNN);
+        // 这里直接使用 NormedNeuralNetwork 来简单包含这些归一化系数
+        if (aNN instanceof TorchModel) mIsTorch = true;
+        NeuralNetwork tNN = new NormedNeuralNetwork(aNN, aNormMu, aNormSigma, mNormMuEng+aRefEng, mNormSigmaEng);
+        NeuralNetwork[] aNNPar = new NeuralNetwork[mThreadNumber];
+        aNNPar[0] = tNN;
+        for (int i = 1; i < mThreadNumber; ++i) {
+            aNNPar[i] = tNN.threadSafeRef();
         }
-        Map<String, ?> tModel = (Map<String, ?>)aModelInfo.get("nn");
-        Object tModelType = tModel.get("type");
-        if (tModelType == null) {
-            tModelType = "feed_forward";
-        }
-        switch(tModelType.toString()) {
-        case "feed_forward": {
-            for (int i = 0; i < mThreadNumber; ++i) {
-                NeuralNetwork tNN = FeedForward.load(tModel);
-                aNN[i] = new NormedNeuralNetwork(tNN, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng);
-            }
-            break;
-        }
-        case "torch": {
-            mIsTorch = true;
-            for (int i = 0; i < mThreadNumber; ++i) {
-                NeuralNetwork tNN = new TorchModel(aBasis.size(), tModel.get("model").toString());
-                aNN[i] = new NormedNeuralNetwork(tNN, aNormMu, aNormSigma, aNormMuEng, aNormSigmaEng);
-            }
-            break;
-        }
-        default: {
-            throw new IllegalArgumentException("Unsupported model type: " + tModelType);
-        }}
-        return new SingleNNAP(aBasisPar, aNN);
-    }
-    private @Nullable SingleNNAP postInitSingleNNAPFrom(Basis aBasis, Map<String, ?> aModelInfo) {
-        // 目前只考虑 mirror 的情况
-        if (!(aBasis instanceof MirrorBasis)) return null;
-        
         Basis[] aBasisPar = new Basis[mThreadNumber];
         aBasisPar[0] = aBasis;
         for (int i = 1; i < mThreadNumber; ++i) {
             aBasisPar[i] = aBasis.threadSafeRef();
         }
-        int tMirrorType = ((MirrorBasis)aBasis).mirrorType();
-        // mirror 会强制这些额外值缺省
-        Number tRefEng = (Number)aModelInfo.get("ref_eng");
-        if (tRefEng != null) throw new IllegalArgumentException("ref_eng in mirror ModelInfo MUST be empty");
-        Object tNormObj = UT.Code.get(aModelInfo, "norm_vec", "norm_sigma", "norm_mu");
-        if (tNormObj != null) throw new IllegalArgumentException("norm_vec/norm_sigma/norm_mu in mirror ModelInfo MUST be empty");
-        
-        Object tModel = aModelInfo.get("torch");
-        if (tModel != null) throw new IllegalArgumentException("torch data in mirror ModelInfo MUST be empty");
-        tModel = aModelInfo.get("model");
-        if (tModel != null) throw new IllegalArgumentException("model data in mirror ModelInfo MUST be empty");
-        // 现在直接采用引用写法，因为不会存在同时调用的情况
-        NeuralNetwork[] aNN = mModels.get(tMirrorType-1).mNN;
-        return new SingleNNAP(aBasisPar, aNN);
+        return new SingleNNAP(aBasisPar, aNNPar);
     }
     
     @SuppressWarnings("SameParameterValue")
@@ -315,6 +269,11 @@ public class NNAP implements IPairPotential {
             Object tBasisInfo = info.get("basis");
             return tBasisInfo!=null ? tBasisInfo : Maps.of("type", "spherical_chebyshev");
         }));
+        NeuralNetwork[] tNN = NeuralNetwork.load(tBasis, NewCollections.map(tModelInfos, info -> {
+            Object tModelInfo = info.get("torch");
+            if (tModelInfo != null) return Maps.of("type", "torch", "model", tModelInfo);
+            return info.get("nn");
+        }));
         // 这里优先读取 norm eng
         Number tNormSigmaEng = null, tNormMuEng = null;
         for (int i = 0; i < tModelSize; ++i) {
@@ -325,14 +284,7 @@ public class NNAP implements IPairPotential {
         mNormMuEng = tNormMuEng==null ? 0.0 : tNormMuEng.doubleValue();
         mModels = new ArrayList<>(tModelSize);
         for (int i = 0; i < tModelSize; ++i) {
-            mModels.add(initSingleNNAPFrom(tBasis[i], tModelInfos.get(i)));
-        }
-        for (int i = 0; i < tModelSize; ++i) {
-            SingleNNAP tModel = postInitSingleNNAPFrom(tBasis[i], tModelInfos.get(i));
-            if (tModel != null) mModels.set(i, tModel);
-        }
-        for (int i = 0; i < tModelSize; ++i) {
-            if (mModels.get(i) == null) throw new IllegalArgumentException("Model init fail for type "+(i+1));
+            mModels.add(initSingleNNAPFrom(i+1, tBasis[i], tNN[i], tModelInfos));
         }
         
         mNlDx = new DoubleList[mThreadNumber];

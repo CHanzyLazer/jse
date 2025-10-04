@@ -27,7 +27,7 @@ import static jse.code.CS.RANDOM;
  *
  * @author liqa
  */
-public class FeedForward extends NeuralNetwork implements ISavable {
+public class FeedForward extends NeuralNetwork {
     final int mInputDim;
     final int[] mHiddenDims;
     final Vector mHiddenWeights, mHiddenWeightsBackward;
@@ -96,7 +96,7 @@ public class FeedForward extends NeuralNetwork implements ISavable {
         this(aInputDim, aHiddenDims, null, null, null, null);
     }
     
-    public FeedForward threadSafeRef() {
+    @Override public FeedForward threadSafeRef() {
         return new FeedForward(mInputDim, mHiddenDims, mHiddenWeights, mHiddenWeightsBackward, mIndexToBackward, mHiddenBiases, mOutputWeight, mOutputBias);
     }
     

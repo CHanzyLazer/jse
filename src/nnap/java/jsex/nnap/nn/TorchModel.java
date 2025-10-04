@@ -109,16 +109,21 @@ public class TorchModel extends NeuralNetwork {
     
     
     private final TorchPointer mPtr;
+    private final String mModelStr;
     private final int mInputDim;
     
     public TorchModel(int aInputDim, String aModel) throws TorchException {
         mInputDim = aInputDim;
+        mModelStr = aModel;
         byte[] tModelBytes = Base64.getDecoder().decode(aModel);
         long tModelPtr = load1(tModelBytes, tModelBytes.length);
         if (tModelPtr==0 || tModelPtr==-1) {
             throw new TorchException("Failed to load Torch Model");
         }
         mPtr = new TorchPointer(this, tModelPtr);
+    }
+    @Override public TorchModel threadSafeRef() throws TorchException {
+        return new TorchModel(mInputDim, mModelStr);
     }
     
     @Override protected void shutdown_() {
