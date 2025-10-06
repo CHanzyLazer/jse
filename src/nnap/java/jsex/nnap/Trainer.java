@@ -1932,17 +1932,19 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             rLoss.plus2this(rLossPar.get(ti));
         }
         // l2 loss here
-        int tShift = 0;
-        for (int i = 0; i < mTypeNum; ++i) {
-            IVector tParas = mNNParas[i];
-            int tWeightSize = mNNParaWeightSizes[i];
-            double tMul = mL2LossWeight/MathEX.Fast.sqrt(tWeightSize);
-            for (int j = 0; j < tWeightSize; ++j) {
-                double tSubPara = tParas.get(j);
-                rLoss.add(3, tMul*(tSubPara*tSubPara));
-                if (tRequireGrad) rGrad.add(tShift+j, 2.0*tMul*tSubPara);
+        if (!aTest) {
+            int tShift = 0;
+            for (int i = 0; i < mTypeNum; ++i) {
+                IVector tParas = mNNParas[i];
+                int tWeightSize = mNNParaWeightSizes[i];
+                double tMul = mL2LossWeight/MathEX.Fast.sqrt(tWeightSize);
+                for (int j = 0; j < tWeightSize; ++j) {
+                    double tSubPara = tParas.get(j);
+                    rLoss.add(3, tMul*(tSubPara*tSubPara));
+                    if (tRequireGrad) rGrad.add(tShift+j, 2.0*tMul*tSubPara);
+                }
+                tShift += mNNParaSizes[i];
             }
-            tShift += mNNParaSizes[i];
         }
         if (rLossDetail != null) {
             rLossDetail.fill(rLoss);
