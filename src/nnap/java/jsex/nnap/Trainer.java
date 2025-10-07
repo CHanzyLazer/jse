@@ -150,6 +150,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     
     private final IntList[] mTypeIlist;
     
+    protected boolean mAutoBreak = true;
+    public Trainer setAutoBreak(boolean aFlag) {
+        mAutoBreak = aFlag;
+        return this;
+    }
     
     protected IOptimizer mOptimizer = new LBFGS(100).setLineSearch();
     protected int mBatchSize = -1;
@@ -759,6 +764,10 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
      *     <dd>指定 loss 函数中 l2 正则化的权重</dd>
      *   <dt>share_norm (可选，默认为 false):</dt>
      *     <dd>指定不同种类的归一化系数是否共享</dd>
+     *   <dt>train_norm (可选，默认为 false):</dt>
+     *     <dd>执行是否训练基组的归一化系数</dd>
+     *   <dt>train_basis (可选，默认为 false):</dt>
+     *     <dd>执行是否训练基组中的可训练参数</dd>
      *   <dt>optimizer (可选):</dt>
      *     <dd>
      *       指定优化器的具体参数，包含：
@@ -805,6 +814,14 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         if (tShareNorm != null) {
             setShareNorm(tShareNorm);
         }
+        @Nullable Boolean tTrainNorm = (Boolean)UT.Code.get(aArgs, "train_norm");
+        if (tTrainNorm != null) {
+            setTrainNorm(tTrainNorm);
+        }
+        @Nullable Boolean tTrainBasis = (Boolean)UT.Code.get(aArgs, "train_basis");
+        if (tTrainBasis != null) {
+            setTrainBasis(tTrainBasis);
+        }
     }
     /**
      * 创建一个 nnap 的训练器
@@ -828,6 +845,10 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
      *     <dd>指定势函数的单位</dd>
      *   <dt>share_norm (可选，默认为 false):</dt>
      *     <dd>指定不同种类的归一化系数是否共享</dd>
+     *   <dt>train_norm (可选，默认为 false):</dt>
+     *     <dd>执行是否训练基组的归一化系数</dd>
+     *   <dt>train_basis (可选，默认为 false):</dt>
+     *     <dd>执行是否训练基组中的可训练参数</dd>
      *   <dt>basis (可选):</dt>
      *     <dd>
      *       指定基组的具体参数，包含：
@@ -1203,6 +1224,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             }
         })
         .setBreakChecker((step, loss, lastLoss, parameterStep) -> {
+            if (!mAutoBreak) return false; // 现在允许直接关闭自动跳出，在训练末期重新开始训练时步长会非常小
             if (mBatchSize > 0) return false; // 分 batch 情况永远不跳出，因为梯度随机
             if (step==0 || Double.isNaN(lastLoss)) return false;
             return Math.abs(lastLoss-loss) < Math.abs(lastLoss)*1e-7;
