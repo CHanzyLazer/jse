@@ -89,11 +89,10 @@ public class MPI {
         public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_MPI"   , jse.code.Conf.CMAKE_CXX_FLAGS);
         
         /**
-         * 是否在通讯之前拷贝一份 java array，在 {@code 3.8.0}
-         * 之前统一都会进行一次拷贝，现在默认不会进行拷贝而尝试获取原始指针，
-         * 这在绝大多数情况下都能提高 mpi 的性能。
+         * 是否在通讯之前拷贝一份 java array，在 {@code 3.8.0} 到 {@code 3.12.2}
+         * 期间为了性能会关闭拷贝，这在某些时候似乎会导致错误或死锁，因此现在默认保持开启。
          */
-        public static boolean COPY_JARRAY = OS.envZ("JSE_COPY_JARRAY_MPI", false);
+        public static boolean COPY_JARRAY = OS.envZ("JSE_COPY_JARRAY_MPI", true);
         
         /**
          * 对于 mpijni，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
