@@ -76,6 +76,7 @@ extern "C" {
 
 /** jarray to buf stuffs */
 static inline void *getJArrayBuf(JNIEnv *aEnv, jarray aJArray) {
+    if (aJArray == NULL) return NULL;
 #ifdef __cplusplus
     return aEnv->GetPrimitiveArrayCritical(aJArray, NULL);
 #else
@@ -84,6 +85,7 @@ static inline void *getJArrayBuf(JNIEnv *aEnv, jarray aJArray) {
 }
 
 static inline void releaseJArrayBuf(JNIEnv *aEnv, jarray aJArray, void *aBuf, jint aMode) {
+    if (aJArray==NULL || aBuf==NULL) return;
 #ifdef __cplusplus
     aEnv->ReleasePrimitiveArrayCritical(aJArray, aBuf, aMode);
 #else

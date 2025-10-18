@@ -14,7 +14,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_forward1(JNIEnv *aEnv, jcl
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
     jdouble *tFp = (jdouble *)getJArrayBuf(aEnv, rFp);
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, rForwardCache);
-    jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
+    jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     
     // do cal
     JSE_NNAP::calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN, tFp+aShiftFp,
@@ -28,7 +28,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_forward1(JNIEnv *aEnv, jcl
     releaseJArrayBuf(aEnv, aNlType, tNlType, JNI_ABORT);
     releaseJArrayBuf(aEnv, rFp, tFp, 0);
     releaseJArrayBuf(aEnv, rForwardCache, tForwardCache, 0);
-    if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backward1(JNIEnv *aEnv, jclass aClazz,
@@ -77,7 +77,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_forwardForce1(JNIEnv *aEnv
     jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, aForwardCache);
     jdouble *tForwardForceCache = (jdouble *)getJArrayBuf(aEnv, rForwardForceCache);
-    jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
+    jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     
     JSE_NNAP::calForce(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                        tNNGrad+aShiftNNGrad, tFx, tFy, tFz,
@@ -95,7 +95,7 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_forwardForce1(JNIEnv *aEnv
     releaseJArrayBuf(aEnv, rFz, tFz, 0);
     releaseJArrayBuf(aEnv, aForwardCache, tForwardCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rForwardForceCache, tForwardForceCache, 0);
-    if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backwardForce1(JNIEnv *aEnv, jclass aClazz,
@@ -115,11 +115,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backwardForce1(JNIEnv *aEn
     jdouble *tGradFy = (jdouble *)getJArrayBuf(aEnv, aGradFy);
     jdouble *tGradFz = (jdouble *)getJArrayBuf(aEnv, aGradFz);
     jdouble *tGradNNGrad = (jdouble *)getJArrayBuf(aEnv, rGradNNGrad);
-    jdouble *tGradPara = rGradPara==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, rGradPara);
+    jdouble *tGradPara = (jdouble *)getJArrayBuf(aEnv, rGradPara); // nullable
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, aForwardCache);
     jdouble *tForwardForceCache = (jdouble *)getJArrayBuf(aEnv, aForwardForceCache);
     jdouble *tBackwardForceCache = (jdouble *)getJArrayBuf(aEnv, rBackwardForceCache);
-    jdouble *tFuseWeight = aFuseWeight==NULL ? NULL : (jdouble *)getJArrayBuf(aEnv, aFuseWeight);
+    jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     
     JSE_NNAP::calBackwardForce(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                                tNNGrad+aShiftNNGrad, tGradFx, tGradFy, tGradFz,
@@ -138,11 +138,11 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_Chebyshev_backwardForce1(JNIEnv *aEn
     releaseJArrayBuf(aEnv, aGradFy, tGradFy, JNI_ABORT);
     releaseJArrayBuf(aEnv, aGradFz, tGradFz, JNI_ABORT);
     releaseJArrayBuf(aEnv, rGradNNGrad, tGradNNGrad, 0);
-    if (rGradPara!=NULL) releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
+    releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
     releaseJArrayBuf(aEnv, aForwardCache, tForwardCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, aForwardForceCache, tForwardForceCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rBackwardForceCache, tBackwardForceCache, 0);
-    if (aFuseWeight!=NULL) releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
 }
 
 }
