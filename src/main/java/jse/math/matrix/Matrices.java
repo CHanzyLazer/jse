@@ -104,15 +104,19 @@ public class Matrices {
     public static RowMatrix fromDouble(Collection<?> aRows) {return fromRowsDouble(aRows);}
     public static RowMatrix fromRowsDouble(Collection<?> aRows) {
         int tColNum;
-        Object tFirst = UT.Code.first(aRows);
-        if (tFirst instanceof Collection) {
-            tColNum = ((Collection<?>)tFirst).size();
-        } else if (tFirst instanceof IVector) {
-            tColNum = ((IVector)tFirst).size();
-        } else if (tFirst instanceof double[]) {
-            tColNum = ((double[])tFirst).length;
+        if (aRows.isEmpty()) {
+            tColNum = 0;
         } else {
-            throw new IllegalArgumentException("Type of Row Must be Collection<? extends Number>, IVector or double[]");
+            Object tFirst = UT.Code.first(aRows);
+            if (tFirst instanceof Collection) {
+                tColNum = ((Collection<?>)tFirst).size();
+            } else if (tFirst instanceof IVector) {
+                tColNum = ((IVector)tFirst).size();
+            } else if (tFirst instanceof double[]) {
+                tColNum = ((double[])tFirst).length;
+            } else {
+                throw new IllegalArgumentException("Type of Row Must be Collection<? extends Number>, IVector or double[]");
+            }
         }
         RowMatrix rMatrix = zeros(aRows.size(), tColNum);
         rMatrix.fillWithRows(aRows);
@@ -120,15 +124,19 @@ public class Matrices {
     }
     public static RowMatrix fromColsDouble(Collection<?> aCols) {
         int tRowNum;
-        Object tFirst = UT.Code.first(aCols);
-        if (tFirst instanceof Collection) {
-            tRowNum = ((Collection<?>)tFirst).size();
-        } else if (tFirst instanceof IVector) {
-            tRowNum = ((IVector)tFirst).size();
-        } else if (tFirst instanceof double[]) {
-            tRowNum = ((double[])tFirst).length;
+        if (aCols.isEmpty()) {
+            tRowNum = 0;
         } else {
-            throw new IllegalArgumentException("Type of Column Must be Collection<? extends Number>, IVector or double[]");
+            Object tFirst = UT.Code.first(aCols);
+            if (tFirst instanceof Collection) {
+                tRowNum = ((Collection<?>)tFirst).size();
+            } else if (tFirst instanceof IVector) {
+                tRowNum = ((IVector)tFirst).size();
+            } else if (tFirst instanceof double[]) {
+                tRowNum = ((double[])tFirst).length;
+            } else {
+                throw new IllegalArgumentException("Type of Column Must be Collection<? extends Number>, IVector or double[]");
+            }
         }
         RowMatrix rMatrix = zeros(tRowNum, aCols.size());
         rMatrix.fillWithCols(aCols);
@@ -155,15 +163,19 @@ public class Matrices {
     public static RowIntMatrix fromInt(Collection<?> aRows) {return fromRowsInt(aRows);}
     public static RowIntMatrix fromRowsInt(Collection<?> aRows) {
         int tColNum;
-        Object tFirst = UT.Code.first(aRows);
-        if (tFirst instanceof Collection) {
-            tColNum = ((Collection<?>)tFirst).size();
-        } else if (tFirst instanceof IIntVector) {
-            tColNum = ((IIntVector)tFirst).size();
-        } else if (tFirst instanceof int[]) {
-            tColNum = ((int[])tFirst).length;
+        if (aRows.isEmpty()) {
+            tColNum = 0;
         } else {
-            throw new IllegalArgumentException("Type of Row Must be Collection<Integer>, IIntVector or int[]");
+            Object tFirst = UT.Code.first(aRows);
+            if (tFirst instanceof Collection) {
+                tColNum = ((Collection<?>)tFirst).size();
+            } else if (tFirst instanceof IIntVector) {
+                tColNum = ((IIntVector)tFirst).size();
+            } else if (tFirst instanceof int[]) {
+                tColNum = ((int[])tFirst).length;
+            } else {
+                throw new IllegalArgumentException("Type of Row Must be Collection<Integer>, IIntVector or int[]");
+            }
         }
         RowIntMatrix rMatrix = RowIntMatrix.zeros(aRows.size(), tColNum);
         rMatrix.fillWithRows(aRows);
@@ -171,15 +183,19 @@ public class Matrices {
     }
     public static RowIntMatrix fromColsInt(Collection<?> aCols) {
         int tRowNum;
-        Object tFirst = UT.Code.first(aCols);
-        if (tFirst instanceof Collection) {
-            tRowNum = ((Collection<?>)tFirst).size();
-        } else if (tFirst instanceof IIntVector) {
-            tRowNum = ((IIntVector)tFirst).size();
-        } else if (tFirst instanceof int[]) {
-            tRowNum = ((int[])tFirst).length;
+        if (aCols.isEmpty()) {
+            tRowNum = 0;
         } else {
-            throw new IllegalArgumentException("Type of Column Must be Collection<Integer>, IIntVector or int[]");
+            Object tFirst = UT.Code.first(aCols);
+            if (tFirst instanceof Collection) {
+                tRowNum = ((Collection<?>)tFirst).size();
+            } else if (tFirst instanceof IIntVector) {
+                tRowNum = ((IIntVector)tFirst).size();
+            } else if (tFirst instanceof int[]) {
+                tRowNum = ((int[])tFirst).length;
+            } else {
+                throw new IllegalArgumentException("Type of Column Must be Collection<Integer>, IIntVector or int[]");
+            }
         }
         RowIntMatrix rMatrix = RowIntMatrix.zeros(tRowNum, aCols.size());
         rMatrix.fillWithCols(aCols);

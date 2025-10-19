@@ -218,8 +218,8 @@ public class SharedFeedForward extends NeuralNetwork {
             int tNoSharedHiddenDim = tHiddenDim-tSharedHiddenDim;
             int tSize = tNoSharedHiddenDim*tColNum;
             RowMatrix tWeight = Matrices.fromRows((List<?>)tHiddenWeights.get(i));
-            if (tWeight.columnNumber() != tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+i+"' mismatch");
             if (tWeight.rowNumber() != tNoSharedHiddenDim) throw new IllegalArgumentException("Row number of hidden weight '"+i+"' mismatch");
+            if (tNoSharedHiddenDim>0 && tWeight.columnNumber()!=tColNum) throw new IllegalArgumentException("Column number of hidden weight '"+i+"' mismatch");
             aHiddenWeights.subVec(tShift, tShift+tSize).fill(tWeight.asVecRow());
             tShift += tSize;
             tColNum = tHiddenDim;
