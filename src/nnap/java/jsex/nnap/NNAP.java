@@ -169,8 +169,11 @@ public class NNAP implements IPairPotential {
         IVector aNormSigma = Vectors.from(tNormSigma);
         List<? extends Number> tNormMu = (List<? extends Number>)tModelInfo.get("norm_mu");
         IVector aNormMu = tNormMu==null ? Vectors.zeros(tNormSigma.size()) : Vectors.from(tNormMu);
-        // 这里直接使用 NormedNeuralNetwork 来简单包含这些归一化系数
+        // torch 兼容
         if (aNN instanceof TorchModel) mIsTorch = true;
+        // share 情况转为简单的 FF 提高性能
+        if (aNN instanceof SharedFeedForward) aNN = ((SharedFeedForward)aNN).toFeedForward();
+        // 这里直接使用 NormedNeuralNetwork 来简单包含这些归一化系数
         NeuralNetwork tNN = new NormedNeuralNetwork(aNN, aNormMu, aNormSigma, mNormMuEng+aRefEng, mNormSigmaEng);
         NeuralNetwork[] aNNPar = new NeuralNetwork[mThreadNumber];
         aNNPar[0] = tNN;

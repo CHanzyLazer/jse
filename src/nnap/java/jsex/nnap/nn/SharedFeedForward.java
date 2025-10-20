@@ -121,6 +121,42 @@ public class SharedFeedForward extends NeuralNetwork {
         return new SharedFeedForward(mInputDim, mShare.threadSafeRef(), mSharedType, mSharedHiddenDims, mHiddenWeights, mHiddenWeightsBackward, mIndexToBackward, mHiddenBiases, mOutputWeight, mOutputBias);
     }
     
+    /** 拷贝参数从而转换成简单的 FeedForward 形式，从而可以加速神经网络的推理部分；会存在部分参数的引用因此进行参数修改是未定义的行为 */
+    public FeedForward toFeedForward() {
+        Vector aHiddenWeights = mShare.mHiddenWeights.copy();
+        Vector aHiddenBiases = mShare.mHiddenBiases.copy();
+        Vector aOutputWeight = mShare.mOutputWeight.copy();
+        double aOutputBias = mShare.mOutputBias[0];
+        int tColNum = mInputDim;
+        int tShift = 0, tShiftShare = 0;
+        for (int i = 0; i < mHiddenNumber; ++i) {
+            int tHiddenDim = mShare.mHiddenDims[i];
+            int tSharedHiddenDim = mSharedHiddenDims[i];
+            int tNoSharedHiddenDim = tHiddenDim-tSharedHiddenDim;
+            // shared last
+            int tSize = tNoSharedHiddenDim*tColNum;
+            aHiddenWeights.subVec(tShiftShare, tShiftShare+tSize).fill(mHiddenWeights.subVec(tShift, tShift+tSize));
+            tShift += tSize;
+            tShiftShare += tHiddenDim*tColNum;
+            tColNum = tHiddenDim;
+        }
+        tShift = 0; tShiftShare = 0;
+        for (int i = 0; i < mHiddenNumber; ++i) {
+            int tHiddenDim = mShare.mHiddenDims[i];
+            int tSharedHiddenDim = mSharedHiddenDims[i];
+            int tNoSharedHiddenDim = tHiddenDim-tSharedHiddenDim;
+            // shared last
+            aHiddenBiases.subVec(tShiftShare, tShiftShare+tNoSharedHiddenDim).fill(mHiddenBiases.subVec(tShift, tShift+tNoSharedHiddenDim));
+            tShift += tNoSharedHiddenDim;
+            tShiftShare += tHiddenDim;
+        }
+        if (mSharedHiddenDims[mHiddenNumber]==0) {
+            aOutputWeight.fill(mOutputWeight);
+            aOutputBias = mOutputBias[0];
+        }
+        return new FeedForward(mInputDim, mShare.mHiddenDims, aHiddenWeights, aHiddenBiases, aOutputWeight, new double[]{aOutputBias});
+    }
+    
     // 这里包含时只处理实际计算流中涉及的参数部分
     public void initParameters(boolean aIncludeShare) {
         int tColNum = mInputDim;
