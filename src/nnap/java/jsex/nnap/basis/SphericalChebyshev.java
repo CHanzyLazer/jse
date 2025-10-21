@@ -4,6 +4,7 @@ import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.IDataShell;
+import jse.math.MathEX;
 import jse.math.matrix.ColumnMatrix;
 import jse.math.vector.*;
 import org.jetbrains.annotations.NotNull;
@@ -179,7 +180,7 @@ public class SphericalChebyshev extends WTypeBasis {
         // 补充对于 PostFuseWeight 的初始化
         if (mPostFuseWeight == null) return;
         mPostFuseWeight.assign(() -> RANDOM.nextDouble(-1, 1));
-        // 确保权重归一化
+        // 确保权重归一化，这个可以有效加速训练
         int tShift = 0;
         for (int np = 0; np < mPostFuseSize; ++np) {
             IVector tSubVec = mPostFuseWeight.subVec(tShift, tShift + mSizeN);
@@ -251,47 +252,33 @@ public class SphericalChebyshev extends WTypeBasis {
     
     @Override protected int forwardCacheSize_(int aNN, boolean aFullCache) {
         int tPostSize = mPostFuseWeight==null ? 0 : (mPostFuseSize*mLMAll);
-        if (mWType == WTYPE_FUSE) {
+        if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
             return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + mSizeN*mLMAll + tPostSize)
                               : (mNMax+1 + mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll + tPostSize);
-        }
-        if (mWType == WTYPE_RFUSE) {
-            return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll + mFuseSize) + mSizeN*mLMAll + tPostSize)
-                              : (mNMax+1 + mLMAll + mFuseSize + mSizeN*mLMAll + tPostSize);
         }
         return aFullCache ? (aNN*(mNMax+1 + 1 + mLMAll) + mSizeN*mLMAll + tPostSize)
                           : (mNMax+1 + mLMAll + mSizeN*mLMAll + tPostSize);
     }
     @Override protected int backwardCacheSize_(int aNN) {
         int tPostSize = mPostFuseWeight==null ? 0 : (mPostFuseSize*mLMAll);
-        if (mWType == WTYPE_FUSE) {
+        if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
             return mSizeN*mLMAll + tPostSize;
-        }
-        if (mWType == WTYPE_RFUSE) {
-            return aNN*mFuseSize + mSizeN*mLMAll + tPostSize;
         }
         return tPostSize;
     }
     @Override protected int forwardForceCacheSize_(int aNN, boolean aFullCache) {
         int tPostSize = mPostFuseWeight==null ? 0 : (mPostFuseSize*mLMAll);
-        if (mWType == WTYPE_FUSE) {
+        if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
             return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + (mNMax+1)*mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll + tPostSize)
                               : (4*(mNMax+1) + 5*mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll + tPostSize);
-        }
-        if (mWType == WTYPE_RFUSE) {
-            return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll + mFuseSize) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll + tPostSize)
-                              : (4*(mNMax+1) + 5*mLMAll + mFuseSize + mSizeN*mLMAll + tPostSize);
         }
         return aFullCache ? (3*aNN*(mNMax+1 + 1 + mLMAll) + (mNMax+1) + 2*mLMAll + mSizeN*mLMAll + tPostSize)
                           : (4*(mNMax+1) + 5*mLMAll + mSizeN*mLMAll + tPostSize);
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
         int tPostSize = mPostFuseWeight==null ? 0 : (mPostFuseSize*mLMAll);
-        if (mWType == WTYPE_FUSE) {
+        if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
             return mLMAll + (mNMax+1)*mLMAll + mSizeN*mLMAll + tPostSize;
-        }
-        if (mWType == WTYPE_RFUSE) {
-            return mLMAll + mNMax+1 + mSizeN*mLMAll + tPostSize;
         }
         return mLMAll + mSizeN*mLMAll + tPostSize;
     }
@@ -308,7 +295,7 @@ public class SphericalChebyshev extends WTypeBasis {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 如果不是 fuse 直接返回不走 native
-        if (mWType!=WTYPE_FUSE && mWType!=WTYPE_RFUSE && mPostFuseWeight==null) return;
+        if (mWType!=WTYPE_FUSE && mWType!=WTYPE_EXFUSE && mPostFuseWeight==null) return;
         // 如果不保留旧值则在这里清空
         if (!aKeepCache) rBackwardCache.fill(0.0);
         

@@ -127,7 +127,7 @@ public class Chebyshev extends WTypeBasis {
         return aFullCache ? (3*aNN*(mNMax+1 + 1) + (mNMax+1)) : 4*(mNMax+1);
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
-        if (mWType==WTYPE_FUSE || mWType==WTYPE_RFUSE) {
+        if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
             return mNMax+1;
         }
         return 0;
@@ -145,7 +145,7 @@ public class Chebyshev extends WTypeBasis {
         if (isShutdown()) throw new IllegalStateException("This Basis is dead");
         
         // 如果不是 fuse 直接返回不走 native
-        if (mWType!=WTYPE_FUSE && mWType!=WTYPE_RFUSE) return;
+        if (mWType!=WTYPE_FUSE && mWType!=WTYPE_EXFUSE) return;
         
         backward0(aNlDx, aNlDy, aNlDz, aNlType, aGradFp, rGradPara, aForwardCache);
     }

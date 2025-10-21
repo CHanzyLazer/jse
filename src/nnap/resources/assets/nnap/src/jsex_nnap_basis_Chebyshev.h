@@ -17,6 +17,8 @@ extern "C" {
 #define jsex_nnap_basis_Chebyshev_WTYPE_EXFULL 3L
 #undef jsex_nnap_basis_Chebyshev_WTYPE_FUSE
 #define jsex_nnap_basis_Chebyshev_WTYPE_FUSE 4L
+#undef jsex_nnap_basis_Chebyshev_WTYPE_EXFUSE
+#define jsex_nnap_basis_Chebyshev_WTYPE_EXFUSE 6L
 #undef jsex_nnap_basis_Chebyshev_DEFAULT_FUSE_SIZE
 #define jsex_nnap_basis_Chebyshev_DEFAULT_FUSE_SIZE 1L
 #undef jsex_nnap_basis_Chebyshev_DEFAULT_NMAX

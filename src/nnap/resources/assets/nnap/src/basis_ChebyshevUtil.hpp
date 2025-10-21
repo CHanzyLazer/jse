@@ -6,74 +6,49 @@
 namespace JSE_NNAP {
 
 template <jint NMAX>
-static void mplusFpFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize) {
+static void mplusFpFuse_(jboolean aExFlag, jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize) {
     jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aType-1);
     jdouble *tFp = rFp;
+    if (aExFlag) {
+        mplus<NMAX+1>(tFp, aFc, aRn);
+        tFp += (NMAX+1);
+    }
     for (jint k = 0; k < aFuseSize; ++k) {
         mplus<NMAX+1>(tFp, aFc*tFuseWeight[k], aRn);
         tFp += (NMAX+1);
     }
 }
-static void mplusFpFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
+static void mplusFpFuse_(jboolean aExFlag, jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
     switch (aNMax) {
-    case 0: {mplusFpFuse<0>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 1: {mplusFpFuse<1>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 2: {mplusFpFuse<2>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 3: {mplusFpFuse<3>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 4: {mplusFpFuse<4>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 5: {mplusFpFuse<5>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 6: {mplusFpFuse<6>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 7: {mplusFpFuse<7>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 8: {mplusFpFuse<8>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 9: {mplusFpFuse<9>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 10: {mplusFpFuse<10>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 11: {mplusFpFuse<11>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 12: {mplusFpFuse<12>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 13: {mplusFpFuse<13>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 14: {mplusFpFuse<14>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 15: {mplusFpFuse<15>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 16: {mplusFpFuse<16>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 17: {mplusFpFuse<17>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 18: {mplusFpFuse<18>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 19: {mplusFpFuse<19>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 20: {mplusFpFuse<20>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 0: {mplusFpFuse_<0>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 1: {mplusFpFuse_<1>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 2: {mplusFpFuse_<2>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 3: {mplusFpFuse_<3>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 4: {mplusFpFuse_<4>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 5: {mplusFpFuse_<5>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 6: {mplusFpFuse_<6>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 7: {mplusFpFuse_<7>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 8: {mplusFpFuse_<8>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 9: {mplusFpFuse_<9>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 10: {mplusFpFuse_<10>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 11: {mplusFpFuse_<11>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 12: {mplusFpFuse_<12>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 13: {mplusFpFuse_<13>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 14: {mplusFpFuse_<14>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 15: {mplusFpFuse_<15>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 16: {mplusFpFuse_<16>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 17: {mplusFpFuse_<17>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 18: {mplusFpFuse_<18>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 19: {mplusFpFuse_<19>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
+    case 20: {mplusFpFuse_<20>(aExFlag, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
     default: {return;}
     }
 }
-
-template <jint NMAX>
-static void mplusFpRFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize) {
-    jdouble *tFuseWeight = aFuseWeight + aFuseSize*(NMAX+1)*(aType-1);
-    for (jint np = 0; np < aFuseSize; ++np) {
-        rFp[np] += aFc*dot<NMAX+1>(tFuseWeight, aRn);
-        tFuseWeight += (NMAX+1);
-    }
+static inline void mplusFpFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
+    mplusFpFuse_(JNI_FALSE, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize, aNMax);
 }
-static void mplusFpRFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
-    switch (aNMax) {
-    case 0: {mplusFpRFuse<0>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 1: {mplusFpRFuse<1>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 2: {mplusFpRFuse<2>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 3: {mplusFpRFuse<3>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 4: {mplusFpRFuse<4>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 5: {mplusFpRFuse<5>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 6: {mplusFpRFuse<6>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 7: {mplusFpRFuse<7>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 8: {mplusFpRFuse<8>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 9: {mplusFpRFuse<9>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 10: {mplusFpRFuse<10>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 11: {mplusFpRFuse<11>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 12: {mplusFpRFuse<12>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 13: {mplusFpRFuse<13>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 14: {mplusFpRFuse<14>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 15: {mplusFpRFuse<15>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 16: {mplusFpRFuse<16>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 17: {mplusFpRFuse<17>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 18: {mplusFpRFuse<18>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 19: {mplusFpRFuse<19>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    case 20: {mplusFpRFuse<20>(rFp, aFuseWeight, aType, aFc, aRn, aFuseSize); return;}
-    default: {return;}
-    }
+static inline void mplusFpExFuse(jdouble *rFp, jdouble *aFuseWeight, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
+    mplusFpFuse_(JNI_TRUE, rFp, aFuseWeight, aType, aFc, aRn, aFuseSize, aNMax);
 }
 
 
@@ -113,117 +88,54 @@ static void mplusGradParaFuse(jdouble *aGradFp, jdouble *rGradPara, jint aType, 
     }
 }
 
-template <jint NMAX>
-static void mplusGradParaRFuse(jdouble *aGradFp, jdouble *rGradPara, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize) {
-    jdouble *tGradPara = rGradPara + aFuseSize*(NMAX+1)*(aType-1);
-    for (jint np = 0; np < aFuseSize; ++np) {
-        mplus<NMAX+1>(tGradPara, aFc*aGradFp[np], aRn);
-        tGradPara += (NMAX+1);
-    }
-}
-static void mplusGradParaRFuse(jdouble *aGradFp, jdouble *rGradPara, jint aType, jdouble aFc, jdouble *aRn, jint aFuseSize, jint aNMax) {
-    switch (aNMax) {
-    case 0: {mplusGradParaRFuse<0>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 1: {mplusGradParaRFuse<1>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 2: {mplusGradParaRFuse<2>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 3: {mplusGradParaRFuse<3>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 4: {mplusGradParaRFuse<4>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 5: {mplusGradParaRFuse<5>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 6: {mplusGradParaRFuse<6>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 7: {mplusGradParaRFuse<7>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 8: {mplusGradParaRFuse<8>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 9: {mplusGradParaRFuse<9>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 10: {mplusGradParaRFuse<10>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 11: {mplusGradParaRFuse<11>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 12: {mplusGradParaRFuse<12>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 13: {mplusGradParaRFuse<13>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 14: {mplusGradParaRFuse<14>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 15: {mplusGradParaRFuse<15>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 16: {mplusGradParaRFuse<16>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 17: {mplusGradParaRFuse<17>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 18: {mplusGradParaRFuse<18>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 19: {mplusGradParaRFuse<19>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    case 20: {mplusGradParaRFuse<20>(aGradFp, rGradPara, aType, aFc, aRn, aFuseSize); return;}
-    default: {return;}
-    }
-}
-
 
 template <jint NMAX>
-static void calGradRnFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize) {
+static void calGradRnFuse_(jboolean aExFlag, jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize) {
     for (jint n = 0; n <= NMAX; ++n) {
         rGradRn[n] = 0.0;
     }
     jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aType-1);
     jdouble *tNNGrad = aNNGrad;
+    if (aExFlag) {
+        mplus<NMAX+1>(rGradRn, 1.0, tNNGrad);
+        tNNGrad += (NMAX+1);
+    }
     for (jint k = 0; k < aFuseSize; ++k) {
         mplus<NMAX+1>(rGradRn, tFuseWeight[k], tNNGrad);
         tNNGrad += (NMAX+1);
     }
 }
-static void calGradRnFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize, jint aNMax) {
+static void calGradRnFuse_(jboolean aExFlag, jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize, jint aNMax) {
     switch (aNMax) {
-    case 0: {calGradRnFuse<0>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 1: {calGradRnFuse<1>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 2: {calGradRnFuse<2>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 3: {calGradRnFuse<3>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 4: {calGradRnFuse<4>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 5: {calGradRnFuse<5>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 6: {calGradRnFuse<6>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 7: {calGradRnFuse<7>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 8: {calGradRnFuse<8>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 9: {calGradRnFuse<9>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 10: {calGradRnFuse<10>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 11: {calGradRnFuse<11>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 12: {calGradRnFuse<12>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 13: {calGradRnFuse<13>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 14: {calGradRnFuse<14>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 15: {calGradRnFuse<15>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 16: {calGradRnFuse<16>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 17: {calGradRnFuse<17>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 18: {calGradRnFuse<18>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 19: {calGradRnFuse<19>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 20: {calGradRnFuse<20>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 0: {calGradRnFuse_<0>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 1: {calGradRnFuse_<1>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 2: {calGradRnFuse_<2>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 3: {calGradRnFuse_<3>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 4: {calGradRnFuse_<4>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 5: {calGradRnFuse_<5>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 6: {calGradRnFuse_<6>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 7: {calGradRnFuse_<7>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 8: {calGradRnFuse_<8>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 9: {calGradRnFuse_<9>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 10: {calGradRnFuse_<10>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 11: {calGradRnFuse_<11>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 12: {calGradRnFuse_<12>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 13: {calGradRnFuse_<13>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 14: {calGradRnFuse_<14>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 15: {calGradRnFuse_<15>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 16: {calGradRnFuse_<16>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 17: {calGradRnFuse_<17>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 18: {calGradRnFuse_<18>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 19: {calGradRnFuse_<19>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
+    case 20: {calGradRnFuse_<20>(aExFlag, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
     default: {return;}
     }
 }
-
-template <jint NMAX>
-static void calGradRnRFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize) {
-    for (jint n = 0; n <= NMAX; ++n) {
-        rGradRn[n] = 0.0;
-    }
-    jdouble *tFuseWeight = aFuseWeight + aFuseSize*(NMAX+1)*(aType-1);
-    for (jint np = 0; np < aFuseSize; ++np) {
-        mplus<NMAX+1>(rGradRn, aNNGrad[np], tFuseWeight);
-        tFuseWeight += (NMAX+1);
-    }
+static inline void calGradRnFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize, jint aNMax) {
+    calGradRnFuse_(JNI_FALSE, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize, aNMax);
 }
-static void calGradRnRFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize, jint aNMax) {
-    switch (aNMax) {
-    case 0: {calGradRnRFuse<0>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 1: {calGradRnRFuse<1>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 2: {calGradRnRFuse<2>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 3: {calGradRnRFuse<3>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 4: {calGradRnRFuse<4>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 5: {calGradRnRFuse<5>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 6: {calGradRnRFuse<6>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 7: {calGradRnRFuse<7>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 8: {calGradRnRFuse<8>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 9: {calGradRnRFuse<9>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 10: {calGradRnRFuse<10>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 11: {calGradRnRFuse<11>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 12: {calGradRnRFuse<12>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 13: {calGradRnRFuse<13>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 14: {calGradRnRFuse<14>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 15: {calGradRnRFuse<15>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 16: {calGradRnRFuse<16>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 17: {calGradRnRFuse<17>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 18: {calGradRnRFuse<18>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 19: {calGradRnRFuse<19>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    case 20: {calGradRnRFuse<20>(rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize); return;}
-    default: {return;}
-    }
+static inline void calGradRnExFuse(jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize, jint aNMax) {
+    calGradRnFuse_(JNI_TRUE, rGradRn, aNNGrad, aFuseWeight, aType, aFuseSize, aNMax);
 }
 
 template <jint NMAX, jboolean WT>
@@ -343,9 +255,13 @@ static inline void mplusGradNNGradWt(jdouble *rGradNNGrad, jdouble *rGradNNGradW
 }
 
 template <jint NMAX>
-static void mplusGradNNGradFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jboolean aFixBasis) {
+static void mplusGradNNGradFuse_(jboolean aExFlag, jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jboolean aFixBasis) {
     jdouble *tFuseWeight = aFuseWeight + aFuseSize*(aType-1);
     jdouble *tGradNNGrad = rGradNNGrad;
+    if (aExFlag) {
+        mplus<NMAX+1>(tGradNNGrad, 1.0, rGradNNGradRn);
+        tGradNNGrad += (NMAX+1);
+    }
     for (jint k = 0; k < aFuseSize; ++k) {
         mplus<NMAX+1>(tGradNNGrad, tFuseWeight[k], rGradNNGradRn);
         tGradNNGrad += (NMAX+1);
@@ -353,79 +269,46 @@ static void mplusGradNNGradFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jd
     if (!aFixBasis) {
         jdouble *tGradPara = rGradPara + aFuseSize*(aType-1);
         jdouble *tNNGrad = aNNGrad;
+        if (aExFlag) {
+            tNNGrad += (NMAX+1);
+        }
         for (jint k = 0; k < aFuseSize; ++k) {
             tGradPara[k] += dot<NMAX+1>(tNNGrad, rGradNNGradRn);
             tNNGrad += (NMAX+1);
         }
     }
 }
-static void mplusGradNNGradFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jint aNMax, jboolean aFixBasis) {
+static void mplusGradNNGradFuse_(jboolean aExFlag, jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jint aNMax, jboolean aFixBasis) {
     switch (aNMax) {
-    case 0: {mplusGradNNGradFuse<0>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 1: {mplusGradNNGradFuse<1>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 2: {mplusGradNNGradFuse<2>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 3: {mplusGradNNGradFuse<3>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 4: {mplusGradNNGradFuse<4>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 5: {mplusGradNNGradFuse<5>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 6: {mplusGradNNGradFuse<6>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 7: {mplusGradNNGradFuse<7>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 8: {mplusGradNNGradFuse<8>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 9: {mplusGradNNGradFuse<9>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 10: {mplusGradNNGradFuse<10>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 11: {mplusGradNNGradFuse<11>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 12: {mplusGradNNGradFuse<12>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 13: {mplusGradNNGradFuse<13>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 14: {mplusGradNNGradFuse<14>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 15: {mplusGradNNGradFuse<15>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 16: {mplusGradNNGradFuse<16>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 17: {mplusGradNNGradFuse<17>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 18: {mplusGradNNGradFuse<18>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 19: {mplusGradNNGradFuse<19>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 20: {mplusGradNNGradFuse<20>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 0: {mplusGradNNGradFuse_<0>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 1: {mplusGradNNGradFuse_<1>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 2: {mplusGradNNGradFuse_<2>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 3: {mplusGradNNGradFuse_<3>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 4: {mplusGradNNGradFuse_<4>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 5: {mplusGradNNGradFuse_<5>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 6: {mplusGradNNGradFuse_<6>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 7: {mplusGradNNGradFuse_<7>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 8: {mplusGradNNGradFuse_<8>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 9: {mplusGradNNGradFuse_<9>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 10: {mplusGradNNGradFuse_<10>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 11: {mplusGradNNGradFuse_<11>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 12: {mplusGradNNGradFuse_<12>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 13: {mplusGradNNGradFuse_<13>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 14: {mplusGradNNGradFuse_<14>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 15: {mplusGradNNGradFuse_<15>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 16: {mplusGradNNGradFuse_<16>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 17: {mplusGradNNGradFuse_<17>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 18: {mplusGradNNGradFuse_<18>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 19: {mplusGradNNGradFuse_<19>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
+    case 20: {mplusGradNNGradFuse_<20>(aExFlag, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
     default: {return;}
     }
 }
-
-template <jint NMAX>
-static void mplusGradNNGradRFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jboolean aFixBasis) {
-    jdouble *tFuseWeight = aFuseWeight + aFuseSize*(NMAX+1)*(aType-1);
-    for (jint np = 0; np < aFuseSize; ++np) {
-        rGradNNGrad[np] += dot<NMAX+1>(tFuseWeight, rGradNNGradRn);
-        tFuseWeight += (NMAX+1);
-    }
-    if (!aFixBasis) {
-        jdouble *tGradPara = rGradPara + aFuseSize*(NMAX+1)*(aType-1);
-        for (jint np = 0; np < aFuseSize; ++np) {
-            mplus<NMAX+1>(tGradPara, aNNGrad[np], rGradNNGradRn);
-            tGradPara += (NMAX+1);
-        }
-    }
+static inline void mplusGradNNGradFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jint aNMax, jboolean aFixBasis) {
+    mplusGradNNGradFuse_(JNI_FALSE, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aNMax, aFixBasis);
 }
-static void mplusGradNNGradRFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jint aNMax, jboolean aFixBasis) {
-    switch (aNMax) {
-    case 0: {mplusGradNNGradRFuse<0>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 1: {mplusGradNNGradRFuse<1>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 2: {mplusGradNNGradRFuse<2>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 3: {mplusGradNNGradRFuse<3>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 4: {mplusGradNNGradRFuse<4>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 5: {mplusGradNNGradRFuse<5>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 6: {mplusGradNNGradRFuse<6>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 7: {mplusGradNNGradRFuse<7>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 8: {mplusGradNNGradRFuse<8>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 9: {mplusGradNNGradRFuse<9>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 10: {mplusGradNNGradRFuse<10>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 11: {mplusGradNNGradRFuse<11>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 12: {mplusGradNNGradRFuse<12>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 13: {mplusGradNNGradRFuse<13>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 14: {mplusGradNNGradRFuse<14>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 15: {mplusGradNNGradRFuse<15>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 16: {mplusGradNNGradRFuse<16>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 17: {mplusGradNNGradRFuse<17>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 18: {mplusGradNNGradRFuse<18>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 19: {mplusGradNNGradRFuse<19>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    case 20: {mplusGradNNGradRFuse<20>(rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aFixBasis); return;}
-    default: {return;}
-    }
+static inline void mplusGradNNGradExFuse(jdouble *rGradNNGrad, jdouble *rGradNNGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jdouble *rGradPara, jint aType, jint aFuseSize, jint aNMax, jboolean aFixBasis) {
+    mplusGradNNGradFuse_(JNI_TRUE, rGradNNGrad, rGradNNGradRn, aNNGrad, aFuseWeight, rGradPara, aType, aFuseSize, aNMax, aFixBasis);
 }
 
 }
