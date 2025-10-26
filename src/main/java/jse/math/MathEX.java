@@ -931,6 +931,24 @@ public class MathEX {
         }
         
         /**
+         * 计算 Clebsch-Gordan 系数的结果，这里只考虑整数输入
+         * <p>
+         * Reference: <a href="https://en.wikipedia.org/wiki/Clebsch-Gordan_coefficients">
+         * Clebsch–Gordan coefficients - Wikipedia </a>
+         * @author liqa
+         * @return 计算结果，实数
+         */
+        public static double clebschGordan(@Range(from = 0, to = SH_LARGEST_L) int aJ1, @Range(from = 0, to = SH_LARGEST_L) int aJ2, @Range(from = 0, to = SH_LARGEST_L) int aJJ, int aM1, int aM2, int aMM) {
+            // 判断输入是否合法
+            if (aM1 < -aJ1 || aM1 > aJ1) throw new IllegalArgumentException("Input m1 MUST be in range -j1 ~ j1, input: "+aM1);
+            if (aM2 < -aJ2 || aM2 > aJ2) throw new IllegalArgumentException("Input m2 MUST be in range -j2 ~ j2, input: "+aM2);
+            if (aMM < -aJJ || aMM > aJJ) throw new IllegalArgumentException("Input mm MUST be in range -jj ~ jj, input: "+aMM);
+            double tPrefactor = Fast.sqrt(aJJ+aJJ + 1);
+            if (((-aJ1+aJ2-aMM)&1)==1) tPrefactor = -tPrefactor;
+            return tPrefactor * wigner3j_(aJ1, aJ2, aJJ, aM1, aM2, -aMM);
+        }
+        
+        /**
          * 计算阶乘，返回浮点数避免整型溢出
          * @author liqa
          * @return {@code 1 * 2 * 3 * ... * (aN-1) * aN}
