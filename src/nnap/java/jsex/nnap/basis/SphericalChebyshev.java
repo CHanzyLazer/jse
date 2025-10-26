@@ -46,10 +46,11 @@ public class SphericalChebyshev extends WTypeBasis {
     final boolean mNoRadial, mL3Cross, mL4Cross;
     final double mRCut;
     
-    final int mSizeL, mSize;
+    final int mSizeL;
     final int mLMaxMax, mLMAll;
+    int mSize;
     
-    final @Nullable Vector mPostFuseWeight;
+    final Vector mPostFuseWeight;
     final int mPostFuseSize;
     final double[] mPostFuseScale;
     
