@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @ApiStatus.Experimental
 public class EquivariantSphericalChebyshev extends SphericalChebyshev {
+    public final static int DEFAULT_LMAX = 3;
     public final static int DEFAULT_LLMAX = 2;
     public final static int DEFAULT_VMAX = 2;
     
@@ -41,8 +42,8 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     EquivariantSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, int aL4Max, int aLLMax, int aVMax, double aRCut,
                                   int aWType, int aFuseStyle, RowMatrix aFuseWeight, Vector aEquWeight, double[] aEquScale) {
         super(aSymbols, aTypeNum, aNMax, aLMax, false, aL3Max, true, aL4Max, true, aRCut, aWType, aFuseStyle, aFuseWeight, aEquWeight, aEquScale);
-        if (aLMax<0 || aLMax>6) throw new IllegalArgumentException("Input lmax MUST be in [0, 6], input: "+aLMax);
-        if (aLLMax<0 || aLLMax>6) throw new IllegalArgumentException("Input llmax MUST be in [0, 6], input: "+aLLMax);
+        if (aLMax<0 || aLMax>4) throw new IllegalArgumentException("Input lmax MUST be in [0, 4], input: "+aLMax);
+        if (aLLMax<0 || aLLMax>4) throw new IllegalArgumentException("Input llmax MUST be in [0, 4], input: "+aLLMax);
         if (aVMax<1 || aVMax>2) throw new IllegalArgumentException("Input vmax MUST be in [1, 2], input: "+aLLMax);
         if (aL3Max>aLLMax) throw new IllegalArgumentException("Input l3max MUST be less than llmax, input: "+aL3Max+" vs "+aLLMax);
         if (aL4Max>aLLMax) throw new IllegalArgumentException("Input l4max MUST be less than llmax, input: "+aL4Max+" vs "+aLLMax);
