@@ -1274,9 +1274,7 @@ template <jint FSTYLE, jint NMAX, jint LMAX>
 static void calGradBnlmFuse_(jboolean aExFlag, jdouble *aGradCnlm, jdouble *rGradBnlm, jdouble *aFuseWeight, jint aType, jint aFuseSize) noexcept {
     constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
     constexpr jint tSizeBnlm = (NMAX+1)*(LMAX+1)*(LMAX+1);
-    for (jint k = 0; k < tSizeBnlm; ++k) {
-        rGradBnlm[k] = 0.0;
-    }
+    fill<tSizeBnlm>(rGradBnlm, 0.0);
     jdouble *tFuseWeight = aFuseWeight;
     if (FSTYLE==FUSE_STYLE_LIMITED) {
         tFuseWeight += aFuseSize*(aType-1);
@@ -1367,9 +1365,7 @@ static void gradCnlm2Fxyz_(jint j, jdouble *aGradCnlm, jdouble *aGradCnlmWt, jdo
                            jdouble *rFx, jdouble *rFy, jdouble *rFz) noexcept {
     constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
     // clear gradY here
-    for (jint k = 0; k < tLMAll; ++k) {
-        rGradY[k] = 0.0;
-    }
+    fill<tLMAll>(rGradY, 0.0);
     jdouble tGradFc = 0.0;
     jdouble rFxj = 0.0, rFyj = 0.0, rFzj = 0.0;
     jdouble *tGradCnlm = aGradCnlm;

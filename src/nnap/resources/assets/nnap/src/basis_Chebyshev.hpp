@@ -30,9 +30,7 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
         rRn = rForwardCache;
     }
     // clear fp first
-    for (jint i = 0; i < tSizeFp; ++i) {
-        rFp[i] = 0.0;
-    }
+    fill(rFp, 0.0, tSizeFp);
     // loop for neighbor
     for (jint j = 0; j < aNN; ++j) {
         jint type = aNlType[j];

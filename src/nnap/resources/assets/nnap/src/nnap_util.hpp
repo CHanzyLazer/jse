@@ -46,6 +46,30 @@ static inline jboolean numericEqual(jdouble aLHS, jdouble aRHS) noexcept {
 }
 
 template <jint N>
+static inline void fill(jdouble *rArray, jdouble aValue) noexcept {
+    for (jint i = 0; i < N; ++i) {
+        rArray[i] = aValue;
+    }
+}
+static inline void fill(jdouble *rArray, jdouble aValue, jint aLen) noexcept {
+    for (jint i = 0; i < aLen; ++i) {
+        rArray[i] = aValue;
+    }
+}
+
+template <jint N>
+static inline void multiply(jdouble *rArray, jdouble aValue) noexcept {
+    for (jint i = 0; i < N; ++i) {
+        rArray[i] *= aValue;
+    }
+}
+static inline void multiply(jdouble *rArray, jdouble aValue, jint aLen) noexcept {
+    for (jint i = 0; i < aLen; ++i) {
+        rArray[i] *= aValue;
+    }
+}
+
+template <jint N>
 static inline jdouble dot(jdouble *aArray) noexcept {
     jdouble rDot = 0.0;
     for (jint i = 0; i < N; ++i) {

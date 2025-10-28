@@ -120,9 +120,7 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
     jdouble *rAnlm = rCnlm + tSizeCnlm;
     jdouble *rForwardCacheElse = rAnlm + tSizeAnlm;
     // clear cnlm first
-    for (jint i = 0; i < tSizeCnlm; ++i) {
-        rCnlm[i] = 0.0;
-    }
+    fill(rCnlm, 0.0, tSizeCnlm);
     // do cal
     calCnlm<WTYPE, FSTYLE>(aNlDx, aNlDy, aNlDz, aNlType, aNN, rCnlm, rForwardCacheElse, aFullCache, aRCut, aNMax, tLMaxMax, aFuseWeight, aFuseSize);
     // cnlm -> anlm
@@ -130,14 +128,10 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
         rAnlm = rCnlm;
     } else {
         // clear anlm first
-        for (jint i = 0; i < tSizeAnlm; ++i) {
-            rAnlm[i] = 0.0;
-        }
+        fill(rAnlm, 0.0, tSizeAnlm);
         mplusAnlm<FSTYLE>(rAnlm, rCnlm, aPostFuseWeight, aPostFuseSize, tSizeN, tLMaxMax);
         // scale anlm here
-        for (jint i = 0; i < tSizeAnlm; ++i) {
-            rAnlm[i] *= aPostFuseScale;
-        }
+        multiply(rAnlm, aPostFuseScale, tSizeAnlm);
     }
     const jint tShiftL3 = aNoRadial?aLMax:(aLMax+1);
     const jint tShiftL4 = tShiftL3 + (aL3Cross?L3NCOLS:L3NCOLS_NOCROSS)[aL3Max];
@@ -412,12 +406,8 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     jdouble *rGradAnlm = rGradCnlm + tSizeCnlm;
     jdouble *rForwardForceCacheElse = rGradAnlm + tSizeAnlm;
     // forward need init gradAnlm gradCnlm here
-    for (jint i = 0; i < tSizeAnlm; ++i) {
-        rGradAnlm[i] = 0.0;
-    }
-    for (jint i = 0; i < tSizeCnlm; ++i) {
-        rGradCnlm[i] = 0.0;
-    }
+    fill(rGradAnlm, 0.0, tSizeAnlm);
+    fill(rGradCnlm, 0.0, tSizeCnlm);
     if (aPostFuseWeight==NULL) {
         tAnlm = tCnlm;
         rGradAnlm = rGradCnlm;
@@ -432,9 +422,7 @@ static void calForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlTy
     }
     if (aPostFuseWeight!=NULL) {
         // scale anlm here
-        for (jint i = 0; i < tSizeAnlm; ++i) {
-            rGradAnlm[i] *= aPostFuseScale;
-        }
+        multiply(rGradAnlm, aPostFuseScale, tSizeAnlm);
         // anlm -> cnlm
         mplusGradAnlm<FSTYLE>(rGradAnlm, rGradCnlm, aPostFuseWeight, aPostFuseSize, tSizeN, tLMaxMax);
     }
@@ -580,9 +568,7 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
         // cnlm -> anlm
         mplusAnlm<FSTYLE>(rGradNNGradAnlm, rGradNNGradCnlm, aPostFuseWeight, aPostFuseSize, tSizeN, tLMaxMax);
         // scale anlm here
-        for (jint i = 0; i < tSizeAnlm; ++i) {
-            rGradNNGradAnlm[i] *= aPostFuseScale;
-        }
+        multiply(rGradNNGradAnlm, aPostFuseScale, tSizeAnlm);
     }
     
     if (aPostFuseWeight==NULL) {

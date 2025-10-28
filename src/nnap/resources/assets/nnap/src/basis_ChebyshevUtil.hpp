@@ -119,9 +119,7 @@ static void mplusGradParaFuse(jdouble *aGradFp, jdouble *rGradPara, jint aType, 
 
 template <jint FSTYLE, jint NMAX>
 static void calGradRnFuse_(jboolean aExFlag, jdouble *rGradRn, jdouble *aNNGrad, jdouble *aFuseWeight, jint aType, jint aFuseSize) {
-    for (jint n = 0; n <= NMAX; ++n) {
-        rGradRn[n] = 0.0;
-    }
+    fill<NMAX+1>(rGradRn, 0.0);
     jdouble *tFuseWeight = aFuseWeight;
     if (FSTYLE==FUSE_STYLE_LIMITED) {
         tFuseWeight += aFuseSize*(aType-1);

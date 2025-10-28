@@ -96,22 +96,30 @@ abstract class WTypeBasis extends MergeableBasis {
         }}
     }
     @SuppressWarnings("rawtypes")
-    static int getWType_(Map aMap) {
+    static int getWType_(Map aMap, int aDefault) {
         @Nullable Object tType = UT.Code.get(aMap, "wtype");
-        if (tType == null) return WTYPE_DEFAULT;
+        if (tType == null) return aDefault;
         if (tType instanceof Number) return ((Number)tType).intValue();
         @Nullable Integer tOut = ALL_WTYPE.get(tType.toString());
         if (tOut == null) throw new IllegalArgumentException("Input fuse_style MUST be in {default, none, full, exfull, fuse, exfuse}, input: "+tType);
         return tOut;
     }
     @SuppressWarnings("rawtypes")
-    static int getFuseStyle_(Map aMap) {
+    static int getWType_(Map aMap) {
+        return getWType_(aMap, WTYPE_DEFAULT);
+    }
+    @SuppressWarnings("rawtypes")
+    static int getFuseStyle_(Map aMap, int aDefault) {
         @Nullable Object tStyle = UT.Code.get(aMap, "fuse_style");
-        if (tStyle == null) return FUSE_STYLE_LIMITED;
+        if (tStyle == null) return aDefault;
         if (tStyle instanceof Number) return ((Number)tStyle).intValue();
         @Nullable Integer tOut = ALL_FUSE_STYLE.get(tStyle.toString());
         if (tOut == null) throw new IllegalArgumentException("Input wtype MUST be in {limited, extensive}, input: "+tStyle);
         return tOut;
+    }
+    @SuppressWarnings("rawtypes")
+    static int getFuseStyle_(Map aMap) {
+        return getFuseStyle_(aMap, FUSE_STYLE_LIMITED);
     }
     @SuppressWarnings("rawtypes")
     static @Nullable RowMatrix getFuseWeight_(Map aMap, int aWType, int aFuseStyle, int aTypeNum, int aNMax, int aLMaxMax) {

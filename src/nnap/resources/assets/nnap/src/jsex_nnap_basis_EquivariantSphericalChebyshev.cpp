@@ -6,9 +6,9 @@ extern "C" {
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forward1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray rFp, jint aShiftFp, jdoubleArray rForwardCache, jint aForwardCacheShift, jboolean aFullCache,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max, jint aLLMax,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
         jint aWType, jint aFuseStyle, jdoubleArray aFuseWeight, jint aFuseSize,
-        jdoubleArray aEquWeight, jint aEquSize, jdouble aEquScale) {
+        jdoubleArray aEquWeight, jintArray aEquSize, jdoubleArray aEquScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
     jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
@@ -18,12 +18,14 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forwar
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, rForwardCache);
     jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     jdouble *tEquWeight = (jdouble *)getJArrayBuf(aEnv, aEquWeight);
+    jint *tEquSize = (jint *)getJArrayBuf(aEnv, aEquSize);
+    jdouble *tEquScale = (jdouble *)getJArrayBuf(aEnv, aEquScale);
     
     JSE_NNAP::calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN, tFp+aShiftFp,
                     tForwardCache+aForwardCacheShift, aFullCache,
-                    aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max, aLLMax,
+                    aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
                     aWType, aFuseStyle, tFuseWeight, aFuseSize,
-                    tEquWeight, aEquSize, aEquScale);
+                    tEquWeight, tEquSize, tEquScale);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -34,15 +36,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forwar
     releaseJArrayBuf(aEnv, rForwardCache, tForwardCache, 0);
     releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquWeight, tEquWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquSize, tEquSize, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquScale, tEquScale, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backward1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aGradFp, jint aShiftGradFp, jdoubleArray rGradPara, jint aShiftGradPara,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray rBackwardCache, jint aBackwardCacheShift,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max, jint aLLMax,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
         jint aWType, jint aFuseStyle, jint aFuseSize,
-        jdoubleArray aEquWeight, jint aEquSize, jdouble aEquScale) {
+        jdoubleArray aEquWeight, jintArray aEquSize, jdoubleArray aEquScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
     jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
@@ -53,13 +57,15 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwa
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, aForwardCache);
     jdouble *tBackwardCache = (jdouble *)getJArrayBuf(aEnv, rBackwardCache);
     jdouble *tEquWeight = (jdouble *)getJArrayBuf(aEnv, aEquWeight);
+    jint *tEquSize = (jint *)getJArrayBuf(aEnv, aEquSize);
+    jdouble *tEquScale = (jdouble *)getJArrayBuf(aEnv, aEquScale);
     
     JSE_NNAP::calBackward(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                           tGradFp+aShiftGradFp, tGradPara+aShiftGradPara,
                           tForwardCache+aForwardCacheShift, tBackwardCache+aBackwardCacheShift,
-                          aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max, aLLMax,
+                          aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
                           aWType, aFuseStyle, aFuseSize,
-                          tEquWeight, aEquSize, aEquScale);
+                          tEquWeight, tEquSize, tEquScale);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -71,15 +77,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwa
     releaseJArrayBuf(aEnv, aForwardCache, tForwardCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rBackwardCache, tBackwardCache, 0);
     releaseJArrayBuf(aEnv, aEquWeight, tEquWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquSize, tEquSize, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquScale, tEquScale, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forwardForce1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNNGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray rForwardForceCache, jint aForwardForceCacheShift, jboolean aFullCache,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max, jint aLLMax,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
         jint aWType, jint aFuseStyle, jdoubleArray aFuseWeight, jint aFuseSize,
-        jdoubleArray aEquWeight, jint aEquSize, jdouble aEquScale) {
+        jdoubleArray aEquWeight, jintArray aEquSize, jdoubleArray aEquScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
     jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
@@ -93,13 +101,15 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forwar
     jdouble *tForwardForceCache = (jdouble *)getJArrayBuf(aEnv, rForwardForceCache);
     jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     jdouble *tEquWeight = (jdouble *)getJArrayBuf(aEnv, aEquWeight);
+    jint *tEquSize = (jint *)getJArrayBuf(aEnv, aEquSize);
+    jdouble *tEquScale = (jdouble *)getJArrayBuf(aEnv, aEquScale);
     
     JSE_NNAP::calForce(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                        tNNGrad+aShiftFp, tFx, tFy, tFz,
                        tForwardCache+aForwardCacheShift, tForwardForceCache+aForwardForceCacheShift, aFullCache,
-                       aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max, aLLMax,
+                       aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
                        aWType, aFuseStyle, tFuseWeight, aFuseSize,
-                       tEquWeight, aEquSize, aEquScale);
+                       tEquWeight, tEquSize, tEquScale);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -114,6 +124,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_forwar
     releaseJArrayBuf(aEnv, rForwardForceCache, tForwardForceCache, 0);
     releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquWeight, tEquWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquSize, tEquSize, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquScale, tEquScale, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwardForce1(JNIEnv *aEnv, jclass aClazz,
@@ -122,9 +134,9 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwa
         jdoubleArray rGradNNGrad, jint aShiftGradNNGrad, jdoubleArray rGradPara, jint aShiftGradPara,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray aForwardForceCache, jint aForwardForceCacheShift,
         jdoubleArray rBackwardCache, jint aBackwardCacheShift, jdoubleArray rBackwardForceCache, jint aBackwardForceCacheShift, jboolean aFixBasis,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max, jint aLLMax,
+        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
         jint aWType, jint aFuseStyle, jdoubleArray aFuseWeight, jint aFuseSize,
-        jdoubleArray aEquWeight, jint aEquSize, jdouble aEquScale) {
+        jdoubleArray aEquWeight, jintArray aEquSize, jdoubleArray aEquScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
     jdouble *tNlDy = (jdouble *)getJArrayBuf(aEnv, aNlDy);
@@ -142,15 +154,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwa
     jdouble *tBackwardForceCache = (jdouble *)getJArrayBuf(aEnv, rBackwardForceCache);
     jdouble *tFuseWeight = (jdouble *)getJArrayBuf(aEnv, aFuseWeight); // nullable
     jdouble *tEquWeight = (jdouble *)getJArrayBuf(aEnv, aEquWeight);
+    jint *tEquSize = (jint *)getJArrayBuf(aEnv, aEquSize);
+    jdouble *tEquScale = (jdouble *)getJArrayBuf(aEnv, aEquScale);
     
     JSE_NNAP::calBackwardForce(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                                tNNGrad+aShiftNNGrad, tGradFx, tGradFy, tGradFz,
                                tGradNNGrad+aShiftGradNNGrad, tGradPara==NULL?NULL:(tGradPara+aShiftGradPara),
                                tForwardCache+aForwardCacheShift, tForwardForceCache+aForwardForceCacheShift,
                                tBackwardCache+aBackwardCacheShift, tBackwardForceCache+aBackwardForceCacheShift, aFixBasis,
-                               aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max, aLLMax,
+                               aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
                                aWType, aFuseStyle, tFuseWeight, aFuseSize,
-                               tEquWeight, aEquSize, aEquScale);
+                               tEquWeight, tEquSize, tEquScale);
     
     // release java array
     releaseJArrayBuf(aEnv, aNlDx, tNlDx, JNI_ABORT);
@@ -169,6 +183,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_EquivariantSphericalChebyshev_backwa
     releaseJArrayBuf(aEnv, rBackwardForceCache, tBackwardForceCache, 0);
     releaseJArrayBuf(aEnv, aFuseWeight, tFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquWeight, tEquWeight, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquSize, tEquSize, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aEquScale, tEquScale, JNI_ABORT);
 }
 
 }
