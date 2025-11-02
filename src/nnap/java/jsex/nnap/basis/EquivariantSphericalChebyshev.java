@@ -38,6 +38,7 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     final Vector mEquWeight;
     final double[] mEquScale;
     final int[] mEquSize;
+    final int mEquNumber, mEquWeightSize, mEquCacheSize;
     
     EquivariantSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, int aL4Max, double aRCut,
                                   int aWType, int aFuseStyle, RowMatrix aFuseWeight, Vector aEquWeight, double[] aEquScale, int[] aEquSize) {
@@ -49,20 +50,31 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
         mEquWeight = aEquWeight;
         mEquSize = aEquSize;
         mEquScale = aEquScale;
+        mEquNumber = aEquSize.length;
+        if (mEquNumber < 2) throw new IllegalArgumentException("At least two equivariant layer is required");
+        mSize = mEquSize[mEquNumber-1]*mSizeL;
         
-        mSize = mEquSize[1]*mSizeL;
-        
-        int tSizeEqu1 = mEquSize[0] * mSizeN;
-        if (mFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSizeEqu1 *= (mLMax+1);
+        int tEquWeightSize = 0;
+        int tColNum = mSizeN;
+        for (int k = 0; k < mEquNumber; ++k) {
+            int tRowNum = mEquSize[k];
+            if (mFuseStyle==FUSE_STYLE_LIMITED) {
+                tEquWeightSize += tRowNum*tColNum;
+            } else {
+                tEquWeightSize += tRowNum*tColNum*(mLMax+1);
+            }
+            tColNum = tRowNum*2;
         }
-        int tSizeEqu2 = mEquSize[1] * mEquSize[0] * 2;
-        if (mFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSizeEqu2 *= (mLMax+1);
+        mEquWeightSize = tEquWeightSize;
+        int tEquCacheSize = mEquSize[0]*mLMAll;
+        for (int k = 1; k < mEquNumber; ++k) {
+            tEquCacheSize += mEquSize[k-1]*mLMAll;
+            tEquCacheSize += mEquSize[k]*mLMAll;
         }
-        if (mEquWeight.size()!=tSizeEqu1+tSizeEqu2) throw new IllegalArgumentException("Size of equivariant weight mismatch");
-        if (mEquScale.length!=2) throw new IllegalArgumentException("Size of equivariant scale mismatch");
-        if (mEquSize.length!=2) throw new IllegalArgumentException("Size of equivariant size mismatch");
+        mEquCacheSize = tEquCacheSize;
+        if (mEquWeight.size()!=mEquWeightSize) throw new IllegalArgumentException("Size of equivariant weight mismatch");
+        if (mEquScale.length!=mEquNumber) throw new IllegalArgumentException("Size of equivariant scale mismatch");
+        if (mEquSize.length!=mEquNumber) throw new IllegalArgumentException("Size of equivariant size mismatch");
     }
     private static int checkLMax_(int aLMax) {
         if (aLMax<0 || aLMax>4) throw new IllegalArgumentException("Input lmax MUST be in [0, 4], input: "+aLMax);
@@ -89,18 +101,21 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
         }
         rSaveTo.put("equivariant_sizes", AbstractCollections.from(mEquSize));
         rSaveTo.put("equivariant_scales", AbstractCollections.from(mEquScale));
-        List<List<Double>> rEquWeights = new ArrayList<>(2);
-        int tSize = mEquSize[0] * mSizeN;
-        if (mFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSize *= (mLMax+1);
+        List<List<Double>> rEquWeights = new ArrayList<>(mEquNumber);
+        int tShift = 0;
+        int tColNum = mSizeN;
+        for (int k = 0; k < mEquNumber; ++k) {
+            int tRowNum = mEquSize[k];
+            int tSize;
+            if (mFuseStyle==FUSE_STYLE_LIMITED) {
+                tSize = tRowNum*tColNum;
+            } else {
+                tSize = tRowNum*tColNum*(mLMax+1);
+            }
+            rEquWeights.add(mEquWeight.subVec(tShift, tShift+tSize).asList());
+            tShift += tSize;
+            tColNum = tRowNum*2;
         }
-        rEquWeights.add(mEquWeight.subVec(0, tSize).asList());
-        int tShift = tSize;
-        tSize = mEquSize[1] * mEquSize[0] * 2;
-        if (mFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSize *= (mLMax+1);
-        }
-        rEquWeights.add(mEquWeight.subVec(tShift, tShift+tSize).asList());
         rSaveTo.put("equivariant_weights", rEquWeights);
     }
     
@@ -166,35 +181,39 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     static Vector getEquWeight_(Map aMap, int aFuseStyle, int aSizeN, int aLMax, int[] aEquSizes) {
         List<?> tEquWeights = (List<?>)UT.Code.get(aMap, "equivariant_weights", "equ_weights");
         if (tEquWeights!=null) {
+            int tEquNumber = tEquWeights.size();
+            if (aEquSizes.length!=tEquNumber) throw new IllegalArgumentException("Size of equivariant weights mismatch");
             Vector.Builder tOut = Vector.builder(16);
-            Vector tVec = Vectors.from((List)tEquWeights.get(0));
-            if (aFuseStyle==FUSE_STYLE_LIMITED) {
-                if (tVec.size()!=aEquSizes[0]*aSizeN) throw new IllegalArgumentException("Size of equivariant weight mismatch");
-            } else
-            if (aFuseStyle==FUSE_STYLE_EXTENSIVE) {
-                if (tVec.size()!=aEquSizes[0]*aSizeN*(aLMax+1)) throw new IllegalArgumentException("Size of equivariant weight mismatch");
-            } else {
-                throw new IllegalStateException();
+            int tColNum = aSizeN;
+            for (int k = 0; k < tEquNumber; ++k) {
+                int tRowNum = aEquSizes[k];
+                Vector tVec = Vectors.from((List)tEquWeights.get(k));
+                int tSize;
+                if (aFuseStyle==FUSE_STYLE_LIMITED) {
+                    tSize = tRowNum*tColNum;
+                } else
+                if (aFuseStyle==FUSE_STYLE_EXTENSIVE) {
+                    tSize = tRowNum*tColNum*(aLMax+1);
+                } else {
+                    throw new IllegalStateException();
+                }
+                if (tVec.size()!=tSize) throw new IllegalArgumentException("Size of equivariant weight '"+k+"' mismatch");
+                tOut.addAll(tVec);
+                tColNum = tRowNum*2;
             }
-            tOut.addAll(tVec);
-            tVec = Vectors.from((List)tEquWeights.get(1));
-            if (aFuseStyle==FUSE_STYLE_LIMITED) {
-                if (tVec.size()!=aEquSizes[1]*aEquSizes[0]*2) throw new IllegalArgumentException("Size of equivariant weight mismatch");
-            } else {
-                if (tVec.size()!=aEquSizes[1]*aEquSizes[0]*2*(aLMax+1)) throw new IllegalArgumentException("Size of equivariant weight mismatch");
-            }
-            tOut.addAll(tVec);
             return tOut.build();
         }
-        int tSize1 = aEquSizes[0]*aSizeN;
-        if (aFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSize1 *= (aLMax+1);
+        int tEquWeightSize = 0;
+        int tColNum = aSizeN;
+        for (int tRowNum : aEquSizes) {
+            if (aFuseStyle==FUSE_STYLE_LIMITED) {
+                tEquWeightSize += tRowNum*tColNum;
+            } else {
+                tEquWeightSize += tRowNum*tColNum*(aLMax+1);
+            }
+            tColNum = tRowNum*2;
         }
-        int tSize2 = aEquSizes[1]*aEquSizes[0]*2;
-        if (aFuseStyle==FUSE_STYLE_EXTENSIVE) {
-            tSize2 *= (aLMax+1);
-        }
-        return Vector.zeros(tSize1+tSize2);
+        return Vector.zeros(tEquWeightSize);
     }
     
     
@@ -205,7 +224,7 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
         // 确保权重归一化，这个可以有效加速训练；经验设定
         int tShift = 0;
         int tColNum = mSizeN;
-        for (int k = 0; k < 2; ++k) {
+        for (int k = 0; k < mEquNumber; ++k) {
             int tRowNum = mEquSize[k];
             for (int np = 0; np < tRowNum; ++np) {
                 if (mFuseStyle==FUSE_STYLE_LIMITED) {
@@ -237,14 +256,13 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
         // 补充对于 EquWeight 的参数
         if (tPara == null) return mEquWeight;
         final int tParaSize = tPara.size();
-        final int tEquParaSize = mEquWeight.size();
         return new RefVector() {
             @Override public double get(int aIdx) {
                 if (aIdx < tParaSize) {
                     return tPara.get(aIdx);
                 }
                 aIdx -= tParaSize;
-                if (aIdx < tEquParaSize) {
+                if (aIdx < mEquWeightSize) {
                     return mEquWeight.get(aIdx);
                 }
                 throw new IndexOutOfBoundsException(String.valueOf(aIdx));
@@ -255,14 +273,14 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                     return;
                 }
                 aIdx -= tParaSize;
-                if (aIdx < tEquParaSize) {
+                if (aIdx < mEquWeightSize) {
                     mEquWeight.set(aIdx, aValue);
                     return;
                 }
                 throw new IndexOutOfBoundsException(String.valueOf(aIdx));
             }
             @Override public int size() {
-                return tParaSize+tEquParaSize;
+                return tParaSize+mEquWeightSize;
             }
         };
     }
@@ -271,16 +289,16 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     }
     
     @Override protected int forwardCacheSize_(int aNN, boolean aFullCache) {
-        return super.forwardCacheSize_(aNN, aFullCache) + (mEquSize[0]*2 + mEquSize[1])*mLMAll;
+        return super.forwardCacheSize_(aNN, aFullCache) + mEquCacheSize;
     }
     @Override protected int backwardCacheSize_(int aNN) {
-        return super.backwardCacheSize_(aNN) + (mEquSize[0]*2 + mEquSize[1])*mLMAll;
+        return super.backwardCacheSize_(aNN) + mEquCacheSize;
     }
     @Override protected int forwardForceCacheSize_(int aNN, boolean aFullCache) {
-        return super.forwardForceCacheSize_(aNN, aFullCache) + (mEquSize[0]*2 + mEquSize[1])*mLMAll;
+        return super.forwardForceCacheSize_(aNN, aFullCache) + mEquCacheSize;
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
-        return super.backwardForceCacheSize_(aNN) + (mEquSize[0]*2 + mEquSize[1])*mLMAll;
+        return super.backwardForceCacheSize_(aNN) + mEquCacheSize;
     }
     
     
@@ -294,22 +312,26 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     
     @Override
     void forward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rFp, IDataShell<double[]> rForwardCache, boolean aFullCache) {
+        if (mEquSize.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
+        if (mEquScale.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
         int tNN = aNlDx.internalDataSize();
         forward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                  rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
                  rForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, aFullCache)), rForwardCache.internalDataShift(), aFullCache,
                  mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL4Max,
                  mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                 mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale);
+                 mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale, mEquNumber);
     }
     private static native void forward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN, double[] rFp, int aShiftFp,
                                         double[] rForwardCache, int aForwardCacheShift, boolean aFullCache,
                                         int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, int aL4Max,
                                         int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize,
-                                        double[] aEquWeight, int[] aEquSize, double[] aEquScale);
+                                        double[] aEquWeight, int[] aEquSize, double[] aEquScale, int aEquNumber);
     
     @Override
     void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> rBackwardCache) {
+        if (mEquSize.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
+        if (mEquScale.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
         int tNN = aNlDx.internalDataSize();
         int tParaSize = mEquWeight.internalDataSize();
         if (mFuseWeight!=null) tParaSize += mFuseWeight.internalDataSize();
@@ -320,17 +342,19 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                   rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
                   mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL4Max,
                   mWType, mFuseStyle, mFuseSize,
-                  mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale);
+                  mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale, mEquNumber);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aGradFp, int aShiftGradFp, double[] rGradPara, int aShiftGradPara,
                                          double[] aForwardCache, int aForwardCacheShift, double[] rBackwardCache, int aBackwardCacheShift,
                                          int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, int aL4Max,
                                          int aWType, int aFuseStyle, int aFuseSize,
-                                         double[] aEquWeight, int[] aEquSize, double[] aEquScale);
+                                         double[] aEquWeight, int[] aEquSize, double[] aEquScale, int aEquNumber);
     
     @Override
     void forwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, IDataShell<double[]> aForwardCache, IDataShell<double[]> rForwardForceCache, boolean aFullCache) {
+        if (mEquSize.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
+        if (mEquScale.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
         int tNN = aNlDx.internalDataSize();
         forwardForce1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                       aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
@@ -338,14 +362,14 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                       rForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, aFullCache)), rForwardForceCache.internalDataShift(), aFullCache,
                       mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL4Max,
                       mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                      mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale);
+                      mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale, mEquNumber);
     }
     private static native void forwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                              double[] aNNGrad, int aShiftNNGrad, double[] rFx, double[] rFy, double[] rFz,
                                              double[] aForwardCache, int aForwardCacheShift, double[] rForwardForceCache, int aForwardForceCacheShift, boolean aFullCache,
                                              int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, int aL4Max,
                                              int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize,
-                                             double[] aEquWeight, int[] aEquSize, double[] aEquScale);
+                                             double[] aEquWeight, int[] aEquSize, double[] aEquScale, int aEquNumber);
     
     @Override
     void backwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
@@ -353,6 +377,8 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                         IDataShell<double[]> rGradNNGrad, @Nullable IDataShell<double[]> rGradPara,
                         IDataShell<double[]> aForwardCache, IDataShell<double[]> aForwardForceCache,
                         IDataShell<double[]> rBackwardCache, IDataShell<double[]> rBackwardForceCache, boolean aFixBasis) {
+        if (mEquSize.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
+        if (mEquScale.length < mEquNumber) throw new IllegalArgumentException("data size mismatch");
         int tNN = aNlDx.internalDataSize();
         int tParaSize = mEquWeight.internalDataSize();
         if (mFuseWeight!=null) tParaSize += mFuseWeight.internalDataSize();
@@ -368,7 +394,7 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                        rBackwardForceCache.internalDataWithLengthCheck(backwardForceCacheSize_(tNN)), rBackwardForceCache.internalDataShift(), aFixBasis,
                        mTypeNum, mRCut, mNMax, mLMax, mL3Max, mL4Max,
                        mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                       mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale);
+                       mEquWeight.internalDataWithLengthCheck(), mEquSize, mEquScale, mEquNumber);
     }
     private static native void backwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                               double[] aNNGrad, int aShiftNNGrad, double[] aGradFx, double[] aGradFy, double[] aGradFz,
@@ -377,5 +403,5 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
                                               double[] rBackwardCache, int aBackwardCacheShift, double[] rBackwardForceCache, int aBackwardForceCacheShift, boolean aFixBasis,
                                               int aTypeNum, double aRCut, int aNMax, int aLMax, int aL3Max, int aL4Max,
                                               int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize,
-                                              double[] aEquWeight, int[] aEquSize, double[] aEquScale);
+                                              double[] aEquWeight, int[] aEquSize, double[] aEquScale, int aEquNumber);
 }
