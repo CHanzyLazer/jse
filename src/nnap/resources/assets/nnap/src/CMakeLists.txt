@@ -48,6 +48,12 @@ if(JSE_USE_MIMALLOC)
 endif()
 
 
+# bigobj options
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+endif()
+
+
 # native optimize
 option(JSE_OPTIM_MAX "Use the most aggressive optimization settings (like AVX512)" OFF)
 option(JSE_OPTIM_BASE "Use basic optimization settings" ON)

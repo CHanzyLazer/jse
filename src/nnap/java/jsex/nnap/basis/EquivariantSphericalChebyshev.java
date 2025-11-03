@@ -42,10 +42,9 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
     
     EquivariantSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, int aL4Max, double aRCut,
                                   int aWType, int aFuseStyle, RowMatrix aFuseWeight, Vector aEquWeight, double[] aEquScale, int[] aEquSize) {
-        super(aSymbols, aTypeNum, aNMax, checkLMax_(aLMax), false, aL3Max, true, aL4Max, true, aRCut,
+        super(aSymbols, aTypeNum, aNMax, checkLMax_(aLMax), false,
+              checkL3Max_(aL3Max, aLMax), true, checkL4Max_(aL4Max, aLMax), true, aRCut,
               aWType, aFuseStyle, aFuseWeight, null, null);
-        if (aL3Max>aLMax) throw new IllegalArgumentException("Input l3max MUST be less than lmax, input: "+aL3Max+" vs "+aLMax);
-        if (aL4Max>aLMax) throw new IllegalArgumentException("Input l4max MUST be less than lmax, input: "+aL4Max+" vs "+aLMax);
         
         mEquWeight = aEquWeight;
         mEquSize = aEquSize;
@@ -77,8 +76,16 @@ public class EquivariantSphericalChebyshev extends SphericalChebyshev {
         if (mEquSize.length!=mEquNumber) throw new IllegalArgumentException("Size of equivariant size mismatch");
     }
     private static int checkLMax_(int aLMax) {
-        if (aLMax<0 || aLMax>4) throw new IllegalArgumentException("Input lmax MUST be in [0, 4], input: "+aLMax);
+        if (aLMax<0 || aLMax>5) throw new IllegalArgumentException("Input lmax MUST be in [0, 5], input: "+aLMax);
         return aLMax;
+    }
+    private static int checkL3Max_(int aL3Max, int aLMax) {
+        if (aL3Max>aLMax) throw new IllegalArgumentException("Input l3max MUST be less than lmax, input: "+aL3Max+" vs "+aLMax);
+        return aL3Max;
+    }
+    private static int checkL4Max_(int aL4Max, int aLMax) {
+        if (aL4Max>aLMax) throw new IllegalArgumentException("Input l4max MUST be less than lmax, input: "+aL4Max+" vs "+aLMax);
+        return aL4Max;
     }
     
     @Override public EquivariantSphericalChebyshev threadSafeRef() {
