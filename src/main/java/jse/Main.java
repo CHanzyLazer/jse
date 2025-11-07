@@ -376,7 +376,7 @@ public class Main {
     
     private static void printLogo(PrintStream aPrinter) {
         aPrinter.println("jse version: "+VERSION+String.format(" (java: %s)", System.getProperty("java.version"))+", Java Simulation Environment");
-        aPrinter.println("Copyright (C) 2023-present, Li Qing'an");
+        aPrinter.println("Copyright (C) 2023-present, Qing'an Li");
         aPrinter.println("       __  ____  ____ ");
         aPrinter.println("     _(  )/ ___)(  __)");
         aPrinter.println("    / \\) \\\\___ \\ ) _) ");

@@ -139,7 +139,7 @@ public class AtomicParameterCalculator extends AbstractThreadPool<ParforThreadPo
         // 计算单位长度供内部使用
         mVolume = mBox.volume();
         mRho = mAtomNum / mVolume;
-        mUnitLen = Fast.cbrt(1.0/ mRho);
+        mUnitLen = Fast.cbrt(1.0/mRho);
         
         mNL = new NeighborListGetter(mAtomDataXYZ, mAtomNum, mBox);
         mInitThread = Thread.currentThread();

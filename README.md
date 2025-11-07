@@ -148,11 +148,13 @@ The project uses [Gradle](https://gradle.org/). Build with:
 
 
 # Citation
+
 *(To be added)*
 
 
 # License
-*(To be added)*
+
+This program is licensed under the [GNU GPLv3](LICENSE).
 
 
 # Acknowledgments
