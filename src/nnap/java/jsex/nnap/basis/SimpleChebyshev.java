@@ -54,6 +54,7 @@ public class SimpleChebyshev extends Basis {
         
         mRFuncScale = aRFuncScale==null ? Vector.ones(mSizeN) : aRFuncScale;
         mNnScale = aNnScale==null ? new double[]{1.0} : aNnScale;
+        
         if (mRFuncScale.size()!=mSizeN) throw new IllegalArgumentException("Size of rfunc scale mismatch");
         if (mNnScale.length!=1) throw new IllegalArgumentException("Size of nn scale mismatch");
     }
