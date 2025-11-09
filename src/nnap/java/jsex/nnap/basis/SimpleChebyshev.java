@@ -24,17 +24,26 @@ import java.util.Map;
 public class SimpleChebyshev extends Basis {
     final int mTypeNum;
     final int mNMax;
-    final int mSizeN;
+    final int mSizeN, mSizeWt;
     
     final String @Nullable[] mSymbols;
     final double mRCut;
     
     final int mSize;
     
-    final Vector mRFuncScale;
+    final Vector mRFuncScale, mRFuncShift;
+    final Vector mWtScale;
     final double[] mNnScale;
     public SimpleChebyshev setRFuncScale(double... aRFuncScale) {
         mRFuncScale.fill(aRFuncScale);
+        return this;
+    }
+    public SimpleChebyshev setRFuncShift(double... aRFuncShift) {
+        mRFuncShift.fill(aRFuncShift);
+        return this;
+    }
+    public SimpleChebyshev setWtScale(double... aWtScale) {
+        mWtScale.fill(aWtScale);
         return this;
     }
     public SimpleChebyshev setNnScale(double aNnScale) {
@@ -42,20 +51,26 @@ public class SimpleChebyshev extends Basis {
         return this;
     }
     
-    SimpleChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, @Nullable Vector aRFuncScale, double @Nullable[] aNnScale) {
+    SimpleChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut,
+                    @Nullable Vector aRFuncScale, @Nullable Vector aRFuncShift, @Nullable Vector aWtScale, double @Nullable[] aNnScale) {
         mTypeNum = aTypeNum;
         mNMax = aNMax;
         mSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
+        mSizeWt = aTypeNum>1 ? 1 : 0;
         
         mSymbols = aSymbols;
         mRCut = aRCut;
         
         mSize = mSizeN;
         
-        mRFuncScale = aRFuncScale==null ? Vector.ones(mSizeN) : aRFuncScale;
+        mRFuncScale = aRFuncScale==null ? Vector.ones(mNMax+1) : aRFuncScale;
+        mRFuncShift = aRFuncShift==null ? Vector.zeros(mNMax+1) : aRFuncShift;
+        mWtScale = aWtScale==null ? Vector.ones(mSizeWt) : aWtScale;
         mNnScale = aNnScale==null ? new double[]{1.0} : aNnScale;
         
-        if (mRFuncScale.size()!=mSizeN) throw new IllegalArgumentException("Size of rfunc scale mismatch");
+        if (mRFuncScale.size()!=mNMax+1) throw new IllegalArgumentException("Size of rfunc scale mismatch");
+        if (mRFuncShift.size()!=mNMax+1) throw new IllegalArgumentException("Size of rfunc shift mismatch");
+        if (mWtScale.size()!=mSizeWt) throw new IllegalArgumentException("Size of wtype scale mismatch");
         if (mNnScale.length!=1) throw new IllegalArgumentException("Size of nn scale mismatch");
     }
     /**
@@ -64,7 +79,7 @@ public class SimpleChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleChebyshev(String @NotNull[] aSymbols, int aNMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aRCut, null, null);
+        this(aSymbols, aSymbols.length, aNMax, aRCut, null, null, null, null);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -72,11 +87,11 @@ public class SimpleChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleChebyshev(int aTypeNum, int aNMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aRCut, null, null);
+        this(null, aTypeNum, aNMax, aRCut, null, null, null, null);
     }
     
     @Override public SimpleChebyshev threadSafeRef() {
-        return new SimpleChebyshev(mSymbols, mTypeNum, mNMax, mRCut, mRFuncScale, mNnScale);
+        return new SimpleChebyshev(mSymbols, mTypeNum, mNMax, mRCut, mRFuncScale, mRFuncShift, mWtScale, mNnScale);
     }
     
     @SuppressWarnings("rawtypes")
@@ -87,28 +102,36 @@ public class SimpleChebyshev extends Basis {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static SimpleChebyshev load(String @NotNull[] aSymbols, Map aMap) {
         int aTypeNum = aSymbols.length;
-        List<? extends Number> tRFuncScales = (List<? extends Number>)aMap.get("rfunc_scales");
+        List<? extends Number> tRFuncScales = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales", "rfunc_sigma");
         Vector aRFuncScales = tRFuncScales==null ? null : Vectors.from(tRFuncScales);
+        List<? extends Number> tRFuncShift = (List<? extends Number>)UT.Code.get(aMap, "rfunc_shifts", "rfunc_mu");
+        Vector aRFuncShift = tRFuncShift==null ? null : Vectors.from(tRFuncShift);
+        List<? extends Number> tWtScale = (List<? extends Number>)UT.Code.get(aMap, "wtype_scales");
+        Vector aWtScale = tWtScale==null ? null : Vectors.from(tWtScale);
         Object tNnScale = aMap.get("nn_scale");
         double[] aNnScale = tNnScale==null ? null : new double[]{((Number)tNnScale).doubleValue()};
         return new SimpleChebyshev(
             aSymbols, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
-            aRFuncScales, aNnScale
+            aRFuncScales, aRFuncShift, aWtScale, aNnScale
         );
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static SimpleChebyshev load(int aTypeNum, Map aMap) {
-        List<? extends Number> tRFuncScales = (List<? extends Number>)aMap.get("rfunc_scales");
+        List<? extends Number> tRFuncScales = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales", "rfunc_sigma");
         Vector aRFuncScales = tRFuncScales==null ? null : Vectors.from(tRFuncScales);
+        List<? extends Number> tRFuncShift = (List<? extends Number>)UT.Code.get(aMap, "rfunc_shifts", "rfunc_mu");
+        Vector aRFuncShift = tRFuncShift==null ? null : Vectors.from(tRFuncShift);
+        List<? extends Number> tWtScale = (List<? extends Number>)UT.Code.get(aMap, "wtype_scales");
+        Vector aWtScale = tWtScale==null ? null : Vectors.from(tWtScale);
         Object tNnScale = aMap.get("nn_scale");
         double[] aNnScale = tNnScale==null ? null : new double[]{((Number)tNnScale).doubleValue()};
         return new SimpleChebyshev(
             null, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
-            aRFuncScales, aNnScale
+            aRFuncScales, aRFuncShift, aWtScale, aNnScale
         );
     }
     
@@ -161,14 +184,15 @@ public class SimpleChebyshev extends Basis {
             // cal fp, with rfunc scale
             if (mTypeNum==1) {
                 for (int n = 0; n <= mNMax; ++n) {
-                    rFp.add(n, fc*rRn.get(n)*mRFuncScale.get(n));
+                    rFp.add(n, fc*(rRn.get(n)-mRFuncShift.get(n))*mRFuncScale.get(n));
                 }
             } else {
                 double wt = ((type&1)==1) ? type : -type;
+                wt *= mWtScale.get(0);
                 for (int n = 0, nwt = mNMax+1; n <= mNMax; ++n, ++nwt) {
-                    double tRHS = fc*rRn.get(n);
-                    rFp.add(n, tRHS*mRFuncScale.get(n));
-                    rFp.add(nwt, wt*tRHS*mRFuncScale.get(nwt));
+                    double tRHS = fc*(rRn.get(n)-mRFuncShift.get(n))*mRFuncScale.get(n);
+                    rFp.add(n, tRHS);
+                    rFp.add(nwt, wt*tRHS);
                 }
             }
         }
