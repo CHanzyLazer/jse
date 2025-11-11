@@ -171,10 +171,9 @@ public class NNAP implements IPairPotential {
         Number tRefEng = (Number)tModelInfo.get("ref_eng");
         double aRefEng = tRefEng==null ? 0.0 : tRefEng.doubleValue();
         List<? extends Number> tNormSigma = (List<? extends Number>)UT.Code.get(tModelInfo, "norm_sigma", "norm_vec");
-        if (tNormSigma == null) throw new IllegalArgumentException("No norm_sigma/norm_vec in ModelInfo");
-        IVector aNormSigma = Vectors.from(tNormSigma);
+        IVector aNormSigma = tNormSigma==null ? null : Vectors.from(tNormSigma);
         List<? extends Number> tNormMu = (List<? extends Number>)tModelInfo.get("norm_mu");
-        IVector aNormMu = tNormMu==null ? Vectors.zeros(tNormSigma.size()) : Vectors.from(tNormMu);
+        IVector aNormMu = tNormMu==null ? null : Vectors.from(tNormMu);
         // torch 兼容
         if (aNN instanceof TorchModel) mIsTorch = true;
         // share 情况转为简单的 FF 提高性能
