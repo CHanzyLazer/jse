@@ -229,14 +229,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     /**
      * 设置所有种类共享相同的归一化系数，只在初始化归一化系数之前设置才能影响初始化
      * <p>
-     * 会同时影响训练归一化系数时的行为
+     * 现在默认不会进行基组归一化，因此直接采用 {@link SharedBasis}
+     * 的写法即可自动实现这个效果
      * @param aFlag 设置值
      * @return 自身方便链式调用
-     * @deprecated 现在默认不会进行基组归一化，因此直接采用 {@link SharedBasis}
-     *             的写法即可自动实现这个效果
      */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
     public Trainer setShareNorm(boolean aFlag) {
         if (mShareNorm == aFlag) return this;
         if (aFlag) {

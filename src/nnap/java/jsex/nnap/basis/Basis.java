@@ -114,6 +114,9 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     
     /** 根据训练集数据初始化内部归一化系数 */
     public final void initScale(List<? extends IAtomData> aDataList) {
+        initScale(aDataList, -1);
+    }
+    public final void initScale(List<? extends IAtomData> aDataList, int aType) {
         final double tRCut = rcut();
         final int tTypeNum = atomTypeNumber();
         List<DoubleList> rNlDxList = new ArrayList<>(16);
@@ -124,6 +127,10 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
             final int tAtomNum = tData.atomNumber();
             final IntUnaryOperator tTypeMap = hasSymbol() ? typeMap(tData) : type->type;
             for (int i = 0; i < tAtomNum; ++i) {
+                if (aType > 0) {
+                    int cType = tTypeMap.applyAsInt(tAPC.atomType_().get(i));
+                    if (aType != cType) continue;
+                }
                 final DoubleList tNlDx = new DoubleList(16);
                 final DoubleList tNlDy = new DoubleList(16);
                 final DoubleList tNlDz = new DoubleList(16);
