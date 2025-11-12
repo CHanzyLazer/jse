@@ -388,6 +388,41 @@ static void dotLM(jdouble *rDot, jdouble *aAlm, jdouble *aBlm) {
     rDot[11] += dot<2*11+1>(tAlm, tBlm); if (LMAX==11) {return;} tAlm += (2*11+1); tBlm += (2*11+1);
     rDot[12] += dot<2*12+1>(tAlm, tBlm); if (LMAX==12) {return;} tAlm += (2*12+1); tBlm += (2*12+1);
 }
+template <jint LMAX>
+static void multiplyLM(jdouble *rClm, jdouble *aMul) {
+    jdouble *tClm = rClm;
+    multiply<2*0+1>(tClm, aMul[0]); if (LMAX==0) {return;} tClm += (2*0+1);
+    multiply<2*1+1>(tClm, aMul[1]); if (LMAX==1) {return;} tClm += (2*1+1);
+    multiply<2*2+1>(tClm, aMul[2]); if (LMAX==2) {return;} tClm += (2*2+1);
+    multiply<2*3+1>(tClm, aMul[3]); if (LMAX==3) {return;} tClm += (2*3+1);
+    multiply<2*4+1>(tClm, aMul[4]); if (LMAX==4) {return;} tClm += (2*4+1);
+    multiply<2*5+1>(tClm, aMul[5]); if (LMAX==5) {return;} tClm += (2*5+1);
+    multiply<2*6+1>(tClm, aMul[6]); if (LMAX==6) {return;} tClm += (2*6+1);
+    multiply<2*7+1>(tClm, aMul[7]); if (LMAX==7) {return;} tClm += (2*7+1);
+    multiply<2*8+1>(tClm, aMul[8]); if (LMAX==8) {return;} tClm += (2*8+1);
+    multiply<2*9+1>(tClm, aMul[9]); if (LMAX==9) {return;} tClm += (2*9+1);
+    multiply<2*10+1>(tClm, aMul[10]); if (LMAX==10) {return;} tClm += (2*10+1);
+    multiply<2*11+1>(tClm, aMul[11]); if (LMAX==11) {return;} tClm += (2*11+1);
+    multiply<2*12+1>(tClm, aMul[12]); if (LMAX==12) {return;} tClm += (2*12+1);
+}
+static void multiplyLM(jdouble *rClm, jdouble *aMul, jint aLMax) noexcept {
+    switch (aLMax) {
+    case 0: {multiplyLM<0>(rClm, aMul); return;}
+    case 1: {multiplyLM<1>(rClm, aMul); return;}
+    case 2: {multiplyLM<2>(rClm, aMul); return;}
+    case 3: {multiplyLM<3>(rClm, aMul); return;}
+    case 4: {multiplyLM<4>(rClm, aMul); return;}
+    case 5: {multiplyLM<5>(rClm, aMul); return;}
+    case 6: {multiplyLM<6>(rClm, aMul); return;}
+    case 7: {multiplyLM<7>(rClm, aMul); return;}
+    case 8: {multiplyLM<8>(rClm, aMul); return;}
+    case 9: {multiplyLM<9>(rClm, aMul); return;}
+    case 10: {multiplyLM<10>(rClm, aMul); return;}
+    case 11: {multiplyLM<11>(rClm, aMul); return;}
+    case 12: {multiplyLM<12>(rClm, aMul); return;}
+    default: {return;}
+    }
+}
 
 template <jint FSTYLE, jint NMAX, jint LMAX>
 static void mplusCnlmFuse_(jboolean aExFlag, jdouble *rCnlm, jdouble *aBnlm, jdouble *aFuseWeight, jint aType, jint aFuseSize) noexcept {
@@ -1011,59 +1046,71 @@ static inline void mplusGradNNGradCnlmWt(jdouble *rGradNNGradCnlm, jdouble *rGra
 
 
 
-template <jint L>
+template <jint L, jboolean SPH_SCALE>
 static inline void calL2Sub_(jdouble *aCnlm, jdouble *rFp) noexcept {
     constexpr jint tLen = L+L+1;
-    const jdouble rDot = dot<tLen>(aCnlm + (L*L));
-    rFp[L-1] = (PI4/(jdouble)tLen) * rDot;
+    jdouble rDot = dot<tLen>(aCnlm + (L*L));
+    rDot /= (jdouble)tLen;
+    if (!SPH_SCALE) rDot *= PI4; // compat
+    rFp[L-1] = rDot;
 }
-template <jint LMAX, jboolean NO_RADIAL>
+template <jint LMAX, jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calL2_(jdouble *aCnlm, jdouble *rFp) noexcept {
     // l == 0
     jdouble *tFp = rFp;
     if (!NO_RADIAL) {
-        const jdouble tCnl0 = aCnlm[0];
-        tFp[0] = PI4 * (tCnl0*tCnl0);
+        const jdouble tCn00 = aCnlm[0];
+        jdouble rDot0 = tCn00*tCn00;
+        if (!SPH_SCALE) rDot0 *= PI4; // compat
+        tFp[0] = rDot0;
         ++tFp;
     }
     if (LMAX == 0) return;
-    calL2Sub_<1>(aCnlm, tFp); if (LMAX == 1) return;
-    calL2Sub_<2>(aCnlm, tFp); if (LMAX == 2) return;
-    calL2Sub_<3>(aCnlm, tFp); if (LMAX == 3) return;
-    calL2Sub_<4>(aCnlm, tFp); if (LMAX == 4) return;
-    calL2Sub_<5>(aCnlm, tFp); if (LMAX == 5) return;
-    calL2Sub_<6>(aCnlm, tFp); if (LMAX == 6) return;
-    calL2Sub_<7>(aCnlm, tFp); if (LMAX == 7) return;
-    calL2Sub_<8>(aCnlm, tFp); if (LMAX == 8) return;
-    calL2Sub_<9>(aCnlm, tFp); if (LMAX == 9) return;
-    calL2Sub_<10>(aCnlm, tFp); if (LMAX == 10) return;
-    calL2Sub_<11>(aCnlm, tFp); if (LMAX == 11) return;
-    calL2Sub_<12>(aCnlm, tFp);
+    calL2Sub_<1, SPH_SCALE>(aCnlm, tFp); if (LMAX == 1) return;
+    calL2Sub_<2, SPH_SCALE>(aCnlm, tFp); if (LMAX == 2) return;
+    calL2Sub_<3, SPH_SCALE>(aCnlm, tFp); if (LMAX == 3) return;
+    calL2Sub_<4, SPH_SCALE>(aCnlm, tFp); if (LMAX == 4) return;
+    calL2Sub_<5, SPH_SCALE>(aCnlm, tFp); if (LMAX == 5) return;
+    calL2Sub_<6, SPH_SCALE>(aCnlm, tFp); if (LMAX == 6) return;
+    calL2Sub_<7, SPH_SCALE>(aCnlm, tFp); if (LMAX == 7) return;
+    calL2Sub_<8, SPH_SCALE>(aCnlm, tFp); if (LMAX == 8) return;
+    calL2Sub_<9, SPH_SCALE>(aCnlm, tFp); if (LMAX == 9) return;
+    calL2Sub_<10, SPH_SCALE>(aCnlm, tFp); if (LMAX == 10) return;
+    calL2Sub_<11, SPH_SCALE>(aCnlm, tFp); if (LMAX == 11) return;
+    calL2Sub_<12, SPH_SCALE>(aCnlm, tFp);
 }
-template <jboolean NO_RADIAL>
+template <jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calL2_(jdouble *aCnlm, jdouble *rFp, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {calL2_<0, NO_RADIAL>(aCnlm, rFp); return;}
-    case 1: {calL2_<1, NO_RADIAL>(aCnlm, rFp); return;}
-    case 2: {calL2_<2, NO_RADIAL>(aCnlm, rFp); return;}
-    case 3: {calL2_<3, NO_RADIAL>(aCnlm, rFp); return;}
-    case 4: {calL2_<4, NO_RADIAL>(aCnlm, rFp); return;}
-    case 5: {calL2_<5, NO_RADIAL>(aCnlm, rFp); return;}
-    case 6: {calL2_<6, NO_RADIAL>(aCnlm, rFp); return;}
-    case 7: {calL2_<7, NO_RADIAL>(aCnlm, rFp); return;}
-    case 8: {calL2_<8, NO_RADIAL>(aCnlm, rFp); return;}
-    case 9: {calL2_<9, NO_RADIAL>(aCnlm, rFp); return;}
-    case 10: {calL2_<10, NO_RADIAL>(aCnlm, rFp); return;}
-    case 11: {calL2_<11, NO_RADIAL>(aCnlm, rFp); return;}
-    case 12: {calL2_<12, NO_RADIAL>(aCnlm, rFp); return;}
+    case 0: {calL2_<0, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 1: {calL2_<1, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 2: {calL2_<2, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 3: {calL2_<3, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 4: {calL2_<4, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 5: {calL2_<5, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 6: {calL2_<6, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 7: {calL2_<7, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 8: {calL2_<8, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 9: {calL2_<9, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 10: {calL2_<10, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 11: {calL2_<11, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
+    case 12: {calL2_<12, NO_RADIAL, SPH_SCALE>(aCnlm, rFp); return;}
     default: {return;}
     }
 }
-static void calL2_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial) noexcept {
+static void calL2_(jdouble *aCnlm, jdouble *rFp, jint aLMax, jboolean aNoRadial, jboolean aSphScale) noexcept {
     if (aNoRadial) {
-        calL2_<JNI_TRUE>(aCnlm, rFp, aLMax);
+        if (aSphScale) {
+            calL2_<JNI_TRUE, JNI_TRUE>(aCnlm, rFp, aLMax);
+        } else {
+            calL2_<JNI_TRUE, JNI_FALSE>(aCnlm, rFp, aLMax);
+        }
     } else {
-        calL2_<JNI_FALSE>(aCnlm, rFp, aLMax);
+        if (aSphScale) {
+            calL2_<JNI_FALSE, JNI_TRUE>(aCnlm, rFp, aLMax);
+        } else {
+            calL2_<JNI_FALSE, JNI_FALSE>(aCnlm, rFp, aLMax);
+        }
     }
 }
 template <jint L3IDX, jint SUBIDX>
@@ -1193,33 +1240,33 @@ static jdouble calL3Sub_(jdouble *aCnlm) noexcept {
 template <jint L3MAX>
 static void calL3_(jdouble *aCnlm, jdouble *rFp) noexcept {
     if (L3MAX <= 1) return;
-    *rFp = calL3Sub_<0>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<1>(aCnlm); ++rFp;
+    rFp[0] = calL3Sub_<0>(aCnlm);
+    rFp[1] = calL3Sub_<1>(aCnlm);
     if (L3MAX == 2) return;
-    *rFp = calL3Sub_<2>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<3>(aCnlm); ++rFp;
+    rFp[2] = calL3Sub_<2>(aCnlm);
+    rFp[3] = calL3Sub_<3>(aCnlm);
     if (L3MAX == 3) return;
-    *rFp = calL3Sub_<4>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<5>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<6>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<7>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<8>(aCnlm); ++rFp;
+    rFp[4] = calL3Sub_<4>(aCnlm);
+    rFp[5] = calL3Sub_<5>(aCnlm);
+    rFp[6] = calL3Sub_<6>(aCnlm);
+    rFp[7] = calL3Sub_<7>(aCnlm);
+    rFp[8] = calL3Sub_<8>(aCnlm);
     if (L3MAX == 4) return;
-    *rFp = calL3Sub_<9>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<10>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<11>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<12>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<13>(aCnlm); ++rFp;
+    rFp[9] = calL3Sub_<9>(aCnlm);
+    rFp[10] = calL3Sub_<10>(aCnlm);
+    rFp[11] = calL3Sub_<11>(aCnlm);
+    rFp[12] = calL3Sub_<12>(aCnlm);
+    rFp[13] = calL3Sub_<13>(aCnlm);
     if (L3MAX == 5) return;
-    *rFp = calL3Sub_<14>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<15>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<16>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<17>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<18>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<19>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<20>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<21>(aCnlm); ++rFp;
-    *rFp = calL3Sub_<22>(aCnlm); ++rFp;
+    rFp[14] = calL3Sub_<14>(aCnlm);
+    rFp[15] = calL3Sub_<15>(aCnlm);
+    rFp[16] = calL3Sub_<16>(aCnlm);
+    rFp[17] = calL3Sub_<17>(aCnlm);
+    rFp[18] = calL3Sub_<18>(aCnlm);
+    rFp[19] = calL3Sub_<19>(aCnlm);
+    rFp[20] = calL3Sub_<20>(aCnlm);
+    rFp[21] = calL3Sub_<21>(aCnlm);
+    rFp[22] = calL3Sub_<22>(aCnlm);
 }
 static void calL3_(jdouble *aCnlm, jdouble *rFp, jint aL3Max) noexcept {
     switch (aL3Max) {
@@ -1350,17 +1397,17 @@ static jdouble calL4Sub_(jdouble *aCnlm) noexcept {
 template <jint L4MAX>
 static void calL4_(jdouble *aCnlm, jdouble *rFp) noexcept {
     if (L4MAX < 1) return;
-    *rFp = calL4Sub_<0>(aCnlm); ++rFp;
+    rFp[0] = calL4Sub_<0>(aCnlm);
     if (L4MAX == 1) return;
-    *rFp = calL4Sub_<1>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<2>(aCnlm); ++rFp;
+    rFp[1] = calL4Sub_<1>(aCnlm);
+    rFp[2] = calL4Sub_<2>(aCnlm);
     if (L4MAX == 2) return;
-    *rFp = calL4Sub_<3>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<4>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<5>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<6>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<7>(aCnlm); ++rFp;
-    *rFp = calL4Sub_<8>(aCnlm); ++rFp;
+    rFp[3] = calL4Sub_<3>(aCnlm);
+    rFp[4] = calL4Sub_<4>(aCnlm);
+    rFp[5] = calL4Sub_<5>(aCnlm);
+    rFp[6] = calL4Sub_<6>(aCnlm);
+    rFp[7] = calL4Sub_<7>(aCnlm);
+    rFp[8] = calL4Sub_<8>(aCnlm);
 }
 static void calL4_(jdouble *aCnlm, jdouble *rFp, jint aL4Max) noexcept {
     switch (aL4Max) {
@@ -1372,63 +1419,73 @@ static void calL4_(jdouble *aCnlm, jdouble *rFp, jint aL4Max) noexcept {
     }
 }
 
-template <jint L>
-static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
+template <jint L, jboolean SPH_SCALE>
+static inline void calGradL2Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad) noexcept {
     constexpr jint tStart = L*L;
     constexpr jint tLen = L+L+1;
     constexpr jint tEnd = tStart+tLen;
-    constexpr jdouble tCoeff = 2.0 * PI4/(jdouble)tLen;
-    const jdouble tMul = tCoeff * aNNGrad[L-1];
+    jdouble tMul = (2.0 / (jdouble)tLen) * aSubNNGrad;
+    if (!SPH_SCALE) tMul *= PI4; // compat
     for (jint i = tStart; i < tEnd; ++i) {
         rGradCnlm[i] += tMul * aCnlm[i];
     }
 }
-template <jint LMAX, jboolean NO_RADIAL>
+template <jint LMAX, jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     // l = 0
     jdouble *tNNGrad = aNNGrad;
     if (!NO_RADIAL) {
-        rGradCnlm[0] += (PI4+PI4) * tNNGrad[0] * aCnlm[0];
+        jdouble tGrad = 2.0 * aCnlm[0] * tNNGrad[0];
+        if (!SPH_SCALE) tGrad *= PI4; // compat
+        rGradCnlm[0] += tGrad;
         ++tNNGrad;
     }
     if (LMAX == 0) return;
-    calGradL2Sub_<1>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 1) return;
-    calGradL2Sub_<2>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 2) return;
-    calGradL2Sub_<3>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 3) return;
-    calGradL2Sub_<4>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 4) return;
-    calGradL2Sub_<5>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 5) return;
-    calGradL2Sub_<6>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 6) return;
-    calGradL2Sub_<7>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 7) return;
-    calGradL2Sub_<8>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 8) return;
-    calGradL2Sub_<9>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 9) return;
-    calGradL2Sub_<10>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 10) return;
-    calGradL2Sub_<11>(aCnlm, rGradCnlm, tNNGrad); if (LMAX == 11) return;
-    calGradL2Sub_<12>(aCnlm, rGradCnlm, tNNGrad);
+    calGradL2Sub_<1, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[0]); if (LMAX == 1) return;
+    calGradL2Sub_<2, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[1]); if (LMAX == 2) return;
+    calGradL2Sub_<3, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[2]); if (LMAX == 3) return;
+    calGradL2Sub_<4, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[3]); if (LMAX == 4) return;
+    calGradL2Sub_<5, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[4]); if (LMAX == 5) return;
+    calGradL2Sub_<6, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[5]); if (LMAX == 6) return;
+    calGradL2Sub_<7, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[6]); if (LMAX == 7) return;
+    calGradL2Sub_<8, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[7]); if (LMAX == 8) return;
+    calGradL2Sub_<9, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[8]); if (LMAX == 9) return;
+    calGradL2Sub_<10, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[9]); if (LMAX == 10) return;
+    calGradL2Sub_<11, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[10]); if (LMAX == 11) return;
+    calGradL2Sub_<12, SPH_SCALE>(aCnlm, rGradCnlm, tNNGrad[11]);
 }
-template <jboolean NO_RADIAL>
+template <jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {calGradL2_<0, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 1: {calGradL2_<1, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 2: {calGradL2_<2, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 3: {calGradL2_<3, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 4: {calGradL2_<4, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 5: {calGradL2_<5, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 6: {calGradL2_<6, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 7: {calGradL2_<7, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 8: {calGradL2_<8, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 9: {calGradL2_<9, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 10: {calGradL2_<10, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 11: {calGradL2_<11, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
-    case 12: {calGradL2_<12, NO_RADIAL>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 0: {calGradL2_<0, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 1: {calGradL2_<1, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 2: {calGradL2_<2, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 3: {calGradL2_<3, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 4: {calGradL2_<4, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 5: {calGradL2_<5, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 6: {calGradL2_<6, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 7: {calGradL2_<7, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 8: {calGradL2_<8, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 9: {calGradL2_<9, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 10: {calGradL2_<10, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 11: {calGradL2_<11, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
+    case 12: {calGradL2_<12, NO_RADIAL, SPH_SCALE>(aCnlm, rGradCnlm, aNNGrad); return;}
     default: {return;}
     }
 }
-static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial) noexcept {
+static void calGradL2_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial, jboolean aSphScale) noexcept {
     if (aNoRadial) {
-        calGradL2_<JNI_TRUE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        if (aSphScale) {
+            calGradL2_<JNI_TRUE, JNI_TRUE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        } else {
+            calGradL2_<JNI_TRUE, JNI_FALSE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        }
     } else {
-        calGradL2_<JNI_FALSE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        if (aSphScale) {
+            calGradL2_<JNI_FALSE, JNI_TRUE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        } else {
+            calGradL2_<JNI_FALSE, JNI_FALSE>(aCnlm, rGradCnlm, aNNGrad, aLMax);
+        }
     }
 }
 template <jint L3IDX, jint SUBIDX>
@@ -1562,33 +1619,33 @@ static void calGradL3Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad
 template <jint L3MAX>
 static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     if (L3MAX <= 1) return;
-    calGradL3Sub_<0>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<1>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<0>(aCnlm, rGradCnlm, aNNGrad[0]);
+    calGradL3Sub_<1>(aCnlm, rGradCnlm, aNNGrad[1]);
     if (L3MAX == 2) return;
-    calGradL3Sub_<2>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<3>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<2>(aCnlm, rGradCnlm, aNNGrad[2]);
+    calGradL3Sub_<3>(aCnlm, rGradCnlm, aNNGrad[3]);
     if (L3MAX == 3) return;
-    calGradL3Sub_<4>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<5>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<6>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<7>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<8>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<4>(aCnlm, rGradCnlm, aNNGrad[4]);
+    calGradL3Sub_<5>(aCnlm, rGradCnlm, aNNGrad[5]);
+    calGradL3Sub_<6>(aCnlm, rGradCnlm, aNNGrad[6]);
+    calGradL3Sub_<7>(aCnlm, rGradCnlm, aNNGrad[7]);
+    calGradL3Sub_<8>(aCnlm, rGradCnlm, aNNGrad[8]);
     if (L3MAX == 4) return;
-    calGradL3Sub_<9>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<10>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<11>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<12>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<13>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<9>(aCnlm, rGradCnlm, aNNGrad[9]);
+    calGradL3Sub_<10>(aCnlm, rGradCnlm, aNNGrad[10]);
+    calGradL3Sub_<11>(aCnlm, rGradCnlm, aNNGrad[11]);
+    calGradL3Sub_<12>(aCnlm, rGradCnlm, aNNGrad[12]);
+    calGradL3Sub_<13>(aCnlm, rGradCnlm, aNNGrad[13]);
     if (L3MAX == 5) return;
-    calGradL3Sub_<14>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<15>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<16>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<17>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<18>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<19>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<20>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<21>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL3Sub_<22>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL3Sub_<14>(aCnlm, rGradCnlm, aNNGrad[14]);
+    calGradL3Sub_<15>(aCnlm, rGradCnlm, aNNGrad[15]);
+    calGradL3Sub_<16>(aCnlm, rGradCnlm, aNNGrad[16]);
+    calGradL3Sub_<17>(aCnlm, rGradCnlm, aNNGrad[17]);
+    calGradL3Sub_<18>(aCnlm, rGradCnlm, aNNGrad[18]);
+    calGradL3Sub_<19>(aCnlm, rGradCnlm, aNNGrad[19]);
+    calGradL3Sub_<20>(aCnlm, rGradCnlm, aNNGrad[20]);
+    calGradL3Sub_<21>(aCnlm, rGradCnlm, aNNGrad[21]);
+    calGradL3Sub_<22>(aCnlm, rGradCnlm, aNNGrad[22]);
 }
 static void calGradL3_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aL3Max) noexcept {
     switch (aL3Max) {
@@ -1725,17 +1782,17 @@ static void calGradL4Sub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble aSubNNGrad
 template <jint L4MAX>
 static void calGradL4_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad) noexcept {
     if (L4MAX < 1) return;
-    calGradL4Sub_<0>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL4Sub_<0>(aCnlm, rGradCnlm, aNNGrad[0]);
     if (L4MAX == 1) return;
-    calGradL4Sub_<1>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<2>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL4Sub_<1>(aCnlm, rGradCnlm, aNNGrad[1]);
+    calGradL4Sub_<2>(aCnlm, rGradCnlm, aNNGrad[2]);
     if (L4MAX == 2) return;
-    calGradL4Sub_<3>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<4>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<5>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<6>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<7>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
-    calGradL4Sub_<8>(aCnlm, rGradCnlm, *aNNGrad); ++aNNGrad;
+    calGradL4Sub_<3>(aCnlm, rGradCnlm, aNNGrad[3]);
+    calGradL4Sub_<4>(aCnlm, rGradCnlm, aNNGrad[4]);
+    calGradL4Sub_<5>(aCnlm, rGradCnlm, aNNGrad[5]);
+    calGradL4Sub_<6>(aCnlm, rGradCnlm, aNNGrad[6]);
+    calGradL4Sub_<7>(aCnlm, rGradCnlm, aNNGrad[7]);
+    calGradL4Sub_<8>(aCnlm, rGradCnlm, aNNGrad[8]);
 }
 static void calGradL4_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jint aL4Max) noexcept {
     switch (aL4Max) {
@@ -1747,59 +1804,72 @@ static void calGradL4_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aNNGrad, jin
     }
 }
 
-template <jint L>
+
+template <jint L, jboolean SPH_SCALE>
 static inline void calGradNNGradL2Sub_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad) noexcept {
     constexpr jint tStart = L*L;
     constexpr jint tLen = L+L+1;
-    const jdouble rDot = dot<tLen>(aCnlm+tStart, aGradNNGradCnlm+tStart);
-    rGradNNGrad[L-1] = (2.0 * PI4/(jdouble)tLen) * rDot;
+    jdouble rDot = dot<tLen>(aCnlm+tStart, aGradNNGradCnlm+tStart);
+    rDot *= (2.0 / (jdouble)tLen);
+    if (!SPH_SCALE) rDot *= PI4; // compat
+    rGradNNGrad[L-1] = rDot;
 }
-template <jint LMAX, jboolean NO_RADIAL>
+template <jint LMAX, jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad) noexcept {
     // l = 0
     jdouble *tGradNNGrad = rGradNNGrad;
     if (!NO_RADIAL) {
-        tGradNNGrad[0] += (PI4+PI4) * aCnlm[0] * aGradNNGradCnlm[0];
+        jdouble tGrad = 2.0 * aCnlm[0] * aGradNNGradCnlm[0];
+        if (!SPH_SCALE) tGrad *= PI4; // compat
+        tGradNNGrad[0] += tGrad;
         ++tGradNNGrad;
     }
     if (LMAX == 0) return;
-    calGradNNGradL2Sub_<1>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 1) return;
-    calGradNNGradL2Sub_<2>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 2) return;
-    calGradNNGradL2Sub_<3>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 3) return;
-    calGradNNGradL2Sub_<4>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 4) return;
-    calGradNNGradL2Sub_<5>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 5) return;
-    calGradNNGradL2Sub_<6>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 6) return;
-    calGradNNGradL2Sub_<7>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 7) return;
-    calGradNNGradL2Sub_<8>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 8) return;
-    calGradNNGradL2Sub_<9>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 9) return;
-    calGradNNGradL2Sub_<10>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 10) return;
-    calGradNNGradL2Sub_<11>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 11) return;
-    calGradNNGradL2Sub_<12>(aCnlm, aGradNNGradCnlm, tGradNNGrad);
+    calGradNNGradL2Sub_<1, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 1) return;
+    calGradNNGradL2Sub_<2, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 2) return;
+    calGradNNGradL2Sub_<3, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 3) return;
+    calGradNNGradL2Sub_<4, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 4) return;
+    calGradNNGradL2Sub_<5, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 5) return;
+    calGradNNGradL2Sub_<6, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 6) return;
+    calGradNNGradL2Sub_<7, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 7) return;
+    calGradNNGradL2Sub_<8, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 8) return;
+    calGradNNGradL2Sub_<9, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 9) return;
+    calGradNNGradL2Sub_<10, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 10) return;
+    calGradNNGradL2Sub_<11, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad); if (LMAX == 11) return;
+    calGradNNGradL2Sub_<12, SPH_SCALE>(aCnlm, aGradNNGradCnlm, tGradNNGrad);
 }
-template <jboolean NO_RADIAL>
+template <jboolean NO_RADIAL, jboolean SPH_SCALE>
 static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {calGradNNGradL2_<0, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 1: {calGradNNGradL2_<1, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 2: {calGradNNGradL2_<2, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 3: {calGradNNGradL2_<3, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 4: {calGradNNGradL2_<4, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 5: {calGradNNGradL2_<5, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 6: {calGradNNGradL2_<6, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 7: {calGradNNGradL2_<7, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 8: {calGradNNGradL2_<8, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 9: {calGradNNGradL2_<9, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 10: {calGradNNGradL2_<10, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 11: {calGradNNGradL2_<11, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
-    case 12: {calGradNNGradL2_<12, NO_RADIAL>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 0: {calGradNNGradL2_<0, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 1: {calGradNNGradL2_<1, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 2: {calGradNNGradL2_<2, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 3: {calGradNNGradL2_<3, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 4: {calGradNNGradL2_<4, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 5: {calGradNNGradL2_<5, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 6: {calGradNNGradL2_<6, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 7: {calGradNNGradL2_<7, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 8: {calGradNNGradL2_<8, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 9: {calGradNNGradL2_<9, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 10: {calGradNNGradL2_<10, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 11: {calGradNNGradL2_<11, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
+    case 12: {calGradNNGradL2_<12, NO_RADIAL, SPH_SCALE>(aCnlm, aGradNNGradCnlm, rGradNNGrad); return;}
     default: {return;}
     }
 }
-static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad, jint aLMax, jboolean aNoRadial) noexcept {
+static void calGradNNGradL2_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *rGradNNGrad, jint aLMax, jboolean aNoRadial, jboolean aSphScale) noexcept {
     if (aNoRadial) {
-        calGradNNGradL2_<JNI_TRUE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        if (aSphScale) {
+            calGradNNGradL2_<JNI_TRUE, JNI_TRUE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        } else {
+            calGradNNGradL2_<JNI_TRUE, JNI_FALSE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        }
     } else {
-        calGradNNGradL2_<JNI_FALSE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        if (aSphScale) {
+            calGradNNGradL2_<JNI_FALSE, JNI_TRUE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        } else {
+            calGradNNGradL2_<JNI_FALSE, JNI_FALSE>(aCnlm, aGradNNGradCnlm, rGradNNGrad, aLMax);
+        }
     }
 }
 template <jint L3IDX, jint SUBIDX>
@@ -2124,8 +2194,8 @@ static void calGradNNGradL4_(jdouble *aCnlm, jdouble *aGradNNGradCnlm, jdouble *
     }
 }
 
-static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial) noexcept {
-    calGradL2_(aGradNNGradCnlm, rGradCnlm, aNNGrad, aLMax, aNoRadial);
+static void calGradCnlmL2_(jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble *aNNGrad, jint aLMax, jboolean aNoRadial, jboolean aSphScale) noexcept {
+    calGradL2_(aGradNNGradCnlm, rGradCnlm, aNNGrad, aLMax, aNoRadial, aSphScale);
 }
 template <jint L3IDX, jint SUBIDX>
 static inline void calGradCnlmL3SubSub_(jdouble *aCnlm, jdouble *rGradCnlm, jdouble *aGradNNGradCnlm, jdouble aSubNNGrad) noexcept {

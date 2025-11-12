@@ -82,7 +82,7 @@ public class SimpleSphericalChebyshev extends Basis {
         mRFuncShift = aRFuncShift==null ? Vector.zeros(mNMax+1) : aRFuncShift;
         mSystemScale = aSystemScale==null ? Vector.ones(mSizeN*(mLMaxMax+1)) : aSystemScale;
         mPolyScale = aPolyScale==null ? new boolean[]{false} : aPolyScale;
-        mSphScale = aSphScale==null ? new boolean[]{aRFuncScale!=null || aRFuncShift!=null || aSystemScale!=null || aPolyScale==null} : aSphScale;
+        mSphScale = aSphScale==null ? new boolean[]{aRFuncScale!=null || aRFuncShift!=null || aSystemScale!=null || aPolyScale!=null} : aSphScale;
         
         if (mRFuncScale.size()!=mNMax+1) throw new IllegalArgumentException("Size of rfunc scale mismatch");
         if (mRFuncShift.size()!=mNMax+1) throw new IllegalArgumentException("Size of rfunc shift mismatch");
@@ -90,7 +90,7 @@ public class SimpleSphericalChebyshev extends Basis {
         if (mPolyScale.length!=1) throw new IllegalArgumentException("Size of poly scale mismatch");
         if (mSphScale.length!=1) throw new IllegalArgumentException("Size of spherical scale mismatch");
     }
-    SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, double aRCut,  @Nullable Vector aRFuncScale, @Nullable Vector aRFuncShift, @Nullable Vector aSystemScale, boolean[] aPolyScale, boolean @Nullable[] aSphScale) {
+    SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, double aRCut, Vector aRFuncScale, Vector aRFuncShift, Vector aSystemScale, boolean[] aPolyScale, boolean[] aSphScale) {
         this(aSymbols, aTypeNum, aNMax, aLMax, Math.max(aLMax, aL3Max), aL3Max, aRCut, aRFuncScale, aRFuncShift, aSystemScale, aPolyScale, aSphScale);
     }
     /**

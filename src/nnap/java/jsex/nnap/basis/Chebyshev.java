@@ -182,8 +182,8 @@ public class Chebyshev extends WTypeBasis {
             mRFuncScale.set(fn, 1.0/MathEX.Fast.sqrt(tScale));
         }
         // 遍历统计系统 scale TODO: 理论上需要支持并行来达到合理性能
-        final Vector tScaleTot = VectorCache.getZeros(mSize);
-        final Vector tScale = VectorCache.getVec(mSize);
+        final Vector tScaleTot = VectorCache.getZeros(mSizeN);
+        final Vector tScale = VectorCache.getVec(mSizeN);
         final DoubleList rForwardCache = new DoubleList(16);
         final int tSize = aNlDxList.size();
         for (int i = 0; i < tSize; ++i) {
@@ -205,7 +205,7 @@ public class Chebyshev extends WTypeBasis {
     void calSystemScale0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rSystemScale, IDataShell<double[]> rForwardCache) {
         int tNN = aNlDx.internalDataSize();
         calSystemScale1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                        rSystemScale.internalDataWithLengthCheck(mSize), rSystemScale.internalDataShift(),
+                        rSystemScale.internalDataWithLengthCheck(mSizeN), rSystemScale.internalDataShift(),
                         rForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, false)), rForwardCache.internalDataShift(),
                         mTypeNum, mRCut, mNMax, mWType, mFuseSize,
                         mRFuncScale.internalDataWithLengthCheck(), mRFuncShift.internalDataWithLengthCheck());
