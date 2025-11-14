@@ -730,13 +730,13 @@ static void calBackwardForce(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jin
             multiply(rSubGradNNGrad+tShiftFp+tSizeL2+tSizeL3, SQRT96_INV, tSizeL4);
         }
     }
+    mplus(rGradNNGrad, 1.0, rSubGradNNGrad, tSizeFp);
     if (WTYPE!=WTYPE_FUSE && WTYPE!=WTYPE_EXFUSE && aPostFuseWeight==NULL) return;
     if (!aFixBasis) for (jint np=0, tShift=0, tShiftFp=0; np<tSizeNp; ++np, tShift+=tLMAll, tShiftFp+=tSizeL) {
         calGradCnlmL2_(rGradAnlm+tShift, rGradNNGradAnlm+tShift, tNNGrad+tShiftFp, aLMax, aNoRadial, aSphScale);
         calGradCnlmL3_(tAnlm+tShift, rGradAnlm+tShift, rGradNNGradAnlm+tShift, tNNGrad+tShiftFp+tSizeL2, aL3Max);
         calGradCnlmL4_(tAnlm+tShift, rGradAnlm+tShift, rGradNNGradAnlm+tShift, tNNGrad+tShiftFp+tSizeL2+tSizeL3, aL4Max);
     }
-    mplus(rGradNNGrad, 1.0, rSubGradNNGrad, tSizeFp);
 }
 
 
