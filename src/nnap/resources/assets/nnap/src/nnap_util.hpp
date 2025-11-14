@@ -24,6 +24,8 @@ static constexpr jdouble JSE_DBL_EPSILON = 1.0e-10;
 
 static constexpr jdouble SQRT2 = 1.4142135623730951;
 static constexpr jdouble SQRT2_INV = 0.7071067811865475;
+static constexpr jdouble SQRT15_INV = 0.2581988897471611;
+static constexpr jdouble SQRT96_INV = 0.10206207261596577;
 static constexpr jdouble SQRT3 = 1.7320508075688772;
 static constexpr jdouble SQRT3DIV2 = 1.224744871391589;
 static constexpr jdouble PI4 = 12.566370614359172;

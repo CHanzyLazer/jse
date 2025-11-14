@@ -216,7 +216,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     protected boolean mTrainBasis = false;
     
     /**
-     * 设置是否对基组进行归一化，现在默认不再进行归一化，而是采用基组内部归一化的技术
+     * 设置是否对基组进行归一化，在一些不要求收敛速度的情况下，可以不进行归一化而只采用基组内部归一化的技术
      * @param aFlag 设置值
      * @return 自身方便链式调用
      */
@@ -225,7 +225,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         mBasisNorm = aFlag;
         return this;
     }
-    protected boolean mBasisNorm = false;
+    protected boolean mBasisNorm = true;
     /**
      * 设置所有种类共享相同的归一化系数，只在初始化归一化系数之前设置才能影响初始化
      * <p>
