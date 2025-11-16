@@ -57,7 +57,7 @@ public class LmpPlugin {
         
         /** 插件依赖的 lammps 版本字符串，默认自动检测 */
         public static String LMP_VERSION = null;
-        private final static String DEFAULT_LMP_VERSION = "2 Aug 2023";
+        private final static String DEFAULT_LMP_VERSION = "22 Jul 2025";
         
         /** 重定向 lmpplugin 动态库的路径，用于自定义编译这个库的过程，或者重新实现 lmpplugin 的接口 */
         public static @Nullable String REDIRECT_LMPPLUGIN_LIB = OS.env("JSE_REDIRECT_LMPPLUGIN_LIB");
@@ -84,6 +84,7 @@ public class LmpPlugin {
         , "lammpsplugin.h"
         , "neigh_request.h"
         , "STUBS/mpi.h"
+        , "json_fwd.h"
     };
     
     static {

@@ -75,16 +75,14 @@ public class NativeLmp implements IAutoShutdown {
         public static String LMP_HOME = OS.env("JSE_LMP_HOME");
         
         /**
-         * 指定需要下载的 lammps 的 tag，
-         * 只在下载时有用；
-         * 这里简单实现，不使用 git 来自动识别最新稳定版本
+         * 指定需要下载的 lammps 的 tag，只在下载时有用
          */
         public static String LMP_TAG = OS.env("JSE_LMP_TAG");
-        private final static String DEFAULT_LMP_TAG = "stable_2Aug2023_update4";
+        private final static String DEFAULT_LMP_TAG = "stable_22Jul2025_update2";
         
         /**
          * 控制在 windows 上编译时是否开启 /MT 选项，
-         * 新版 lammps 有时需要开启 /MT 才能正常运行，但这个应该非常不安全；
+         * 新版 lammps 有时需要开启 /MT 才能正常运行，但这个操作非常不安全；
          * 更加安全的做法是更换兼容的 jdk 版本，例如
          * <a href="https://learn.microsoft.com/zh-cn/java/openjdk/download">微软构建的 OpenJDK</a>
          */
