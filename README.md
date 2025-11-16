@@ -22,8 +22,7 @@ to provide a high-performance yet flexible program package. Current features inc
 
 ## Core Functionality
 For basic operations, ensure you have a Java environment. jse requires at least JDK 8, 
-but newer JDK 21 is recommended for optimal performance. Download the Oracle JDK 
-[**here**](https://www.oracle.com/java/technologies/downloads/#java21).
+but newer JDK 21 is recommended for optimal performance.
 
 ## Advanced Features (JNI)
 
@@ -51,14 +50,8 @@ Requires an MPI development environment (for header files):
 
 ### Python Support
 
-Requires Python development headers:  
-
-- Linux (e.g., Ubuntu): `sudo apt install python3-dev`,
-  a dedicated virtual environment is recommended:  
-  
-    ```shell
-    python -m venv jsepyenv
-    ```
+Requires Python development headers,
+for Linux (e.g., Ubuntu) you may need: `sudo apt install python3-dev`
 
 ### LAMMPS Support
 
