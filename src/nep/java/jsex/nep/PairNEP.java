@@ -36,6 +36,9 @@ public class PairNEP extends LmpPlugin.Pair {
     }
     
     @Override public void initStyle() {
+        if (!forceNewtonPair()) {
+            throw new IllegalArgumentException("Pair style NEP requires newton pair on");
+        }
         // nep 需要完整的近邻列表
         neighborRequestFull();
     }

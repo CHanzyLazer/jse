@@ -54,6 +54,9 @@ public class PairNNAP extends LmpPlugin.Pair {
     }
     
     @Override public void initStyle() {
+        if (!forceNewtonPair()) {
+            throw new IllegalArgumentException("Pair style NNAP requires newton pair on");
+        }
         // nnap 需要完整的近邻列表
         neighborRequestFull();
     }
