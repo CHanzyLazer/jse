@@ -76,6 +76,8 @@ else()
     include_directories(STUBS)
 endif()
 
+# compat
+include_directories(compat)
 
 # add lammps
 add_definitions(-DLAMMPS_EXCEPTIONS)

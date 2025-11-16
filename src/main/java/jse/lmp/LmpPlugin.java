@@ -84,7 +84,7 @@ public class LmpPlugin {
         , "lammpsplugin.h"
         , "neigh_request.h"
         , "STUBS/mpi.h"
-        , "json_fwd.h"
+        , "compat/json_fwd.h"
     };
     
     static {
