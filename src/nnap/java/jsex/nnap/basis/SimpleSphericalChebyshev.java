@@ -27,7 +27,8 @@ public class SimpleSphericalChebyshev extends Basis {
     
     final String @Nullable[] mSymbols;
     final int mLMax, mL3Max;
-    final double mRCut;
+    final double mRCut, mRCutS;
+    final boolean mFCutS;
     
     final int mSizeL;
     final int mLMaxMax, mLMAll;
@@ -57,19 +58,23 @@ public class SimpleSphericalChebyshev extends Basis {
         return this;
     }
     
-    private SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aLMaxMax, int aL3Max, double aRCut,
+    private SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aLMaxMax, int aL3Max, double aRCut, boolean aFCutS, double aRCutS,
                                      @Nullable Vector aRFuncScale, @Nullable Vector aRFuncShift, @Nullable Vector aSystemScale, boolean @Nullable[] aPolyScale, boolean @Nullable[] aSphScale) {
         if (aLMaxMax<0 || aLMaxMax>12) throw new IllegalArgumentException("Input lmax MUST be in [0, 12], input: "+aLMaxMax);
         if (aL3Max<0 || aL3Max>4) throw new IllegalArgumentException("Input l3max MUST be in [0, 4], input: "+aL3Max);
         mTypeNum = aTypeNum;
         mNMax = aNMax;
-        mSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
+        int tSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
+        mSizeN = aFCutS ? (tSizeN+tSizeN) : tSizeN;
         mSizeWt = aTypeNum>1 ? 1 : 0;
         
         mSymbols = aSymbols;
         mLMax = aLMax;
         mL3Max = aL3Max;
         mRCut = aRCut;
+        mFCutS = aFCutS;
+        mRCutS = aRCutS;
+        if (mRCutS > mRCut) throw new IllegalArgumentException("rcut_s cannot be greater than rcut");
         
         mSizeL = (mLMax+1) + SphericalChebyshev.L3NCOLS[mL3Max];
         mLMaxMax = aLMaxMax;
@@ -90,8 +95,8 @@ public class SimpleSphericalChebyshev extends Basis {
         if (mPolyScale.length!=1) throw new IllegalArgumentException("Size of poly scale mismatch");
         if (mSphScale.length!=1) throw new IllegalArgumentException("Size of spherical scale mismatch");
     }
-    SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, double aRCut, Vector aRFuncScale, Vector aRFuncShift, Vector aSystemScale, boolean[] aPolyScale, boolean[] aSphScale) {
-        this(aSymbols, aTypeNum, aNMax, aLMax, Math.max(aLMax, aL3Max), aL3Max, aRCut, aRFuncScale, aRFuncShift, aSystemScale, aPolyScale, aSphScale);
+    SimpleSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, double aRCut,  boolean aFCutS, double aRCutS,Vector aRFuncScale, Vector aRFuncShift, Vector aSystemScale, boolean[] aPolyScale, boolean[] aSphScale) {
+        this(aSymbols, aTypeNum, aNMax, aLMax, Math.max(aLMax, aL3Max), aL3Max, aRCut, aFCutS, aRCutS, aRFuncScale, aRFuncShift, aSystemScale, aPolyScale, aSphScale);
     }
     /**
      * @param aSymbols 基组需要的元素排序
@@ -100,7 +105,7 @@ public class SimpleSphericalChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleSphericalChebyshev(String @NotNull[] aSymbols, int aNMax, int aLMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aLMax, SphericalChebyshev.DEFAULT_L3MAX, aRCut, null, null, null, null, null);
+        this(aSymbols, aSymbols.length, aNMax, aLMax, SphericalChebyshev.DEFAULT_L3MAX, aRCut, false, 0.0, null, null, null, null, null);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -109,11 +114,11 @@ public class SimpleSphericalChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleSphericalChebyshev(int aTypeNum, int aNMax, int aLMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aLMax, SphericalChebyshev.DEFAULT_L3MAX, aRCut, null, null, null, null, null);
+        this(null, aTypeNum, aNMax, aLMax, SphericalChebyshev.DEFAULT_L3MAX, aRCut, false, 0.0, null, null, null, null, null);
     }
     
     @Override public SimpleSphericalChebyshev threadSafeRef() {
-        return new SimpleSphericalChebyshev(mSymbols, mTypeNum, mNMax, mLMax, mL3Max, mRCut, mRFuncScale, mRFuncShift, mSystemScale, mPolyScale, mSphScale);
+        return new SimpleSphericalChebyshev(mSymbols, mTypeNum, mNMax, mLMax, mL3Max, mRCut, mFCutS, mRCutS, mRFuncScale, mRFuncShift, mSystemScale, mPolyScale, mSphScale);
     }
     
     @SuppressWarnings("rawtypes")
@@ -138,6 +143,8 @@ public class SimpleSphericalChebyshev extends Basis {
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_LMAX, "lmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_L3MAX, "l3max")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Boolean)UT.Code.getWithDefault(aMap, false, "fcut_s")),
+            ((Number)UT.Code.getWithDefault(aMap, 0.0, "rcut_s")).doubleValue(),
             aRFuncScales, aRFuncShift, aSystemScale, aPolyScale, null
         );
     }
@@ -157,6 +164,8 @@ public class SimpleSphericalChebyshev extends Basis {
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_LMAX, "lmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_L3MAX, "l3max")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, SphericalChebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Boolean)UT.Code.getWithDefault(aMap, false, "fcut_s")),
+            ((Number)UT.Code.getWithDefault(aMap, 0.0, "rcut_s")).doubleValue(),
             aRFuncScales, aRFuncShift, aSystemScale, aPolyScale, null
         );
     }
@@ -234,8 +243,10 @@ public class SimpleSphericalChebyshev extends Basis {
             double dis = MathEX.Fast.hypot(dx, dy, dz);
             // check rcut for merge
             if (dis >= mRCut) continue;
+            boolean tFCutS = mFCutS && dis<mRCutS;
             // cal fc
             double fc = SimpleChebyshev.calFc(dis, mRCut);
+            double fcS = tFCutS ? SimpleChebyshev.calFc(dis, mRCutS) : 0.0;
             // cal Rn
             SimpleChebyshev.calRn(rRn, mNMax, dis, mRCut);
             // scale rfunc here
@@ -255,11 +266,28 @@ public class SimpleSphericalChebyshev extends Basis {
                         ++ck;
                     }
                 }
+                if (tFCutS) for (int n = 0; n <= mNMax; ++n) {
+                    double tMul = fcS*rRn.get(n);
+                    for (int k = 0; k < mLMAll; ++k) {
+                        rCnlm.add(ck, tMul*rY.get(k));
+                        ++ck;
+                    }
+                }
             } else {
                 double wt = ((type&1)==1) ? type : -type;
                 int ck = 0, ckwt = tSizeBnlm;
                 for (int n = 0; n <= mNMax; ++n) {
                     double tMul = fc*rRn.get(n);
+                    for (int k = 0; k < mLMAll; ++k) {
+                        double tValue = tMul*rY.get(k);
+                        rCnlm.add(ck, tValue);
+                        rCnlm.add(ckwt, wt*tValue);
+                        ++ck; ++ckwt;
+                    }
+                }
+                ck = ckwt; ckwt += tSizeBnlm;
+                if (tFCutS) for (int n = 0; n <= mNMax; ++n) {
+                    double tMul = fcS*rRn.get(n);
                     for (int k = 0; k < mLMAll; ++k) {
                         double tValue = tMul*rY.get(k);
                         rCnlm.add(ck, tValue);

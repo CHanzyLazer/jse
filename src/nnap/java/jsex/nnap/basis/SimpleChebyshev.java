@@ -27,7 +27,8 @@ public class SimpleChebyshev extends Basis {
     final int mSizeN, mSizeWt;
     
     final String @Nullable[] mSymbols;
-    final double mRCut;
+    final double mRCut, mRCutS;
+    final boolean mFCutS;
     
     final int mSize;
     
@@ -46,15 +47,19 @@ public class SimpleChebyshev extends Basis {
         return this;
     }
     
-    SimpleChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut,
+    SimpleChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, boolean aFCutS, double aRCutS,
                     @Nullable Vector aRFuncScale, @Nullable Vector aRFuncShift, @Nullable Vector aSystemScale) {
         mTypeNum = aTypeNum;
         mNMax = aNMax;
-        mSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
+        int tSizeN = aTypeNum>1 ? (aNMax+aNMax+2) : (aNMax+1);
+        mSizeN = aFCutS ? (tSizeN+tSizeN) : tSizeN;
         mSizeWt = aTypeNum>1 ? 1 : 0;
         
         mSymbols = aSymbols;
         mRCut = aRCut;
+        mFCutS = aFCutS;
+        mRCutS = aRCutS;
+        if (mRCutS > mRCut) throw new IllegalArgumentException("rcut_s cannot be greater than rcut");
         
         mSize = mSizeN;
         
@@ -72,7 +77,7 @@ public class SimpleChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleChebyshev(String @NotNull[] aSymbols, int aNMax, double aRCut) {
-        this(aSymbols, aSymbols.length, aNMax, aRCut, null, null, null);
+        this(aSymbols, aSymbols.length, aNMax, aRCut, false, 0.0, null, null, null);
     }
     /**
      * @param aTypeNum 原子种类数目
@@ -80,11 +85,11 @@ public class SimpleChebyshev extends Basis {
      * @param aRCut 截断半径
      */
     public SimpleChebyshev(int aTypeNum, int aNMax, double aRCut) {
-        this(null, aTypeNum, aNMax, aRCut, null, null, null);
+        this(null, aTypeNum, aNMax, aRCut, false, 0.0, null, null, null);
     }
     
     @Override public SimpleChebyshev threadSafeRef() {
-        return new SimpleChebyshev(mSymbols, mTypeNum, mNMax, mRCut, mRFuncScale, mRFuncShift, mSystemScale);
+        return new SimpleChebyshev(mSymbols, mTypeNum, mNMax, mRCut, mFCutS, mRCutS, mRFuncScale, mRFuncShift, mSystemScale);
     }
     
     @SuppressWarnings("rawtypes")
@@ -105,6 +110,8 @@ public class SimpleChebyshev extends Basis {
             aSymbols, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Boolean)UT.Code.getWithDefault(aMap, false, "fcut_s")),
+            ((Number)UT.Code.getWithDefault(aMap, 0.0, "rcut_s")).doubleValue(),
             aRFuncScales, aRFuncShift, aSystemScale
         );
     }
@@ -120,6 +127,8 @@ public class SimpleChebyshev extends Basis {
             null, aTypeNum,
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_NMAX, "nmax")).intValue(),
             ((Number)UT.Code.getWithDefault(aMap, Chebyshev.DEFAULT_RCUT, "rcut")).doubleValue(),
+            ((Boolean)UT.Code.getWithDefault(aMap, false, "fcut_s")),
+            ((Number)UT.Code.getWithDefault(aMap, 0.0, "rcut_s")).doubleValue(),
             aRFuncScales, aRFuncShift, aSystemScale
         );
     }
@@ -156,6 +165,7 @@ public class SimpleChebyshev extends Basis {
         if (aFullCache) throw new UnsupportedOperationException("full cache in simple basis");
         validCache_(rForwardCache, mNMax+1);
         Vector rRn = new Vector(mNMax+1, rForwardCache.internalData());
+        final int tShiftS = mTypeNum==1 ? (mNMax+1) : (mNMax+mNMax+2);
         // clear fp first
         rFp.fill(0.0);
         // loop for neighbor
@@ -166,8 +176,10 @@ public class SimpleChebyshev extends Basis {
             double dis = MathEX.Fast.hypot(dx, dy, dz);
             // check rcut for merge
             if (dis >= mRCut) continue;
+            boolean tFCutS = mFCutS && dis<mRCutS;
             // cal fc
             double fc = calFc(dis, mRCut);
+            double fcS = tFCutS ? calFc(dis, mRCutS) : 0.0;
             // cal Rn
             calRn(rRn, mNMax, dis, mRCut);
             // scale rfunc here
@@ -178,12 +190,20 @@ public class SimpleChebyshev extends Basis {
                 for (int n = 0; n <= mNMax; ++n) {
                     rFp.add(n, fc*rRn.get(n));
                 }
+                if (tFCutS) for (int n = 0; n <= mNMax; ++n) {
+                    rFp.add(n+tShiftS, fcS*rRn.get(n));
+                }
             } else {
                 double wt = ((type&1)==1) ? type : -type;
                 for (int n = 0, nwt = mNMax+1; n <= mNMax; ++n, ++nwt) {
                     double tRHS = fc*rRn.get(n);
                     rFp.add(n, tRHS);
                     rFp.add(nwt, wt*tRHS);
+                }
+                if (tFCutS) for (int n = 0, nwt = mNMax+1; n <= mNMax; ++n, ++nwt) {
+                    double tRHS = fcS*rRn.get(n);
+                    rFp.add(n+tShiftS, tRHS);
+                    rFp.add(nwt+tShiftS, wt*tRHS);
                 }
             }
         }
