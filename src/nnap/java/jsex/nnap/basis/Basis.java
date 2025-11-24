@@ -51,6 +51,11 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
             case "mirror": case "share": {
                 break; // mirror/share 情况延迟初始化
             }
+            case "multi_layer_spherical_chebyshev": case "ml_spherical_chebyshev": {
+                rBasis[i] = aSymbols==null ? MultiLayerSphericalChebyshev.load(tTypeNum, tBasisMap)
+                                           : MultiLayerSphericalChebyshev.load(aSymbols, tBasisMap);
+                break;
+            }
             case "spherical_chebyshev": {
                 rBasis[i] = aSymbols==null ? SphericalChebyshev.load(tTypeNum, tBasisMap)
                                            : SphericalChebyshev.load(aSymbols, tBasisMap);
