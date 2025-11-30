@@ -5,6 +5,15 @@
 
 namespace JSE_NNAP {
 
+static inline jdouble silu(jdouble aX) noexcept {
+    return aX / (1.0 + exp(-aX));
+}
+static inline jdouble siluGrad(jdouble aX, jdouble *rGrad) noexcept {
+    jdouble tSigmoid = 1.0 / (1.0 + exp(-aX));
+    *rGrad = tSigmoid * (1 + aX * (1 - tSigmoid));
+    return aX * tSigmoid;
+}
+
 template <jint NMAX>
 static void calRFuse(jdouble *rRFn, jdouble *aRn, jdouble *aRFuseWeight, jint aRFuseSize) {
     jdouble *tRFuseWeight = aRFuseWeight;
@@ -13,124 +22,182 @@ static void calRFuse(jdouble *rRFn, jdouble *aRn, jdouble *aRFuseWeight, jint aR
         tRFuseWeight += NMAX+1;
     }
 }
-static void calRFuse(jdouble *rRFn, jdouble *aRn, jdouble *aRFuseWeight, jint aRFuseSize, jint aNMax) {
-    switch (aNMax) {
-    case 0: {calRFuse<0>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 1: {calRFuse<1>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 2: {calRFuse<2>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 3: {calRFuse<3>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 4: {calRFuse<4>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 5: {calRFuse<5>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 6: {calRFuse<6>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 7: {calRFuse<7>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 8: {calRFuse<8>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 9: {calRFuse<9>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 10: {calRFuse<10>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 11: {calRFuse<11>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 12: {calRFuse<12>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 13: {calRFuse<13>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 14: {calRFuse<14>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 15: {calRFuse<15>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 16: {calRFuse<16>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 17: {calRFuse<17>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 18: {calRFuse<18>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 19: {calRFuse<19>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    case 20: {calRFuse<20>(rRFn, aRn, aRFuseWeight, aRFuseSize); return;}
-    default: {return;}
+static void calEmbRn(jdouble *aInputX, jint aInputDim, jdouble *aEmbWeights, jdouble *aEmbBiases, jint *aEmbDims, jint aEmbNumber, jdouble *rEmbCache, jdouble *rEmbCache2, jdouble *rEmbRn) {
+    jdouble *tInput = aInputX;
+    jdouble *rOutput = rEmbCache;
+    jdouble *rGrad = rEmbCache2;
+    jdouble *tWeights = aEmbWeights, *tBiases = aEmbBiases;
+    jint tInSize = aInputDim;
+    const jint tEnd = aEmbNumber - 1;
+    for (jint i = 0; i < tEnd; ++i) {
+        const jint tOutSize = aEmbDims[i];
+        for (jint j = 0; j < tOutSize; ++j) {
+            const jdouble tDot = dot(tInput, tWeights, tInSize) + tBiases[j];
+            tWeights += tInSize;
+            if (rEmbCache2==NULL) {
+                rOutput[j] = silu(tDot);
+            } else {
+                rOutput[j] = siluGrad(tDot, rGrad+j);
+            }
+        }
+        tBiases += tOutSize;
+        tInput = rOutput;
+        rOutput += tOutSize;
+        if (rEmbCache2!=NULL) rGrad += tOutSize;
+        tInSize = tOutSize;
+    }
+    // no activate in last layer
+    rOutput = rEmbRn;
+    const jint tOutSize = aEmbDims[tEnd];
+    for (jint j = 0; j < tOutSize; ++j) {
+        rOutput[j] = dot(tInput, tWeights, tInSize) + tBiases[j];
+        tWeights += tInSize;
     }
 }
 
 template <jint LMAX>
-static void mplusCnlmRFuse(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRFn, jint aRFuseSize) noexcept {
+static void mplusCnlmEmb(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aEmbRn, jint aSizeN) noexcept {
     constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
     jdouble *tCnlm = rCnlm;
-    for (jint np = 0; np < aRFuseSize; ++np) {
-        const jdouble tMul = aFc*aRFn[np];
+    for (jint np = 0; np < aSizeN; ++np) {
+        const jdouble tMul = aFc*aEmbRn[np];
         for (jint k = 0; k < tLMAll; ++k) {
             tCnlm[k] += tMul*aY[k];
         }
         tCnlm += tLMAll;
     }
 }
-static void mplusCnlmRFuse(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRFn, jint aRFuseSize, jint aLMax) noexcept {
+static void mplusCnlmEmb(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aEmbRn, jint aSizeN, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {mplusCnlmRFuse<0>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 1: {mplusCnlmRFuse<1>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 2: {mplusCnlmRFuse<2>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 3: {mplusCnlmRFuse<3>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 4: {mplusCnlmRFuse<4>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 5: {mplusCnlmRFuse<5>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 6: {mplusCnlmRFuse<6>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 7: {mplusCnlmRFuse<7>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 8: {mplusCnlmRFuse<8>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 9: {mplusCnlmRFuse<9>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 10: {mplusCnlmRFuse<10>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 11: {mplusCnlmRFuse<11>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
-    case 12: {mplusCnlmRFuse<12>(rCnlm, aY, aFc, aRFn, aRFuseSize); return;}
+    case 0: {mplusCnlmEmb<0>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 1: {mplusCnlmEmb<1>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 2: {mplusCnlmEmb<2>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 3: {mplusCnlmEmb<3>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 4: {mplusCnlmEmb<4>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 5: {mplusCnlmEmb<5>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 6: {mplusCnlmEmb<6>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 7: {mplusCnlmEmb<7>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 8: {mplusCnlmEmb<8>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 9: {mplusCnlmEmb<9>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 10: {mplusCnlmEmb<10>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 11: {mplusCnlmEmb<11>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
+    case 12: {mplusCnlmEmb<12>(rCnlm, aY, aFc, aEmbRn, aSizeN); return;}
     default: {return;}
     }
 }
 
-template <jint NMAX>
-static void mplusGradParaRFuse(jdouble *aGradRFn, jdouble *aRn, jdouble *rGradPara, jint aRFuseSize) {
-    jdouble *tGradPara = rGradPara;
-    for (jint np = 0; np < aRFuseSize; ++np) {
-        mplus<NMAX+1>(tGradPara, aGradRFn[np], aRn);
-        tGradPara += NMAX+1;
+
+static void backwardEmbRn(jdouble *aInputX, jint aInputDim, jdouble *aEmbWeights, jint *aEmbDims, jint aEmbNumber, jdouble *aEmbCache, jdouble *aEmbCache2, jdouble *aGradEmbRn, jdouble *rGradEmbCache, jdouble *rGradPara) {
+    /// switch to last layer
+    const jint tEnd = aEmbNumber - 1;
+    jdouble *tGradInput = NULL;
+    jdouble *tGradOutput = NULL;
+    jdouble *tCacheInput = aInputX;
+    jdouble *tCacheOutput2 = aEmbCache2;
+    jdouble *tWeights = aEmbWeights;
+    jdouble *rGradWeights = rGradPara, *rGradBiases = NULL;
+    jint tInSize = aInputDim;
+    if (tEnd > 0) {
+        tGradInput = rGradEmbCache;
+        tCacheInput = aEmbCache;
+        const jint tEndMM = tEnd - 1;
+        for (jint i = 0; i < tEndMM; ++i) {
+            const jint tOutSize = aEmbDims[i];
+            tGradInput += tOutSize;
+            tCacheInput += tOutSize;
+        }
     }
-}
-static void mplusGradParaRFuse(jdouble *aGradRFn, jdouble *aRn, jdouble *rGradPara, jint aRFuseSize, jint aNMax) {
-    switch (aNMax) {
-    case 0: {mplusGradParaRFuse<0>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 1: {mplusGradParaRFuse<1>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 2: {mplusGradParaRFuse<2>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 3: {mplusGradParaRFuse<3>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 4: {mplusGradParaRFuse<4>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 5: {mplusGradParaRFuse<5>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 6: {mplusGradParaRFuse<6>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 7: {mplusGradParaRFuse<7>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 8: {mplusGradParaRFuse<8>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 9: {mplusGradParaRFuse<9>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 10: {mplusGradParaRFuse<10>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 11: {mplusGradParaRFuse<11>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 12: {mplusGradParaRFuse<12>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 13: {mplusGradParaRFuse<13>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 14: {mplusGradParaRFuse<14>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 15: {mplusGradParaRFuse<15>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 16: {mplusGradParaRFuse<16>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 17: {mplusGradParaRFuse<17>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 18: {mplusGradParaRFuse<18>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 19: {mplusGradParaRFuse<19>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    case 20: {mplusGradParaRFuse<20>(aGradRFn, aRn, rGradPara, aRFuseSize); return;}
-    default: {return;}
+    for (jint i = 0; i < tEnd; ++i) {
+        const jint tOutSize = aEmbDims[i];
+        tWeights += tInSize*tOutSize;
+        rGradWeights += tInSize*tOutSize;
+        tCacheOutput2 += tOutSize;
+        tInSize = tOutSize;
+    }
+    const jint tEmbOutputDim = aEmbDims[tEnd];
+    rGradBiases = rGradWeights + tInSize*tEmbOutputDim;
+    for (jint i = 0; i < tEnd; ++i) {
+        rGradBiases += aEmbDims[i];
+    }
+    /// begin backward
+    // last layer
+    jint tOutSize = tEmbOutputDim;
+    for (jint j = 0; j < tOutSize; ++j) {
+        const jdouble tSubGradEmbRn = aGradEmbRn[j];
+        rGradBiases[j] += tSubGradEmbRn;
+        mplus(rGradWeights, tSubGradEmbRn, tCacheInput, tInSize);
+        if (tGradInput != NULL) {
+            mplus(tGradInput, tSubGradEmbRn, tWeights, tInSize);
+        }
+        tWeights += tInSize;
+        rGradWeights += tInSize;
+    }
+    if (tEnd == 0) return; // on hidden layer
+    tWeights -= tInSize*tOutSize;
+    rGradWeights -= tInSize*tOutSize;
+    // else layers
+    tOutSize = tInSize;
+    tGradOutput = tGradInput;
+    for (jint i = tEnd-2; i >= 0; --i) {
+        tInSize = aEmbDims[i];
+        tGradInput -= tInSize;
+        tCacheInput -= tInSize;
+        tWeights -= tInSize*tOutSize;
+        rGradWeights -= tInSize*tOutSize;
+        rGradBiases -= tOutSize;
+        tCacheOutput2 -= tOutSize;
+        for (jint j = 0; j < tOutSize; ++j) {
+            const jdouble tSubGrad = tGradOutput[j] * tCacheOutput2[j];
+            rGradBiases[j] += tSubGrad;
+            mplus(rGradWeights, tSubGrad, tCacheInput, tInSize);
+            mplus(tGradInput, tSubGrad, tWeights, tInSize);
+            tWeights += tInSize;
+            rGradWeights += tInSize;
+        }
+        tWeights -= tInSize*tOutSize;
+        rGradWeights -= tInSize*tOutSize;
+        tOutSize = tInSize;
+        tGradOutput = tGradInput;
+    }
+    // to input layer
+    tInSize = aInputDim;
+    tCacheInput = aInputX;
+    rGradWeights -= tInSize*tOutSize;
+    rGradBiases -= tOutSize;
+    tCacheOutput2 -= tOutSize;
+    for (jint j = 0; j < tOutSize; ++j) {
+        const jdouble tSubGrad = tGradOutput[j] * tCacheOutput2[j];
+        rGradBiases[j] += tSubGrad;
+        mplus(rGradWeights, tSubGrad, tCacheInput, tInSize);
+        rGradWeights += tInSize;
     }
 }
 
 template <jint LMAX>
-static void mplusGradCnlmRFuse(jdouble *aGradCnlm, jdouble *aY, jdouble aFc, jdouble *rGradRFn, jint aRFuseSize) noexcept {
+static void mplusGradCnlmEmb(jdouble *aGradCnlm, jdouble *aY, jdouble aFc, jdouble *rGradEmbRn, jint aSizeN) noexcept {
     constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
     jdouble *tGradCnlm = aGradCnlm;
-    for (jint np = 0; np < aRFuseSize; ++np) {
+    for (jint np = 0; np < aSizeN; ++np) {
         const jdouble tDot = dot<tLMAll>(tGradCnlm, aY);
-        rGradRFn[np] += aFc*tDot;
+        rGradEmbRn[np] += aFc*tDot;
         tGradCnlm += tLMAll;
     }
 }
-static void mplusGradCnlmRFuse(jdouble *aGradCnlm, jdouble *aY, jdouble aFc, jdouble *rGradRFn, jint aRFuseSize, jint aLMax) noexcept {
+static void mplusGradCnlmEmb(jdouble *aGradCnlm, jdouble *aY, jdouble aFc, jdouble *rGradEmbRn, jint aSizeN, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {mplusGradCnlmRFuse<0>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 1: {mplusGradCnlmRFuse<1>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 2: {mplusGradCnlmRFuse<2>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 3: {mplusGradCnlmRFuse<3>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 4: {mplusGradCnlmRFuse<4>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 5: {mplusGradCnlmRFuse<5>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 6: {mplusGradCnlmRFuse<6>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 7: {mplusGradCnlmRFuse<7>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 8: {mplusGradCnlmRFuse<8>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 9: {mplusGradCnlmRFuse<9>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 10: {mplusGradCnlmRFuse<10>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 11: {mplusGradCnlmRFuse<11>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
-    case 12: {mplusGradCnlmRFuse<12>(aGradCnlm, aY, aFc, rGradRFn, aRFuseSize); return;}
+    case 0: {mplusGradCnlmEmb<0>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 1: {mplusGradCnlmEmb<1>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 2: {mplusGradCnlmEmb<2>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 3: {mplusGradCnlmEmb<3>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 4: {mplusGradCnlmEmb<4>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 5: {mplusGradCnlmEmb<5>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 6: {mplusGradCnlmEmb<6>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 7: {mplusGradCnlmEmb<7>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 8: {mplusGradCnlmEmb<8>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 9: {mplusGradCnlmEmb<9>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 10: {mplusGradCnlmEmb<10>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 11: {mplusGradCnlmEmb<11>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
+    case 12: {mplusGradCnlmEmb<12>(aGradCnlm, aY, aFc, rGradEmbRn, aSizeN); return;}
     default: {return;}
     }
 }
