@@ -762,6 +762,10 @@ static inline void chebyshev2Full(jdouble aX, jdouble *rDest) noexcept {
 static inline jdouble calFc(jdouble aDis, jdouble aRCut) noexcept {
     return pow4(1.0 - pow2(aDis/aRCut));
 }
+static inline jdouble calFc(jdouble aDis, jdouble aRCutL, jdouble aRCutR) noexcept {
+    const double tX = (aDis-aRCutL)/(aRCutR-aRCutL);
+    return pow4(1.0 - pow2(tX+tX - 1.0));
+}
 template <jint N>
 static inline void calRn(jdouble *rRn, jdouble aDis, jdouble aRCut, jdouble *aScale) noexcept {
     jdouble tRnX = 1.0 - 2.0*aDis/aRCut;

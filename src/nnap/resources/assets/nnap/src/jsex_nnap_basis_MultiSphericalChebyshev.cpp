@@ -1,36 +1,14 @@
-#include "jsex_nnap_basis_MultiLayerSphericalChebyshev.h"
-#include "basis_MultiLayerSphericalChebyshev.hpp"
+#include "jsex_nnap_basis_MultiSphericalChebyshev.h"
+#include "basis_MultiSphericalChebyshev.hpp"
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forwardEmb0(JNIEnv *aEnv, jclass aClazz,
-        jdoubleArray aInputX, jdoubleArray rOutputEmb, jint aNMax, jdoubleArray aEmbWeights, jdoubleArray aEmbBiases, jintArray aEmbDims, jint aEmbNumber) {
-    jdouble *tInputX = (jdouble *)getJArrayBuf(aEnv, aInputX);
-    jdouble *tOutputEmb = (jdouble *)getJArrayBuf(aEnv, rOutputEmb);
-    jdouble *tEmbWeights = (jdouble *)getJArrayBuf(aEnv, aEmbWeights);
-    jdouble *tEmbBiases = (jdouble *)getJArrayBuf(aEnv, aEmbBiases);
-    jint *tEmbDims = (jint *)getJArrayBuf(aEnv, aEmbDims);
-
-    jint tEmbCacheSize = 0;
-    for (jint l = 0; l < aEmbNumber-1; ++l) {
-        tEmbCacheSize += tEmbDims[l];
-    }
-    jdouble *rEmbCache = MALLOCN_TP(jdouble, tEmbCacheSize);
-    JSE_NNAP::calEmbRn(tInputX, aNMax, tEmbWeights, tEmbBiases, tEmbDims, aEmbNumber, rEmbCache, NULL, tOutputEmb);
-    FREE(rEmbCache);
-
-    releaseJArrayBuf(aEnv, aInputX, tInputX, JNI_ABORT);
-    releaseJArrayBuf(aEnv, rOutputEmb, tOutputEmb, 0);
-    releaseJArrayBuf(aEnv, aEmbWeights, tEmbWeights, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbBiases, tEmbBiases, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbDims, tEmbDims, JNI_ABORT);
-}
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forward1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiSphericalChebyshev_forward1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray rFp, jint aShiftFp, jdoubleArray rForwardCache, jint aForwardCacheShift, jboolean aFullCache,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
-        jdoubleArray aEmbWeights, jdoubleArray aEmbBiases, jintArray aEmbDims, jint aEmbNumber,
-        jdoubleArray aEquFuseWeight, jint aEquFuseSize, jdouble aEquFuseScale,
+        jint aTypeNum, jdouble aRCutMax, jdoubleArray aRCutsL, jdoubleArray aRCutsR, jint aRCutsSize,
+        jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
+        jdoubleArray aEquFuseWeight, jint aEquFuseOutDim, jdouble aEquFuseScale,
         jdoubleArray aRFuncScale, jdoubleArray aSystemScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
@@ -39,18 +17,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forward
     jint *tNlType = (jint *)getJArrayBuf(aEnv, aNlType);
     jdouble *tFp = (jdouble *)getJArrayBuf(aEnv, rFp);
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, rForwardCache);
-    jdouble *tEmbWeights = (jdouble *)getJArrayBuf(aEnv, aEmbWeights);
-    jdouble *tEmbBiases = (jdouble *)getJArrayBuf(aEnv, aEmbBiases);
-    jint *tEmbDims = (jint *)getJArrayBuf(aEnv, aEmbDims);
+    jdouble *tRCutsL = (jdouble *)getJArrayBuf(aEnv, aRCutsL);
+    jdouble *tRCutsR = (jdouble *)getJArrayBuf(aEnv, aRCutsR);
     jdouble *tEquFuseWeight = (jdouble *)getJArrayBuf(aEnv, aEquFuseWeight);
     jdouble *tRFuncScale = (jdouble *)getJArrayBuf(aEnv, aRFuncScale);
     jdouble *tSystemScale = (jdouble *)getJArrayBuf(aEnv, aSystemScale);
     
     JSE_NNAP::calFp(tNlDx, tNlDy, tNlDz, tNlType, aNN, tFp+aShiftFp,
                     tForwardCache+aForwardCacheShift, aFullCache,
-                    aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
-                    tEmbWeights, tEmbBiases, tEmbDims, aEmbNumber,
-                    tEquFuseWeight, aEquFuseSize, aEquFuseScale,
+                    aTypeNum, aRCutMax, tRCutsL, tRCutsR, aRCutsSize,
+                    aNMax, aLMax, aL3Max, aL4Max,
+                    tEquFuseWeight, aEquFuseOutDim, aEquFuseScale,
                     tRFuncScale, tSystemScale);
     
     // release java array
@@ -60,21 +37,20 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forward
     releaseJArrayBuf(aEnv, aNlType, tNlType, JNI_ABORT);
     releaseJArrayBuf(aEnv, rFp, tFp, 0);
     releaseJArrayBuf(aEnv, rForwardCache, tForwardCache, 0);
-    releaseJArrayBuf(aEnv, aEmbWeights, tEmbWeights, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbBiases, tEmbBiases, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbDims, tEmbDims, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsL, tRCutsL, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsR, tRCutsR, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquFuseWeight, tEquFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aRFuncScale, tRFuncScale, JNI_ABORT);
     releaseJArrayBuf(aEnv, aSystemScale, tSystemScale, JNI_ABORT);
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backward1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiSphericalChebyshev_backward1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aGradFp, jint aShiftGradFp, jdoubleArray rGradPara, jint aShiftGradPara,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray rBackwardCache, jint aBackwardCacheShift,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
-        jdoubleArray aEmbWeights, jintArray aEmbDims, jint aEmbNumber,
-        jdoubleArray aEquFuseWeight, jint aEquFuseSize, jdouble aEquFuseScale,
+        jint aTypeNum, jdouble aRCutMax, jdoubleArray aRCutsL, jdoubleArray aRCutsR, jint aRCutsSize,
+        jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
+        jdoubleArray aEquFuseWeight, jint aEquFuseOutDim, jdouble aEquFuseScale,
         jdoubleArray aSystemScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
@@ -85,17 +61,17 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backwar
     jdouble *tGradPara = (jdouble *)getJArrayBuf(aEnv, rGradPara);
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, aForwardCache);
     jdouble *tBackwardCache = (jdouble *)getJArrayBuf(aEnv, rBackwardCache);
-    jdouble *tEmbWeights = (jdouble *)getJArrayBuf(aEnv, aEmbWeights);
-    jint *tEmbDims = (jint *)getJArrayBuf(aEnv, aEmbDims);
+    jdouble *tRCutsL = (jdouble *)getJArrayBuf(aEnv, aRCutsL);
+    jdouble *tRCutsR = (jdouble *)getJArrayBuf(aEnv, aRCutsR);
     jdouble *tEquFuseWeight = (jdouble *)getJArrayBuf(aEnv, aEquFuseWeight);
     jdouble *tSystemScale = (jdouble *)getJArrayBuf(aEnv, aSystemScale);
     
     JSE_NNAP::calBackward(tNlDx, tNlDy, tNlDz, tNlType, aNN,
                           tGradFp+aShiftGradFp, tGradPara+aShiftGradPara,
                           tForwardCache+aForwardCacheShift, tBackwardCache+aBackwardCacheShift,
-                          aTypeNum, aRCut, aNMax, aLMax, aL3Max, aL4Max,
-                          tEmbWeights, tEmbDims, aEmbNumber,
-                          tEquFuseWeight, aEquFuseSize, aEquFuseScale,
+                          aTypeNum, aRCutMax, tRCutsL, tRCutsR, aRCutsSize,
+                          aNMax, aLMax, aL3Max, aL4Max,
+                          tEquFuseWeight, aEquFuseOutDim, aEquFuseScale,
                           tSystemScale);
     
     // release java array
@@ -107,19 +83,19 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backwar
     releaseJArrayBuf(aEnv, rGradPara, tGradPara, 0);
     releaseJArrayBuf(aEnv, aForwardCache, tForwardCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rBackwardCache, tBackwardCache, 0);
-    releaseJArrayBuf(aEnv, aEmbWeights, tEmbWeights, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbDims, tEmbDims, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsL, tRCutsL, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsR, tRCutsR, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquFuseWeight, tEquFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aSystemScale, tSystemScale, JNI_ABORT);
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forwardForce1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiSphericalChebyshev_forwardForce1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNNGrad, jint aShiftFp, jdoubleArray rFx, jdoubleArray rFy, jdoubleArray rFz,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray rForwardForceCache, jint aForwardForceCacheShift, jboolean aFullCache,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
-        jdoubleArray aEmbWeights, jintArray aEmbDims, jint aEmbNumber,
-        jdoubleArray aEquFuseWeight, jint aEquFuseSize, jdouble aEquFuseScale,
+        jint aTypeNum, jdouble aRCutMax, jdoubleArray aRCutsL, jdoubleArray aRCutsR, jint aRCutsSize,
+        jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
+        jdoubleArray aEquFuseWeight, jint aEquFuseOutDim, jdouble aEquFuseScale,
         jdoubleArray aRFuncScale, jdoubleArray aSystemScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
@@ -132,8 +108,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forward
     jdouble *tFz = (jdouble *)getJArrayBuf(aEnv, rFz);
     jdouble *tForwardCache = (jdouble *)getJArrayBuf(aEnv, aForwardCache);
     jdouble *tForwardForceCache = (jdouble *)getJArrayBuf(aEnv, rForwardForceCache);
-    jdouble *tEmbWeights = (jdouble *)getJArrayBuf(aEnv, aEmbWeights);
-    jint *tEmbDims = (jint *)getJArrayBuf(aEnv, aEmbDims);
+    jdouble *tRCutsL = (jdouble *)getJArrayBuf(aEnv, aRCutsL);
+    jdouble *tRCutsR = (jdouble *)getJArrayBuf(aEnv, aRCutsR);
     jdouble *tEquFuseWeight = (jdouble *)getJArrayBuf(aEnv, aEquFuseWeight);
     jdouble *tRFuncScale = (jdouble *)getJArrayBuf(aEnv, aRFuncScale);
     jdouble *tSystemScale = (jdouble *)getJArrayBuf(aEnv, aSystemScale);
@@ -157,22 +133,22 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_forward
     releaseJArrayBuf(aEnv, rFz, tFz, 0);
     releaseJArrayBuf(aEnv, aForwardCache, tForwardCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rForwardForceCache, tForwardForceCache, 0);
-    releaseJArrayBuf(aEnv, aEmbWeights, tEmbWeights, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbDims, tEmbDims, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsL, tRCutsL, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsR, tRCutsR, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquFuseWeight, tEquFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aRFuncScale, tRFuncScale, JNI_ABORT);
     releaseJArrayBuf(aEnv, aSystemScale, tSystemScale, JNI_ABORT);
 }
 
-JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backwardForce1(JNIEnv *aEnv, jclass aClazz,
+JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiSphericalChebyshev_backwardForce1(JNIEnv *aEnv, jclass aClazz,
         jdoubleArray aNlDx, jdoubleArray aNlDy, jdoubleArray aNlDz, jintArray aNlType, jint aNN,
         jdoubleArray aNNGrad, jint aShiftNNGrad, jdoubleArray aGradFx, jdoubleArray aGradFy, jdoubleArray aGradFz,
         jdoubleArray rGradNNGrad, jint aShiftGradNNGrad, jdoubleArray rGradPara, jint aShiftGradPara,
         jdoubleArray aForwardCache, jint aForwardCacheShift, jdoubleArray aForwardForceCache, jint aForwardForceCacheShift,
         jdoubleArray rBackwardCache, jint aBackwardCacheShift, jdoubleArray rBackwardForceCache, jint aBackwardForceCacheShift, jboolean aFixBasis,
-        jint aTypeNum, jdouble aRCut, jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
-        jdoubleArray aEmbWeights, jintArray aEmbDims, jint aEmbNumber,
-        jdoubleArray aEquFuseWeight, jint aEquFuseSize, jdouble aEquFuseScale,
+        jint aTypeNum, jdouble aRCutMax, jdoubleArray aRCutsL, jdoubleArray aRCutsR, jint aRCutsSize,
+        jint aNMax, jint aLMax, jint aL3Max, jint aL4Max,
+        jdoubleArray aEquFuseWeight, jint aEquFuseOutDim, jdouble aEquFuseScale,
         jdoubleArray aSystemScale) {
     // java array init
     jdouble *tNlDx = (jdouble *)getJArrayBuf(aEnv, aNlDx);
@@ -189,8 +165,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backwar
     jdouble *tForwardForceCache = (jdouble *)getJArrayBuf(aEnv, aForwardForceCache);
     jdouble *tBackwardCache = (jdouble *)getJArrayBuf(aEnv, rBackwardCache);
     jdouble *tBackwardForceCache = (jdouble *)getJArrayBuf(aEnv, rBackwardForceCache);
-    jdouble *tEmbWeights = (jdouble *)getJArrayBuf(aEnv, aEmbWeights);
-    jint *tEmbDims = (jint *)getJArrayBuf(aEnv, aEmbDims);
+    jdouble *tRCutsL = (jdouble *)getJArrayBuf(aEnv, aRCutsL);
+    jdouble *tRCutsR = (jdouble *)getJArrayBuf(aEnv, aRCutsR);
     jdouble *tEquFuseWeight = (jdouble *)getJArrayBuf(aEnv, aEquFuseWeight);
     jdouble *tSystemScale = (jdouble *)getJArrayBuf(aEnv, aSystemScale);
     
@@ -219,8 +195,8 @@ JNIEXPORT void JNICALL Java_jsex_nnap_basis_MultiLayerSphericalChebyshev_backwar
     releaseJArrayBuf(aEnv, aForwardForceCache, tForwardForceCache, JNI_ABORT);
     releaseJArrayBuf(aEnv, rBackwardCache, tBackwardCache, 0);
     releaseJArrayBuf(aEnv, rBackwardForceCache, tBackwardForceCache, 0);
-    releaseJArrayBuf(aEnv, aEmbWeights, tEmbWeights, JNI_ABORT);
-    releaseJArrayBuf(aEnv, aEmbDims, tEmbDims, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsL, tRCutsL, JNI_ABORT);
+    releaseJArrayBuf(aEnv, aRCutsR, tRCutsR, JNI_ABORT);
     releaseJArrayBuf(aEnv, aEquFuseWeight, tEquFuseWeight, JNI_ABORT);
     releaseJArrayBuf(aEnv, aSystemScale, tSystemScale, JNI_ABORT);
 }

@@ -191,8 +191,8 @@ public class MergedBasis extends Basis {
                 tType = "spherical_chebyshev";
             }
             switch(tType.toString()) {
-            case "multi_layer_spherical_chebyshev": case "ml_spherical_chebyshev": {
-                tMergeBasis[i] = MultiLayerSphericalChebyshev.load(aSymbols, tMap);
+            case "multi_spherical_chebyshev": {
+                tMergeBasis[i] = MultiSphericalChebyshev.load(aSymbols, tMap);
                 break;
             }
             case "spherical_chebyshev": {
@@ -222,8 +222,8 @@ public class MergedBasis extends Basis {
                 tType = "spherical_chebyshev";
             }
             switch(tType.toString()) {
-            case "multi_layer_spherical_chebyshev": case "ml_spherical_chebyshev": {
-                tMergeBasis[i] = MultiLayerSphericalChebyshev.load(aTypeNum, tMap);
+            case "multi_spherical_chebyshev": {
+                tMergeBasis[i] = MultiSphericalChebyshev.load(aTypeNum, tMap);
                 break;
             }
             case "spherical_chebyshev": {

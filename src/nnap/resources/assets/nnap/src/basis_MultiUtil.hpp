@@ -5,6 +5,66 @@
 
 namespace JSE_NNAP {
 
+template <jint NMAX, jint LMAX>
+static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn) noexcept {
+    constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
+    jdouble *tCnlm = rCnlm;
+    for (jint n = 0; n <= NMAX; ++n) {
+        const jdouble tMul = aFc*aRn[n];
+        for (jint k = 0; k < tLMAll; ++k) {
+            const jdouble tValue = tMul*aY[k];
+            tCnlm[k] += tValue;
+        }
+        tCnlm += tLMAll;
+    }
+}
+template <jint LMAX>
+static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jint aNMax) noexcept {
+    switch (aNMax) {
+    case 0: {mplusCnlmMl<0, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 1: {mplusCnlmMl<1, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 2: {mplusCnlmMl<2, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 3: {mplusCnlmMl<3, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 4: {mplusCnlmMl<4, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 5: {mplusCnlmMl<5, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 6: {mplusCnlmMl<6, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 7: {mplusCnlmMl<7, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 8: {mplusCnlmMl<8, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 9: {mplusCnlmMl<9, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 10: {mplusCnlmMl<10, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 11: {mplusCnlmMl<11, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 12: {mplusCnlmMl<12, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 13: {mplusCnlmMl<13, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 14: {mplusCnlmMl<14, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 15: {mplusCnlmMl<15, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 16: {mplusCnlmMl<16, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 17: {mplusCnlmMl<17, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 18: {mplusCnlmMl<18, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 19: {mplusCnlmMl<19, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 20: {mplusCnlmMl<20, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    default: {return;}
+    }
+}
+static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jint aNMax, jint aLMax) noexcept {
+    switch (aLMax) {
+    case 0: {mplusCnlmMl<0>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 1: {mplusCnlmMl<1>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 2: {mplusCnlmMl<2>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 3: {mplusCnlmMl<3>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 4: {mplusCnlmMl<4>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 5: {mplusCnlmMl<5>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 6: {mplusCnlmMl<6>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 7: {mplusCnlmMl<7>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 8: {mplusCnlmMl<8>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 9: {mplusCnlmMl<9>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 10: {mplusCnlmMl<10>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 11: {mplusCnlmMl<11>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 12: {mplusCnlmMl<12>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    default: {return;}
+    }
+}
+
+
 static inline jdouble silu(jdouble aX) noexcept {
     return aX / (1.0 + exp(-aX));
 }
