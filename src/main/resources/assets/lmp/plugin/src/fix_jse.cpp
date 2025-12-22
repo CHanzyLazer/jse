@@ -321,11 +321,21 @@ jlong FixJSE::atomF() {
 jlong FixJSE::atomMask() {
     return (jlong)(intptr_t) atom->mask;
 }
+jlong FixJSE::atomTag() {
+    return (jlong)(intptr_t) atom->tag;
+}
 jlong FixJSE::atomType() {
     return (jlong)(intptr_t) atom->type;
 }
 jlong FixJSE::atomMass() {
     return (jlong)(intptr_t) atom->mass;
+}
+jlong FixJSE::atomExtract(jstring name) {
+    const char *name_c = mEnv->GetStringUTFChars(name, NULL);
+    if (JSE_LMPPLUGIN::exceptionCheck(mEnv)) error->all(FLERR, "parse name");
+    jlong ptr = (jlong)(intptr_t) atom->extract(name_c);
+    mEnv->ReleaseStringUTFChars(name, name_c);
+    return ptr;
 }
 jlong FixJSE::atomNatoms() {
     return (jlong) atom->natoms;

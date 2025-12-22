@@ -129,6 +129,13 @@ JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsLibMpi_1(JNIEnv *aEnv, j
     return JNI_FALSE;
 #endif
 }
+JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsBigbig_1(JNIEnv *aEnv, jclass aClazz) {
+#ifdef LAMMPS_BIGBIG
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
+}
 
 JNIEXPORT void JNICALL Java_jse_lmp_NativeLmp_lammpsMpiFinalize_1(JNIEnv *aEnv, jclass aClazz) {
 #ifdef LAMMPS_OLD

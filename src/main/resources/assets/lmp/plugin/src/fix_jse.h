@@ -97,8 +97,10 @@ public:
     jlong atomV();
     jlong atomF();
     jlong atomMask();
+    jlong atomTag();
     jlong atomType();
     jlong atomMass();
+    jlong atomExtract(jstring);
     jlong atomNatoms();
     jint atomNtypes();
     jint atomNlocal();

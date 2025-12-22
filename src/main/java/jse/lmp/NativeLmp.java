@@ -314,6 +314,7 @@ public class NativeLmp implements IAutoShutdown {
         EXECUTABLE_NAME = tFirstDot>=0 ? tExecutableName.substring(0, tFirstDot) : tExecutableName;
         DEFAULT_ARGS = new String[] {EXECUTABLE_NAME, "-log", "none"};
         LAMMPS_LIB_MPI = lammpsLibMpi_();
+        LAMMPS_BIGBIG = lammpsBigbig_();
     }
     
     
@@ -413,6 +414,10 @@ public class NativeLmp implements IAutoShutdown {
     /** 在编译 lammps jni 库时是否有找到 mpi 支持，如果没有则很多操作不需要真的执行 mpi 通讯 */
     public final static boolean LAMMPS_LIB_MPI;
     private native static boolean lammpsLibMpi_();
+    
+    /** 在编译 lammps jni 时是否开启了 LAMMPS_BIGBIG，目前没对开启进行任何支持 */
+    public final static boolean LAMMPS_BIGBIG;
+    private native static boolean lammpsBigbig_();
     
     /**
      * Shut down the MPI communication like {@link MPI#shutdown}

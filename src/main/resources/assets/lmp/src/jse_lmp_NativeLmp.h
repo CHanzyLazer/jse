@@ -75,6 +75,14 @@ JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsLibMpi_1
 
 /*
  * Class:     jse_lmp_NativeLmp
+ * Method:    lammpsBigbig_
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_NativeLmp_lammpsBigbig_1
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jse_lmp_NativeLmp
  * Method:    lammpsMpiFinalize_
  * Signature: ()V
  */

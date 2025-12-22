@@ -61,11 +61,17 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomV_1(JNIEnv *aEnv, j
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomF_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomF();
 }
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomTag_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->atomTag();
+}
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomType_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomType();
 }
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomMass_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomMass();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomExtract_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr, jstring aName) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->atomExtract(aName);
 }
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNatoms_1(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomNatoms();

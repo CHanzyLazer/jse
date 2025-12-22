@@ -323,11 +323,20 @@ public class LmpPlugin {
         protected final NestedDoubleCPointer atomF() {return new NestedDoubleCPointer(atomF_(mPairPtr));}
         private native static long atomF_(long aPairPtr);
         
+        protected final IntCPointer atomTag() {
+            if (NativeLmp.LAMMPS_BIGBIG) throw new UnsupportedOperationException("atomTag for LAMMPS_BIGBIG");
+            return new IntCPointer(atomTag_(mPairPtr));
+        }
+        private native static long atomTag_(long aPairPtr);
+        
         protected final IntCPointer atomType() {return new IntCPointer(atomType_(mPairPtr));}
         private native static long atomType_(long aPairPtr);
         
         protected final DoubleCPointer atomMass() {return new DoubleCPointer(atomMass_(mPairPtr));}
         private native static long atomMass_(long aPairPtr);
+        
+        protected final CPointer atomExtract(String aName) {return new CPointer(atomExtract_(mPairPtr, aName));}
+        private native static long atomExtract_(long aPairPtr, String aName);
         
         protected final long atomNatoms() {return atomNatoms_(mPairPtr);}
         private native static long atomNatoms_(long aPairPtr);
@@ -734,11 +743,20 @@ public class LmpPlugin {
         protected final IntCPointer atomMask() {return new IntCPointer(atomMask_(mFixPtr));}
         private native static long atomMask_(long aFixPtr);
         
+        protected final IntCPointer atomTag() {
+            if (NativeLmp.LAMMPS_BIGBIG) throw new UnsupportedOperationException("atomTag for LAMMPS_BIGBIG");
+            return new IntCPointer(atomTag_(mFixPtr));
+        }
+        private native static long atomTag_(long aFixPtr);
+        
         protected final IntCPointer atomType() {return new IntCPointer(atomType_(mFixPtr));}
         private native static long atomType_(long aFixPtr);
         
         protected final DoubleCPointer atomMass() {return new DoubleCPointer(atomMass_(mFixPtr));}
-        private native static long atomMass_(long aPairPtr);
+        private native static long atomMass_(long aFixPtr);
+        
+        protected final CPointer atomExtract(String aName) {return new CPointer(atomExtract_(mFixPtr, aName));}
+        private native static long atomExtract_(long aFixPtr, String aName);
         
         protected final long atomNatoms() {return atomNatoms_(mFixPtr);}
         private native static long atomNatoms_(long aFixPtr);

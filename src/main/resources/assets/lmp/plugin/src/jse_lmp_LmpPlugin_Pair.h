@@ -159,6 +159,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomF_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    atomTag_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomTag_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
  * Method:    atomType_
  * Signature: (J)J
  */
@@ -172,6 +180,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomType_1
  */
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomMass_1
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Pair
+ * Method:    atomExtract_
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomExtract_1
+  (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     jse_lmp_LmpPlugin_Pair

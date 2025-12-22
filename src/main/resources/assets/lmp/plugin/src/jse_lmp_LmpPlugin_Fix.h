@@ -393,6 +393,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomMask_1
 
 /*
  * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    atomTag_
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomTag_1
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
  * Method:    atomType_
  * Signature: (J)J
  */
@@ -406,6 +414,14 @@ JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomType_1
  */
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomMass_1
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    atomExtract_
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomExtract_1
+  (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     jse_lmp_LmpPlugin_Fix
