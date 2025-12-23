@@ -4,10 +4,8 @@ import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.vector.DoubleArrayVector;
 import jse.math.vector.IVector;
-import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,9 +35,6 @@ public class MirrorBasis extends Basis {
     @Override public void initParameters() {mMirrorBasis.initParameters();}
     @Override public IVector parameters() {return mMirrorBasis.parameters();}
     @Override public boolean hasParameters() {return mMirrorBasis.hasParameters();}
-    @Override public void initScale(List<DoubleList> aNlDxList, List<DoubleList> aNlDyList, List<DoubleList> aNlDzList, List<IntList> aNlTypeList, ParforThreadPool aPool) {
-        throw new UnsupportedOperationException("initScale for MirrorBasis");
-    }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {

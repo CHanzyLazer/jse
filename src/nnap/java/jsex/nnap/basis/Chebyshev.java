@@ -1,21 +1,14 @@
 package jsex.nnap.basis;
 
-import jse.cache.VectorCache;
 import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
-import jse.code.collection.NewCollections;
 import jse.math.IDataShell;
-import jse.math.MathEX;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.DoubleArrayVector;
-import jse.math.vector.Vector;
-import jse.math.vector.Vectors;
-import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,28 +33,16 @@ public class Chebyshev extends WTypeBasis {
     
     final int mSize;
     
-    final Vector mRFuncScale;
-    final Vector mSystemScale;
-    final boolean[] mAnyScale;
     
-    Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType, int aFuseStyle, @Nullable RowMatrix aFuseWeight,
-              @Nullable Vector aRFuncScale, @Nullable Vector aSystemScale, boolean @Nullable[] aAnyScale) {
+    Chebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, double aRCut, int aWType, int aFuseStyle, @Nullable RowMatrix aFuseWeight) {
         super(aTypeNum, aNMax, 0, aWType, aFuseStyle, aFuseWeight);
         mSymbols = aSymbols;
         mRCut = aRCut;
         
         mSize = mSizeN;
-        
-        mRFuncScale = aRFuncScale==null ? Vector.ones(mNMax+1) : aRFuncScale;
-        mSystemScale = aSystemScale==null ? Vector.ones(mSize) : aSystemScale;
-        mAnyScale = aAnyScale==null ? new boolean[]{aRFuncScale!=null || aSystemScale!=null} : aAnyScale;
-        
-        if (mRFuncScale.size()!=mNMax+1) throw new IllegalArgumentException("Size of rfunc scale mismatch");
-        if (mSystemScale.size()!=mSize) throw new IllegalArgumentException("Size of system scale mismatch");
-        if (mAnyScale.length!=1) throw new IllegalArgumentException("Size of any scale mismatch");
     }
     @Override public Chebyshev threadSafeRef() {
-        return new Chebyshev(mSymbols, mTypeNum, mNMax, mRCut, mWType, mFuseStyle, mFuseWeight, mRFuncScale, mSystemScale, mAnyScale);
+        return new Chebyshev(mSymbols, mTypeNum, mNMax, mRCut, mWType, mFuseStyle, mFuseWeight);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -77,45 +58,35 @@ public class Chebyshev extends WTypeBasis {
             rSaveTo.put("fuse_size", mFuseSize);
             rSaveTo.put("fuse_weight", mFuseWeight.asListRows());
         }
-        if (mAnyScale[0]) {
-            rSaveTo.put("rfunc_scales", mRFuncScale.asList());
-            rSaveTo.put("system_scales", mSystemScale.asList());
-        }
     }
     
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     public static Chebyshev load(String @NotNull[] aSymbols, Map aMap) {
         int aTypeNum = aSymbols.length;
         int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
         int aFuseStyle = getFuseStyle_(aMap);
         RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aFuseStyle, aTypeNum, aNMax, 0);
-        List<? extends Number> tRFuncScale = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales");
-        Vector aRFuncScales = tRFuncScale==null ? null : Vectors.from(tRFuncScale);
-        List<? extends Number> tSystemScale = (List<? extends Number>)UT.Code.get(aMap, "system_scales");
-        Vector aSystemScale = tSystemScale==null ? null : Vectors.from(tSystemScale);
+        if (aMap.containsKey("rfunc_scales")) throw new IllegalArgumentException("rfunc_scales are invalid now");
+        if (aMap.containsKey("system_scales")) throw new IllegalArgumentException("system_scales are invalid now");
         return new Chebyshev(
             aSymbols, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
-            aWType, aFuseStyle, aFuseWeight,
-            aRFuncScales, aSystemScale, null
+            aWType, aFuseStyle, aFuseWeight
         );
     }
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     public static Chebyshev load(int aTypeNum, Map aMap) {
         int aNMax = ((Number)UT.Code.getWithDefault(aMap, DEFAULT_NMAX, "nmax")).intValue();
         int aWType = getWType_(aMap);
         int aFuseStyle = getFuseStyle_(aMap);
         RowMatrix aFuseWeight = getFuseWeight_(aMap, aWType, aFuseStyle, aTypeNum, aNMax, 0);
-        List<? extends Number> tRFuncScales = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales");
-        Vector aRFuncScales = tRFuncScales==null ? null : Vectors.from(tRFuncScales);
-        List<? extends Number> tSystemScale = (List<? extends Number>)UT.Code.get(aMap, "system_scales");
-        Vector aSystemScale = tSystemScale==null ? null : Vectors.from(tSystemScale);
+        if (aMap.containsKey("rfunc_scales")) throw new IllegalArgumentException("rfunc_scales are invalid now");
+        if (aMap.containsKey("system_scales")) throw new IllegalArgumentException("system_scales are invalid now");
         return new Chebyshev(
             null, aTypeNum, aNMax,
             ((Number)UT.Code.getWithDefault(aMap, DEFAULT_RCUT, "rcut")).doubleValue(),
-            aWType, aFuseStyle, aFuseWeight,
-            aRFuncScales, aSystemScale, null
+            aWType, aFuseStyle, aFuseWeight
         );
     }
     
@@ -146,63 +117,17 @@ public class Chebyshev extends WTypeBasis {
         return aFullCache ? aNN*(mNMax+1 + 1) : (mNMax+1);
     }
     @Override protected int backwardCacheSize_(int aNN) {
-        return mSize;
+        return 0;
     }
     @Override protected int forwardForceCacheSize_(int aNN, boolean aFullCache) {
-        return aFullCache ? (3*aNN*(mNMax+1 + 1) + (mNMax+1) + mSize) : (4*(mNMax+1) + mSize);
+        return aFullCache ? (3*aNN*(mNMax+1 + 1) + (mNMax+1)) : (4*(mNMax+1));
     }
     @Override protected int backwardForceCacheSize_(int aNN) {
         if (mWType==WTYPE_FUSE || mWType==WTYPE_EXFUSE) {
-            return mNMax+1 + mSize;
+            return mNMax+1;
         }
-        return mSize;
+        return 0;
     }
-    
-    @Override public void initScale(List<DoubleList> aNlDxList, List<DoubleList> aNlDyList, List<DoubleList> aNlDzList, List<IntList> aNlTypeList, ParforThreadPool aPool) {
-        mAnyScale[0] = true;
-        // 先初始化径向函数的缩放
-        for (int n = 0; n <= mNMax; ++n) {
-            final int fn = n;
-            double tScale = MathEX.Adv.integral(0.0, 1.0, 1000, r -> Math.abs(MathEX.Func.chebyshev(fn, 1 - 2*r)));
-            mRFuncScale.set(fn, 1.0/tScale);
-        }
-        // 遍历统计系统 scale
-        final int tThreadNum = aPool.threadNumber();
-        final List<Vector> tScaleTotPar = VectorCache.getZeros(mSizeN, tThreadNum);
-        final List<Vector> tScalePar = VectorCache.getVec(mSizeN, tThreadNum);
-        final List<DoubleList> rForwardCachePar = NewCollections.from(tThreadNum, i -> new DoubleList(16));
-        final int tSize = aNlDxList.size();
-        aPool.parfor(tSize, (i, threadID) -> {
-            Vector tScaleTot = tScaleTotPar.get(threadID);
-            Vector tScale = tScalePar.get(threadID);
-            calSystemScale(aNlDxList.get(i), aNlDyList.get(i), aNlDzList.get(i), aNlTypeList.get(i), tScale, rForwardCachePar.get(threadID));
-            tScale.abs2this();
-            tScaleTot.plus2this(tScale);
-        });
-        Vector tScaleTot = tScaleTotPar.get(0);
-        for (int i = 1; i < tThreadNum; ++i) tScaleTot.plus2this(tScaleTotPar.get(i));
-        tScaleTot.div2this(tSize);
-        tScaleTot.operation().ldiv2this(1.0);
-        mSystemScale.fill(tScaleTot);
-        VectorCache.returnVec(tScalePar);
-        VectorCache.returnVec(tScaleTotPar);
-    }
-    void calSystemScale(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rSystemScale, DoubleList rForwardCache) {
-        if (isShutdown()) throw new IllegalStateException("This Basis is dead");
-        validCache_(rForwardCache, forwardCacheSize_(aNlDx.size(), false));
-        calSystemScale0(aNlDx, aNlDy, aNlDz, aNlType, rSystemScale, rForwardCache);
-    }
-    void calSystemScale0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> rSystemScale, IDataShell<double[]> rForwardCache) {
-        int tNN = aNlDx.internalDataSize();
-        calSystemScale1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
-                        rSystemScale.internalDataWithLengthCheck(mSizeN), rSystemScale.internalDataShift(),
-                        rForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, false)), rForwardCache.internalDataShift(),
-                        mTypeNum, mRCut, mNMax, mWType, mFuseSize,
-                        mRFuncScale.internalDataWithLengthCheck());
-    }
-    private static native void calSystemScale1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
-                                               double[] rSystemScale, int aShiftSystemScale, double[] rForwardCache, int aForwardCacheShift,
-                                               int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseSize, double[] aRFuncScale);
     
     @Override
     protected void forward_(DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType, DoubleArrayVector rFp, DoubleArrayVector rForwardCache, boolean aFullCache) {
@@ -248,13 +173,11 @@ public class Chebyshev extends WTypeBasis {
         forward1(aNlDx.internalDataWithLengthCheck(tNN, 0), aNlDy.internalDataWithLengthCheck(tNN, 0), aNlDz.internalDataWithLengthCheck(tNN, 0), aNlType.internalDataWithLengthCheck(tNN, 0), tNN,
                  rFp.internalDataWithLengthCheck(mSize), rFp.internalDataShift(),
                  rForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, aFullCache)), rForwardCache.internalDataShift(), aFullCache,
-                 mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                 mRFuncScale.internalDataWithLengthCheck(), mSystemScale.internalDataWithLengthCheck());
+                 mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void forward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN, double[] rFp, int aShiftFp,
                                         double[] rForwardCache, int aForwardCacheShift, boolean aFullCache,
-                                        int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize,
-                                        double[] aRFuncScale, double[] aSystemScale);
+                                        int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize);
     
     void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> rBackwardCache) {
         assert mFuseWeight != null;
@@ -264,13 +187,12 @@ public class Chebyshev extends WTypeBasis {
                   rGradPara.internalDataWithLengthCheck(mFuseWeight.internalDataSize()), rGradPara.internalDataShift(),
                   aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
                   rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
-                  mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseSize,
-                  mSystemScale.internalDataWithLengthCheck());
+                  mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseSize);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aGradFp, int aShiftGradFp, double[] rGradPara, int aShiftGradPara,
                                          double[] aForwardCache, int aForwardCacheShift, double[] rBackwardCache, int aBackwardCacheShift,
-                                         int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, int aFuseSize, double[] aSystemScale);
+                                         int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, int aFuseSize);
     
     void forwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, IDataShell<double[]> aForwardCache, IDataShell<double[]> rForwardForceCache, boolean aFullCache) {
         int tNN = aNlDx.internalDataSize();
@@ -278,14 +200,12 @@ public class Chebyshev extends WTypeBasis {
                       aNNGrad.internalDataWithLengthCheck(mSize), aNNGrad.internalDataShift(), rFx.internalDataWithLengthCheck(tNN, 0), rFy.internalDataWithLengthCheck(tNN, 0), rFz.internalDataWithLengthCheck(tNN, 0),
                       aForwardCache.internalDataWithLengthCheck(forwardCacheSize_(tNN, true)), aForwardCache.internalDataShift(),
                       rForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, aFullCache)), rForwardForceCache.internalDataShift(), aFullCache,
-                      mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                      mRFuncScale.internalDataWithLengthCheck(), mSystemScale.internalDataWithLengthCheck());
+                      mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void forwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                              double[] aNNGrad, int aShiftNNGrad, double[] rFx, double[] rFy, double[] rFz,
                                              double[] aForwardCache, int aForwardCacheShift, double[] rForwardForceCache, int aForwardForceCacheShift, boolean aFullCache,
-                                             int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize,
-                                             double[] aRFuncScale, double[] aSystemScale);
+                                             int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize);
     
     void backwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                         IDataShell<double[]> aNNGrad, IDataShell<double[]> aGradFx, IDataShell<double[]> aGradFy, IDataShell<double[]> aGradFz,
@@ -302,13 +222,12 @@ public class Chebyshev extends WTypeBasis {
                        aForwardForceCache.internalDataWithLengthCheck(forwardForceCacheSize_(tNN, true)), aForwardForceCache.internalDataShift(),
                        rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
                        rBackwardForceCache.internalDataWithLengthCheck(backwardForceCacheSize_(tNN)), rBackwardForceCache.internalDataShift(), aFixBasis,
-                       mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize,
-                       mSystemScale.internalDataWithLengthCheck());
+                       mTypeNum, mRCut, mNMax, mWType, mFuseStyle, mFuseWeight==null?null:mFuseWeight.internalDataWithLengthCheck(), mFuseSize);
     }
     private static native void backwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                               double[] aNNGrad, int aShiftNNGrad, double[] aGradFx, double[] aGradFy, double[] aGradFz,
                                               double[] rGradNNGrad, int aShiftGradNNGrad, double[] rGradPara, int aShiftGradPara,
                                               double[] aForwardCache, int aForwardCacheShift, double[] aForwardForceCache, int aForwardForceCacheShift,
                                               double[] rBackwardCache, int aBackwardCacheShift, double[] rBackwardForceCache, int rBackwardForceCacheShift, boolean aFixBasis,
-                                              int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize, double[] aSystemScale);
+                                              int aTypeNum, double aRCut, int aNMax, int aWType, int aFuseStyle, double[] aFuseWeight, int aFuseSize);
 }

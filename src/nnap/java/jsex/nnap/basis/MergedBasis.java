@@ -151,12 +151,6 @@ public class MergedBasis extends Basis {
         return false;
     }
     
-    @Override public void initScale(List<DoubleList> aNlDxList, List<DoubleList> aNlDyList, List<DoubleList> aNlDzList, List<IntList> aNlTypeList, ParforThreadPool aPool) {
-        for (MergeableBasis tMergedBasis : mMergedBasis) {
-            tMergedBasis.initScale(aNlDxList, aNlDyList, aNlDzList, aNlTypeList, aPool);
-        }
-    }
-    
     @Override public double rcut() {return mRCut;}
     @Override public int size() {return mSize;}
     @Override public int atomTypeNumber() {return mTypeNum;}

@@ -216,17 +216,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     protected boolean mTrainBasis = false;
     
     /**
-     * 是否进行基组内部的缩放归一化，现在默认会进行，不过目前效果并不显著
-     * @param aFlag 设置值
-     * @return 自身方便链式调用
-     */
-    public Trainer setBasisScale(boolean aFlag) {
-        if (mBasisScale == aFlag) return this;
-        mBasisScale = aFlag;
-        return this;
-    }
-    protected boolean mBasisScale = false;
-    /**
      * 设置基组最大值限制，现在会根据此值在基组归一化时进行缩放限制，提高描述能力
      * @param aValue 设置值
      * @return 自身方便链式调用
@@ -236,17 +225,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         return this;
     }
     protected double mBasisMax = DEFAULT_BASIS_MAX;
-    /**
-     * 设置是否对基组进行归一化，在一些不要求收敛速度的情况下，可以不进行归一化而只采用基组内部归一化的技术
-     * @param aFlag 设置值
-     * @return 自身方便链式调用
-     */
-    public Trainer setBasisNorm(boolean aFlag) {
-        if (mBasisNorm == aFlag) return this;
-        mBasisNorm = aFlag;
-        return this;
-    }
-    protected boolean mBasisNorm = true;
     /**
      * 设置所有种类共享相同的归一化系数，只在初始化归一化系数之前设置才能影响初始化
      * <p>
@@ -719,14 +697,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         if (tShareNorm != null) {
             setShareNorm(tShareNorm);
         }
-        @Nullable Boolean tBasisNorm = (Boolean)UT.Code.get(aArgs, "basis_norm");
-        if (tBasisNorm != null) {
-            setBasisNorm(tBasisNorm);
-        }
-        @Nullable Boolean tBasisScale = (Boolean)UT.Code.get(aArgs, "basis_scale");
-        if (tBasisScale != null) {
-            setBasisScale(tBasisScale);
-        }
         @Nullable Boolean tTrainBasis = (Boolean)UT.Code.get(aArgs, "train_basis");
         if (tTrainBasis != null) {
             setTrainBasis(tTrainBasis);
@@ -1040,14 +1010,12 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             } else {
                 List<? extends Number> tNormSigma = (List<? extends Number>)UT.Code.get(tModelInfo, "norm_sigma", "norm_vec");
                 if (tNormSigma != null) {
-                    mBasisNorm = true;
                     mNormSigma[i].fill(tNormSigma);
                 } else {
                     mNormSigma[i].fill(1.0);
                 }
                 List<? extends Number> tNormMu = (List<? extends Number>)tModelInfo.get("norm_mu");
                 if (tNormMu != null) {
-                    mBasisNorm = true;
                     mNormMu[i].fill(tNormMu);
                 } else {
                     mNormMu[i].fill(0.0);
@@ -1810,77 +1778,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     public IVector trainLoss() {return mTrainLoss.asVec();}
     public IVector testLoss() {return mTestLoss.asVec();}
     
-    protected void initBasisScale() {
-        if (!mBasisScale) return;
-        // 构造近邻列表
-        List<List<DoubleList>> tNlDxListList = new ArrayList<>(mTypeNum);
-        List<List<DoubleList>> tNlDyListList = new ArrayList<>(mTypeNum);
-        List<List<DoubleList>> tNlDzListList = new ArrayList<>(mTypeNum);
-        List<List<IntList>> tNlTypeListList = new ArrayList<>(mTypeNum);
-        for (int ti = 0; ti < mTypeNum; ++ti) {
-            Basis tBasis = mBasis[0][ti];
-            if (tBasis instanceof SharedBasis || tBasis instanceof MirrorBasis) {
-                tNlDxListList.add(null);
-                tNlDyListList.add(null);
-                tNlDzListList.add(null);
-                tNlTypeListList.add(null);
-            } else {
-                tNlDxListList.add(new ArrayList<>(128));
-                tNlDyListList.add(new ArrayList<>(128));
-                tNlDzListList.add(new ArrayList<>(128));
-                tNlTypeListList.add(new ArrayList<>(128));
-            }
-        }
-        for (int i = 0; i < mTrainData.mSize; ++i) {
-            IntVector tAtomType = mTrainData.mAtomType.get(i);
-            int tAtomNum = tAtomType.size();
-            
-            DoubleList[] tNlDx = mTrainData.mNlDx.get(i), tNlDy = mTrainData.mNlDy.get(i), tNlDz = mTrainData.mNlDz.get(i);
-            IntList[] tNlType = mTrainData.mNlType.get(i);
-            
-            for (int k = 0; k < tAtomNum; ++k) {
-                DoubleList tSubNlDx = tNlDx[k], tSubNlDy = tNlDy[k], tSubNlDz = tNlDz[k];
-                IntList tSubNlType = tNlType[k];
-                
-                int tType = tAtomType.get(k);
-                Basis tSubBasis = mBasis[0][tType-1];
-                if (tSubBasis instanceof SharedBasis) {
-                    tType = ((SharedBasis)tSubBasis).sharedType();
-                }
-                if (tSubBasis instanceof MirrorBasis) {
-                    final int tMirrorType = ((MirrorBasis)tSubBasis).mirrorType();
-                    final int tThisType = ((MirrorBasis)tSubBasis).thisType();
-                    final IntList fSubNlType = new IntList(tSubNlType.size());
-                    tSubNlType.forEach(type -> {
-                        if (type == tThisType) fSubNlType.add(tMirrorType);
-                        else if (type == tMirrorType) fSubNlType.add(tThisType);
-                        else fSubNlType.add(type);
-                    });
-                    tSubNlType = fSubNlType;
-                    tType = tMirrorType;
-                }
-                tNlDxListList.get(tType-1).add(tSubNlDx);
-                tNlDyListList.get(tType-1).add(tSubNlDy);
-                tNlDzListList.get(tType-1).add(tSubNlDz);
-                tNlTypeListList.get(tType-1).add(tSubNlType);
-            }
-        }
-        // 根据近邻列表调用 scale
-        for (int ti = 0; ti < mTypeNum; ++ti) {
-            Basis tBasis = mBasis[0][ti];
-            if (!(tBasis instanceof SharedBasis) && !(tBasis instanceof MirrorBasis)) {
-                tBasis.initScale(tNlDxListList.get(ti), tNlDyListList.get(ti), tNlDzListList.get(ti), tNlTypeListList.get(ti), pool());
-            }
-        }
-    }
     protected void initNormBasis() {
-        if (!mBasisNorm) {
-            for (int i = 0; i < mTypeNum; ++i) {
-                mNormMu[i].fill(0.0);
-                mNormSigma[i].fill(1.0);
-            }
-            return;
-        }
         for (int i = 0; i < mTypeNum; ++i) {
             mNormMu[i].fill(0.0);
             mNormSigma[i].fill(0.0);
@@ -2147,7 +2045,6 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         // 初始化归一化参数，现在只会初始化一次
         if (!mNormInit) {
             if (aPrintLog) System.out.println("Init train data...");
-            initBasisScale();
             initNormEng();
             initNormBasis();
             mNormInit = true;
@@ -2326,10 +2223,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             Map rNN = new LinkedHashMap();
             mNN[0][i].save(rNN);
             rModel.put("ref_eng", mRefEngs.get(i));
-            if (mBasisNorm) {
-                rModel.put("norm_mu", mNormMu[i].asList());
-                rModel.put("norm_sigma", mNormSigma[i].asList());
-            }
+            rModel.put("norm_mu", mNormMu[i].asList());
+            rModel.put("norm_sigma", mNormSigma[i].asList());
             rModel.put("nn", rNN);
             rModels.add(rModel);
         }

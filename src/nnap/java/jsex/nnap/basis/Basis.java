@@ -4,18 +4,15 @@ import jse.atom.AtomicParameterCalculator;
 import jse.atom.IAtomData;
 import jse.atom.IHasSymbol;
 import jse.cache.VectorCache;
-import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.code.io.ISavable;
 import jse.math.vector.*;
 import jse.parallel.IAutoShutdown;
-import jse.parallel.ParforThreadPool;
 import jsex.nnap.NNAP;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
@@ -113,47 +110,6 @@ public abstract class Basis implements IHasSymbol, ISavable, IAutoShutdown {
     public @Nullable IVector parameters() {return null;}
     /** @return 是否确实存在可拟合的参数 */
     public boolean hasParameters() {return false;}
-    
-    /** 根据训练集数据初始化内部归一化系数 */
-    public final void initScale(List<? extends IAtomData> aDataList) {
-        initScale(aDataList, -1);
-    }
-    public final void initScale(List<? extends IAtomData> aDataList, int aType) {
-        final double tRCut = rcut();
-        final int tTypeNum = atomTypeNumber();
-        List<DoubleList> rNlDxList = new ArrayList<>(16);
-        List<DoubleList> rNlDyList = new ArrayList<>(16);
-        List<DoubleList> rNlDzList = new ArrayList<>(16);
-        List<IntList> rNlTypeList = new ArrayList<>(16);
-        for (IAtomData tData : aDataList) try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(tData)) {
-            final int tAtomNum = tData.atomNumber();
-            final IntUnaryOperator tTypeMap = hasSymbol() ? typeMap(tData) : type->type;
-            for (int i = 0; i < tAtomNum; ++i) {
-                if (aType > 0) {
-                    int cType = tTypeMap.applyAsInt(tAPC.atomType_().get(i));
-                    if (aType != cType) continue;
-                }
-                final DoubleList tNlDx = new DoubleList(16);
-                final DoubleList tNlDy = new DoubleList(16);
-                final DoubleList tNlDz = new DoubleList(16);
-                final IntList tNlType = new IntList(16);
-                tAPC.nl_().forEachNeighbor(i, tRCut, (dx, dy, dz, idx) -> {
-                    int type = tTypeMap.applyAsInt(tAPC.atomType_().get(idx));
-                    if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
-                    // 简单缓存近邻列表
-                    tNlDx.add(dx); tNlDy.add(dy); tNlDz.add(dz);
-                    tNlType.add(type);
-                });
-                tNlDx.trimToSize(); tNlDy.trimToSize(); tNlDz.trimToSize();
-                tNlType.trimToSize();
-                rNlDxList.add(tNlDx); rNlDyList.add(tNlDy); rNlDzList.add(tNlDz);
-                rNlTypeList.add(tNlType);
-            }
-        }
-        initScale(rNlDxList, rNlDyList, rNlDzList, rNlTypeList, UT.Par.pool(1));
-    }
-    @ApiStatus.Internal
-    public void initScale(List<DoubleList> aNlDxList, List<DoubleList> aNlDyList, List<DoubleList> aNlDzList, List<IntList> aNlTypeList, ParforThreadPool aPool) {/**/}
     
     /** @return 基组需要的近邻截断半径 */
     public abstract double rcut();

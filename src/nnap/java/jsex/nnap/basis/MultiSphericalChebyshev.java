@@ -44,10 +44,9 @@ public class MultiSphericalChebyshev extends MergeableBasis {
     final double[] mEquFuseScale;
     
     final Vector mRFuncScale;
-    final Vector mSystemScale;
     
     MultiSphericalChebyshev(String @Nullable[] aSymbols, int aTypeNum, int aNMax, int aLMax, int aL3Max, int aL4Max, Vector aRCutsL, Vector aRCutsR,
-                            Vector aEquFuseWeight, double[] aEquFuseScale, Vector aRFuncScale, Vector aSystemScale) {
+                            Vector aEquFuseWeight, double[] aEquFuseScale, Vector aRFuncScale) {
         if (aTypeNum <= 0) throw new IllegalArgumentException("Inpute ntypes MUST be Positive, input: "+aTypeNum);
         if (aNMax<1 || aNMax>20) throw new IllegalArgumentException("Input nmax MUST be in [1, 20], input: "+aNMax);
         if (aLMax<0 || aLMax>12) throw new IllegalArgumentException("Input lmax MUST be in [0, 12], input: "+aLMax);
@@ -73,7 +72,7 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         for (int i = 0; i < mRCutsSize; ++i) {
             if (mRCutsL.get(i) >= mRCutsR.get(i)) throw new IllegalArgumentException("rcut_l must be less than rcut_r: "+mRCutsL+" vs "+mRCutsR);
         }
-        mEquFuseInDim = mRCutsSize*(mNMax+1);
+        mEquFuseInDim = getEquFuseInDim(mNMax, mRCutsSize);
         
         mEquFuseWeight = aEquFuseWeight;
         mEquFuseOutDim = mEquFuseWeight.size()/mEquFuseInDim;
@@ -82,14 +81,16 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         if (mEquFuseWeight.size()!=mEquFuseInDim*mEquFuseOutDim) throw new IllegalArgumentException("Size of equfuse weight mismatch");
         mSize = mEquFuseOutDim*mSizeL;
         
-        mRFuncScale = aRFuncScale==null ? Vector.ones(mNMax) : aRFuncScale;
-        mSystemScale = aSystemScale==null ? Vector.ones(mEquFuseInDim*(mLMax+1)) : aSystemScale;
-        if (mRFuncScale.size()!=mNMax) throw new IllegalArgumentException("Size of rfunc scale mismatch");
-        if (mSystemScale.size()!=mEquFuseInDim*(mLMax+1)) throw new IllegalArgumentException("Size of system scale mismatch");
+        mRFuncScale = aRFuncScale;
+        if (mRFuncScale.size()!=mEquFuseInDim) throw new IllegalArgumentException("Size of rfunc scale mismatch");
     }
     
     @Override public MultiSphericalChebyshev threadSafeRef() {
-        return new MultiSphericalChebyshev(mSymbols, mTypeNum, mNMax, mLMax, mL3Max, mL4Max, mRCutsL, mRCutsR, mEquFuseWeight, mEquFuseScale, mRFuncScale, mSystemScale);
+        return new MultiSphericalChebyshev(mSymbols, mTypeNum, mNMax, mLMax, mL3Max, mL4Max, mRCutsL, mRCutsR, mEquFuseWeight, mEquFuseScale, mRFuncScale);
+    }
+    
+    static int getEquFuseInDim(int aNMax, int aRCutsSize) {
+        return aRCutsSize *(aNMax+1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -102,7 +103,6 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         rSaveTo.put("rcuts_l", mRCutsL.asList());
         rSaveTo.put("rcuts_r", mRCutsR.asList());
         rSaveTo.put("rfunc_scales", mRFuncScale.asList());
-        rSaveTo.put("system_scales", mSystemScale.asList());
         rSaveTo.put("equfuse_size", mEquFuseOutDim);
         rSaveTo.put("equfuse_weight", mEquFuseWeight.asList());
         rSaveTo.put("equfuse_scale", mEquFuseScale[0]);
@@ -123,19 +123,18 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         if (aRCutsL==null) {
             aRCutsL = aRCutsR.copy(); aRCutsL.negative2this();
         }
+        int tEquFuseInDim = getEquFuseInDim(aNMax, tRCutsR.size());
         Object tEquFuseSize = UT.Code.get(aMap, "equfuse_size");
         if (tEquFuseSize==null) throw new IllegalArgumentException("Key `equfuse_size` required for multi_spherical_chebyshev");
         int aEquFuseSize = ((Number)tEquFuseSize).intValue();
         double aEquFuseScale = ((Number)UT.Code.getWithDefault(aMap, 1.0, "equfuse_scale")).doubleValue();
-        Vector aEquFuseWeight = getEquFuseWeight_(aMap, tRCutsR.size()*(aNMax+1), aEquFuseSize);
+        Vector aEquFuseWeight = getEquFuseWeight_(aMap, tEquFuseInDim, aEquFuseSize);
         List<? extends Number> tRFuncScale = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales");
-        Vector aRFuncScales = tRFuncScale==null ? null : Vectors.from(tRFuncScale);
-        List<? extends Number> tSystemScale = (List<? extends Number>)UT.Code.get(aMap, "system_scales");
-        Vector aSystemScale = tSystemScale==null ? null : Vectors.from(tSystemScale);
+        Vector aRFuncScales = tRFuncScale==null ? Vectors.ones(tEquFuseInDim) : Vectors.from(tRFuncScale);
         return new MultiSphericalChebyshev(
             aSymbols, aTypeNum, aNMax, aLMax, aL3Max, aL4Max,
             aRCutsL, aRCutsR,
-            aEquFuseWeight, new double[]{aEquFuseScale}, aRFuncScales, aSystemScale
+            aEquFuseWeight, new double[]{aEquFuseScale}, aRFuncScales
         );
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -152,19 +151,18 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         if (aRCutsL==null) {
             aRCutsL = aRCutsR.copy(); aRCutsL.negative2this();
         }
+        int tEquFuseInDim = getEquFuseInDim(aNMax, tRCutsR.size());
         Object tEquFuseSize = UT.Code.get(aMap, "equfuse_size");
         if (tEquFuseSize==null) throw new IllegalArgumentException("Key `equfuse_size` required for multi-type spherical chebyshev");
         int aEquFuseSize = ((Number)tEquFuseSize).intValue();
         double aEquFuseScale = ((Number)UT.Code.getWithDefault(aMap, 1.0, "equfuse_scale")).doubleValue();
-        Vector aEquFuseWeight = getEquFuseWeight_(aMap, tRCutsR.size()*(aNMax+1), aEquFuseSize);
+        Vector aEquFuseWeight = getEquFuseWeight_(aMap, tEquFuseInDim, aEquFuseSize);
         List<? extends Number> tRFuncScale = (List<? extends Number>)UT.Code.get(aMap, "rfunc_scales");
-        Vector aRFuncScales = tRFuncScale ==null ? null : Vectors.from(tRFuncScale);
-        List<? extends Number> tSystemScale = (List<? extends Number>)UT.Code.get(aMap, "system_scales");
-        Vector aSystemScale = tSystemScale==null ? null : Vectors.from(tSystemScale);
+        Vector aRFuncScales = tRFuncScale ==null ? Vectors.ones(tEquFuseInDim) : Vectors.from(tRFuncScale);
         return new MultiSphericalChebyshev(
             null, aTypeNum, aNMax, aLMax, aL3Max, aL4Max,
             aRCutsL, aRCutsR,
-            aEquFuseWeight, new double[]{aEquFuseScale}, aRFuncScales, aSystemScale
+            aEquFuseWeight, new double[]{aEquFuseScale}, aRFuncScales
         );
     }
     
@@ -188,6 +186,30 @@ public class MultiSphericalChebyshev extends MergeableBasis {
         }
         // 在这个经验设定下，scale 设置为此值确保输出的基组值数量级一致
         mEquFuseScale[0] = MathEX.Fast.sqrt(1.0 / mEquFuseInDim);
+        // 此时也经验设置 rfunc scale
+        double tBase = MathEX.Adv.integral(0.0, mRCutMax, 1000, r -> {
+            double x = r / mRCutMax;
+            x = 1 - x*x;
+            x = x*x;
+            return r*r * x*x;
+        });
+        for (int k = 0, i = 0; k < mRCutsSize; ++k) {
+            final double rcutL = mRCutsL.get(k);
+            final double rcutR = mRCutsR.get(k);
+            for (int n = 0; n <= mNMax; ++n, ++i) {
+                final int fn = n;
+                double tScale = MathEX.Adv.integral(Math.max(rcutL, 0.0), rcutR, 1000, r -> {
+                    double x = (r-rcutL) / (rcutR-rcutL);
+                    x = x+x - 1;
+                    x = 1 - x*x;
+                    x = x*x;
+                    double fcut = x*x;
+                    double cheby = Math.abs(MathEX.Func.chebyshev(fn, 1 - 2*(r/mRCutMax)));
+                    return r*r * fcut * cheby;
+                });
+                mRFuncScale.set(i, tBase / tScale);
+            }
+        }
     }
     @Override public IVector parameters() {
         return mEquFuseWeight;
@@ -282,14 +304,14 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                  mTypeNum, mRCutMax, mRCutsL.internalDataWithLengthCheck(), mRCutsR.internalDataWithLengthCheck(), mRCutsSize,
                  mNMax, mLMax, mL3Max, mL4Max,
                  mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0],
-                 mRFuncScale.internalDataWithLengthCheck(), mSystemScale.internalDataWithLengthCheck());
+                 mRFuncScale.internalDataWithLengthCheck());
     }
     private static native void forward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN, double[] rFp, int aShiftFp,
                                         double[] rForwardCache, int aForwardCacheShift, boolean aFullCache,
                                         int aTypeNum, double aRCutMax, double[] aRCutsL, double[] aRCutsR, int aRCutsSize,
                                         int aNMax, int aLMax, int aL3Max, int aL4Max,
                                         double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale,
-                                        double[] aRFuncScale, double[] aSystemScale);
+                                        double[] aRFuncScale);
     
     void backward0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aGradFp, IDataShell<double[]> rGradPara, IDataShell<double[]> aForwardCache, IDataShell<double[]> rBackwardCache) {
         int tNN = aNlDx.internalDataSize();
@@ -301,16 +323,14 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                   rBackwardCache.internalDataWithLengthCheck(backwardCacheSize_(tNN)), rBackwardCache.internalDataShift(),
                   mTypeNum, mRCutMax, mRCutsL.internalDataWithLengthCheck(), mRCutsR.internalDataWithLengthCheck(), mRCutsSize,
                   mNMax, mLMax, mL3Max, mL4Max,
-                  mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0],
-                  mSystemScale.internalDataWithLengthCheck());
+                  mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0]);
     }
     private static native void backward1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                          double[] aGradFp, int aShiftGradFp, double[] rGradPara, int aShiftGradPara,
                                          double[] aForwardCache, int aForwardCacheShift, double[] rBackwardCache, int aBackwardCacheShift,
                                          int aTypeNum, double aRCutMax, double[] aRCutsL, double[] aRCutsR, int aRCutsSize,
                                          int aNMax, int aLMax, int aL3Max, int aL4Max,
-                                         double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale,
-                                         double[] aSystemScale);
+                                         double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale);
     
     void forwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType, IDataShell<double[]> aNNGrad, IDataShell<double[]> rFx, IDataShell<double[]> rFy, IDataShell<double[]> rFz, IDataShell<double[]> aForwardCache, IDataShell<double[]> rForwardForceCache, boolean aFullCache) {
         int tNN = aNlDx.internalDataSize();
@@ -321,7 +341,7 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                       mTypeNum, mRCutMax, mRCutsL.internalDataWithLengthCheck(), mRCutsR.internalDataWithLengthCheck(), mRCutsSize,
                       mNMax, mLMax, mL3Max, mL4Max,
                       mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0],
-                      mRFuncScale.internalDataWithLengthCheck(), mSystemScale.internalDataWithLengthCheck());
+                      mRFuncScale.internalDataWithLengthCheck());
     }
     private static native void forwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                              double[] aNNGrad, int aShiftNNGrad, double[] rFx, double[] rFy, double[] rFz,
@@ -329,7 +349,7 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                                              int aTypeNum, double aRCutMax, double[] aRCutsL, double[] aRCutsR, int aRCutsSize,
                                              int aNMax, int aLMax, int aL3Max, int aL4Max,
                                              double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale,
-                                             double[] aRFuncScale, double[] aSystemScale);
+                                             double[] aRFuncScale);
     
     void backwardForce0(IDataShell<double[]> aNlDx, IDataShell<double[]> aNlDy, IDataShell<double[]> aNlDz, IDataShell<int[]> aNlType,
                         IDataShell<double[]> aNNGrad, IDataShell<double[]> aGradFx, IDataShell<double[]> aGradFy, IDataShell<double[]> aGradFz,
@@ -349,8 +369,7 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                        rBackwardForceCache.internalDataWithLengthCheck(backwardForceCacheSize_(tNN)), rBackwardForceCache.internalDataShift(), aFixBasis,
                        mTypeNum, mRCutMax, mRCutsL.internalDataWithLengthCheck(), mRCutsR.internalDataWithLengthCheck(), mRCutsSize,
                        mNMax, mLMax, mL3Max, mL4Max,
-                       mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0],
-                       mSystemScale.internalDataWithLengthCheck());
+                       mEquFuseWeight.internalDataWithLengthCheck(), mEquFuseOutDim, mEquFuseScale[0]);
     }
     private static native void backwardForce1(double[] aNlDx, double[] aNlDy, double[] aNlDz, int[] aNlType, int aNN,
                                               double[] aNNGrad, int aShiftNNGrad, double[] aGradFx, double[] aGradFy, double[] aGradFz,
@@ -359,6 +378,5 @@ public class MultiSphericalChebyshev extends MergeableBasis {
                                               double[] rBackwardCache, int aBackwardCacheShift, double[] rBackwardForceCache, int aBackwardForceCacheShift, boolean aFixBasis,
                                               int aTypeNum, double aRCutMax, double[] aRCutsL, double[] aRCutsR, int aRCutsSize,
                                               int aNMax, int aLMax, int aL3Max, int aL4Max,
-                                              double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale,
-                                              double[] aSystemScale);
+                                              double[] aEquFuseWeight, int aEquFuseOutDim, double aEquFuseScale);
 }

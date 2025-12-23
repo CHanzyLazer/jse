@@ -6,11 +6,11 @@
 namespace JSE_NNAP {
 
 template <jint NMAX, jint LMAX>
-static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn) noexcept {
+static void mplusCnlmMulti(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jdouble *aRFuncScale) noexcept {
     constexpr jint tLMAll = (LMAX+1)*(LMAX+1);
     jdouble *tCnlm = rCnlm;
     for (jint n = 0; n <= NMAX; ++n) {
-        const jdouble tMul = aFc*aRn[n];
+        const jdouble tMul = aFc*aRn[n]*aRFuncScale[n];
         for (jint k = 0; k < tLMAll; ++k) {
             const jdouble tValue = tMul*aY[k];
             tCnlm[k] += tValue;
@@ -19,47 +19,47 @@ static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn) 
     }
 }
 template <jint LMAX>
-static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jint aNMax) noexcept {
+static void mplusCnlmMulti(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jdouble *aRFuncScale, jint aNMax) noexcept {
     switch (aNMax) {
-    case 0: {mplusCnlmMl<0, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 1: {mplusCnlmMl<1, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 2: {mplusCnlmMl<2, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 3: {mplusCnlmMl<3, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 4: {mplusCnlmMl<4, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 5: {mplusCnlmMl<5, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 6: {mplusCnlmMl<6, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 7: {mplusCnlmMl<7, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 8: {mplusCnlmMl<8, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 9: {mplusCnlmMl<9, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 10: {mplusCnlmMl<10, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 11: {mplusCnlmMl<11, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 12: {mplusCnlmMl<12, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 13: {mplusCnlmMl<13, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 14: {mplusCnlmMl<14, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 15: {mplusCnlmMl<15, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 16: {mplusCnlmMl<16, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 17: {mplusCnlmMl<17, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 18: {mplusCnlmMl<18, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 19: {mplusCnlmMl<19, LMAX>(rCnlm, aY, aFc, aRn); return;}
-    case 20: {mplusCnlmMl<20, LMAX>(rCnlm, aY, aFc, aRn); return;}
+    case 0: {mplusCnlmMulti<0, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 1: {mplusCnlmMulti<1, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 2: {mplusCnlmMulti<2, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 3: {mplusCnlmMulti<3, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 4: {mplusCnlmMulti<4, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 5: {mplusCnlmMulti<5, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 6: {mplusCnlmMulti<6, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 7: {mplusCnlmMulti<7, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 8: {mplusCnlmMulti<8, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 9: {mplusCnlmMulti<9, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 10: {mplusCnlmMulti<10, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 11: {mplusCnlmMulti<11, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 12: {mplusCnlmMulti<12, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 13: {mplusCnlmMulti<13, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 14: {mplusCnlmMulti<14, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 15: {mplusCnlmMulti<15, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 16: {mplusCnlmMulti<16, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 17: {mplusCnlmMulti<17, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 18: {mplusCnlmMulti<18, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 19: {mplusCnlmMulti<19, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
+    case 20: {mplusCnlmMulti<20, LMAX>(rCnlm, aY, aFc, aRn, aRFuncScale); return;}
     default: {return;}
     }
 }
-static void mplusCnlmMl(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jint aNMax, jint aLMax) noexcept {
+static void mplusCnlmMulti(jdouble *rCnlm, jdouble *aY, jdouble aFc, jdouble *aRn, jdouble *aRFuncScale, jint aNMax, jint aLMax) noexcept {
     switch (aLMax) {
-    case 0: {mplusCnlmMl<0>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 1: {mplusCnlmMl<1>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 2: {mplusCnlmMl<2>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 3: {mplusCnlmMl<3>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 4: {mplusCnlmMl<4>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 5: {mplusCnlmMl<5>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 6: {mplusCnlmMl<6>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 7: {mplusCnlmMl<7>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 8: {mplusCnlmMl<8>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 9: {mplusCnlmMl<9>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 10: {mplusCnlmMl<10>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 11: {mplusCnlmMl<11>(rCnlm, aY, aFc, aRn, aNMax); return;}
-    case 12: {mplusCnlmMl<12>(rCnlm, aY, aFc, aRn, aNMax); return;}
+    case 0: {mplusCnlmMulti<0>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 1: {mplusCnlmMulti<1>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 2: {mplusCnlmMulti<2>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 3: {mplusCnlmMulti<3>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 4: {mplusCnlmMulti<4>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 5: {mplusCnlmMulti<5>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 6: {mplusCnlmMulti<6>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 7: {mplusCnlmMulti<7>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 8: {mplusCnlmMulti<8>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 9: {mplusCnlmMulti<9>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 10: {mplusCnlmMulti<10>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 11: {mplusCnlmMulti<11>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
+    case 12: {mplusCnlmMulti<12>(rCnlm, aY, aFc, aRn, aRFuncScale, aNMax); return;}
     default: {return;}
     }
 }
