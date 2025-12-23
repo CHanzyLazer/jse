@@ -19,14 +19,14 @@ extern "C" {
 #define jsex_nnap_basis_Chebyshev_WTYPE_FUSE 4L
 #undef jsex_nnap_basis_Chebyshev_WTYPE_EXFUSE
 #define jsex_nnap_basis_Chebyshev_WTYPE_EXFUSE 6L
-#undef jsex_nnap_basis_Chebyshev_FUSE_STYLE_LIMITED
-#define jsex_nnap_basis_Chebyshev_FUSE_STYLE_LIMITED 0L
-#undef jsex_nnap_basis_Chebyshev_FUSE_STYLE_EXTENSIVE
-#define jsex_nnap_basis_Chebyshev_FUSE_STYLE_EXTENSIVE 1L
 #undef jsex_nnap_basis_Chebyshev_DEFAULT_NMAX
 #define jsex_nnap_basis_Chebyshev_DEFAULT_NMAX 5L
 #undef jsex_nnap_basis_Chebyshev_DEFAULT_RCUT
 #define jsex_nnap_basis_Chebyshev_DEFAULT_RCUT 6.0
+#undef jsex_nnap_basis_Chebyshev_FUSE_STYLE_LIMITED
+#define jsex_nnap_basis_Chebyshev_FUSE_STYLE_LIMITED 0L
+#undef jsex_nnap_basis_Chebyshev_FUSE_STYLE_EXTENSIVE
+#define jsex_nnap_basis_Chebyshev_FUSE_STYLE_EXTENSIVE 1L
 /*
  * Class:     jsex_nnap_basis_Chebyshev
  * Method:    forward1

@@ -83,7 +83,7 @@ static void calFp(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aNlType,
     // do cal
     calCnlm(aNlDx, aNlDy, aNlDz, aNlType, aNN, rCnlm, rForwardCacheElse, aFullCache, aRCutMax, aRCutsL, aRCutsR, aRCutsSize, aNMax, aLMax, aRFuncScale);
     // cnlm -> anlm
-    mplusAnlm<FUSE_STYLE_LIMITED>(rAnlm, rCnlm, aEquFuseWeight, aEquFuseOutDim, tEquFuseInDim, aLMax);
+    mplusAnlm(rAnlm, rCnlm, aEquFuseWeight, aEquFuseOutDim, tEquFuseInDim, aLMax);
     // scale anlm here
     multiply(rAnlm, aEquFuseScale, tSizeAnlm);
     // cal L2 L3 L4
@@ -124,7 +124,7 @@ static void calBackwardMainLoop(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, 
             const jdouble tRCutR = aRCutsR[k];
             if (dis<=tRCutL || dis>=tRCutR) continue;
             jdouble fc = tFc[k];
-            // mplusGradParaFuse<FSTYLE>(aGradCnlm, tBnlm, rGradPara, type, aFuseSize, aNMax, aLMaxMax);
+            // mplusGradParaFuse(aGradCnlm, tBnlm, rGradPara, type, aFuseSize, aNMax, aLMaxMax);
         }
     }
 }
@@ -158,9 +158,9 @@ static void calBackward(jdouble *aNlDx, jdouble *aNlDy, jdouble *aNlDz, jint *aN
     jdouble *tGradPara = rGradPara;
     // scale anlm here
     multiply(rGradAnlm, aEquFuseScale, tSizeAnlm);
-    mplusGradParaPostFuse<FUSE_STYLE_LIMITED>(rGradAnlm, tCnlm, tGradPara, aEquFuseOutDim, tEquFuseInDim, aLMax);
+    mplusGradParaPostFuse(rGradAnlm, tCnlm, tGradPara, aEquFuseOutDim, tEquFuseInDim, aLMax);
     // anlm -> cnlm
-    mplusGradAnlm<FUSE_STYLE_LIMITED>(rGradAnlm, rGradCnlm, aEquFuseWeight, aEquFuseOutDim, tEquFuseInDim, aLMax);
+    mplusGradAnlm(rGradAnlm, rGradCnlm, aEquFuseWeight, aEquFuseOutDim, tEquFuseInDim, aLMax);
     // plus to para
     calBackwardMainLoop(aNlDx, aNlDy, aNlDz, aNlType, aNN, rGradPara, rGradCnlm, tForwardCacheElse, rBackwardCacheElse, aRCutMax, aRCutsL, aRCutsR, aRCutsSize, aNMax, aLMax);
 }
