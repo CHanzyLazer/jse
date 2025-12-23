@@ -763,7 +763,7 @@ static inline jdouble calFc(jdouble aDis, jdouble aRCut) noexcept {
     return pow4(1.0 - pow2(aDis/aRCut));
 }
 static inline jdouble calFc(jdouble aDis, jdouble aRCutL, jdouble aRCutR) noexcept {
-    const double tX = (aDis-aRCutL)/(aRCutR-aRCutL);
+    const jdouble tX = (aDis-aRCutL)/(aRCutR-aRCutL);
     return pow4(1.0 - pow2(tX+tX - 1.0));
 }
 template <jint N>
@@ -802,6 +802,16 @@ static inline void calFcPxyz(jdouble *rFcPx, jdouble *rFcPy, jdouble *rFcPz,
                              jdouble aDis, jdouble aRCut, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
     jdouble fcMul = 1.0 - pow2(aDis/aRCut);
     jdouble fcPMul = 8.0 * pow3(fcMul) / (aRCut*aRCut);
+    *rFcPx = aDx * fcPMul;
+    *rFcPy = aDy * fcPMul;
+    *rFcPz = aDz * fcPMul;
+}
+static inline void calFcPxyz(jdouble *rFcPx, jdouble *rFcPy, jdouble *rFcPz,
+                             jdouble aDis, jdouble aRCutL, jdouble aRCutR, jdouble aDx, jdouble aDy, jdouble aDz) noexcept {
+    const jdouble tRCutRL = aRCutR-aRCutL;
+    const jdouble tX = (aDis-aRCutL)/tRCutRL;
+    jdouble fcMul = 1.0 - pow2(tX+tX - 1.0);
+    jdouble fcPMul = 16.0 * pow3(fcMul) * (2.0 - (aRCutL+aRCutR)/aDis) / (tRCutRL*tRCutRL);
     *rFcPx = aDx * fcPMul;
     *rFcPy = aDy * fcPMul;
     *rFcPz = aDz * fcPMul;
