@@ -234,7 +234,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
      * @return 自身方便链式调用
      */
     public Trainer setShareNorm(boolean aFlag) {
-        if (mShareNorm == aFlag) return this;
+        if (mShareNorm!=null &&  mShareNorm==aFlag) return this;
         if (aFlag) {
             // 检测基组长度是否相等
             int tBasisSize = mBasisSizes[0];
@@ -245,7 +245,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
         mShareNorm = aFlag;
         return this;
     }
-    protected boolean mShareNorm = false;
+    protected @Nullable Boolean mShareNorm = null;
+    protected boolean mSharedBasis = true;
     
     protected double mEnergyWeight = DEFAULT_ENERGY_WEIGHT;
     public Trainer setEnergyWeight(double aWeight) {
@@ -413,6 +414,13 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 UT.Code.warning("RefEng of mirror mismatch for type: "+(i+1)+", overwrite with mirror values automatically");
             }
             mRefEngs.set(i, tRefEng);
+        }
+        // 简单遍历识别 shared 基组情况
+        for (int i = 1; i < mSymbols.length; ++i) {
+            if (!(mBasis[0][i] instanceof SharedBasis)) {
+                mSharedBasis = false;
+                break;
+            }
         }
         
         mTrainData = new DataSet();
@@ -1779,6 +1787,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
     public IVector testLoss() {return mTestLoss.asVec();}
     
     protected void initNormBasis() {
+        final boolean tShareNorm = mShareNorm==null ? mSharedBasis : mShareNorm;
         for (int i = 0; i < mTypeNum; ++i) {
             mNormMu[i].fill(0.0);
             mNormSigma[i].fill(0.0);
@@ -1832,11 +1841,11 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 Vector tSubFp = tFp[tType-1];
                 tSubBasis.eval(tNlDx[k], tNlDy[k], tNlDz[k], tNlType[k], tSubFp);
                 // 统计归一化系数
-                tNormMu[mShareNorm?0:(tType-1)].plus2this(tSubFp);
-                tNormSigma[mShareNorm?0:(tType-1)].operation().operate2this(tSubFp, (lhs, rhs) -> lhs + rhs * rhs);
-                tMax[mShareNorm?0:(tType-1)].operation().operate2this(tSubFp, Math::max);
-                tMin[mShareNorm?0:(tType-1)].operation().operate2this(tSubFp, Math::min);
-                tDiv.increment(mShareNorm?0:(tType-1));
+                tNormMu[tShareNorm?0:(tType-1)].plus2this(tSubFp);
+                tNormSigma[tShareNorm?0:(tType-1)].operation().operate2this(tSubFp, (lhs, rhs) -> lhs + rhs * rhs);
+                tMax[tShareNorm?0:(tType-1)].operation().operate2this(tSubFp, Math::max);
+                tMin[tShareNorm?0:(tType-1)].operation().operate2this(tSubFp, Math::min);
+                tDiv.increment(tShareNorm?0:(tType-1));
             }
         });
         for (int ti = 1; ti < tThreadNum; ++ti) {
@@ -1853,7 +1862,7 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
             mNormDiv.plus2this(tDivPar[ti]);
             IntVectorCache.returnVec(tDivPar[ti]);
         }
-        for (int i = 0; i < mTypeNum; ++i) if ((mShareNorm && i==0) || (!mShareNorm && !(mBasis[0][i] instanceof MirrorBasis))) {
+        for (int i = 0; i < mTypeNum; ++i) if ((tShareNorm && i==0) || (!tShareNorm && !(mBasis[0][i] instanceof MirrorBasis))) {
             int tDivI = mNormDiv.get(i);
             if (tDivI == 0) {
                 UT.Code.warning("number of atoms of type `"+mSymbols[i]+"` is zero, check your input or dataset.");
@@ -1873,8 +1882,8 @@ public class Trainer extends AbstractThreadPool<ParforThreadPool> implements IHa
                 });
             }
         }
-        for (int i = 0; i < mTypeNum; ++i) if ((mShareNorm && i!=0) || (!mShareNorm && (mBasis[0][i] instanceof MirrorBasis))) {
-            int tMirrorIdx = mShareNorm ? 0 : (((MirrorBasis)mBasis[0][i]).mirrorType()-1);
+        for (int i = 0; i < mTypeNum; ++i) if ((tShareNorm && i!=0) || (!tShareNorm && (mBasis[0][i] instanceof MirrorBasis))) {
+            int tMirrorIdx = tShareNorm ? 0 : (((MirrorBasis)mBasis[0][i]).mirrorType()-1);
             mNormMu[i].fill(mNormMu[tMirrorIdx]);
             mNormSigma[i].fill(mNormSigma[tMirrorIdx]);
         }
