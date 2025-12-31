@@ -5,7 +5,6 @@ import jse.code.OS;
 import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION;
@@ -38,7 +37,7 @@ public class Dlfcn {
          * 自定义构建 dlfcnjni 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_DLFCN");
         
         /**
          * 自定义构建 dlfcnjni 时使用的编译器，

@@ -39,7 +39,7 @@ public class MiMalloc {
          * 自定义构建 mimalloc 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_MIMALLOC");
         
         /**
          * 自定义构建 mimalloc 时使用的编译器，

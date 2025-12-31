@@ -6,7 +6,6 @@ import jse.code.UT;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION;
@@ -37,7 +36,7 @@ public class CPointer {
          * 自定义构建 cpointer 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_CPOINTER");
         
         /**
          * 自定义构建 cpointer 时使用的编译器，

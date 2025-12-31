@@ -178,6 +178,35 @@ public class OS {
         String tEnv = env(aName);
         return tEnv==null ? aDefault : tEnv.trim().split(File.pathSeparator);
     }
+    
+    /**
+     * 从环境变量获取 map 属性，认为采用 {@code k1:v1,k2:v2,...} 的格式排列
+     * @param aName 需要获取的 map 环境变量名称
+     * @return {@link Map} 对象，如果不存在或者获取失败则返回空 map
+     */
+    public static @NotNull Map<String, String> envMap(String aName) {
+        return envMap(aName, new LinkedHashMap<>());
+    }
+    /**
+     * 从环境变量获取 map 属性，认为采用 {@code k1:v1,k2:v2,...}
+     * 的格式排列，并且在没有获取到的时候返回默认值
+     * @param aName 需要获取的 map 环境变量名称
+     * @param aDefault 不存在值或者获取失败时使用的默认值
+     * @return {@link Map} 对象，如果不存在或者获取失败则返回 aDefault
+     */
+    @Contract("_, !null -> !null")
+    public static Map<String, String> envMap(String aName, Map<String, String> aDefault) {
+        String tEnv = env(aName);
+        if (tEnv==null) return aDefault;
+        String[] tTokens = IO.Text.splitStr(tEnv);
+        Map<String, String> rOut = new LinkedHashMap<>(tTokens.length);
+        for (String tToken : tTokens) {
+            String[] tPair = tToken.split(":");
+            rOut.put(tPair[0].trim(), tPair[1].trim());
+        }
+        return rOut;
+    }
+    
     /**
      * 获取一个整数环境变量值，并且在没有获取到的时候返回默认值
      * @param aName 需要获取的整数环境变量名称

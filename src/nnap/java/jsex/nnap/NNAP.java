@@ -58,7 +58,7 @@ public class NNAP implements IPairPotential {
          * 自定义构建 nnap 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_NNAP");
         
         public static final int NONE = -1;
         public static final int COMPAT = 0;

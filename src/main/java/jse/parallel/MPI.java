@@ -77,7 +77,7 @@ public class MPI {
          * 自定义构建 mpijni 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_MPI");
         
         /**
          * 自定义构建 mpijni 时使用的编译器，

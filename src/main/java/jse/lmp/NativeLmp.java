@@ -92,7 +92,7 @@ public class NativeLmp implements IAutoShutdown {
          * 自定义构建 lammps 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING = OS.envMap("JSE_CMAKE_SETTING_LMP");
         
         /**
          * 自定义构建 lammps 以及 lmpjni 时使用的编译器，
@@ -107,7 +107,7 @@ public class NativeLmp implements IAutoShutdown {
          * 自定义构建 lammps 相关库（lmpjni，lmpplugin）需要共享的
          * cmake 参数设置，会在构建时使用 -D ${key}=${value} 传入
          */
-        public final static Map<String, String> CMAKE_SETTING_SHARE = new LinkedHashMap<>();
+        public final static Map<String, String> CMAKE_SETTING_SHARE = OS.envMap("JSE_CMAKE_SETTING_LMP_SHARE");
         
         /**
          * 对于 lmpjni，是否使用 {@link MiMalloc} 来加速 c 的内存分配，
@@ -169,9 +169,17 @@ public class NativeLmp implements IAutoShutdown {
         // 依赖 jniutil
         JNIUtil.InitHelper.init();
         
-        // 这样来统一增加 nativelmp 需要的默认额外设置，
-        // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
-        Map<String, String> rCmakeSettingNativeLmp = new LinkedHashMap<>(Conf.CMAKE_SETTING);
+        // 这样来统一增加 nativelmp 需要的默认额外设置
+        Map<String, String> rCmakeSettingNativeLmp = new LinkedHashMap<>();
+        // 这里先添加一个简单的环境变量设置的 lammps pkg
+        @Nullable String tLmpPkgStr = OS.env("JSE_LMP_PKG");
+        if (tLmpPkgStr!=null) {
+            String[] tLmpPkgs = IO.Text.splitStr(tLmpPkgStr);
+            for (String tLmpPkg : tLmpPkgs) {
+                rCmakeSettingNativeLmp.put("PKG_"+tLmpPkg, "ON");
+            }
+        }
+        rCmakeSettingNativeLmp.putAll(Conf.CMAKE_SETTING);
         rCmakeSettingNativeLmp.putAll(Conf.CMAKE_SETTING_SHARE);
         rCmakeSettingNativeLmp.put("BUILD_SHARED_LIBS",      "ON");
         rCmakeSettingNativeLmp.put("LAMMPS_EXCEPTIONS:BOOL", "ON");
