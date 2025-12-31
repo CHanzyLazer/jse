@@ -12,10 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
-import static jse.code.CS.VERSION;
 import static jse.code.OS.*;
 
 /**
@@ -39,19 +36,6 @@ public class LmpPlugin {
     }
     
     public final static class Conf {
-        /**
-         * 自定义构建 lmpplugin 的 cmake 参数设置，
-         * 会在构建时使用 -D ${key}=${value} 传入
-         */
-        public final static Map<String, String> CMAKE_SETTING = new LinkedHashMap<>();
-        
-        /**
-         * 自定义构建 lmpplugin 时使用的编译器，
-         * cmake 有时不能自动检测到希望使用的编译器
-         */
-        public static @Nullable String CMAKE_CXX_COMPILER = OS.env("JSE_CMAKE_CXX_COMPILER_LMPPLUGIN", jse.code.Conf.CMAKE_CXX_COMPILER);
-        public static @Nullable String CMAKE_CXX_FLAGS    = OS.env("JSE_CMAKE_CXX_FLAGS_LMPPLUGIN"   , jse.code.Conf.CMAKE_CXX_FLAGS);
-        
         /** 启动的 jvm 的最大内存，默认为 1g 用来防止 mpi 运行 java 导致内存溢出 */
         public static String JVM_XMX = "1g";
         
@@ -63,7 +47,7 @@ public class LmpPlugin {
         public static @Nullable String REDIRECT_LMPPLUGIN_LIB = OS.env("JSE_REDIRECT_LMPPLUGIN_LIB");
     }
     
-    public final static String LIB_DIR = JAR_DIR+"lmp/plugin/" + UT.Code.uniqueID(JAVA_HOME, VERSION, NativeLmp.NATIVELMP_HOME, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"lmp/plugin/" + UT.Code.uniqueID(NativeLmp.NATIVELMP_LIB_DIR, Conf.JVM_XMX) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "jse_lmp_LmpPlugin_Pair.cpp"
@@ -98,7 +82,7 @@ public class LmpPlugin {
         NativeLmp.InitHelper.init();
         final String[] fLmpVersion = new String[1];
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
-        LIB_PATH = new JNIUtil.LibBuilder("lmpplugin", "LMPPLUGIN", LIB_DIR, Conf.CMAKE_SETTING)
+        LIB_PATH = new JNIUtil.LibBuilder("lmpplugin", "LMPPLUGIN", LIB_DIR, NativeLmp.Conf.CMAKE_SETTING_SHARE)
             .setMPIChecker() // 现在也会检测 mpi
             .setEnvChecker(() -> {
                 // 获取 lammps 版本字符串
@@ -112,7 +96,8 @@ public class LmpPlugin {
                 }
             })
             .setSrc("lmp/plugin", SRC_NAME)
-            .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setCmakeCxxCompiler(NativeLmp.Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(NativeLmp.Conf.CMAKE_CXX_FLAGS)
+            .setRedirectLibPath(Conf.REDIRECT_LMPPLUGIN_LIB)
             .setCmakeLineOp(line -> {
                 // 替换其中的 lammps 库路径为设置好的路径
                 line = line.replace("$ENV{JSE_LMP_INCLUDE_DIR}", NativeLmp.NATIVELMP_INCLUDE_DIR.replace("\\", "\\\\"))  // 注意反斜杠的转义问题

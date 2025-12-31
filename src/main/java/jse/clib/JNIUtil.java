@@ -54,6 +54,9 @@ public class JNIUtil {
     /** 当前 {@link JNIUtil} JNI 库的头文件路径 */
     public final static String HEADER_PATH = INCLUDE_DIR+HEADER_NAME;
     
+    /** jse 自动下载的一些离线包的路径，这里采用 jar 包所在的绝对路径 */
+    public final static String PKG_DIR = JAR_DIR+".jnipkg/";
+    
     /** {@link JNIUtil} 内部定义的常量，这里重新定义一次从而避免 JNI 通讯 */
     public final static int
       JTYPE_NULL    = 0
@@ -144,6 +147,8 @@ public class JNIUtil {
     @FunctionalInterface public interface IEnvChecker {void check() throws Exception;}
     @ApiStatus.Internal
     @FunctionalInterface public interface IDirIniter {String init(String aInput) throws Exception;}
+    @ApiStatus.Internal
+    @FunctionalInterface public interface IDirConsumer {void apply(String aInput) throws Exception;}
     
     /** 现在将一些通用的 cmake 编译 jni 库流程统一放在这里，减少重复的代码 */
     @ApiStatus.Internal
@@ -156,12 +161,12 @@ public class JNIUtil {
             IO.makeDir(tBuildDir);
             return tBuildDir;
         };
+        private IDirConsumer mPostBuildDir = bd -> {};
         private final String mLibDir;
         private String mCmakeInitDir = "..";
         private @Nullable String mCmakeCCompiler = null, mCmakeCxxCompiler = null, mCmakeCFlags = null, mCmakeCxxFlags = null;
         private @Nullable Boolean mUseMiMalloc = null;
         private boolean mMT = false;
-        private boolean mRebuild = false;
         private final Map<String, String> mCmakeSettings;
         private @Nullable String mRedirectLibPath = null;
         private @Nullable IUnaryFullOperator<? extends CharSequence, ? super String> mCmakeLineOpt = line -> line;
@@ -225,13 +230,13 @@ public class JNIUtil {
         }
         public LibBuilder setSrcDirIniter(IDirIniter aSrcDirIniter) {mSrcDirIniter = aSrcDirIniter; return this;}
         public LibBuilder setBuildDirIniter(IDirIniter aBuildDirIniter) {mBuildDirIniter = aBuildDirIniter; return this;}
+        public LibBuilder setPostBuildDir(IDirConsumer aPostBuildDir) {mPostBuildDir = aPostBuildDir; return this;}
         public LibBuilder setCmakeInitDir(String aCmakeInitDir) {mCmakeInitDir = aCmakeInitDir; return this;}
         public LibBuilder setCmakeCCompiler(@Nullable String aCmakeCCompiler) {mCmakeCCompiler = aCmakeCCompiler; return this;}
         public LibBuilder setCmakeCxxCompiler(@Nullable String aCmakeCxxCompiler) {mCmakeCxxCompiler = aCmakeCxxCompiler; return this;}
         public LibBuilder setCmakeCFlags(@Nullable String aCmakeCFlags) {mCmakeCFlags = aCmakeCFlags; return this;}
         public LibBuilder setCmakeCxxFlags(@Nullable String aCmakeCxxFlags) {mCmakeCxxFlags = aCmakeCxxFlags; return this;}
         public LibBuilder setUseMiMalloc(@Nullable Boolean aUseMiMalloc) {mUseMiMalloc = aUseMiMalloc; return this;}
-        public LibBuilder setRebuild(boolean aRebuild) {mRebuild = aRebuild; return this;}
         public LibBuilder setRedirectLibPath(@Nullable String aRedirectLibPath) {mRedirectLibPath = aRedirectLibPath; return this;}
         public LibBuilder setCmakeLineOp(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {mCmakeLineOpt = aCmakeLineOpt; return this;}
         
@@ -242,7 +247,7 @@ public class JNIUtil {
             if (mRedirectLibPath == null) {
                 @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);
                 // 如果不存在 jni lib 则需要重新通过源码编译
-                if (mRebuild || tLibName == null) {
+                if (tLibName == null) {
                     System.out.println(mInfoProjectName +" INIT INFO: "+ mProjectName +" libraries not found. Reinstalling...");
                     try {
                         tLibName = initLib_();
@@ -362,6 +367,7 @@ public class JNIUtil {
                 }
                 throw new Exception(mInfoProjectName +" BUILD ERROR: Build Failed, No "+ mProjectName +" lib in '"+ mLibDir +"'");
             }
+            mPostBuildDir.apply(tBuildDir);
             // 完事后移除临时解压得到的源码
             IO.removeDir(tWorkingDir);
             System.out.println(mInfoProjectName +" INIT INFO: "+ mProjectName +" successfully installed.");
