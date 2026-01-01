@@ -2,7 +2,6 @@ package jse.clib;
 
 import jse.code.IO;
 import jse.code.OS;
-import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -30,7 +29,7 @@ public class Compiler {
     }
     
     public final static class Conf {
-        /** 是否强制检测编译器，关闭后则会有报错降低为警告，默认开启 */
+        /** 是否强制检测编译器，关闭后则不进行报错，默认开启 */
         public static boolean FORCE = OS.envZ("JSE_FORCE_COMPILER", true);
     }
     
@@ -92,15 +91,14 @@ public class Compiler {
         
         EXE_PATH = getExePath_();
         if (EXE_PATH==null) {
-            String tErrInfo = "No suitable C/C++ compiler detected, \n";
+            System.err.println("JNI INIT ERROR: No suitable C/C++ compiler detected,");
             if (IS_WINDOWS) {
-                tErrInfo += "  For Windows, you need MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/";
+                System.err.println("  For Windows, you need MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
             } else {
-                tErrInfo += "  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/\n" +
-                            "  For Ubuntu, you can use `sudo apt install g++`";
+                System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
+                System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
             }
-            if (Conf.FORCE) throw new RuntimeException(tErrInfo);
-            else UT.Code.warning(tErrInfo);
+            if (Conf.FORCE) throw new RuntimeException("No suitable C/C++ compiler");
             EXE_CMD = null;
             TYPE = "unknown";
             VALID = false;
@@ -120,9 +118,9 @@ public class Compiler {
                     if (tHasGxx) {
                         VALID = true;
                     } else {
-                        String tErrInfo = "No g++ for gcc, for Ubuntu, you can use `sudo apt install g++`";
-                        if (Conf.FORCE) throw new RuntimeException(tErrInfo);
-                        else UT.Code.warning(tErrInfo);
+                        System.err.println("JNI INIT ERROR: No g++ for gcc,");
+                        System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
+                        if (Conf.FORCE) throw new RuntimeException("No suitable C/C++ compiler");
                         VALID = false;
                     }
                 } else {

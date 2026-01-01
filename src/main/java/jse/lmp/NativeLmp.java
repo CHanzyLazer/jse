@@ -249,6 +249,7 @@ public class NativeLmp implements IAutoShutdown {
             .setMT(Conf.USE_MT)
             .setEnvChecker(() -> {
                 // 在这里输出没有 mpi 的警告，保证无 mpi 情况下只会警告一次
+                MPICore.printInfo();
                 if (!MPICore.VALID) {
                     System.out.println("NATIVE_LMP INIT INFO: No MPI support,");
                     System.out.println("Build lammps without MPI support? (y/N)");

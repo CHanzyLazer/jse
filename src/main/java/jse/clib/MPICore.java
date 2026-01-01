@@ -1,7 +1,6 @@
 package jse.clib;
 
 import jse.code.IO;
-import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
 import static jse.code.OS.EXEC;
@@ -34,6 +33,25 @@ public class MPICore {
     public final static boolean VALID;
     
     
+    private static boolean FIRST_PRINT = true;
+    /** 由于此库是可选的，因此提供一个延迟打印接口，仅第一次构建时打印提示 */
+    public static void printInfo() {
+        if (!FIRST_PRINT) return;
+        FIRST_PRINT = false;
+        if (EXE_PATH!=null) {
+            System.out.printf("JNI INIT INFO: Use MPI in %s\n", EXE_PATH);
+        } else {
+            System.err.println("JNI INIT WARNING: No MPI found,");
+            if (IS_WINDOWS) {
+                System.err.println("  For Windows, you can use MS-MPI: https://www.microsoft.com/en-us/download/details.aspx?id=105289");
+                System.err.println("  BOTH 'msmpisetup.exe' and 'msmpisdk.msi' are needed.");
+            } else {
+                System.err.println("  For Liunx/Mac, you can use OpenMPI: https://www.open-mpi.org/");
+                System.err.println("  For Ubuntu, you can use `sudo apt install libopenmpi-dev`");
+            }
+        }
+    }
+    
     private static @Nullable String getExePath_() {
         // 检测环境变量的 mpiexec
         EXEC.setNoSTDOutput().setNoERROutput();
@@ -56,22 +74,12 @@ public class MPICore {
         InitHelper.INITIALIZED = true;
         try {EXE_PATH = getExePath_();}
         catch (Exception e) {throw new RuntimeException(e);}
-        if (EXE_PATH==null) {
-            String tErrInfo = "No MPI found, \n";
-            if (IS_WINDOWS) {
-                tErrInfo += "  For Windows, you can use MS-MPI: https://www.microsoft.com/en-us/download/details.aspx?id=105289\n" +
-                            "  BOTH 'msmpisetup.exe' and 'msmpisdk.msi' are needed.";
-            } else {
-                tErrInfo += "  For Liunx/Mac, you can use OpenMPI: https://www.open-mpi.org/\n" +
-                            "  For Ubuntu, you can use `sudo apt install libopenmpi-dev`";
-            }
-            UT.Code.warning(tErrInfo);
-            EXE_CMD = null;
-            VALID = false;
-        } else {
-            System.out.printf("JNI INIT INFO: Use MPI in %s\n", EXE_PATH);
+        if (EXE_PATH!=null) {
             EXE_CMD = (IS_WINDOWS?"& \"":"\"") + EXE_PATH + "\"";
             VALID = true;
+        } else {
+            EXE_CMD = null;
+            VALID = false;
         }
     }
 }

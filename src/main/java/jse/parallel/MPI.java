@@ -1042,7 +1042,10 @@ public class MPI {
             
             // 依赖 MPICore
             MPICore.InitHelper.init();
-            if (!MPICore.VALID) throw new RuntimeException("No MPI support.");
+            if (!MPICore.VALID) {
+                MPICore.printInfo();
+                throw new RuntimeException("No MPI support.");
+            }
             // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
             Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
             rCmakeSetting.put("JSE_COPY_JARRAY", Conf.COPY_JARRAY ? "ON" : "OFF");
@@ -1051,6 +1054,7 @@ public class MPI {
             // 现在直接使用 JNIUtil.buildLib 来统一初始化
             MPIJNI_LIB_PATH = new JNIUtil.LibBuilder("mpijni", "MPI", MPIJNI_LIB_DIR, rCmakeSetting)
                 .setSrc("mpi", MPIJNI_SRC_NAME)
+                .setEnvChecker(MPICore::printInfo) // 在这里输出 mpi 信息，保证只在第一次构建时输出一次
                 .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
                 .setUseMiMalloc(Conf.USE_MIMALLOC).setRedirectLibPath(Conf.REDIRECT_MPIJNI_LIB)
                 .get();
