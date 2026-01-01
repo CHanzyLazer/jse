@@ -1037,8 +1037,6 @@ public class MPI {
         // 这对于一般的 MPI 实现应该都是没有问题的
         static {
             InitHelper.INITIALIZED = true;
-            // 依赖 jniutil
-            JNIUtil.InitHelper.init();
             // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
             Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
             rCmakeSetting.put("JSE_COPY_JARRAY", Conf.COPY_JARRAY ? "ON" : "OFF");

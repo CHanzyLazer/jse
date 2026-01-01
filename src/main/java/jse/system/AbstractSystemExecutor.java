@@ -14,8 +14,8 @@ import static jse.code.CS.*;
 
 
 /**
+ * 将一般实现放入抽象类中，因为 submit 一定需要在 pool 中使用，如果直接嵌套文件的输入流会在写入前就关闭，默认输出在 System.out
  * @author liqa
- * <p> 将一般实现放入抽象类中，因为 submit 一定需要在 pool 中使用，如果直接嵌套文件的输入流会在写入前就关闭，默认输出在 System.out </p>
  */
 public abstract class AbstractSystemExecutor implements ISystemExecutor {
     private boolean mNoSTDOutput = false, mNoERROutput = false;
@@ -27,9 +27,9 @@ public abstract class AbstractSystemExecutor implements ISystemExecutor {
     protected final void printStackTrace(Throwable aThrowable) {if (!mNoERROutput) UT.Code.printStackTrace(aThrowable);}
     
     
-    @Override public final int system(String aCommand                           ) {return system_(aCommand, STD_OUT_WRITELN);}
+    @Override public final int system(String aCommand) {return system_(aCommand, STD_OUT_WRITELN);}
     @Override public final int system(String aCommand, final String aOutFilePath) {return system_(aCommand, fileWriteln(aOutFilePath));}
-    
+    @Override public final int system_str(String aCommand, final List<String> rOutLines) {return system_(aCommand, line->rOutLines.add(line.toString()));}
     @Override public final List<String> system_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT do system from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return AbstractCollections.zl();
@@ -40,6 +40,7 @@ public abstract class AbstractSystemExecutor implements ISystemExecutor {
     
     @Override public final Future<Integer> submitSystem(String aCommand) {return submitSystem_(aCommand, STD_OUT_WRITELN);}
     @Override public final Future<Integer> submitSystem(String aCommand, final String aOutFilePath) {return submitSystem_(aCommand, fileWriteln(aOutFilePath));}
+    @Override public final Future<Integer> submitSystem_str(String aCommand, final List<String> rOutLines) {return submitSystem_(aCommand, line->rOutLines.add(line.toString()));}
     @Override public final Future<List<String>> submitSystem_str(String aCommand) {
         if (mDead) throw new RuntimeException("Can NOT submitSystem from this Dead Executor.");
         if (aCommand==null || aCommand.isEmpty()) return EPT_STR_FUTURE;

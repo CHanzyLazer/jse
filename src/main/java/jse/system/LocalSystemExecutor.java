@@ -73,7 +73,7 @@ public class LocalSystemExecutor extends AbstractSystemExecutor {
                 mOutTask = UT.Par.redirectStream(mProcess.getInputStream(), true, noSTDOutput() ? NUL_PRINT_STREAM : System.out);
             } else {
                 mOutTask = UT.Par.runAsync(() -> {
-                    try (BufferedReader tOutReader = IO.toReader(mProcess.getInputStream(), charset_()); IO.IWriteln tWriteln = (noSTDOutput() ? NUL_WRITELN: aWriteln)) {
+                    try (BufferedReader tOutReader = IO.toReader(mProcess.getInputStream(), charset_()); IO.IWriteln tWriteln = (noSTDOutput() ? NUL_WRITELN:aWriteln)) {
                         // 对于 Process，由于内部已经有 buffered 输出流，因此必须要获取输出流并遍历，避免发生流死锁
                         String tLine;
                         while ((tLine = tOutReader.readLine()) != null) tWriteln.writeln(tLine);

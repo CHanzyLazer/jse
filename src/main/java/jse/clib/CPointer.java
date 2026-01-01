@@ -104,8 +104,6 @@ public class CPointer {
     
     static {
         InitHelper.INITIALIZED = true;
-        // 依赖 jniutil
-        JNIUtil.InitHelper.init();
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LIB_PATH = new JNIUtil.LibBuilder("cpointer", "CPOINTER", LIB_DIR, Conf.CMAKE_SETTING)
             .setSrc("cpointer", SRC_NAME)

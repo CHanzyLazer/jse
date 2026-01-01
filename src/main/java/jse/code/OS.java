@@ -44,10 +44,12 @@ public class OS {
         }
     }
     
+    /** 当前的 {@code System.getProperty("os.name")}，用于 JNI 库方便做系统隔离 */
+    public final static String OS_NAME = System.getProperty("os.name");
     /** 当前平台是否是 windows */
-    public final static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+    public final static boolean IS_WINDOWS = OS_NAME.toLowerCase().contains("windows");
     /** 当前平台是否是 macos */
-    public final static boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
+    public final static boolean IS_MAC = OS_NAME.toLowerCase().contains("mac");
     /** linux 上不进行输出的重定向路径名，{@code "/dev/null"} */
     public final static String NO_LOG_LINUX = "/dev/null";
     /** windows 上不进行输出的重定向路径名，{@code "NUL"} */

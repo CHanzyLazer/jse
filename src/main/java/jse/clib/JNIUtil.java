@@ -241,6 +241,8 @@ public class JNIUtil {
         public LibBuilder setCmakeLineOp(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {mCmakeLineOpt = aCmakeLineOpt; return this;}
         
         @Override public String get() {
+            // 现在总是优先依赖 jniutil 用来确保一些通用的检测总是优先执行
+            JNIUtil.InitHelper.init();
             // 如果开启了 USE_MIMALLOC 则增加 MiMalloc 依赖
             if (mUseMiMalloc!=null && mUseMiMalloc) MiMalloc.InitHelper.init();
             String tLibPath;
@@ -265,7 +267,7 @@ public class JNIUtil {
         private String cmakeInitCmd_() throws IOException {
             // 设置参数，这里使用 List 来构造这个长指令
             List<String> rCommand = new ArrayList<>();
-            rCommand.add("cmake");
+            rCommand.add("\""+CMake.EXE_PATH+"\"");
             // 这里设置 C/C++ 编译器（如果有）
             if (mCmakeCCompiler   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + mCmakeCCompiler);}
             if (mCmakeCxxCompiler != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ mCmakeCxxCompiler);}
@@ -296,16 +298,12 @@ public class JNIUtil {
             return String.join(" ", rCommand);
         }
         private @NotNull String initLib_() throws Exception {
-            // 优先检测环境
+            // 自定义的环境检测
             if (!mEnvChecker.isEmpty()) for (IEnvChecker tChecker : mEnvChecker) tChecker.check();
-            // 检测 cmake，为了简洁并避免问题，现在要求一定要有 cmake 环境
-            EXEC.setNoSTDOutput().setNoERROutput();
-            boolean tNoCmake = EXEC.system("cmake --version") != 0;
-            EXEC.setNoSTDOutput(false).setNoERROutput(false);
-            if (tNoCmake) {
-                System.err.println("No cmake found, you can download cmake from: https://cmake.org/download/");
-                throw new Exception(mInfoProjectName +" BUILD ERROR: No cmake environment.");
-            }
+            // 检测编译器环境
+            Compiler.InitHelper.init();
+            // 检测 cmake
+            CMake.InitHelper.init();
             // 从内部资源解压到临时目录，现在编译任务统一放到 jse 安装目录
             boolean tWorkingDirValid = true;
             String tWorkingDirName = "build-"+ mProjectName +"@"+UT.Code.randID() + "/";
@@ -345,25 +343,24 @@ public class JNIUtil {
             System.out.println(mInfoProjectName +" INIT INFO: Building "+ mProjectName +" from source code...");
             String tBuildDir = mBuildDirIniter.init(tSrcDir);
             // 直接通过系统指令来编译库，关闭输出
-            EXEC.setNoSTDOutput().setWorkingDir(tBuildDir);
+            EXEC.setWorkingDir(tBuildDir);
+            if (!DEBUG) EXEC.setNoSTDOutput();
             // 现在初始化 cmake 和参数设置放在一起执行
             EXEC.system(cmakeInitCmd_());
             // 最后进行构造操作
-            EXEC.system("cmake --build . --config Release");
+            EXEC.system("\""+CMake.EXE_PATH+"\" --build . --config Release");
             EXEC.setNoSTDOutput(false).setWorkingDir(null);
             // 简单检测一下是否编译成功
             @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);
             if (tLibName == null) {
+                System.err.println("Build Failed, build directory: "+tBuildDir);
                 if (tWorkingDirValid) {
-                    System.err.println("Build Failed, this may be caused by the lack of a C/C++ compiler");
-                    if (IS_WINDOWS) {
-                        System.err.println("  For Windows, you can use MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
-                    } else {
-                        System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
-                        System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
-                    }
+                    System.err.println("  This may be caused by the inappropriate characters in working directory: "+tWorkingDir);
+                }
+                if (IS_WINDOWS) {
+                    System.err.println("  You can use `$env:JSE_DEBUG = 1` (in powershell) to make the build output complete information");
                 } else {
-                    System.err.println("Build Failed, this may be caused by the inappropriate characters in build directory: "+tWorkingDir);
+                    System.err.println("  You can use `export JSE_DEBUG=1` to make the build output complete information");
                 }
                 throw new Exception(mInfoProjectName +" BUILD ERROR: Build Failed, No "+ mProjectName +" lib in '"+ mLibDir +"'");
             }

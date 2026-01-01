@@ -77,8 +77,6 @@ public class TorchModel extends NeuralNetwork {
                         "Note: you can convert old potential file via `jse -i jsex.nnap.TrainerTorch.convert path/to/old/nnpot.json path/to/new/nnpot.json`");
         // 依赖 torch
         Torch.InitHelper.init();
-        // 依赖 jniutil
-        JNIUtil.InitHelper.init();
         
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LIB_PATH = new JNIUtil.LibBuilder("nnaptorch", "NNAP_TORCH", LIB_DIR, Conf.CMAKE_SETTING)

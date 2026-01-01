@@ -166,8 +166,6 @@ public class NativeLmp implements IAutoShutdown {
     
     static {
         InitHelper.INITIALIZED = true;
-        // 依赖 jniutil
-        JNIUtil.InitHelper.init();
         
         // 这样来统一增加 nativelmp 需要的默认额外设置
         Map<String, String> rCmakeSettingNativeLmp = new LinkedHashMap<>();
@@ -206,7 +204,7 @@ public class NativeLmp implements IAutoShutdown {
         final Callable<Void> tCacheValider = () -> {
             if (IO.exists(tNativeLmpCachePath)) return null;
             System.out.printf("NATIVE_LMP INIT INFO: No correct lammps source code in %s\n", JNIUtil.PKG_DIR);
-            System.out.println("Download lammps? (Y/n)");
+            System.out.println("Auto download lammps? (Y/n)");
             BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
             String tLine = tReader.readLine();
             while (true) {
@@ -223,12 +221,11 @@ public class NativeLmp implements IAutoShutdown {
             try {
                 IO.copy(URI.create(tLmpUri).toURL(), tNativeLmpCachePath);
             } catch (Exception e) {
-                System.out.println("NATIVE_LMP INIT ERROR: Auto download lammps fail, you can:\n");
-                System.out.printf("  1. Download lammps source code manually from %s\n", tLmpUri);
-                System.out.printf("  2. Put it into %s\n", tNativeLmpCachePath);
-                System.out.println("  3. Rerun this program\n");
-                System.out.println("The following is the exception stack information.");
-                Thread.sleep(500);
+                System.err.println("NATIVE_LMP INIT ERROR: Auto download lammps fail, you can:\n");
+                System.err.printf("  1. Download lammps source code manually from %s\n", tLmpUri);
+                System.err.printf("  2. Put it into %s\n", tNativeLmpCachePath);
+                System.err.println("  3. Rerun this program\n");
+                System.err.println("The following is the exception stack information.");
                 throw e;
             }
             System.out.println("NATIVE_LMP INIT INFO: lammps source code downloading finished.");

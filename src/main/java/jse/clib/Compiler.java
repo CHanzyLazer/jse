@@ -1,0 +1,131 @@
+package jse.clib;
+
+import jse.code.IO;
+import jse.code.OS;
+import jse.code.UT;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.util.List;
+
+import static jse.code.OS.EXEC;
+import static jse.code.OS.IS_WINDOWS;
+
+/**
+ * 编译 jni 需要的 C/C++ 编译器，目前仅用于辅助环境检测以及安装提示
+ * @author liqa
+ */
+public class Compiler {
+    /** 用于判断是否进行了静态初始化以及方便的手动初始化 */
+    public final static class InitHelper {
+        private static volatile boolean INITIALIZED = false;
+        /** @return {@link Compiler} 相关的 JNI 库是否已经初始化完成 */
+        public static boolean initialized() {return INITIALIZED;}
+        /** 初始化 {@link Compiler} 相关的 JNI 库 */
+        @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf"})
+        public static void init() {
+            // 手动调用此值来强制初始化
+            if (!INITIALIZED) String.valueOf(VALID);
+        }
+    }
+    
+    public final static class Conf {
+        /** 是否强制检测编译器，关闭后则会有报错降低为警告，默认开启 */
+        public static boolean FORCE = OS.envZ("JSE_FORCE_COMPILER", true);
+    }
+    
+    /** 自动检测到的编译器种类，目前只考虑 windows 下的 msvc, linux 下的 gcc，mac 下的 clang */
+    public final static String TYPE;
+    /** 自动检测到的编译器可执行路径 */
+    public final static String EXE_PATH;
+    /** 自动检测到编译器是否合适，包括是否有合适的 c++ 编译器 */
+    public final static boolean VALID;
+    
+    private static @Nullable String getExePath_() {
+        if (!Conf.FORCE) return null;
+        if (!IS_WINDOWS) {
+            // 非 windows 下统一简单通过执行命令检测，优先 gcc 后 clang
+            // 由于版本判断较为麻烦，这里不去检测版本
+            EXEC.setNoSTDOutput().setNoERROutput();
+            boolean tHasGcc = EXEC.system("gcc --version") == 0;
+            EXEC.setNoSTDOutput(false).setNoERROutput(false);
+            if (tHasGcc) {
+                String tGccPath = EXEC.system_str("which gcc").get(0);
+                if (IO.exists(tGccPath)) return tGccPath;
+            }
+            // fallback clang
+            EXEC.setNoSTDOutput().setNoERROutput();
+            boolean tHasClang = EXEC.system("clang --version") == 0;
+            EXEC.setNoSTDOutput(false).setNoERROutput(false);
+            if (tHasClang) {
+                String tClangPath = EXEC.system_str("which clang").get(0);
+                if (IO.exists(tClangPath)) return tClangPath;
+            }
+            return null;
+        }
+        // windows 下总是检测 msvc
+        String tVswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+        if (!IO.exists(tVswhere)) return null;
+        List<String> tLines = EXEC.system_str("\""+tVswhere+"\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath");
+        if (tLines.isEmpty()) return null;
+        String tVsPath = tLines.get(0);
+        if (tVsPath==null || !IO.exists(tVsPath)) return null;
+        String tClPath = tVsPath + "\\VC\\Tools\\MSVC\\";
+        if (!IO.exists(tClPath)) return null;
+        String tVerName;
+        try {
+            String[] tList = IO.list(tClPath);
+            if (tList.length==0) return null;
+            tVerName = tList[0];
+        } catch (IOException e) {
+            return null;
+        }
+        tClPath = tClPath + tVerName + "\\bin\\Hostx64\\x64\\cl.exe";
+        if (!IO.exists(tClPath)) return null;
+        return tClPath;
+    }
+    
+    static {
+        InitHelper.INITIALIZED = true;
+        
+        EXE_PATH = getExePath_();
+        if (EXE_PATH==null) {
+            String tErrInfo = "No suitable C/C++ compiler detected, \n";
+            if (IS_WINDOWS) {
+                tErrInfo += "  For Windows, you need MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/";
+            } else {
+                tErrInfo += "  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/\n" +
+                            "  For Ubuntu, you can use `sudo apt install g++`";
+            }
+            if (Conf.FORCE) throw new RuntimeException(tErrInfo);
+            else UT.Code.warning(tErrInfo);
+            TYPE = "unknown";
+            VALID = false;
+        } else {
+            System.out.printf("JNI INIT INFO: C/C++ compiler detected in %s\n", EXE_PATH);
+            if (IS_WINDOWS) {
+                TYPE = "msvc";
+                VALID = true;
+            } else {
+                if (EXE_PATH.endsWith("gcc")) {
+                    TYPE = "gcc";
+                    // 还需要额外检测 g++
+                    EXEC.setNoSTDOutput().setNoERROutput();
+                    boolean tHasGxx = EXEC.system("g++ --version") == 0;
+                    EXEC.setNoSTDOutput(false).setNoERROutput(false);
+                    if (tHasGxx) {
+                        VALID = true;
+                    } else {
+                        String tErrInfo = "No g++ for gcc, for Ubuntu, you can use `sudo apt install g++`";
+                        if (Conf.FORCE) throw new RuntimeException(tErrInfo);
+                        else UT.Code.warning(tErrInfo);
+                        VALID = false;
+                    }
+                } else {
+                    TYPE = "clang";
+                    VALID = true;
+                }
+            }
+        }
+    }
+}

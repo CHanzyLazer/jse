@@ -2215,9 +2215,6 @@ public class ARRAY {
         
         static {
             InitHelper.INITIALIZED = true;
-            // 依赖 jniutil
-            JNIUtil.InitHelper.init();
-            // 这里不直接依赖 LmpPlugin
             
             // 先添加 Conf.CMAKE_SETTING，这样保证确定的优先级
             Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);

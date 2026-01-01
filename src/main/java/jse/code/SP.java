@@ -750,8 +750,6 @@ public class SP {
             OS.InitHelper.init();
             // 在 JVM 关闭时关闭 JEP_INTERP，最先添加来避免一些问题
             Main.addGlobalAutoCloseable(Python::close);
-            // 依赖 jniutil
-            JNIUtil.InitHelper.init();
             
             // 需要 python 环境，由于总是需要执行 python 来获取相关信息，因此这里统一检测
             boolean tUsePython3 = false;

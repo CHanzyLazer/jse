@@ -74,8 +74,6 @@ public class LmpPlugin {
     static {
         InitHelper.INITIALIZED = true;
         
-        // 依赖 jniutil；实际内部不直接依赖
-        JNIUtil.InitHelper.init();
         // 依赖 cpointer
         CPointer.InitHelper.init();
         // 依赖 lmpjni

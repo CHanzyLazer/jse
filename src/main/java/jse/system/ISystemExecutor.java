@@ -1,5 +1,6 @@
 package jse.system;
 
+import jse.code.IO;
 import jse.parallel.IThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -10,11 +11,11 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 /**
- * @author liqa
- * <p> 通用的系统指令执行器接口，实现类似 matlab 的 system 指令功能，
- * 在此基础上增加了类似 Executor 的功能，可以后台运行等 </p>
+ * 通用的系统指令执行器接口，实现类似 matlab 的 system 指令功能，
+ * 在此基础上增加了类似 Executor 的功能，可以后台运行等
  * <p>
  * 要求这些方法是线程安全的，可以同一个实例并行运行同一个方法
+ * @author liqa
  */
 @SuppressWarnings("UnusedReturnValue")
 public interface ISystemExecutor extends IThreadPool {
@@ -46,12 +47,14 @@ public interface ISystemExecutor extends IThreadPool {
     ISystemExecutor setNoERROutput(boolean aNoERROutput);
     boolean noERROutput();
     
-    int system(String aCommand                     );
+    int system(String aCommand);
     int system(String aCommand, String aOutFilePath);
+    int system_str(String aCommand, List<String> rOutLines);
     
     /** submit stuffs */
-    Future<Integer> submitSystem(String aCommand                     );
+    Future<Integer> submitSystem(String aCommand);
     Future<Integer> submitSystem(String aCommand, String aOutFilePath);
+    Future<Integer> submitSystem_str(String aCommand, List<String> rOutLines);
     
     /** 获取字符串输出而不是退出代码 */
     List<String> system_str(String aCommand);

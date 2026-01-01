@@ -221,6 +221,14 @@ public class Conf {
     public static boolean NO_CACHE = OS.envZ("JSE_NO_CACHE", false);
     
     /**
+     * 用户自定义的版本掩码，用于对于完全不同的环境（主要是不同编译器）进行设置来达到独立的 jni 依赖。
+     * <p>
+     * 默认为 {@code 0}
+     * <p>
+     * 也可使用环境变量 {@code JSE_VERSION_MASK} 来设置
+     */
+    public static int VERSION_MASK = OS.envI("JSE_VERSION_MASK", 0);
+    /**
      * 是否使用 {@link jse.clib.MiMalloc} 来加速 c 的内存分配，这对于 java 数组和 c 数组的转换很有效；
      * 这只控制全局的默认行为，如果子项的 JNI 库有设置 {@code USE_MIMALLOC} 相关值将会覆盖此设置。
      * <p>
