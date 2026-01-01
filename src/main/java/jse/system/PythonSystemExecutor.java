@@ -3,8 +3,8 @@ package jse.system;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * 在本地的 python 上执行
  * @author liqa
- * <p> 在本地的 python 上执行 </p>
  */
 public class PythonSystemExecutor extends LocalSystemExecutor {
     private final String[] mPyArgs;

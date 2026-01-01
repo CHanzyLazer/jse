@@ -17,8 +17,8 @@ import static jse.code.CS.SSH_SLEEP_TIME;
 
 
 /**
+ * 在 ssh 服务器上执行指令的简单实现
  * @author liqa
- * <p> 在 ssh 服务器上执行指令的简单实现 </p>
  */
 public class SSHSystemExecutor extends RemoteSystemExecutor implements ISavable {
     final SSHChecker mSSH;

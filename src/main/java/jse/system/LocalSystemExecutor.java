@@ -15,8 +15,8 @@ import java.util.concurrent.*;
 import static jse.code.CS.*;
 
 /**
+ * SystemExecutor 的一般实现，直接在本地运行
  * @author liqa
- * <p> SystemExecutor 的一般实现，直接在本地运行 </p>
  */
 public class LocalSystemExecutor extends AbstractSystemExecutor {
     public LocalSystemExecutor() {super();}

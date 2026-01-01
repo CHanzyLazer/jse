@@ -3,8 +3,8 @@ package jse.system;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * 在本地的 bash 上执行
  * @author liqa
- * <p> 在本地的 bash 上执行 </p>
  */
 public class BashSystemExecutor extends LocalSystemExecutor {
     public BashSystemExecutor() {super();}

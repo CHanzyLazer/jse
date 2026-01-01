@@ -6,8 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.Future;
 
 /**
+ * SystemExecutor 的另一种抽象实现，在远程运行的情况
  * @author liqa
- * <p> SystemExecutor 的另一种抽象实现，在远程运行的情况 </p>
  */
 public abstract class RemoteSystemExecutor extends AbstractSystemExecutor {
     public RemoteSystemExecutor() {super();}

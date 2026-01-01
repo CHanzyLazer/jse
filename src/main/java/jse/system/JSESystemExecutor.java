@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import static jse.code.OS.JAR_PATH;
 
 /**
+ * 通过 jse 执行，会使用和此实例相同的 jar
  * @author liqa
- * <p> 通过 jse 执行，会使用和此实例相同的 jar </p>
  */
 public class JSESystemExecutor extends LocalSystemExecutor {
     final boolean mIsPython;

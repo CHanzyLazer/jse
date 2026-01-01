@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.Charset;
 
 /**
+ * 在本地的 cmd 上执行
  * @author liqa
- * <p> 在本地的 cmd 上执行 </p>
  */
 public class CMDSystemExecutor extends LocalSystemExecutor {
     public CMDSystemExecutor() {super();}

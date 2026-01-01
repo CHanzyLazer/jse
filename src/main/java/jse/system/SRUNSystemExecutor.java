@@ -15,10 +15,11 @@ import static jse.code.OS.Slurm.IS_SLURM;
 import static jse.code.OS.Slurm.RESOURCES_MANAGER;
 
 /**
+ * 在 SLURM 内部提交子任务的提交器，主要用于 salloc 或者 sbatch 一个 jse 任务后，
+ * 在提交的 jse 任务中提交子任务；因此认为此时已经有了 SLURM 的任务环境
+ * <p>
+ * 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务
  * @author liqa
- * <p> 在 SLURM 内部提交子任务的提交器，主要用于 salloc 或者 sbatch 一个 jse 任务后，
- * 在提交的 jse 任务中提交子任务；因此认为此时已经有了 SLURM 的任务环境 </p>
- * <p> 由于是提交子任务的形式，这里依旧使用 java 线程池来提交后台任务 </p>
  */
 public class SRUNSystemExecutor extends LocalSystemExecutor {
     private final SRUNChecker mChecker;

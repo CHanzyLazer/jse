@@ -19,14 +19,11 @@ import static jse.code.CS.FILE_SYSTEM_SLEEP_TIME;
 
 
 /**
- * @author liqa
- * <p> 使用 ssh 连接到服务器 </p>
- * <p> 创建时自动连接服务器，自动跳过初次登录的 "yes/no" 询问 </p>
- * <p> 提供提交指令，断开自动重连，同步目标文件夹等功能 </p>
- * <p> 由于免密登录只支持经典的 openssh 密钥（即需要生成时加上 -m pem），因此还提供密码登录的支持，
- * 但依旧不建议使用密码登录，因为会在代码中出现明文密码 </p>
+ * 使用 ssh 连接到服务器；
+ * 创建时自动连接服务器，自动跳过初次登录的 "yes/no" 询问
  * <p>
- * <p> 更加简洁的实现，现在只保留需要的一些功能，并且削弱了可见性 </p>
+ * 更加简洁的实现，现在只保留需要的一些功能，并且削弱了可见性
+ * @author liqa
  */
 @SuppressWarnings("UnusedReturnValue")
 final class SSHCore implements IAutoShutdown {
