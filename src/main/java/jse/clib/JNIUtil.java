@@ -8,17 +8,15 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+import static jse.code.CS.VERSION_NUMBER;
 import static jse.code.Conf.*;
-import static jse.code.CS.VERSION;
 import static jse.code.OS.*;
 import static jse.code.OS.IS_MAC;
 
@@ -46,7 +44,7 @@ public class JNIUtil {
     }
     
     /** 当前 {@link JNIUtil} JNI 库的根目录，结尾一定存在 {@code '/'} */
-    public final static String HOME = JAR_DIR+"jniutil/" + UT.Code.uniqueID(VERSION) + "/";
+    public final static String HOME = JAR_DIR+"jniutil/" + UT.Code.uniqueID(VERSION_NUMBER) + "/";
     /** 当前 {@link JNIUtil} JNI 库的头文件所在文件夹，结尾一定存在 {@code '/'} */
     public final static String INCLUDE_DIR = HOME+"include/";
     /** 当前 {@link JNIUtil} JNI 库的头文件名称 */

@@ -32,7 +32,7 @@ public class CMake {
     /** 自动下载使用的 cmake 版本 */
     public final static String VERSION = "4.2.1";
     /** 内部 cmake 会使用的路径 */
-    public final static String INTERNAL_HOME = JAR_DIR+"cmake/core/" + UT.Code.uniqueID(OS.OS_NAME, VERSION) + "/";
+    public final static String INTERNAL_HOME = JAR_DIR+"cmake/core/" + UT.Code.uniqueID(OS.OS_NAME, CMake.VERSION) + "/";
     /** 自动检测到的 cmake 可执行路径 */
     public final static String EXE_PATH;
     /** 拼接后可以执行的命令，对于 windows 和 linux 专门适配 */

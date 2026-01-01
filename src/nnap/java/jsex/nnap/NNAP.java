@@ -3,7 +3,6 @@ package jsex.nnap;
 import jse.atom.IPairPotential;
 import jse.clib.JNIUtil;
 import jse.clib.MiMalloc;
-import jse.code.CS;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
@@ -23,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static jse.code.CS.VERSION_NUMBER;
+import static jse.code.Conf.VERSION_MASK;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.OS.JAVA_HOME;
 
@@ -88,7 +89,7 @@ public class NNAP implements IPairPotential {
     }
     
     public final static int VERSION = 5;
-    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, CS.VERSION, NNAP.VERSION, Conf.OPTIM_LEVEL, Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"nnap/jni/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, NNAP.VERSION, Conf.OPTIM_LEVEL, Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
           "nnap_util.hpp"

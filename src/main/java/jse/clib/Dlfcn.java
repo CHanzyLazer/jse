@@ -7,7 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-import static jse.code.CS.VERSION;
+import static jse.code.CS.VERSION_NUMBER;
+import static jse.code.Conf.VERSION_MASK;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.OS.JAVA_HOME;
 
@@ -63,7 +64,7 @@ public class Dlfcn {
     }
     
     /** 当前 {@link Dlfcn} JNI 库所在的文件夹路径，结尾一定存在 {@code '/'} */
-    public final static String LIB_DIR = JAR_DIR+"dlfcn/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"dlfcn/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, Conf.CMAKE_C_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link Dlfcn} JNI 库的路径 */
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {

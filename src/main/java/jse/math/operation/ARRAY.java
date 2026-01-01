@@ -19,8 +19,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.*;
 
-import static jse.code.CS.VERSION;
+import static jse.code.CS.VERSION_NUMBER;
 import static jse.code.Conf.NATIVE_OPERATION;
+import static jse.code.Conf.VERSION_MASK;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.OS.JAVA_HOME;
 import static jse.code.UT.Code.toComplexDouble;
@@ -2204,7 +2205,7 @@ public class ARRAY {
         }
         
         /** 当前 {@link ARRAY} JNI 库所在的文件夹路径，结尾一定存在 {@code '/'} */
-        public final static String LIB_DIR = JAR_DIR+"math/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION, Conf.OPTIM_LEVEL, Conf.BATCH_SIZE, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+        public final static String LIB_DIR = JAR_DIR+"math/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, Conf.OPTIM_LEVEL, Conf.BATCH_SIZE, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
         /** 当前 {@link ARRAY} JNI 库的路径 */
         public final static String LIB_PATH;
         private final static String[] SRC_NAME = {

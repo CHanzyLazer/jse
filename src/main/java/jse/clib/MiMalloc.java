@@ -1,6 +1,5 @@
 package jse.clib;
 
-import jse.code.CS;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
@@ -9,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static jse.code.CS.VERSION_NUMBER;
 import static jse.code.OS.JAR_DIR;
 import static jse.code.Conf.*;
 import static jse.code.OS.JAVA_HOME;
@@ -89,7 +89,7 @@ public class MiMalloc {
     public final static String VERSION = "2.2.4";
     
     /** 当前 {@link MiMalloc} 库的根目录，结尾一定存在 {@code '/'} */
-    public final static String HOME = JAR_DIR+"mimalloc/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, CS.VERSION, MiMalloc.VERSION, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String HOME = JAR_DIR+"mimalloc/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, MiMalloc.VERSION, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link MiMalloc} 库所在的文件夹路径，结尾一定存在 {@code '/'} */
     public final static String LIB_DIR = HOME+"lib/";
     /** 当前 {@link MiMalloc} 库的 include 目录路径，结尾一定存在 {@code '/'} */

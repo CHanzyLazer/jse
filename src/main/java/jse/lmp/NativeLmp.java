@@ -195,7 +195,7 @@ public class NativeLmp implements IAutoShutdown {
             NATIVELMP_LIB_DIR = tNativeLmpBuildDir + "lib/";
         } else {
             // 否则直接版本隔离，采用内部 lammps
-            String tNativeLmpDir = LMP_ROOT+"core/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION, MPICore.EXE_PATH, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, rCmakeSettingNativeLmp) + "/";
+            String tNativeLmpDir = LMP_ROOT+"core/" + UT.Code.uniqueID(OS.OS_NAME, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, MPICore.EXE_PATH, Conf.CMAKE_C_COMPILER, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_C_FLAGS, Conf.CMAKE_CXX_FLAGS, rCmakeSettingNativeLmp) + "/";
             NATIVELMP_INCLUDE_DIR = tNativeLmpDir + "includes/";
             NATIVELMP_LIB_DIR = tNativeLmpDir + "lib/";
         }
