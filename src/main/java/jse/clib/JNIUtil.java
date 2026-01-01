@@ -267,7 +267,7 @@ public class JNIUtil {
         private String cmakeInitCmd_() throws IOException {
             // 设置参数，这里使用 List 来构造这个长指令
             List<String> rCommand = new ArrayList<>();
-            rCommand.add("\""+CMake.EXE_PATH+"\"");
+            rCommand.add(CMake.EXE_CMD);
             // 这里设置 C/C++ 编译器（如果有）
             if (mCmakeCCompiler   != null) {rCommand.add("-D"); rCommand.add("CMAKE_C_COMPILER="  + mCmakeCCompiler);}
             if (mCmakeCxxCompiler != null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+ mCmakeCxxCompiler);}
@@ -348,7 +348,7 @@ public class JNIUtil {
             // 现在初始化 cmake 和参数设置放在一起执行
             EXEC.system(cmakeInitCmd_());
             // 最后进行构造操作
-            EXEC.system("\""+CMake.EXE_PATH+"\" --build . --config Release");
+            EXEC.system(CMake.EXE_CMD+" --build . --config Release");
             EXEC.setNoSTDOutput(false).setWorkingDir(null);
             // 简单检测一下是否编译成功
             @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);

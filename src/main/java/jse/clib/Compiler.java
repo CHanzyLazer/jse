@@ -38,6 +38,8 @@ public class Compiler {
     public final static String TYPE;
     /** 自动检测到的编译器可执行路径 */
     public final static String EXE_PATH;
+    /** 拼接后可以执行的命令，对于 windows 和 linux 专门适配 */
+    public final static String EXE_CMD;
     /** 自动检测到编译器是否合适，包括是否有合适的 c++ 编译器 */
     public final static boolean VALID;
     
@@ -66,7 +68,7 @@ public class Compiler {
         // windows 下总是检测 msvc
         String tVswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
         if (!IO.exists(tVswhere)) return null;
-        List<String> tLines = EXEC.system_str("\""+tVswhere+"\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath");
+        List<String> tLines = EXEC.system_str("& \""+tVswhere+"\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath");
         if (tLines.isEmpty()) return null;
         String tVsPath = tLines.get(0);
         if (tVsPath==null || !IO.exists(tVsPath)) return null;
@@ -99,10 +101,12 @@ public class Compiler {
             }
             if (Conf.FORCE) throw new RuntimeException(tErrInfo);
             else UT.Code.warning(tErrInfo);
+            EXE_CMD = null;
             TYPE = "unknown";
             VALID = false;
         } else {
             System.out.printf("JNI INIT INFO: C/C++ compiler detected in %s\n", EXE_PATH);
+            EXE_CMD = (IS_WINDOWS?"& \"":"\"") + EXE_PATH + "\"";
             if (IS_WINDOWS) {
                 TYPE = "msvc";
                 VALID = true;

@@ -35,6 +35,8 @@ public class CMake {
     public final static String INTERNAL_HOME = JAR_DIR+"cmake/core/" + UT.Code.uniqueID(OS.OS_NAME, VERSION) + "/";
     /** 自动检测到的 cmake 可执行路径 */
     public final static String EXE_PATH;
+    /** 拼接后可以执行的命令，对于 windows 和 linux 专门适配 */
+    public final static String EXE_CMD;
     
     private static @NotNull String getExePath_() throws Exception {
         // 优先检测环境变量的 cmake
@@ -121,5 +123,6 @@ public class CMake {
         try {EXE_PATH = getExePath_();}
         catch (Exception e) {throw new RuntimeException(e);}
         System.out.printf("JNI INIT INFO: Use CMake in %s\n", EXE_PATH);
+        EXE_CMD = (IS_WINDOWS?"& \"":"\"") + EXE_PATH + "\"";
     }
 }

@@ -6,11 +6,11 @@ if "%SCRIPT_DIR%" == "" set SCRIPT_DIR=.\
 
 @REM Find jse.jar
 set JAR_LOCATION=
-for %%i in (%SCRIPT_DIR%jse-*.jar) do (
+for %%i in ("%SCRIPT_DIR%jse-*.jar") do (
     set "JAR_LOCATION=%%i"
     goto :foundJar
 )
-for %%i in (%SCRIPT_DIR%lib\jse-*.jar) do (
+for %%i in ("%SCRIPT_DIR%lib\jse-*.jar") do (
     set "JAR_LOCATION=%%i"
     goto :foundJar
 )
