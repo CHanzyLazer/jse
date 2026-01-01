@@ -54,6 +54,11 @@ public class LmpCore {
         private final static String DEFAULT_TAG = "stable_22Jul2025_update2";
         
         /**
+         * 指定编译时的并行数目，应该可以大大加速编译时间（特别对于现在这种版本隔离的情况）
+         * 默认为比较保守的 {@code 4}。实测对于 MSVC 是无效的，需要配合环境变量，这里不去做可能破坏性的测试
+         */
+        public static int CMAKE_PARALLEL = OS.envI("JSE_LMP_CMAKE_PARALLEL", 4);
+        /**
          * 控制在 windows 上编译时是否开启 /MT 选项，
          * 新版 lammps 有时需要开启 /MT 才能正常运行，但这个操作非常不安全；
          * 更加安全的做法是更换兼容的 jdk 版本，例如
@@ -200,6 +205,7 @@ public class LmpCore {
         // 现在直接使用 JNIUtil.buildLib 来统一初始化
         LIB_PATH = new JNIUtil.LibBuilder("lammps", "LMP_CORE", LIB_DIR, rCmakeSettingLmp)
             .setMT(Conf.USE_MT)
+            .setParallel(Conf.CMAKE_PARALLEL)
             .setEnvChecker(() -> {
                 // 在这里输出没有 mpi 的警告，保证无 mpi 情况下只会警告一次
                 MPICore.printInfo();

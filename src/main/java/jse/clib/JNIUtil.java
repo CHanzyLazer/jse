@@ -160,6 +160,7 @@ public class JNIUtil {
             return tBuildDir;
         };
         private IDirConsumer mPostBuildDir = bd -> {};
+        private int mParallel = 0;
         private final String mLibDir;
         private String mCmakeInitDir = "..";
         private @Nullable String mCmakeCCompiler = null, mCmakeCxxCompiler = null, mCmakeCFlags = null, mCmakeCxxFlags = null;
@@ -174,6 +175,7 @@ public class JNIUtil {
             mLibDir = aLibDir;
             mCmakeSettings = aCmakeSettings;
         }
+        public LibBuilder setParallel(int aParallel) {mParallel = aParallel; return this;}
         public LibBuilder setMT() {return setMT(true);}
         public LibBuilder setMT(boolean aMT) {mMT = aMT; return this;}
         public LibBuilder setEnvChecker(IEnvChecker aEnvChecker) {mEnvChecker.add(aEnvChecker); return this;}
@@ -298,7 +300,9 @@ public class JNIUtil {
             // 现在初始化 cmake 和参数设置放在一起执行
             EXEC.system(cmakeInitCmd_());
             // 最后进行构造操作
-            EXEC.system(CMake.EXE_CMD+" --build . --config Release");
+            String tCmd = CMake.EXE_CMD+" --build . --config Release";
+            if (mParallel > 1) tCmd += " --parallel "+mParallel;
+            EXEC.system(tCmd);
             EXEC.setNoSTDOutput(false).setWorkingDir(null);
             // 简单检测一下是否编译成功
             @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);

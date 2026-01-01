@@ -63,7 +63,7 @@ public class Main {
         }
     }
     
-    @SuppressWarnings({"ThrowablePrintedToSystemOut", "UnnecessaryReturnStatement"})
+    @SuppressWarnings({"ThrowablePrintedToSystemOut", "UnnecessaryReturnStatement", "ExtractMethodRecommender"})
     public static void main(String[] aArgs) throws Exception {
         try {
             // 完全没有输入时（双击运行）直接结束
@@ -248,6 +248,12 @@ public class Main {
                     if (tName.equals("cpointer")) {
                         tNamesToClean.add(tName);
                     } else
+                    if (tName.equals("dlfcn")) {
+                        tNamesToClean.add(tName);
+                    } else
+                    if (tName.equals("jep")) {
+                        tNamesToClean.add(tName);
+                    } else
                     if (tName.equals("jniutil")) {
                         tNamesToClean.add(tName);
                     } else
@@ -268,7 +274,7 @@ public class Main {
                     System.out.println("There is no jni library to clean");
                     return;
                 }
-                System.out.printf("The following directories located in %s will be removed:\n", JAR_DIR);
+                System.out.printf("The following directories in %s will be removed:\n", JAR_DIR);
                 System.out.println(String.join("\n", tNamesToClean));
                 System.out.println("Confirm? (y/N)");
                 BufferedReader tReader = jse.code.IO.toReader(System.in, Charset.defaultCharset());
@@ -287,9 +293,9 @@ public class Main {
             }
             case "-jnibuild": {
                 jse.parallel.MPI.InitHelper.init();
-                jse.lmp.NativeLmp.InitHelper.init();
-                jse.code.SP.Python.InitHelper.init();
+                jse.lmp.LmpPlugin.InitHelper.init();
                 jsex.nnap.PairNNAP.InitHelper.init();
+                jse.code.SP.Python.InitHelper.init();
                 return;
             }
             default: {
