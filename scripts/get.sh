@@ -8,15 +8,22 @@ set -o pipefail
 
 JSE_VERSION="3.12.6"
 JSE_DEFAULT_DIR="${HOME}/jse"
-JSE_RELEASE_URL="https://github.com/CHanzyLazer/jse/releases/download/v${JSE_VERSION}/jse-${JSE_VERSION}.tar.gz"
+JSE_PKG_NAME="jse-${JSE_VERSION}.tar.gz"
+JSE_RELEASE_URL="https://github.com/CHanzyLazer/jse/releases/download/v${JSE_VERSION}/${JSE_PKG_NAME}"
 
 JAVA_REQUIRED="21"
 JDK_VENDOR="Oracle"
 JDK_VERSION="21"
-JDK_URL="https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz"
+JDK_PKG_NAME="jdk-${JDK_VERSION}_linux-x64_bin.tar.gz"
+JDK_URL="https://download.oracle.com/java/${JDK_VERSION}/latest/${JDK_PKG_NAME}"
 JDK_BASE="${HOME}/java"
 
 BASHRC="${HOME}/.bashrc"
+
+CACHE_DIR="${HOME}/.cache/jse-getter"
+mkdir -p "$CACHE_DIR" || raise "cannot create cache dir: $CACHE_DIR"
+
+NL=$'\n'
 
 # =============================
 # Helper functions
@@ -51,9 +58,36 @@ remote_get() {
     fi
 }
 download_file() {
-    remote_get "$1" > "$2" || raise "download failed: $1"
+    local url="$1"
+    local outfile="$2"
+    if [ -f "$outfile" ]; then
+        echo "Using cached file: $outfile"
+        return 0
+    fi
+    echo "Downloading $url"
+    echo "or you can download it manually and put into $CACHE_DIR"
+    tmpfile="$(mktemp "${outfile}.tmp.XXXXXX")" || raise "mktemp failed"
+    if remote_get "$url" > "$tmpfile"; then
+        mv "$tmpfile" "$outfile"
+        return 0
+    else
+        raise "download failed"
+    fi
 }
-
+write_bashrc_block() {
+    local block_name="$1"
+    local block_content="$2"
+    local bashrc="$BASHRC"
+    if grep -q "# >>> $block_name" "$bashrc" 2>/dev/null; then
+        echo "Existing $block_name configuration found in ~/.bashrc, it will be updated."
+        sed -i "/# >>> $block_name/,/# <<< $block_name/d" "$bashrc"
+    fi
+    {
+        echo "# >>> $block_name"
+        echo "$block_content"
+        echo "# <<< $block_name"
+    } >> "$bashrc"
+}
 
 # =========================================================
 # logo
@@ -96,29 +130,28 @@ fi
 if [ "$INSTALL_JDK" -eq 1 ]; then
     echo "Installing JDK into $JDK_BASE"
     mkdir -p "$JDK_BASE" || raise "cannot create $JDK_BASE"
-
-    tmpdir=$(mktemp -d) || raise "mktemp failed"
-    download_file "$JDK_URL" "$tmpdir/jdk.tar.gz"
-
+    
+    download_file "$JDK_URL" "$CACHE_DIR/$JDK_PKG_NAME"
     echo "Extracting..."
-    tar -xzf "$tmpdir/jdk.tar.gz" -C "$JDK_BASE" || raise "extract jdk failed"
-    rm -rf "$tmpdir"
-
+    tar -xzf "$CACHE_DIR/$JDK_PKG_NAME" -C "$JDK_BASE" || raise "extract jdk failed"
+    
     JAVA_HOME_DETECTED=$(find "$JDK_BASE" -maxdepth 1 -type d -name "jdk-*" | sort | tail -n 1)
     [ -n "$JAVA_HOME_DETECTED" ] || raise "cannot detect extracted JDK directory"
-
+    
     # env for current session
     export JAVA_HOME="$JAVA_HOME_DETECTED"
     export PATH="$JAVA_HOME/bin:$PATH"
     # env for bashrc
     if ask_yes_no "Add JAVA_HOME and PATH to ~/.bashrc?" y; then
-        {
-            echo ""
-            echo "# >>> jse java"
-            echo "export JAVA_HOME=\"$JAVA_HOME\""
-            echo "export PATH=\"\$JAVA_HOME/bin:\$PATH\""
-            echo "# <<< jse java"
-        } >> "$BASHRC"
+        write_bashrc_block "jse java" "export JAVA_HOME=\"$JAVA_HOME\"${NL}export PATH=\"\$JAVA_HOME/bin:\$PATH\""
+        JAVA_ENV_WRITTEN=1
+    else
+        JAVA_ENV_WRITTEN=0
+        echo "You can add it manually if needed:"
+        echo "----------------------------------------"
+        echo "export JAVA_HOME=\"$JAVA_HOME\""
+        echo "export PATH=\"\$JAVA_HOME/bin:\$PATH\""
+        echo "----------------------------------------"
     fi
 fi
 
@@ -135,25 +168,26 @@ fi
 mkdir -p "$JSE_DIR" || raise "cannot create $JSE_DIR"
 
 tmpdir=$(mktemp -d) || raise "mktemp failed"
-download_file "$JSE_RELEASE_URL" "$tmpdir/jse.tar.gz"
-
+download_file "$JSE_RELEASE_URL" "$CACHE_DIR/$JSE_PKG_NAME"
 echo "Extracting..."
-tar -xzf "$tmpdir/jse.tar.gz" -C "$tmpdir" || raise "extract jse failed"
+tar -xzf "$CACHE_DIR/$JSE_PKG_NAME" -C "$tmpdir" || raise "extract jse failed"
 inner=$(find "$tmpdir" -maxdepth 1 -type d -name "jse-*")
 [ -n "$inner" ] || raise "invalid jse archive"
 mv "$inner"/* "$JSE_DIR" || raise "install jse failed"
 rm -rf "$tmpdir"
 
 # env for current session
-export PATH="$JSE_DIR/bin:$PATH"
+export PATH="$JSE_DIR:$PATH"
 # env for bashrc
 if ask_yes_no "Add jse to PATH in ~/.bashrc?" y; then
-    {
-        echo ""
-        echo "# >>> jse path"
-        echo "export PATH=\"$JSE_DIR/bin:\$PATH\""
-        echo "# <<< jse path"
-    } >> "$BASHRC"
+    write_bashrc_block "jse path" "export PATH=\"$JSE_DIR:\$PATH\""
+    JSE_ENV_WRITTEN=1
+else
+    JSE_ENV_WRITTEN=0
+    echo "You can add it manually if needed:"
+    echo "----------------------------------------"
+    echo "export PATH=\"$JSE_DIR:\$PATH\""
+    echo "----------------------------------------"
 fi
 
 # =========================================================
@@ -167,4 +201,12 @@ if ask_yes_no "Run 'jse -jnibuild' to install JNI libraries?" n; then
 fi
 
 echo ""
+if [ "${JAVA_ENV_WRITTEN:-0}" -eq 1 ] || [ "${JSE_ENV_WRITTEN:-0}" -eq 1 ]; then
+    echo "------------Environment Note------------"
+    echo "The environment variables have been added to ~/.bashrc,"
+    echo "to make them effective in current shell, run:"
+    echo "  source ~/.bashrc"
+    echo "or open a new terminal."
+    echo "----------------------------------------"
+fi
 echo "Installation completed!"
