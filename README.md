@@ -5,7 +5,6 @@ It is written in Java and leverages **JIT compilation**, **modern JVM features**
 
 jse is designed for **materials scientists, computational physicists, and chemists**, including users who may *not* have a strong programming background, while still providing powerful low-level control for advanced users.
 
----
 
 ## Key Features
 
@@ -48,7 +47,6 @@ jse is designed for **materials scientists, computational physicists, and chemis
 - Compression / decompression
 - SSH connectivity
 
----
 
 ## Installation
 
@@ -71,7 +69,6 @@ bash <(wget https://raw.githubusercontent.com/CHanzyLazer/jse/main/scripts/get.s
 Invoke-Expression (Invoke-Webrequest 'https://raw.githubusercontent.com/CHanzyLazer/jse/main/scripts/get.ps1' -UseBasicParsing).Content
 ```
 
----
 
 ### Manual Installation
 
@@ -87,12 +84,11 @@ Invoke-Expression (Invoke-Webrequest 'https://raw.githubusercontent.com/CHanzyLa
 3. Extract the package and add the directory to your `PATH`.
 
 4. Verify installation:
+   
+   ```bash
+   jse -v
+   ```
 
-```bash
-jse -v
-```
-
----
 
 ## Basic Usage
 
@@ -152,25 +148,23 @@ jse path/to/script.py
 
 > jse automatically detects the scripting language by file extension.
 
----
 
 ## IDE Support (Groovy IntelliSense)
 
 For **IntelliJ IDEA** users:
 
 1. Initialize in the project directory (with IDEA closed):
-
-```bash
-jse --idea
-```
+   
+   ```bash
+   jse --idea
+   ```
 
 2. Open the directory in IntelliJ and configure the JDK:
+   
+   ```text
+   File → Project Structure → Project → SDK
+   ```
 
-```
-File → Project Structure → Project → SDK
-```
-
----
 
 ## Advanced Features
 
@@ -189,7 +183,6 @@ jse --jnibuild
 
 > Missing dependencies will be clearly reported.
 
----
 
 ### MPI Support
 
@@ -220,7 +213,6 @@ mpiexec -np 4 jse.bat script.groovy
 
 ⚠️ Ensure JNI libraries are initialized *before* MPI execution to avoid race conditions.
 
----
 
 ### LAMMPS Integration
 
@@ -244,7 +236,6 @@ Specify LAMMPS packages:
 export jse_LMP_PKG="EXTRA-COMPUTE EXTRA-FIX EXTRA-PAIR MANYBODY"
 ```
 
----
 
 ### Python Support
 
@@ -266,7 +257,6 @@ jse --python script.py
 
 > Omitting `--python` is allowed for `.py` files.
 
----
 
 ## Citation
 
@@ -285,14 +275,12 @@ If you use jse in academic work, please cite:
   Parameter](https://www.sciencedirect.com/science/article/abs/pii/S1359645425011589),
   *Acta Materialia* **(2025)**
 
----
 
 ## License
 
 This project is licensed under **GNU GPL v3**.
 See [LICENSE](LICENSE) for details.
 
----
 
 ## Acknowledgments
 
