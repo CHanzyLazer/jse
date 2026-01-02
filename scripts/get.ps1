@@ -11,7 +11,7 @@ param (
 
 & {
     $TempPath = ([System.IO.Path]::GetTempPath())
-    $LastRelease = "3.12.6"
+    $LastRelease = "3.13.4"
     $ErrorActionPreference = 'Stop'
     
     function WriteErrorTip($msg) {
