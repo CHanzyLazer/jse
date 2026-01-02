@@ -22,10 +22,6 @@ import java.util.Map;
  * 为了中间变量缓存利用效率，此类相同实例线程不安全，而不同实例之间线程安全
  * <p>
  * 现在统一通过调用 c 并借助 avx 指令优化来得到最佳的性能
- * <p>
- * References:
- * <a href="https://link.springer.com/article/10.1007/s40843-024-2953-9">
- * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
  * @author liqa
  */
 public class Chebyshev extends WTypeBasis {

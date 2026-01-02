@@ -23,7 +23,7 @@ import static jse.code.CS.RANDOM;
  * <p>
  * 现在统一通过调用 c 并借助 avx 指令优化来得到最佳的性能
  * <p>
- * References:
+ * Reference:
  * <a href="https://link.springer.com/article/10.1007/s40843-024-2953-9">
  * Efficient and accurate simulation of vitrification in multi-component metallic liquids with neural-network potentials </a>
  * @author Su Rui, liqa

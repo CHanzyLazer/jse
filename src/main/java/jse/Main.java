@@ -100,7 +100,7 @@ public class Main {
                 if (aArgs.length < 3) {SP.Python.runShell(); return;}
                 break;
             }
-            case "-lmp": case "--lmp": {
+            case "-lmp": case "-lammps": case "--lammps": {
                 // 直接通过 jse 启动内嵌的 lammps，参数转发并且自动启动 LmpPlugin
                 String[] tArgs = new String[aArgs.length-2];
                 if (tArgs.length > 0) System.arraycopy(aArgs, 2, tArgs, 0, tArgs.length);
@@ -477,15 +477,15 @@ public class Main {
         aPrinter.println();
         aPrinter.println("Such as:  jse path/to/script.groovy [args...]");
         aPrinter.println("          jse -t 'println(/hello world/)'");
-        aPrinter.println("          jse --lmp -in melt.in");
+        aPrinter.println("          jse -lmp -in melt.in");
         aPrinter.println();
         aPrinter.println("The options can be:");
         aPrinter.println("    -t --text      Run the groovy text script");
         aPrinter.println("    -f --file      Run the groovy/python file script (default behavior when left blank)");
         aPrinter.println("    -v --version   Print version number");
         aPrinter.println("    -? --help      Print help message");
+        aPrinter.println("    -lmp --lammps  Run lammps bindings in jse");
         aPrinter.println("    --idea         Initialize the current directory to Intellij IDEA project");
-        aPrinter.println("    --lmp          Run lammps bindings in jse");
         aPrinter.println("    --groovy       Run the groovy file script, or open the groovy interactive shell when no file input");
         aPrinter.println("    --python       Run the python file script, or open the python interactive shell when no file input");
         aPrinter.println("    --groovytext   Run the groovy text script");

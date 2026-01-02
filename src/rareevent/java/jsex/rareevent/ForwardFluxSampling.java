@@ -21,8 +21,11 @@ import java.util.function.BooleanSupplier;
 import static jse.code.CS.RANDOM;
 
 /**
- * 使用向前通量采样法（Forward Flux Sampling，FFS）来对稀有事件的概率进行采样；
- * 只用于技术上的简单实现，如果需要保留演化的路径信息请使用 BG
+ * 使用向前通量采样法（Forward Flux Sampling，FFS）来对稀有事件的概率进行采样
+ * <p>
+ * Reference:
+ * <a href="https://www.sciencedirect.com/science/article/abs/pii/S1359645425011589">
+ * Revealing Crystal Nucleation Behaviors in Metallic Glass-Forming Liquids via Parallel Forward Flux Sampling with Multi-Type Bond-Orientational Order Parameter </a>
  * @author liqa
  * @param <T> 路径上每个点的类型，对于 lammps 模拟则是原子结构信息 {@link IAtomData}
  */

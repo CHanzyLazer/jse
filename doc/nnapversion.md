@@ -237,13 +237,14 @@
 
 ### 后期 5 版本支持
 
-- 共享归一化系数的格式支持
 - 共享基组支持
+- 共享归一化系数支持（共享基组时默认开启）
 - 共享神经网络支持
 - `cnlm` 二次混合支持
 - `fuse_weight` 排序调整
 - 增加 `exfuse` 种类项
 - 移除 `noradial`, `l3cross`, `l4cross` 可调项
+- 增加 `fuse_scale` 项保证基组大小合理，这会破坏使用 `fuse` 的向前兼容性
 
 参考的标准势函数格式如下：
 
@@ -265,7 +266,6 @@
                 "nmax": 5,
                 "rcut": 6.0,
                 "wtype": "exfuse",
-                "fuse_style": "limited",
                 "fuse_size": 2,
                 "fuse_weight": "[...], 2-D list of fuse weight, order: [type][fuse_k]"
             }, {
@@ -276,7 +276,6 @@
                 "l4max": 0,
                 "rcut": 4.0,
                 "wtype": "exfuse",
-                "fuse_style": "limited",
                 "fuse_size": 2,
                 "fuse_weight": "[...], 2-D list of fuse weight, order: [type][fuse_k]",
                 "post_fuse": true,
@@ -317,11 +316,8 @@
 }
 ```
 
-## VERSION == 6 (计划中)
+## VERSION == 6 (如果有必要)
 
 - 基组包含自身种类信息支持
-- 训练代码直接砍掉不同种类不同基组的写法，现在只允许使用相同基组，并且总是共享归一化系数（同时也会总是共享 scale）
-- `Mirror` 也改成单基组的写法
-- 共享基组默认会共享归一化系数，从而简化训练时的共享归一化系数设置
-
+- 利用自身种类信息，`Mirror` 改成单基组的写法，进而支持多种类的合理 `Mirror` 设置
 
