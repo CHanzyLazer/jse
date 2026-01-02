@@ -60,7 +60,7 @@ public class CMake {
         String tCmakePkgName = "cmake-"+VERSION+"-" + (IS_WINDOWS ? "windows-x86_64.zip" : (IS_MAC ? "macos-universal.tar.gz" : "linux-x86_64.tar.gz"));
         String tCmakeCachePath = JNIUtil.PKG_DIR + tCmakePkgName;
         if (!IO.exists(tCmakeCachePath)) {
-            System.out.printf("JNI INIT INFO: No correct CMake pkg in %s\n", JNIUtil.PKG_DIR);
+            System.out.println("JNI INIT INFO: No correct CMake pkg detected");
             System.out.println("Auto download CMake? (Y/n)");
             BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
             String tLine = tReader.readLine();
@@ -74,17 +74,9 @@ public class CMake {
                 System.out.println("Auto download CMake? (Y/n)");
             }
             String tCmakeUri = String.format("https://github.com/Kitware/CMake/releases/download/v%s/%s", VERSION, tCmakePkgName);
-            System.out.println("JNI INIT INFO: Downloading the CMake pkg...");
-            try {
-                IO.copy(URI.create(tCmakeUri).toURL(), tCmakeCachePath);
-            } catch (Exception e) {
-                System.err.println("JNI INIT ERROR: Auto download CMake fail, you can:\n");
-                System.err.printf("  1. Download CMake pkg manually from %s\n", tCmakeUri);
-                System.err.printf("  2. Put it into %s\n", tCmakeCachePath);
-                System.err.println("  3. Rerun this program\n");
-                System.err.println("The following is the exception stack information.");
-                throw e;
-            }
+            System.out.println("JNI INIT INFO: Downloading "+tCmakeUri);
+            System.out.println("  or you can download it manually and put into "+JNIUtil.PKG_DIR);
+            IO.copy(URI.create(tCmakeUri).toURL(), tCmakeCachePath);
             System.out.println("JNI INIT INFO: CMake pkg downloading finished.");
         }
         // 解压

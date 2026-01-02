@@ -163,7 +163,7 @@ public class LmpCore {
         final String tLmpCachePath = JNIUtil.PKG_DIR + "lammps-"+ tLmpTag +".zip";
         final Callable<Void> tCacheValider = () -> {
             if (jse.code.IO.exists(tLmpCachePath)) return null;
-            System.out.printf("LMP_CORE INIT INFO: No correct lammps source code in %s\n", JNIUtil.PKG_DIR);
+            System.out.println("LMP_CORE INIT INFO: No correct lammps source code detected");
             System.out.println("Auto download lammps? (Y/n)");
             BufferedReader tReader = jse.code.IO.toReader(System.in, Charset.defaultCharset());
             String tLine = tReader.readLine();
@@ -177,17 +177,9 @@ public class LmpCore {
                 System.out.println("Auto download lammps? (Y/n)");
             }
             String tLmpUri = String.format("https://github.com/lammps/lammps/archive/refs/tags/%s.zip", tLmpTag);
-            System.out.println("LMP_CORE INIT INFO: Downloading the source code...");
-            try {
-                jse.code.IO.copy(URI.create(tLmpUri).toURL(), tLmpCachePath);
-            } catch (Exception e) {
-                System.err.println("LMP_CORE INIT ERROR: Auto download lammps fail, you can:\n");
-                System.err.printf("  1. Download lammps source code manually from %s\n", tLmpUri);
-                System.err.printf("  2. Put it into %s\n", tLmpCachePath);
-                System.err.println("  3. Rerun this program\n");
-                System.err.println("The following is the exception stack information.");
-                throw e;
-            }
+            System.out.println("LMP_CORE INIT INFO: Downloading "+tLmpUri);
+            System.out.println("  or you can download it manually and put into "+JNIUtil.PKG_DIR);
+            jse.code.IO.copy(URI.create(tLmpUri).toURL(), tLmpCachePath);
             System.out.println("LMP_CORE INIT INFO: lammps source code downloading finished.");
             return null;
         };
