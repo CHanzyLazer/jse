@@ -1,33 +1,35 @@
 #!/usr/bin/env bash
 
+# jse getter
+# usage:
+#    bash <(curl -s <my location>)
+
 set -o pipefail
 
-# =============================
-# Basic config
-# =============================
+# ----------------------------------------
+# basic config
+#
 
+JSE_DIR="${1:-"${HOME}/jse"}"
 JSE_VERSION="3.12.6"
-JSE_DEFAULT_DIR="${HOME}/jse"
 JSE_PKG_NAME="jse-${JSE_VERSION}.tar.gz"
-JSE_RELEASE_URL="https://github.com/CHanzyLazer/jse/releases/download/v${JSE_VERSION}/${JSE_PKG_NAME}"
+JSE_URL="https://github.com/CHanzyLazer/jse/releases/download/v${JSE_VERSION}/${JSE_PKG_NAME}"
 
 JAVA_REQUIRED="21"
 JDK_VENDOR="Oracle"
 JDK_VERSION="21"
 JDK_PKG_NAME="jdk-${JDK_VERSION}_linux-x64_bin.tar.gz"
 JDK_URL="https://download.oracle.com/java/${JDK_VERSION}/latest/${JDK_PKG_NAME}"
-JDK_BASE="${HOME}/java"
 
 BASHRC="${HOME}/.bashrc"
-
 CACHE_DIR="${HOME}/.cache/jse-getter"
 mkdir -p "$CACHE_DIR" || raise "cannot create cache dir: $CACHE_DIR"
 
 NL=$'\n'
 
-# =============================
-# Helper functions
-# =============================
+# ----------------------------------------
+# helper functions
+#
 
 raise() {
     echo "[ERROR] $*" 1>&2
@@ -77,21 +79,22 @@ download_file() {
 write_bashrc_block() {
     local block_name="$1"
     local block_content="$2"
-    local bashrc="$BASHRC"
-    if grep -q "# >>> $block_name" "$bashrc" 2>/dev/null; then
+    if grep -q "# >>> $block_name" "$BASHRC" 2>/dev/null; then
         echo "Existing $block_name configuration found in ~/.bashrc, it will be updated."
-        sed -i "/# >>> $block_name/,/# <<< $block_name/d" "$bashrc"
+        sed -i "/# >>> $block_name/,/# <<< $block_name/d" "$BASHRC"
+    else
+        echo "" >> "$BASHRC"
     fi
     {
         echo "# >>> $block_name"
         echo "$block_content"
         echo "# <<< $block_name"
-    } >> "$bashrc"
+    } >> "$BASHRC"
 }
 
-# =========================================================
-# logo
-# =========================================================
+# ----------------------------------------
+# start script
+#
 
 echo '       __  ____  ____          '
 echo '     _(  )/ ___)(  __)         '
@@ -99,9 +102,16 @@ echo '    / \) \\___ \ ) _)          '
 echo '    \____/(____/(____) getter  '
 echo '                               '
 
-# =========================================================
+echo "Install to $JSE_DIR"
+if [ -d "$JSE_DIR" ] && [ "$(ls -A "$JSE_DIR" 2>/dev/null)" ]; then
+    ask_yes_no "Directory not empty, continue anyway?" n || raise "$JSE_DIR not empty"
+else
+    mkdir -p "$JSE_DIR" || raise "cannot create $JSE_DIR"
+fi
+
+# ----------------------------------------
 # detect java
-# =========================================================
+#
 
 JAVA_FOUND=0
 JAVA_VERSION=0
@@ -123,19 +133,17 @@ else
     ask_yes_no "Install $JDK_VENDOR JDK $JDK_VERSION anyway?" n && INSTALL_JDK=1
 fi
 
-# =========================================================
+# ----------------------------------------
 # install jdk
-# =========================================================
+#
 
 if [ "$INSTALL_JDK" -eq 1 ]; then
-    echo "Installing JDK into $JDK_BASE"
-    mkdir -p "$JDK_BASE" || raise "cannot create $JDK_BASE"
-    
+    echo "JDK will be installed into $JSE_DIR"
     download_file "$JDK_URL" "$CACHE_DIR/$JDK_PKG_NAME"
     echo "Extracting..."
-    tar -xzf "$CACHE_DIR/$JDK_PKG_NAME" -C "$JDK_BASE" || raise "extract jdk failed"
+    tar -xzf "$CACHE_DIR/$JDK_PKG_NAME" -C "$JSE_DIR" || raise "extract jdk failed"
     
-    JAVA_HOME_DETECTED=$(find "$JDK_BASE" -maxdepth 1 -type d -name "jdk-*" | sort | tail -n 1)
+    JAVA_HOME_DETECTED=$(find "$JSE_DIR" -maxdepth 1 -type d -name "jdk-*" | sort | tail -n 1)
     [ -n "$JAVA_HOME_DETECTED" ] || raise "cannot detect extracted JDK directory"
     
     # env for current session
@@ -155,49 +163,39 @@ if [ "$INSTALL_JDK" -eq 1 ]; then
     fi
 fi
 
-# =========================================================
+# ----------------------------------------
 # install jse
-# =========================================================
+#
 
-JSE_DIR="${1:-$JSE_DEFAULT_DIR}"
-
-echo "Installing jse into $JSE_DIR"
-if [ -d "$JSE_DIR" ] && [ "$(ls -A "$JSE_DIR" 2>/dev/null)" ]; then
-    raise "installation directory not empty: $JSE_DIR"
-fi
-mkdir -p "$JSE_DIR" || raise "cannot create $JSE_DIR"
-
-tmpdir=$(mktemp -d) || raise "mktemp failed"
-download_file "$JSE_RELEASE_URL" "$CACHE_DIR/$JSE_PKG_NAME"
+download_file "$JSE_URL" "$CACHE_DIR/$JSE_PKG_NAME"
 echo "Extracting..."
-tar -xzf "$CACHE_DIR/$JSE_PKG_NAME" -C "$tmpdir" || raise "extract jse failed"
-inner=$(find "$tmpdir" -maxdepth 1 -type d -name "jse-*")
-[ -n "$inner" ] || raise "invalid jse archive"
-mv "$inner"/* "$JSE_DIR" || raise "install jse failed"
-rm -rf "$tmpdir"
+tar -xzf "$CACHE_DIR/$JSE_PKG_NAME" -C "$JSE_DIR" || raise "extract jse failed"
+
+JSE_HOME_DETECTED=$(find "$JSE_DIR" -maxdepth 1 -type d -name "jse-*" | sort | tail -n 1)
+[ -n "$JSE_HOME_DETECTED" ] || raise "cannot detect extracted jse directory"
 
 # env for current session
-export PATH="$JSE_DIR:$PATH"
+export PATH="$JSE_HOME_DETECTED:$PATH"
 # env for bashrc
-if ask_yes_no "Add jse to PATH in ~/.bashrc?" y; then
-    write_bashrc_block "jse path" "export PATH=\"$JSE_DIR:\$PATH\""
+if ask_yes_no "Add jse PATH in ~/.bashrc?" y; then
+    write_bashrc_block "jse path" "export PATH=\"$JSE_HOME_DETECTED:\$PATH\""
     JSE_ENV_WRITTEN=1
 else
     JSE_ENV_WRITTEN=0
     echo "You can add it manually if needed:"
     echo "----------------------------------------"
-    echo "export PATH=\"$JSE_DIR:\$PATH\""
+    echo "export PATH=\"$JSE_HOME_DETECTED:\$PATH\""
     echo "----------------------------------------"
 fi
 
-# =========================================================
+# ----------------------------------------
 # verify
-# =========================================================
+#
 
 jse -v || raise "jse failed to run... Why?"
 
-if ask_yes_no "Run 'jse -jnibuild' to install JNI libraries?" n; then
-    jse -jnibuild || raise "jni build failed"
+if ask_yes_no "Run 'jse --jnibuild' to install JNI libraries?" n; then
+    jse --jnibuild || raise "jni build failed"
 fi
 
 echo ""

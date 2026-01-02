@@ -3,7 +3,7 @@
 
 # jse getter
 # usage: (in powershell)
-#  Invoke-Expression (Invoke-Webrequest <my location> -UseBasicParsing).Content
+#    Invoke-Expression (Invoke-Webrequest <my location> -UseBasicParsing).Content
 
 param (
     [string]$installdir = ""
@@ -128,7 +128,7 @@ param (
     }
     $installdir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($installdir)
     
-    Write-Host "Install jse to $installdir"
+    Write-Host "Install to $installdir"
     if (Test-Path $installdir) {
         $items = Get-ChildItem -Path $installdir -Force -ErrorAction SilentlyContinue
         if ($items -and $items.Count -gt 0) {
@@ -198,8 +198,8 @@ param (
     }
     
     # jni part
-    if (AskYesNo "Run 'jse -jnibuild' to install JNI libraries?" $false) {
-        & jse -jnibuild
+    if (AskYesNo "Run 'jse --jnibuild' to install JNI libraries?" $false) {
+        & jse --jnibuild
     }
     Write-Host ""
     Write-Host "Installation completed!" -ForegroundColor Green
