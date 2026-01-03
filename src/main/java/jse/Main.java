@@ -292,10 +292,10 @@ public class Main {
                 return;
             }
             case "-jnibuild": case "--jnibuild": {
+                jse.code.SP.Python.InitHelper.init();
                 jse.parallel.MPI.InitHelper.init();
                 jse.lmp.LmpPlugin.InitHelper.init();
                 jsex.nnap.PairNNAP.InitHelper.init();
-                jse.code.SP.Python.InitHelper.init();
                 return;
             }
             default: {
@@ -461,11 +461,7 @@ public class Main {
         aPrinter.println("    \\____/(____/(____)");
         aPrinter.println("        by liqa, CHanzyLazer");
         aPrinter.println();
-        String tURL = "https://github.com/CHanzyLazer/jse";
-        if (UNICODE_SUPPORT) {
-            tURL = "\u001b[4m"+tURL+"\u001b[0m";
-        }
-        aPrinter.println("    GitHub: "+tURL);
+        aPrinter.println("    GitHub: "+IO.Text.url("https://github.com/CHanzyLazer/jse"));
     }
     private static void printLogo() {printLogo(System.out);}
     

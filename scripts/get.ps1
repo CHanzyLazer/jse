@@ -170,7 +170,7 @@ param (
             $paths = $userPath -split ';' | Where-Object { $_ -and $_.Trim() }
             
             if ($paths -notcontains $installdir) {
-                $newPath = ($paths + $installdir) -join ';'
+                $newPath = "$installdir;$userPath"
                 [Environment]::SetEnvironmentVariable(
                     "Path",
                     $newPath,

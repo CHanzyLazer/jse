@@ -315,7 +315,7 @@ public class JNIUtil {
             @Nullable String tLibName = LIB_NAME_IN(mLibDir, mProjectName);
             if (tLibName == null) {
                 System.err.println("Build Failed, build directory: "+tBuildDir);
-                if (tWorkingDirValid) {
+                if (!tWorkingDirValid) {
                     System.err.println("  This may be caused by the inappropriate characters in working directory: "+tWorkingDir);
                 }
                 if (IS_WINDOWS) {

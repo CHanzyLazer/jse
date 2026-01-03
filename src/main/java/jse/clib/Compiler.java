@@ -104,9 +104,9 @@ public class Compiler {
         if (EXE_PATH==null) {
             System.err.println("JNI INIT ERROR: No suitable C/C++ compiler detected,");
             if (IS_WINDOWS) {
-                System.err.println("  For Windows, you need MSVC: https://visualstudio.microsoft.com/vs/features/cplusplus/");
+                System.err.println("  For Windows, you need MSVC: "+IO.Text.url("https://visualstudio.microsoft.com/vs/features/cplusplus/"));
             } else {
-                System.err.println("  For Liunx/Mac, you can use GCC: https://gcc.gnu.org/");
+                System.err.println("  For Liunx/Mac, you can use GCC: "+IO.Text.url("https://gcc.gnu.org/"));
                 System.err.println("  For Ubuntu, you can use `sudo apt install g++`");
             }
             if (Conf.FORCE) throw new RuntimeException("No suitable C/C++ compiler");

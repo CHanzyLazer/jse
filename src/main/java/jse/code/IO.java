@@ -48,6 +48,7 @@ import java.util.zip.ZipOutputStream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jse.code.CS.*;
+import static jse.code.Conf.UNICODE_SUPPORT;
 import static jse.code.OS.USER_HOME;
 import static jse.code.OS.WORKING_DIR_PATH;
 
@@ -169,6 +170,15 @@ public class IO {
          */
         public static String percent(double aProb) {
             return String.format("%.2f", aProb*100) + "%";
+        }
+        /**
+         * 将输入的链接字符串增加下滑线，如果没有 {@link Conf#UNICODE_SUPPORT}
+         * 则不会进行任何操作
+         * @param aUrlStr 链接字符串
+         * @return 格式化的用于打印的链接
+         */
+        public static String url(String aUrlStr) {
+            return UNICODE_SUPPORT ? ("\u001b[4m"+aUrlStr+"\u001b[0m") : aUrlStr;
         }
         
         /**

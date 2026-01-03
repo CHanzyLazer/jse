@@ -764,7 +764,7 @@ public class SP {
             NUMPY_SUPPORT = tNumpySupport;
             EXEC.setNoSTDOutput(false).setNoERROutput(false);
             if (tNoPython) {
-                System.err.println("No python found, you can download python from: https://www.python.org/downloads/");
+                System.err.println("No python found, you can download python from: "+IO.Text.url("https://www.python.org/downloads/"));
                 System.err.println("  If you need numpy, you need to install numpy before running: `pip install numpy==1.26.4`");
                 throw new RuntimeException("JEP BUILD ERROR: No python environment.");
             }

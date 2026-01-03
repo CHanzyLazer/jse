@@ -43,10 +43,10 @@ public class MPICore {
         } else {
             System.err.println("JNI INIT WARNING: No MPI found,");
             if (IS_WINDOWS) {
-                System.err.println("  For Windows, you can use MS-MPI: https://www.microsoft.com/en-us/download/details.aspx?id=105289");
+                System.err.println("  For Windows, you can use MS-MPI: "+IO.Text.url("https://www.microsoft.com/en-us/download/details.aspx?id=105289"));
                 System.err.println("  BOTH 'msmpisetup.exe' and 'msmpisdk.msi' are needed.");
             } else {
-                System.err.println("  For Liunx/Mac, you can use OpenMPI: https://www.open-mpi.org/");
+                System.err.println("  For Liunx/Mac, you can use OpenMPI: "+IO.Text.url("https://www.open-mpi.org/"));
                 System.err.println("  For Ubuntu, you can use `sudo apt install libopenmpi-dev`");
             }
         }
