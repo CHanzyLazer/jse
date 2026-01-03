@@ -10,14 +10,15 @@ param (
 )
 
 & {
-    $TempPath = ([System.IO.Path]::GetTempPath())
     $LastRelease = "3.13.5"
     $ErrorActionPreference = 'Stop'
+    
+    $WorkingDir = Join-Path ([System.IO.Path]::GetTempPath()) ("jse-getter-" + [guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $WorkingDir | Out-Null
     
     function WriteErrorTip($msg) {
         Write-Host $msg -BackgroundColor Red -ForegroundColor White
     }
-    
     function AskYesNo($msg, $defaultYes = $true) {
         $suffix = if ($defaultYes) { "(Y/n)" } else { "(y/N)" }
         $ans = Read-Host "$msg $suffix"
@@ -70,9 +71,8 @@ param (
         }
         return $info
     }
-    
     function InstallOpenJdk {
-        $jdkInstaller = Join-Path $TempPath "microsoft-jdk-21.0.9-windows-x64.exe"
+        $jdkInstaller = Join-Path $WorkingDir "microsoft-jdk-21.0.9-windows-x64.exe"
         $url = "https://aka.ms/download-jdk/microsoft-jdk-21.0.9-windows-x64.exe"
         
         Write-Host "Downloading Microsoft OpenJDK 21..."
@@ -139,22 +139,22 @@ param (
     New-Item -ItemType Directory -Path $installdir -Force | Out-Null
     
     # download jse
-    $zipFile = Join-Path $TempPath "jse-$LastRelease.zip"
+    $zipFile = Join-Path $WorkingDir "jse-$LastRelease.zip"
     $downloadUrl = "https://github.com/CHanzyLazer/jse/releases/download/v$LastRelease/jse-$LastRelease.zip"
     
     Write-Host "Downloading jse..."
     Invoke-WebRequest $downloadUrl -OutFile $zipFile -UseBasicParsing
     Write-Host "Extracting..."
-    Expand-Archive $zipFile -DestinationPath $TempPath -Force
+    Expand-Archive $zipFile -DestinationPath $WorkingDir -Force
     
-    $innerDir = Get-ChildItem $TempPath |
+    $innerDir = Get-ChildItem -Path $WorkingDir -Directory |
         Where-Object { $_.PSIsContainer -and $_.Name -like "jse-*" } |
         Select-Object -First 1
     if (-not $innerDir) {
         WriteErrorTip "Unexpected zip structure."
         return
     }
-    Copy-Item "$($innerDir.FullName)\*" $installdir -Recurse -Force
+    Move-Item -Path (Join-Path $innerDir.FullName '*') -Destination $installdir -Force
     
     # add to path (auto for current session)
     $env:Path = "$installdir;$env:Path"
@@ -203,4 +203,9 @@ param (
     }
     Write-Host ""
     Write-Host "Installation completed!" -ForegroundColor Green
+    
+    # cleanup isolated temp directory
+    if (Test-Path $WorkingDir) {
+        Remove-Item -Path $WorkingDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
