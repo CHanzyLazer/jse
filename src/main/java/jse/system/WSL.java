@@ -5,4 +5,5 @@ import org.jetbrains.annotations.VisibleForTesting;
 @VisibleForTesting
 public final class WSL extends WSLSystemExecutor {
     public WSL() {super();}
+    public WSL(boolean aInteractive) {super(aInteractive);}
 }
