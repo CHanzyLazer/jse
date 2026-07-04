@@ -269,7 +269,7 @@ If you use jse in academic work, please cite:
   *Science China Materials* **67**, 3298–3308 (2024)
 
 * **FFS & Multi-type BOOP (`jsex.rareevent`)**:
-  Qing-an Li *et al.*
+  Qing'an Li *et al.*
   [Revealing Crystal Nucleation Behaviors in Metallic Glass-Forming Liquids 
   via Parallel Forward Flux Sampling with Multi-Type Bond-Orientational Order 
   Parameter](https://www.sciencedirect.com/science/article/abs/pii/S1359645425011589),
