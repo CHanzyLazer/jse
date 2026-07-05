@@ -1,6 +1,8 @@
 package jsex.nnap;
 
-import jse.atom.*;
+import jse.atom.IAtomData;
+import jse.atom.IHasSymbol;
+import jse.atom.NeighborListGetter2;
 import jse.cache.IntVectorCache;
 import jse.cache.LogicalVectorCache;
 import jse.cache.VectorCache;
@@ -68,8 +70,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     
     protected static class DataSet {
         public int mSize = 0;
-        /** APC 数据，总是缓存近邻 cell 但不缓存具体近邻列表；后续近邻改版需要同步替换成原始的 bins/cells */
-        public final List<AtomicParameterCalculator> mAPC = new ArrayList<>(64);
+        /** 近邻列表数据，总是缓存近邻 cell 但不缓存具体近邻列表 */
+        public final List<NeighborListGetter2> mNl = new ArrayList<>(64);
         /** 每个原子数据结构对应的每原子能量值 */
         public final DoubleList mEng = new DoubleList(64);
         /** 这里力数据使用 List 存储，每个原子结构一组 */
@@ -85,7 +87,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         /** 原子近邻原子数，每个原子结构一组 */
         public final List<IntVector> mNumNei = new ArrayList<>(64);
         /** 近邻列表，每个原子结构一组，每个原子对应一个近邻列表向量 */
-        public final List<IntCPointer[]> mNl = new ArrayList<>(64);
+        public final List<IntCPointer[]> mNlIdx = new ArrayList<>(64);
         /** 现在存储近邻的种类列表，这样不用每次遍历都临时构造 */
         public final List<IntCPointer[]> mNlType = new ArrayList<>(64);
         /** 近邻原子坐标差，每个原子结构一组，每个原子对应一个近邻列表向量 */
@@ -171,7 +173,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     private final IDoubleOrFloatCPointer[] mBGradAGradNlDxBuf, mBGradAGradNlDyBuf, mBGradAGradNlDzBuf;
     private final DoubleList[] mForceXBuf, mForceYBuf, mForceZBuf;
     private final DoubleList[] mBGradForceXBuf, mBGradForceYBuf, mBGradForceZBuf;
-    private final List<List<IntCPointer>> mNlBuf, mNlTypeBuf;
+    private final List<List<IntCPointer>> mNlIdxBuf, mNlTypeBuf;
     private final List<List<IDoubleOrFloatCPointer>> mNlDxBuf, mNlDyBuf, mNlDzBuf;
     
     protected boolean mCacheNl = true;
@@ -387,7 +389,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         mBGradForceXBuf = new DoubleList[aNumThreads];
         mBGradForceYBuf = new DoubleList[aNumThreads];
         mBGradForceZBuf = new DoubleList[aNumThreads];
-        mNlBuf = new ArrayList<>(aNumThreads);
+        mNlIdxBuf = new ArrayList<>(aNumThreads);
         mNlTypeBuf = new ArrayList<>(aNumThreads);
         mNlDxBuf = new ArrayList<>(aNumThreads);
         mNlDyBuf = new ArrayList<>(aNumThreads);
@@ -406,7 +408,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             mBGradForceXBuf[ti] = new DoubleList();
             mBGradForceYBuf[ti] = new DoubleList();
             mBGradForceZBuf[ti] = new DoubleList();
-            mNlBuf.add(new ArrayList<>(16));
+            mNlIdxBuf.add(new ArrayList<>(16));
             mNlTypeBuf.add(new ArrayList<>(16));
             mNlDxBuf.add(new ArrayList<>(16));
             mNlDyBuf.add(new ArrayList<>(16));
@@ -921,12 +923,12 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int tNumAtoms = tAtomType.size();
             
             // 通用方式获取近邻列表
-            List<IntCPointer> tNl = mNlBuf.get(threadID);
+            List<IntCPointer> tNlIdx = mNlIdxBuf.get(threadID);
             List<IntCPointer> tNlType = mNlTypeBuf.get(threadID);
             List<IDoubleOrFloatCPointer> tNlDx = mNlDxBuf.get(threadID);
             List<IDoubleOrFloatCPointer> tNlDy = mNlDyBuf.get(threadID);
             List<IDoubleOrFloatCPointer> tNlDz = mNlDzBuf.get(threadID);
-            buildNl(aTest, i, threadID, tNl, tNlType, tNlDx, tNlDy, tNlDz);
+            buildNl(aTest, i, threadID, tNlIdx, tNlType, tNlDx, tNlDy, tNlDz);
             
             DoubleWrapper rBGradEng = new DoubleWrapper(0.0);
             List<IDoubleOrFloatCPointer> rCache = mCacheBuf.get(threadID);
@@ -1012,7 +1014,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             for (int k = 0; k < tNumAtoms; ++k) {
                 final int tNlSize = tNumNei.get(k);
                 final int cType = tAtomType.get(k);
-                IntCPointer tSubNl = tNl.get(k), tSubNlType = tNlType.get(k);
+                IntCPointer tSubNlIdx = tNlIdx.get(k), tSubNlType = tNlType.get(k);
                 IDoubleOrFloatCPointer tSubNlDx = tNlDx.get(k), tSubNlDy = tNlDy.get(k), tSubNlDz = tNlDz.get(k);
                 
                 tPtrMng.ensureCapacity(rAGradNlDx, tNlSize);
@@ -1035,7 +1037,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     double fx = rAGradNlDx.getAtD(j);
                     double fy = rAGradNlDy.getAtD(j);
                     double fz = rAGradNlDz.getAtD(j);
-                    int nlk = tSubNl.getAt(j);
+                    int nlk = tSubNlIdx.getAt(j);
                     if (tHasForce) {
                         rFx.set(k, rFx.get(k) - fx);
                         rFy.set(k, rFy.get(k) - fy);
@@ -1124,7 +1126,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             for (int k = 0; k < tNumAtoms; ++k) {
                 final int tNlSize = tNumNei.get(k);
                 final int cType = tAtomType.get(k);
-                IntCPointer tSubNl = tNl.get(k), tSubNlType = tNlType.get(k);
+                IntCPointer tSubNlIdx = tNlIdx.get(k), tSubNlType = tNlType.get(k);
                 IDoubleOrFloatCPointer tSubNlDx = tNlDx.get(k), tSubNlDy = tNlDy.get(k), tSubNlDz = tNlDz.get(k);
                 
                 tPtrMng.ensureCapacity(rBGradAGradNlDx, tNlSize);
@@ -1138,7 +1140,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     tBGradFzk = rBGradFz.get(k);
                 }
                 for (int j = 0; j < tNlSize; ++j) {
-                    int nlk = tSubNl.getAt(j);
+                    int nlk = tSubNlIdx.getAt(j);
                     double rSubBGradAGradNlDx = 0.0, rSubBGradAGradNlDy = 0.0, rSubBGradAGradNlDz = 0.0;
                     if (tHasForce) {
                         rSubBGradAGradNlDx += rBGradFx.get(nlk) - tBGradFxk;
@@ -1204,7 +1206,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 aEnergy -= mRefEngs.get(tType-1);
             }
         }
-        rData.mAPC.add(AtomicParameterCalculator.of(aAtomData));
+        rData.mNl.add(new NeighborListGetter2(aAtomData, mNNAP.rcutMax()));
         rData.mAtomType.add(rAtomType.asVec());
         rData.mVolume.append(aAtomData.volume());
         rData.mEng.append(tHasEng ? (aEnergy/tNumAtoms) : Double.NaN);
@@ -1356,28 +1358,28 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     }
     
     
-    protected void buildNl(boolean aTest, int aDataIdx, int aThreadID, List<IntCPointer> rNl, List<IntCPointer> rNlType,
+    protected void buildNl(boolean aTest, int aDataIdx, int aThreadID, List<IntCPointer> rNlIdx, List<IntCPointer> rNlType,
                            List<IDoubleOrFloatCPointer> rNlDx, List<IDoubleOrFloatCPointer> rNlDy, List<IDoubleOrFloatCPointer> rNlDz) {
         DataSet tData = aTest ? mTestData : mTrainData;
         IntVector tNumNei = tData.mNumNei.get(aDataIdx);
         IntVector tAtomType = tData.mAtomType.get(aDataIdx);
         int tNumAtoms = tAtomType.size();
         if (mCacheNl) {
-            rNl.clear(); rNlType.clear();
+            rNlIdx.clear(); rNlType.clear();
             rNlDx.clear(); rNlDy.clear(); rNlDz.clear();
-            IntCPointer[] tNl = tData.mNl.get(aDataIdx);
+            IntCPointer[] tNlIdx = tData.mNlIdx.get(aDataIdx);
             IntCPointer[] tNlType = tData.mNlType.get(aDataIdx);
             IDoubleOrFloatCPointer[] tNlDx = tData.mNlDx.get(aDataIdx);
             IDoubleOrFloatCPointer[] tNlDy = tData.mNlDy.get(aDataIdx);
             IDoubleOrFloatCPointer[] tNlDz = tData.mNlDz.get(aDataIdx);
             for (int k = 0; k < tNumAtoms; ++k) {
-                rNl.add(tNl[k]); rNlType.add(tNlType[k]);
+                rNlIdx.add(tNlIdx[k]); rNlType.add(tNlType[k]);
                 rNlDx.add(tNlDx[k]); rNlDy.add(tNlDy[k]); rNlDz.add(tNlDz[k]);
             }
             return;
         }
         PointerManager tPtrMng = mNNAP.mPtrMngPar[aThreadID];
-        while (rNl.size() < tNumAtoms) rNl.add(tPtrMng.newIntCPointer());
+        while (rNlIdx.size() < tNumAtoms) rNlIdx.add(tPtrMng.newIntCPointer());
         while (rNlType.size() < tNumAtoms) rNlType.add(tPtrMng.newIntCPointer());
         while (rNlDx.size() < tNumAtoms) rNlDx.add(tPtrMng.newDoubleOrFloatCPointer(mSingle));
         while (rNlDy.size() < tNumAtoms) rNlDy.add(tPtrMng.newDoubleOrFloatCPointer(mSingle));
@@ -1385,36 +1387,40 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         for (int k = 0; k < tNumAtoms; ++k) {
             int tNlSize = tNumNei.get(k);
             if (tNlSize > 0) {
-                tPtrMng.ensureCapacity(rNl.get(k), tNlSize);
+                tPtrMng.ensureCapacity(rNlIdx.get(k), tNlSize);
                 tPtrMng.ensureCapacity(rNlType.get(k), tNlSize);
                 tPtrMng.ensureCapacity(rNlDx.get(k), tNlSize);
                 tPtrMng.ensureCapacity(rNlDy.get(k), tNlSize);
                 tPtrMng.ensureCapacity(rNlDz.get(k), tNlSize);
             }
         }
-        AtomicParameterCalculator tAPC = tData.mAPC.get(aDataIdx);
+        NeighborListGetter2 tNl = tData.mNl.get(aDataIdx);
         for (int k = 0; k < tNumAtoms; ++k) {
-            int tType = tAtomType.get(k);
-            IntCPointer tSubNlPtr = rNl.get(k);
+            IntCPointer tSubNlIdxPtr = rNlIdx.get(k);
             IntCPointer tSubNlTypePtr = rNlType.get(k);
             IDoubleOrFloatCPointer tSubNlDxPtr = rNlDx.get(k);
             IDoubleOrFloatCPointer tSubNlDyPtr = rNlDy.get(k);
             IDoubleOrFloatCPointer tSubNlDzPtr = rNlDz.get(k);
+            double tRCut = mNNAP.rcut(tAtomType.get(k));
+            double tRCutSq = tRCut*tRCut;
             final int[] nli = {0};
-            tAPC.nl_().forEachNeighbor(k, mNNAP.rcut(tType), (dx, dy, dz, idx) -> {
-                tSubNlPtr.putAt(nli[0], idx);
-                tSubNlTypePtr.putAt(nli[0], tAtomType.get(idx));
-                tSubNlDxPtr.putAtD(nli[0], dx);
-                tSubNlDyPtr.putAtD(nli[0], dy);
-                tSubNlDzPtr.putAtD(nli[0], dz);
-                ++nli[0];
+            tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+                double dis2 = dx*dx + dy*dy + dz*dz;
+                if (dis2 < tRCutSq) {
+                    tSubNlIdxPtr.putAt(nli[0], idx);
+                    tSubNlTypePtr.putAt(nli[0], tAtomType.get(idx));
+                    tSubNlDxPtr.putAtD(nli[0], dx);
+                    tSubNlDyPtr.putAtD(nli[0], dy);
+                    tSubNlDzPtr.putAtD(nli[0], dz);
+                    ++nli[0];
+                }
             });
         }
     }
     
     protected void initDataNl(boolean aPrintLog) {
-        final int tTrainSize = mTrainData.mAPC.size();
-        final int tTestSize = mTestData.mAPC.size();
+        final int tTrainSize = mTrainData.mNl.size();
+        final int tTestSize = mTestData.mNl.size();
         final int tTrainStart = mTrainData.mSize - tTrainSize;
         final int tTestStart = mTestData.mSize - tTestSize;
         // 预先添加占位，因为需要保证并行线程安全且顺序一致
@@ -1430,17 +1436,22 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int ai = ii<tTrainSize ? ii : ii-tTrainSize;
             int i = ai + (ii<tTrainSize ? tTrainStart : tTestStart);
             
-            AtomicParameterCalculator tAPC = rData.mAPC.get(ai);
+            NeighborListGetter2 tNl = rData.mNl.get(ai);
             IntVector tAtomType = rData.mAtomType.get(i);
-            int tNumAtoms = tAPC.natoms();
+            int tNumAtoms = tNl.natoms();
             
             IntVector rNumNei = IntVector.zeros(tNumAtoms);
             rData.mNumNei.set(i, rNumNei);
             
             for (int k = 0; k < tNumAtoms; ++k) {
+                double tRCut = mNNAP.rcut(tAtomType.get(k));
+                double tRCutSq = tRCut*tRCut;
                 final int[] tNlSize = {0};
-                tAPC.nl_().forEachNeighbor(k, mNNAP.rcut(tAtomType.get(k)), (dx, dy, dz, idx) -> {
-                    ++tNlSize[0];
+                tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+                    double dis2 = dx*dx + dy*dy + dz*dz;
+                    if (dis2 < tRCutSq) {
+                        ++tNlSize[0];
+                    }
                 });
                 rNumNei.set(k, tNlSize[0]);
             }
@@ -1454,14 +1465,14 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         mNlCached = true;
         // 同样预先添加占位
         for (int ai = 0; ai < tTrainSize; ++ai) {
-            mTrainData.mNl.add(null);
+            mTrainData.mNlIdx.add(null);
             mTrainData.mNlType.add(null);
             mTrainData.mNlDx.add(null);
             mTrainData.mNlDy.add(null);
             mTrainData.mNlDz.add(null);
         }
         for (int ai = 0; ai < tTestSize; ++ai) {
-            mTestData.mNl.add(null);
+            mTestData.mNlIdx.add(null);
             mTestData.mNlType.add(null);
             mTestData.mNlDx.add(null);
             mTestData.mNlDy.add(null);
@@ -1473,17 +1484,17 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int ai = ii<tTrainSize ? ii : ii-tTrainSize;
             int i = ai + (ii<tTrainSize ? tTrainStart : tTestStart);
             
-            AtomicParameterCalculator tAPC = rData.mAPC.get(ai);
+            NeighborListGetter2 tNl = rData.mNl.get(ai);
             IntVector tNumNei = rData.mNumNei.get(i);
             IntVector tAtomType = rData.mAtomType.get(i);
-            int tNumAtoms = tAPC.natoms();
+            int tNumAtoms = tNl.natoms();
             
-            IntCPointer[] rNl = new IntCPointer[tNumAtoms];
+            IntCPointer[] rNlIdx = new IntCPointer[tNumAtoms];
             IntCPointer[] rNlType = new IntCPointer[tNumAtoms];
             IDoubleOrFloatCPointer[] rNlDx = new IDoubleOrFloatCPointer[tNumAtoms];
             IDoubleOrFloatCPointer[] rNlDy = new IDoubleOrFloatCPointer[tNumAtoms];
             IDoubleOrFloatCPointer[] rNlDz = new IDoubleOrFloatCPointer[tNumAtoms];
-            rData.mNl.set(i, rNl);
+            rData.mNlIdx.set(i, rNlIdx);
             rData.mNlType.set(i, rNlType);
             rData.mNlDx.set(i, rNlDx);
             rData.mNlDy.set(i, rNlDy);
@@ -1493,24 +1504,28 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             IntCPointer tIntNlPtr = mNNAP.mPtrMngTot.newIntCPointer(tTotNlSize*2L);
             IDoubleOrFloatCPointer tFltNlPtr = mNNAP.mPtrMngTot.newDoubleOrFloatCPointer(mSingle, tTotNlSize*3L);
             for (int k = 0; k < tNumAtoms; ++k) {
-                int tType = tAtomType.get(k);
                 int tNlSize = tNumNei.get(k);
                 // 增加近邻列表，这里直接重新添加
-                IntCPointer tNlPtr = tIntNlPtr.copy(); tIntNlPtr.rightShift(tNlSize);
+                IntCPointer tNlIdxPtr = tIntNlPtr.copy(); tIntNlPtr.rightShift(tNlSize);
                 IntCPointer tNlTypePtr = tIntNlPtr.copy(); tIntNlPtr.rightShift(tNlSize);
                 IDoubleOrFloatCPointer tNlDxPtr = tFltNlPtr.copy(); tFltNlPtr.rightShift(tNlSize);
                 IDoubleOrFloatCPointer tNlDyPtr = tFltNlPtr.copy(); tFltNlPtr.rightShift(tNlSize);
                 IDoubleOrFloatCPointer tNlDzPtr = tFltNlPtr.copy(); tFltNlPtr.rightShift(tNlSize);
+                double tRCut = mNNAP.rcut(tAtomType.get(k));
+                double tRCutSq = tRCut*tRCut;
                 final int[] nli = {0};
-                tAPC.nl_().forEachNeighbor(k, mNNAP.rcut(tType), (dx, dy, dz, idx) -> {
-                    tNlPtr.putAt(nli[0], idx);
-                    tNlTypePtr.putAt(nli[0], tAtomType.get(idx));
-                    tNlDxPtr.putAtD(nli[0], dx);
-                    tNlDyPtr.putAtD(nli[0], dy);
-                    tNlDzPtr.putAtD(nli[0], dz);
-                    ++nli[0];
+                tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+                    double dis2 = dx*dx + dy*dy + dz*dz;
+                    if (dis2 < tRCutSq) {
+                        tNlIdxPtr.putAt(nli[0], idx);
+                        tNlTypePtr.putAt(nli[0], tAtomType.get(idx));
+                        tNlDxPtr.putAtD(nli[0], dx);
+                        tNlDyPtr.putAtD(nli[0], dy);
+                        tNlDzPtr.putAtD(nli[0], dz);
+                        ++nli[0];
+                    }
                 });
-                rNl[k] = tNlPtr;
+                rNlIdx[k] = tNlIdxPtr;
                 rNlType[k] = tNlTypePtr;
                 rNlDx[k] = tNlDxPtr;
                 rNlDy[k] = tNlDyPtr;
@@ -1518,8 +1533,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             }
             if (aPrintLog) UT.Timer.progressBar();
         });
-        mTrainData.mAPC.clear();
-        mTestData.mAPC.clear();
+        mTrainData.mNl.clear();
+        mTestData.mNl.clear();
     }
     protected void initUnitLen() {
         // 通过近邻列表估计单位长度，这个值可以用来为力和应力无量纲化
@@ -1568,7 +1583,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int tNumAtoms = tAtomType.size();
             
             // 通用方式获取近邻列表
-            List<IntCPointer> tNl = mNlBuf.get(threadID);
+            List<IntCPointer> tNl = mNlIdxBuf.get(threadID);
             List<IntCPointer> tNlType = mNlTypeBuf.get(threadID);
             List<IDoubleOrFloatCPointer> tNlDx = mNlDxBuf.get(threadID);
             List<IDoubleOrFloatCPointer> tNlDy = mNlDyBuf.get(threadID);
@@ -1747,7 +1762,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         IDoubleOrFloatCPointer rAGradNlDx = mAGradNlDxBuf[0];
         IDoubleOrFloatCPointer rAGradNlDy = mAGradNlDyBuf[0];
         IDoubleOrFloatCPointer rAGradNlDz = mAGradNlDzBuf[0];
-        List<IntCPointer> tNl = mNlBuf.get(0);
+        List<IntCPointer> tNl = mNlIdxBuf.get(0);
         List<IntCPointer> tNlType = mNlTypeBuf.get(0);
         List<IDoubleOrFloatCPointer> tNlDx = mNlDxBuf.get(0);
         List<IDoubleOrFloatCPointer> tNlDy = mNlDyBuf.get(0);
@@ -1838,8 +1853,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         // 清空旧的早停存储
         mMinLoss = Double.POSITIVE_INFINITY;
         // 数据近邻列表初始化
-        final boolean tNewTrainData = !mTrainData.mAPC.isEmpty();
-        final boolean tNewTestData = !mTestData.mAPC.isEmpty();
+        final boolean tNewTrainData = !mTrainData.mNl.isEmpty();
+        final boolean tNewTestData = !mTestData.mNl.isEmpty();
         if (tNewTrainData || tNewTestData) {
             initDataNl(aPrintLog);
             if (tNewTrainData) {
