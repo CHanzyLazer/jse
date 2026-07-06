@@ -5,9 +5,7 @@ import jse.code.LibVer;
 import jse.code.OS;
 import jse.code.UT;
 
-import java.io.BufferedReader;
 import java.net.URI;
-import java.nio.charset.Charset;
 
 import static jse.code.OS.*;
 
@@ -84,17 +82,8 @@ public class Ninja {
             String tNinjaCachePath = JNIUtil.PKG_DIR + tNinjaPkgName;
             if (!IO.exists(tNinjaCachePath)) {
                 System.out.println(IO.Text.green("JNI INIT INFO:")+" No correct Ninja pkg detected");
-                System.out.println(IO.Text.yellow("Auto download Ninja? (Y/n)"));
-                BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-                String tLine = tReader.readLine();
-                while (true) {
-                    if (tLine.equalsIgnoreCase("n")) {
-                        throw new Exception("user interrupted");
-                    }
-                    if (tLine.isEmpty() || tLine.equalsIgnoreCase("y")) {
-                        break;
-                    }
-                    System.out.println(IO.Text.yellow("Auto download Ninja? (Y/n)"));
+                if (!PROMPTER.confirm(true, "Auto download Ninja?")) {
+                    throw new Exception("user interrupted");
                 }
                 String tNinjaUrl = String.format("https://github.com/ninja-build/ninja/releases/download/v%s/%s", VERSION, tNinjaPkgName);
                 System.out.println("Downloading "+IO.Text.underline(tNinjaUrl));

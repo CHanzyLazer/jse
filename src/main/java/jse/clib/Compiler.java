@@ -5,16 +5,12 @@ import jse.code.OS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static jse.code.OS.EXEC;
-import static jse.code.OS.IS_WINDOWS;
+import static jse.code.OS.*;
 
 /**
  * 编译 jni 需要的 C/C++ 编译器，目前仅用于辅助环境检测以及安装提示
@@ -89,14 +85,8 @@ public class Compiler {
                 "Please upgrade your GCC (>= 8.5) as soon as possible.\n" +
                 "========================================================================"
             ));
-            System.out.println(IO.Text.yellow("Compiling with old gcc anyway? (y/N)"));
-            BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-            String tLine = tReader.readLine();
-            while (!tLine.equalsIgnoreCase("y")) {
-                if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
-                    throw new Exception("old gcc");
-                }
-                System.out.println(IO.Text.yellow("Compiling with old gcc anyway? (y/N)"));
+            if (!PROMPTER.confirm(false, "Compiling with old gcc anyway?")) {
+                throw new Exception("old gcc");
             }
         }
     }

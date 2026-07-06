@@ -43,11 +43,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -909,14 +907,8 @@ public class SP {
                     if (!NUMPY_SUPPORT) {
                         System.out.println(IO.Text.green("JEP INIT INFO:")+" No numpy in python, you can install numpy by `pip install numpy`,");
                         System.out.println("  or build jep without numpy support.");
-                        System.out.println(IO.Text.yellow("Build jep without numpy support? (y/N)"));
-                        BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-                        String tLine = tReader.readLine();
-                        while (!tLine.equalsIgnoreCase("y")) {
-                            if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
-                                throw new Exception("no numpy");
-                            }
-                            System.out.println(IO.Text.yellow("Build jep without numpy support? (y/N)"));
+                        if (!PROMPTER.confirm(false, "Build jep without numpy support?")) {
+                            throw new Exception("no numpy");
                         }
                     }
                 })

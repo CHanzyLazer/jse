@@ -41,9 +41,17 @@ public class Conf {
      * <p>
      * 默认为 {@code true}
      * <p>
-     * 也可使用环境变量 {@code JDK_CHECK} 来设置
+     * 也可使用环境变量 {@code JSE_JDK_CHECK} 来设置
      */
-    public static boolean JDK_CHECK = OS.envZ("JDK_CHECK", true);
+    public static boolean JDK_CHECK = OS.envZ("JSE_JDK_CHECK", true);
+    /**
+     * 开启 yes 模式，所有交互式统一回复 y 来避免交互式的问题
+     * <p>
+     * 默认为 {@code false}
+     * <p>
+     * 也可使用环境变量 {@code JSE_YES_MODE} 来设置
+     */
+    public static boolean YES_MODE = OS.envZ("JSE_YES_MODE", false);
     /**
      * 运算是否开启边界检测，在 {@code jse 2.7.7} 以及更早的版本下不会主动检测
      * <p>

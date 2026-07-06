@@ -2,6 +2,7 @@ package jse.code;
 
 import com.google.common.collect.ImmutableList;
 import jse.Main;
+import jse.code.io.IPrompter;
 import jse.math.MathEX;
 import jse.system.BashSystemExecutor;
 import jse.system.ISystemExecutor;
@@ -87,6 +88,10 @@ public class OS {
     /** {@link Path} 版本的 {@link #WORKING_DIR} */
     final static Path WORKING_DIR_PATH;
     
+    /** 抽象的选择器层，根据 {@link System#in} 的状态和环境变量确认行为 */
+    @ApiStatus.Internal
+    public final static IPrompter PROMPTER;
+    
     
     private static boolean FILESYSTEM_FIRST_PRINT = true;
     /** 由于文件系统类型逻辑上来说还是只检测了安装目录，因此提供一个延迟打印接口，仅第一次安装时打印提示；这里顺便提供一个用户输入以防止这是误操作 */
@@ -110,14 +115,8 @@ public class OS {
                 "  - Consider upgrading to a newer HPC environment\n" +
                 "========================================================================"
             ));
-            System.out.println(IO.Text.yellow("Continue anyway? (y/N)"));
-            BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-            String tLine = tReader.readLine();
-            while (!tLine.equalsIgnoreCase("y")) {
-                if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
-                    throw new Exception("legacy filesystem");
-                }
-                System.out.println(IO.Text.yellow("Continue anyway? (y/N)"));
+            if (!PROMPTER.confirm(false, "Continue anyway?")) {
+                throw new Exception("legacy filesystem");
             }
         }
     }
@@ -144,6 +143,12 @@ public class OS {
     static {
         InitHelper.INITIALIZED = true;
         
+        // 获取选择器的模式
+        if (Conf.YES_MODE) {
+            PROMPTER = IPrompter.YES;
+        } else {
+            PROMPTER = IPrompter.CONSOLE;
+        }
         // 从环境变量获取系统代理，许多环境走这个因此需要提供兼容
         final Proxy fEnvHttpsProxy, fEnvHttpProxy;
         if (Conf.ENV_PROXY) {

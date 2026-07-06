@@ -16,9 +16,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.PrintStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,9 +26,7 @@ import java.util.logging.Level;
 import static jse.code.CS.VERSION;
 import static jse.code.Conf.DEBUG;
 import static jse.code.Conf.WORKING_DIR_OF;
-import static jse.code.OS.JAR_DIR;
-import static jse.code.OS.JAR_PATH;
-import static jse.code.OS.WORKING_DIR;
+import static jse.code.OS.*;
 import static jse.code.SP.GROOVY_LIB_DIR;
 import static jse.code.SP.JAR_LIB_DIR;
 
@@ -314,30 +310,8 @@ public class Main {
                 }
                 System.out.printf("The following directories in %s will be removed:\n", JAR_DIR);
                 System.out.println(String.join("\n", tNamesToClean));
-                if (tCleanAll) {
-                    System.out.println(IO.Text.yellow("Confirm? (y/N)"));
-                } else {
-                    System.out.println(IO.Text.yellow("Confirm? (Y/n)"));
-                }
-                BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-                String tLine = tReader.readLine();
-                if (tCleanAll) {
-                    while (!tLine.equalsIgnoreCase("y")) {
-                        if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
-                            return 0;
-                        }
-                        System.out.println(IO.Text.yellow("Confirm? (y/N)"));
-                    }
-                } else {
-                    while (true) {
-                        if (tLine.equalsIgnoreCase("n")) {
-                            return 0;
-                        }
-                        if (tLine.isEmpty() || tLine.equalsIgnoreCase("y")) {
-                            break;
-                        }
-                        System.out.println(IO.Text.yellow("Confirm? (Y/n)"));
-                    }
+                if (!PROMPTER.confirm(!tCleanAll, "Confirm?")) {
+                    return 0;
                 }
                 for (String tName : tNamesToClean) {
                     System.out.printf("Removing: %s\n", tName);

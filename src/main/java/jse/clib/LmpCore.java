@@ -6,10 +6,8 @@ import jse.code.OS;
 import jse.code.UT;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -188,17 +186,8 @@ public class LmpCore {
                 }
             }
             System.out.println(IO.Text.green("LMP_CORE INIT INFO:")+" No correct lammps source code detected");
-            System.out.println(IO.Text.yellow("Auto download lammps? (Y/n)"));
-            BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-            String tLine = tReader.readLine();
-            while (true) {
-                if (tLine.equalsIgnoreCase("n")) {
-                    throw new Exception("user interrupted");
-                }
-                if (tLine.isEmpty() || tLine.equalsIgnoreCase("y")) {
-                    break;
-                }
-                System.out.println(IO.Text.yellow("Auto download lammps? (Y/n)"));
+            if (!PROMPTER.confirm(true, "Auto download lammps?")) {
+                throw new Exception("user interrupted");
             }
             String tLmpUrl = String.format("https://github.com/lammps/lammps/archive/refs/tags/%s.%s", TAG, IS_WINDOWS?"zip":"tar.gz");
             System.out.println("Downloading "+IO.Text.underline(tLmpUrl));
@@ -237,14 +226,8 @@ public class LmpCore {
                 MPICore.printInfo();
                 if (!MPICore.VALID) {
                     System.out.println(IO.Text.green("LMP_CORE INIT INFO:")+" No MPI support,");
-                    System.out.println(IO.Text.yellow("Build lammps without MPI support? (y/N)"));
-                    BufferedReader tReader = IO.toReader(System.in, Charset.defaultCharset());
-                    String tLine = tReader.readLine();
-                    while (!tLine.equalsIgnoreCase("y")) {
-                        if (tLine.isEmpty() || tLine.equalsIgnoreCase("n")) {
-                            throw new Exception("no MPI");
-                        }
-                        System.out.println(IO.Text.yellow("Build lammps without MPI support? (y/N)"));
+                    if (!PROMPTER.confirm(false, "Build lammps without MPI support?")) {
+                        throw new Exception("no MPI");
                     }
                 }
             })
