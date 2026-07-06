@@ -12,7 +12,7 @@ public class LibVer {
     public static final String LMP_TAG = "stable_22Jul2025_update4";
     public static final String LMP = "22 Jul 2025";
     
-    public static final String CMAKE = "4.2.1";
+    public static final String CMAKE = "4.3.4";
     
     public static final String MIMALLOC = "2.2.4";
     
