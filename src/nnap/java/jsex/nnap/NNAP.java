@@ -99,7 +99,9 @@ public class NNAP implements IPairPotential {
     final AnyCPointer mFpHyperParam, mFpParam, mNnParam, mNormParam;
     final IDoubleOrFloatCPointer[] mCache;
     private final IDoubleOrFloatCPointer[] mOutEng;
+    private final IDoubleOrFloatCPointer[] mPosX, mPosY, mPosZ;
     private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
+    private final IntCPointer[] mType;
     private final IntCPointer[] mNlType, mNlIdx;
     
     private final DoubleList[] mNlDxBuf, mNlDyBuf, mNlDzBuf;
@@ -190,9 +192,13 @@ public class NNAP implements IPairPotential {
             mPtrMngPar[ti] = new PointerManager();
         }
         mOutNums = mPtrMngTot.newIntCPointer(16);
+        mPosX = new IDoubleOrFloatCPointer[mNumThreads];
+        mPosY = new IDoubleOrFloatCPointer[mNumThreads];
+        mPosZ = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDx = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDy = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDz = new IDoubleOrFloatCPointer[mNumThreads];
+        mType = new IntCPointer[mNumThreads];
         mNlType = new IntCPointer[mNumThreads];
         mNlIdx = new IntCPointer[mNumThreads];
         mGradNlDx = new IDoubleOrFloatCPointer[mNumThreads];
@@ -206,9 +212,13 @@ public class NNAP implements IPairPotential {
         mNlTypeBuf = new IntList[mNumThreads];
         mNlIdxBuf = new IntList[mNumThreads];
         for (int ti = 0; ti < mNumThreads; ++ti) {
+            mPosX[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mPosY[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mPosZ[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mType[ti] = mPtrMngPar[ti].newIntCPointer();
             mNlType[ti] = mPtrMngPar[ti].newIntCPointer();
             mNlIdx[ti] = mPtrMngPar[ti].newIntCPointer();
             mGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
@@ -872,17 +882,17 @@ public class NNAP implements IPairPotential {
     
     
     /// lammps stuff
-    private void validNlLammps_(int aNeiNum) {
-        mPtrMngPar[0].ensureCapacity(mNlDx[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mNlDy[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mNlDz[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mNlType[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNeiNum);
-        mPtrMngPar[0].ensureCapacity(mGradNlDz[0], aNeiNum);
+    private void validNlLammps_(int aNlocalghost, int aNlSize) {
+        mPtrMngPar[0].ensureCapacity(mPosX[0], aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mPosY[0], aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mPosZ[0], aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mType[0], aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mGradNlDz[0], aNlSize);
         for (int i = 0; i < mSymbols.length; ++i) {
-            mPtrMngPar[0].ensureCapacity(mCache[0], mBasis[i].forwardCacheSize(aNeiNum));
+            mPtrMngPar[0].ensureCapacity(mCache[0], mBasis[i].forwardCacheSize(aNlSize));
         }
     }
     void computeLammps(PairNNAP aPair) throws Exception {
@@ -898,16 +908,18 @@ public class NNAP implements IPairPotential {
         IntCPointer ilist = aPair.listIlist();
         IntCPointer numneigh = aPair.listNumneigh();
         mStatNeiNumLammps.invoke(ilist, numneigh, inum, mOutNums);
-        validNlLammps_(mOutNums.getAt(0));
+        int nlocalghost = aPair.atomNlocal() + aPair.atomNghost();
+        validNlLammps_(nlocalghost, mOutNums.getAt(0));
         
         // 调用 jit 方法计算
         int tCode = mComputeLammps.invoke(
-            inum, aPair.mNumTypes, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, aPair.cvflagAtom()?1:0,
+            nlocalghost, inum, aPair.mNumTypes,
+            aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, aPair.cvflagAtom()?1:0,
             aPair.atomX(), aPair.atomF(), aPair.atomType(), ilist,
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mNlDx[0], mNlDy[0], mNlDz[0], mNlType[0], mNlIdx[0],
+            mPosX[0], mPosY[0], mPosZ[0], mType[0], mNlIdx[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
             mGradNlDx[0], mGradNlDy[0], mGradNlDz[0],
             mCache[0]
@@ -954,9 +966,7 @@ public class NNAP implements IPairPotential {
         final boolean nlflag = mNeighnumMax<0 || aPair.neighborAgo()==0;
         final boolean cvflagAtom = aPair.cvflagAtom();
         final int inum = aPair.listInum();
-        final int nlocal = aPair.atomNlocal();
-        final int nghost = aPair.atomNghost();
-        final int nlocalghost = nlocal + nghost;
+        final int nlocalghost = aPair.atomNlocal() + aPair.atomNghost();
         mPtrMngTot.ensureCapacity(mFltBuf, (long)nlocalghost*9L);
         mPtrMngTot.ensureCapacity(mCudaX, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaF, (long)nlocalghost*3L);

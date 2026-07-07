@@ -5,22 +5,34 @@
 
 namespace JSE_NNAP {
 
-template <int WTYPE, int NMAX, int SIZE_NP>
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
-    flt_t *aBufNlDx, flt_t *aBufNlDy, flt_t *aBufNlDz, int *aBufNlType, int aNeiNum, flt_t *rFp,
-    flt_t aRCut, flt_t *aParams) noexcept {
+    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
+    flt_t *rFp, flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // clear fp first
     fill<SIZE_NP>(rFp, ZERO);
     // loop for neighbor
-    for (int j = 0; j < aNeiNum; ++j) {
-        int type = aBufNlType[j*nb + bi];
-        flt_t dx = aBufNlDx[j*nb + bi], dy = aBufNlDy[j*nb + bi], dz = aBufNlDz[j*nb + bi];
-        flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
+    const flt_t cx = aPosX[bi];
+    const flt_t cy = aPosY[bi];
+    const flt_t cz = aPosZ[bi];
+    const int ctype = aType[bi];
+    for (int jj = 0; jj < aNlSize; ++jj) {
+        const int j = aBufNl[jj*nb + bi];
+        const flt_t dx = aPosX[j] - cx;
+        const flt_t dy = aPosY[j] - cy;
+        const flt_t dz = aPosZ[j] - cz;
+        const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // mirror stuff
+        int type = aType[j];
+        if (MTYPE > 0) {
+            if (type==MTYPE) type = ctype;
+            else if (type==ctype) type = MTYPE;
+        }
         // cal Rn, fc
         calRn<NMAX>(bRn, dis, aRCut);
         flt_t fc = calFc(dis, aRCut);
@@ -31,22 +43,33 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
         mplusFp<SIZE_NP>(rFp, fc, bRnp);
     }
 }
-template <int WTYPE, int NMAX, int SIZE_NP>
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
-    flt_t *aBufNlDx, flt_t *aBufNlDy, flt_t *aBufNlDz, int *aBufNlType, int aNeiNum, flt_t *aAGradFp,
-    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
+    flt_t *aAGradFp, flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
     flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1], bAGradRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // loop for neighbor
-    for (int j = 0; j < aNeiNum; ++j) {
-        // init nl
-        int type = aBufNlType[j*nb + bi];
-        flt_t dx = aBufNlDx[j*nb + bi], dy = aBufNlDy[j*nb + bi], dz = aBufNlDz[j*nb + bi];
-        flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
+    const flt_t cx = aPosX[bi];
+    const flt_t cy = aPosY[bi];
+    const flt_t cz = aPosZ[bi];
+    const int ctype = aType[bi];
+    for (int jj = 0; jj < aNlSize; ++jj) {
+        const int j = aBufNl[jj*nb + bi];
+        const flt_t dx = aPosX[j] - cx;
+        const flt_t dy = aPosY[j] - cy;
+        const flt_t dz = aPosZ[j] - cz;
+        const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // mirror stuff
+        int type = aType[j];
+        if (MTYPE > 0) {
+            if (type==MTYPE) type = ctype;
+            else if (type==ctype) type = MTYPE;
+        }
         // cal Rn, fc
         calRn<NMAX>(bRn, dis, aRCut);
         flt_t fc = calFc(dis, aRCut);
@@ -71,45 +94,58 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         flt_t rAGradj = dot<NMAX+1>(bAGradRn, tRnGrad);
         rAGradj += rAGradFc*fcGrad;
         // to grad xyz
-        rBufAGradNlDx[j*nb + bi] += rAGradj*dx;
-        rBufAGradNlDy[j*nb + bi] += rAGradj*dy;
-        rBufAGradNlDz[j*nb + bi] += rAGradj*dz;
+        rBufAGradNlDx[jj*nb + bi] += rAGradj*dx;
+        rBufAGradNlDy[jj*nb + bi] += rAGradj*dy;
+        rBufAGradNlDz[jj*nb + bi] += rAGradj*dz;
     }
 }
 
 
 
-template <int WTYPE, int NMAX, int SIZE_NP, int REQUIRE_CACHE>
-static void chebyForward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType, int aNeiNum, flt_t *rFp,
-                         flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP, int REQUIRE_CACHE>
+static void chebyForward(int bi,
+    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
+    flt_t *rFp, flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[REQUIRE_CACHE ? 1 : (NMAX+1)]; flt_t *rRn = REQUIRE_CACHE ? NULL : bRn;
     flt_t bRnp[REQUIRE_CACHE ? 1 : SIZE_NP]; flt_t *rRnp = REQUIRE_CACHE ? NULL : bRnp;
     flt_t *rNlFc = NULL, *rNlRn = NULL, *rNlRnp = NULL;
     if (REQUIRE_CACHE) {
-        rNlFc = *rForwardCache; *rForwardCache += aNeiNum;
-        rNlRn = *rForwardCache; *rForwardCache += aNeiNum*(NMAX+1);
-        rNlRnp = *rForwardCache; *rForwardCache += aNeiNum*SIZE_NP;
+        rNlFc = *rForwardCache; *rForwardCache += aNlSize;
+        rNlRn = *rForwardCache; *rForwardCache += aNlSize*(NMAX+1);
+        rNlRnp = *rForwardCache; *rForwardCache += aNlSize*SIZE_NP;
     }
     // clear fp first
     fill<SIZE_NP>(rFp, ZERO);
     // loop for neighbor
-    for (int j = 0; j < aNeiNum; ++j) {
-        int type = aNlType[j];
-        flt_t dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
+    const flt_t cx = aPosX[bi];
+    const flt_t cy = aPosY[bi];
+    const flt_t cz = aPosZ[bi];
+    const int ctype = aType[bi];
+    for (int jj = 0; jj < aNlSize; ++jj) {
+        const int j = aNl[jj];
+        const flt_t dx = aPosX[j] - cx;
+        const flt_t dy = aPosY[j] - cy;
+        const flt_t dz = aPosZ[j] - cz;
+        const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // mirror stuff
+        int type = aType[j];
+        if (MTYPE > 0) {
+            if (type==MTYPE) type = ctype;
+            else if (type==ctype) type = MTYPE;
+        }
         // cal Rn, fc
-        if (REQUIRE_CACHE) rRn = rNlRn + j*(NMAX+1);
+        if (REQUIRE_CACHE) rRn = rNlRn + jj*(NMAX+1);
         calRn<NMAX>(rRn, dis, aRCut);
         flt_t fc = calFc(dis, aRCut);
-        if (REQUIRE_CACHE) rNlFc[j] = fc;
+        if (REQUIRE_CACHE) rNlFc[jj] = fc;
         // Rn to fp
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
             const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
             // cal Rnp
-            if (REQUIRE_CACHE) rRnp = rNlRnp + j*SIZE_NP;
+            if (REQUIRE_CACHE) rRnp = rNlRnp + jj*SIZE_NP;
             calRnp<NMAX, SIZE_NP>(rRnp, rRn, aParams+tParamShift);
             mplusFp<SIZE_NP>(rFp, fc, rRnp);
         } else
@@ -132,11 +168,12 @@ static void chebyForward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType,
     }
 }
 
-template <int WTYPE, int NMAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
-static void chebyBackward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType, int aNeiNum, flt_t *aAGradFp,
-                          flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
-                          flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
-                          flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) noexcept {
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
+static void chebyBackward(int bi,
+    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
+    flt_t *aAGradFp, flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
+    flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) noexcept {
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(USE_BB && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(!GRAD_PARAM && USE_BB), "INVALID STATE");
@@ -144,52 +181,63 @@ static void chebyBackward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType
         // no param
         if (WTYPE!=WTYPE_RFUSE && WTYPE!=WTYPE_FUSE && WTYPE!=WTYPE_EXFUSE) {
             // aForwardCache shift required
-            *aForwardCache += aNeiNum;
-            *aForwardCache += aNeiNum*(NMAX+1);
-            *aForwardCache += aNeiNum*SIZE_NP;
+            *aForwardCache += aNlSize;
+            *aForwardCache += aNlSize*(NMAX+1);
+            *aForwardCache += aNlSize*SIZE_NP;
             if (USE_BB) {
                 // rBackwardBackwardCache shift required
-                *rBackwardBackwardCache += aNeiNum*SIZE_NP;
+                *rBackwardBackwardCache += aNlSize*SIZE_NP;
             }
             return;
         }
     }
     // init cache
-    flt_t *tNlFc = *aForwardCache; *aForwardCache += aNeiNum;
-    flt_t *tNlRn = *aForwardCache; *aForwardCache += aNeiNum*(NMAX+1);
-    flt_t *tNlRnp = *aForwardCache; *aForwardCache += aNeiNum*SIZE_NP;
+    flt_t *tNlFc = *aForwardCache; *aForwardCache += aNlSize;
+    flt_t *tNlRn = *aForwardCache; *aForwardCache += aNlSize*(NMAX+1);
+    flt_t *tNlRnp = *aForwardCache; *aForwardCache += aNlSize*SIZE_NP;
     flt_t bRnGrad[REQUIRE_CACHE ? 1 : (NMAX+1)]; flt_t *rRnGrad = REQUIRE_CACHE ? NULL : bRnGrad;
     flt_t bAGradRnp[REQUIRE_CACHE ? 1 : SIZE_NP]; flt_t *rAGradRnp = REQUIRE_CACHE ? NULL : bAGradRnp;
     flt_t *rNlFcGrad = NULL, *rNlRnGrad = NULL, *rNlAGradRnp = NULL;
     if (REQUIRE_CACHE) {
-        rNlFcGrad = *rBackwardCache; *rBackwardCache += aNeiNum;
-        rNlRnGrad = *rBackwardCache; *rBackwardCache += aNeiNum*(NMAX+1);
-        rNlAGradRnp = *rBackwardCache; *rBackwardCache += aNeiNum*SIZE_NP;
+        rNlFcGrad = *rBackwardCache; *rBackwardCache += aNlSize;
+        rNlRnGrad = *rBackwardCache; *rBackwardCache += aNlSize*(NMAX+1);
+        rNlAGradRnp = *rBackwardCache; *rBackwardCache += aNlSize*SIZE_NP;
     }
     if (USE_BB) {
-        rNlAGradRnp = *rBackwardBackwardCache; *rBackwardBackwardCache += aNeiNum*SIZE_NP;
+        rNlAGradRnp = *rBackwardBackwardCache; *rBackwardBackwardCache += aNlSize*SIZE_NP;
     }
     flt_t rAGradRn[NMAX+1];
     // loop for neighbor
-    for (int j = 0; j < aNeiNum; ++j) {
-        // init nl
-        int type = aNlType[j];
-        flt_t dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
+    const flt_t cx = aPosX[bi];
+    const flt_t cy = aPosY[bi];
+    const flt_t cz = aPosZ[bi];
+    const int ctype = aType[bi];
+    for (int jj = 0; jj < aNlSize; ++jj) {
+        const int j = aNl[jj];
+        const flt_t dx = aPosX[j] - cx;
+        const flt_t dy = aPosY[j] - cy;
+        const flt_t dz = aPosZ[j] - cz;
+        const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // mirror stuff
+        int type = aType[j];
+        if (MTYPE > 0) {
+            if (type==MTYPE) type = ctype;
+            else if (type==ctype) type = MTYPE;
+        }
         // get Rn, fc
-        flt_t *tRn = tNlRn + j*(NMAX+1);
-        flt_t fc = tNlFc[j];
+        flt_t *tRn = tNlRn + jj*(NMAX+1);
+        flt_t fc = tNlFc[jj];
         // gradFp to gradRn & gradFc
         flt_t rAGradFc = ZERO;
         fill<NMAX+1>(rAGradRn, ZERO);
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
             const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
             // get Rnp
-            flt_t *tRnp = tNlRnp + j*SIZE_NP;
+            flt_t *tRnp = tNlRnp + jj*SIZE_NP;
             // cache grad Rnp
-            if (REQUIRE_CACHE || USE_BB) rAGradRnp = rNlAGradRnp + j*SIZE_NP;
+            if (REQUIRE_CACHE || USE_BB) rAGradRnp = rNlAGradRnp + jj*SIZE_NP;
             if (!USE_BB) fill<SIZE_NP>(rAGradRnp, ZERO);
             backwardMplusFp<SIZE_NP>(aAGradFp, fc, rAGradFc, tRnp, rAGradRnp);
             backwardRnp<NMAX, SIZE_NP, GRAD_PARAM, !GRAD_PARAM>(
@@ -217,49 +265,62 @@ static void chebyBackward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType
         // gradRn, gradFc to grad xyz
         if (!GRAD_PARAM) {
             // cal RnGrad, fcGrag
-            if (REQUIRE_CACHE) rRnGrad = rNlRnGrad + j*(NMAX+1);
+            if (REQUIRE_CACHE) rRnGrad = rNlRnGrad + jj*(NMAX+1);
             calRnGrad<NMAX>(rRnGrad, dis, aRCut);
             flt_t fcGrad = calFcGrad(dis, aRCut);
-            if (REQUIRE_CACHE) rNlFcGrad[j] = fcGrad;
+            if (REQUIRE_CACHE) rNlFcGrad[jj] = fcGrad;
             flt_t rAGradj = dot<NMAX+1>(rAGradRn, rRnGrad);
             rAGradj += rAGradFc*fcGrad;
-            rAGradNlDx[j] += rAGradj*dx;
-            rAGradNlDy[j] += rAGradj*dy;
-            rAGradNlDz[j] += rAGradj*dz;
+            rAGradNlDx[jj] += rAGradj*dx;
+            rAGradNlDy[jj] += rAGradj*dy;
+            rAGradNlDz[jj] += rAGradj*dz;
         }
     }
 }
 
-template <int WTYPE, int NMAX, int SIZE_NP>
-static void chebyBackwardBackward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType, int aNeiNum, flt_t *aAGradFp, flt_t *rBGradAGradFp,
-                                  flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
-                                  flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
-                                  flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) noexcept {
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
+static void chebyBackwardBackward(int bi,
+    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
+    flt_t *aAGradFp, flt_t *rBGradAGradFp,
+    flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
+    flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
+    flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) noexcept {
     // init cache
-    flt_t *tNlFc = *aForwardCache; *aForwardCache += aNeiNum;
-    flt_t *tNlRn = *aForwardCache; *aForwardCache += aNeiNum*(NMAX+1);
-    flt_t *tNlRnp = *aForwardCache; *aForwardCache += aNeiNum*SIZE_NP;
-    flt_t *tNlFcGrad = *aBackwardCache; *aBackwardCache += aNeiNum;
-    flt_t *tNlRnGrad = *aBackwardCache; *aBackwardCache += aNeiNum*(NMAX+1);
-    flt_t *tNlAGradRnp = *aBackwardCache; *aBackwardCache += aNeiNum*SIZE_NP;
-    flt_t *rNlBGradRnp = *rBackwardBackwardCache; *rBackwardBackwardCache += aNeiNum*SIZE_NP;
+    flt_t *tNlFc = *aForwardCache; *aForwardCache += aNlSize;
+    flt_t *tNlRn = *aForwardCache; *aForwardCache += aNlSize*(NMAX+1);
+    flt_t *tNlRnp = *aForwardCache; *aForwardCache += aNlSize*SIZE_NP;
+    flt_t *tNlFcGrad = *aBackwardCache; *aBackwardCache += aNlSize;
+    flt_t *tNlRnGrad = *aBackwardCache; *aBackwardCache += aNlSize*(NMAX+1);
+    flt_t *tNlAGradRnp = *aBackwardCache; *aBackwardCache += aNlSize*SIZE_NP;
+    flt_t *rNlBGradRnp = *rBackwardBackwardCache; *rBackwardBackwardCache += aNlSize*SIZE_NP;
     flt_t rBGradAGradRn[NMAX+1], rBGradAGradRnp[SIZE_NP];
     // loop for neighbor
-    for (int j = 0; j < aNeiNum; ++j) {
-        // init nl
-        int type = aNlType[j];
-        flt_t dx = aNlDx[j], dy = aNlDy[j], dz = aNlDz[j];
-        flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
+    const flt_t cx = aPosX[bi];
+    const flt_t cy = aPosY[bi];
+    const flt_t cz = aPosZ[bi];
+    const int ctype = aType[bi];
+    for (int jj = 0; jj < aNlSize; ++jj) {
+        const int j = aNl[jj];
+        const flt_t dx = aPosX[j] - cx;
+        const flt_t dy = aPosY[j] - cy;
+        const flt_t dz = aPosZ[j] - cz;
+        const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
+        // mirror stuff
+        int type = aType[j];
+        if (MTYPE > 0) {
+            if (type==MTYPE) type = ctype;
+            else if (type==ctype) type = MTYPE;
+        }
         // get Rn, fc
-        flt_t *tRn = tNlRn + j*(NMAX+1);
-        flt_t fc = tNlFc[j];
+        flt_t *tRn = tNlRn + jj*(NMAX+1);
+        flt_t fc = tNlFc[jj];
         // get RnGrad, fcGrad
-        flt_t *tRnGrad = tNlRnGrad + j*(NMAX+1);
-        flt_t fcGrad = tNlFcGrad[j];
+        flt_t *tRnGrad = tNlRnGrad + jj*(NMAX+1);
+        flt_t fcGrad = tNlFcGrad[jj];
         // grad grad xyz to grad grad fc & Rn
-        const flt_t tBGradAGradj = aBGradAGradNlDx[j]*dx + aBGradAGradNlDy[j]*dy + aBGradAGradNlDz[j]*dz;
+        const flt_t tBGradAGradj = aBGradAGradNlDx[jj]*dx + aBGradAGradNlDy[jj]*dy + aBGradAGradNlDz[jj]*dz;
         fill<NMAX+1>(rBGradAGradRn, ZERO);
         flt_t tBGradAGradFc = tBGradAGradj*fcGrad;
         mplus<NMAX+1>(rBGradAGradRn, tBGradAGradj, tRnGrad);
@@ -267,15 +328,15 @@ static void chebyBackwardBackward(flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int 
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
             const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
             // get gradRnp
-            flt_t *tAGradRnp = tNlAGradRnp + j*SIZE_NP;
+            flt_t *tAGradRnp = tNlAGradRnp + jj*SIZE_NP;
             fill<SIZE_NP>(rBGradAGradRnp, ZERO);
             backwardBackwardRnp<NMAX, SIZE_NP>(
                 tAGradRnp, rBGradAGradRnp, rBGradAGradRn,
                 aParams+tParamShift, rBGradParams+tParamShift
             );
             // get Rnp
-            flt_t *tRnp = tNlRnp + j*SIZE_NP;
-            flt_t *rBGradRnp = rNlBGradRnp + j*SIZE_NP;
+            flt_t *tRnp = tNlRnp + jj*SIZE_NP;
+            flt_t *rBGradRnp = rNlBGradRnp + jj*SIZE_NP;
             fill<SIZE_NP>(rBGradRnp, ZERO);
             backwardBackwardMplusFp<SIZE_NP, TRUE>(aAGradFp, rBGradAGradFp, fc, tBGradAGradFc, tRnp, rBGradRnp, rBGradAGradRnp);
         } else
