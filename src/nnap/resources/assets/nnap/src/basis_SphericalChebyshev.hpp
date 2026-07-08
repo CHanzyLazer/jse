@@ -7,7 +7,7 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
+    flt4_td *aPosType, int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *rAnlm1, flt_t *rAnlm2,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
@@ -15,21 +15,20 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
     // init cache
     flt_t bRn[NMAX+1];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_td jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -62,8 +61,8 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
-    flt_t *rFp, flt_t aRCut, flt_t *aParams) noexcept {
+    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *rFp,
+    flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
@@ -79,7 +78,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bY, bAnlm1, bAnlm2,
             aRCut, aParams
         );
@@ -97,7 +96,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         fill<tLMAll>(bAnlm1, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bY, bAnlm1, NULL,
             aRCut, aParams
         );
@@ -110,7 +109,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
+    flt4_td *aPosType, int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
     flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
     flt_t aRCut, flt_t *aParams) {
@@ -119,21 +118,20 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     // init cache
     flt_t bRn[NMAX+1];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_td jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -221,8 +219,8 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
-    flt_t *aAGradFp, flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
@@ -240,7 +238,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bAGradAnlm1, bAnlm1, bAnlm2,
             aRCut, aParams
         );
@@ -255,7 +253,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL4<L4MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         tShiftFp += tSizeL;
         backwardAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
             rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
             aRCut, aParams
@@ -265,7 +263,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         fill<tLMAll>(bAnlm1, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bAGradAnlm1, bAnlm1, NULL,
             aRCut, aParams
         );
@@ -274,7 +272,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL3<L3MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         backwardAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosX, aPosY, aPosZ, aType, aNlSize, aBufNl,
+            aPosType, aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
             rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
             aRCut, aParams
@@ -286,8 +284,8 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int REQUIRE_CACHE>
 static void calAnlm(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *rAnlm, flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *rAnlm,
+    flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t bRn[REQUIRE_CACHE ? 1 : (NMAX+1)]; flt_t *rRn = REQUIRE_CACHE ? NULL : bRn;
@@ -301,21 +299,20 @@ static void calAnlm(int bi,
         rNlY = *rForwardCache; *rForwardCache += aNlSize*tLMAll;
     }
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -356,8 +353,8 @@ static void calAnlm(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP, int REQUIRE_CACHE>
 static void sphForward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *rFp, flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *rFp,
+    flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
@@ -374,8 +371,8 @@ static void sphForward(int bi,
     }
     // do cal
     calAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, REQUIRE_CACHE>(bi,
-        aPosX, aPosY, aPosZ, aType, aNlSize, aNl,
-        rAnlm, rForwardCache, aRCut, aParams
+        aPosType, aNlSize, aNl, rAnlm,
+        rForwardCache, aRCut, aParams
     );
     // anlm -> fp
     constexpr int tSizeL2 = LMAX+1;
@@ -389,8 +386,8 @@ static void sphForward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
 static void backwardAnlm(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradAnlm, flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradAnlm,
+    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
     flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) {
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
@@ -425,21 +422,20 @@ static void backwardAnlm(int bi,
     flt_t rAGradRn[NMAX+1];
     flt_t rAGradY[tLMAll];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -514,8 +510,8 @@ static void backwardAnlm(int bi,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
 static void sphBackward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradFp, flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradFp,
+    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
     flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) noexcept {
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
@@ -567,8 +563,8 @@ static void sphBackward(int bi,
         calGradSphL4<L4MAX>(tAnlm+tShift, rAGradAnlm+tShift, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
     }
     backwardAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, GRAD_PARAM, USE_BB, REQUIRE_CACHE>(bi,
-        aPosX, aPosY, aPosZ, aType, aNlSize, aNl,
-        rAGradAnlm, rAGradNlDx, rAGradNlDy, rAGradNlDz,
+        aPosType, aNlSize, aNl, rAGradAnlm,
+        rAGradNlDx, rAGradNlDy, rAGradNlDz,
         aForwardCache, rBackwardCache, rBackwardBackwardCache,
         aRCut, aParams, rAGradParams
     );
@@ -576,8 +572,7 @@ static void sphBackward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP>
 static void backwardBackwardAnlm(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradAnlm, flt_t *rBGradAGradAnlm,
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradAnlm, flt_t *rBGradAGradAnlm,
     flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
     flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) {
@@ -596,21 +591,20 @@ static void backwardBackwardAnlm(int bi,
     flt_t rBGradAGradRn[NMAX+1], rBGradAGradRnp[SIZE_NP];
     flt_t rBGradAGradY[tLMAll];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -680,8 +674,7 @@ static void backwardBackwardAnlm(int bi,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static void sphBackwardBackward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradFp, flt_t *rBGradAGradFp,
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradFp, flt_t *rBGradAGradFp,
     flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
     flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) noexcept {
@@ -699,8 +692,7 @@ static void sphBackwardBackward(int bi,
     fill<tSizeAnlm>(rBGradAnlm, ZERO);
     // xyz -> anlm
     backwardBackwardAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP>(bi,
-        aPosX, aPosY, aPosZ, aType, aNlSize, aNl,
-        tAGradAnlm, rBGradAGradAnlm,
+        aPosType, aNlSize, aNl, tAGradAnlm, rBGradAGradAnlm,
         aBGradAGradNlDx, aBGradAGradNlDy, aBGradAGradNlDz,
         aForwardCache, aBackwardCache, rBackwardBackwardCache,
         aRCut, aParams, rBGradParams

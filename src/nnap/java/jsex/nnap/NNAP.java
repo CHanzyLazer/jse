@@ -99,9 +99,8 @@ public class NNAP implements IPairPotential {
     final AnyCPointer mFpHyperParam, mFpParam, mNnParam, mNormParam;
     final IDoubleOrFloatCPointer[] mCache;
     private final IDoubleOrFloatCPointer[] mOutEng;
-    private final IDoubleOrFloatCPointer[] mPosX, mPosY, mPosZ;
+    private final IDoubleOrFloatCPointer[] mPosType;
     private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
-    private final IntCPointer[] mType;
     private final IntCPointer[] mNlType, mNlIdx;
     
     private final DoubleList[] mNlDxBuf, mNlDyBuf, mNlDzBuf;
@@ -192,13 +191,10 @@ public class NNAP implements IPairPotential {
             mPtrMngPar[ti] = new PointerManager();
         }
         mOutNums = mPtrMngTot.newIntCPointer(16);
-        mPosX = new IDoubleOrFloatCPointer[mNumThreads];
-        mPosY = new IDoubleOrFloatCPointer[mNumThreads];
-        mPosZ = new IDoubleOrFloatCPointer[mNumThreads];
+        mPosType = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDx = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDy = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDz = new IDoubleOrFloatCPointer[mNumThreads];
-        mType = new IntCPointer[mNumThreads];
         mNlType = new IntCPointer[mNumThreads];
         mNlIdx = new IntCPointer[mNumThreads];
         mGradNlDx = new IDoubleOrFloatCPointer[mNumThreads];
@@ -212,13 +208,10 @@ public class NNAP implements IPairPotential {
         mNlTypeBuf = new IntList[mNumThreads];
         mNlIdxBuf = new IntList[mNumThreads];
         for (int ti = 0; ti < mNumThreads; ++ti) {
-            mPosX[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mPosY[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mPosZ[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mPosType[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mType[ti] = mPtrMngPar[ti].newIntCPointer();
             mNlType[ti] = mPtrMngPar[ti].newIntCPointer();
             mNlIdx[ti] = mPtrMngPar[ti].newIntCPointer();
             mGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
@@ -883,10 +876,7 @@ public class NNAP implements IPairPotential {
     
     /// lammps stuff
     private void validNlLammps_(int aNlocalghost, int aNlSize) {
-        mPtrMngPar[0].ensureCapacity(mPosX[0], aNlocalghost);
-        mPtrMngPar[0].ensureCapacity(mPosY[0], aNlocalghost);
-        mPtrMngPar[0].ensureCapacity(mPosZ[0], aNlocalghost);
-        mPtrMngPar[0].ensureCapacity(mType[0], aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mPosType[0], aNlocalghost*4L);
         mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNlSize);
@@ -919,7 +909,7 @@ public class NNAP implements IPairPotential {
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mPosX[0], mPosY[0], mPosZ[0], mType[0], mNlIdx[0],
+            mPosType[0], mNlIdx[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
             mGradNlDx[0], mGradNlDy[0], mGradNlDz[0],
             mCache[0]

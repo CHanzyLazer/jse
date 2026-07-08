@@ -7,29 +7,28 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
-    flt_t *rFp, flt_t aRCut, flt_t *aParams) noexcept {
+    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *rFp,
+    flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // clear fp first
     fill<SIZE_NP>(rFp, ZERO);
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_td jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -45,28 +44,27 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
 }
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aBufNl,
-    flt_t *aAGradFp, flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
     flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1], bAGradRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_td jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -104,8 +102,8 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP, int REQUIRE_CACHE>
 static void chebyForward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *rFp, flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *rFp,
+    flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[REQUIRE_CACHE ? 1 : (NMAX+1)]; flt_t *rRn = REQUIRE_CACHE ? NULL : bRn;
     flt_t bRnp[REQUIRE_CACHE ? 1 : SIZE_NP]; flt_t *rRnp = REQUIRE_CACHE ? NULL : bRnp;
@@ -118,21 +116,20 @@ static void chebyForward(int bi,
     // clear fp first
     fill<SIZE_NP>(rFp, ZERO);
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -170,8 +167,8 @@ static void chebyForward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
 static void chebyBackward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradFp, flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    flt4_t *aPosType, int aNlSize, int *aNl,flt_t *aAGradFp,
+    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
     flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) noexcept {
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
@@ -208,21 +205,20 @@ static void chebyBackward(int bi,
     }
     flt_t rAGradRn[NMAX+1];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }
@@ -280,8 +276,7 @@ static void chebyBackward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static void chebyBackwardBackward(int bi,
-    flt_t *aPosX, flt_t *aPosY, flt_t *aPosZ, int *aType, int aNlSize, int *aNl,
-    flt_t *aAGradFp, flt_t *rBGradAGradFp,
+    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradFp, flt_t *rBGradAGradFp,
     flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
     flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) noexcept {
@@ -295,21 +290,20 @@ static void chebyBackwardBackward(int bi,
     flt_t *rNlBGradRnp = *rBackwardBackwardCache; *rBackwardBackwardCache += aNlSize*SIZE_NP;
     flt_t rBGradAGradRn[NMAX+1], rBGradAGradRnp[SIZE_NP];
     // loop for neighbor
-    const flt_t cx = aPosX[bi];
-    const flt_t cy = aPosY[bi];
-    const flt_t cz = aPosZ[bi];
-    const int ctype = aType[bi];
+    const flt4_t cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt_t dx = aPosX[j] - cx;
-        const flt_t dy = aPosY[j] - cy;
-        const flt_t dz = aPosZ[j] - cz;
+        const flt4_t jinfo = aPosType[j];
+        const flt_t dx = jinfo.x - cinfo.x;
+        const flt_t dy = jinfo.y - cinfo.y;
+        const flt_t dz = jinfo.z - cinfo.z;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = aType[j];
+        int type = (int)jinfo.w;
         if (MTYPE > 0) {
+            const int ctype = (int)cinfo.w;
             if (type==MTYPE) type = ctype;
             else if (type==ctype) type = MTYPE;
         }

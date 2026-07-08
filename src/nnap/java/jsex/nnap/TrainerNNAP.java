@@ -1853,8 +1853,15 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         // 清空旧的早停存储
         mMinLoss = Double.POSITIVE_INFINITY;
         // 数据近邻列表初始化
-        final boolean tNewTrainData = !mTrainData.mNl.isEmpty();
-        final boolean tNewTestData = !mTestData.mNl.isEmpty();
+        final boolean tNewTrainData, tNewTestData;
+        if (mCacheNl) {
+            // TODO: 这玩意目前逻辑有大问题，不过应该无所谓，反正要回退到缓存 AtomData 的情况
+            tNewTrainData = mTrainData.mNl.size() > mTrainData.mNlType.size();
+            tNewTestData = mTestData.mNl.size() > mTestData.mNlType.size();
+        } else {
+            tNewTrainData = !mTrainData.mNl.isEmpty();
+            tNewTestData = !mTestData.mNl.isEmpty();
+        }
         if (tNewTrainData || tNewTestData) {
             initDataNl(aPrintLog);
             if (tNewTrainData) {

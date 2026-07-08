@@ -41,6 +41,35 @@ typedef double flt_t;
 typedef float flt_t;
 // <<< NNAPGEN PICK [PRECISION]
 
+struct flt4_t {
+    flt_t x, y, z, w;
+};
+// _td: type for device only
+// >>> NNAPGEN PICK
+// --- NNAPGEN PICK: cpu
+struct flt4_td {
+    flt_t x, y, z, w;
+};
+// >>> NNAPGEN REMOVE
+/*
+// <<< NNAPGEN REMOVE
+// --- NNAPGEN PICK: cuda
+#ifdef NNAP_PRECISION_SINGLE
+typedef float4 flt4_td;
+#else
+typedef double4 flt4_td;
+#endif
+// <<< NNAPGEN PICK [ARCH]
+// >>> NNAPGEN REMOVE
+*/
+// <<< NNAPGEN REMOVE
+
+// >>> NNAPGEN REMOVE
+#define __NNAPGEN_NTYPES__ 2
+#define __NNAPGENS_X__ 0
+// <<< NNAPGEN REMOVE
+
+
 static constexpr int WTYPE_DEFAULT = 0;
 static constexpr int WTYPE_NONE    = -1;
 static constexpr int WTYPE_SINGLE  = 1; // unused
