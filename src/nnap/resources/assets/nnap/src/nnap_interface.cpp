@@ -8,15 +8,14 @@
 
 extern "C" {
 
-__jsefunc__ int jse_nnap_calFp(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_calFp(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t *rFp) {
     
-    const int ctype = (int)aPosType[bi].w;
     int code;
 // >>> NNAPGEN SWITCH
     code = JSE_NNAP::fpForward<__NNAPGENS_ctype__, JSE_NNAP::FALSE>(bi, ctype,
-        aPosType, aNlSize, aNl, rFp,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rFp,
         aFpHyperParam, aFpParam, NULL
     );
     if (code!=0) return code;
@@ -24,17 +23,16 @@ __jsefunc__ int jse_nnap_calFp(int bi,
     return 0;
 }
 
-__jsefunc__ int jse_nnap_calEnergy(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_calEnergy(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t *rOutEng) {
     
-    const int ctype = (int)aPosType[bi].w;
     int code;
 // >>> NNAPGEN SWITCH
     JSE_NNAP::flt_t rLayers[__NNAPGENX_NN_SIZE_IN__+__NNAPGENX_NN_SIZE_HB__];
     code = JSE_NNAP::fpForward<__NNAPGENS_ctype__, JSE_NNAP::FALSE>(bi, ctype,
-        aPosType, aNlSize, aNl, rLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rLayers,
         aFpHyperParam, aFpParam, NULL
     );
     if (code!=0) return code;
@@ -47,13 +45,12 @@ __jsefunc__ int jse_nnap_calEnergy(int bi,
     return 0;
 }
 
-__jsefunc__ int jse_nnap_calEnergyForce(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_calEnergyForce(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t *rOutEng, JSE_NNAP::flt_t *rGradNlDx, JSE_NNAP::flt_t *rGradNlDy, JSE_NNAP::flt_t *rGradNlDz,
     JSE_NNAP::flt_t *rFpForwardCache) {
     
-    const int ctype = (int)aPosType[bi].w;
     // manual clear required for backward in force
     for (int j = 0; j < aNlSize; ++j) {
         rGradNlDx[j] = JSE_NNAP::ZERO;
@@ -64,7 +61,7 @@ __jsefunc__ int jse_nnap_calEnergyForce(int bi,
 // >>> NNAPGEN SWITCH
     JSE_NNAP::flt_t rLayers[__NNAPGENX_NN_SIZE_IN__+__NNAPGENX_NN_SIZE_HB__];
     code = JSE_NNAP::fpForward<__NNAPGENS_ctype__, JSE_NNAP::TRUE>(bi, ctype,
-        aPosType, aNlSize, aNl, rLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rLayers,
         aFpHyperParam, aFpParam, rFpForwardCache
     );
     if (code!=0) return code;
@@ -82,7 +79,7 @@ __jsefunc__ int jse_nnap_calEnergyForce(int bi,
     );
     if (code!=0) return code;
     code = JSE_NNAP::fpBackward<__NNAPGENS_ctype__, JSE_NNAP::FALSE, JSE_NNAP::FALSE, JSE_NNAP::FALSE>(bi, ctype,
-        aPosType, aNlSize, aNl, rLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rLayers,
         rGradNlDx, rGradNlDy, rGradNlDz, aFpHyperParam,
         aFpParam, NULL, rFpForwardCache, NULL, NULL
     );
@@ -92,19 +89,18 @@ __jsefunc__ int jse_nnap_calEnergyForce(int bi,
 }
 
 
-__jsefunc__ int jse_nnap_forwardEnergy(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_forwardEnergy(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t *rOutEng, JSE_NNAP::flt_t *rFpForwardCache, JSE_NNAP::flt_t *rNnForwardCache) {
     
-    const int ctype = (int)aPosType[bi].w;
     int code;
 // >>> NNAPGEN SWITCH
     JSE_NNAP::flt_t *rLayers = rNnForwardCache;
     JSE_NNAP::flt_t *rNnGradCache = rLayers + (__NNAPGENX_NN_SIZE_IN__+__NNAPGENX_NN_SIZE_HB__);
     
     code = JSE_NNAP::fpForward<__NNAPGENS_ctype__, JSE_NNAP::TRUE>(bi, ctype,
-        aPosType, aNlSize, aNl, rLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rLayers,
         aFpHyperParam, aFpParam, rFpForwardCache
     );
     if (code!=0) return code;
@@ -116,13 +112,12 @@ __jsefunc__ int jse_nnap_forwardEnergy(int bi,
 // <<< NNAPGEN SWITCH (ctype) [FP NN TYPE]
     return 0;
 }
-__jsefunc__ int jse_nnap_backwardEnergy(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_backwardEnergy(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t aGradEng, JSE_NNAP::flt_t **rGradFpParam, JSE_NNAP::flt_t **rGradNnParam,
     JSE_NNAP::flt_t *aFpForwardCache, JSE_NNAP::flt_t *aNnForwardCache) {
     
-    const int ctype = (int)aPosType[bi].w;
     int code;
 // >>> NNAPGEN SWITCH
     JSE_NNAP::flt_t *tLayers = aNnForwardCache;
@@ -135,7 +130,7 @@ __jsefunc__ int jse_nnap_backwardEnergy(int bi,
     );
     if (code!=0) return code;
     code = JSE_NNAP::fpBackward<__NNAPGENS_ctype__, JSE_NNAP::TRUE, JSE_NNAP::FALSE, JSE_NNAP::FALSE>(bi, ctype,
-        aPosType, aNlSize, aNl, rGradLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rGradLayers,
         NULL, NULL, NULL, aFpHyperParam,
         aFpParam, rGradFpParam, aFpForwardCache, NULL, NULL
     );
@@ -144,13 +139,12 @@ __jsefunc__ int jse_nnap_backwardEnergy(int bi,
     return 0;
 }
 
-__jsefunc__ int jse_nnap_forwardEnergyForce(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_forwardEnergyForce(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t *rOutEng, JSE_NNAP::flt_t *rGradNlDx, JSE_NNAP::flt_t *rGradNlDy, JSE_NNAP::flt_t *rGradNlDz,
     JSE_NNAP::flt_t *rFpForwardCache, JSE_NNAP::flt_t *rNnForwardCache, JSE_NNAP::flt_t *rFpBackwardCache, JSE_NNAP::flt_t *rNnBackwardCache) {
     
-    const int ctype = (int)aPosType[bi].w;
     // manual clear required for backward in force
     for (int j = 0; j < aNlSize; ++j) {
         rGradNlDx[j] = JSE_NNAP::ZERO;
@@ -169,7 +163,7 @@ __jsefunc__ int jse_nnap_forwardEnergyForce(int bi,
     JSE_NNAP::fill<__NNAPGENX_NN_SIZE_HB__>(rAGradLayersZ, JSE_NNAP::ZERO);
     
     code = JSE_NNAP::fpForward<__NNAPGENS_ctype__, JSE_NNAP::TRUE>(bi, ctype,
-        aPosType, aNlSize, aNl, rLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rLayers,
         aFpHyperParam, aFpParam, rFpForwardCache
     );
     if (code!=0) return code;
@@ -184,7 +178,7 @@ __jsefunc__ int jse_nnap_forwardEnergyForce(int bi,
     );
     if (code!=0) return code;
     code = JSE_NNAP::fpBackward<__NNAPGENS_ctype__, JSE_NNAP::FALSE, JSE_NNAP::FALSE, JSE_NNAP::TRUE>(bi, ctype,
-        aPosType, aNlSize, aNl, rAGradLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rAGradLayers,
         rGradNlDx, rGradNlDy, rGradNlDz, aFpHyperParam,
         aFpParam, NULL, rFpForwardCache, rFpBackwardCache, NULL
     );
@@ -192,15 +186,14 @@ __jsefunc__ int jse_nnap_forwardEnergyForce(int bi,
 // <<< NNAPGEN SWITCH (ctype) [FP NN TYPE]
     return 0;
 }
-__jsefunc__ int jse_nnap_backwardEnergyForce(int bi,
-    JSE_NNAP::flt4_t *aPosType, int aNlSize, int *aNl,
+__jsefunc__ int jse_nnap_backwardEnergyForce(int bi, int ctype,
+    JSE_NNAP::flt_t *aPosType, int aNlSize, int *aNl,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t *aNormParam,
     JSE_NNAP::flt_t aBGradEng, JSE_NNAP::flt_t *aBGradAGradNlDx, JSE_NNAP::flt_t *aBGradAGradNlDy, JSE_NNAP::flt_t *aBGradAGradNlDz,
     JSE_NNAP::flt_t **rBGradFpParam, JSE_NNAP::flt_t **rBGradNnParam,
     JSE_NNAP::flt_t *aFpForwardCache, JSE_NNAP::flt_t *aNnForwardCache, JSE_NNAP::flt_t *aFpBackwardCache, JSE_NNAP::flt_t *aNnBackwardCache,
     JSE_NNAP::flt_t *rFpBackwardBackwardCache) {
     
-    const int ctype = (int)aPosType[bi].w;
     int code;
 // >>> NNAPGEN SWITCH
     JSE_NNAP::flt_t *tLayers = aNnForwardCache;
@@ -213,7 +206,7 @@ __jsefunc__ int jse_nnap_backwardEnergyForce(int bi,
     JSE_NNAP::flt_t rBGradLayers[__NNAPGENX_NN_SIZE_IN__+__NNAPGENX_NN_SIZE_HB__] = {0};
     
     code = JSE_NNAP::fpBackwardBackward<__NNAPGENS_ctype__>(bi, ctype,
-        aPosType, aNlSize, aNl, tAGradLayers, rBGradAGradLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, tAGradLayers, rBGradAGradLayers,
         aBGradAGradNlDx, aBGradAGradNlDy, aBGradAGradNlDz,
         aFpHyperParam, aFpParam, rBGradFpParam, aFpForwardCache, aFpBackwardCache, rFpBackwardBackwardCache
     );
@@ -229,7 +222,7 @@ __jsefunc__ int jse_nnap_backwardEnergyForce(int bi,
     );
     if (code!=0) return code;
     code = JSE_NNAP::fpBackward<__NNAPGENS_ctype__, JSE_NNAP::TRUE, JSE_NNAP::TRUE, JSE_NNAP::FALSE>(bi, ctype,
-        aPosType, aNlSize, aNl, rBGradLayers,
+        (JSE_NNAP::flt4_t *)aPosType, aNlSize, aNl, rBGradLayers,
         NULL, NULL, NULL, aFpHyperParam,
         aFpParam, rBGradFpParam, aFpForwardCache, NULL, rFpBackwardBackwardCache
     );
@@ -241,10 +234,9 @@ __jsefunc__ int jse_nnap_backwardEnergyForce(int bi,
 
 #define JSE_LMP_NEIGHMASK 0x1FFFFFFF
 
-__jsefunc__ int jse_nnap_statNeiNumLammps(int *ilist, int *numneigh, int inum, int *numneighMax) {
+__jsefunc__ int jse_nnap_statNlSizeLammps(int nlocal, int *numneigh, int *numneighMax) {
     int numneighMax_ = 0;
-    for (int ii = 0; ii < inum; ++ii) {
-        int i = ilist[ii];
+    for (int i = 0; i < nlocal; ++i) {
         int jnum = numneigh[i];
         if (jnum > numneighMax_) numneighMax_ = jnum;
     }
@@ -253,7 +245,7 @@ __jsefunc__ int jse_nnap_statNeiNumLammps(int *ilist, int *numneigh, int inum, i
 }
 
 __jsefunc__ int jse_nnap_computeLammps(
-    int nlocalghost, int inum, int ntypes,
+    int inum, int nlocal, int nghost, int ntypes,
     int eflag, int vflag, int eflagAtom, int vflagAtom, int cvflagAtom,
     double **x, double **f, int *type, int *ilist,
     int *numneigh, int **firstneigh, double *cutsq,
@@ -264,6 +256,7 @@ __jsefunc__ int jse_nnap_computeLammps(
     JSE_NNAP::flt_t *rGradNlDx, JSE_NNAP::flt_t *rGradNlDy, JSE_NNAP::flt_t *rGradNlDz,
     JSE_NNAP::flt_t *rFpForwardCache) {
     
+    const int nlocalghost = nlocal + nghost;
     /// lammps x type -> jse pos xyz type
     for (int i = 0; i < nlocalghost; ++i) {
         rPosType[4*i + 0] = (JSE_NNAP::flt_t)x[i][0];
