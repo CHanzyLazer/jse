@@ -7,30 +7,32 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
-    flt4_td *aPosType, int aNlSize, int *aBufNl,
+    int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *rAnlm1, flt_t *rAnlm2,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t bRn[NMAX+1];
     // loop for neighbor
-    const flt4_td cinfo = aPosType[bi];
+    const flt_t xi = posx[bi];
+    const flt_t yi = posy[bi];
+    const flt_t zi = posz[bi];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt4_td jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = posx[j] - xi;
+        const flt_t dy = posy[j] - yi;
+        const flt_t dz = posz[j] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // cal Y
         calY<LMAXMAX>(bY, dx, dy, dz, dis);
@@ -38,7 +40,7 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
         calRn<NMAX>(bRn, dis, aRCut);
         const flt_t fc = calFc(dis, aRCut);
         // cal anlm
-        const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1)) + np*(NMAX+1);
+        const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1)) + np*(NMAX+1);
         if (TWO_PASS) {
             const flt_t *tWeight1 = aParams+tParamShift, *tWeight2 = aParams+tParamShift+(NMAX+1);
             flt_t tRnp1 = ZERO, tRnp2 = ZERO;
@@ -61,7 +63,8 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
-    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *rFp,
+    int aNlSize, int *aBufNl, flt_t *rFp,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
@@ -78,8 +81,9 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bY, bAnlm1, bAnlm2,
+            posx, posy, posz, type,
             aRCut, aParams
         );
         // anlm -> fp
@@ -96,8 +100,9 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         fill<tLMAll>(bAnlm1, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bY, bAnlm1, NULL,
+            posx, posy, posz, type,
             aRCut, aParams
         );
         // anlm -> fp
@@ -109,8 +114,9 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
 
 template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
-    flt4_td *aPosType, int aNlSize, int *aBufNl,
+    int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *fx, flt_t *fy, flt_t *fz,
     flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
     flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
@@ -123,22 +129,23 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     flt_t f0xi = ZERO;
     flt_t f0yi = ZERO;
     flt_t f0zi = ZERO;
-    const flt4_td cinfo = aPosType[bi];
+    const flt_t xi = posx[bi];
+    const flt_t yi = posy[bi];
+    const flt_t zi = posz[bi];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt4_td jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = posx[j] - xi;
+        const flt_t dy = posy[j] - yi;
+        const flt_t dz = posz[j] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // cal Y
         calY<LMAXMAX>(bY, dx, dy, dz, dis);
@@ -149,7 +156,7 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
         // grad anlm -> grad xyz
         flt_t thetaPx, thetaPy, thetaPz, phiPx, phiPy;
         flt_t rAGradj = ZERO, rAGradThetaj = ZERO, rAGradPhij = ZERO;
-        const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1)) + np*(NMAX+1);
+        const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1)) + np*(NMAX+1);
         if (TWO_PASS) {
             const flt_t *tWeight1 = aParams+tParamShift, *tWeight2 = aParams+tParamShift+(NMAX+1);
             flt_t tRnp1 = ZERO, tRnp2 = ZERO;
@@ -255,7 +262,8 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
 }
 template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
-    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *fx, flt_t *fy, flt_t *fz,
     flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
     flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
@@ -276,8 +284,9 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bAGradAnlm1, bAnlm1, bAnlm2,
+            posx, posy, posz, type,
             aRCut, aParams
         );
         fill<tLMAll>(bAGradAnlm1, ZERO);
@@ -292,8 +301,9 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         tShiftFp += tSizeL;
         backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
+            posx, posy, posz, type,
             fx, fy, fz,
             v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
             v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
@@ -304,8 +314,9 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         fill<tLMAll>(bAnlm1, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bAGradAnlm1, bAnlm1, NULL,
+            posx, posy, posz, type,
             aRCut, aParams
         );
         fill<tLMAll>(bAGradAnlm1, ZERO);
@@ -314,8 +325,9 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aPosType, aNlSize, aBufNl,
+            aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
+            posx, posy, posz, type,
             fx, fy, fz,
             v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
             v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,

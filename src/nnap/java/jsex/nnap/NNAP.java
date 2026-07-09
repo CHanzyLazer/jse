@@ -117,9 +117,8 @@ public class NNAP implements IPairPotential {
     private int mNeighnumMax = -1;
     private FloatCPointer mFltBuf = null;
     private IntCPointer mIntBuf = null;
-    private FloatCudaPointer mCudaPosType = null;
-    private FloatCudaPointer mCudaX = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaBufNlSize = null, mCudaBufCType = null;
+    private FloatCudaPointer mCudaPos = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
+    private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaBufNlSize = null;
     private IntCudaPointer mCudaFirstneigh = null, mCudaBufNlType = null, mCudaBufNlIdx = null;
     private FloatCudaPointer mCudaBufNlDx = null, mCudaBufNlDy = null, mCudaBufNlDz = null, mCudaBufGradNlDx = null, mCudaBufGradNlDy = null, mCudaBufGradNlDz = null;
     private IntCudaPointer mCudaNMerges = null;
@@ -925,11 +924,12 @@ public class NNAP implements IPairPotential {
         
         mFltBuf = mPtrMngTot.newFloatCPointer();
         mIntBuf = mPtrMngTot.newIntCPointer();
-        mCudaPosType = mPtrMngTot.newFloatCudaPointer();
+        mCudaPos = mPtrMngTot.newFloatCudaPointer();
         mCudaF = mPtrMngTot.newFloatCudaPointer();
         mCudaEatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom1 = mPtrMngTot.newFloatCudaPointer();
+        mCudaType = mPtrMngTot.newIntCudaPointer();
         mCudaIlist = mPtrMngTot.newIntCudaPointer();
         mCudaNumneigh = mPtrMngTot.newIntCudaPointer();
         mCudaFirstneigh = mPtrMngTot.newIntCudaPointer();
@@ -949,7 +949,9 @@ public class NNAP implements IPairPotential {
         final int nghost = aPair.atomNghost();
         final int nlocalghost = nlocal + nghost;
         mPtrMngTot.ensureCapacity(mFltBuf, (long)nlocalghost*9L);
-        mPtrMngTot.ensureCapacity(mCudaPosType, (long)nlocalghost*4L);
+        mPtrMngTot.ensureCapacity(mIntBuf, nlocalghost);
+        mPtrMngTot.ensureCapacity(mCudaPos, (long)nlocalghost*3L);
+        mPtrMngTot.ensureCapacity(mCudaType, (long)nlocalghost);
         mPtrMngTot.ensureCapacity(mCudaF, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
@@ -982,7 +984,7 @@ public class NNAP implements IPairPotential {
             aPair.atomX(), aPair.atomType(), aPair.mLmpType2NNAPType,
             ilist, numneigh, firstneigh,
             mFltBuf, mIntBuf,
-            mCudaPosType, nlflag?mCudaIlist:NULL,
+            mCudaPos, mCudaType, nlflag?mCudaIlist:NULL,
             nlflag?mCudaNumneigh:NULL, nlflag?mCudaFirstneigh:NULL
         );
         CudaCore.cudaExceptionCheck(tCode);
@@ -990,7 +992,7 @@ public class NNAP implements IPairPotential {
         // cuda compute
         tCode = mComputeLammpsCuda.invoke(
             inum, nlocal, nghost, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, cvflagAtom?1:0,
-            mCudaPosType, mCudaIlist, mCudaNMerges, mCudaMergeSorted,
+            mCudaPos, mCudaType, mCudaIlist, mCudaNMerges, mCudaMergeSorted,
             mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,

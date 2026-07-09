@@ -9,17 +9,25 @@
 
 namespace JSE_NNAP {
 
-static __global__ void initLammpsNeiKernel(int inum, int nlocal,
-        int *ilist, flt4_td *postype, int *nmerges, int **mergeSorted,
+static __global__ void initLammpsNeiKernel(int inum, int nlocal, int nghost,
+        int *ilist, int *nmerges, int **mergeSorted,
         flt_t **cutsq, int *numneigh, int *firstneigh,
-        int *rBufNlSize, int *rBufNl) {
+        int *rBufNlSize, int *rBufNl,
+        flt_t *pos, int *type) {
     
     const int ii = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (ii >= inum) return;
     
+    const int nlocalghost = nlocal + nghost;
     const int i = ilist[ii];
-    const flt4_td cinfo = postype[i];
-    const int ctype = (int)cinfo.w;
+    const int ctype = type[i];
+    
+    flt_t *posx = pos;
+    flt_t *posy = pos + nlocalghost;
+    flt_t *posz = pos + nlocalghost*2L;
+    const flt_t xi = posx[i];
+    const flt_t yi = posy[i];
+    const flt_t zi = posz[i];
     
     const int jnum = numneigh[i];
     const flt_t *cutsq_ = cutsq[ctype-1];
@@ -32,11 +40,10 @@ static __global__ void initLammpsNeiKernel(int inum, int nlocal,
         const flt_t cutsqR = cutsq_[k];
         for (int jj = 0; jj < jnum; ++jj) {
             const int j = firstneigh[jj*nlocal + i];
-            const flt4_td jinfo = postype[j];
             // Note that dxyz in jse and lammps are defined oppositely
-            const flt_t dx = jinfo.x - cinfo.x;
-            const flt_t dy = jinfo.y - cinfo.y;
-            const flt_t dz = jinfo.z - cinfo.z;
+            const flt_t dx = posx[j] - xi;
+            const flt_t dy = posy[j] - yi;
+            const flt_t dz = posz[j] - zi;
             const flt_t rsq = dx*dx + dy*dy + dz*dz;
             if (rsq>=cutsqL && rsq<cutsqR) {
                 rBufNl[tNlSize*nlocal + i] = j;
@@ -52,7 +59,8 @@ static __global__ void initLammpsNeiKernel(int inum, int nlocal,
 
 template <int EEITHER, int VEITHER, int VATOM, int CVATOM>
 static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
-        int *ilist, flt4_td *postype, int *aBufNlSize, int *aBufNl,
+        int *ilist, int *aBufNlSize, int *aBufNl,
+        flt_t *pos, int *type,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
         flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
     
@@ -61,14 +69,18 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
     
     const int nlocalghost = nlocal + nghost;
     const int i = ilist[ii];
-    const flt4_td cinfo = postype[i];
-    const int ctype = (int)cinfo.w;
+    const int ctype = type[i];
+    
+    flt_t *posx = pos;
+    flt_t *posy = pos + nlocalghost;
+    flt_t *posz = pos + nlocalghost*2L;
     
     flt_t rEng = ZERO;
 // >>> NNAPGEN SWITCH
     flt_t rFpOrGradFp[__NNAPGENX_FP_SIZE__];
     fpForwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
-        postype, aBufNlSize, aBufNl, rFpOrGradFp,
+        aBufNlSize, aBufNl, rFpOrGradFp,
+        posx, posy, posz, type,
         aFpHyperParam, aFpParam
     );
     {
@@ -85,7 +97,8 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
         );
     }
     fpBackwardGpu<__NNAPGENS_ctype__, VEITHER, VATOM, CVATOM>(nlocal, i, ctype,
-        postype, aBufNlSize, aBufNl, rFpOrGradFp,
+        aBufNlSize, aBufNl, rFpOrGradFp,
+        posx, posy, posz, type,
         f, f + nlocalghost, f + nlocalghost*2L,
         vatom0,             vatom0 + nlocal,    vatom0 + nlocal*2L,
         vatom0 + nlocal*3L, vatom0 + nlocal*4L, vatom0 + nlocal*5L,
@@ -102,21 +115,24 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
 template <int VEITHER, int VATOM, int CVATOM>
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         int inum, int nlocal, int nghost,
-        int *ilist, flt4_td *postype, int *aBufNlSize, int *aBufNl,
+        int *ilist, int *aBufNlSize, int *aBufNl,
+        flt_t *pos, int *type,
         int eflag,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
         flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
     if (eflag) {
         computeLammpsKernel<TRUE, VEITHER, VATOM, CVATOM>
                      <<<aGridSize, aBlockSize>>>(inum, nlocal, nghost,
-            ilist, postype, aBufNlSize, aBufNl,
+            ilist, aBufNlSize, aBufNl,
+            pos, type,
             eatom0, f, vatom0, vatom1,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     } else {
         computeLammpsKernel<FALSE, VEITHER, VATOM, CVATOM>
                      <<<aGridSize, aBlockSize>>>(inum, nlocal, nghost,
-            ilist, postype, aBufNlSize, aBufNl,
+            ilist, aBufNlSize, aBufNl,
+            pos, type,
             eatom0, f, vatom0, vatom1,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
@@ -124,7 +140,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
 }
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     int inum, int nlocal, int nghost,
-    int *ilist, flt4_td *postype, int *aBufNlSize, int *aBufNl,
+    int *ilist, int *aBufNlSize, int *aBufNl,
+    flt_t *pos, int *type,
     int eflag, int vflag, int vflagAtom, int cvflagAtom,
     flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
@@ -132,7 +149,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         if (cvflagAtom) {
             computeLammpsKernel_<TRUE, TRUE, TRUE>(aGridSize, aBlockSize,
                 inum, nlocal, nghost,
-                ilist, postype, aBufNlSize, aBufNl,
+                ilist, aBufNlSize, aBufNl,
+                pos, type,
                 eflag,
                 eatom0, f, vatom0, vatom1,
                 aFpHyperParam, aFpParam, aNormParam, aNnParam
@@ -140,7 +158,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         } else if (vflagAtom) {
             computeLammpsKernel_<TRUE, TRUE, FALSE>(aGridSize, aBlockSize,
                 inum, nlocal, nghost,
-                ilist, postype, aBufNlSize, aBufNl,
+                ilist, aBufNlSize, aBufNl,
+                pos, type,
                 eflag,
                 eatom0, f, vatom0, vatom1,
                 aFpHyperParam, aFpParam, aNormParam, aNnParam
@@ -148,7 +167,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         } else {
             computeLammpsKernel_<TRUE, FALSE, FALSE>(aGridSize, aBlockSize,
                 inum, nlocal, nghost,
-                ilist, postype, aBufNlSize, aBufNl,
+                ilist, aBufNlSize, aBufNl,
+                pos, type,
                 eflag,
                 eatom0, f, vatom0, vatom1,
                 aFpHyperParam, aFpParam, aNormParam, aNnParam
@@ -157,7 +177,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     } else {
         computeLammpsKernel_<FALSE, FALSE, FALSE>(aGridSize, aBlockSize,
             inum, nlocal, nghost,
-            ilist, postype, aBufNlSize, aBufNl,
+            ilist, aBufNlSize, aBufNl,
+            pos, type,
             eflag,
             eatom0, f, vatom0, vatom1,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
@@ -317,18 +338,22 @@ __jsefunc__ int jse_nnap_lammps2cuda(
     double **x, int *type, int *aLmpType2NNAPType,
     int *ilist, int *numneigh, int **firstneigh,
     JSE_NNAP::flt_t *fltBuf, int *intBuf,
-    JSE_NNAP::flt_t *cudaPosType, int *cudaIlist,
+    JSE_NNAP::flt_t *cudaPos, int *cudaType, int *cudaIlist,
     int *cudaNumneigh, int *cudaFirstneigh) {
     
     const int nlocalghost = nlocal + nghost;
     cudaError_t tErr;
     for (int i = 0; i < nlocalghost; ++i) {
-        fltBuf[4*i + 0] = (JSE_NNAP::flt_t)x[i][0];
-        fltBuf[4*i + 1] = (JSE_NNAP::flt_t)x[i][1];
-        fltBuf[4*i + 2] = (JSE_NNAP::flt_t)x[i][2];
-        fltBuf[4*i + 3] = (JSE_NNAP::flt_t)aLmpType2NNAPType[type[i]];
+        fltBuf[0*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][0];
+        fltBuf[1*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][1];
+        fltBuf[2*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][2];
     }
-    tErr = cudaMemcpy(cudaPosType, fltBuf, nlocalghost*4L*sizeof(JSE_NNAP::flt_t), cudaMemcpyHostToDevice);
+    tErr = cudaMemcpy(cudaPos, fltBuf, nlocalghost*4L*sizeof(JSE_NNAP::flt_t), cudaMemcpyHostToDevice);
+    if (tErr!=cudaSuccess) return (int)tErr;
+    for (int i = 0; i < nlocalghost; ++i) {
+        intBuf[i] = aLmpType2NNAPType[type[i]];
+    }
+    tErr = cudaMemcpy(cudaType, intBuf, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
     if (tErr!=cudaSuccess) return (int)tErr;
     if (nlflag) {
         tErr = cudaMemcpy(cudaIlist, ilist, inum*sizeof(int), cudaMemcpyHostToDevice);
@@ -423,7 +448,7 @@ __jsefunc__ int jse_nnap_cuda2lammps(
 
 __jsefunc__ int jse_nnap_computeLammpsCuda(
     int inum, int nlocal, int nghost, int eflag, int vflag, int eflagAtom, int vflagAtom, int cvflagAtom,
-    JSE_NNAP::flt_t *postype, int *ilist, int *nmerges, int **mergeSorted,
+    JSE_NNAP::flt_t *pos, int *type, int *ilist, int *nmerges, int **mergeSorted,
     JSE_NNAP::flt_t **cutsq, int *numneigh, int *firstneigh,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t **aNormParam,
     JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *eatom0, JSE_NNAP::flt_t *vatom0, JSE_NNAP::flt_t *vatom1,
@@ -453,15 +478,16 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
     constexpr int tBlockSize = __NNAPGEN_CUDA_BLOCKSIZE__;
     const int tGridSize = (inum + tBlockSize-1) / tBlockSize;
     
-    JSE_NNAP::flt4_td *postype_ = (JSE_NNAP::flt4_td *)postype;
-    JSE_NNAP::initLammpsNeiKernel<<<tGridSize, tBlockSize>>>(inum, nlocal,
-        ilist, postype_, nmerges, mergeSorted,
+    JSE_NNAP::initLammpsNeiKernel<<<tGridSize, tBlockSize>>>(inum, nlocal, nghost,
+        ilist, nmerges, mergeSorted,
         cutsq, numneigh, firstneigh,
-        rBufNlSize, rBufNl
+        rBufNlSize, rBufNl,
+        pos, type
     );
     JSE_NNAP::computeLammpsKernel_(tGridSize, tBlockSize,
         inum, nlocal, nghost,
-        ilist, postype_, rBufNlSize, rBufNl,
+        ilist, rBufNlSize, rBufNl,
+        pos, type,
         eflag||eflagAtom, vflag, vflagAtom, cvflagAtom,
         eatom0, f, vatom0, vatom1,
         aFpHyperParam, aFpParam, aNormParam, aNnParam

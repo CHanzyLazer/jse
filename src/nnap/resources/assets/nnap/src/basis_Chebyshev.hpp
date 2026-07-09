@@ -7,7 +7,8 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
-    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *rFp,
+    int aNlSize, int *aBufNl, flt_t *rFp,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1];
@@ -15,28 +16,29 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
     // clear fp first
     fill<SIZE_NP>(rFp, ZERO);
     // loop for neighbor
-    const flt4_td cinfo = aPosType[bi];
+    const flt_t xi = posx[bi];
+    const flt_t yi = posy[bi];
+    const flt_t zi = posz[bi];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt4_td jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = posx[j] - xi;
+        const flt_t dy = posy[j] - yi;
+        const flt_t dz = posz[j] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // cal Rn, fc
         calRn<NMAX>(bRn, dis, aRCut);
         flt_t fc = calFc(dis, aRCut);
         // cal Rnp
-        const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
+        const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1));
         calRnp<NMAX, SIZE_NP>(bRnp, bRn, aParams+tParamShift);
         // Rn to fp
         mplusFp<SIZE_NP>(rFp, fc, bRnp);
@@ -44,7 +46,8 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
 }
 template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
-    flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *fx, flt_t *fy, flt_t *fz,
     flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
     flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
@@ -56,28 +59,29 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     flt_t f0xi = ZERO;
     flt_t f0yi = ZERO;
     flt_t f0zi = ZERO;
-    const flt4_td cinfo = aPosType[bi];
+    const flt_t xi = posx[bi];
+    const flt_t yi = posy[bi];
+    const flt_t zi = posz[bi];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
-        const flt4_td jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = posx[j] - xi;
+        const flt_t dy = posy[j] - yi;
+        const flt_t dz = posz[j] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // cal Rn, fc
         calRn<NMAX>(bRn, dis, aRCut);
         flt_t fc = calFc(dis, aRCut);
         // cal Rnp
-        const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
+        const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1));
         calRnp<NMAX, SIZE_NP>(bRnp, bRn, aParams+tParamShift);
         
         // backward in single loop for save cache
