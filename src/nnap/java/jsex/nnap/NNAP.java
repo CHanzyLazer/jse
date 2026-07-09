@@ -919,7 +919,7 @@ public class NNAP implements IPairPotential {
     
     // cuda stuff
     private boolean mCudaLmpInited = false;
-    private void initLmpDataCuda_(PairNNAP aPair) throws CudaException {
+    private void initLmpDataCuda_() throws CudaException {
         if (mCudaLmpInited) return;
         mCudaLmpInited = true;
         
@@ -935,14 +935,11 @@ public class NNAP implements IPairPotential {
         mCudaFirstneigh = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlIdx = mPtrMngTot.newIntCudaPointer();
-        mCudaBufGradNlDx = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufGradNlDy = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufGradNlDz = mPtrMngTot.newFloatCudaPointer();
     }
     void computeLammpsCuda(PairNNAP aPair) throws CudaException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (!mCuda) throw new IllegalStateException();
-        initLmpDataCuda_(aPair);
+        initLmpDataCuda_();
         // 常规缓存向量长度规范
         final boolean nlflag = mNeighnumMax<0 || aPair.neighborAgo()==0;
         final boolean cvflagAtom = aPair.cvflagAtom();
@@ -977,9 +974,6 @@ public class NNAP implements IPairPotential {
             mPtrMngTot.ensureCapacity(mIntBuf, tTotNlSize);
             mPtrMngTot.ensureCapacity(mCudaFirstneigh, tTotNlSize);
             mPtrMngTot.ensureCapacity(mCudaBufNlIdx, tTotNlSize);
-            mPtrMngTot.ensureCapacity(mCudaBufGradNlDx, tTotNlSize);
-            mPtrMngTot.ensureCapacity(mCudaBufGradNlDy, tTotNlSize);
-            mPtrMngTot.ensureCapacity(mCudaBufGradNlDz, tTotNlSize);
         }
         
         // lammps -> cuda
@@ -1000,8 +994,7 @@ public class NNAP implements IPairPotential {
             mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
-            mCudaBufNlSize, mCudaBufNlIdx,
-            mCudaBufGradNlDx, mCudaBufGradNlDy, mCudaBufGradNlDz
+            mCudaBufNlSize, mCudaBufNlIdx
         );
         CudaCore.cudaExceptionCheck(tCode);
         

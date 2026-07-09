@@ -50,6 +50,18 @@ struct flt4_t {
 struct flt4_td {
     flt_t x, y, z, w;
 };
+static inline float atomicAdd(float *ptr, float val) noexcept {
+    // no atomic, add only for debug
+    const float old = *ptr;
+    *ptr += val;
+    return old;
+}
+static inline double atomicAdd(double *ptr, double val) noexcept {
+    // no atomic, add only for debug
+    const double old = *ptr;
+    *ptr += val;
+    return old;
+}
 // >>> NNAPGEN REMOVE
 /*
 // <<< NNAPGEN REMOVE

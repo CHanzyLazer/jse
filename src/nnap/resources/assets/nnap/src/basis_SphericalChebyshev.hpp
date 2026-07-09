@@ -107,17 +107,22 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     }
 }
 
-template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
+template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     flt4_td *aPosType, int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
-    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt_t *fx, flt_t *fy, flt_t *fz,
+    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t aRCut, flt_t *aParams) {
     // const init
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t bRn[NMAX+1];
     // loop for neighbor
+    flt_t f0xi = ZERO;
+    flt_t f0yi = ZERO;
+    flt_t f0zi = ZERO;
     const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
@@ -212,15 +217,48 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
             }
         }
         // to grad xyz
-        rBufAGradNlDx[jj*nb + bi] += rAGradj*dx + rAGradThetaj*thetaPx + rAGradPhij*phiPx;
-        rBufAGradNlDy[jj*nb + bi] += rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
-        rBufAGradNlDz[jj*nb + bi] += rAGradj*dz + rAGradThetaj*thetaPz;
+        const flt_t fxj = rAGradj*dx + rAGradThetaj*thetaPx + rAGradPhij*phiPx;
+        const flt_t fyj = rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
+        const flt_t fzj = rAGradj*dz + rAGradThetaj*thetaPz;
+        f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
+        atomicAdd(fx + j, fxj);
+        atomicAdd(fy + j, fyj);
+        atomicAdd(fz + j, fzj);
+        if (VEITHER) {
+            const flt_t vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
+            const flt_t vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
+            v0xx[bi] += vxxj; v0yy[bi] += vyyj; v0zz[bi] += vzzj;
+            v0xy[bi] += vxyj; v0xz[bi] += vxzj; v0yz[bi] += vyzj;
+            if (CVATOM) {
+                atomicAdd(v1xx + j, vxxj);
+                atomicAdd(v1yy + j, vyyj);
+                atomicAdd(v1zz + j, vzzj);
+                atomicAdd(v1xy + j, vxyj);
+                atomicAdd(v1xz + j, vxzj);
+                atomicAdd(v1yz + j, vyzj);
+                atomicAdd(v1yx + j, dy*fxj);
+                atomicAdd(v1zx + j, dz*fxj);
+                atomicAdd(v1zy + j, dz*fyj);
+            } else if (VATOM) {
+                atomicAdd(v1xx + j, vxxj);
+                atomicAdd(v1yy + j, vyyj);
+                atomicAdd(v1zz + j, vzzj);
+                atomicAdd(v1xy + j, vxyj);
+                atomicAdd(v1xz + j, vxzj);
+                atomicAdd(v1yz + j, vyzj);
+            }
+        }
     }
+    atomicAdd(fx + bi, f0xi);
+    atomicAdd(fy + bi, f0yi);
+    atomicAdd(fz + bi, f0zi);
 }
-template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
+template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
-    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt_t *fx, flt_t *fy, flt_t *fz,
+    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
@@ -252,10 +290,13 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL3<L3MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         tShiftFp += tSizeL;
-        backwardAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
+        backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
+                        tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
             aPosType, aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
-            rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
+            fx, fy, fz,
+            v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+            v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
             aRCut, aParams
         );
     }
@@ -271,10 +312,13 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
         calGradSphL3<L3MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
-        backwardAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
+        backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
+                        tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
             aPosType, aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
-            rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
+            fx, fy, fz,
+            v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+            v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
             aRCut, aParams
         );
     }

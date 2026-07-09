@@ -130,10 +130,12 @@ static NNAP_DEVICE int normedNnBackwardGpu(int ctype,
     return 0;
 }
 
-template <int CTYPE_GEN>
+template <int CTYPE_GEN, int VEITHER, int VATOM, int CVATOM>
 static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
     flt4_td *aPosType, int *aBufNlSize, int *aBufNl, flt_t *aAGradFp,
-    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt_t *fx, flt_t *fy, flt_t *fz,
+    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t **aFpHyperParam, flt_t **aFpParam) noexcept {
     
     int flag = 1;
@@ -156,16 +158,21 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
 // >>> NNAPGEN REPEAT
 // >>> NNAPGEN PICK
 // --- NNAPGEN PICK: spherical_chebyshev
-    sphBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_LMAX__,
-                   __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
+    sphBackwardGpu<VEITHER, VATOM, CVATOM, __NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
+                   __NNAPGENXX_FP_LMAX__, __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aPosType, aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
-        rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
+        fx, fy, fz,
+        v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+        v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
         tSubFpHyperParam[0], tSubFpParam
     );
 // --- NNAPGEN PICK: chebyshev
-    chebyBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
+    chebyBackwardGpu<VEITHER, VATOM, CVATOM, __NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
+                     __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aPosType, aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
-        rBufAGradNlDx, rBufAGradNlDy, rBufAGradNlDz,
+        fx, fy, fz,
+        v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+        v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
         tSubFpHyperParam[0], tSubFpParam
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]

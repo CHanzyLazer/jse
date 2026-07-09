@@ -42,15 +42,20 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
         mplusFp<SIZE_NP>(rFp, fc, bRnp);
     }
 }
-template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
+template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     flt4_td *aPosType, int aNlSize, int *aBufNl, flt_t *aAGradFp,
-    flt_t *rBufAGradNlDx, flt_t *rBufAGradNlDy, flt_t *rBufAGradNlDz,
+    flt_t *fx, flt_t *fy, flt_t *fz,
+    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
     flt_t bRn[NMAX+1], bAGradRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // loop for neighbor
+    flt_t f0xi = ZERO;
+    flt_t f0yi = ZERO;
+    flt_t f0zi = ZERO;
     const flt4_td cinfo = aPosType[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aBufNl[jj*nb + bi];
@@ -92,10 +97,41 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         flt_t rAGradj = dot<NMAX+1>(bAGradRn, tRnGrad);
         rAGradj += rAGradFc*fcGrad;
         // to grad xyz
-        rBufAGradNlDx[jj*nb + bi] += rAGradj*dx;
-        rBufAGradNlDy[jj*nb + bi] += rAGradj*dy;
-        rBufAGradNlDz[jj*nb + bi] += rAGradj*dz;
+        const flt_t fxj = rAGradj*dx;
+        const flt_t fyj = rAGradj*dy;
+        const flt_t fzj = rAGradj*dz;
+        f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
+        atomicAdd(fx + j, fxj);
+        atomicAdd(fy + j, fyj);
+        atomicAdd(fz + j, fzj);
+        if (VEITHER) {
+            const flt_t vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
+            const flt_t vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
+            v0xx[bi] += vxxj; v0yy[bi] += vyyj; v0zz[bi] += vzzj;
+            v0xy[bi] += vxyj; v0xz[bi] += vxzj; v0yz[bi] += vyzj;
+            if (CVATOM) {
+                atomicAdd(v1xx + j, vxxj);
+                atomicAdd(v1yy + j, vyyj);
+                atomicAdd(v1zz + j, vzzj);
+                atomicAdd(v1xy + j, vxyj);
+                atomicAdd(v1xz + j, vxzj);
+                atomicAdd(v1yz + j, vyzj);
+                atomicAdd(v1yx + j, dy*fxj);
+                atomicAdd(v1zx + j, dz*fxj);
+                atomicAdd(v1zy + j, dz*fyj);
+            } else if (VATOM) {
+                atomicAdd(v1xx + j, vxxj);
+                atomicAdd(v1yy + j, vyyj);
+                atomicAdd(v1zz + j, vzzj);
+                atomicAdd(v1xy + j, vxyj);
+                atomicAdd(v1xz + j, vxzj);
+                atomicAdd(v1yz + j, vyzj);
+            }
+        }
     }
+    atomicAdd(fx + bi, f0xi);
+    atomicAdd(fy + bi, f0yi);
+    atomicAdd(fz + bi, f0zi);
 }
 
 
