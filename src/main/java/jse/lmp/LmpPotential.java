@@ -148,12 +148,7 @@ public class LmpPotential extends AbstractLmpPotential {
             rThermoStyle.add("pe");
         }
         if (tRequireTotalStress) {
-            rThermoStyle.add("pxx");
-            rThermoStyle.add("pyy");
-            rThermoStyle.add("pzz");
-            rThermoStyle.add("pxy");
-            rThermoStyle.add("pxz");
-            rThermoStyle.add("pyz");
+            mLmp.command("compute p_tot all pressure NULL virial");
         }
         mLmp.command("thermo_style  custom step "+String.join(" ", rThermoStyle));
         // 按需增加对应的 compute
@@ -161,7 +156,7 @@ public class LmpPotential extends AbstractLmpPotential {
             mLmp.command("compute eng_atom all pe/atom");
         }
         if (tRequirePreAtomStress) {
-            mLmp.command("compute stress_atom all stress/atom NULL");
+            mLmp.command("compute stress_atom all stress/atom NULL virial");
         }
         // 通过 run 0 来触发计算
         mLmp.command("run  0");
@@ -173,12 +168,13 @@ public class LmpPotential extends AbstractLmpPotential {
         double tVirialXX = Double.NaN, tVirialYY = Double.NaN, tVirialZZ = Double.NaN, tVirialXY = Double.NaN, tVirialXZ = Double.NaN, tVirialYZ = Double.NaN;
         if (tRequireTotalStress) {
             final double tVolume = aAtomData.volume();
-            tVirialXX = validStressUnit(mLmp.thermoOf("pxx"))*tVolume;
-            tVirialYY = validStressUnit(mLmp.thermoOf("pyy"))*tVolume;
-            tVirialZZ = validStressUnit(mLmp.thermoOf("pzz"))*tVolume;
-            tVirialXY = validStressUnit(mLmp.thermoOf("pxy"))*tVolume;
-            tVirialXZ = validStressUnit(mLmp.thermoOf("pxz"))*tVolume;
-            tVirialYZ = validStressUnit(mLmp.thermoOf("pyz"))*tVolume;
+            Vector tPress = mLmp.computeOf("p_tot", NativeLmp.LMP_STYLE_GLOBAL, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
+            tVirialXX = validStressUnit(tPress.get(0))*tVolume;
+            tVirialYY = validStressUnit(tPress.get(1))*tVolume;
+            tVirialZZ = validStressUnit(tPress.get(2))*tVolume;
+            tVirialXY = validStressUnit(tPress.get(3))*tVolume;
+            tVirialXZ = validStressUnit(tPress.get(4))*tVolume;
+            tVirialYZ = validStressUnit(tPress.get(5))*tVolume;
         }
         RowMatrix tForces = null;
         if (tRequireForce) {

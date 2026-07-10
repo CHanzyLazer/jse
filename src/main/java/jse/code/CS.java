@@ -253,6 +253,8 @@ public class CS {
     public final static double EV_TO_J = UNITS.get("_e");
     /** Electron volt to kcal/mol */
     public final static double EV_TO_KCAL = UNITS.get("mol") / UNITS.get("kcal");
+    /** u*A^2/ps^2 to eV */
+    public final static double VOLE_TO_EV = 10000d * UNITS.get("_amu") / UNITS.get("_e");
     
     /** All atom name, start from 0, {@code SYMBOLS[0] == "H"} */
     public final static String[] SYMBOLS = {

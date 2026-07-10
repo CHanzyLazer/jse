@@ -189,12 +189,11 @@ public interface IPotential extends AutoCloseable {
      * applications to thermal conductivity calculations </a>
      *
      * @param aAtomData 需要计算应力的原子数据
-     * @param aIdealGas 是否考虑理想气体部分（速度效应部分），默认为 {@code false}
      * @return 按照 {@code [xx, yy, zz, xy, xz, yz, yx, zx, zy]} 顺序排列的应力向量，
      *         如果不支持 9 列的输出则只输出 {@code [xx, yy, zz, xy, xz, yz]}
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default List<Vector> calStresses(IAtomData aAtomData, boolean aIdealGas) throws Exception {
+    default List<Vector> calStresses(IAtomData aAtomData) throws Exception {
         if (isClosed()) throw new IllegalStateException("This Potential is dead");
         final int tAtomNum = aAtomData.natoms();
         final boolean tCentroid = centroidPerAtomStressSupport();
@@ -205,63 +204,19 @@ public interface IPotential extends AutoCloseable {
         for (int i = 0; i < tColNum; ++i) {
             rStresses.get(i).operation().negative2this();
         }
-        if (!aIdealGas || !aAtomData.hasMass() || !aAtomData.hasVelocity()) return rStresses;
-        // 累加速度项，这里需要消去整体的平动
-        double vxTot = 0.0, vyTot = 0.0, vzTot = 0.0;
-        for (int i = 0; i < tAtomNum; ++i) {
-            IAtom tAtom = aAtomData.atom(i);
-            vxTot += tAtom.vx(); vyTot += tAtom.vy(); vzTot += tAtom.vz();
-        }
-        vxTot /= (double)tAtomNum;
-        vyTot /= (double)tAtomNum;
-        vzTot /= (double)tAtomNum;
-        for (int i = 0; i < tAtomNum; ++i) {
-            IAtom tAtom = aAtomData.atom(i);
-            if (!tAtom.hasMass()) continue;
-            double vx = tAtom.vx() - vxTot, vy = tAtom.vy() - vyTot, vz = tAtom.vz() - vzTot;
-            double tMass = tAtom.mass();
-            rStresses.get(0).add(i, -tMass * vx*vx);
-            rStresses.get(1).add(i, -tMass * vy*vy);
-            rStresses.get(2).add(i, -tMass * vz*vz);
-            rStresses.get(3).add(i, -tMass * vx*vy);
-            rStresses.get(4).add(i, -tMass * vx*vz);
-            rStresses.get(5).add(i, -tMass * vy*vz);
-            if (tCentroid) {
-                rStresses.get(6).add(i, -tMass * vy*vx);
-                rStresses.get(7).add(i, -tMass * vz*vx);
-                rStresses.get(8).add(i, -tMass * vz*vy);
-            }
-        }
         return rStresses;
+        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
     }
-    /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 中所有原子的单独应力，具体可以参见：
-     * <a href="https://en.wikipedia.org/wiki/Virial_stress">
-     * Virial stress - Wikipedia </a>
-     * <p>
-     * 每原子位力的定义具有一定任意性，这里的实现优先采用 GPUMD 中使用的更具对称性的定义，
-     * 在多体势的情况下可能会和 LAMMPS 存在出入。具体可参考：
-     * <a href="https://arxiv.org/abs/1503.06565">
-     * Force and heat current formulas for many-body potentials in molecular dynamics simulation with
-     * applications to thermal conductivity calculations </a>
-     *
-     * @param aAtomData 需要计算应力的原子数据
-     * @return 按照 {@code [xx, yy, zz, xy, xz, yz, yx, zx, zy]} 顺序排列的应力向量，
-     *         如果不支持 9 列的输出则只输出 {@code [xx, yy, zz, xy, xz, yz]}
-     * @throws Exception 特殊实现下可选的抛出异常
-     */
-    default List<Vector> calStresses(IAtomData aAtomData) throws Exception {return calStresses(aAtomData, false);}
     
     /**
      * 使用此势函数计算给定原子数据 {@link IAtomData} 原子结构的应力，具体可以参见：
      * <a href="https://en.wikipedia.org/wiki/Virial_stress">
      * Virial stress - Wikipedia </a>
      * @param aAtomData 需要计算应力的原子数据
-     * @param aIdealGas 是否考虑理想气体部分（速度效应部分），默认为 {@code false}
      * @return 按照 {@code [xx, yy, zz, xy, xz, yz]} 顺序排列的应力值
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default List<Double> calStress(IAtomData aAtomData, boolean aIdealGas) throws Exception {
+    default List<Double> calStress(IAtomData aAtomData) throws Exception {
         if (isClosed()) throw new IllegalStateException("This Potential is dead");
         List<Vector> rStresses = VectorCache.getVec(1, 6);
         calEnergyForceVirials(aAtomData, null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5));
@@ -273,42 +228,9 @@ public interface IPotential extends AutoCloseable {
         double rStressYZ = -rStresses.get(5).get(0);
         VectorCache.returnVec(rStresses);
         double tVolume = aAtomData.volume();
-        if (!aIdealGas || !aAtomData.hasMass() || !aAtomData.hasVelocity()) {
-            return Lists.newArrayList(rStressXX/tVolume, rStressYY/tVolume, rStressZZ/tVolume, rStressXY/tVolume, rStressXZ/tVolume, rStressYZ/tVolume);
-        }
-        // 累加速度项，这里需要消去整体的平动
-        final int tAtomNum = aAtomData.natoms();
-        double vxTot = 0.0, vyTot = 0.0, vzTot = 0.0;
-        for (int i = 0; i < tAtomNum; ++i) {
-            IAtom tAtom = aAtomData.atom(i);
-            vxTot += tAtom.vx(); vyTot += tAtom.vy(); vzTot += tAtom.vz();
-        }
-        vxTot /= (double)tAtomNum;
-        vyTot /= (double)tAtomNum;
-        vzTot /= (double)tAtomNum;
-        for (int i = 0; i < tAtomNum; ++i) {
-            IAtom tAtom = aAtomData.atom(i);
-            if (!tAtom.hasMass()) continue;
-            double vx = tAtom.vx() - vxTot, vy = tAtom.vy() - vyTot, vz = tAtom.vz() - vzTot;
-            double tMass = tAtom.mass();
-            rStressXX -= (tMass * vx*vx);
-            rStressYY -= (tMass * vy*vy);
-            rStressZZ -= (tMass * vz*vz);
-            rStressXY -= (tMass * vx*vy);
-            rStressXZ -= (tMass * vx*vz);
-            rStressYZ -= (tMass * vy*vz);
-        }
         return Lists.newArrayList(rStressXX/tVolume, rStressYY/tVolume, rStressZZ/tVolume, rStressXY/tVolume, rStressXZ/tVolume, rStressYZ/tVolume);
+        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
     }
-    /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 原子结构的应力，具体可以参见：
-     * <a href="https://en.wikipedia.org/wiki/Virial_stress">
-     * Virial stress - Wikipedia </a>
-     * @param aAtomData 需要计算应力的原子数据
-     * @return 按照 {@code [xx, yy, zz, xy, xz, yz]} 顺序排列的应力值
-     * @throws Exception 特殊实现下可选的抛出异常
-     */
-    default List<Double> calStress(IAtomData aAtomData) throws Exception {return calStress(aAtomData, false);}
     
     
     /**

@@ -182,12 +182,13 @@ public class SystemLmpPotential extends AbstractLmpPotential {
             rThermoStyle.add("pe");
         }
         if (tRequireTotalStress) {
-            rThermoStyle.add("pxx");
-            rThermoStyle.add("pyy");
-            rThermoStyle.add("pzz");
-            rThermoStyle.add("pxy");
-            rThermoStyle.add("pxz");
-            rThermoStyle.add("pyz");
+            rLmpIn.add("compute p_tot all pressure NULL virial");
+            rThermoStyle.add("c_p_tot[1]");
+            rThermoStyle.add("c_p_tot[2]");
+            rThermoStyle.add("c_p_tot[3]");
+            rThermoStyle.add("c_p_tot[4]");
+            rThermoStyle.add("c_p_tot[5]");
+            rThermoStyle.add("c_p_tot[6]");
         }
         rLmpIn.add("thermo_style  custom step "+String.join(" ", rThermoStyle));
         rLmpIn.add("thermo  1");
@@ -197,7 +198,7 @@ public class SystemLmpPotential extends AbstractLmpPotential {
             rLmpIn.add("compute eng_atom all pe/atom");
         }
         if (tRequirePreAtomStress) {
-            rLmpIn.add("compute stress_atom all stress/atom NULL");
+            rLmpIn.add("compute stress_atom all stress/atom NULL virial");
         }
         String tDumpPath = mChecker.mWorkingDir+"dump-"+tUniqueID;
         List<String> rDumpCustom = new ArrayList<>(10);
@@ -238,12 +239,12 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         double tVirialXX = Double.NaN, tVirialYY = Double.NaN, tVirialZZ = Double.NaN, tVirialXY = Double.NaN, tVirialXZ = Double.NaN, tVirialYZ = Double.NaN;
         if (tRequireTotalStress) {
             final double tVolume = aAtomData.volume();
-            tVirialXX = validStressUnit(tLog.get(0, "Pxx"))*tVolume;
-            tVirialYY = validStressUnit(tLog.get(0, "Pyy"))*tVolume;
-            tVirialZZ = validStressUnit(tLog.get(0, "Pzz"))*tVolume;
-            tVirialXY = validStressUnit(tLog.get(0, "Pxy"))*tVolume;
-            tVirialXZ = validStressUnit(tLog.get(0, "Pxz"))*tVolume;
-            tVirialYZ = validStressUnit(tLog.get(0, "Pyz"))*tVolume;
+            tVirialXX = validStressUnit(tLog.get(0, "c_p_tot[1]"))*tVolume;
+            tVirialYY = validStressUnit(tLog.get(0, "c_p_tot[2]"))*tVolume;
+            tVirialZZ = validStressUnit(tLog.get(0, "c_p_tot[3]"))*tVolume;
+            tVirialXY = validStressUnit(tLog.get(0, "c_p_tot[4]"))*tVolume;
+            tVirialXZ = validStressUnit(tLog.get(0, "c_p_tot[5]"))*tVolume;
+            tVirialYZ = validStressUnit(tLog.get(0, "c_p_tot[6]"))*tVolume;
         }
         IVector tForcesX = null, tForcesY = null, tForcesZ = null;
         if (tRequireForce) {
