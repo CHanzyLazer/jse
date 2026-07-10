@@ -147,9 +147,10 @@ class NNAPGEN {
         rGenMap.put("[PRECISION]", aSingle?"single":"double");
         rGenMap.put("[ARCH]", "cuda");
         String tUniqueID = UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, NNAP.VERSION,
-                                            rGenMap, NNAP.Conf.OPTIM_LEVEL, NNAP.Conf.CMAKE_CXX_COMPILER, NNAP.Conf.CMAKE_CXX_FLAGS, NNAP.Conf.CMAKE_CUDA_COMPILER, NNAP.Conf.CMAKE_CUDA_FLAGS, NNAP.Conf.CMAKE_SETTING);
+                                            rGenMap, NNAP.Conf.OPTIM_LEVEL, NNAP.Conf.CMAKE_CXX_COMPILER, NNAP.Conf.CMAKE_CXX_FLAGS,
+                                            NNAP.Conf.CMAKE_CUDA_COMPILER, NNAP.Conf.CMAKE_CUDA_FLAGS, NNAP.Conf.CMAKE_CUDA_ARCHITECTURES, NNAP.Conf.CMAKE_SETTING);
         return CudaJIT.engine()
-            .setCmakeCudaCompiler(NNAP.Conf.CMAKE_CUDA_COMPILER).setCmakeCudaFlags(NNAP.Conf.CMAKE_CUDA_FLAGS)
+            .setCmakeCudaCompiler(NNAP.Conf.CMAKE_CUDA_COMPILER).setCmakeCudaFlags(NNAP.Conf.CMAKE_CUDA_FLAGS).setCmakeCudaArch(NNAP.Conf.CMAKE_CUDA_ARCHITECTURES)
             .setCmakeCxxCompiler(NNAP.Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(NNAP.Conf.CMAKE_CXX_FLAGS)
             .setCmakeSettings(NNAP.Conf.CMAKE_SETTING).setOptimLevel(NNAP.Conf.OPTIM_LEVEL)
             .addTypeMap("JSE_NNAP::flt_t", aSingle?"float":"double")

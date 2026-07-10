@@ -122,15 +122,15 @@ public class SimpleJIT {
     }
     public static class Engine implements IJITEngine {
         /// compiler stuffs
-        private String mLibDir = null;
-        private String mProjectName = null;
-        private @Nullable String mSrcCxx = null;
-        private @Nullable String mSrc = null;
-        private boolean mNoExtern = false;
-        private @Nullable IDirIniter mSrcDirIniter = null;
-        private @Nullable String mCmakeCxxCompiler = null, mCmakeCxxFlags = null;
-        private final Map<String, String> mCmakeSettings = new LinkedHashMap<>();
-        private int mOptimLevel = OPTIM_BASE;
+        protected String mLibDir = null;
+        protected String mProjectName = null;
+        protected @Nullable String mSrcCxx = null;
+        protected @Nullable String mSrc = null;
+        protected boolean mNoExtern = false;
+        protected @Nullable IDirIniter mSrcDirIniter = null;
+        protected @Nullable String mCmakeCxxCompiler = null, mCmakeCxxFlags = null;
+        protected final Map<String, String> mCmakeSettings = new LinkedHashMap<>();
+        protected int mOptimLevel = OPTIM_BASE;
         private final SourceScanner mScanner = new SourceScanner(JIT_FUNC_MARKER);
         
         /// jit engins stuffs

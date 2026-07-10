@@ -1,0 +1,46 @@
+cmake_minimum_required(VERSION 3.24)
+
+set(CMAKE_CUDA_ARCHITECTURES "75" CACHE STRING "CUDA architectures")
+project(cudanl LANGUAGES CXX CUDA)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(SOURCE_FILES
+    jse_gpu_CudaNeighborListGetter.cu)
+add_library(cudanl SHARED ${SOURCE_FILES})
+
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    set(BUILD_SHARED_LIBS ON)
+endif()
+
+
+# add jni
+find_package(JNI)
+if(JNI_FOUND)
+    include_directories(${JNI_INCLUDE_DIRS})
+    target_link_libraries(cudanl ${JNI_LIBRARIES})
+else()
+    message(FATAL_ERROR "No java development environment found")
+endif()
+
+
+# add jniutil
+include_directories("$ENV{JSE_JNIUTIL_INCLUDE_DIR}")
+
+
+# add mimalloc
+option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
+if(JSE_USE_MIMALLOC)
+    add_definitions(-DUSE_MIMALLOC)
+    
+    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
+    target_link_libraries(cudanl "$ENV{JSE_MIMALLOC_LIB_PATH}")
+endif()

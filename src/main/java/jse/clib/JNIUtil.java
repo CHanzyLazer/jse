@@ -5,6 +5,7 @@ import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
+import jse.gpu.CudaJIT;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -214,8 +215,9 @@ public class JNIUtil {
         private int mParallel = 0;
         private final String mLibDir;
         private String mCmakeInitDir = "..";
-        private boolean mUsedCmakeCCompiler = false, mUsedCmakeCxxCompiler = false;
+        private boolean mUsedCmakeCCompiler = false, mUsedCmakeCxxCompiler = false, mUsedCmakeCudaCompiler = false;
         private @Nullable String mCmakeCCompiler = null, mCmakeCxxCompiler = null, mCmakeCFlags = null, mCmakeCxxFlags = null;
+        private @Nullable String mCmakeCudaCompiler = null, mCmakeCudaFlags = null, mCmakeCudaArch = null;
         private @Nullable Boolean mUseMiMalloc = null;
         private boolean mMT = false;
         private final Map<String, String> mCmakeSettings;
@@ -246,8 +248,11 @@ public class JNIUtil {
         public LibBuilder setCmakeInitDir(String aCmakeInitDir) {mCmakeInitDir = aCmakeInitDir; return this;}
         public LibBuilder setCmakeCCompiler(@Nullable String aCmakeCCompiler) {mUsedCmakeCCompiler = true; mCmakeCCompiler = aCmakeCCompiler; return this;}
         public LibBuilder setCmakeCxxCompiler(@Nullable String aCmakeCxxCompiler) {mUsedCmakeCxxCompiler = true; mCmakeCxxCompiler = aCmakeCxxCompiler; return this;}
+        public LibBuilder setCmakeCudaCompiler(@Nullable String aCmakeCudaCompiler) {mUsedCmakeCudaCompiler = true; mCmakeCudaCompiler = aCmakeCudaCompiler; return this;}
         public LibBuilder setCmakeCFlags(@Nullable String aCmakeCFlags) {mCmakeCFlags = aCmakeCFlags; return this;}
         public LibBuilder setCmakeCxxFlags(@Nullable String aCmakeCxxFlags) {mCmakeCxxFlags = aCmakeCxxFlags; return this;}
+        public LibBuilder setCmakeCudaFlags(@Nullable String aCmakeCudaFlags) {mCmakeCudaFlags = aCmakeCudaFlags; return this;}
+        public LibBuilder setCmakeCudaArch(@Nullable String aCmakeCudaArch) {mCmakeCudaArch = aCmakeCudaArch; return this;}
         public LibBuilder setUseMiMalloc(@Nullable Boolean aUseMiMalloc) {mUseMiMalloc = aUseMiMalloc; return this;}
         public LibBuilder setCmakeLineOp(@Nullable IUnaryFullOperator<? extends CharSequence, ? super String> aCmakeLineOpt) {mCmakeLineOpt = aCmakeLineOpt; return this;}
         
@@ -291,8 +296,13 @@ public class JNIUtil {
                 String tCmakeCxxCompiler = mCmakeCxxCompiler==null ? Compiler.CXX_COMPILER : mCmakeCxxCompiler;
                 if (tCmakeCxxCompiler!=null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_COMPILER="+tCmakeCxxCompiler);}
             }
+            if (mUsedCmakeCudaCompiler) {
+                if (mCmakeCudaCompiler!=null) {rCommand.add("-D"); rCommand.add("CMAKE_CUDA_COMPILER="+mCmakeCudaCompiler);}
+            }
             if (mCmakeCFlags!=null) {rCommand.add("-D"); rCommand.add("CMAKE_C_FLAGS=\""+mCmakeCFlags+"\"");}
             if (mCmakeCxxFlags!=null) {rCommand.add("-D"); rCommand.add("CMAKE_CXX_FLAGS=\""+mCmakeCxxFlags+"\"");}
+            if (mCmakeCudaFlags!=null) {rCommand.add("-D"); rCommand.add("CMAKE_CUDA_FLAGS=\""+mCmakeCudaFlags+"\"");}
+            if (mCmakeCudaArch!=null) {rCommand.add("-D"); rCommand.add("CMAKE_CUDA_ARCHITECTURES=\""+mCmakeCudaArch+"\"");}
             // 配置其余的参数设置
             if (mUseMiMalloc!=null) {
                 rCommand.add("-D"); rCommand.add("JSE_USE_MIMALLOC="+(((!Compiler.Conf.FORCE || !Compiler.GCC_OLD) && mUseMiMalloc) ? "ON" : "OFF"));
