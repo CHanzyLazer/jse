@@ -98,8 +98,9 @@ public class NNAP implements IPairPotential {
     final IntCPointer mOutNums;
     final AnyCPointer mFpHyperParam, mFpParam, mNnParam, mNormParam;
     final IDoubleOrFloatCPointer[] mCache;
-    private final IDoubleOrFloatCPointer[] mOutEng;
-    private final IDoubleOrFloatCPointer[] mPosType;
+    private final IDoubleOrFloatCPointer[] mEng, mForce, mVirial, mVAtom;
+    private final IDoubleOrFloatCPointer mPos;
+    private final IntCPointer mType;
     private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
     private final IntCPointer[] mNlType, mNlIdx;
     
@@ -190,7 +191,8 @@ public class NNAP implements IPairPotential {
             mPtrMngPar[ti] = new PointerManager();
         }
         mOutNums = mPtrMngTot.newIntCPointer(16);
-        mPosType = new IDoubleOrFloatCPointer[mNumThreads];
+        mPos = mPtrMngTot.newDoubleOrFloatCPointer(mSingle);
+        mType = mPtrMngTot.newIntCPointer();
         mNlDx = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDy = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDz = new IDoubleOrFloatCPointer[mNumThreads];
@@ -199,7 +201,10 @@ public class NNAP implements IPairPotential {
         mGradNlDx = new IDoubleOrFloatCPointer[mNumThreads];
         mGradNlDy = new IDoubleOrFloatCPointer[mNumThreads];
         mGradNlDz = new IDoubleOrFloatCPointer[mNumThreads];
-        mOutEng = new IDoubleOrFloatCPointer[mNumThreads];
+        mEng = new IDoubleOrFloatCPointer[mNumThreads];
+        mForce = new IDoubleOrFloatCPointer[mNumThreads];
+        mVirial = new IDoubleOrFloatCPointer[mNumThreads];
+        mVAtom = new IDoubleOrFloatCPointer[mNumThreads];
         mCache = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDxBuf = new DoubleList[mNumThreads];
         mNlDyBuf = new DoubleList[mNumThreads];
@@ -207,7 +212,6 @@ public class NNAP implements IPairPotential {
         mNlTypeBuf = new IntList[mNumThreads];
         mNlIdxBuf = new IntList[mNumThreads];
         for (int ti = 0; ti < mNumThreads; ++ti) {
-            mPosType[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
@@ -216,7 +220,10 @@ public class NNAP implements IPairPotential {
             mGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mGradNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mGradNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mOutEng[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 1);
+            mEng[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 1);
+            mForce[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mVirial[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 6);
+            mVAtom[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mCache[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDxBuf[ti] = new DoubleList(16);
             mNlDyBuf[ti] = new DoubleList(16);
@@ -761,33 +768,33 @@ public class NNAP implements IPairPotential {
                             IntCPointer aNlType, int aNumNei, int aCType) {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
-        IDoubleOrFloatCPointer tOutEng = mOutEng[aThreadID];
+        IDoubleOrFloatCPointer tEng = mEng[aThreadID];
         // 调用 jit 方法获取结果
         int tCode = mCalEnergy.invoke(
             aNlDx, aNlDy, aNlDz, aNlType, aNumNei, aCType,
             mFpHyperParam, mFpParam, mNnParam, mNormParam.getAsDoubleOrFloatCPointerAt(mSingle, aCType-1),
-            tOutEng
+            tEng
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
-        return tOutEng.getD();
+        return tEng.getD();
     }
     public double calEnergyForce(int aThreadID, IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz,
                                  IntCPointer aNlType, int aNumNei, int aCType,
                                  IDoubleOrFloatCPointer rGradNlDx, IDoubleOrFloatCPointer rGradNlDy, IDoubleOrFloatCPointer rGradNlDz) {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
-        IDoubleOrFloatCPointer tOutEng = mOutEng[aThreadID];
+        IDoubleOrFloatCPointer tEng = mEng[aThreadID];
         IDoubleOrFloatCPointer tFpForwardCache = mCache[aThreadID];
         mPtrMngPar[aThreadID].ensureCapacity(tFpForwardCache, mBasis[aCType-1].forwardCacheSize(aNumNei));
         // 调用 jit 方法获取结果
         int tCode = mCalEnergyForce.invoke(
             aNlDx, aNlDy, aNlDz, aNlType, aNumNei, aCType,
             mFpHyperParam, mFpParam, mNnParam, mNormParam.getAsDoubleOrFloatCPointerAt(mSingle, aCType-1),
-            tOutEng, rGradNlDx, rGradNlDy, rGradNlDz,
+            tEng, rGradNlDx, rGradNlDy, rGradNlDz,
             tFpForwardCache
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
-        return tOutEng.getD();
+        return tEng.getD();
     }
     
     public int forwardEnergyCacheSize(int aNumNei, int aCType) {
@@ -797,15 +804,15 @@ public class NNAP implements IPairPotential {
                                 IntCPointer aNlType, int aNumNei, int aCType, IDoubleOrFloatCPointer rCaches) {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
-        IDoubleOrFloatCPointer tOutEng = mOutEng[aThreadID];
+        IDoubleOrFloatCPointer tEng = mEng[aThreadID];
         // 调用 jit 方法获取结果
         int tCode = mForwardEnergy.invoke(
             aNlDx, aNlDy, aNlDz, aNlType, aNumNei, aCType,
             mFpHyperParam, mFpParam, mNnParam, mNormParam.getAsDoubleOrFloatCPointerAt(mSingle, aCType-1),
-            tOutEng, rCaches, rCaches.plus(mBasis[aCType-1].forwardCacheSize(aNumNei))
+            tEng, rCaches, rCaches.plus(mBasis[aCType-1].forwardCacheSize(aNumNei))
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
-        return tOutEng.getD();
+        return tEng.getD();
     }
     public void backwardEnergy(int aThreadID, double aGradEng, IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz,
                                IntCPointer aNlType, int aNumNei, int aCType, IDoubleOrFloatCPointer aCaches) {
@@ -831,7 +838,7 @@ public class NNAP implements IPairPotential {
                                      IDoubleOrFloatCPointer rAGradNlDx, IDoubleOrFloatCPointer rAGradNlDy, IDoubleOrFloatCPointer rAGradNlDz) {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
-        IDoubleOrFloatCPointer tOutEng = mOutEng[aThreadID];
+        IDoubleOrFloatCPointer tEng = mEng[aThreadID];
         int tSizeFpForwardCache = mBasis[aCType-1].forwardCacheSize(aNumNei);
         int tSizeNnForwardCache = mNN[aCType-1].forwardCacheSize();
         int tSizeFpBackwardCache = mBasis[aCType-1].backwardCacheSize(aNumNei);
@@ -839,13 +846,13 @@ public class NNAP implements IPairPotential {
         int tCode = mForwardEnergyForce.invoke(
             aNlDx, aNlDy, aNlDz, aNlType, aNumNei, aCType,
             mFpHyperParam, mFpParam, mNnParam, mNormParam.getAsDoubleOrFloatCPointerAt(mSingle, aCType-1),
-            tOutEng, rAGradNlDx, rAGradNlDy, rAGradNlDz,
+            tEng, rAGradNlDx, rAGradNlDy, rAGradNlDz,
             rCaches, rCaches.plus(tSizeFpForwardCache),
             rCaches.plus(tSizeFpForwardCache+tSizeNnForwardCache),
             rCaches.plus(tSizeFpForwardCache+tSizeNnForwardCache+tSizeFpBackwardCache)
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
-        return tOutEng.getD();
+        return tEng.getD();
     }
     public void backwardEnergyForce(int aThreadID, double aBGradEng, IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz,
                                     IntCPointer aNlType, int aNumNei, int aCType, IDoubleOrFloatCPointer aCaches,
@@ -875,11 +882,11 @@ public class NNAP implements IPairPotential {
     
     /// lammps stuff
     private void validNlLammps_(int aNlocalghost, int aNlSize) {
-        mPtrMngPar[0].ensureCapacity(mPosType[0], aNlocalghost*4L);
+        mPtrMngTot.ensureCapacity(mPos, aNlocalghost*3L);
+        mPtrMngTot.ensureCapacity(mType, aNlocalghost);
+        mPtrMngPar[0].ensureCapacity(mForce[0], aNlocalghost*3L);
+        mPtrMngPar[0].ensureCapacity(mVAtom[0], aNlocalghost*9L);
         mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDz[0], aNlSize);
         for (int i = 0; i < mSymbols.length; ++i) {
             mPtrMngPar[0].ensureCapacity(mCache[0], mBasis[i].forwardCacheSize(aNlSize));
         }
@@ -903,14 +910,14 @@ public class NNAP implements IPairPotential {
         // 调用 jit 方法计算
         int tCode = mComputeLammps.invoke(
             inum, nlocal, nghost, aPair.mNumTypes,
-            aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, aPair.cvflagAtom()?1:0,
+            aPair.eflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagEither()?1:0, aPair.vflagAtom()?1:0, aPair.cvflagAtom()?1:0,
             aPair.atomX(), aPair.atomF(), aPair.atomType(), aPair.listIlist(),
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mPosType[0], mNlIdx[0],
+            mPos, mType, mNlIdx[0],
+            mForce[0], mVAtom[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
-            mGradNlDx[0], mGradNlDy[0], mGradNlDz[0],
             mCache[0]
         );
         if (tCode>0) throw new IllegalStateException("Exit code: "+tCode);
@@ -942,7 +949,6 @@ public class NNAP implements IPairPotential {
         initLmpDataCuda_();
         // 常规缓存向量长度规范
         final boolean nlflag = mNeighnumMax<0 || aPair.neighborAgo()==0;
-        final boolean cvflagAtom = aPair.cvflagAtom();
         final int inum = aPair.listInum();
         IPointer ilist = aPair.listIlist();
         final int nlocal = aPair.atomNlocal();
@@ -955,7 +961,7 @@ public class NNAP implements IPairPotential {
         mPtrMngTot.ensureCapacity(mCudaF, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
-        mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*(cvflagAtom?9L:6L));
+        mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
         if (nlflag) {
             mPtrMngTot.ensureCapacity(mCudaIlist, inum);
             mPtrMngTot.ensureCapacity(mCudaNumneigh, nlocal);
@@ -990,8 +996,12 @@ public class NNAP implements IPairPotential {
         CudaCore.cudaExceptionCheck(tCode);
         
         // cuda compute
+        final boolean eflagEither = aPair.eflagEither();
+        final boolean vflagEither = aPair.vflagEither();
+        final boolean vflagAtom = aPair.vflagAtom();
+        final boolean cvflagAtom = aPair.cvflagAtom();
         tCode = mComputeLammpsCuda.invoke(
-            inum, nlocal, nghost, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, cvflagAtom?1:0,
+            inum, nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
             mCudaPos, mCudaType, mCudaIlist, mCudaNMerges, mCudaMergeSorted,
             mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
@@ -1002,7 +1012,7 @@ public class NNAP implements IPairPotential {
         
         // cuda -> lammps
         tCode = mCuda2Lammps.invoke(
-            inum, nlocal, nghost, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, cvflagAtom?1:0,
+            inum, nlocal, nghost, eflagEither?1:0, aPair.eflagAtom()?1:0, vflagEither?1:0, vflagAtom?1:0, cvflagAtom?1:0,
             aPair.atomF(), aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
             mFltBuf, ilist,
             mCudaF, mCudaEatom0,

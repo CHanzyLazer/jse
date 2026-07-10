@@ -24,6 +24,22 @@
 #define __NNAPGENS_X__ 0
 // <<< NNAPGEN REMOVE
 
+
+#ifdef NNAP_ARCH_CPU
+static inline float atomicAdd(float *ptr, float val) noexcept {
+    // no atomic, add only for debug
+    const float old = *ptr;
+    *ptr += val;
+    return old;
+}
+static inline double atomicAdd(double *ptr, double val) noexcept {
+    // no atomic, add only for debug
+    const double old = *ptr;
+    *ptr += val;
+    return old;
+}
+#endif
+
 namespace JSE_NNAP {
 
 // >>> NNAPGEN PICK
@@ -41,40 +57,6 @@ typedef double flt_t;
 typedef float flt_t;
 // <<< NNAPGEN PICK [PRECISION]
 
-struct flt4_t {
-    flt_t x, y, z, w;
-};
-// _td: type for device only
-// >>> NNAPGEN PICK
-// --- NNAPGEN PICK: cpu
-struct flt4_td {
-    flt_t x, y, z, w;
-};
-static inline float atomicAdd(float *ptr, float val) noexcept {
-    // no atomic, add only for debug
-    const float old = *ptr;
-    *ptr += val;
-    return old;
-}
-static inline double atomicAdd(double *ptr, double val) noexcept {
-    // no atomic, add only for debug
-    const double old = *ptr;
-    *ptr += val;
-    return old;
-}
-// >>> NNAPGEN REMOVE
-/*
-// <<< NNAPGEN REMOVE
-// --- NNAPGEN PICK: cuda
-#ifdef NNAP_PRECISION_SINGLE
-typedef float4 flt4_td;
-#else
-typedef double4 flt4_td;
-#endif
-// <<< NNAPGEN PICK [ARCH]
-// >>> NNAPGEN REMOVE
-*/
-// <<< NNAPGEN REMOVE
 
 // >>> NNAPGEN REMOVE
 #define __NNAPGEN_NTYPES__ 2

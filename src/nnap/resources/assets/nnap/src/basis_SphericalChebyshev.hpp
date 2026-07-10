@@ -112,23 +112,23 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     }
 }
 
-template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
+template <int VATOM, int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz,
-    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
     flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t aRCut, flt_t *aParams) {
+    
     // const init
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t bRn[NMAX+1];
     // loop for neighbor
-    flt_t f0xi = ZERO;
-    flt_t f0yi = ZERO;
-    flt_t f0zi = ZERO;
+    flt_t f0xi = ZERO, f0yi = ZERO, f0zi = ZERO;
+    flt_t v0xxi = ZERO, v0yyi = ZERO, v0zzi = ZERO;
+    flt_t v0xyi = ZERO, v0xzi = ZERO, v0yzi = ZERO;
     const flt_t xi = posx[bi];
     const flt_t yi = posy[bi];
     const flt_t zi = posz[bi];
@@ -231,41 +231,31 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
         atomicAdd(fx + j, fxj);
         atomicAdd(fy + j, fyj);
         atomicAdd(fz + j, fzj);
-        if (VEITHER) {
-            const flt_t vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
-            const flt_t vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
-            v0xx[bi] += vxxj; v0yy[bi] += vyyj; v0zz[bi] += vzzj;
-            v0xy[bi] += vxyj; v0xz[bi] += vxzj; v0yz[bi] += vyzj;
-            if (CVATOM) {
-                atomicAdd(v1xx + j, vxxj);
-                atomicAdd(v1yy + j, vyyj);
-                atomicAdd(v1zz + j, vzzj);
-                atomicAdd(v1xy + j, vxyj);
-                atomicAdd(v1xz + j, vxzj);
-                atomicAdd(v1yz + j, vyzj);
-                atomicAdd(v1yx + j, dy*fxj);
-                atomicAdd(v1zx + j, dz*fxj);
-                atomicAdd(v1zy + j, dz*fyj);
-            } else if (VATOM) {
-                atomicAdd(v1xx + j, vxxj);
-                atomicAdd(v1yy + j, vyyj);
-                atomicAdd(v1zz + j, vzzj);
-                atomicAdd(v1xy + j, vxyj);
-                atomicAdd(v1xz + j, vxzj);
-                atomicAdd(v1yz + j, vyzj);
-            }
+        v0xxi += dx*fxj; v0yyi += dy*fyj; v0zzi += dz*fzj;
+        v0xyi += dx*fyj; v0xzi += dx*fzj; v0yzi += dy*fzj;
+        if (VATOM) {
+            atomicAdd(v1xx + j, dx*fxj);
+            atomicAdd(v1yy + j, dy*fyj);
+            atomicAdd(v1zz + j, dz*fzj);
+            atomicAdd(v1xy + j, dx*fyj);
+            atomicAdd(v1xz + j, dx*fzj);
+            atomicAdd(v1yz + j, dy*fzj);
+            atomicAdd(v1yx + j, dy*fxj);
+            atomicAdd(v1zx + j, dz*fxj);
+            atomicAdd(v1zy + j, dz*fyj);
         }
     }
     atomicAdd(fx + bi, f0xi);
     atomicAdd(fy + bi, f0yi);
     atomicAdd(fz + bi, f0zi);
+    v0[0] += v0xxi; v0[1] += v0yyi; v0[2] += v0zzi;
+    v0[3] += v0xyi; v0[4] += v0xzi; v0[5] += v0yzi;
 }
-template <int VEITHER, int VATOM, int CVATOM, int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
+template <int VATOM, int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz,
-    flt_t *v0xx, flt_t *v0yy, flt_t *v0zz, flt_t *v0xy, flt_t *v0xz, flt_t *v0yz,
+    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
     flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
     flt_t aRCut, flt_t *aParams) noexcept {
     // const init
@@ -299,13 +289,12 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL3<L3MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         tShiftFp += tSizeL;
-        backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
+        backwardAnlmGpu<VATOM, WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
             aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
             posx, posy, posz, type,
-            fx, fy, fz,
-            v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+            fx, fy, fz, v0,
             v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
             aRCut, aParams
         );
@@ -323,13 +312,12 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
         calGradSphL3<L3MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
-        backwardAnlmGpu<VEITHER, VATOM, CVATOM, WTYPE, MTYPE, NMAX,
+        backwardAnlmGpu<VATOM, WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
             aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
             posx, posy, posz, type,
-            fx, fy, fz,
-            v0xx, v0yy, v0zz, v0xy, v0xz, v0yz,
+            fx, fy, fz, v0,
             v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
             aRCut, aParams
         );
@@ -340,8 +328,10 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int REQUIRE_CACHE>
 static void calAnlm(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *rAnlm,
+    int aNlSize, int *aNl, flt_t *rAnlm,
+    flt_t *pos, int *type,
     flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
+    
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t bRn[REQUIRE_CACHE ? 1 : (NMAX+1)]; flt_t *rRn = REQUIRE_CACHE ? NULL : bRn;
@@ -355,22 +345,23 @@ static void calAnlm(int bi,
         rNlY = *rForwardCache; *rForwardCache += aNlSize*tLMAll;
     }
     // loop for neighbor
-    const flt4_t cinfo = aPosType[bi];
+    const flt_t xi = pos[3*bi+0];
+    const flt_t yi = pos[3*bi+1];
+    const flt_t zi = pos[3*bi+2];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt4_t jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = pos[3*j+0] - xi;
+        const flt_t dy = pos[3*j+1] - yi;
+        const flt_t dz = pos[3*j+2] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // cal Y
         if (REQUIRE_CACHE) rY = rNlY + jj*tLMAll;
@@ -382,7 +373,7 @@ static void calAnlm(int bi,
         if (REQUIRE_CACHE) rNlFc[jj] = fc;
         // to anlm
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
-            const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
+            const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1));
             // cal Rnp
             if (REQUIRE_CACHE) rRnp = rNlRnp + jj*SIZE_NP;
             calRnp<NMAX, SIZE_NP>(rRnp, rRn, aParams+tParamShift);
@@ -392,15 +383,15 @@ static void calAnlm(int bi,
             mplusAnlm<NMAX+1, LMAXMAX>(rAnlm, rY, fc, rRn);
         } else
         if (WTYPE==WTYPE_FULL) {
-            flt_t *tAnlm = rAnlm + (type-1)*(NMAX+1)*tLMAll;
+            flt_t *tAnlm = rAnlm + (typej-1)*(NMAX+1)*tLMAll;
             mplusAnlm<NMAX+1, LMAXMAX>(tAnlm, rY, fc, rRn);
         } else
         if (WTYPE==WTYPE_EXFULL) {
-            flt_t *tAnlmWt = rAnlm + type*(NMAX+1)*tLMAll;
+            flt_t *tAnlmWt = rAnlm + typej*(NMAX+1)*tLMAll;
             mplusAnlmWt<NMAX+1, LMAXMAX>(rAnlm, tAnlmWt, ONE, rY, fc, rRn);
         } else
         if (WTYPE==WTYPE_DEFAULT) {
-            double wt = ((type&1)==1) ? type : (-type);
+            double wt = ((typej&1)==1) ? typej : (-typej);
             flt_t *tAnlmWt = rAnlm + (NMAX+1)*tLMAll;
             mplusAnlmWt<NMAX+1, LMAXMAX>(rAnlm, tAnlmWt, wt, rY, fc, rRn);
         }
@@ -409,7 +400,8 @@ static void calAnlm(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP, int REQUIRE_CACHE>
 static void sphForward(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *rFp,
+    int aNlSize, int *aNl, flt_t *rFp,
+    flt_t *pos, int *type,
     flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
@@ -427,7 +419,8 @@ static void sphForward(int bi,
     }
     // do cal
     calAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, REQUIRE_CACHE>(bi,
-        aPosType, aNlSize, aNl, rAnlm,
+        aNlSize, aNl, rAnlm,
+        pos, type,
         rForwardCache, aRCut, aParams
     );
     // anlm -> fp
@@ -442,10 +435,12 @@ static void sphForward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
 static void backwardAnlm(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradAnlm,
-    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    int aNlSize, int *aNl, flt_t *aAGradAnlm,
+    flt_t *pos, int *type,
+    flt_t *f, flt_t *v0, flt_t *v1,
     flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) {
+    
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(USE_BB && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(!GRAD_PARAM && USE_BB), "INVALID STATE");
@@ -453,6 +448,7 @@ static void backwardAnlm(int bi,
         // no param
         if (WTYPE!=WTYPE_RFUSE && WTYPE!=WTYPE_FUSE && WTYPE!=WTYPE_EXFUSE) return;
     }
+    // const init
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t *tNlFc = *aForwardCache; *aForwardCache += aNlSize;
@@ -478,22 +474,26 @@ static void backwardAnlm(int bi,
     flt_t rAGradRn[NMAX+1];
     flt_t rAGradY[tLMAll];
     // loop for neighbor
-    const flt4_t cinfo = aPosType[bi];
+    flt_t f0xi = ZERO, f0yi = ZERO, f0zi = ZERO;
+    flt_t v0xxi = ZERO, v0yyi = ZERO, v0zzi = ZERO;
+    flt_t v0xyi = ZERO, v0xzi = ZERO, v0yzi = ZERO;
+    const flt_t xi = pos[3*bi + 0];
+    const flt_t yi = pos[3*bi + 1];
+    const flt_t zi = pos[3*bi + 2];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt4_t jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = pos[3*j + 0] - xi;
+        const flt_t dy = pos[3*j + 1] - yi;
+        const flt_t dz = pos[3*j + 2] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
         // get Y
         flt_t *tY = tNlY + jj*tLMAll;
@@ -505,7 +505,7 @@ static void backwardAnlm(int bi,
         fill<NMAX+1>(rAGradRn, ZERO);
         fill<tLMAll>(rAGradY, ZERO);
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
-            const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
+            const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1));
             // get Rnp
             flt_t *tRnp = tNlRnp + jj*SIZE_NP;
             // cache grad Rnp here
@@ -522,15 +522,15 @@ static void backwardAnlm(int bi,
             backwardMplusAnlm<NMAX+1, LMAXMAX>(aAGradAnlm, tY, rAGradY, fc, rAGradFc, tRn, rAGradRn);
         } else
         if (WTYPE==WTYPE_FULL) {
-            flt_t *tAGradAnlm = aAGradAnlm + (type-1)*(NMAX+1)*tLMAll;
+            flt_t *tAGradAnlm = aAGradAnlm + (typej-1)*(NMAX+1)*tLMAll;
             backwardMplusAnlm<NMAX+1, LMAXMAX>(tAGradAnlm, tY, rAGradY, fc, rAGradFc, tRn, rAGradRn);
         } else
         if (WTYPE==WTYPE_EXFULL) {
-            flt_t *tAGradAnlmWt = aAGradAnlm + type*(NMAX+1)*tLMAll;
+            flt_t *tAGradAnlmWt = aAGradAnlm + typej*(NMAX+1)*tLMAll;
             backwardMplusAnlmWt<NMAX+1, LMAXMAX>(aAGradAnlm, tAGradAnlmWt, ONE, tY, rAGradY, fc, rAGradFc, tRn, rAGradRn);
         } else
         if (WTYPE==WTYPE_DEFAULT) {
-            double wt = ((type&1)==1) ? type : (-type);
+            double wt = ((typej&1)==1) ? typej : (-typej);
             flt_t *tAGradAnlmWt = aAGradAnlm + (NMAX+1)*tLMAll;
             backwardMplusAnlmWt<NMAX+1, LMAXMAX>(aAGradAnlm, tAGradAnlmWt, wt, tY, rAGradY, fc, rAGradFc, tRn, rAGradRn);
         }
@@ -558,18 +558,36 @@ static void backwardAnlm(int bi,
                 rAGradThetaj += subAGradY*rYPtheta[k];
                 rAGradPhij += subAGradY*rYPphi[k];
             }
-            rAGradNlDx[jj] += rAGradj*dx + rAGradThetaj*thetaPx + rAGradPhij*phiPx;
-            rAGradNlDy[jj] += rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
-            rAGradNlDz[jj] += rAGradj*dz + rAGradThetaj*thetaPz;
+            const flt_t fxj = rAGradj*dx + rAGradThetaj*thetaPx + rAGradPhij*phiPx;
+            const flt_t fyj = rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
+            const flt_t fzj = rAGradj*dz + rAGradThetaj*thetaPz;
+            f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
+            f[3*j + 0] += fxj; f[3*j + 1] += fyj; f[3*j + 2] += fzj;
+            const flt_t vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
+            const flt_t vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
+            v0xxi += vxxj; v0yyi += vyyj; v0zzi += vzzj;
+            v0xyi += vxyj; v0xzi += vxzj; v0yzi += vyzj;
+            v1[9*j + 0] += vxxj; v1[9*j + 1] += vyyj; v1[9*j + 2] += vzzj;
+            v1[9*j + 3] += vxyj; v1[9*j + 4] += vxzj; v1[9*j + 5] += vyzj;
+            v1[9*j + 6] += dy*fxj;
+            v1[9*j + 7] += dz*fxj;
+            v1[9*j + 8] += dz*fyj;
         }
+    }
+    if (!GRAD_PARAM) {
+        f[3*bi + 0] += f0xi; f[3*bi + 1] += f0yi; f[3*bi + 2] += f0zi;
+        v0[0] += v0xxi; v0[1] += v0yyi; v0[2] += v0zzi;
+        v0[3] += v0xyi; v0[4] += v0xzi; v0[5] += v0yzi;
     }
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
 static void sphBackward(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradFp,
-    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz,
+    int aNlSize, int *aNl, flt_t *aAGradFp,
+    flt_t *pos, int *type,
+    flt_t *f, flt_t *v0, flt_t *v1,
     flt_t **aForwardCache, flt_t **rBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rAGradParams) noexcept {
+    
     static_assert(!(GRAD_PARAM && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(USE_BB && REQUIRE_CACHE), "INVALID STATE");
     static_assert(!(!GRAD_PARAM && USE_BB), "INVALID STATE");
@@ -619,8 +637,9 @@ static void sphBackward(int bi,
         calGradSphL4<L4MAX>(tAnlm+tShift, rAGradAnlm+tShift, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
     }
     backwardAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, GRAD_PARAM, USE_BB, REQUIRE_CACHE>(bi,
-        aPosType, aNlSize, aNl, rAGradAnlm,
-        rAGradNlDx, rAGradNlDy, rAGradNlDz,
+        aNlSize, aNl, rAGradAnlm,
+        pos, type,
+        f, v0, v1,
         aForwardCache, rBackwardCache, rBackwardBackwardCache,
         aRCut, aParams, rAGradParams
     );
@@ -628,10 +647,12 @@ static void sphBackward(int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP>
 static void backwardBackwardAnlm(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradAnlm, flt_t *rBGradAGradAnlm,
-    flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
+    int aNlSize, int *aNl, flt_t *aAGradAnlm, flt_t *rBGradAGradAnlm,
+    flt_t *pos, int *type,
+    flt_t *aBGradF, flt_t *aBGradV0,
     flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) {
+    
     constexpr int tLMAll = (LMAXMAX+1)*(LMAXMAX+1);
     // init cache
     flt_t *tNlFc = *aForwardCache; *aForwardCache += aNlSize;
@@ -647,23 +668,37 @@ static void backwardBackwardAnlm(int bi,
     flt_t rBGradAGradRn[NMAX+1], rBGradAGradRnp[SIZE_NP];
     flt_t rBGradAGradY[tLMAll];
     // loop for neighbor
-    const flt4_t cinfo = aPosType[bi];
+    const flt_t tBGradFxi = aBGradF[3*bi + 0];
+    const flt_t tBGradFyi = aBGradF[3*bi + 1];
+    const flt_t tBGradFzi = aBGradF[3*bi + 2];
+    const flt_t tBGradVxx = aBGradV0[0], tBGradVyy = aBGradV0[1], tBGradVzz = aBGradV0[2];
+    const flt_t tBGradVxy = aBGradV0[3], tBGradVxz = aBGradV0[4], tBGradVyz = aBGradV0[5];
+    const flt_t xi = pos[3*bi + 0];
+    const flt_t yi = pos[3*bi + 1];
+    const flt_t zi = pos[3*bi + 2];
+    const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const int j = aNl[jj];
-        const flt4_t jinfo = aPosType[j];
-        const flt_t dx = jinfo.x - cinfo.x;
-        const flt_t dy = jinfo.y - cinfo.y;
-        const flt_t dz = jinfo.z - cinfo.z;
+        const flt_t dx = pos[3*j + 0] - xi;
+        const flt_t dy = pos[3*j + 1] - yi;
+        const flt_t dz = pos[3*j + 2] - zi;
         const flt_t dis = nnap_sqrt(dx*dx + dy*dy + dz*dz);
         // check rcut for merge
         if (dis >= aRCut) continue;
         // mirror stuff
-        int type = (int)jinfo.w;
+        int typej = type[j];
         if (MTYPE > 0) {
-            const int ctype = (int)cinfo.w;
-            if (type==MTYPE) type = ctype;
-            else if (type==ctype) type = MTYPE;
+            if (typej==MTYPE) typej = typei;
+            else if (typej==typei) typej = MTYPE;
         }
+        // backward f v
+        flt_t rBGradFxj = ZERO, rBGradFyj = ZERO, rBGradFzj = ZERO;
+        rBGradFxj += aBGradF[3*j + 0] - tBGradFxi;
+        rBGradFyj += aBGradF[3*j + 1] - tBGradFyi;
+        rBGradFzj += aBGradF[3*j + 2] - tBGradFzi;
+        rBGradFxj += dx*tBGradVxx;
+        rBGradFyj += dy*tBGradVyy + dx*tBGradVxy;
+        rBGradFzj += dz*tBGradVzz + dx*tBGradVxz + dy*tBGradVyz;
         // get Rn, fc
         flt_t *tRn = tNlRn + jj*(NMAX+1);
         flt_t fc = tNlFc[jj];
@@ -683,10 +718,9 @@ static void backwardBackwardAnlm(int bi,
             phiPx, phiPy
         );
         // grad grad xyz to grad grad fc, Rn & Y
-        const flt_t tBGradAGradDx = aBGradAGradNlDx[jj], tBGradAGradDy = aBGradAGradNlDy[jj], tBGradAGradDz = aBGradAGradNlDz[jj];
-        const flt_t tBGradAGradj = tBGradAGradDx*dx + tBGradAGradDy*dy + tBGradAGradDz*dz;
-        const flt_t tBGradAGradThetaj = tBGradAGradDx*thetaPx + tBGradAGradDy*thetaPy + tBGradAGradDz*thetaPz;
-        const flt_t tBGradAGradPhij = tBGradAGradDx*phiPx + tBGradAGradDy*phiPy;
+        const flt_t tBGradAGradj = rBGradFxj*dx + rBGradFyj*dy + rBGradFzj*dz;
+        const flt_t tBGradAGradThetaj = rBGradFxj*thetaPx + rBGradFyj*thetaPy + rBGradFzj*thetaPz;
+        const flt_t tBGradAGradPhij = rBGradFxj*phiPx + rBGradFyj*phiPy;
         fill<NMAX+1>(rBGradAGradRn, ZERO);
         fill<tLMAll>(rBGradAGradY, ZERO);
         flt_t tBGradAGradFc = tBGradAGradj*fcGrad;
@@ -696,7 +730,7 @@ static void backwardBackwardAnlm(int bi,
         }
         // grad grad fc, Rn & Y to grad grad anlm
         if (WTYPE==WTYPE_RFUSE || WTYPE==WTYPE_FUSE || WTYPE==WTYPE_EXFUSE) {
-            const int tParamShift = (type-1)*(SIZE_NP*(NMAX+1));
+            const int tParamShift = (typej-1)*(SIZE_NP*(NMAX+1));
             // get gradRnp
             flt_t *tAGradRnp = tNlAGradRnp + jj*SIZE_NP;
             fill<SIZE_NP>(rBGradAGradRnp, ZERO);
@@ -714,15 +748,15 @@ static void backwardBackwardAnlm(int bi,
             backwardBackwardMplusAnlm<NMAX+1, LMAXMAX>(rBGradAGradAnlm, tY, rBGradAGradY, fc, tBGradAGradFc, tRn, rBGradAGradRn);
         } else
         if (WTYPE==WTYPE_FULL) {
-            flt_t *tBGradAGradAnlm = rBGradAGradAnlm + (type-1)*(NMAX+1)*tLMAll;
+            flt_t *tBGradAGradAnlm = rBGradAGradAnlm + (typej-1)*(NMAX+1)*tLMAll;
             backwardBackwardMplusAnlm<NMAX+1, LMAXMAX>(tBGradAGradAnlm, tY, rBGradAGradY, fc, tBGradAGradFc, tRn, rBGradAGradRn);
         } else
         if (WTYPE==WTYPE_EXFULL) {
-            flt_t *rBGradAGradAnlmWt = rBGradAGradAnlm + type*(NMAX+1)*tLMAll;
+            flt_t *rBGradAGradAnlmWt = rBGradAGradAnlm + typej*(NMAX+1)*tLMAll;
             backwardBackwardMplusAnlmWt<NMAX+1, LMAXMAX>(rBGradAGradAnlm, rBGradAGradAnlmWt, ONE, tY, rBGradAGradY, fc, tBGradAGradFc, tRn, rBGradAGradRn);
         } else
         if (WTYPE==WTYPE_DEFAULT) {
-            double wt = ((type&1)==1) ? type : (-type);
+            double wt = ((typej&1)==1) ? typej : (-typej);
             flt_t *rBGradAGradAnlmWt = rBGradAGradAnlm + (NMAX+1)*tLMAll;
             backwardBackwardMplusAnlmWt<NMAX+1, LMAXMAX>(rBGradAGradAnlm, rBGradAGradAnlmWt, wt, tY, rBGradAGradY, fc, tBGradAGradFc, tRn, rBGradAGradRn);
         }
@@ -730,8 +764,9 @@ static void backwardBackwardAnlm(int bi,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static void sphBackwardBackward(int bi,
-    flt4_t *aPosType, int aNlSize, int *aNl, flt_t *aAGradFp, flt_t *rBGradAGradFp,
-    flt_t *aBGradAGradNlDx, flt_t *aBGradAGradNlDy, flt_t *aBGradAGradNlDz,
+    int aNlSize, int *aNl, flt_t *aAGradFp, flt_t *rBGradAGradFp,
+    flt_t *pos, int *type,
+    flt_t *aBGradF, flt_t *aBGradV0,
     flt_t **aForwardCache, flt_t **aBackwardCache, flt_t **rBackwardBackwardCache,
     flt_t aRCut, flt_t *aParams, flt_t *rBGradParams) noexcept {
     // const init
@@ -748,8 +783,9 @@ static void sphBackwardBackward(int bi,
     fill<tSizeAnlm>(rBGradAnlm, ZERO);
     // xyz -> anlm
     backwardBackwardAnlm<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP>(bi,
-        aPosType, aNlSize, aNl, tAGradAnlm, rBGradAGradAnlm,
-        aBGradAGradNlDx, aBGradAGradNlDy, aBGradAGradNlDz,
+        aNlSize, aNl, tAGradAnlm, rBGradAGradAnlm,
+        pos, type,
+        aBGradF, aBGradV0,
         aForwardCache, aBackwardCache, rBackwardBackwardCache,
         aRCut, aParams, rBGradParams
     );
