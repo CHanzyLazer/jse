@@ -100,7 +100,7 @@ public class NNAP implements IPairPotential {
     final IDoubleOrFloatCPointer[] mCache;
     private final IDoubleOrFloatCPointer[] mEng, mForce, mVirial, mVAtom;
     private final IDoubleOrFloatCPointer mPos;
-    private final IntCPointer mType;
+    private final IntCPointer mType, mNl;
     private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
     private final IntCPointer[] mNlType, mNlIdx;
     
@@ -119,7 +119,7 @@ public class NNAP implements IPairPotential {
     private FloatCPointer mFltBuf = null;
     private IntCPointer mIntBuf = null;
     private FloatCudaPointer mCudaPos = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaBufNlSize = null;
+    private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaBufNlSize = null, mCudaBufNl = null;
     private IntCudaPointer mCudaFirstneigh = null, mCudaBufNlType = null, mCudaBufNlIdx = null;
     private FloatCudaPointer mCudaBufNlDx = null, mCudaBufNlDy = null, mCudaBufNlDz = null, mCudaBufGradNlDx = null, mCudaBufGradNlDy = null, mCudaBufGradNlDz = null;
     private IntCudaPointer mCudaNMerges = null;
@@ -193,6 +193,7 @@ public class NNAP implements IPairPotential {
         mOutNums = mPtrMngTot.newIntCPointer(16);
         mPos = mPtrMngTot.newDoubleOrFloatCPointer(mSingle);
         mType = mPtrMngTot.newIntCPointer();
+        mNl = mPtrMngTot.newIntCPointer();
         mNlDx = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDy = new IDoubleOrFloatCPointer[mNumThreads];
         mNlDz = new IDoubleOrFloatCPointer[mNumThreads];
@@ -884,9 +885,9 @@ public class NNAP implements IPairPotential {
     private void validNlLammps_(int aNlocalghost, int aNlSize) {
         mPtrMngTot.ensureCapacity(mPos, aNlocalghost*3L);
         mPtrMngTot.ensureCapacity(mType, aNlocalghost);
+        mPtrMngTot.ensureCapacity(mNl, aNlSize);
         mPtrMngPar[0].ensureCapacity(mForce[0], aNlocalghost*3L);
         mPtrMngPar[0].ensureCapacity(mVAtom[0], aNlocalghost*9L);
-        mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
         for (int i = 0; i < mSymbols.length; ++i) {
             mPtrMngPar[0].ensureCapacity(mCache[0], mBasis[i].forwardCacheSize(aNlSize));
         }
@@ -915,7 +916,7 @@ public class NNAP implements IPairPotential {
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mPos, mType, mNlIdx[0],
+            mPos, mType, mNl,
             mForce[0], mVAtom[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
             mCache[0]
@@ -941,7 +942,7 @@ public class NNAP implements IPairPotential {
         mCudaNumneigh = mPtrMngTot.newIntCudaPointer();
         mCudaFirstneigh = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
-        mCudaBufNlIdx = mPtrMngTot.newIntCudaPointer();
+        mCudaBufNl = mPtrMngTot.newIntCudaPointer();
     }
     void computeLammpsCuda(PairNNAP aPair) throws CudaException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
@@ -981,7 +982,7 @@ public class NNAP implements IPairPotential {
             int tTotNlSize = nlocal*mNeighnumMax;
             mPtrMngTot.ensureCapacity(mIntBuf, tTotNlSize);
             mPtrMngTot.ensureCapacity(mCudaFirstneigh, tTotNlSize);
-            mPtrMngTot.ensureCapacity(mCudaBufNlIdx, tTotNlSize);
+            mPtrMngTot.ensureCapacity(mCudaBufNl, tTotNlSize);
         }
         
         // lammps -> cuda
@@ -1006,7 +1007,7 @@ public class NNAP implements IPairPotential {
             mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
-            mCudaBufNlSize, mCudaBufNlIdx
+            mCudaBufNlSize, mCudaBufNl
         );
         CudaCore.cudaExceptionCheck(tCode);
         
