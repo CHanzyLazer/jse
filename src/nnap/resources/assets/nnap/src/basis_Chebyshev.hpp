@@ -44,12 +44,11 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
         mplusFp<SIZE_NP>(rFp, fc, bRnp);
     }
 }
-template <int VATOM, int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
+template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
-    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
+    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t aRCut, flt_t *aParams) noexcept {
     
     // init cache
@@ -105,26 +104,13 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         const flt_t fyj = rAGradj*dy;
         const flt_t fzj = rAGradj*dz;
         f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-        atomicAdd(fx + j, fxj);
-        atomicAdd(fy + j, fyj);
-        atomicAdd(fz + j, fzj);
         v0xxi += dx*fxj; v0yyi += dy*fyj; v0zzi += dz*fzj;
         v0xyi += dx*fyj; v0xzi += dx*fzj; v0yzi += dy*fzj;
-        if (VATOM) {
-            atomicAdd(v1xx + j, dx*fxj);
-            atomicAdd(v1yy + j, dy*fyj);
-            atomicAdd(v1zz + j, dz*fzj);
-            atomicAdd(v1xy + j, dx*fyj);
-            atomicAdd(v1xz + j, dx*fzj);
-            atomicAdd(v1yz + j, dy*fzj);
-            atomicAdd(v1yx + j, dy*fxj);
-            atomicAdd(v1zx + j, dz*fxj);
-            atomicAdd(v1zy + j, dz*fyj);
-        }
+        nlFx[jj*nb + bi] += fxj;
+        nlFy[jj*nb + bi] += fyj;
+        nlFz[jj*nb + bi] += fzj;
     }
-    atomicAdd(fx + bi, f0xi);
-    atomicAdd(fy + bi, f0yi);
-    atomicAdd(fz + bi, f0zi);
+    f0[0] += f0xi; f0[1] += f0yi; f0[2] += f0zi;
     v0[0] += v0xxi; v0[1] += v0yyi; v0[2] += v0zzi;
     v0[3] += v0xyi; v0[4] += v0xzi; v0[5] += v0yzi;
 }

@@ -121,7 +121,7 @@ public class NNAP implements IPairPotential {
     private FloatCudaPointer mCudaPos = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
     private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaBufNlSize = null, mCudaBufNl = null;
     private IntCudaPointer mCudaFirstneigh = null, mCudaBufNlType = null, mCudaBufNlIdx = null;
-    private FloatCudaPointer mCudaBufNlDx = null, mCudaBufNlDy = null, mCudaBufNlDz = null, mCudaBufGradNlDx = null, mCudaBufGradNlDy = null, mCudaBufGradNlDz = null;
+    private FloatCudaPointer mCudaBufNlDx = null, mCudaBufNlDy = null, mCudaBufNlDz = null, mCudaBufNlFx = null, mCudaBufNlFy = null, mCudaBufNlFz = null;
     private IntCudaPointer mCudaNMerges = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
     private CudaPointer mCudaFpHyperParam = null, mCudaFpParam = null, mCudaNnParam = null, mCudaNormParam = null;
@@ -943,6 +943,9 @@ public class NNAP implements IPairPotential {
         mCudaFirstneigh = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
         mCudaBufNl = mPtrMngTot.newIntCudaPointer();
+        mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
+        mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
+        mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
     }
     void computeLammpsCuda(PairNNAP aPair) throws CudaException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
@@ -983,6 +986,9 @@ public class NNAP implements IPairPotential {
             mPtrMngTot.ensureCapacity(mIntBuf, tTotNlSize);
             mPtrMngTot.ensureCapacity(mCudaFirstneigh, tTotNlSize);
             mPtrMngTot.ensureCapacity(mCudaBufNl, tTotNlSize);
+            mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
+            mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
+            mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
         }
         
         // lammps -> cuda
@@ -1007,6 +1013,7 @@ public class NNAP implements IPairPotential {
             mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
+            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,
             mCudaBufNlSize, mCudaBufNl
         );
         CudaCore.cudaExceptionCheck(tCode);
@@ -1033,9 +1040,9 @@ public class NNAP implements IPairPotential {
         mCudaBufNlDx = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlDy = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlDz = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufGradNlDx = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufGradNlDy = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufGradNlDz = mPtrMngTot.newFloatCudaPointer();
+        mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
+        mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
+        mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
     }
     void computeGPUMD(int number_of_particles, int N1, int N2, int neighnumMax,
                       long g_neighbor_number, long g_neighbor_list,
@@ -1057,9 +1064,9 @@ public class NNAP implements IPairPotential {
         mPtrMngTot.ensureCapacity(mCudaBufNlDx, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlDy, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlDz, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufGradNlDx, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufGradNlDy, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufGradNlDz, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
         
         int tCode = mComputeGPUMD.invoke(
             number_of_particles, N1, N2,
@@ -1070,7 +1077,7 @@ public class NNAP implements IPairPotential {
             new DoubleCudaPointer(g_fx), new DoubleCudaPointer(g_fy), new DoubleCudaPointer(g_fz),
             new DoubleCudaPointer(g_virial), new DoubleCudaPointer(g_potential),
             mCudaBufNlDx, mCudaBufNlDy, mCudaBufNlDz, mCudaBufNlType, mCudaBufNlIdx, mCudaBufNlSize,
-            mCudaBufGradNlDx, mCudaBufGradNlDy, mCudaBufGradNlDz
+            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz
         );
         CudaCore.cudaExceptionCheck(tCode);
     }

@@ -62,6 +62,7 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
         int *ilist, int *aBufNlSize, int *aBufNl,
         flt_t *pos, int *type,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
+        flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
         flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
     
     const int ii = (int)(blockIdx.x * blockDim.x + threadIdx.x);
@@ -70,13 +71,22 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
     const int nlocalghost = nlocal + nghost;
     const int i = ilist[ii];
     const int ctype = type[i];
+    const int tNlSize = aBufNlSize[i];
     
     flt_t *posx = pos;
     flt_t *posy = pos + nlocalghost;
     flt_t *posz = pos + nlocalghost*2L;
     
+    // manual clear required for backward in force
     flt_t eng = ZERO;
+    flt_t f0[3] = {0};
     flt_t v0[6] = {0};
+    for (int jj = 0; jj < tNlSize; ++jj) {
+        nlFx[jj*nlocal + i] = ZERO;
+        nlFy[jj*nlocal + i] = ZERO;
+        nlFz[jj*nlocal + i] = ZERO;
+    }
+    
 // >>> NNAPGEN SWITCH
     flt_t rFpOrGradFp[__NNAPGENX_FP_SIZE__];
     fpForwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
@@ -97,16 +107,14 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
             aNormParam[ctype-1], aNnParam, rNnGradCache
         );
     }
-    fpBackwardGpu<__NNAPGENS_ctype__, VATOM>(nlocal, i, ctype,
+    fpBackwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
         aBufNlSize, aBufNl, rFpOrGradFp,
         posx, posy, posz, type,
-        f, f + nlocalghost, f + nlocalghost*2L, v0,
-        vatom1,                  vatom1 + nlocalghost,    vatom1 + nlocalghost*2L,
-        vatom1 + nlocalghost*3L, vatom1 + nlocalghost*4L, vatom1 + nlocalghost*5L,
-        vatom1 + nlocalghost*6L, vatom1 + nlocalghost*7L, vatom1 + nlocalghost*8L,
+        f0, v0, nlFx, nlFy, nlFz,
         aFpHyperParam, aFpParam
     );
 // <<< NNAPGEN SWITCH (ctype) [FP NN TYPE]
+    
     if (EEITHER) {
         eatom0[i] += eng;
     }
@@ -118,6 +126,35 @@ static __global__ void computeLammpsKernel(int inum, int nlocal, int nghost,
         vatom0[4*nlocal + i] += v0[4];
         vatom0[5*nlocal + i] += v0[5];
     }
+    atomicAdd(f + (0*nlocalghost + i), f0[0]);
+    atomicAdd(f + (1*nlocalghost + i), f0[1]);
+    atomicAdd(f + (2*nlocalghost + i), f0[2]);
+    const flt_t xi = VATOM ? posx[i] : ZERO;
+    const flt_t yi = VATOM ? posy[i] : ZERO;
+    const flt_t zi = VATOM ? posz[i] : ZERO;
+    for (int jj = 0; jj < tNlSize; ++jj) {
+        const int j = aBufNl[jj*nlocal + i];
+        const flt_t fxj = nlFx[jj*nlocal + i];
+        const flt_t fyj = nlFy[jj*nlocal + i];
+        const flt_t fzj = nlFz[jj*nlocal + i];
+        atomicAdd(f + (0*nlocalghost + j), fxj);
+        atomicAdd(f + (1*nlocalghost + j), fyj);
+        atomicAdd(f + (2*nlocalghost + j), fzj);
+        if (VATOM) {
+            const flt_t dx = posx[j] - xi;
+            const flt_t dy = posy[j] - yi;
+            const flt_t dz = posz[j] - zi;
+            atomicAdd(vatom1 + (0*nlocalghost + j), dx*fxj);
+            atomicAdd(vatom1 + (1*nlocalghost + j), dy*fyj);
+            atomicAdd(vatom1 + (2*nlocalghost + j), dz*fzj);
+            atomicAdd(vatom1 + (3*nlocalghost + j), dx*fyj);
+            atomicAdd(vatom1 + (4*nlocalghost + j), dx*fzj);
+            atomicAdd(vatom1 + (5*nlocalghost + j), dy*fzj);
+            atomicAdd(vatom1 + (6*nlocalghost + j), dy*fxj);
+            atomicAdd(vatom1 + (7*nlocalghost + j), dz*fxj);
+            atomicAdd(vatom1 + (8*nlocalghost + j), dz*fyj);
+        }
+    }
 }
 template <int VTOTAL, int VATOM>
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
@@ -126,6 +163,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         flt_t *pos, int *type,
         int eflagEither,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
+        flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
         flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
     if (eflagEither) {
         computeLammpsKernel<TRUE, VTOTAL, VATOM>
@@ -133,6 +171,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             ilist, aBufNlSize, aBufNl,
             pos, type,
             eatom0, f, vatom0, vatom1,
+            nlFx, nlFy, nlFz,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     } else {
@@ -141,6 +180,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             ilist, aBufNlSize, aBufNl,
             pos, type,
             eatom0, f, vatom0, vatom1,
+            nlFx, nlFy, nlFz,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     }
@@ -151,6 +191,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     flt_t *pos, int *type,
     int eflagEither, int vflag, int vflagAtom,
     flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
+    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
     if (vflagAtom) {
         computeLammpsKernel_<TRUE, TRUE>(aGridSize, aBlockSize,
@@ -159,6 +200,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             pos, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,
+            nlFx, nlFy, nlFz,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     } else if (vflag) {
@@ -168,6 +210,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             pos, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,
+            nlFx, nlFy, nlFz,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     } else {
@@ -177,6 +220,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             pos, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,
+            nlFx, nlFy, nlFz,
             aFpHyperParam, aFpParam, aNormParam, aNnParam
         );
     }
@@ -446,6 +490,7 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
     JSE_NNAP::flt_t **cutsq, int *numneigh, int *firstneigh,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t **aNormParam,
     JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *eatom0, JSE_NNAP::flt_t *vatom0, JSE_NNAP::flt_t *vatom1,
+    JSE_NNAP::flt_t *nlFx, JSE_NNAP::flt_t *nlFy, JSE_NNAP::flt_t *nlFz,
     int *rBufNlSize, int *rBufNl) {
     
     const int nlocalghost = nlocal + nghost;
@@ -481,6 +526,7 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
         pos, type,
         eflagEither, vflag, vflagAtom,
         eatom0, f, vatom0, vatom1,
+        nlFx, nlFy, nlFz,
         aFpHyperParam, aFpParam, aNormParam, aNnParam
     );
     

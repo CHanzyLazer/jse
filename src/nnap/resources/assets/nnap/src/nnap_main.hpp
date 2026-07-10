@@ -133,12 +133,11 @@ static NNAP_DEVICE int normedNnBackwardGpu(int ctype,
     return 0;
 }
 
-template <int CTYPE_GEN, int VATOM>
+template <int CTYPE_GEN>
 static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
     int *aBufNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
-    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
+    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t **aFpHyperParam, flt_t **aFpParam) noexcept {
     
     int flag = 1;
@@ -161,21 +160,19 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
 // >>> NNAPGEN REPEAT
 // >>> NNAPGEN PICK
 // --- NNAPGEN PICK: spherical_chebyshev
-    sphBackwardGpu<VATOM, __NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
+    sphBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
                    __NNAPGENXX_FP_LMAX__, __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
-        fx, fy, fz, v0,
-        v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
+        f0, v0, nlFx, nlFy, nlFz,
         tSubFpHyperParam[0], tSubFpParam
     );
 // --- NNAPGEN PICK: chebyshev
-    chebyBackwardGpu<VATOM, __NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
+    chebyBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
                      __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
-        fx, fy, fz, v0,
-        v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
+        f0, v0, nlFx, nlFy, nlFz,
         tSubFpHyperParam[0], tSubFpParam
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]

@@ -112,13 +112,12 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     }
 }
 
-template <int VATOM, int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
+template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     int aNlSize, int *aBufNl,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
-    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
+    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t aRCut, flt_t *aParams) {
     
     // const init
@@ -228,36 +227,23 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
         const flt_t fyj = rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
         const flt_t fzj = rAGradj*dz + rAGradThetaj*thetaPz;
         f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-        atomicAdd(fx + j, fxj);
-        atomicAdd(fy + j, fyj);
-        atomicAdd(fz + j, fzj);
         v0xxi += dx*fxj; v0yyi += dy*fyj; v0zzi += dz*fzj;
         v0xyi += dx*fyj; v0xzi += dx*fzj; v0yzi += dy*fzj;
-        if (VATOM) {
-            atomicAdd(v1xx + j, dx*fxj);
-            atomicAdd(v1yy + j, dy*fyj);
-            atomicAdd(v1zz + j, dz*fzj);
-            atomicAdd(v1xy + j, dx*fyj);
-            atomicAdd(v1xz + j, dx*fzj);
-            atomicAdd(v1yz + j, dy*fzj);
-            atomicAdd(v1yx + j, dy*fxj);
-            atomicAdd(v1zx + j, dz*fxj);
-            atomicAdd(v1zy + j, dz*fyj);
-        }
+        nlFx[jj*nb + bi] += fxj;
+        nlFy[jj*nb + bi] += fyj;
+        nlFz[jj*nb + bi] += fzj;
     }
-    atomicAdd(fx + bi, f0xi);
-    atomicAdd(fy + bi, f0yi);
-    atomicAdd(fz + bi, f0zi);
+    f0[0] += f0xi; f0[1] += f0yi; f0[2] += f0zi;
     v0[0] += v0xxi; v0[1] += v0yyi; v0[2] += v0zzi;
     v0[3] += v0xyi; v0[4] += v0xzi; v0[5] += v0yzi;
 }
-template <int VATOM, int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
+template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *fx, flt_t *fy, flt_t *fz, flt_t *v0,
-    flt_t *v1xx, flt_t *v1yy, flt_t *v1zz, flt_t *v1xy, flt_t *v1xz, flt_t *v1yz, flt_t *v1yx, flt_t *v1zx, flt_t *v1zy,
+    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t aRCut, flt_t *aParams) noexcept {
+    
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
@@ -289,13 +275,12 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL3<L3MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm2, bAGradAnlm2, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         tShiftFp += tSizeL;
-        backwardAnlmGpu<VATOM, WTYPE, MTYPE, NMAX,
+        backwardAnlmGpu<WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
             aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
             posx, posy, posz, type,
-            fx, fy, fz, v0,
-            v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
+            f0, v0, nlFx, nlFy, nlFz,
             aRCut, aParams
         );
     }
@@ -312,13 +297,12 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
         calGradSphL3<L3MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2);
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
-        backwardAnlmGpu<VATOM, WTYPE, MTYPE, NMAX,
+        backwardAnlmGpu<WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
             aNlSize, aBufNl,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
             posx, posy, posz, type,
-            fx, fy, fz, v0,
-            v1xx, v1yy, v1zz, v1xy, v1xz, v1yz, v1yx, v1zx, v1zy,
+            f0, v0, nlFx, nlFy, nlFz,
             aRCut, aParams
         );
     }
