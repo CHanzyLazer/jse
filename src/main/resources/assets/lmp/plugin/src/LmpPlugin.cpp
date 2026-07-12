@@ -29,12 +29,13 @@ jboolean JSE_LMPPLUGIN::initJVM(JNIEnv **rEnv) {
         return JNI_TRUE;
     }
     JavaVMInitArgs tVMArgs;
-    JavaVMOption tOptions[3];
+    JavaVMOption tOptions[4];
     tOptions[0].optionString = (char *)JVM_CLASS_PATH;
     tOptions[1].optionString = (char *)JVM_XMX;
     tOptions[2].optionString = (char *)"--enable-native-access=ALL-UNNAMED";
+    tOptions[3].optionString = (char *)"-XX:+AdjustStackSizeForTLS";
     tVMArgs.version = JNI_VERSION_1_6;
-    tVMArgs.nOptions = 3;
+    tVMArgs.nOptions = 4;
     tVMArgs.options = tOptions;
     tVMArgs.ignoreUnrecognized = JNI_TRUE;
     
