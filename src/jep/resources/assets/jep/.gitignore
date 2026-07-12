@@ -1,0 +1,5 @@
+/jep*-src/build
+/jep*-src/*build*
+/jep*-src/.*
+
+jep*.zip

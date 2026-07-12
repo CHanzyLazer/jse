@@ -5,5 +5,5 @@ __*
 /release/lib
 /release/src
 
-!/.gitignore
-!/.gitattributes
+!.gitignore
+!.gitattributes
