@@ -31,6 +31,8 @@ sourceSets {
                 'assets/mpi/src/.*/', 'assets/mpi/src/build/', 'assets/mpi/src/*build*/',
                 'assets/lmp/src/.*/', 'assets/lmp/src/build/', 'assets/lmp/src/*build*/',
                 'assets/lmp/plugin/src/.*/', 'assets/lmp/plugin/src/build/', 'assets/lmp/plugin/src/*build*/',
+                'assets/cudacore/src/.*/', 'assets/cudacore/src/build/', 'assets/cudacore/src/*build*/',
+                'assets/cudanl/src/.*/', 'assets/cudanl/src/build/', 'assets/cudanl/src/*build*/',
                 'assets/nep/src/.*/', 'assets/nep/src/build/', 'assets/nep/src/*build*/',
                 'assets/nnap/src/.*/', 'assets/nnap/src/build/', 'assets/nnap/src/*build*/',
                 'assets/jsexpy/.*/',
