@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
+
+set(CMAKE_CUDA_ARCHITECTURES "75" CACHE STRING "CUDA architectures")
 project(cudacore LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -11,11 +13,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(SOURCE_FILES
-    jse_gpu_CudaCore.cpp
-    jse_gpu_FloatCudaPointer.cpp
-    jse_gpu_DoubleCudaPointer.cpp
-    jse_gpu_IntCudaPointer.cpp
-    jse_gpu_Int64CudaPointer.cpp)
+    jse_gpu_CudaCore.cu
+    jse_gpu_FloatCudaPointer.cu
+    jse_gpu_DoubleCudaPointer.cu
+    jse_gpu_IntCudaPointer.cu
+    jse_gpu_Int64CudaPointer.cu)
 add_library(cudacore SHARED ${SOURCE_FILES})
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -46,9 +48,3 @@ if(JSE_USE_MIMALLOC)
     include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
     target_link_libraries(cudacore "$ENV{JSE_MIMALLOC_LIB_PATH}")
 endif()
-
-
-# cuda additional setting
-find_package(CUDAToolkit REQUIRED)
-target_link_libraries(cudacore CUDA::cudart)
-set_target_properties(cudacore PROPERTIES CUDA_ARCHITECTURES OFF)

@@ -1,10 +1,3 @@
-#if defined(__cplusplus) && defined(__CLION_IDE__)
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "modernize-deprecated-headers"
-#pragma ide diagnostic ignored "modernize-use-auto"
-#pragma ide diagnostic ignored "modernize-use-nullptr"
-#endif
-
 #include <jni.h>
 
 #ifndef JNIUTIL_H
@@ -604,6 +597,89 @@ static inline void freeStrBuf(char **aStrBuf, int aLen) {
 
 
 /** exception stuffs */
+static inline void throwExceptionCLib(JNIEnv *aEnv, const char *aErrStr) {
+    const char *tClazzName = "jse/clib/CLibException";
+    const char *tInitSig = "(Ljava/lang/String;)V";
+#ifdef __cplusplus
+    // find class runtime due to asm
+    jclass tClazz = aEnv->FindClass(tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
+    jthrowable tException = (jthrowable)aEnv->NewObject(tClazz, tInit, tJErrStr);
+    aEnv->Throw(tException);
+    aEnv->DeleteLocalRef(tException);
+    aEnv->DeleteLocalRef(tJErrStr);
+    aEnv->DeleteLocalRef(tClazz);
+#else
+    // find class runtime due to asm
+    jclass tClazz = (*aEnv)->FindClass(aEnv, tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
+    jthrowable tException = (jthrowable)(*aEnv)->NewObject(aEnv, tClazz, tInit, tJErrStr);
+    (*aEnv)->Throw(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
+    (*aEnv)->DeleteLocalRef(aEnv, tClazz);
+#endif
+}
+static inline void throwExceptionCLibCode(JNIEnv *aEnv, jint aErrCode, const char *aErrStr) {
+    const char *tClazzName = "jse/clib/CLibException";
+    const char *tInitSig = "(ILjava/lang/String;)V";
+#ifdef __cplusplus
+    // find class runtime due to asm
+    jclass tClazz = aEnv->FindClass(tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
+    jthrowable tException = (jthrowable)aEnv->NewObject(tClazz, tInit, aErrCode, tJErrStr);
+    aEnv->Throw(tException);
+    aEnv->DeleteLocalRef(tException);
+    aEnv->DeleteLocalRef(tJErrStr);
+    aEnv->DeleteLocalRef(tClazz);
+#else
+    // find class runtime due to asm
+    jclass tClazz = (*aEnv)->FindClass(aEnv, tClazzName);
+    if (tClazz == NULL) {
+        fprintf(stderr, "Couldn't find %s\n", tClazzName);
+        return;
+    }
+    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", tInitSig);
+    if (tInit == NULL) {
+        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
+        return;
+    }
+    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
+    jthrowable tException = (jthrowable)(*aEnv)->NewObject(aEnv, tClazz, tInit, aErrCode, tJErrStr);
+    (*aEnv)->Throw(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tException);
+    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
+    (*aEnv)->DeleteLocalRef(aEnv, tClazz);
+#endif
+}
+
 static inline void throwExceptionMPI(JNIEnv *aEnv, const char *aErrStr, int aExitCode) {
     const char *tClazzName = "jse/parallel/MPIException";
     const char *tInitSig = "(ILjava/lang/String;)V";
@@ -688,54 +764,119 @@ static inline void throwExceptionLMP(JNIEnv *aEnv, const char *aErrStr) {
 #endif
 }
 
-static inline void throwExceptionTorch(JNIEnv *aEnv, const char *aErrStr) {
-    const char *tClazzName = "jse/clib/TorchException";
-    const char *tInitSig = "(Ljava/lang/String;)V";
-#ifdef __cplusplus
-    // find class runtime due to asm
-    jclass tClazz = aEnv->FindClass(tClazzName);
-    if (tClazz == NULL) {
-        fprintf(stderr, "Couldn't find %s\n", tClazzName);
-        return;
-    }
-    jmethodID tInit = aEnv->GetMethodID(tClazz, "<init>", tInitSig);
-    if (tInit == NULL) {
-        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
-        return;
-    }
-    jstring tJErrStr = aEnv->NewStringUTF(aErrStr);
-    jthrowable tException = (jthrowable)aEnv->NewObject(tClazz, tInit, tJErrStr);
-    aEnv->Throw(tException);
-    aEnv->DeleteLocalRef(tException);
-    aEnv->DeleteLocalRef(tJErrStr);
-    aEnv->DeleteLocalRef(tClazz);
+
+/** clib load stuffs */
+#if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
+#include <Windows.h>
 #else
-    // find class runtime due to asm
-    jclass tClazz = (*aEnv)->FindClass(aEnv, tClazzName);
-    if (tClazz == NULL) {
-        fprintf(stderr, "Couldn't find %s\n", tClazzName);
-        return;
+#include <dlfcn.h>
+#endif
+
+static inline void *jloadLibraryS(JNIEnv *aEnv, jstring aLibPath) {
+#if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
+#ifdef __cplusplus
+    const jchar *tLibPath = aEnv->GetStringChars(aLibPath, NULL);
+    if (!tLibPath) return NULL; // OOM
+    HMODULE tHandle = LoadLibraryW((LPCWSTR)tLibPath);
+    aEnv->ReleaseStringChars(aLibPath, tLibPath);
+#else
+    const jchar *tLibPath = (*aEnv)->GetStringChars(aEnv, aLibPath, NULL);
+    if (!tLibPath) return NULL; // OOM
+    HMODULE tHandle = LoadLibraryW((LPCWSTR)tLibPath);
+    (*aEnv)->ReleaseStringChars(aEnv, aLibPath, tLibPath);
+#endif
+    if (!tHandle) {
+        throwExceptionCLibCode(aEnv, (jint)GetLastError(), "LoadLibraryW failed");
+        return NULL;
     }
-    jmethodID tInit = (*aEnv)->GetMethodID(aEnv, tClazz, "<init>", tInitSig);
-    if (tInit == NULL) {
-        fprintf(stderr, "Couldn't find %s.<init>%s\n", tClazzName, tInitSig);
-        return;
+    return (void *)(intptr_t)tHandle;
+#else
+#ifdef __cplusplus
+    const char *tLibPath = aEnv->GetStringUTFChars(aLibPath, NULL);
+    if (!tLibPath) return NULL; // OOM
+    void *tHandle = dlopen(tLibPath, RTLD_NOW | RTLD_LOCAL);
+    aEnv->ReleaseStringUTFChars(aLibPath, tLibPath);
+#else
+    const char *tLibPath = (*aEnv)->GetStringUTFChars(aEnv, aLibPath, NULL);
+    if (!tLibPath) return NULL; // OOM
+    void *tHandle = dlopen(tLibPath, RTLD_NOW | RTLD_LOCAL);
+    (*aEnv)->ReleaseStringUTFChars(aEnv, aLibPath, tLibPath);
+#endif
+    if (!tHandle) {
+        const char *tErr = dlerror();
+        throwExceptionCLib(aEnv, tErr?tErr:"dlopen failed");
+        return NULL;
     }
-    jstring tJErrStr = (*aEnv)->NewStringUTF(aEnv, aErrStr);
-    jthrowable tException = (jthrowable)(*aEnv)->NewObject(aEnv, tClazz, tInit, tJErrStr);
-    (*aEnv)->Throw(aEnv, tException);
-    (*aEnv)->DeleteLocalRef(aEnv, tException);
-    (*aEnv)->DeleteLocalRef(aEnv, tJErrStr);
-    (*aEnv)->DeleteLocalRef(aEnv, tClazz);
+    return tHandle;
 #endif
 }
 
+static inline void jfreeLibrary(JNIEnv *aEnv, void *aLibHandle) {
+#if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
+    FreeLibrary((HMODULE)(intptr_t)aLibHandle);
+#else
+    dlclose(aLibHandle);
+#endif
+}
+
+static inline void *jfindMethodS(JNIEnv *aEnv, void *aLibHandle, jstring aMethodName) {
+#if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
+#ifdef __cplusplus
+    const char *tMethodName = aEnv->GetStringUTFChars(aMethodName, NULL);
+    if (!tMethodName) return NULL; // OOM
+    FARPROC tMethodPtr = GetProcAddress((HMODULE)(intptr_t)aLibHandle, (LPCSTR)tMethodName);
+    aEnv->ReleaseStringUTFChars(aMethodName, tMethodName);
+#else
+    const char *tMethodName = (*aEnv)->GetStringUTFChars(aEnv, aMethodName, NULL);
+    if (!tMethodName) return NULL; // OOM
+    FARPROC tMethodPtr = GetProcAddress((HMODULE)(intptr_t)aLibHandle, (LPCSTR)tMethodName);
+    (*aEnv)->ReleaseStringUTFChars(aEnv, aMethodName, tMethodName);
+#endif
+    if (!tMethodPtr) {
+        throwExceptionCLibCode(aEnv, (jint)GetLastError(), "GetProcAddress failed");
+        return NULL;
+    }
+    return (void *)(intptr_t)tMethodPtr;
+#else
+#ifdef __cplusplus
+    const char *tMethodName = aEnv->GetStringUTFChars(aMethodName, NULL);
+    if (!tMethodName) return NULL; // OOM
+    void* tMethodPtr = dlsym(aLibHandle, tMethodName);
+    aEnv->ReleaseStringUTFChars(aMethodName, tMethodName);
+#else
+    const char *tMethodName = (*aEnv)->GetStringUTFChars(aEnv, aMethodName, NULL);
+    if (!tMethodName) return NULL; // OOM
+    void* tMethodPtr = dlsym(aLibHandle, tMethodName);
+    (*aEnv)->ReleaseStringUTFChars(aEnv, aMethodName, tMethodName);
+#endif
+    if (!tMethodPtr) {
+        const char *tErr = dlerror();
+        throwExceptionCLib(aEnv, tErr?tErr:"dlsym failed");
+        return NULL;
+    }
+    return tMethodPtr;
+#endif
+}
+static inline void *jfindMethodC(JNIEnv *aEnv, void *aLibHandle, const char *aMethodName) {
+#if defined(WIN32) || defined(_WIN64) || defined(_WIN32)
+    FARPROC tMethodPtr = GetProcAddress((HMODULE)(intptr_t)aLibHandle, (LPCSTR)aMethodName);
+    if (!tMethodPtr) {
+        throwExceptionCLibCode(aEnv, (jint)GetLastError(), "GetProcAddress failed");
+        return NULL;
+    }
+    return (void *)(intptr_t)tMethodPtr;
+#else
+    void* tMethodPtr = dlsym(aLibHandle, aMethodName);
+    if (!tMethodPtr) {
+        const char *tErr = dlerror();
+        throwExceptionCLib(aEnv, tErr?tErr:"dlsym failed");
+        return NULL;
+    }
+    return tMethodPtr;
+#endif
+}
 
 #ifdef __cplusplus
 }
 #endif
-#endif
-
-#if defined(__cplusplus) && defined(__CLION_IDE__)
-#pragma clang diagnostic pop
 #endif

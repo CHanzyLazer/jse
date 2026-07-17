@@ -1,5 +1,6 @@
 package jse.jit;
 
+import jse.clib.CLibException;
 import org.intellij.lang.annotations.Language;
 
 public interface IJITEngine extends AutoCloseable {
@@ -20,7 +21,7 @@ public interface IJITEngine extends AutoCloseable {
     
     /// workflow, comile() -> findMethod(name)
     void compile() throws Exception;
-    IJITMethod findMethod(CharSequence aMethodName) throws JITException;
+    IJITMethod findMethod(CharSequence aMethodName) throws CLibException;
     
     @Override void close() throws Exception;
     boolean isClosed();

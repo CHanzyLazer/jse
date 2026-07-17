@@ -243,7 +243,7 @@ public class SimpleJIT {
             long tPtr = loadLibrary0(mLibPath);
             mLibHandle = new JITLibHandle(this, tPtr, mCacheLib?null:mLibDir);
         }
-        @Override public Method findMethod(CharSequence aMethodName) throws JITException {
+        @Override public Method findMethod(CharSequence aMethodName) throws CLibException {
             if (mDead) throw new RuntimeException("this JIT engine is dead");
             if (mLibHandle==null) throw new IllegalStateException("Require compile() first.");
             if (mLibHandle.isNull()) throw new NullPointerException();
@@ -421,7 +421,7 @@ public class SimpleJIT {
                 } else {
                     System.err.println("  You can use `export JSE_DEBUG=1` to make the build output complete information");
                 }
-                throw new JITException("JIT Build Failed");
+                throw new CLibException("JIT Build Failed");
             }
             // 完事后移除临时解压得到的源码，这里需要对于神秘文件系统专门处理
             if (Conf.CLEAN) {
@@ -543,7 +543,7 @@ public class SimpleJIT {
         }
     }
     
-    private static native long loadLibrary0(String aLibPath) throws JITException;
-    private static native long findMethod0(long aLibHandle, String aMethodName) throws JITException;
+    private static native long loadLibrary0(String aLibPath) throws CLibException;
+    private static native long findMethod0(long aLibHandle, String aMethodName) throws CLibException;
     private static native int invokeMethod0(long aMethodPtr, long aPtr);
 }

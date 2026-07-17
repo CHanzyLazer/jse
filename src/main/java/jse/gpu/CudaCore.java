@@ -59,6 +59,26 @@ public class CudaCore {
          * 也可使用环境变量 {@code JSE_CMAKE_CXX_FLAGS_CUDA} 来设置
          */
         public static @Nullable String CMAKE_CXX_FLAGS = OS.env("JSE_CMAKE_CXX_FLAGS_CUDA", jse.code.Conf.CMAKE_CXX_FLAGS);
+        /**
+         * 自定义构建 cudacore 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         * <p>
+         * 也可使用环境变量 {@code JSE_CMAKE_CUDA_COMPILER_CUDA} 来设置
+         */
+        public static @Nullable String CMAKE_CUDA_COMPILER = OS.env("JSE_CMAKE_CUDA_COMPILER_CUDA");
+        /**
+         * 自定义构建 cudacore 时使用的编译器，
+         * cmake 有时不能自动检测到希望使用的编译器
+         * <p>
+         * 也可使用环境变量 {@code JSE_CMAKE_CUDA_FLAGS_CUDA} 来设置
+         */
+        public static @Nullable String CMAKE_CUDA_FLAGS = OS.env("JSE_CMAKE_CUDA_FLAGS_CUDA");
+        /**
+         * 自定义构建 cudacore 时的 cuda 架构，用于覆盖默认的 75
+         * <p>
+         * 也可使用环境变量 {@code JSE_CMAKE_CUDA_ARCHITECTURES_CUDA} 来设置
+         */
+        public static @Nullable String CMAKE_CUDA_ARCHITECTURES = OS.env("JSE_CMAKE_CUDA_ARCHITECTURES_CUDA");
         
         /**
          * 对于 cudacore，是否使用 {@link MiMalloc} 来加速内存分配，
@@ -70,19 +90,22 @@ public class CudaCore {
     }
     
     /** 当前 {@link CudaCore} JNI 库所在的文件夹路径，结尾一定存在 {@code '/'} */
-    public final static String LIB_DIR = JAR_DIR+"gpu/cuda/" + UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, NVCC.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_SETTING) + "/";
+    public final static String LIB_DIR = JAR_DIR+"gpu/cuda/" +
+        UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, NVCC.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK,
+                         Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS,
+                         Conf.CMAKE_CUDA_COMPILER, Conf.CMAKE_CUDA_FLAGS, Conf.CMAKE_CUDA_ARCHITECTURES, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link CudaCore} JNI 库的路径 */
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
-          "jse_gpu_CudaCore.cpp"
+          "jse_gpu_CudaCore.cu"
         , "jse_gpu_CudaCore.h"
-        , "jse_gpu_FloatCudaPointer.cpp"
+        , "jse_gpu_FloatCudaPointer.cu"
         , "jse_gpu_FloatCudaPointer.h"
-        , "jse_gpu_DoubleCudaPointer.cpp"
+        , "jse_gpu_DoubleCudaPointer.cu"
         , "jse_gpu_DoubleCudaPointer.h"
-        , "jse_gpu_IntCudaPointer.cpp"
+        , "jse_gpu_IntCudaPointer.cu"
         , "jse_gpu_IntCudaPointer.h"
-        , "jse_gpu_Int64CudaPointer.cpp"
+        , "jse_gpu_Int64CudaPointer.cu"
         , "jse_gpu_Int64CudaPointer.h"
         , "cudacore_util.h"
     };
@@ -99,6 +122,8 @@ public class CudaCore {
             .setSrc("cudacore", SRC_NAME)
             .setEnvChecker(NVCC::printInfo) // 在这里输出 nvcc 信息，保证只在第一次构建时输出一次；可能存在和 cmake 检测不一致的问题
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
+            .setCmakeCudaCompiler(Conf.CMAKE_CUDA_COMPILER).setCmakeCudaFlags(Conf.CMAKE_CUDA_FLAGS)
+            .setCmakeCudaArch(Conf.CMAKE_CUDA_ARCHITECTURES)
             .setUseMiMalloc(Conf.USE_MIMALLOC)
             .get();
         // 设置库路径，这里直接使用 System.load

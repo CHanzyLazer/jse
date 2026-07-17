@@ -1,7 +1,6 @@
 #ifndef CUDACORE_UTIL_H
 #define CUDACORE_UTIL_H
 
-#include <cuda_runtime.h>
 #include <cstdint>
 
 namespace JSE_CUDACORE {
