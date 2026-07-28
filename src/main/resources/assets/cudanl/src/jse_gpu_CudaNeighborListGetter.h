@@ -9,11 +9,19 @@ extern "C" {
 #endif
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
- * Method:    build0
- * Signature: (IIJJJ)V
+ * Method:    buildCells0
+ * Signature: (IIIZFFFFFFFFFFFFJJJIIIJJJJJ)I
  */
-JNIEXPORT void JNICALL Java_jse_gpu_CudaNeighborListGetter_build0
-  (JNIEnv *, jclass, jint, jint, jlong, jlong, jlong);
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jlong, jlong, jlong);
+
+/*
+ * Class:     jse_gpu_CudaNeighborListGetter
+ * Method:    buildNl0
+ * Signature: (IIZFFFFFFFFFFFFJJJIIIJJFJJIJJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0
+  (JNIEnv *, jclass, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jfloat, jlong, jlong, jint, jlong, jlong);
 
 #ifdef __cplusplus
 }

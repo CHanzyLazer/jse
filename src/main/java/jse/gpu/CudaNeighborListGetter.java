@@ -2,7 +2,6 @@ package jse.gpu;
 
 import jse.clib.Compiler;
 import jse.clib.JNIUtil;
-import jse.clib.MiMalloc;
 import jse.clib.NVCC;
 import jse.code.IO;
 import jse.code.OS;
@@ -10,6 +9,7 @@ import jse.code.UT;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION_NUMBER;
@@ -38,6 +38,12 @@ public class CudaNeighborListGetter {
     }
     
     public final static class Conf {
+        /**
+         * 自定义 cudanl 中使用的 block_size 值，这可能会影响速度；
+         * 默认为 {@code 256}
+         */
+        public static int BLOCKSIZE = OS.envI("JSE_CUDANL_BLOCKSIZE", 256);
+        
         /**
          * 自定义构建 cudanl 的 cmake 参数设置，
          * 会在构建时使用 -D ${key}=${value} 传入
@@ -80,18 +86,18 @@ public class CudaNeighborListGetter {
         public static @Nullable String CMAKE_CUDA_ARCHITECTURES = OS.env("JSE_CMAKE_CUDA_ARCHITECTURES_CUDANL");
         
         /**
-         * 对于 cudanl，是否使用 {@link MiMalloc} 来加速内存分配
+         * cudanl 是否开启 debug 模式
          * <p>
-         * 也可使用环境变量 {@code JSE_USE_MIMALLOC_CUDANL} 来设置
+         * 也可使用环境变量 {@code JSE_DEBUG_CUDANL} 来设置
          */
-        public static boolean USE_MIMALLOC = OS.envZ("JSE_USE_MIMALLOC_CUDANL", jse.code.Conf.USE_MIMALLOC);
+        public static boolean DEBUG = OS.envZ("JSE_DEBUG_CUDANL", jse.code.Conf.DEBUG);
     }
     
     /** 当前 {@link CudaNeighborListGetter} JNI 库所在的文件夹路径，结尾一定存在 {@code '/'} */
     public final static String LIB_DIR = JAR_DIR+"gpu/nl/" +
         UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, NVCC.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK,
-                         Conf.USE_MIMALLOC, Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS,
-                         Conf.CMAKE_CUDA_COMPILER, Conf.CMAKE_CUDA_FLAGS, Conf.CMAKE_CUDA_ARCHITECTURES, Conf.CMAKE_SETTING) + "/";
+                         Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_CUDA_COMPILER, Conf.CMAKE_CUDA_FLAGS,
+                         Conf.CMAKE_CUDA_ARCHITECTURES, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link CudaNeighborListGetter} JNI 库的路径 */
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
@@ -106,13 +112,14 @@ public class CudaNeighborListGetter {
         // 依赖 CudaCore
         CudaCore.InitHelper.init();
         
-        LIB_PATH = new JNIUtil.LibBuilder("cudanl", "CUDA_NL", LIB_DIR, Conf.CMAKE_SETTING)
+        Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
+        if (Conf.DEBUG) rCmakeSetting.put("JSE_DEBUG_MODE", "ON");
+        LIB_PATH = new JNIUtil.LibBuilder("cudanl", "CUDA_NL", LIB_DIR, rCmakeSetting)
             .setSrc("cudanl", SRC_NAME)
             .setEnvChecker(NVCC::printInfo) // 在这里输出 nvcc 信息，保证只在第一次构建时输出一次；可能存在和 cmake 检测不一致的问题
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
             .setCmakeCudaCompiler(Conf.CMAKE_CUDA_COMPILER).setCmakeCudaFlags(Conf.CMAKE_CUDA_FLAGS)
             .setCmakeCudaArch(Conf.CMAKE_CUDA_ARCHITECTURES)
-            .setUseMiMalloc(Conf.USE_MIMALLOC)
             .get();
         // 设置库路径，这里直接使用 System.load
         System.load(IO.toAbsolutePath(LIB_PATH));
@@ -120,5 +127,18 @@ public class CudaNeighborListGetter {
     
     /// OOP sutffs (TODO)
     
-    static native void build0(int nlocal, int nghost, long aPos, long rNlSize, long rNl) throws CudaException;
+    private static native int buildCells0(
+        int aBlockSize, int nlocal, int nghost, boolean aPrism, float ax, float ay, float az,
+        float bx, float by, float bz, float cx, float cy, float cz,
+        float xlo, float ylo, float zlo, long posX, long posY, long posZ,
+        int sliceX, int sliceY, int sliceZ, long cells, long cellSize, long cellCapacity,
+        long errorGpu, long errorCpu);
+    
+    private static native int buildNl0(
+        int aBlockSize, int nlocal, boolean aPrism, float ax, float ay, float az,
+        float bx, float by, float bz, float cx, float cy, float cz,
+        float xlo, float ylo, float zlo, long posX, long posY, long posZ,
+        int sliceX, int sliceY, int sliceZ, long cells, long cellSize,
+        float rcutsq, long nl, long nlSize, int nlCapacity,
+        long errorGpu, long errorCpu);
 }

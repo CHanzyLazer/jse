@@ -32,15 +32,8 @@ else()
 endif()
 
 
-# add jniutil
-include_directories("$ENV{JSE_JNIUTIL_INCLUDE_DIR}")
-
-
-# add mimalloc
-option(JSE_USE_MIMALLOC "Use mimalloc to accelerate `malloc` operation" ON)
-if(JSE_USE_MIMALLOC)
-    add_definitions(-DUSE_MIMALLOC)
-    
-    include_directories("$ENV{JSE_MIMALLOC_INCLUDE_DIR}")
-    target_link_libraries(cudanl "$ENV{JSE_MIMALLOC_LIB_PATH}")
+# debug mode
+option(JSE_DEBUG_MODE "Debug mode" OFF)
+if(JSE_DEBUG_MODE)
+    add_definitions(-DJSE_DEBUG)
 endif()
