@@ -136,10 +136,10 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private final IntCPointer mErrorCpu;
     private final CudaPointer mCells;
     private final AnyCPointer mCellsCpu;
-    private final IntCudaPointer mCellTot, mCellSize;
-    private final IntCPointer mCellSizeCpu;
-    private int mLocalCellCapacity = -1, mGhostCellCapacity = -1;
-    private final IntCPointer mLocalCellMax, mGhostCellMax;
+    private final IntCudaPointer mCellTot, mCellSize, mNl, mNlSize;
+    private final IntCPointer mCellSizeCpu, mNlSizeCpu;
+    private int mLocalCellCapacity = -1, mGhostCellCapacity = -1, mNlCapacity = -1;
+    private final IntCPointer mLocalCellMax, mGhostCellMax, mNlMax;
     private final FloatCudaPointer mPos;
     private final FloatCPointer mPosCpu;
     
@@ -155,16 +155,21 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mCellTot = mPtrMng.newIntCudaPointer();
         mCellSize = mPtrMng.newIntCudaPointer();
         mCellSizeCpu = mPtrMng.newIntCPointer();
+        mNl = mPtrMng.newIntCudaPointer();
+        mNlSize = mPtrMng.newIntCudaPointer();
+        mNlSizeCpu = mPtrMng.newIntCPointer();
         mLocalCellMax = mPtrMng.newIntCPointer(1);
         mGhostCellMax = mPtrMng.newIntCPointer(1);
+        mNlMax = mPtrMng.newIntCPointer(1);
         mPos = mPtrMng.newFloatCudaPointer();
         mPosCpu = mPtrMng.newFloatCPointer();
     }
     public final static int MAX_SLICE = 512;
     private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
-    private  boolean mPrism = false;
+    private boolean mPrism = false;
     private final XYZ mA = new XYZ(), mB = new XYZ(), mC = new XYZ();
     private final XYZ mBC = new XYZ(), mCA = new XYZ(), mAB = new XYZ();
+    private double mVolume = Double.NaN;
     
     @Override public void close() {
         mPtrMng.close();
@@ -177,6 +182,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mA.setXYZ(ax, ay, az);
         mB.setXYZ(bx, by, bz);
         mC.setXYZ(cx, cy, cz);
+        mVolume = mA.mixed(mB, mC);
         
         mB.cross2dest(mC, mBC);
         mC.cross2dest(mA, mCA);
@@ -194,6 +200,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mA.setXYZ(x, 0, 0);
         mB.setXYZ(0, y, 0);
         mC.setXYZ(0, 0, z);
+        mVolume = x*y*z;
         
         mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(x/mRCut));
         mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(y/mRCut));
@@ -258,6 +265,40 @@ public class CudaNeighborListGetter implements AutoCloseable {
         }
     }
     
+    void initNl(int nlocal) throws CudaException {
+        final int tNlCap = MathEX.Code.ceil2int(nlocal/mVolume * mRCut*mRCut*mRCut * (4.0/3.0*MathEX.PI * 1.25));
+        if (tNlCap > mNlCapacity) {
+            mNlCapacity = tNlCap;
+            mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
+            System.err.println("init nl: "+mNlCapacity);
+        }
+        mPtrMng.ensureCapacity(mNlSize, nlocal);
+        mPtrMng.ensureCapacity(mNlSizeCpu, nlocal);
+    }
+    void buildNl(int nlocal, int nghost) throws CudaException {
+        int tCode = buildNl0(
+            Conf.BLOCKSIZE, nlocal, nghost, mPrism, (float)mA.mX, (float)mA.mY, (float)mA.mZ,
+            (float)mB.mX, (float)mB.mY, (float)mB.mZ, (float)mC.mX, (float)mC.mY, (float)mC.mZ,
+            mPos.ptr_(), mSliceX, mSliceY, mSliceZ,
+            mCells.ptr_(), mCellSize.ptr_(), (float)mRCutSq,
+            mNl.ptr_(), mNlSize.ptr_(), mNlSizeCpu.ptr_(), mNlCapacity, mNlMax.ptr_(),
+            mErrorGpu.ptr_(), mErrorCpu.ptr_()
+        );
+        CudaCore.cudaExceptionCheck(tCode);
+        int tError = mErrorCpu.get();
+        if (tError != 0) throw new IllegalStateException("error: " + tError);
+    }
+    void validNl(int nlocal, int nghost) throws CudaException {
+        // 检测是否 nl 大小存在超出，超出后需要重新构建
+        int tNlMax = mNlMax.get();
+        if (tNlMax > mNlCapacity) {
+            mNlCapacity = MathEX.Code.ceil2int(tNlMax*1.25);
+            mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
+            System.err.println("growth nl: "+mNlCapacity);
+            buildCells(nlocal, nghost);
+        }
+    }
+    
     
     public void build(LmpPlugin.Pair aPair) throws CudaException {
         final int nlocal = aPair.atomNlocal();
@@ -289,7 +330,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
         buildCells(nlocal, nghost);
         validCells(nlocal, nghost);
         
-        
+        initNl(nlocal);
+        buildNl(nlocal, nghost);
+        validNl(nlocal, nghost);
     }
     
     private static native int initPosLmp0(
@@ -310,10 +353,10 @@ public class CudaNeighborListGetter implements AutoCloseable {
         long errorGpu, long errorCpu);
     
     private static native int buildNl0(
-        int aBlockSize, int nlocal, boolean aPrism, float ax, float ay, float az,
+        int aBlockSize, int nlocal, int nghost, boolean aPrism, float ax, float ay, float az,
         float bx, float by, float bz, float cx, float cy, float cz,
         long pos, int sliceX, int sliceY, int sliceZ,
         long cells, long cellSize, float rcutsq,
-        long nl, long nlSize, int nlCapacity,
+        long nl, long nlSize, long nlSizeCpu, int nlCapacity, long nlMax,
         long errorGpu, long errorCpu);
 }

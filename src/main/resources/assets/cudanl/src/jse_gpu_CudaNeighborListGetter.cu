@@ -320,18 +320,23 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
     jfloat bx, jfloat by, jfloat bz, jfloat cx, jfloat cy, jfloat cz,
     jlong pos, jint sliceX, jint sliceY, jint sliceZ,
     jlong cells, jlong cellSize, jfloat rcutsq,
-    jlong nl, jlong nlSize, jint nlCapacity,
+    jlong nl, jlong nlSize, jlong nlSizeCpu, jint nlCapacity, jlong nlMax,
     jlong errorGpu, jlong errorCpu) {
     
     const int tGridSize = (nlocal + aBlockSize-1) / aBlockSize;
     
+    int *tErrorGpu = (int *)(intptr_t)errorGpu;
+    int *tErrorCpu = (int *)(intptr_t)errorCpu;
+    int *tNlSize = (int *)(intptr_t)nlSize;
+    int *tNlSizeCpu = (int *)(intptr_t)nlSizeCpu;
+    
     cudaError_t tErr;
 #ifdef JSE_DEBUG
-    tErr = cudaMemset((int *)(intptr_t)errorGpu, 0, sizeof(int));
+    tErr = cudaMemset(tErrorGpu, 0, sizeof(int));
     if (tErr!=cudaSuccess) return (int)tErr;
 #endif
     
-    tErr = cudaMemset((int *)(intptr_t)nlSize, 0, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int));
+    tErr = cudaMemset(tNlSize, 0, nlocal*sizeof(int));
     if (tErr!=cudaSuccess) return (int)tErr;
     
     float *posx = (float *)(intptr_t)pos;
@@ -343,27 +348,37 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (const int **)(intptr_t)cells, (int *)(intptr_t)cellSize, rcutsq,
-            (int *)(intptr_t)nl, (int *)(intptr_t)nlSize, (int)nlCapacity,
-            (int *)(intptr_t)errorGpu
+            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity,
+            tErrorGpu
         );
     } else {
         JSE_CUDANL::buildNlKernel<JNI_FALSE><<<tGridSize, (int)aBlockSize>>>(nlocal,
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (const int **)(intptr_t)cells, (int *)(intptr_t)cellSize, rcutsq,
-            (int *)(intptr_t)nl, (int *)(intptr_t)nlSize, (int)nlCapacity,
-            (int *)(intptr_t)errorGpu
+            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity,
+            tErrorGpu
         );
     }
     tErr = cudaDeviceSynchronize();
     if (tErr!=cudaSuccess) return (int)tErr;
     
 #ifdef JSE_DEBUG
-    tErr = cudaMemcpy((int *)(intptr_t)errorCpu, (int *)(intptr_t)errorGpu, sizeof(int), cudaMemcpyDeviceToHost);
+    tErr = cudaMemcpy(tErrorCpu, tErrorGpu, sizeof(int), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
 #else
-    *((int *)(intptr_t)errorCpu) = 0;
+    *tErrorCpu = 0;
 #endif
+    
+    tErr = cudaMemcpy(tNlSizeCpu, tNlSize, nlocal*sizeof(int), cudaMemcpyDeviceToHost);
+    if (tErr!=cudaSuccess) return (int)tErr;
+    
+    int rNlMax = 0;
+    for (int idx = 0; idx < nlocal; ++idx) {
+        const int nlSizei = tNlSizeCpu[idx];
+        if (nlSizei > rNlMax) rNlMax = nlSizei;
+    }
+    *((int *)(intptr_t)nlMax) = rNlMax;
     
     return cudaSuccess;
 }
