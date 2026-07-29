@@ -11,6 +11,14 @@ extern "C" {
 #define jse_gpu_CudaNeighborListGetter_MAX_SLICE 256L
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
+ * Method:    initPosLmp0
+ * Signature: (IIFFFJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0
+  (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat, jlong, jlong, jlong);
+
+/*
+ * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    initCells0
  * Signature: (IIIJJJII)I
  */
@@ -20,18 +28,18 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildCells0
- * Signature: (IIIZFFFFFFFFFFFFJJJIIIJJIIJJ)I
+ * Signature: (IIIZFFFFFFFFFJIIIJJIIJJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0
-  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jint, jint, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jint, jint, jlong, jlong);
 
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildNl0
- * Signature: (IIZFFFFFFFFFFFFJJJIIIJJFJJIJJ)I
+ * Signature: (IIZFFFFFFFFFJIIIJJFJJIJJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0
-  (JNIEnv *, jclass, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jfloat, jlong, jlong, jint, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jfloat, jlong, jlong, jint, jlong, jlong);
 
 #ifdef __cplusplus
 }
