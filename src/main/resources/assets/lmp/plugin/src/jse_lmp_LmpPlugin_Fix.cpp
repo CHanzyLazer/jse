@@ -178,6 +178,18 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNmax0(JNIEnv *aEnv, j
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNghost0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
     return ((FixJSE *)(intptr_t)aFixPtr)->atomNghost();
 }
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainBoxExist0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    return ((FixJSE *)(intptr_t)aFixPtr)->domainBoxExist();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainInit0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    ((FixJSE *)(intptr_t)aFixPtr)->domainInit();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainPeriodicity0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    return ((FixJSE *)(intptr_t)aFixPtr)->domainPeriodicity();
+}
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainBoxChange0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
+    return ((FixJSE *)(intptr_t)aFixPtr)->domainBoxChange();
+}
 JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainTriclinic0(JNIEnv *aEnv, jclass aClazz, jlong aFixPtr) {
     return ((FixJSE *)(intptr_t)aFixPtr)->domainTriclinic();
 }

@@ -5,6 +5,7 @@
 
 #include "lammps/atom.h"
 #include "lammps/comm.h"
+#include "lammps/domain.h"
 #include "lammps/citeme.h"
 #include "lammps/error.h"
 #include "lammps/force.h"
@@ -229,6 +230,36 @@ jint PairJSE::atomNghost() {
 }
 jint PairJSE::atomNmax() {
     return (jint) atom->nmax;
+}
+jboolean PairJSE::domainBoxExist() {
+    return domain->box_exist ? JNI_TRUE : JNI_FALSE;
+}
+void PairJSE::domainInit() {
+    domain->init();
+}
+jlong PairJSE::domainPeriodicity() {
+    return (jlong)(intptr_t) domain->periodicity;
+}
+jboolean PairJSE::domainBoxChange() {
+    return domain->box_change ? JNI_TRUE : JNI_FALSE;
+}
+jlong PairJSE::domainBoxlo() {
+    return (jlong)(intptr_t) domain->boxlo;
+}
+jlong PairJSE::domainBoxhi() {
+    return (jlong)(intptr_t) domain->boxhi;
+}
+jboolean PairJSE::domainTriclinic() {
+    return (domain->triclinic) ? JNI_TRUE : JNI_FALSE;
+}
+jlong PairJSE::domainXy() {
+    return (jlong)(intptr_t) &(domain->xy);
+}
+jlong PairJSE::domainXz() {
+    return (jlong)(intptr_t) &(domain->xz);
+}
+jlong PairJSE::domainYz() {
+    return (jlong)(intptr_t) &(domain->yz);
 }
 jlong PairJSE::forceSpecialLj() {
     return (jlong)(intptr_t) force->special_lj;

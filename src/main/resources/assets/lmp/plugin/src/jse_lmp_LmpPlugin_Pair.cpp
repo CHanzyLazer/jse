@@ -94,6 +94,36 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNghost0(JNIEnv *aEnv
 JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Pair_atomNmax0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->atomNmax();
 }
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainBoxExist0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainBoxExist();
+}
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainInit0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    ((PairJSE *)(intptr_t)aPairPtr)->domainInit();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainPeriodicity0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainPeriodicity();
+}
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainBoxChange0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainBoxChange();
+}
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainTriclinic0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainTriclinic();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainXy0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainXy();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainXz0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainXz();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainYz0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainYz();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainBoxlo0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainBoxlo();
+}
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_domainBoxhi0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
+    return ((PairJSE *)(intptr_t)aPairPtr)->domainBoxhi();
+}
 JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Pair_forceSpecialLj0(JNIEnv *aEnv, jclass aClazz, jlong aPairPtr) {
     return ((PairJSE *)(intptr_t)aPairPtr)->forceSpecialLj();
 }

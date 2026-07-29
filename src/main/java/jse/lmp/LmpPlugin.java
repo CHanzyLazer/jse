@@ -2,6 +2,7 @@ package jse.lmp;
 
 import jse.clib.*;
 import jse.code.*;
+import jse.code.IO;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
 import jse.cptr.*;
@@ -342,6 +343,36 @@ public class LmpPlugin {
         
         public final int atomNmax() {return atomNmax0(mPairPtr);}
         private native static int atomNmax0(long aPairPtr);
+        
+        public final boolean domainBoxExist() {return domainBoxExist0(mPairPtr);}
+        private native static boolean domainBoxExist0(long aPairPtr);
+        
+        public final void domainInit() {domainInit0(mPairPtr);}
+        private native static void domainInit0(long aPairPtr);
+        
+        public final IntCPointer domainPeriodicity() {return new IntCPointer(domainPeriodicity0(mPairPtr));}
+        private native static long domainPeriodicity0(long aPairPtr);
+        
+        public final boolean domainBoxChange() {return domainBoxChange0(mPairPtr);}
+        private native static boolean domainBoxChange0(long aPairPtr);
+        
+        public final boolean domainTriclinic() {return domainTriclinic0(mPairPtr);}
+        private native static boolean domainTriclinic0(long aPairPtr);
+        
+        public final DoubleCPointer domainXy() {return new DoubleCPointer(domainXy0(mPairPtr));}
+        private native static long domainXy0(long aPairPtr);
+        
+        public final DoubleCPointer domainXz() {return new DoubleCPointer(domainXz0(mPairPtr));}
+        private native static long domainXz0(long aPairPtr);
+        
+        public final DoubleCPointer domainYz() {return new DoubleCPointer(domainYz0(mPairPtr));}
+        private native static long domainYz0(long aPairPtr);
+        
+        public final DoubleCPointer domainBoxlo() {return new DoubleCPointer(domainBoxlo0(mPairPtr));}
+        private native static long domainBoxlo0(long aPairPtr);
+        
+        public final DoubleCPointer domainBoxhi() {return new DoubleCPointer(domainBoxhi0(mPairPtr));}
+        private native static long domainBoxhi0(long aPairPtr);
         
         public final DoubleCPointer forceSpecialLj() {return new DoubleCPointer(forceSpecialLj0(mPairPtr));}
         private native static long forceSpecialLj0(long aPairPtr);
@@ -796,6 +827,18 @@ public class LmpPlugin {
         
         public final int atomNghost() {return atomNghost0(mFixPtr);}
         private native static int atomNghost0(long aFixPtr);
+        
+        public final boolean domainBoxExist() {return domainBoxExist0(mFixPtr);}
+        private native static boolean domainBoxExist0(long aFixPtr);
+        
+        public final void domainInit() {domainInit0(mFixPtr);}
+        private native static void domainInit0(long aFixPtr);
+        
+        public final IntCPointer domainPeriodicity() {return new IntCPointer(domainPeriodicity0(mFixPtr));}
+        private native static long domainPeriodicity0(long aFixPtr);
+        
+        public final boolean domainBoxChange() {return domainBoxChange0(mFixPtr);}
+        private native static boolean domainBoxChange0(long aFixPtr);
         
         public final boolean domainTriclinic() {return domainTriclinic0(mFixPtr);}
         private native static boolean domainTriclinic0(long aFixPtr);

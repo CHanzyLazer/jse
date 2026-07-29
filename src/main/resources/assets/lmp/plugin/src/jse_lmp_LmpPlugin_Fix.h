@@ -521,6 +521,38 @@ JNIEXPORT jint JNICALL Java_jse_lmp_LmpPlugin_00024Fix_atomNghost0
 
 /*
  * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    domainBoxExist0
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainBoxExist0
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    domainInit0
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainInit0
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    domainPeriodicity0
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainPeriodicity0
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
+ * Method:    domainBoxChange0
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_jse_lmp_LmpPlugin_00024Fix_domainBoxChange0
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jse_lmp_LmpPlugin_Fix
  * Method:    domainTriclinic0
  * Signature: (J)Z
  */

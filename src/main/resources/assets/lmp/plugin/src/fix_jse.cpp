@@ -381,6 +381,18 @@ jint FixJSE::atomNghost() {
 jint FixJSE::atomNmax() {
     return (jint) atom->nmax;
 }
+jboolean FixJSE::domainBoxExist() {
+    return domain->box_exist ? JNI_TRUE : JNI_FALSE;
+}
+void FixJSE::domainInit() {
+    domain->init();
+}
+jlong FixJSE::domainPeriodicity() {
+    return (jlong)(intptr_t) domain->periodicity;
+}
+jboolean FixJSE::domainBoxChange() {
+    return domain->box_change ? JNI_TRUE : JNI_FALSE;
+}
 jboolean FixJSE::domainTriclinic() {
     return (domain->triclinic) ? JNI_TRUE : JNI_FALSE;
 }

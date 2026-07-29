@@ -113,6 +113,10 @@ public:
     jint atomNlocal();
     jint atomNghost();
     jint atomNmax();
+    jboolean domainBoxExist();
+    void domainInit();
+    jlong domainPeriodicity();
+    jboolean domainBoxChange();
     jboolean domainTriclinic();
     jlong domainXy();
     jlong domainXz();
