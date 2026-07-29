@@ -7,13 +7,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef jse_gpu_CudaNeighborListGetter_MAX_SLICE
+#define jse_gpu_CudaNeighborListGetter_MAX_SLICE 256L
+/*
+ * Class:     jse_gpu_CudaNeighborListGetter
+ * Method:    initCells0
+ * Signature: (IIIJJJII)I
+ */
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0
+  (JNIEnv *, jclass, jint, jint, jint, jlong, jlong, jlong, jint, jint);
+
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildCells0
- * Signature: (IIIZFFFFFFFFFFFFJJJIIIJJJJJ)I
+ * Signature: (IIIZFFFFFFFFFFFFJJJIIIJJIIJJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0
-  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jlong, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jlong, jlong, jint, jint, jint, jlong, jlong, jint, jint, jlong, jlong);
 
 /*
  * Class:     jse_gpu_CudaNeighborListGetter

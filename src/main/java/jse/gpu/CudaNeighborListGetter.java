@@ -1,15 +1,23 @@
 package jse.gpu;
 
+import jse.atom.XYZ;
 import jse.clib.Compiler;
 import jse.clib.JNIUtil;
 import jse.clib.NVCC;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
+import jse.cptr.AnyCPointer;
+import jse.cptr.IntCPointer;
+import jse.cptr.PointerManager;
+import jse.lmp.LmpPlugin;
+import jse.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static jse.code.CS.VERSION_NUMBER;
@@ -125,13 +133,120 @@ public class CudaNeighborListGetter {
         System.load(IO.toAbsolutePath(LIB_PATH));
     }
     
-    /// OOP sutffs (TODO)
+    /// OOP sutffs
+    final double mRCut, mRCutSq;
+    final PointerManager mPtrMng;
+    private final IntCudaPointer mErrorGpu;
+    private final IntCPointer mErrorCpu;
+    private final CudaPointer mCells;
+    private final AnyCPointer mCellsCpu;
+    private final IntCudaPointer mCellTot, mCellSize;
+    private int mLocalCellCapacity = -1, mGhostCellCapacity = -1;
+    
+    
+    public CudaNeighborListGetter(double aRCut) throws CudaException {
+        mRCut = aRCut;
+        mRCutSq = aRCut*aRCut;
+        mPtrMng = new PointerManager();
+        
+        mErrorGpu = mPtrMng.newIntCudaPointer(1);
+        mErrorCpu = mPtrMng.newIntCPointer(1);
+        mCells = mPtrMng.newCudaPointer(0);
+        mCellsCpu = mPtrMng.newAnyCPointer();
+        mCellTot = mPtrMng.newIntCudaPointer();
+        mCellSize = mPtrMng.newIntCudaPointer();
+    }
+    public final static int MAX_SLICE = 256;
+    private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
+    private  boolean mPrism = false;
+    private final XYZ mA = new XYZ(), mB = new XYZ(), mC = new XYZ();
+    private final XYZ mBC = new XYZ(), mCA = new XYZ(), mAB = new XYZ();
+    
+    void initBox(double ax, double ay, double az,
+                 double bx, double by, double bz,
+                 double cx, double cy, double cz) {
+        mPrism = true;
+        mA.setXYZ(ax, ay, az);
+        mB.setXYZ(bx, by, bz);
+        mC.setXYZ(cx, cy, cz);
+        
+        mB.cross2dest(mC, mBC);
+        mC.cross2dest(mA, mCA);
+        mA.cross2dest(mB, mAB);
+        double mPx = mA.dot(mBC) / mBC.norm();
+        double mPy = mB.dot(mCA) / mCA.norm();
+        double mPz = mC.dot(mAB) / mAB.norm();
+        
+        mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPx/mRCut));
+        mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPy/mRCut));
+        mSliceZ = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPz/mRCut));
+    }
+    void initBox(double x, double y, double z) {
+        mPrism = false;
+        mA.setXYZ(x, 0, 0);
+        mB.setXYZ(0, y, 0);
+        mC.setXYZ(0, 0, z);
+        
+        mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(x/mRCut));
+        mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(y/mRCut));
+        mSliceZ = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(z/mRCut));
+    }
+    
+    void initCells(int nlocal, int nghost) throws CudaException {
+        final int tCellCount = (mSliceX+2)*(mSliceY+2)*(mSliceZ+2);
+        final int tLocalCellCount = mSliceX*mSliceY*mSliceZ;
+        final int tGhostCellCount = tCellCount-tLocalCellCount;
+        final int tLocalCap = MathEX.Code.ceil2int(nlocal / (double)tLocalCellCount * 1.25);
+        final int tGhostCap = MathEX.Code.ceil2int(nghost / (double)tGhostCellCount * 1.25);
+        if (tLocalCap>mLocalCellCapacity || tGhostCap>mGhostCellCapacity) {
+            mLocalCellCapacity = tLocalCap;
+            mGhostCellCapacity = tLocalCap;
+            mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*tLocalCap + (long)tGhostCellCount*tGhostCap, false);
+        }
+        mPtrMng.ensureCapacity(mCellSize, tCellCount);
+        mPtrMng.ensureCapacity(mCells, tCellCount*AnyCPointer.TYPE_SIZE);
+        mPtrMng.ensureCapacity(mCellsCpu, tCellCount);
+        int tCode = initCells0(
+            mSliceX, mSliceY, mSliceZ,
+            mCellTot.ptr_(), mCells.ptr_(), mCellsCpu.ptr_(),
+            mLocalCellCapacity, mGhostCellCapacity
+        );
+        CudaCore.cudaExceptionCheck(tCode);
+    }
+    
+    void buildCells(int nlocal, int nghost) throws CudaException {
+        int tCode = buildCells0(
+            Conf.BLOCKSIZE, nlocal, nghost, mPrism, mA.mX, mA.mY, mA.mZ,
+            mB.mX, mB.mY, mB.mZ, mC.mX, mC.mY, mC.mZ,
+            mXlo, mYlo, mZlo, posX, posY, posZ,
+            mSliceX, mSliceY, mSliceZ, mCells.ptr_(), mCellSize.ptr_(), mLocalCellCapacity, mGhostCellCapacity,
+            mErrorGpu, mErrorCpu
+        );
+        CudaCore.cudaExceptionCheck(tCode);
+        int tError = mErrorCpu.get();
+        if (tError != 0) throw new IllegalStateException("error: " + tError);
+    }
+    
+    
+    public void build(LmpPlugin.Pair aPair) throws CudaException {
+        final int nlocal = aPair.atomNlocal();
+        final int nghost = aPair.atomNghost();
+        
+        initBox();
+        initCells(nlocal, nghost);
+        buildCells(nlocal, nghost);
+    }
+    
+    
+    private static native int initCells0(
+        int sliceX, int sliceY, int sliceZ, long cellsTot, long cells, long cellsCpu,
+        int localCellCapacity, int ghostCellCapacity);
     
     private static native int buildCells0(
         int aBlockSize, int nlocal, int nghost, boolean aPrism, float ax, float ay, float az,
         float bx, float by, float bz, float cx, float cy, float cz,
         float xlo, float ylo, float zlo, long posX, long posY, long posZ,
-        int sliceX, int sliceY, int sliceZ, long cells, long cellSize, long cellCapacity,
+        int sliceX, int sliceY, int sliceZ, long cells, long cellSize, int localCellCapacity, int ghostCellCapacity,
         long errorGpu, long errorCpu);
     
     private static native int buildNl0(

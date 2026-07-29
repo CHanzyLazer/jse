@@ -33,15 +33,43 @@ static __device__ inline void toDirect(
     z = (abs(z1-z0) < JSE_FLT_EPSILON) ? z0 : z1;
 }
 
+static __device__ __host__ inline int cellValid(
+    const int sliceX, const int sliceY, const int sliceZ,
+    const int i, const int j, const int k) {
+    if (i>=-1 && i<=sliceX && j>=-1 && j<=sliceY && k>=-1 && k<=sliceZ) {
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+static __device__ __host__ inline int cellIndex(
+    const int sliceX, const int sliceY, const int sliceZ,
+    const int i, const int j, const int k) {
+    return (i+1) + (sliceX+2)*(j+1) + (sliceX+2)*(sliceY+2)*(k+1);
+}
+static __device__ __host__ inline int cellGhost(
+    const int sliceX, const int sliceY, const int sliceZ,
+    const int i, const int j, const int k) {
+    return (i==-1 || i==sliceX || j==-1 || j==sliceY || k==-1 || k==sliceZ);
+}
 static __device__ inline int cellIndex(
     const int sliceX, const int sliceY, const int sliceZ,
     const int i, const int j, const int k, int *error) {
 #ifdef JSE_DEBUG
-    if (i<-1 || i>sliceX || j<-1 || j>sliceY || k<-1 || k>sliceZ) {
+    if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
         atomicAdd(error, 1);
     }
 #endif
-    return (i+1) + (sliceX+2)*(j+1) + (sliceX+2)*(sliceY+2)*(k+1);
+    return cellIndex(sliceX, sliceY, sliceZ, i, j, k);
+}
+static __device__ inline int cellGhost(
+    const int sliceX, const int sliceY, const int sliceZ,
+    const int i, const int j, const int k, int *error) {
+#ifdef JSE_DEBUG
+    if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
+        atomicAdd(error, 1);
+    }
+#endif
+    return cellGhost(sliceX, sliceY, sliceZ, i, j, k);
 }
 
 template <int PRISM>
@@ -52,7 +80,7 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const float xlo, const float ylo, const float zlo,
     const float *posX, const float *posY, const float *posZ,
     const int sliceX, const int sliceY, const int sliceZ,
-    int **cells, int *cellSize, const int *cellCapacity, int *error) {
+    int **cells, int *cellSize, int localCellCapacity, int ghostCellCapacity, int *error) {
     
     const int idx = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (idx >= nlocalghost) return;
@@ -69,7 +97,8 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     
     const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k, error);
     const int ci = atomicAdd(cellSize+cidx, 1);
-    if (ci < cellCapacity[cidx]) {
+    const int cellCap = cellGhost(sliceX, sliceY, sliceZ, i, j, k, error) ? ghostCellCapacity : localCellCapacity;
+    if (ci < cellCap) {
         cells[cidx][ci] = idx;
     }
 }
@@ -93,7 +122,7 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     } \
 }
 
-#define JSE_CUDANL_cell2nl(_i, _j, _k) if (_i>=-1 && _i<=sliceX && _j>=-1 && _j<=sliceY && _k>=-1 && _k<=sliceZ) { \
+#define JSE_CUDANL_cell2nl(_i, _j, _k) if (cellValid(sliceX, sliceY, sliceZ, _i, _j, _k)) { \
     const int cidx = cellIndex(sliceX, sliceY, sliceZ, _i, _j, _k, error); \
     const int *cell = cells[cidx]; \
     const int csize = cellSize[cidx]; \
@@ -174,24 +203,53 @@ static __global__ void buildNlKernel(const int nlocal,
 
 extern "C" {
 
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0(
+    JNIEnv *aEnv, jclass aClazz, jint sliceX, jint sliceY, jint sliceZ,
+    jlong cellsTot, jlong cells, jlong cellsCpu,
+    jint localCellCapacity, jint ghostCellCapacity) {
+    
+    int *tCellsPtr = (int *)(intptr_t)cellsTot;
+    int **rCellsCpu = (int **)(intptr_t)cellsCpu;
+    
+    for (int k = -1; k <= sliceZ; ++k) for (int j = -1; j <= sliceY; ++j) for (int i = -1; i <= sliceX; ++i) {
+        const int cidx = JSE_CUDANL::cellIndex(sliceX, sliceY, sliceZ, i, j, k);
+        rCellsCpu[cidx] = tCellsPtr;
+        const int cellCap = JSE_CUDANL::cellGhost(sliceX, sliceY, sliceZ, i, j, k) ? ghostCellCapacity : localCellCapacity;
+        tCellsPtr += cellCap;
+    }
+    
+    cudaError_t tErr = cudaMemcpy((int **)(intptr_t)cells, rCellsCpu, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int *), cudaMemcpyHostToDevice);
+    return tErr;
+}
+
+
 JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
     JNIEnv *aEnv, jclass aClazz, jint aBlockSize, jint nlocal, jint nghost,
     jboolean aPrism, jfloat ax, jfloat ay, jfloat az,
     jfloat bx, jfloat by, jfloat bz, jfloat cx, jfloat cy, jfloat cz,
     jfloat xlo, jfloat ylo, jfloat zlo, jlong posX, jlong posY, jlong posZ,
     jint sliceX, jint sliceY, jint sliceZ,
-    jlong cells, jlong cellSize, jlong cellCapacity,
+    jlong cells, jlong cellSize, jint localCellCapacity, jint ghostCellCapacity,
     jlong errorGpu, jlong errorCpu) {
     
     const int nlocalghost = nlocal + nghost;
     const int tGridSize = (nlocalghost + aBlockSize-1) / aBlockSize;
+    
+    cudaError_t tErr;
+#ifdef JSE_DEBUG
+    tErr = cudaMemset((int *)(intptr_t)errorGpu, 0, sizeof(int));
+    if (tErr!=cudaSuccess) return (int)tErr;
+#endif
+    
+    tErr = cudaMemset((int *)(intptr_t)cellSize, 0, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int));
+    if (tErr!=cudaSuccess) return (int)tErr;
     
     if (aPrism) {
         JSE_CUDANL::buildCellsKernel<JNI_TRUE><<<tGridSize, (int)aBlockSize>>>(nlocalghost,
             ax, ay, az, bx, by, bz, cx, cy, cz,
             xlo, ylo, zlo, (float *)(intptr_t)posX, (float *)(intptr_t)posY, (float *)(intptr_t)posZ,
             (int)sliceX, (int)sliceY, (int)sliceZ,
-            (int **)(intptr_t)cells, (int *)(intptr_t)cellSize, (int *)(intptr_t)cellCapacity,
+            (int **)(intptr_t)cells, (int *)(intptr_t)cellSize, (int)localCellCapacity, (int)ghostCellCapacity,
             (int *)(intptr_t)errorGpu
         );
     } else {
@@ -199,17 +257,18 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
             ax, ay, az, bx, by, bz, cx, cy, cz,
             xlo, ylo, zlo, (float *)(intptr_t)posX, (float *)(intptr_t)posY, (float *)(intptr_t)posZ,
             (int)sliceX, (int)sliceY, (int)sliceZ,
-            (int **)(intptr_t)cells, (int *)(intptr_t)cellSize, (int *)(intptr_t)cellCapacity,
+            (int **)(intptr_t)cells, (int *)(intptr_t)cellSize, (int)localCellCapacity, (int)ghostCellCapacity,
             (int *)(intptr_t)errorGpu
         );
     }
-    cudaError_t tErr;
     tErr = cudaDeviceSynchronize();
     if (tErr!=cudaSuccess) return (int)tErr;
     
 #ifdef JSE_DEBUG
     tErr = cudaMemcpy((int *)(intptr_t)errorCpu, (int *)(intptr_t)errorGpu, sizeof(int), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
+#else
+    *((int *)(intptr_t)errorCpu) = 0;
 #endif
     
     return cudaSuccess;
@@ -226,6 +285,15 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
     jlong errorGpu, jlong errorCpu) {
     
     const int tGridSize = (nlocal + aBlockSize-1) / aBlockSize;
+    
+    cudaError_t tErr;
+#ifdef JSE_DEBUG
+    tErr = cudaMemset((int *)(intptr_t)errorGpu, 0, sizeof(int));
+    if (tErr!=cudaSuccess) return (int)tErr;
+#endif
+    
+    tErr = cudaMemset((int *)(intptr_t)nlSize, 0, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int));
+    if (tErr!=cudaSuccess) return (int)tErr;
     
     if (aPrism) {
         JSE_CUDANL::buildNlKernel<JNI_TRUE><<<tGridSize, (int)aBlockSize>>>(nlocal,
@@ -246,13 +314,14 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
             (int *)(intptr_t)errorGpu
         );
     }
-    cudaError_t tErr;
     tErr = cudaDeviceSynchronize();
     if (tErr!=cudaSuccess) return (int)tErr;
     
 #ifdef JSE_DEBUG
     tErr = cudaMemcpy((int *)(intptr_t)errorCpu, (int *)(intptr_t)errorGpu, sizeof(int), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
+#else
+    *((int *)(intptr_t)errorCpu) = 0;
 #endif
     
     return cudaSuccess;

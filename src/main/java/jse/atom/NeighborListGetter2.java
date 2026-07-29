@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Experimental
 public class NeighborListGetter2 {
-    public final static int MAX_SLICE = 512;
+    public final static int MAX_SLICE = 256;
     private final static int MARK_X = 0, MARK_Y = 1, MARK_Z = 2;
     
     protected final IntList mIdx;

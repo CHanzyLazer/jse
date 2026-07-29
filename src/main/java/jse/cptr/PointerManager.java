@@ -77,6 +77,9 @@ public class PointerManager implements AutoCloseable {
         rPtr.setPtr_(0);
     }
     public synchronized void ensureCapacity(ICPointer rPtr, long aMinCount) {
+        ensureCapacity(rPtr, aMinCount, true);
+    }
+    public synchronized void ensureCapacity(ICPointer rPtr, long aMinCount, boolean aGrowth) {
         if (mDead) throw new IllegalStateException("This PointerManager is dead");
         final long oCount, tSize;
         final AutoCPointerHandle oHandle;
@@ -98,13 +101,16 @@ public class PointerManager implements AutoCloseable {
                 catch (Exception e) {throw new RuntimeException(e);}
                 mCPointers.remove(tPtr);
             }
-            long tCount = Math.max(aMinCount, oCount + (oCount>>1));
+            long tCount = aGrowth ? Math.max(aMinCount, oCount + (oCount>>1)) : aMinCount;
             AutoCPointerHandle tHandle = new AutoCPointerHandle(this, tCount, tSize);
             mCPointers.put(tHandle.mPtr, tHandle);
             rPtr.setPtr_(tHandle.mPtr);
         }
     }
     public synchronized void ensureCapacity(ICudaPointer rPtr, long aMinCount) throws CudaException {
+        ensureCapacity(rPtr, aMinCount, true);
+    }
+    public synchronized void ensureCapacity(ICudaPointer rPtr, long aMinCount, boolean aGrowth) throws CudaException {
         if (mDead) throw new IllegalStateException("This PointerManager is dead");
         final long oCount;
         final AutoCudaPointerHandle oHandle;
@@ -124,7 +130,7 @@ public class PointerManager implements AutoCloseable {
                 catch (Exception e) {throw new RuntimeException(e);}
                 mCudaPointers.remove(tPtr);
             }
-            long tCount = Math.max(tMinCount, oCount + (oCount>>1));
+            long tCount = aGrowth ? Math.max(tMinCount, oCount + (oCount>>1)) : aMinCount;
             AutoCudaPointerHandle tHandle = new AutoCudaPointerHandle(this, tCount);
             mCudaPointers.put(tHandle.mPtr, tHandle);
             rPtr.setPtr_(tHandle.mPtr);

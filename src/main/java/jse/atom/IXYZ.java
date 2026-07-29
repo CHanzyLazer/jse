@@ -6,6 +6,7 @@ import jse.code.collection.NewCollections;
 import jse.math.MathEX;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,6 +88,12 @@ public interface IXYZ {
         double tZ = z();
         return new XYZ(tY*aZ - aY*tZ, tZ*aX - aZ*tX, tX*aY - aX*tY);
     }
+    @ApiStatus.Experimental
+    default void cross2dest(IXYZ aRHS, ISettableXYZ rDest) {
+        double aX = aRHS.x(), aY = aRHS.y(), aZ = aRHS.z();
+        double tX = x(), tY = y(), tZ = z();
+        rDest.setXYZ(tY*aZ - aY*tZ, tZ*aX - aZ*tX, tX*aY - aX*tY);
+    }
     
     /** @return {@code cross(aCross).dot(aDot)} */
     default double mixed(IXYZ aCross, IXYZ aDot) {return mixed(aCross.x(), aCross.y(), aCross.z(), aDot.x(), aDot.y(), aDot.z());}
@@ -127,6 +134,10 @@ public interface IXYZ {
     default XYZ plus(double aX, double aY, double aZ) {return new XYZ(x()+aX, y()+aY, z()+aZ);}
     /** @return {@code new XYZ(x()+aRHS, y()+aRHS, z()+aRHS)} */
     default XYZ plus(double aRHS) {return new XYZ(x()+aRHS, y()+aRHS, z()+aRHS);}
+    @ApiStatus.Experimental
+    default void plus2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()+aRHS.x(), y()+aRHS.y(), z()+aRHS.z());}
+    @ApiStatus.Experimental
+    default void plus2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()+aRHS, y()+aRHS, z()+aRHS);}
     
     /** @return {@code new XYZ(x()-aRHS.x(), y()-aRHS.y(), z()-aRHS.z())} */
     default XYZ minus(IXYZ aRHS) {return minus(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -136,6 +147,10 @@ public interface IXYZ {
     default XYZ minus(double aX, double aY, double aZ) {return new XYZ(x()-aX, y()-aY, z()-aZ);}
     /** @return {@code new XYZ(x()-aRHS, y()-aRHS, z()-aRHS)} */
     default XYZ minus(double aRHS) {return new XYZ(x()-aRHS, y()-aRHS, z()-aRHS);}
+    @ApiStatus.Experimental
+    default void minus2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()-aRHS.x(), y()-aRHS.y(), z()-aRHS.z());}
+    @ApiStatus.Experimental
+    default void minus2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()-aRHS, y()-aRHS, z()-aRHS);}
     
     /** @return {@code new XYZ(aRHS.x()-x(), aRHS.y()-y(), aRHS.z()-z())} */
     default XYZ lminus(IXYZ aRHS) {return lminus(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -145,6 +160,10 @@ public interface IXYZ {
     default XYZ lminus(double aX, double aY, double aZ) {return new XYZ(aX-x(), aY-y(), aZ-z());}
     /** @return {@code new XYZ(aRHS-x(), aRHS-y(), aRHS-z())} */
     default XYZ lminus(double aRHS) {return new XYZ(aRHS-x(), aRHS-y(), aRHS-z());}
+    @ApiStatus.Experimental
+    default void lminus2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(aRHS.x()-x(), aRHS.y()-y(), aRHS.z()-z());}
+    @ApiStatus.Experimental
+    default void lminus2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(aRHS-x(), aRHS-y(), aRHS-z());}
     
     /** @return {@code new XYZ(x()*aRHS.x(), y()*aRHS.y(), z()*aRHS.z())} */
     default XYZ multiply(IXYZ aRHS) {return multiply(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -154,6 +173,10 @@ public interface IXYZ {
     default XYZ multiply(double aX, double aY, double aZ) {return new XYZ(x()*aX, y()*aY, z()*aZ);}
     /** @return {@code new XYZ(x()*aRHS, y()*aRHS, z()*aRHS)} */
     default XYZ multiply(double aRHS) {return new XYZ(x()*aRHS, y()*aRHS, z()*aRHS);}
+    @ApiStatus.Experimental
+    default void multiply2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()*aRHS.x(), y()*aRHS.y(), z()*aRHS.z());}
+    @ApiStatus.Experimental
+    default void multiply2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()*aRHS, y()*aRHS, z()*aRHS);}
     
     /** @return {@code new XYZ(x()/aRHS.x(), y()/aRHS.y(), z()/aRHS.z())} */
     default XYZ div(IXYZ aRHS) {return div(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -163,6 +186,10 @@ public interface IXYZ {
     default XYZ div(double aX, double aY, double aZ) {return new XYZ(x()/aX, y()/aY, z()/aZ);}
     /** @return {@code new XYZ(x()/aRHS, y()/aRHS, z()/aRHS)} */
     default XYZ div(double aRHS) {return new XYZ(x()/aRHS, y()/aRHS, z()/aRHS);}
+    @ApiStatus.Experimental
+    default void div2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()/aRHS.x(), y()/aRHS.y(), z()/aRHS.z());}
+    @ApiStatus.Experimental
+    default void div2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(x()/aRHS, y()/aRHS, z()/aRHS);}
     
     /** @return {@code new XYZ(aRHS.x()/x(), aRHS.y()/y(), aRHS.z()/z())} */
     default XYZ ldiv(IXYZ aRHS) {return ldiv(aRHS.x(), aRHS.y(), aRHS.z());}
@@ -172,6 +199,10 @@ public interface IXYZ {
     default XYZ ldiv(double aX, double aY, double aZ) {return new XYZ(aX/x(), aY/y(), aZ/z());}
     /** @return {@code new XYZ(aRHS/x(), aRHS/y(), aRHS/z())} */
     default XYZ ldiv(double aRHS) {return new XYZ(aRHS/x(), aRHS/y(), aRHS/z());}
+    @ApiStatus.Experimental
+    default void ldiv2dest(IXYZ aRHS, ISettableXYZ rDest) {rDest.setXYZ(aRHS.x()/x(), aRHS.y()/y(), aRHS.z()/z());}
+    @ApiStatus.Experimental
+    default void ldiv2dest(double aRHS, ISettableXYZ rDest) {rDest.setXYZ(aRHS/x(), aRHS/y(), aRHS/z());}
     
     
     /**
