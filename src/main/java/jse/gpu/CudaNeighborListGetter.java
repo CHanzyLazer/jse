@@ -101,7 +101,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
     public final static String LIB_DIR = JAR_DIR+"gpu/nl/" +
         UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, NVCC.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK,
                          Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_CUDA_COMPILER, Conf.CMAKE_CUDA_FLAGS,
-                         Conf.CMAKE_CUDA_ARCHITECTURES, Conf.CMAKE_SETTING) + "/";
+                         Conf.CMAKE_CUDA_ARCHITECTURES, Conf.DEBUG, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link CudaNeighborListGetter} JNI 库的路径 */
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
@@ -299,6 +299,19 @@ public class CudaNeighborListGetter implements AutoCloseable {
         }
     }
     
+    
+    public int nlmax() {
+        return mNlMax.get();
+    }
+    public FloatCudaPointer pos() {
+        return mPos;
+    }
+    public IntCudaPointer nl() {
+        return mNl;
+    }
+    public IntCudaPointer nlsize() {
+        return mNlSize;
+    }
     
     public void build(LmpPlugin.Pair aPair) throws CudaException {
         final int nlocal = aPair.atomNlocal();

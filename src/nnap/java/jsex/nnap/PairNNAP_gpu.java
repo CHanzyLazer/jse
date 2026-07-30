@@ -1,6 +1,7 @@
 package jsex.nnap;
 
 import jse.gpu.CudaJIT;
+import jse.gpu.CudaNeighborListGetter;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -26,13 +27,21 @@ public class PairNNAP_gpu extends PairNNAP {
     private final static boolean _INIT_FLAG;
     static {
         PairNNAP_gpu.InitHelper.INITIALIZED = true;
-        // 现在只需要 jit 初始化即可
+        // 需要 cuda jit 和 cuda nl
         CudaJIT.InitHelper.init();
+        CudaNeighborListGetter.InitHelper.init();
         _INIT_FLAG = false;
     }
     
     protected PairNNAP_gpu(long aPairPtr) {
         super(aPairPtr);
+    }
+    
+    @Override public void initStyle() {
+        if (!forceNewtonPair()) {
+            throw new IllegalArgumentException("Pair style NNAP requires newton pair on");
+        }
+        // gpu 总是手动构造近邻列表
     }
     @Override public void compute() throws Exception {
         mNNAP.computeLammpsCuda(this);
