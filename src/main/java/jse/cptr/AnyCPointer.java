@@ -49,7 +49,11 @@ public class AnyCPointer extends CPointer {
     public static AnyCPointer calloc(long aCount) {
         return new AnyCPointer(calloc0(aCount, TYPE_SIZE));
     }
-    /** {@code sizeof(void *)} */
+    /**
+     * {@inheritDoc}
+     * @return {@code sizeof(void *)}
+     */
+    @Override public long typeSize() {return TYPE_SIZE;}
     public final static long TYPE_SIZE = typeSize0();
     private native static long typeSize0();
     

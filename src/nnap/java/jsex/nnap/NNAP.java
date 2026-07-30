@@ -935,17 +935,14 @@ public class NNAP implements IPairPotential {
         mCudaEatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom1 = mPtrMngTot.newFloatCudaPointer();
-        mCudaPos = mPtrMngTot.newFloatCudaPointer();
         mCudaType = mPtrMngTot.newIntCudaPointer();
-        mCudaNumneigh = mPtrMngTot.newIntCudaPointer();
-        mCudaFirstneigh = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
         mCudaBufNl = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
         
-//        mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
+        mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
     }
     void computeLammpsCuda(PairNNAP aPair) throws CudaException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
@@ -957,22 +954,16 @@ public class NNAP implements IPairPotential {
         final int nlocalghost = nlocal + nghost;
         mPtrMngTot.ensureCapacity(mFltBuf, (long)nlocalghost*9L);
         mPtrMngTot.ensureCapacity(mIntBuf, (long)nlocalghost);
-        mPtrMngTot.ensureCapacity(mCudaPos, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaType, (long)nlocalghost);
         mPtrMngTot.ensureCapacity(mCudaF, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
         mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
         mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)nlocal*(mNMergesMax+1));
-        mPtrMngTot.ensureCapacity(mCudaNumneigh, nlocal);
-//        // GPU 近邻列表构建
-//        mCudaNlGetter.build(aPair);
-        mStatNlSizeLammps.invoke(nlocal, aPair.listNumneigh(), mOutNums);
-        final int tNeighnumMax = mOutNums.getAt(0);
+        // GPU 近邻列表构建
+        mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
-        final int tTotNlSize = nlocal*tNeighnumMax;
-        mPtrMngTot.ensureCapacity(mIntBuf, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaFirstneigh, tTotNlSize);
+        final int tTotNlSize = nlocal*mCudaNlGetter.nlmax();
         mPtrMngTot.ensureCapacity(mCudaBufNl, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
@@ -980,12 +971,9 @@ public class NNAP implements IPairPotential {
         
         // lammps -> cuda
         int tCode = mLammps2Cuda.invoke(
-            nlocal, nghost, tNeighnumMax,
-            aPair.atomX(), aPair.atomType(), aPair.mLmpType2NNAPType,
-            aPair.listNumneigh(), aPair.listFirstneigh(),
-            mFltBuf, mIntBuf,
-            mCudaPos, mCudaType,
-            mCudaNumneigh, mCudaFirstneigh
+            nlocal, nghost,
+            aPair.atomType(), aPair.mLmpType2NNAPType,
+            mIntBuf, mCudaType
         );
         CudaCore.cudaExceptionCheck(tCode);
         
@@ -996,8 +984,8 @@ public class NNAP implements IPairPotential {
         final boolean cvflagAtom = aPair.cvflagAtom();
         tCode = mComputeLammpsCuda.invoke(
             nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
-            mCudaPos, mCudaType, mCudaNMerges, mCudaMergeSorted,
-            mCudaCutsq, mCudaNumneigh, mCudaFirstneigh,
+            mCudaNlGetter.pos(), mCudaType, mCudaNMerges, mCudaMergeSorted,
+            mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(),
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
             mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,

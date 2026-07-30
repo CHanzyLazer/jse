@@ -10,7 +10,6 @@ import jse.code.UT;
 import jse.cptr.*;
 import jse.lmp.LmpPlugin;
 import jse.math.MathEX;
-import jse.math.vector.IntVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -212,11 +211,11 @@ public class CudaNeighborListGetter implements AutoCloseable {
         final int tCellCount = (mSliceX+2)*(mSliceY+2)*(mSliceZ+2);
         final int tLocalCellCount = mSliceX*mSliceY*mSliceZ;
         final int tGhostCellCount = tCellCount-tLocalCellCount;
-        final int tLocalCap = MathEX.Code.ceil2int(nlocal / (double)tLocalCellCount * 1.25);
-        final int tGhostCap = MathEX.Code.ceil2int(nghost / (double)tGhostCellCount * 1.25);
+        final int tLocalCap = MathEX.Code.ceil2int(nlocal / (double)tLocalCellCount);
+        final int tGhostCap = MathEX.Code.ceil2int(nghost / (double)tGhostCellCount);
         if (tLocalCap>mLocalCellCapacity || tGhostCap>mGhostCellCapacity) {
-            if (tLocalCap>mLocalCellCapacity) mLocalCellCapacity = tLocalCap;
-            if (tGhostCap>mGhostCellCapacity) mGhostCellCapacity = tGhostCap;
+            if (tLocalCap>mLocalCellCapacity) mLocalCellCapacity = MathEX.Code.ceil2int(tLocalCap*1.5);
+            if (tGhostCap>mGhostCellCapacity) mGhostCellCapacity = MathEX.Code.ceil2int(tGhostCap*2.0);
             System.err.println("init cell, local: "+mLocalCellCapacity+", ghost: "+mGhostCellCapacity);
         }
         mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*mLocalCellCapacity + (long)tGhostCellCount*mGhostCellCapacity, false);
@@ -267,9 +266,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
     }
     
     void initNl(int nlocal) throws CudaException {
-        final int tNlCap = MathEX.Code.ceil2int(nlocal/mVolume * mRCut*mRCut*mRCut * (4.0/3.0*MathEX.PI * 1.25));
+        final int tNlCap = MathEX.Code.ceil2int(nlocal/mVolume * mRCut*mRCut*mRCut * (4.0/3.0*MathEX.PI));
         if (tNlCap > mNlCapacity) {
-            mNlCapacity = tNlCap;
+            mNlCapacity = MathEX.Code.ceil2int(tNlCap*1.25);
             System.err.println("init nl: "+mNlCapacity);
         }
         mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
@@ -296,7 +295,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
             mNlCapacity = MathEX.Code.ceil2int(tNlMax*1.25);
             mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
             System.err.println("growth nl: "+mNlCapacity);
-            buildCells(nlocal, nghost);
+            buildNl(nlocal, nghost);
         }
     }
     

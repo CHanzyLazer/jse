@@ -37,12 +37,12 @@ public class PairNNAP_gpu extends PairNNAP {
         super(aPairPtr);
     }
     
-//    @Override public void initStyle() {
-//        if (!forceNewtonPair()) {
-//            throw new IllegalArgumentException("Pair style NNAP requires newton pair on");
-//        }
-//        // gpu 总是手动构造近邻列表
-//    }
+    @Override public void initStyle() {
+        if (!forceNewtonPair()) {
+            throw new IllegalArgumentException("Pair style NNAP requires newton pair on");
+        }
+        // gpu 总是手动构造近邻列表
+    }
     @Override public void compute() throws Exception {
         mNNAP.computeLammpsCuda(this);
     }

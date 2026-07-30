@@ -219,9 +219,9 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0(
     
     const int nlocalghost = nlocal + nghost;
     for (int i = 0; i < nlocalghost; ++i) {
-        rPosCpu[0*nlocalghost + i] = (float)tPosLmp[i][0] - xlo;
-        rPosCpu[1*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
-        rPosCpu[2*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
+        rPosCpu[0L*nlocalghost + i] = (float)tPosLmp[i][0] - xlo;
+        rPosCpu[1L*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
+        rPosCpu[2L*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
     }
     cudaError_t tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
     return tErr;

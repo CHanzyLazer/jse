@@ -372,41 +372,17 @@ __jsefunc__ int jse_nnap_statNlSizeLammps(int nlocal, int *numneigh, int *numnei
 }
 
 __jsefunc__ int jse_nnap_lammps2cuda(
-    int nlocal, int nghost, int neighnumMax,
-    double **x, int *type, int *aLmpType2NNAPType,
-    int *numneigh, int **firstneigh,
-    JSE_NNAP::flt_t *fltBuf, int *intBuf,
-    JSE_NNAP::flt_t *cudaPos, int *cudaType,
-    int *cudaNumneigh, int *cudaFirstneigh) {
+    int nlocal, int nghost,
+    int *type, int *aLmpType2NNAPType,
+    int *intBuf, int *cudaType) {
     
     const int nlocalghost = nlocal + nghost;
     cudaError_t tErr;
-    for (int i = 0; i < nlocalghost; ++i) {
-        fltBuf[0*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][0];
-        fltBuf[1*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][1];
-        fltBuf[2*nlocalghost + i] = (JSE_NNAP::flt_t)x[i][2];
-    }
-    tErr = cudaMemcpy(cudaPos, fltBuf, nlocalghost*3L*sizeof(JSE_NNAP::flt_t), cudaMemcpyHostToDevice);
-    if (tErr!=cudaSuccess) return (int)tErr;
-    
     for (int i = 0; i < nlocalghost; ++i) {
         intBuf[i] = aLmpType2NNAPType[type[i]];
     }
     tErr = cudaMemcpy(cudaType, intBuf, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
     if (tErr!=cudaSuccess) return (int)tErr;
-    
-    tErr = cudaMemcpy(cudaNumneigh, numneigh, nlocal*sizeof(int), cudaMemcpyHostToDevice);
-    if (tErr!=cudaSuccess) return (int)tErr;
-    for (int i = 0; i < nlocal; ++i) {
-        int jnum = numneigh[i];
-        int *jlist = firstneigh[i];
-        for (int jj = 0; jj < jnum; ++jj) {
-            intBuf[jj*nlocal + i] = jlist[jj] & JSE_LMP_NEIGHMASK;
-        }
-    }
-    tErr = cudaMemcpy(cudaFirstneigh, intBuf, nlocal*neighnumMax*sizeof(int), cudaMemcpyHostToDevice);
-    if (tErr!=cudaSuccess) return (int)tErr;
-    
     return (int)cudaSuccess;
 }
 
