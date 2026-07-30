@@ -10,6 +10,7 @@ import jse.code.UT;
 import jse.cptr.*;
 import jse.lmp.LmpPlugin;
 import jse.math.MathEX;
+import jse.math.vector.IntVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -216,9 +217,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
         if (tLocalCap>mLocalCellCapacity || tGhostCap>mGhostCellCapacity) {
             if (tLocalCap>mLocalCellCapacity) mLocalCellCapacity = tLocalCap;
             if (tGhostCap>mGhostCellCapacity) mGhostCellCapacity = tGhostCap;
-            mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*mLocalCellCapacity + (long)tGhostCellCount*mGhostCellCapacity, false);
             System.err.println("init cell, local: "+mLocalCellCapacity+", ghost: "+mGhostCellCapacity);
         }
+        mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*mLocalCellCapacity + (long)tGhostCellCount*mGhostCellCapacity, false);
         mPtrMng.ensureCapacity(mCellSize, tCellCount);
         mPtrMng.ensureCapacity(mCellSizeCpu, tCellCount);
         mPtrMng.ensureCapacity(mCells, tCellCount*AnyCPointer.TYPE_SIZE);
@@ -269,9 +270,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
         final int tNlCap = MathEX.Code.ceil2int(nlocal/mVolume * mRCut*mRCut*mRCut * (4.0/3.0*MathEX.PI * 1.25));
         if (tNlCap > mNlCapacity) {
             mNlCapacity = tNlCap;
-            mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
             System.err.println("init nl: "+mNlCapacity);
         }
+        mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
         mPtrMng.ensureCapacity(mNlSize, nlocal);
         mPtrMng.ensureCapacity(mNlSizeCpu, nlocal);
     }
@@ -339,6 +340,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         } else {
             initBox(ax, by, cz);
         }
+        
         initCells(nlocal, nghost);
         buildCells(nlocal, nghost);
         validCells(nlocal, nghost);

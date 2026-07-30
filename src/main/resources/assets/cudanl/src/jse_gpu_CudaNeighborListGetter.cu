@@ -4,7 +4,6 @@
 
 namespace JSE_CUDANL {
 
-static constexpr double JSE_DBL_EPSILON = 1.0e-12;
 static constexpr float JSE_FLT_EPSILON = 1.0e-5f;
 
 static __device__ inline float mixed(
@@ -57,6 +56,7 @@ static __device__ inline int cellIndex(
 #ifdef JSE_DEBUG
     if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
         atomicAdd(error, 1);
+        return -1;
     }
 #endif
     return cellIndex(sliceX, sliceY, sliceZ, i, j, k);
@@ -67,6 +67,7 @@ static __device__ inline int cellGhost(
 #ifdef JSE_DEBUG
     if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
         atomicAdd(error, 1);
+        return -1;
     }
 #endif
     return cellGhost(sliceX, sliceY, sliceZ, i, j, k);
@@ -95,8 +96,15 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const int k = z<0 ? (-1) : (z>=1 ? sliceZ : (int)(z * (float)sliceZ));
     
     const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k, error);
+#ifdef JSE_DEBUG
+    if (cidx < 0) return;
+#endif
     const int ci = atomicAdd(cellSize+cidx, 1);
-    const int cellCap = cellGhost(sliceX, sliceY, sliceZ, i, j, k, error) ? ghostCellCapacity : localCellCapacity;
+    const int cghost = cellGhost(sliceX, sliceY, sliceZ, i, j, k, error);
+#ifdef JSE_DEBUG
+    if (cghost < 0) return;
+#endif
+    const int cellCap = cghost ? ghostCellCapacity : localCellCapacity;
     if (ci < cellCap) {
         cells[cidx][ci] = idx;
     }
@@ -108,7 +116,7 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const int csize = cellSize[cidx]; \
     for (int ci = 0; ci < csize; ++ci) { \
         const int jdx = cell[ci]; \
-        if (jdx != idx) continue; \
+        if (jdx == idx) continue; \
         const float dx = posx[jdx] - x0; \
         const float dy = posy[jdx] - y0; \
         const float dz = posz[jdx] - z0; \
@@ -215,7 +223,7 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0(
         rPosCpu[1*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
         rPosCpu[2*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
     }
-    cudaError_t tErr = cudaMemcpy(rPos, rPosCpu, nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
+    cudaError_t tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
     return tErr;
 }
 

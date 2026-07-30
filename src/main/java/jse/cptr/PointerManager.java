@@ -130,7 +130,7 @@ public class PointerManager implements AutoCloseable {
                 catch (Exception e) {throw new RuntimeException(e);}
                 mCudaPointers.remove(tPtr);
             }
-            long tCount = aGrowth ? Math.max(tMinCount, oCount + (oCount>>1)) : aMinCount;
+            long tCount = aGrowth ? Math.max(tMinCount, oCount + (oCount>>1)) : tMinCount;
             AutoCudaPointerHandle tHandle = new AutoCudaPointerHandle(this, tCount);
             mCudaPointers.put(tHandle.mPtr, tHandle);
             rPtr.setPtr_(tHandle.mPtr);
