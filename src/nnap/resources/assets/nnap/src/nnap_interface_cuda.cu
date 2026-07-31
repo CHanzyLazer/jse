@@ -13,13 +13,16 @@ static __global__ void initLammpsNeiKernel(int nlocal, int nghost,
         int *nmerges, int **mergeSorted,
         flt_t **cutsq, int *nlsize, int *nl,
         int *rBufNlSize, int *rBufNl,
-        flt_t *pos, int *type) {
+        flt_t *pos, int *type, int *aLmpType2NNAPType) {
     
     const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (i >= nlocal) return;
     
     const int nlocalghost = nlocal + nghost;
-    const int ctype = type[i];
+    
+    // type map first
+    const int ctype = aLmpType2NNAPType[type[i]];
+    type[i] = ctype;
     
     flt_t *posx = pos;
     flt_t *posy = pos + nlocalghost;
@@ -361,31 +364,6 @@ extern "C" {
 
 #define JSE_LMP_NEIGHMASK 0x1FFFFFFF
 
-__jsefunc__ int jse_nnap_statNlSizeLammps(int nlocal, int *numneigh, int *numneighMax) {
-    int numneighMax_ = 0;
-    for (int i = 0; i < nlocal; ++i) {
-        int jnum = numneigh[i];
-        if (jnum > numneighMax_) numneighMax_ = jnum;
-    }
-    numneighMax[0] = numneighMax_;
-    return 0;
-}
-
-__jsefunc__ int jse_nnap_lammps2cuda(
-    int nlocal, int nghost,
-    int *type, int *aLmpType2NNAPType,
-    int *intBuf, int *cudaType) {
-    
-    const int nlocalghost = nlocal + nghost;
-    cudaError_t tErr;
-    for (int i = 0; i < nlocalghost; ++i) {
-        intBuf[i] = aLmpType2NNAPType[type[i]];
-    }
-    tErr = cudaMemcpy(cudaType, intBuf, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
-    if (tErr!=cudaSuccess) return (int)tErr;
-    return (int)cudaSuccess;
-}
-
 __jsefunc__ int jse_nnap_cuda2lammps(
     int nlocal, int nghost, int eflag, int eflagAtom, int vflag, int vflagAtom, int cvflagAtom,
     double **f, double *engVdwl, double *eatom, double *virial, double **vatom, double **cvatom,
@@ -457,7 +435,7 @@ __jsefunc__ int jse_nnap_cuda2lammps(
 __jsefunc__ int jse_nnap_computeLammpsCuda(
     int nlocal, int nghost, int eflagEither, int vflag, int vflagAtom,
     JSE_NNAP::flt_t *pos, int *type, int *nmerges, int **mergeSorted,
-    JSE_NNAP::flt_t **cutsq, int *nlsize, int *nl,
+    JSE_NNAP::flt_t **cutsq, int *nlsize, int *nl, int *aLmpType2NNAPType,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t **aNormParam,
     JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *eatom0, JSE_NNAP::flt_t *vatom0, JSE_NNAP::flt_t *vatom1,
     JSE_NNAP::flt_t *nlFx, JSE_NNAP::flt_t *nlFy, JSE_NNAP::flt_t *nlFz,
@@ -488,7 +466,7 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
         nmerges, mergeSorted,
         cutsq, nlsize, nl,
         rBufNlSize, rBufNl,
-        pos, type
+        pos, type, aLmpType2NNAPType
     );
     JSE_NNAP::computeLammpsKernel_(tGridSize, tBlockSize,
         nlocal, nghost,

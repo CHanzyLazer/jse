@@ -55,10 +55,10 @@ public class PairNNAP_gpu extends PairNNAP {
     @Override public void close() throws Exception {
         if (Conf.DEBUG && commMe()==0) {
             System.out.println("=========NNAP GPU TIME=========");
-            System.out.printf("copy    time: %.4g\n", mNNAP.cudaCopyTime());
-            System.out.printf("compute time: %.4g\n", mNNAP.cudaComputeTime());
-            System.out.printf("cell    time: %.4g\n", mNNAP.cudaCellTime());
-            System.out.printf("nl      time: %.4g\n", mNNAP.cudaNlTime());
+            System.out.printf("copy    time: %.4g s\n", mNNAP.cudaCopyTime());
+            System.out.printf("compute time: %.4g s\n", mNNAP.cudaComputeTime());
+            System.out.printf("cell    time: %.4g s\n", mNNAP.cudaCellTime());
+            System.out.printf("nl      time: %.4g s\n", mNNAP.cudaNlTime());
             System.out.println("===============================");
         }
         super.close();

@@ -141,8 +141,11 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private final IntCPointer mCellSizeCpu, mNlSizeCpu;
     private int mLocalCellCapacity = -1, mGhostCellCapacity = -1, mNlCapacity = -1;
     private final IntCPointer mLocalCellMax, mGhostCellMax, mNlMax;
+    
     private final FloatCudaPointer mPos;
     private final FloatCPointer mPosCpu;
+    private final IntCudaPointer mType;
+    private final IntCPointer mTypeCpu;
     
     public CudaNeighborListGetter(double aRCut) throws CudaException {
         mRCut = aRCut;
@@ -164,6 +167,8 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mNlMax = mPtrMng.newIntCPointer(1);
         mPos = mPtrMng.newFloatCudaPointer();
         mPosCpu = mPtrMng.newFloatCPointer();
+        mType = mPtrMng.newIntCudaPointer();
+        mTypeCpu = mPtrMng.newIntCPointer();
     }
     public final static int MAX_SLICE = 512;
     private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
@@ -307,6 +312,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
     public FloatCudaPointer pos() {
         return mPos;
     }
+    public IntCudaPointer type() {
+        return mType;
+    }
     public IntCudaPointer nl() {
         return mNl;
     }
@@ -335,10 +343,12 @@ public class CudaNeighborListGetter implements AutoCloseable {
         double xlo = tBoxLo.getAt(0), ylo = tBoxLo.getAt(1), zlo = tBoxLo.getAt(2);
         mPtrMng.ensureCapacity(mPos, 3L*(nlocal+nghost));
         mPtrMng.ensureCapacity(mPosCpu, 3L*(nlocal+nghost));
-        initPosLmp0(
+        mPtrMng.ensureCapacity(mType, (nlocal+nghost));
+        initPosTypeLmp0(
             nlocal, nghost,
             (float)xlo, (float)ylo, (float)zlo,
-            aPair.atomX().ptr_(), mPos.ptr_(), mPosCpu.ptr_()
+            aPair.atomX().ptr_(), mPos.ptr_(), mPosCpu.ptr_(),
+            aPair.atomType().ptr_(), mType.ptr_()
         );
         
         double ax = tBoxHi.getAt(0) - xlo;
@@ -366,9 +376,10 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mNlTimer.to();
     }
     
-    private static native int initPosLmp0(
+    private static native int initPosTypeLmp0(
         int nlocal, int nghost, float xlo, float ylo, float zlo,
-        long posLmp, long pos, long posCpu);
+        long posLmp, long pos, long posCpu,
+        long typeLmp, long type);
     
     private static native int initCells0(
         int sliceX, int sliceY, int sliceZ, long cellsTot, long cells, long cellsCpu,

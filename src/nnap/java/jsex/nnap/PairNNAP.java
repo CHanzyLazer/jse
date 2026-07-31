@@ -147,7 +147,7 @@ public class PairNNAP extends LmpPlugin.Pair {
             mCutsq = null;
         }
         if (mTypeIlistBuf != null) {
-            for (int type = 1; type < mNumTypes; ++type) {
+            for (int type = 1; type <= mNumTypes; ++type) {
                 IntCPointer tBuf = mTypeIlistBuf[type];
                 if (tBuf!=null) tBuf.free();
             }

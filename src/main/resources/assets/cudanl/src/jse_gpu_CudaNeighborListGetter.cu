@@ -191,13 +191,16 @@ static __global__ void buildNlKernel(const int nlocal,
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0(
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosTypeLmp0(
     JNIEnv *aEnv, jclass aClazz, jint nlocal, jint nghost,
-    jfloat xlo, jfloat ylo, jfloat zlo, jlong posLmp, jlong pos, jlong posCpu) {
+    jfloat xlo, jfloat ylo, jfloat zlo, jlong posLmp, jlong pos, jlong posCpu,
+    jlong typeLmp, jlong type) {
     
     double **tPosLmp = (double **)(intptr_t)posLmp;
     float *rPos = (float *)(intptr_t)pos;
     float *rPosCpu = (float *)(intptr_t)posCpu;
+    int *tTypeLmp = (int *)(intptr_t)typeLmp;
+    int *rType = (int *)(intptr_t)type;
     
     const int nlocalghost = nlocal + nghost;
     for (int i = 0; i < nlocalghost; ++i) {
@@ -205,7 +208,10 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0(
         rPosCpu[1L*nlocalghost + i] = (float)tPosLmp[i][1] - ylo;
         rPosCpu[2L*nlocalghost + i] = (float)tPosLmp[i][2] - zlo;
     }
-    cudaError_t tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
+    cudaError_t tErr;
+    tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
+    if (tErr!=cudaSuccess) return (int)tErr;
+    tErr = cudaMemcpy(rType, tTypeLmp, nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
     return tErr;
 }
 

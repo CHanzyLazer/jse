@@ -116,11 +116,10 @@ public class NNAP implements IPairPotential {
     
     // cuda stuff
     private FloatCPointer mFltBuf = null;
-    private IntCPointer mIntBuf = null;
-    private FloatCudaPointer mCudaPos = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaType = null,  mCudaNumneigh = null, mCudaFirstneigh = null, mCudaBufNlSize = null, mCudaBufNl = null;
+    private FloatCudaPointer mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
+    private IntCudaPointer mCudaBufNlSize = null, mCudaBufNl = null;
     private FloatCudaPointer mCudaBufNlFx = null, mCudaBufNlFy = null, mCudaBufNlFz = null;
-    private IntCudaPointer mCudaNMerges = null;
+    private IntCudaPointer mCudaNMerges = null, mCudaLmpType2NNAPType = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
     private CudaPointer mCudaFpHyperParam = null, mCudaFpParam = null, mCudaNnParam = null, mCudaNormParam = null;
     private CudaNeighborListGetter mCudaNlGetter = null;
@@ -449,7 +448,7 @@ public class NNAP implements IPairPotential {
     private IJITMethod mForwardEnergy = null, mBackwardEnergy = null;
     private IJITMethod mForwardEnergyForce = null, mBackwardEnergyForce = null;
     // cuda stuff
-    private IJITMethod mLammps2Cuda = null, mCuda2Lammps = null, mComputeLammpsCuda = null;
+    private IJITMethod mCuda2Lammps = null, mComputeLammpsCuda = null;
     private IJITMethod mComputeGPUMD = null;
     
     private void compileJIT_() throws Exception {
@@ -459,7 +458,6 @@ public class NNAP implements IPairPotential {
         if (mCuda) {
             mJITEngine = mNNAPGEN.initEngineCuda(mSingle);
             mJITEngine.compile();
-            mLammps2Cuda = mJITEngine.findMethod("jse_nnap_lammps2cuda");
             mCuda2Lammps = mJITEngine.findMethod("jse_nnap_cuda2lammps");
             mComputeLammpsCuda = mJITEngine.findMethod("jse_nnap_computeLammpsCuda");
             mComputeGPUMD = mJITEngine.findMethod("jse_nnap_computeGPUMD");
@@ -469,13 +467,13 @@ public class NNAP implements IPairPotential {
             mCalFp = mJITEngine.findMethod("jse_nnap_calFp");
             mCalEnergy = mJITEngine.findMethod("jse_nnap_calEnergy");
             mCalEnergyForce = mJITEngine.findMethod("jse_nnap_calEnergyForce");
+            mStatNlSizeLammps = mJITEngine.findMethod("jse_nnap_statNlSizeLammps");
             mComputeLammps = mJITEngine.findMethod("jse_nnap_computeLammps");
             mForwardEnergy = mJITEngine.findMethod("jse_nnap_forwardEnergy");
             mBackwardEnergy = mJITEngine.findMethod("jse_nnap_backwardEnergy");
             mForwardEnergyForce = mJITEngine.findMethod("jse_nnap_forwardEnergyForce");
             mBackwardEnergyForce = mJITEngine.findMethod("jse_nnap_backwardEnergyForce");
         }
-        mStatNlSizeLammps = mJITEngine.findMethod("jse_nnap_statNlSizeLammps");
     }
     
     @Override public void close() throws Exception {
@@ -944,17 +942,15 @@ public class NNAP implements IPairPotential {
         mCudaNlGetter.resetTimer();
     }
     private boolean mCudaLmpInited = false;
-    private void initLmpDataCuda_() throws CudaException {
+    private void initLmpDataCuda_(PairNNAP aPair) throws CudaException {
         if (mCudaLmpInited) return;
         mCudaLmpInited = true;
         
         mFltBuf = mPtrMngTot.newFloatCPointer();
-        mIntBuf = mPtrMngTot.newIntCPointer();
         mCudaF = mPtrMngTot.newFloatCudaPointer();
         mCudaEatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom1 = mPtrMngTot.newFloatCudaPointer();
-        mCudaType = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
         mCudaBufNl = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
@@ -962,18 +958,18 @@ public class NNAP implements IPairPotential {
         mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
         
         mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
+        mCudaLmpType2NNAPType = mPtrMngTot.newIntCudaPointer(aPair.mNumTypes+1);
+        mCudaLmpType2NNAPType.fill(aPair.mLmpType2NNAPType, aPair.mNumTypes+1);
     }
     void computeLammpsCuda(PairNNAP aPair) throws CudaException {
         if (mDead) throw new IllegalStateException("This NNAP is dead");
         if (!mCuda) throw new IllegalStateException();
-        initLmpDataCuda_();
+        initLmpDataCuda_(aPair);
         // 常规缓存向量长度规范
         final int nlocal = aPair.atomNlocal();
         final int nghost = aPair.atomNghost();
         final int nlocalghost = nlocal + nghost;
         mPtrMngTot.ensureCapacity(mFltBuf, (long)nlocalghost*9L);
-        mPtrMngTot.ensureCapacity(mIntBuf, (long)nlocalghost);
-        mPtrMngTot.ensureCapacity(mCudaType, (long)nlocalghost);
         mPtrMngTot.ensureCapacity(mCudaF, (long)nlocalghost*3L);
         mPtrMngTot.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
@@ -988,26 +984,16 @@ public class NNAP implements IPairPotential {
         mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
         
-        // lammps -> cuda
-        mCudaCopyTimer.from();
-        int tCode = mLammps2Cuda.invoke(
-            nlocal, nghost,
-            aPair.atomType(), aPair.mLmpType2NNAPType,
-            mIntBuf, mCudaType
-        );
-        CudaCore.cudaExceptionCheck(tCode);
-        mCudaCopyTimer.to();
-        
         // cuda compute
         mCudaComputeTimer.from();
         final boolean eflagEither = aPair.eflagEither();
         final boolean vflagEither = aPair.vflagEither();
         final boolean vflagAtom = aPair.vflagAtom();
         final boolean cvflagAtom = aPair.cvflagAtom();
-        tCode = mComputeLammpsCuda.invoke(
+        int tCode = mComputeLammpsCuda.invoke(
             nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
-            mCudaNlGetter.pos(), mCudaType, mCudaNMerges, mCudaMergeSorted,
-            mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(),
+            mCudaNlGetter.pos(), mCudaNlGetter.type(), mCudaNMerges, mCudaMergeSorted,
+            mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(), mCudaLmpType2NNAPType,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
             mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,

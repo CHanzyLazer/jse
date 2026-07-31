@@ -11,11 +11,11 @@ extern "C" {
 #define jse_gpu_CudaNeighborListGetter_MAX_SLICE 512L
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
- * Method:    initPosLmp0
- * Signature: (IIFFFJJJ)I
+ * Method:    initPosTypeLmp0
+ * Signature: (IIFFFJJJJJ)I
  */
-JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosLmp0
-  (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat, jlong, jlong, jlong);
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosTypeLmp0
+  (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat, jlong, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
