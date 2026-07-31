@@ -137,7 +137,7 @@ template <int CTYPE_GEN>
 static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
     int *aBufNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
+    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t **aFpHyperParam, flt_t **aFpParam) noexcept {
     
     int flag = 1;
@@ -164,7 +164,7 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
                    __NNAPGENXX_FP_LMAX__, __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
-        f0, v0, nlFx, nlFy, nlFz,
+        nlFx, nlFy, nlFz,
         tSubFpHyperParam[0], tSubFpParam
     );
 // --- NNAPGEN PICK: chebyshev
@@ -172,7 +172,7 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
                      __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
-        f0, v0, nlFx, nlFy, nlFz,
+        nlFx, nlFy, nlFz,
         tSubFpHyperParam[0], tSubFpParam
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]

@@ -48,16 +48,13 @@ template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *f0, flt_t *v0, flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
+    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t aRCut, flt_t *aParams) noexcept {
     
     // init cache
     flt_t bRn[NMAX+1], bAGradRn[NMAX+1];
     flt_t bRnp[SIZE_NP];
     // loop for neighbor
-    flt_t f0xi = ZERO, f0yi = ZERO, f0zi = ZERO;
-    flt_t v0xxi = ZERO, v0yyi = ZERO, v0zzi = ZERO;
-    flt_t v0xyi = ZERO, v0xzi = ZERO, v0yzi = ZERO;
     const flt_t xi = posx[bi];
     const flt_t yi = posy[bi];
     const flt_t zi = posz[bi];
@@ -103,16 +100,10 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         const flt_t fxj = rAGradj*dx;
         const flt_t fyj = rAGradj*dy;
         const flt_t fzj = rAGradj*dz;
-        f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-        v0xxi += dx*fxj; v0yyi += dy*fyj; v0zzi += dz*fzj;
-        v0xyi += dx*fyj; v0xzi += dx*fzj; v0yzi += dy*fzj;
         nlFx[jj*nb + bi] += fxj;
         nlFy[jj*nb + bi] += fyj;
         nlFz[jj*nb + bi] += fzj;
     }
-    f0[0] += f0xi; f0[1] += f0yi; f0[2] += f0zi;
-    v0[0] += v0xxi; v0[1] += v0yyi; v0[2] += v0zzi;
-    v0[3] += v0xyi; v0[4] += v0xzi; v0[5] += v0yzi;
 }
 
 
