@@ -7,6 +7,7 @@ import jse.clib.NVCC;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
+import jse.code.timer.AccumulatedTimer;
 import jse.cptr.*;
 import jse.lmp.LmpPlugin;
 import jse.math.MathEX;
@@ -313,6 +314,18 @@ public class CudaNeighborListGetter implements AutoCloseable {
         return mNlSize;
     }
     
+    private final AccumulatedTimer mCellTimer = new AccumulatedTimer(), mNlTimer = new AccumulatedTimer();
+    public double cellTime() {
+        return mCellTimer.get();
+    }
+    public double nlTime() {
+        return mNlTimer.get();
+    }
+    public void resetTimer() {
+        mCellTimer.reset();
+        mNlTimer.reset();
+    }
+    
     public void build(LmpPlugin.Pair aPair) throws CudaException {
         final int nlocal = aPair.atomNlocal();
         final int nghost = aPair.atomNghost();
@@ -340,13 +353,17 @@ public class CudaNeighborListGetter implements AutoCloseable {
             initBox(ax, by, cz);
         }
         
+        mCellTimer.from();
         initCells(nlocal, nghost);
         buildCells(nlocal, nghost);
         validCells(nlocal, nghost);
+        mCellTimer.to();
         
+        mNlTimer.from();
         initNl(nlocal);
         buildNl(nlocal, nghost);
         validNl(nlocal, nghost);
+        mNlTimer.to();
     }
     
     private static native int initPosLmp0(

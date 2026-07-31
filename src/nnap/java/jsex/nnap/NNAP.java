@@ -10,6 +10,7 @@ import jse.code.UT;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
+import jse.code.timer.AccumulatedTimer;
 import jse.gpu.*;
 import jse.jit.IJITEngine;
 import jse.jit.IJITMethod;
@@ -924,6 +925,24 @@ public class NNAP implements IPairPotential {
     }
     
     // cuda stuff
+    private final AccumulatedTimer mCudaCopyTimer = new AccumulatedTimer(), mCudaComputeTimer = new AccumulatedTimer();
+    public double cudaCellTime() {
+        return mCudaNlGetter.cellTime();
+    }
+    public double cudaNlTime() {
+        return mCudaNlGetter.nlTime();
+    }
+    public double cudaCopyTime() {
+        return mCudaCopyTimer.get();
+    }
+    public double cudaComputeTime() {
+        return mCudaComputeTimer.get();
+    }
+    public void resetCudaTimer() {
+        mCudaCopyTimer.reset();
+        mCudaComputeTimer.reset();
+        mCudaNlGetter.resetTimer();
+    }
     private boolean mCudaLmpInited = false;
     private void initLmpDataCuda_() throws CudaException {
         if (mCudaLmpInited) return;
@@ -970,14 +989,17 @@ public class NNAP implements IPairPotential {
         mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
         
         // lammps -> cuda
+        mCudaCopyTimer.from();
         int tCode = mLammps2Cuda.invoke(
             nlocal, nghost,
             aPair.atomType(), aPair.mLmpType2NNAPType,
             mIntBuf, mCudaType
         );
         CudaCore.cudaExceptionCheck(tCode);
+        mCudaCopyTimer.to();
         
         // cuda compute
+        mCudaComputeTimer.from();
         final boolean eflagEither = aPair.eflagEither();
         final boolean vflagEither = aPair.vflagEither();
         final boolean vflagAtom = aPair.vflagAtom();
@@ -992,14 +1014,17 @@ public class NNAP implements IPairPotential {
             mCudaBufNlSize, mCudaBufNl
         );
         CudaCore.cudaExceptionCheck(tCode);
+        mCudaComputeTimer.to();
         
         // cuda -> lammps
+        mCudaCopyTimer.from();
         tCode = mCuda2Lammps.invoke(
             nlocal, nghost, eflagEither?1:0, aPair.eflagAtom()?1:0, vflagEither?1:0, vflagAtom?1:0, cvflagAtom?1:0,
             aPair.atomF(), aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
             mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
         );
         CudaCore.cudaExceptionCheck(tCode);
+        mCudaCopyTimer.to();
     }
     
     private boolean mCudaGpumdInited = false;
