@@ -85,7 +85,6 @@ public class SimpleJIT {
         LIB_PATH = new JNIUtil.LibBuilder("jitengine", "JIT", LIB_DIR, Conf.CMAKE_SETTING)
             .setSrc("jitengine", SRC_NAME)
             .setCmakeCCompiler(Conf.CMAKE_C_COMPILER).setCmakeCFlags(Conf.CMAKE_C_FLAGS)
-            .setCmakeLineOp(null)
             .get();
         // 设置库路径，这里直接使用 System.load
         System.load(IO.toAbsolutePath(LIB_PATH));
