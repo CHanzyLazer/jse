@@ -28,18 +28,18 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildCells0
- * Signature: (IIIZFFFFFFFFFJIIIJJJIIJJJJ)I
+ * Signature: (IIIZFFFFFFFFFJIIIJJJIIJJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0
-  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jlong, jint, jint, jlong, jlong, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jlong, jint, jint, jlong, jlong);
 
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildNl0
- * Signature: (IIIZFFFFFFFFFJIIIJJFJJJIJJJ)I
+ * Signature: (IIIZFFFFFFFFFJIIIJJFJJJIJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0
-  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jfloat, jlong, jlong, jlong, jint, jlong, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jfloat, jlong, jlong, jlong, jint, jlong);
 
 #ifdef __cplusplus
 }

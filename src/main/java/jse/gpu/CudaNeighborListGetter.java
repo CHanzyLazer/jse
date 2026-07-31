@@ -14,7 +14,6 @@ import jse.math.MathEX;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static jse.code.CS.VERSION_NUMBER;
@@ -89,20 +88,13 @@ public class CudaNeighborListGetter implements AutoCloseable {
          * 也可使用环境变量 {@code JSE_CMAKE_CUDA_ARCHITECTURES_CUDANL} 来设置
          */
         public static @Nullable String CMAKE_CUDA_ARCHITECTURES = OS.env("JSE_CMAKE_CUDA_ARCHITECTURES_CUDANL");
-        
-        /**
-         * cudanl 是否开启 debug 模式
-         * <p>
-         * 也可使用环境变量 {@code JSE_DEBUG_CUDANL} 来设置
-         */
-        public static boolean DEBUG = OS.envZ("JSE_DEBUG_CUDANL", jse.code.Conf.DEBUG);
     }
     
     /** 当前 {@link CudaNeighborListGetter} JNI 库所在的文件夹路径，结尾一定存在 {@code '/'} */
     public final static String LIB_DIR = JAR_DIR+"gpu/nl/" +
         UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, NVCC.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK,
                          Conf.CMAKE_CXX_COMPILER, Conf.CMAKE_CXX_FLAGS, Conf.CMAKE_CUDA_COMPILER, Conf.CMAKE_CUDA_FLAGS,
-                         Conf.CMAKE_CUDA_ARCHITECTURES, Conf.DEBUG, Conf.CMAKE_SETTING) + "/";
+                         Conf.CMAKE_CUDA_ARCHITECTURES, Conf.CMAKE_SETTING) + "/";
     /** 当前 {@link CudaNeighborListGetter} JNI 库的路径 */
     public final static String LIB_PATH;
     private final static String[] SRC_NAME = {
@@ -117,9 +109,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         // 依赖 CudaCore
         CudaCore.InitHelper.init();
         
-        Map<String, String> rCmakeSetting = new LinkedHashMap<>(Conf.CMAKE_SETTING);
-        if (Conf.DEBUG) rCmakeSetting.put("JSE_DEBUG_MODE", "ON");
-        LIB_PATH = new JNIUtil.LibBuilder("cudanl", "CUDA_NL", LIB_DIR, rCmakeSetting)
+        LIB_PATH = new JNIUtil.LibBuilder("cudanl", "CUDA_NL", LIB_DIR, Conf.CMAKE_SETTING)
             .setSrc("cudanl", SRC_NAME)
             .setEnvChecker(NVCC::printInfo) // 在这里输出 nvcc 信息，保证只在第一次构建时输出一次；可能存在和 cmake 检测不一致的问题
             .setCmakeCxxCompiler(Conf.CMAKE_CXX_COMPILER).setCmakeCxxFlags(Conf.CMAKE_CXX_FLAGS)
@@ -133,8 +123,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
     /// OOP sutffs
     final double mRCut, mRCutSq;
     final PointerManager mPtrMng;
-    private final IntCudaPointer mErrorGpu;
-    private final IntCPointer mErrorCpu;
     private final CudaPointer mCells;
     private final AnyCPointer mCellsCpu;
     private final IntCudaPointer mCellTot, mCellSize, mNl, mNlSize;
@@ -152,8 +140,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mRCutSq = aRCut*aRCut;
         mPtrMng = new PointerManager();
         
-        mErrorGpu = mPtrMng.newIntCudaPointer(1);
-        mErrorCpu = mPtrMng.newIntCPointer(1);
         mCells = mPtrMng.newCudaPointer(0);
         mCellsCpu = mPtrMng.newAnyCPointer();
         mCellTot = mPtrMng.newIntCudaPointer();
@@ -243,12 +229,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
             mPos.ptr_(), mSliceX, mSliceY, mSliceZ,
             mCells.ptr_(), mCellSize.ptr_(), mCellSizeCpu.ptr_(),
             mLocalCellCapacity, mGhostCellCapacity,
-            mLocalCellMax.ptr_(), mGhostCellMax.ptr_(),
-            mErrorGpu.ptr_(), mErrorCpu.ptr_()
+            mLocalCellMax.ptr_(), mGhostCellMax.ptr_()
         );
         CudaCore.cudaExceptionCheck(tCode);
-        int tError = mErrorCpu.get();
-        if (tError != 0) throw new IllegalStateException("error: " + tError);
     }
     void validCells(int nlocal, int nghost) throws CudaException {
         // 检测是否 cell 大小存在超出，超出后需要重新构建
@@ -287,12 +270,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
             (float)mB.mX, (float)mB.mY, (float)mB.mZ, (float)mC.mX, (float)mC.mY, (float)mC.mZ,
             mPos.ptr_(), mSliceX, mSliceY, mSliceZ,
             mCells.ptr_(), mCellSize.ptr_(), (float)mRCutSq,
-            mNl.ptr_(), mNlSize.ptr_(), mNlSizeCpu.ptr_(), mNlCapacity, mNlMax.ptr_(),
-            mErrorGpu.ptr_(), mErrorCpu.ptr_()
+            mNl.ptr_(), mNlSize.ptr_(), mNlSizeCpu.ptr_(), mNlCapacity, mNlMax.ptr_()
         );
         CudaCore.cudaExceptionCheck(tCode);
-        int tError = mErrorCpu.get();
-        if (tError != 0) throw new IllegalStateException("error: " + tError);
     }
     void validNl(int nlocal, int nghost) throws CudaException {
         // 检测是否 nl 大小存在超出，超出后需要重新构建
@@ -322,7 +302,10 @@ public class CudaNeighborListGetter implements AutoCloseable {
         return mNlSize;
     }
     
-    private final AccumulatedTimer mCellTimer = new AccumulatedTimer(), mNlTimer = new AccumulatedTimer();
+    private final AccumulatedTimer mCopyTimer = new AccumulatedTimer(), mCellTimer = new AccumulatedTimer(), mNlTimer = new AccumulatedTimer();
+    public double copyTime() {
+        return mCopyTimer.get();
+    }
     public double cellTime() {
         return mCellTimer.get();
     }
@@ -330,6 +313,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         return mNlTimer.get();
     }
     public void resetTimer() {
+        mCopyTimer.reset();
         mCellTimer.reset();
         mNlTimer.reset();
     }
@@ -340,6 +324,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         DoubleCPointer tBoxLo = aPair.domainBoxlo();
         DoubleCPointer tBoxHi = aPair.domainBoxhi();
         
+        mCopyTimer.from();
         double xlo = tBoxLo.getAt(0), ylo = tBoxLo.getAt(1), zlo = tBoxLo.getAt(2);
         mPtrMng.ensureCapacity(mPos, 3L*(nlocal+nghost));
         mPtrMng.ensureCapacity(mPosCpu, 3L*(nlocal+nghost));
@@ -350,6 +335,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
             aPair.atomX().ptr_(), mPos.ptr_(), mPosCpu.ptr_(),
             aPair.atomType().ptr_(), mType.ptr_()
         );
+        mCopyTimer.to();
         
         double ax = tBoxHi.getAt(0) - xlo;
         double by = tBoxHi.getAt(1) - ylo;
@@ -391,14 +377,12 @@ public class CudaNeighborListGetter implements AutoCloseable {
         long pos, int sliceX, int sliceY, int sliceZ,
         long cells, long cellSize, long cellSizeCpu,
         int localCellCapacity, int ghostCellCapacity,
-        long localCellMax, long ghostCellMax,
-        long errorGpu, long errorCpu);
+        long localCellMax, long ghostCellMax);
     
     private static native int buildNl0(
         int aBlockSize, int nlocal, int nghost, boolean aPrism, float ax, float ay, float az,
         float bx, float by, float bz, float cx, float cy, float cz,
         long pos, int sliceX, int sliceY, int sliceZ,
         long cells, long cellSize, float rcutsq,
-        long nl, long nlSize, long nlSizeCpu, int nlCapacity, long nlMax,
-        long errorGpu, long errorCpu);
+        long nl, long nlSize, long nlSizeCpu, int nlCapacity, long nlMax);
 }

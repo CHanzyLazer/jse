@@ -31,9 +31,3 @@ else()
     message(FATAL_ERROR "No java development environment found")
 endif()
 
-
-# debug mode
-option(JSE_DEBUG_MODE "Debug mode" OFF)
-if(JSE_DEBUG_MODE)
-    add_definitions(-DJSE_DEBUG)
-endif()

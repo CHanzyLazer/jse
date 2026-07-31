@@ -6,6 +6,10 @@ namespace JSE_CUDANL {
 
 static constexpr float JSE_FLT_EPSILON = 1.0e-5f;
 
+static __device__ inline int floor2int(const float val) {
+    return __float2int_rd(val);
+}
+
 static __device__ inline float mixed(
     const float ax, const float ay, const float az,
     const float bx, const float by, const float bz,
@@ -32,14 +36,6 @@ static __device__ inline void toDirect(
     z = (abs(z1-z0) < JSE_FLT_EPSILON) ? z0 : z1;
 }
 
-static __device__ __host__ inline int cellValid(
-    const int sliceX, const int sliceY, const int sliceZ,
-    const int i, const int j, const int k) {
-    if (i>=-1 && i<=sliceX && j>=-1 && j<=sliceY && k>=-1 && k<=sliceZ) {
-        return JNI_TRUE;
-    }
-    return JNI_FALSE;
-}
 static __device__ __host__ inline int cellIndex(
     const int sliceX, const int sliceY, const int sliceZ,
     const int i, const int j, const int k) {
@@ -48,29 +44,7 @@ static __device__ __host__ inline int cellIndex(
 static __device__ __host__ inline int cellGhost(
     const int sliceX, const int sliceY, const int sliceZ,
     const int i, const int j, const int k) {
-    return (i==-1 || i==sliceX || j==-1 || j==sliceY || k==-1 || k==sliceZ);
-}
-static __device__ inline int cellIndex(
-    const int sliceX, const int sliceY, const int sliceZ,
-    const int i, const int j, const int k, int *error) {
-#ifdef JSE_DEBUG
-    if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
-        atomicAdd(error, 1);
-        return -1;
-    }
-#endif
-    return cellIndex(sliceX, sliceY, sliceZ, i, j, k);
-}
-static __device__ inline int cellGhost(
-    const int sliceX, const int sliceY, const int sliceZ,
-    const int i, const int j, const int k, int *error) {
-#ifdef JSE_DEBUG
-    if (!cellValid(sliceX, sliceY, sliceZ, i, j, k)) {
-        atomicAdd(error, 1);
-        return -1;
-    }
-#endif
-    return cellGhost(sliceX, sliceY, sliceZ, i, j, k);
+    return (i<0 || i>=sliceX || j<0 || j>=sliceY || k<0 || k>=sliceZ);
 }
 
 template <int PRISM>
@@ -80,7 +54,7 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const float cx, const float cy, const float cz,
     const float *posx, const float *posy, const float *posz,
     const int sliceX, const int sliceY, const int sliceZ,
-    int **cells, int *cellSize, int localCellCapacity, int ghostCellCapacity, int *error) {
+    int **cells, int *cellSize, int localCellCapacity, int ghostCellCapacity) {
     
     const int idx = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (idx >= nlocalghost) return;
@@ -91,42 +65,17 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     } else {
         x /= ax; y /= by; z /= cz;
     }
-    const int i = x<0 ? (-1) : (x>=1 ? sliceX : (int)(x * (float)sliceX));
-    const int j = y<0 ? (-1) : (y>=1 ? sliceY : (int)(y * (float)sliceY));
-    const int k = z<0 ? (-1) : (z>=1 ? sliceZ : (int)(z * (float)sliceZ));
+    int i = floor2int(x * (float)sliceX); i = i<-1 ? (-1) : (i>sliceX ? sliceX : i);
+    int j = floor2int(y * (float)sliceY); j = j<-1 ? (-1) : (j>sliceY ? sliceY : j);
+    int k = floor2int(z * (float)sliceZ); k = k<-1 ? (-1) : (k>sliceZ ? sliceZ : k);
     
-    const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k, error);
-#ifdef JSE_DEBUG
-    if (cidx < 0) return;
-#endif
+    const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k);
     const int ci = atomicAdd(cellSize+cidx, 1);
-    const int cghost = cellGhost(sliceX, sliceY, sliceZ, i, j, k, error);
-#ifdef JSE_DEBUG
-    if (cghost < 0) return;
-#endif
+    const int cghost = cellGhost(sliceX, sliceY, sliceZ, i, j, k);
     const int cellCap = cghost ? ghostCellCapacity : localCellCapacity;
     if (ci < cellCap) {
         cells[cidx][ci] = idx;
     }
-}
-
-#define JSE_CUDANL_cell2nl(_i, _j, _k) { \
-    const int cidx = cellIndex(sliceX, sliceY, sliceZ, _i, _j, _k, error); \
-    const int *cell = cells[cidx]; \
-    const int csize = cellSize[cidx]; \
-    for (int ci = 0; ci < csize; ++ci) { \
-        const int jdx = cell[ci]; \
-        if (jdx == idx) continue; \
-        const float dx = posx[jdx] - x0; \
-        const float dy = posy[jdx] - y0; \
-        const float dz = posz[jdx] - z0; \
-        const float rsq = dx*dx + dy*dy + dz*dz; \
-        if (rsq >= rcutsq) continue; \
-        if (nlsizei < nlCapacity) { \
-            nl[nlsizei*nlocal + idx] = jdx; \
-        } \
-        ++nlsizei; \
-    } \
 }
 
 template <int PRISM>
@@ -137,7 +86,7 @@ static __global__ void buildNlKernel(const int nlocal,
     const float *posx, const float *posy, const float *posz,
     const int sliceX, const int sliceY, const int sliceZ,
     const int **cells, const int *cellSize, const float rcutsq,
-    int *nl, int *nlSize, const int nlCapacity, int *error) {
+    int *nl, int *nlSize, const int nlCapacity) {
 
     const int idx = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (idx >= nlocal) return;
@@ -149,40 +98,29 @@ static __global__ void buildNlKernel(const int nlocal,
     } else {
         x /= ax; y /= by; z /= cz;
     }
-    int i = (int)(x * (float)sliceX); i = i<0 ? 0 : (i>=sliceX ? (sliceX-1) : i);
-    int j = (int)(y * (float)sliceY); j = j<0 ? 0 : (j>=sliceY ? (sliceY-1) : j);
-    int k = (int)(z * (float)sliceZ); k = k<0 ? 0 : (k>=sliceZ ? (sliceZ-1) : k);
+    int i = floor2int(x * (float)sliceX); i = i<0 ? 0 : (i>=sliceX ? (sliceX-1) : i);
+    int j = floor2int(y * (float)sliceY); j = j<0 ? 0 : (j>=sliceY ? (sliceY-1) : j);
+    int k = floor2int(z * (float)sliceZ); k = k<0 ? 0 : (k>=sliceZ ? (sliceZ-1) : k);
     
     int nlsizei = 0;
-    
-    JSE_CUDANL_cell2nl((i  ), (j  ), (k  ));
-    JSE_CUDANL_cell2nl((i  ), (j  ), (k+1));
-    JSE_CUDANL_cell2nl((i  ), (j  ), (k-1));
-    JSE_CUDANL_cell2nl((i  ), (j+1), (k  ));
-    JSE_CUDANL_cell2nl((i  ), (j+1), (k+1));
-    JSE_CUDANL_cell2nl((i  ), (j+1), (k-1));
-    JSE_CUDANL_cell2nl((i  ), (j-1), (k  ));
-    JSE_CUDANL_cell2nl((i  ), (j-1), (k+1));
-    JSE_CUDANL_cell2nl((i  ), (j-1), (k-1));
-    JSE_CUDANL_cell2nl((i+1), (j  ), (k  ));
-    JSE_CUDANL_cell2nl((i+1), (j  ), (k+1));
-    JSE_CUDANL_cell2nl((i+1), (j  ), (k-1));
-    JSE_CUDANL_cell2nl((i+1), (j+1), (k  ));
-    JSE_CUDANL_cell2nl((i+1), (j+1), (k+1));
-    JSE_CUDANL_cell2nl((i+1), (j+1), (k-1));
-    JSE_CUDANL_cell2nl((i+1), (j-1), (k  ));
-    JSE_CUDANL_cell2nl((i+1), (j-1), (k+1));
-    JSE_CUDANL_cell2nl((i+1), (j-1), (k-1));
-    JSE_CUDANL_cell2nl((i-1), (j  ), (k  ));
-    JSE_CUDANL_cell2nl((i-1), (j  ), (k+1));
-    JSE_CUDANL_cell2nl((i-1), (j  ), (k-1));
-    JSE_CUDANL_cell2nl((i-1), (j+1), (k  ));
-    JSE_CUDANL_cell2nl((i-1), (j+1), (k+1));
-    JSE_CUDANL_cell2nl((i-1), (j+1), (k-1));
-    JSE_CUDANL_cell2nl((i-1), (j-1), (k  ));
-    JSE_CUDANL_cell2nl((i-1), (j-1), (k+1));
-    JSE_CUDANL_cell2nl((i-1), (j-1), (k-1));
-    
+    for (int kk = k-1; kk <= k+1; ++kk) for (int jj = j-1; jj <= j+1; ++jj) for (int ii = i-1; ii <= i+1; ++ii) {
+        const int cidx = cellIndex(sliceX, sliceY, sliceZ, ii, jj, kk);
+        const int *cell = cells[cidx];
+        const int csize = cellSize[cidx];
+        for (int ci = 0; ci < csize; ++ci) {
+            const int jdx = cell[ci];
+            if (jdx == idx) continue;
+            const float dx = posx[jdx] - x0;
+            const float dy = posy[jdx] - y0;
+            const float dz = posz[jdx] - z0;
+            const float rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq >= rcutsq) continue;
+            if (nlsizei < nlCapacity) {
+                nl[nlsizei*nlocal + idx] = jdx;
+            }
+            ++nlsizei;
+        }
+    }
     nlSize[idx] = nlsizei;
 }
 
@@ -242,23 +180,15 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
     jlong pos, jint sliceX, jint sliceY, jint sliceZ,
     jlong cells, jlong cellSize, jlong cellSizeCpu,
     jint localCellCapacity, jint ghostCellCapacity,
-    jlong localCellMax, jlong ghostCellMax,
-    jlong errorGpu, jlong errorCpu) {
+    jlong localCellMax, jlong ghostCellMax) {
     
     const int nlocalghost = nlocal + nghost;
     const int tGridSize = (nlocalghost + aBlockSize-1) / aBlockSize;
     
-    int *tErrorGpu = (int *)(intptr_t)errorGpu;
-    int *tErrorCpu = (int *)(intptr_t)errorCpu;
     int *tCellSize = (int *)(intptr_t)cellSize;
     int *tCellSizeCpu = (int *)(intptr_t)cellSizeCpu;
     
     cudaError_t tErr;
-#ifdef JSE_DEBUG
-    tErr = cudaMemset(tErrorGpu, 0, sizeof(int));
-    if (tErr!=cudaSuccess) return (int)tErr;
-#endif
-    
     tErr = cudaMemset(tCellSize, 0, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int));
     if (tErr!=cudaSuccess) return (int)tErr;
     
@@ -270,26 +200,17 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
         JSE_CUDANL::buildCellsKernel<JNI_TRUE><<<tGridSize, (int)aBlockSize>>>(nlocalghost,
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
-            (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity,
-            tErrorGpu
+            (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity
         );
     } else {
         JSE_CUDANL::buildCellsKernel<JNI_FALSE><<<tGridSize, (int)aBlockSize>>>(nlocalghost,
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
-            (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity,
-            tErrorGpu
+            (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity
         );
     }
     tErr = cudaDeviceSynchronize();
     if (tErr!=cudaSuccess) return (int)tErr;
-    
-#ifdef JSE_DEBUG
-    tErr = cudaMemcpy(tErrorCpu, tErrorGpu, sizeof(int), cudaMemcpyDeviceToHost);
-    if (tErr!=cudaSuccess) return (int)tErr;
-#else
-    *tErrorCpu = 0;
-#endif
     
     tErr = cudaMemcpy(tCellSizeCpu, tCellSize, (sliceX+2)*(sliceY+2)*(sliceZ+2)*sizeof(int), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
@@ -316,22 +237,14 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
     jfloat bx, jfloat by, jfloat bz, jfloat cx, jfloat cy, jfloat cz,
     jlong pos, jint sliceX, jint sliceY, jint sliceZ,
     jlong cells, jlong cellSize, jfloat rcutsq,
-    jlong nl, jlong nlSize, jlong nlSizeCpu, jint nlCapacity, jlong nlMax,
-    jlong errorGpu, jlong errorCpu) {
+    jlong nl, jlong nlSize, jlong nlSizeCpu, jint nlCapacity, jlong nlMax) {
     
     const int tGridSize = (nlocal + aBlockSize-1) / aBlockSize;
     
-    int *tErrorGpu = (int *)(intptr_t)errorGpu;
-    int *tErrorCpu = (int *)(intptr_t)errorCpu;
     int *tNlSize = (int *)(intptr_t)nlSize;
     int *tNlSizeCpu = (int *)(intptr_t)nlSizeCpu;
     
     cudaError_t tErr;
-#ifdef JSE_DEBUG
-    tErr = cudaMemset(tErrorGpu, 0, sizeof(int));
-    if (tErr!=cudaSuccess) return (int)tErr;
-#endif
-    
     tErr = cudaMemset(tNlSize, 0, nlocal*sizeof(int));
     if (tErr!=cudaSuccess) return (int)tErr;
     
@@ -344,27 +257,18 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildNl0(
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (const int **)(intptr_t)cells, (int *)(intptr_t)cellSize, rcutsq,
-            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity,
-            tErrorGpu
+            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity
         );
     } else {
         JSE_CUDANL::buildNlKernel<JNI_FALSE><<<tGridSize, (int)aBlockSize>>>(nlocal,
             ax, ay, az, bx, by, bz, cx, cy, cz,
             posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (const int **)(intptr_t)cells, (int *)(intptr_t)cellSize, rcutsq,
-            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity,
-            tErrorGpu
+            (int *)(intptr_t)nl, tNlSize, (int)nlCapacity
         );
     }
     tErr = cudaDeviceSynchronize();
     if (tErr!=cudaSuccess) return (int)tErr;
-    
-#ifdef JSE_DEBUG
-    tErr = cudaMemcpy(tErrorCpu, tErrorGpu, sizeof(int), cudaMemcpyDeviceToHost);
-    if (tErr!=cudaSuccess) return (int)tErr;
-#else
-    *tErrorCpu = 0;
-#endif
     
     tErr = cudaMemcpy(tNlSizeCpu, tNlSize, nlocal*sizeof(int), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;

@@ -924,14 +924,11 @@ public class NNAP implements IPairPotential {
     
     // cuda stuff
     private final AccumulatedTimer mCudaCopyTimer = new AccumulatedTimer(), mCudaComputeTimer = new AccumulatedTimer();
-    public double cudaCellTime() {
-        return mCudaNlGetter.cellTime();
-    }
     public double cudaNlTime() {
-        return mCudaNlGetter.nlTime();
+        return mCudaNlGetter.nlTime() + mCudaNlGetter.cellTime();
     }
     public double cudaCopyTime() {
-        return mCudaCopyTimer.get();
+        return mCudaCopyTimer.get() + mCudaNlGetter.copyTime();
     }
     public double cudaComputeTime() {
         return mCudaComputeTimer.get();
