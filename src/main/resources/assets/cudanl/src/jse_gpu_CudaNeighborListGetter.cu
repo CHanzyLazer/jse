@@ -110,31 +110,13 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     }
 }
 
-#define JSE_CUDANL_cell2nl_ijk {\
-    const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k, error); \
-    const int *cell = cells[cidx]; \
-    const int csize = cellSize[cidx]; \
-    for (int ci = 0; ci < csize; ++ci) { \
-        const int jdx = cell[ci]; \
-        if (jdx == idx) continue; \
-        const float dx = posx[jdx] - x0; \
-        const float dy = posy[jdx] - y0; \
-        const float dz = posz[jdx] - z0; \
-        const float rsq = dx*dx + dy*dy + dz*dz; \
-        if (rsq >= rcutsq) continue; \
-        if (nlsizei < nlCapacity) { \
-            nl[nlsizei*nlocal + idx] = jdx; \
-        } \
-        ++nlsizei; \
-    } \
-}
-
-#define JSE_CUDANL_cell2nl(_i, _j, _k) if (cellValid(sliceX, sliceY, sliceZ, _i, _j, _k)) { \
+#define JSE_CUDANL_cell2nl(_i, _j, _k) { \
     const int cidx = cellIndex(sliceX, sliceY, sliceZ, _i, _j, _k, error); \
     const int *cell = cells[cidx]; \
     const int csize = cellSize[cidx]; \
     for (int ci = 0; ci < csize; ++ci) { \
         const int jdx = cell[ci]; \
+        if (jdx == idx) continue; \
         const float dx = posx[jdx] - x0; \
         const float dy = posy[jdx] - y0; \
         const float dz = posz[jdx] - z0; \
@@ -167,13 +149,13 @@ static __global__ void buildNlKernel(const int nlocal,
     } else {
         x /= ax; y /= by; z /= cz;
     }
-    const int i = x<0 ? (-1) : (x>=1 ? sliceX : (int)(x * (float)sliceX));
-    const int j = y<0 ? (-1) : (y>=1 ? sliceY : (int)(y * (float)sliceY));
-    const int k = z<0 ? (-1) : (z>=1 ? sliceZ : (int)(z * (float)sliceZ));
+    int i = (int)(x * (float)sliceX); i = i<0 ? 0 : (i>=sliceX ? (sliceX-1) : i);
+    int j = (int)(y * (float)sliceY); j = j<0 ? 0 : (j>=sliceY ? (sliceY-1) : j);
+    int k = (int)(z * (float)sliceZ); k = k<0 ? 0 : (k>=sliceZ ? (sliceZ-1) : k);
     
     int nlsizei = 0;
     
-    JSE_CUDANL_cell2nl_ijk;
+    JSE_CUDANL_cell2nl((i  ), (j  ), (k  ));
     JSE_CUDANL_cell2nl((i  ), (j  ), (k+1));
     JSE_CUDANL_cell2nl((i  ), (j  ), (k-1));
     JSE_CUDANL_cell2nl((i  ), (j+1), (k  ));
