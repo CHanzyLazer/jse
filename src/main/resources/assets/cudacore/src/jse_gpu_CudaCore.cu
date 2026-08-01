@@ -38,6 +38,14 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaCore_cudaGetDevice(JNIEnv *aEnv, jclass 
     }
     return (jint)rDevice;
 }
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaCore_cudaGetDeviceCus(JNIEnv *aEnv, jclass aClazz, jint aDevice) {
+    cudaDeviceProp tProp{};
+    const cudaError_t tErr = cudaGetDeviceProperties(&tProp, aDevice);
+    if (tErr != cudaSuccess) {
+        JSE_CUDACORE::throwExceptionCuda(aEnv, cudaGetErrorString(tErr));
+    }
+    return (jint)tProp.multiProcessorCount;
+}
 
 JNIEXPORT jlong JNICALL Java_jse_gpu_CudaCore_cudaMalloc0(JNIEnv *aEnv, jclass aClazz, jlong aCount) {
     void *tPtr = NULL;

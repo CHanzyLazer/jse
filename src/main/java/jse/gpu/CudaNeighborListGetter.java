@@ -208,7 +208,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
         if (tLocalCap>mLocalCellCapacity || tGhostCap>mGhostCellCapacity) {
             if (tLocalCap>mLocalCellCapacity) mLocalCellCapacity = MathEX.Code.ceil2int(tLocalCap*1.5);
             if (tGhostCap>mGhostCellCapacity) mGhostCellCapacity = MathEX.Code.ceil2int(tGhostCap*2.0);
-            System.err.println("init cell, local: "+mLocalCellCapacity+", ghost: "+mGhostCellCapacity);
         }
         mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*mLocalCellCapacity + (long)tGhostCellCount*mGhostCellCapacity, false);
         mPtrMng.ensureCapacity(mCellSize, tCellCount);
@@ -243,7 +242,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
             final int tLocalCellCount = mSliceX*mSliceY*mSliceZ;
             final int tGhostCellCount = (mSliceX+2)*(mSliceY+2)*(mSliceZ+2)-tLocalCellCount;
             mPtrMng.ensureCapacity(mCellTot, (long)tLocalCellCount*mLocalCellCapacity + (long)tGhostCellCount*mGhostCellCapacity, false);
-            System.err.println("growth cell, local: "+mLocalCellCapacity+", ghost: "+mGhostCellCapacity);
             int tCode = initCells0(
                 mSliceX, mSliceY, mSliceZ,
                 mCellTot.ptr_(), mCells.ptr_(), mCellsCpu.ptr_(),
@@ -258,7 +256,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
         final int tNlCap = MathEX.Code.ceil2int(nlocal/mVolume * mRCut*mRCut*mRCut * (4.0/3.0*MathEX.PI));
         if (tNlCap > mNlCapacity) {
             mNlCapacity = MathEX.Code.ceil2int(tNlCap*1.25);
-            System.err.println("init nl: "+mNlCapacity);
         }
         mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
         mPtrMng.ensureCapacity(mNlSize, nlocal);
@@ -280,7 +277,6 @@ public class CudaNeighborListGetter implements AutoCloseable {
         if (tNlMax > mNlCapacity) {
             mNlCapacity = MathEX.Code.ceil2int(tNlMax*1.25);
             mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
-            System.err.println("growth nl: "+mNlCapacity);
             buildNl(nlocal, nghost);
         }
     }

@@ -137,6 +137,7 @@ public class CudaCore {
     public static native int cudaGetDeviceCount() throws CudaException;
     public static native void cudaSetDevice(int aDevice) throws CudaException;
     public static native int cudaGetDevice() throws CudaException;
+    public static native int cudaGetDeviceCus(int aDevice) throws CudaException;
     
     static long cudaMalloc(long aCount) throws CudaException {
         if (aCount<=0) throw new IllegalArgumentException("Input count must be positive");

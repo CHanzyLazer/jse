@@ -49,6 +49,14 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaCore_cudaGetDevice
 
 /*
  * Class:     jse_gpu_CudaCore
+ * Method:    cudaGetDeviceCus
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_jse_gpu_CudaCore_cudaGetDeviceCus
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     jse_gpu_CudaCore
  * Method:    cudaMalloc0
  * Signature: (J)J
  */
