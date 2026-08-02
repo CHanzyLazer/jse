@@ -122,7 +122,9 @@ public class NNAP implements IPairPotential {
     private IntCudaPointer mCudaNMerges = null, mCudaLmpType2NNAPType = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
     private CudaPointer mCudaFpHyperParam = null, mCudaFpParam = null, mCudaNnParam = null, mCudaNormParam = null;
+    private FloatCudaPointer mCudaCache = null;
     private CudaNeighborListGetter mCudaNlGetter = null;
+    private int mCudaFpForwardCacheSize = -1;
     
     @SuppressWarnings({"unchecked", "resource"})
     NNAP(@Nullable String aLibDir, @Nullable String aProjectName, Map<?, ?> aModelInfo, @Range(from=1, to=Integer.MAX_VALUE) int aNumThreads, String aArch) throws Exception {
@@ -315,6 +317,11 @@ public class NNAP implements IPairPotential {
         }
         // 这里初始化 cuda 数据
         if (mCuda) {
+            int tCudaFpForwardCacheSize = 0;
+            for (int i = 0; i < tModelSize; ++i) {
+                tCudaFpForwardCacheSize = Math.max(tCudaFpForwardCacheSize, mBasis[i].forwardCacheSizeGpu());
+            }
+            mCudaFpForwardCacheSize = tCudaFpForwardCacheSize;
             AnyCPointer tCudaFpHyperParam = AnyCPointer.calloc(tModelSize);
             AnyCPointer tCudaFpParam = AnyCPointer.calloc(tModelSize);
             AnyCPointer tCudaNnParam = AnyCPointer.calloc(tModelSize);
@@ -953,6 +960,7 @@ public class NNAP implements IPairPotential {
         mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
+        mCudaCache = mPtrMngTot.newFloatCudaPointer();
         
         mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
         mCudaLmpType2NNAPType = mPtrMngTot.newIntCudaPointer(aPair.mNumTypes+1);
@@ -972,6 +980,7 @@ public class NNAP implements IPairPotential {
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
         mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
         mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)nlocal*(mNMergesMax+1));
+        mPtrMngTot.ensureCapacity(mCudaCache, (long)nlocal*mCudaFpForwardCacheSize);
         // GPU 近邻列表构建
         mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
@@ -992,6 +1001,7 @@ public class NNAP implements IPairPotential {
             mCudaNlGetter.pos(), mCudaNlGetter.type(), mCudaNMerges, mCudaMergeSorted,
             mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(), mCudaLmpType2NNAPType,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
+            mCudaCache,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
             mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,
             mCudaBufNlSize, mCudaBufNl

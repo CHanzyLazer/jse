@@ -61,7 +61,8 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
         flt_t *posx, flt_t *posy, flt_t *posz, int *type,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
         flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
-        flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
+        flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam,
+        flt_t *rFpForwardCache) {
     
     const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (i >= nlocal) return;
@@ -83,7 +84,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
     fpForwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
         aBufNlSize, aBufNl, rFpOrGradFp,
         posx, posy, posz, type,
-        aFpHyperParam, aFpParam
+        aFpHyperParam, aFpParam, rFpForwardCache
     );
     {
         flt_t rNnGradCache[__NNAPGENX_NN_SIZE_HB__];
@@ -102,7 +103,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
         aBufNlSize, aBufNl, rFpOrGradFp,
         posx, posy, posz, type,
         nlFx, nlFy, nlFz,
-        aFpHyperParam, aFpParam
+        aFpHyperParam, aFpParam, rFpForwardCache
     );
 // <<< NNAPGEN SWITCH (ctype) [FP NN TYPE]
     
@@ -165,7 +166,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         int eflagEither,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
         flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
-        flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
+        flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam,
+        flt_t *rFpForwardCache) {
     if (eflagEither) {
         computeLammpsKernel<TRUE, VTOTAL, VATOM>
                      <<<aGridSize, aBlockSize>>>(nlocal, nghost,
@@ -173,7 +175,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             posx, posy, posz, type,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
-            aFpHyperParam, aFpParam, aNormParam, aNnParam
+            aFpHyperParam, aFpParam, aNormParam, aNnParam,
+            rFpForwardCache
         );
     } else {
         computeLammpsKernel<FALSE, VTOTAL, VATOM>
@@ -182,18 +185,20 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             posx, posy, posz, type,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
-            aFpHyperParam, aFpParam, aNormParam, aNnParam
+            aFpHyperParam, aFpParam, aNormParam, aNnParam,
+            rFpForwardCache
         );
     }
 }
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
-    int nlocal, int nghost,
-    int *aBufNlSize, int *aBufNl,
-    flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    int eflagEither, int vflag, int vflagAtom,
-    flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
-    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
-    flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam) {
+        int nlocal, int nghost,
+        int *aBufNlSize, int *aBufNl,
+        flt_t *posx, flt_t *posy, flt_t *posz, int *type,
+        int eflagEither, int vflag, int vflagAtom,
+        flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
+        flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
+        flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **aNormParam, flt_t **aNnParam,
+        flt_t *rFpForwardCache) {
     if (vflagAtom) {
         computeLammpsKernel_<TRUE, TRUE>(aGridSize, aBlockSize,
             nlocal, nghost,
@@ -202,7 +207,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             eflagEither,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
-            aFpHyperParam, aFpParam, aNormParam, aNnParam
+            aFpHyperParam, aFpParam, aNormParam, aNnParam,
+            rFpForwardCache
         );
     } else if (vflag) {
         computeLammpsKernel_<TRUE, FALSE>(aGridSize, aBlockSize,
@@ -212,7 +218,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             eflagEither,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
-            aFpHyperParam, aFpParam, aNormParam, aNnParam
+            aFpHyperParam, aFpParam, aNormParam, aNnParam,
+            rFpForwardCache
         );
     } else {
         computeLammpsKernel_<FALSE, FALSE>(aGridSize, aBlockSize,
@@ -222,7 +229,8 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
             eflagEither,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
-            aFpHyperParam, aFpParam, aNormParam, aNnParam
+            aFpHyperParam, aFpParam, aNormParam, aNnParam,
+            rFpForwardCache
         );
     }
 }
@@ -437,6 +445,7 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
     JSE_NNAP::flt_t *pos, int *type, int *nmerges, int **mergeSorted,
     JSE_NNAP::flt_t **cutsq, int *nlsize, int *nl, int *aLmpType2NNAPType,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t **aNormParam,
+    JSE_NNAP::flt_t *rFpForwardCache,
     JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *eatom0, JSE_NNAP::flt_t *vatom0, JSE_NNAP::flt_t *vatom1,
     JSE_NNAP::flt_t *nlFx, JSE_NNAP::flt_t *nlFy, JSE_NNAP::flt_t *nlFz,
     int *rBufNlSize, int *rBufNl) {
@@ -479,7 +488,8 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
         eflagEither, vflag, vflagAtom,
         eatom0, f, vatom0, vatom1,
         nlFx, nlFy, nlFz,
-        aFpHyperParam, aFpParam, aNormParam, aNnParam
+        aFpHyperParam, aFpParam, aNormParam, aNnParam,
+        rFpForwardCache
     );
     
     return (int)cudaDeviceSynchronize();

@@ -77,4 +77,6 @@ public abstract class MergeableBasis implements ISavable {
     public abstract int backwardCacheSize(int aNumNei);
     /** @return 二次反向传播中需要的缓存大小 */
     public abstract int backwardBackwardCacheSize(int aNumNei);
+    
+    public abstract int forwardCacheSizeGpu();
 }

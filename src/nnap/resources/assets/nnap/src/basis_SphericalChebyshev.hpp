@@ -65,18 +65,20 @@ template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SI
 static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *rFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t aRCut, flt_t *aParams) noexcept {
+    flt_t **rForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
+    flt_t *rAnlmBuf = *rForwardCache; *rForwardCache += (SIZE_NP*tLMAll)*nb;
     flt_t bY[tLMAll];
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     // change loop order for less cache
     constexpr int tSizeL2 = LMAX+1;
     constexpr int tSizeL3 = L3NCOLS[L3MAX];
     int np = 0, tShiftFp = 0;
+    int tShiftAnlm1 = 0, tShiftAnlm2 = tLMAll;
     for (; np < (SIZE_NP-1); np += 2) {
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
@@ -86,6 +88,13 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
             posx, posy, posz, type,
             aRCut, aParams
         );
+        // cache anlm
+        for (int k = 0; k < tLMAll; ++k) {
+            rAnlmBuf[(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+            rAnlmBuf[(k+tShiftAnlm2)*nb + bi] = bAnlm2[k];
+        }
+        tShiftAnlm1 += (2*tLMAll);
+        tShiftAnlm2 += (2*tLMAll);
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
         calSphL3<L3MAX>(bAnlm1, rFp+tShiftFp+tSizeL2);
@@ -105,6 +114,10 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
             posx, posy, posz, type,
             aRCut, aParams
         );
+        // cache anlm
+        for (int k = 0; k < tLMAll; ++k) {
+            rAnlmBuf[(k+tShiftAnlm2)*nb + bi] = bAnlm1[k];
+        }
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
         calSphL3<L3MAX>(bAnlm1, rFp+tShiftFp+tSizeL2);
@@ -233,29 +246,29 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     int aNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
-    flt_t aRCut, flt_t *aParams) noexcept {
+    flt_t **aForwardCache, flt_t aRCut, flt_t *aParams) noexcept {
     
     // const init
     constexpr int tSizeL = (LMAX+1) + L3NCOLS[L3MAX] + L4NCOLS[L4MAX];
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
+    flt_t *tAnlmBuf = *aForwardCache; *aForwardCache += (SIZE_NP*tLMAll)*nb;
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     flt_t bAGradAnlm1[tLMAll], bAGradAnlm2[tLMAll];
     // change loop order for less cache
     constexpr int tSizeL2 = LMAX+1;
     constexpr int tSizeL3 = L3NCOLS[L3MAX];
     int np = 0, tShiftFp = 0;
+    int tShiftAnlm1 = 0, tShiftAnlm2 = tLMAll;
     for (; np < (SIZE_NP-1); np += 2) {
-        // recalculated for save cache
-        fill<tLMAll>(bAnlm1, ZERO);
-        fill<tLMAll>(bAnlm2, ZERO);
-        calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aNlSize, aBufNl,
-            bAGradAnlm1, bAnlm1, bAnlm2,
-            posx, posy, posz, type,
-            aRCut, aParams
-        );
+        // read anlm from cache
+        for (int k = 0; k < tLMAll; ++k) {
+            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm1)*nb + bi];
+            bAnlm2[k] = tAnlmBuf[(k+tShiftAnlm2)*nb + bi];
+        }
+        tShiftAnlm1 += (2*tLMAll);
+        tShiftAnlm2 += (2*tLMAll);
         fill<tLMAll>(bAGradAnlm1, ZERO);
         fill<tLMAll>(bAGradAnlm2, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
@@ -277,13 +290,10 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     }
     // rest
     if (SIZE_NP%2 == 1) {
-        fill<tLMAll>(bAnlm1, ZERO);
-        calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aNlSize, aBufNl,
-            bAGradAnlm1, bAnlm1, NULL,
-            posx, posy, posz, type,
-            aRCut, aParams
-        );
+        // read anlm from cache
+        for (int k = 0; k < tLMAll; ++k) {
+            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm2)*nb + bi];
+        }
         fill<tLMAll>(bAGradAnlm1, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
         calGradSphL3<L3MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2);

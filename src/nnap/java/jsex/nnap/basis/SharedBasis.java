@@ -52,6 +52,10 @@ public class SharedBasis extends Basis {
         return mSharedBasis.backwardBackwardCacheSize(aNumNei);
     }
     
+    @Override public int forwardCacheSizeGpu() {
+        return mSharedBasis.forwardCacheSizeGpu();
+    }
+    
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
         rSaveTo.put("type", "share");

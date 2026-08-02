@@ -29,11 +29,12 @@ template <int CTYPE_GEN>
 static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
     int *aBufNlSize, int *aBufNl, flt_t *rFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t **aFpHyperParam, flt_t **aFpParam) noexcept {
+    flt_t **aFpHyperParam, flt_t **aFpParam, flt_t *rFpForwardCache) noexcept {
     
     int flag = 1;
 // >>> NNAPGEN SWITCH
     flt_t *rSubFp = rFp;
+    flt_t *rSubFpForwardCache = rFpForwardCache;
 // >>> NNAPGEN IF
 // --- NNAPGEN HAS: [FP SHARE __NNAPGENS_X__]
     flt_t *tSubFpHyperParam = aFpHyperParam[__NNAPGENX_FP_SHARED_TYPE__-1];
@@ -55,7 +56,7 @@ static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
                   __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, rSubFp,
         posx, posy, posz, type,
-        tSubFpHyperParam[0], tSubFpParam
+        &rSubFpForwardCache, tSubFpHyperParam[0], tSubFpParam
     );
 // --- NNAPGEN PICK: chebyshev
     chebyForwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
@@ -138,11 +139,12 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
     int *aBufNlSize, int *aBufNl, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
-    flt_t **aFpHyperParam, flt_t **aFpParam) noexcept {
+    flt_t **aFpHyperParam, flt_t **aFpParam, flt_t *aFpForwardCache) noexcept {
     
     int flag = 1;
 // >>> NNAPGEN SWITCH
     flt_t *tSubAGradFp = aAGradFp;
+    flt_t *tSubFpForwardCache = aFpForwardCache;
 // >>> NNAPGEN IF
 // --- NNAPGEN HAS: [FP SHARE __NNAPGENS_X__]
     flt_t *tSubFpHyperParam = aFpHyperParam[__NNAPGENX_FP_SHARED_TYPE__-1];
@@ -165,7 +167,7 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
         nlFx, nlFy, nlFz,
-        tSubFpHyperParam[0], tSubFpParam
+        &tSubFpForwardCache, tSubFpHyperParam[0], tSubFpParam
     );
 // --- NNAPGEN PICK: chebyshev
     chebyBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,

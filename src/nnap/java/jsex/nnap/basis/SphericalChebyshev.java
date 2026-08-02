@@ -119,6 +119,10 @@ public class SphericalChebyshev extends WTypeBasis {
         return aNumNei*mSizeNP + mSizeNP*mLMAll;
     }
     
+    @Override public int forwardCacheSizeGpu() {
+        return mSizeNP*mLMAll;
+    }
+    
     @Override public void updateGenMap(Map<String, Object> rGenMap, int aGenIdxType, int aGenIdxMerge) {
         super.updateGenMap(rGenMap, aGenIdxType, aGenIdxMerge);
         rGenMap.put("[FP USE "+aGenIdxType+":"+aGenIdxMerge+"]", "spherical_chebyshev");
