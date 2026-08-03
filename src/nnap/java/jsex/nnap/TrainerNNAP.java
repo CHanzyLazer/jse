@@ -949,9 +949,10 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     final int cType = tAtomType.get(k);
                     IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                     tPtrMng.ensureCapacity(tSubCache, mNNAP.forwardEnergyCacheSize(tNlSize, cType));
-                    double tSubEng = mNNAP.forwardEnergy(threadID,
+                    double tSubEng = mNNAP.forwardEnergy(
+                        threadID, cType, tNlSize,
                         tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
-                        tNlSize, cType, tSubCache
+                        tSubCache
                     );
                     // 注意 nnap 内部获取能量会是准确值，这里需要再次归一化
                     rEng += (tSubEng - mRefEngs.get(cType-1));
@@ -973,14 +974,16 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     IDoubleOrFloatCPointer tSubNlDx = tNlDx.get(k), tSubNlDy = tNlDy.get(k), tSubNlDz = tNlDz.get(k);
                     IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                     if (!mCacheForward) {
-                        mNNAP.forwardEnergy(threadID,
+                        mNNAP.forwardEnergy(
+                            threadID, cType, tNlSize,
                             tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
-                            tNlSize, cType, tSubCache
+                            tSubCache
                         );
                     }
-                    mNNAP.backwardEnergy(threadID,
-                        tBGradEng, tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
-                        tNlSize, cType, tSubCache
+                    mNNAP.backwardEnergy(
+                        threadID, cType, tNlSize,
+                        tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
+                        tBGradEng, tSubCache
                     );
                 }
                 return;
@@ -1023,10 +1026,11 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 
                 IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                 tPtrMng.ensureCapacity(tSubCache, mNNAP.forwardEnergyForceCacheSize(tNlSize, cType));
-                double tSubEng = mNNAP.forwardEnergyForce(threadID,
+                double tSubEng = mNNAP.forwardEnergyForce(
+                    threadID, cType, tNlSize,
                     tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
-                    tNlSize, cType, tSubCache,
-                    rAGradNlDx, rAGradNlDy, rAGradNlDz
+                    rAGradNlDx, rAGradNlDy, rAGradNlDz,
+                    tSubCache
                 );
                 // 注意 nnap 内部获取能量会是准确值，这里需要再次归一化
                 if (tHasEng) {
@@ -1162,16 +1166,18 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 }
                 IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                 if (!mCacheForward) {
-                    mNNAP.forwardEnergyForce(threadID,
+                    mNNAP.forwardEnergyForce(
+                        threadID, cType, tNlSize,
                         tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
-                        tNlSize, cType, tSubCache,
-                        rAGradNlDx, rAGradNlDy, rAGradNlDz
+                        rAGradNlDx, rAGradNlDy, rAGradNlDz,
+                        tSubCache
                     );
                 }
-                mNNAP.backwardEnergyForce(threadID,
-                    tBGradEng, tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
-                    tNlSize, cType, tSubCache,
-                    rBGradAGradNlDx, rBGradAGradNlDy, rBGradAGradNlDz
+                mNNAP.backwardEnergyForce(
+                    threadID, cType, tNlSize,
+                    tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
+                    rBGradAGradNlDx, rBGradAGradNlDy, rBGradAGradNlDz,
+                    tBGradEng, tSubCache
                 );
             }
         });
@@ -1603,9 +1609,10 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 int tType = tAtomType.get(k);
                 // NNAP 内部缓存使用 NNAP 内部的管理器
                 tPtrMng.ensureCapacity(rFpPtr, mNNAP.mBasis[tType-1].size());
-                mNNAP.calFp(threadID,
+                mNNAP.calFp(
+                    threadID, tType, tNumNei.get(k),
                     tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
-                    tNumNei.get(k), tType, rFpPtr
+                    rFpPtr
                 );
                 Vector tSubFp = tFp[tType-1];
                 rFpPtr.parse2destD(tSubFp);
@@ -1789,8 +1796,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tPtrMng.ensureCapacity(rAGradNlDz, tNlSize);
                 
                 mNNAP.calEnergyForce(
-                    0, tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
-                    tNlSize, tAtomType.get(k),
+                    0, tAtomType.get(k), tNlSize,
+                    tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
                     rAGradNlDx, rAGradNlDy, rAGradNlDz
                 );
             }

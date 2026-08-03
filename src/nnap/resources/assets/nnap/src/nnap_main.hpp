@@ -56,7 +56,7 @@ static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
                   __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, rSubFp,
         posx, posy, posz, type,
-        &rSubFpForwardCache, tSubFpHyperParam[0], tSubFpParam
+        tSubFpHyperParam[0], tSubFpParam, &rSubFpForwardCache
     );
 // --- NNAPGEN PICK: chebyshev
     chebyForwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
@@ -78,13 +78,14 @@ static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
 template <int CTYPE_GEN>
 static NNAP_DEVICE int normedNnForwardGpu(int ctype,
     flt_t *rOut, flt_t *rFp,
-    flt_t *aNormParam, flt_t **aNnParam, flt_t *rNnGradGradCache) noexcept {
+    flt_t **aNormParam, flt_t **aNnParam, flt_t *rNnGradGradCache) noexcept {
     
-    flt_t tNormMuEng = aNormParam[0];
-    flt_t tNormSigmaEng = aNormParam[1];
+    flt_t *tSubNormParam = aNormParam[ctype-1];
+    flt_t tNormMuEng = tSubNormParam[0];
+    flt_t tNormSigmaEng = tSubNormParam[1];
     int flag = 1;
     // >>> NNAPGEN SWITCH
-    flt_t *tNormMu = aNormParam + 2;
+    flt_t *tNormMu = tSubNormParam + 2;
     flt_t *tNormSigma = tNormMu + __NNAPGENX_NN_SIZE_IN__;
     // norm fp here
     for (int i = 0; i < __NNAPGENX_NN_SIZE_IN__; ++i) {
@@ -109,9 +110,10 @@ static NNAP_DEVICE int normedNnForwardGpu(int ctype,
 template <int CTYPE_GEN>
 static NNAP_DEVICE int normedNnBackwardGpu(int ctype,
     flt_t aInAGrad, flt_t *rAGradFp,
-    flt_t *aNormParam, flt_t **aNnParam, flt_t *aNnGradCache) noexcept {
+    flt_t **aNormParam, flt_t **aNnParam, flt_t *aNnGradCache) noexcept {
     
-    flt_t tNormSigmaEng = aNormParam[1];
+    flt_t *tSubNormParam = aNormParam[ctype-1];
+    flt_t tNormSigmaEng = tSubNormParam[1];
     int flag = 1;
     // >>> NNAPGEN SWITCH
     // denorm energy here
@@ -123,7 +125,7 @@ static NNAP_DEVICE int normedNnBackwardGpu(int ctype,
         tInAGrad, rAGradFp, tWeights, aNnGradCache
     );
     // <<< NNAPGEN PICK [NN USE __NNAPGENS_X__]
-    flt_t *tNormSigma = aNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
+    flt_t *tNormSigma = tSubNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
     // denorm fp here
     for (int i = 0; i < __NNAPGENX_NN_SIZE_IN__; ++i) {
         rAGradFp[i] /= tNormSigma[i];
@@ -167,7 +169,7 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
         aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNl, tSubAGradFp,
         posx, posy, posz, type,
         nlFx, nlFy, nlFz,
-        &tSubFpForwardCache, tSubFpHyperParam[0], tSubFpParam
+        tSubFpHyperParam[0], tSubFpParam, &tSubFpForwardCache
     );
 // --- NNAPGEN PICK: chebyshev
     chebyBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
@@ -191,10 +193,10 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
 
 
 template <int CTYPE_GEN, int REQUIRE_CACHE>
-static int fpForward(int bi, int ctype,
-    int aNlSize, int *aNl, flt_t *rFp,
-    flt_t *pos, int *type,
-    flt_t **aFpHyperParam, flt_t **aFpParam, flt_t *rFpForwardCache) noexcept {
+static int fpForward(int ctype,
+    int aNlSize, flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType,
+    flt_t *rFp, flt_t **aFpHyperParam, flt_t **aFpParam,
+    flt_t *rFpForwardCache) noexcept {
     
     int flag = 1;
 // >>> NNAPGEN SWITCH
@@ -218,16 +220,16 @@ static int fpForward(int bi, int ctype,
 // >>> NNAPGEN PICK
 // --- NNAPGEN PICK: spherical_chebyshev
     sphForward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_LMAX__,
-               __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__, REQUIRE_CACHE>(bi,
-        aNlSize, aNl, rSubFp,
-        pos, type,
-        REQUIRE_CACHE?(&rSubFpForwardCache):NULL, tSubFpHyperParam[0], tSubFpParam
+               __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__, REQUIRE_CACHE>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        rSubFp, tSubFpHyperParam[0], tSubFpParam,
+        REQUIRE_CACHE?(&rSubFpForwardCache):NULL
     );
 // --- NNAPGEN PICK: chebyshev
-    chebyForward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__, REQUIRE_CACHE>(bi,
-        aNlSize, aNl, rSubFp,
-        pos, type,
-        REQUIRE_CACHE?(&rSubFpForwardCache):NULL, tSubFpHyperParam[0], tSubFpParam
+    chebyForward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__, REQUIRE_CACHE>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        rSubFp, tSubFpHyperParam[0], tSubFpParam,
+        REQUIRE_CACHE?(&rSubFpForwardCache):NULL
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]
     rSubFp += __NNAPGENXX_FP_SIZE__;
@@ -242,14 +244,15 @@ static int fpForward(int bi, int ctype,
 
 template <int CTYPE_GEN, int CACHE_GRAD, int CACHE_GRADGRAD>
 static int normedNnForward(int ctype,
-    flt_t *rOut, flt_t *rLayers, flt_t *aNormParam, flt_t **aNnParam,
+    flt_t *rOut, flt_t *rLayers, flt_t **aNormParam, flt_t **aNnParam,
     flt_t *rNnGradCache, flt_t *rNnGradGradCache) noexcept {
     
-    flt_t tNormMuEng = aNormParam[0];
-    flt_t tNormSigmaEng = aNormParam[1];
+    flt_t *tSubNormParam = aNormParam[ctype-1];
+    flt_t tNormMuEng = tSubNormParam[0];
+    flt_t tNormSigmaEng = tSubNormParam[1];
     int flag = 1;
 // >>> NNAPGEN SWITCH
-    flt_t *tNormMu = aNormParam + 2;
+    flt_t *tNormMu = tSubNormParam + 2;
     flt_t *tNormSigma = tNormMu + __NNAPGENX_NN_SIZE_IN__;
     // norm fp here
     for (int i = 0; i < __NNAPGENX_NN_SIZE_IN__; ++i) {
@@ -274,9 +277,10 @@ static int normedNnForward(int ctype,
 template <int CTYPE_GEN, int GRAD_PARAM, int CACHE_Z>
 static int normedNnBackward(int ctype,
     flt_t aInAGrad, flt_t *aLayers, flt_t *rAGradLayers, flt_t *rAGradLayersZ,
-    flt_t *aNormParam, flt_t **aNnParam, flt_t **rAGradNnParam, flt_t *aNnGradCache) noexcept {
+    flt_t **aNormParam, flt_t **aNnParam, flt_t **rAGradNnParam, flt_t *aNnGradCache) noexcept {
     
-    flt_t tNormSigmaEng = aNormParam[1];
+    flt_t *tSubNormParam = aNormParam[ctype-1];
+    flt_t tNormSigmaEng = tSubNormParam[1];
     int flag = 1;
 // >>> NNAPGEN SWITCH
     // denorm energy here
@@ -291,7 +295,7 @@ static int normedNnBackward(int ctype,
         tWeights, rAGradWeights, rAGradBiases, aNnGradCache
     );
 // <<< NNAPGEN PICK [NN USE __NNAPGENS_X__]
-    flt_t *tNormSigma = aNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
+    flt_t *tNormSigma = tSubNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
     // denorm fp here
     for (int i = 0; i < __NNAPGENX_NN_SIZE_IN__; ++i) {
         rAGradLayers[i] /= tNormSigma[i];
@@ -303,10 +307,9 @@ static int normedNnBackward(int ctype,
 }
 
 template <int CTYPE_GEN, int GRAD_PARAM, int USE_BB, int REQUIRE_CACHE>
-static int fpBackward(int bi, int ctype,
-    int aNlSize, int *aNl, flt_t *aAGradFp,
-    flt_t *pos, int *type,
-    flt_t *f, flt_t *v0, flt_t *v1,
+static int fpBackward(int ctype,
+    int aNlSize, flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType,
+    flt_t *rAGradNlDx, flt_t *rAGradNlDy, flt_t *rAGradNlDz, flt_t *aAGradFp,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **rAGradFpParam,
     flt_t *aFpForwardCache, flt_t *rFpBackwardCache, flt_t *rFpBackwardBackwardCache) noexcept {
     
@@ -341,21 +344,19 @@ static int fpBackward(int bi, int ctype,
 // --- NNAPGEN PICK: spherical_chebyshev
     sphBackward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
                 __NNAPGENXX_FP_LMAX__, __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__,
-                GRAD_PARAM, USE_BB, REQUIRE_CACHE>(bi,
-        aNlSize, aNl, tSubAGradFp,
-        pos, type,
-        f, v0, v1,
-        &tSubFpForwardCache, REQUIRE_CACHE?(&rSubFpBackwardCache):NULL, USE_BB?(&rSubFpBackwardBackwardCache):NULL,
-        tSubFpHyperParam[0], tSubFpParam, rSubAGradFpParam
+                GRAD_PARAM, USE_BB, REQUIRE_CACHE>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        rAGradNlDx, rAGradNlDy, rAGradNlDz, tSubAGradFp,
+        tSubFpHyperParam[0], tSubFpParam, rSubAGradFpParam,
+        &tSubFpForwardCache, REQUIRE_CACHE?(&rSubFpBackwardCache):NULL, USE_BB?(&rSubFpBackwardBackwardCache):NULL
     );
 // --- NNAPGEN PICK: chebyshev
     chebyBackward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
-                  __NNAPGENXX_FP_SIZE_NP__, GRAD_PARAM, USE_BB, REQUIRE_CACHE>(bi,
-        aNlSize, aNl, tSubAGradFp,
-        pos, type,
-        f, v0, v1,
-        &tSubFpForwardCache, REQUIRE_CACHE?(&rSubFpBackwardCache):NULL, USE_BB?(&rSubFpBackwardBackwardCache):NULL,
-        tSubFpHyperParam[0], tSubFpParam, rSubAGradFpParam
+                  __NNAPGENXX_FP_SIZE_NP__, GRAD_PARAM, USE_BB, REQUIRE_CACHE>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        rAGradNlDx, rAGradNlDy, rAGradNlDz, tSubAGradFp,
+        tSubFpHyperParam[0], tSubFpParam, rSubAGradFpParam,
+        &tSubFpForwardCache, REQUIRE_CACHE?(&rSubFpBackwardCache):NULL, USE_BB?(&rSubFpBackwardBackwardCache):NULL
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]
     tSubAGradFp += __NNAPGENXX_FP_SIZE__;
@@ -372,10 +373,10 @@ static int fpBackward(int bi, int ctype,
 }
 
 template <int CTYPE_GEN>
-static int fpBackwardBackward(int bi, int ctype,
-    int aNlSize, int *aNl, flt_t *aAGradFp, flt_t *rBGradAGradFp,
-    flt_t *pos, int *type,
-    flt_t *aBGradF, flt_t *aBGradV0,
+static int fpBackwardBackward(int ctype,
+    int aNlSize, flt_t *aNlDx, flt_t *aNlDy, flt_t *aNlDz, int *aNlType,
+    flt_t *aBGradNlDx, flt_t *aBGradNlDy, flt_t *aBGradNlDz,
+    flt_t *aAGradFp, flt_t *rBGradAGradFp,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t **rBGradFpParam,
     flt_t *aFpForwardCache, flt_t *aFpBackwardCache, flt_t *rFpBackwardBackwardCache) noexcept {
     
@@ -407,20 +408,20 @@ static int fpBackwardBackward(int bi, int ctype,
 // >>> NNAPGEN PICK
 // --- NNAPGEN PICK: spherical_chebyshev
     sphBackwardBackward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_LMAX__,
-                        __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(bi,
-        aNlSize, aNl, tSubAGradFp, rSubBGradAGradFp,
-        pos, type,
-        aBGradF, aBGradV0,
-        &tSubFpForwardCache, &tSubFpBackwardCache, &rSubFpBackwardBackwardCache,
-        tSubFpHyperParam[0], tSubFpParam, rSubBGradFpParam
+                        __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        aBGradNlDx, aBGradNlDy, aBGradNlDz,
+        tSubAGradFp, rSubBGradAGradFp,
+        tSubFpHyperParam[0], tSubFpParam, rSubBGradFpParam,
+        &tSubFpForwardCache, &tSubFpBackwardCache, &rSubFpBackwardBackwardCache
     );
 // --- NNAPGEN PICK: chebyshev
-    chebyBackwardBackward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(bi,
-        aNlSize, aNl, tSubAGradFp, rSubBGradAGradFp,
-        pos, type,
-        aBGradF, aBGradV0,
-        &tSubFpForwardCache, &tSubFpBackwardCache, &rSubFpBackwardBackwardCache,
-        tSubFpHyperParam[0], tSubFpParam, rSubBGradFpParam
+    chebyBackwardBackward<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(ctype,
+        aNlSize, aNlDx, aNlDy, aNlDz, aNlType,
+        aBGradNlDx, aBGradNlDy, aBGradNlDz,
+        tSubAGradFp, rSubBGradAGradFp,
+        tSubFpHyperParam[0], tSubFpParam, rSubBGradFpParam,
+        &tSubFpForwardCache, &tSubFpBackwardCache, &rSubFpBackwardBackwardCache
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]
     tSubAGradFp += __NNAPGENXX_FP_SIZE__;
@@ -438,12 +439,13 @@ static int fpBackwardBackward(int bi, int ctype,
 template <int CTYPE_GEN, int GRAD_IN>
 static int normedNnBackwardBackward(int ctype,
     flt_t aInAGrad, flt_t *rOutBGradAGrad, flt_t *aAGradLayers, flt_t *rBGradAGradLayers, flt_t *aAGradLayersZ, flt_t *rBGradLayersZ,
-    flt_t *aNormParam, flt_t **aNnParam, flt_t **rBGradNnParam, flt_t *aNnGradCache, flt_t *aNnGradGradCache) noexcept {
+    flt_t **aNormParam, flt_t **aNnParam, flt_t **rBGradNnParam, flt_t *aNnGradCache, flt_t *aNnGradGradCache) noexcept {
     
-    flt_t tNormSigmaEng = aNormParam[1];
+    flt_t *tSubNormParam = aNormParam[ctype-1];
+    flt_t tNormSigmaEng = tSubNormParam[1];
     int flag = 1;
 // >>> NNAPGEN SWITCH
-    flt_t *tNormSigma = aNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
+    flt_t *tNormSigma = tSubNormParam + (2+__NNAPGENX_NN_SIZE_IN__);
     // denorm fp here
     for (int i = 0; i < __NNAPGENX_NN_SIZE_IN__; ++i) {
         rBGradAGradLayers[i] /= tNormSigma[i];

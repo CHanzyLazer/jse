@@ -90,13 +90,13 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
         flt_t rNnGradCache[__NNAPGENX_NN_SIZE_HB__];
         normedNnForwardGpu<__NNAPGENS_ctype__>(
             ctype, &eng, rFpOrGradFp,
-            aNormParam[ctype-1], aNnParam, rNnGradCache
+            aNormParam, aNnParam, rNnGradCache
         );
         // manual clear required for backward in force
         fill<__NNAPGENX_FP_SIZE__>(rFpOrGradFp, ZERO);
         normedNnBackwardGpu<__NNAPGENS_ctype__>(
             ctype, ONE, rFpOrGradFp,
-            aNormParam[ctype-1], aNnParam, rNnGradCache
+            aNormParam, aNnParam, rNnGradCache
         );
     }
     fpBackwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
@@ -304,13 +304,13 @@ static __global__ void computeGpumdKernel(int number_of_particles, int N1, int N
         flt_t rNnGradCache[__NNAPGENX_NN_SIZE_HB__];
         normedNnForwardGpu<__NNAPGENS_ctype__>(
             ctype, &rEng, rFpOrGradFp,
-            aNormParam[ctype-1], aNnParam, rNnGradCache
+            aNormParam, aNnParam, rNnGradCache
         );
         // manual clear required for backward in force
         fill<__NNAPGENX_FP_SIZE__>(rFpOrGradFp, ZERO);
         normedNnBackwardGpu<__NNAPGENS_ctype__>(
             ctype, ONE, rFpOrGradFp,
-            aNormParam[ctype-1], aNnParam, rNnGradCache
+            aNormParam, aNnParam, rNnGradCache
         );
     }
     // fpBackwardGpu<__NNAPGENS_ctype__>(number_of_particles, ii,
