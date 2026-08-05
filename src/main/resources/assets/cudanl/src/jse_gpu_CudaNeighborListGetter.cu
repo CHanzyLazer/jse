@@ -38,13 +38,13 @@ static __device__ inline void toDirect(
 
 static __device__ __host__ inline int cellIndex(
     const int sliceX, const int sliceY, const int sliceZ,
-    const int i, const int j, const int k) {
-    return (i+1) + (sliceX+2)*(j+1) + (sliceX+2)*(sliceY+2)*(k+1);
+    const int ci, const int cj, const int ck) {
+    return (ci+1) + (sliceX+2)*(cj+1) + (sliceX+2)*(sliceY+2)*(ck+1);
 }
 static __device__ __host__ inline int cellGhost(
     const int sliceX, const int sliceY, const int sliceZ,
-    const int i, const int j, const int k) {
-    return (i<0 || i>=sliceX || j<0 || j>=sliceY || k<0 || k>=sliceZ);
+    const int ci, const int cj, const int ck) {
+    return (ci<0 || ci>=sliceX || cj<0 || cj>=sliceY || ck<0 || ck>=sliceZ);
 }
 
 template <int PRISM>
@@ -56,25 +56,25 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const int sliceX, const int sliceY, const int sliceZ,
     int **cells, int *cellSize, int localCellCapacity, int ghostCellCapacity) {
     
-    const int idx = (int)(blockIdx.x * blockDim.x + threadIdx.x);
-    if (idx >= nlocalghost) return;
+    const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
+    if (i >= nlocalghost) return;
     
-    float x = posx[idx], y = posy[idx], z = posz[idx];
+    float x = posx[i], y = posy[i], z = posz[i];
     if (PRISM) {
         toDirect(x, y, z, ax, ay, az, bx, by, bz, cx, cy, cz);
     } else {
         x /= ax; y /= by; z /= cz;
     }
-    int i = floor2int(x * (float)sliceX); i = i<-1 ? (-1) : (i>sliceX ? sliceX : i);
-    int j = floor2int(y * (float)sliceY); j = j<-1 ? (-1) : (j>sliceY ? sliceY : j);
-    int k = floor2int(z * (float)sliceZ); k = k<-1 ? (-1) : (k>sliceZ ? sliceZ : k);
+    int ci = floor2int(x * (float)sliceX); ci = ci<-1 ? (-1) : (ci>sliceX ? sliceX : ci);
+    int cj = floor2int(y * (float)sliceY); cj = cj<-1 ? (-1) : (cj>sliceY ? sliceY : cj);
+    int ck = floor2int(z * (float)sliceZ); ck = ck<-1 ? (-1) : (ck>sliceZ ? sliceZ : ck);
     
-    const int cidx = cellIndex(sliceX, sliceY, sliceZ, i, j, k);
-    const int ci = atomicAdd(cellSize+cidx, 1);
-    const int cghost = cellGhost(sliceX, sliceY, sliceZ, i, j, k);
+    const int idx = cellIndex(sliceX, sliceY, sliceZ, ci, cj, ck);
+    const int ji = atomicAdd(cellSize+idx, 1);
+    const int cghost = cellGhost(sliceX, sliceY, sliceZ, ci, cj, ck);
     const int cellCap = cghost ? ghostCellCapacity : localCellCapacity;
-    if (ci < cellCap) {
-        cells[cidx][ci] = idx;
+    if (ji < cellCap) {
+        cells[idx][ji] = i;
     }
 }
 
@@ -88,40 +88,40 @@ static __global__ void buildNlKernel(const int nlocal,
     const int **cells, const int *cellSize, const float rcutsq,
     int *nl, int *nlSize, const int nlCapacity) {
 
-    const int idx = (int)(blockIdx.x * blockDim.x + threadIdx.x);
-    if (idx >= nlocal) return;
+    const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
+    if (i >= nlocal) return;
     
-    const float x0 = posx[idx], y0 = posy[idx], z0 = posz[idx];
+    const float x0 = posx[i], y0 = posy[i], z0 = posz[i];
     float x = x0, y = y0, z = z0;
     if (PRISM) {
         toDirect(x, y, z, ax, ay, az, bx, by, bz, cx, cy, cz);
     } else {
         x /= ax; y /= by; z /= cz;
     }
-    int i = floor2int(x * (float)sliceX); i = i<0 ? 0 : (i>=sliceX ? (sliceX-1) : i);
-    int j = floor2int(y * (float)sliceY); j = j<0 ? 0 : (j>=sliceY ? (sliceY-1) : j);
-    int k = floor2int(z * (float)sliceZ); k = k<0 ? 0 : (k>=sliceZ ? (sliceZ-1) : k);
+    int ci0 = floor2int(x * (float)sliceX); ci0 = ci0<0 ? 0 : (ci0>=sliceX ? (sliceX-1) : ci0);
+    int cj0 = floor2int(y * (float)sliceY); cj0 = cj0<0 ? 0 : (cj0>=sliceY ? (sliceY-1) : cj0);
+    int ck0 = floor2int(z * (float)sliceZ); ck0 = ck0<0 ? 0 : (ck0>=sliceZ ? (sliceZ-1) : ck0);
     
     int nlsizei = 0;
-    for (int kk = k-1; kk <= k+1; ++kk) for (int jj = j-1; jj <= j+1; ++jj) for (int ii = i-1; ii <= i+1; ++ii) {
-        const int cidx = cellIndex(sliceX, sliceY, sliceZ, ii, jj, kk);
-        const int *cell = cells[cidx];
-        const int csize = cellSize[cidx];
-        for (int ci = 0; ci < csize; ++ci) {
-            const int jdx = cell[ci];
-            if (jdx == idx) continue;
-            const float dx = posx[jdx] - x0;
-            const float dy = posy[jdx] - y0;
-            const float dz = posz[jdx] - z0;
+    for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
+        const int idx = cellIndex(sliceX, sliceY, sliceZ, ci, cj, ck);
+        const int *cell = cells[idx];
+        const int csize = cellSize[idx];
+        for (int ji = 0; ji < csize; ++ji) {
+            const int j = cell[ji];
+            if (j == i) continue;
+            const float dx = posx[j] - x0;
+            const float dy = posy[j] - y0;
+            const float dz = posz[j] - z0;
             const float rsq = dx*dx + dy*dy + dz*dz;
             if (rsq >= rcutsq) continue;
             if (nlsizei < nlCapacity) {
-                nl[nlsizei*nlocal + idx] = jdx;
+                nl[nlsizei*nlocal + i] = j;
             }
             ++nlsizei;
         }
     }
-    nlSize[idx] = nlsizei;
+    nlSize[i] = nlsizei;
 }
 
 }
@@ -161,10 +161,10 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0(
     int *tCellsPtr = (int *)(intptr_t)cellsTot;
     int **rCellsCpu = (int **)(intptr_t)cellsCpu;
     
-    for (int k = -1; k <= sliceZ; ++k) for (int j = -1; j <= sliceY; ++j) for (int i = -1; i <= sliceX; ++i) {
-        const int cidx = JSE_CUDANL::cellIndex(sliceX, sliceY, sliceZ, i, j, k);
-        rCellsCpu[cidx] = tCellsPtr;
-        const int cellCap = JSE_CUDANL::cellGhost(sliceX, sliceY, sliceZ, i, j, k) ? ghostCellCapacity : localCellCapacity;
+    for (int ck = -1; ck <= sliceZ; ++ck) for (int cj = -1; cj <= sliceY; ++cj) for (int ci = -1; ci <= sliceX; ++ci) {
+        const int idx = JSE_CUDANL::cellIndex(sliceX, sliceY, sliceZ, ci, cj, ck);
+        rCellsCpu[idx] = tCellsPtr;
+        const int cellCap = JSE_CUDANL::cellGhost(sliceX, sliceY, sliceZ, ci, cj, ck) ? ghostCellCapacity : localCellCapacity;
         tCellsPtr += cellCap;
     }
     
@@ -216,10 +216,10 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
     if (tErr!=cudaSuccess) return (int)tErr;
     
     int rLocalCellMax = 0, rGhostCellMax = 0;
-    for (int k = -1; k <= sliceZ; ++k) for (int j = -1; j <= sliceY; ++j) for (int i = -1; i <= sliceX; ++i) {
-        const int cidx = JSE_CUDANL::cellIndex(sliceX, sliceY, sliceZ, i, j, k);
-        const int cellSizei = tCellSizeCpu[cidx];
-        if (JSE_CUDANL::cellGhost(sliceX, sliceY, sliceZ, i, j, k)) {
+    for (int ck = -1; ck <= sliceZ; ++ck) for (int cj = -1; cj <= sliceY; ++cj) for (int ci = -1; ci <= sliceX; ++ci) {
+        const int idx = JSE_CUDANL::cellIndex(sliceX, sliceY, sliceZ, ci, cj, ck);
+        const int cellSizei = tCellSizeCpu[idx];
+        if (JSE_CUDANL::cellGhost(sliceX, sliceY, sliceZ, ci, cj, ck)) {
             if (cellSizei > rGhostCellMax) rGhostCellMax = cellSizei;
         } else {
             if (cellSizei > rLocalCellMax) rLocalCellMax = cellSizei;
