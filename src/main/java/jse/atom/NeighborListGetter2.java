@@ -9,7 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 更加高效的 jse 近邻列表实现，缓存 ghost 从而避免每次获取时重复计算来大幅加速
+ * jse 中的近邻列表实现，具体采用了 Neighbor Cell List (NCL)
+ * 算法来实现一个 O(N) 复杂度的近邻搜索，具体可以参考 Julia 中的例子：
+ * <a href="https://jaantollander.com/post/searching-for-fixed-radius-near-neighbors-with-cell-lists-algorithm-in-julia-language/">
+ * Searching for Fixed-Radius Near Neighbors with Cell Lists Algorithm in Julia Language </a>
+ * <p>
+ * 相比旧版更加高效，缓存 ghost 从而避免每次获取时重复计算来大幅加速
  * <p>
  * 目前统一认为边界条件为 ppp
  * <p>

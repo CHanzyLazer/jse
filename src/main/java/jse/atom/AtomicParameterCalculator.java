@@ -3,11 +3,9 @@ package jse.atom;
 import com.google.common.collect.Lists;
 import jse.cache.*;
 import jse.code.CS;
-import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.code.collection.IntList;
 import jse.code.collection.NewCollections;
-import jse.code.functional.IUnaryFullOperator;
 import jse.math.ComplexDouble;
 import jse.math.MathEX;
 import jse.math.function.FixBoundFunc1;
@@ -21,7 +19,6 @@ import jse.math.vector.*;
 import jse.parallel.*;
 import org.jetbrains.annotations.*;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -30,17 +27,16 @@ import static jse.code.CS.R_NEAREST_MUL;
 import static jse.math.MathEX.*;
 
 /**
- * 原子参数计算器，目前包含了 jse 实现的所有参数计算功能；
+ * 原子参数计算器，目前包含了 jse 实现的基本参数计算功能；
  * 包括计算径向分布函数 {@link #calRDF}，结构因子函数
- * {@link #calSF}，键角序参量 {@link #calBOOP}/{@link #calABOOP}
- * 以及近邻列表获取 {@link #getNeighborList}/{@link #getFullNeighborList}。
+ * {@link #calSF}，键角序参量 {@link #calBOOP}/{@link #calABOOP} 等。
  * <p>
  * 其余附加的功能会通过
  * <a href="https://blog.mrhaki.com/2013/01/groovy-goodness-adding-extra-methods.html">
  * Groovy Extension Modules </a>
  * 的方式来添加，例如 voronoi 分析 {@link jsex.voronoi.VoronoiExtensions#calVoronoi}，
- * nnap 基组的计算 {@link jsex.nnap.NNAPExtensions#calBasisNNAP} (实际 groovy
- * 中使用和其他参量函数一致)
+ * nnap 基组的计算 {@link jsex.nnap.NNAPExtensions#calBasisNNAP}，使得实际 groovy
+ * 使用可以通过一样的方式来计算：{@code apc.calVoronoi(...)}
  * <p>
  * 一般来说，直接使用 {@link #of(IAtomData)}
  * 来通过一个原子数据来创建一个的参数计算器，然后调用相关方法来进行计算：
@@ -50,60 +46,31 @@ import static jse.math.MathEX.*;
  * } </pre>
  * 由此来计算此原子数据的 rdf
  * <p>
- * 也可以通过 {@link #withOf(IAtomData, IUnaryFullOperator)}
- * 来创建一个自动关闭的 apc 并直接获取计算结果：
- * <pre> {@code
- * def gr = APC.withOf(data) {it.calRDF()}
- * } </pre>
- * 来直接计算 rdf 并自动关闭参数计算器
- * <p>
- * 此类线程不安全（主要由于近邻列表缓存），但不同实例之间线程安全
+ * 此类线程不安全，但不同实例之间线程安全
  *
  * @see IAtomData IAtomData: 关于 jse 中原子数据的实现和定义
  * @see APC APC: AtomicParameterCalculator 的简称
- * @see NeighborListGetter NeighborListGetter: jse 目前的近邻列表实现
+ * @see NeighborListGetter2 NeighborListGetter: jse 目前的近邻列表实现
  * @author liqa
  */
 public class AtomicParameterCalculator implements AutoCloseable {
-    private IMatrix mPosMat; // 现在改为 Matrix 存储，每行为一个原子的 xyz 数据
-    private final IBox mBox;
+    private int mNumAtoms = -1;
+    private final IntList mNumAtomsType; // 统计某个种类的原子数目
+    private final IntList mTypes; // 所有的原子种类
+    private int mNumTypes = -1; // 所有的原子种类数目
+    private double mVolume = Double.NaN; // 模拟盒体积
+    private double mRho = Double.NaN; // 粒子数密度
+    private double mUnitLen = Double.NaN; // 平均单个原子的距离
     
-    private final int mNumAtoms;
-    private IIntVector mNumAtomsType; // 统计某个种类的原子数目
-    private IIntVector mTypeVec; // 统计所有的原子种类
-    private final int mNomTypes; // 统计所有的原子种类数目
-    private final double mVolume; // 模拟盒体积
-    private final double mRho; // 粒子数密度
-    private final double mUnitLen; // 平均单个原子的距离
-    
-    private final NeighborListGetter mNL;
-    private final Thread mInitThread;
+    private final NeighborListGetter2 mNL;
     
     /// ParforThreadPool stuffs
-    private ParforThreadPool mPool;
-    private volatile boolean mDead = false;
-    /** 关闭这个参数计算器，现在不再强制要求手动关闭，但是手动调用可以提高性能 */
+    private final ParforThreadPool mPool;
+    private boolean mDead = false;
     @Override public void close() {
         if (mDead) return;
         mDead = true;
         mPool.close();
-        mNL.close(); // 内部保证执行后内部的 mAtomDataXYZ 已经置为 null
-        // 此时 APC 关闭，归还 mAtomDataXYZ，这种写法保证永远能获取到 mAtomDataXYZ 时都是合法的
-        // 只有相同线程关闭才会归还
-        Thread tThread = Thread.currentThread();
-        if (tThread == mInitThread) {
-            IMatrix oAtomDataXYZ = mPosMat;
-            IIntVector oAtomNumType = mNumAtomsType;
-            IIntVector oTypeVec = mTypeVec;
-            mPosMat = null;
-            mNumAtomsType = null;
-            mTypeVec = null;
-            MatrixCache.returnMat(oAtomDataXYZ);
-            IntVectorCache.returnVec(oAtomNumType);
-            IntVectorCache.returnVec(oTypeVec);
-        } else {
-            UT.Code.warning("Thread of close() and init should be SAME in AtomicParameterCalculator");
-        }
     }
     /** @return 是否调用了关闭 */
     public boolean isClosed() {
@@ -113,125 +80,61 @@ public class AtomicParameterCalculator implements AutoCloseable {
     public int nthreads() {
         return mPool.nthreads();
     }
-    /**
-     * 修改线程数，如果相同则不会进行任何操作
-     * @param aNumThreads 线程数目
-     * @return 返回自身用于链式调用
-     */
-    public AtomicParameterCalculator setNthreads(@Range(from=1, to=Integer.MAX_VALUE) int aNumThreads)  {
-        if (aNumThreads!=nthreads()) {
-            mPool.close();
-            mPool = new ParforThreadPool(aNumThreads);
-        }
-        return this;
-    }
     
-    /** @deprecated use {@link #of(IAtomData)} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    AtomicParameterCalculator(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
-        mPool = new ParforThreadPool(aThreadNum);
-        // 获取模拟盒数据
-        mBox = aAtomData.box().copy(); // 最大限度防止外部修改
-        
-        // 获取合适的 XYZ 数据和原子种类信息
-        mNumAtoms = aAtomData.natoms();
-        mNomTypes = aAtomData.ntypes();
-        mPosMat = MatrixCache.getMatRow(mNumAtoms, 3);
-        mTypeVec = IntVectorCache.getVec(mNumAtoms);
-        mNumAtomsType = IntVectorCache.getZeros(mNomTypes);
-        XYZ tBuf = new XYZ();
+    public AtomicParameterCalculator setData(IAtomData aData) {
+        mNL.setData(aData);
+        mNumAtoms = aData.natoms();
+        mNumTypes = aData.ntypes();
+        mTypes.clear(); mTypes.ensureCapacity(mNumAtoms);
+        mNumAtomsType.clear(); mNumAtomsType.addZeros(mNumTypes);
         for (int i = 0; i < mNumAtoms; ++i) {
-            IAtom tAtom = aAtomData.atom(i);
-            setValidXYZ_(mPosMat, tAtom, i, tBuf);
+            IAtom tAtom = aData.atom(i);
             int tType = tAtom.type();
-            mTypeVec.set(i, tType);
-            mNumAtomsType.increment(tType-1);
+            mTypes.add(tType);
+            mNumAtomsType.set(tType-1, mNumAtomsType.get(tType-1)+1);
         }
-        
         // 计算单位长度供内部使用
-        mVolume = mBox.volume();
+        mVolume = aData.volume();
         mRho = mNumAtoms / mVolume;
         mUnitLen = Fast.cbrt(1.0/mRho);
-        
-        mNL = new NeighborListGetter(mPosMat, mNumAtoms, mBox);
-        mInitThread = Thread.currentThread();
+        return this;
     }
-    /** @deprecated use {@link #of(IAtomData)} */ @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
-    AtomicParameterCalculator(IAtomData aAtomData) {
-        this(aAtomData, 1);
+    boolean checkValid() {
+        if (mNumAtoms < 0) {
+        
+        }
+    }
+    
+    
+    AtomicParameterCalculator(int aNumThreads) {
+        mPool = new ParforThreadPool(aNumThreads);
+        mNL = new NeighborListGetter2();
+        mTypes = new IntList();
+        mNumAtomsType = new IntList();
     }
     
     
     /**
      * 根据输入数据直接创建 APC
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aThreadNum APC 进行计算会使用的线程数，默认为 {@code 1}
+     * @param aNumThreads APC 进行计算会使用的线程数，默认为 {@code 1}
      */
-    public static AtomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum) {
-        return new AtomicParameterCalculator(aAtomData, aThreadNum);
+    @SuppressWarnings("resource")
+    public static AtomicParameterCalculator of(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aNumThreads) {
+        return new AtomicParameterCalculator(aNumThreads).setData(aAtomData);
     }
     /**
      * 根据输入数据直接创建 APC
      * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
      */
     public static AtomicParameterCalculator of(IAtomData aAtomData) {
-        return new AtomicParameterCalculator(aAtomData);
-    }
-    
-    /**
-     * 自动关闭的接口，例如通过：
-     * <pre> {@code
-     * def gr = APC.withOf(data) {it.calRDF()}
-     * } </pre>
-     * 来直接计算 rdf 并计算完成后自动关闭
-     * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aThreadNum APC 进行计算会使用的线程数，默认为 {@code 1}
-     * @param aDoLater 需要使用 APC 进行的相关操作，返回计算结果
-     * @return {@code aDoLater} 输出的计算结果
-     */
-    public static <T> T withOf(IAtomData aAtomData, @Range(from=1, to=Integer.MAX_VALUE) int aThreadNum, IUnaryFullOperator<? extends T, ? super AtomicParameterCalculator> aDoLater) {
-        try (AtomicParameterCalculator tAPC = new AtomicParameterCalculator(aAtomData, aThreadNum)) {
-            return aDoLater.apply(tAPC);
-        }
+        return of(aAtomData, 1);
     }
     /**
-     * 自动关闭的接口，例如通过：
-     * <pre> {@code
-     * def gr = APC.withOf(data) {it.calRDF()}
-     * } </pre>
-     * 来直接计算 rdf 并计算完成后自动关闭
-     * @param aAtomData 原子数据，会遍历读取原子数据进行值拷贝
-     * @param aDoLater 需要使用 APC 进行的相关操作，返回计算结果
-     * @return {@code aDoLater} 输出的计算结果
+     * 创建一个空的 APC
      */
-    public static <T> T withOf(IAtomData aAtomData, IUnaryFullOperator<? extends T, ? super AtomicParameterCalculator> aDoLater) {
-        try (AtomicParameterCalculator tAPC = new AtomicParameterCalculator(aAtomData)) {
-            return aDoLater.apply(tAPC);
-        }
-    }
-    
-    
-    /// 内部使用方法，用来将 aAtomDataXYZ 转换成内部存储的格式，并且处理精度问题造成的超出边界问题
-    private static void setValidXYZ_(IBox aBox, IMatrix rXYZMat, double aX, double aY, double aZ, int aRow, @NotNull XYZ rBuf) {
-        rBuf.setXYZ(aX, aY, aZ);
-        aBox.wrapPBC(rBuf);
-        rXYZMat.set(aRow, 0, rBuf.mX);
-        rXYZMat.set(aRow, 1, rBuf.mY);
-        rXYZMat.set(aRow, 2, rBuf.mZ);
-    }
-    private void setValidXYZ_(IMatrix rXYZMat, IXYZ aXYZ, int aRow, @NotNull XYZ rBuf) {
-        setValidXYZ_(mBox, rXYZMat, aXYZ.x(), aXYZ.y(), aXYZ.z(), aRow, rBuf);
-    }
-    private IMatrix getValidAtomDataXYZ_(Collection<? extends IXYZ> aAtomDataXYZ) {
-        int tSize = aAtomDataXYZ.size();
-        // 尝试先获取缓存的临时变量
-        IMatrix rXYZMat = MatrixCache.getMatRow(tSize, 3);
-        XYZ tBuf = new XYZ();
-        int row = 0;
-        for (IXYZ tXYZ : aAtomDataXYZ) {
-            setValidXYZ_(rXYZMat, tXYZ, row, tBuf);
-            ++row;
-        }
-        return rXYZMat;
+    public static AtomicParameterCalculator of() {
+        return new AtomicParameterCalculator(1);
     }
     
     
@@ -356,8 +259,8 @@ public class AtomicParameterCalculator implements AutoCloseable {
     public AtomicParameterCalculator setAtomType(int aIdx, int aType) {
         // 简单更新
         if (aType > mNomTypes) throw new IllegalArgumentException("input type ("+aType+") Must <= ntypes ("+ mNomTypes +")");
-        mNumAtomsType.decrement(mTypeVec.get(aIdx)-1);
-        mTypeVec.set(aIdx, aType);
+        mNumAtomsType.decrement(mTypes.get(aIdx)-1);
+        mTypes.set(aIdx, aType);
         mNumAtomsType.increment(aType-1);
         return this;
     }
@@ -371,9 +274,9 @@ public class AtomicParameterCalculator implements AutoCloseable {
     }
     /**
      * 外部为 APC 补充运算时使用，获取 APC 内部的近邻列表获取器
-     * @see NeighborListGetter
+     * @see NeighborListGetter2
      */
-    @ApiStatus.Internal public NeighborListGetter nl_() {
+    @ApiStatus.Internal public NeighborListGetter2 nl_() {
         return mNL;
     }
     /**
@@ -388,7 +291,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * @see IIntVector
      */
     @ApiStatus.Internal public IIntVector types() {
-        return mTypeVec;
+        return mTypes;
     }
     
     
@@ -461,12 +364,12 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 使用 mNL 的专门获取近邻距离的方法
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mTypeVec.get(i);
+            int tTypeI = mTypes.get(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
                 final IFunc1 dn = dnPar[threadID];
                 mNL.forEachNeighbor(i, aRMax - dr*0.5, true, (dx, dy, dz, idx) -> {
-                    if (mTypeVec.get(idx) == tTypeJ) {
+                    if (mTypes.get(idx) == tTypeJ) {
                         dn.updateNear(Fast.hypot(dx, dy, dz), g->g+1);
                     }
                 });
@@ -540,12 +443,12 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 使用 mNL 的专门获取近邻距离的方法
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            final int tTypeA = mTypeVec.get(i);
+            final int tTypeA = mTypes.get(i);
             final IFunc1[] dnAll = dnAllPar.get(threadID);
             mNL.forEachNeighbor(i, aRMax - dr*0.5, true, (dx, dy, dz, idx) -> {
                 double dis = Fast.hypot(dx, dy, dz);
                 dnAll[0].updateNear(dis, g->g+1);
-                int tTypeB = mTypeVec.get(idx);
+                int tTypeB = mTypes.get(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
                 dnAll[tIdx].updateNear(dis, g->g+1);
             });
@@ -676,13 +579,13 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 使用 mNL 的专门获取近邻距离的方法
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mTypeVec.get(i);
+            int tTypeI = mTypes.get(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
                 final IFunc1 dn = dnPar[threadID];
                 final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
                 mNL.forEachNeighbor(i, aRMax+tRShift, true, (dx, dy, dz, idx) -> {
-                    if (mTypeVec.get(idx) == tTypeJ) {
+                    if (mTypes.get(idx) == tTypeJ) {
                         tDeltaG.setX0(Fast.hypot(dx, dy, dz));
                         dn.plus2this(tDeltaG);
                     }
@@ -769,13 +672,13 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 使用 mNL 的专门获取近邻距离的方法
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            final int tTypeA = mTypeVec.get(i);
+            final int tTypeA = mTypes.get(i);
             final IFunc1[] dnAll = dnAllPar.get(threadID);
             final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
             mNL.forEachNeighbor(i, aRMax+tRShift, true, (dx, dy, dz, idx) -> {
                 tDeltaG.setX0(Fast.hypot(dx, dy, dz));
                 dnAll[0].plus2this(tDeltaG);
-                int tTypeB = mTypeVec.get(idx);
+                int tTypeB = mTypes.get(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
                 dnAll[tIdx].plus2this(tDeltaG);
             });
@@ -899,12 +802,12 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 需要这样遍历才能得到正确结果
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mTypeVec.get(i);
+            int tTypeI = mTypes.get(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
                 XYZ cXYZ = new XYZ(mPosMat.row(i));
                 IFunc1 Hq = HqPar[threadID];
-                for (int j = 0; j < i; ++j) if (mTypeVec.get(j) == tTypeJ) {
+                for (int j = 0; j < i; ++j) if (mTypes.get(j) == tTypeJ) {
                     final double dis = cXYZ.distance(mPosMat.get(j, 0), mPosMat.get(j, 1), mPosMat.get(j, 2));
                     Hq.operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
                 }
@@ -986,14 +889,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 需要这样遍历才能得到正确结果
         mPool.parfor(mNumAtoms, (i, threadID) -> {
             XYZ cXYZ = new XYZ(mPosMat.row(i));
-            int tTypeA = mTypeVec.get(i);
+            int tTypeA = mTypes.get(i);
             IFunc1[] HqAll = HqAllPar.get(threadID);
             IVector tDelta = tDeltaPar.get(threadID);
             for (int j = 0; j < i; ++j) {
                 final double dis = cXYZ.distance(mPosMat.get(j, 0), mPosMat.get(j, 1), mPosMat.get(j, 2));
                 tDelta.operation().operate2this(HqAll[0].x(), (any, q) -> Fast.sin(q*dis)/(q*dis));
                 HqAll[0].f().plus2this(tDelta);
-                int tTypeB = mTypeVec.get(j);
+                int tTypeB = mTypes.get(j);
                 HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].f().plus2this(tDelta);
             }
         });
