@@ -2,7 +2,7 @@ package jsex.nnap;
 
 import jse.atom.IAtomData;
 import jse.atom.IHasSymbol;
-import jse.atom.NeighborListGetter2;
+import jse.atom.NeighborListGetter;
 import jse.cache.IntVectorCache;
 import jse.cache.LogicalVectorCache;
 import jse.cache.VectorCache;
@@ -71,7 +71,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     protected static class DataSet {
         public int mSize = 0;
         /** 近邻列表数据，总是缓存近邻 cell 但不缓存具体近邻列表 */
-        public final List<NeighborListGetter2> mNl = new ArrayList<>(64);
+        public final List<NeighborListGetter> mNl = new ArrayList<>(64);
         /** 每个原子数据结构对应的每原子能量值 */
         public final DoubleList mEng = new DoubleList(64);
         /** 这里力数据使用 List 存储，每个原子结构一组 */
@@ -1212,7 +1212,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 aEnergy -= mRefEngs.get(tType-1);
             }
         }
-        rData.mNl.add(new NeighborListGetter2(aAtomData, mNNAP.rcutMax()));
+        rData.mNl.add(new NeighborListGetter(aAtomData, mNNAP.rcutMax()));
         rData.mAtomType.add(rAtomType.asVec());
         rData.mVolume.append(aAtomData.volume());
         rData.mEng.append(tHasEng ? (aEnergy/tNumAtoms) : Double.NaN);
@@ -1400,7 +1400,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tPtrMng.ensureCapacity(rNlDz.get(k), tNlSize);
             }
         }
-        NeighborListGetter2 tNl = tData.mNl.get(aDataIdx);
+        NeighborListGetter tNl = tData.mNl.get(aDataIdx);
         for (int k = 0; k < tNumAtoms; ++k) {
             IntCPointer tSubNlIdxPtr = rNlIdx.get(k);
             IntCPointer tSubNlTypePtr = rNlType.get(k);
@@ -1442,7 +1442,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int ai = ii<tTrainSize ? ii : ii-tTrainSize;
             int i = ai + (ii<tTrainSize ? tTrainStart : tTestStart);
             
-            NeighborListGetter2 tNl = rData.mNl.get(ai);
+            NeighborListGetter tNl = rData.mNl.get(ai);
             IntVector tAtomType = rData.mAtomType.get(i);
             int tNumAtoms = tNl.natoms();
             
@@ -1490,7 +1490,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int ai = ii<tTrainSize ? ii : ii-tTrainSize;
             int i = ai + (ii<tTrainSize ? tTrainStart : tTestStart);
             
-            NeighborListGetter2 tNl = rData.mNl.get(ai);
+            NeighborListGetter tNl = rData.mNl.get(ai);
             IntVector tNumNei = rData.mNumNei.get(i);
             IntVector tAtomType = rData.mAtomType.get(i);
             int tNumAtoms = tNl.natoms();

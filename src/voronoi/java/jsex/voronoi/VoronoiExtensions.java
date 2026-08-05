@@ -2,6 +2,7 @@ package jsex.voronoi;
 
 import jse.atom.AtomicParameterCalculator;
 import jse.code.collection.AbstractRandomAccessList;
+import jse.math.vector.IVector;
 
 import java.util.List;
 import java.util.RandomAccess;
@@ -61,10 +62,11 @@ public class VoronoiExtensions {
         final VoronoiBuilder rBuilder = new VoronoiBuilder().setNoWarning(aNoWarning).setIndexLength(aIndexLength).setAreaThreshold(aAreaThreshold).setLengthThreshold(aLengthThreshold);
         // 先增加内部原本的粒子，根据 cell 的顺序添加可以加速 voronoi 的构造
         final int[] idx2voronoi = new int[self.natoms()];
+        final IVector tPosX = self.posX(), tPosY = self.posY(), tPosZ = self.posZ();
         self.nl_().forEachCell(aRCutOff, idx -> {
             idx2voronoi[idx] = rBuilder.sizeVertex();
             // 原则上 VoronoiBuilder.insert 内部也会进行一次拷贝避免坐标被意外修改，但是旧版本没有，这样写可以兼顾效率和旧版兼容
-            rBuilder.insert(self.positions().get(idx, 0), self.positions().get(idx, 1), self.positions().get(idx, 2), idx);
+            rBuilder.insert(tPosX.get(idx), tPosY.get(idx), tPosZ.get(idx), idx);
         });
         // 然后增加一些镜像粒子保证 PBC 下的准确性
         self.nl_().forEachMirrorCell(aRCutOff, rBuilder::insert);
