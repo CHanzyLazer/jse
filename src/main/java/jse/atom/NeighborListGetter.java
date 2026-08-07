@@ -267,10 +267,10 @@ public class NeighborListGetter {
         if (Math.abs(rCartesian.mZ-tIntZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = tIntZ;
     }
     
-    IntList cell(int ci, int cj, int ck) {
+    public IntList cell(int ci, int cj, int ck) {
         return cell(ci, cj, ck, false);
     }
-    IntList cell(int ci, int cj, int ck, boolean in) {
+    public IntList cell(int ci, int cj, int ck, boolean in) {
         if (in) {
             if (ci<0 || ci>=mSliceX || cj<0 || cj>=mSliceY || ck<0 || ck>=mSliceZ) {
                 throw new IndexOutOfBoundsException(String.format("Index: (%d, %d, %d)", ci, cj, ck));
@@ -281,6 +281,15 @@ public class NeighborListGetter {
             }
         }
         return mCells.get((ci+1) + (mSliceX+2)*(cj+1) + (mSliceX+2)*(mSliceY+2)*(ck+1));
+    }
+    public int sliceX() {
+        return mSliceX;
+    }
+    public int sliceY() {
+        return mSliceY;
+    }
+    public int sliceZ() {
+        return mSliceZ;
     }
     
     public boolean isPrism() {

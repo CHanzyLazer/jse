@@ -1,6 +1,6 @@
 package jse.atom.pot;
 
-import jse.atom.IPairPotential;
+import jse.atom.AbstractPairPotential;
 import jse.cache.VectorCache;
 import jse.code.IO;
 import jse.math.MathEX;
@@ -37,7 +37,7 @@ import static jse.code.CS.UNITS;
  *
  * @author liqa
  */
-public class EAM implements IPairPotential {
+public class EAM extends AbstractPairPotential {
     public final static class Conf {
         /** 是否使用 lammps 中采用的低精度 hartree 和 bohr，从而让结果和 lammps 一致 */
         public static boolean USE_LAMMPS_PRECISION = true;
@@ -154,7 +154,8 @@ public class EAM implements IPairPotential {
      * @param aFilePath EAM 势函数路径，要求 DYNAMO 格式的 lammps 支持的文件
      * @param aFormat 可选的 EAM 势函数文件格式，可选 {@code "eam", "alloy", "fs", "adp"}，默认根据后缀名自动检测
      */
-    public EAM(String aFilePath, @Nullable String aFormat) throws IOException {
+    public EAM(String aFilePath, @Nullable String aFormat, int aNumThreads) throws IOException {
+        super(aNumThreads);
         if (aFormat == null) {
             if (aFilePath.endsWith(".eam")) {
                 aFormat = "eam";
@@ -305,6 +306,14 @@ public class EAM implements IPairPotential {
     /**
      * 通过势函数文件创建一个 EAM 势函数
      * @param aFilePath EAM 势函数路径，要求 DYNAMO 格式的 lammps 支持的文件
+     * @param aFormat 可选的 EAM 势函数文件格式，可选 {@code "eam", "alloy", "fs", "adp"}，默认根据后缀名自动检测
+     */
+    public EAM(String aFilePath, @Nullable String aFormat) throws IOException {
+        this(aFilePath, aFormat, 1);
+    }
+    /**
+     * 通过势函数文件创建一个 EAM 势函数
+     * @param aFilePath EAM 势函数路径，要求 DYNAMO 格式的 lammps 支持的文件
      */
     public EAM(String aFilePath) throws IOException {
         this(aFilePath, null);
@@ -442,7 +451,7 @@ public class EAM implements IPairPotential {
                 throw new IllegalArgumentException("Unsupported EAM format: " + aFilePath);
             }
         }
-        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write_(tWriteln, aFormat);}
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write(tWriteln, aFormat);}
     }
     /**
      * 输出成 lammps 支持的 eam 势函数文件
@@ -453,7 +462,7 @@ public class EAM implements IPairPotential {
         write(aFilePath, null);
     }
     /** 提供 {@link IO.IWriteln} 的接口来实现边写入边处理，此方法不会自动关闭流 */
-    void write_(IO.IWriteln aWriteln, String aFormat) throws IOException {
+    public void write(IO.IWriteln aWriteln, String aFormat) throws IOException {
         String[] tHeaders = mHeader.split("\n");
         String tDNCut = mNRho+" "+mDRho+" "+mNR+" "+mDR+" "+mCut;
         switch(aFormat) {
@@ -542,26 +551,8 @@ public class EAM implements IPairPotential {
      * {@inheritDoc}
      * @return {@inheritDoc}
      */
-    @Override public boolean neighborListChecked() {return true;}
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
     @Override public boolean neighborListHalf() {return true;}
-
     
-    private int mThreadNum = 1;
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public int nthreads() {return mThreadNum;}
-    /**
-     * 设置传入原子数据后计算使用的默认线程数
-     * @param aNumThreads 需要设置的线程数，默认为 {@code 1}
-     * @return 自身方便链式调用
-     */
-    public EAM setNthreads(int aNumThreads) {mThreadNum = aNumThreads; return this;}
     
     /**
      * {@inheritDoc}
@@ -592,7 +583,7 @@ public class EAM implements IPairPotential {
             final Vector tLambdaXY = mWR==null ? null : tLambdaXYPar.get(threadID);
             final Vector tLambdaXZ = mWR==null ? null : tLambdaXZPar.get(threadID);
             final Vector tLambdaYZ = mWR==null ? null : tLambdaYZPar.get(threadID);
-            nl.forEachDxyzTypeIdx(mCut, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
                 double r = MathEX.Fast.sqrt(rsq);
@@ -709,7 +700,7 @@ public class EAM implements IPairPotential {
             final Vector tLambdaXY = mWR==null ? null : tLambdaXYPar.get(threadID);
             final Vector tLambdaXZ = mWR==null ? null : tLambdaXZPar.get(threadID);
             final Vector tLambdaYZ = mWR==null ? null : tLambdaYZPar.get(threadID);
-            nl.forEachDxyzTypeIdx(mCut, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
                 double r = MathEX.Fast.sqrt(rsq);
@@ -839,7 +830,7 @@ public class EAM implements IPairPotential {
             final Vector tLambdaXY = mWR==null ? null : tLambdaXYPar.get(threadID);
             final Vector tLambdaXZ = mWR==null ? null : tLambdaXZPar.get(threadID);
             final Vector tLambdaYZ = mWR==null ? null : tLambdaYZPar.get(threadID);
-            nl.forEachDxyzTypeIdx(mCut, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
                 double r = MathEX.Fast.sqrt(rsq);
@@ -899,7 +890,7 @@ public class EAM implements IPairPotential {
         }
         aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
             final double fpi = mFRhoSpline[cType-1].subsGrad(tRho.get(cIdx));
-            nl.forEachDxyzTypeIdx(mCut, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
                 double r = MathEX.Fast.sqrt(rsq);

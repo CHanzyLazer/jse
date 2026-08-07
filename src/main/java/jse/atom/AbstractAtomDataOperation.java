@@ -193,46 +193,45 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
         return NewCollections.from(rSlice);
     }
     
-    
+    protected NeighborListGetter mNl = null;
     protected List<IntVector> clusterAnalyze_(double aRCut, final boolean aUnwrapByCluster2this, boolean aOutputIndex) {
         final IAtomData tThis = thisAtomData_();
         assert !aUnwrapByCluster2this || (tThis instanceof ISettableAtomData);
         
         final int tAtomNum = tThis.natoms();
-        // 使用 apc 来获取近邻列表
-        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(tThis)) {
-            final List<IntVector> rClusters = aOutputIndex ? new ArrayList<>() : null;
-            final ILogicalVector tVisited = LogicalVectorCache.getZeros(tAtomNum);
-            // 采用深度有限搜索算法来获取团簇
-            final IntDeque tStack = new IntDeque();
-            final XYZ tBuf = new XYZ();
-            for (int point = 0; point < tAtomNum; ++point) if (!tVisited.get(point)) {
-                IntVector.Builder subCluster = aOutputIndex ? IntVector.builder() : null;
-//              tStack.clear(); // 由于后面会遍历移除，因此此时 tStack 永远为空
+        if (mNl == null) mNl = new NeighborListGetter();
+        mNl.setData(tThis).setRCut(aRCut).build();
+        final List<IntVector> rClusters = aOutputIndex ? new ArrayList<>() : null;
+        final ILogicalVector tVisited = LogicalVectorCache.getZeros(tAtomNum);
+        // 采用深度有限搜索算法来获取团簇
+        final IntDeque tStack = new IntDeque();
+        final XYZ tBuf = new XYZ();
+        for (int point = 0; point < tAtomNum; ++point) if (!tVisited.get(point)) {
+            IntVector.Builder subCluster = aOutputIndex ? IntVector.builder() : null;
+//          tStack.clear(); // 由于后面会遍历移除，因此此时 tStack 永远为空
+            
+            tStack.push(point);
+            tVisited.set(point, true);
+            
+            while (!tStack.isEmpty()) {
+                int currentPoint = tStack.pop();
+                if (aOutputIndex) subCluster.add(currentPoint);
                 
-                tStack.push(point);
-                tVisited.set(point, true);
-                
-                while (!tStack.isEmpty()) {
-                    int currentPoint = tStack.pop();
-                    if (aOutputIndex) subCluster.add(currentPoint);
-                    
-                    if (aUnwrapByCluster2this) tBuf.setXYZ(tThis.atom(currentPoint));
-                    tAPC.nl_().forEachNeighbor(currentPoint, aRCut, (dx, dy, dz, neighbor) -> {
-                        if (!tVisited.get(neighbor)) {
-                            tStack.push(neighbor);
-                            tVisited.set(neighbor, true);
-                            if (aUnwrapByCluster2this) {
-                                ((ISettableAtomData)tThis).atom(neighbor).setXYZ(tBuf.mX+dx, tBuf.mY+dy, tBuf.mZ+dz);
-                            }
+                if (aUnwrapByCluster2this) tBuf.setXYZ(tThis.atom(currentPoint));
+                mNl.forEachNeighbor(currentPoint, (dx, dy, dz, neighbor) -> {
+                    if (!tVisited.get(neighbor)) {
+                        tStack.push(neighbor);
+                        tVisited.set(neighbor, true);
+                        if (aUnwrapByCluster2this) {
+                            ((ISettableAtomData)tThis).atom(neighbor).setXYZ(tBuf.mX+dx, tBuf.mY+dy, tBuf.mZ+dz);
                         }
-                    });
-                }
-                if (aOutputIndex) rClusters.add(subCluster.build());
+                    }
+                });
             }
-            LogicalVectorCache.returnVec(tVisited);
-            return rClusters;
+            if (aOutputIndex) rClusters.add(subCluster.build());
         }
+        LogicalVectorCache.returnVec(tVisited);
+        return rClusters;
     }
     
     @Override public List<IntVector> clusterAnalyze(double aRCut) {

@@ -2,6 +2,7 @@ package jsex.rareevent.atom;
 
 import jse.atom.IAtomData;
 import jse.atom.AtomicParameterCalculator;
+import jse.atom.NeighborListGetter;
 import jse.code.collection.AbstractCollections;
 import jse.math.MathEX;
 import jse.math.vector.IIntVector;
@@ -31,9 +32,9 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
                 // 如果全部统计且最小团簇大小为 0 则直接求和统计数目即可
                 return tIsSolid.count();
             } else {
+                final NeighborListGetter tNl = tAPC.nl_().setRCut(getRCluster_(tAPC));
                 // 使用 getClustersDFS 获取所有的团簇（一般来说会比 BFS 更快，当然这个部分不是瓶颈）
-                final double tRCluster = getRCluster_(tAPC);
-                List<? extends IIntVector> tClusters = MathEX.Adv.getClustersDFS(tIsSolid.size(), AbstractCollections.filterInt(tIsSolid.size(), tIsSolid), i -> AbstractCollections.filterInt(tAPC.getNeighborList(i, tRCluster), tIsSolid));
+                List<? extends IIntVector> tClusters = MathEX.Adv.getClustersDFS(tIsSolid.size(), AbstractCollections.filterInt(tIsSolid.size(), tIsSolid), i -> AbstractCollections.filterInt(tNl.get(i), tIsSolid));
                 // 遍历团簇统计 lambda，区分 countAll() 和一般只统计最大的逻辑
                 double rLambda = 0.0;
                 double rMax = 0.0;

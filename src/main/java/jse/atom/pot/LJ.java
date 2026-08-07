@@ -1,6 +1,6 @@
 package jse.atom.pot;
 
-import jse.atom.IPairPotential;
+import jse.atom.AbstractPairPotential;
 import jse.math.MathEX;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * 默认情况下不对截断处进行能量的 shift。
  * @author liqa
  */
-public class LJ implements IPairPotential {
+public class LJ extends AbstractPairPotential {
     private final double mCutMax;
     private final double[][] mCutsq;
     private final double[][] mLJ1, mLJ2, mLJ3, mLJ4;
@@ -17,14 +17,8 @@ public class LJ implements IPairPotential {
     private final int mTypeNum;
     private final String @Nullable[] mSymbols;
     
-    /**
-     * 创建一个 LJ 势函数，{@code E = 4ε[(σ/r)^12 - (σ/r)^6]}，
-     * 不考虑原子种类都使用相同的参数
-     * @param aEpsilon 公式中的 {@code ε} 值
-     * @param aSigma 公式中的 {@code σ} 值
-     * @param aRCut 需要的截断半径值
-     */
-    public LJ(double aEpsilon, double aSigma, double aRCut) {
+    public LJ(double aEpsilon, double aSigma, double aRCut, int aNumThreads) {
+        super(aNumThreads);
         mTypeNum = -1;
         mSymbols = null;
         mLJ1 = new double[][]{{48.0 * aEpsilon * MathEX.Fast.powFast(aSigma, 12)}};
@@ -36,18 +30,8 @@ public class LJ implements IPairPotential {
         mOffset = new double[][]{{4.0 * aEpsilon * (MathEX.Fast.powFast(tRatio, 12) - MathEX.Fast.powFast(tRatio, 6))}};
         mCutMax = aRCut;
     }
-    /**
-     * 创建一个 LJ 势函数，{@code E = 4ε[(σ/r)^12 - (σ/r)^6]}，
-     * 不同原子种类使用不同的参数
-     * @param aEpsilon 公式中的 {@code ε} 值，{@code aEpsilon[i][j]} 记录元素种类
-     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
-     * @param aSigma 公式中的 {@code σ} 值，{@code aSigma[i][j]} 记录元素种类
-     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
-     * @param aRCut 需要的截断半径值，{@code aRCut[i][j]} 记录元素种类
-     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
-     * @param aSymbols 可选的元素符号信息，如果输入则会根据此元素符号自动映射输入的原子数据，默认为 {@code null}
-     */
-    public LJ(double[][] aEpsilon, double[][] aSigma, double[][] aRCut, String @Nullable[] aSymbols) {
+    public LJ(double[][] aEpsilon, double[][] aSigma, double[][] aRCut, String @Nullable[] aSymbols, int aNumThreads) {
+        super(aNumThreads);
         mTypeNum = aRCut.length;
         if (aSigma.length != mTypeNum) throw new IllegalArgumentException("Input Sigma size MUST be the same size of RCut");
         if (aEpsilon.length != mTypeNum) throw new IllegalArgumentException("Input Epsilon size MUST be the same size of RCut");
@@ -82,6 +66,30 @@ public class LJ implements IPairPotential {
             mCutsq[i][j] = mCutsq[j][i];
             mOffset[i][j] = mOffset[j][i];
         }
+    }
+    /**
+     * 创建一个 LJ 势函数，{@code E = 4ε[(σ/r)^12 - (σ/r)^6]}，
+     * 不考虑原子种类都使用相同的参数
+     * @param aEpsilon 公式中的 {@code ε} 值
+     * @param aSigma 公式中的 {@code σ} 值
+     * @param aRCut 需要的截断半径值
+     */
+    public LJ(double aEpsilon, double aSigma, double aRCut) {
+        this(aEpsilon, aSigma, aRCut, 1);
+    }
+    /**
+     * 创建一个 LJ 势函数，{@code E = 4ε[(σ/r)^12 - (σ/r)^6]}，
+     * 不同原子种类使用不同的参数
+     * @param aEpsilon 公式中的 {@code ε} 值，{@code aEpsilon[i][j]} 记录元素种类
+     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
+     * @param aSigma 公式中的 {@code σ} 值，{@code aSigma[i][j]} 记录元素种类
+     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
+     * @param aRCut 需要的截断半径值，{@code aRCut[i][j]} 记录元素种类
+     * {@code i+1} 和 {@code j+1} 之间的值，只会读取 {@code j <= i} 的部分（下三角）
+     * @param aSymbols 可选的元素符号信息，如果输入则会根据此元素符号自动映射输入的原子数据，默认为 {@code null}
+     */
+    public LJ(double[][] aEpsilon, double[][] aSigma, double[][] aRCut, String @Nullable[] aSymbols) {
+        this(aEpsilon, aSigma, aRCut, aSymbols, 1);
     }
     /**
      * 创建一个 LJ 势函数，{@code E = 4ε[(σ/r)^12 - (σ/r)^6]}，
@@ -136,26 +144,7 @@ public class LJ implements IPairPotential {
      * {@inheritDoc}
      * @return {@inheritDoc}
      */
-    @Override public boolean neighborListChecked() {return true;}
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
     @Override public boolean neighborListHalf() {return true;}
-
-    
-    private int mThreadNum = 1;
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public int nthreads() {return mThreadNum;}
-    /**
-     * 设置传入原子数据后计算使用的默认线程数
-     * @param aNumThreads 需要设置的线程数，默认为 {@code 1}
-     * @return 自身方便链式调用
-     */
-    public LJ setNthreads(int aNumThreads) {mThreadNum = aNumThreads; return this;}
     
     /**
      * {@inheritDoc}
@@ -165,7 +154,7 @@ public class LJ implements IPairPotential {
      */
     @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) {
         aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx(mCutMax, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq[cType][type]) return;
                 double r2inv = 1.0 / rsq;
@@ -188,7 +177,7 @@ public class LJ implements IPairPotential {
      */
     @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
         aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx(mCutMax, (dx, dy, dz, type, idx) -> {
+            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq[cType][type]) return;
                 double r2inv = 1.0 / rsq;

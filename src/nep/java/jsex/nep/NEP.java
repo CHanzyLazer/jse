@@ -1,6 +1,6 @@
 package jsex.nep;
 
-import jse.atom.IPairPotential;
+import jse.atom.AbstractPairPotential;
 import jse.clib.Compiler;
 import jse.code.IO;
 import jse.code.LibVer;
@@ -49,7 +49,7 @@ import static jse.cptr.CPointer.NULL;
  *
  * @author Zheyong Fan, Junjie Wang, Eric Lindgren，liqa
  */
-public class NEP implements IPairPotential {
+public class NEP extends AbstractPairPotential {
     
     public final static class Conf {
         /**
@@ -95,8 +95,9 @@ public class NEP implements IPairPotential {
     private final static String INTERFACE_NAME_CUDA = "nep_interface_cuda.cu", INTERFACE_HEAD_NAME_CUDA = "nep_interface_cuda.h";
     private final static String SRC_NAME = "nep_core.hpp";
     
-    NEP() {}
+    NEP() {super(1);}
     public NEP(String aPotentialFileName) throws Exception {
+        this();
         init_from_file(aPotentialFileName, "cpu");
     }
     
@@ -109,12 +110,12 @@ public class NEP implements IPairPotential {
     private final DoubleList mNlDxBuf = new DoubleList(16), mNlDyBuf = new DoubleList(16), mNlDzBuf = new DoubleList(16);
     private final IntList mNlTypeBuf = new IntList(16), mNlIdxBuf = new IntList(16);
     
-    private int buildNL_(IDxyzTypeIdxIterable aNL, double aRCut) {
+    private int buildNL_(IDxyzTypeIdxIterable aNL) {
         final int tTypeNum = this.ntypes();
         // 缓存情况需要先清空这些
         mNlDxBuf.clear(); mNlDyBuf.clear(); mNlDzBuf.clear();
         mNlTypeBuf.clear(); mNlIdxBuf.clear();
-        aNL.forEachDxyzTypeIdx(aRCut, (dx, dy, dz, type, idx) -> {
+        aNL.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
             // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查
             if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
             // 简单缓存近邻列表
@@ -139,14 +140,14 @@ public class NEP implements IPairPotential {
      * @param rEnergyAccumulator {@inheritDoc}
      */
     @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) throws Exception {
-        if (mDead) throw new IllegalStateException("This NEP is dead");
+        if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
         mPtrMng.ensureCapacity(Fp, annmb.dim);
         mPtrMng.ensureCapacity(sum_fxyz, (long) (paramb.n_max_angular + 1)*NUM_OF_ABC);
         aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
             // 近邻列表构建以及相关值设置
-            int tNeiNum = buildNL_(nl, rcutMax());
+            int tNeiNum = buildNL_(nl);
             // 调用 jit 方法获取结果
             mCalEnergy.invoke(
                 mNlDx, mNlDy, mNlDz, mNlType, tNeiNum, cType-1,
@@ -170,14 +171,14 @@ public class NEP implements IPairPotential {
      * @param rVirialAccumulator {@inheritDoc}
      */
     @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
-        if (mDead) throw new IllegalStateException("This NEP is dead");
+        if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
         mPtrMng.ensureCapacity(Fp, annmb.dim);
         mPtrMng.ensureCapacity(sum_fxyz, (long) (paramb.n_max_angular + 1)*NUM_OF_ABC);
         aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
             // 近邻列表构建以及相关值设置
-            int tNeiNum = buildNL_(nl, rcutMax());
+            int tNeiNum = buildNL_(nl);
             // 调用 jit 方法获取结果
             mCalEnergyForce.invoke(
                 mNlDx, mNlDy, mNlDz, mNlType, tNeiNum, cType-1,
@@ -225,7 +226,7 @@ public class NEP implements IPairPotential {
         mPtrMng.ensureCapacity(mNlFz, aNeiNum);
     }
     void computeLammps(PairNEP aPair) {
-        if (mDead) throw new IllegalStateException("This NEP is dead");
+        if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new IllegalStateException();
         // 近邻列表大小获取和缓存合理化
@@ -261,7 +262,7 @@ public class NEP implements IPairPotential {
         mCudaTypeMap.fill(aPair.mTypeMap, aPair.mTypeNum+1);
     }
     void computeLammpsCuda(PairNEP aPair) throws CudaException {
-        if (mDead) throw new IllegalStateException("This NEP is dead");
+        if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (!mCuda) throw new IllegalStateException();
         initLmpParamCuda_(aPair);
@@ -583,11 +584,9 @@ public class NEP implements IPairPotential {
     private static final String MARKER_PICK_END = "// <<< NEPGEN PICK";
     private static final int STATE_NORMAL = 0, STATE_REMOVE = 1, STATE_PICK = 4;
     
-    boolean mDead = false;
-    @Override public boolean isClosed() {return mDead;}
     @Override public void close() throws Exception {
-        if (mDead) return;
-        mDead = true;
+        if (isClosed()) return;
+        super.close();
         mPtrMng.close();
     }
     

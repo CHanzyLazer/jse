@@ -108,7 +108,7 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         // 缓存情况需要先清空这些
         mNlDx.clear(); mNlDy.clear(); mNlDz.clear();
         mNlType.clear();
-        aAPC.nl_().forEachNeighbor(aIdx, rcut(), (dx, dy, dz, idx) -> {
+        aAPC.nl_().forEachNeighbor(aIdx, (dx, dy, dz, idx) -> {
             int type = aTypeMap.applyAsInt(aAPC.types().get(idx));
             if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
             // 简单缓存近邻列表
@@ -117,7 +117,9 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         });
         eval(mNlDx, mNlDy, mNlDz, mNlType, rFp);
     }
-    public final void eval(AtomicParameterCalculator aAPC, int aIdx, DoubleArrayVector rFp) {eval(aAPC, aIdx, type->type, rFp);}
+    public final void eval(AtomicParameterCalculator aAPC, int aIdx, DoubleArrayVector rFp) {
+        eval(aAPC, aIdx, type->type, rFp);
+    }
     
     /**
      * 简单遍历计算给定原子数据所有基组的实现，此实现适合对相同基组计算大量的原子结构；
@@ -131,6 +133,7 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         int tAtomNum = aAtomData.natoms();
         List<Vector> rFps = VectorCache.getVec(size(), tAtomNum);
         try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
+            tAPC.nl_().setRCut(rcut()).build();
             for (int i = 0; i < tAtomNum; ++i) {
                 eval(tAPC, i, tTypeMap, rFps.get(i));
             }
