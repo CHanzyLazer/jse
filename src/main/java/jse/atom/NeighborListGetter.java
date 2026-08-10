@@ -330,12 +330,12 @@ public class NeighborListGetter {
     
     // 限制最近邻数目的近邻构建，现在使用简单的遍历方式来实现
     private static class NearestNeighborList implements AutoCloseable {
-        private final double[] mDx, mDy, mDz, mDis;
+        private final double[] mDx, mDy, mDz, mRsq;
         private final int[] mIdx;
         private final int mNnn;
         private int mSize;
         private int mMaxIdx;
-        private double mMaxDis;
+        private double mMaxRsq;
         
         NearestNeighborList(int aNnn) {
             if (aNnn <= 0) throw new IllegalStateException();
@@ -344,44 +344,45 @@ public class NeighborListGetter {
             mDx = DoubleArrayCache.getArray(aNnn);
             mDy = DoubleArrayCache.getArray(aNnn);
             mDz = DoubleArrayCache.getArray(aNnn);
-            mDis = DoubleArrayCache.getArray(aNnn);
+            mRsq = DoubleArrayCache.getArray(aNnn);
             mIdx = IntArrayCache.getArray(aNnn);
             mMaxIdx = -1;
-            mMaxDis = Double.NEGATIVE_INFINITY;
+            mMaxRsq = Double.NEGATIVE_INFINITY;
         }
         @Override public void close() {
             IntArrayCache.returnArray(mIdx);
-            DoubleArrayCache.returnArray(mDis);
+            DoubleArrayCache.returnArray(mRsq);
             DoubleArrayCache.returnArray(mDz);
             DoubleArrayCache.returnArray(mDy);
             DoubleArrayCache.returnArray(mDx);
         }
         
-        void put(double aDis, double aDx, double aDy, double aDz, int aIdx) {
+        void put(double aDx, double aDy, double aDz, int aIdx) {
+            double tRsq = aDx*aDx + aDy*aDy + aDz*aDz;
             // 没达到容量直接添加
             if (mSize < mNnn) {
                 mDx[mSize] = aDx; mDy[mSize] = aDy; mDz[mSize] = aDz;
-                mDis[mSize] = aDis;
+                mRsq[mSize] = tRsq;
                 mIdx[mSize] = aIdx;
-                if (aDis > mMaxDis) {
-                    mMaxDis = aDis;
+                if (tRsq > mMaxRsq) {
+                    mMaxRsq = tRsq;
                     mMaxIdx = mSize;
                 }
                 ++mSize;
                 return;
             }
             // 超过容量了替换掉最远的
-            if (aDis >= mMaxDis) return;
+            if (tRsq >= mMaxRsq) return;
             mDx[mMaxIdx] = aDx; mDy[mMaxIdx] = aDy; mDz[mMaxIdx] = aDz;
-            mDis[mMaxIdx] = aDis;
+            mRsq[mMaxIdx] = tRsq;
             mIdx[mMaxIdx] = aIdx;
             // 遍历确定新的最远位置
             mMaxIdx = -1;
-            mMaxDis = Double.NEGATIVE_INFINITY;
+            mMaxRsq = Double.NEGATIVE_INFINITY;
             for (int ji = 0; ji < mNnn; ++ji) {
-                double tDis = mDis[ji];
-                if (tDis > mMaxDis) {
-                    mMaxDis = tDis;
+                double tDis = mRsq[ji];
+                if (tDis > mMaxRsq) {
+                    mMaxRsq = tDis;
                     mMaxIdx = ji;
                 }
             }
@@ -401,13 +402,21 @@ public class NeighborListGetter {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
                     if (j>=index) continue;
-                    aDxyzIdxDo.run(mPosX.get(j)-x0, mPosY.get(j)-y0, mPosZ.get(j)-z0, mIdx.get(j));
+                    double dx = mPosX.get(j) - x0;
+                    double dy = mPosY.get(j) - y0;
+                    double dz = mPosZ.get(j) - z0;
+                    double rsq = dx*dx + dy*dy + dz*dz;
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
                     if (j==index) continue;
-                    aDxyzIdxDo.run(mPosX.get(j)-x0, mPosY.get(j)-y0, mPosZ.get(j)-z0, mIdx.get(j));
+                    double dx = mPosX.get(j) - x0;
+                    double dy = mPosY.get(j) - y0;
+                    double dz = mPosZ.get(j) - z0;
+                    double rsq = dx*dx + dy*dy + dz*dz;
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
                 }
             }
         } else {
@@ -417,12 +426,20 @@ public class NeighborListGetter {
                     int j = tCell.get(ji);
                     int jdx = mIdx.get(j);
                     if (jdx>index || (jdx==index && tSkipHalfGhost)) continue;
-                    aDxyzIdxDo.run(mPosX.get(j)-x0, mPosY.get(j)-y0, mPosZ.get(j)-z0, jdx);
+                    double dx = mPosX.get(j) - x0;
+                    double dy = mPosY.get(j) - y0;
+                    double dz = mPosZ.get(j) - z0;
+                    double rsq = dx*dx + dy*dy + dz*dz;
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, jdx);
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
-                    aDxyzIdxDo.run(mPosX.get(j)-x0, mPosY.get(j)-y0, mPosZ.get(j)-z0, mIdx.get(j));
+                    double dx = mPosX.get(j) - x0;
+                    double dy = mPosY.get(j) - y0;
+                    double dz = mPosZ.get(j) - z0;
+                    double rsq = dx*dx + dy*dy + dz*dz;
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
                 }
             }
         }
@@ -432,11 +449,15 @@ public class NeighborListGetter {
         final int tCellSize = tCell.size();
         for (int ji = 0; ji < tCellSize; ++ji) {
             int j = tCell.get(ji);
-            aDxyzIdxDo.run(mPosX.get(j)-x0, mPosY.get(j)-y0, mPosZ.get(j)-z0, mIdx.get(j));
+            double dx = mPosX.get(j) - x0;
+            double dy = mPosY.get(j) - y0;
+            double dz = mPosZ.get(j) - z0;
+            double rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
         }
     }
     
-    public void forEachNeighborRaw(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final double x0 = mPosX.get(aIndex);
         final double y0 = mPosY.get(aIndex);
@@ -482,7 +503,7 @@ public class NeighborListGetter {
         forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck+1, false, aHalf, aDxyzIdxDo);
         forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
     }
-    public void forEachNeighborRaw(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         // 注意对于一般情况需要将超出边界的进行平移
@@ -532,12 +553,6 @@ public class NeighborListGetter {
         forEachCell(x0, y0, z0, ci-1, cj-1, ck-1, false, aDxyzIdxDo);
     }
     
-    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
-        forEachNeighborRaw(aIndex, aHalf, (dx, dy, dz, idx) -> {
-            double rsq = dx*dx + dy*dy + dz*dz;
-            if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, idx);
-        });
-    }
     public void forEachNeighbor(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
         forEachNeighbor(aIndex, false, aDxyzIdxDo);
     }
@@ -548,18 +563,9 @@ public class NeighborListGetter {
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
-            forEachNeighborRaw(aIndex, false, (dx, dy, dz, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                tNNL.put(rsq, dx, dy, dz, idx);
-            });
+            forEachNeighbor(aIndex, false, tNNL::put);
             tNNL.forEachNeighbor(aDxyzIdxDo);
         }
-    }
-    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
-        forEachNeighborRaw(aX, aY, aZ, (dx, dy, dz, idx) -> {
-            double rsq = dx*dx + dy*dy + dz*dz;
-            if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, idx);
-        });
     }
     public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
@@ -568,10 +574,7 @@ public class NeighborListGetter {
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
-            forEachNeighborRaw(aX, aY, aZ, (dx, dy, dz, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                tNNL.put(rsq, dx, dy, dz, idx);
-            });
+            forEachNeighbor(aX, aY, aZ, tNNL::put);
             tNNL.forEachNeighbor(aDxyzIdxDo);
         }
     }
