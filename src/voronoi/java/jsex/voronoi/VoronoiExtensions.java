@@ -1,7 +1,6 @@
 package jsex.voronoi;
 
 import jse.atom.AtomicParameterCalculator;
-import jse.atom.NeighborListGetter;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.DoubleList;
 
@@ -63,11 +62,11 @@ public class VoronoiExtensions {
         final VoronoiBuilder rBuilder = new VoronoiBuilder().setNoWarning(aNoWarning).setIndexLength(aIndexLength).setAreaThreshold(aAreaThreshold).setLengthThreshold(aLengthThreshold);
         // 先增加内部原本的粒子，根据 cell 的顺序添加可以加速 voronoi 的构造
         final int[] idx2voronoi = new int[self.natoms()];
-        NeighborListGetter tNl = self.nl_().setRCut(aRCutOff);
-        final DoubleList tPosX = tNl.posX(), tPosY = tNl.posY(), tPosZ = tNl.posZ();
-        final int tSliceX = tNl.sliceX(), tSliceY = tNl.sliceY(), tSliceZ = tNl.sliceZ();
+        self.nl_().setRCut(aRCutOff).build();
+        final DoubleList tPosX = self.nl_().posX(), tPosY = self.nl_().posY(), tPosZ = self.nl_().posZ();
+        final int tSliceX = self.nl_().sliceX(), tSliceY = self.nl_().sliceY(), tSliceZ = self.nl_().sliceZ();
         for (int ck = 0; ck < tSliceZ; ++ck) for (int cj = 0; cj < tSliceY; ++cj) for (int ci = 0; ci < tSliceX; ++ci) {
-            tNl.cell(ci, cj, ck, true).forEach(i -> {
+            self.nl_().cell(ci, cj, ck, true).forEach(i -> {
                 idx2voronoi[i] = rBuilder.sizeVertex();
                 // 原则上 VoronoiBuilder.insert 内部也会进行一次拷贝避免坐标被意外修改，但是旧版本没有，这样写可以兼顾效率和旧版兼容
                 rBuilder.insert(tPosX.get(i), tPosY.get(i), tPosZ.get(i), i);
@@ -76,7 +75,7 @@ public class VoronoiExtensions {
         // 然后增加一些镜像粒子保证 PBC 下的准确性
         for (int ck = -1; ck <= tSliceZ; ++ck) for (int cj = -1; cj <= tSliceY; ++cj) for (int ci = -1; ci <= tSliceX; ++ci) {
             if (ci>=0 && ci<tSliceX && cj>=0 && cj<tSliceY && ck>=0 && ck<tSliceZ) continue;
-            tNl.cell(ci, cj, ck, false).forEach(i -> {
+            self.nl_().cell(ci, cj, ck, false).forEach(i -> {
                 rBuilder.insert(tPosX.get(i), tPosY.get(i), tPosZ.get(i));
             });
         }

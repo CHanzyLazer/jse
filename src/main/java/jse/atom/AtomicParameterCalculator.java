@@ -231,22 +231,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
         return mNL;
     }
     /**
-     * 外部为 APC 补充运算时使用，获取 APC 内部的原子坐标数据
-     * @see IVector
-     */
-    @ApiStatus.Internal public IVector posX() {
-        DoubleList tPosX = mNL.posX();
-        return new Vector(mNumAtoms, tPosX.internalData());
-    }
-    @ApiStatus.Internal public IVector posY() {
-        DoubleList tPosY = mNL.posY();
-        return new Vector(mNumAtoms, tPosY.internalData());
-    }
-    @ApiStatus.Internal public IVector posZ() {
-        DoubleList tPosZ = mNL.posZ();
-        return new Vector(mNumAtoms, tPosZ.internalData());
-    }
-    /**
      * 外部为 APC 补充运算时使用，获取 APC 内部的原子种类编号向量
      * @see IIntVector
      */

@@ -164,11 +164,11 @@ public class NeighborListGetter {
             }
         } else {
             tBuf.setXYZ(mSliceX/mA.mX, mSliceY/mB.mY, mSliceZ/mC.mZ);
-            for (int idx = 0; idx < mNumAtoms; ++idx) {
-                int ci = MathEX.Code.floor2int(mPosX.get(idx) * tBuf.mX);
-                int cj = MathEX.Code.floor2int(mPosY.get(idx) * tBuf.mY);
-                int ck = MathEX.Code.floor2int(mPosZ.get(idx) * tBuf.mZ);
-                cell(ci, cj, ck, true).add(idx);
+            for (int i = 0; i < mNumAtoms; ++i) {
+                int ci = MathEX.Code.floor2int(mPosX.get(i) * tBuf.mX);
+                int cj = MathEX.Code.floor2int(mPosY.get(i) * tBuf.mY);
+                int ck = MathEX.Code.floor2int(mPosZ.get(i) * tBuf.mZ);
+                cell(ci, cj, ck, true).add(i);
             }
         }
         // 添加 ghost 原子，这里使用遍历的方式实现

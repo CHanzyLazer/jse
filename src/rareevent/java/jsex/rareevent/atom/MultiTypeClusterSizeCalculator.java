@@ -67,6 +67,7 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
             if (subTypeSolidChecker!=null && tTypeIndices.get(tTypeMM).size()>=tMinCalNum) {
                 try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aPoint.operation().refSlice(tTypeIndices.get(tTypeMM)))) {
                     final NeighborListGetter tNl = tAPC.nl_().setRCut(tAPC.unitLen()*R_NEAREST_MUL);
+                    tNl.build();
                     ILogicalVector tTypeIsSolid = subTypeSolidChecker.checkSolid(tAPC);
                     // 使用 refSlicer 来合并两者结果
                     rIsSolid.refSlicer().get(tTypeIndices.get(tTypeMM)).or2this(tTypeIsSolid);
