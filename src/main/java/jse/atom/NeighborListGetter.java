@@ -560,6 +560,7 @@ public class NeighborListGetter {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
             forEachNeighbor(aIndex, aDxyzIdxDo);
+            return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
@@ -571,6 +572,7 @@ public class NeighborListGetter {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
             forEachNeighbor(aX, aY, aZ, aDxyzIdxDo);
+            return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
