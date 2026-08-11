@@ -28,10 +28,10 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initCells0
 /*
  * Class:     jse_gpu_CudaNeighborListGetter
  * Method:    buildCells0
- * Signature: (IIIZFFFFFFFFFJIIIFJJJIIJJ)I
+ * Signature: (IIIZFFFFFFFFFJIIIJJJIIJJ)I
  */
 JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0
-  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jfloat, jlong, jlong, jlong, jint, jint, jlong, jlong);
+  (JNIEnv *, jclass, jint, jint, jint, jboolean, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jlong, jint, jint, jint, jlong, jlong, jlong, jint, jint, jlong, jlong);
 
 /*
  * Class:     jse_gpu_CudaNeighborListGetter

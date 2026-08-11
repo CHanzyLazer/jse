@@ -10,22 +10,7 @@ static __device__ inline int floor2int(const float val) {
     return __float2int_rd(val);
 }
 
-
-static __device__ __host__ inline float proj2ab(
-    const float x, const float y, const float z,
-    const float ax, const float ay, const float az,
-    const float bx, const float by, const float bz) {
-    
-    const float abx = ay*bz - by*az;
-    const float aby = az*bx - bz*ax;
-    const float abz = ax*by - bx*ay;
-    
-    const float dot_ = x*abx + y*aby + z*abz;
-    const float norm_ = sqrt(abx*abx + aby*aby + abz*abz);
-    return dot_ / norm_;
-}
-
-static __device__ __host__ inline float mixed(
+static __device__ inline float mixed(
     const float ax, const float ay, const float az,
     const float bx, const float by, const float bz,
     const float cx, const float cy, const float cz) {
@@ -33,7 +18,7 @@ static __device__ __host__ inline float mixed(
     return (ay*bz - by*az)*cx + (az*bx - bz*ax)*cy + (ax*by - bx*ay)*cz;
 }
 
-static __device__ __host__ inline void toDirect(
+static __device__ inline void toDirect(
     float &x, float &y, float &z,
     const float ax, const float ay, const float az,
     const float bx, const float by, const float bz,
@@ -67,29 +52,14 @@ static __global__ void buildCellsKernel(const int nlocalghost,
     const float ax, const float ay, const float az,
     const float bx, const float by, const float bz,
     const float cx, const float cy, const float cz,
-    const float px, const float py, const float pz,
     const float *posx, const float *posy, const float *posz,
-    const int sliceX, const int sliceY, const int sliceZ, const float rcut,
+    const int sliceX, const int sliceY, const int sliceZ,
     int **cells, int *cellSize, int localCellCapacity, int ghostCellCapacity) {
     
     const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (i >= nlocalghost) return;
     
     float x = posx[i], y = posy[i], z = posz[i];
-    if (PRISM) {
-        float proj_ = proj2ab(x, y, z, bx, by, bz, cx, cy, cz);
-        if (proj_>=(px+rcut) || proj_<=-rcut) return;
-        proj_ = proj2ab(x, y, z, cx, cy, cz, ax, ay, az);
-        if (proj_>=(py+rcut) || proj_<=-rcut) return;
-        proj_ = proj2ab(x, y, z, ax, ay, az, bx, by, bz);
-        if (proj_>=(pz+rcut) || proj_<=-rcut) return;
-    } else {
-        if ((x>=(ax+rcut) || x<=-rcut) ||
-            (y>=(by+rcut) || y<=-rcut) ||
-            (z>=(cz+rcut) || z<=-rcut)) {
-            return;
-        }
-    }
     if (PRISM) {
         toDirect(x, y, z, ax, ay, az, bx, by, bz, cx, cy, cz);
     } else {
@@ -207,7 +177,7 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
     JNIEnv *aEnv, jclass aClazz, jint aBlockSize, jint nlocal, jint nghost,
     jboolean aPrism, jfloat ax, jfloat ay, jfloat az,
     jfloat bx, jfloat by, jfloat bz, jfloat cx, jfloat cy, jfloat cz,
-    jlong pos, jint sliceX, jint sliceY, jint sliceZ, jfloat rcut,
+    jlong pos, jint sliceX, jint sliceY, jint sliceZ,
     jlong cells, jlong cellSize, jlong cellSizeCpu,
     jint localCellCapacity, jint ghostCellCapacity,
     jlong localCellMax, jlong ghostCellMax) {
@@ -227,18 +197,15 @@ JNIEXPORT int JNICALL Java_jse_gpu_CudaNeighborListGetter_buildCells0(
     float *posz = (float *)(intptr_t)pos + nlocalghost*2L;
     
     if (aPrism) {
-        const float px = JSE_CUDANL::proj2ab(ax, ay, az, bx, by, bz, cx, cy, cz);
-        const float py = JSE_CUDANL::proj2ab(bx, by, bz, cx, cy, cz, ax, ay, az);
-        const float pz = JSE_CUDANL::proj2ab(cx, cy, cz, ax, ay, az, bx, by, bz);
         JSE_CUDANL::buildCellsKernel<JNI_TRUE><<<tGridSize, (int)aBlockSize>>>(nlocalghost,
-            ax, ay, az, bx, by, bz, cx, cy, cz, px, py, pz,
-            posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ, rcut,
+            ax, ay, az, bx, by, bz, cx, cy, cz,
+            posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity
         );
     } else {
         JSE_CUDANL::buildCellsKernel<JNI_FALSE><<<tGridSize, (int)aBlockSize>>>(nlocalghost,
-            ax, ay, az, bx, by, bz, cx, cy, cz, 0, 0, 0,
-            posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ, rcut,
+            ax, ay, az, bx, by, bz, cx, cy, cz,
+            posx, posy, posz, (int)sliceX, (int)sliceY, (int)sliceZ,
             (int **)(intptr_t)cells, tCellSize, (int)localCellCapacity, (int)ghostCellCapacity
         );
     }
