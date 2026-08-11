@@ -9,9 +9,11 @@ import jse.math.MathEX;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * jse 中的近邻列表实现，具体采用了 Neighbor Cell List (NCL)
@@ -27,11 +29,11 @@ import java.util.List;
  * @author liqa
  */
 @ApiStatus.Experimental
-public class NeighborListGetter {
+public class NeighborListGetter implements IHasSymbol {
     public final static int MAX_SLICE = 256;
     
     private boolean mValid = false;
-    private final IntList mIdx;
+    private final IntList mIdx, mType;
     private final DoubleList mPosX, mPosY, mPosZ;
     private final List<IntList> mCells;
     private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
@@ -50,6 +52,7 @@ public class NeighborListGetter {
     
     public NeighborListGetter() {
         mIdx = new IntList();
+        mType = new IntList();
         mPosX = new DoubleList();
         mPosY = new DoubleList();
         mPosZ = new DoubleList();
@@ -60,6 +63,20 @@ public class NeighborListGetter {
         setData(aData).setRCut(aRCut).build();
     }
     
+    
+    /// symbol stuffs
+    private final List<String> mSymbols = new ArrayList<>();
+    private int mNumTypes = 0;
+    private boolean mHasSymbol = false;
+    @Override public int ntypes() {
+        return mNumTypes;
+    }
+    @Override public boolean hasSymbol() {
+        return mHasSymbol;
+    }
+    @Override public @Nullable String symbol(int aType) {
+        return mHasSymbol ? mSymbols.get(aType-1) : null;
+    }
     
     public NeighborListGetter setRCut(double aRCut) {
         if (aRCut <= 0.0) throw new IllegalArgumentException("rcut MUST > 0.0, input: "+aRCut);
@@ -102,7 +119,12 @@ public class NeighborListGetter {
             mABNorm = Double.NaN;
             mPlaneXYZ.setXYZ(mA.mX, mB.mY, mC.mZ);
         }
+        mSymbols.clear();
+        mNumTypes = aData.ntypes();
+        mHasSymbol = aData.hasSymbol();
+        if (mHasSymbol) mSymbols.addAll(Objects.requireNonNull(aData.symbols()));
         mIdx.clear(); mIdx.ensureCapacity(mNumAtoms);
+        mType.clear(); mIdx.ensureCapacity(mNumAtoms);
         mPosX.clear(); mPosX.ensureCapacity(mNumAtoms);
         mPosY.clear(); mPosY.ensureCapacity(mNumAtoms);
         mPosZ.clear(); mPosZ.ensureCapacity(mNumAtoms);
@@ -110,6 +132,7 @@ public class NeighborListGetter {
         for (int i = 0; i < mNumAtoms; ++i) {
             IAtom tAtom = aData.atom(i);
             mIdx.add(i);
+            mType.add(tAtom.type());
             tBuf.setXYZ(tAtom.x(), tAtom.y(), tAtom.z());
             wrapPBC(tBuf);
             mPosX.add(tBuf.mX);
@@ -325,13 +348,33 @@ public class NeighborListGetter {
     public IntList index() {
         return mIdx;
     }
+    public IntList type() {
+        return mType;
+    }
+    public ISettableAtomData data() {
+        if (mNumAtoms < 0) {
+            throw new IllegalStateException("Need `setData` first");
+        }
+        AtomDataBuilder<SettableAtomData> tBuilder = SettableAtomData.builder();
+        tBuilder.setNtypes(mNumTypes);
+        if (mHasSymbol) tBuilder.setSymbols(mSymbols);
+        if (mPrism) {
+            tBuilder.setBox(mA, mB, mC);
+        } else {
+            tBuilder.setBox(mA.mX, mB.mY, mC.mZ);
+        }
+        for (int i = 0; i < mNumAtoms; ++i) {
+            tBuilder.add(mPosX.get(i), mPosY.get(i), mPosZ.get(i), mType.get(i));
+        }
+        return tBuilder.build();
+    }
     
-    @FunctionalInterface public interface IDxyzIdxDo {void run(double aDx, double aDy, double aDz, int aIdx);}
+    @FunctionalInterface public interface IDxyzIdxTypeDo {void run(double dx, double dy, double dz, int idx, int type);}
     
     // 限制最近邻数目的近邻构建，现在使用简单的遍历方式来实现
     private static class NearestNeighborList implements AutoCloseable {
         private final double[] mDx, mDy, mDz, mRsq;
-        private final int[] mIdx;
+        private final int[] mIdx, mType;
         private final int mNnn;
         private int mSize;
         private int mMaxIdx;
@@ -346,10 +389,12 @@ public class NeighborListGetter {
             mDz = DoubleArrayCache.getArray(aNnn);
             mRsq = DoubleArrayCache.getArray(aNnn);
             mIdx = IntArrayCache.getArray(aNnn);
+            mType = IntArrayCache.getArray(aNnn);
             mMaxIdx = -1;
             mMaxRsq = Double.NEGATIVE_INFINITY;
         }
         @Override public void close() {
+            IntArrayCache.returnArray(mType);
             IntArrayCache.returnArray(mIdx);
             DoubleArrayCache.returnArray(mRsq);
             DoubleArrayCache.returnArray(mDz);
@@ -357,13 +402,14 @@ public class NeighborListGetter {
             DoubleArrayCache.returnArray(mDx);
         }
         
-        void put(double aDx, double aDy, double aDz, int aIdx) {
+        void put(double aDx, double aDy, double aDz, int aIdx, int aType) {
             double tRsq = aDx*aDx + aDy*aDy + aDz*aDz;
             // 没达到容量直接添加
             if (mSize < mNnn) {
                 mDx[mSize] = aDx; mDy[mSize] = aDy; mDz[mSize] = aDz;
                 mRsq[mSize] = tRsq;
                 mIdx[mSize] = aIdx;
+                mType[mSize] = aType;
                 if (tRsq > mMaxRsq) {
                     mMaxRsq = tRsq;
                     mMaxIdx = mSize;
@@ -376,6 +422,7 @@ public class NeighborListGetter {
             mDx[mMaxIdx] = aDx; mDy[mMaxIdx] = aDy; mDz[mMaxIdx] = aDz;
             mRsq[mMaxIdx] = tRsq;
             mIdx[mMaxIdx] = aIdx;
+            mType[mMaxIdx] = aType;
             // 遍历确定新的最远位置
             mMaxIdx = -1;
             mMaxRsq = Double.NEGATIVE_INFINITY;
@@ -387,36 +434,38 @@ public class NeighborListGetter {
                 }
             }
         }
-        void forEachNeighbor(IDxyzIdxDo aDxyzIdxDo) {
+        void forEachNeighbor(IDxyzIdxTypeDo aDxyzIdxTypeDo) {
             for (int ji = 0; ji < mNnn; ++ji) {
-                aDxyzIdxDo.run(mDx[ji], mDy[ji], mDz[ji], mIdx[ji]);
+                aDxyzIdxTypeDo.run(mDx[ji], mDy[ji], mDz[ji], mIdx[ji], mType[ji]);
             }
         }
     }
     
-    void forEachCell(int index, double x0, double y0, double z0, int ci, int cj, int ck, boolean in, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
+    void forEachCell(int index, double x0, double y0, double z0, int ci, int cj, int ck, boolean in, boolean aHalf, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         IntList tCell = cell(ci, cj, ck, in);
         final int tCellSize = tCell.size();
         if (in) {
             if (aHalf) {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
+                    int jdx = mIdx.get(j);
                     if (j>=index) continue;
                     double dx = mPosX.get(j) - x0;
                     double dy = mPosY.get(j) - y0;
                     double dz = mPosZ.get(j) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
+                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
+                    int jdx = mIdx.get(j);
                     if (j==index) continue;
                     double dx = mPosX.get(j) - x0;
                     double dy = mPosY.get(j) - y0;
                     double dz = mPosZ.get(j) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
+                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
                 }
             }
         } else {
@@ -430,34 +479,36 @@ public class NeighborListGetter {
                     double dy = mPosY.get(j) - y0;
                     double dz = mPosZ.get(j) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, jdx);
+                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.get(ji);
+                    int jdx = mIdx.get(j);
                     double dx = mPosX.get(j) - x0;
                     double dy = mPosY.get(j) - y0;
                     double dz = mPosZ.get(j) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
+                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
                 }
             }
         }
     }
-    void forEachCell(double x0, double y0, double z0, int ci, int cj, int ck, boolean in, IDxyzIdxDo aDxyzIdxDo) {
+    void forEachCell(double x0, double y0, double z0, int ci, int cj, int ck, boolean in, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         IntList tCell = cell(ci, cj, ck, in);
         final int tCellSize = tCell.size();
         for (int ji = 0; ji < tCellSize; ++ji) {
             int j = tCell.get(ji);
+            int jdx = mIdx.get(j);
             double dx = mPosX.get(j) - x0;
             double dy = mPosY.get(j) - y0;
             double dz = mPosZ.get(j) - z0;
             double rsq = dx*dx + dy*dy + dz*dz;
-            if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, mIdx.get(j));
+            if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
         }
     }
     
-    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final double x0 = mPosX.get(aIndex);
         final double y0 = mPosY.get(aIndex);
@@ -476,10 +527,10 @@ public class NeighborListGetter {
             ck0 = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
         }
         for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
-            forEachCell(aIndex, x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aHalf, aDxyzIdxDo);
+            forEachCell(aIndex, x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aHalf, aDxyzIdxTypeDo);
         }
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         // 注意对于一般情况需要将超出边界的进行平移
@@ -501,35 +552,35 @@ public class NeighborListGetter {
         final double y0 = tBuf.mY;
         final double z0 = tBuf.mZ;
         for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
-            forEachCell(x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aDxyzIdxDo);
+            forEachCell(x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aDxyzIdxTypeDo);
         }
     }
     
-    public void forEachNeighbor(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
-        forEachNeighbor(aIndex, false, aDxyzIdxDo);
+    public void forEachNeighbor(int aIndex, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+        forEachNeighbor(aIndex, false, aDxyzIdxTypeDo);
     }
-    public void forEachNeighbor(int aIndex, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(int aIndex, int aNnn, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aIndex, aDxyzIdxDo);
+            forEachNeighbor(aIndex, aDxyzIdxTypeDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
             forEachNeighbor(aIndex, false, tNNL::put);
-            tNNL.forEachNeighbor(aDxyzIdxDo);
+            tNNL.forEachNeighbor(aDxyzIdxTypeDo);
         }
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aX, aY, aZ, aDxyzIdxDo);
+            forEachNeighbor(aX, aY, aZ, aDxyzIdxTypeDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
             forEachNeighbor(aX, aY, aZ, tNNL::put);
-            tNNL.forEachNeighbor(aDxyzIdxDo);
+            tNNL.forEachNeighbor(aDxyzIdxTypeDo);
         }
     }
     
@@ -549,7 +600,7 @@ public class NeighborListGetter {
     public IntVector get(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
+        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx, type) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -578,7 +629,7 @@ public class NeighborListGetter {
     @ApiStatus.Internal public IntVector get_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
+        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx, type) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -625,21 +676,22 @@ public class NeighborListGetter {
      *
      * @param aIdx 需要获取近邻列表的原子索引
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表，不包括自身
+     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表，不包括自身
      * @see Vector
      */
     public List<Vector> getFull(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        // 目前这种情况都需要遍历一下
-        final Vector.Builder rNL = Vector.builder();
+        
+        final Vector.Builder rIdx = Vector.builder();
+        final Vector.Builder rType = Vector.builder();
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> {
-            rNL.add(idx);
+        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx, type) -> {
+            rIdx.add(idx); rType.add(type);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rNL.build());
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build(), rType.build());
     }
     /**
      * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
@@ -654,7 +706,7 @@ public class NeighborListGetter {
      * 来增加一个参数 aNnn
      *
      * @param aIdx 需要获取近邻列表的原子索引
-     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表，不包括自身
+     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表，不包括自身
      * @see Vector
      */
     public List<Vector> getFull(int aIdx) {
@@ -669,15 +721,16 @@ public class NeighborListGetter {
     @ApiStatus.Internal public List<Vector> getFull_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
-        final Vector.Builder rNL = Vector.builder();
+        final Vector.Builder rIdx = Vector.builder();
+        final Vector.Builder rType = Vector.builder();
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
-            rNL.add(idx);
+        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx, type) -> {
+            rIdx.add(idx); rType.add(type);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rNL.build());
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build(), rType.build());
     }
     /**
      * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
@@ -689,7 +742,7 @@ public class NeighborListGetter {
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表
+     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表
      * @see Vector
      * @see IXYZ
      */
@@ -709,7 +762,7 @@ public class NeighborListGetter {
      * 来增加一个参数 aNnn
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
-     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表
+     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表
      * @see Vector
      * @see IXYZ
      */

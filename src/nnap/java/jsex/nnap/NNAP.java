@@ -610,12 +610,12 @@ public class NNAP extends AbstractPairPotential {
             int cType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
             rFps.add(VectorCache.getVec(mBasis[cType-1].size()));
         }
-        final NeighborListGetter tNl = nl_().setData(aAtomData).setRCut(rcutMax());
+        final NeighborListGetter tNl = nl_().setData(aAtomData).setRCut(rcutMax()); tNl.build();
         pool_().parfor(tNumAtoms, (i, threadID) -> {
-            final int cType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
+            final int cType = tTypeMap.applyAsInt(tNl.type().get(i));
             int tNlSize = buildNL_(threadID, (dxyzTypeDo) -> {
-                tNl.forEachNeighbor(i, (dx, dy, dz, idx) -> {
-                    int tType = tTypeMap.applyAsInt(aAtomData.atom(idx).type());
+                tNl.forEachNeighbor(i, (dx, dy, dz, idx, type) -> {
+                    int tType = tTypeMap.applyAsInt(type);
                     dxyzTypeDo.run(dx, dy, dz, tType, idx);
                 });
             }, mBasis[cType-1].rcutMax(), false);

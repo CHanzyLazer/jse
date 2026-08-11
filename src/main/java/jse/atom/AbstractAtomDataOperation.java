@@ -218,7 +218,7 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
                 if (aOutputIndex) subCluster.add(currentPoint);
                 
                 if (aUnwrapByCluster2this) tBuf.setXYZ(tThis.atom(currentPoint));
-                mNl.forEachNeighbor(currentPoint, (dx, dy, dz, neighbor) -> {
+                mNl.forEachNeighbor(currentPoint, (dx, dy, dz, neighbor, type) -> {
                     if (!tVisited.get(neighbor)) {
                         tStack.push(neighbor);
                         tVisited.set(neighbor, true);

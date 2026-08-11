@@ -108,8 +108,8 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         // 缓存情况需要先清空这些
         mNlDx.clear(); mNlDy.clear(); mNlDz.clear();
         mNlType.clear();
-        aAPC.nl_().forEachNeighbor(aIdx, (dx, dy, dz, idx) -> {
-            int type = aTypeMap.applyAsInt(aAPC.types().get(idx));
+        aAPC.nl_().forEachNeighbor(aIdx, (dx, dy, dz, idx, type) -> {
+            type = aTypeMap.applyAsInt(type);
             if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
             // 简单缓存近邻列表
             mNlDx.add(dx); mNlDy.add(dy); mNlDz.add(dz);
