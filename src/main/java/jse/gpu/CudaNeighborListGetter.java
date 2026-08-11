@@ -179,13 +179,13 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mB.cross2dest(mC, mBC);
         mC.cross2dest(mA, mCA);
         mA.cross2dest(mB, mAB);
-        double mPx = mA.dot(mBC) / mBC.norm();
-        double mPy = mB.dot(mCA) / mCA.norm();
-        double mPz = mC.dot(mAB) / mAB.norm();
+        double tPx = mA.dot(mBC) / mBC.norm();
+        double tPy = mB.dot(mCA) / mCA.norm();
+        double tPz = mC.dot(mAB) / mAB.norm();
         
-        mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPx/mRCut));
-        mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPy/mRCut));
-        mSliceZ = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPz/mRCut));
+        mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(tPx/mRCut));
+        mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(tPy/mRCut));
+        mSliceZ = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(tPz/mRCut));
     }
     void initBox(double x, double y, double z) {
         mPrism = false;
@@ -225,7 +225,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         int tCode = buildCells0(
             Conf.BLOCKSIZE, nlocal, nghost, mPrism, (float)mA.mX, (float)mA.mY, (float)mA.mZ,
             (float)mB.mX, (float)mB.mY, (float)mB.mZ, (float)mC.mX, (float)mC.mY, (float)mC.mZ,
-            mPos.ptr_(), mSliceX, mSliceY, mSliceZ,
+            mPos.ptr_(), mSliceX, mSliceY, mSliceZ, (float)mRCut,
             mCells.ptr_(), mCellSize.ptr_(), mCellSizeCpu.ptr_(),
             mLocalCellCapacity, mGhostCellCapacity,
             mLocalCellMax.ptr_(), mGhostCellMax.ptr_()
@@ -370,7 +370,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private static native int buildCells0(
         int aBlockSize, int nlocal, int nghost, boolean aPrism, float ax, float ay, float az,
         float bx, float by, float bz, float cx, float cy, float cz,
-        long pos, int sliceX, int sliceY, int sliceZ,
+        long pos, int sliceX, int sliceY, int sliceZ, float rcut,
         long cells, long cellSize, long cellSizeCpu,
         int localCellCapacity, int ghostCellCapacity,
         long localCellMax, long ghostCellMax);
