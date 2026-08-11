@@ -186,10 +186,10 @@ public class NeighborListGetter {
                 // 注意排除自身
                 if (ri==0 && rj==0 && rk==0) continue;
                 // 简单的方向性判断排除不需要遍历的 cell
-                if ((ri>0 && ci0!=0) || (ri<0 && ci0!=(mSliceX-1))) continue;
-                if ((rj>0 && cj0!=0) || (rj<0 && cj0!=(mSliceY-1))) continue;
-                if ((rk>0 && ck0!=0) || (rk<0 && ck0!=(mSliceZ-1))) continue;
-                    
+                if ((ri>0 && ci0>0) || (ri<0 && ci0<(mSliceX-1))) continue;
+                if ((rj>0 && cj0>0) || (rj<0 && cj0<(mSliceY-1))) continue;
+                if ((rk>0 && ck0>0) || (rk<0 && ck0<(mSliceZ-1))) continue;
+                
                 int ci = ri==0 ? ci0 : (ri>0 ? ci0+mSliceX : ci0-mSliceX);
                 int cj = rj==0 ? cj0 : (rj>0 ? cj0+mSliceY : cj0-mSliceY);
                 int ck = rk==0 ? ck0 : (rk>0 ? ck0+mSliceZ : ck0-mSliceZ);
@@ -218,7 +218,7 @@ public class NeighborListGetter {
                         }
                     }
                     tCellG.add(mIdx.size());
-                    mIdx.add(mIdx.get(i));
+                    mIdx.add(i);
                     mPosX.add(tBuf.mX);
                     mPosY.add(tBuf.mY);
                     mPosZ.add(tBuf.mZ);
@@ -462,46 +462,22 @@ public class NeighborListGetter {
         final double x0 = mPosX.get(aIndex);
         final double y0 = mPosY.get(aIndex);
         final double z0 = mPosZ.get(aIndex);
-        final int ci, cj, ck;
+        final int ci0, cj0, ck0;
         if (mPrism) {
             final XYZ tBuf = new XYZ();
             tBuf.setXYZ(x0, y0, z0);
             toDirect(tBuf);
-            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX);
-            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
-            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
+            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX);
+            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY);
+            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci = MathEX.Code.floor2int(x0*mSliceX/mA.mX);
-            cj = MathEX.Code.floor2int(y0*mSliceY/mB.mY);
-            ck = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
+            ci0 = MathEX.Code.floor2int(x0*mSliceX/mA.mX);
+            cj0 = MathEX.Code.floor2int(y0*mSliceY/mB.mY);
+            ck0 = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
         }
-        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck  , true , aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck-1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck  , false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck+1, false, aHalf, aDxyzIdxDo);
-        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
+        for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
+            forEachCell(aIndex, x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aHalf, aDxyzIdxDo);
+        }
     }
     public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
@@ -510,47 +486,23 @@ public class NeighborListGetter {
         final XYZ tBuf = new XYZ(aX, aY, aZ);
         wrapPBC(tBuf); // 存在部分重复计算，不过不关键
         
-        final int ci, cj, ck;
+        final int ci0, cj0, ck0;
         if (mPrism) {
             toDirect(tBuf);
-            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX);
-            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
-            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
+            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX);
+            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY);
+            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX/mA.mX);
-            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY/mB.mY);
-            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ/mC.mZ);
+            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX/mA.mX);
+            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY/mB.mY);
+            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ/mC.mZ);
         }
         final double x0 = tBuf.mX;
         final double y0 = tBuf.mY;
         final double z0 = tBuf.mZ;
-        forEachCell(x0, y0, z0, ci  , cj  , ck  , true , aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj  , ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj  , ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj+1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj+1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj+1, ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj-1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj-1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci  , cj-1, ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj  , ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj  , ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj  , ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj+1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj+1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj+1, ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj-1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj-1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci+1, cj-1, ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj  , ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj  , ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj  , ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj+1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj+1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj+1, ck-1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj-1, ck  , false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj-1, ck+1, false, aDxyzIdxDo);
-        forEachCell(x0, y0, z0, ci-1, cj-1, ck-1, false, aDxyzIdxDo);
+        for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
+            forEachCell(x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aDxyzIdxDo);
+        }
     }
     
     public void forEachNeighbor(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
