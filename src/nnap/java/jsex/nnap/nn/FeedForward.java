@@ -4,7 +4,6 @@ import jse.code.Conf;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.cptr.IDoubleOrFloatCPointer;
-import jse.math.MathEX;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
@@ -107,7 +106,7 @@ public class FeedForward extends NeuralNetwork {
         int tShift = 0;
         for (int tHiddenDim : mHiddenDims) {
             int tSize = tHiddenDim*tColNum;
-            double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
+            double tBound = Math.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
             mHiddenWeights.subVec(tShift, tShift+tSize).assign(() -> RANDOM.nextDouble(-tBound, tBound));
             tShift += tSize;
             tColNum = tHiddenDim;
@@ -115,14 +114,14 @@ public class FeedForward extends NeuralNetwork {
         tShift = 0;
         tColNum = mInputDim;
         for (int tHiddenDim : mHiddenDims) {
-            double tBound = MathEX.Fast.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
+            double tBound = Math.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
             mHiddenBiases.subVec(tShift, tShift+tHiddenDim).assign(() -> RANDOM.nextDouble(-tBound, tBound));
             tShift += tHiddenDim;
             tColNum = tHiddenDim;
         }
-        double tBound = MathEX.Fast.sqrt(3.0 / tColNum); // Kaiming 均匀初始化，注意输出层没有激活函数因此权重需要调整
+        double tBound = Math.sqrt(3.0 / tColNum); // Kaiming 均匀初始化，注意输出层没有激活函数因此权重需要调整
         mOutputWeight.assign(() -> RANDOM.nextDouble(-tBound, tBound));
-        double tBoundB = MathEX.Fast.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
+        double tBoundB = Math.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
         mOutputBias.set(0, RANDOM.nextDouble(-tBoundB, tBoundB));
         updateParameters_();
     }

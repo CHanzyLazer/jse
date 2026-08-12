@@ -7,8 +7,6 @@ import jse.math.MathEX;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static jse.code.CS.XYZ_ZERO;
-
 /**
  * lammps 格式的模拟盒信息
  * @author liqa
@@ -62,10 +60,10 @@ public class LmpBox implements IBox {
         XYZ tC = XYZ.toXYZ(aC);
         double tX = tA.norm();
         double tXY = tB.dot(tA) / tX;
-        double tY = MathEX.Fast.sqrt(tB.dot() - tXY*tXY);
+        double tY = Math.sqrt(tB.dot() - tXY*tXY);
         double tXZ = tC.dot(tA) / tX;
         double tYZ = (tB.dot(tC) - tXY*tXZ) / tY;
-        double tZ = MathEX.Fast.sqrt(tC.dot() - tXZ*tXZ - tYZ*tYZ);
+        double tZ = Math.sqrt(tC.dot() - tXZ*tXZ - tYZ*tYZ);
         // 这里同样考虑由于计算误差导致的数值非正交问题
         if (Math.abs(tXY) < MathEX.Code.DBL_EPSILON) tXY = 0.0;
         if (Math.abs(tXZ) < MathEX.Code.DBL_EPSILON) tXZ = 0.0;

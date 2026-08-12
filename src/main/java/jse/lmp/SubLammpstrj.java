@@ -5,7 +5,6 @@ import jse.code.FileEndException;
 import jse.code.IO;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
-import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
 import jse.math.table.ITable;
 import jse.math.table.Table;
@@ -334,7 +333,7 @@ public class SubLammpstrj extends AbstractSettableAtomData {
         if (mKeyY == null) throw new UnsupportedOperationException("`setDenseNormalized` for Lammpstrj without y data");
         if (mKeyZ == null) throw new UnsupportedOperationException("`setDenseNormalized` for Lammpstrj without z data");
         
-        double tScale = MathEX.Fast.cbrt(volume() / this.natoms());
+        double tScale = Math.cbrt(volume() / this.natoms());
         tScale = 1.0 / tScale;
         return (SubLammpstrj)setBoxScale(tScale);
     }

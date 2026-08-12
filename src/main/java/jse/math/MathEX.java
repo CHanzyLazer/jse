@@ -11,8 +11,6 @@ import jse.code.collection.IntDeque;
 import jse.code.iterator.IHasIntIterator;
 import jse.math.function.IFunc1Subs;
 import jse.math.vector.*;
-import net.jafama.DoubleWrapper;
-import net.jafama.FastMath;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 
@@ -56,7 +54,7 @@ public class MathEX {
             for (int i = tL+tL-1; i > 1; i-=2) rFactorial2 *= i;
             SH_FACTORIAL2_2L_PLUS_1.set(tL, rFactorial2);
         }
-        SH_SQRT_2L = Vectors.from(SH_LARGEST_L+1, l -> Fast.sqrt(l+l));
+        SH_SQRT_2L = Vectors.from(SH_LARGEST_L+1, l -> Math.sqrt(l+l));
         
         final int tSize = (SH_LARGEST_L+2)*(SH_LARGEST_L+1)/2;
         SH_Alm = Vectors.NaN(tSize);
@@ -68,11 +66,11 @@ public class MathEX {
             double tLL = tL*tL, tLmmLmm = (tL-1)*(tL-1);
             for (int tM = 0; tM < tL-1; ++tM) {
                 double tMM = tM * tM;
-                SH_Alm.set(tStart+tM,  Fast.sqrt((4.0*tLL - 1.0) / (tLL - tMM)));
-                SH_Blm.set(tStart+tM, -Fast.sqrt((tLmmLmm - tMM) / (4.0*tLmmLmm - 1.0)));
+                SH_Alm.set(tStart+tM,  Math.sqrt((4.0*tLL - 1.0) / (tLL - tMM)));
+                SH_Blm.set(tStart+tM, -Math.sqrt((tLmmLmm - tMM) / (4.0*tLmmLmm - 1.0)));
                 double tMul = 1.0 / (double)((tL+tM+1) * (tL-tM));
-                SH_Clm.set(tStart+tM, -2.0 * (tM+1) * Fast.sqrt(tMul));
-                SH_Dlm.set(tStart+tM, -Fast.sqrt((tL+tM+2) * (tL-tM-1) * tMul));
+                SH_Clm.set(tStart+tM, -2.0 * (tM+1) * Math.sqrt(tMul));
+                SH_Dlm.set(tStart+tM, -Math.sqrt((tL+tM+2) * (tL-tM-1) * tMul));
             }
             tStart += tL + 1;
         }
@@ -85,7 +83,7 @@ public class MathEX {
                 rElm *= 4*PI;
                 rElm = 1.0 / rElm;
                 rElm *= tL+tL+1;
-                rElm = Fast.sqrt(rElm);
+                rElm = Math.sqrt(rElm);
                 SH_Elm.set(tStart+tM, rElm);
             }
             tStart += tL + 1;
@@ -364,19 +362,14 @@ public class MathEX {
             sphericalHarmonicsFull2Dest3_(aLMax, aX, aY, aZ, rDest);
         }
         private static void sphericalHarmonicsFull2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aTheta, double aPhi, IComplexVector rDest) {
-            DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
-            double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            double tCosTheta = tJafamaDoubleWrapper.value;
-            double tSinPhi = FastMath.sinAndCos(aPhi, tJafamaDoubleWrapper);
-            double tCosPhi = tJafamaDoubleWrapper.value;
-            sphericalHarmonicsFull2Dest4_(aLMax, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+            sphericalHarmonicsFull2Dest4_(aLMax, Math.cos(aTheta), Math.sin(aTheta), Math.cos(aPhi),  Math.sin(aPhi), rDest);
         }
         private static void sphericalHarmonicsFull2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, IComplexVector rDest) {
-            sphericalHarmonicsFull2DestXYZDis_(aLMax, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+            sphericalHarmonicsFull2DestXYZDis_(aLMax, aX, aY, aZ, Math.sqrt(aX*aX + aY*aY + aZ*aZ), rDest);
         }
         @ApiStatus.Internal
         public static void sphericalHarmonicsFull2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, double aDis, IComplexVector rDest) {
-            double tXY = Fast.hypot(aX, aY);
+            double tXY = Math.sqrt(aX*aX + aY*aY);
             double tCosTheta = aZ / aDis;
             double tSinTheta = tXY / aDis;
             double tCosPhi;
@@ -448,19 +441,14 @@ public class MathEX {
             realSphericalHarmonicsFull2Dest3_(aLMax, aX, aY, aZ, rDest);
         }
         private static void realSphericalHarmonicsFull2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aTheta, double aPhi, IVector rDest) {
-            DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
-            double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            double tCosTheta = tJafamaDoubleWrapper.value;
-            double tSinPhi = FastMath.sinAndCos(aPhi, tJafamaDoubleWrapper);
-            double tCosPhi = tJafamaDoubleWrapper.value;
-            realSphericalHarmonicsFull2Dest4_(aLMax, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+            realSphericalHarmonicsFull2Dest4_(aLMax, Math.cos(aTheta), Math.sin(aTheta), Math.cos(aPhi),  Math.sin(aPhi), rDest);
         }
         private static void realSphericalHarmonicsFull2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, IVector rDest) {
-            realSphericalHarmonicsFull2DestXYZDis_(aLMax, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+            realSphericalHarmonicsFull2DestXYZDis_(aLMax, aX, aY, aZ, Math.sqrt(aX*aX + aY*aY + aZ*aZ), rDest);
         }
         @ApiStatus.Internal
         public static void realSphericalHarmonicsFull2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aLMax, double aX, double aY, double aZ, double aDis, IVector rDest) {
-            double tXY = Fast.hypot(aX, aY);
+            double tXY = Math.sqrt(aX*aX + aY*aY);
             double tCosTheta = aZ / aDis;
             double tSinTheta = tXY / aDis;
             double tCosPhi;
@@ -520,8 +508,8 @@ public class MathEX {
                         if (tM == 0) rDest.set(tStartL, tPlm);
                         else setRealY_(rDest, tStartL, tM, tPlm);
                     }
-                    setRealY_(rDest, tStartL, tL-1, aX * Fast.sqrt(2.0*(tL-1) + 3.0) * tPll);
-                    tPll *= (-Fast.sqrt(1.0 + 0.5/(double)tL) * aY);
+                    setRealY_(rDest, tStartL, tL-1, aX * Math.sqrt(2.0*(tL-1) + 3.0) * tPll);
+                    tPll *= (-Math.sqrt(1.0 + 0.5/(double)tL) * aY);
                     setRealY_(rDest, tStartL, tL, tPll);
                     tStartLm2 = tStartLmm;
                     tStartLmm = tStartL;
@@ -573,19 +561,14 @@ public class MathEX {
             sphericalHarmonics2Dest3_(aL, aX, aY, aZ, rDest);
         }
         private static void sphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aTheta, double aPhi, IComplexVector rDest) {
-            DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
-            double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            double tCosTheta = tJafamaDoubleWrapper.value;
-            double tSinPhi = FastMath.sinAndCos(aPhi, tJafamaDoubleWrapper);
-            double tCosPhi = tJafamaDoubleWrapper.value;
-            sphericalHarmonics2Dest4_(aL, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+            sphericalHarmonics2Dest4_(aL, Math.cos(aTheta), Math.sin(aTheta), Math.cos(aPhi),  Math.sin(aPhi), rDest);
         }
         private static void sphericalHarmonics2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, IComplexVector rDest) {
-            sphericalHarmonics2DestXYZDis_(aL, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+            sphericalHarmonics2DestXYZDis_(aL, aX, aY, aZ, Math.sqrt(aX*aX + aY*aY + aZ*aZ), rDest);
         }
         @ApiStatus.Internal
         public static void sphericalHarmonics2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, double aDis, IComplexVector rDest) {
-            double tXY = Fast.hypot(aX, aY);
+            double tXY = Math.sqrt(aX*aX + aY*aY);
             double tCosTheta = aZ / aDis;
             double tSinTheta = tXY / aDis;
             double tCosPhi;
@@ -653,19 +636,14 @@ public class MathEX {
             realSphericalHarmonics2Dest3_(aL, aX, aY, aZ, rDest);
         }
         private static void realSphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aTheta, double aPhi, IVector rDest) {
-            DoubleWrapper tJafamaDoubleWrapper = new DoubleWrapper(); // new 的损耗应该可以忽略掉
-            double tSinTheta = FastMath.sinAndCos(aTheta, tJafamaDoubleWrapper);
-            double tCosTheta = tJafamaDoubleWrapper.value;
-            double tSinPhi = FastMath.sinAndCos(aPhi, tJafamaDoubleWrapper);
-            double tCosPhi = tJafamaDoubleWrapper.value;
-            realSphericalHarmonics2Dest4_(aL, tCosTheta, tSinTheta, tCosPhi, tSinPhi, rDest);
+            realSphericalHarmonics2Dest4_(aL, Math.cos(aTheta), Math.sin(aTheta), Math.cos(aPhi),  Math.sin(aPhi), rDest);
         }
         private static void realSphericalHarmonics2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, IVector rDest) {
-            realSphericalHarmonics2DestXYZDis_(aL, aX, aY, aZ, Fast.hypot(aX, aY, aZ), rDest);
+            realSphericalHarmonics2DestXYZDis_(aL, aX, aY, aZ, Math.sqrt(aX*aX + aY*aY + aZ*aZ), rDest);
         }
         @ApiStatus.Internal
         public static void realSphericalHarmonics2DestXYZDis_(@Range(from = 0, to = SH_LARGEST_L) int aL, double aX, double aY, double aZ, double aDis, IVector rDest) {
-            double tXY = Fast.hypot(aX, aY);
+            double tXY = Math.sqrt(aX*aX + aY*aY);
             double tCosTheta = aZ / aDis;
             double tSinTheta = tXY / aDis;
             double tCosPhi;
@@ -721,7 +699,7 @@ public class MathEX {
             default: {
                 int tStartCDE = (aL+1)*aL/2;
                 double tPll = SH_Elm.get(tStartCDE + aL);
-                tPll *= Fast.powFast(aY, aL);
+                tPll *= Code.powi(aY, aL);
                 
                 // 特殊处理 aY == 0.0 的情况，避免出现 NaN，此时除了 Pl0 全部都会是 0.0，
                 // 顺便也处理 aY ≈ 0 的情况，保证至少结果不会偏离太远，
@@ -790,7 +768,7 @@ public class MathEX {
         public static void sphericalHarmonics2Dest(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aTheta, double aPhi, ISettableComplexDouble rDest) {
             // 判断输入是否合法
             if (Math.abs(aM) > aL) throw new IllegalArgumentException("Input m MUST be in range -l ~ l, input: "+aM);
-            sphericalHarmonics2Dest_(aL, aM, Fast.cos(aTheta), aPhi, rDest);
+            sphericalHarmonics2Dest_(aL, aM, Math.cos(aTheta), aPhi, rDest);
         }
         public static void sphericalHarmonics2Dest3(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ, ISettableComplexDouble rDest) {
             // 判断输入是否合法
@@ -799,7 +777,7 @@ public class MathEX {
         }
         private static ComplexDouble sphericalHarmonics_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aTheta, double aPhi) {
             ComplexDouble rY = new ComplexDouble();
-            sphericalHarmonics2Dest_(aL, aM, Fast.cos(aTheta), aPhi, rY);
+            sphericalHarmonics2Dest_(aL, aM, Math.cos(aTheta), aPhi, rY);
             return rY;
         }
         private static ComplexDouble sphericalHarmonics3_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ) {
@@ -808,8 +786,8 @@ public class MathEX {
             return rY;
         }
         private static void sphericalHarmonics2Dest3_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aX, double aY, double aZ, ISettableComplexDouble rDest) {
-            double tCosTheta = aZ / Fast.hypot(aX, aY, aZ);
-            double tPhi = Fast.atan2(aY, aX);
+            double tCosTheta = aZ / Math.sqrt(aX*aX + aY*aY + aZ*aZ);
+            double tPhi = Math.atan2(aY, aX);
             sphericalHarmonics2Dest_(aL, aM, tCosTheta, tPhi, rDest);
         }
         private static void sphericalHarmonics2Dest_(@Range(from = 0, to = SH_LARGEST_L) int aL, int aM, double aCosTheta, double aPhi, ISettableComplexDouble rDest) {
@@ -824,8 +802,8 @@ public class MathEX {
             // 计算连带 Legendre 多项式部分
             rFront *= legendre_(aL, aM, aCosTheta);
             // 返回结果，实部虚部分开计算
-            rDest.setReal(rFront*Fast.cos(aM*aPhi));
-            rDest.setImag(rFront*Fast.sin(aM*aPhi));
+            rDest.setReal(rFront*Math.cos(aM*aPhi));
+            rDest.setImag(rFront*Math.sin(aM*aPhi));
         }
         
         /**
@@ -855,7 +833,7 @@ public class MathEX {
             switch(tGreater) {
             case 0: {
                 if (aM == 0) return 1.0;
-                double tPmm = Fast.sqrt(Fast.powFast(1.0 - aX*aX, aM));
+                double tPmm = Math.sqrt(Code.powi(1.0 - aX*aX, aM));
                 if ((aM&1)==1) tPmm = -tPmm;
                 tPmm *= SH_FACTORIAL2_2L_PLUS_1.get(aL);
                 return tPmm;
@@ -913,7 +891,7 @@ public class MathEX {
             rFront *= factorial( aJ1-aJ2+aJ3);
             rFront *= factorial(-aJ1+aJ2+aJ3);
             rFront /= factorial( aJ1+aJ2+aJ3+1);
-            rFront = Fast.sqrt(rFront);
+            rFront = Math.sqrt(rFront);
             
             // 计算中间的根式
             double rMid = 1.0;
@@ -923,7 +901,7 @@ public class MathEX {
             rMid *= factorial(aJ2+aM2);
             rMid *= factorial(aJ3-aM3);
             rMid *= factorial(aJ3+aM3);
-            rMid = Fast.sqrt(rMid);
+            rMid = Math.sqrt(rMid);
             
             // 最终结果
             double tResult = rFront*rMid*rBack;
@@ -944,7 +922,7 @@ public class MathEX {
             if (aM1 < -aJ1 || aM1 > aJ1) throw new IllegalArgumentException("Input m1 MUST be in range -j1 ~ j1, input: "+aM1);
             if (aM2 < -aJ2 || aM2 > aJ2) throw new IllegalArgumentException("Input m2 MUST be in range -j2 ~ j2, input: "+aM2);
             if (aMM < -aJJ || aMM > aJJ) throw new IllegalArgumentException("Input mm MUST be in range -jj ~ jj, input: "+aMM);
-            double tPrefactor = Fast.sqrt(aJJ+aJJ + 1);
+            double tPrefactor = Math.sqrt(aJJ+aJJ + 1);
             if (((-aJ1+aJ2-aMM)&1)==1) tPrefactor = -tPrefactor;
             return tPrefactor * wigner3j_(aJ1, aJ2, aJJ, aM1, aM2, -aMM);
         }
@@ -961,46 +939,6 @@ public class MathEX {
             for (int i = 2; i <= aN; ++i) rProd *= i;
             return rProd;
         }
-    }
-    
-    
-    /// operations in FastMath
-    public static class Fast {
-        public static double sqrt(double aValue) {return FastMath.sqrt(aValue);}
-        public static double cbrt(double aValue) {return FastMath.cbrt(aValue);}
-        public static double hypot(double aX, double aY) {return FastMath.hypot(aX, aY);}
-        public static double hypot(double aX, double aY, double aZ) {return FastMath.hypot(aX, aY, aZ);}
-        
-        public static double exp(double aValue) {return FastMath.exp(aValue);}
-        public static double log(double aValue) {return FastMath.log(aValue);}
-        public static double log10(double aValue) {return FastMath.log10(aValue);}
-        
-        public static double pow(double aValue, double aPower) {return FastMath.pow(aValue, aPower);}
-        public static double powFast(double aValue, int aPower) {return FastMath.powFast(aValue, aPower);}
-        public static double pow2(double aValue) {return aValue*aValue;}
-        public static double pow3(double aValue) {return aValue*aValue*aValue;}
-        
-        public static double sin(double aValue) {return FastMath.sin(aValue);}
-        public static double cos(double aValue) {return FastMath.cos(aValue);}
-        public static double tan(double aValue) {return FastMath.tan(aValue);}
-        
-        public static double asin(double aValue) {return FastMath.asin(aValue);}
-        public static double acos(double aValue) {return FastMath.acos(aValue);}
-        public static double atan(double aValue) {return FastMath.atan(aValue);}
-        public static double atan2(double aY, double aX) {return FastMath.atan2(aY, aX);}
-        
-        public static double sinh(double aValue) {return FastMath.sinh(aValue);}
-        public static double cosh(double aValue) {return FastMath.cosh(aValue);}
-        public static double tanh(double aValue) {return FastMath.tanh(aValue);}
-        
-        public static double asinh(double aValue) {return FastMath.asinh(aValue);}
-        public static double acosh(double aValue) {return FastMath.acosh(aValue);}
-        public static double atanh(double aValue) {return FastMath.atanh(aValue);}
-        
-        public static double powQuick(double aValue, double aPower) {return FastMath.powQuick(aValue, aPower);}
-        public static double sqrtQuick(double aValue) {return FastMath.sqrtQuick(aValue);}
-        public static double sinQuick(double aValue) {return FastMath.sinQuick(aValue);}
-        public static double cosQuick(double aValue) {return FastMath.cosQuick(aValue);}
     }
     
     
@@ -1089,7 +1027,7 @@ public class MathEX {
             double tSSR = rBuffer.operation().dot();
             VectorCache.returnVec(rBuffer);
             
-            double tSigma = Fast.sqrt(tSSR / (tNx-2.0));
+            double tSigma = Math.sqrt(tSSR / (tNx-2.0));
             
             return new DoubleTriplet(tA, tB, tSigma);
         }
@@ -1178,67 +1116,208 @@ public class MathEX {
     
     
     /// utils operations
+    @SuppressWarnings("ManualMinMaxCalculation")
     public static class Code {
-        public static double floor(double aValue) {return FastMath.floor(aValue);}
-        public static double ceil(double aValue) {return FastMath.ceil(aValue);}
-        public static long round(double aValue) {return FastMath.round(aValue);}
+        public static int floor2int(double value) {
+            int valueInt = (int) value;
+            if (value < 0.0) {
+                if (value == (double) valueInt) {
+                    return valueInt;
+                } else {
+                    if (valueInt == Integer.MIN_VALUE) {
+                        return valueInt;
+                    } else {
+                        return valueInt - 1;
+                    }
+                }
+            } else { // >= 0 or NaN.
+                return valueInt;
+            }
+        }
+        public static int ceil2int(double value) {
+            int valueInt = (int) value;
+            if (value > 0.0) {
+                if (value == (double) valueInt) {
+                    return valueInt;
+                } else {
+                    if (valueInt == Integer.MAX_VALUE) {
+                        return valueInt;
+                    } else {
+                        return valueInt + 1;
+                    }
+                }
+            } else { // <= 0 or NaN.
+                return valueInt;
+            }
+        }
+        public static int round2int(double value) {
+            long a = Math.round(value); // 还是使用 jdk 实现，这里不管怎样保持 jdk 一致
+            if (a != (int)a) {
+                return (a < 0) ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+            }
+            return (int)a;
+        }
         
-        public static int floor2int(double aValue) {return FastMath.floorToInt(aValue);}
-        public static int ceil2int(double aValue) {return FastMath.ceilToInt(aValue);}
-        public static int round2int(double aValue) {return FastMath.roundToInt(aValue);}
-        
-        public static double toRange(double aMin, double aMax, double aValue) {return FastMath.toRange(aMin, aMax, aValue);}
-        public static int toRange(int aMin, int aMax, int aValue) {return FastMath.toRange(aMin, aMax, aValue);}
-        public static long toRange(long aMin, long aMax, long aValue) {return FastMath.toRange(aMin, aMax, aValue);}
+        public static double toRange(double aMin, double aMax, double aValue) {
+            if (aValue <= aMin) {
+                return aMin;
+            } else if (aValue >= aMax) {
+                return aMax;
+            } else {
+                return aValue;
+            }
+        }
+        public static int toRange(int aMin, int aMax, int aValue) {
+            if (aValue <= aMin) {
+                return aMin;
+            } else if (aValue >= aMax) {
+                return aMax;
+            } else {
+                return aValue;
+            }
+        }
+        public static long toRange(long aMin, long aMax, long aValue) {
+            if (aValue <= aMin) {
+                return aMin;
+            } else if (aValue >= aMax) {
+                return aMax;
+            } else {
+                return aValue;
+            }
+        }
         
         /** double compare */
         public static boolean numericEqual(double aLHS, double aRHS) {
+            if (Double.isNaN(aLHS) || Double.isNaN(aRHS)) return false;
             double tNorm = Math.abs(aLHS) + Math.abs(aRHS);
             if (tNorm < Double.MIN_NORMAL * EPS_MUL) return true; // 两个值都为零的情况，比这个值更小时乘以 epsilon() 会失效
             double tDiff = Math.abs(aLHS - aRHS);
             return tDiff <= tNorm * DBL_EPSILON;
         }
         public static boolean numericGreater(double aLHS, double aRHS) {
+            if (Double.isNaN(aLHS) || Double.isNaN(aRHS)) return false;
             double tNorm = Math.abs(aLHS) + Math.abs(aRHS);
             if (tNorm < Double.MIN_NORMAL * EPS_MUL) return false; // 两个值都为零的情况，比这个值更小时乘以 epsilon() 会失效
             return aLHS - aRHS > tNorm * DBL_EPSILON;
         }
         public static boolean numericLess(double aLHS, double aRHS) {
+            if (Double.isNaN(aLHS) || Double.isNaN(aRHS)) return false;
             double tNorm = Math.abs(aLHS) + Math.abs(aRHS);
             if (tNorm < Double.MIN_NORMAL * EPS_MUL) return false; // 两个值都为零的情况，比这个值更小时乘以 epsilon() 会失效
             return aRHS - aLHS > tNorm * DBL_EPSILON;
         }
         public final static int EPS_MUL = 8;
-        /** {@link FastMath} will has lower accuracy */
         public final static double DBL_EPSILON = 1.0e-10;
         
         
-        /** Translates Amount of aUnit1 to Amount of aUnit2. */
-        public static long units(long aAmount, long aOriginalUnit, long aTargetUnit, boolean aRoundUp) {
-            if (aTargetUnit == 0) return 0;
-            if (aOriginalUnit == aTargetUnit || aOriginalUnit == 0) return aAmount;
-            if (aOriginalUnit %   aTargetUnit == 0) {aOriginalUnit /=   aTargetUnit;   aTargetUnit = 1;} else
-            if (aTargetUnit   % aOriginalUnit == 0) {  aTargetUnit /= aOriginalUnit; aOriginalUnit = 1;}
-            return Math.max(0, ((aAmount * aTargetUnit) / aOriginalUnit) + (aRoundUp && (aAmount * aTargetUnit) % aOriginalUnit > 0 ? 1 : 0));
+        public static double pow2(double aVal) {
+            return aVal*aVal;
         }
-        public static int units(int aAmount, int aOriginalUnit, int aTargetUnit, boolean aRoundUp) {
-            if (aTargetUnit == 0) return 0;
-            if (aOriginalUnit == aTargetUnit || aOriginalUnit == 0) return aAmount;
-            if (aOriginalUnit %   aTargetUnit == 0) {aOriginalUnit /=   aTargetUnit;   aTargetUnit = 1;} else
-            if (aTargetUnit   % aOriginalUnit == 0) {  aTargetUnit /= aOriginalUnit; aOriginalUnit = 1;}
-            return Math.max(0, ((aAmount * aTargetUnit) / aOriginalUnit) + (aRoundUp && (aAmount * aTargetUnit) % aOriginalUnit > 0 ? 1 : 0));
+        public static double pow3(double aVal) {
+            return aVal*aVal*aVal;
         }
-        
+        public static double pow4(double aVal) {
+            aVal *= aVal;
+            return aVal*aVal;
+        }
+        public static double pow5(double aVal) {
+            double tVal2 = aVal*aVal;
+            return tVal2*tVal2*aVal;
+        }
+        public static double pow6(double aVal) {
+            aVal *= aVal;
+            return aVal*aVal*aVal;
+        }
+        public static double pow7(double aVal) {
+            double tVal2 = aVal*aVal;
+            return tVal2*tVal2*tVal2*aVal;
+        }
+        public static double pow8(double aVal) {
+            aVal *= aVal;
+            aVal *= aVal;
+            return aVal*aVal;
+        }
+        public static double pow9(double aVal) {
+            aVal = aVal*aVal*aVal;
+            return aVal*aVal*aVal;
+        }
+        public static double pow10(double aVal) {
+            double tVal2 = aVal*aVal;
+            aVal = tVal2*tVal2;
+            aVal *= aVal;
+            return aVal*tVal2;
+        }
+        public static double pow11(double aVal) {
+            double tVal2 = aVal*aVal;
+            double aVal8 = tVal2*tVal2;
+            aVal8 *= aVal8;
+            return aVal8*tVal2*aVal;
+        }
+        public static double pow12(double aVal) {
+            aVal *= aVal;
+            aVal *= aVal;
+            return aVal*aVal*aVal;
+        }
+        /**
+         * 实现来源 {@code net.jafama.FastMath#powFast}
+         */
+        public static double powi(double value, int power) {
+            if (power < 3) {
+                if (power < 0) {
+                    // Opposite of Integer.MIN_VALUE does not exist as int.
+                    if (power == Integer.MIN_VALUE) {
+                        // Integer.MAX_VALUE = -(power+1)
+                        return 1.0/(powi(value,Integer.MAX_VALUE) * value);
+                    } else {
+                        return 1.0/powi(value,-power);
+                    }
+                } else {
+                    // Here, power is in [0,2].
+                    if (power == 2) { // Most common case first.
+                        return value * value;
+                    } else if (power == 0) {
+                        return 1.0;
+                    } else { // power == 1
+                        return value;
+                    }
+                }
+            } else { // power >= 4
+                double oddRemains = 1.0;
+                // If power <= 5, faster to finish outside the loop.
+                while (power > 5) {
+                    // Test if power is odd.
+                    if ((power & 1) != 0) {
+                        oddRemains *= value;
+                    }
+                    value *= value;
+                    power >>= 1; // power = power / 2
+                }
+                // Here, power is in [3,5].
+                if (power == 3) {
+                    return oddRemains * value * value * value;
+                } else { // power in [4,5].
+                    double v2 = value * value;
+                    if (power == 4) {
+                        return oddRemains * v2 * v2;
+                    } else { // power == 5
+                        return oddRemains * v2 * v2 * value;
+                    }
+                }
+            }
+        }
         
         /**
          * Divides but rounds up.
          */
-        public static long divup(long aNumber, long aDivider) {return aNumber / aDivider + (aNumber % aDivider == 0 ? 0 : 1);}
-        public static int  divup(int  aNumber, int  aDivider) {return aNumber / aDivider + (aNumber % aDivider == 0 ? 0 : 1);}
+        public static long divup(long aNumber, long aDivider) {
+            return aNumber / aDivider + (aNumber % aDivider == 0 ? 0 : 1);
+        }
+        public static int  divup(int  aNumber, int  aDivider) {
+            return aNumber / aDivider + (aNumber % aDivider == 0 ? 0 : 1);
+        }
         
         /**
          * get the next power of 2 of aNum
-         * @author liqa
          */
         public static int ceilPower2(int aNum) {
             --aNum;
@@ -1252,7 +1331,6 @@ public class MathEX {
         }
         /**
          * get the previous power of 2 of aNum
-         * @author liqa
          */
         public static int floorPower2(int aNum) {
             aNum |= aNum >> 1;
@@ -1265,7 +1343,6 @@ public class MathEX {
         }
         /**
          * get the next power of aRoot of aNum, use the ceil value of power consistently
-         * @author liqa
          */
         public static int ceilPower(int aNum, double aRoot) {
             if (aNum <= 1) return aNum;
@@ -1274,13 +1351,12 @@ public class MathEX {
             int out = 1;
             while (out < aNum) {
                 tValue *= aRoot;
-                out = Code.ceil2int(tValue);
+                out = ceil2int(tValue);
             }
             return out;
         }
         /**
          * get the previous power of aRoot of aNum, use the ceil value of power consistently
-         * @author liqa
          */
         public static int floorPower(int aNum, double aRoot) {
             if (aNum <= 1) return aNum;
@@ -1289,7 +1365,7 @@ public class MathEX {
             int out = 1;
             while (true) {
                 tValue *= aRoot;
-                int tOut = Code.ceil2int(tValue);
+                int tOut = ceil2int(tValue);
                 if (tOut > aNum) return out;
                 out = tOut;
             }

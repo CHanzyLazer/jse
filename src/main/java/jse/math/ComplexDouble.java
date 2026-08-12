@@ -96,8 +96,13 @@ public final class ComplexDouble extends AbstractSettableComplexDouble {
     @Override public ComplexDouble negative() {return new ComplexDouble(-mReal, -mImag);}
     @Override public void negative2this() {mReal = -mReal; mImag = -mImag;}
     
-    @Override public double norm() {return MathEX.Fast.hypot(mReal, mImag);}
-    @Override public double phase() {return MathEX.Fast.atan2(mImag, mReal);}
+    @Override public double norm() {
+        final double tReal = mReal, tImag = mImag;
+        return Math.sqrt(tReal*tReal + tImag*tImag);
+    }
+    @Override public double phase() {
+        return Math.atan2(mImag, mReal);
+    }
     @Override public ComplexDouble conj() {return new ComplexDouble(mReal, -mImag);}
     @Override public void conj2this() {mImag = -mImag;}
 }

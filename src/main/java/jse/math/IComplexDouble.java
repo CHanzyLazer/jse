@@ -65,8 +65,13 @@ public interface IComplexDouble {
     
     default ComplexDouble negative() {return new ComplexDouble(-real(), -imag());}
     
-    default double norm() {return MathEX.Fast.hypot(real(), imag());}
-    default double phase() {return MathEX.Fast.atan2(imag(), real());}
+    default double norm() {
+        final double tReal = real(), tImag = imag();
+        return Math.sqrt(tReal*tReal + tImag*tImag);
+    }
+    default double phase() {
+        return Math.atan2(imag(), real());
+    }
     /** matlab 的名称 */
     default double abs() {return norm();}
     default double angle() {return phase();}

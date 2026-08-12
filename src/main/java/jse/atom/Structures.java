@@ -237,7 +237,7 @@ public class Structures {
      * @return 由此创建的 {@link IAtomData}
      */
     public static IAtomData HCP(double aCellSize, int aRepeat) {return HCP(aCellSize, aRepeat, aRepeat, aRepeat);}
-    private final static double SQRT3 = MathEX.Fast.sqrt(3.0), SQRT83 = MathEX.Fast.sqrt(8.0/3.0);
+    private final static double SQRT3 = Math.sqrt(3.0), SQRT83 = Math.sqrt(8.0/3.0);
     /** @see #HCP(double, double, int, int, int) */
     @VisibleForTesting public static IAtomData hcp(double aCellSize, double aCellHeight, int aRepeatX, int aRepeatY, int aRepeatZ) {return HCP(aCellSize, aCellHeight, aRepeatX, aRepeatY, aRepeatZ);}
     /** @see #HCP(double, int, int, int) */

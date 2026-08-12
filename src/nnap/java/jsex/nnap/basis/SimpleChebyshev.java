@@ -156,7 +156,7 @@ public class SimpleChebyshev extends SimpleBasis {
         for (int j = 0; j < tNN; ++j) {
             int type = aNlType.get(j);
             double dx = aNlDx.get(j), dy = aNlDy.get(j), dz = aNlDz.get(j);
-            double dis = MathEX.Fast.hypot(dx, dy, dz);
+            double dis = Math.sqrt(dx*dx + dy*dy + dz*dz);
             // check rcut for merge
             if (dis >= mRCut) continue;
             // cal fc

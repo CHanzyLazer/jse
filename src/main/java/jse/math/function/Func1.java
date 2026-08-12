@@ -80,12 +80,12 @@ public class Func1 {
      */
     public static ZeroBoundSymmetryFunc1 deltaG(double aSigma, final double aMu, double aResolution) {
         final double tXMul = -1.0 / (2.0*aSigma*aSigma);
-        final double tYMul =  1.0 / (MathEX.Fast.sqrt(2.0*PI) * aSigma);
+        final double tYMul =  1.0 / (Math.sqrt(2.0*PI) * aSigma);
         
         ZeroBoundSymmetryFunc1 rFunc1 = ZeroBoundSymmetryFunc1.zeros(aMu, aSigma/aResolution, MathEX.Code.round2int(aResolution*G_RANG));
         rFunc1.fill(x -> {
             x -= aMu;
-            return MathEX.Fast.exp(x * x * tXMul) * tYMul;
+            return Math.exp(x * x * tXMul) * tYMul;
         });
         return rFunc1;
     }

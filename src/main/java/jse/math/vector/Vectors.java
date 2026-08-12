@@ -154,7 +154,7 @@ public class Vectors {
         return rVector;
     }
     public static Vector logspace(double aStart, double aEnd, int aN) {
-        double tStep = MathEX.Fast.pow(aEnd/aStart, 1.0/(double)(aN-1));
+        double tStep = Math.pow(aEnd/aStart, 1.0/(double)(aN-1));
         return logsequence(aStart, tStep, aN);
     }
     

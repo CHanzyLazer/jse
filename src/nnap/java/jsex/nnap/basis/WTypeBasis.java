@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableBiMap;
 import jse.code.Conf;
 import jse.code.UT;
 import jse.cptr.IDoubleOrFloatCPointer;
-import jse.math.MathEX;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
@@ -589,7 +588,7 @@ abstract class WTypeBasis extends MergeableBasis {
             }
         }
         // 在这个经验设定下，scale 设置为此值确保输出的基组值数量级一致
-        mRFuseScale[0] = MathEX.Fast.sqrt(1.0 / mSizeN);
+        mRFuseScale[0] = Math.sqrt(1.0 / mSizeN);
     }
     @Override public void initParameters() {
         initFuseWeight_();

@@ -25,7 +25,7 @@ abstract class AbstractLmpPotential implements IPotential {
     /** 将 lammps real 单位制中的 atmospheres 转换成 (kcal/mol)/Å^3 需要乘的倍数 */
     public final static double ATM_TO_KCAL = 1.01325*BAR_TO_EV*EV_TO_KCAL;
     /** 将 lammps electron 单位制中的 Pascal 转换成 Hartree/Bohr^3 需要乘的倍数 */
-    public final static double PA_TO_HARTREE = UNITS.get("Pascal") / UNITS.get("Hartree") * MathEX.Fast.pow3(UNITS.get("Bohr"));
+    public final static double PA_TO_HARTREE = UNITS.get("Pascal") / UNITS.get("Hartree") * MathEX.Code.pow3(UNITS.get("Bohr"));
     
     @NotNull String mPairStyle;
     @NotNull String[] mPairCoeff;

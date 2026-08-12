@@ -118,7 +118,12 @@ public interface IXYZ {
      * @return {@code sqrt(x()*x() + y()*y() + z()*z())}
      * @see Math#sqrt(double)
      */
-    default double norm() {return MathEX.Fast.hypot(x(), y(), z());}
+    default double norm() {
+        double tX = x();
+        double tY = y();
+        double tZ = z();
+        return Math.sqrt(tX*tX + tY*tY + tZ*tZ);
+    }
     /**
      * @return {@code abs(x()) + abs(y()) + abs(z())}
      * @see Math#abs(double)
@@ -246,25 +251,12 @@ public interface IXYZ {
      * @see #distance2(double, double, double)
      * @see Math#sqrt(double)
      */
-    default double distance(double aX, double aY, double aZ) {return MathEX.Fast.hypot(x()-aX, y()-aY, z()-aZ);}
-    /**
-     * @return {@code sqrtQuick(this.distance2(aRHS))}
-     * @see #distance2(IXYZ)
-     * @see MathEX.Fast#sqrtQuick(double)
-     */
-    default double distanceQuick(IXYZ aRHS) {return MathEX.Fast.sqrtQuick(distance2(aRHS));}
-    /**
-     * @return {@code sqrtQuick(this.distance2(aRHS))}
-     * @see #distance2(XYZ)
-     * @see MathEX.Fast#sqrtQuick(double)
-     */
-    default double distanceQuick(XYZ aRHS) {return MathEX.Fast.sqrtQuick(distance2(aRHS));}
-    /**
-     * @return {@code sqrtQuick(this.distance2(aX, aY, aZ))}
-     * @see #distance2(double, double, double)
-     * @see MathEX.Fast#sqrtQuick(double)
-     */
-    default double distanceQuick(double aX, double aY, double aZ) {return MathEX.Fast.sqrtQuick(distance2(aX, aY, aZ));}
+    default double distance(double aX, double aY, double aZ) {
+        aX -= x();
+        aY -= y();
+        aZ -= z();
+        return Math.sqrt(aX*aX + aY*aY + aZ*aZ);
+    }
     
     /**
      * MHT: ManHaTtan distance, 曼哈顿距离

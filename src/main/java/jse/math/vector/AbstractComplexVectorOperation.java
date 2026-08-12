@@ -11,7 +11,6 @@ import jse.code.iterator.IComplexDoubleIterator;
 import jse.code.iterator.IDoubleIterator;
 import jse.math.ComplexDouble;
 import jse.math.IComplexDouble;
-import jse.math.MathEX;
 import jse.math.operation.DATA;
 
 import java.util.function.Consumer;
@@ -154,14 +153,14 @@ public abstract class AbstractComplexVectorOperation implements IComplexVectorOp
         }
         return rDot;
     }
-    @Override public double norm() {return MathEX.Fast.sqrt(dot());}
+    @Override public double norm() {return Math.sqrt(dot());}
     @Override public IVector abs() {
         IVector rVector = newRealVector_();
         final IComplexDoubleIterator it = thisVector_().iterator();
         rVector.assign(() -> {
             it.nextOnly();
             double tReal = it.real(), tImag = it.imag();
-            return MathEX.Fast.hypot(tReal, tImag);
+            return Math.sqrt(tReal*tReal + tImag*tImag);
         });
         return rVector;
     }

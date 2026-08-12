@@ -374,7 +374,7 @@ public class POSCAR extends AbstractSettableAtomData {
      */
     @ApiStatus.Obsolete
     public POSCAR setDenseNormalized() {
-        double tScale = MathEX.Fast.cbrt(volume() / natoms());
+        double tScale = Math.cbrt(volume() / natoms());
         // 直接通过调整 boxScale 来实现
         mBox.setScale(mBox.scale() / tScale);
         return this;

@@ -4,7 +4,6 @@ import jse.code.functional.IChecker;
 import jse.code.functional.IComparator;
 import jse.code.functional.ISwapper;
 import jse.code.iterator.IDoubleIterator;
-import jse.math.MathEX;
 import jse.math.operation.DATA;
 
 import java.util.function.*;
@@ -138,7 +137,7 @@ public abstract class AbstractVectorOperation implements IVectorOperation {
         }
         return rDot;
     }
-    @Override public double norm() {return MathEX.Fast.sqrt(dot());}
+    @Override public double norm() {return Math.sqrt(dot());}
     @Override public double norm1() {
         final IDoubleIterator it = thisVector_().iterator();
         double rNorm1 = 0.0;

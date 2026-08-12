@@ -144,9 +144,9 @@ public interface IBox extends IXYZ {
      */
     default void wrapPBC(XYZ rXYZ) {
         toDirect(rXYZ);
-        if (rXYZ.mX<0.0 || rXYZ.mX>=1.0) {rXYZ.mX -= MathEX.Code.floor(rXYZ.mX);}
-        if (rXYZ.mY<0.0 || rXYZ.mY>=1.0) {rXYZ.mY -= MathEX.Code.floor(rXYZ.mY);}
-        if (rXYZ.mZ<0.0 || rXYZ.mZ>=1.0) {rXYZ.mZ -= MathEX.Code.floor(rXYZ.mZ);}
+        if (rXYZ.mX<0.0 || rXYZ.mX>=1.0) {rXYZ.mX -= Math.floor(rXYZ.mX);}
+        if (rXYZ.mY<0.0 || rXYZ.mY>=1.0) {rXYZ.mY -= Math.floor(rXYZ.mY);}
+        if (rXYZ.mZ<0.0 || rXYZ.mZ>=1.0) {rXYZ.mZ -= Math.floor(rXYZ.mZ);}
         toCartesian(rXYZ);
     }
     /**

@@ -32,13 +32,13 @@ public class Func2 {
      */
     public static ZeroBoundSymmetryFunc2 deltaG(double aSigma, final double aMu, double aResolution) {
         final double tMul = -1.0 / (2.0*aSigma*aSigma);
-        final double tFMul =  1.0 / (MathEX.Fast.sqrt(2.0*PI) * aSigma * aSigma);
+        final double tFMul =  1.0 / (Math.sqrt(2.0*PI) * aSigma * aSigma);
         
         ZeroBoundSymmetryFunc2 rFunc1 = ZeroBoundSymmetryFunc2.zeros(aMu, aSigma/aResolution, MathEX.Code.round2int(aResolution*G_RANG));
         rFunc1.fill((x, y) -> {
             x -= aMu;
             y -= aMu;
-            return MathEX.Fast.exp(x*x*tMul + y*y*tMul) * tFMul;
+            return Math.exp(x*x*tMul + y*y*tMul) * tFMul;
         });
         return rFunc1;
     }
@@ -110,7 +110,7 @@ public class Func2 {
         double tStepY = (aEndY-aStartY)/(double)(aNy-1);
         ZeroBoundFunc2 rFunc2 = ZeroBoundFunc2.zeros(aStartX, aStartY, tStepX, tStepY, aNx, aNy);
         // 用于累加的 DeltaG
-        final IZeroBoundFunc2 tDeltaG = deltaG(MathEX.Fast.sqrt(tStepX*tStepY)*aSigmaMul, 0.0, aSigmaMul);
+        final IZeroBoundFunc2 tDeltaG = deltaG(Math.sqrt(tStepX*tStepY)*aSigmaMul, 0.0, aSigmaMul);
         
         final double tLBoundX = aStartX - tDeltaG.zeroBoundNegX();
         final double tLBoundY = aStartY - tDeltaG.zeroBoundNegY();

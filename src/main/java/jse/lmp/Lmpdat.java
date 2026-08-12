@@ -10,7 +10,6 @@ import jse.code.UT;
 import jse.code.collection.AbstractRandomAccessList;
 import jse.code.collection.IntList;
 import jse.math.IDataShell;
-import jse.math.MathEX;
 import jse.math.matrix.IMatrix;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
@@ -320,7 +319,7 @@ public class Lmpdat extends AbstractSettableAtomData {
      */
     @ApiStatus.Obsolete
     public Lmpdat setDenseNormalized() {
-        double tScale = MathEX.Fast.cbrt(volume() / mNumAtoms);
+        double tScale = Math.cbrt(volume() / mNumAtoms);
         tScale = 1.0 / tScale;
         return (Lmpdat)setBoxScale(tScale);
     }

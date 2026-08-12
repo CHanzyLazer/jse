@@ -120,7 +120,7 @@ public class Soft extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq[cType][type]) return;
-                double deng = mPrefactor[cType][type] * (1.0 + MathEX.Fast.cos(MathEX.PI * MathEX.Fast.sqrt(rsq) / mCut[cType][type]));
+                double deng = mPrefactor[cType][type] * (1.0 + Math.cos(MathEX.PI * Math.sqrt(rsq) / mCut[cType][type]));
                 rEnergyAccumulator.add(threadID, cIdx, idx, deng);
             });
         });
@@ -140,9 +140,9 @@ public class Soft extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq[cType][type]) return;
-                double r = MathEX.Fast.sqrt(rsq);
+                double r = Math.sqrt(rsq);
                 double arg = MathEX.PI * r / mCut[cType][type];
-                double fpair = r<=0.0 ? 0.0 : (mPrefactor[cType][type] * MathEX.Fast.sin(arg) * MathEX.PI/mCut[cType][type]/r);
+                double fpair = r<=0.0 ? 0.0 : (mPrefactor[cType][type] * Math.sin(arg) * MathEX.PI/mCut[cType][type]/r);
                 double fx = dx*fpair;
                 double fy = dy*fpair;
                 double fz = dz*fpair;
@@ -153,7 +153,7 @@ public class Soft extends AbstractPairPotential {
                     rVirialAccumulator.add(threadID, cIdx, idx, fx, fy, fz, dx, dy, dz);
                 }
                 if (rEnergyAccumulator != null) {
-                    double deng = mPrefactor[cType][type] * (1.0 + MathEX.Fast.cos(arg));
+                    double deng = mPrefactor[cType][type] * (1.0 + Math.cos(arg));
                     rEnergyAccumulator.add(threadID, cIdx, idx, deng);
                 }
             });

@@ -4,7 +4,6 @@ import jse.code.Conf;
 import jse.code.UT;
 import jse.code.collection.AbstractCollections;
 import jse.cptr.IDoubleOrFloatCPointer;
-import jse.math.MathEX;
 import jse.math.matrix.Matrices;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.*;
@@ -205,7 +204,7 @@ public class SharedFeedForward extends NeuralNetwork {
             int tHiddenDim = mBase.mHiddenDims[i];
             int tSharedHiddenDim = mSharedHiddenDims[i];
             int tNoSharedHiddenDim = tHiddenDim-tSharedHiddenDim;
-            double tBound = MathEX.Fast.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
+            double tBound = Math.sqrt(6.0 / tColNum); // Kaiming 均匀初始化
             int tSize = tNoSharedHiddenDim*tColNum;
             mNoSharedHiddenWeights.subVec(tShift, tShift+tSize).assign(() -> RANDOM.nextDouble(-tBound, tBound));
             tShift += tSize;
@@ -217,13 +216,13 @@ public class SharedFeedForward extends NeuralNetwork {
             int tHiddenDim = mBase.mHiddenDims[i];
             int tSharedHiddenDim = mSharedHiddenDims[i];
             int tNoSharedHiddenDim = tHiddenDim-tSharedHiddenDim;
-            double tBound = MathEX.Fast.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
+            double tBound = Math.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
             mNoSharedHiddenBiases.subVec(tShift, tShift+tNoSharedHiddenDim).assign(() -> RANDOM.nextDouble(-tBound, tBound));
             tShift += tNoSharedHiddenDim;
             tColNum = tHiddenDim;
         }
-        double tBound = MathEX.Fast.sqrt(3.0 / tColNum); // Kaiming 均匀初始化，注意输出层没有激活函数因此权重需要调整
-        double tBoundB = MathEX.Fast.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
+        double tBound = Math.sqrt(3.0 / tColNum); // Kaiming 均匀初始化，注意输出层没有激活函数因此权重需要调整
+        double tBoundB = Math.sqrt(1.0 / tColNum); // 偏置也使用 Kaiming 均匀初始化，和 pytorch 默认保持一致
         if (mSharedHiddenDims[mNumLayers]==0) {
             mNoSharedOutputWeight.assign(() -> RANDOM.nextDouble(-tBound, tBound));
             mNoSharedOutputBias.set(0, RANDOM.nextDouble(-tBoundB, tBoundB));

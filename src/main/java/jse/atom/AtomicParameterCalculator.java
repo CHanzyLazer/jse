@@ -91,7 +91,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 计算单位长度供内部使用
         mVolume = aData.volume();
         mRho = mNumAtoms / mVolume;
-        mUnitLen = Fast.cbrt(1.0/mRho);
+        mUnitLen = Math.cbrt(1.0/mRho);
         return this;
     }
     void checkValid() {
@@ -197,7 +197,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * @return 混合原子数密度值
      */
     public double birho(int aTypeA, int aTypeB) {
-        return Fast.sqrt(rho(aTypeA)*rho(aTypeB));
+        return Math.sqrt(rho(aTypeA)*rho(aTypeB));
     }
     /**
      * 和另一个 APC 的混合原子数密度，即 {@code sqrt(rho()*aAPC.rho())}
@@ -205,7 +205,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * @return 混合原子数密度值
      */
     public double birho(AtomicParameterCalculator aAPC) {
-        return Fast.sqrt(mRho*aAPC.mRho);
+        return Math.sqrt(mRho*aAPC.mRho);
     }
     
     
@@ -247,7 +247,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         mPool.parfor(mNumAtoms, (i, threadID) -> {
             final IFunc1 dn = dnPar[threadID];
             mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
-                dn.updateNear(Fast.hypot(dx, dy, dz), g->g+1);
+                dn.updateNear(Math.sqrt(dx*dx + dy*dy + dz*dz), g->g+1);
             });
         });
         
@@ -307,7 +307,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                 final IFunc1 dn = dnPar[threadID];
                 mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
                     if (mNL.typeAt(idx) == tTypeJ) {
-                        dn.updateNear(Fast.hypot(dx, dy, dz), g->g+1);
+                        dn.updateNear(Math.sqrt(dx*dx + dy*dy + dz*dz), g->g+1);
                     }
                 });
             }
@@ -388,7 +388,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             final int tTypeA = mNL.typeAt(i);
             final IFunc1[] dnAll = dnAllPar.get(threadID);
             mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
-                double dis = Fast.hypot(dx, dy, dz);
+                double dis = Math.sqrt(dx*dx + dy*dy + dz*dz);
                 dnAll[0].updateNear(dis, g->g+1);
                 final int tTypeB = mNL.typeAt(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
@@ -465,7 +465,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             final IFunc1 dn = dnPar[threadID];
             final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
             mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
-                tDeltaG.setX0(Fast.hypot(dx, dy, dz));
+                tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                 dn.plus2this(tDeltaG);
             });
         });
@@ -540,7 +540,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                 final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
                 mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
                     if (mNL.typeAt(idx) == tTypeJ) {
-                        tDeltaG.setX0(Fast.hypot(dx, dy, dz));
+                        tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                         dn.plus2this(tDeltaG);
                     }
                 });
@@ -637,7 +637,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             final IFunc1[] dnAll = dnAllPar.get(threadID);
             final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
             mNL.forEachNeighbor(i, true, (dx, dy, dz, idx) -> {
-                tDeltaG.setX0(Fast.hypot(dx, dy, dz));
+                tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                 dnAll[0].plus2this(tDeltaG);
                 final int tTypeB = mNL.typeAt(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
@@ -716,7 +716,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             IFunc1 Hq = HqPar[threadID];
             for (int j = 0; j < i; ++j) {
                 final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
-                Hq.operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                Hq.operation().mapFull2this((H, q) -> (H + Math.sin(q*dis)/(q*dis)));
             }
         });
         
@@ -782,7 +782,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                 IFunc1 Hq = HqPar[threadID];
                 for (int j = 0; j < i; ++j) if (mNL.typeAt(j) == tTypeJ) {
                     final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
-                    Hq.operation().mapFull2this((H, q) -> (H + Fast.sin(q*dis)/(q*dis)));
+                    Hq.operation().mapFull2this((H, q) -> (H + Math.sin(q*dis)/(q*dis)));
                 }
             }
         });
@@ -790,7 +790,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 获取结果
         IFunc1 Sq = HqPar[0];
         for (int i = 1; i < HqPar.length; ++i) Sq.plus2this(HqPar[i]);
-        double tDiv = Fast.sqrt(mNumAtomsType.get(aTypeA-1) * mNumAtomsType.get(aTypeB-1));
+        double tDiv = Math.sqrt(mNumAtomsType.get(aTypeA-1) * mNumAtomsType.get(aTypeB-1));
         if (aTypeA == aTypeB) tDiv *= 0.5;
         Sq.div2this(tDiv);
         Sq.plus2this(1.0);
@@ -873,7 +873,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             IVector tDelta = tDeltaPar.get(threadID);
             for (int j = 0; j < i; ++j) {
                 final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
-                tDelta.operation().operate2this(HqAll[0].x(), (any, q) -> Fast.sin(q*dis)/(q*dis));
+                tDelta.operation().operate2this(HqAll[0].x(), (any, q) -> Math.sin(q*dis)/(q*dis));
                 HqAll[0].f().plus2this(tDelta);
                 int tTypeB = mNL.typeAt(j);
                 HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].f().plus2this(tDelta);
@@ -889,7 +889,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         SqAll[0].div2this(mNumAtoms *0.5);
         int idx = 1;
         for (int typeAmm = 0; typeAmm < mNumTypes; ++typeAmm) for (int typeBmm = 0; typeBmm <= typeAmm; ++typeBmm) {
-            double tDiv = Fast.sqrt(mNumAtomsType.get(typeAmm) * mNumAtomsType.get(typeBmm));
+            double tDiv = Math.sqrt(mNumAtomsType.get(typeAmm) * mNumAtomsType.get(typeBmm));
             if (typeAmm == typeBmm) tDiv *= 0.5;
             SqAll[idx].div2this(tDiv);
             ++idx;
@@ -951,7 +951,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         double dq = (aQMax-aQMin)/aN;
         
         IFunc1 Sq = FixBoundFunc1.zeros(aQMin, dq, aN).setBound(0.0, 1.0);
-        Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Fast.sin(q*r) / q)));
+        Sq.fill(aGr.operation().refConvolveFull((gr, r, q) -> (r * (gr-1.0) * Math.sin(q*r) / q)));
         Sq.multiply2this(4.0*PI*aRho);
         Sq.plus2this(1.0);
         
@@ -1008,7 +1008,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         double dr = (aRMax-aRMin)/aN;
         
         IFunc1 gr = FixBoundFunc1.zeros(aRMin, dr, aN).setBound(0.0, 1.0);
-        gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Fast.sin(q*r) / r)));
+        gr.fill(aSq.operation().refConvolveFull((Sq, q, r) -> (q * (Sq-1.0) * Math.sin(q*r) / r)));
         gr.multiply2this(1.0/(2.0*PI*PI*aRho));
         gr.plus2this(1.0);
         
@@ -1699,7 +1699,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 直接计算复向量的点乘
             double tDot = Qlm.row(i).operation().dot();
             // 使用这个公式设置 Ql
-            Ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            Ql.set(i, Math.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1757,7 +1757,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 直接计算复向量的点乘
             double tDot = Qlm.row(i).operation().dot();
             // 使用这个公式设置 Ql
-            Ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            Ql.set(i, Math.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -1881,8 +1881,8 @@ public class AtomicParameterCalculator implements AutoCloseable {
             IComplexVector Qlmi = Qlm.row(i);
             // 分母为复向量的点乘
             double rDiv = Qlmi.operation().dot();
-            rDiv = Fast.sqrt(rDiv);
-            rDiv = Fast.pow3(rDiv);
+            rDiv = Math.sqrt(rDiv);
+            rDiv = MathEX.Code.pow3(rDiv);
             // 分子需要这样计算，这里只保留实数（虚数部分为 0）
             double rMul = 0.0;
             for (int tM1 = -aL; tM1 <= aL; ++tM1) for (int tM2 = -aL; tM2 <= aL; ++tM2) {
@@ -1981,7 +1981,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 直接计算复向量的点乘
             double tDot = qlm.row(i).operation().dot();
             // 使用这个公式设置 ql
-            ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            ql.set(i, Math.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -2064,7 +2064,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 直接计算复向量的点乘
             double tDot = qlm.row(i).operation().dot();
             // 使用这个公式设置 ql
-            ql.set(i, Fast.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
+            ql.set(i, Math.sqrt(4.0*PI*tDot/(double)(aL+aL+1)));
         }
         
         // 计算完成归还缓存数据
@@ -2197,8 +2197,8 @@ public class AtomicParameterCalculator implements AutoCloseable {
             IComplexVector qlmi = qlm.row(i);
             // 分母为复向量的点乘，等于实部虚部分别点乘
             double rDiv = qlmi.operation().dot();
-            rDiv = Fast.sqrt(rDiv);
-            rDiv = Fast.pow3(rDiv);
+            rDiv = Math.sqrt(rDiv);
+            rDiv = MathEX.Code.pow3(rDiv);
             // 分子需要这样计算，这里只保留实数（虚数部分为 0）
             double rMul = 0.0;
             for (int tM1 = -aL; tM1 <= aL; ++tM1) for (int tM2 = -aL; tM2 <= aL; ++tM2) {

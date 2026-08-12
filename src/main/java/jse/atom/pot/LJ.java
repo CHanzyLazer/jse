@@ -21,13 +21,13 @@ public class LJ extends AbstractPairPotential {
         super(aNumThreads);
         mTypeNum = -1;
         mSymbols = null;
-        mLJ1 = new double[][]{{48.0 * aEpsilon * MathEX.Fast.powFast(aSigma, 12)}};
-        mLJ2 = new double[][]{{24.0 * aEpsilon * MathEX.Fast.powFast(aSigma,  6)}};
-        mLJ3 = new double[][]{{ 4.0 * aEpsilon * MathEX.Fast.powFast(aSigma, 12)}};
-        mLJ4 = new double[][]{{ 4.0 * aEpsilon * MathEX.Fast.powFast(aSigma,  6)}};
+        mLJ1 = new double[][]{{48.0 * aEpsilon * MathEX.Code.pow12(aSigma)}};
+        mLJ2 = new double[][]{{24.0 * aEpsilon * MathEX.Code.pow6( aSigma)}};
+        mLJ3 = new double[][]{{ 4.0 * aEpsilon * MathEX.Code.pow12(aSigma)}};
+        mLJ4 = new double[][]{{ 4.0 * aEpsilon * MathEX.Code.pow6( aSigma)}};
         mCutsq = new double[][]{{aRCut*aRCut}};
         double tRatio = aSigma / aRCut;
-        mOffset = new double[][]{{4.0 * aEpsilon * (MathEX.Fast.powFast(tRatio, 12) - MathEX.Fast.powFast(tRatio, 6))}};
+        mOffset = new double[][]{{4.0 * aEpsilon * (MathEX.Code.pow12(tRatio) - MathEX.Code.pow6(tRatio))}};
         mCutMax = aRCut;
     }
     public LJ(double[][] aEpsilon, double[][] aSigma, double[][] aRCut, String @Nullable[] aSymbols, int aNumThreads) {
@@ -47,14 +47,14 @@ public class LJ extends AbstractPairPotential {
         for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
             double tEpsilon = aEpsilon[i][j];
             double tSigma = aSigma[i][j];
-            mLJ1[i+1][j+1] = 48.0 * tEpsilon * MathEX.Fast.powFast(tSigma, 12);
-            mLJ2[i+1][j+1] = 24.0 * tEpsilon * MathEX.Fast.powFast(tSigma,  6);
-            mLJ3[i+1][j+1] =  4.0 * tEpsilon * MathEX.Fast.powFast(tSigma, 12);
-            mLJ4[i+1][j+1] =  4.0 * tEpsilon * MathEX.Fast.powFast(tSigma,  6);
+            mLJ1[i+1][j+1] = 48.0 * tEpsilon * MathEX.Code.pow12(tSigma);
+            mLJ2[i+1][j+1] = 24.0 * tEpsilon * MathEX.Code.pow6( tSigma);
+            mLJ3[i+1][j+1] =  4.0 * tEpsilon * MathEX.Code.pow12(tSigma);
+            mLJ4[i+1][j+1] =  4.0 * tEpsilon * MathEX.Code.pow6( tSigma);
             double tRCut = aRCut[i][j];
             mCutsq[i+1][j+1] =  tRCut*tRCut;
             double tRatio = tSigma / tRCut;
-            mOffset[i+1][j+1] = 4.0 * tEpsilon * (MathEX.Fast.powFast(tRatio, 12) - MathEX.Fast.powFast(tRatio, 6));
+            mOffset[i+1][j+1] = 4.0 * tEpsilon * (MathEX.Code.pow12(tRatio) - MathEX.Code.pow6(tRatio));
             if (tRCut > tCutMax) tCutMax = tRCut;
         }
         mCutMax = tCutMax;

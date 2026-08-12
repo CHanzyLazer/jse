@@ -13,7 +13,7 @@ public interface ISettableComplexDouble extends IComplexDouble {
     void setReal(double aReal);
     void setImag(double aImag);
     default void setRealImag(double aReal, double aImag) {setReal(aReal); setImag(aImag);}
-    default void setNormPhase(double aNorm, double aPhase) {setRealImag(aNorm * MathEX.Fast.cos(aPhase), aNorm * MathEX.Fast.sin(aPhase));}
+    default void setNormPhase(double aNorm, double aPhase) {setRealImag(aNorm * Math.cos(aPhase), aNorm * Math.sin(aPhase));}
     
     /** Groovy stuffs */
     @VisibleForTesting default double getReal() {return real();}

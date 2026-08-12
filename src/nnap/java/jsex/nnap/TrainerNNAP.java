@@ -862,7 +862,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         rMAE.multiply2this(mNormSigmaEng);
         rMAE.update(0, v -> v/mEnergyWeight);
         rMAE.update(1, v -> v/(mForceWeight*mUnitLen));
-        rMAE.update(2, v -> v/(mStressWeight*MathEX.Fast.pow3(mUnitLen)));
+        rMAE.update(2, v -> v/(mStressWeight*MathEX.Code.pow3(mUnitLen)));
     }
     private double calLoss_(boolean aTest, ISlice aSlice, @Nullable Vector rLossDetail, @Nullable Vector rGrad,
                             ILossFunc aLossFuncEng, ILossFunc aLossFuncForce, ILossFunc aLossFuncStress) {
@@ -1096,7 +1096,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             }
             if (tHasStress) {
                 double tLossStress = 0.0;
-                final double tMul = MathEX.Fast.pow3(mUnitLen) / mNormSigmaEng;
+                final double tMul = MathEX.Code.pow3(mUnitLen) / mNormSigmaEng;
                 tLossStress += aLossFuncStress.call(rSxx*tMul, tSxxReal*tMul, rBGradSxx);
                 tLossStress += aLossFuncStress.call(rSyy*tMul, tSyyReal*tMul, rBGradSyy);
                 tLossStress += aLossFuncStress.call(rSzz*tMul, tSzzReal*tMul, rBGradSzz);
@@ -1123,7 +1123,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             double tBGradSxx = 0.0, tBGradSyy = 0.0, tBGradSzz = 0.0;
             double tBGradSxy = 0.0, tBGradSxz = 0.0, tBGradSyz = 0.0;
             if (tHasStress) {
-                final double tMul = - mStressWeight * MathEX.Fast.pow3(mUnitLen) / (mNormSigmaEng * tVolume * fStressSize*6);
+                final double tMul = - mStressWeight * MathEX.Code.pow3(mUnitLen) / (mNormSigmaEng * tVolume * fStressSize*6);
                 tBGradSxx = tMul*rBGradSxx.value(); tBGradSyy = tMul*rBGradSyy.value(); tBGradSzz = tMul*rBGradSzz.value();
                 tBGradSxy = tMul*rBGradSxy.value(); tBGradSxz = tMul*rBGradSxz.value(); tBGradSyz = tMul*rBGradSyz.value();
             }
@@ -1552,7 +1552,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int tNumAtoms = tAtomType.size();
             for (int k = 0; k < tNumAtoms; ++k) {
                 double tRCut = mNNAP.rcut(tAtomType.get(k));
-                rUnitLen += MathEX.Fast.cbrt((4.0/3.0*MathEX.PI) * MathEX.Fast.pow3(tRCut) / (tNumNei.get(k)+1));
+                rUnitLen += Math.cbrt((4.0/3.0*MathEX.PI) * MathEX.Code.pow3(tRCut) / (tNumNei.get(k)+1));
             }
             rNumTot += tNumAtoms;
         }
@@ -1654,7 +1654,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tMaxPar[0][i].operation().operate2this(tMinPar[0][i], Math::max);
                 tSigmaPar[0][i].operation().operate2this(tMuPar[0][i], (lhs, rhs) -> lhs - rhs*rhs);
                 tSigmaPar[0][i].operation().operate2this(tMaxPar[0][i], (v, max) -> {
-                    v = MathEX.Code.numericEqual(v, 0.0) ? 1.0 : MathEX.Fast.sqrt(v);
+                    v = MathEX.Code.numericEqual(v, 0.0) ? 1.0 : Math.sqrt(v);
                     return Math.max(v, max/mBasisMax);
                 });
             }

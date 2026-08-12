@@ -173,9 +173,9 @@ public abstract class AbstractAtomDataOperation implements IAtomDataOperation {
                 if (tThis.isPrism()) {
                     tBuf.setXYZ(tAtom);
                     rBox.toDirect(tBuf);
-                    tBuf.mX -= MathEX.Code.floor(tBuf.mX);
-                    tBuf.mY -= MathEX.Code.floor(tBuf.mY);
-                    tBuf.mZ -= MathEX.Code.floor(tBuf.mZ);
+                    tBuf.mX -= Math.floor(tBuf.mX);
+                    tBuf.mY -= Math.floor(tBuf.mY);
+                    tBuf.mZ -= Math.floor(tBuf.mZ);
                     rBox.toCartesian(tBuf);
                     subAtom.setXYZ(tBuf).setType(tAtom.type());
                 } else {

@@ -166,7 +166,12 @@ public final class XYZ extends AbstractSettableXYZ {
     /** {@inheritDoc} */
     @Override public void abs2this()  {mX = Math.abs(mX); mY = Math.abs(mY); mZ = Math.abs(mZ);}
     /** @return {@inheritDoc} */
-    @Override public double norm() {return MathEX.Fast.hypot(mX, mY, mZ);}
+    @Override public double norm() {
+        double tX = mX;
+        double tY = mY;
+        double tZ = mZ;
+        return Math.sqrt(tX*tX + tY*tY + tZ*tZ);
+    }
     /** @return {@inheritDoc} */
     @Override public double norm1() {return Math.abs(mX) + Math.abs(mY) + Math.abs(mZ);}
     
@@ -235,9 +240,16 @@ public final class XYZ extends AbstractSettableXYZ {
         return aX*aX + aY*aY + aZ*aZ;
     }
     /** @return {@inheritDoc} */
-    @Override public double distance(double aX, double aY, double aZ) {return MathEX.Fast.hypot(mX-aX, mY-aY, mZ-aZ);}
+    @Override public double distance(double aX, double aY, double aZ) {
+        aX -= mX;
+        aY -= mY;
+        aZ -= mZ;
+        return Math.sqrt(aX*aX + aY*aY + aZ*aZ);
+    }
     /** @return {@inheritDoc} */
-    @Override public double distanceMHT(double aX, double aY, double aZ) {return Math.abs(mX-aX) + Math.abs(mY-aY) + Math.abs(mZ-aZ);}
+    @Override public double distanceMHT(double aX, double aY, double aZ) {
+        return Math.abs(mX-aX) + Math.abs(mY-aY) + Math.abs(mZ-aZ);
+    }
     
     /** @return {@inheritDoc} */
     @Override public boolean numericEqual(double aX, double aY, double aZ) {

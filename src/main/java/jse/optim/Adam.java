@@ -1,6 +1,5 @@
 package jse.optim;
 
-import jse.math.MathEX;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
@@ -120,7 +119,7 @@ public class Adam extends AbstractOptimizer {
         if (!mAMSGrad) {
             mMomentum.operation().operate2dest(
                 mVariance, rParameterStep,
-                (m, v) -> -mEta * m/(1-mBeta1Prod) / (MathEX.Fast.sqrt(v/(1-mBeta2Prod)) + mEps)
+                (m, v) -> -mEta * m/(1-mBeta1Prod) / (Math.sqrt(v/(1-mBeta2Prod)) + mEps)
             );
         } else {
             final int tSize = mMomentum.size();
@@ -129,7 +128,7 @@ public class Adam extends AbstractOptimizer {
                 double v = mVariance.get(i);
                 double v2 = mVariance2.get(i);
                 v = Math.max(v2, v);
-                rParameterStep.set(i, -mEta * m/(1-mBeta1Prod) / (MathEX.Fast.sqrt(v/(1-mBeta2Prod)) + mEps));
+                rParameterStep.set(i, -mEta * m/(1-mBeta1Prod) / (Math.sqrt(v/(1-mBeta2Prod)) + mEps));
             }
             mVariance.operation().div2dest(1-mBeta2Prod, mVariance2);
             

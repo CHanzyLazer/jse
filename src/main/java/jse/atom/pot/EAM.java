@@ -475,7 +475,7 @@ public class EAM extends AbstractPairPotential {
             aWriteln.writeln(String.valueOf(mFRho[0].get(i)));
             }
             for (int i = 0; i < mNR; ++i) {
-            aWriteln.writeln(String.valueOf(MathEX.Fast.sqrt(mRPhiR[0][0].get(i)/EAM_MUL)));
+            aWriteln.writeln(String.valueOf(Math.sqrt(mRPhiR[0][0].get(i)/EAM_MUL)));
             }
             for (int i = 0; i < mNR; ++i) {
             aWriteln.writeln(String.valueOf(mRhoR[0][0].get(i)));
@@ -586,7 +586,7 @@ public class EAM extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
-                double r = MathEX.Fast.sqrt(rsq);
+                double r = Math.sqrt(rsq);
                 double deng = 0.5 * mRPhiRSpline[cType-1][type-1].subs(r) / r;
                 rEnergyAccumulator.add(threadID, cIdx, deng);
                 tRho.add(cIdx, mRhoRSpline[mRhoR.length==1?0:(cType-1)][type-1].subs(r));
@@ -703,7 +703,7 @@ public class EAM extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
-                double r = MathEX.Fast.sqrt(rsq);
+                double r = Math.sqrt(rsq);
                 double deng = mRPhiRSpline[cType-1][type-1].subs(r) / r;
                 rEnergyAccumulator.add(threadID, cIdx, idx, deng);
                 tRho.add(cIdx, mRhoRSpline[mRhoR.length==1?0:(cType-1)][type-1].subs(r));
@@ -833,7 +833,7 @@ public class EAM extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
-                double r = MathEX.Fast.sqrt(rsq);
+                double r = Math.sqrt(rsq);
                 tRho.add(cIdx, mRhoRSpline[mRhoR.length==1?0:(cType-1)][type-1].subs(r));
                 tRho.add(idx, mRhoRSpline[mRhoR.length==1?0:(type-1)][cType-1].subs(r));
                 if (mUR != null) {
@@ -893,7 +893,7 @@ public class EAM extends AbstractPairPotential {
             nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= mCutsq) return;
-                double r = MathEX.Fast.sqrt(rsq);
+                double r = Math.sqrt(rsq);
                 double recip = 1.0/r;
                 double rphi = mRPhiRSpline[cType-1][type-1].subs(r);
                 double rphip = mRPhiRSpline[cType-1][type-1].subsGrad(r);

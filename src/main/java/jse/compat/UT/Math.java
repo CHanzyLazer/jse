@@ -7,13 +7,9 @@ import org.jetbrains.annotations.VisibleForTesting;
 @VisibleForTesting
 public final class Math extends UT.Math {
     public final static double
-          PI  = UT.Math.PI
-        , pi  = UT.Math.pi
-        , E   = UT.Math.E
+          pi  = UT.Math.pi
         , e   = UT.Math.e
-        , NaN = UT.Math.NaN
         , nan = UT.Math.nan
-        , Inf = UT.Math.Inf
         , inf = UT.Math.inf
         ;
     public final static IComplexDouble

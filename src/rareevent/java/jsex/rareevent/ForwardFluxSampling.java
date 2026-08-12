@@ -575,7 +575,7 @@ public class ForwardFluxSampling<T> implements Runnable, AutoCloseable {
                             break;
                         }
                         case CONSERVATIVE_GUESS: {
-                            tPruningProb = Math.min(mPruningProb, 1.0 - MathEX.Fast.sqrt(getProb(mPruningIndex)));
+                            tPruningProb = Math.min(mPruningProb, 1.0 - Math.sqrt(getProb(mPruningIndex)));
                             break;
                         }
                         case FIXED: case TIME_DEPENDENT: default: {
