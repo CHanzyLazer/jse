@@ -1,8 +1,8 @@
 package jsex.nnap.basis;
 
-import jse.atom.AtomicParameterCalculator;
 import jse.atom.IAtomData;
 import jse.atom.IHasSymbol;
+import jse.atom.NeighborListGetter;
 import jse.cache.VectorCache;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
@@ -93,23 +93,23 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         forward(aNlDx, aNlDy, aNlDz, aNlType, rFp, mForwardCache, false);
     }
     /**
-     * 基于 {@link AtomicParameterCalculator} 的近邻列表实现的通用的计算某个原子的基组功能
-     * @param aAPC 原子结构参数计算器，用来获取近邻列表
+     * 基于 {@link NeighborListGetter} 的通用的计算某个原子的基组功能
+     * @param aNL 近邻列表构建器，认为已经执行过 {@code aNL.setRCut(rcut()).build()}
      * @param aIdx 需要计算基组的原子索引
      * @param aTypeMap 计算器中元素种类到基组定义的种类序号的一个映射，默认不做映射
      * @param rFp 计算输出的原子描述符向量
      */
-    public final void eval(final AtomicParameterCalculator aAPC, final int aIdx, final IntUnaryOperator aTypeMap, DoubleArrayVector rFp) {
+    public final void eval(final NeighborListGetter aNL, final int aIdx, final IntUnaryOperator aTypeMap, DoubleArrayVector rFp) {
         if (mDead) throw new IllegalStateException("This Basis is dead");
-        typeMapCheck(aAPC.ntypes(), aTypeMap);
+        typeMapCheck(aNL.ntypes(), aTypeMap);
         // 构造近邻列表缓存
         initCacheNl_();
         final int tTypeNum = ntypes();
         // 缓存情况需要先清空这些
         mNlDx.clear(); mNlDy.clear(); mNlDz.clear();
         mNlType.clear();
-        aAPC.nl_().forEachNeighbor(aIdx, (dx, dy, dz, idx, type) -> {
-            type = aTypeMap.applyAsInt(type);
+        aNL.forEachNeighbor(aIdx, (dx, dy, dz, idx) -> {
+            int type = aTypeMap.applyAsInt(aNL.typeAt(idx));
             if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
             // 简单缓存近邻列表
             mNlDx.add(dx); mNlDy.add(dy); mNlDz.add(dz);
@@ -117,8 +117,8 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         });
         eval(mNlDx, mNlDy, mNlDz, mNlType, rFp);
     }
-    public final void eval(AtomicParameterCalculator aAPC, int aIdx, DoubleArrayVector rFp) {
-        eval(aAPC, aIdx, type->type, rFp);
+    public final void eval(NeighborListGetter aNL, int aIdx, DoubleArrayVector rFp) {
+        eval(aNL, aIdx, type->type, rFp);
     }
     
     /**
@@ -132,11 +132,9 @@ public abstract class SimpleBasis implements IHasSymbol, AutoCloseable {
         IntUnaryOperator tTypeMap = hasSymbol() ? typeMap(aAtomData) : type->type;
         int tAtomNum = aAtomData.natoms();
         List<Vector> rFps = VectorCache.getVec(size(), tAtomNum);
-        try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aAtomData)) {
-            tAPC.nl_().setRCut(rcut()).build();
-            for (int i = 0; i < tAtomNum; ++i) {
-                eval(tAPC, i, tTypeMap, rFps.get(i));
-            }
+        NeighborListGetter tNL = new NeighborListGetter(aAtomData, rcut());
+        for (int i = 0; i < tAtomNum; ++i) {
+            eval(tNL, i, tTypeMap, rFps.get(i));
         }
         return rFps;
     }

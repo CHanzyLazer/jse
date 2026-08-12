@@ -24,7 +24,7 @@ public class LongList implements IDataShell<long[]> {
     protected int mSize = 0;
     private LongList(int aSize, long[] aData) {mSize = aSize; mData = aData;}
     public LongList() {mData = ZL_LONG;}
-    public LongList(int aInitSize) {mData = new long[aInitSize];}
+    public LongList(int aInitCap) {mData = new long[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于

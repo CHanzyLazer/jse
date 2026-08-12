@@ -28,7 +28,7 @@ public class ComplexDoubleList implements IDataShell<double[][]> {
     protected int mSize = 0;
     private ComplexDoubleList(int aSize, double[][] aData) {mSize = aSize; mData = aData;}
     public ComplexDoubleList() {mData = ZL_BIDOU; mSize = 0;}
-    public ComplexDoubleList(int aInitSize) {mData = new double[2][aInitSize];}
+    public ComplexDoubleList(int aInitCap) {mData = new double[2][aInitCap];}
     
     public double getReal(int aIdx) {rangeCheck(aIdx, mSize); return mData[0][aIdx];}
     public double getImag(int aIdx) {rangeCheck(aIdx, mSize); return mData[1][aIdx];}

@@ -36,7 +36,7 @@ public class NNAPExtensions {
             final List<Vector> rFingerPrints = VectorCache.getVec(tBasis[0].size(), self.natoms());
             // 理论上只需要遍历一半从而加速这个过程，但由于实现较麻烦且占用过多内存（所有近邻的 Ylm, Rn, fc 都要存，会随着截断半径增加爆炸增涨），这里不考虑
             self.pool_().parfor(self.natoms(), (i, threadID) -> {
-                tBasis[threadID].eval(self, i, rFingerPrints.get(i));
+                tBasis[threadID].eval(self.nl_(), i, rFingerPrints.get(i));
             });
             return rFingerPrints;
         } finally {

@@ -2,7 +2,6 @@ package jsex.rareevent.atom;
 
 import jse.atom.IAtomData;
 import jse.atom.AtomicParameterCalculator;
-import jse.atom.NeighborListGetter;
 import jse.code.collection.ISlice;
 import jse.code.collection.NewCollections;
 import jse.math.MathEX;
@@ -66,14 +65,13 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
             ISolidChecker subTypeSolidChecker = mTypeSolidCheckers==null ? mAllSolidChecker : mTypeSolidCheckers[tTypeMM];
             if (subTypeSolidChecker!=null && tTypeIndices.get(tTypeMM).size()>=tMinCalNum) {
                 try (AtomicParameterCalculator tAPC = AtomicParameterCalculator.of(aPoint.operation().refSlice(tTypeIndices.get(tTypeMM)))) {
-                    final NeighborListGetter tNl = tAPC.nl_().setRCut(tAPC.unitLen()*R_NEAREST_MUL);
-                    tNl.build();
+                    tAPC.nl_().setRCut(tAPC.unitLen()*R_NEAREST_MUL).build();
                     ILogicalVector tTypeIsSolid = subTypeSolidChecker.checkSolid(tAPC);
                     // 使用 refSlicer 来合并两者结果
                     rIsSolid.refSlicer().get(tTypeIndices.get(tTypeMM)).or2this(tTypeIsSolid);
                     // 周围中有一半的为 solid 则也要设为 solid
                     for (int idx = 0; idx < tAtomNum; ++idx) if (!rIsSolid.get(idx) && aPoint.atom(idx).type()!=tTypeMM+1) {
-                        IIntVector tNlIdx = tNl.get(aPoint.atom(idx));
+                        IIntVector tNlIdx = tAPC.nl_().get(aPoint.atom(idx));
                         int rTypeSolidNum = tTypeIsSolid.refSlicer().get(tNlIdx).count();
                         if (rTypeSolidNum!=0 && rTypeSolidNum+rTypeSolidNum>=tNlIdx.size()) rIsSolid.set(idx, true);
                     }

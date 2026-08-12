@@ -30,15 +30,62 @@ import java.util.Objects;
  */
 @ApiStatus.Experimental
 public class NeighborListGetter implements IHasSymbol {
+    
+    public static final class Cell {
+        private final IntList mIdx;
+        private final DoubleList mPosX, mPosY, mPosZ;
+        
+        Cell(int aInitCap) {
+            mIdx = new IntList(aInitCap);
+            mPosX = new DoubleList(aInitCap);
+            mPosY = new DoubleList(aInitCap);
+            mPosZ = new DoubleList(aInitCap);
+        }
+        
+        public int size() {
+            return mIdx.size();
+        }
+        public void ensureCapacity(int aMinCap) {
+            mIdx.ensureCapacity(aMinCap);
+            mPosX.ensureCapacity(aMinCap);
+            mPosY.ensureCapacity(aMinCap);
+            mPosZ.ensureCapacity(aMinCap);
+        }
+        public void clear() {
+            mIdx.clear();
+            mPosX.clear();
+            mPosY.clear();
+            mPosZ.clear();
+        }
+        
+        void put(double x, double y, double z, int idx) {
+            mIdx.add(idx);
+            mPosX.add(x);
+            mPosY.add(y);
+            mPosZ.add(z);
+        }
+        public int indexAt(int ii) {
+            return mIdx.get(ii);
+        }
+        public double posXAt(int ii) {
+            return mPosX.get(ii);
+        }
+        public double posYAt(int ii) {
+            return mPosY.get(ii);
+        }
+        public double posZAt(int ii) {
+            return mPosZ.get(ii);
+        }
+    }
+    
     public final static int MAX_SLICE = 256;
     
     private boolean mValid = false;
-    private final IntList mIdx, mType;
+    private final IntList mType;
     private final DoubleList mPosX, mPosY, mPosZ;
-    private final List<IntList> mCells;
+    private final List<Cell> mCells;
     private int mSliceX = 0, mSliceY = 0, mSliceZ = 0;
     private int mNumAtoms = -1;
-    private int mNumGhost = -1;
     
     private boolean mPrism;
     private final XYZ mA = new XYZ(), mB = new XYZ(), mC = new XYZ();
@@ -51,7 +98,6 @@ public class NeighborListGetter implements IHasSymbol {
     
     
     public NeighborListGetter() {
-        mIdx = new IntList();
         mType = new IntList();
         mPosX = new DoubleList();
         mPosY = new DoubleList();
@@ -123,15 +169,13 @@ public class NeighborListGetter implements IHasSymbol {
         mNumTypes = aData.ntypes();
         mHasSymbol = aData.hasSymbol();
         if (mHasSymbol) mSymbols.addAll(Objects.requireNonNull(aData.symbols()));
-        mIdx.clear(); mIdx.ensureCapacity(mNumAtoms);
-        mType.clear(); mIdx.ensureCapacity(mNumAtoms);
+        mType.clear(); mType.ensureCapacity(mNumAtoms);
         mPosX.clear(); mPosX.ensureCapacity(mNumAtoms);
         mPosY.clear(); mPosY.ensureCapacity(mNumAtoms);
         mPosZ.clear(); mPosZ.ensureCapacity(mNumAtoms);
         final XYZ tBuf = new XYZ();
         for (int i = 0; i < mNumAtoms; ++i) {
             IAtom tAtom = aData.atom(i);
-            mIdx.add(i);
             mType.add(tAtom.type());
             tBuf.setXYZ(tAtom.x(), tAtom.y(), tAtom.z());
             wrapPBC(tBuf);
@@ -154,102 +198,97 @@ public class NeighborListGetter implements IHasSymbol {
         if (mNumAtoms < 0) {
             throw new IllegalStateException("Need `setData` first");
         }
-        // 简单估算带上 ghost 后的大小，无所谓精度
-        final int tNumInit = MathEX.Code.ceil2int(mNumAtoms * MathEX.Fast.pow3(MathEX.Fast.cbrt(mVolume)+mRCut+mRCut)/mVolume * 1.25);
-        mIdx.setInternalDataSize(mNumAtoms); mIdx.ensureCapacity(tNumInit);
-        mPosX.setInternalDataSize(mNumAtoms); mPosX.ensureCapacity(tNumInit);
-        mPosY.setInternalDataSize(mNumAtoms); mPosY.ensureCapacity(tNumInit);
-        mPosZ.setInternalDataSize(mNumAtoms); mPosZ.ensureCapacity(tNumInit);
         // 确定分划份数
         mSliceX = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPlaneXYZ.mX/mRCut));
         mSliceY = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPlaneXYZ.mY/mRCut));
         mSliceZ = MathEX.Code.toRange(1, MAX_SLICE, MathEX.Code.floor2int(mPlaneXYZ.mZ/mRCut));
         // 参数初始化
         final int tCellCount = (mSliceX+2)*(mSliceY+2)*(mSliceZ+2);
-        final int tCellSizeInit = MathEX.Code.ceil2int(mNumAtoms / (double)(mSliceX*mSliceY*mSliceZ) * 1.25);
-        for (IntList tCell : mCells) {
+        final int tCellInitCap = MathEX.Code.ceil2int(mNumAtoms / (double)(mSliceX*mSliceY*mSliceZ) * 1.25);
+        for (Cell tCell : mCells) {
             tCell.clear();
-            tCell.ensureCapacity(tCellSizeInit);
+            tCell.ensureCapacity(tCellInitCap);
         }
         while (mCells.size() < tCellCount) {
-            mCells.add(new IntList(tCellSizeInit));
+            mCells.add(new Cell(tCellInitCap));
         }
         // 先构建中心的 cell
         final XYZ tBuf = new XYZ();
         if (mPrism) {
             for (int i = 0; i < mNumAtoms; ++i) {
-                tBuf.setXYZ(mPosX.get(i), mPosY.get(i), mPosZ.get(i));
+                final double x = mPosX.get(i), y = mPosY.get(i), z = mPosZ.get(i);
+                tBuf.setXYZ(x, y, z);
                 toDirect(tBuf);
                 int ci = MathEX.Code.floor2int(tBuf.mX * mSliceX);
                 int cj = MathEX.Code.floor2int(tBuf.mY * mSliceY);
                 int ck = MathEX.Code.floor2int(tBuf.mZ * mSliceZ);
-                cell(ci, cj, ck, true).add(i);
+                cell(ci, cj, ck, true).put(x, y, z, i);
             }
         } else {
             tBuf.setXYZ(mSliceX/mA.mX, mSliceY/mB.mY, mSliceZ/mC.mZ);
             for (int i = 0; i < mNumAtoms; ++i) {
-                int ci = MathEX.Code.floor2int(mPosX.get(i) * tBuf.mX);
-                int cj = MathEX.Code.floor2int(mPosY.get(i) * tBuf.mY);
-                int ck = MathEX.Code.floor2int(mPosZ.get(i) * tBuf.mZ);
-                cell(ci, cj, ck, true).add(i);
+                final double x = mPosX.get(i), y = mPosY.get(i), z = mPosZ.get(i);
+                int ci = MathEX.Code.floor2int(x * tBuf.mX);
+                int cj = MathEX.Code.floor2int(y * tBuf.mY);
+                int ck = MathEX.Code.floor2int(z * tBuf.mZ);
+                cell(ci, cj, ck, true).put(x, y, z, i);
             }
         }
         // 添加 ghost 原子，这里使用遍历的方式实现
-        mNumGhost = 0;
         for (int ck0 = 0; ck0 < mSliceZ; ++ck0) for (int cj0 = 0; cj0 < mSliceY; ++cj0) for (int ci0 = 0; ci0 < mSliceX; ++ci0) {
             // 只考虑最外围的 cell 会存在 ghost
             if (ci0>0 && ci0<(mSliceX-1) && cj0>0 && cj0<(mSliceY-1) && ck0>0 && ck0<(mSliceZ-1)) continue;
-            final IntList tCell0 = cell(ci0, cj0, ck0, true);
-            final int tCellSize0 = tCell0.size();
-            // 总是有 26 个可能方向需要增加 ghost，并包括可能的扩胞，这里遍历实现
-            final int tRepX = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mX);
-            final int tRepY = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mY);
-            final int tRepZ = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mZ);
-            for (int rk = -tRepZ; rk <= tRepZ; ++rk) for (int rj = -tRepY; rj <= tRepY; ++rj) for (int ri = -tRepX; ri <= tRepX; ++ri) {
-                // 注意排除自身
-                if (ri==0 && rj==0 && rk==0) continue;
-                // 简单的方向性判断排除不需要遍历的 cell
-                if ((ri>0 && ci0>0) || (ri<0 && ci0<(mSliceX-1))) continue;
-                if ((rj>0 && cj0>0) || (rj<0 && cj0<(mSliceY-1))) continue;
-                if ((rk>0 && ck0>0) || (rk<0 && ck0<(mSliceZ-1))) continue;
-                
-                int ci = ri==0 ? ci0 : (ri>0 ? ci0+mSliceX : ci0-mSliceX);
-                int cj = rj==0 ? cj0 : (rj>0 ? cj0+mSliceY : cj0-mSliceY);
-                int ck = rk==0 ? ck0 : (rk>0 ? ck0+mSliceZ : ck0-mSliceZ);
-                IntList tCellG = cell(ci, cj, ck);
-                
-                for (int ii = 0; ii < tCellSize0; ++ii) {
-                    final int i = tCell0.get(ii);
-                    tBuf.setXYZ(mPosX.get(i), mPosY.get(i), mPosZ.get(i));
-                    if (mPrism) {
-                        tBuf.mplus2this(mA, ri);
-                        tBuf.mplus2this(mB, rj);
-                        tBuf.mplus2this(mC, rk);
-                        if ((ri>0 ? ((tBuf.dot(mBC)/mBCNorm - mPlaneXYZ.mX) >= mRCut) : ((-tBuf.dot(mBC)/mBCNorm) >= mRCut)) ||
-                            (rj>0 ? ((tBuf.dot(mCA)/mCANorm - mPlaneXYZ.mY) >= mRCut) : ((-tBuf.dot(mCA)/mCANorm) >= mRCut)) ||
-                            (rk>0 ? ((tBuf.dot(mAB)/mABNorm - mPlaneXYZ.mZ) >= mRCut) : ((-tBuf.dot(mAB)/mABNorm) >= mRCut))) {
-                            continue;
-                        }
-                    } else {
-                        tBuf.mX += ri * mA.mX;
-                        tBuf.mY += rj * mB.mY;
-                        tBuf.mZ += rk * mC.mZ;
-                        if ((ri>0 ? ((tBuf.mX-mPlaneXYZ.mX) >= mRCut) : ((-tBuf.mX) >= mRCut)) ||
-                            (rj>0 ? ((tBuf.mY-mPlaneXYZ.mY) >= mRCut) : ((-tBuf.mY) >= mRCut)) ||
-                            (rk>0 ? ((tBuf.mZ-mPlaneXYZ.mZ) >= mRCut) : ((-tBuf.mZ) >= mRCut))) {
-                            continue;
-                        }
-                    }
-                    tCellG.add(mIdx.size());
-                    mIdx.add(i);
-                    mPosX.add(tBuf.mX);
-                    mPosY.add(tBuf.mY);
-                    mPosZ.add(tBuf.mZ);
-                    ++mNumGhost;
-                }
-            }
+            // 填充到对应的 ghost cell 中
+            buildGhostCell_(ci0, cj0, ck0, tBuf);
         }
         mValid = true;
+    }
+    
+    private void buildGhostCell_(int ci0, int cj0, int ck0, XYZ rBuf) {
+        final Cell tCell0 = cell(ci0, cj0, ck0, true);
+        final int tCellSize0 = tCell0.size();
+        // 总是有 26 个可能方向需要增加 ghost，并包括可能的扩胞，这里遍历实现
+        final int tRepX = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mX);
+        final int tRepY = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mY);
+        final int tRepZ = MathEX.Code.ceil2int(mRCut/mPlaneXYZ.mZ);
+        for (int rk = -tRepZ; rk <= tRepZ; ++rk) for (int rj = -tRepY; rj <= tRepY; ++rj) for (int ri = -tRepX; ri <= tRepX; ++ri) {
+            // 注意排除自身
+            if (ri==0 && rj==0 && rk==0) continue;
+            // 简单的方向性判断排除不需要遍历的 cell
+            if ((ri>0 && ci0>0) || (ri<0 && ci0<(mSliceX-1))) continue;
+            if ((rj>0 && cj0>0) || (rj<0 && cj0<(mSliceY-1))) continue;
+            if ((rk>0 && ck0>0) || (rk<0 && ck0<(mSliceZ-1))) continue;
+            
+            int ci = ri==0 ? ci0 : (ri>0 ? ci0+mSliceX : ci0-mSliceX);
+            int cj = rj==0 ? cj0 : (rj>0 ? cj0+mSliceY : cj0-mSliceY);
+            int ck = rk==0 ? ck0 : (rk>0 ? ck0+mSliceZ : ck0-mSliceZ);
+            
+            Cell tCellG = cell(ci, cj, ck);
+            for (int ii = 0; ii < tCellSize0; ++ii) {
+                final int i = tCell0.indexAt(ii);
+                rBuf.setXYZ(mPosX.get(i), mPosY.get(i), mPosZ.get(i));
+                if (mPrism) {
+                    rBuf.mplus2this(mA, ri);
+                    rBuf.mplus2this(mB, rj);
+                    rBuf.mplus2this(mC, rk);
+                    if ((ri>0 ? ((rBuf.dot(mBC)/mBCNorm - mPlaneXYZ.mX) >= mRCut) : ((-rBuf.dot(mBC)/mBCNorm) >= mRCut)) ||
+                        (rj>0 ? ((rBuf.dot(mCA)/mCANorm - mPlaneXYZ.mY) >= mRCut) : ((-rBuf.dot(mCA)/mCANorm) >= mRCut)) ||
+                        (rk>0 ? ((rBuf.dot(mAB)/mABNorm - mPlaneXYZ.mZ) >= mRCut) : ((-rBuf.dot(mAB)/mABNorm) >= mRCut))) {
+                        continue;
+                    }
+                } else {
+                    rBuf.mX += ri * mA.mX;
+                    rBuf.mY += rj * mB.mY;
+                    rBuf.mZ += rk * mC.mZ;
+                    if ((ri>0 ? ((rBuf.mX-mPlaneXYZ.mX) >= mRCut) : ((-rBuf.mX) >= mRCut)) ||
+                        (rj>0 ? ((rBuf.mY-mPlaneXYZ.mY) >= mRCut) : ((-rBuf.mY) >= mRCut)) ||
+                        (rk>0 ? ((rBuf.mZ-mPlaneXYZ.mZ) >= mRCut) : ((-rBuf.mZ) >= mRCut))) {
+                        continue;
+                    }
+                }
+                tCellG.put(rBuf.mX, rBuf.mY, rBuf.mZ, i);
+            }
+        }
     }
     
     
@@ -290,10 +329,10 @@ public class NeighborListGetter implements IHasSymbol {
         if (Math.abs(rCartesian.mZ-tIntZ) < MathEX.Code.DBL_EPSILON) rCartesian.mZ = tIntZ;
     }
     
-    public IntList cell(int ci, int cj, int ck) {
+    public Cell cell(int ci, int cj, int ck) {
         return cell(ci, cj, ck, false);
     }
-    public IntList cell(int ci, int cj, int ck, boolean in) {
+    public Cell cell(int ci, int cj, int ck, boolean in) {
         if (in) {
             if (ci<0 || ci>=mSliceX || cj<0 || cj>=mSliceY || ck<0 || ck>=mSliceZ) {
                 throw new IndexOutOfBoundsException(String.format("Index: (%d, %d, %d)", ci, cj, ck));
@@ -318,38 +357,32 @@ public class NeighborListGetter implements IHasSymbol {
     public boolean isPrism() {
         return mPrism;
     }
-    public XYZ a() {
+    public IXYZ boxA() {
         return mA;
     }
-    public XYZ b() {
+    public IXYZ boxB() {
         return mB;
     }
-    public XYZ c() {
+    public IXYZ boxC() {
         return mC;
     }
     public int natoms() {
         return mNumAtoms;
     }
-    public int nghost() {
-        return mNumGhost;
-    }
     public double rcut() {
         return mRCut;
     }
-    public DoubleList posX() {
-        return mPosX;
+    public double posXAt(int i) {
+        return mPosX.get(i);
     }
-    public DoubleList posY() {
-        return mPosY;
+    public double posYAt(int i) {
+        return mPosY.get(i);
     }
-    public DoubleList posZ() {
-        return mPosZ;
+    public double posZAt(int i) {
+        return mPosZ.get(i);
     }
-    public IntList index() {
-        return mIdx;
-    }
-    public IntList type() {
-        return mType;
+    public int typeAt(int i) {
+        return mType.get(i);
     }
     public ISettableAtomData data() {
         if (mNumAtoms < 0) {
@@ -369,12 +402,12 @@ public class NeighborListGetter implements IHasSymbol {
         return tBuilder.build();
     }
     
-    @FunctionalInterface public interface IDxyzIdxTypeDo {void run(double dx, double dy, double dz, int idx, int type);}
+    @FunctionalInterface public interface IDxyzIdxDo {void run(double dx, double dy, double dz, int idx);}
     
     // 限制最近邻数目的近邻构建，现在使用简单的遍历方式来实现
     private static class NearestNeighborList implements AutoCloseable {
         private final double[] mDx, mDy, mDz, mRsq;
-        private final int[] mIdx, mType;
+        private final int[] mIdx;
         private final int mNnn;
         private int mSize;
         private int mMaxIdx;
@@ -389,12 +422,10 @@ public class NeighborListGetter implements IHasSymbol {
             mDz = DoubleArrayCache.getArray(aNnn);
             mRsq = DoubleArrayCache.getArray(aNnn);
             mIdx = IntArrayCache.getArray(aNnn);
-            mType = IntArrayCache.getArray(aNnn);
             mMaxIdx = -1;
             mMaxRsq = Double.NEGATIVE_INFINITY;
         }
         @Override public void close() {
-            IntArrayCache.returnArray(mType);
             IntArrayCache.returnArray(mIdx);
             DoubleArrayCache.returnArray(mRsq);
             DoubleArrayCache.returnArray(mDz);
@@ -402,14 +433,13 @@ public class NeighborListGetter implements IHasSymbol {
             DoubleArrayCache.returnArray(mDx);
         }
         
-        void put(double aDx, double aDy, double aDz, int aIdx, int aType) {
+        void put(double aDx, double aDy, double aDz, int aIdx) {
             double tRsq = aDx*aDx + aDy*aDy + aDz*aDz;
             // 没达到容量直接添加
             if (mSize < mNnn) {
                 mDx[mSize] = aDx; mDy[mSize] = aDy; mDz[mSize] = aDz;
                 mRsq[mSize] = tRsq;
                 mIdx[mSize] = aIdx;
-                mType[mSize] = aType;
                 if (tRsq > mMaxRsq) {
                     mMaxRsq = tRsq;
                     mMaxIdx = mSize;
@@ -422,7 +452,6 @@ public class NeighborListGetter implements IHasSymbol {
             mDx[mMaxIdx] = aDx; mDy[mMaxIdx] = aDy; mDz[mMaxIdx] = aDz;
             mRsq[mMaxIdx] = tRsq;
             mIdx[mMaxIdx] = aIdx;
-            mType[mMaxIdx] = aType;
             // 遍历确定新的最远位置
             mMaxIdx = -1;
             mMaxRsq = Double.NEGATIVE_INFINITY;
@@ -434,153 +463,194 @@ public class NeighborListGetter implements IHasSymbol {
                 }
             }
         }
-        void forEachNeighbor(IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+        void forEachNeighbor(IDxyzIdxDo aDxyzIdxDo) {
             for (int ji = 0; ji < mNnn; ++ji) {
-                aDxyzIdxTypeDo.run(mDx[ji], mDy[ji], mDz[ji], mIdx[ji], mType[ji]);
+                aDxyzIdxDo.run(mDx[ji], mDy[ji], mDz[ji], mIdx[ji]);
             }
         }
     }
     
-    void forEachCell(int index, double x0, double y0, double z0, int ci, int cj, int ck, boolean in, boolean aHalf, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
-        IntList tCell = cell(ci, cj, ck, in);
+    void forEachCell(int index, double x0, double y0, double z0, int ci, int cj, int ck, boolean in, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
+        Cell tCell = cell(ci, cj, ck, in);
         final int tCellSize = tCell.size();
         if (in) {
             if (aHalf) {
                 for (int ji = 0; ji < tCellSize; ++ji) {
-                    int j = tCell.get(ji);
-                    int jdx = mIdx.get(j);
+                    int j = tCell.indexAt(ji);
                     if (j>=index) continue;
-                    double dx = mPosX.get(j) - x0;
-                    double dy = mPosY.get(j) - y0;
-                    double dz = mPosZ.get(j) - z0;
+                    double dx = tCell.posXAt(ji) - x0;
+                    double dy = tCell.posYAt(ji) - y0;
+                    double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, j);
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
-                    int j = tCell.get(ji);
-                    int jdx = mIdx.get(j);
+                    int j = tCell.indexAt(ji);
                     if (j==index) continue;
-                    double dx = mPosX.get(j) - x0;
-                    double dy = mPosY.get(j) - y0;
-                    double dz = mPosZ.get(j) - z0;
+                    double dx = tCell.posXAt(ji) - x0;
+                    double dy = tCell.posYAt(ji) - y0;
+                    double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, j);
                 }
             }
         } else {
             if (aHalf) {
                 final boolean tSkipHalfGhost = ci<0 || (ci<mSliceX && (cj<0 || cj<mSliceY && ck<0));
                 for (int ji = 0; ji < tCellSize; ++ji) {
-                    int j = tCell.get(ji);
-                    int jdx = mIdx.get(j);
-                    if (jdx>index || (jdx==index && tSkipHalfGhost)) continue;
-                    double dx = mPosX.get(j) - x0;
-                    double dy = mPosY.get(j) - y0;
-                    double dz = mPosZ.get(j) - z0;
+                    int j = tCell.indexAt(ji);
+                    if (j>index || (j==index && tSkipHalfGhost)) continue;
+                    double dx = tCell.posXAt(ji) - x0;
+                    double dy = tCell.posYAt(ji) - y0;
+                    double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, j);
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
-                    int j = tCell.get(ji);
-                    int jdx = mIdx.get(j);
-                    double dx = mPosX.get(j) - x0;
-                    double dy = mPosY.get(j) - y0;
-                    double dz = mPosZ.get(j) - z0;
+                    double dx = tCell.posXAt(ji) - x0;
+                    double dy = tCell.posYAt(ji) - y0;
+                    double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, tCell.indexAt(ji));
                 }
             }
         }
     }
-    void forEachCell(double x0, double y0, double z0, int ci, int cj, int ck, boolean in, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
-        IntList tCell = cell(ci, cj, ck, in);
+    void forEachCell(double x0, double y0, double z0, int ci, int cj, int ck, boolean in, IDxyzIdxDo aDxyzIdxDo) {
+        Cell tCell = cell(ci, cj, ck, in);
         final int tCellSize = tCell.size();
         for (int ji = 0; ji < tCellSize; ++ji) {
-            int j = tCell.get(ji);
-            int jdx = mIdx.get(j);
-            double dx = mPosX.get(j) - x0;
-            double dy = mPosY.get(j) - y0;
-            double dz = mPosZ.get(j) - z0;
+            double dx = tCell.posXAt(ji) - x0;
+            double dy = tCell.posYAt(ji) - y0;
+            double dz = tCell.posZAt(ji) - z0;
             double rsq = dx*dx + dy*dy + dz*dz;
-            if (rsq < mRCutSq) aDxyzIdxTypeDo.run(dx, dy, dz, jdx, mType.get(jdx));
+            if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, tCell.indexAt(ji));
         }
     }
     
-    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final double x0 = mPosX.get(aIndex);
         final double y0 = mPosY.get(aIndex);
         final double z0 = mPosZ.get(aIndex);
-        final int ci0, cj0, ck0;
+        final int ci, cj, ck;
         if (mPrism) {
             final XYZ tBuf = new XYZ();
             tBuf.setXYZ(x0, y0, z0);
             toDirect(tBuf);
-            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX);
-            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY);
-            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
+            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX);
+            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
+            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci0 = MathEX.Code.floor2int(x0*mSliceX/mA.mX);
-            cj0 = MathEX.Code.floor2int(y0*mSliceY/mB.mY);
-            ck0 = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
+            ci = MathEX.Code.floor2int(x0*mSliceX/mA.mX);
+            cj = MathEX.Code.floor2int(y0*mSliceY/mB.mY);
+            ck = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
         }
-        for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
-            forEachCell(aIndex, x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aHalf, aDxyzIdxTypeDo);
-        }
+        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck  , true , aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck  , false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck+1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj  , ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj+1, ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj+1, ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj+1, ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci  , cj-1, ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
+        forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         // 注意对于一般情况需要将超出边界的进行平移
         final XYZ tBuf = new XYZ(aX, aY, aZ);
         wrapPBC(tBuf); // 存在部分重复计算，不过不关键
         
-        final int ci0, cj0, ck0;
+        final int ci, cj, ck;
         if (mPrism) {
             toDirect(tBuf);
-            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX);
-            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY);
-            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
+            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX);
+            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
+            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci0 = MathEX.Code.floor2int(tBuf.mX*mSliceX/mA.mX);
-            cj0 = MathEX.Code.floor2int(tBuf.mY*mSliceY/mB.mY);
-            ck0 = MathEX.Code.floor2int(tBuf.mZ*mSliceZ/mC.mZ);
+            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX/mA.mX);
+            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY/mB.mY);
+            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ/mC.mZ);
         }
         final double x0 = tBuf.mX;
         final double y0 = tBuf.mY;
         final double z0 = tBuf.mZ;
-        for (int ck = ck0-1; ck <= ck0+1; ++ck) for (int cj = cj0-1; cj <= cj0+1; ++cj) for (int ci = ci0-1; ci <= ci0+1; ++ci) {
-            forEachCell(x0, y0, z0, ci, cj, ck, (ck==ck0 && cj==cj0 && ci==ci0), aDxyzIdxTypeDo);
-        }
+        forEachCell(x0, y0, z0, ci  , cj  , ck  , true , aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj  , ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj  , ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj+1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj+1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj+1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj-1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj-1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj-1, ck  , false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj  , ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj  , ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj  , ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj+1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj+1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj+1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj-1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj-1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj-1, ck+1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj  , ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj  , ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj  , ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj+1, ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj+1, ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj+1, ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci  , cj-1, ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci+1, cj-1, ck-1, false, aDxyzIdxDo);
+        forEachCell(x0, y0, z0, ci-1, cj-1, ck-1, false, aDxyzIdxDo);
     }
     
-    public void forEachNeighbor(int aIndex, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
-        forEachNeighbor(aIndex, false, aDxyzIdxTypeDo);
+    public void forEachNeighbor(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
+        forEachNeighbor(aIndex, false, aDxyzIdxDo);
     }
-    public void forEachNeighbor(int aIndex, int aNnn, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+    public void forEachNeighbor(int aIndex, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aIndex, aDxyzIdxTypeDo);
+            forEachNeighbor(aIndex, aDxyzIdxDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
             forEachNeighbor(aIndex, false, tNNL::put);
-            tNNL.forEachNeighbor(aDxyzIdxTypeDo);
+            tNNL.forEachNeighbor(aDxyzIdxDo);
         }
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxTypeDo aDxyzIdxTypeDo) {
+    public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aX, aY, aZ, aDxyzIdxTypeDo);
+            forEachNeighbor(aX, aY, aZ, aDxyzIdxDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
             forEachNeighbor(aX, aY, aZ, tNNL::put);
-            tNNL.forEachNeighbor(aDxyzIdxTypeDo);
+            tNNL.forEachNeighbor(aDxyzIdxDo);
         }
     }
     
@@ -600,7 +670,7 @@ public class NeighborListGetter implements IHasSymbol {
     public IntVector get(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx, type) -> rNL.add(idx));
+        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -629,7 +699,7 @@ public class NeighborListGetter implements IHasSymbol {
     @ApiStatus.Internal public IntVector get_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx, type) -> rNL.add(idx));
+        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -676,22 +746,21 @@ public class NeighborListGetter implements IHasSymbol {
      *
      * @param aIdx 需要获取近邻列表的原子索引
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表，不包括自身
+     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表，不包括自身
      * @see Vector
      */
     public List<Vector> getFull(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         final Vector.Builder rIdx = Vector.builder();
-        final Vector.Builder rType = Vector.builder();
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx, type) -> {
-            rIdx.add(idx); rType.add(type);
+        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> {
+            rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build(), rType.build());
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build());
     }
     /**
      * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
@@ -706,7 +775,7 @@ public class NeighborListGetter implements IHasSymbol {
      * 来增加一个参数 aNnn
      *
      * @param aIdx 需要获取近邻列表的原子索引
-     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的向量列表，不包括自身
+     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的向量列表，不包括自身
      * @see Vector
      */
     public List<Vector> getFull(int aIdx) {
@@ -722,15 +791,14 @@ public class NeighborListGetter implements IHasSymbol {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         final Vector.Builder rIdx = Vector.builder();
-        final Vector.Builder rType = Vector.builder();
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx, type) -> {
-            rIdx.add(idx); rType.add(type);
+        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
+            rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build(), rType.build());
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build());
     }
     /**
      * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。

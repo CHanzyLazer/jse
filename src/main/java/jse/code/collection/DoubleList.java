@@ -27,7 +27,7 @@ public class DoubleList implements IDataShell<double[]> {
     protected int mSize = 0;
     private DoubleList(int aSize, double[] aData) {mSize = aSize; mData = aData;}
     public DoubleList() {mData = ZL_DOUBLE;}
-    public DoubleList(int aInitSize) {mData = new double[aInitSize];}
+    public DoubleList(int aInitCap) {mData = new double[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于

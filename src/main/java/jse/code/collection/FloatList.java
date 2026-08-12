@@ -31,7 +31,7 @@ public class FloatList implements IDataShell<float[]> {
     protected int mSize = 0;
     private FloatList(int aSize, float[] aData) {mSize = aSize; mData = aData;}
     public FloatList() {mData = ZL_FLOAT;}
-    public FloatList(int aInitSize) {mData = new float[aInitSize];}
+    public FloatList(int aInitCap) {mData = new float[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于

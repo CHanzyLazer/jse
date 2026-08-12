@@ -32,8 +32,8 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
                 // 如果全部统计且最小团簇大小为 0 则直接求和统计数目即可
                 return tIsSolid.count();
             } else {
-                final NeighborListGetter tNl = tAPC.nl_().setRCut(getRCluster_(tAPC));
-                tNl.build();
+                final NeighborListGetter tNl = tAPC.nl_();
+                tNl.setRCut(getRCluster_(tAPC)).build();
                 // 使用 getClustersDFS 获取所有的团簇（一般来说会比 BFS 更快，当然这个部分不是瓶颈）
                 List<? extends IIntVector> tClusters = MathEX.Adv.getClustersDFS(tIsSolid.size(), AbstractCollections.filterInt(tIsSolid.size(), tIsSolid), i -> AbstractCollections.filterInt(tNl.get(i), tIsSolid));
                 // 遍历团簇统计 lambda，区分 countAll() 和一般只统计最大的逻辑

@@ -2,7 +2,6 @@ package jsex.nnap;
 
 import jse.atom.AbstractPairPotential;
 import jse.atom.IAtomData;
-import jse.atom.NeighborListGetter;
 import jse.cache.VectorCache;
 import jse.code.IO;
 import jse.code.OS;
@@ -98,10 +97,10 @@ public class NNAP extends AbstractPairPotential {
     final IDoubleOrFloatCPointer[] mCache;
     private final IDoubleOrFloatCPointer[] mEng;
     private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
-    private final IntCPointer[] mNlType, mNl;
+    private final IntCPointer[] mNlType, mNlIdx;
     
     private final DoubleList[] mNlDxBuf, mNlDyBuf, mNlDzBuf;
-    private final IntList[] mNlTypeBuf, mNlBuf;
+    private final IntList[] mNlTypeBuf, mNlIdxBuf;
     
     final int mTotCParamSize, mTotGradCParamSize, mTotParamSize;
     final IDoubleOrFloatCPointer mTotCParam;
@@ -191,7 +190,7 @@ public class NNAP extends AbstractPairPotential {
         mNlDy = new IDoubleOrFloatCPointer[aNumThreads];
         mNlDz = new IDoubleOrFloatCPointer[aNumThreads];
         mNlType = new IntCPointer[aNumThreads];
-        mNl = new IntCPointer[aNumThreads];
+        mNlIdx = new IntCPointer[aNumThreads];
         mGradNlDx = new IDoubleOrFloatCPointer[aNumThreads];
         mGradNlDy = new IDoubleOrFloatCPointer[aNumThreads];
         mGradNlDz = new IDoubleOrFloatCPointer[aNumThreads];
@@ -201,13 +200,13 @@ public class NNAP extends AbstractPairPotential {
         mNlDyBuf = new DoubleList[aNumThreads];
         mNlDzBuf = new DoubleList[aNumThreads];
         mNlTypeBuf = new IntList[aNumThreads];
-        mNlBuf = new IntList[aNumThreads];
+        mNlIdxBuf = new IntList[aNumThreads];
         for (int ti = 0; ti < aNumThreads; ++ti) {
             mNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mNlType[ti] = mPtrMngPar[ti].newIntCPointer();
-            mNl[ti] = mPtrMngPar[ti].newIntCPointer();
+            mNlIdx[ti] = mPtrMngPar[ti].newIntCPointer();
             mGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mGradNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mGradNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
@@ -217,7 +216,7 @@ public class NNAP extends AbstractPairPotential {
             mNlDyBuf[ti] = new DoubleList(16);
             mNlDzBuf[ti] = new DoubleList(16);
             mNlTypeBuf[ti] = new IntList(16);
-            mNlBuf[ti] = new IntList(16);
+            mNlIdxBuf[ti] = new IntList(16);
         }
         // 初始化参数数组
         int tTotCParamSize = 0, tTotGradCParamSize = 0, tTotParamSize = 0;
@@ -492,7 +491,7 @@ public class NNAP extends AbstractPairPotential {
     private int buildNL_(int aThreadID, IDxyzTypeIdxIterable aNL, double aRCut, boolean aRequireGrad) {
         PointerManager tPtrMng = mPtrMngPar[aThreadID];
         final DoubleList tNlDxBuf = mNlDxBuf[aThreadID], tNlDyBuf = mNlDyBuf[aThreadID], tNlDzBuf = mNlDzBuf[aThreadID];
-        final IntList tNlTypeBuf = mNlTypeBuf[aThreadID], tNlIdxBuf = mNlBuf[aThreadID];
+        final IntList tNlTypeBuf = mNlTypeBuf[aThreadID], tNlIdxBuf = mNlIdxBuf[aThreadID];
         IDoubleOrFloatCPointer tNlDx = mNlDx[aThreadID], tNlDy = mNlDy[aThreadID], tNlDz = mNlDz[aThreadID];
         IDoubleOrFloatCPointer tGradNlDx = mGradNlDx[aThreadID], tGradNlDy = mGradNlDy[aThreadID], tGradNlDz = mGradNlDz[aThreadID];
         IntCPointer tNlType = mNlType[aThreadID];
@@ -561,7 +560,7 @@ public class NNAP extends AbstractPairPotential {
             DoubleList tNlDxBuf = mNlDxBuf[threadID];
             DoubleList tNlDyBuf = mNlDyBuf[threadID];
             DoubleList tNlDzBuf = mNlDzBuf[threadID];
-            IntList tNlIdxBuf = mNlBuf[threadID];
+            IntList tNlIdxBuf = mNlIdxBuf[threadID];
             // 近邻列表构建以及相关值设置
             int tNlSize = buildNL_(threadID, nl, mBasis[cType-1].rcutMax(), true);
             double tEng = calEnergyForce(
@@ -610,12 +609,12 @@ public class NNAP extends AbstractPairPotential {
             int cType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
             rFps.add(VectorCache.getVec(mBasis[cType-1].size()));
         }
-        final NeighborListGetter tNl = nl_().setData(aAtomData).setRCut(rcutMax()); tNl.build();
+        mNL.setData(aAtomData).setRCut(rcutMax()).build();
         pool_().parfor(tNumAtoms, (i, threadID) -> {
-            final int cType = tTypeMap.applyAsInt(tNl.type().get(i));
+            final int cType = tTypeMap.applyAsInt(mNL.typeAt(i));
             int tNlSize = buildNL_(threadID, (dxyzTypeDo) -> {
-                tNl.forEachNeighbor(i, (dx, dy, dz, idx, type) -> {
-                    int tType = tTypeMap.applyAsInt(type);
+                mNL.forEachNeighbor(i, (dx, dy, dz, idx) -> {
+                    int tType = tTypeMap.applyAsInt(mNL.typeAt(idx));
                     dxyzTypeDo.run(dx, dy, dz, tType, idx);
                 });
             }, mBasis[cType-1].rcutMax(), false);
@@ -887,7 +886,7 @@ public class NNAP extends AbstractPairPotential {
         mPtrMngPar[0].ensureCapacity(mNlDy[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mNlDz[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mNlType[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mNl[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNlSize);
         mPtrMngPar[0].ensureCapacity(mGradNlDz[0], aNlSize);
@@ -917,7 +916,7 @@ public class NNAP extends AbstractPairPotential {
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mNlDx[0], mNlDy[0], mNlDz[0], mNlType[0], mNl[0],
+            mNlDx[0], mNlDy[0], mNlDz[0], mNlType[0], mNlIdx[0],
             mGradNlDx[0], mGradNlDy[0], mGradNlDz[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
             mCache[0]

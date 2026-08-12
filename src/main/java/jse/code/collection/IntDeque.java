@@ -22,7 +22,7 @@ public class IntDeque {
     protected int mEnd = 0;
     private IntDeque(int aStart, int aEnd, int[] aData) {mStart = aStart; mEnd = aEnd; mData = aData;}
     public IntDeque() {mData = ZL_INT;}
-    public IntDeque(int aInitSize) {mData = new int[aInitSize];}
+    public IntDeque(int aInitCap) {mData = new int[aInitCap];}
     
     public int get(int aIdx) {
         rangeCheck(aIdx, size());

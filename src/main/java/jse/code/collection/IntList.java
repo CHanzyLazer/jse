@@ -24,7 +24,7 @@ public class IntList implements ISlice, IDataShell<int[]> {
     protected int mSize = 0;
     private IntList(int aSize, int[] aData) {mSize = aSize; mData = aData;}
     public IntList() {mData = ZL_INT;}
-    public IntList(int aInitSize) {mData = new int[aInitSize];}
+    public IntList(int aInitCap) {mData = new int[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于

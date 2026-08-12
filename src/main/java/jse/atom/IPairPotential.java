@@ -125,10 +125,10 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         calEnergyPart(aAtomData.natoms(), (initDo, finalDo, neighborListDo) -> {
             pool_().parforWithException(aIndices.size(), initDo, finalDo, (i, threadID) -> {
                 final int cIdx = aIndices.get(i);
-                final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.type().get(cIdx));
+                final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(cIdx));
                 neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
-                    tNl.forEachNeighbor(i, false, (dx, dy, dz, idx, type) -> {
-                        int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(type);
+                    tNl.forEachNeighbor(i, false, (dx, dy, dz, idx) -> {
+                        int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                         dxyzTypeDo.run(dx, dy, dz, tType, idx);
                     });
                 });
@@ -235,11 +235,11 @@ public interface IPairPotential extends IPotential, IHasSymbol {
             }
             calEnergy(tAtomNum, (initDo, finalDo, neighborListDo) -> {
                 pool_().parforWithException(tAtomNum, initDo, finalDo, (i, threadID) -> {
-                    final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.type().get(i));
+                    final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(i));
                     neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
                         // 根据 neighborListHalf 来确定是否开启半数优化
-                        tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx, type) -> {
-                            int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(type);
+                        tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx) -> {
+                            int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                             dxyzTypeDo.run(dx, dy, dz, tType, idx);
                         });
                     });
@@ -300,11 +300,11 @@ public interface IPairPotential extends IPotential, IHasSymbol {
         // 遍历所有原子计算力
         calEnergyForceVirial(tAtomNum, (initDo, finalDo, neighborListDo) -> {
             pool_().parforWithException(tAtomNum, initDo, finalDo, (i, threadID) -> {
-                final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.type().get(i));
+                final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(i));
                 neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
                     // 根据 neighborListHalf 来确定是否开启半数优化
-                    tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx, type) -> {
-                        int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(type);
+                    tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx) -> {
+                        int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                         dxyzTypeDo.run(dx, dy, dz, tType, idx);
                     });
                 });

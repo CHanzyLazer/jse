@@ -24,7 +24,7 @@ public class ShortList implements IDataShell<short[]> {
     protected int mSize = 0;
     private ShortList(int aSize, short[] aData) {mSize = aSize; mData = aData;}
     public ShortList() {mData = ZL_SHORT;}
-    public ShortList(int aInitSize) {mData = new short[aInitSize];}
+    public ShortList(int aInitCap) {mData = new short[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于

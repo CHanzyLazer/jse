@@ -24,7 +24,7 @@ public class BooleanList implements IDataShell<boolean[]> {
     protected int mSize = 0;
     private BooleanList(int aSize, boolean[] aData) {mSize = aSize; mData = aData;}
     public BooleanList() {mData = ZL_BOOL;}
-    public BooleanList(int aInitSize) {mData = new boolean[aInitSize];}
+    public BooleanList(int aInitCap) {mData = new boolean[aInitCap];}
     
     /**
      * 转换为 numpy 的数组 {@link NDArray}，在 java 侧根据具体向量类型可能不会进行值拷贝，由于
