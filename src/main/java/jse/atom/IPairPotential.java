@@ -127,7 +127,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
                 final int cIdx = aIndices.get(i);
                 final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(cIdx));
                 neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
-                    tNl.forEachNeighbor(i, false, (dx, dy, dz, idx) -> {
+                    tNl.forEach(i, false, (dx, dy, dz, idx) -> {
                         int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                         dxyzTypeDo.run(dx, dy, dz, tType, idx);
                     });
@@ -238,7 +238,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
                     final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(i));
                     neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
                         // 根据 neighborListHalf 来确定是否开启半数优化
-                        tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx) -> {
+                        tNl.forEach(i, tNLHalf, (dx, dy, dz, idx) -> {
                             int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                             dxyzTypeDo.run(dx, dy, dz, tType, idx);
                         });
@@ -303,7 +303,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
                 final int cType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(i));
                 neighborListDo.run(threadID, i, cType, dxyzTypeDo -> {
                     // 根据 neighborListHalf 来确定是否开启半数优化
-                    tNl.forEachNeighbor(i, tNLHalf, (dx, dy, dz, idx) -> {
+                    tNl.forEach(i, tNLHalf, (dx, dy, dz, idx) -> {
                         int tType = tTypeNum<=0 ? 0 : tTypeMap.applyAsInt(tNl.typeAt(idx));
                         dxyzTypeDo.run(dx, dy, dz, tType, idx);
                     });

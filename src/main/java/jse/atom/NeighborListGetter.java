@@ -530,7 +530,7 @@ public class NeighborListGetter implements IHasSymbol {
         }
     }
     
-    public void forEachNeighbor(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEach(int aIndex, boolean aHalf, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final double x0 = mPosX.get(aIndex);
         final double y0 = mPosY.get(aIndex);
@@ -576,7 +576,7 @@ public class NeighborListGetter implements IHasSymbol {
         forEachCell(aIndex, x0, y0, z0, ci+1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
         forEachCell(aIndex, x0, y0, z0, ci-1, cj-1, ck-1, false, aHalf, aDxyzIdxDo);
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEach(double aX, double aY, double aZ, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         
         // 注意对于一般情况需要将超出边界的进行平移
@@ -626,30 +626,30 @@ public class NeighborListGetter implements IHasSymbol {
         forEachCell(x0, y0, z0, ci-1, cj-1, ck-1, false, aDxyzIdxDo);
     }
     
-    public void forEachNeighbor(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
-        forEachNeighbor(aIndex, false, aDxyzIdxDo);
+    public void forEach(int aIndex, IDxyzIdxDo aDxyzIdxDo) {
+        forEach(aIndex, false, aDxyzIdxDo);
     }
-    public void forEachNeighbor(int aIndex, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEach(int aIndex, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aIndex, aDxyzIdxDo);
+            forEach(aIndex, aDxyzIdxDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
-            forEachNeighbor(aIndex, false, tNNL::put);
+            forEach(aIndex, false, tNNL::put);
             tNNL.forEachNeighbor(aDxyzIdxDo);
         }
     }
-    public void forEachNeighbor(double aX, double aY, double aZ, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
+    public void forEach(double aX, double aY, double aZ, int aNnn, IDxyzIdxDo aDxyzIdxDo) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         if (aNnn < 0) {
-            forEachNeighbor(aX, aY, aZ, aDxyzIdxDo);
+            forEach(aX, aY, aZ, aDxyzIdxDo);
             return;
         }
         if (aNnn == 0) return;
         try (NearestNeighborList tNNL = new NearestNeighborList(aNnn)) {
-            forEachNeighbor(aX, aY, aZ, tNNL::put);
+            forEach(aX, aY, aZ, tNNL::put);
             tNNL.forEachNeighbor(aDxyzIdxDo);
         }
     }
@@ -670,7 +670,7 @@ public class NeighborListGetter implements IHasSymbol {
     public IntVector get(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
+        forEach(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -699,7 +699,7 @@ public class NeighborListGetter implements IHasSymbol {
     @ApiStatus.Internal public IntVector get_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
         final IntVector.Builder rNL = IntVector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
+        forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL.build();
     }
     /**
@@ -756,7 +756,7 @@ public class NeighborListGetter implements IHasSymbol {
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aIdx, aNnn, (dx, dy, dz, idx) -> {
+        forEach(aIdx, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
@@ -794,7 +794,7 @@ public class NeighborListGetter implements IHasSymbol {
         final Vector.Builder rDx = Vector.builder();
         final Vector.Builder rDy = Vector.builder();
         final Vector.Builder rDz = Vector.builder();
-        forEachNeighbor(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
+        forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });

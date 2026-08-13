@@ -1410,7 +1410,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             double tRCut = mNNAP.rcut(tAtomType.get(k));
             double tRCutSq = tRCut*tRCut;
             final int[] nli = {0};
-            tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+            tNl.forEach(k, false, (dx, dy, dz, idx) -> {
                 double dis2 = dx*dx + dy*dy + dz*dz;
                 if (dis2 < tRCutSq) {
                     tSubNlIdxPtr.putAt(nli[0], idx);
@@ -1453,7 +1453,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 double tRCut = mNNAP.rcut(tAtomType.get(k));
                 double tRCutSq = tRCut*tRCut;
                 final int[] tNlSize = {0};
-                tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+                tNl.forEach(k, false, (dx, dy, dz, idx) -> {
                     double dis2 = dx*dx + dy*dy + dz*dz;
                     if (dis2 < tRCutSq) {
                         ++tNlSize[0];
@@ -1520,7 +1520,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 double tRCut = mNNAP.rcut(tAtomType.get(k));
                 double tRCutSq = tRCut*tRCut;
                 final int[] nli = {0};
-                tNl.forEachNeighbor(k, false, (dx, dy, dz, idx) -> {
+                tNl.forEach(k, false, (dx, dy, dz, idx) -> {
                     double dis2 = dx*dx + dy*dy + dz*dz;
                     if (dis2 < tRCutSq) {
                         tNlIdxPtr.putAt(nli[0], idx);

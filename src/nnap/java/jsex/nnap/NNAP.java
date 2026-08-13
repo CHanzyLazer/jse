@@ -613,7 +613,7 @@ public class NNAP extends AbstractPairPotential {
         pool_().parfor(tNumAtoms, (i, threadID) -> {
             final int cType = tTypeMap.applyAsInt(mNL.typeAt(i));
             int tNlSize = buildNL_(threadID, (dxyzTypeDo) -> {
-                mNL.forEachNeighbor(i, (dx, dy, dz, idx) -> {
+                mNL.forEach(i, (dx, dy, dz, idx) -> {
                     int tType = tTypeMap.applyAsInt(mNL.typeAt(idx));
                     dxyzTypeDo.run(dx, dy, dz, tType, idx);
                 });
