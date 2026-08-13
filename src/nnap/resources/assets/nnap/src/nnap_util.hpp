@@ -126,21 +126,6 @@ static inline NNAP_DEVICE NNAP_HOST float nnap_sqrt(float value) noexcept {
 #endif
 }
 
-static inline NNAP_DEVICE NNAP_HOST double nnap_hypot(double x, double y) noexcept {
-#ifdef NNAP_ARCH_CUDA
-    return hypot(x, y);
-#else
-    return std::hypot(x, y);
-#endif
-}
-static inline NNAP_DEVICE NNAP_HOST float nnap_hypot(float x, float y) noexcept {
-#ifdef NNAP_ARCH_CUDA
-    return hypot(x, y);
-#else
-    return std::hypot(x, y);
-#endif
-}
-
 static inline NNAP_DEVICE NNAP_HOST double nnap_exp(double value) noexcept {
 #ifdef NNAP_ARCH_CUDA
     return exp(value);

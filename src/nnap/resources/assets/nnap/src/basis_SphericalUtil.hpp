@@ -84,7 +84,7 @@ static NNAP_DEVICE NNAP_HOST void realSphericalHarmonicsFull4_(flt_t aCosTheta, 
 }
 template <int LMAX>
 static NNAP_DEVICE NNAP_HOST void calY(flt_t *rY, flt_t aDx, flt_t aDy, flt_t aDz, flt_t aDis) noexcept {
-    const flt_t dxy = nnap_hypot(aDx, aDy);
+    const flt_t dxy = nnap_sqrt(aDx*aDx + aDy*aDy);
     const flt_t cosTheta = aDz / aDis;
     const flt_t sinTheta = dxy / aDis;
     flt_t cosPhi;
@@ -157,7 +157,7 @@ template <int LMAX>
 static NNAP_DEVICE NNAP_HOST void calYPthetaPphi(flt_t *rYPtheta, flt_t *rYPphi, flt_t *aY, flt_t aDx, flt_t aDy, flt_t aDz, flt_t aDis,
                                                  flt_t &rThetaPx, flt_t &rThetaPy, flt_t &rThetaPz, flt_t &rPhiPx, flt_t &rPhiPy) noexcept {
     constexpr int tLMAll = (LMAX+1)*(LMAX+1);
-    const flt_t dxy = nnap_hypot(aDx, aDy);
+    const flt_t dxy = nnap_sqrt(aDx*aDx + aDy*aDy);
     const flt_t cosTheta = aDz / aDis;
     const flt_t sinTheta = dxy / aDis;
     const int dxyCloseZero = numericEqual(dxy, ZERO);
@@ -206,7 +206,7 @@ template <int LMAX>
 static NNAP_DEVICE void calYPthetaPphiGpu(flt_t *rYPtheta, flt_t *aY_rYPphi, flt_t aDx, flt_t aDy, flt_t aDz, flt_t aDis,
                                           flt_t &rThetaPx, flt_t &rThetaPy, flt_t &rThetaPz, flt_t &rPhiPx, flt_t &rPhiPy) noexcept {
     constexpr int tLMAll = (LMAX+1)*(LMAX+1);
-    const flt_t dxy = nnap_hypot(aDx, aDy);
+    const flt_t dxy = nnap_sqrt(aDx*aDx + aDy*aDy);
     const flt_t cosTheta = aDz / aDis;
     const flt_t sinTheta = dxy / aDis;
     const int dxyCloseZero = numericEqual(dxy, ZERO);
@@ -234,7 +234,7 @@ static NNAP_DEVICE void calYPthetaPphiGpu(flt_t *rYPtheta, flt_t *aY_rYPphi, flt
 static inline NNAP_DEVICE NNAP_HOST void calthetaPhiPxyz(flt_t aDx, flt_t aDy, flt_t aDz, flt_t aDis,
                                                          flt_t &rThetaPx, flt_t &rThetaPy, flt_t &rThetaPz,
                                                          flt_t &rPhiPx, flt_t &rPhiPy) noexcept {
-    const flt_t dxy = nnap_hypot(aDx, aDy);
+    const flt_t dxy = nnap_sqrt(aDx*aDx + aDy*aDy);
     const flt_t cosTheta = aDz / aDis;
     const flt_t sinTheta = dxy / aDis;
     const int dxyCloseZero = numericEqual(dxy, ZERO);
