@@ -1,14 +1,8 @@
 package jse.atom;
 
-import com.google.common.collect.Lists;
 import jep.JepException;
 import jep.python.PyObject;
-import jse.ase.AseAtoms;
-import jse.cache.MatrixCache;
-import jse.cache.VectorCache;
 import jse.code.SP;
-import jse.code.UT;
-import jse.code.collection.ISlice;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.Vector;
@@ -24,7 +18,7 @@ import java.util.Map;
  * ASE Calculator </a>，但这里实现不依靠原子结构，并且不缓存计算结果。
  * 因此每次计算都直接传入原子数据 {@link IAtomData} 实时计算。
  * <p>
- * 支持通过 {@link #asAseCalculator()} 来将此势函数转换为一个
+ * 支持通过 {@link #ase()} 来将此势函数转换为一个
  * ase 计算器，用来接入使用 ase 计算器的代码。
  *
  * @see IAtomData IAtomData: 通用的原子数据接口
@@ -32,6 +26,12 @@ import java.util.Map;
  * @author liqa
  */
 public interface IPotential extends AutoCloseable {
+    /**
+     * 现在总是需要设置原子数据后进行计算，从而和 APC 等接口使用保持一致
+     * @param aData 需要计算的原子数据
+     * @return 自身方便链式调用
+     */
+    IPotential setData(IAtomData aData) throws Exception;
     /**
      * 检测此势函数是否已经关闭，默认永远为 {@code false}（即使手动调用了
      * {@link #close()}），即默认不会去进行是否关闭的检测；
@@ -62,123 +62,33 @@ public interface IPotential extends AutoCloseable {
         SP.Python.exec("from jsepy.atom import PotentialCalculator");
         return (PyObject)SP.Python.invoke("PotentialCalculator", this);
     }
-    /** @deprecated use {@link #ase()} */
-    @Deprecated default PyObject asAseCalculator() throws JepException {
-        UT.Code.warning("`IPotential.asAseCalculator()` is deprecated, use `IPotential.ase()`.");
-        return ase();
-    }
     @ApiStatus.Internal
-    default Map<String, Object> calculate_(Map<String, Object> rResults, PyObject aPyAseAtoms, String[] aProperties, boolean aSystemChanges) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        boolean tAllInResults = true;
-        for (String tProperty : aProperties) {
-            if (!rResults.containsKey(tProperty)) {
-                tAllInResults = false;
-                break;
-            }
-        }
-        if (!aSystemChanges && tAllInResults) return rResults;
-        IAtomData tAtoms = AseAtoms.of(aPyAseAtoms, true);
-        // 遍历统计需要的量
-        boolean tRequireEnergy = false, tRequirePreAtomEnergy = false;
-        boolean tRequireForces = false;
-        boolean tRequireStress = false, tRequirePreAtomStress = false;;
-        for (String tProperty : aProperties) {
-            if (tProperty.equals("energy") || tProperty.equals("energies")) tRequireEnergy = true;
-            if (tProperty.equals("forces")) tRequireForces = true;
-            if (tProperty.equals("stress") || tProperty.equals("stresses")) tRequireStress = true;
-            if (tProperty.equals("energies")) tRequirePreAtomEnergy = true;
-            if (tProperty.equals("stresses")) tRequirePreAtomStress = true;
-        }
-        // 只需要能量则直接使用简单的计算能量接口
-        if (!tRequireForces && !tRequireStress) {
-            if (!tRequireEnergy) return rResults;
-            if (!tRequirePreAtomEnergy) {
-                double tEnergy = calEnergy(tAtoms);
-                rResults.put("energy", tEnergy);
-                return rResults;
-            }
-            Vector tEnergies = calEnergies(tAtoms);
-            double tEnergy = tEnergies.sum();
-            rResults.put("energy", tEnergy);
-            rResults.put("energies", tEnergies.numpy());
-            VectorCache.returnVec(tEnergies);
-            return rResults;
-        }
-        // 其余情况则统一全部计算
-        final int tAtomNum = tAtoms.natoms();
-        Vector rEnergies = VectorCache.getZeros(tRequirePreAtomEnergy?tAtomNum:1);
-        RowMatrix rForces = MatrixCache.getZerosRow(tAtomNum, 3);
-        RowMatrix rStresses = MatrixCache.getZerosRow(tRequirePreAtomStress?tAtomNum:1, 6);
-        calEnergyForceVirials(tAtoms, rEnergies, rForces.col(0), rForces.col(1), rForces.col(2),
-                              rStresses.col(0), rStresses.col(1), rStresses.col(2), rStresses.col(5), rStresses.col(4), rStresses.col(3));
-        rStresses.operation().negative2this();
-        Vector rStress = VectorCache.getZeros(6);
-        for (int i = 0; i < 6; ++i) {
-            rStress.set(i, rStresses.col(i).sum());
-        }
-        rStress.div2this(tAtoms.volume());
-        double tEnergy = rEnergies.sum();
-        rResults.put("energy", tEnergy);
-        if (tRequirePreAtomEnergy) {
-        rResults.put("energies", rEnergies.numpy());
-        }
-        rResults.put("forces", rForces.numpy());
-        rResults.put("stress", rStress.numpy());
-        if (tRequirePreAtomStress) {
-        rResults.put("stresses", rStresses.numpy());
-        }
-        VectorCache.returnVec(rEnergies);
-        MatrixCache.returnMat(rForces);
-        VectorCache.returnVec(rStress);
-        MatrixCache.returnMat(rStresses);
-        return rResults;
-    }
+    Map<String, Object> calculate_(Map<String, Object> rResults, PyObject aPyAseAtoms, String[] aProperties, boolean aSystemChanges) throws Exception;
     
     
     /**
-     * 通过此势函数计算给定原子数据 {@link IAtomData} 中每个原子的能量值
-     * @param aAtomData 需要计算能量的原子数据
+     * 通过此势函数计算给定原子数据中每个原子的能量值
      * @return 每个原子能量组成的向量
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default Vector calEnergies(IAtomData aAtomData) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        Vector rEnergies = VectorCache.getVec(aAtomData.natoms());
-        calEnergyForceVirials(aAtomData, rEnergies, null, null, null, null, null, null, null, null, null);
-        return rEnergies;
-    }
+    Vector calEnergies() throws Exception;
     
     /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 的总能量
-     * @param aAtomData 需要计算总能量的原子数据
+     * 使用此势函数计算给定原子数据的总能量
      * @return 总能量
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default double calEnergy(IAtomData aAtomData) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        Vector rTotEng = VectorCache.getVec(1);
-        calEnergyForceVirials(aAtomData, rTotEng, null, null, null, null, null, null, null, null, null);
-        double tTotEng = rTotEng.get(0);
-        VectorCache.returnVec(rTotEng);
-        return tTotEng;
-    }
+    double calEnergy() throws Exception;
     
     /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 中每个原子的受力
-     * @param aAtomData 需要计算力的原子数据
+     * 使用此势函数计算给定原子数据中每个原子的受力
      * @return 每个原子力组成的矩阵，按行排列
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default RowMatrix calForces(IAtomData aAtomData) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        RowMatrix rForces = MatrixCache.getMatRow(aAtomData.natoms(), 3);
-        calEnergyForceVirials(aAtomData, null, rForces.col(0), rForces.col(1), rForces.col(2), null, null, null, null, null, null);
-        return rForces;
-    }
+    RowMatrix calForces() throws Exception;
     
     /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 中所有原子的单独应力，具体可以参见：
+     * 使用此势函数计算给定原子数据中所有原子的单独应力，具体可以参见：
      * <a href="https://en.wikipedia.org/wiki/Virial_stress">
      * Virial stress - Wikipedia </a>
      * <p>
@@ -188,59 +98,20 @@ public interface IPotential extends AutoCloseable {
      * Force and heat current formulas for many-body potentials in molecular dynamics simulation with
      * applications to thermal conductivity calculations </a>
      *
-     * @param aAtomData 需要计算应力的原子数据
      * @return 按照 {@code [xx, yy, zz, xy, xz, yz, yx, zx, zy]} 顺序排列的应力向量，
      *         如果不支持 9 列的输出则只输出 {@code [xx, yy, zz, xy, xz, yz]}
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default List<Vector> calStresses(IAtomData aAtomData) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        final int tAtomNum = aAtomData.natoms();
-        final boolean tCentroid = centroidPerAtomStressSupport();
-        final int tColNum = tCentroid ? 9 : 6;
-        List<Vector> rStresses = VectorCache.getVec(tAtomNum, tColNum);
-        calEnergyForceVirials(aAtomData, null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5),
-                              tCentroid?rStresses.get(6):null, tCentroid?rStresses.get(7):null, tCentroid?rStresses.get(8):null);
-        for (int i = 0; i < tColNum; ++i) {
-            rStresses.get(i).operation().negative2this();
-        }
-        return rStresses;
-        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
-    }
+    List<Vector> calStresses() throws Exception;
     
     /**
-     * 使用此势函数计算给定原子数据 {@link IAtomData} 原子结构的应力，具体可以参见：
+     * 使用此势函数计算给定原子数据原子结构的应力，具体可以参见：
      * <a href="https://en.wikipedia.org/wiki/Virial_stress">
      * Virial stress - Wikipedia </a>
-     * @param aAtomData 需要计算应力的原子数据
      * @return 按照 {@code [xx, yy, zz, xy, xz, yz]} 顺序排列的应力值
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default List<Double> calStress(IAtomData aAtomData) throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        List<Vector> rStresses = VectorCache.getVec(1, 6);
-        calEnergyForceVirials(aAtomData, null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5));
-        double rStressXX = -rStresses.get(0).get(0);
-        double rStressYY = -rStresses.get(1).get(0);
-        double rStressZZ = -rStresses.get(2).get(0);
-        double rStressXY = -rStresses.get(3).get(0);
-        double rStressXZ = -rStresses.get(4).get(0);
-        double rStressYZ = -rStresses.get(5).get(0);
-        VectorCache.returnVec(rStresses);
-        double tVolume = aAtomData.volume();
-        return Lists.newArrayList(rStressXX/tVolume, rStressYY/tVolume, rStressZZ/tVolume, rStressXY/tVolume, rStressXZ/tVolume, rStressYZ/tVolume);
-        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
-    }
-    
-    
-    /**
-     * 通过此势函数计算给定原子数据 {@link IAtomData} 指定原子的总能量
-     * @param aAtomData 需要计算能量的原子数据
-     * @param aIndices 需要计算的原子的索引（从 0 开始）
-     * @return 指定原子的总能量
-     * @throws Exception 特殊实现下可选的抛出异常
-     */
-    double calEnergyAt(IAtomData aAtomData, ISlice aIndices) throws Exception;
+    List<Double> calStress() throws Exception;
     
     
     /**
@@ -255,7 +126,6 @@ public interface IPotential extends AutoCloseable {
      * Force and heat current formulas for many-body potentials in molecular dynamics simulation with
      * applications to thermal conductivity calculations </a>
      *
-     * @param aAtomData 需要计算性质的原子数据
      * @param rEnergies 存储计算输出的每原子能量值，{@code null} 表示不需要能量，长度为 {@code 1} 表示只需要体系的总能量
      * @param rForcesX 存储计算输出的 x 方向力值，{@code null} 表示不需要此值
      * @param rForcesY 存储计算输出的 y 方向力值，{@code null} 表示不需要此值
@@ -271,7 +141,7 @@ public interface IPotential extends AutoCloseable {
      * @param rVirialsZY 存储计算输出的 zy 分量的每原子位力值，默认为 {@code null} 表示不需要此值
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    void calEnergyForceVirials(IAtomData aAtomData, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws Exception;
+    void calEnergyForceVirials(@Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws Exception;
     /**
      * 使用此势函数计算所有需要的性质，需要注意的是，这里位力需要采用
      * lammps 一致的定义，具体可以参见：
@@ -284,7 +154,6 @@ public interface IPotential extends AutoCloseable {
      * Force and heat current formulas for many-body potentials in molecular dynamics simulation with
      * applications to thermal conductivity calculations </a>
      *
-     * @param aAtomData 需要计算性质的原子数据
      * @param rEnergies 存储计算输出的每原子能量值，{@code null} 表示不需要能量，长度为 {@code 1} 表示只需要体系的总能量
      * @param rForcesX 存储计算输出的 x 方向力值，{@code null} 表示不需要此值
      * @param rForcesY 存储计算输出的 y 方向力值，{@code null} 表示不需要此值
@@ -297,7 +166,7 @@ public interface IPotential extends AutoCloseable {
      * @param rVirialsYZ 存储计算输出的 yz 分量的每原子位力值，{@code null} 表示不需要此值，长度为 {@code 1} 表示只需要此分量下体系的总位力值
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    default void calEnergyForceVirials(IAtomData aAtomData, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ) throws Exception {
-        calEnergyForceVirials(aAtomData, rEnergies, rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ, null, null, null);
+    default void calEnergyForceVirials(@Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ) throws Exception {
+        calEnergyForceVirials(rEnergies, rForcesX, rForcesY, rForcesZ, rVirialsXX, rVirialsYY, rVirialsZZ, rVirialsXY, rVirialsXZ, rVirialsYZ, null, null, null);
     }
 }

@@ -1,11 +1,14 @@
 package jse.lmp;
 
-import jse.atom.*;
+import jse.atom.IAtomData;
+import jse.atom.IPotential;
+import jse.atom.XYZ;
 import jse.code.IO;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
+import jse.math.vector.Vectors;
 import jse.parallel.MPI;
 import jse.parallel.MPIException;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +89,15 @@ public class LmpPotential extends AbstractLmpPotential {
      * @param aPairStyle 希望使用的 lammps 中的 pair 样式，对应 lammps 命令 {@code pair_style}
      * @param aPairCoeff lammps pair 需要设置的参数，对应 lammps 命令 {@code pair_coeff}
      */
-    public LmpPotential(String aPairStyle, String... aPairCoeff) throws LmpException {this(aPairStyle, aPairCoeff, null);}
+    public LmpPotential(String aPairStyle, String... aPairCoeff) throws LmpException {
+        this(aPairStyle, aPairCoeff, null);
+    }
+    private @Nullable Lmpdat mData = null;
+    @Override public LmpPotential setData(IAtomData aData) throws Exception {
+        super.setData(aData);
+        mData = Lmpdat.of(aData, Vectors.ones(aData.ntypes()));
+        return this;
+    }
     
     private boolean mDead = false;
     /** @return 此 lammps 势函数是否已经关闭 */
@@ -103,7 +114,6 @@ public class LmpPotential extends AbstractLmpPotential {
     
     /**
      * {@inheritDoc}
-     * @param aAtomData {@inheritDoc}
      * @param rEnergies {@inheritDoc}
      * @param rForcesX {@inheritDoc}
      * @param rForcesY {@inheritDoc}
@@ -115,7 +125,7 @@ public class LmpPotential extends AbstractLmpPotential {
      * @param rVirialsXZ {@inheritDoc}
      * @param rVirialsYZ {@inheritDoc}
      */
-    @Override public void calEnergyForceVirials(IAtomData aAtomData, @Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws LmpException, MPIException {
+    @Override public void calEnergyForceVirials(@Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
         // 统一判断需要的类型
         final boolean tRequirePreAtomEnergy = rEnergies!=null && rEnergies.size()!=1;
@@ -125,18 +135,14 @@ public class LmpPotential extends AbstractLmpPotential {
         final boolean tRequireTotalStress = (rVirialsXX!=null && rVirialsXX.size()==1) || (rVirialsYY!=null && rVirialsYY.size()==1) || (rVirialsZZ!=null && rVirialsZZ.size()==1) || (rVirialsXY!=null && rVirialsXY.size()==1) || (rVirialsXZ!=null && rVirialsXZ.size()==1) || (rVirialsYZ!=null && rVirialsYZ.size()==1);
         // 简单实现 lammps 计算统一不支持 9 项压力（绝大部分原生的势没做支持），为了确保严谨语义要求输出时直接报错
         if (rVirialsYX!=null || rVirialsZX!=null || rVirialsZY!=null) throw new UnsupportedOperationException("LmpPotential not support 9 columns stresses");
-        // 调用 lammps 计算
+        // 没有设置 data 抛出异常
+        if (mData == null) throw new IllegalStateException("Need `setData` first");
+        // 除了保持简单，pair style 等参数也可能发生改变，因此这里总是触发清理和重新计算
         mLmp.clear();
         if (mBeforeCommands != null) mLmp.commands(mBeforeCommands);
         mLmp.command("units  "+mUnits);
         mLmp.command("boundary  p p p");
-        mLmp.loadData(aAtomData, true); // 统一不需要 id 信息，简化排序问题
-        // 补充可能不存在的质量信息，只是例行设置，不影响结果
-        final int tAtomTypeNum = aAtomData.ntypes();
-        for (int tType = 1; tType <= tAtomTypeNum; ++tType) {
-            double tMass = aAtomData.mass(tType);
-            if (Double.isNaN(tMass)) mLmp.command(String.format("mass  %d 1.0", tType));
-        }
+        mLmp.loadData(mData, true); // 统一不需要 id 信息，简化排序问题
         mLmp.command("pair_style   "+mPairStyle);
         for (String tPairCoeff : mPairCoeff) {
             mLmp.command("pair_coeff   "+tPairCoeff);
@@ -167,14 +173,13 @@ public class LmpPotential extends AbstractLmpPotential {
         }
         double tVirialXX = Double.NaN, tVirialYY = Double.NaN, tVirialZZ = Double.NaN, tVirialXY = Double.NaN, tVirialXZ = Double.NaN, tVirialYZ = Double.NaN;
         if (tRequireTotalStress) {
-            final double tVolume = aAtomData.volume();
             Vector tPress = mLmp.computeOf("p_tot", NativeLmp.LMP_STYLE_GLOBAL, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
-            tVirialXX = validStressUnit(tPress.get(0))*tVolume;
-            tVirialYY = validStressUnit(tPress.get(1))*tVolume;
-            tVirialZZ = validStressUnit(tPress.get(2))*tVolume;
-            tVirialXY = validStressUnit(tPress.get(3))*tVolume;
-            tVirialXZ = validStressUnit(tPress.get(4))*tVolume;
-            tVirialYZ = validStressUnit(tPress.get(5))*tVolume;
+            tVirialXX = validStressUnit(tPress.get(0))*mVolume;
+            tVirialYY = validStressUnit(tPress.get(1))*mVolume;
+            tVirialZZ = validStressUnit(tPress.get(2))*mVolume;
+            tVirialXY = validStressUnit(tPress.get(3))*mVolume;
+            tVirialXZ = validStressUnit(tPress.get(4))*mVolume;
+            tVirialYZ = validStressUnit(tPress.get(5))*mVolume;
         }
         RowMatrix tForces = null;
         if (tRequireForce) {
@@ -198,16 +203,13 @@ public class LmpPotential extends AbstractLmpPotential {
         }
         mLmp.clear();
         // 如果模拟盒不是 lmpstyle，还需要对力以及压力进行转换
-        IBox aBox = aAtomData.box();
-        if (!aBox.isLmpStyle()) {
-            LmpBox tBox = LmpBox.of(aBox);
+        if (!mIsLmpStyle) {
             XYZ tBuf0 = new XYZ(), tBuf1 = new XYZ(), tBuf2 = new XYZ();
-            final int tAtomNum = aAtomData.natoms();
-            if (tRequireForce) for (int i = 0; i < tAtomNum; ++i) {
+            if (tRequireForce) for (int i = 0; i < mNumAtoms; ++i) {
                 assert tForces != null;
                 tBuf0.setXYZ(tForces.get(i, 0), tForces.get(i, 1), tForces.get(i, 2));
-                tBox.toDirect(tBuf0);
-                aBox.toCartesian(tBuf0);
+                mBoxIn.toDirect(tBuf0);
+                mBoxOut.toCartesian(tBuf0);
                 tForces.set(i, 0, tBuf0.mX);
                 tForces.set(i, 1, tBuf0.mY);
                 tForces.set(i, 2, tBuf0.mZ);
@@ -216,16 +218,16 @@ public class LmpPotential extends AbstractLmpPotential {
                 tBuf0.setXYZ(tVirialXX, tVirialXY, tVirialXZ);
                 tBuf1.setXYZ(tVirialXY, tVirialYY, tVirialYZ);
                 tBuf2.setXYZ(tVirialXZ, tVirialYZ, tVirialZZ);
-                rotateVirial(tBox, aBox, tBuf0, tBuf1, tBuf2);
+                rotateVirial(tBuf0, tBuf1, tBuf2);
                 tVirialXX = tBuf0.mX; tVirialYY = tBuf1.mY; tVirialZZ = tBuf2.mZ;
                 tVirialXY = tBuf0.mY; tVirialXZ = tBuf0.mZ; tVirialYZ = tBuf1.mZ;
             }
-            if (tRequirePreAtomStress) for (int i = 0; i < tAtomNum; ++i) {
+            if (tRequirePreAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
                 assert tVirials != null;
                 tBuf0.setXYZ(tVirials.get(i, 0), tVirials.get(i, 3), tVirials.get(i, 4));
                 tBuf1.setXYZ(tVirials.get(i, 3), tVirials.get(i, 1), tVirials.get(i, 5));
                 tBuf2.setXYZ(tVirials.get(i, 4), tVirials.get(i, 5), tVirials.get(i, 2));
-                rotateVirial(tBox, aBox, tBuf0, tBuf1, tBuf2);
+                rotateVirial(tBuf0, tBuf1, tBuf2);
                 tVirials.set(i, 0, tBuf0.mX); tVirials.set(i, 1, tBuf1.mY); tVirials.set(i, 2, tBuf2.mZ);
                 tVirials.set(i, 3, tBuf0.mY); tVirials.set(i, 4, tBuf0.mZ); tVirials.set(i, 5, tBuf1.mZ);
             }

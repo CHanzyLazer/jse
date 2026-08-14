@@ -110,6 +110,65 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     @ApiStatus.Internal NeighborListGetter nl_();
     
     /**
+     * 获取内部原子数据的拷贝，从而得到 swap，flip 后的构型
+     * @return 内部原子数据的拷贝
+     */
+    default ISettableAtomData data() {
+        return nl_().data();
+    }
+    
+    /**
+     * 通过此势函数计算给定原子数据指定原子的总能量
+     * @param aIndices 需要计算的原子的索引（从 0 开始）
+     * @return 指定原子的总能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    double calEnergyAt(ISlice aIndices) throws Exception;
+    
+    /**
+     * 计算交换种类前后的能量差，是否会考虑截断半径的优化则取决于具体的势函数的实现
+     *
+     * @param aI 需要交换种类的第一个原子索引
+     * @param aJ 需要交换种类的第二个原子索引
+     * @param aRestoreData 计算完成后是否还原内部原子数据的状态，默认为 {@code true}；如果关闭则会中保留交换后的结构
+     * @return 交换后能量 - 交换前能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    double calEnergyDiffSwap(int aI, int aJ, boolean aRestoreData) throws Exception;
+    /**
+     * 计算交换种类前后的能量差，是否会考虑截断半径的优化则取决于具体的势函数的实现
+     *
+     * @param aI 需要交换种类的第一个原子索引
+     * @param aJ 需要交换种类的第二个原子索引
+     * @return 交换后能量 - 交换前能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    default double calEnergyDiffSwap(int aI, int aJ) throws Exception {
+        return calEnergyDiffSwap(aI, aJ, true);
+    }
+    /**
+     * 计算翻转某个元素种类前后的能量差，是否会考虑截断半径的优化则取决于具体的势函数的实现
+     *
+     * @param aI 需要翻转种类的原子索引
+     * @param aType 此原子需要翻转的种类编号，对应输入原子数据原始的种类编号，没有经过 aTypeMap（如果有的话）
+     * @param aRestoreData 计算完成后是否还原内部原子数据的状态，默认为 {@code true}；如果关闭则会保留翻转后的结构
+     * @return 翻转后能量 - 翻转前能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    double calEnergyDiffFlip(int aI, int aType, boolean aRestoreData) throws Exception;
+    /**
+     * 计算翻转某个元素种类前后的能量差，是否会考虑截断半径的优化则取决于具体的势函数的实现
+     *
+     * @param aI 需要翻转种类的原子索引
+     * @param aType 此原子需要翻转的种类编号，对应输入原子数据原始的种类编号，没有经过 aTypeMap（如果有的话）
+     * @return 翻转后能量 - 翻转前能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    default double calEnergyDiffFlip(int aI, int aType) throws Exception {
+        return calEnergyDiffFlip(aI, aType, true);
+    }
+    
+    /**
      * {@inheritDoc}
      * @param aAtomData {@inheritDoc}
      * @param aIndices {@inheritDoc}

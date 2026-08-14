@@ -2,9 +2,8 @@ package jse.lmp;
 
 import jse.atom.IAtomData;
 import jse.atom.IBox;
-import jse.atom.IPotential;
+import jse.atom.AbstractPotential;
 import jse.atom.XYZ;
-import jse.code.collection.ISlice;
 import jse.math.MathEX;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +17,7 @@ import static jse.code.CS.UNITS;
  * @author liqa
  */
 @SuppressWarnings({"UnknownLanguage", "RedundantSuppression"})
-abstract class AbstractLmpPotential implements IPotential {
+abstract class AbstractLmpPotential extends AbstractPotential {
     final static String DEFAULT_UNITS = "metal";
     /** 将 lammps metal 单位制中的 bar 转换成 ev/Å^3 需要乘的倍数 */
     public final static double BAR_TO_EV = UNITS.get("bar");
@@ -74,7 +73,10 @@ abstract class AbstractLmpPotential implements IPotential {
      * @param aCommands 需要设置的最开始执行的 lammps 命令
      * @return 自身方便链式调用
      */
-    public AbstractLmpPotential setBeforeCommands(@Language("lmpin") String aCommands) {mBeforeCommands = aCommands; return this;}
+    public AbstractLmpPotential setBeforeCommands(@Language("lmpin") String aCommands) {
+        mBeforeCommands = aCommands;
+        return this;
+    }
     @Language("lmpin") @Nullable String mLastCommands = null;
     /**
      * 设置需要在 lammps 运行最后执行的命令，可以用来设置 {@code pair_modify}
@@ -82,7 +84,10 @@ abstract class AbstractLmpPotential implements IPotential {
      * @param aCommands 需要设置的最后执行的 lammps 命令
      * @return 自身方便链式调用
      */
-    public AbstractLmpPotential setLastCommands(@Language("lmpin") String aCommands) {mLastCommands = aCommands; return this;}
+    public AbstractLmpPotential setLastCommands(@Language("lmpin") String aCommands) {
+        mLastCommands = aCommands;
+        return this;
+    }
     
     String mUnits = DEFAULT_UNITS;
     /**
@@ -96,9 +101,24 @@ abstract class AbstractLmpPotential implements IPotential {
      * @param aUnits 需要设置的单位
      * @return 自身方便链式调用
      */
-    public AbstractLmpPotential setUnits(String aUnits) {mUnits = aUnits; return this;}
+    public AbstractLmpPotential setUnits(String aUnits) {
+        mUnits = aUnits;
+        return this;
+    }
     /** @return 内部 lammps 计算采用的单位，默认为 {@code metal} */
-    public String units() {return mUnits;}
+    public String units() {
+        return mUnits;
+    }
+    
+    IBox mBoxIn = null, mBoxOut = null;
+    boolean mIsLmpStyle = false;
+    @Override public AbstractLmpPotential setData(IAtomData aData) throws Exception {
+        super.setData(aData);
+        mIsLmpStyle = aData.isLmpStyle();
+        mBoxOut = aData.box().copy();
+        mBoxIn = LmpBox.of(mBoxOut);
+        return this;
+    }
     
     double validStressUnit(double aLmpStress) {
         switch (mUnits) {
@@ -109,26 +129,23 @@ abstract class AbstractLmpPotential implements IPotential {
         }
     }
     @SuppressWarnings("SuspiciousNameCombination")
-    void rotateVirial(IBox aBoxIn, IBox aBoxOut, XYZ rBuf0, XYZ rBuf1, XYZ rBuf2) {
+    void rotateVirial(XYZ rBuf0, XYZ rBuf1, XYZ rBuf2) {
         // 应力需要这样旋转变换两次
-        aBoxIn.toDirect(rBuf0);
-        aBoxIn.toDirect(rBuf1);
-        aBoxIn.toDirect(rBuf2);
-        aBoxOut.toCartesian(rBuf0);
-        aBoxOut.toCartesian(rBuf1);
-        aBoxOut.toCartesian(rBuf2);
+        mBoxIn.toDirect(rBuf0);
+        mBoxIn.toDirect(rBuf1);
+        mBoxIn.toDirect(rBuf2);
+        mBoxOut.toCartesian(rBuf0);
+        mBoxOut.toCartesian(rBuf1);
+        mBoxOut.toCartesian(rBuf2);
         double
         tV = rBuf0.mY; rBuf0.mY = rBuf1.mX; rBuf1.mX = tV;
         tV = rBuf0.mZ; rBuf0.mZ = rBuf2.mX; rBuf2.mX = tV;
         tV = rBuf1.mZ; rBuf1.mZ = rBuf2.mY; rBuf2.mY = tV;
-        aBoxIn.toDirect(rBuf0);
-        aBoxIn.toDirect(rBuf1);
-        aBoxIn.toDirect(rBuf2);
-        aBoxOut.toCartesian(rBuf0);
-        aBoxOut.toCartesian(rBuf1);
-        aBoxOut.toCartesian(rBuf2);
+        mBoxIn.toDirect(rBuf0);
+        mBoxIn.toDirect(rBuf1);
+        mBoxIn.toDirect(rBuf2);
+        mBoxOut.toCartesian(rBuf0);
+        mBoxOut.toCartesian(rBuf1);
+        mBoxOut.toCartesian(rBuf2);
     }
-    
-    /** 常规的 lammps 不支持计算部分原子能量，因此会直接抛出 {@link UnsupportedOperationException} */
-    @Override public double calEnergyAt(IAtomData aAPC, ISlice aIndices) {throw new UnsupportedOperationException();}
 }
