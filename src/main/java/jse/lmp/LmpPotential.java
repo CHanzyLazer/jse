@@ -2,10 +2,8 @@ package jse.lmp;
 
 import jse.atom.IAtomData;
 import jse.atom.IPotential;
-import jse.atom.XYZ;
 import jse.code.IO;
 import jse.math.matrix.RowMatrix;
-import jse.math.vector.IVector;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
@@ -114,27 +112,16 @@ public class LmpPotential extends AbstractLmpPotential {
     
     /**
      * {@inheritDoc}
-     * @param rEnergies {@inheritDoc}
-     * @param rForcesX {@inheritDoc}
-     * @param rForcesY {@inheritDoc}
-     * @param rForcesZ {@inheritDoc}
-     * @param rVirialsXX {@inheritDoc}
-     * @param rVirialsYY {@inheritDoc}
-     * @param rVirialsZZ {@inheritDoc}
-     * @param rVirialsXY {@inheritDoc}
-     * @param rVirialsXZ {@inheritDoc}
-     * @param rVirialsYZ {@inheritDoc}
+     * @param aRequireTotalEnergy {@inheritDoc}
+     * @param aRequirePreAtomEnergy {@inheritDoc}
+     * @param aRequireForce {@inheritDoc}
+     * @param aRequireTotalStress {@inheritDoc}
+     * @param aRequirePreAtomStress {@inheritDoc}
+     * @throws LmpException 触发 LAMMPS 异常
+     * @throws MPIException 触发 MPI 异常
      */
-    @Override public void calEnergyForceVirials(@Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws LmpException, MPIException {
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
-        // 统一判断需要的类型
-        final boolean tRequirePreAtomEnergy = rEnergies!=null && rEnergies.size()!=1;
-        final boolean tRequireTotalEnergy = rEnergies!=null && rEnergies.size()==1;
-        final boolean tRequireForce = rForcesX!=null || rForcesY!=null || rForcesZ!=null;
-        final boolean tRequirePreAtomStress = (rVirialsXX!=null && rVirialsXX.size()!=1) || (rVirialsYY!=null && rVirialsYY.size()!=1) || (rVirialsZZ!=null && rVirialsZZ.size()!=1) || (rVirialsXY!=null && rVirialsXY.size()!=1) || (rVirialsXZ!=null && rVirialsXZ.size()!=1) || (rVirialsYZ!=null && rVirialsYZ.size()!=1);
-        final boolean tRequireTotalStress = (rVirialsXX!=null && rVirialsXX.size()==1) || (rVirialsYY!=null && rVirialsYY.size()==1) || (rVirialsZZ!=null && rVirialsZZ.size()==1) || (rVirialsXY!=null && rVirialsXY.size()==1) || (rVirialsXZ!=null && rVirialsXZ.size()==1) || (rVirialsYZ!=null && rVirialsYZ.size()==1);
-        // 简单实现 lammps 计算统一不支持 9 项压力（绝大部分原生的势没做支持），为了确保严谨语义要求输出时直接报错
-        if (rVirialsYX!=null || rVirialsZX!=null || rVirialsZY!=null) throw new UnsupportedOperationException("LmpPotential not support 9 columns stresses");
         // 没有设置 data 抛出异常
         if (mData == null) throw new IllegalStateException("Need `setData` first");
         // 除了保持简单，pair style 等参数也可能发生改变，因此这里总是触发清理和重新计算
@@ -150,98 +137,63 @@ public class LmpPotential extends AbstractLmpPotential {
         if (mLastCommands != null) mLmp.commands(mLastCommands);
         // 增加这个 thermo 确保势能和应力可以获取到
         List<String> rThermoStyle = new ArrayList<>(8);
-        if (tRequireTotalEnergy) {
+        if (aRequireTotalEnergy) {
             rThermoStyle.add("pe");
         }
-        if (tRequireTotalStress) {
+        if (aRequireTotalStress) {
             mLmp.command("compute p_tot all pressure NULL virial");
         }
         mLmp.command("thermo_style  custom step "+String.join(" ", rThermoStyle));
         // 按需增加对应的 compute
-        if (tRequirePreAtomEnergy) {
+        if (aRequirePreAtomEnergy) {
             mLmp.command("compute eng_atom all pe/atom");
         }
-        if (tRequirePreAtomStress) {
+        if (aRequirePreAtomStress) {
             mLmp.command("compute stress_atom all stress/atom NULL virial");
         }
         // 通过 run 0 来触发计算
         mLmp.command("run  0");
-        // 直接获取结果
-        double tEnergy = Double.NaN;
-        if (tRequireTotalEnergy) {
-            tEnergy = mLmp.thermoOf("pe");
-        }
-        double tVirialXX = Double.NaN, tVirialYY = Double.NaN, tVirialZZ = Double.NaN, tVirialXY = Double.NaN, tVirialXZ = Double.NaN, tVirialYZ = Double.NaN;
-        if (tRequireTotalStress) {
-            Vector tPress = mLmp.computeOf("p_tot", NativeLmp.LMP_STYLE_GLOBAL, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
-            tVirialXX = validStressUnit(tPress.get(0))*mVolume;
-            tVirialYY = validStressUnit(tPress.get(1))*mVolume;
-            tVirialZZ = validStressUnit(tPress.get(2))*mVolume;
-            tVirialXY = validStressUnit(tPress.get(3))*mVolume;
-            tVirialXZ = validStressUnit(tPress.get(4))*mVolume;
-            tVirialYZ = validStressUnit(tPress.get(5))*mVolume;
-        }
-        RowMatrix tForces = null;
-        if (tRequireForce) {
-            tForces = mLmp.atomDataOf("f");
-        }
-        Vector tEnergies = null;
-        if (tRequirePreAtomEnergy) {
-            tEnergies = mLmp.computeOf("eng_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
-        }
-        RowMatrix tVirials = null;
-        if (tRequirePreAtomStress) {
-            tVirials = mLmp.computeOf("stress_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_ARRAY);
-            tVirials.negative2this();
-            tVirials.operation().map2this(this::validStressUnit);
-        }
         // lammps 会乱序，需要重新排序，这里可以确定可以按照 id 来排序
         IntVector tLmpIdx2Idx = null;
-        if (tRequireForce || tRequirePreAtomEnergy || tRequirePreAtomStress) {
+        if (aRequireForce || aRequirePreAtomEnergy || aRequirePreAtomStress) {
             tLmpIdx2Idx = mLmp.atomIntDataOf("id").asVecRow();
             tLmpIdx2Idx.minus2this(1);
         }
-        mLmp.clear();
-        // 如果模拟盒不是 lmpstyle，还需要对力以及压力进行转换
-        if (!mIsLmpStyle) {
-            XYZ tBuf0 = new XYZ(), tBuf1 = new XYZ(), tBuf2 = new XYZ();
-            if (tRequireForce) for (int i = 0; i < mNumAtoms; ++i) {
-                assert tForces != null;
-                tBuf0.setXYZ(tForces.get(i, 0), tForces.get(i, 1), tForces.get(i, 2));
-                mBoxIn.toDirect(tBuf0);
-                mBoxOut.toCartesian(tBuf0);
-                tForces.set(i, 0, tBuf0.mX);
-                tForces.set(i, 1, tBuf0.mY);
-                tForces.set(i, 2, tBuf0.mZ);
-            }
-            if (tRequireTotalStress) {
-                tBuf0.setXYZ(tVirialXX, tVirialXY, tVirialXZ);
-                tBuf1.setXYZ(tVirialXY, tVirialYY, tVirialYZ);
-                tBuf2.setXYZ(tVirialXZ, tVirialYZ, tVirialZZ);
-                rotateVirial(tBuf0, tBuf1, tBuf2);
-                tVirialXX = tBuf0.mX; tVirialYY = tBuf1.mY; tVirialZZ = tBuf2.mZ;
-                tVirialXY = tBuf0.mY; tVirialXZ = tBuf0.mZ; tVirialYZ = tBuf1.mZ;
-            }
-            if (tRequirePreAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
-                assert tVirials != null;
-                tBuf0.setXYZ(tVirials.get(i, 0), tVirials.get(i, 3), tVirials.get(i, 4));
-                tBuf1.setXYZ(tVirials.get(i, 3), tVirials.get(i, 1), tVirials.get(i, 5));
-                tBuf2.setXYZ(tVirials.get(i, 4), tVirials.get(i, 5), tVirials.get(i, 2));
-                rotateVirial(tBuf0, tBuf1, tBuf2);
-                tVirials.set(i, 0, tBuf0.mX); tVirials.set(i, 1, tBuf1.mY); tVirials.set(i, 2, tBuf2.mZ);
-                tVirials.set(i, 3, tBuf0.mY); tVirials.set(i, 4, tBuf0.mZ); tVirials.set(i, 5, tBuf1.mZ);
-            }
+        // 直接获取结果
+        if (aRequireTotalEnergy) {
+            mEnergy = mLmp.thermoOf("pe");
         }
-        // 设置结果输出
-        if (rEnergies!=null) {if (rEnergies.size()==1) {rEnergies.set(0, tEnergy);} else {assert tEnergies!=null && tLmpIdx2Idx!=null; rEnergies.putAt(tLmpIdx2Idx, tEnergies);}}
-        if (rForcesX!=null) {assert tForces!=null; rForcesX.putAt(tLmpIdx2Idx, tForces.col(0));}
-        if (rForcesY!=null) {assert tForces!=null; rForcesY.putAt(tLmpIdx2Idx, tForces.col(1));}
-        if (rForcesZ!=null) {assert tForces!=null; rForcesZ.putAt(tLmpIdx2Idx, tForces.col(2));}
-        if (rVirialsXX!=null) {if (rVirialsXX.size()==1) {rVirialsXX.set(0, tVirialXX);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsXX.putAt(tLmpIdx2Idx, tVirials.col(0));}}
-        if (rVirialsYY!=null) {if (rVirialsYY.size()==1) {rVirialsYY.set(0, tVirialYY);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsYY.putAt(tLmpIdx2Idx, tVirials.col(1));}}
-        if (rVirialsZZ!=null) {if (rVirialsZZ.size()==1) {rVirialsZZ.set(0, tVirialZZ);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsZZ.putAt(tLmpIdx2Idx, tVirials.col(2));}}
-        if (rVirialsXY!=null) {if (rVirialsXY.size()==1) {rVirialsXY.set(0, tVirialXY);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsXY.putAt(tLmpIdx2Idx, tVirials.col(3));}}
-        if (rVirialsXZ!=null) {if (rVirialsXZ.size()==1) {rVirialsXZ.set(0, tVirialXZ);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsXZ.putAt(tLmpIdx2Idx, tVirials.col(4));}}
-        if (rVirialsYZ!=null) {if (rVirialsYZ.size()==1) {rVirialsYZ.set(0, tVirialYZ);} else {assert tVirials!=null && tLmpIdx2Idx!=null; rVirialsYZ.putAt(tLmpIdx2Idx, tVirials.col(5));}}
+        if (aRequireTotalStress) {
+            Vector tPress = mLmp.computeOf("p_tot", NativeLmp.LMP_STYLE_GLOBAL, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
+            mStressXX = -validStressUnit(tPress.get(0));
+            mStressYY = -validStressUnit(tPress.get(1));
+            mStressZZ = -validStressUnit(tPress.get(2));
+            mStressXY = -validStressUnit(tPress.get(3));
+            mStressXZ = -validStressUnit(tPress.get(4));
+            mStressYZ = -validStressUnit(tPress.get(5));
+        }
+        if (aRequireForce) {
+            RowMatrix tForces = mLmp.atomDataOf("f");
+            mForcesX.putAt(tLmpIdx2Idx, tForces.col(0));
+            mForcesY.putAt(tLmpIdx2Idx, tForces.col(1));
+            mForcesZ.putAt(tLmpIdx2Idx, tForces.col(2));
+        }
+        if (aRequirePreAtomEnergy) {
+            Vector tEnergies = mLmp.computeOf("eng_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
+            mEnergies.putAt(tLmpIdx2Idx, tEnergies);
+        }
+        if (aRequirePreAtomStress) {
+            RowMatrix tStresses = mLmp.computeOf("stress_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_ARRAY);
+            tStresses.operation().map2this(this::validStressUnit);
+            mStressesXX.putAt(tLmpIdx2Idx, tStresses.col(0));
+            mStressesYY.putAt(tLmpIdx2Idx, tStresses.col(1));
+            mStressesZZ.putAt(tLmpIdx2Idx, tStresses.col(2));
+            mStressesXY.putAt(tLmpIdx2Idx, tStresses.col(3));
+            mStressesXZ.putAt(tLmpIdx2Idx, tStresses.col(4));
+            mStressesYZ.putAt(tLmpIdx2Idx, tStresses.col(5));
+        }
+        mLmp.clear();
+        // 最后调整 box 变化导致的力和应力方向变化
+        validBox(aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
     }
 }

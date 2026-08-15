@@ -43,19 +43,19 @@ public interface IHasSymbol {
     
     /// utils
     /**
-     * 通过内部的 {@link #symbols()} 来获取关于另一个 {@link IAtomData} 的种类编号映射
-     * @param aAtomData 需要获取种类编号映射的原子数据
-     * @return 一个种类编号映射，输入原始的 aAtomData 的原子种类编号，返回对应 this 的种类编号
+     * 通过内部的 {@link #symbols()} 来获取关于另一个 {@link IHasSymbol} 的种类编号映射
+     * @param aHasSymbol 需要获取种类编号映射的另一个含有种类的数据
+     * @return 一个种类编号映射，输入原始的 aHasSymbol 的原子种类编号，返回对应 this 的种类编号
      * @throws UnsupportedOperationException 当不存在 {@link #symbols()} 数据
      */
-    default IntUnaryOperator typeMap(IAtomData aAtomData) {
+    default IntUnaryOperator typeMap(IHasSymbol aHasSymbol) {
         if (!hasSymbol()) throw new UnsupportedOperationException("`typeMap` for IHasSymbol without symbols");
-        if (!aAtomData.hasSymbol()) {
+        if (!aHasSymbol.hasSymbol()) {
             int tTypeNum = ntypes();
-            if (tTypeNum>0 && tTypeNum<aAtomData.ntypes()) throw new IllegalArgumentException("Invalid atom type number of AtomData: " + aAtomData.ntypes() + ", target: " + tTypeNum);
+            if (tTypeNum>0 && tTypeNum<aHasSymbol.ntypes()) throw new IllegalArgumentException("Invalid number of atom types of AtomData: " + aHasSymbol.ntypes() + ", target: " + tTypeNum);
             return type->type;
         }
-        return typeMap_(Objects.requireNonNull(symbols()), aAtomData);
+        return typeMap_(Objects.requireNonNull(symbols()), aHasSymbol);
     }
     /**
      * 通过内部的 {@link #symbols()} 来判断输入的 aSymbolsIn 是否是有着相同的顺序
@@ -92,8 +92,8 @@ public interface IHasSymbol {
     }
     
     @ApiStatus.Internal
-    static IntUnaryOperator typeMap_(List<String> aSymbols, IAtomData aAtomData) {
-        List<String> tAtomDataSymbols = Objects.requireNonNull(aAtomData.symbols());
+    static IntUnaryOperator typeMap_(List<String> aSymbols, IHasSymbol aHasSymbol) {
+        List<String> tAtomDataSymbols = Objects.requireNonNull(aHasSymbol.symbols());
         if (sameSymbolOrder_(aSymbols, tAtomDataSymbols)) return type->type;
         final int[] tAtomDataType2newType = new int[tAtomDataSymbols.size()+1];
         for (int i = 0; i < tAtomDataSymbols.size(); ++i) {

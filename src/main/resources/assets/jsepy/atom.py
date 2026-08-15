@@ -131,5 +131,5 @@ class PotentialCalculator(Calculator):
                 raise PropertyNotImplementedError(p)
             if not self.pot.perAtomStressSupport() and p=='stresses':
                 raise PropertyNotImplementedError(p)
-        self.results = dict(self.pot.calculate_(self.results, self.atoms, properties, len(system_changes)>0))
+        self.results = dict(self.pot.calculateAse_(self.results, self.atoms, properties, len(system_changes)>0))
 

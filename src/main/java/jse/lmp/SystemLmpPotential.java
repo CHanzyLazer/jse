@@ -2,7 +2,6 @@ package jse.lmp;
 
 import jse.atom.IAtomData;
 import jse.atom.IPotential;
-import jse.atom.XYZ;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
@@ -150,27 +149,15 @@ public class SystemLmpPotential extends AbstractLmpPotential {
     
     /**
      * {@inheritDoc}
-     * @param rEnergies {@inheritDoc}
-     * @param rForcesX {@inheritDoc}
-     * @param rForcesY {@inheritDoc}
-     * @param rForcesZ {@inheritDoc}
-     * @param rVirialsXX {@inheritDoc}
-     * @param rVirialsYY {@inheritDoc}
-     * @param rVirialsZZ {@inheritDoc}
-     * @param rVirialsXY {@inheritDoc}
-     * @param rVirialsXZ {@inheritDoc}
-     * @param rVirialsYZ {@inheritDoc}
+     * @param aRequireTotalEnergy {@inheritDoc}
+     * @param aRequirePreAtomEnergy {@inheritDoc}
+     * @param aRequireForce {@inheritDoc}
+     * @param aRequireTotalStress {@inheritDoc}
+     * @param aRequirePreAtomStress {@inheritDoc}
+     * @throws IOException 读写临时文件时触发异常
      */
-    @Override public void calEnergyForceVirials(@Nullable IVector rEnergies, @Nullable IVector rForcesX, @Nullable IVector rForcesY, @Nullable IVector rForcesZ, @Nullable IVector rVirialsXX, @Nullable IVector rVirialsYY, @Nullable IVector rVirialsZZ, @Nullable IVector rVirialsXY, @Nullable IVector rVirialsXZ, @Nullable IVector rVirialsYZ, @Nullable IVector rVirialsYX, @Nullable IVector rVirialsZX, @Nullable IVector rVirialsZY) throws IOException {
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws IOException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
-        // 统一判断需要的类型
-        final boolean tRequirePreAtomEnergy = rEnergies!=null && rEnergies.size()!=1;
-        final boolean tRequireTotalEnergy = rEnergies!=null && rEnergies.size()==1;
-        final boolean tRequireForce = rForcesX!=null || rForcesY!=null || rForcesZ!=null;
-        final boolean tRequirePreAtomStress = (rVirialsXX!=null && rVirialsXX.size()!=1) || (rVirialsYY!=null && rVirialsYY.size()!=1) || (rVirialsZZ!=null && rVirialsZZ.size()!=1) || (rVirialsXY!=null && rVirialsXY.size()!=1) || (rVirialsXZ!=null && rVirialsXZ.size()!=1) || (rVirialsYZ!=null && rVirialsYZ.size()!=1);
-        final boolean tRequireTotalStress = (rVirialsXX!=null && rVirialsXX.size()==1) || (rVirialsYY!=null && rVirialsYY.size()==1) || (rVirialsZZ!=null && rVirialsZZ.size()==1) || (rVirialsXY!=null && rVirialsXY.size()==1) || (rVirialsXZ!=null && rVirialsXZ.size()==1) || (rVirialsYZ!=null && rVirialsYZ.size()==1);
-        // 简单实现 lammps 计算统一不支持 9 项压力（绝大部分原生的势没做支持），为了确保严谨语义要求输出时直接报错
-        if (rVirialsYX!=null || rVirialsZX!=null || rVirialsZY!=null) throw new UnsupportedOperationException("LmpPotential not support 9 columns stresses");
         // 没有设置 data 抛出异常
         if (mDataPath == null) throw new IllegalStateException("Need `setData` first");
         // 除了保持简单，pair style 等参数也可能发生改变，因此这里总是触发重新计算
@@ -188,10 +175,10 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         if (mLastCommands != null) rLmpIn.add(mLastCommands);
         // 增加这个 thermo 确保势能和应力可以获取到
         List<String> rThermoStyle = new ArrayList<>(8);
-        if (tRequireTotalEnergy) {
+        if (aRequireTotalEnergy) {
             rThermoStyle.add("pe");
         }
-        if (tRequireTotalStress) {
+        if (aRequireTotalStress) {
             rLmpIn.add("compute p_tot all pressure NULL virial");
             rThermoStyle.add("c_p_tot[1]");
             rThermoStyle.add("c_p_tot[2]");
@@ -204,23 +191,23 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         rLmpIn.add("thermo  1");
         rLmpIn.add("thermo_modify  format float %24.18g"); // 调整输出精度
         // 按需增加对应的 compute
-        if (tRequirePreAtomEnergy) {
+        if (aRequirePreAtomEnergy) {
             rLmpIn.add("compute eng_atom all pe/atom");
         }
-        if (tRequirePreAtomStress) {
+        if (aRequirePreAtomStress) {
             rLmpIn.add("compute stress_atom all stress/atom NULL virial");
         }
         String tDumpPath = mChecker.mWorkingDir+"dump-"+tUniqueID;
         List<String> rDumpCustom = new ArrayList<>(10);
-        if (tRequireForce) {
+        if (aRequireForce) {
             rDumpCustom.add("fx");
             rDumpCustom.add("fy");
             rDumpCustom.add("fz");
         }
-        if (tRequirePreAtomEnergy) {
+        if (aRequirePreAtomEnergy) {
             rDumpCustom.add("c_eng_atom");
         }
-        if (tRequirePreAtomStress) {
+        if (aRequirePreAtomStress) {
             rDumpCustom.add("c_stress_atom[1]");
             rDumpCustom.add("c_stress_atom[2]");
             rDumpCustom.add("c_stress_atom[3]");
@@ -242,84 +229,40 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         // 直接获取结果
         Thermo tLog = Thermo.read(tLogPath);
         ITable tDump = SubLammpstrj.read(tDumpPath).asTable();
-        double tEnergy = Double.NaN;
-        if (tRequireTotalEnergy) {
-            tEnergy = tLog.get(0, "PotEng");
-        }
-        double tVirialXX = Double.NaN, tVirialYY = Double.NaN, tVirialZZ = Double.NaN, tVirialXY = Double.NaN, tVirialXZ = Double.NaN, tVirialYZ = Double.NaN;
-        if (tRequireTotalStress) {
-            tVirialXX = validStressUnit(tLog.get(0, "c_p_tot[1]"))*mVolume;
-            tVirialYY = validStressUnit(tLog.get(0, "c_p_tot[2]"))*mVolume;
-            tVirialZZ = validStressUnit(tLog.get(0, "c_p_tot[3]"))*mVolume;
-            tVirialXY = validStressUnit(tLog.get(0, "c_p_tot[4]"))*mVolume;
-            tVirialXZ = validStressUnit(tLog.get(0, "c_p_tot[5]"))*mVolume;
-            tVirialYZ = validStressUnit(tLog.get(0, "c_p_tot[6]"))*mVolume;
-        }
-        IVector tForcesX = null, tForcesY = null, tForcesZ = null;
-        if (tRequireForce) {
-            tForcesX = tDump.col("fx");
-            tForcesY = tDump.col("fy");
-            tForcesZ = tDump.col("fz");
-        }
-        IVector tEnergies = null;
-        if (tRequirePreAtomEnergy) {
-            tEnergies = tDump.col("c_eng_atom");
-        }
-        IVector tVirialsXX = null, tVirialsYY = null, tVirialsZZ = null, tVirialsXY = null, tVirialsXZ = null, tVirialsYZ = null;
-        if (tRequirePreAtomStress) {
-            tVirialsXX = tDump.col("c_stress_atom[1]"); tVirialsXX.negative2this(); tVirialsXX.operation().map2this(this::validStressUnit);
-            tVirialsYY = tDump.col("c_stress_atom[2]"); tVirialsYY.negative2this(); tVirialsYY.operation().map2this(this::validStressUnit);
-            tVirialsZZ = tDump.col("c_stress_atom[3]"); tVirialsZZ.negative2this(); tVirialsZZ.operation().map2this(this::validStressUnit);
-            tVirialsXY = tDump.col("c_stress_atom[4]"); tVirialsXY.negative2this(); tVirialsXY.operation().map2this(this::validStressUnit);
-            tVirialsXZ = tDump.col("c_stress_atom[5]"); tVirialsXZ.negative2this(); tVirialsXZ.operation().map2this(this::validStressUnit);
-            tVirialsYZ = tDump.col("c_stress_atom[6]"); tVirialsYZ.negative2this(); tVirialsYZ.operation().map2this(this::validStressUnit);
-        }
         // lammps 会乱序，需要重新排序，这里可以确定可以按照 id 来排序
         IIntVector tLmpIdx2Idx = null;
-        if (tRequireForce || tRequirePreAtomEnergy || tRequirePreAtomStress) {
+        if (aRequireForce || aRequirePreAtomEnergy || aRequirePreAtomStress) {
             tLmpIdx2Idx = tDump.col("id").asIntVec().copy();
             tLmpIdx2Idx.minus2this(1);
         }
-        // 如果模拟盒不是 lmpstyle，还需要对力以及压力进行转换
-        if (!mIsLmpStyle) {
-            XYZ tBuf0 = new XYZ(), tBuf1 = new XYZ(), tBuf2 = new XYZ();
-            if (tRequireForce) for (int i = 0; i < mNumAtoms; ++i) {
-                assert tForcesX!=null && tForcesY!=null && tForcesZ!=null;
-                tBuf0.setXYZ(tForcesX.get(i), tForcesY.get(i), tForcesZ.get(i));
-                mBoxIn.toDirect(tBuf0);
-                mBoxOut.toCartesian(tBuf0);
-                tForcesX.set(i, tBuf0.mX);
-                tForcesY.set(i, tBuf0.mY);
-                tForcesZ.set(i, tBuf0.mZ);
-            }
-            if (tRequireTotalStress) {
-                tBuf0.setXYZ(tVirialXX, tVirialXY, tVirialXZ);
-                tBuf1.setXYZ(tVirialXY, tVirialYY, tVirialYZ);
-                tBuf2.setXYZ(tVirialXZ, tVirialYZ, tVirialZZ);
-                rotateVirial(tBuf0, tBuf1, tBuf2);
-                tVirialXX = tBuf0.mX; tVirialYY = tBuf1.mY; tVirialZZ = tBuf2.mZ;
-                tVirialXY = tBuf0.mY; tVirialXZ = tBuf0.mZ; tVirialYZ = tBuf1.mZ;
-            }
-            if (tRequirePreAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
-                assert tVirialsXX!=null && tVirialsYY!=null && tVirialsZZ!=null && tVirialsXY!=null && tVirialsXZ!=null && tVirialsYZ!=null;
-                tBuf0.setXYZ(tVirialsXX.get(i), tVirialsXY.get(i), tVirialsXZ.get(i));
-                tBuf1.setXYZ(tVirialsXY.get(i), tVirialsYY.get(i), tVirialsYZ.get(i));
-                tBuf2.setXYZ(tVirialsXZ.get(i), tVirialsYZ.get(i), tVirialsZZ.get(i));
-                rotateVirial(tBuf0, tBuf1, tBuf2);
-                tVirialsXX.set(i, tBuf0.mX); tVirialsYY.set(i, tBuf1.mY); tVirialsZZ.set(i, tBuf2.mZ);
-                tVirialsXY.set(i, tBuf0.mY); tVirialsXZ.set(i, tBuf0.mZ); tVirialsYZ.set(i, tBuf1.mZ);
-            }
+        if (aRequireTotalEnergy) {
+            mEnergy = tLog.get(0, "PotEng");
         }
-        // 设置结果输出
-        if (rEnergies!=null) {if (rEnergies.size()==1) {rEnergies.set(0, tEnergy);} else {assert tEnergies!=null; rEnergies.putAt(tLmpIdx2Idx, tEnergies);}}
-        if (rForcesX!=null) {assert tForcesX!=null; rForcesX.putAt(tLmpIdx2Idx, tForcesX);}
-        if (rForcesY!=null) {assert tForcesY!=null; rForcesY.putAt(tLmpIdx2Idx, tForcesY);}
-        if (rForcesZ!=null) {assert tForcesZ!=null; rForcesZ.putAt(tLmpIdx2Idx, tForcesZ);}
-        if (rVirialsXX!=null) {if (rVirialsXX.size()==1) {rVirialsXX.set(0, tVirialXX);} else {assert tVirialsXX!=null; rVirialsXX.putAt(tLmpIdx2Idx, tVirialsXX);}}
-        if (rVirialsYY!=null) {if (rVirialsYY.size()==1) {rVirialsYY.set(0, tVirialYY);} else {assert tVirialsYY!=null; rVirialsYY.putAt(tLmpIdx2Idx, tVirialsYY);}}
-        if (rVirialsZZ!=null) {if (rVirialsZZ.size()==1) {rVirialsZZ.set(0, tVirialZZ);} else {assert tVirialsZZ!=null; rVirialsZZ.putAt(tLmpIdx2Idx, tVirialsZZ);}}
-        if (rVirialsXY!=null) {if (rVirialsXY.size()==1) {rVirialsXY.set(0, tVirialXY);} else {assert tVirialsXY!=null; rVirialsXY.putAt(tLmpIdx2Idx, tVirialsXY);}}
-        if (rVirialsXZ!=null) {if (rVirialsXZ.size()==1) {rVirialsXZ.set(0, tVirialXZ);} else {assert tVirialsXZ!=null; rVirialsXZ.putAt(tLmpIdx2Idx, tVirialsXZ);}}
-        if (rVirialsYZ!=null) {if (rVirialsYZ.size()==1) {rVirialsYZ.set(0, tVirialYZ);} else {assert tVirialsYZ!=null; rVirialsYZ.putAt(tLmpIdx2Idx, tVirialsYZ);}}
+        if (aRequireTotalStress) {
+            mStressXX = -validStressUnit(tLog.get(0, "c_p_tot[1]"));
+            mStressYY = -validStressUnit(tLog.get(0, "c_p_tot[2]"));
+            mStressZZ = -validStressUnit(tLog.get(0, "c_p_tot[3]"));
+            mStressXY = -validStressUnit(tLog.get(0, "c_p_tot[4]"));
+            mStressXZ = -validStressUnit(tLog.get(0, "c_p_tot[5]"));
+            mStressYZ = -validStressUnit(tLog.get(0, "c_p_tot[6]"));
+        }
+        if (aRequireForce) {
+            mForcesX.putAt(tLmpIdx2Idx, tDump.col("fx"));
+            mForcesY.putAt(tLmpIdx2Idx, tDump.col("fy"));
+            mForcesZ.putAt(tLmpIdx2Idx, tDump.col("fz"));
+        }
+        if (aRequirePreAtomEnergy) {
+            mEnergies.putAt(tLmpIdx2Idx, tDump.col("c_eng_atom"));
+        }
+        if (aRequirePreAtomStress) {
+            mStressesXX.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[1]")); mStressesXX.operation().map2this(this::validStressUnit);
+            mStressesYY.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[2]")); mStressesYY.operation().map2this(this::validStressUnit);
+            mStressesZZ.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[3]")); mStressesZZ.operation().map2this(this::validStressUnit);
+            mStressesXY.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[4]")); mStressesXY.operation().map2this(this::validStressUnit);
+            mStressesXZ.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[5]")); mStressesXZ.operation().map2this(this::validStressUnit);
+            mStressesYZ.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[6]")); mStressesYZ.operation().map2this(this::validStressUnit);
+        }
+        // 最后调整 box 变化导致的力和应力方向变化
+        validBox(aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
     }
 }

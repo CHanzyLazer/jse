@@ -381,8 +381,14 @@ public class NeighborListGetter implements IHasSymbol {
     public double posZAt(int i) {
         return mPosZ.get(i);
     }
+    public XYZ posAt(int i) {
+        return new XYZ(mPosX.get(i), mPosY.get(i), mPosZ.get(i));
+    }
     public int typeAt(int i) {
         return mType.get(i);
+    }
+    public void setTypeAt(int i, int type) {
+        mType.set(i, type);
     }
     public ISettableAtomData data() {
         if (mNumAtoms < 0) {

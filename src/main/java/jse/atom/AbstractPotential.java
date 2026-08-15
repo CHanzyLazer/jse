@@ -1,28 +1,74 @@
 package jse.atom;
 
-import com.google.common.collect.Lists;
 import jep.python.PyObject;
 import jse.ase.AseAtoms;
-import jse.cache.MatrixCache;
-import jse.cache.VectorCache;
+import jse.code.collection.DoubleList;
 import jse.math.matrix.RowMatrix;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractPotential implements IPotential {
     protected int mNumAtoms = -1;
     protected double mVolume = Double.NaN;
     
+    protected double mEnergy = Double.NaN;
+    protected double mStressXX = Double.NaN, mStressYY = Double.NaN, mStressZZ = Double.NaN;
+    protected double mStressXY = Double.NaN, mStressXZ = Double.NaN, mStressYZ = Double.NaN;
+    protected Vector mEnergies = null;
+    protected Vector mForcesX = null, mForcesY = null, mForcesZ = null;
+    protected Vector mStressesXX = null, mStressesYY = null, mStressesZZ = null;
+    protected Vector mStressesXY = null, mStressesXZ = null, mStressesYZ = null;
+    protected Vector mStressesYX = null, mStressesZX = null, mStressesZY = null;
+    private final DoubleList mEnergiesRaw = new DoubleList();
+    private final DoubleList mForcesRaw = new DoubleList();
+    private final DoubleList mStressesRaw = new DoubleList();
+    
     @Override public AbstractPotential setData(IAtomData aData) throws Exception {
         mNumAtoms = aData.natoms();
         mVolume = aData.volume();
+        // 目前约定 setData 后统一初始化为 0
+        mEnergy = 0.0;
+        mStressXX = mStressYY = mStressZZ = mStressXY = mStressXZ = mStressYZ = 0.0;
+        mForcesRaw.clear();
+        mForcesRaw.addZeros(mNumAtoms*3);
+        double[] tData = mForcesRaw.internalData();
+        int tShift = 0;
+        mForcesX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+        mForcesY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+        mForcesZ = new Vector(mNumAtoms, tShift, tData);
+        if (perAtomEnergySupport()) {
+            mEnergiesRaw.clear();
+            mEnergiesRaw.addZeros(mNumAtoms);
+            mEnergies = mEnergiesRaw.asVec();
+        }
+        if (perAtomStressSupport()) {
+            mStressesRaw.clear();
+            boolean tCentroid = centroidPerAtomStressSupport();
+            mStressesRaw.addZeros(mNumAtoms*(tCentroid?9:6));
+            tData = mStressesRaw.internalData();
+            tShift = 0;
+            mStressesXX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesYY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesZZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesXY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesXZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesYZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            if (tCentroid) {
+                mStressesYX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mStressesZX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mStressesZY = new Vector(mNumAtoms, tShift, tData);
+            }
+        }
         return this;
     }
+    
+    
+    private final DoubleList mForcesAse = new DoubleList();
+    private final DoubleList mStressAse = new DoubleList(), mStressesAse = new DoubleList();
     @ApiStatus.Internal
-    @Override public Map<String, Object> calculate_(Map<String, Object> rResults, PyObject aPyAseAtoms, String[] aProperties, boolean aSystemChanges) throws Exception {
+    @Override public final Map<String, Object> calculateAse_(Map<String, Object> rResults, PyObject aPyAseAtoms, String[] aProperties, boolean aSystemChanges) throws Exception {
         if (isClosed()) throw new IllegalStateException("This Potential is dead");
         boolean tAllInResults = true;
         for (String tProperty : aProperties) {
@@ -34,105 +80,86 @@ public abstract class AbstractPotential implements IPotential {
         if (!aSystemChanges && tAllInResults) return rResults;
         setData(AseAtoms.of(aPyAseAtoms, true));
         // 遍历统计需要的量
-        boolean tRequireEnergy = false, tRequirePreAtomEnergy = false;
+        boolean tRequireTotalEnergy = false, tRequirePreAtomEnergy = false;
         boolean tRequireForces = false;
-        boolean tRequireStress = false, tRequirePreAtomStress = false;
+        boolean tRequireTotalStress = false, tRequirePreAtomStress = false;
         for (String tProperty : aProperties) {
-            if (tProperty.equals("energy") || tProperty.equals("energies")) tRequireEnergy = true;
-            if (tProperty.equals("forces")) tRequireForces = true;
-            if (tProperty.equals("stress") || tProperty.equals("stresses")) tRequireStress = true;
+            if (tProperty.equals("energy")) tRequireTotalEnergy = true;
             if (tProperty.equals("energies")) tRequirePreAtomEnergy = true;
+            if (tProperty.equals("forces")) tRequireForces = true;
+            if (tProperty.equals("stress")) tRequireTotalStress = true;
             if (tProperty.equals("stresses")) tRequirePreAtomStress = true;
         }
-        // 只需要能量则直接使用简单的计算能量接口
-        if (!tRequireForces && !tRequireStress) {
-            if (!tRequireEnergy) return rResults;
-            if (!tRequirePreAtomEnergy) {
-                double tEnergy = calEnergy();
-                rResults.put("energy", tEnergy);
-                return rResults;
-            }
-            Vector tEnergies = calEnergies();
-            double tEnergy = tEnergies.sum();
-            rResults.put("energy", tEnergy);
-            rResults.put("energies", tEnergies.numpy());
-            VectorCache.returnVec(tEnergies);
-            return rResults;
+        // 执行计算并获取结果
+        calculate(tRequireTotalEnergy, tRequirePreAtomEnergy, tRequireForces, tRequireTotalStress, tRequirePreAtomStress);
+        if (tRequireTotalEnergy) {
+            rResults.put("energy", mEnergy);
         }
-        // 其余情况则统一全部计算
-        Vector rEnergies = VectorCache.getZeros(tRequirePreAtomEnergy?mNumAtoms:1);
-        RowMatrix rForces = MatrixCache.getZerosRow(mNumAtoms, 3);
-        RowMatrix rStresses = MatrixCache.getZerosRow(tRequirePreAtomStress?mNumAtoms:1, 6);
-        calEnergyForceVirials(rEnergies, rForces.col(0), rForces.col(1), rForces.col(2),
-                              rStresses.col(0), rStresses.col(1), rStresses.col(2), rStresses.col(5), rStresses.col(4), rStresses.col(3));
-        rStresses.operation().negative2this();
-        Vector rStress = VectorCache.getZeros(6);
-        for (int i = 0; i < 6; ++i) {
-            rStress.set(i, rStresses.col(i).sum());
-        }
-        rStress.div2this(mVolume);
-        double tEnergy = rEnergies.sum();
-        rResults.put("energy", tEnergy);
         if (tRequirePreAtomEnergy) {
-            rResults.put("energies", rEnergies.numpy());
+            rResults.put("energies", mEnergies.numpy());
         }
-        rResults.put("forces", rForces.numpy());
-        rResults.put("stress", rStress.numpy());
+        if (tRequireForces) {
+            mForcesAse.ensureCapacity(mNumAtoms*3);
+            RowMatrix rForces = new RowMatrix(mNumAtoms, 3, mForcesAse.internalData());
+            for (int i = 0; i < mNumAtoms; ++i) {
+                rForces.set(i, 0, mForcesX.get(i));
+                rForces.set(i, 1, mForcesY.get(i));
+                rForces.set(i, 2, mForcesZ.get(i));
+            }
+            rResults.put("forces", rForces.numpy());
+        }
+        if (tRequireTotalStress) {
+            mStressAse.ensureCapacity(6);
+            Vector rStress = new Vector(6, mStressAse.internalData());
+            rStress.set(0, mStressXX);
+            rStress.set(1, mStressYY);
+            rStress.set(2, mStressZZ);
+            rStress.set(3, mStressYZ); // 注意 ase 的 stress 顺序问题
+            rStress.set(4, mStressXZ);
+            rStress.set(5, mStressXY);
+            rResults.put("stress", rStress.numpy());
+        }
         if (tRequirePreAtomStress) {
+            mStressesAse.ensureCapacity(mNumAtoms*6);
+            RowMatrix rStresses = new RowMatrix(mNumAtoms, 6, mStressesAse.internalData());
+            for (int i = 0; i < mNumAtoms; ++i) {
+                rStresses.set(i, 0, mStressesXX.get(i));
+                rStresses.set(i, 1, mStressesYY.get(i));
+                rStresses.set(i, 2, mStressesZZ.get(i));
+                rStresses.set(i, 3, mStressesYZ.get(i)); // 注意 ase 的 stress 顺序问题
+                rStresses.set(i, 4, mStressesXZ.get(i));
+                rStresses.set(i, 5, mStressesXY.get(i));
+            }
             rResults.put("stresses", rStresses.numpy());
         }
-        VectorCache.returnVec(rEnergies);
-        MatrixCache.returnMat(rForces);
-        VectorCache.returnVec(rStress);
-        MatrixCache.returnMat(rStresses);
         return rResults;
     }
     
-    @Override public Vector calEnergies() throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        Vector rEnergies = VectorCache.getVec(mNumAtoms);
-        calEnergyForceVirials(rEnergies, null, null, null, null, null, null, null, null, null);
-        return rEnergies;
+    @Override public final double energy() {
+        return mEnergy;
     }
-    @Override public double calEnergy() throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        Vector rTotEng = VectorCache.getVec(1);
-        calEnergyForceVirials(rTotEng, null, null, null, null, null, null, null, null, null);
-        double tTotEng = rTotEng.get(0);
-        VectorCache.returnVec(rTotEng);
-        return tTotEng;
+    @Override public final Vector energies() {
+        if (!perAtomEnergySupport()) return null;
+        return mEnergies;
     }
-    @Override public RowMatrix calForces() throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        RowMatrix rForces = MatrixCache.getMatRow(mNumAtoms, 3);
-        calEnergyForceVirials(null, rForces.col(0), rForces.col(1), rForces.col(2), null, null, null, null, null, null);
-        return rForces;
-    }
-    @Override public List<Vector> calStresses() throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        final boolean tCentroid = centroidPerAtomStressSupport();
-        final int tColNum = tCentroid ? 9 : 6;
-        List<Vector> rStresses = VectorCache.getVec(mNumAtoms, tColNum);
-        calEnergyForceVirials(null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5),
-                              tCentroid?rStresses.get(6):null, tCentroid?rStresses.get(7):null, tCentroid?rStresses.get(8):null);
-        for (int i = 0; i < tColNum; ++i) {
-            rStresses.get(i).operation().negative2this();
-        }
-        return rStresses;
-        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
-    }
-    @Override public List<Double> calStress() throws Exception {
-        if (isClosed()) throw new IllegalStateException("This Potential is dead");
-        List<Vector> rStresses = VectorCache.getVec(1, 6);
-        calEnergyForceVirials(null, null, null, null, rStresses.get(0), rStresses.get(1), rStresses.get(2), rStresses.get(3), rStresses.get(4), rStresses.get(5));
-        double rStressXX = -rStresses.get(0).get(0);
-        double rStressYY = -rStresses.get(1).get(0);
-        double rStressZZ = -rStresses.get(2).get(0);
-        double rStressXY = -rStresses.get(3).get(0);
-        double rStressXZ = -rStresses.get(4).get(0);
-        double rStressYZ = -rStresses.get(5).get(0);
-        VectorCache.returnVec(rStresses);
-        return Lists.newArrayList(rStressXX/mVolume, rStressYY/mVolume, rStressZZ/mVolume, rStressXY/mVolume, rStressXZ/mVolume, rStressYZ/mVolume);
-        // 由于存在单位转换问题，这里不再计算原本错误处理的速度部分。需要则需要使用 CS.VOLE_TO_EV 手转换和计算（metal）
-    }
+    @Override public final Vector forcesX() {return mForcesX;}
+    @Override public final Vector forcesY() {return mForcesY;}
+    @Override public final Vector forcesZ() {return mForcesZ;}
+    
+    @Override public final double stressXX() {return mStressXX;}
+    @Override public final double stressYY() {return mStressYY;}
+    @Override public final double stressZZ() {return mStressZZ;}
+    @Override public final double stressXY() {return mStressXY;}
+    @Override public final double stressXZ() {return mStressXZ;}
+    @Override public final double stressYZ() {return mStressYZ;}
+    
+    @Override public final Vector stressesXX() {return mStressesXX;}
+    @Override public final Vector stressesYY() {return mStressesYY;}
+    @Override public final Vector stressesZZ() {return mStressesZZ;}
+    @Override public final Vector stressesXY() {return mStressesXY;}
+    @Override public final Vector stressesXZ() {return mStressesXZ;}
+    @Override public final Vector stressesYZ() {return mStressesYZ;}
+    @Override public final Vector stressesYX() {return mStressesYX;}
+    @Override public final Vector stressesZX() {return mStressesZX;}
+    @Override public final Vector stressesZY() {return mStressesZY;}
 }

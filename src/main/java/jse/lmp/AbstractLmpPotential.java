@@ -129,7 +129,7 @@ abstract class AbstractLmpPotential extends AbstractPotential {
         }
     }
     @SuppressWarnings("SuspiciousNameCombination")
-    void rotateVirial(XYZ rBuf0, XYZ rBuf1, XYZ rBuf2) {
+    void rotateStress(XYZ rBuf0, XYZ rBuf1, XYZ rBuf2) {
         // 应力需要这样旋转变换两次
         mBoxIn.toDirect(rBuf0);
         mBoxIn.toDirect(rBuf1);
@@ -147,5 +147,35 @@ abstract class AbstractLmpPotential extends AbstractPotential {
         mBoxOut.toCartesian(rBuf0);
         mBoxOut.toCartesian(rBuf1);
         mBoxOut.toCartesian(rBuf2);
+    }
+    void validBox(boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) {
+        // 如果模拟盒不是 lmpstyle，还需要对力以及压力进行转换
+        if (!mIsLmpStyle) {
+            XYZ tBuf0 = new XYZ(), tBuf1 = new XYZ(), tBuf2 = new XYZ();
+            if (aRequireForce) for (int i = 0; i < mNumAtoms; ++i) {
+                tBuf0.setXYZ(mForcesX.get(i), mForcesY.get(i), mForcesZ.get(i));
+                mBoxIn.toDirect(tBuf0);
+                mBoxOut.toCartesian(tBuf0);
+                mForcesX.set(i, tBuf0.mX);
+                mForcesY.set(i, tBuf0.mY);
+                mForcesZ.set(i, tBuf0.mZ);
+            }
+            if (aRequireTotalStress) {
+                tBuf0.setXYZ(mStressXX, mStressXY, mStressXZ);
+                tBuf1.setXYZ(mStressXY, mStressYY, mStressYZ);
+                tBuf2.setXYZ(mStressXZ, mStressYZ, mStressZZ);
+                rotateStress(tBuf0, tBuf1, tBuf2);
+                mStressXX = tBuf0.mX; mStressYY = tBuf1.mY; mStressZZ = tBuf2.mZ;
+                mStressXY = tBuf0.mY; mStressXZ = tBuf0.mZ; mStressYZ = tBuf1.mZ;
+            }
+            if (aRequirePreAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
+                tBuf0.setXYZ(mStressesXX.get(i), mStressesXY.get(i), mStressesXZ.get(i));
+                tBuf1.setXYZ(mStressesXY.get(i), mStressesYY.get(i), mStressesYZ.get(i));
+                tBuf2.setXYZ(mStressesXZ.get(i), mStressesYZ.get(i), mStressesZZ.get(i));
+                rotateStress(tBuf0, tBuf1, tBuf2);
+                mStressesXX.set(i, tBuf0.mX); mStressesYY.set(i, tBuf1.mY); mStressesZZ.set(i, tBuf2.mZ);
+                mStressesXY.set(i, tBuf0.mY); mStressesXZ.set(i, tBuf0.mZ); mStressesYZ.set(i, tBuf1.mZ);
+            }
+        }
     }
 }
