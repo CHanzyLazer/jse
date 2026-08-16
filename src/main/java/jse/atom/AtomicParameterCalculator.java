@@ -59,7 +59,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
     private double mRho = Double.NaN; // 粒子数密度
     private double mUnitLen = Double.NaN; // 平均单个原子的距离
     
-    private final NeighborListGetter mNL;
+    private final NeighborListGetter mNl;
     
     /// ParforThreadPool stuffs
     private final ParforThreadPool mPool;
@@ -79,7 +79,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
     }
     
     public AtomicParameterCalculator setData(IAtomData aData) {
-        mNL.setData(aData);
+        mNl.setData(aData);
         mNumAtoms = aData.natoms();
         mNumTypes = aData.ntypes();
         mNumAtomsType.clear(); mNumAtomsType.addZeros(mNumTypes);
@@ -106,7 +106,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
     
     AtomicParameterCalculator(int aNumThreads) {
         mPool = new ParforThreadPool(aNumThreads);
-        mNL = new NeighborListGetter();
+        mNl = new NeighborListGetter();
         mNumAtomsType = new IntList();
     }
     
@@ -229,7 +229,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * @see NeighborListGetter
      */
     @ApiStatus.Internal public NeighborListGetter nl_() {
-        return mNL;
+        return mNl;
     }
     
     
@@ -249,11 +249,11 @@ public class AtomicParameterCalculator implements AutoCloseable {
         final IFunc1[] dnPar = new IFunc1[nthreads()];
         for (int i = 0; i < dnPar.length; ++i) dnPar[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax - dr*0.5).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax - dr*0.5).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
             final IFunc1 dn = dnPar[threadID];
-            mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+            mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                 dn.updateNear(Math.sqrt(dx*dx + dy*dy + dz*dz), g->g+1);
             });
         });
@@ -305,15 +305,15 @@ public class AtomicParameterCalculator implements AutoCloseable {
         final IFunc1[] dnPar = new IFunc1[nthreads()];
         for (int i = 0; i < dnPar.length; ++i) dnPar[i] = FixBoundFunc1.zeros(0.0, dr, aN).setBound(0.0, 1.0);
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax - dr*0.5).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax - dr*0.5).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mNL.typeAt(i);
+            int tTypeI = mNl.typeAt(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
                 final IFunc1 dn = dnPar[threadID];
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
-                    if (mNL.typeAt(idx) == tTypeJ) {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
+                    if (mNl.typeAt(idx) == tTypeJ) {
                         dn.updateNear(Math.sqrt(dx*dx + dy*dy + dz*dz), g->g+1);
                     }
                 });
@@ -389,15 +389,15 @@ public class AtomicParameterCalculator implements AutoCloseable {
             return dnAll;
         });
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax - dr*0.5).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax - dr*0.5).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            final int tTypeA = mNL.typeAt(i);
+            final int tTypeA = mNl.typeAt(i);
             final IFunc1[] dnAll = dnAllPar.get(threadID);
-            mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+            mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                 double dis = Math.sqrt(dx*dx + dy*dy + dz*dz);
                 dnAll[0].updateNear(dis, g->g+1);
-                final int tTypeB = mNL.typeAt(idx);
+                final int tTypeB = mNl.typeAt(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
                 dnAll[tIdx].updateNear(dis, g->g+1);
             });
@@ -466,12 +466,12 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 需要增加一个额外的偏移保证外部边界的统计正确性
         final double tRShift = -tDeltaGPar[0].zeroBoundL();
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax+tRShift).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax+tRShift).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
             final IFunc1 dn = dnPar[threadID];
             final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
-            mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+            mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                 tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                 dn.plus2this(tDeltaG);
             });
@@ -537,16 +537,16 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 需要增加一个额外的偏移保证外部边界的统计正确性
         final double tRShift = -tDeltaGPar[0].zeroBoundL();
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax+tRShift).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax+tRShift).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mNL.typeAt(i);
+            int tTypeI = mNl.typeAt(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 final int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
                 final IFunc1 dn = dnPar[threadID];
                 final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
-                    if (mNL.typeAt(idx) == tTypeJ) {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
+                    if (mNl.typeAt(idx) == tTypeJ) {
                         tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                         dn.plus2this(tDeltaG);
                     }
@@ -637,16 +637,16 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 需要增加一个额外的偏移保证外部边界的统计正确性
         final double tRShift = -tDeltaGPar[0].zeroBoundL();
         
-        // 使用 mNL 的专门获取近邻距离的方法
-        mNL.setRCut(aRMax+tRShift).build();
+        // 使用 mNl 的专门获取近邻距离的方法
+        mNl.setRCut(aRMax+tRShift).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            final int tTypeA = mNL.typeAt(i);
+            final int tTypeA = mNl.typeAt(i);
             final IFunc1[] dnAll = dnAllPar.get(threadID);
             final IZeroBoundFunc1 tDeltaG = tDeltaGPar[threadID];
-            mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+            mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                 tDeltaG.setX0(Math.sqrt(dx*dx + dy*dy + dz*dz));
                 dnAll[0].plus2this(tDeltaG);
-                final int tTypeB = mNL.typeAt(idx);
+                final int tTypeB = mNl.typeAt(idx);
                 int tIdx = tTypeB<=tTypeA ? ((tTypeA*(tTypeA-1))/2 + tTypeB) : ((tTypeB*(tTypeB-1))/2 + tTypeA);
                 dnAll[tIdx].plus2this(tDeltaG);
             });
@@ -719,10 +719,10 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 需要这样遍历才能得到正确结果
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            XYZ cXYZ = new XYZ(mNL.posXAt(i), mNL.posYAt(i), mNL.posZAt(i));
+            XYZ cXYZ = new XYZ(mNl.posXAt(i), mNl.posYAt(i), mNl.posZAt(i));
             IFunc1 Hq = HqPar[threadID];
             for (int j = 0; j < i; ++j) {
-                final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
+                final double dis = cXYZ.distance(mNl.posXAt(j), mNl.posYAt(j), mNl.posZAt(j));
                 Hq.operation().mapFull2this((H, q) -> (H + Math.sin(q*dis)/(q*dis)));
             }
         });
@@ -782,13 +782,13 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 需要这样遍历才能得到正确结果
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            int tTypeI = mNL.typeAt(i);
+            int tTypeI = mNl.typeAt(i);
             if (tTypeI==aTypeA || tTypeI==aTypeB) {
                 int tTypeJ = tTypeI==aTypeA ? aTypeB : aTypeA;
-                XYZ cXYZ = new XYZ(mNL.posXAt(i), mNL.posYAt(i), mNL.posZAt(i));
+                XYZ cXYZ = new XYZ(mNl.posXAt(i), mNl.posYAt(i), mNl.posZAt(i));
                 IFunc1 Hq = HqPar[threadID];
-                for (int j = 0; j < i; ++j) if (mNL.typeAt(j) == tTypeJ) {
-                    final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
+                for (int j = 0; j < i; ++j) if (mNl.typeAt(j) == tTypeJ) {
+                    final double dis = cXYZ.distance(mNl.posXAt(j), mNl.posYAt(j), mNl.posZAt(j));
                     Hq.operation().mapFull2this((H, q) -> (H + Math.sin(q*dis)/(q*dis)));
                 }
             }
@@ -874,15 +874,15 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 需要这样遍历才能得到正确结果
         mPool.parfor(mNumAtoms, (i, threadID) -> {
-            XYZ cXYZ = new XYZ(mNL.posXAt(i), mNL.posYAt(i), mNL.posZAt(i));
-            int tTypeA = mNL.typeAt(i);
+            XYZ cXYZ = new XYZ(mNl.posXAt(i), mNl.posYAt(i), mNl.posZAt(i));
+            int tTypeA = mNl.typeAt(i);
             IFunc1[] HqAll = HqAllPar.get(threadID);
             IVector tDelta = tDeltaPar.get(threadID);
             for (int j = 0; j < i; ++j) {
-                final double dis = cXYZ.distance(mNL.posXAt(j), mNL.posYAt(j), mNL.posZAt(j));
+                final double dis = cXYZ.distance(mNl.posXAt(j), mNl.posYAt(j), mNl.posZAt(j));
                 tDelta.operation().operate2this(HqAll[0].x(), (any, q) -> Math.sin(q*dis)/(q*dis));
                 HqAll[0].f().plus2this(tDelta);
-                int tTypeB = mNL.typeAt(j);
+                int tTypeB = mNl.typeAt(j);
                 HqAll[(tTypeA*(tTypeA-1))/2 + tTypeB].f().plus2this(tDelta);
             }
         });
@@ -1061,7 +1061,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         private final double mXLo, mXHi, mYLo, mYHi, mZLo, mZHi;
         MPIInfo(MPI.Comm aComm) throws MPIException {
             // 这里简单处理，MPI 只支持非斜方的模拟盒
-            if (mNL.isPrism()) throw new IllegalArgumentException("AtomicParameterCalculator only provides MPI support for orthogonal box");
+            if (mNl.isPrism()) throw new IllegalArgumentException("AtomicParameterCalculator only provides MPI support for orthogonal box");
             mComm = aComm;
             mRank = mComm.rank();
             mSize = mComm.size();
@@ -1092,7 +1092,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             int tI = mRank%mSizeX;
             int tJ = mRank/mSizeX%mSizeY;
             int tK = mRank/mSizeX/mSizeY;
-            mCellSize = new XYZ(mNL.boxA().x()/mSizeX, mNL.boxB().y()/mSizeY, mNL.boxC().z()/mSizeZ);
+            mCellSize = new XYZ(mNl.boxA().x()/mSizeX, mNl.boxB().y()/mSizeY, mNl.boxC().z()/mSizeZ);
             mXLo = tI * mCellSize.mX; mXHi = mXLo + mCellSize.mX;
             mYLo = tJ * mCellSize.mY; mYHi = mYLo + mCellSize.mY;
             mZLo = tK * mCellSize.mZ; mZHi = mZLo + mCellSize.mZ;
@@ -1111,11 +1111,11 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         @SuppressWarnings("RedundantIfStatement")
         boolean inRegin(int aIdx) {
-            double tX = mNL.posXAt(aIdx);
+            double tX = mNl.posXAt(aIdx);
             if (tX < mXLo || tX >= mXHi) return false;
-            double tY = mNL.posYAt(aIdx);
+            double tY = mNl.posYAt(aIdx);
             if (tY < mYLo || tY >= mYHi) return false;
-            double tZ = mNL.posZAt(aIdx);
+            double tZ = mNl.posZAt(aIdx);
             if (tZ < mZLo || tZ >= mZHi) return false;
             return true;
         }
@@ -1161,9 +1161,9 @@ public class AtomicParameterCalculator implements AutoCloseable {
             IntArrayCache.getArrayTo(mNumAtoms, mSize, (i, array) -> rBuf2Idx[i] = array);
             // 遍历所有的原子统计位置
             for (int i = 0; i < mNumAtoms; ++i) {
-                double tX = mNL.posXAt(i);
-                double tY = mNL.posYAt(i);
-                double tZ = mNL.posZAt(i);
+                double tX = mNl.posXAt(i);
+                double tY = mNl.posYAt(i);
+                double tZ = mNl.posZAt(i);
                 // 如果设置了 aRMax 则跳过在中间的原子即可
                 if (!tInitAll && !inEdge_(tX, tY, tZ, aRMax)) continue;
                 int tI = MathEX.Code.floor2int(tX / mCellSize.mX);
@@ -1296,7 +1296,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         final List<? extends IComplexVector> tYPar = ComplexVectorCache.getVec(aL+aL+1, nthreads());
         
         // 遍历计算 Qlm，只对这个最耗时的部分进行并行优化
-        mNL.setRCut(aRNearest).build();
+        mNl.setRCut(aRNearest).build();
         mPool.parfor(mNumAtoms, (i, threadID) -> {
             // 先获取这个线程的 Qlm, tNN
             final IComplexMatrix Qlm = rDestPar.get(threadID);
@@ -1306,7 +1306,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算 Ylm
             if (aNnn > 0) {
-                mNL.forEach(i, aNnn, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnn, (dx, dy, dz, idx) -> {
                     // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
                     Func.sphericalHarmonics2Dest3(aL, dx, dy, dz, tY);
                     Qlmi.plus2this(tY);
@@ -1314,7 +1314,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                     tNN.increment(i);
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     // 对于 half 遍历优化，对称的对面的粒子要增加这个统计
                     IComplexVector Qlmj = Qlm.row(idx);
                     Func.sphericalHarmonics2Dest3(aL, dx, dy, dz, tY);
@@ -1390,14 +1390,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         final IComplexVector tY = ComplexVectorCache.getVec(aL+aL+1);
         
         // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
-        mNL.setRCut(aRNearest).build();
+        mNl.setRCut(aRNearest).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 一次计算一行
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算 Ylm
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnn, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnn, (dx, dy, dz, idx) -> {
                 // 计算 Y 并累加，考虑对称性只需要算 m=0~l 的部分
                 Func.sphericalHarmonics2Dest3(aL, dx, dy, dz, tY);
                 Qlmi.plus2this(tY);
@@ -1492,7 +1492,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         // 如果限制了 aNnn 需要关闭 half 遍历的优化
         
         // 遍历计算 qlm
-        mNL.setRCut(aRNearestQ).build();
+        mNl.setRCut(aRNearestQ).build();
         for (int i = 0; i < mNumAtoms; ++i) {
             // 一次计算一行
             final IComplexVector qlmi = qlm.row(i);
@@ -1503,14 +1503,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 再累加近邻
             final int fI = i;
             if (aNnnQ > 0) {
-                mNL.forEach(i, aNnnQ, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnnQ, (dx, dy, dz, idx) -> {
                     // 直接按行累加即可
                     qlmi.plus2this(Qlm.row(idx));
                     // 统计近邻数
                     tNN.increment(fI);
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     qlmi.plus2this(Qlm.row(idx));
                     // 对于 half 遍历优化，对称的对面的粒子也要进行累加
                     qlm.row(idx).plus2this(Qlmi);
@@ -1599,7 +1599,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
         tNN.fill(1.0);
         
         // 遍历计算 Qlm，这里直接判断原子位置是否是需要计算的然后跳过
-        mNL.setRCut(aRNearestQ).build();
+        mNl.setRCut(aRNearestQ).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 一次计算一行
             final IComplexVector qlmi = qlm.row(i);
@@ -1610,7 +1610,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
             // 再累加近邻
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnnQ, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnnQ, (dx, dy, dz, idx) -> {
                 // 直接按行累加即可
                 qlmi.plus2this(Qlm.row(idx));
                 // 统计近邻数
@@ -2338,14 +2338,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) {
             // 统一获取行向量
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             if (aNnnS > 0) {
-                mNL.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
                     // 统一获取行向量
                     IComplexVector Qlmj = Qlm.row(idx);
                     // 计算复向量的点乘
@@ -2356,7 +2356,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                     }
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     IComplexVector Qlmj = Qlm.row(idx);
                     ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                     if (Sij.norm() > aConnectThreshold) {
@@ -2464,14 +2464,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 Qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 统一获取行向量
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
                 // 统一获取行向量
                 IComplexVector Qlmj = Qlm.row(idx);
                 // 计算复向量的点乘
@@ -2622,14 +2622,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) {
             // 统一获取行向量
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             if (aNnnS > 0) {
-                mNL.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
                     // 统一获取行向量
                     IComplexVector qlmj = qlm.row(idx);
                     // 计算复向量的点乘
@@ -2640,7 +2640,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                     }
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     IComplexVector qlmj = qlm.row(idx);
                     ComplexDouble Sij = qlmi.operation().dot(qlmj);
                     if (Sij.norm() > aConnectThreshold) {
@@ -2740,14 +2740,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 统一获取行向量
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
                 // 统一获取行向量
                 IComplexVector qlmj = qlm.row(idx);
                 // 计算复向量的点乘
@@ -2904,14 +2904,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) {
             // 统一获取行向量
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             if (aNnnS > 0) {
-                mNL.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
                     // 统一获取行向量
                     IComplexVector Qlmj = Qlm.row(idx);
                     // 计算复向量的点乘
@@ -2924,7 +2924,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                     tNN.increment(fI);
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     IComplexVector Qlmj = Qlm.row(idx);
                     ComplexDouble Sij = Qlmi.operation().dot(Qlmj);
                     if (Sij.norm() > aConnectThreshold) {
@@ -3040,14 +3040,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 Qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 统一获取行向量
             final IComplexVector Qlmi = Qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
                 // 统一获取行向量
                 IComplexVector Qlmj = Qlm.row(idx);
                 // 计算复向量的点乘
@@ -3205,14 +3205,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) {
             // 统一获取行向量
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             if (aNnnS > 0) {
-                mNL.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, aNnnS, (dx, dy, dz, idx) -> {
                     // 统一获取行向量
                     IComplexVector qlmj = qlm.row(idx);
                     // 计算复向量的点乘
@@ -3225,7 +3225,7 @@ public class AtomicParameterCalculator implements AutoCloseable {
                     tNN.increment(fI);
                 });
             } else {
-                mNL.forEach(i, true, (dx, dy, dz, idx) -> {
+                mNl.forEach(i, true, (dx, dy, dz, idx) -> {
                     IComplexVector qlmj = qlm.row(idx);
                     ComplexDouble Sij = qlmi.operation().dot(qlmj);
                     if (Sij.norm() > aConnectThreshold) {
@@ -3332,14 +3332,14 @@ public class AtomicParameterCalculator implements AutoCloseable {
         }
         
         // 计算近邻上 qlm 的标量积，根据标量积来统计连接数
-        mNL.setRCut(aRNearestS).build();
+        mNl.setRCut(aRNearestS).build();
         for (int i = 0; i < mNumAtoms; ++i) if (aMPIInfo.inRegin(i)) {
             // 统一获取行向量
             final IComplexVector qlmi = qlm.row(i);
             // 遍历近邻计算连接数
             final int fI = i;
             // 现在简单处理，MPI 部分总是砍掉 half 优化，因为经过正确性验证后很快就要砍掉
-            mNL.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
+            mNl.forEach(fI, aNnnS, (dx, dy, dz, idx) -> {
                 // 统一获取行向量
                 IComplexVector qlmj = qlm.row(idx);
                 // 计算复向量的点乘

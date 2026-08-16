@@ -147,7 +147,7 @@ public class AseCalculator extends AbstractPotential {
         if (mAtoms == null) throw new IllegalStateException("Need `setData` first");
         // 按照难度逆序计算，可以利用 ase 计算器的缓存特性避免重复计算
         if (aRequirePreAtomStress) {
-            if (!mPerAtomStressSupport) throw new UnsupportedOperationException("calc stresses not supported");
+            if (!mPerAtomStressSupport) throw new UnsupportedOperationException("per-atom stress not supported");
             NDArray<?> tPyStresses;
             try (PyCallable tGetStresses = mAtoms.getAttr("get_stresses", PyCallable.class)) {
                 tPyStresses = tGetStresses.callAs(NDArray.class);
@@ -163,7 +163,7 @@ public class AseCalculator extends AbstractPotential {
             }
         }
         if (aRequireTotalStress) {
-            if (!mStressSupport) throw new UnsupportedOperationException("calc stress not supported");
+            if (!mStressSupport) throw new UnsupportedOperationException("stress not supported");
             NDArray<?> tPyStress;
             try (PyCallable tGetStress = mAtoms.getAttr("get_stress", PyCallable.class)) {
                 tPyStress = tGetStress.callAs(NDArray.class);
@@ -177,7 +177,7 @@ public class AseCalculator extends AbstractPotential {
             mStressXY = tStress.get(5);
         }
         if (aRequireForce) {
-            if (!mForceSupport) throw new UnsupportedOperationException("calc forces not supported");
+            if (!mForceSupport) throw new UnsupportedOperationException("forces not supported");
             NDArray<?> tPyForces;
             try (PyCallable tGetForces = mAtoms.getAttr("get_forces", PyCallable.class)) {
                 tPyForces = tGetForces.callAs(NDArray.class);
@@ -190,7 +190,7 @@ public class AseCalculator extends AbstractPotential {
             }
         }
         if (aRequirePreAtomEnergy) {
-            if (!mPerAtomEnergySupport) throw new UnsupportedOperationException("calc energies not supported");
+            if (!mPerAtomEnergySupport) throw new UnsupportedOperationException("per-atom energy not supported");
             NDArray<?> tPyEnergies;
             try (PyCallable tGetEnergies = mAtoms.getAttr("get_potential_energies", PyCallable.class)) {
                 tPyEnergies = tGetEnergies.callAs(NDArray.class);
@@ -199,7 +199,7 @@ public class AseCalculator extends AbstractPotential {
             mEnergies.fill(tEnergies);
         }
         if (aRequireTotalEnergy) {
-            if (!mEnergySupport) throw new UnsupportedOperationException("calc energy not supported");
+            if (!mEnergySupport) throw new UnsupportedOperationException("energy not supported");
             try (PyCallable tGetEnergy = mAtoms.getAttr("get_potential_energy", PyCallable.class)) {
                 mEnergy = tGetEnergy.callAs(Number.class).doubleValue();
             }

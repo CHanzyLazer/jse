@@ -482,9 +482,14 @@ public class NNAP extends AbstractPairPotential {
         if (mCudaNlGetter!=null) mCudaNlGetter.close();
     }
     
-    @Override public double rcutMax() {return mRCutMax;}
-    public double rcut(int aType) {
+    @Override public double rcutMax() {
+        return mRCutMax;
+    }
+    @Override public double rcut(int aType) {
         return mBasis[aType-1].rcutMax();
+    }
+    @Override public boolean typewiseCutoff() {
+        return true;
     }
     
     
