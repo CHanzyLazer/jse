@@ -2,7 +2,6 @@ package jsex.nnap;
 
 import jse.atom.AbstractPairPotential;
 import jse.atom.IAtomData;
-import jse.cache.VectorCache;
 import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
@@ -96,11 +95,8 @@ public class NNAP extends AbstractPairPotential {
     final AnyCPointer mFpHyperParam, mFpParam, mNnParam, mNormParam;
     final IDoubleOrFloatCPointer[] mCache;
     private final IDoubleOrFloatCPointer[] mEng;
-    private final IDoubleOrFloatCPointer[] mNlDx, mNlDy, mNlDz, mGradNlDx, mGradNlDy, mGradNlDz;
-    private final IntCPointer[] mNlType, mNlIdx;
-    
-    private final DoubleList[] mNlDxBuf, mNlDyBuf, mNlDzBuf;
-    private final IntList[] mNlTypeBuf, mNlIdxBuf;
+    private final IDoubleOrFloatCPointer[] mCNlDx, mCNlDy, mCNlDz, mCGradNlDx, mCGradNlDy, mCGradNlDz;
+    private final IntCPointer[] mCNlType, mCNlIdx;
     
     final int mTotCParamSize, mTotGradCParamSize, mTotParamSize;
     final IDoubleOrFloatCPointer mTotCParam;
@@ -112,7 +108,7 @@ public class NNAP extends AbstractPairPotential {
     // cuda stuff
     private FloatCPointer mFltBuf = null;
     private FloatCudaPointer mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaBufNlSize = null, mCudaBufNl = null;
+    private IntCudaPointer mCudaBufNlSize = null, mCudaBufNlIdx = null;
     private FloatCudaPointer mCudaBufNlFx = null, mCudaBufNlFy = null, mCudaBufNlFz = null;
     private IntCudaPointer mCudaNMerges = null, mCudaLmpType2NNAPType = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
@@ -186,37 +182,27 @@ public class NNAP extends AbstractPairPotential {
             mPtrMngPar[ti] = new PointerManager();
         }
         mOutNums = mPtrMngTot.newIntCPointer(16);
-        mNlDx = new IDoubleOrFloatCPointer[aNumThreads];
-        mNlDy = new IDoubleOrFloatCPointer[aNumThreads];
-        mNlDz = new IDoubleOrFloatCPointer[aNumThreads];
-        mNlType = new IntCPointer[aNumThreads];
-        mNlIdx = new IntCPointer[aNumThreads];
-        mGradNlDx = new IDoubleOrFloatCPointer[aNumThreads];
-        mGradNlDy = new IDoubleOrFloatCPointer[aNumThreads];
-        mGradNlDz = new IDoubleOrFloatCPointer[aNumThreads];
+        mCNlDx = new IDoubleOrFloatCPointer[aNumThreads];
+        mCNlDy = new IDoubleOrFloatCPointer[aNumThreads];
+        mCNlDz = new IDoubleOrFloatCPointer[aNumThreads];
+        mCNlType = new IntCPointer[aNumThreads];
+        mCNlIdx = new IntCPointer[aNumThreads];
+        mCGradNlDx = new IDoubleOrFloatCPointer[aNumThreads];
+        mCGradNlDy = new IDoubleOrFloatCPointer[aNumThreads];
+        mCGradNlDz = new IDoubleOrFloatCPointer[aNumThreads];
         mEng = new IDoubleOrFloatCPointer[aNumThreads];
         mCache = new IDoubleOrFloatCPointer[aNumThreads];
-        mNlDxBuf = new DoubleList[aNumThreads];
-        mNlDyBuf = new DoubleList[aNumThreads];
-        mNlDzBuf = new DoubleList[aNumThreads];
-        mNlTypeBuf = new IntList[aNumThreads];
-        mNlIdxBuf = new IntList[aNumThreads];
         for (int ti = 0; ti < aNumThreads; ++ti) {
-            mNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mNlType[ti] = mPtrMngPar[ti].newIntCPointer();
-            mNlIdx[ti] = mPtrMngPar[ti].newIntCPointer();
-            mGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mGradNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mGradNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCNlType[ti] = mPtrMngPar[ti].newIntCPointer();
+            mCNlIdx[ti] = mPtrMngPar[ti].newIntCPointer();
+            mCGradNlDx[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCGradNlDy[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mCGradNlDz[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mEng[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 1);
             mCache[ti] = mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mNlDxBuf[ti] = new DoubleList(16);
-            mNlDyBuf[ti] = new DoubleList(16);
-            mNlDzBuf[ti] = new DoubleList(16);
-            mNlTypeBuf[ti] = new IntList(16);
-            mNlIdxBuf[ti] = new IntList(16);
         }
         // 初始化参数数组
         int tTotCParamSize = 0, tTotGradCParamSize = 0, tTotParamSize = 0;
@@ -491,111 +477,81 @@ public class NNAP extends AbstractPairPotential {
     @Override public boolean typewiseCutoff() {
         return true;
     }
+    public double fpSize(int aType) {
+        return mBasis[aType-1].size();
+    }
     
     
-    private int buildNL_(int aThreadID, IDxyzTypeIdxIterable aNL, double aRCut, boolean aRequireGrad) {
+    @ApiStatus.Experimental @Override
+    public double calEnergySingle(int aThreadID, int aCType,
+                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        if (isClosed()) throw new IllegalStateException("This NNAP is dead");
+        checkType(aCType);
         PointerManager tPtrMng = mPtrMngPar[aThreadID];
-        final DoubleList tNlDxBuf = mNlDxBuf[aThreadID], tNlDyBuf = mNlDyBuf[aThreadID], tNlDzBuf = mNlDzBuf[aThreadID];
-        final IntList tNlTypeBuf = mNlTypeBuf[aThreadID], tNlIdxBuf = mNlIdxBuf[aThreadID];
-        IDoubleOrFloatCPointer tNlDx = mNlDx[aThreadID], tNlDy = mNlDy[aThreadID], tNlDz = mNlDz[aThreadID];
-        IDoubleOrFloatCPointer tGradNlDx = mGradNlDx[aThreadID], tGradNlDy = mGradNlDy[aThreadID], tGradNlDz = mGradNlDz[aThreadID];
-        IntCPointer tNlType = mNlType[aThreadID];
-        final int tNumTypes = ntypes();
-        final double tRCutsq = aRCut*aRCut;
-        // 缓存情况需要先清空这些
-        tNlDxBuf.clear(); tNlDyBuf.clear(); tNlDzBuf.clear();
-        tNlTypeBuf.clear(); tNlIdxBuf.clear();
-        aNL.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-            if (type > tNumTypes) throw new IllegalArgumentException("Exist type ("+type+") greater than the input ntypes ("+tNumTypes+")");
-            // 需要重新进行近邻检查，由于不同种类的截断半径会有所不同
-            double rsq = dx*dx + dy*dy + dz*dz;
-            if (rsq >= tRCutsq) return;
-            // 简单缓存近邻列表
-            tNlDxBuf.add(dx); tNlDyBuf.add(dy); tNlDzBuf.add(dz);
-            tNlTypeBuf.add(type); tNlIdxBuf.add(idx);
-        });
-        int tNlSize = tNlIdxBuf.size();
-        tPtrMng.ensureCapacity(tNlDx, tNlSize); tNlDx.fillD(tNlDxBuf);
-        tPtrMng.ensureCapacity(tNlDy, tNlSize); tNlDy.fillD(tNlDyBuf);
-        tPtrMng.ensureCapacity(tNlDz, tNlSize); tNlDz.fillD(tNlDzBuf);
-        tPtrMng.ensureCapacity(tNlType, tNlSize); tNlType.fill(tNlTypeBuf);
-        if (aRequireGrad) {
-            tPtrMng.ensureCapacity(tGradNlDx, tNlSize);
-            tPtrMng.ensureCapacity(tGradNlDy, tNlSize);
-            tPtrMng.ensureCapacity(tGradNlDz, tNlSize);
-        }
-        return tNlSize;
+        IDoubleOrFloatCPointer tCNlDx = mCNlDx[aThreadID], tCNlDy = mCNlDy[aThreadID], tCNlDz = mCNlDz[aThreadID];
+        IntCPointer tCNlType = mCNlType[aThreadID];
+        int tNlSize = aNlDx.size();
+        tPtrMng.ensureCapacity(tCNlDx, tNlSize); tCNlDx.fillD(aNlDx);
+        tPtrMng.ensureCapacity(tCNlDy, tNlSize); tCNlDy.fillD(aNlDy);
+        tPtrMng.ensureCapacity(tCNlDz, tNlSize); tCNlDz.fillD(aNlDz);
+        tPtrMng.ensureCapacity(tCNlType, tNlSize); tCNlType.fill(aNlType);
+        return calEnergySingle(
+            aThreadID, aCType, tNlSize,
+            tCNlDx, tCNlDy, tCNlDz, tCNlType
+        );
     }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     */
-    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) throws Exception {
+    @ApiStatus.Experimental @Override
+    public double calEnergyForceSingle(int aThreadID, int aCType,
+                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
+                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
         if (isClosed()) throw new IllegalStateException("This NNAP is dead");
-        if (mCuda) throw new IllegalStateException();
-        aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
-            // 近邻列表构建以及相关值设置
-            int tNlSize = buildNL_(threadID, nl, mBasis[cType-1].rcutMax(), false);
-            double tEng = calEnergy(
-                threadID, cType, tNlSize,
-                mNlDx[threadID], mNlDy[threadID], mNlDz[threadID], mNlType[threadID]
-            );
-            rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
-        });
+        checkType(aCType);
+        PointerManager tPtrMng = mPtrMngPar[aThreadID];
+        IDoubleOrFloatCPointer tCNlDx = mCNlDx[aThreadID], tCNlDy = mCNlDy[aThreadID], tCNlDz = mCNlDz[aThreadID];
+        IDoubleOrFloatCPointer rCGradNlDx = mCGradNlDx[aThreadID], rCGradNlDy = mCGradNlDy[aThreadID], rCGradNlDz = mCGradNlDz[aThreadID];
+        IntCPointer tCNlType = mCNlType[aThreadID];
+        int tNlSize = aNlDx.size();
+        tPtrMng.ensureCapacity(tCNlDx, tNlSize); tCNlDx.fillD(aNlDx);
+        tPtrMng.ensureCapacity(tCNlDy, tNlSize); tCNlDy.fillD(aNlDy);
+        tPtrMng.ensureCapacity(tCNlDz, tNlSize); tCNlDz.fillD(aNlDz);
+        tPtrMng.ensureCapacity(tCNlType, tNlSize); tCNlType.fill(aNlType);
+        tPtrMng.ensureCapacity(rCGradNlDx, tNlSize);
+        tPtrMng.ensureCapacity(rCGradNlDy, tNlSize);
+        tPtrMng.ensureCapacity(rCGradNlDz, tNlSize);
+        double tEng = calEnergyForceSingle(
+            aThreadID, aCType, tNlSize,
+            tCNlDx, tCNlDy, tCNlDz, tCNlType,
+            rCGradNlDx, rCGradNlDy, rCGradNlDz
+        );
+        rCGradNlDx.parse2destD(rGradNlDx);
+        rCGradNlDy.parse2destD(rGradNlDy);
+        rCGradNlDz.parse2destD(rGradNlDz);
+        return tEng;
     }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     * @param rForceAccumulator {@inheritDoc}
-     * @param rVirialAccumulator {@inheritDoc}
-     */
-    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
+    @ApiStatus.Experimental
+    public Vector calFpSingle(int aThreadID, int aCType,
+                              DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
         if (isClosed()) throw new IllegalStateException("This NNAP is dead");
-        if (mCuda) throw new IllegalStateException();
-        aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
-            IDoubleOrFloatCPointer tGradNlDx = mGradNlDx[threadID];
-            IDoubleOrFloatCPointer tGradNlDy = mGradNlDy[threadID];
-            IDoubleOrFloatCPointer tGradNlDz = mGradNlDz[threadID];
-            DoubleList tNlDxBuf = mNlDxBuf[threadID];
-            DoubleList tNlDyBuf = mNlDyBuf[threadID];
-            DoubleList tNlDzBuf = mNlDzBuf[threadID];
-            IntList tNlIdxBuf = mNlIdxBuf[threadID];
-            // 近邻列表构建以及相关值设置
-            int tNlSize = buildNL_(threadID, nl, mBasis[cType-1].rcutMax(), true);
-            double tEng = calEnergyForce(
-                threadID, cType, tNlSize,
-                mNlDx[threadID], mNlDy[threadID], mNlDz[threadID], mNlType[threadID],
-                tGradNlDx, tGradNlDy, tGradNlDz
-            );
-            if (rEnergyAccumulator != null) {
-                rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
-            }
-            // 累加交叉项到近邻
-            for (int j = 0; j < tNlSize; ++j) {
-                double dx = tNlDxBuf.get(j);
-                double dy = tNlDyBuf.get(j);
-                double dz = tNlDzBuf.get(j);
-                int idx = tNlIdxBuf.get(j);
-                // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查；
-                // 直接遍历查询不走合并了，实测专门合并还会影响效率
-                double fx = tGradNlDx.getAtD(j);
-                double fy = tGradNlDy.getAtD(j);
-                double fz = tGradNlDz.getAtD(j);
-                if (rForceAccumulator != null) {
-                    rForceAccumulator.add(threadID, cIdx, idx, fx, fy, fz);
-                }
-                if (rVirialAccumulator != null) {
-                    // GPUMD 给出的更具对称性的形式要求累加到近邻的 index 上
-                    rVirialAccumulator.add(threadID, -1, idx, fx, fy, fz, dx, dy, dz);
-                }
-            }
-        });
+        checkType(aCType);
+        PointerManager tPtrMng = mPtrMngPar[aThreadID];
+        IDoubleOrFloatCPointer tCNlDx = mCNlDx[aThreadID], tCNlDy = mCNlDy[aThreadID], tCNlDz = mCNlDz[aThreadID];
+        IntCPointer tCNlType = mCNlType[aThreadID];
+        int tNlSize = aNlDx.size();
+        tPtrMng.ensureCapacity(tCNlDx, tNlSize); tCNlDx.fillD(aNlDx);
+        tPtrMng.ensureCapacity(tCNlDy, tNlSize); tCNlDy.fillD(aNlDy);
+        tPtrMng.ensureCapacity(tCNlDz, tNlSize); tCNlDz.fillD(aNlDz);
+        tPtrMng.ensureCapacity(tCNlType, tNlSize); tCNlType.fill(aNlType);
+        int tFpSize = mBasis[aCType-1].size();
+        IDoubleOrFloatCPointer rFpPtr = mCache[aThreadID];
+        mPtrMngPar[aThreadID].ensureCapacity(rFpPtr, tFpSize);
+        calFpSingle(
+            aThreadID, aCType, tNlSize,
+            tCNlDx, tCNlDy, tCNlDz, tCNlType,
+            rFpPtr
+        );
+        Vector rFp = Vectors.zeros(tFpSize);
+        rFpPtr.parse2destD(rFp);
+        return rFp;
     }
     
     /**
@@ -609,29 +565,17 @@ public class NNAP extends AbstractPairPotential {
         if (mCuda) throw new IllegalStateException();
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
         int tNumAtoms = aAtomData.natoms();
-        List<Vector> rFps = new ArrayList<>(tNumAtoms);
-        for (int i = 0; i < tNumAtoms; ++i) {
-            int cType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
-            rFps.add(VectorCache.getVec(mBasis[cType-1].size()));
-        }
-        mNL.setData(aAtomData).setRCut(rcutMax()).build();
-        pool_().parfor(tNumAtoms, (i, threadID) -> {
-            final int cType = tTypeMap.applyAsInt(mNL.typeAt(i));
-            int tNlSize = buildNL_(threadID, (dxyzTypeDo) -> {
-                mNL.forEach(i, (dx, dy, dz, idx) -> {
-                    int tType = tTypeMap.applyAsInt(mNL.typeAt(idx));
-                    dxyzTypeDo.run(dx, dy, dz, tType, idx);
-                });
-            }, mBasis[cType-1].rcutMax(), false);
-            int tFpSize = mBasis[cType-1].size();
-            IDoubleOrFloatCPointer rFpPtr = mCache[threadID];
-            mPtrMngPar[threadID].ensureCapacity(rFpPtr, tFpSize);
-            calFp(
-                threadID, cType, tNlSize,
-                mNlDx[threadID], mNlDy[threadID], mNlDz[threadID], mNlType[threadID],
-                rFpPtr
+        List<Vector> rFps = NewCollections.nulls(tNumAtoms);
+        mNl.setData(aAtomData).setRCut(rcutMax()).build();
+        mPool.parfor(tNumAtoms, (i, threadID) -> {
+            final int ctype = tTypeMap.applyAsInt(mNl.typeAt(i));
+            checkType(ctype);
+            initBufNl(threadID, i, false);
+            Vector tFp = calFpSingle(
+                threadID, ctype,
+                mNlDxPar[threadID], mNlDyPar[threadID], mNlDzPar[threadID], mNlTypePar[threadID]
             );
-            rFpPtr.parse2destD(rFps.get(i));
+            rFps.set(i, tFp);
         });
         return rFps;
     }
@@ -751,9 +695,9 @@ public class NNAP extends AbstractPairPotential {
     
     
     /// jit stuffs
-    public void calFp(int aThreadID, int aCType, int aNlSize,
-                      IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,
-                      IDoubleOrFloatCPointer rFp) {
+    public void calFpSingle(int aThreadID, int aCType, int aNlSize,
+                            IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,
+                            IDoubleOrFloatCPointer rFp) {
         if (isClosed()) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
         // 调用 jit 方法获取结果
@@ -763,8 +707,8 @@ public class NNAP extends AbstractPairPotential {
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
     }
-    public double calEnergy(int aThreadID, int aCType, int aNlSize,
-                            IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType) {
+    public double calEnergySingle(int aThreadID, int aCType, int aNlSize,
+                                  IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType) {
         if (isClosed()) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
         IDoubleOrFloatCPointer tEng = mEng[aThreadID];
@@ -777,9 +721,9 @@ public class NNAP extends AbstractPairPotential {
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
         return tEng.getD();
     }
-    public double calEnergyForce(int aThreadID, int aCType, int aNlSize,
-                                 IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,
-                                 IDoubleOrFloatCPointer rGradNlDx, IDoubleOrFloatCPointer rGradNlDy, IDoubleOrFloatCPointer rGradNlDz) {
+    public double calEnergyForceSingle(int aThreadID, int aCType, int aNlSize,
+                                       IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,
+                                       IDoubleOrFloatCPointer rGradNlDx, IDoubleOrFloatCPointer rGradNlDy, IDoubleOrFloatCPointer rGradNlDz) {
         if (isClosed()) throw new IllegalStateException("This NNAP is dead");
         if (mCuda) throw new IllegalStateException();
         IDoubleOrFloatCPointer tEng = mEng[aThreadID];
@@ -887,14 +831,14 @@ public class NNAP extends AbstractPairPotential {
     
     /// lammps stuff
     private void validNlLammps_(int aNlSize) {
-        mPtrMngPar[0].ensureCapacity(mNlDx[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mNlDy[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mNlDz[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mNlType[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mNlIdx[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDx[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDy[0], aNlSize);
-        mPtrMngPar[0].ensureCapacity(mGradNlDz[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCNlDx[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCNlDy[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCNlDz[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCNlType[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCNlIdx[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCGradNlDx[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCGradNlDy[0], aNlSize);
+        mPtrMngPar[0].ensureCapacity(mCGradNlDz[0], aNlSize);
         for (int i = 0; i < mSymbols.length; ++i) {
             mPtrMngPar[0].ensureCapacity(mCache[0], mBasis[i].forwardCacheSize(aNlSize));
         }
@@ -921,8 +865,8 @@ public class NNAP extends AbstractPairPotential {
             numneigh, aPair.listFirstneigh(), aPair.mCutsq,
             aPair.mLmpType2NNAPType, aPair.mTypeIlist, aPair.mTypeInum,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mNlDx[0], mNlDy[0], mNlDz[0], mNlType[0], mNlIdx[0],
-            mGradNlDx[0], mGradNlDy[0], mGradNlDz[0],
+            mCNlDx[0], mCNlDy[0], mCNlDz[0], mCNlType[0], mCNlIdx[0],
+            mCGradNlDx[0], mCGradNlDy[0], mCGradNlDz[0],
             mFpHyperParam, mFpParam, mNnParam, mNormParam,
             mCache[0]
         );
@@ -956,7 +900,7 @@ public class NNAP extends AbstractPairPotential {
         mCudaVatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom1 = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
-        mCudaBufNl = mPtrMngTot.newIntCudaPointer();
+        mCudaBufNlIdx = mPtrMngTot.newIntCudaPointer();
         mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
         mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
@@ -985,7 +929,7 @@ public class NNAP extends AbstractPairPotential {
         mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
         final int tTotNlSize = nlocal*mCudaNlGetter.nlmax();
-        mPtrMngTot.ensureCapacity(mCudaBufNl, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaBufNlIdx, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
         mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
@@ -1004,7 +948,7 @@ public class NNAP extends AbstractPairPotential {
             mCudaCache,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
             mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,
-            mCudaBufNlSize, mCudaBufNl
+            mCudaBufNlSize, mCudaBufNlIdx
         );
         CudaCore.cudaExceptionCheck(tCode);
         mCudaComputeTimer.to();

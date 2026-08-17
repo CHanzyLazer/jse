@@ -13,6 +13,7 @@ import jse.gpu.*;
 import jse.jit.IJITEngine;
 import jse.jit.IJITMethod;
 import jse.jit.SimpleJIT;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -107,123 +108,73 @@ public class NEP extends AbstractPairPotential {
     @Override public double rcutMax() {return Math.max(paramb.rc_radial, paramb.rc_angular);}
     
     
-    private final DoubleList mNlDxBuf = new DoubleList(16), mNlDyBuf = new DoubleList(16), mNlDzBuf = new DoubleList(16);
-    private final IntList mNlTypeBuf = new IntList(16), mNlIdxBuf = new IntList(16);
-    
-    private int buildNL_(IDxyzTypeIdxIterable aNL) {
-        final int tTypeNum = this.ntypes();
-        // 缓存情况需要先清空这些
-        mNlDxBuf.clear(); mNlDyBuf.clear(); mNlDzBuf.clear();
-        mNlTypeBuf.clear(); mNlIdxBuf.clear();
-        aNL.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-            // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查
-            if (type > tTypeNum) throw new IllegalArgumentException("Exist type ("+type+") greater than the input typeNum ("+tTypeNum+")");
-            // 简单缓存近邻列表
-            mNlDxBuf.add(dx); mNlDyBuf.add(dy); mNlDzBuf.add(dz);
-            mNlTypeBuf.add(type-1); mNlIdxBuf.add(idx);
-        });
-        int tNeiNum = mNlIdxBuf.size();
-        mPtrMng.ensureCapacity(mNlDx, tNeiNum); mNlDx.fillD(mNlDxBuf);
-        mPtrMng.ensureCapacity(mNlDy, tNeiNum); mNlDy.fillD(mNlDyBuf);
-        mPtrMng.ensureCapacity(mNlDz, tNeiNum); mNlDz.fillD(mNlDzBuf);
-        mPtrMng.ensureCapacity(mNlType, tNeiNum); mNlType.fill(mNlTypeBuf);
-        mPtrMng.ensureCapacity(mNlFx, tNeiNum);
-        mPtrMng.ensureCapacity(mNlFy, tNeiNum);
-        mPtrMng.ensureCapacity(mNlFz, tNeiNum);
-        return tNeiNum;
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     */
-    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) throws Exception {
+    @ApiStatus.Experimental @Override
+    public double calEnergySingle(int aThreadID, int aCType,
+                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
+        checkType(aCType);
+        int tNlSize = aNlDx.size();
+        mPtrMng.ensureCapacity(mCNlDx, tNlSize); mCNlDx.fillD(aNlDx);
+        mPtrMng.ensureCapacity(mCNlDy, tNlSize); mCNlDy.fillD(aNlDy);
+        mPtrMng.ensureCapacity(mCNlDz, tNlSize); mCNlDz.fillD(aNlDz);
+        mPtrMng.ensureCapacity(mCNlType, tNlSize); mCNlType.fill(aNlType);
         mPtrMng.ensureCapacity(Fp, annmb.dim);
         mPtrMng.ensureCapacity(sum_fxyz, (long) (paramb.n_max_angular + 1)*NUM_OF_ABC);
-        aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
-            // 近邻列表构建以及相关值设置
-            int tNeiNum = buildNL_(nl);
-            // 调用 jit 方法获取结果
-            mCalEnergy.invoke(
-                mNlDx, mNlDy, mNlDz, mNlType, tNeiNum, cType-1,
-                paramb.atomic_numbers, paramb.q_scaler,
-                annmb.w0, annmb.b0, annmb.w1, annmb.b1, annmb.c,
-                zbl.para, gn_radial, gn_angular,
-                mOutEng, mNlFx, mNlFy, mNlFz,
-                Fp, sum_fxyz
-            );
-            double tEng = mOutEng.getD();
-            rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
-        });
+        mCalEnergy.invoke(
+            mCNlDx, mCNlDy, mCNlDz, mCNlType, tNlSize, aCType-1,
+            paramb.atomic_numbers, paramb.q_scaler,
+            annmb.w0, annmb.b0, annmb.w1, annmb.b1, annmb.c,
+            zbl.para, gn_radial, gn_angular,
+            mOutEng, mCNlFx, mCNlFy, mCNlFz,
+            Fp, sum_fxyz
+        );
+        return mOutEng.getD();
     }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     * @param rForceAccumulator {@inheritDoc}
-     * @param rVirialAccumulator {@inheritDoc}
-     */
-    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
+    @ApiStatus.Experimental @Override
+    public double calEnergyForceSingle(int aThreadID, int aCType,
+                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
+                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
+        checkType(aCType);
+        int tNlSize = aNlDx.size();
+        mPtrMng.ensureCapacity(mCNlDx, tNlSize); mCNlDx.fillD(aNlDx);
+        mPtrMng.ensureCapacity(mCNlDy, tNlSize); mCNlDy.fillD(aNlDy);
+        mPtrMng.ensureCapacity(mCNlDz, tNlSize); mCNlDz.fillD(aNlDz);
+        mPtrMng.ensureCapacity(mCNlType, tNlSize); mCNlType.fill(aNlType);
+        mPtrMng.ensureCapacity(mCNlFx, tNlSize);
+        mPtrMng.ensureCapacity(mCNlFy, tNlSize);
+        mPtrMng.ensureCapacity(mCNlFz, tNlSize);
         mPtrMng.ensureCapacity(Fp, annmb.dim);
         mPtrMng.ensureCapacity(sum_fxyz, (long) (paramb.n_max_angular + 1)*NUM_OF_ABC);
-        aNeighborListGetter.forEachNLWithException(null, null, (threadID, cIdx, cType, nl) -> {
-            // 近邻列表构建以及相关值设置
-            int tNeiNum = buildNL_(nl);
-            // 调用 jit 方法获取结果
-            mCalEnergyForce.invoke(
-                mNlDx, mNlDy, mNlDz, mNlType, tNeiNum, cType-1,
-                paramb.atomic_numbers, paramb.q_scaler,
-                annmb.w0, annmb.b0, annmb.w1, annmb.b1, annmb.c,
-                zbl.para, gn_radial, gn_angular, gnp_radial, gnp_angular,
-                mOutEng, mNlFx, mNlFy, mNlFz,
-                Fp, sum_fxyz
-            );
-            double tEng = mOutEng.getD();
-            if (rEnergyAccumulator != null) {
-                rEnergyAccumulator.add(threadID, cIdx, -1, tEng);
-            }
-            // 累加交叉项到近邻
-            for (int j = 0; j < tNeiNum; ++j) {
-                double dx = mNlDxBuf.get(j);
-                double dy = mNlDyBuf.get(j);
-                double dz = mNlDzBuf.get(j);
-                int idx = mNlIdxBuf.get(j);
-                // 为了效率这里不进行近邻检查，因此需要上层近邻列表提供时进行检查；
-                // 直接遍历查询不走合并了，实测专门合并还会影响效率
-                double fx = mNlFx.getAtD(j);
-                double fy = mNlFy.getAtD(j);
-                double fz = mNlFz.getAtD(j);
-                if (rForceAccumulator != null) {
-                    rForceAccumulator.add(threadID, cIdx, idx, fx, fy, fz);
-                }
-                if (rVirialAccumulator != null) {
-                    // GPUMD 给出的更具对称性的形式要求累加到近邻的 index 上
-                    rVirialAccumulator.add(threadID, -1, idx, fx, fy, fz, dx, dy, dz);
-                }
-            }
-        });
+        mCalEnergyForce.invoke(
+            mCNlDx, mCNlDy, mCNlDz, mCNlType, tNlSize, aCType-1,
+            paramb.atomic_numbers, paramb.q_scaler,
+            annmb.w0, annmb.b0, annmb.w1, annmb.b1, annmb.c,
+            zbl.para, gn_radial, gn_angular, gnp_radial, gnp_angular,
+            mOutEng, mCNlFx, mCNlFy, mCNlFz,
+            Fp, sum_fxyz
+        );
+        double tEng = mOutEng.getD();
+        mCNlFx.parse2destD(rGradNlDx);
+        mCNlFy.parse2destD(rGradNlDy);
+        mCNlFz.parse2destD(rGradNlDz);
+        return tEng;
     }
     
     
-    private void validNlLammps_(int aNeiNum) {
-        mPtrMng.ensureCapacity(mNlDx, aNeiNum);
-        mPtrMng.ensureCapacity(mNlDy, aNeiNum);
-        mPtrMng.ensureCapacity(mNlDz, aNeiNum);
-        mPtrMng.ensureCapacity(mNlType, aNeiNum);
-        mPtrMng.ensureCapacity(mNlIdx, aNeiNum);
-        mPtrMng.ensureCapacity(mNlFx, aNeiNum);
-        mPtrMng.ensureCapacity(mNlFy, aNeiNum);
-        mPtrMng.ensureCapacity(mNlFz, aNeiNum);
+    private void validNlLammps_(int aNlSize) {
+        mPtrMng.ensureCapacity(mCNlDx, aNlSize);
+        mPtrMng.ensureCapacity(mCNlDy, aNlSize);
+        mPtrMng.ensureCapacity(mCNlDz, aNlSize);
+        mPtrMng.ensureCapacity(mCNlType, aNlSize);
+        mPtrMng.ensureCapacity(mCNlIdx, aNlSize);
+        mPtrMng.ensureCapacity(mCNlFx, aNlSize);
+        mPtrMng.ensureCapacity(mCNlFy, aNlSize);
+        mPtrMng.ensureCapacity(mCNlFz, aNlSize);
     }
     void computeLammps(PairNEP aPair) {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
@@ -244,11 +195,11 @@ public class NEP extends AbstractPairPotential {
             aPair.atomX(), aPair.atomF(), aPair.atomType(),
             ilist, numneigh, aPair.listFirstneigh(), aPair.mCutoffsq, aPair.mTypeMap,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mNlDx, mNlDy, mNlDz, mNlType, mNlIdx,
+            mCNlDx, mCNlDy, mCNlDz, mCNlType, mCNlIdx,
             paramb.atomic_numbers, paramb.q_scaler,
             annmb.w0, annmb.b0, annmb.w1, annmb.b1, annmb.c,
             zbl.para, gn_radial, gn_angular, gnp_radial, gnp_angular,
-            mNlFx, mNlFy, mNlFz,
+            mCNlFx, mCNlFy, mCNlFz,
             Fp, sum_fxyz
         );
     }
@@ -550,9 +501,9 @@ public class NEP extends AbstractPairPotential {
     boolean mInited = false, mSingle = false, mCuda = true;
     IntCPointer mOutNums = mPtrMng.newIntCPointer(16);
     IDoubleOrFloatCPointer mOutEng = null;
-    IDoubleOrFloatCPointer mNlDx = null, mNlDy = null, mNlDz = null;
-    IDoubleOrFloatCPointer mNlFx = null, mNlFy = null, mNlFz = null;
-    IntCPointer mNlType = null, mNlIdx = null;
+    IDoubleOrFloatCPointer mCNlDx = null, mCNlDy = null, mCNlDz = null;
+    IDoubleOrFloatCPointer mCNlFx = null, mCNlFy = null, mCNlFz = null;
+    IntCPointer mCNlType = null, mCNlIdx = null;
     
     /// gpu stuffs
     // cpu 数据
@@ -1013,14 +964,14 @@ public class NEP extends AbstractPairPotential {
         gnp_angular = mPtrMng.newDoubleOrFloatCPointer(mSingle);
         
         mOutEng = mPtrMng.newDoubleOrFloatCPointer(mSingle, 1);
-        mNlDx = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlDy = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlDz = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlFx = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlFy = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlFz = mPtrMng.newDoubleOrFloatCPointer(mSingle);
-        mNlType = mPtrMng.newIntCPointer();
-        mNlIdx = mPtrMng.newIntCPointer();
+        mCNlDx = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlDy = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlDz = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlFx = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlFy = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlFz = mPtrMng.newDoubleOrFloatCPointer(mSingle);
+        mCNlType = mPtrMng.newIntCPointer();
+        mCNlIdx = mPtrMng.newIntCPointer();
         
         // init cuda pointer here
         if (mCuda) {

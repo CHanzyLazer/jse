@@ -2,7 +2,6 @@ package jse.atom;
 
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
-import jse.cptr.IDoubleOrFloatCPointer;
 import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;

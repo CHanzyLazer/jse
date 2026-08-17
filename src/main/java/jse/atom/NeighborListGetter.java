@@ -672,7 +672,7 @@ public class NeighborListGetter implements IHasSymbol {
      */
     public IntList get(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rNL = new IntList(8);
+        IntList rNL = new IntList(16);
         forEach(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL;
     }
@@ -700,7 +700,7 @@ public class NeighborListGetter implements IHasSymbol {
      */
     @ApiStatus.Internal public IntList get_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rNL = new IntList(8);
+        IntList rNL = new IntList(16);
         forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
         return rNL;
     }
@@ -750,10 +750,10 @@ public class NeighborListGetter implements IHasSymbol {
      */
     public List<?> getFull(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rIdx = new IntList();
-        DoubleList rDx = new DoubleList();
-        DoubleList rDy = new DoubleList();
-        DoubleList rDz = new DoubleList();
+        IntList rIdx = new IntList(16);
+        DoubleList rDx = new DoubleList(16);
+        DoubleList rDy = new DoubleList(16);
+        DoubleList rDz = new DoubleList(16);
         forEach(aIdx, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
@@ -786,10 +786,10 @@ public class NeighborListGetter implements IHasSymbol {
      */
     @ApiStatus.Internal public List<?> getFull_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rIdx = new IntList();
-        DoubleList rDx = new DoubleList();
-        DoubleList rDy = new DoubleList();
-        DoubleList rDz = new DoubleList();
+        IntList rIdx = new IntList(16);
+        DoubleList rDx = new DoubleList(16);
+        DoubleList rDy = new DoubleList(16);
+        DoubleList rDz = new DoubleList(16);
         forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);

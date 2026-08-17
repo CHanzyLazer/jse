@@ -70,6 +70,12 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
     private final List<DoubleList> mForcesParRaw = new ArrayList<>();
     private final List<DoubleList> mVirialsParRaw = new ArrayList<>();
     
+    protected final void checkType(int aType) {
+        final int tNumTypes = ntypes();
+        if (tNumTypes>0 && aType>tNumTypes) {
+            throw new IllegalArgumentException("Exist type ("+aType+") greater than the input ntypes ("+tNumTypes+")");
+        }
+    }
     protected final void initBufNl(int aThreadID, int aI, boolean aRequireForce) {
         final DoubleList rNlDx = mNlDxPar[aThreadID], rNlDy = mNlDyPar[aThreadID], rNlDz = mNlDzPar[aThreadID];
         final IntList rNlType = mNlTypePar[aThreadID], rNlIdx = mNlIdxPar[aThreadID];
@@ -80,15 +86,17 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
             mNl.forEach(aI, (dx, dy, dz, idx) -> {
                 double rsq = dx*dx + dy*dy + dz*dz;
                 if (rsq >= tRCutSq) return;
+                int type = mTypeMap.applyAsInt(mNl.typeAt(idx));
+                checkType(type);
                 rNlDx.add(dx); rNlDy.add(dy); rNlDz.add(dz);
-                rNlType.add(mTypeMap.applyAsInt(mNl.typeAt(idx)));
-                rNlIdx.add(idx);
+                rNlType.add(type); rNlIdx.add(idx);
             });
         } else {
             mNl.forEach(aI, (dx, dy, dz, idx) -> {
+                int type = mTypeMap.applyAsInt(mNl.typeAt(idx));
+                checkType(type);
                 rNlDx.add(dx); rNlDy.add(dy); rNlDz.add(dz);
-                rNlType.add(mTypeMap.applyAsInt(mNl.typeAt(idx)));
-                rNlIdx.add(idx);
+                rNlType.add(type); rNlIdx.add(idx);
             });
         }
         if (aRequireForce) {
@@ -112,14 +120,14 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                 mGradNlDyPar = new DoubleList[tNumThreads];
                 mGradNlDzPar = new DoubleList[tNumThreads];
                 for (int i = 0; i < tNumThreads; ++i) {
-                    mNlDxPar[i] = new DoubleList();
-                    mNlDyPar[i] = new DoubleList();
-                    mNlDzPar[i] = new DoubleList();
-                    mNlTypePar[i] = new IntList();
-                    mNlIdxPar[i] = new IntList();
-                    mGradNlDxPar[i] = new DoubleList();
-                    mGradNlDyPar[i] = new DoubleList();
-                    mGradNlDzPar[i] = new DoubleList();
+                    mNlDxPar[i] = new DoubleList(16);
+                    mNlDyPar[i] = new DoubleList(16);
+                    mNlDzPar[i] = new DoubleList(16);
+                    mNlTypePar[i] = new IntList(16);
+                    mNlIdxPar[i] = new IntList(16);
+                    mGradNlDxPar[i] = new DoubleList(16);
+                    mGradNlDyPar[i] = new DoubleList(16);
+                    mGradNlDzPar[i] = new DoubleList(16);
                 }
             }
         }
@@ -339,22 +347,24 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         if (isClosed()) throw new IllegalStateException("This Potential is dead");
         if (aRequirePreAtomEnergy && !perAtomEnergySupport()) throw new UnsupportedOperationException("per-atom energy not supported");
         if (aRequirePreAtomStress && !perAtomStressSupport()) throw new UnsupportedOperationException("per-atom stress not supported");
-        // 构建近邻列表，顺便会检查是否执行了 setData
-        mNl.setRCut(rcutMax()).build();
         // 判断需要的计算等级
         final boolean tCalEnergyForce = aRequireForce || aRequireTotalStress || aRequirePreAtomStress;
         final boolean tCalEnergy = (!tCalEnergyForce) && (aRequireTotalEnergy || aRequirePreAtomEnergy);
         // 什么都不用计算的情况
         if (!tCalEnergy && !tCalEnergyForce) return;
+        // 构建近邻列表，顺便会检查是否执行了 setData
+        mNl.setRCut(rcutMax()).build();
         // 缓存初始化
         initBufPar(true, aRequireTotalEnergy, aRequirePreAtomEnergy, aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
         // 执行计算，默认实现中直接基于 calEnergySingle calEnergyForceSingle
         // 做全近邻遍历的计算，对应非消息传递的局域多体势的通用实现，非多体势可以做进一步优化
         if (tCalEnergy) {
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                checkType(ctype);
                 initBufNl(threadID, i, false);
                 double tEng = calEnergySingle(
-                    threadID, mTypeMap.applyAsInt(mNl.typeAt(i)),
+                    threadID, ctype,
                     mNlDxPar[threadID], mNlDyPar[threadID], mNlDzPar[threadID], mNlTypePar[threadID]
                 );
                 if (aRequireTotalEnergy) {
@@ -368,11 +378,13 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
 //            assert tCalEnergyForce;
             final boolean tCentroid = centroidPerAtomStressSupport();
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                checkType(ctype);
                 initBufNl(threadID, i, true);
                 DoubleList tNlDx = mNlDxPar[threadID], tNlDy = mNlDyPar[threadID], tNlDz = mNlDzPar[threadID];
                 DoubleList rGradNlDx = mGradNlDxPar[threadID], rGradNlDy = mGradNlDyPar[threadID], rGradNlDz = mGradNlDzPar[threadID];
                 double tEng = calEnergyForceSingle(
-                    threadID, mTypeMap.applyAsInt(mNl.typeAt(i)),
+                    threadID, ctype,
                     tNlDx, tNlDy, tNlDz, mNlTypePar[threadID],
                     rGradNlDx, rGradNlDy, rGradNlDz
                 );

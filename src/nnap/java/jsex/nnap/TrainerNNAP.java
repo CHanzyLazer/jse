@@ -1609,7 +1609,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 int tType = tAtomType.get(k);
                 // NNAP 内部缓存使用 NNAP 内部的管理器
                 tPtrMng.ensureCapacity(rFpPtr, mNNAP.mBasis[tType-1].size());
-                mNNAP.calFp(
+                mNNAP.calFpSingle(
                     threadID, tType, tNumNei.get(k),
                     tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
                     rFpPtr
