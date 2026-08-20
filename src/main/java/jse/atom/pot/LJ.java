@@ -1,7 +1,10 @@
 package jse.atom.pot;
 
 import jse.atom.AbstractPairPotential;
+import jse.code.collection.DoubleList;
+import jse.code.collection.IntList;
 import jse.math.MathEX;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -140,64 +143,52 @@ public class LJ extends AbstractPairPotential {
      * @return {@inheritDoc}
      */
     @Override public boolean manybody() {return false;}
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public boolean neighborListHalf() {return true;}
     
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) {
-        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                if (rsq >= mCutsq[cType][type]) return;
-                double r2inv = 1.0 / rsq;
-                double r6inv = r2inv*r2inv*r2inv;
-                double deng = r6inv*(mLJ3[cType][type]*r6inv - mLJ4[cType][type]);
-                if (mShift) deng -= mOffset[cType][type];
-                rEnergyAccumulator.add(threadID, cIdx, idx, deng);
-            });
-        });
+    
+    @ApiStatus.Experimental @Override
+    public double calEnergySingle(int aThreadID, int aCType,
+                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        double tEng = 0.0;
+        final int tNlSize = aNlDx.size();
+        for (int jj = 0; jj < tNlSize; ++jj) {
+            int type = aNlType.get(jj);
+            double dx = aNlDx.get(jj);
+            double dy = aNlDy.get(jj);
+            double dz = aNlDz.get(jj);
+            double rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq >= mCutsq[aCType][type]) continue;
+            double r2inv = 1.0 / rsq;
+            double r6inv = r2inv*r2inv*r2inv;
+            double deng = r6inv*(mLJ3[aCType][type]*r6inv - mLJ4[aCType][type]);
+            if (mShift) deng -= mOffset[aCType][type];
+            tEng += deng*0.5;
+        }
+        return tEng;
     }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     * @param rForceAccumulator {@inheritDoc}
-     * @param rVirialAccumulator {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
-        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                if (rsq >= mCutsq[cType][type]) return;
-                double r2inv = 1.0 / rsq;
-                double r6inv = r2inv*r2inv*r2inv;
-                double fpair = r2inv*r6inv*(mLJ1[cType][type]*r6inv - mLJ2[cType][type]);
-                double fx = dx*fpair;
-                double fy = dy*fpair;
-                double fz = dz*fpair;
-                if (rForceAccumulator != null) {
-                    rForceAccumulator.add(threadID, cIdx, idx, fx, fy, fz);
-                }
-                if (rVirialAccumulator != null) {
-                    rVirialAccumulator.add(threadID, cIdx, idx, fx, fy, fz, dx, dy, dz);
-                }
-                if (rEnergyAccumulator != null) {
-                    double deng = r6inv*(mLJ3[cType][type]*r6inv - mLJ4[cType][type]);
-                    if (mShift) deng -= mOffset[cType][type];
-                    rEnergyAccumulator.add(threadID, cIdx, idx, deng);
-                }
-            });
-        });
+    @ApiStatus.Experimental @Override
+    public double calEnergyForceSingle(int aThreadID, int aCType,
+                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
+                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+        double tEng = 0.0;
+        final int tNlSize = aNlDx.size();
+        for (int jj = 0; jj < tNlSize; ++jj) {
+            int type = aNlType.get(jj);
+            double dx = aNlDx.get(jj);
+            double dy = aNlDy.get(jj);
+            double dz = aNlDz.get(jj);
+            double rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq >= mCutsq[aCType][type]) continue;
+            double r2inv = 1.0 / rsq;
+            double r6inv = r2inv*r2inv*r2inv;
+            double fpair = r2inv*r6inv*(mLJ1[aCType][type]*r6inv - mLJ2[aCType][type]);
+            fpair *= 0.5;
+            rGradNlDx.set(jj, dx*fpair);
+            rGradNlDy.set(jj, dy*fpair);
+            rGradNlDz.set(jj, dz*fpair);
+            double deng = r6inv*(mLJ3[aCType][type]*r6inv - mLJ4[aCType][type]);
+            if (mShift) deng -= mOffset[aCType][type];
+            tEng += deng*0.5;
+        }
+        return tEng;
     }
 }

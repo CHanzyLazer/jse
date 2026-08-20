@@ -1,7 +1,10 @@
 package jse.atom.pot;
 
 import jse.atom.AbstractPairPotential;
+import jse.code.collection.DoubleList;
+import jse.code.collection.IntList;
 import jse.math.MathEX;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -102,61 +105,48 @@ public class Soft extends AbstractPairPotential {
      * @return {@inheritDoc}
      */
     @Override public boolean manybody() {return false;}
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public boolean neighborListHalf() {return true;}
     
     
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public void calEnergy(int aAtomNumber, INeighborListGetter aNeighborListGetter, IEnergyAccumulator rEnergyAccumulator) {
-        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                if (rsq >= mCutsq[cType][type]) return;
-                double deng = mPrefactor[cType][type] * (1.0 + Math.cos(MathEX.PI * Math.sqrt(rsq) / mCut[cType][type]));
-                rEnergyAccumulator.add(threadID, cIdx, idx, deng);
-            });
-        });
+    @ApiStatus.Experimental @Override
+    public double calEnergySingle(int aThreadID, int aCType,
+                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        double tEng = 0.0;
+        final int tNlSize = aNlDx.size();
+        for (int jj = 0; jj < tNlSize; ++jj) {
+            int type = aNlType.get(jj);
+            double dx = aNlDx.get(jj);
+            double dy = aNlDy.get(jj);
+            double dz = aNlDz.get(jj);
+            double rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq >= mCutsq[aCType][type]) continue;
+            double deng = mPrefactor[aCType][type] * (1.0 + Math.cos(MathEX.PI * Math.sqrt(rsq) / mCut[aCType][type]));
+            tEng += deng*0.5;
+        }
+        return tEng;
     }
-    
-    /**
-     * {@inheritDoc}
-     * @param aAtomNumber {@inheritDoc}
-     * @param aNeighborListGetter {@inheritDoc}
-     * @param rEnergyAccumulator {@inheritDoc}
-     * @param rForceAccumulator {@inheritDoc}
-     * @param rVirialAccumulator {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public void calEnergyForceVirial(int aAtomNumber, INeighborListGetter aNeighborListGetter, @Nullable IEnergyAccumulator rEnergyAccumulator, @Nullable IForceAccumulator rForceAccumulator, @Nullable IVirialAccumulator rVirialAccumulator) throws Exception {
-        aNeighborListGetter.forEachNL((threadID, cIdx, cType, nl) -> {
-            nl.forEachDxyzTypeIdx((dx, dy, dz, type, idx) -> {
-                double rsq = dx*dx + dy*dy + dz*dz;
-                if (rsq >= mCutsq[cType][type]) return;
-                double r = Math.sqrt(rsq);
-                double arg = MathEX.PI * r / mCut[cType][type];
-                double fpair = r<=0.0 ? 0.0 : (mPrefactor[cType][type] * Math.sin(arg) * MathEX.PI/mCut[cType][type]/r);
-                double fx = dx*fpair;
-                double fy = dy*fpair;
-                double fz = dz*fpair;
-                if (rForceAccumulator != null) {
-                    rForceAccumulator.add(threadID, cIdx, idx, fx, fy, fz);
-                }
-                if (rVirialAccumulator != null) {
-                    rVirialAccumulator.add(threadID, cIdx, idx, fx, fy, fz, dx, dy, dz);
-                }
-                if (rEnergyAccumulator != null) {
-                    double deng = mPrefactor[cType][type] * (1.0 + Math.cos(arg));
-                    rEnergyAccumulator.add(threadID, cIdx, idx, deng);
-                }
-            });
-        });
+    @ApiStatus.Experimental @Override
+    public double calEnergyForceSingle(int aThreadID, int aCType,
+                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
+                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+        double tEng = 0.0;
+        final int tNlSize = aNlDx.size();
+        for (int jj = 0; jj < tNlSize; ++jj) {
+            int type = aNlType.get(jj);
+            double dx = aNlDx.get(jj);
+            double dy = aNlDy.get(jj);
+            double dz = aNlDz.get(jj);
+            double rsq = dx*dx + dy*dy + dz*dz;
+            if (rsq >= mCutsq[aCType][type]) continue;
+            double r = Math.sqrt(rsq);
+            double arg = MathEX.PI * r / mCut[aCType][type];
+            double fpair = r<=0.0 ? 0.0 : (mPrefactor[aCType][type] * Math.sin(arg) * MathEX.PI/mCut[aCType][type]/r);
+            fpair *= 0.5;
+            rGradNlDx.set(jj, dx*fpair);
+            rGradNlDy.set(jj, dy*fpair);
+            rGradNlDz.set(jj, dz*fpair);
+            double deng = mPrefactor[aCType][type] * (1.0 + Math.cos(arg));
+            tEng += deng*0.5;
+        }
+        return tEng;
     }
 }

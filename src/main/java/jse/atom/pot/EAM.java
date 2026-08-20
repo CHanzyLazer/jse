@@ -3,6 +3,8 @@ package jse.atom.pot;
 import jse.atom.AbstractPairPotential;
 import jse.cache.VectorCache;
 import jse.code.IO;
+import jse.code.collection.DoubleList;
+import jse.code.collection.IntList;
 import jse.math.MathEX;
 import jse.math.function.ConstBoundFunc1;
 import jse.math.function.IFunc1;
@@ -547,13 +549,13 @@ public class EAM extends AbstractPairPotential {
      * @return {@inheritDoc}
      */
     @Override public double rcutMax() {return mCut;}
-    /**
-     * {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override public boolean neighborListHalf() {return true;}
     
     
+    @ApiStatus.Experimental @Override
+    public double calEnergySingle(int aThreadID, int aCType,
+                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        
+    }
     /**
      * {@inheritDoc}
      * @param aAtomNumber {@inheritDoc}
