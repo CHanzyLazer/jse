@@ -748,9 +748,9 @@ public class NeighborListGetter implements IHasSymbol {
      * @param aNnn 需要的最近的近邻原子数目
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表，不包括自身
      */
-    public List<?> getFull(int aIdx, int aNnn) {
+    public List<DoubleList> getFull(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rIdx = new IntList(16);
+        DoubleList rIdx = new DoubleList(16);
         DoubleList rDx = new DoubleList(16);
         DoubleList rDy = new DoubleList(16);
         DoubleList rDz = new DoubleList(16);
@@ -775,7 +775,7 @@ public class NeighborListGetter implements IHasSymbol {
      * @param aIdx 需要获取近邻列表的原子索引
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表，不包括自身
      */
-    public List<?> getFull(int aIdx) {
+    public List<DoubleList> getFull(int aIdx) {
         return getFull(aIdx, -1);
     }
     
@@ -784,9 +784,9 @@ public class NeighborListGetter implements IHasSymbol {
      * 目前来说如果需要类似功能则需使用 {@link #getFull(IXYZ, int)}
      * @see #getFull(IXYZ, int)
      */
-    @ApiStatus.Internal public List<?> getFull_(double aX, double aY, double aZ, int aNnn) {
+    @ApiStatus.Internal public List<DoubleList> getFull_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rIdx = new IntList(16);
+        DoubleList rIdx = new DoubleList(16);
         DoubleList rDx = new DoubleList(16);
         DoubleList rDy = new DoubleList(16);
         DoubleList rDz = new DoubleList(16);
@@ -806,10 +806,10 @@ public class NeighborListGetter implements IHasSymbol {
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的列表
+     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表
      * @see IXYZ
      */
-    public List<?> getFull(IXYZ aXYZ, int aNnn) {
+    public List<DoubleList> getFull(IXYZ aXYZ, int aNnn) {
         return getFull_(aXYZ.x(), aXYZ.y(), aXYZ.z(), aNnn);
     }
     /**
@@ -825,10 +825,10 @@ public class NeighborListGetter implements IHasSymbol {
      * 来增加一个参数 aNnn
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
-     * @return 按照 {@code [dx, dy, dz, idx, type]} 顺序排列的列表
+     * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表
      * @see IXYZ
      */
-    public List<?> getFull(IXYZ aXYZ) {
+    public List<DoubleList> getFull(IXYZ aXYZ) {
         return getFull(aXYZ, -1);
     }
 }

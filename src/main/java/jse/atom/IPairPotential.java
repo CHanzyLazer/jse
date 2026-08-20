@@ -145,9 +145,9 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @param aNlDy 近邻的 dy 组成的列表，{@code dy = yj - yi}
      * @param aNlDz 近邻的 dz 组成的列表，{@code dz = zj - zi}
      * @param aNlType 近邻的种类编号组成的列表，注意为此 potential 内使用编号
-     * @param rGradNlDx 能量关于近邻 dx 梯度组成的列表，物理上对应中心原子对近邻的力
-     * @param rGradNlDy 能量关于近邻 dy 梯度组成的列表，物理上对应中心原子对近邻的力
-     * @param rGradNlDz 能量关于近邻 dz 梯度组成的列表，物理上对应中心原子对近邻的力
+     * @param rGradNlDx 能量关于近邻 dx 梯度组成的列表，物理上对应中心原子对近邻之间的力
+     * @param rGradNlDy 能量关于近邻 dy 梯度组成的列表，物理上对应中心原子对近邻之间的力
+     * @param rGradNlDz 能量关于近邻 dz 梯度组成的列表，物理上对应中心原子对近邻之间的力
      * @return 计算得到的此原子能量
      * @throws UnsupportedOperationException 对于不支持仅根据单个近邻计算单个原子能量的情况
      * @throws Exception 特殊实现下可选的抛出异常

@@ -12,7 +12,7 @@ namespace JSE_NNAP {
 static __global__ void initLammpsNeiKernel(int nlocal,
         int *nmerges, int **mergeSorted,
         flt_t **cutsq, int *nlsize, int *nl,
-        int *rBufNlSize, int *rBufNl,
+        int *rBufNlSize, int *rBufNlIdx,
         flt_t *posx, flt_t *posy, flt_t *posz,
         int *type, int *aLmpType2NNAPType) {
     
@@ -44,7 +44,7 @@ static __global__ void initLammpsNeiKernel(int nlocal,
             const flt_t dz = posz[j] - zi;
             const flt_t rsq = dx*dx + dy*dy + dz*dz;
             if (rsq>=cutsqL && rsq<cutsqR) {
-                rBufNl[tNlSize*nlocal + i] = j;
+                rBufNlIdx[tNlSize*nlocal + i] = j;
                 ++tNlSize;
             }
         }
@@ -57,7 +57,7 @@ static __global__ void initLammpsNeiKernel(int nlocal,
 
 template <int EEITHER, int VTOTAL, int VATOM>
 static __global__ void computeLammpsKernel(int nlocal, int nghost,
-        int *aBufNlSize, int *aBufNl,
+        int *aBufNlSize, int *aBufNlIdx,
         flt_t *posx, flt_t *posy, flt_t *posz, int *type,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
         flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
@@ -82,7 +82,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
 // >>> NNAPGEN SWITCH
     flt_t rFpOrGradFp[__NNAPGENX_FP_SIZE__];
     fpForwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
-        aBufNlSize, aBufNl, rFpOrGradFp,
+        aBufNlSize, aBufNlIdx, rFpOrGradFp,
         posx, posy, posz, type,
         aFpHyperParam, aFpParam, rFpForwardCache
     );
@@ -100,7 +100,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
         );
     }
     fpBackwardGpu<__NNAPGENS_ctype__>(nlocal, i, ctype,
-        aBufNlSize, aBufNl, rFpOrGradFp,
+        aBufNlSize, aBufNlIdx, rFpOrGradFp,
         posx, posy, posz, type,
         nlFx, nlFy, nlFz,
         aFpHyperParam, aFpParam, rFpForwardCache
@@ -117,7 +117,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
     const flt_t yi = (VTOTAL||VATOM) ? posy[i] : ZERO;
     const flt_t zi = (VTOTAL||VATOM) ? posz[i] : ZERO;
     for (int jj = 0; jj < tNlSize; ++jj) {
-        const int j = aBufNl[jj*nlocal + i];
+        const int j = aBufNlIdx[jj*nlocal + i];
         const flt_t fxj = nlFx[jj*nlocal + i];
         const flt_t fyj = nlFy[jj*nlocal + i];
         const flt_t fzj = nlFz[jj*nlocal + i];
@@ -161,7 +161,7 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
 template <int VTOTAL, int VATOM>
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         int nlocal, int nghost,
-        int *aBufNlSize, int *aBufNl,
+        int *aBufNlSize, int *aBufNlIdx,
         flt_t *posx, flt_t *posy, flt_t *posz, int *type,
         int eflagEither,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
@@ -171,7 +171,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     if (eflagEither) {
         computeLammpsKernel<TRUE, VTOTAL, VATOM>
                      <<<aGridSize, aBlockSize>>>(nlocal, nghost,
-            aBufNlSize, aBufNl,
+            aBufNlSize, aBufNlIdx,
             posx, posy, posz, type,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
@@ -181,7 +181,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     } else {
         computeLammpsKernel<FALSE, VTOTAL, VATOM>
                      <<<aGridSize, aBlockSize>>>(nlocal, nghost,
-            aBufNlSize, aBufNl,
+            aBufNlSize, aBufNlIdx,
             posx, posy, posz, type,
             eatom0, f, vatom0, vatom1,
             nlFx, nlFy, nlFz,
@@ -192,7 +192,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
 }
 static void computeLammpsKernel_(int aGridSize, int aBlockSize,
         int nlocal, int nghost,
-        int *aBufNlSize, int *aBufNl,
+        int *aBufNlSize, int *aBufNlIdx,
         flt_t *posx, flt_t *posy, flt_t *posz, int *type,
         int eflagEither, int vflag, int vflagAtom,
         flt_t *eatom0, flt_t *f, flt_t *vatom0, flt_t *vatom1,
@@ -202,7 +202,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     if (vflagAtom) {
         computeLammpsKernel_<TRUE, TRUE>(aGridSize, aBlockSize,
             nlocal, nghost,
-            aBufNlSize, aBufNl,
+            aBufNlSize, aBufNlIdx,
             posx, posy, posz, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,
@@ -213,7 +213,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     } else if (vflag) {
         computeLammpsKernel_<TRUE, FALSE>(aGridSize, aBlockSize,
             nlocal, nghost,
-            aBufNlSize, aBufNl,
+            aBufNlSize, aBufNlIdx,
             posx, posy, posz, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,
@@ -224,7 +224,7 @@ static void computeLammpsKernel_(int aGridSize, int aBlockSize,
     } else {
         computeLammpsKernel_<FALSE, FALSE>(aGridSize, aBlockSize,
             nlocal, nghost,
-            aBufNlSize, aBufNl,
+            aBufNlSize, aBufNlIdx,
             posx, posy, posz, type,
             eflagEither,
             eatom0, f, vatom0, vatom1,

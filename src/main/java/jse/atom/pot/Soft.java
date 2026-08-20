@@ -15,12 +15,12 @@ import org.jetbrains.annotations.Nullable;
 public class Soft extends AbstractPairPotential {
     private final double mCutMax;
     private final double[][] mPrefactor, mCut, mCutsq;
-    private final int mTypeNum;
+    private final int mNumTypes;
     private final String @Nullable[] mSymbols;
     
     public Soft(double aPrefactor, double aRCut, int aNumThreads) {
         super(aNumThreads);
-        mTypeNum = -1;
+        mNumTypes = -1;
         mSymbols = null;
         mPrefactor = new double[][]{{aPrefactor}};
         mCut = new double[][]{{aRCut}};
@@ -29,15 +29,15 @@ public class Soft extends AbstractPairPotential {
     }
     public Soft(double[][] aPrefactor, double[][] aRCut, String @Nullable[] aSymbols, int aNumThreads) {
         super(aNumThreads);
-        mTypeNum = aRCut.length;
-        if (aPrefactor.length != mTypeNum) throw new IllegalArgumentException("Input A size MUST be the same size of RCut");
-        if (aSymbols!=null && aSymbols.length!=mTypeNum) throw new IllegalArgumentException("Input Symbols size MUST be the same size of RCut");
+        mNumTypes = aRCut.length;
+        if (aPrefactor.length !=mNumTypes) throw new IllegalArgumentException("Input A size MUST be the same size of RCut");
+        if (aSymbols!=null && aSymbols.length!=mNumTypes) throw new IllegalArgumentException("Input Symbols size MUST be the same size of RCut");
         mSymbols = aSymbols;
-        mPrefactor = new double[mTypeNum+1][mTypeNum+1];
-        mCut = new double[mTypeNum+1][mTypeNum+1];
-        mCutsq = new double[mTypeNum+1][mTypeNum+1];
+        mPrefactor = new double[mNumTypes+1][mNumTypes+1];
+        mCut = new double[mNumTypes+1][mNumTypes+1];
+        mCutsq = new double[mNumTypes+1][mNumTypes+1];
         double tCutMax = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
+        for (int i = 0; i < mNumTypes; ++i) for (int j = 0; j <= i; ++j) {
             double tA = aPrefactor[i][j];
             mPrefactor[i+1][j+1] = tA;
             double tRCut = aRCut[i][j];
@@ -46,7 +46,7 @@ public class Soft extends AbstractPairPotential {
             if (tRCut > tCutMax) tCutMax = tRCut;
         }
         mCutMax = tCutMax;
-        for (int j = 2; j <= mTypeNum; ++j) for (int i = 1; i < j; ++i) {
+        for (int j = 2; j <= mNumTypes; ++j) for (int i = 1; i < j; ++i) {
             mPrefactor[i][j] = mPrefactor[j][i];
             mCut[i][j] = mCut[j][i];
             mCutsq[i][j] = mCutsq[j][i];
@@ -86,7 +86,7 @@ public class Soft extends AbstractPairPotential {
     }
     
     /** @return {@inheritDoc} */
-    @Override public int ntypes() {return mTypeNum;}
+    @Override public int ntypes() {return mNumTypes;}
     /** @return {@inheritDoc} */
     @Override public boolean hasSymbol() {return mSymbols!=null;}
     /**
@@ -110,10 +110,12 @@ public class Soft extends AbstractPairPotential {
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
                                   DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        if (mNumTypes <= 0) aCType = 0;
+        checkType(aCType);
         double tEng = 0.0;
         final int tNlSize = aNlDx.size();
         for (int jj = 0; jj < tNlSize; ++jj) {
-            int type = aNlType.get(jj);
+            int type = (mNumTypes<=0) ? 0 : aNlType.get(jj);
             double dx = aNlDx.get(jj);
             double dy = aNlDy.get(jj);
             double dz = aNlDz.get(jj);
@@ -128,10 +130,12 @@ public class Soft extends AbstractPairPotential {
     public double calEnergyForceSingle(int aThreadID, int aCType,
                                        DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
                                        DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+        if (mNumTypes <= 0) aCType = 0;
+        checkType(aCType);
         double tEng = 0.0;
         final int tNlSize = aNlDx.size();
         for (int jj = 0; jj < tNlSize; ++jj) {
-            int type = aNlType.get(jj);
+            int type = (mNumTypes<=0) ? 0 : aNlType.get(jj);
             double dx = aNlDx.get(jj);
             double dy = aNlDy.get(jj);
             double dz = aNlDz.get(jj);

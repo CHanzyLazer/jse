@@ -1795,7 +1795,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tPtrMng.ensureCapacity(rAGradNlDy, tNlSize);
                 tPtrMng.ensureCapacity(rAGradNlDz, tNlSize);
                 
-                mNNAP.calEnergyForce(
+                mNNAP.calEnergyForceSingle(
                     0, tAtomType.get(k), tNlSize,
                     tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
                     rAGradNlDx, rAGradNlDy, rAGradNlDz

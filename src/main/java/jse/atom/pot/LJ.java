@@ -17,12 +17,12 @@ public class LJ extends AbstractPairPotential {
     private final double[][] mCutsq;
     private final double[][] mLJ1, mLJ2, mLJ3, mLJ4;
     private final double[][] mOffset;
-    private final int mTypeNum;
+    private final int mNumTypes;
     private final String @Nullable[] mSymbols;
     
     public LJ(double aEpsilon, double aSigma, double aRCut, int aNumThreads) {
         super(aNumThreads);
-        mTypeNum = -1;
+        mNumTypes = -1;
         mSymbols = null;
         mLJ1 = new double[][]{{48.0 * aEpsilon * MathEX.Code.pow12(aSigma)}};
         mLJ2 = new double[][]{{24.0 * aEpsilon * MathEX.Code.pow6( aSigma)}};
@@ -35,19 +35,19 @@ public class LJ extends AbstractPairPotential {
     }
     public LJ(double[][] aEpsilon, double[][] aSigma, double[][] aRCut, String @Nullable[] aSymbols, int aNumThreads) {
         super(aNumThreads);
-        mTypeNum = aRCut.length;
-        if (aSigma.length != mTypeNum) throw new IllegalArgumentException("Input Sigma size MUST be the same size of RCut");
-        if (aEpsilon.length != mTypeNum) throw new IllegalArgumentException("Input Epsilon size MUST be the same size of RCut");
-        if (aSymbols!=null && aSymbols.length!=mTypeNum) throw new IllegalArgumentException("Input Symbols size MUST be the same size of RCut");
+        mNumTypes = aRCut.length;
+        if (aSigma.length != mNumTypes) throw new IllegalArgumentException("Input Sigma size MUST be the same size of RCut");
+        if (aEpsilon.length != mNumTypes) throw new IllegalArgumentException("Input Epsilon size MUST be the same size of RCut");
+        if (aSymbols!=null && aSymbols.length!=mNumTypes) throw new IllegalArgumentException("Input Symbols size MUST be the same size of RCut");
         mSymbols = aSymbols;
-        mLJ1 = new double[mTypeNum+1][mTypeNum+1];
-        mLJ2 = new double[mTypeNum+1][mTypeNum+1];
-        mLJ3 = new double[mTypeNum+1][mTypeNum+1];
-        mLJ4 = new double[mTypeNum+1][mTypeNum+1];
-        mCutsq = new double[mTypeNum+1][mTypeNum+1];
-        mOffset = new double[mTypeNum+1][mTypeNum+1];
+        mLJ1 = new double[mNumTypes+1][mNumTypes+1];
+        mLJ2 = new double[mNumTypes+1][mNumTypes+1];
+        mLJ3 = new double[mNumTypes+1][mNumTypes+1];
+        mLJ4 = new double[mNumTypes+1][mNumTypes+1];
+        mCutsq = new double[mNumTypes+1][mNumTypes+1];
+        mOffset = new double[mNumTypes+1][mNumTypes+1];
         double tCutMax = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < mTypeNum; ++i) for (int j = 0; j <= i; ++j) {
+        for (int i = 0; i < mNumTypes; ++i) for (int j = 0; j <= i; ++j) {
             double tEpsilon = aEpsilon[i][j];
             double tSigma = aSigma[i][j];
             mLJ1[i+1][j+1] = 48.0 * tEpsilon * MathEX.Code.pow12(tSigma);
@@ -61,7 +61,7 @@ public class LJ extends AbstractPairPotential {
             if (tRCut > tCutMax) tCutMax = tRCut;
         }
         mCutMax = tCutMax;
-        for (int j = 2; j <= mTypeNum; ++j) for (int i = 1; i < j; ++i) {
+        for (int j = 2; j <= mNumTypes; ++j) for (int i = 1; i < j; ++i) {
             mLJ1[i][j] = mLJ1[j][i];
             mLJ2[i][j] = mLJ2[j][i];
             mLJ3[i][j] = mLJ3[j][i];
@@ -124,7 +124,7 @@ public class LJ extends AbstractPairPotential {
     public LJ setShift(boolean aShift) {mShift = aShift; return this;}
     
     /** @return {@inheritDoc} */
-    @Override public int ntypes() {return mTypeNum;}
+    @Override public int ntypes() {return mNumTypes;}
     /** @return {@inheritDoc} */
     @Override public boolean hasSymbol() {return mSymbols!=null;}
     /**
@@ -148,10 +148,12 @@ public class LJ extends AbstractPairPotential {
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
                                   DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+        if (mNumTypes <= 0) aCType = 0;
+        checkType(aCType);
         double tEng = 0.0;
         final int tNlSize = aNlDx.size();
         for (int jj = 0; jj < tNlSize; ++jj) {
-            int type = aNlType.get(jj);
+            int type = (mNumTypes<=0) ? 0 : aNlType.get(jj);
             double dx = aNlDx.get(jj);
             double dy = aNlDy.get(jj);
             double dz = aNlDz.get(jj);
@@ -169,10 +171,12 @@ public class LJ extends AbstractPairPotential {
     public double calEnergyForceSingle(int aThreadID, int aCType,
                                        DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
                                        DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+        if (mNumTypes <= 0) aCType = 0;
+        checkType(aCType);
         double tEng = 0.0;
         final int tNlSize = aNlDx.size();
         for (int jj = 0; jj < tNlSize; ++jj) {
-            int type = aNlType.get(jj);
+            int type = (mNumTypes<=0) ? 0 : aNlType.get(jj);
             double dx = aNlDx.get(jj);
             double dy = aNlDy.get(jj);
             double dz = aNlDz.get(jj);

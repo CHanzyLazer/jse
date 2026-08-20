@@ -397,7 +397,6 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                 // 累加交叉项到近邻
                 IntList tNlIdx = mNlIdxPar[threadID];
                 final int tNlSize = tNlIdx.size();
-                double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
                 Vector tForcesX = aRequireForce ? mForcesXPar[threadID] : null;
                 Vector tForcesY = aRequireForce ? mForcesYPar[threadID] : null;
                 Vector tForcesZ = aRequireForce ? mForcesZPar[threadID] : null;
@@ -418,9 +417,9 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                     final double fy = rGradNlDy.get(jj);
                     final double fz = rGradNlDz.get(jj);
                     if (aRequireForce) {
-                        fx0 -= fx; tForcesX.add(j, fx);
-                        fy0 -= fy; tForcesY.add(j, fy);
-                        fz0 -= fz; tForcesZ.add(j, fz);
+                        tForcesX.add(i, -fx); tForcesX.add(j, fx);
+                        tForcesY.add(i, -fy); tForcesY.add(j, fy);
+                        tForcesZ.add(i, -fz); tForcesZ.add(j, fz);
                     }
                     if (aRequireTotalStress || aRequirePreAtomStress) {
                         final double dx = tNlDx.get(jj);
@@ -447,11 +446,6 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                             }
                         }
                     }
-                }
-                if (aRequireForce) {
-                    tForcesX.add(i, fx0);
-                    tForcesY.add(i, fy0);
-                    tForcesZ.add(i, fz0);
                 }
                 if (aRequireTotalStress) {
                     mVirialXXPar[threadID].mValue += tVirialXX;

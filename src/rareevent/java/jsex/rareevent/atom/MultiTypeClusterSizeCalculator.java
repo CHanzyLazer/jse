@@ -71,7 +71,7 @@ public class MultiTypeClusterSizeCalculator extends AbstractClusterSizeCalculato
                     rIsSolid.refSlicer().get(tTypeIndices.get(tTypeMM)).or2this(tTypeIsSolid);
                     // 周围中有一半的为 solid 则也要设为 solid
                     for (int idx = 0; idx < tAtomNum; ++idx) if (!rIsSolid.get(idx) && aPoint.atom(idx).type()!=tTypeMM+1) {
-                        IIntVector tNlIdx = tAPC.nl_().get(aPoint.atom(idx));
+                        IIntVector tNlIdx = tAPC.nl_().get(aPoint.atom(idx)).asVec();
                         int rTypeSolidNum = tTypeIsSolid.refSlicer().get(tNlIdx).count();
                         if (rTypeSolidNum!=0 && rTypeSolidNum+rTypeSolidNum>=tNlIdx.size()) rIsSolid.set(idx, true);
                     }

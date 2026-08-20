@@ -7,7 +7,7 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
-    int aNlSize, int *aBufNl,
+    int aNlSize, int *aBufNlIdx,
     flt_t *bY, flt_t *rAnlm1, flt_t *rAnlm2,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams) noexcept {
@@ -21,7 +21,7 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aBufNl[jj*nb + bi];
+        const int j = aBufNlIdx[jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -63,7 +63,7 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
-    int aNlSize, int *aBufNl, flt_t *rFp,
+    int aNlSize, int *aBufNlIdx, flt_t *rFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams, flt_t **rForwardCache) noexcept {
     // const init
@@ -83,7 +83,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         fill<tLMAll>(bAnlm1, ZERO);
         fill<tLMAll>(bAnlm2, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aNlSize, aBufNl,
+            aNlSize, aBufNlIdx,
             bY, bAnlm1, bAnlm2,
             posx, posy, posz, type,
             aRCut, aParams
@@ -109,7 +109,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         fill<tLMAll>(bAnlm1, ZERO);
         calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aNlSize, aBufNl,
+            aNlSize, aBufNlIdx,
             bY, bAnlm1, NULL,
             posx, posy, posz, type,
             aRCut, aParams
@@ -127,7 +127,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
 static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
-    int aNlSize, int *aBufNl,
+    int aNlSize, int *aBufNlIdx,
     flt_t *bY, flt_t *bYPtheta, flt_t *aAGradAnlm1, flt_t *aAGradAnlm2,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
@@ -143,7 +143,7 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aBufNl[jj*nb + bi];
+        const int j = aBufNlIdx[jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -243,7 +243,7 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
 static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
-    int aNlSize, int *aBufNl, flt_t *aAGradFp,
+    int aNlSize, int *aBufNlIdx, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
     flt_t aRCut, flt_t *aParams, flt_t **aForwardCache) noexcept {
@@ -281,7 +281,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         tShiftFp += tSizeL;
         backwardAnlmGpu<WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
-            aNlSize, aBufNl,
+            aNlSize, aBufNlIdx,
             bAnlm1, bAnlm2, bAGradAnlm1, bAGradAnlm2,
             posx, posy, posz, type,
             nlFx, nlFy, nlFz,
@@ -300,7 +300,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
         calGradSphL4<L4MAX>(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp+tSizeL2+tSizeL3);
         backwardAnlmGpu<WTYPE, MTYPE, NMAX,
                         tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
-            aNlSize, aBufNl,
+            aNlSize, aBufNlIdx,
             bAnlm1, bAnlm2, bAGradAnlm1, NULL,
             posx, posy, posz, type,
             nlFx, nlFy, nlFz,
