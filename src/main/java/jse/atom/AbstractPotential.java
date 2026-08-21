@@ -19,11 +19,11 @@ public abstract class AbstractPotential implements IPotential {
     protected double mEnergy = Double.NaN;
     protected double mStressXX = Double.NaN, mStressYY = Double.NaN, mStressZZ = Double.NaN;
     protected double mStressXY = Double.NaN, mStressXZ = Double.NaN, mStressYZ = Double.NaN;
-    protected Vector mEnergies = null;
-    protected Vector mForcesX = null, mForcesY = null, mForcesZ = null;
-    protected Vector mStressesXX = null, mStressesYY = null, mStressesZZ = null;
-    protected Vector mStressesXY = null, mStressesXZ = null, mStressesYZ = null;
-    protected Vector mStressesYX = null, mStressesZX = null, mStressesZY = null;
+    protected final Vector mEnergies = new Vector(0, null);
+    protected final Vector mForcesX = new Vector(0, null), mForcesY = new Vector(0, null), mForcesZ = new Vector(0, null);
+    protected final Vector mStressesXX = new Vector(0, null), mStressesYY = new Vector(0, null), mStressesZZ = new Vector(0, null);
+    protected final Vector mStressesXY = new Vector(0, null), mStressesXZ = new Vector(0, null), mStressesYZ = new Vector(0, null);
+    protected final Vector mStressesYX = new Vector(0, null), mStressesZX = new Vector(0, null), mStressesZY = new Vector(0, null);
     private final DoubleList mEnergiesRaw = new DoubleList();
     private final DoubleList mForcesRaw = new DoubleList();
     private final DoubleList mStressesRaw = new DoubleList();
@@ -62,13 +62,13 @@ public abstract class AbstractPotential implements IPotential {
         mForcesRaw.addZeros(mNumAtoms*3);
         double[] tData = mForcesRaw.internalData();
         int tShift = 0;
-        mForcesX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-        mForcesY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-        mForcesZ = new Vector(mNumAtoms, tShift, tData);
+        mForcesX.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+        mForcesY.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+        mForcesZ.setInternalData(mNumAtoms, tShift, tData);
         if (perAtomEnergySupport()) {
             mEnergiesRaw.clear();
             mEnergiesRaw.addZeros(mNumAtoms);
-            mEnergies = mEnergiesRaw.asVec();
+            mEnergies.setInternalData(mEnergiesRaw);
         }
         if (perAtomStressSupport()) {
             boolean tCentroid = centroidPerAtomStressSupport();
@@ -76,16 +76,16 @@ public abstract class AbstractPotential implements IPotential {
             mStressesRaw.addZeros(mNumAtoms*(tCentroid?9:6));
             tData = mStressesRaw.internalData();
             tShift = 0;
-            mStressesXX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mStressesYY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mStressesZZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mStressesXY = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mStressesXZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mStressesYZ = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesXX.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesYY.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesZZ.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesXY.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesXZ.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mStressesYZ.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
             if (tCentroid) {
-                mStressesYX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mStressesZX = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mStressesZY = new Vector(mNumAtoms, tShift, tData);
+                mStressesYX.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mStressesZX.setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mStressesZY.setInternalData(mNumAtoms, tShift, tData);
             }
         }
         return this;

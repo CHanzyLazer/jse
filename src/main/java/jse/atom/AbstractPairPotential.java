@@ -109,6 +109,34 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
             mForcesParRaw[i] = new DoubleList();
             mVirialsParRaw[i] = new DoubleList();
         }
+        mEnergiesPar[0] = mEnergies;
+        mForcesXPar[0] = mForcesX;
+        mForcesYPar[0] = mForcesY;
+        mForcesZPar[0] = mForcesZ;
+        mVirialsXXPar[0] = mStressesXX;
+        mVirialsYYPar[0] = mStressesYY;
+        mVirialsZZPar[0] = mStressesZZ;
+        mVirialsXYPar[0] = mStressesXY;
+        mVirialsXZPar[0] = mStressesXZ;
+        mVirialsYZPar[0] = mStressesYZ;
+        mVirialsYXPar[0] = mStressesYX;
+        mVirialsZXPar[0] = mStressesZX;
+        mVirialsZYPar[0] = mStressesZY;
+        for (int i = 1; i < aNumThreads; ++i) {
+            mEnergiesPar[i] = new Vector(0, null);
+            mForcesXPar[i] = new Vector(0, null);
+            mForcesYPar[i] = new Vector(0, null);
+            mForcesZPar[i] = new Vector(0, null);
+            mVirialsXXPar[i] = new Vector(0, null);
+            mVirialsYYPar[i] = new Vector(0, null);
+            mVirialsZZPar[i] = new Vector(0, null);
+            mVirialsXYPar[i] = new Vector(0, null);
+            mVirialsXZPar[i] = new Vector(0, null);
+            mVirialsYZPar[i] = new Vector(0, null);
+            mVirialsYXPar[i] = new Vector(0, null);
+            mVirialsZXPar[i] = new Vector(0, null);
+            mVirialsZYPar[i] = new Vector(0, null);
+        }
     }
     
     private boolean mDead = false;
@@ -139,57 +167,42 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         if (hasSymbol()) mTypeMap = typeMap(aData);
         // 现在在这里初始化缓存的占用
         final int tNumThreads = nthreads();
-        mForcesXPar[0] = mForcesX;
-        mForcesYPar[0] = mForcesY;
-        mForcesZPar[0] = mForcesZ;
         for (int i = 1; i < tNumThreads; ++i) {
             DoubleList tSubForcesParRaw = mForcesParRaw[i];
             tSubForcesParRaw.clear();
             tSubForcesParRaw.addZeros(mNumAtoms*3);
             double[] tData = tSubForcesParRaw.internalData();
             int tShift = 0;
-            mForcesXPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mForcesYPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-            mForcesZPar[i] = new Vector(mNumAtoms, tShift, tData);
+            mForcesXPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mForcesYPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+            mForcesZPar[i].setInternalData(mNumAtoms, tShift, tData);
         }
         if (perAtomEnergySupport()) {
-            mEnergiesPar[0] = mEnergies;
             for (int i = 1; i < tNumThreads; ++i) {
                 DoubleList tSubEnergiesParRaw = mEnergiesParRaw[i];
                 tSubEnergiesParRaw.clear();
                 tSubEnergiesParRaw.addZeros(mNumAtoms);
-                mEnergiesPar[i] = tSubEnergiesParRaw.asVec();
+                mEnergiesPar[i].setInternalData(tSubEnergiesParRaw);
             }
         }
         if (perAtomStressSupport()) {
             boolean tCentroid = centroidPerAtomStressSupport();
-            mVirialsXXPar[0] = mStressesXX;
-            mVirialsYYPar[0] = mStressesYY;
-            mVirialsZZPar[0] = mStressesZZ;
-            mVirialsXYPar[0] = mStressesXY;
-            mVirialsXZPar[0] = mStressesXZ;
-            mVirialsYZPar[0] = mStressesYZ;
-            if (tCentroid) {
-                mVirialsYXPar[0] = mStressesYX;
-                mVirialsZXPar[0] = mStressesZX;
-                mVirialsZYPar[0] = mStressesZY;
-            }
             for (int i = 1; i < tNumThreads; ++i) {
                 DoubleList tSubVirialsParRaw = mVirialsParRaw[i];
                 tSubVirialsParRaw.clear();
                 tSubVirialsParRaw.addZeros(mNumAtoms*(tCentroid?9:6));
                 double[] tData = tSubVirialsParRaw.internalData();
                 int tShift = 0;
-                mVirialsXXPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mVirialsYYPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mVirialsZZPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mVirialsXYPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mVirialsXZPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                mVirialsYZPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsXXPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsYYPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsZZPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsXYPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsXZPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                mVirialsYZPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
                 if (tCentroid) {
-                    mVirialsYXPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                    mVirialsZXPar[i] = new Vector(mNumAtoms, tShift, tData); tShift += mNumAtoms;
-                    mVirialsZYPar[i] = new Vector(mNumAtoms, tShift, tData);
+                    mVirialsYXPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                    mVirialsZXPar[i].setInternalData(mNumAtoms, tShift, tData); tShift += mNumAtoms;
+                    mVirialsZYPar[i].setInternalData(mNumAtoms, tShift, tData);
                 }
             }
         }
@@ -228,20 +241,20 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                 rNlType.add(type); rNlIdx.add(idx);
             });
         }
-        mNlDxPar[aThreadID].setInternal(rNlDx);
-        mNlDyPar[aThreadID].setInternal(rNlDy);
-        mNlDzPar[aThreadID].setInternal(rNlDz);
-        mNlTypePar[aThreadID].setInternal(rNlType);
-        mNlIdxPar[aThreadID].setInternal(rNlIdx);
+        mNlDxPar[aThreadID].setInternalData(rNlDx);
+        mNlDyPar[aThreadID].setInternalData(rNlDy);
+        mNlDzPar[aThreadID].setInternalData(rNlDz);
+        mNlTypePar[aThreadID].setInternalData(rNlType);
+        mNlIdxPar[aThreadID].setInternalData(rNlIdx);
         if (aRequireForce) {
             final int mNlSize = rNlIdx.size();
             DoubleList rGradNlDx = mGradNlDxParRaw[aThreadID], rGradNlDy = mGradNlDyParRaw[aThreadID], rGradNlDz = mGradNlDzParRaw[aThreadID];
             rGradNlDx.clear(); rGradNlDx.addZeros(mNlSize);
             rGradNlDy.clear(); rGradNlDy.addZeros(mNlSize);
             rGradNlDz.clear(); rGradNlDz.addZeros(mNlSize);
-            mGradNlDxPar[aThreadID].setInternal(rGradNlDx);
-            mGradNlDyPar[aThreadID].setInternal(rGradNlDy);
-            mGradNlDzPar[aThreadID].setInternal(rGradNlDz);
+            mGradNlDxPar[aThreadID].setInternalData(rGradNlDx);
+            mGradNlDyPar[aThreadID].setInternalData(rGradNlDy);
+            mGradNlDzPar[aThreadID].setInternalData(rGradNlDz);
         }
     }
     protected final void initBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
