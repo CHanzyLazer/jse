@@ -3,6 +3,7 @@ package jse.atom.pot;
 import jse.atom.AbstractPairPotential;
 import jse.code.IO;
 import jse.code.collection.DoubleList;
+import jse.code.collection.DoubleWrapper;
 import jse.code.collection.IntList;
 import jse.math.MathEX;
 import jse.math.function.ConstBoundFunc1;
@@ -682,7 +683,8 @@ public class EAM extends AbstractPairPotential {
             double rsq = dx*dx + dy*dy + dz*dz;
             if (rsq >= mCutsq) continue;
             double r = Math.sqrt(rsq);
-            tEng += 0.5*mRPhiRSpline[aCType-1][type-1].subs(r) / r;
+            double deng = mRPhiRSpline[aCType-1][type-1].subs(r) / r;
+            tEng += deng*0.5;
             rho += mRhoRSpline[mRhoR.length==1?0:(aCType-1)][type-1].subs(r);
             if (mUR != null) {
                 assert mURSpline != null;
@@ -696,32 +698,28 @@ public class EAM extends AbstractPairPotential {
                 lxy += w*dx*dy; lxz += w*dx*dz; lyz += w*dy*dz;
             }
         }
-        tEng += mFRhoSpline[aCType-1].subs(rho);
+        double deng = mFRhoSpline[aCType-1].subs(rho);
         if (mUR != null) {
-            tEng += 0.5 * (mx*mx + my*my + mz*mz);
+            deng += 0.5 * (mx*mx + my*my + mz*mz);
         }
         if (mWR != null) {
-            tEng += 0.5 * (lxx*lxx + lyy*lyy + lzz*lzz);
-            tEng += (lxy*lxy + lxz*lxz + lyz*lyz);
+            deng += 0.5 * (lxx*lxx + lyy*lyy + lzz*lzz);
+            deng += (lxy*lxy + lxz*lxz + lyz*lyz);
             double nu = lxx + lyy + lzz;
-            tEng -= (1.0/6.0) * nu*nu;
+            deng -= (1.0/6.0) * nu*nu;
         }
+        tEng += deng;
         return tEng;
     }
     @ApiStatus.Experimental @Override
     public double calEnergyForceSingle(int aThreadID, int aCType,
                                        DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
                                        DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
-        // 旧的 lammps/类lammps 实现存在一些问题，这里改为反向传播的方式来重新实现
         checkType(aCType);
         double rho = 0.0;
         double mx = 0.0, my = 0.0, mz = 0.0;
         double lxx = 0.0, lyy = 0.0, lzz = 0.0;
         double lxy = 0.0, lxz = 0.0, lyz = 0.0;
-        double gmx = 0.0, gmy = 0.0, gmz = 0.0;
-        double glxx = 0.0, glyy = 0.0, glzz = 0.0;
-        double glxy = 0.0, glxz = 0.0, glyz = 0.0;
-        double tEng = 0.0;
         final int tNlSize = aNlDx.size();
         for (int jj = 0; jj < tNlSize; ++jj) {
             int type = aNlType.get(jj);
@@ -744,22 +742,8 @@ public class EAM extends AbstractPairPotential {
                 lxy += w*dx*dy; lxz += w*dx*dz; lyz += w*dy*dz;
             }
         }
-        tEng += mFRhoSpline[aCType-1].subs(rho);
-        double grho = mFRhoSpline[aCType-1].subsGrad(rho);
-        if (mUR != null) {
-            tEng += 0.5 * (mx*mx + my*my + mz*mz);
-            gmx = mx; gmy = my; gmz = mz;
-        }
-        if (mWR != null) {
-            tEng += 0.5 * (lxx*lxx + lyy*lyy + lzz*lzz);
-            tEng += (lxy*lxy + lxz*lxz + lyz*lyz);
-            double nu = lxx + lyy + lzz;
-            tEng -= (1.0/6.0) * nu*nu;
-            double gnu = (-1.0/3.0) * nu;
-            glxx = lxx + gnu; glyy = lyy + gnu; glzz = lzz + gnu;
-            glxy = lxy + lxy; glxz = lxz + lxz; glyz = lyz + lyz;
-        }
-        // backward nl
+        double tEng = 0.0;
+        final double fpi = mFRhoSpline[aCType-1].subsGrad(rho);
         for (int jj = 0; jj < tNlSize; ++jj) {
             int type = aNlType.get(jj);
             double dx = aNlDx.get(jj);
@@ -768,40 +752,257 @@ public class EAM extends AbstractPairPotential {
             double rsq = dx*dx + dy*dy + dz*dz;
             if (rsq >= mCutsq) continue;
             double r = Math.sqrt(rsq);
-            double rinv = 1.0/r;
-            double r2inv = rinv*rinv;
-            double gdx = 0.0, gdy = 0.0, gdz = 0.0;
-            double gdr = 0.0;
+            double recip = 1.0/r;
+            double rphi = mRPhiRSpline[aCType-1][type-1].subs(r);
+            double rphip = mRPhiRSpline[aCType-1][type-1].subsGrad(r);
+            double fpj = mFRhoSpline[type-1].subsGrad(rho);
+            double rhojp = mRhoRSpline[mRhoR.length==1?0:(aCType-1)][type-1].subsGrad(r);
+            double rhoip = mRhoRSpline[mRhoR.length==1?0:(type-1)][aCType-1].subsGrad(r);
+            double phi = rphi*recip;
+            double phip = rphip*recip - phi*recip;
+            double fpair = -(fpi*rhojp + fpj*rhoip + phip) * recip;
+            fpair *= 0.5;
+            double fx = dx*fpair, fy = dy*fpair, fz = dz*fpair;
             if (mUR != null) {
                 assert mURSpline != null;
                 double u = mURSpline[aCType-1][type-1].subs(r);
-                gdx += gmx*u;
-                gdy += gmy*u;
-                gdz += gmz*u;
-                double gu = gmx*dx + gmy*dy + gmz*dz;
-                gdr += gu*mURSpline[aCType-1][type-1].subsGrad(r)*rinv;
+                double up = mURSpline[aCType-1][type-1].subsGrad(r);
+                double m3 = mx*dx + my*dy + mz*dz;
+                fx -= (mx*u + m3*up*dx*recip);
+                fy -= (my*u + m3*up*dy*recip);
+                fz -= (mz*u + m3*up*dz*recip);
             }
             if (mWR != null) {
                 assert mWRSpline != null;
                 double w = mWRSpline[aCType-1][type-1].subs(r);
-                gdx += w*(glxx*2.0*dx + glxy*dy + glxz*dz);
-                gdy += w*(glyy*2.0*dy + glxy*dx + glyz*dz);
-                gdz += w*(glzz*2.0*dz + glxz*dx + glyz*dy);
-                double gw = glxx*dx*dx + glyy*dy*dy + glzz*dz*dz + glxy*dx*dy + glxz*dx*dz + glyz*dy*dz;
-                gdr += gw*mWRSpline[aCType-1][type-1].subsGrad(r)*rinv;
+                double wp = mWRSpline[aCType-1][type-1].subsGrad(r);
+                double l3 = lxx*dx*dx + lyy*dy*dy + lzz*dz*dz
+                    + 2.0 * (lxy*dx*dy + lyz*dy*dz + lxz*dx*dz);
+                double nu = lxx + lyy + lzz;
+                fx -= (2.0*w*(lxx*dx + lxy*dy + lxz*dz) + wp*dx*recip*l3 - (1.0/3.0)*nu*(wp*r + 2.0*w)*dx);
+                fy -= (2.0*w*(lxy*dx + lyy*dy + lyz*dz) + wp*dy*recip*l3 - (1.0/3.0)*nu*(wp*r + 2.0*w)*dy);
+                fz -= (2.0*w*(lxz*dx + lyz*dy + lzz*dz) + wp*dz*recip*l3 - (1.0/3.0)*nu*(wp*r + 2.0*w)*dz);
             }
-            gdr += grho*mRhoRSpline[mRhoR.length==1?0:(aCType-1)][type-1].subsGrad(r)*rinv;
-            double phi = mRPhiRSpline[aCType-1][type-1].subs(r)*rinv;
+            rGradNlDx.set(jj, fx);
+            rGradNlDy.set(jj, fy);
+            rGradNlDz.set(jj, fz);
             tEng += 0.5*phi;
-            gdr += 0.5*mRPhiRSpline[aCType-1][type-1].subsGrad(r)*r2inv;
-            gdr -= 0.5*phi*r2inv;
-            gdx += gdr*dx;
-            gdy += gdr*dy;
-            gdz += gdr*dz;
-            rGradNlDx.set(jj, gdx);
-            rGradNlDy.set(jj, gdy);
-            rGradNlDz.set(jj, gdz);
         }
+        double deng = mFRhoSpline[aCType-1].subs(rho);
+        if (mUR != null) {
+            deng += 0.5 * (mx*mx + my*my + mz*mz);
+        }
+        if (mWR != null) {
+            deng += 0.5 * (lxx*lxx + lyy*lyy + lzz*lzz);
+            deng += (lxy*lxy + lxz*lxz + lyz*lyz);
+            double nu = lxx + lyy + lzz;
+            deng -= (1.0/6.0) * nu*nu;
+        }
+        tEng += deng;
         return tEng;
+    }
+    
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws Exception {
+        if (isClosed()) throw new IllegalStateException("This Potential is dead");
+        // 判断需要的计算等级
+        final boolean tCalEnergyForce = aRequireForce || aRequireTotalStress || aRequirePreAtomStress;
+        final boolean tCalEnergy = (!tCalEnergyForce) && (aRequireTotalEnergy || aRequirePreAtomEnergy);
+        // 什么都不用计算的情况
+        if (!tCalEnergy && !tCalEnergyForce) return;
+        // 构建近邻列表，顺便会检查是否执行了 setData
+        mNl.setRCut(rcutMax()).build();
+        // 缓存初始化
+        initBufPar(false, aRequireTotalEnergy, aRequirePreAtomEnergy, aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
+        initEamPar();
+        // 执行计算，这里采用一半遍历的优化
+        mPool.parfor(mNumAtoms, (i, threadID) -> {
+            int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+            checkType(ctype);
+            final DoubleWrapper tEnergy = aRequireTotalEnergy ? mEnergyPar[threadID] : null;
+            final Vector tEnergies = aRequirePreAtomEnergy ? mEnergiesPar[threadID] : null;
+            final Vector tRho = mRhoPar[threadID];
+            final Vector tMuX = mUR==null ? null : mMuXPar[threadID];
+            final Vector tMuY = mUR==null ? null : mMuYPar[threadID];
+            final Vector tMuZ = mUR==null ? null : mMuZPar[threadID];
+            final Vector tLambdaXX = mWR==null ? null : mLambdaXXPar[threadID];
+            final Vector tLambdaYY = mWR==null ? null : mLambdaYYPar[threadID];
+            final Vector tLambdaZZ = mWR==null ? null : mLambdaZZPar[threadID];
+            final Vector tLambdaXY = mWR==null ? null : mLambdaXYPar[threadID];
+            final Vector tLambdaXZ = mWR==null ? null : mLambdaXZPar[threadID];
+            final Vector tLambdaYZ = mWR==null ? null : mLambdaYZPar[threadID];
+            mNl.forEach(i, true, (dx, dy, dz, j) -> {
+                double rsq = dx*dx + dy*dy + dz*dz;
+                if (rsq >= mCutsq) return;
+                int type = mTypeMap.applyAsInt(mNl.typeAt(j));
+                checkType(type);
+                double r = Math.sqrt(rsq);
+                if (aRequireTotalEnergy || aRequirePreAtomEnergy) {
+                    double deng = mRPhiRSpline[ctype-1][type-1].subs(r) / r;
+                    if (aRequireTotalEnergy) {
+                        tEnergy.mValue += deng;
+                    }
+                    if (aRequirePreAtomEnergy) {
+                        tEnergies.add(i, deng*0.5);
+                        tEnergies.add(j, deng*0.5);
+                    }
+                }
+                tRho.add(i, mRhoRSpline[mRhoR.length==1?0:(ctype-1)][type-1].subs(r));
+                tRho.add(j, mRhoRSpline[mRhoR.length==1?0:(type-1)][ctype-1].subs(r));
+                if (mUR != null) {
+                    assert mURSpline != null;
+                    double u = mURSpline[ctype-1][type-1].subs(r);
+                    double mx = u*dx, my = u*dy, mz = u*dz;
+                    tMuX.add(i, mx); tMuX.add(j, -mx);
+                    tMuY.add(i, my); tMuY.add(j, -my);
+                    tMuZ.add(i, mz); tMuZ.add(j, -mz);
+                }
+                if (mWR != null) {
+                    assert mWRSpline != null;
+                    double w = mWRSpline[ctype-1][type-1].subs(r);
+                    double lxx = w*dx*dx, lyy = w*dy*dy, lzz = w*dz*dz;
+                    double lxy = w*dx*dy, lxz = w*dx*dz, lyz = w*dy*dz;
+                    tLambdaXX.add(i, lxx); tLambdaXX.add(j, lxx);
+                    tLambdaYY.add(i, lyy); tLambdaYY.add(j, lyy);
+                    tLambdaZZ.add(i, lzz); tLambdaZZ.add(j, lzz);
+                    tLambdaXY.add(i, lxy); tLambdaXY.add(j, lxy);
+                    tLambdaXZ.add(i, lxz); tLambdaXZ.add(j, lxz);
+                    tLambdaYZ.add(i, lyz); tLambdaYZ.add(j, lyz);
+                }
+            });
+        });
+        collectEamPar();
+        if (tCalEnergyForce) {
+            final boolean tCentroid = centroidPerAtomStressSupport();
+            mPool.parfor(mNumAtoms, (i, threadID) -> {
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                final Vector tForcesX = aRequireForce ? mForcesXPar[threadID] : null;
+                final Vector tForcesY = aRequireForce ? mForcesYPar[threadID] : null;
+                final Vector tForcesZ = aRequireForce ? mForcesZPar[threadID] : null;
+                final DoubleWrapper tVirialXX = aRequireTotalStress ? mVirialXXPar[threadID] : null;
+                final DoubleWrapper tVirialYY = aRequireTotalStress ? mVirialYYPar[threadID] : null;
+                final DoubleWrapper tVirialZZ = aRequireTotalStress ? mVirialZZPar[threadID] : null;
+                final DoubleWrapper tVirialXY = aRequireTotalStress ? mVirialXYPar[threadID] : null;
+                final DoubleWrapper tVirialXZ = aRequireTotalStress ? mVirialXZPar[threadID] : null;
+                final DoubleWrapper tVirialYZ = aRequireTotalStress ? mVirialYZPar[threadID] : null;
+                final Vector tVirialsXX = aRequirePreAtomStress ? mVirialsXXPar[threadID] : null;
+                final Vector tVirialsYY = aRequirePreAtomStress ? mVirialsYYPar[threadID] : null;
+                final Vector tVirialsZZ = aRequirePreAtomStress ? mVirialsZZPar[threadID] : null;
+                final Vector tVirialsXY = aRequirePreAtomStress ? mVirialsXYPar[threadID] : null;
+                final Vector tVirialsXZ = aRequirePreAtomStress ? mVirialsXZPar[threadID] : null;
+                final Vector tVirialsYZ = aRequirePreAtomStress ? mVirialsYZPar[threadID] : null;
+                final Vector tVirialsYX = (tCentroid && aRequirePreAtomStress) ? mVirialsYXPar[threadID] : null;
+                final Vector tVirialsZX = (tCentroid && aRequirePreAtomStress) ? mVirialsZXPar[threadID] : null;
+                final Vector tVirialsZY = (tCentroid && aRequirePreAtomStress) ? mVirialsZYPar[threadID] : null;
+                final double fpi = mFRhoSpline[ctype-1].subsGrad(mRho.get(i));
+                mNl.forEach(i, true, (dx, dy, dz, j) -> {
+                    double rsq = dx*dx + dy*dy + dz*dz;
+                    if (rsq >= mCutsq) return;
+                    int type = mTypeMap.applyAsInt(mNl.typeAt(j));
+                    double r = Math.sqrt(rsq);
+                    double recip = 1.0/r;
+                    double rphi = mRPhiRSpline[ctype-1][type-1].subs(r);
+                    double rphip = mRPhiRSpline[ctype-1][type-1].subsGrad(r);
+                    double fpj = mFRhoSpline[type-1].subsGrad(mRho.get(j));
+                    double rhojp = mRhoRSpline[mRhoR.length==1?0:(ctype-1)][type-1].subsGrad(r);
+                    double rhoip = mRhoRSpline[mRhoR.length==1?0:(type-1)][ctype-1].subsGrad(r);
+                    double phi = rphi*recip;
+                    double phip = rphip*recip - phi*recip;
+                    double fpair = -(fpi*rhojp + fpj*rhoip + phip) * recip;
+                    double fx = dx*fpair, fy = dy*fpair, fz = dz*fpair;
+                    if (mUR != null) {
+                        assert mURSpline != null;
+                        double u = mURSpline[ctype-1][type-1].subs(r);
+                        double up = mURSpline[ctype-1][type-1].subsGrad(r);
+                        double dmx = mMuX.get(i) - mMuX.get(j);
+                        double dmy = mMuY.get(i) - mMuY.get(j);
+                        double dmz = mMuZ.get(i) - mMuZ.get(j);
+                        double dm3 = dmx*dx + dmy*dy + dmz*dz;
+                        fx -= (dmx*u + dm3*up*dx*recip);
+                        fy -= (dmy*u + dm3*up*dy*recip);
+                        fz -= (dmz*u + dm3*up*dz*recip);
+                    }
+                    if (mWR != null) {
+                        assert mWRSpline != null;
+                        double w = mWRSpline[ctype-1][type-1].subs(r);
+                        double wp = mWRSpline[ctype-1][type-1].subsGrad(r);
+                        double slxx = mLambdaXX.get(i) + mLambdaXX.get(j);
+                        double slyy = mLambdaYY.get(i) + mLambdaYY.get(j);
+                        double slzz = mLambdaZZ.get(i) + mLambdaZZ.get(j);
+                        double slxy = mLambdaXY.get(i) + mLambdaXY.get(j);
+                        double slyz = mLambdaYZ.get(i) + mLambdaYZ.get(j);
+                        double slxz = mLambdaXZ.get(i) + mLambdaXZ.get(j);
+                        double sl3 = slxx*dx*dx + slyy*dy*dy + slzz*dz*dz
+                            + 2.0 * (slxy*dx*dy + slyz*dy*dz + slxz*dx*dz);
+                        double snu = slxx + slyy + slzz;
+                        fx -= (2.0*w*(slxx*dx + slxy*dy + slxz*dz) + wp*dx*recip*sl3 - (1.0/3.0)*snu*(wp*r + 2.0*w)*dx);
+                        fy -= (2.0*w*(slxy*dx + slyy*dy + slyz*dz) + wp*dy*recip*sl3 - (1.0/3.0)*snu*(wp*r + 2.0*w)*dy);
+                        fz -= (2.0*w*(slxz*dx + slyz*dy + slzz*dz) + wp*dz*recip*sl3 - (1.0/3.0)*snu*(wp*r + 2.0*w)*dz);
+                    }
+                    if (aRequireForce) {
+                        tForcesX.add(i, -fx); tForcesX.add(j, fx);
+                        tForcesY.add(i, -fy); tForcesY.add(j, fy);
+                        tForcesZ.add(i, -fz); tForcesZ.add(j, fz);
+                    }
+                    if (aRequireTotalStress || aRequirePreAtomStress) {
+                        double vxx = dx*fx, vyy = dy*fy, vzz = dz*fz;
+                        double vxy = dx*fy, vxz = dx*fz, vyz = dy*fz;
+                        if (aRequireTotalStress) {
+                            tVirialXX.mValue += vxx;
+                            tVirialYY.mValue += vyy;
+                            tVirialZZ.mValue += vzz;
+                            tVirialXY.mValue += vxy;
+                            tVirialXZ.mValue += vxz;
+                            tVirialYZ.mValue += vyz;
+                        }
+                        // GPUMD 给出的更具对称性的形式要求累加到近邻的 j 上
+                        if (aRequirePreAtomStress) {
+                            tVirialsXX.add(i, vxx*0.5); tVirialsXX.add(j, vxx*0.5);
+                            tVirialsYY.add(i, vyy*0.5); tVirialsYY.add(j, vyy*0.5);
+                            tVirialsZZ.add(i, vzz*0.5); tVirialsZZ.add(j, vzz*0.5);
+                            tVirialsXY.add(i, vxy*0.5); tVirialsXY.add(j, vxy*0.5);
+                            tVirialsXZ.add(i, vxz*0.5); tVirialsXZ.add(j, vxz*0.5);
+                            tVirialsYZ.add(i, vyz*0.5); tVirialsYZ.add(j, vyz*0.5);
+                            if (tCentroid) {
+                                double vyx = dy*fx, vzx = dz*fx, vzy = dz*fy;
+                                tVirialsYX.add(i, vyx*0.5); tVirialsYX.add(j, vyx*0.5);
+                                tVirialsZX.add(i, vzx*0.5); tVirialsZX.add(j, vzx*0.5);
+                                tVirialsZY.add(i, vzy*0.5); tVirialsZY.add(j, vzy*0.5);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        if (aRequireTotalEnergy || aRequirePreAtomEnergy) {
+            mPool.parfor(mNumAtoms, (i, threadID) -> {
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                double deng = mFRhoSpline[ctype-1].subs(mRho.get(i));
+                if (mUR != null) {
+                    double mx = mMuX.get(i);
+                    double my = mMuY.get(i);
+                    double mz = mMuZ.get(i);
+                    deng += 0.5 * (mx*mx + my*my + mz*mz);
+                }
+                if (mWR != null) {
+                    double lxx = mLambdaXX.get(i);
+                    double lyy = mLambdaYY.get(i);
+                    double lzz = mLambdaZZ.get(i);
+                    double lxy = mLambdaXY.get(i);
+                    double lxz = mLambdaXZ.get(i);
+                    double lyz = mLambdaYZ.get(i);
+                    deng += 0.5 * (lxx*lxx + lyy*lyy + lzz*lzz);
+                    deng += (lxy*lxy + lxz*lxz + lyz*lyz);
+                    double nu = lxx + lyy + lzz;
+                    deng -= (1.0/6.0) * nu*nu;
+                }
+                if (aRequireTotalEnergy) {
+                    mEnergyPar[threadID].mValue += deng;
+                }
+                if (aRequirePreAtomEnergy) {
+                    mEnergiesPar[threadID].add(i, deng);
+                }
+            });
+        }
+        collectBufPar(aRequireTotalEnergy, aRequirePreAtomEnergy, aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
     }
 }
