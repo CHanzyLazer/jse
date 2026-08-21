@@ -329,6 +329,27 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         }
     }
     
+    @ApiStatus.Experimental @Override
+    public final double calEnergySingle(int aThreadID, int aI) throws Exception {
+        int ctype = mTypeMap.applyAsInt(mNl.typeAt(aI));
+        checkType(ctype);
+        initBufNl(aThreadID, aI, false);
+        return calEnergySingle(
+            aThreadID, ctype,
+            mNlDxPar[aThreadID], mNlDyPar[aThreadID], mNlDzPar[aThreadID], mNlTypePar[aThreadID]
+        );
+    }
+    @ApiStatus.Experimental @Override
+    public final double calEnergyForceSingle(int aThreadID, int aI, DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) throws Exception {
+        int ctype = mTypeMap.applyAsInt(mNl.typeAt(aI));
+        checkType(ctype);
+        initBufNl(aThreadID, aI, true);
+        return calEnergyForceSingle(
+            aThreadID, ctype,
+            mNlDxPar[aThreadID], mNlDyPar[aThreadID], mNlDzPar[aThreadID], mNlTypePar[aThreadID],
+            rGradNlDx, rGradNlDy, rGradNlDz
+        );
+    }
     
     @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) throws Exception {
         if (isClosed()) throw new IllegalStateException("This Potential is dead");
@@ -346,13 +367,7 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         // 做全近邻遍历的计算，对应非消息传递的局域多体势的通用实现，非多体势可以做进一步优化
         if (tCalEnergy) {
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
-                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
-                checkType(ctype);
-                initBufNl(threadID, i, false);
-                double tEng = calEnergySingle(
-                    threadID, ctype,
-                    mNlDxPar[threadID], mNlDyPar[threadID], mNlDzPar[threadID], mNlTypePar[threadID]
-                );
+                double tEng = calEnergySingle(threadID, i);
                 if (aRequireTotalEnergy) {
                     mEnergyPar[threadID].mValue += tEng;
                 }
@@ -364,16 +379,9 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         if (tCalEnergyForce) {
             final boolean tCentroid = centroidPerAtomStressSupport();
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
-                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
-                checkType(ctype);
-                initBufNl(threadID, i, true);
                 DoubleList tNlDx = mNlDxPar[threadID], tNlDy = mNlDyPar[threadID], tNlDz = mNlDzPar[threadID];
                 DoubleList rGradNlDx = mGradNlDxPar[threadID], rGradNlDy = mGradNlDyPar[threadID], rGradNlDz = mGradNlDzPar[threadID];
-                double tEng = calEnergyForceSingle(
-                    threadID, ctype,
-                    tNlDx, tNlDy, tNlDz, mNlTypePar[threadID],
-                    rGradNlDx, rGradNlDy, rGradNlDz
-                );
+                double tEng = calEnergyForceSingle(threadID, i, rGradNlDx, rGradNlDy, rGradNlDz);
                 if (aRequireTotalEnergy) {
                     mEnergyPar[threadID].mValue += tEng;
                 }

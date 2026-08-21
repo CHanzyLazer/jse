@@ -113,6 +113,16 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     }
     
     /**
+     * 计算给定索引的单个原子能量接口，可以用于简单实现 MC 算法中进行部分修改后的能量更新
+     *
+     * @param aThreadID 可选当前调用的线程 id，对于串行情况总是传入 0
+     * @param aI 需要计算的原子索引
+     * @return 计算得到的此原子能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    @ApiStatus.Experimental
+    double calEnergySingle(int aThreadID, int aI) throws Exception;
+    /**
      * 输入一个通用的近邻列表后计算单个原子能量的接口，此接口设计上为不依赖 {@link #setData(IAtomData)}
      * 的通用接口，可以用于实现通用的高效 MC 算法中进行部分修改后的能量更新
      * <p>
@@ -132,6 +142,19 @@ public interface IPairPotential extends IPotential, IHasSymbol {
     @ApiStatus.Experimental
     double calEnergySingle(int aThreadID, int aCType, DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) throws Exception;
     
+    /**
+     * 计算给定索引的单个原子能量以及对近邻的力的接口
+     *
+     * @param aThreadID 可选当前调用的线程 id，对于串行情况总是传入 0
+     * @param aI 需要计算的原子索引
+     * @param rGradNlDx 能量关于近邻 dx 梯度组成的列表，物理上对应中心原子对近邻之间的力
+     * @param rGradNlDy 能量关于近邻 dy 梯度组成的列表，物理上对应中心原子对近邻之间的力
+     * @param rGradNlDz 能量关于近邻 dz 梯度组成的列表，物理上对应中心原子对近邻之间的力
+     * @return 计算得到的此原子能量
+     * @throws Exception 特殊实现下可选的抛出异常
+     */
+    @ApiStatus.Experimental
+    double calEnergyForceSingle(int aThreadID, int aI, DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) throws Exception;
     /**
      * 输入一个通用的近邻列表后计算单个原子能量以及对近邻的力的接口，此接口设计上为不依赖
      * {@link #setData(IAtomData)} 的通用接口。
