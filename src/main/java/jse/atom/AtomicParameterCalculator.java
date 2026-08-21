@@ -1272,9 +1272,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * 返回一个复数矩阵，行为原子，列为 m
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
-     * 从而可以通过 {@link ComplexMatrixCache#returnMat(IComplexMatrix)} 来实现对象重复利用
      *
      * @author liqa
      * @param aL 计算具体 Qlm 值的下标，即 {@code Q4m: l = 4, Q6m: l = 6}
@@ -1332,7 +1329,9 @@ public class AtomicParameterCalculator implements AutoCloseable {
         
         // 获取结果
         IVector tNN = tNNPar.get(0);
-        for (int i = 1; i < tNNPar.size(); ++i) tNN.plus2this(tNNPar.get(i));
+        for (int i = 1; i < tNNPar.size(); ++i) {
+            tNN.plus2this(tNNPar.get(i));
+        }
         IComplexMatrix Qlm = rDestPar.get(0);
         for (int i = 1; i < rDestPar.size(); ++i) {
             IComplexMatrix subQlm = rDestPar.get(i);
@@ -1354,9 +1353,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calYlmMean(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
-     * 从而可以通过 {@link ComplexMatrixCache#returnMat(IComplexMatrix)} 来实现对象重复利用
      *
      * @author liqa
      * @param aL 计算具体 Qlm 值的下标，即 {@code Q4m: l = 4, Q6m: l = 6}
@@ -1462,9 +1458,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
-     * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
-     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      *
@@ -1535,9 +1528,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
-     * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
-     * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
      *
@@ -1558,9 +1548,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calQlmMean(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 主要用于内部使用，由于对象较大这里返回 cache 的值，
-     * 从而可以通过 {@link ComplexMatrixCache#returnMat} 来实现对象重复利用
      * <p>
      * Reference: <a href="https://doi.org/10.1063/1.2977970">
      * Accurate determination of crystal structures based on averaged local bond order parameters</a>
@@ -1676,9 +1663,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
      * {@link #calABOOP(int, double, int)}
      * <p>
@@ -1721,9 +1705,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calBOOP(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, ql），需要调用
      * {@link #calABOOP(int, double)}
@@ -1858,9 +1839,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, wl），需要调用
      * {@link #calABOOP3(int, double, int)}
      * <p>
@@ -1921,9 +1899,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * 通过 {@link #calBOOP3(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算对近邻平均过一次的键角序参量（ABOOP, wl），需要调用
      * {@link #calABOOP3(int, double)}
      * <p>
@@ -1957,9 +1932,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * 输出结果为按照输入原子顺序排列的向量；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
      * {@link #calBOOP(int, double, int)}
@@ -2003,9 +1975,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
      * {@link #calBOOP(int, double, int)}
      * <p>
@@ -2029,9 +1998,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calABOOP(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要计算原始的键角序参量（BOOP, Ql），需要调用
      * {@link #calBOOP(int, double)}
@@ -2174,9 +2140,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
      * {@link #calBOOP3(int, double, int)}
      * <p>
@@ -2236,9 +2199,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
      * {@link #calBOOP3(int, double, int)}
      * <p>
@@ -2262,9 +2222,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calABOOP3(int, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要计算原始的键角序参量（BOOP, Wl），需要调用
      * {@link #calBOOP3(int, double)}
@@ -2297,9 +2254,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * 输出结果为按照输入原子顺序排列的向量，数值为连接数目；
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectCountABOOP(int, double, double, int)}
@@ -2380,9 +2334,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectCountABOOP(int, double, double, int)}
      * <p>
@@ -2412,9 +2363,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calConnectCountBOOP(int, double, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectCountABOOP(int, double, double)}
@@ -2584,9 +2532,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectCountBOOP(int, double, double, int)}
      * <p>
@@ -2664,9 +2609,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectCountBOOP(int, double, double, int)}
      * <p>
@@ -2692,9 +2634,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calConnectCountABOOP(int, double, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectCountBOOP(int, double, double)}
@@ -2862,9 +2801,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectRatioABOOP(int, double, double, int)}
      * <p>
@@ -2954,9 +2890,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectRatioABOOP(int, double, double, int)}
      * <p>
@@ -2986,9 +2919,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calConnectRatioBOOP(int, double, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要使用对近邻平均过一次的键角序参量（ABOOP, ql-like），需要调用
      * {@link #calConnectRatioABOOP(int, double, double, int)}
@@ -3165,9 +3095,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectRatioBOOP(int, double, double, int)}
      * <p>
@@ -3254,9 +3181,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
      * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
-     * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectRatioBOOP(int, double, double, int)}
      * <p>
@@ -3282,9 +3206,6 @@ public class AtomicParameterCalculator implements AutoCloseable {
      * <p>
      * 通过 {@link #calConnectRatioABOOP(int, double, double, int)}
      * 考虑 aNnn 可以增加结果的稳定性，但是会增加性能开销
-     * <p>
-     * 为了统一接口这里同样返回 cache 的值，
-     * 从而可以通过 {@link VectorCache#returnVec} 来实现对象重复利用
      * <p>
      * 如果需要使用原始的键角序参量（BOOP, Ql-like），需要调用
      * {@link #calConnectRatioBOOP(int, double, double)}
