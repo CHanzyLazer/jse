@@ -1,7 +1,7 @@
 package jse.atom;
 
-import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
+import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -140,7 +140,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @throws Exception 特殊实现下可选的抛出异常
      */
     @ApiStatus.Experimental
-    double calEnergySingle(int aThreadID, int aCType, DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) throws Exception;
+    double calEnergySingle(int aThreadID, int aCType, Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType) throws Exception;
     
     /**
      * 计算给定索引的单个原子能量以及对近邻的力的接口
@@ -154,7 +154,7 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @throws Exception 特殊实现下可选的抛出异常
      */
     @ApiStatus.Experimental
-    double calEnergyForceSingle(int aThreadID, int aI, DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) throws Exception;
+    double calEnergyForceSingle(int aThreadID, int aI, Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) throws Exception;
     /**
      * 输入一个通用的近邻列表后计算单个原子能量以及对近邻的力的接口，此接口设计上为不依赖
      * {@link #setData(IAtomData)} 的通用接口。
@@ -176,6 +176,6 @@ public interface IPairPotential extends IPotential, IHasSymbol {
      * @throws Exception 特殊实现下可选的抛出异常
      */
     @ApiStatus.Experimental
-    double calEnergyForceSingle(int aThreadID, int aCType, DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) throws Exception;
+    double calEnergyForceSingle(int aThreadID, int aCType, Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType,
+                                Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) throws Exception;
 }

@@ -12,6 +12,11 @@ import java.lang.reflect.Array;
  * @author liqa
  */
 public interface IDataShell<D> {
+    default void setInternal(IDataShell<D> aDataShell) {
+        setInternalData(aDataShell.internalData());
+        setInternalDataSize(aDataShell.internalDataSize());
+        setInternalDataShift(aDataShell.internalDataShift());
+    }
     default void setInternalData(D aData) {throw new UnsupportedOperationException();}
     default void setInternalDataSize(int aSize) {throw new UnsupportedOperationException();}
     default void setInternalDataShift(int aShift) {throw new UnsupportedOperationException();}

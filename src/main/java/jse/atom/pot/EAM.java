@@ -2,13 +2,12 @@ package jse.atom.pot;
 
 import jse.atom.AbstractPairPotential;
 import jse.code.IO;
-import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
 import jse.math.MathEX;
 import jse.math.function.ConstBoundFunc1;
 import jse.math.function.IFunc1;
 import jse.math.function.ZeroBoundFunc1;
 import jse.math.vector.IVector;
+import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import jse.math.vector.Vectors;
 import org.jetbrains.annotations.ApiStatus;
@@ -551,7 +550,7 @@ public class EAM extends AbstractPairPotential {
     
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
-                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+                                  Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType) {
         checkType(aCType);
         double rho = 0.0;
         double mx = 0.0, my = 0.0, mz = 0.0;
@@ -597,8 +596,8 @@ public class EAM extends AbstractPairPotential {
     }
     @ApiStatus.Experimental @Override
     public double calEnergyForceSingle(int aThreadID, int aCType,
-                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+                                       Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType,
+                                       Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) {
         // 旧的 lammps/类lammps 实现存在一些问题，这里改为反向传播的方式来重新实现
         checkType(aCType);
         double rho = 0.0;

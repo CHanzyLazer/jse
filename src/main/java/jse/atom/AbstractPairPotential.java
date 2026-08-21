@@ -4,6 +4,7 @@ import jse.code.collection.DoubleList;
 import jse.code.collection.DoubleWrapper;
 import jse.code.collection.IntList;
 import jse.math.MathEX;
+import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import jse.parallel.ParforThreadPool;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,9 +16,12 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
     protected final NeighborListGetter mNl;
     protected final ParforThreadPool mPool;
     
-    protected final DoubleList[] mNlDxPar, mNlDyPar, mNlDzPar;
-    protected final IntList[] mNlTypePar, mNlIdxPar;
-    protected final DoubleList[] mGradNlDxPar, mGradNlDyPar, mGradNlDzPar;
+    protected final Vector[] mNlDxPar, mNlDyPar, mNlDzPar;
+    protected final IntVector[] mNlTypePar, mNlIdxPar;
+    protected final Vector[] mGradNlDxPar, mGradNlDyPar, mGradNlDzPar;
+    private final DoubleList[] mNlDxParRaw, mNlDyParRaw, mNlDzParRaw;
+    private final IntList[] mNlTypeParRaw, mNlIdxParRaw;
+    private final DoubleList[] mGradNlDxParRaw, mGradNlDyParRaw, mGradNlDzParRaw;
     
     protected final Vector[] mEnergiesPar;
     protected final Vector[] mForcesXPar, mForcesYPar, mForcesZPar;
@@ -36,23 +40,39 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         mNl = new NeighborListGetter();
         
         // 现在在这里初始化缓存的并行占用部分，认为线程数是不变的
-        mNlDxPar = new DoubleList[aNumThreads];
-        mNlDyPar = new DoubleList[aNumThreads];
-        mNlDzPar = new DoubleList[aNumThreads];
-        mNlTypePar = new IntList[aNumThreads];
-        mNlIdxPar = new IntList[aNumThreads];
-        mGradNlDxPar = new DoubleList[aNumThreads];
-        mGradNlDyPar = new DoubleList[aNumThreads];
-        mGradNlDzPar = new DoubleList[aNumThreads];
+        mNlDxPar = new Vector[aNumThreads];
+        mNlDyPar = new Vector[aNumThreads];
+        mNlDzPar = new Vector[aNumThreads];
+        mNlTypePar = new IntVector[aNumThreads];
+        mNlIdxPar = new IntVector[aNumThreads];
+        mGradNlDxPar = new Vector[aNumThreads];
+        mGradNlDyPar = new Vector[aNumThreads];
+        mGradNlDzPar = new Vector[aNumThreads];
+        mNlDxParRaw = new DoubleList[aNumThreads];
+        mNlDyParRaw = new DoubleList[aNumThreads];
+        mNlDzParRaw = new DoubleList[aNumThreads];
+        mNlTypeParRaw = new IntList[aNumThreads];
+        mNlIdxParRaw = new IntList[aNumThreads];
+        mGradNlDxParRaw = new DoubleList[aNumThreads];
+        mGradNlDyParRaw = new DoubleList[aNumThreads];
+        mGradNlDzParRaw = new DoubleList[aNumThreads];
         for (int i = 0; i < aNumThreads; ++i) {
-            mNlDxPar[i] = new DoubleList(16);
-            mNlDyPar[i] = new DoubleList(16);
-            mNlDzPar[i] = new DoubleList(16);
-            mNlTypePar[i] = new IntList(16);
-            mNlIdxPar[i] = new IntList(16);
-            mGradNlDxPar[i] = new DoubleList(16);
-            mGradNlDyPar[i] = new DoubleList(16);
-            mGradNlDzPar[i] = new DoubleList(16);
+            mNlDxPar[i] = new Vector(0, null);
+            mNlDyPar[i] = new Vector(0, null);
+            mNlDzPar[i] = new Vector(0, null);
+            mNlTypePar[i] = new IntVector(0, null);
+            mNlIdxPar[i] = new IntVector(0, null);
+            mGradNlDxPar[i] = new Vector(0, null);
+            mGradNlDyPar[i] = new Vector(0, null);
+            mGradNlDzPar[i] = new Vector(0, null);
+            mNlDxParRaw[i] = new DoubleList(8);
+            mNlDyParRaw[i] = new DoubleList(8);
+            mNlDzParRaw[i] = new DoubleList(8);
+            mNlTypeParRaw[i] = new IntList(8);
+            mNlIdxParRaw[i] = new IntList(8);
+            mGradNlDxParRaw[i] = new DoubleList(8);
+            mGradNlDyParRaw[i] = new DoubleList(8);
+            mGradNlDzParRaw[i] = new DoubleList(8);
         }
         mEnergiesPar = new Vector[aNumThreads];
         mForcesXPar = new Vector[aNumThreads];
@@ -186,8 +206,8 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         }
     }
     protected final void initBufNl(int aThreadID, int aI, boolean aRequireForce) {
-        final DoubleList rNlDx = mNlDxPar[aThreadID], rNlDy = mNlDyPar[aThreadID], rNlDz = mNlDzPar[aThreadID];
-        final IntList rNlType = mNlTypePar[aThreadID], rNlIdx = mNlIdxPar[aThreadID];
+        final DoubleList rNlDx = mNlDxParRaw[aThreadID], rNlDy = mNlDyParRaw[aThreadID], rNlDz = mNlDzParRaw[aThreadID];
+        final IntList rNlType = mNlTypeParRaw[aThreadID], rNlIdx = mNlIdxParRaw[aThreadID];
         rNlDx.clear(); rNlDy.clear(); rNlDz.clear();
         rNlType.clear(); rNlIdx.clear();
         if (typewiseCutoff()) {
@@ -208,12 +228,20 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                 rNlType.add(type); rNlIdx.add(idx);
             });
         }
+        mNlDxPar[aThreadID].setInternal(rNlDx);
+        mNlDyPar[aThreadID].setInternal(rNlDy);
+        mNlDzPar[aThreadID].setInternal(rNlDz);
+        mNlTypePar[aThreadID].setInternal(rNlType);
+        mNlIdxPar[aThreadID].setInternal(rNlIdx);
         if (aRequireForce) {
             final int mNlSize = rNlIdx.size();
-            DoubleList rGradNlDx = mGradNlDxPar[aThreadID], rGradNlDy = mGradNlDyPar[aThreadID], rGradNlDz = mGradNlDzPar[aThreadID];
+            DoubleList rGradNlDx = mGradNlDxParRaw[aThreadID], rGradNlDy = mGradNlDyParRaw[aThreadID], rGradNlDz = mGradNlDzParRaw[aThreadID];
             rGradNlDx.clear(); rGradNlDx.addZeros(mNlSize);
             rGradNlDy.clear(); rGradNlDy.addZeros(mNlSize);
             rGradNlDz.clear(); rGradNlDz.addZeros(mNlSize);
+            mGradNlDxPar[aThreadID].setInternal(rGradNlDx);
+            mGradNlDyPar[aThreadID].setInternal(rGradNlDy);
+            mGradNlDzPar[aThreadID].setInternal(rGradNlDz);
         }
     }
     protected final void initBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
@@ -340,10 +368,10 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         );
     }
     @ApiStatus.Experimental @Override
-    public final double calEnergyForceSingle(int aThreadID, int aI, DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) throws Exception {
+    public final double calEnergyForceSingle(int aThreadID, int aI, Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) throws Exception {
         int ctype = mTypeMap.applyAsInt(mNl.typeAt(aI));
         checkType(ctype);
-        initBufNl(aThreadID, aI, true);
+        initBufNl(aThreadID, aI, false);
         return calEnergyForceSingle(
             aThreadID, ctype,
             mNlDxPar[aThreadID], mNlDyPar[aThreadID], mNlDzPar[aThreadID], mNlTypePar[aThreadID],
@@ -367,7 +395,13 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         // 做全近邻遍历的计算，对应非消息传递的局域多体势的通用实现，非多体势可以做进一步优化
         if (tCalEnergy) {
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
-                double tEng = calEnergySingle(threadID, i);
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                checkType(ctype);
+                initBufNl(threadID, i, false);
+                double tEng = calEnergySingle(
+                    threadID, ctype,
+                    mNlDxPar[threadID], mNlDyPar[threadID], mNlDzPar[threadID], mNlTypePar[threadID]
+                );
                 if (aRequireTotalEnergy) {
                     mEnergyPar[threadID].mValue += tEng;
                 }
@@ -379,9 +413,16 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
         if (tCalEnergyForce) {
             final boolean tCentroid = centroidPerAtomStressSupport();
             mPool.parforWithException(mNumAtoms, this::initDo, this::finalDo, (i, threadID) -> {
-                DoubleList tNlDx = mNlDxPar[threadID], tNlDy = mNlDyPar[threadID], tNlDz = mNlDzPar[threadID];
-                DoubleList rGradNlDx = mGradNlDxPar[threadID], rGradNlDy = mGradNlDyPar[threadID], rGradNlDz = mGradNlDzPar[threadID];
-                double tEng = calEnergyForceSingle(threadID, i, rGradNlDx, rGradNlDy, rGradNlDz);
+                int ctype = mTypeMap.applyAsInt(mNl.typeAt(i));
+                checkType(ctype);
+                initBufNl(threadID, i, true);
+                Vector tNlDx = mNlDxPar[threadID], tNlDy = mNlDyPar[threadID], tNlDz = mNlDzPar[threadID];
+                Vector rGradNlDx = mGradNlDxPar[threadID], rGradNlDy = mGradNlDyPar[threadID], rGradNlDz = mGradNlDzPar[threadID];
+                double tEng = calEnergyForceSingle(
+                    threadID, ctype,
+                    tNlDx, tNlDy, tNlDz, mNlTypePar[threadID],
+                    rGradNlDx, rGradNlDy, rGradNlDz
+                );
                 if (aRequireTotalEnergy) {
                     mEnergyPar[threadID].mValue += tEng;
                 }
@@ -389,7 +430,7 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                     mEnergiesPar[threadID].add(i, tEng);
                 }
                 // 累加交叉项到近邻
-                IntList tNlIdx = mNlIdxPar[threadID];
+                IntVector tNlIdx = mNlIdxPar[threadID];
                 final int tNlSize = tNlIdx.size();
                 Vector tForcesX = aRequireForce ? mForcesXPar[threadID] : null;
                 Vector tForcesY = aRequireForce ? mForcesYPar[threadID] : null;

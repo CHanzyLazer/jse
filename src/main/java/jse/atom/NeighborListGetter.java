@@ -6,6 +6,8 @@ import jse.cache.IntArrayCache;
 import jse.code.collection.DoubleList;
 import jse.code.collection.IntList;
 import jse.math.MathEX;
+import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -661,23 +663,23 @@ public class NeighborListGetter implements IHasSymbol {
     
     /// 直接构建获取值拷贝后的近邻列表
     /**
-     * 获取给定索引原子的近邻原子索引组成的列表，不包括自身
+     * 获取给定索引原子的近邻原子索引组成的向量，不包括自身
      * <p>
      * 如果需要近邻原子的相对坐标需要使用
      * {@link #getFull(int, int)}
      *
      * @param aIdx 需要获取近邻列表的原子索引
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 近邻原子索引组成的列表，不包括自身
+     * @return 近邻原子索引组成的向量，不包括自身
      */
-    public IntList get(int aIdx, int aNnn) {
+    public IntVector get(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rNL = new IntList(16);
+        IntVector.Builder rNL = IntVector.builder();
         forEach(aIdx, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
-        return rNL;
+        return rNL.build();
     }
     /**
-     * 获取给定索引原子的近邻原子索引组成的列表，不包括自身
+     * 获取给定索引原子的近邻原子索引组成的向量，不包括自身
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #get(int, int)}
@@ -689,7 +691,7 @@ public class NeighborListGetter implements IHasSymbol {
      * @param aIdx 需要获取近邻列表的原子索引
      * @return 近邻原子索引组成的，不包括自身
      */
-    public IntList get(int aIdx) {
+    public IntVector get(int aIdx) {
         return get(aIdx, -1);
     }
     
@@ -698,28 +700,28 @@ public class NeighborListGetter implements IHasSymbol {
      * 目前来说如果需要类似功能则需使用 {@link #get(IXYZ, int)}
      * @see #get(IXYZ, int)
      */
-    @ApiStatus.Internal public IntList get_(double aX, double aY, double aZ, int aNnn) {
+    @ApiStatus.Internal public IntVector get_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        IntList rNL = new IntList(16);
+        IntVector.Builder rNL = IntVector.builder();
         forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> rNL.add(idx));
-        return rNL;
+        return rNL.build();
     }
     /**
-     * 获取给定坐标近邻原子索引组成的列表，不会特意排除恰好位于输入坐标的点
+     * 获取给定坐标近邻原子索引组成的向量，不会特意排除恰好位于输入坐标的点
      * <p>
      * 如果需要近邻原子的相对坐标需要使用
      * {@link #getFull(IXYZ, int)}
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
      * @param aNnn 需要的最近的近邻原子数目
-     * @return 近邻原子索引组成的列表
+     * @return 近邻原子索引组成的向量
      * @see IXYZ
      */
-    public IntList get(IXYZ aXYZ, int aNnn) {
+    public IntVector get(IXYZ aXYZ, int aNnn) {
         return get_(aXYZ.x(), aXYZ.y(), aXYZ.z(), aNnn);
     }
     /**
-     * 获取给定坐标近邻原子索引组成的列表，不会特意排除恰好位于输入坐标的点
+     * 获取给定坐标近邻原子索引组成的向量，不会特意排除恰好位于输入坐标的点
      * <p>
      * 如果需要获取指定数目的最近的近邻原子列表，则使用
      * {@link #get(IXYZ, int)}
@@ -729,15 +731,15 @@ public class NeighborListGetter implements IHasSymbol {
      * {@link #getFull(IXYZ)}
      *
      * @param aXYZ 需要获取近邻列表的 xyz 坐标
-     * @return 近邻原子索引组成的列表
+     * @return 近邻原子索引组成的向量
      * @see IXYZ
      */
-    public IntList get(IXYZ aXYZ) {
+    public IntVector get(IXYZ aXYZ) {
         return get(aXYZ, -1);
     }
     
     /**
-     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
+     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的向量，不包括自身。
      * 其中相对坐标按照定义：{@code dr = rj - ri}，其中 {@code i}
      * 为中心索引，{@code j} 为近邻索引。
      * <p>
@@ -748,20 +750,20 @@ public class NeighborListGetter implements IHasSymbol {
      * @param aNnn 需要的最近的近邻原子数目
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表，不包括自身
      */
-    public List<DoubleList> getFull(int aIdx, int aNnn) {
+    public List<Vector> getFull(int aIdx, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        DoubleList rIdx = new DoubleList(16);
-        DoubleList rDx = new DoubleList(16);
-        DoubleList rDy = new DoubleList(16);
-        DoubleList rDz = new DoubleList(16);
+        Vector.Builder rIdx = Vector.builder();
+        Vector.Builder rDx = Vector.builder();
+        Vector.Builder rDy = Vector.builder();
+        Vector.Builder rDz = Vector.builder();
         forEach(aIdx, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx, rDy, rDz, rIdx);
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build());
     }
     /**
-     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
+     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的向量，不包括自身。
      * 其中相对坐标按照定义：{@code dr = rj - ri}，其中 {@code i}
      * 为中心索引，{@code j} 为近邻索引。
      * <p>
@@ -775,7 +777,7 @@ public class NeighborListGetter implements IHasSymbol {
      * @param aIdx 需要获取近邻列表的原子索引
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表，不包括自身
      */
-    public List<DoubleList> getFull(int aIdx) {
+    public List<Vector> getFull(int aIdx) {
         return getFull(aIdx, -1);
     }
     
@@ -784,20 +786,20 @@ public class NeighborListGetter implements IHasSymbol {
      * 目前来说如果需要类似功能则需使用 {@link #getFull(IXYZ, int)}
      * @see #getFull(IXYZ, int)
      */
-    @ApiStatus.Internal public List<DoubleList> getFull_(double aX, double aY, double aZ, int aNnn) {
+    @ApiStatus.Internal public List<Vector> getFull_(double aX, double aY, double aZ, int aNnn) {
         if (!mValid) throw new IllegalStateException("Need `build` first");
-        DoubleList rIdx = new DoubleList(16);
-        DoubleList rDx = new DoubleList(16);
-        DoubleList rDy = new DoubleList(16);
-        DoubleList rDz = new DoubleList(16);
+        Vector.Builder rIdx = Vector.builder();
+        Vector.Builder rDx = Vector.builder();
+        Vector.Builder rDy = Vector.builder();
+        Vector.Builder rDz = Vector.builder();
         forEach(aX, aY, aZ, aNnn, (dx, dy, dz, idx) -> {
             rIdx.add(idx);
             rDx.add(dx); rDy.add(dy); rDz.add(dz);
         });
-        return Lists.newArrayList(rDx, rDy, rDz, rIdx);
+        return Lists.newArrayList(rDx.build(), rDy.build(), rDz.build(), rIdx.build());
     }
     /**
-     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
+     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的向量，不包括自身。
      * 其中相对坐标按照定义：{@code dr = rj - ri}，其中 {@code i}
      * 为中心索引，{@code j} 为近邻索引。
      * <p>
@@ -809,11 +811,11 @@ public class NeighborListGetter implements IHasSymbol {
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表
      * @see IXYZ
      */
-    public List<DoubleList> getFull(IXYZ aXYZ, int aNnn) {
+    public List<Vector> getFull(IXYZ aXYZ, int aNnn) {
         return getFull_(aXYZ.x(), aXYZ.y(), aXYZ.z(), aNnn);
     }
     /**
-     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的列表，不包括自身。
+     * 获取给定索引原子的近邻原子的相对坐标以及索引组成的向量，不包括自身。
      * 其中相对坐标按照定义：{@code dr = rj - ri}，其中 {@code i}
      * 为中心索引，{@code j} 为近邻索引。
      * <p>
@@ -828,7 +830,7 @@ public class NeighborListGetter implements IHasSymbol {
      * @return 按照 {@code [dx, dy, dz, idx]} 顺序排列的列表
      * @see IXYZ
      */
-    public List<DoubleList> getFull(IXYZ aXYZ) {
+    public List<Vector> getFull(IXYZ aXYZ) {
         return getFull(aXYZ, -1);
     }
 }

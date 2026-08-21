@@ -38,7 +38,7 @@ public abstract class AbstractClusterSizeCalculator implements IParameterCalcula
                 List<? extends IIntVector> tClusters = MathEX.Adv.getClustersDFS(
                     tIsSolid.size(),
                     AbstractCollections.filterInt(tIsSolid.size(), tIsSolid),
-                    i -> AbstractCollections.filterInt(tNl.get(i).asVec(), tIsSolid)
+                    i -> AbstractCollections.filterInt(tNl.get(i), tIsSolid)
                 );
                 // 遍历团簇统计 lambda，区分 countAll() 和一般只统计最大的逻辑
                 double rLambda = 0.0;

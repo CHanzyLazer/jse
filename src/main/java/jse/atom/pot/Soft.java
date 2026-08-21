@@ -1,9 +1,9 @@
 package jse.atom.pot;
 
 import jse.atom.AbstractPairPotential;
-import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
 import jse.math.MathEX;
+import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +109,7 @@ public class Soft extends AbstractPairPotential {
     
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
-                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+                                  Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType) {
         if (mNumTypes <= 0) aCType = 0;
         checkType(aCType);
         double tEng = 0.0;
@@ -128,8 +128,8 @@ public class Soft extends AbstractPairPotential {
     }
     @ApiStatus.Experimental @Override
     public double calEnergyForceSingle(int aThreadID, int aCType,
-                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+                                       Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType,
+                                       Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) {
         if (mNumTypes <= 0) aCType = 0;
         checkType(aCType);
         double tEng = 0.0;

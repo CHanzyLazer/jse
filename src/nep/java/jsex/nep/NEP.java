@@ -7,12 +7,13 @@ import jse.code.LibVer;
 import jse.code.OS;
 import jse.code.UT;
 import jse.code.collection.DoubleList;
-import jse.code.collection.IntList;
 import jse.cptr.*;
 import jse.gpu.*;
 import jse.jit.IJITEngine;
 import jse.jit.IJITMethod;
 import jse.jit.SimpleJIT;
+import jse.math.vector.IntVector;
+import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -110,7 +111,7 @@ public class NEP extends AbstractPairPotential {
     
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
-                                  DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType) {
+                                  Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType) {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
@@ -134,8 +135,8 @@ public class NEP extends AbstractPairPotential {
     }
     @ApiStatus.Experimental @Override
     public double calEnergyForceSingle(int aThreadID, int aCType,
-                                       DoubleList aNlDx, DoubleList aNlDy, DoubleList aNlDz, IntList aNlType,
-                                       DoubleList rGradNlDx, DoubleList rGradNlDy, DoubleList rGradNlDz) {
+                                       Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType,
+                                       Vector rGradNlDx, Vector rGradNlDy, Vector rGradNlDz) {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (mCuda) throw new UnsupportedOperationException();
