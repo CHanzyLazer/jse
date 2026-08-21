@@ -113,17 +113,17 @@ public class LmpPotential extends AbstractLmpPotential {
     /**
      * {@inheritDoc}
      * @param aRequireTotalEnergy {@inheritDoc}
-     * @param aRequirePreAtomEnergy {@inheritDoc}
+     * @param aRequirePerAtomEnergy {@inheritDoc}
      * @param aRequireForce {@inheritDoc}
      * @param aRequireTotalStress {@inheritDoc}
-     * @param aRequirePreAtomStress {@inheritDoc}
+     * @param aRequirePerAtomStress {@inheritDoc}
      * @throws LmpException 触发 LAMMPS 异常
      * @throws MPIException 触发 MPI 异常
      */
-    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws LmpException, MPIException {
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) throws LmpException, MPIException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
-        // 没有设置 data 抛出异常
-        if (mData == null) throw new IllegalStateException("Need `setData` first");
+        if (!dataValid()) throw new IllegalStateException("data invalid");
+        assert mData!=null;
         // 除了保持简单，pair style 等参数也可能发生改变，因此这里总是触发清理和重新计算
         mLmp.clear();
         if (mBeforeCommands != null) mLmp.commands(mBeforeCommands);
@@ -145,17 +145,17 @@ public class LmpPotential extends AbstractLmpPotential {
         }
         mLmp.command("thermo_style  custom step "+String.join(" ", rThermoStyle));
         // 按需增加对应的 compute
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             mLmp.command("compute eng_atom all pe/atom");
         }
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             mLmp.command("compute stress_atom all stress/atom NULL virial");
         }
         // 通过 run 0 来触发计算
         mLmp.command("run  0");
         // lammps 会乱序，需要重新排序，这里可以确定可以按照 id 来排序
         IntVector tLmpIdx2Idx = null;
-        if (aRequireForce || aRequirePreAtomEnergy || aRequirePreAtomStress) {
+        if (aRequireForce || aRequirePerAtomEnergy || aRequirePerAtomStress) {
             tLmpIdx2Idx = mLmp.atomIntDataOf("id").asVecRow();
             tLmpIdx2Idx.minus2this(1);
         }
@@ -178,11 +178,11 @@ public class LmpPotential extends AbstractLmpPotential {
             mForcesY.putAt(tLmpIdx2Idx, tForces.col(1));
             mForcesZ.putAt(tLmpIdx2Idx, tForces.col(2));
         }
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             Vector tEnergies = mLmp.computeOf("eng_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_VECTOR).asVecRow();
             mEnergies.putAt(tLmpIdx2Idx, tEnergies);
         }
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             RowMatrix tStresses = mLmp.computeOf("stress_atom", NativeLmp.LMP_STYLE_ATOM, NativeLmp.LMP_TYPE_ARRAY);
             tStresses.operation().map2this(this::validStressUnit);
             mStressesXX.putAt(tLmpIdx2Idx, tStresses.col(0));
@@ -194,6 +194,12 @@ public class LmpPotential extends AbstractLmpPotential {
         }
         mLmp.clear();
         // 最后调整 box 变化导致的力和应力方向变化
-        validBox(aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
+        validBox(aRequireForce, aRequireTotalStress, aRequirePerAtomStress);
+        // 设置对应值合法
+        if (aRequireTotalEnergy) mTotalEnergyValid = true;
+        if (aRequirePerAtomEnergy) mPerAtomEnergyValid = true;
+        if (aRequireForce) mForceValid = true;
+        if (aRequireTotalStress) mTotalStressValid = true;
+        if (aRequirePerAtomStress) mPerAtomStressValid = true;
     }
 }

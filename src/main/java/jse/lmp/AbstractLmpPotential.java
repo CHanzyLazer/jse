@@ -148,7 +148,7 @@ abstract class AbstractLmpPotential extends AbstractPotential {
         mBoxOut.toCartesian(rBuf1);
         mBoxOut.toCartesian(rBuf2);
     }
-    void validBox(boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) {
+    void validBox(boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
         // 如果模拟盒不是 lmpstyle，还需要对力以及压力进行转换
         if (!mIsLmpStyle) {
             XYZ tBuf0 = new XYZ(), tBuf1 = new XYZ(), tBuf2 = new XYZ();
@@ -168,7 +168,7 @@ abstract class AbstractLmpPotential extends AbstractPotential {
                 mStressXX = tBuf0.mX; mStressYY = tBuf1.mY; mStressZZ = tBuf2.mZ;
                 mStressXY = tBuf0.mY; mStressXZ = tBuf0.mZ; mStressYZ = tBuf1.mZ;
             }
-            if (aRequirePreAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
+            if (aRequirePerAtomStress) for (int i = 0; i < mNumAtoms; ++i) {
                 tBuf0.setXYZ(mStressesXX.get(i), mStressesXY.get(i), mStressesXZ.get(i));
                 tBuf1.setXYZ(mStressesXY.get(i), mStressesYY.get(i), mStressesYZ.get(i));
                 tBuf2.setXYZ(mStressesXZ.get(i), mStressesYZ.get(i), mStressesZZ.get(i));

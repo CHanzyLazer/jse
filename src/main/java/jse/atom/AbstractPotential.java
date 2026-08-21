@@ -12,6 +12,9 @@ import java.util.Map;
 public abstract class AbstractPotential implements IPotential {
     protected int mNumAtoms = -1;
     protected double mVolume = Double.NaN;
+    @Override public final boolean dataValid() {
+        return mNumAtoms >= 0;
+    }
     
     protected double mEnergy = Double.NaN;
     protected double mStressXX = Double.NaN, mStressYY = Double.NaN, mStressZZ = Double.NaN;
@@ -25,9 +28,33 @@ public abstract class AbstractPotential implements IPotential {
     private final DoubleList mForcesRaw = new DoubleList();
     private final DoubleList mStressesRaw = new DoubleList();
     
+    protected boolean mTotalEnergyValid = false, mPerAtomEnergyValid = false;
+    protected boolean mTotalStressValid = false, mPerAtomStressValid = false;
+    protected boolean mForceValid = false;
+    @Override public final boolean totalEnergyValid() {
+        return mTotalEnergyValid;
+    }
+    @Override public final boolean perAtomEnergyValid() {
+        return mPerAtomEnergyValid;
+    }
+    @Override public final boolean totalStressValid() {
+        return mTotalStressValid;
+    }
+    @Override public final boolean perAtomStressValid() {
+        return mPerAtomStressValid;
+    }
+    @Override public final boolean forceValid() {
+        return mForceValid;
+    }
+    
     @Override public AbstractPotential setData(IAtomData aData) throws Exception {
         mNumAtoms = aData.natoms();
         mVolume = aData.volume();
+        mTotalEnergyValid = false;
+        mPerAtomEnergyValid = false;
+        mTotalStressValid = false;
+        mPerAtomStressValid = false;
+        mForceValid = false;
         // 目前约定 setData 后统一初始化为 0
         mEnergy = 0.0;
         mStressXX = mStressYY = mStressZZ = mStressXY = mStressXZ = mStressYZ = 0.0;
@@ -44,8 +71,8 @@ public abstract class AbstractPotential implements IPotential {
             mEnergies = mEnergiesRaw.asVec();
         }
         if (perAtomStressSupport()) {
-            mStressesRaw.clear();
             boolean tCentroid = centroidPerAtomStressSupport();
+            mStressesRaw.clear();
             mStressesRaw.addZeros(mNumAtoms*(tCentroid?9:6));
             tData = mStressesRaw.internalData();
             tShift = 0;
@@ -63,7 +90,6 @@ public abstract class AbstractPotential implements IPotential {
         }
         return this;
     }
-    
     
     private final DoubleList mForcesAse = new DoubleList();
     private final DoubleList mStressAse = new DoubleList(), mStressesAse = new DoubleList();
@@ -136,30 +162,89 @@ public abstract class AbstractPotential implements IPotential {
     }
     
     @Override public final double energy() {
+        if (!mTotalEnergyValid) throw new IllegalStateException("total energy invalid");
         return mEnergy;
     }
     @Override public final Vector energies() {
-        if (!perAtomEnergySupport()) return null;
+        if (!mPerAtomEnergyValid) throw new IllegalStateException("per-atom energy invalid");
         return mEnergies;
     }
-    @Override public final Vector forcesX() {return mForcesX;}
-    @Override public final Vector forcesY() {return mForcesY;}
-    @Override public final Vector forcesZ() {return mForcesZ;}
     
-    @Override public final double stressXX() {return mStressXX;}
-    @Override public final double stressYY() {return mStressYY;}
-    @Override public final double stressZZ() {return mStressZZ;}
-    @Override public final double stressXY() {return mStressXY;}
-    @Override public final double stressXZ() {return mStressXZ;}
-    @Override public final double stressYZ() {return mStressYZ;}
+    @Override public final Vector forcesX() {
+        if (!mForceValid) throw new IllegalStateException("force invalid");
+        return mForcesX;
+    }
+    @Override public final Vector forcesY() {
+        if (!mForceValid) throw new IllegalStateException("force invalid");
+        return mForcesY;
+    }
+    @Override public final Vector forcesZ() {
+        if (!mForceValid) throw new IllegalStateException("force invalid");
+        return mForcesZ;
+    }
     
-    @Override public final Vector stressesXX() {return mStressesXX;}
-    @Override public final Vector stressesYY() {return mStressesYY;}
-    @Override public final Vector stressesZZ() {return mStressesZZ;}
-    @Override public final Vector stressesXY() {return mStressesXY;}
-    @Override public final Vector stressesXZ() {return mStressesXZ;}
-    @Override public final Vector stressesYZ() {return mStressesYZ;}
-    @Override public final Vector stressesYX() {return mStressesYX;}
-    @Override public final Vector stressesZX() {return mStressesZX;}
-    @Override public final Vector stressesZY() {return mStressesZY;}
+    @Override public final double stressXX() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressXX;
+    }
+    @Override public final double stressYY() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressYY;
+    }
+    @Override public final double stressZZ() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressZZ;
+    }
+    @Override public final double stressXY() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressXY;
+    }
+    @Override public final double stressXZ() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressXZ;
+    }
+    @Override public final double stressYZ() {
+        if (!mTotalStressValid) throw new IllegalStateException("total stress invalid");
+        return mStressYZ;
+    }
+    
+    @Override public final Vector stressesXX() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesXX;
+    }
+    @Override public final Vector stressesYY() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesYY;
+    }
+    @Override public final Vector stressesZZ() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesZZ;
+    }
+    @Override public final Vector stressesXY() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesXY;
+    }
+    @Override public final Vector stressesXZ() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesXZ;
+    }
+    @Override public final Vector stressesYZ() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        return mStressesYZ;
+    }
+    @Override public final Vector stressesYX() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        if (!centroidPerAtomStressSupport()) throw new UnsupportedOperationException("stressesYX for no centroid stresses support");
+        return mStressesYX;
+    }
+    @Override public final Vector stressesZX() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        if (!centroidPerAtomStressSupport()) throw new UnsupportedOperationException("stressesZX for no centroid stresses support");
+        return mStressesZX;
+    }
+    @Override public final Vector stressesZY() {
+        if (!mPerAtomStressValid) throw new IllegalStateException("per-atom stress invalid");
+        if (!centroidPerAtomStressSupport()) throw new UnsupportedOperationException("stressesZY for no centroid stresses support");
+        return mStressesZY;
+    }
 }

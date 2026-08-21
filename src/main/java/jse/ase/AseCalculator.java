@@ -135,18 +135,18 @@ public class AseCalculator extends AbstractPotential {
     /**
      * {@inheritDoc}
      * @param aRequireTotalEnergy {@inheritDoc}
-     * @param aRequirePreAtomEnergy {@inheritDoc}
+     * @param aRequirePerAtomEnergy {@inheritDoc}
      * @param aRequireForce {@inheritDoc}
      * @param aRequireTotalStress {@inheritDoc}
-     * @param aRequirePreAtomStress {@inheritDoc}
+     * @param aRequirePerAtomStress {@inheritDoc}
      * @throws JepException 触发 jep 异常
      */
-    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws JepException {
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) throws JepException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
-        // 没有设置 data 抛出异常
-        if (mAtoms == null) throw new IllegalStateException("Need `setData` first");
+        if (!dataValid()) throw new IllegalStateException("data invalid");
+        assert mAtoms!=null;
         // 按照难度逆序计算，可以利用 ase 计算器的缓存特性避免重复计算
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             if (!mPerAtomStressSupport) throw new UnsupportedOperationException("per-atom stress not supported");
             NDArray<?> tPyStresses;
             try (PyCallable tGetStresses = mAtoms.getAttr("get_stresses", PyCallable.class)) {
@@ -189,7 +189,7 @@ public class AseCalculator extends AbstractPotential {
                 mForcesZ.set(i, tForces.get(i, 2));
             }
         }
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             if (!mPerAtomEnergySupport) throw new UnsupportedOperationException("per-atom energy not supported");
             NDArray<?> tPyEnergies;
             try (PyCallable tGetEnergies = mAtoms.getAttr("get_potential_energies", PyCallable.class)) {
@@ -204,5 +204,11 @@ public class AseCalculator extends AbstractPotential {
                 mEnergy = tGetEnergy.callAs(Number.class).doubleValue();
             }
         }
+        // 设置对应值合法
+        if (aRequireTotalEnergy) mTotalEnergyValid = true;
+        if (aRequirePerAtomEnergy) mPerAtomEnergyValid = true;
+        if (aRequireForce) mForceValid = true;
+        if (aRequireTotalStress) mTotalStressValid = true;
+        if (aRequirePerAtomStress) mPerAtomStressValid = true;
     }
 }

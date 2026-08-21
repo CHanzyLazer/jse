@@ -150,16 +150,16 @@ public class SystemLmpPotential extends AbstractLmpPotential {
     /**
      * {@inheritDoc}
      * @param aRequireTotalEnergy {@inheritDoc}
-     * @param aRequirePreAtomEnergy {@inheritDoc}
+     * @param aRequirePerAtomEnergy {@inheritDoc}
      * @param aRequireForce {@inheritDoc}
      * @param aRequireTotalStress {@inheritDoc}
-     * @param aRequirePreAtomStress {@inheritDoc}
+     * @param aRequirePerAtomStress {@inheritDoc}
      * @throws IOException 读写临时文件时触发异常
      */
-    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws IOException {
+    @Override public void calculate(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) throws IOException {
         if (mDead) throw new IllegalStateException("This Potential is dead");
-        // 没有设置 data 抛出异常
-        if (mDataPath == null) throw new IllegalStateException("Need `setData` first");
+        if (!dataValid()) throw new IllegalStateException("data invalid");
+        assert mDataPath!=null;
         // 除了保持简单，pair style 等参数也可能发生改变，因此这里总是触发重新计算
         String tUniqueID = UT.Code.randID();
         // 准备输入 in 文件
@@ -191,10 +191,10 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         rLmpIn.add("thermo  1");
         rLmpIn.add("thermo_modify  format float %24.18g"); // 调整输出精度
         // 按需增加对应的 compute
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             rLmpIn.add("compute eng_atom all pe/atom");
         }
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             rLmpIn.add("compute stress_atom all stress/atom NULL virial");
         }
         String tDumpPath = mChecker.mWorkingDir+"dump-"+tUniqueID;
@@ -204,10 +204,10 @@ public class SystemLmpPotential extends AbstractLmpPotential {
             rDumpCustom.add("fy");
             rDumpCustom.add("fz");
         }
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             rDumpCustom.add("c_eng_atom");
         }
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             rDumpCustom.add("c_stress_atom[1]");
             rDumpCustom.add("c_stress_atom[2]");
             rDumpCustom.add("c_stress_atom[3]");
@@ -231,7 +231,7 @@ public class SystemLmpPotential extends AbstractLmpPotential {
         ITable tDump = SubLammpstrj.read(tDumpPath).asTable();
         // lammps 会乱序，需要重新排序，这里可以确定可以按照 id 来排序
         IIntVector tLmpIdx2Idx = null;
-        if (aRequireForce || aRequirePreAtomEnergy || aRequirePreAtomStress) {
+        if (aRequireForce || aRequirePerAtomEnergy || aRequirePerAtomStress) {
             tLmpIdx2Idx = tDump.col("id").asIntVec().copy();
             tLmpIdx2Idx.minus2this(1);
         }
@@ -251,10 +251,10 @@ public class SystemLmpPotential extends AbstractLmpPotential {
             mForcesY.putAt(tLmpIdx2Idx, tDump.col("fy"));
             mForcesZ.putAt(tLmpIdx2Idx, tDump.col("fz"));
         }
-        if (aRequirePreAtomEnergy) {
+        if (aRequirePerAtomEnergy) {
             mEnergies.putAt(tLmpIdx2Idx, tDump.col("c_eng_atom"));
         }
-        if (aRequirePreAtomStress) {
+        if (aRequirePerAtomStress) {
             mStressesXX.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[1]")); mStressesXX.operation().map2this(this::validStressUnit);
             mStressesYY.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[2]")); mStressesYY.operation().map2this(this::validStressUnit);
             mStressesZZ.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[3]")); mStressesZZ.operation().map2this(this::validStressUnit);
@@ -263,6 +263,12 @@ public class SystemLmpPotential extends AbstractLmpPotential {
             mStressesYZ.putAt(tLmpIdx2Idx, tDump.col("c_stress_atom[6]")); mStressesYZ.operation().map2this(this::validStressUnit);
         }
         // 最后调整 box 变化导致的力和应力方向变化
-        validBox(aRequireForce, aRequireTotalStress, aRequirePreAtomStress);
+        validBox(aRequireForce, aRequireTotalStress, aRequirePerAtomStress);
+        // 设置对应值合法
+        if (aRequireTotalEnergy) mTotalEnergyValid = true;
+        if (aRequirePerAtomEnergy) mPerAtomEnergyValid = true;
+        if (aRequireForce) mForceValid = true;
+        if (aRequireTotalStress) mTotalStressValid = true;
+        if (aRequirePerAtomStress) mPerAtomStressValid = true;
     }
 }

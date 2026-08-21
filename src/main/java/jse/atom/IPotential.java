@@ -29,6 +29,8 @@ public interface IPotential extends AutoCloseable {
      * @return 自身方便链式调用
      */
     IPotential setData(IAtomData aData) throws Exception;
+    /** @return 是否经过 {@link #setData} 使自身有合适的原子数据 */
+    boolean dataValid();
     /**
      * 检测此势函数是否已经关闭，默认永远为 {@code false}（即使手动调用了
      * {@link #close()}），即默认不会去进行是否关闭的检测；
@@ -69,13 +71,13 @@ public interface IPotential extends AutoCloseable {
      * 一般情况直接使用 {@link #calculate()} 来直接计算所有结果。
      *
      * @param aRequireTotalEnergy 需要计算总能量，对应 {@link #energy()} 合法
-     * @param aRequirePreAtomEnergy 需要计算每原子能量，对应 {@link #energies()} 合法
+     * @param aRequirePerAtomEnergy 需要计算每原子能量，对应 {@link #energies()} 合法
      * @param aRequireForce 需要计算力，对应 {@link #forces()} 合法
      * @param aRequireTotalStress 需要计算总应力，对应 {@link #stress()} 合法
-     * @param aRequirePreAtomStress 需要计算每原子应力，对应 {@link #stresses()} 合法
+     * @param aRequirePerAtomStress 需要计算每原子应力，对应 {@link #stresses()} 合法
      * @throws Exception 特殊实现下可选的抛出异常
      */
-    void calculate(boolean aRequireTotalEnergy, boolean aRequirePreAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePreAtomStress) throws Exception;
+    void calculate(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) throws Exception;
     /**
      * 对内部的原子数据计算所有可以计算的量并存储结果，计算完成的结果通过
      * {@link #energy()} 等接口获取。
@@ -88,6 +90,16 @@ public interface IPotential extends AutoCloseable {
     default void calculate() throws Exception {
         calculate(true, perAtomEnergySupport(), true, true, perAtomStressSupport());
     }
+    /** @return 是否经过 {@link #calculate} 计算并得到总能量，对应 {@link #energy()} 合法 */
+    boolean totalEnergyValid();
+    /** @return 是否经过 {@link #calculate} 计算并得到每原子能量，对应 {@link #energies()} 合法 */
+    boolean perAtomEnergyValid();
+    /** @return 是否经过 {@link #calculate} 计算并得到力，对应 {@link #forces()} 合法 */
+    boolean forceValid();
+    /** @return 是否经过 {@link #calculate} 计算并得到总应力，对应 {@link #stress()} 合法 */
+    boolean totalStressValid();
+    /** @return 是否经过 {@link #calculate} 计算并得到每原子应力，对应 {@link #stresses()} 合法 */
+    boolean perAtomStressValid();
     
     /**
      * 获取此势计算得到的总能量
