@@ -121,28 +121,28 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
         const flt_t fxj = nlFx[jj*nlocal + i];
         const flt_t fyj = nlFy[jj*nlocal + i];
         const flt_t fzj = nlFz[jj*nlocal + i];
-        f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-        atomicAdd(f + (0*nlocalghost + j), fxj);
-        atomicAdd(f + (1*nlocalghost + j), fyj);
-        atomicAdd(f + (2*nlocalghost + j), fzj);
+        f0xi += fxj; f0yi += fyj; f0zi += fzj;
+        atomicAdd(f + (0*nlocalghost + j), -fxj);
+        atomicAdd(f + (1*nlocalghost + j), -fyj);
+        atomicAdd(f + (2*nlocalghost + j), -fzj);
         if (VTOTAL||VATOM) {
             const flt_t dx = posx[j] - xi;
             const flt_t dy = posy[j] - yi;
             const flt_t dz = posz[j] - zi;
             if (VTOTAL) {
-                v0xxi += dx*fxj; v0yyi += dy*fyj; v0zzi += dz*fzj;
-                v0xyi += dx*fyj; v0xzi += dx*fzj; v0yzi += dy*fzj;
+                v0xxi -= dx*fxj; v0yyi -= dy*fyj; v0zzi -= dz*fzj;
+                v0xyi -= dx*fyj; v0xzi -= dx*fzj; v0yzi -= dy*fzj;
             }
             if (VATOM) {
-                atomicAdd(vatom1 + (0*nlocalghost + j), dx*fxj);
-                atomicAdd(vatom1 + (1*nlocalghost + j), dy*fyj);
-                atomicAdd(vatom1 + (2*nlocalghost + j), dz*fzj);
-                atomicAdd(vatom1 + (3*nlocalghost + j), dx*fyj);
-                atomicAdd(vatom1 + (4*nlocalghost + j), dx*fzj);
-                atomicAdd(vatom1 + (5*nlocalghost + j), dy*fzj);
-                atomicAdd(vatom1 + (6*nlocalghost + j), dy*fxj);
-                atomicAdd(vatom1 + (7*nlocalghost + j), dz*fxj);
-                atomicAdd(vatom1 + (8*nlocalghost + j), dz*fyj);
+                atomicAdd(vatom1 + (0*nlocalghost + j), -dx*fxj);
+                atomicAdd(vatom1 + (1*nlocalghost + j), -dy*fyj);
+                atomicAdd(vatom1 + (2*nlocalghost + j), -dz*fzj);
+                atomicAdd(vatom1 + (3*nlocalghost + j), -dx*fyj);
+                atomicAdd(vatom1 + (4*nlocalghost + j), -dx*fzj);
+                atomicAdd(vatom1 + (5*nlocalghost + j), -dy*fzj);
+                atomicAdd(vatom1 + (6*nlocalghost + j), -dy*fxj);
+                atomicAdd(vatom1 + (7*nlocalghost + j), -dz*fxj);
+                atomicAdd(vatom1 + (8*nlocalghost + j), -dz*fyj);
             }
         }
     }
@@ -340,24 +340,24 @@ static __global__ void collectGpumdResultsKernel(int number_of_particles, int N1
         const flt_t fx = rBufGradNlDx[jj*number_of_particles + ii];
         const flt_t fy = rBufGradNlDy[jj*number_of_particles + ii];
         const flt_t fz = rBufGradNlDz[jj*number_of_particles + ii];
-        f0x -= fx;
-        f0y -= fy;
-        f0z -= fz;
-        atomicAdd(g_fx + j, fx);
-        atomicAdd(g_fy + j, fy);
-        atomicAdd(g_fz + j, fz);
+        f0x += fx;
+        f0y += fy;
+        f0z += fz;
+        atomicAdd(g_fx + j, -fx);
+        atomicAdd(g_fy + j, -fy);
+        atomicAdd(g_fz + j, -fz);
         const flt_t dx = aBufNlDx[jj*number_of_particles + ii];
         const flt_t dy = aBufNlDy[jj*number_of_particles + ii];
         const flt_t dz = aBufNlDz[jj*number_of_particles + ii];
-        atomicAdd(g_virial + (0*number_of_particles + j), dx*fx);
-        atomicAdd(g_virial + (1*number_of_particles + j), dy*fy);
-        atomicAdd(g_virial + (2*number_of_particles + j), dz*fz);
-        atomicAdd(g_virial + (3*number_of_particles + j), dx*fy);
-        atomicAdd(g_virial + (4*number_of_particles + j), dx*fz);
-        atomicAdd(g_virial + (5*number_of_particles + j), dy*fz);
-        atomicAdd(g_virial + (6*number_of_particles + j), dy*fx);
-        atomicAdd(g_virial + (7*number_of_particles + j), dz*fx);
-        atomicAdd(g_virial + (8*number_of_particles + j), dz*fy);
+        atomicAdd(g_virial + (0*number_of_particles + j), -dx*fx);
+        atomicAdd(g_virial + (1*number_of_particles + j), -dy*fy);
+        atomicAdd(g_virial + (2*number_of_particles + j), -dz*fz);
+        atomicAdd(g_virial + (3*number_of_particles + j), -dx*fy);
+        atomicAdd(g_virial + (4*number_of_particles + j), -dx*fz);
+        atomicAdd(g_virial + (5*number_of_particles + j), -dy*fz);
+        atomicAdd(g_virial + (6*number_of_particles + j), -dy*fx);
+        atomicAdd(g_virial + (7*number_of_particles + j), -dz*fx);
+        atomicAdd(g_virial + (8*number_of_particles + j), -dz*fy);
     }
     atomicAdd(g_fx + ii, f0x);
     atomicAdd(g_fy + ii, f0y);

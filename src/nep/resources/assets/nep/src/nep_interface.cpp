@@ -324,40 +324,40 @@ __jsefunc__ int jse_nep_computeLammps(
             const JSE_NEP::flt_t fx = nl_fx[jj];
             const JSE_NEP::flt_t fy = nl_fy[jj];
             const JSE_NEP::flt_t fz = nl_fz[jj];
-            f[i][0] -= fx;
-            f[i][1] -= fy;
-            f[i][2] -= fz;
-            f[j][0] += fx;
-            f[j][1] += fy;
-            f[j][2] += fz;
+            f[i][0] += fx;
+            f[i][1] += fy;
+            f[i][2] += fz;
+            f[j][0] -= fx;
+            f[j][1] -= fy;
+            f[j][2] -= fz;
             if (vflag) {
                 const JSE_NEP::flt_t dx = nl_dx[jj];
                 const JSE_NEP::flt_t dy = nl_dy[jj];
                 const JSE_NEP::flt_t dz = nl_dz[jj];
-                virial[0] += dx*fx;
-                virial[1] += dy*fy;
-                virial[2] += dz*fz;
-                virial[3] += dx*fy;
-                virial[4] += dx*fz;
-                virial[5] += dy*fz;
+                virial[0] -= dx*fx;
+                virial[1] -= dy*fy;
+                virial[2] -= dz*fz;
+                virial[3] -= dx*fy;
+                virial[4] -= dx*fz;
+                virial[5] -= dy*fz;
                 if (vflagAtom) {
-                    vatom[j][0] += dx*fx;
-                    vatom[j][1] += dy*fy;
-                    vatom[j][2] += dz*fz;
-                    vatom[j][3] += dx*fy;
-                    vatom[j][4] += dx*fz;
-                    vatom[j][5] += dy*fz;
+                    vatom[j][0] -= dx*fx;
+                    vatom[j][1] -= dy*fy;
+                    vatom[j][2] -= dz*fz;
+                    vatom[j][3] -= dx*fy;
+                    vatom[j][4] -= dx*fz;
+                    vatom[j][5] -= dy*fz;
                 }
                 if (cvflagAtom) {
-                    cvatom[j][0] += dx*fx;
-                    cvatom[j][1] += dy*fy;
-                    cvatom[j][2] += dz*fz;
-                    cvatom[j][3] += dx*fy;
-                    cvatom[j][4] += dx*fz;
-                    cvatom[j][5] += dy*fz;
-                    cvatom[j][6] += dy*fx;
-                    cvatom[j][7] += dz*fx;
-                    cvatom[j][8] += dz*fy;
+                    cvatom[j][0] -= dx*fx;
+                    cvatom[j][1] -= dy*fy;
+                    cvatom[j][2] -= dz*fz;
+                    cvatom[j][3] -= dx*fy;
+                    cvatom[j][4] -= dx*fz;
+                    cvatom[j][5] -= dy*fz;
+                    cvatom[j][6] -= dy*fx;
+                    cvatom[j][7] -= dz*fx;
+                    cvatom[j][8] -= dz*fy;
                 }
             }
         }

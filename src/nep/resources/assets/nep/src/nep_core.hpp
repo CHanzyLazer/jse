@@ -1231,9 +1231,9 @@ static NEP_DEVICE void find_force_radial(const int nb, const int bi,
             }
         }
 
-        g_nl_fx[i1*nb + bi] -= f12[0];
-        g_nl_fy[i1*nb + bi] -= f12[1];
-        g_nl_fz[i1*nb + bi] -= f12[2];
+        g_nl_fx[i1*nb + bi] += f12[0];
+        g_nl_fy[i1*nb + bi] += f12[1];
+        g_nl_fz[i1*nb + bi] += f12[2];
     }
 }
 
@@ -1312,9 +1312,9 @@ static NEP_DEVICE void find_force_angular(const int nb, const int bi,
             }
         }
 
-        g_nl_fx[i1*nb + bi] -= f12[0];
-        g_nl_fy[i1*nb + bi] -= f12[1];
-        g_nl_fz[i1*nb + bi] -= f12[2];
+        g_nl_fx[i1*nb + bi] += f12[0];
+        g_nl_fy[i1*nb + bi] += f12[1];
+        g_nl_fz[i1*nb + bi] += f12[2];
     }
 }
 
@@ -1376,9 +1376,9 @@ static NEP_DEVICE void find_force_ZBL(const int nb, const int bi,
         flt_t f2 = fp * d12inv * (flt_t)0.5;
         flt_t f12[3] = {r12[0] * f2, r12[1] * f2, r12[2] * f2};
         
-        g_nl_fx[i1*nb + bi] -= f12[0];
-        g_nl_fy[i1*nb + bi] -= f12[1];
-        g_nl_fz[i1*nb + bi] -= f12[2];
+        g_nl_fx[i1*nb + bi] += f12[0];
+        g_nl_fy[i1*nb + bi] += f12[1];
+        g_nl_fz[i1*nb + bi] += f12[2];
         
         *potential += f * (flt_t)0.5;
     }

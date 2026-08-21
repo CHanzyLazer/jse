@@ -264,17 +264,17 @@ __jsefunc__ int jse_nnap_forwardForceCollect(int i, JSE_NNAP::flt_t aRCut,
         const JSE_NNAP::flt_t fzj = aAGradNlDz[jj];
         const int j = aNlIdx[jj];
         
-        f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-        f[3*j + 0] += fxj; f[3*j + 1] += fyj; f[3*j + 2] += fzj;
-        const JSE_NNAP::flt_t vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
-        const JSE_NNAP::flt_t vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
+        f0xi += fxj; f0yi += fyj; f0zi += fzj;
+        f[3*j + 0] -= fxj; f[3*j + 1] -= fyj; f[3*j + 2] -= fzj;
+        const JSE_NNAP::flt_t vxxj = -dx*fxj, vyyj = -dy*fyj, vzzj = -dz*fzj;
+        const JSE_NNAP::flt_t vxyj = -dx*fyj, vxzj = -dx*fzj, vyzj = -dy*fzj;
         v0xxi += vxxj; v0yyi += vyyj; v0zzi += vzzj;
         v0xyi += vxyj; v0xzi += vxzj; v0yzi += vyzj;
         vatom[9*j + 0] += vxxj; vatom[9*j + 1] += vyyj; vatom[9*j + 2] += vzzj;
         vatom[9*j + 3] += vxyj; vatom[9*j + 4] += vxzj; vatom[9*j + 5] += vyzj;
-        vatom[9*j + 6] += dy*fxj;
-        vatom[9*j + 7] += dz*fxj;
-        vatom[9*j + 8] += dz*fyj;
+        vatom[9*j + 6] -= dy*fxj;
+        vatom[9*j + 7] -= dz*fxj;
+        vatom[9*j + 8] -= dz*fyj;
     }
     f[3*i + 0] += f0xi; f[3*i + 1] += f0yi; f[3*i + 2] += f0zi;
     v[0] += v0xxi; v[1] += v0yyi; v[2] += v0zzi;
@@ -300,12 +300,12 @@ __jsefunc__ int jse_nnap_backwardForceCollect(int i, JSE_NNAP::flt_t aRCut,
         if (rsq >= rcutsq) continue;
         const int j = aNlIdx[jj];
         JSE_NNAP::flt_t rBGradFxj = JSE_NNAP::ZERO, rBGradFyj = JSE_NNAP::ZERO, rBGradFzj = JSE_NNAP::ZERO;
-        rBGradFxj += aBGradF[3*j + 0] - tBGradFxi;
-        rBGradFyj += aBGradF[3*j + 1] - tBGradFyi;
-        rBGradFzj += aBGradF[3*j + 2] - tBGradFzi;
-        rBGradFxj += dx*tBGradVxx;
-        rBGradFyj += dy*tBGradVyy + dx*tBGradVxy;
-        rBGradFzj += dz*tBGradVzz + dx*tBGradVxz + dy*tBGradVyz;
+        rBGradFxj += tBGradFxi - aBGradF[3*j + 0];
+        rBGradFyj += tBGradFyi - aBGradF[3*j + 1];
+        rBGradFzj += tBGradFzi - aBGradF[3*j + 2];
+        rBGradFxj -= dx*tBGradVxx;
+        rBGradFyj -= dy*tBGradVyy + dx*tBGradVxy;
+        rBGradFzj -= dz*tBGradVzz + dx*tBGradVxz + dy*tBGradVyz;
         rBGradNlDx[jj] += rBGradFxj;
         rBGradNlDy[jj] += rBGradFyj;
         rBGradNlDz[jj] += rBGradFzj;
@@ -434,14 +434,14 @@ __jsefunc__ int jse_nnap_computeLammps(
                 const JSE_NNAP::flt_t fxj = rAGradNlDx[jj];
                 const JSE_NNAP::flt_t fyj = rAGradNlDy[jj];
                 const JSE_NNAP::flt_t fzj = rAGradNlDz[jj];
-                f0xi -= fxj; f0yi -= fyj; f0zi -= fzj;
-                f[j][0] += fxj; f[j][1] += fyj; f[j][2] += fzj;
+                f0xi += fxj; f0yi += fyj; f0zi += fzj;
+                f[j][0] -= fxj; f[j][1] -= fyj; f[j][2] -= fzj;
                 if (vflag) {
                     const double dx = x[j][0] - xi;
                     const double dy = x[j][1] - yi;
                     const double dz = x[j][2] - zi;
-                    const double vxxj = dx*fxj, vyyj = dy*fyj, vzzj = dz*fzj;
-                    const double vxyj = dx*fyj, vxzj = dx*fzj, vyzj = dy*fzj;
+                    const double vxxj = -dx*fxj, vyyj = -dy*fyj, vzzj = -dz*fzj;
+                    const double vxyj = -dx*fyj, vxzj = -dx*fzj, vyzj = -dy*fzj;
                     v0xxi += vxxj; v0yyi += vyyj; v0zzi += vzzj;
                     v0xyi += vxyj; v0xzi += vxzj; v0yzi += vyzj;
                     if (vflagAtom) {
@@ -451,9 +451,9 @@ __jsefunc__ int jse_nnap_computeLammps(
                     if (cvflagAtom) {
                         cvatom[j][0] += vxxj; cvatom[j][1] += vyyj; cvatom[j][2] += vzzj;
                         cvatom[j][3] += vxyj; cvatom[j][4] += vxzj; cvatom[j][5] += vyzj;
-                        cvatom[j][6] += dy*fxj;
-                        cvatom[j][7] += dz*fxj;
-                        cvatom[j][8] += dz*fyj;
+                        cvatom[j][6] -= dy*fxj;
+                        cvatom[j][7] -= dz*fxj;
+                        cvatom[j][8] -= dz*fyj;
                     }
                 }
             }

@@ -185,10 +185,9 @@ public class LJ extends AbstractPairPotential {
             double r2inv = 1.0 / rsq;
             double r6inv = r2inv*r2inv*r2inv;
             double fpair = r2inv*r6inv*(mLJ1[aCType][type]*r6inv - mLJ2[aCType][type]);
-            fpair *= 0.5;
-            rGradNlDx.set(jj, dx*fpair);
-            rGradNlDy.set(jj, dy*fpair);
-            rGradNlDz.set(jj, dz*fpair);
+            rGradNlDx.set(jj, (-0.5)*dx*fpair);
+            rGradNlDy.set(jj, (-0.5)*dy*fpair);
+            rGradNlDz.set(jj, (-0.5)*dz*fpair);
             double deng = r6inv*(mLJ3[aCType][type]*r6inv - mLJ4[aCType][type]);
             if (mShift) deng -= mOffset[aCType][type];
             tEng += deng*0.5;

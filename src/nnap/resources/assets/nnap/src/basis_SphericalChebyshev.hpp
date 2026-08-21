@@ -635,7 +635,6 @@ static void backwardBackwardAnlm(int ctype,
             if (typej==MTYPE) typej = ctype;
             else if (typej==ctype) typej = MTYPE;
         }
-        // backward f v
         const flt_t tBGradFxj = aBGradNlDx[jj];
         const flt_t tBGradFyj = aBGradNlDy[jj];
         const flt_t tBGradFzj = aBGradNlDz[jj];

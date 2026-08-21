@@ -85,9 +85,9 @@ static __global__ void collectLammpsResultsKernel(int inum, int nlocalghost,
         const flt_t fx = g_nl_fx[jj*inum + ii];
         const flt_t fy = g_nl_fy[jj*inum + ii];
         const flt_t fz = g_nl_fz[jj*inum + ii];
-        f0x -= fx;
-        f0y -= fy;
-        f0z -= fz;
+        f0x += fx;
+        f0y += fy;
+        f0z += fz;
         atomicAdd(f + (0*nlocalghost + j), fx);
         atomicAdd(f + (1*nlocalghost + j), fy);
         atomicAdd(f + (2*nlocalghost + j), fz);
@@ -95,12 +95,12 @@ static __global__ void collectLammpsResultsKernel(int inum, int nlocalghost,
             const flt_t dx = g_nl_dx[jj*inum + ii];
             const flt_t dy = g_nl_dy[jj*inum + ii];
             const flt_t dz = g_nl_dz[jj*inum + ii];
-            const flt_t vxx = dx*fx;
-            const flt_t vyy = dy*fy;
-            const flt_t vzz = dz*fz;
-            const flt_t vxy = dx*fy;
-            const flt_t vxz = dx*fz;
-            const flt_t vyz = dy*fz;
+            const flt_t vxx = -dx*fx;
+            const flt_t vyy = -dy*fy;
+            const flt_t vzz = -dz*fz;
+            const flt_t vxy = -dx*fy;
+            const flt_t vxz = -dx*fz;
+            const flt_t vyz = -dy*fz;
             vatom0[0*inum + ii] += vxx;
             vatom0[1*inum + ii] += vyy;
             vatom0[2*inum + ii] += vzz;
@@ -114,9 +114,9 @@ static __global__ void collectLammpsResultsKernel(int inum, int nlocalghost,
                 atomicAdd(vatom1 + (3*nlocalghost + j), vxy);
                 atomicAdd(vatom1 + (4*nlocalghost + j), vxz);
                 atomicAdd(vatom1 + (5*nlocalghost + j), vyz);
-                atomicAdd(vatom1 + (6*nlocalghost + j), dy*fx);
-                atomicAdd(vatom1 + (7*nlocalghost + j), dz*fx);
-                atomicAdd(vatom1 + (8*nlocalghost + j), dz*fy);
+                atomicAdd(vatom1 + (6*nlocalghost + j), -dy*fx);
+                atomicAdd(vatom1 + (7*nlocalghost + j), -dz*fx);
+                atomicAdd(vatom1 + (8*nlocalghost + j), -dz*fy);
             } else if (vflagAtom) {
                 atomicAdd(vatom1 + (0*nlocalghost + j), vxx);
                 atomicAdd(vatom1 + (1*nlocalghost + j), vyy);

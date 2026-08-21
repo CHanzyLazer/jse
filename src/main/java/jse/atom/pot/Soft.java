@@ -144,10 +144,9 @@ public class Soft extends AbstractPairPotential {
             double r = Math.sqrt(rsq);
             double arg = MathEX.PI * r / mCut[aCType][type];
             double fpair = r<=0.0 ? 0.0 : (mPrefactor[aCType][type] * Math.sin(arg) * MathEX.PI/mCut[aCType][type]/r);
-            fpair *= 0.5;
-            rGradNlDx.set(jj, dx*fpair);
-            rGradNlDy.set(jj, dy*fpair);
-            rGradNlDz.set(jj, dz*fpair);
+            rGradNlDx.set(jj, (-0.5)*dx*fpair);
+            rGradNlDy.set(jj, (-0.5)*dy*fpair);
+            rGradNlDz.set(jj, (-0.5)*dz*fpair);
             double deng = mPrefactor[aCType][type] * (1.0 + Math.cos(arg));
             tEng += deng*0.5;
         }

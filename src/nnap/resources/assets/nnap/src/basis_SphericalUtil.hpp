@@ -174,11 +174,11 @@ static NNAP_DEVICE NNAP_HOST void calYPthetaPphi(flt_t *rYPtheta, flt_t *rYPphi,
         // fix singularity
         fill<tLMAll>(rYPphi, ZERO);
     }
-    rThetaPx = -cosTheta*cosPhi/aDis;
-    rThetaPy = -cosTheta*sinPhi/aDis;
-    rThetaPz =  sinTheta/aDis;
-    rPhiPx = dxyCloseZero ? ZERO : ( sinPhi/dxy);
-    rPhiPy = dxyCloseZero ? ZERO : (-cosPhi/dxy);
+    rThetaPx =  cosTheta*cosPhi/aDis;
+    rThetaPy =  cosTheta*sinPhi/aDis;
+    rThetaPz = -sinTheta/aDis;
+    rPhiPx = dxyCloseZero ? ZERO : (-sinPhi/dxy);
+    rPhiPy = dxyCloseZero ? ZERO : ( cosPhi/dxy);
 }
 
 
@@ -223,11 +223,11 @@ static NNAP_DEVICE void calYPthetaPphiGpu(flt_t *rYPtheta, flt_t *aY_rYPphi, flt
         // fix singularity
         fill<tLMAll>(aY_rYPphi, ZERO);
     }
-    rThetaPx = -cosTheta*cosPhi/aDis;
-    rThetaPy = -cosTheta*sinPhi/aDis;
-    rThetaPz =  sinTheta/aDis;
-    rPhiPx = dxyCloseZero ? ZERO : ( sinPhi/dxy);
-    rPhiPy = dxyCloseZero ? ZERO : (-cosPhi/dxy);
+    rThetaPx =  cosTheta*cosPhi/aDis;
+    rThetaPy =  cosTheta*sinPhi/aDis;
+    rThetaPz = -sinTheta/aDis;
+    rPhiPx = dxyCloseZero ? ZERO : (-sinPhi/dxy);
+    rPhiPy = dxyCloseZero ? ZERO : ( cosPhi/dxy);
 }
 
 
@@ -246,11 +246,11 @@ static inline NNAP_DEVICE NNAP_HOST void calthetaPhiPxyz(flt_t aDx, flt_t aDy, f
         cosPhi = aDx / dxy;
         sinPhi = aDy / dxy;
     }
-    rThetaPx = -cosTheta*cosPhi/aDis;
-    rThetaPy = -cosTheta*sinPhi/aDis;
-    rThetaPz =  sinTheta/aDis;
-    rPhiPx = dxyCloseZero ? ZERO : ( sinPhi/dxy);
-    rPhiPy = dxyCloseZero ? ZERO : (-cosPhi/dxy);
+    rThetaPx =  cosTheta*cosPhi/aDis;
+    rThetaPy =  cosTheta*sinPhi/aDis;
+    rThetaPz = -sinTheta/aDis;
+    rPhiPx = dxyCloseZero ? ZERO : (-sinPhi/dxy);
+    rPhiPy = dxyCloseZero ? ZERO : ( cosPhi/dxy);
 }
 
 

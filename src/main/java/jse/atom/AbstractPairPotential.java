@@ -417,16 +417,16 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                     final double fy = rGradNlDy.get(jj);
                     final double fz = rGradNlDz.get(jj);
                     if (aRequireForce) {
-                        tForcesX.add(i, -fx); tForcesX.add(j, fx);
-                        tForcesY.add(i, -fy); tForcesY.add(j, fy);
-                        tForcesZ.add(i, -fz); tForcesZ.add(j, fz);
+                        tForcesX.add(i, fx); tForcesX.add(j, -fx);
+                        tForcesY.add(i, fy); tForcesY.add(j, -fy);
+                        tForcesZ.add(i, fz); tForcesZ.add(j, -fz);
                     }
                     if (aRequireTotalStress || aRequirePreAtomStress) {
                         final double dx = tNlDx.get(jj);
                         final double dy = tNlDy.get(jj);
                         final double dz = tNlDz.get(jj);
-                        final double vxx = dx*fx, vyy = dy*fy, vzz = dz*fz;
-                        final double vxy = dx*fy, vxz = dx*fz, vyz = dy*fz;
+                        final double vxx = -dx*fx, vyy = -dy*fy, vzz = -dz*fz;
+                        final double vxy = -dx*fy, vxz = -dx*fz, vyz = -dy*fz;
                         if (aRequireTotalStress) {
                             tVirialXX += vxx; tVirialYY += vyy; tVirialZZ += vzz;
                             tVirialXY += vxy; tVirialXZ += vxz; tVirialYZ += vyz;
@@ -440,9 +440,9 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
                             tVirialsXZ.add(j, vxz);
                             tVirialsYZ.add(j, vyz);
                             if (tCentroid) {
-                                tVirialsYX.add(j, dy*fx);
-                                tVirialsZX.add(j, dz*fx);
-                                tVirialsZY.add(j, dz*fy);
+                                tVirialsYX.add(j, -dy*fx);
+                                tVirialsZX.add(j, -dz*fx);
+                                tVirialsZY.add(j, -dz*fy);
                             }
                         }
                     }

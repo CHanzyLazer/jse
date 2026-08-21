@@ -257,7 +257,7 @@ static inline NNAP_DEVICE NNAP_HOST flt_t calFc(flt_t aDis, flt_t aRCut) noexcep
 }
 static inline NNAP_DEVICE NNAP_HOST flt_t calFcGrad(flt_t aDis, flt_t aRCut) noexcept {
     const flt_t fcMul3 = pow3(ONE - pow2(aDis/aRCut));
-    return ((flt_t)8.0) * fcMul3 / (aRCut*aRCut);
+    return (-(flt_t)8.0) * fcMul3 / (aRCut*aRCut);
 }
 
 template <int N>
@@ -269,7 +269,7 @@ static inline NNAP_DEVICE NNAP_HOST void calRn(flt_t *rRn, flt_t aDis, flt_t aRC
 template <int N>
 static inline NNAP_DEVICE NNAP_HOST void calRnGrad(flt_t *rRnGrad, flt_t aDis, flt_t aRCut) noexcept {
     const flt_t tX = aDis/aRCut;
-    const flt_t tCheby2Mul = TWO / (aDis*aRCut);
+    const flt_t tCheby2Mul = (-TWO) / (aDis*aRCut);
     const flt_t tRnX = ONE - (tX+tX);
     chebyshev2Full<N-1>(tRnX, tCheby2Mul, rRnGrad+1);
     rRnGrad[0] = ZERO;
