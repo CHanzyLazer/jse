@@ -75,14 +75,14 @@ public class Chebyshev extends WTypeBasis {
      */
     @Override public int size() {return mSize;}
     
-    @Override public int forwardCacheSize(int aNumNei) {
-        return aNumNei*(1 + mNMax+1 + mSizeNP);
+    @Override public int forwardCacheSize(int aNlSize) {
+        return aNlSize*(1 + mNMax+1 + mSizeNP);
     }
-    @Override public int backwardCacheSize(int aNumNei) {
-        return aNumNei*(1 + mNMax+1 + mSizeNP);
+    @Override public int backwardCacheSize(int aNlSize) {
+        return aNlSize*(1 + mNMax+1 + mSizeNP);
     }
-    @Override public int backwardBackwardCacheSize(int aNumNei) {
-        return aNumNei*mSizeNP;
+    @Override public int backwardBackwardCacheSize(int aNlSize) {
+        return aNlSize*mSizeNP;
     }
     
     @Override public int forwardCacheSizeGpu() {

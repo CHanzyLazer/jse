@@ -109,14 +109,14 @@ public class SphericalChebyshev extends WTypeBasis {
      */
     @Override public int size() {return mSize;}
     
-    @Override public int forwardCacheSize(int aNumNei) {
-        return aNumNei*(1 + mNMax+1 + mSizeNP + mLMAll) + (mSizeNP*mLMAll);
+    @Override public int forwardCacheSize(int aNlSize) {
+        return aNlSize*(1 + mNMax+1 + mSizeNP + mLMAll) + (mSizeNP*mLMAll);
     }
-    @Override public int backwardCacheSize(int aNumNei) {
-        return aNumNei*(1 + mNMax+1 + mSizeNP + mLMAll*2) + (mSizeNP*mLMAll);
+    @Override public int backwardCacheSize(int aNlSize) {
+        return aNlSize*(1 + mNMax+1 + mSizeNP + mLMAll*2) + (mSizeNP*mLMAll);
     }
-    @Override public int backwardBackwardCacheSize(int aNumNei) {
-        return aNumNei*mSizeNP + mSizeNP*mLMAll;
+    @Override public int backwardBackwardCacheSize(int aNlSize) {
+        return aNlSize*mSizeNP + mSizeNP*mLMAll;
     }
     
     @Override public int forwardCacheSizeGpu() {

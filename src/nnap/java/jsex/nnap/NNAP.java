@@ -739,8 +739,8 @@ public class NNAP extends AbstractPairPotential {
         return tEng.getD();
     }
     
-    public int forwardEnergyCacheSize(int aNumNei, int aCType) {
-        return mBasis[aCType-1].forwardCacheSize(aNumNei) + mNN[aCType-1].forwardCacheSize();
+    public int forwardEnergyCacheSize(int aNlSize, int aCType) {
+        return mBasis[aCType-1].forwardCacheSize(aNlSize) + mNN[aCType-1].forwardCacheSize();
     }
     public double forwardEnergy(int aThreadID, int aCType, int aNlSize,
                                 IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,
@@ -775,9 +775,9 @@ public class NNAP extends AbstractPairPotential {
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
     }
     
-    public int forwardEnergyForceCacheSize(int aNumNei, int aCType) {
-        return mBasis[aCType-1].forwardCacheSize(aNumNei)  + mNN[aCType-1].forwardCacheSize()
-             + mBasis[aCType-1].backwardCacheSize(aNumNei) + mNN[aCType-1].backwardCacheSize();
+    public int forwardEnergyForceCacheSize(int aNlSize, int aCType) {
+        return mBasis[aCType-1].forwardCacheSize(aNlSize)  + mNN[aCType-1].forwardCacheSize()
+             + mBasis[aCType-1].backwardCacheSize(aNlSize) + mNN[aCType-1].backwardCacheSize();
     }
     public double forwardEnergyForce(int aThreadID, int aCType, int aNlSize,
                                      IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlType,

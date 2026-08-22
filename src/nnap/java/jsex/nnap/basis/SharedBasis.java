@@ -42,14 +42,14 @@ public class SharedBasis extends Basis {
         return mSharedType==tBasis.mSharedType && mSharedBasis.hasSameGenMap(tBasis.mSharedBasis);
     }
     
-    @Override public int forwardCacheSize(int aNumNei) {
-        return mSharedBasis.forwardCacheSize(aNumNei);
+    @Override public int forwardCacheSize(int aNlSize) {
+        return mSharedBasis.forwardCacheSize(aNlSize);
     }
-    @Override public int backwardCacheSize(int aNumNei) {
-        return mSharedBasis.backwardCacheSize(aNumNei);
+    @Override public int backwardCacheSize(int aNlSize) {
+        return mSharedBasis.backwardCacheSize(aNlSize);
     }
-    @Override public int backwardBackwardCacheSize(int aNumNei) {
-        return mSharedBasis.backwardBackwardCacheSize(aNumNei);
+    @Override public int backwardBackwardCacheSize(int aNlSize) {
+        return mSharedBasis.backwardBackwardCacheSize(aNlSize);
     }
     
     @Override public int forwardCacheSizeGpu() {

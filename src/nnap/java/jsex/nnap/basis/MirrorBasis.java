@@ -42,14 +42,14 @@ public class MirrorBasis extends Basis {
         return mMirrorType==tBasis.mMirrorType && mMirrorBasis.hasSameGenMap(tBasis.mMirrorBasis);
     }
     
-    @Override public int forwardCacheSize(int aNumNei) {
-        return mMirrorBasis.forwardCacheSize(aNumNei);
+    @Override public int forwardCacheSize(int aNlSize) {
+        return mMirrorBasis.forwardCacheSize(aNlSize);
     }
-    @Override public int backwardCacheSize(int aNumNei) {
-        return mMirrorBasis.backwardCacheSize(aNumNei);
+    @Override public int backwardCacheSize(int aNlSize) {
+        return mMirrorBasis.backwardCacheSize(aNlSize);
     }
-    @Override public int backwardBackwardCacheSize(int aNumNei) {
-        return mMirrorBasis.backwardBackwardCacheSize(aNumNei);
+    @Override public int backwardBackwardCacheSize(int aNlSize) {
+        return mMirrorBasis.backwardBackwardCacheSize(aNlSize);
     }
     
     @Override public int forwardCacheSizeGpu() {
