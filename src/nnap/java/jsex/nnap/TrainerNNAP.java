@@ -1203,8 +1203,10 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     }
     
     
-    private void addData_(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress, DataSet rData) {
-        final boolean tHasEng = !Double.isNaN(aEnergy);
+    private void addData_(IAtomData aAtomData, boolean aHasEnergy, double aEnergy,
+                          boolean aHasForce, IVector aFx, IVector aFy, IVector aFz,
+                          boolean aHasStress, double aSxx, double aSyy, double aSzz, double aSxy, double aSxz, double aSyz,
+                          DataSet rData) {
         // 简单处理（不需要近邻列表）的数据添加在这里实现
         IntUnaryOperator tTypeMap = typeMap(aAtomData);
         final int tNumAtoms = aAtomData.natoms();
@@ -1213,50 +1215,48 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
             rAtomType.add(tType);
             // 计算相对能量值
-            if (tHasEng) {
+            if (aHasEnergy) {
                 aEnergy -= mRefEngs.get(tType-1);
             }
         }
         rData.mDataTemp.add(aAtomData.copy()); //TODO: 之后需要改为精度相关的专门紧凑格式来进一步减少内存占用
         rData.mAtomType.add(rAtomType.asVec());
         rData.mVolume.append(aAtomData.volume());
-        rData.mEng.append(tHasEng ? (aEnergy/tNumAtoms) : Double.NaN);
+        rData.mEng.append(aHasEnergy ? (aEnergy/tNumAtoms) : Double.NaN);
         // 添加力
         if (mHasForce) {
-            if (aForces==null) {
+            if (aHasForce) {
+                Vector rForceX = Vector.zeros(tNumAtoms);
+                Vector rForceY = Vector.zeros(tNumAtoms);
+                Vector rForceZ = Vector.zeros(tNumAtoms);
+                rForceX.fill(aFx);
+                rForceY.fill(aFy);
+                rForceZ.fill(aFz);
+                rData.mForceX.add(rForceX);
+                rData.mForceY.add(rForceY);
+                rData.mForceZ.add(rForceZ);
+            } else {
                 rData.mForceX.add(null);
                 rData.mForceY.add(null);
                 rData.mForceZ.add(null);
-            } else {
-                Vector.Builder rForceX = Vector.builder(tNumAtoms);
-                Vector.Builder rForceY = Vector.builder(tNumAtoms);
-                Vector.Builder rForceZ = Vector.builder(tNumAtoms);
-                for (int i = 0; i < tNumAtoms; ++i) {
-                    rForceX.add(aForces.get(i, 0));
-                    rForceY.add(aForces.get(i, 1));
-                    rForceZ.add(aForces.get(i, 2));
-                }
-                rData.mForceX.add(rForceX.build());
-                rData.mForceY.add(rForceY.build());
-                rData.mForceZ.add(rForceZ.build());
             }
         }
         // 应力
         if (mHasStress) {
-            if (aStress==null) {
+            if (aHasStress) {
+                rData.mStressXX.add(aSxx);
+                rData.mStressYY.add(aSyy);
+                rData.mStressZZ.add(aSzz);
+                rData.mStressXY.add(aSxy);
+                rData.mStressXZ.add(aSxz);
+                rData.mStressYZ.add(aSyz);
+            } else {
                 rData.mStressXX.add(Double.NaN);
                 rData.mStressYY.add(Double.NaN);
                 rData.mStressZZ.add(Double.NaN);
                 rData.mStressXY.add(Double.NaN);
                 rData.mStressXZ.add(Double.NaN);
                 rData.mStressYZ.add(Double.NaN);
-            } else {
-                rData.mStressXX.add(aStress.get(0));
-                rData.mStressYY.add(aStress.get(1));
-                rData.mStressZZ.add(aStress.get(2));
-                rData.mStressXY.add(aStress.get(3));
-                rData.mStressXZ.add(aStress.get(4));
-                rData.mStressYZ.add(aStress.get(5));
             }
         }
         ++rData.mSize;
@@ -1303,22 +1303,58 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
      * 增加一个训练集数据
      * @param aAtomData 原子结构数据
      * @param aEnergy 此原子结构数据的总能量
+     * @param aFx 可选的每个原子的力 x 分量
+     * @param aFy 可选的每个原子的力 y 分量
+     * @param aFz 可选的每个原子的力 z 分量
+     * @param aSxx 可选的原子结构数据的应力 xx 分量
+     * @param aSyy 可选的原子结构数据的应力 yy 分量
+     * @param aSzz 可选的原子结构数据的应力 zz 分量
+     * @param aSxy 可选的原子结构数据的应力 xy 分量
+     * @param aSxz 可选的原子结构数据的应力 xz 分量
+     * @param aSyz 可选的原子结构数据的应力 yz 分量
+     * @see IAtomData
+     */
+    public void addTrainData(IAtomData aAtomData, double aEnergy, IVector aFx, IVector aFy, IVector aFz,
+                             double aSxx, double aSyy, double aSzz, double aSxy, double aSxz, double aSyz) {
+        if (!mHasForce && aFx!=null) {
+            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
+            validForceData_();
+        }
+        if (!mHasStress && !Double.isNaN(aSxx)) {
+            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
+            validStressData_();
+        }
+        // 添加数据
+        addData_(
+            aAtomData, !Double.isNaN(aEnergy), aEnergy,
+            aFx!=null, aFx, aFy, aFz,
+            !Double.isNaN(aSxx), aSxx, aSyy, aSzz, aSxy, aSxz, aSyz,
+            mTrainData
+        );
+    }
+    /**
+     * 增加一个训练集数据
+     * @param aAtomData 原子结构数据
+     * @param aEnergy 此原子结构数据的总能量
      * @param aForces 可选的每个原子的力，按行排列，每列对应 x,y,z 方向的力
      * @param aStress 可选的原子结构数据的应力值，按照 {@code [xx, yy, zz, xy, xz, yz]} 顺序排列
      * @see IAtomData
      * @see IMatrix
      */
     public void addTrainData(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress) {
-        if (!mHasForce && aForces!=null) {
-            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
-            validForceData_();
-        }
-        if (!mHasStress && aStress!=null) {
-            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
-            validStressData_();
-        }
-        // 添加数据
-        addData_(aAtomData, aEnergy, aForces, aStress, mTrainData);
+        addTrainData(
+            aAtomData, aEnergy,
+            aForces==null?null:aForces.col(0), aForces==null?null:aForces.col(1), aForces==null?null:aForces.col(2),
+            aStress==null?Double.NaN:aStress.get(0), aStress==null?Double.NaN:aStress.get(1), aStress==null?Double.NaN:aStress.get(2),
+            aStress==null?Double.NaN:aStress.get(3), aStress==null?Double.NaN:aStress.get(4), aStress==null?Double.NaN:aStress.get(5)
+        );
+    }
+    /**
+     * {@code addTrainData(aAtomData, aEnergy, aFx, aFy, aFz, nan, nan, nan, nan, nan, nan)}
+     * @see #addTrainData(IAtomData, double, IVector, IVector, IVector, double, double, double, double, double, double)
+     */
+    public void addTrainData(IAtomData aAtomData, double aEnergy, IVector aFx, IVector aFy, IVector aFz) {
+        addTrainData(aAtomData, aEnergy, aFx, aFy, aFz, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
     }
     /**
      * {@code addTrainData(aAtomData, aEnergy, aForces, null)}
@@ -1338,20 +1374,57 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
      * 增加一个测试集数据
      * @param aAtomData 原子结构数据
      * @param aEnergy 此原子结构数据的总能量
+     * @param aFx 可选的每个原子的力 x 分量
+     * @param aFy 可选的每个原子的力 y 分量
+     * @param aFz 可选的每个原子的力 z 分量
+     * @param aSxx 可选的原子结构数据的应力 xx 分量
+     * @param aSyy 可选的原子结构数据的应力 yy 分量
+     * @param aSzz 可选的原子结构数据的应力 zz 分量
+     * @param aSxy 可选的原子结构数据的应力 xy 分量
+     * @param aSxz 可选的原子结构数据的应力 xz 分量
+     * @param aSyz 可选的原子结构数据的应力 yz 分量
+     * @see IAtomData
+     */
+    public void addTestData(IAtomData aAtomData, double aEnergy, IVector aFx, IVector aFy, IVector aFz,
+                             double aSxx, double aSyy, double aSzz, double aSxy, double aSxz, double aSyz) {
+        if (!mHasForce && aFx!=null) {
+            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
+            validForceData_();
+        }
+        if (!mHasStress && !Double.isNaN(aSxx)) {
+            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
+            validStressData_();
+        }
+        // 添加数据
+        addData_(
+            aAtomData, !Double.isNaN(aEnergy), aEnergy,
+            aFx!=null, aFx, aFy, aFz,
+            !Double.isNaN(aSxx), aSxx, aSyy, aSzz, aSxy, aSxz, aSyz,
+            mTestData
+        );
+        if (!mHasTest) mHasTest = true;
+    }
+    /**
+     * 增加一个测试集数据
+     * @param aAtomData 原子结构数据
+     * @param aEnergy 此原子结构数据的总能量
      * @see IAtomData
      * @see IMatrix
      */
     public void addTestData(IAtomData aAtomData, double aEnergy, @Nullable IMatrix aForces, @Nullable IVector aStress) {
-        if (!mHasForce && aForces!=null) {
-            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
-            validForceData_();
-        }
-        if (!mHasStress && aStress!=null) {
-            // 现在支持部分数据缺省，因此这里需要补全缺省的数据占位
-            validStressData_();
-        }
-        addData_(aAtomData, aEnergy, aForces, aStress, mTestData);
-        if (!mHasTest) mHasTest = true;
+        addTestData(
+            aAtomData, aEnergy,
+            aForces==null?null:aForces.col(0), aForces==null?null:aForces.col(1), aForces==null?null:aForces.col(2),
+            aStress==null?Double.NaN:aStress.get(0), aStress==null?Double.NaN:aStress.get(1), aStress==null?Double.NaN:aStress.get(2),
+            aStress==null?Double.NaN:aStress.get(3), aStress==null?Double.NaN:aStress.get(4), aStress==null?Double.NaN:aStress.get(5)
+        );
+    }
+    /**
+     * {@code addTestData(aAtomData, aEnergy, aFx, aFy, aFz, nan, nan, nan, nan, nan, nan)}
+     * @see #addTestData(IAtomData, double, IVector, IVector, IVector, double, double, double, double, double, double)
+     */
+    public void addTestData(IAtomData aAtomData, double aEnergy, IVector aFx, IVector aFy, IVector aFz) {
+        addTestData(aAtomData, aEnergy, aFx, aFy, aFz, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
     }
     /**
      * {@code addTestData(aAtomData, aEnergy, aForces, null)}
