@@ -244,12 +244,11 @@ __jsefunc__ int jse_nnap_backwardEnergyForce(int ctype,
     return 0;
 }
 
-__jsefunc__ int jse_nnap_forwardForceCollect(int i, JSE_NNAP::flt_t aRCut,
-    int aNlSize, JSE_NNAP::flt_t *aNlDx, JSE_NNAP::flt_t *aNlDy, JSE_NNAP::flt_t *aNlDz, int *aNlIdx,
+__jsefunc__ int jse_nnap_forwardForceCollect(int i, int aNlSize,
+    JSE_NNAP::flt_t *aNlDx, JSE_NNAP::flt_t *aNlDy, JSE_NNAP::flt_t *aNlDz, int *aNlIdx,
     JSE_NNAP::flt_t *aAGradNlDx, JSE_NNAP::flt_t *aAGradNlDy, JSE_NNAP::flt_t *aAGradNlDz,
-    JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *v, JSE_NNAP::flt_t *vatom) {
+    JSE_NNAP::flt_t *rFx, JSE_NNAP::flt_t *rFy, JSE_NNAP::flt_t *rFz, JSE_NNAP::flt_t *rV) {
     
-    const JSE_NNAP::flt_t rcutsq = aRCut*aRCut;
     JSE_NNAP::flt_t f0xi = JSE_NNAP::ZERO, f0yi = JSE_NNAP::ZERO, f0zi = JSE_NNAP::ZERO;
     JSE_NNAP::flt_t v0xxi = JSE_NNAP::ZERO, v0yyi = JSE_NNAP::ZERO, v0zzi = JSE_NNAP::ZERO;
     JSE_NNAP::flt_t v0xyi = JSE_NNAP::ZERO, v0xzi = JSE_NNAP::ZERO, v0yzi = JSE_NNAP::ZERO;
@@ -257,58 +256,47 @@ __jsefunc__ int jse_nnap_forwardForceCollect(int i, JSE_NNAP::flt_t aRCut,
         const JSE_NNAP::flt_t dx = aNlDx[jj];
         const JSE_NNAP::flt_t dy = aNlDy[jj];
         const JSE_NNAP::flt_t dz = aNlDz[jj];
-        const JSE_NNAP::flt_t rsq = dx*dx + dy*dy + dz*dz;
-        if (rsq >= rcutsq) continue;
         const JSE_NNAP::flt_t fxj = aAGradNlDx[jj];
         const JSE_NNAP::flt_t fyj = aAGradNlDy[jj];
         const JSE_NNAP::flt_t fzj = aAGradNlDz[jj];
         const int j = aNlIdx[jj];
         
         f0xi += fxj; f0yi += fyj; f0zi += fzj;
-        f[3*j + 0] -= fxj; f[3*j + 1] -= fyj; f[3*j + 2] -= fzj;
-        const JSE_NNAP::flt_t vxxj = -dx*fxj, vyyj = -dy*fyj, vzzj = -dz*fzj;
-        const JSE_NNAP::flt_t vxyj = -dx*fyj, vxzj = -dx*fzj, vyzj = -dy*fzj;
-        v0xxi += vxxj; v0yyi += vyyj; v0zzi += vzzj;
-        v0xyi += vxyj; v0xzi += vxzj; v0yzi += vyzj;
-        vatom[9*j + 0] += vxxj; vatom[9*j + 1] += vyyj; vatom[9*j + 2] += vzzj;
-        vatom[9*j + 3] += vxyj; vatom[9*j + 4] += vxzj; vatom[9*j + 5] += vyzj;
-        vatom[9*j + 6] -= dy*fxj;
-        vatom[9*j + 7] -= dz*fxj;
-        vatom[9*j + 8] -= dz*fyj;
+        rFx[j] -= fxj; rFy[j] -= fyj; rFz[j] -= fzj;
+        v0xxi -= dx*fxj; v0yyi -= dy*fyj; v0zzi -= dz*fzj;
+        v0xyi -= dx*fyj; v0xzi -= dx*fzj; v0yzi -= dy*fzj;
     }
-    f[3*i + 0] += f0xi; f[3*i + 1] += f0yi; f[3*i + 2] += f0zi;
-    v[0] += v0xxi; v[1] += v0yyi; v[2] += v0zzi;
-    v[3] += v0xyi; v[4] += v0xzi; v[5] += v0yzi;
+    rFx[i] += f0xi; rFy[i] += f0yi; rFz[i] += f0zi;
+    rV[0] += v0xxi; rV[1] += v0yyi; rV[2] += v0zzi;
+    rV[3] += v0xyi; rV[4] += v0xzi; rV[5] += v0yzi;
     return 0;
 }
-__jsefunc__ int jse_nnap_backwardForceCollect(int i, JSE_NNAP::flt_t aRCut,
-    int aNlSize, JSE_NNAP::flt_t *aNlDx, JSE_NNAP::flt_t *aNlDy, JSE_NNAP::flt_t *aNlDz, int *aNlIdx,
-    JSE_NNAP::flt_t *rBGradNlDx, JSE_NNAP::flt_t *rBGradNlDy, JSE_NNAP::flt_t *rBGradNlDz,
-    JSE_NNAP::flt_t *aBGradF, JSE_NNAP::flt_t *aBGradV) {
+__jsefunc__ int jse_nnap_backwardForceCollect(int i, int aNlSize,
+    JSE_NNAP::flt_t *aNlDx, JSE_NNAP::flt_t *aNlDy, JSE_NNAP::flt_t *aNlDz, int *aNlIdx,
+    JSE_NNAP::flt_t *rBGradAGradNlDx, JSE_NNAP::flt_t *rBGradAGradNlDy, JSE_NNAP::flt_t *rBGradAGradNlDz,
+    JSE_NNAP::flt_t *aBGradFx, JSE_NNAP::flt_t *aBGradFy, JSE_NNAP::flt_t *aBGradFz, JSE_NNAP::flt_t *aBGradV) {
     
-    const JSE_NNAP::flt_t rcutsq = aRCut*aRCut;
-    const JSE_NNAP::flt_t tBGradFxi = aBGradF[3*i + 0];
-    const JSE_NNAP::flt_t tBGradFyi = aBGradF[3*i + 1];
-    const JSE_NNAP::flt_t tBGradFzi = aBGradF[3*i + 2];
+    const JSE_NNAP::flt_t tBGradFxi = aBGradFx[i];
+    const JSE_NNAP::flt_t tBGradFyi = aBGradFy[i];
+    const JSE_NNAP::flt_t tBGradFzi = aBGradFz[i];
     const JSE_NNAP::flt_t tBGradVxx = aBGradV[0], tBGradVyy = aBGradV[1], tBGradVzz = aBGradV[2];
     const JSE_NNAP::flt_t tBGradVxy = aBGradV[3], tBGradVxz = aBGradV[4], tBGradVyz = aBGradV[5];
     for (int jj = 0; jj < aNlSize; ++jj) {
         const JSE_NNAP::flt_t dx = aNlDx[jj];
         const JSE_NNAP::flt_t dy = aNlDy[jj];
         const JSE_NNAP::flt_t dz = aNlDz[jj];
-        const JSE_NNAP::flt_t rsq = dx*dx + dy*dy + dz*dz;
-        if (rsq >= rcutsq) continue;
         const int j = aNlIdx[jj];
         JSE_NNAP::flt_t rBGradFxj = JSE_NNAP::ZERO, rBGradFyj = JSE_NNAP::ZERO, rBGradFzj = JSE_NNAP::ZERO;
-        rBGradFxj += tBGradFxi - aBGradF[3*j + 0];
-        rBGradFyj += tBGradFyi - aBGradF[3*j + 1];
-        rBGradFzj += tBGradFzi - aBGradF[3*j + 2];
+        rBGradFxj += tBGradFxi - aBGradFx[j];
+        rBGradFyj += tBGradFyi - aBGradFy[j];
+        rBGradFzj += tBGradFzi - aBGradFz[j];
         rBGradFxj -= dx*tBGradVxx;
         rBGradFyj -= dy*tBGradVyy + dx*tBGradVxy;
         rBGradFzj -= dz*tBGradVzz + dx*tBGradVxz + dy*tBGradVyz;
-        rBGradNlDx[jj] += rBGradFxj;
-        rBGradNlDy[jj] += rBGradFyj;
-        rBGradNlDz[jj] += rBGradFzj;
+        // set here for auto clear
+        rBGradAGradNlDx[jj] = rBGradFxj;
+        rBGradAGradNlDy[jj] = rBGradFyj;
+        rBGradAGradNlDz[jj] = rBGradFzj;
     }
     return 0;
 }

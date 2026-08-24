@@ -425,6 +425,7 @@ public class NNAP extends AbstractPairPotential {
     private IJITMethod mStatNlSizeLammps = null, mComputeLammps = null;
     private IJITMethod mForwardEnergy = null, mBackwardEnergy = null;
     private IJITMethod mForwardEnergyForce = null, mBackwardEnergyForce = null;
+    private IJITMethod mForwardForceCollect = null, mBackwardForceCollect = null;
     // cuda stuff
     private IJITMethod mCuda2Lammps = null, mComputeLammpsCuda = null;
     private IJITMethod mComputeGPUMD = null;
@@ -451,6 +452,8 @@ public class NNAP extends AbstractPairPotential {
             mBackwardEnergy = mJITEngine.findMethod("jse_nnap_backwardEnergy");
             mForwardEnergyForce = mJITEngine.findMethod("jse_nnap_forwardEnergyForce");
             mBackwardEnergyForce = mJITEngine.findMethod("jse_nnap_backwardEnergyForce");
+            mForwardForceCollect = mJITEngine.findMethod("jse_nnap_forwardForceCollect");
+            mBackwardForceCollect = mJITEngine.findMethod("jse_nnap_backwardForceCollect");
         }
     }
     
@@ -826,7 +829,32 @@ public class NNAP extends AbstractPairPotential {
         );
         if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
     }
-    
+    public void forwardForceCollect(int i, int aNlSize,
+                                    IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlIdx,
+                                    IDoubleOrFloatCPointer aAGradNlDx, IDoubleOrFloatCPointer aAGradNlDy, IDoubleOrFloatCPointer aAGradNlDz,
+                                    IDoubleOrFloatCPointer rFx, IDoubleOrFloatCPointer rFy, IDoubleOrFloatCPointer rFz, IDoubleOrFloatCPointer rV) {
+        // 调用 jit 方法获取结果
+        int tCode = mForwardForceCollect.invoke(
+            i, aNlSize,
+            aNlDx, aNlDy, aNlDz, aNlIdx,
+            aAGradNlDx, aAGradNlDy, aAGradNlDz,
+            rFx, rFy, rFz, rV
+        );
+        if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
+    }
+    public void backwardForceCollect(int i, int aNlSize,
+                                     IDoubleOrFloatCPointer aNlDx, IDoubleOrFloatCPointer aNlDy, IDoubleOrFloatCPointer aNlDz, IntCPointer aNlIdx,
+                                     IDoubleOrFloatCPointer rBGradAGradNlDx, IDoubleOrFloatCPointer rBGradAGradNlDy, IDoubleOrFloatCPointer rBGradAGradNlDz,
+                                     IDoubleOrFloatCPointer aBGradFx, IDoubleOrFloatCPointer aBGradFy, IDoubleOrFloatCPointer aBGradFz, IDoubleOrFloatCPointer aBGradV) {
+        // 调用 jit 方法获取结果
+        int tCode = mBackwardForceCollect.invoke(
+            i, aNlSize,
+            aNlDx, aNlDy, aNlDz, aNlIdx,
+            rBGradAGradNlDx, rBGradAGradNlDy, rBGradAGradNlDz,
+            aBGradFx, aBGradFy, aBGradFz, aBGradV
+        );
+        if (tCode!=0) throw new IllegalStateException("Exit code: "+tCode);
+    }
     
     /// lammps stuff
     private void validNlLammps_(int aNlSize) {

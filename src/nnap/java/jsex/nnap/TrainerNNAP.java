@@ -173,8 +173,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     private final List<List<IDoubleOrFloatCPointer>> mCacheBuf;
     private final IDoubleOrFloatCPointer[] mAGradNlDxBuf, mAGradNlDyBuf, mAGradNlDzBuf;
     private final IDoubleOrFloatCPointer[] mBGradAGradNlDxBuf, mBGradAGradNlDyBuf, mBGradAGradNlDzBuf;
-    private final DoubleList[] mForceXBuf, mForceYBuf, mForceZBuf;
-    private final DoubleList[] mBGradForceXBuf, mBGradForceYBuf, mBGradForceZBuf;
+    private final IDoubleOrFloatCPointer[] mForceXBuf, mForceYBuf, mForceZBuf, mVirialBuf;
+    private final IDoubleOrFloatCPointer[] mBGradForceXBuf, mBGradForceYBuf, mBGradForceZBuf, mBGradVirialBuf;
     private final List<List<IntCPointer>> mNlIdxBuf, mNlTypeBuf;
     private final List<List<IDoubleOrFloatCPointer>> mNlDxBuf, mNlDyBuf, mNlDzBuf;
     private final NeighborListGetter[] mNlBuf;
@@ -386,12 +386,14 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         mBGradAGradNlDxBuf = new IDoubleOrFloatCPointer[aNumThreads];
         mBGradAGradNlDyBuf = new IDoubleOrFloatCPointer[aNumThreads];
         mBGradAGradNlDzBuf = new IDoubleOrFloatCPointer[aNumThreads];
-        mForceXBuf = new DoubleList[aNumThreads];
-        mForceYBuf = new DoubleList[aNumThreads];
-        mForceZBuf = new DoubleList[aNumThreads];
-        mBGradForceXBuf = new DoubleList[aNumThreads];
-        mBGradForceYBuf = new DoubleList[aNumThreads];
-        mBGradForceZBuf = new DoubleList[aNumThreads];
+        mForceXBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mForceYBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mForceZBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mVirialBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mBGradForceXBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mBGradForceYBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mBGradForceZBuf = new IDoubleOrFloatCPointer[aNumThreads];
+        mBGradVirialBuf = new IDoubleOrFloatCPointer[aNumThreads];
         mNlIdxBuf = new ArrayList<>(aNumThreads);
         mNlTypeBuf = new ArrayList<>(aNumThreads);
         mNlDxBuf = new ArrayList<>(aNumThreads);
@@ -406,12 +408,14 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             mBGradAGradNlDxBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mBGradAGradNlDyBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
             mBGradAGradNlDzBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
-            mForceXBuf[ti] = new DoubleList();
-            mForceYBuf[ti] = new DoubleList();
-            mForceZBuf[ti] = new DoubleList();
-            mBGradForceXBuf[ti] = new DoubleList();
-            mBGradForceYBuf[ti] = new DoubleList();
-            mBGradForceZBuf[ti] = new DoubleList();
+            mForceXBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mForceYBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mForceZBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mVirialBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 6);
+            mBGradForceXBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mBGradForceYBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mBGradForceZBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle);
+            mBGradVirialBuf[ti] = mNNAP.mPtrMngPar[ti].newDoubleOrFloatCPointer(mSingle, 6);
             mNlIdxBuf.add(new ArrayList<>(16));
             mNlTypeBuf.add(new ArrayList<>(16));
             mNlDxBuf.add(new ArrayList<>(16));
@@ -1002,23 +1006,23 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             IDoubleOrFloatCPointer rAGradNlDx = mAGradNlDxBuf[threadID];
             IDoubleOrFloatCPointer rAGradNlDy = mAGradNlDyBuf[threadID];
             IDoubleOrFloatCPointer rAGradNlDz = mAGradNlDzBuf[threadID];
-            DoubleList rFx = mForceXBuf[threadID];
-            DoubleList rFy = mForceYBuf[threadID];
-            DoubleList rFz = mForceZBuf[threadID];
+            IDoubleOrFloatCPointer rFx = mForceXBuf[threadID];
+            IDoubleOrFloatCPointer rFy = mForceYBuf[threadID];
+            IDoubleOrFloatCPointer rFz = mForceZBuf[threadID];
+            IDoubleOrFloatCPointer rV = mVirialBuf[threadID];
             IDoubleOrFloatCPointer rBGradAGradNlDx = mBGradAGradNlDxBuf[threadID];
             IDoubleOrFloatCPointer rBGradAGradNlDy = mBGradAGradNlDyBuf[threadID];
             IDoubleOrFloatCPointer rBGradAGradNlDz = mBGradAGradNlDzBuf[threadID];
-            DoubleList rBGradFx = mBGradForceXBuf[threadID];
-            DoubleList rBGradFy = mBGradForceYBuf[threadID];
-            DoubleList rBGradFz = mBGradForceZBuf[threadID];
+            IDoubleOrFloatCPointer rBGradFx = mBGradForceXBuf[threadID];
+            IDoubleOrFloatCPointer rBGradFy = mBGradForceYBuf[threadID];
+            IDoubleOrFloatCPointer rBGradFz = mBGradForceZBuf[threadID];
+            IDoubleOrFloatCPointer rBGradV = mBGradVirialBuf[threadID];
             
             double rEng = 0.0;
-            if (tHasForce) {
-                rFx.clear(); rFx.addZeros(tNumAtoms);
-                rFy.clear(); rFy.addZeros(tNumAtoms);
-                rFz.clear(); rFz.addZeros(tNumAtoms);
-            }
-            double rSxx = 0.0, rSyy = 0.0, rSzz = 0.0, rSxy = 0.0, rSxz = 0.0, rSyz = 0.0;
+            tPtrMng.ensureCapacity(rFx, tNumAtoms); rFx.fillD(0.0, tNumAtoms);
+            tPtrMng.ensureCapacity(rFy, tNumAtoms); rFy.fillD(0.0, tNumAtoms);
+            tPtrMng.ensureCapacity(rFz, tNumAtoms); rFz.fillD(0.0, tNumAtoms);
+            rV.fillD(0.0, 6);
             for (int k = 0; k < tNumAtoms; ++k) {
                 final int tSubNlSize = tNlSize.get(k);
                 final int ctype = tAtomType.get(k);
@@ -1041,34 +1045,19 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 if (tHasEng) {
                     rEng += (tSubEng - mRefEngs.get(ctype-1));
                 }
-                // 这里累加来得到力和压力值
-                for (int j = 0; j < tSubNlSize; ++j) {
-                    double fx = rAGradNlDx.getAtD(j);
-                    double fy = rAGradNlDy.getAtD(j);
-                    double fz = rAGradNlDz.getAtD(j);
-                    int nlk = tSubNlIdx.getAt(j);
-                    if (tHasForce) {
-                        rFx.set(k, rFx.get(k) - fx);
-                        rFy.set(k, rFy.get(k) - fy);
-                        rFz.set(k, rFz.get(k) - fz);
-                        rFx.set(nlk, rFx.get(nlk) + fx);
-                        rFy.set(nlk, rFy.get(nlk) + fy);
-                        rFz.set(nlk, rFz.get(nlk) + fz);
-                    }
-                    // cal stress here
-                    if (tHasStress) {
-                        double dx = tSubNlDx.getAtD(j);
-                        double dy = tSubNlDy.getAtD(j);
-                        double dz = tSubNlDz.getAtD(j);
-                        rSxx += dx*fx; rSyy += dy*fy; rSzz += dz*fz;
-                        rSxy += dx*fy; rSxz += dx*fz; rSyz += dy*fz;
-                    }
-                }
+                // 调用 native 累加得到力和压力值
+                mNNAP.forwardForceCollect(
+                    k, tSubNlSize,
+                    tSubNlDx, tSubNlDy, tSubNlDz, tSubNlIdx,
+                    rAGradNlDx, rAGradNlDy, rAGradNlDz,
+                    rFx, rFy, rFz, rV
+                );
             }
             // cal stress here
+            double rSxx = 0.0, rSyy = 0.0, rSzz = 0.0, rSxy = 0.0, rSxz = 0.0, rSyz = 0.0;
             if (tHasStress) {
-                rSxx = -rSxx/tVolume; rSyy = -rSyy/tVolume; rSzz = -rSzz/tVolume;
-                rSxy = -rSxy/tVolume; rSxz = -rSxz/tVolume; rSyz = -rSyz/tVolume;
+                rSxx = -rV.getAtD(0)/tVolume; rSyy = -rV.getAtD(1)/tVolume; rSzz = -rV.getAtD(2)/tVolume;
+                rSxy = -rV.getAtD(3)/tVolume; rSxz = -rV.getAtD(4)/tVolume; rSyz = -rV.getAtD(5)/tVolume;
             }
             // 能量队归一化以及 loss 计算
             if (tHasEng) {
@@ -1079,22 +1068,24 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 rLoss.add(0, mEnergyWeight * tLossEng / fEngSize);
             }
             // 力和压力 loss 计算
+            if (tRequireGrad) {
+                tPtrMng.ensureCapacity(rBGradFx, tNumAtoms); rBGradFx.fillD(0.0, tNumAtoms);
+                tPtrMng.ensureCapacity(rBGradFy, tNumAtoms); rBGradFy.fillD(0.0, tNumAtoms);
+                tPtrMng.ensureCapacity(rBGradFz, tNumAtoms); rBGradFz.fillD(0.0, tNumAtoms);
+                rBGradV.fillD(0.0, 6);
+            }
             if (tHasForce) {
-                if (tRequireGrad) {
-                    rBGradFx.clear(); rBGradFx.addZeros(tNumAtoms);
-                    rBGradFy.clear(); rBGradFy.addZeros(tNumAtoms);
-                    rBGradFz.clear(); rBGradFz.addZeros(tNumAtoms);
-                }
                 double tLossForce = 0.0;
                 final double tMul = mUnitLen / mNormSigmaEng;
+                final double tMulG = tMul * mForceWeight / (fForceSize*3);
                 for (int k = 0; k < tNumAtoms; ++k) {
-                    tLossForce += aLossFuncForce.call(rFx.get(k)*tMul, tFxReal.get(k)*tMul, rSubBGradFx);
-                    tLossForce += aLossFuncForce.call(rFy.get(k)*tMul, tFyReal.get(k)*tMul, rSubBGradFy);
-                    tLossForce += aLossFuncForce.call(rFz.get(k)*tMul, tFzReal.get(k)*tMul, rSubBGradFz);
+                    tLossForce += aLossFuncForce.call(rFx.getAtD(k)*tMul, tFxReal.get(k)*tMul, rSubBGradFx);
+                    tLossForce += aLossFuncForce.call(rFy.getAtD(k)*tMul, tFyReal.get(k)*tMul, rSubBGradFy);
+                    tLossForce += aLossFuncForce.call(rFz.getAtD(k)*tMul, tFzReal.get(k)*tMul, rSubBGradFz);
                     if (tRequireGrad) {
-                        rBGradFx.set(k, rSubBGradFx.value());
-                        rBGradFy.set(k, rSubBGradFy.value());
-                        rBGradFz.set(k, rSubBGradFz.value());
+                        rBGradFx.putAtD(k, tMulG*rSubBGradFx.value());
+                        rBGradFy.putAtD(k, tMulG*rSubBGradFy.value());
+                        rBGradFz.putAtD(k, tMulG*rSubBGradFz.value());
                     }
                 }
                 rLoss.add(1, mForceWeight * tLossForce / (fForceSize*3));
@@ -1108,6 +1099,15 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tLossStress += aLossFuncStress.call(rSxy*tMul, tSxyReal*tMul, rBGradSxy);
                 tLossStress += aLossFuncStress.call(rSxz*tMul, tSxzReal*tMul, rBGradSxz);
                 tLossStress += aLossFuncStress.call(rSyz*tMul, tSyzReal*tMul, rBGradSyz);
+                if (tRequireGrad) {
+                    final double tMulG = - tMul * mStressWeight / (tVolume * fStressSize*6);
+                    rBGradV.putAtD(0, tMulG*rBGradSxx.value());
+                    rBGradV.putAtD(1, tMulG*rBGradSyy.value());
+                    rBGradV.putAtD(2, tMulG*rBGradSzz.value());
+                    rBGradV.putAtD(3, tMulG*rBGradSxy.value());
+                    rBGradV.putAtD(4, tMulG*rBGradSxz.value());
+                    rBGradV.putAtD(5, tMulG*rBGradSyz.value());
+                }
                 rLoss.add(2, mStressWeight * tLossStress / (fStressSize*6));
             }
             /// backward
@@ -1116,21 +1116,6 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             if (tHasEng) {
                 tBGradEng = mEnergyWeight * rBGradEng.value() / fEngSize;
                 tBGradEng /= (mNormSigmaEng * tNumAtoms);
-            }
-            if (tHasForce) {
-                final double tMul = mForceWeight * mUnitLen / (mNormSigmaEng * fForceSize*3);
-                for (int k = 0; k < tNumAtoms; ++k) {
-                    rBGradFx.set(k, tMul*rBGradFx.get(k));
-                    rBGradFy.set(k, tMul*rBGradFy.get(k));
-                    rBGradFz.set(k, tMul*rBGradFz.get(k));
-                }
-            }
-            double tBGradSxx = 0.0, tBGradSyy = 0.0, tBGradSzz = 0.0;
-            double tBGradSxy = 0.0, tBGradSxz = 0.0, tBGradSyz = 0.0;
-            if (tHasStress) {
-                final double tMul = - mStressWeight * MathEX.Code.pow3(mUnitLen) / (mNormSigmaEng * tVolume * fStressSize*6);
-                tBGradSxx = tMul*rBGradSxx.value(); tBGradSyy = tMul*rBGradSyy.value(); tBGradSzz = tMul*rBGradSzz.value();
-                tBGradSxy = tMul*rBGradSxy.value(); tBGradSxz = tMul*rBGradSxz.value(); tBGradSyz = tMul*rBGradSyz.value();
             }
             for (int k = 0; k < tNumAtoms; ++k) {
                 final int tSubNlSize = tNlSize.get(k);
@@ -1141,34 +1126,13 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tPtrMng.ensureCapacity(rBGradAGradNlDx, tSubNlSize);
                 tPtrMng.ensureCapacity(rBGradAGradNlDy, tSubNlSize);
                 tPtrMng.ensureCapacity(rBGradAGradNlDz, tSubNlSize);
-                // 反向传播力和压力的构造过程
-                double tBGradFxk = 0.0, tBGradFyk = 0.0, tBGradFzk = 0.0;
-                if (tHasForce) {
-                    tBGradFxk = rBGradFx.get(k);
-                    tBGradFyk = rBGradFy.get(k);
-                    tBGradFzk = rBGradFz.get(k);
-                }
-                for (int j = 0; j < tSubNlSize; ++j) {
-                    int nlk = tSubNlIdx.getAt(j);
-                    double rSubBGradAGradNlDx = 0.0, rSubBGradAGradNlDy = 0.0, rSubBGradAGradNlDz = 0.0;
-                    if (tHasForce) {
-                        rSubBGradAGradNlDx += rBGradFx.get(nlk) - tBGradFxk;
-                        rSubBGradAGradNlDy += rBGradFy.get(nlk) - tBGradFyk;
-                        rSubBGradAGradNlDz += rBGradFz.get(nlk) - tBGradFzk;
-                    }
-                    // stress loss grad here
-                    if (tHasStress) {
-                        double dx = tSubNlDx.getAtD(j);
-                        double dy = tSubNlDy.getAtD(j);
-                        double dz = tSubNlDz.getAtD(j);
-                        rSubBGradAGradNlDx += dx*tBGradSxx;
-                        rSubBGradAGradNlDy += dy*tBGradSyy + dx*tBGradSxy;
-                        rSubBGradAGradNlDz += dz*tBGradSzz + dx*tBGradSxz + dy*tBGradSyz;
-                    }
-                    rBGradAGradNlDx.putAtD(j, rSubBGradAGradNlDx);
-                    rBGradAGradNlDy.putAtD(j, rSubBGradAGradNlDy);
-                    rBGradAGradNlDz.putAtD(j, rSubBGradAGradNlDz);
-                }
+                // 调用 native 反向传播力和压力
+                mNNAP.backwardForceCollect(
+                    k, tSubNlSize,
+                    tSubNlDx, tSubNlDy, tSubNlDz, tSubNlIdx,
+                    rBGradAGradNlDx, rBGradAGradNlDy, rBGradAGradNlDz,
+                    rBGradFx, rBGradFy, rBGradFz, rBGradV
+                );
                 IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                 if (!mCacheForward) {
                     mNNAP.forwardEnergyForce(
