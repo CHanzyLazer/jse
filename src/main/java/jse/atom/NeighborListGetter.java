@@ -502,24 +502,29 @@ public class NeighborListGetter implements IHasSymbol {
                 }
             }
         } else {
+            final boolean tNotGhost = ci>=0 && ci<mSliceX && cj>=0 && cj<mSliceY && ck>=0 && ck<mSliceZ;
             if (aHalf) {
                 final boolean tSkipHalfGhost = ci<0 || (ci<mSliceX && (cj<0 || cj<mSliceY && ck<0));
                 for (int ji = 0; ji < tCellSize; ++ji) {
                     int j = tCell.indexAt(ji);
+                    if (tNotGhost && j==index) continue; // 由于存在舍入误差，因此原则上可能此粒子出现在其他 cell 中，同样跳过
                     if (j>index || (j==index && tSkipHalfGhost)) continue;
                     double dx = tCell.posXAt(ji) - x0;
                     double dy = tCell.posYAt(ji) - y0;
                     double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
+                    if (j==index && MathEX.Code.numericEqual(rsq, 0.0)) continue;
                     if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, j);
                 }
             } else {
                 for (int ji = 0; ji < tCellSize; ++ji) {
+                    int j = tCell.indexAt(ji);
+                    if (tNotGhost && j==index) continue; // 由于存在舍入误差，因此原则上可能此粒子出现在其他 cell 中，同样跳过
                     double dx = tCell.posXAt(ji) - x0;
                     double dy = tCell.posYAt(ji) - y0;
                     double dz = tCell.posZAt(ji) - z0;
                     double rsq = dx*dx + dy*dy + dz*dz;
-                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, tCell.indexAt(ji));
+                    if (rsq < mRCutSq) aDxyzIdxDo.run(dx, dy, dz, j);
                 }
             }
         }
@@ -550,9 +555,9 @@ public class NeighborListGetter implements IHasSymbol {
             cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
             ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci = MathEX.Code.floor2int(x0*mSliceX/mA.mX);
-            cj = MathEX.Code.floor2int(y0*mSliceY/mB.mY);
-            ck = MathEX.Code.floor2int(z0*mSliceZ/mC.mZ);
+            ci = MathEX.Code.floor2int((x0/mA.mX)*mSliceX);
+            cj = MathEX.Code.floor2int((y0/mB.mY)*mSliceY);
+            ck = MathEX.Code.floor2int((z0/mC.mZ)*mSliceZ);
         }
         forEachCell(aIndex, x0, y0, z0, ci  , cj  , ck  , true , aHalf, aDxyzIdxDo);
         forEachCell(aIndex, x0, y0, z0, ci+1, cj  , ck  , false, aHalf, aDxyzIdxDo);
@@ -596,9 +601,9 @@ public class NeighborListGetter implements IHasSymbol {
             cj = MathEX.Code.floor2int(tBuf.mY*mSliceY);
             ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ);
         } else {
-            ci = MathEX.Code.floor2int(tBuf.mX*mSliceX/mA.mX);
-            cj = MathEX.Code.floor2int(tBuf.mY*mSliceY/mB.mY);
-            ck = MathEX.Code.floor2int(tBuf.mZ*mSliceZ/mC.mZ);
+            ci = MathEX.Code.floor2int((tBuf.mX/mA.mX)*mSliceX);
+            cj = MathEX.Code.floor2int((tBuf.mY/mB.mY)*mSliceY);
+            ck = MathEX.Code.floor2int((tBuf.mZ/mC.mZ)*mSliceZ);
         }
         final double x0 = tBuf.mX;
         final double y0 = tBuf.mY;

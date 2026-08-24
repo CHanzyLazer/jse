@@ -109,7 +109,7 @@ static __global__ void buildNlKernel(const int nlocal,
         const int csize = cellSize[idx];
         for (int ji = 0; ji < csize; ++ji) {
             const int j = cell[ji];
-            if (j == i) continue;
+            if (j == i) continue; // ghost will have new index here
             const float dx = posx[j] - x0;
             const float dy = posy[j] - y0;
             const float dz = posz[j] - z0;
