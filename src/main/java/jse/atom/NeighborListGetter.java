@@ -34,12 +34,11 @@ public class NeighborListGetter implements IHasSymbol {
     public static final class Cell {
         private final IntList mIdx;
         private final DoubleList mPosX, mPosY, mPosZ;
-        
-        Cell(int aInitCap) {
-            mIdx = new IntList(aInitCap);
-            mPosX = new DoubleList(aInitCap);
-            mPosY = new DoubleList(aInitCap);
-            mPosZ = new DoubleList(aInitCap);
+        Cell() {
+            mIdx = new IntList();
+            mPosX = new DoubleList();
+            mPosY = new DoubleList();
+            mPosZ = new DoubleList();
         }
         
         public int size() {
@@ -205,12 +204,13 @@ public class NeighborListGetter implements IHasSymbol {
         // 参数初始化
         final int tCellCount = (mSliceX+2)*(mSliceY+2)*(mSliceZ+2);
         final int tCellInitCap = MathEX.Code.ceil2int(mNumAtoms / (double)(mSliceX*mSliceY*mSliceZ) * 1.25);
-        for (Cell tCell : mCells) {
+        while (mCells.size() < tCellCount) {
+            mCells.add(new Cell());
+        }
+        for (int i = 0; i < tCellCount; ++i) {
+            Cell tCell = mCells.get(i);
             tCell.clear();
             tCell.ensureCapacity(tCellInitCap);
-        }
-        while (mCells.size() < tCellCount) {
-            mCells.add(new Cell(tCellInitCap));
         }
         // 先构建中心的 cell
         final XYZ tBuf = new XYZ();
