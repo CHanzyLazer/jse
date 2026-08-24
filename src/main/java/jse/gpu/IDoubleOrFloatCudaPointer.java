@@ -139,4 +139,10 @@ public interface IDoubleOrFloatCudaPointer extends ICudaPointer {
      */
     @UnsafeJNI("Invalid input count may directly result in JVM SIGSEGV")
     void parse2destF(FloatCPointer rDest, long aCount) throws CudaException;
+    
+    @Override void rightShift(long aCount);
+    @Override IDoubleOrFloatCudaPointer plus(long aCount);
+    @Override void leftShift(long aCount);
+    @Override IDoubleOrFloatCudaPointer minus(long aCount);
+    @Override IDoubleOrFloatCudaPointer copy();
 }

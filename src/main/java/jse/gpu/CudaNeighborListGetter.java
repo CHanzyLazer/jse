@@ -25,6 +25,8 @@ import static jse.code.OS.JAVA_HOME;
  * 基于 JNI 调用 cuda 实现的高效近邻列表获取器，用于最大限度提高 GPU 上的效率。
  * <p>
  * 目前实现主要针对 LAMMPS 已有的信息和数据格式设计
+ * <p>
+ * 由于 GPU 的并行性要求缓存所有的近邻，因此这里采用需要更少内存/显存的格式，并可以和 LAMMPS 一致
  *
  * @author liqa
  */
@@ -131,6 +133,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
     private final IntCPointer mLocalCellMax, mGhostCellMax, mNlMax;
     
     private final FloatCudaPointer mPos;
+    private FloatCudaPointer mPosX = null, mPosY = null, mPosZ = null;
     private final FloatCPointer mPosCpu;
     private final IntCudaPointer mType;
     private final IntCPointer mTypeCpu;
@@ -285,8 +288,14 @@ public class CudaNeighborListGetter implements AutoCloseable {
     public int nlmax() {
         return mNlMax.get();
     }
-    public FloatCudaPointer pos() {
-        return mPos;
+    public FloatCudaPointer posX() {
+        return mPosX;
+    }
+    public FloatCudaPointer posY() {
+        return mPosY;
+    }
+    public FloatCudaPointer posZ() {
+        return mPosZ;
     }
     public IntCudaPointer type() {
         return mType;
@@ -331,6 +340,9 @@ public class CudaNeighborListGetter implements AutoCloseable {
             aPair.atomX().ptr_(), mPos.ptr_(), mPosCpu.ptr_(),
             aPair.atomType().ptr_(), mType.ptr_()
         );
+        mPosX = mPos.copy();
+        mPosY = mPosX.plus(nlocal+nghost);
+        mPosZ = mPosY.plus(nlocal+nghost);
         mCopyTimer.to();
         
         double ax = tBoxHi.getAt(0) - xlo;

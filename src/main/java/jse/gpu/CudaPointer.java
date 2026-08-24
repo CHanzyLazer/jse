@@ -2,7 +2,6 @@ package jse.gpu;
 
 import jse.clib.UnsafeJNI;
 import jse.cptr.ICPointer;
-import jse.cptr.IPointer;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -71,7 +70,7 @@ public class CudaPointer implements ICudaPointer {
      * cuda 指针对应的显存，因此返回对象内部存储了相同的 cuda 指针
      * @return 拷贝的 cuda 指针包装类，包含相同的 cuda 指针
      */
-    public CudaPointer copy() {
+    @Override public CudaPointer copy() {
         return new CudaPointer(mPtr);
     }
     @Override public final boolean equals(Object aRHS) {
@@ -137,4 +136,9 @@ public class CudaPointer implements ICudaPointer {
         if (isNull()) throw new NullPointerException();
         CudaCore.cudaMemset(mPtr, aValue, aCount);
     }
+    
+    @Override public void rightShift(long aCount) {throw new UnsupportedOperationException();}
+    @Override public CudaPointer plus(long aCount) {throw new UnsupportedOperationException();}
+    @Override public void leftShift(long aCount) {throw new UnsupportedOperationException();}
+    @Override public CudaPointer minus(long aCount) {throw new UnsupportedOperationException();}
 }

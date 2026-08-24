@@ -57,6 +57,22 @@ JNIEXPORT void JNICALL Java_jse_gpu_DoubleCudaPointer_parse2destF0
 JNIEXPORT void JNICALL Java_jse_gpu_DoubleCudaPointer_parse2destF1
   (JNIEnv *, jclass, jlong, jlong, jlong);
 
+/*
+ * Class:     jse_gpu_DoubleCudaPointer
+ * Method:    rightShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_DoubleCudaPointer_rightShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jse_gpu_DoubleCudaPointer
+ * Method:    leftShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_DoubleCudaPointer_leftShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

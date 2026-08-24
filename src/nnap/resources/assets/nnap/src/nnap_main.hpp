@@ -27,7 +27,7 @@ namespace JSE_NNAP {
 
 template <int CTYPE_GEN>
 static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
-    int *aBufNlSize, int *aBufNlIdx, flt_t *rFp,
+    int *aMgNlSize, int *aMgNlIdx, flt_t *rFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t *rFpForwardCache) noexcept {
     
@@ -54,13 +54,13 @@ static NNAP_DEVICE int fpForwardGpu(int nb, int bi, int ctype,
 // --- NNAPGEN PICK: spherical_chebyshev
     sphForwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_LMAX__,
                   __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
-        aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNlIdx, rSubFp,
+        aMgNlSize[(__NNAPGENOS_X__+1)*nb + bi], aMgNlIdx, rSubFp,
         posx, posy, posz, type,
         tSubFpHyperParam[0], tSubFpParam, &rSubFpForwardCache
     );
 // --- NNAPGEN PICK: chebyshev
     chebyForwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
-        aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNlIdx, rSubFp,
+        aMgNlSize[(__NNAPGENOS_X__+1)*nb + bi], aMgNlIdx, rSubFp,
         posx, posy, posz, type,
         tSubFpHyperParam[0], tSubFpParam
     );
@@ -138,9 +138,9 @@ static NNAP_DEVICE int normedNnBackwardGpu(int ctype,
 
 template <int CTYPE_GEN>
 static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
-    int *aBufNlSize, int *aBufNlIdx, flt_t *aAGradFp,
+    int *aMgNlSize, int *aMgNlIdx, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
+    flt_t *rGradNlDx, flt_t *rGradNlDy, flt_t *rGradNlDz,
     flt_t **aFpHyperParam, flt_t **aFpParam, flt_t *aFpForwardCache) noexcept {
     
     int flag = 1;
@@ -166,17 +166,17 @@ static NNAP_DEVICE int fpBackwardGpu(int nb, int bi, int ctype,
 // --- NNAPGEN PICK: spherical_chebyshev
     sphBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
                    __NNAPGENXX_FP_LMAX__, __NNAPGENXX_FP_L3MAX__, __NNAPGENXX_FP_L4MAX__, __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
-        aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNlIdx, tSubAGradFp,
+        aMgNlSize[(__NNAPGENOS_X__+1)*nb + bi], aMgNlIdx, tSubAGradFp,
         posx, posy, posz, type,
-        nlFx, nlFy, nlFz,
+        rGradNlDx, rGradNlDy, rGradNlDz,
         tSubFpHyperParam[0], tSubFpParam, &tSubFpForwardCache
     );
 // --- NNAPGEN PICK: chebyshev
     chebyBackwardGpu<__NNAPGENXX_FP_WTYPE__, mtype, __NNAPGENXX_FP_NMAX__,
                      __NNAPGENXX_FP_SIZE_NP__>(nb, bi,
-        aBufNlSize[(__NNAPGENOS_X__+1)*nb + bi], aBufNlIdx, tSubAGradFp,
+        aMgNlSize[(__NNAPGENOS_X__+1)*nb + bi], aMgNlIdx, tSubAGradFp,
         posx, posy, posz, type,
-        nlFx, nlFy, nlFz,
+        rGradNlDx, rGradNlDy, rGradNlDz,
         tSubFpHyperParam[0], tSubFpParam
     );
 // <<< NNAPGEN PICK [FP USE __NNAPGENS_X__:__NNAPGENOS_X__]

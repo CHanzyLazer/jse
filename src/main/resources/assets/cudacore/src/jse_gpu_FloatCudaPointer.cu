@@ -55,5 +55,15 @@ JNIEXPORT void JNICALL Java_jse_gpu_FloatCudaPointer_parse2destD1(JNIEnv *aEnv, 
     }
     FREE(tBuf);
 }
+JNIEXPORT jlong JNICALL Java_jse_gpu_FloatCudaPointer_rightShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    float *tPtr = (float *)(intptr_t)aPtr;
+    tPtr += aCount;
+    return (jlong)(intptr_t)tPtr;
+}
+JNIEXPORT jlong JNICALL Java_jse_gpu_FloatCudaPointer_leftShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    float *tPtr = (float *)(intptr_t)aPtr;
+    tPtr -= aCount;
+    return (jlong)(intptr_t)tPtr;
+}
 
 }

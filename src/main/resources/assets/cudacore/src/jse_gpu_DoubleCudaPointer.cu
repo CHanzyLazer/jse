@@ -55,5 +55,15 @@ JNIEXPORT void JNICALL Java_jse_gpu_DoubleCudaPointer_parse2destF1(JNIEnv *aEnv,
     }
     FREE(tBuf);
 }
+JNIEXPORT jlong JNICALL Java_jse_gpu_DoubleCudaPointer_rightShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    double *tPtr = (double *)(intptr_t)aPtr;
+    tPtr += aCount;
+    return (jlong)(intptr_t)tPtr;
+}
+JNIEXPORT jlong JNICALL Java_jse_gpu_DoubleCudaPointer_leftShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    double *tPtr = (double *)(intptr_t)aPtr;
+    tPtr -= aCount;
+    return (jlong)(intptr_t)tPtr;
+}
 
 }

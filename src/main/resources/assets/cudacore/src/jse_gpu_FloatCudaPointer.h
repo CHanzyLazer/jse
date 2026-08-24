@@ -57,6 +57,22 @@ JNIEXPORT void JNICALL Java_jse_gpu_FloatCudaPointer_parse2destD0
 JNIEXPORT void JNICALL Java_jse_gpu_FloatCudaPointer_parse2destD1
   (JNIEnv *, jclass, jlong, jlong, jlong);
 
+/*
+ * Class:     jse_gpu_FloatCudaPointer
+ * Method:    rightShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_FloatCudaPointer_rightShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jse_gpu_FloatCudaPointer
+ * Method:    leftShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_FloatCudaPointer_leftShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

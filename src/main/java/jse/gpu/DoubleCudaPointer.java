@@ -278,6 +278,46 @@ public class DoubleCudaPointer extends CudaPointer implements IDoubleOrFloatCuda
     
     /**
      * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     */
+    @Override public void rightShift(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        mPtr = rightShift0(mPtr, aCount);
+    }
+    @ApiStatus.Internal
+    public native static long rightShift0(long aPtr, long aCount);
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public DoubleCudaPointer plus(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        return new DoubleCudaPointer(rightShift0(mPtr, aCount));
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     */
+    @Override public void leftShift(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        mPtr = leftShift0(mPtr, aCount);
+    }
+    @ApiStatus.Internal
+    public native static long leftShift0(long aPtr, long aCount);
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override public DoubleCudaPointer minus(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        return new DoubleCudaPointer(leftShift0(mPtr, aCount));
+    }
+    
+    /**
+     * {@inheritDoc}
      * @return {@inheritDoc}
      */
     @Override public DoubleCudaPointer copy() {

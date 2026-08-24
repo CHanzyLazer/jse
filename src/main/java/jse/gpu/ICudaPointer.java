@@ -68,4 +68,35 @@ public interface ICudaPointer extends IPointer {
      * @return {@code sizeof(xxx)}
      */
     long typeSize();
+    
+    /**
+     * 指针向后移动指定步数，即对应 c 中的 {@code ptr += aCount}
+     * @param aCount 需要移动的步数
+     */
+    void rightShift(long aCount);
+    /**
+     * 计算并返回向后移动指定步数的指针，即对应 c 中的 {@code ptr + aCount}
+     * @param aCount 需要移动的步数
+     * @return 移动后的指针对象
+     */
+    ICudaPointer plus(long aCount);
+    
+    /**
+     * 指针向前移动指定步数，即对应 c 中的 {@code ptr -= aCount}
+     * @param aCount 需要移动的步数
+     */
+    void leftShift(long aCount);
+    /**
+     * 计算并返回向前移动指定步数的指针，即对应 c 中的 {@code ptr - aCount}
+     * @param aCount 需要移动的步数
+     * @return 移动后的指针对象
+     */
+    ICudaPointer minus(long aCount);
+    
+    /**
+     * 拷贝一份 cuda 指针包装类，注意此方法不会实际拷贝内部
+     * cuda 指针对应的显存，因此返回对象内部存储了相同的 cuda 指针
+     * @return 拷贝的 cuda 指针包装类，包含相同的 cuda 指针
+     */
+    ICudaPointer copy();
 }

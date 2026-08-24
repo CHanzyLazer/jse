@@ -7,7 +7,7 @@ namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
-    int aNlSize, int *aBufNlIdx, flt_t *rFp,
+    int aNlSize, int *aNlIdx, flt_t *rFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
     flt_t aRCut, flt_t *aParams) noexcept {
     // init cache
@@ -21,7 +21,7 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aBufNlIdx[jj*nb + bi];
+        const int j = aNlIdx[jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -46,9 +46,9 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
 }
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
 static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
-    int aNlSize, int *aBufNlIdx, flt_t *aAGradFp,
+    int aNlSize, int *aNlIdx, flt_t *aAGradFp,
     flt_t *posx, flt_t *posy, flt_t *posz, int *type,
-    flt_t *nlFx, flt_t *nlFy, flt_t *nlFz,
+    flt_t *rGradNlDx, flt_t *rGradNlDy, flt_t *rGradNlDz,
     flt_t aRCut, flt_t *aParams) noexcept {
     
     // init cache
@@ -60,7 +60,7 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aBufNlIdx[jj*nb + bi];
+        const int j = aNlIdx[jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -100,9 +100,9 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         const flt_t fxj = rAGradj*dx;
         const flt_t fyj = rAGradj*dy;
         const flt_t fzj = rAGradj*dz;
-        nlFx[jj*nb + bi] += fxj;
-        nlFy[jj*nb + bi] += fyj;
-        nlFz[jj*nb + bi] += fzj;
+        rGradNlDx[jj*nb + bi] += fxj;
+        rGradNlDy[jj*nb + bi] += fyj;
+        rGradNlDz[jj*nb + bi] += fzj;
     }
 }
 

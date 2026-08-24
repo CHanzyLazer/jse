@@ -19,5 +19,15 @@ JNIEXPORT void JNICALL Java_jse_gpu_IntCudaPointer_parse2dest0(JNIEnv *aEnv, jcl
     parseint2jintV(aEnv, rJArray, aStart, tBuf, 0, aCount);
     FREE(tBuf);
 }
+JNIEXPORT jlong JNICALL Java_jse_gpu_IntCudaPointer_rightShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    int *tPtr = (int *)(intptr_t)aPtr;
+    tPtr += aCount;
+    return (jlong)(intptr_t)tPtr;
+}
+JNIEXPORT jlong JNICALL Java_jse_gpu_IntCudaPointer_leftShift0(JNIEnv *aEnv, jclass aClazz, jlong aPtr, jlong aCount) {
+    int *tPtr = (int *)(intptr_t)aPtr;
+    tPtr -= aCount;
+    return (jlong)(intptr_t)tPtr;
+}
 
 }

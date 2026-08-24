@@ -141,6 +141,46 @@ public class Int64CudaPointer extends CudaPointer {
     
     /**
      * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     */
+    public void rightShift(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        mPtr = rightShift0(mPtr, aCount);
+    }
+    @ApiStatus.Internal
+    public native static long rightShift0(long aPtr, long aCount);
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    public Int64CudaPointer plus(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        return new Int64CudaPointer(rightShift0(mPtr, aCount));
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     */
+    public void leftShift(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        mPtr = leftShift0(mPtr, aCount);
+    }
+    @ApiStatus.Internal
+    public native static long leftShift0(long aPtr, long aCount);
+    /**
+     * {@inheritDoc}
+     * @param aCount {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    public Int64CudaPointer minus(long aCount) {
+        if (isNull()) throw new NullPointerException();
+        return new Int64CudaPointer(leftShift0(mPtr, aCount));
+    }
+    
+    /**
+     * {@inheritDoc}
      * @return {@inheritDoc}
      */
     @Override public Int64CudaPointer copy() {

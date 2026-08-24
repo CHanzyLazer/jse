@@ -25,6 +25,22 @@ JNIEXPORT void JNICALL Java_jse_gpu_Int64CudaPointer_fill0
 JNIEXPORT void JNICALL Java_jse_gpu_Int64CudaPointer_parse2dest0
   (JNIEnv *, jclass, jlong, jlongArray, jint, jint);
 
+/*
+ * Class:     jse_gpu_Int64CudaPointer
+ * Method:    rightShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_Int64CudaPointer_rightShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     jse_gpu_Int64CudaPointer
+ * Method:    leftShift0
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_jse_gpu_Int64CudaPointer_leftShift0
+  (JNIEnv *, jclass, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

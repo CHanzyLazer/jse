@@ -107,8 +107,8 @@ public class NNAP extends AbstractPairPotential {
     // cuda stuff
     private FloatCPointer mFltBuf = null;
     private FloatCudaPointer mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaBufNlSize = null, mCudaBufNlIdx = null;
-    private FloatCudaPointer mCudaBufNlFx = null, mCudaBufNlFy = null, mCudaBufNlFz = null;
+    private IntCudaPointer mCudaMgNlSize = null, mCudaMgNlIdx = null;
+    private FloatCudaPointer mCudaGradNlDx = null, mCudaGradNlDy = null, mCudaGradNlDz = null;
     private IntCudaPointer mCudaNMerges = null, mCudaLmpType2NNAPType = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
     private CudaPointer mCudaFpHyperParam = null, mCudaFpParam = null, mCudaNnParam = null, mCudaNormParam = null;
@@ -301,30 +301,23 @@ public class NNAP extends AbstractPairPotential {
             mCudaFpParam = mPtrMngTot.newCudaPointer(tModelSize*AnyCPointer.TYPE_SIZE);
             mCudaNnParam = mPtrMngTot.newCudaPointer(tModelSize*AnyCPointer.TYPE_SIZE);
             mCudaNormParam = mPtrMngTot.newCudaPointer(tModelSize*AnyCPointer.TYPE_SIZE);
+            // 现在也改为单个指针，因此需要确保顺序和上面一致
+            FloatCudaPointer tTotCudaParam = mPtrMngTot.newFloatCudaPointer(mTotCParamSize);
+            tTotCudaParam.fill((FloatCPointer)mTotCParam, mTotCParamSize);
+            FloatCudaPointer tCudaParam = tTotCudaParam.copy();
             for (int i = 0; i < tModelSize; ++i) {
-                int tSize = mBasis[i].cptrHyperParameterSize();
-                FloatCPointer tSubParam = mFpHyperParam.getAsFloatCPointerAt(i);
-                FloatCudaPointer tSubCudaParam = mPtrMngTot.newFloatCudaPointer(tSize);
-                if (tSize>0) tSubCudaParam.fill(tSubParam, tSize);
-                tCudaFpHyperParam.putAt(i, tSubCudaParam);
-                
-                tSize = mBasis[i].cptrParameterSize();
-                tSubParam = mFpParam.getAsFloatCPointerAt(i);
-                tSubCudaParam = mPtrMngTot.newFloatCudaPointer(tSize);
-                if (tSize>0) tSubCudaParam.fill(tSubParam, tSize);
-                tCudaFpParam.putAt(i, tSubCudaParam);
-                
-                tSize = mNN[i].cptrParameterSize();
-                tSubParam = mNnParam.getAsFloatCPointerAt(i);
-                tSubCudaParam = mPtrMngTot.newFloatCudaPointer(tSize);
-                if (tSize>0) tSubCudaParam.fill(tSubParam, tSize);
-                tCudaNnParam.putAt(i, tSubCudaParam);
-                
-                tSize = mBasis[i].size()*2 + 2;
-                tSubParam = mNormParam.getAsFloatCPointerAt(i);
-                tSubCudaParam = mPtrMngTot.newFloatCudaPointer(tSize);
-                if (tSize>0) tSubCudaParam.fill(tSubParam, tSize);
-                tCudaNormParam.putAt(i, tSubCudaParam);
+                tCudaFpParam.putAt(i, tCudaParam);
+                tCudaParam.rightShift(mBasis[i].cptrParameterSize());
+                tCudaFpHyperParam.putAt(i, tCudaParam);
+                tCudaParam.rightShift(mBasis[i].cptrHyperParameterSize());
+            }
+            for (int i = 0; i < tModelSize; ++i) {
+                tCudaNnParam.putAt(i, tCudaParam);
+                tCudaParam.rightShift(mNN[i].cptrParameterSize());
+            }
+            for (int i = 0; i < tModelSize; ++i) {
+                tCudaNormParam.putAt(i, tCudaParam);
+                tParam.rightShift(mBasis[i].size()*2L + 2L);
             }
             mCudaFpHyperParam.memcpy2this(tCudaFpHyperParam, tModelSize*AnyCPointer.TYPE_SIZE);
             mCudaFpParam.memcpy2this(tCudaFpParam, tModelSize*AnyCPointer.TYPE_SIZE);
@@ -334,6 +327,7 @@ public class NNAP extends AbstractPairPotential {
             tCudaFpParam.free();
             tCudaNnParam.free();
             tCudaNormParam.free();
+            // GPU 部分特有的 merge cutoff 对应近邻特殊处理
             mCudaNMerges = mPtrMngTot.newIntCudaPointer(tModelSize);
             mCudaCutsq = mPtrMngTot.newCudaPointer(tModelSize*AnyCPointer.TYPE_SIZE);
             mCudaMergeSorted = mPtrMngTot.newCudaPointer(tModelSize*AnyCPointer.TYPE_SIZE);
@@ -926,11 +920,11 @@ public class NNAP extends AbstractPairPotential {
         mCudaEatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom0 = mPtrMngTot.newFloatCudaPointer();
         mCudaVatom1 = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
-        mCudaBufNlIdx = mPtrMngTot.newIntCudaPointer();
-        mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
+        mCudaMgNlSize = mPtrMngTot.newIntCudaPointer();
+        mCudaMgNlIdx = mPtrMngTot.newIntCudaPointer();
+        mCudaGradNlDx = mPtrMngTot.newFloatCudaPointer();
+        mCudaGradNlDy = mPtrMngTot.newFloatCudaPointer();
+        mCudaGradNlDz = mPtrMngTot.newFloatCudaPointer();
         mCudaCache = mPtrMngTot.newFloatCudaPointer();
         
         mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
@@ -950,16 +944,16 @@ public class NNAP extends AbstractPairPotential {
         mPtrMngTot.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
         mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
-        mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)nlocal*(mNMergesMax+1));
+        mPtrMngTot.ensureCapacity(mCudaMgNlSize, (long)nlocal*(mNMergesMax+1));
         mPtrMngTot.ensureCapacity(mCudaCache, (long)nlocal*mCudaFpForwardCacheSize);
         // GPU 近邻列表构建
         mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
         final int tTotNlSize = nlocal*mCudaNlGetter.nlmax();
-        mPtrMngTot.ensureCapacity(mCudaBufNlIdx, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaMgNlIdx, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaGradNlDx, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaGradNlDy, tTotNlSize);
+        mPtrMngTot.ensureCapacity(mCudaGradNlDz, tTotNlSize);
         
         // cuda compute
         mCudaComputeTimer.from();
@@ -969,13 +963,13 @@ public class NNAP extends AbstractPairPotential {
         final boolean cvflagAtom = aPair.cvflagAtom();
         int tCode = mComputeLammpsCuda.invoke(
             nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
-            mCudaNlGetter.pos(), mCudaNlGetter.type(), mCudaNMerges, mCudaMergeSorted,
-            mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(), mCudaLmpType2NNAPType,
+            mCudaNlGetter.posX(), mCudaNlGetter.posY(), mCudaNlGetter.posZ(), mCudaNlGetter.type(),
+            mCudaNMerges, mCudaMergeSorted, mCudaCutsq, mCudaNlGetter.nlsize(), mCudaNlGetter.nl(), mCudaLmpType2NNAPType,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             mCudaCache,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
-            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz,
-            mCudaBufNlSize, mCudaBufNlIdx
+            mCudaGradNlDx, mCudaGradNlDy, mCudaGradNlDz,
+            mCudaMgNlSize, mCudaMgNlIdx
         );
         CudaCore.cudaExceptionCheck(tCode);
         mCudaComputeTimer.to();
@@ -996,10 +990,10 @@ public class NNAP extends AbstractPairPotential {
         if (mCudaGpumdInited) return;
         mCudaGpumdInited = true;
         
-        mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
-        mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
-        mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
+//        mCudaBufNlSize = mPtrMngTot.newIntCudaPointer();
+//        mCudaBufNlFx = mPtrMngTot.newFloatCudaPointer();
+//        mCudaBufNlFy = mPtrMngTot.newFloatCudaPointer();
+//        mCudaBufNlFz = mPtrMngTot.newFloatCudaPointer();
     }
     void computeGPUMD(int number_of_particles, int N1, int N2, int neighnumMax,
                       long g_neighbor_number, long g_neighbor_list,
@@ -1014,11 +1008,11 @@ public class NNAP extends AbstractPairPotential {
         
         initGpumdDataCuda_();
         // 近邻列表缓存向量长度规范
-        mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)number_of_particles*(mNMergesMax+1));
-        int tTotNlSize = number_of_particles*neighnumMax;
-        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
-        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
+//        mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)number_of_particles*(mNMergesMax+1));
+//        int tTotNlSize = number_of_particles*neighnumMax;
+//        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
+//        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
+//        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
         
         int tCode = mComputeGPUMD.invoke(
             number_of_particles, N1, N2,
@@ -1027,9 +1021,9 @@ public class NNAP extends AbstractPairPotential {
             mCudaNMerges, mCudaMergeSorted, mCudaCutsq,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
             new DoubleCudaPointer(g_fx), new DoubleCudaPointer(g_fy), new DoubleCudaPointer(g_fz),
-            new DoubleCudaPointer(g_virial), new DoubleCudaPointer(g_potential),
+            new DoubleCudaPointer(g_virial), new DoubleCudaPointer(g_potential)
 //            mCudaBufNlDx, mCudaBufNlDy, mCudaBufNlDz, mCudaBufNlType, mCudaBufNlIdx, mCudaBufNlSize,
-            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz
+//            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz
         );
         CudaCore.cudaExceptionCheck(tCode);
     }
