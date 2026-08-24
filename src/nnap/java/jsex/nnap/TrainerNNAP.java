@@ -1893,7 +1893,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         long tSteps = 0;
         while (tTimerTotal.get() < aMaxTimeSecond) for (int si = 0; si < tDataSize; ++si) {
             final int i = tSlice.get(si);
-            IntVector tNlSize = mTrainData.mNlSize.get(i);
+            IntVector tNlSize = tData.mNlSize.get(i);
             IntVector tAtomType = tData.mAtomType.get(i);
             final int tNumAtoms = tAtomType.size();
             
