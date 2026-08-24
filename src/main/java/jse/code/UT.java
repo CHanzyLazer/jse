@@ -675,7 +675,14 @@ public class UT {
             if (sProgressBar == null) return;
             if (aExtraMsg != null) sProgressBar.setExtraMessage(aExtraMsg);
             sProgressBar.step();
-            if (sProgressBar.getCurrent() >= sProgressBar.getMax()) {
+            if (!sProgressBar.isIndefinite() && sProgressBar.getCurrent()>=sProgressBar.getMax()) {
+                sProgressBar.close();
+                Main.removeGlobalAutoCloseable(sProgressBar);
+                sProgressBar = null;
+            }
+        }
+        public static synchronized void progressBarClose() {
+            if (sProgressBar != null) {
                 sProgressBar.close();
                 Main.removeGlobalAutoCloseable(sProgressBar);
                 sProgressBar = null;
@@ -687,6 +694,7 @@ public class UT {
         @VisibleForTesting public static void pbar(long aN) {progressBar(aN);}
         @VisibleForTesting public static void pbar(@Nullable String aExtraMsg) {progressBar(aExtraMsg);}
         @VisibleForTesting public static void pbar() {progressBar();}
+        @VisibleForTesting public static void pbarClose() {progressBarClose();}
         
         
         private static <T> Iterable<T> progressBarWrapper_(String aName, Iterable<T> aUnderlying, ProgressBarStyle aStyle, PrintStream aConsumer, int aUpdateIntervalMillis, String aUnitName, long aUnitSize, int aMaxRenderedLength, boolean aShowSpeed, ChronoUnit aSpeedUnit) {
