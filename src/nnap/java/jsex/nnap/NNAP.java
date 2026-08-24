@@ -347,25 +347,27 @@ public class NNAP extends AbstractPairPotential {
                 tSubCudaCutsq.fill(tSubCutsq, tSubNMerges);
                 tCudaCutsq.putAt(i, tSubCudaCutsq);
                 tSubCutsq.free();
-                // 简单二次遍历获取排序的索引
+                // 选择排序获取排序的索引
                 IntCudaPointer tSubCudaMergeSorted = mPtrMngTot.newIntCudaPointer(tSubNMerges);
                 IntCPointer tSubMergeSorted = IntCPointer.calloc(tSubNMerges);
                 for (int k = 0; k < tSubNMerges; ++k) {
                     tSubMergeSorted.putAt(k, k);
                 }
-                for (int ki = 0; ki < tSubNMerges; ++ki) {
-                    int tMinIdx = -1;
-                    double tMinRCut = Double.POSITIVE_INFINITY;
-                    for (int kkj = ki; kkj < tSubNMerges; ++kkj) {
-                        int kj = tSubMergeSorted.getAt(kkj);
-                        double tRCut = tSubBasis.rcut(kj);
-                        if (tRCut < tMinRCut) {
-                            tMinRCut = tRCut;
+                for (int ki = 0; ki < tSubNMerges-1; ++ki) {
+                    int tMinIdx = ki;
+                    double tMinValue = tSubBasis.rcut(tSubMergeSorted.getAt(tMinIdx));
+                    for (int kj = ki+1; kj < tSubNMerges; ++kj) {
+                        double tValue = tSubBasis.rcut(tSubMergeSorted.getAt(kj));
+                        if (tValue < tMinValue) {
                             tMinIdx = kj;
+                            tMinValue = tValue;
                         }
                     }
-                    tSubMergeSorted.putAt(tMinIdx, ki);
-                    tSubMergeSorted.putAt(ki, tMinIdx);
+                    if (tMinIdx != ki) {
+                        int tmp = tSubMergeSorted.getAt(ki);
+                        tSubMergeSorted.putAt(ki, tMinIdx);
+                        tSubMergeSorted.putAt(tMinIdx, tmp);
+                    }
                 }
                 tSubCudaMergeSorted.fill(tSubMergeSorted, tSubNMerges);
                 tCudaMergeSorted.putAt(i, tSubCudaMergeSorted);
