@@ -10,10 +10,14 @@ import org.jetbrains.annotations.Range;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.OpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
+
+import static jse.code.CS.ZL_OO;
 
 /**
  * 多帧的 {@link DataXYZ}，通过：
@@ -399,6 +403,18 @@ public class DumpXYZ extends AbstractListWrapper<DataXYZ, IAtomData, DataXYZ> {
         }
         return new DumpXYZ(rDumpXYZ);
     }
+    public static void readForEach(String aFilePath, Consumer<? super DataXYZ> aAction) throws IOException {
+        try (BufferedReader tReader = IO.toReader(aFilePath)) {
+            while (true) {
+                try {
+                    DataXYZ tDataXYZ = DataXYZ.read(tReader);
+                    aAction.accept(tDataXYZ);
+                } catch (FileEndException any) {
+                    break;
+                }
+            }
+        }
+    }
     
     /**
      * 输出成标准的多帧的 XYZ 文件，会根据需要自动选择原始的 XYZ 格式或者扩展的 XYZ 格式
@@ -408,7 +424,10 @@ public class DumpXYZ extends AbstractListWrapper<DataXYZ, IAtomData, DataXYZ> {
      * @see DataXYZ#write(String)
      */
     public void write(String aFilePath) throws IOException {
-        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write(tWriteln);}
+        write(aFilePath, ZL_OO);
+    }
+    public void write(String aFilePath, OpenOption... aOptions) throws IOException {
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath, aOptions)) {write(tWriteln);}
     }
     /**
      * 提供使用 {@link IO.IWriteln} 的流式接口

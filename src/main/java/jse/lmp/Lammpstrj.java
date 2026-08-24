@@ -15,10 +15,14 @@ import org.jetbrains.annotations.Range;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.OpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
+
+import static jse.code.CS.ZL_OO;
 
 
 /**
@@ -290,6 +294,18 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
         }
         return new Lammpstrj(rLammpstrj);
     }
+    public static void readForEach(String aFilePath, Consumer<? super SubLammpstrj> aAction) throws IOException {
+        try (BufferedReader tReader = IO.toReader(aFilePath)) {
+            while (true) {
+                try {
+                    SubLammpstrj tSubLammpstrj = SubLammpstrj.read(tReader);
+                    aAction.accept(tSubLammpstrj);
+                } catch (FileEndException any) {
+                    break;
+                }
+            }
+        }
+    }
     
     /**
      * 输出成 lammps 格式的 dump 文件，可以供 OVITO 等软件读取
@@ -298,7 +314,10 @@ public class Lammpstrj extends AbstractListWrapper<SubLammpstrj, IAtomData, SubL
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write(tWriteln);}
+        write(aFilePath, ZL_OO);
+    }
+    public void write(String aFilePath, OpenOption... aOptions) throws IOException {
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath, aOptions)) {write(tWriteln);}
     }
     /**
      * 提供使用 {@link IO.IWriteln} 的流式接口

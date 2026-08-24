@@ -18,6 +18,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.OpenOption;
 import java.util.Arrays;
 
 import static jse.code.CS.*;
@@ -769,7 +770,10 @@ public class SubLammpstrj extends AbstractSettableAtomData {
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write(tWriteln);}
+        write(aFilePath, ZL_OO);
+    }
+    public void write(String aFilePath, OpenOption... aOptions) throws IOException {
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath, aOptions)) {write(tWriteln);}
     }
     /**
      * 提供使用 {@link IO.IWriteln} 的流式接口

@@ -11,7 +11,14 @@ import org.jetbrains.annotations.Range;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.OpenOption;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
+
+import static jse.code.CS.ZL_OO;
 
 /**
  * 多帧的 {@link POSCAR}，现在支持现代的非共享 box 的
@@ -382,6 +389,18 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, POSCAR> {
         }
         return new XDATCAR(rXDATCAR);
     }
+    public static void readForEach(String aFilePath, Consumer<? super POSCAR> aAction) throws IOException {
+        try (BufferedReader tReader = IO.toReader(aFilePath)) {
+            while (true) {
+                try {
+                    POSCAR tPOSCAR = POSCAR.read(tReader);
+                    aAction.accept(tPOSCAR);
+                } catch (FileEndException any) {
+                    break;
+                }
+            }
+        }
+    }
     
     /**
      * 输出成 vasp 格式的 XDATCAR 文件，可以供 OVITO 等软件读取
@@ -389,7 +408,10 @@ public class XDATCAR extends AbstractListWrapper<POSCAR, IAtomData, POSCAR> {
      * @throws IOException 如果写入文件失败
      */
     public void write(String aFilePath) throws IOException {
-        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath)) {write(tWriteln);}
+        write(aFilePath, ZL_OO);
+    }
+    public void write(String aFilePath, OpenOption... aOptions) throws IOException {
+        try (IO.IWriteln tWriteln = IO.toWriteln(aFilePath, aOptions)) {write(tWriteln);}
     }
     /**
      * 提供使用 {@link IO.IWriteln} 的流式接口
