@@ -1537,7 +1537,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         }
     }
     
-    protected void initDataNl(boolean aPrintLog) {
+    protected void initDataNl() {
         final boolean tCacheNl = mCacheNl;
         if (!tCacheNl) {
             if (mNlCached) throw new IllegalStateException("Cannot turn off caching after caching neighbors");
@@ -1572,7 +1572,6 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 mTestData.mData.add(null);
             }
         }
-        if (aPrintLog) UT.Timer.progressBar("init nl", tTrainSize+tTestSize);
         mPool.parfor(tTrainSize+tTestSize, (ii, threadID) -> {
             DataSet rData = ii<tTrainSize ? mTrainData : mTestData;
             int ai = ii<tTrainSize ? ii : ii-tTrainSize;
@@ -1649,7 +1648,6 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     rNlDz[k] = tNlDzPtr;
                 }
             }
-            if (aPrintLog) UT.Timer.progressBar();
         });
         // 总是清理 temp
         mTrainData.mDataTemp.clear();
@@ -1672,7 +1670,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         mUnitLen = rUnitLen / (double)rNumTot;
     }
     
-    protected void initNormBasis(boolean aPrintLog) {
+    protected void initNormBasis() {
         final boolean tShareNorm = mShareNorm==null ? mSharedBasis : mShareNorm;
         final int tNumTypes = ntypes();
         final int tNumThreads = mPool.nthreads();
@@ -1693,7 +1691,6 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             }
             tDivPar[ti] = IntVectorCache.getZeros(tNumTypes);
         }
-        if (aPrintLog && !mCacheNl) UT.Timer.progressBar("init norm", mTrainData.mSize);
         mPool.parfor(mTrainData.mSize, (i, threadID) -> {
             PointerManager tPtrMng = mNNAP.mPtrMngPar[threadID];
             
@@ -1742,7 +1739,6 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 tMin[tNormIdx].operation().operate2this(tSubFp, Math::min);
                 tDiv.increment(tNormIdx);
             }
-            if (aPrintLog && !mCacheNl) UT.Timer.progressBar();
         });
         for (int ti = 1; ti < tNumThreads; ++ti) {
             for (int i = 0; i < tNumTypes; ++i) {
@@ -1976,7 +1972,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         final boolean tNewTrainData = !mTrainData.mDataTemp.isEmpty();
         final boolean tNewTestData = !mTestData.mDataTemp.isEmpty();
         if (tNewTrainData || tNewTestData) {
-            initDataNl(aPrintLog);
+            if (aPrintLog) System.out.println("Init nl...");
+            initDataNl();
             if (tNewTrainData) {
                 initUnitLen();
                 mOptimizer.markLossFuncChanged();
@@ -1984,9 +1981,9 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         }
         // 初始化归一化参数，现在只会初始化一次
         if (!mNormInit) {
-            if (aPrintLog && mCacheNl) System.out.println("Init norm...");
+            if (aPrintLog) System.out.println("Init norm...");
             initNormEng();
-            initNormBasis(aPrintLog);
+            initNormBasis();
             mNormInit = true;
         }
         if (mFirstTrain) {
