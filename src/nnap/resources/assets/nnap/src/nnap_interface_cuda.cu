@@ -9,23 +9,28 @@
 
 namespace JSE_NNAP {
 
+static __global__ void initLammpsTypeKernel(int nlocalghost,
+    int *type, int *aLmpType2NNAPType) {
+    
+    const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
+    if (i >= nlocalghost) return;
+    
+    type[i] = aLmpType2NNAPType[type[i]];
+}
+
 static __global__ void initLammpsNeiKernel(int nlocal,
         int *nmerges, int **mergeSorted,
         flt_t **cutsq, int *nlsize, int *nl,
         int *rMgNlSize, int *rMgNlIdx,
-        flt_t *posx, flt_t *posy, flt_t *posz,
-        int *type, int *aLmpType2NNAPType) {
+        flt_t *posx, flt_t *posy, flt_t *posz, int *type) {
     
     const int i = (int)(blockIdx.x * blockDim.x + threadIdx.x);
     if (i >= nlocal) return;
     
-    // type map first
-    const int ctype = aLmpType2NNAPType[type[i]];
-    type[i] = ctype;
-    
     const flt_t xi = posx[i];
     const flt_t yi = posy[i];
     const flt_t zi = posz[i];
+    const int ctype = type[i];
     
     const int jnum = nlsize[i];
     const flt_t *cutsq_ = cutsq[ctype-1];
@@ -470,12 +475,16 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
     /// begin compute here
     constexpr int tBlockSize = __NNAPGEN_CUDA_BLOCKSIZE__;
     const int tGridSize = (nlocal + tBlockSize-1) / tBlockSize;
+    const int tGridSizeLG = (nlocal+nghost + tBlockSize-1) / tBlockSize;
     
+    JSE_NNAP::initLammpsTypeKernel<<<tGridSizeLG, tBlockSize>>>(nlocal+nghost,
+        type, aLmpType2NNAPType
+    );
     JSE_NNAP::initLammpsNeiKernel<<<tGridSize, tBlockSize>>>(nlocal,
         nmerges, mergeSorted,
         cutsq, nlsize, nl,
         rMgNlSize, rMgNlIdx,
-        posx, posy, posz, type, aLmpType2NNAPType
+        posx, posy, posz, type
     );
     JSE_NNAP::computeLammpsKernel_(tGridSize, tBlockSize,
         nlocal, nghost,

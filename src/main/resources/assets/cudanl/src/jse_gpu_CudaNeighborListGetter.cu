@@ -149,7 +149,7 @@ JNIEXPORT jint JNICALL Java_jse_gpu_CudaNeighborListGetter_initPosTypeLmp0(
     cudaError_t tErr;
     tErr = cudaMemcpy(rPos, rPosCpu, 3L*nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
     if (tErr!=cudaSuccess) return (int)tErr;
-    tErr = cudaMemcpy(rType, tTypeLmp, nlocalghost*sizeof(float), cudaMemcpyHostToDevice);
+    tErr = cudaMemcpy(rType, tTypeLmp, nlocalghost*sizeof(int), cudaMemcpyHostToDevice);
     return tErr;
 }
 
