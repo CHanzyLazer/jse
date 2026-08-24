@@ -116,7 +116,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         );
         // cache anlm
         for (int k = 0; k < tLMAll; ++k) {
-            rAnlmBuf[(k+tShiftAnlm2)*nb + bi] = bAnlm1[k];
+            rAnlmBuf[(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
         }
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
@@ -292,7 +292,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         // read anlm from cache
         for (int k = 0; k < tLMAll; ++k) {
-            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm2)*nb + bi];
+            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm1)*nb + bi];
         }
         fill<tLMAll>(bAGradAnlm1, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
