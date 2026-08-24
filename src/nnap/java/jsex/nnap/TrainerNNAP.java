@@ -215,7 +215,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     protected final DataSet mTrainData, mTestData;
     protected final boolean mIsRetrain;
     protected final NNAP mNNAP;
-    protected final IVector mRefEngs;
+    protected final IVector mRefEngs, mRefEngScales;
     protected double mNormMuEng = 0.0, mNormSigmaEng = 1.0;
     protected double mUnitLen = 1.0;
     protected boolean mHasForce = false;
@@ -412,6 +412,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             List<? extends Map<String, ?>> tModelInfos = (List<? extends Map<String, ?>>)aModelInfo.get("models");
             if (tModelInfos == null) throw new IllegalArgumentException("No models in ModelInfo");
             mRefEngs = refEngsFromModelInfo_(mNNAP, tModelInfos);
+            mRefEngScales = refEngScalesFromModelInfo_(mNNAP, tModelInfos);
             initNormFromModelInfo_(mNNAP, tModelInfos);
             // 标记 retrain 不需要重新设置归一化系数
             mNormInit = true;
@@ -419,7 +420,9 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             mIsRetrain = false;
             mNNAP = nnapFromArgs_(aArgs, aNumThreads);
             mRefEngs = refEngsFromArgs_(mNNAP, aArgs);
+            mRefEngScales = refEngScalesFromArgs_(mNNAP, aArgs);
             if (mNNAP.ntypes() != mRefEngs.size()) throw new IllegalArgumentException("Symbols length does not match reference energies length.");
+            if (mNNAP.ntypes() != mRefEngScales.size()) throw new IllegalArgumentException("Symbols length does not match reference energy scales length.");
             // 初始化 nnap 内部参数
             mNNAP.initParameters();
         }
@@ -437,6 +440,12 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 UT.Code.warning("RefEng of mirror mismatch for type: "+(i+1)+", overwrite with mirror values automatically");
             }
             mRefEngs.set(i, tRefEng);
+            double oRefEngScale = mRefEngScales.get(i);
+            double tRefEngScale = mRefEngScales.get(tMirrorType-1);
+            if (!Double.isNaN(oRefEngScale) && !MathEX.Code.numericEqual(oRefEngScale, tRefEngScale)) {
+                UT.Code.warning("RefEngScale of mirror mismatch for type: "+(i+1)+", overwrite with mirror values automatically");
+            }
+            mRefEngScales.set(i, tRefEngScale);
         }
         // 简单遍历识别 shared 基组情况
         for (int i = 1; i < tNumTypes; ++i) {
@@ -560,6 +569,8 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
      *     <dd>指定元素列表</dd>
      *   <dt>ref_engs (可选):</dt>
      *     <dd>指定每个元素的参考能量</dd>
+     *   <dt>ref_eng_scales (可选):</dt>
+     *     <dd>指定每个元素的参考能量缩放比例，和每原子能量的方差正相关</dd>
      *   <dt>nthreads (可选，默认为 4):</dt>
      *     <dd>指定训练时使用的线程数</dd>
      *   <dt>energy_weight (可选，默认为 1.0):</dt>
@@ -752,32 +763,56 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     }
     @SuppressWarnings("unchecked")
     private static IVector refEngsFromArgs_(NNAP aNNAP, Map<String, ?> aArgs) {
-        @Nullable Object refEngs = UT.Code.get(aArgs, "ref_engs", "reference_energies", "erefs");
-        if (refEngs == null) return Vectors.zeros(aNNAP.ntypes());
-        if (refEngs instanceof Collection) {
-            return Vectors.from((Collection<? extends Number>)refEngs);
+        @Nullable Object tRefEngs = UT.Code.get(aArgs, "ref_engs", "reference_energies", "erefs");
+        if (tRefEngs == null) return Vectors.zeros(aNNAP.ntypes());
+        if (tRefEngs instanceof Collection) {
+            return Vectors.from((Collection<? extends Number>)tRefEngs);
         } else
-        if (refEngs instanceof double[]) {
-            return Vectors.from((double[])refEngs);
+        if (tRefEngs instanceof double[]) {
+            return Vectors.from((double[])tRefEngs);
         } else
-        if (refEngs instanceof IVector) {
-            return Vectors.from((IVector)refEngs);
+        if (tRefEngs instanceof IVector) {
+            return Vectors.from((IVector)tRefEngs);
         } else {
-            throw new IllegalArgumentException("invalid type of ref_engs: " + refEngs.getClass().getName());
+            throw new IllegalArgumentException("invalid type of ref_engs: " + tRefEngs.getClass().getName());
+        }
+    }
+    @SuppressWarnings("unchecked")
+    private static IVector refEngScalesFromArgs_(NNAP aNNAP, Map<String, ?> aArgs) {
+        @Nullable Object tRefEngScales = UT.Code.get(aArgs, "ref_eng_scales", "reference_energy_scales");
+        if (tRefEngScales == null) return Vectors.ones(aNNAP.ntypes());
+        if (tRefEngScales instanceof Collection) {
+            return Vectors.from((Collection<? extends Number>) tRefEngScales);
+        } else
+        if (tRefEngScales instanceof double[]) {
+            return Vectors.from((double[]) tRefEngScales);
+        } else
+        if (tRefEngScales instanceof IVector) {
+            return Vectors.from((IVector) tRefEngScales);
+        } else {
+            throw new IllegalArgumentException("invalid type of ref_eng_scales: " + tRefEngScales.getClass().getName());
         }
     }
     
     private static void argsCheckRetrain_(Map<String, ?> aArgs) {
-        @Nullable Object tObj = UT.Code.get(aArgs, "symbols", "elems", "species");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `symbols` for retraining");
-        tObj = UT.Code.get(aArgs, "ref_engs", "reference_energies", "erefs");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `ref_engs` for retraining");
-        tObj = UT.Code.get(aArgs, "basis");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `basis` for retraining");
-        tObj = UT.Code.get(aArgs, "nn");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `nn` for retraining");
-        tObj = UT.Code.get(aArgs, "units");
-        if (tObj != null) throw new IllegalArgumentException("args of trainer can NOT contain `units` for retraining");
+        if (UT.Code.get(aArgs, "symbols", "elems", "species") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `symbols` for retraining");
+        }
+        if (UT.Code.get(aArgs, "ref_engs", "reference_energies", "erefs") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `ref_engs` for retraining");
+        }
+        if (UT.Code.get(aArgs, "ref_eng_scales", "reference_energy_scales") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `ref_eng_scales` for retraining");
+        }
+        if (UT.Code.get(aArgs, "basis") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `basis` for retraining");
+        }
+        if (UT.Code.get(aArgs, "nn") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `nn` for retraining");
+        }
+        if (UT.Code.get(aArgs, "units") != null) {
+            throw new IllegalArgumentException("args of trainer can NOT contain `units` for retraining");
+        }
     }
     private static IVector refEngsFromModelInfo_(NNAP aNNAP, List<? extends Map<String, ?>> aModelInfos) {
         final int tNumTypes = aNNAP.ntypes();
@@ -793,6 +828,21 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             }
         }
         return tRefEngs;
+    }
+    private static IVector refEngScalesFromModelInfo_(NNAP aNNAP, List<? extends Map<String, ?>> aModelInfos) {
+        final int tNumTypes = aNNAP.ntypes();
+        IVector tRefEngScales = Vectors.zeros(tNumTypes);
+        for (int i = 0; i < tNumTypes; ++i) {
+            Number tRefEngScale = (Number)aModelInfos.get(i).get("ref_eng_scale");
+            if (aNNAP.mBasis[i] instanceof MirrorBasis) {
+                // mirror 会强制这些额外值缺省
+                if (tRefEngScale != null) throw new IllegalArgumentException("ref_eng_scale in mirror_basis MUST be empty");
+                tRefEngScales.set(i, Double.NaN);
+            } else {
+                tRefEngScales.set(i, tRefEngScale==null?1.0:tRefEngScale.doubleValue());
+            }
+        }
+        return tRefEngScales;
     }
     private void initNormFromModelInfo_(NNAP aNNAP, List<? extends Map<String, ?>> aModelInfos) {
         final int tNumTypes = aNNAP.ntypes();
@@ -932,22 +982,19 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         return calLoss(aTest, true, rLossDetail, null);
     }
     protected double calLoss(boolean aTest, boolean aFull, @Nullable Vector rLossDetail, @Nullable Vector rGrad) {
-        return calLoss_(aTest, aTest ? mFullSliceTest : (aFull?mFullSliceTrain:mSliceTrain), rLossDetail, rGrad,
+        return calLoss_(aTest, false, aTest ? mFullSliceTest : (aFull?mFullSliceTrain:mSliceTrain), rLossDetail, rGrad,
                         mLossFuncEng, mLossFuncForce, mLossFuncStress);
     }
     protected void calMAE(boolean aTest, Vector rMAE) {
-        calLoss_(aTest, aTest?mFullSliceTest:mFullSliceTrain, rMAE, null,
+        calLoss_(aTest, true, aTest?mFullSliceTest:mFullSliceTrain, rMAE, null,
                  LOSS_ABSOLUTE, LOSS_ABSOLUTE, LOSS_ABSOLUTE);
-        rMAE.multiply2this(mNormSigmaEng);
-        rMAE.update(0, v -> v/mEnergyWeight);
-        rMAE.update(1, v -> v/(mForceWeight*mUnitLen));
-        rMAE.update(2, v -> v/(mStressWeight*MathEX.Code.pow3(mUnitLen)));
     }
-    private double calLoss_(boolean aTest, ISlice aSlice, @Nullable Vector rLossDetail, @Nullable Vector rGrad,
+    private double calLoss_(boolean aTest, boolean aRawLoss, ISlice aSlice, @Nullable Vector rLossDetail, @Nullable Vector rGrad,
                             ILossFunc aLossFuncEng, ILossFunc aLossFuncForce, ILossFunc aLossFuncStress) {
         final DataSet tData = aTest ? mTestData : mTrainData;
         final boolean tRequireGrad = rGrad!=null;
         if (aTest && tRequireGrad) throw new IllegalStateException();
+        if (aRawLoss && tRequireGrad) throw new IllegalStateException();
         final int tNumThreads = mPool.nthreads();
         if (tRequireGrad) {
             mNNAP.requireGrad();
@@ -1028,24 +1075,41 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     final int ctype = tAtomType.get(k);
                     IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                     tPtrMng.ensureCapacity(tSubCache, mNNAP.forwardEnergyCacheSize(tSubNlSize, ctype));
-                    double tSubEng = mNNAP.forwardEnergy(
+                    rEng += mNNAP.forwardEnergy(
                         threadID, ctype, tSubNlSize,
                         tNlDx.get(k), tNlDy.get(k), tNlDz.get(k), tNlType.get(k),
                         tSubCache
                     );
-                    // 注意 nnap 内部获取能量会是准确值，这里需要再次归一化
-                    rEng += (tSubEng - mRefEngs.get(ctype-1));
                 }
-                rEng /= tNumAtoms;
-                // 这样确保两者操作总是一致/等价的
-                rEng = (rEng - mNormMuEng) / mNormSigmaEng;
-                tEngReal = (tEngReal - mNormMuEng) / mNormSigmaEng;
+                // 注意 nnap 内部获取能量会是原始值，这里需要再次归一化；这里按照 initNormEng 一样的方式来归一化
+                double tScaledNAtoms = 0.0;
+                if (aRawLoss) {
+                    tScaledNAtoms = tNumAtoms;
+                } else {
+                    for (int k = 0; k < tNumAtoms; ++k) {
+                        int ctype = tAtomType.get(k);
+                        double tRefEng = mRefEngs.get(ctype-1);
+                        rEng -= tRefEng;
+                        tEngReal -= tRefEng;
+                        tScaledNAtoms += mRefEngScales.get(ctype-1);
+                    }
+                }
+                rEng /= tScaledNAtoms;
+                tEngReal /= tScaledNAtoms;
+                if (!aRawLoss) {
+                    // 采用 initNormEng 一样的方式来归一化可以确保至少此时是正态分布的
+                    rEng = (rEng - mNormMuEng) / mNormSigmaEng;
+                    tEngReal = (tEngReal - mNormMuEng) / mNormSigmaEng;
+                }
                 double tLossEng = aLossFuncEng.call(rEng, tEngReal, rBGradEng);
-                rLoss.add(0, mEnergyWeight * tLossEng / fEngSize);
+                if (!aRawLoss) {
+                    tLossEng *= mEnergyWeight;
+                }
+                rLoss.add(0, tLossEng / fEngSize);
                 /// backward
                 if (!tRequireGrad) return;
                 double tBGradEng = mEnergyWeight * rBGradEng.value() / fEngSize;
-                tBGradEng /= (mNormSigmaEng * tNumAtoms);
+                tBGradEng /= (mNormSigmaEng * tScaledNAtoms);
                 for (int k = 0; k < tNumAtoms; ++k) {
                     final int tSubNlSize = tNlSize.get(k);
                     final int ctype = tAtomType.get(k);
@@ -1105,16 +1169,12 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 
                 IDoubleOrFloatCPointer tSubCache = mCacheForward ? rCache.get(k) : rCache0;
                 tPtrMng.ensureCapacity(tSubCache, mNNAP.forwardEnergyForceCacheSize(tSubNlSize, ctype));
-                double tSubEng = mNNAP.forwardEnergyForce(
+                rEng += mNNAP.forwardEnergyForce(
                     threadID, ctype, tSubNlSize,
                     tSubNlDx, tSubNlDy, tSubNlDz, tSubNlType,
                     rAGradNlDx, rAGradNlDy, rAGradNlDz,
                     tSubCache
                 );
-                // 注意 nnap 内部获取能量会是准确值，这里需要再次归一化
-                if (tHasEng) {
-                    rEng += (tSubEng - mRefEngs.get(ctype-1));
-                }
                 // 调用 native 累加得到力和压力值
                 mNNAP.forwardForceCollect(
                     k, tSubNlSize,
@@ -1129,13 +1189,36 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 rSxx = -rV.getAtD(0)/tVolume; rSyy = -rV.getAtD(1)/tVolume; rSzz = -rV.getAtD(2)/tVolume;
                 rSxy = -rV.getAtD(3)/tVolume; rSxz = -rV.getAtD(4)/tVolume; rSyz = -rV.getAtD(5)/tVolume;
             }
+            // 采用一致的归一化方式，那么这里会得到等效的缩放系数
+            double tScaledNAtoms = 0.0;
+            if (aRawLoss) {
+                tScaledNAtoms = tNumAtoms;
+            } else {
+                for (int k = 0; k < tNumAtoms; ++k) {
+                    tScaledNAtoms += mRefEngScales.get(tAtomType.get(k)-1);
+                }
+            }
+            double tEngScale = tScaledNAtoms / tNumAtoms;
             // 能量队归一化以及 loss 计算
             if (tHasEng) {
-                rEng /= tNumAtoms;
-                rEng = (rEng - mNormMuEng) / mNormSigmaEng;
-                tEngReal = (tData.mEng.get(i) - mNormMuEng) / mNormSigmaEng;
+                if (!aRawLoss) {
+                    for (int k = 0; k < tNumAtoms; ++k) {
+                        double tRefEng = mRefEngs.get(tAtomType.get(k)-1);
+                        rEng -= tRefEng;
+                        tEngReal -= tRefEng;
+                    }
+                }
+                rEng /= tScaledNAtoms;
+                tEngReal /= tScaledNAtoms;
+                if (!aRawLoss) {
+                    rEng = (rEng - mNormMuEng) / mNormSigmaEng;
+                    tEngReal = (tEngReal - mNormMuEng) / mNormSigmaEng;
+                }
                 double tLossEng = aLossFuncEng.call(rEng, tEngReal, rBGradEng);
-                rLoss.add(0, mEnergyWeight * tLossEng / fEngSize);
+                if (!aRawLoss) {
+                    tLossEng *= mEnergyWeight;
+                }
+                rLoss.add(0, tLossEng / fEngSize);
             }
             // 力和压力 loss 计算
             if (tRequireGrad) {
@@ -1146,7 +1229,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             }
             if (tHasForce) {
                 double tLossForce = 0.0;
-                final double tMul = mUnitLen / mNormSigmaEng;
+                final double tMul = aRawLoss ? 1.0 : (mUnitLen/(mNormSigmaEng*tEngScale));
                 final double tMulG = tMul * mForceWeight / (fForceSize*3);
                 for (int k = 0; k < tNumAtoms; ++k) {
                     tLossForce += aLossFuncForce.call(rFx.getAtD(k)*tMul, tFxReal.get(k)*tMul, rSubBGradFx);
@@ -1158,11 +1241,14 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                         rBGradFz.putAtD(k, tMulG*rSubBGradFz.value());
                     }
                 }
-                rLoss.add(1, mForceWeight * tLossForce / (fForceSize*3));
+                if (!aRawLoss) {
+                    tLossForce *= mForceWeight;
+                }
+                rLoss.add(1, tLossForce / (fForceSize*3));
             }
             if (tHasStress) {
                 double tLossStress = 0.0;
-                final double tMul = MathEX.Code.pow3(mUnitLen) / mNormSigmaEng;
+                final double tMul = aRawLoss ? 1.0 : (MathEX.Code.pow3(mUnitLen)/(mNormSigmaEng*tEngScale));
                 tLossStress += aLossFuncStress.call(rSxx*tMul, tSxxReal*tMul, rBGradSxx);
                 tLossStress += aLossFuncStress.call(rSyy*tMul, tSyyReal*tMul, rBGradSyy);
                 tLossStress += aLossFuncStress.call(rSzz*tMul, tSzzReal*tMul, rBGradSzz);
@@ -1178,14 +1264,17 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                     rBGradV.putAtD(4, tMulG*rBGradSxz.value());
                     rBGradV.putAtD(5, tMulG*rBGradSyz.value());
                 }
-                rLoss.add(2, mStressWeight * tLossStress / (fStressSize*6));
+                if (!aRawLoss) {
+                    tLossStress *= mStressWeight;
+                }
+                rLoss.add(2, tLossStress / (fStressSize*6));
             }
             /// backward
             if (!tRequireGrad) return;
             double tBGradEng = 0.0;
             if (tHasEng) {
                 tBGradEng = mEnergyWeight * rBGradEng.value() / fEngSize;
-                tBGradEng /= (mNormSigmaEng * tNumAtoms);
+                tBGradEng /= (mNormSigmaEng * tScaledNAtoms);
             }
             for (int k = 0; k < tNumAtoms; ++k) {
                 final int tSubNlSize = tNlSize.get(k);
@@ -1246,17 +1335,13 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         final int tNumAtoms = aAtomData.natoms();
         IntList rAtomType = new IntList(tNumAtoms);
         for (int i = 0; i < tNumAtoms; ++i) {
-            int tType = tTypeMap.applyAsInt(aAtomData.atom(i).type());
-            rAtomType.add(tType);
-            // 计算相对能量值
-            if (aHasEnergy) {
-                aEnergy -= mRefEngs.get(tType-1);
-            }
+            rAtomType.add(tTypeMap.applyAsInt(aAtomData.atom(i).type()));
         }
         rData.mDataTemp.add(new TrainAtomData(aAtomData));
         rData.mAtomType.add(rAtomType.asVec());
         rData.mVolume.append(aAtomData.volume());
-        rData.mEng.append(aHasEnergy ? (aEnergy/tNumAtoms) : Double.NaN);
+        // 添加能量
+        rData.mEng.append(aHasEnergy ? aEnergy : Double.NaN);
         // 添加力
         if (mHasForce) {
             if (aHasForce) {
@@ -1794,9 +1879,21 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         // 这里采用中位数和上下四分位数来归一化能量
         // 手动遍历拷贝来去除掉 nan
         final Vector.Builder rBuilder = Vector.builder();
-        mTrainData.mEng.forEach(v -> {
-            if (!Double.isNaN(v)) rBuilder.add(v);
-        });
+        final int tDataSize = mTrainData.mSize;
+        for (int i = 0; i < tDataSize; ++i) {
+            double tEng = mTrainData.mEng.get(i);
+            if (Double.isNaN(tEng)) continue;
+            // 采用如下方式来应用 RefEng 和 RefEngScale，这个不等价但是原则上形式应该是任意的
+            IntVector tAtomType = mTrainData.mAtomType.get(i);
+            final int tNumAtoms = tAtomType.size();
+            double tScaledNAtoms = 0.0;
+            for (int k = 0; k < tNumAtoms; ++k) {
+                int tType = tAtomType.get(k);
+                tEng -= mRefEngs.get(tType-1);
+                tScaledNAtoms += mRefEngScales.get(tType-1);
+            }
+            rBuilder.add(tEng/tScaledNAtoms);
+        }
         Vector tSortedEng = rBuilder.build();
         if (tSortedEng.size() < 10) {
             UT.Code.warning("too less input energy ("+tSortedEng.size()+"), check your input or dataset.");
@@ -1834,7 +1931,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         final int tNumTypes = ntypes();
         for (int type = 1; type <= tNumTypes; ++type) {
             mNNAP.setNormMuEng(type, mNormMuEng+mRefEngs.get(type-1));
-            mNNAP.setNormSigmaEng(type, mNormSigmaEng);
+            mNNAP.setNormSigmaEng(type, mNormSigmaEng*mRefEngScales.get(type-1));
         }
         mOptimizer.markLossFuncChanged();
     }
@@ -2152,6 +2249,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
             Map rNN = new LinkedHashMap();
             mNNAP.mNN[i].save(rNN);
             rModel.put("ref_eng", mRefEngs.get(i));
+            rModel.put("ref_eng_scale", mRefEngScales.get(i));
             rModel.put("norm_mu", toList_(mNNAP.normMu(i+1), mNNAP.mBasis[i].size()));
             rModel.put("norm_sigma", toList_(mNNAP.normSigma(i+1), mNNAP.mBasis[i].size()));
             rModel.put("nn", rNN);
