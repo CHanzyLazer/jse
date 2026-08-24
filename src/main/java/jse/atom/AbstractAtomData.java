@@ -206,7 +206,7 @@ public abstract class AbstractAtomData implements IAtomData {
         
         /// stuff to override
         /** 可以直接实现的返回内部 id 值 */
-        protected abstract int id_();
+        protected int id_() {return -1;}
         /** 可以直接实现的返回内部 type 值 */
         protected abstract int type_();
         /** 可以直接实现的返回内部 vx 值 */

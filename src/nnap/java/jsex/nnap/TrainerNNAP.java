@@ -1,8 +1,6 @@
 package jsex.nnap;
 
-import jse.atom.IAtomData;
-import jse.atom.IHasSymbol;
-import jse.atom.NeighborListGetter;
+import jse.atom.*;
 import jse.cache.IntVectorCache;
 import jse.cache.LogicalVectorCache;
 import jse.cache.VectorCache;
@@ -33,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 import static java.nio.file.StandardOpenOption.APPEND;
+import static jse.code.CS.MASS;
 
 /**
  * 纯 jse + jit 实现的 nnap 训练器，从而实现更高的优化效果
@@ -67,6 +66,77 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
         grad.mValue = tErrAbs>=1.0 ? (tErr>=0?1.0:-1.0) : tErr;
         return tErrAbs>=1.0 ? (tErrAbs-0.5) : (0.5*tErr*tErr);
     };
+    
+    protected static class TrainAtomData extends AbstractAtomData {
+        private final Vector mPosX, mPosY, mPosZ;
+        private final IntVector mType;
+        private final IBox mBox;
+        private final int mNumAtoms, mNumTypes;
+        private final String @Nullable[] mSymbols;
+        public TrainAtomData(IAtomData aData) {
+            mNumAtoms = aData.natoms();
+            mNumTypes = aData.ntypes();
+            List<String> tSymbols = aData.symbols();
+            if (tSymbols==null) {
+                mSymbols = null;
+            } else {
+                mSymbols = new String[mNumTypes];
+                for (int i = 0; i < mNumTypes; ++i) {
+                    mSymbols[i] = tSymbols.get(i);
+                }
+            }
+            IBox tBox = aData.box();
+            if (tBox.isPrism()) {
+                mBox = new BoxPrism(tBox.a(), tBox.b(), tBox.c());
+            } else {
+                mBox = new Box(tBox);
+            }
+            mPosX = Vector.zeros(mNumAtoms);
+            mPosY = Vector.zeros(mNumAtoms);
+            mPosZ = Vector.zeros(mNumAtoms);
+            mType = IntVector.zeros(mNumAtoms);
+            for (int i = 0; i < mNumAtoms; ++i) {
+                IAtom tAtom = aData.atom(i);
+                mPosX.set(i, tAtom.x());
+                mPosY.set(i, tAtom.y());
+                mPosZ.set(i, tAtom.z());
+                mType.set(i, tAtom.type());
+            }
+        }
+        
+        
+        @Override public IAtom atom(int aIdx) {
+            return new AbstractAtom_() {
+                @Override public int index() {return aIdx;}
+                @Override public double x() {return mPosX.get(aIdx);}
+                @Override public double y() {return mPosY.get(aIdx);}
+                @Override public double z() {return mPosZ.get(aIdx);}
+                @Override protected int type_() {return mType.get(aIdx);}
+            };
+        }
+        @Override public IBox box() {
+            return mBox;
+        }
+        @Override public int natoms() {
+            return mNumAtoms;
+        }
+        @Override public int ntypes() {
+            return mNumTypes;
+        }
+        @Override public boolean hasSymbol() {
+            return mSymbols!=null;
+        }
+        @Override public @Nullable String symbol(int aType) {
+            return mSymbols==null ? null : mSymbols[aType-1];
+        }
+        @Override public boolean hasMass() {
+            return hasSymbol();
+        }
+        @Override public double mass(int aType) {
+            @Nullable String tSymbol = symbol(aType);
+            return tSymbol==null ? Double.NaN : MASS.getOrDefault(tSymbol, Double.NaN);
+        }
+    }
     
     protected static class DataSet {
         public int mSize = 0;
@@ -1183,7 +1253,7 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
                 aEnergy -= mRefEngs.get(tType-1);
             }
         }
-        rData.mDataTemp.add(aAtomData.copy()); //TODO: 之后需要改为精度相关的专门紧凑格式来进一步减少内存占用
+        rData.mDataTemp.add(new TrainAtomData(aAtomData));
         rData.mAtomType.add(rAtomType.asVec());
         rData.mVolume.append(aAtomData.volume());
         rData.mEng.append(aHasEnergy ? (aEnergy/tNumAtoms) : Double.NaN);
