@@ -109,6 +109,11 @@ public class NEP extends AbstractPairPotential {
     @Override public double rcutMax() {return Math.max(paramb.rc_radial, paramb.rc_angular);}
     
     
+    @Override
+    protected void initBufNl(int aThreadID, int aI, boolean aRequireForce) {
+        super.initBufNl(aThreadID, aI, aRequireForce);
+        mNlTypePar[aThreadID].minus2this(1);
+    }
     @ApiStatus.Experimental @Override
     public double calEnergySingle(int aThreadID, int aCType,
                                   Vector aNlDx, Vector aNlDy, Vector aNlDz, IntVector aNlType) {

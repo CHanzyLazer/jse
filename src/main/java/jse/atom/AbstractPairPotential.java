@@ -218,7 +218,7 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
             throw new IllegalArgumentException("Exist type ("+aType+") greater than the input ntypes ("+tNumTypes+")");
         }
     }
-    protected final void initBufNl(int aThreadID, int aI, boolean aRequireForce) {
+    protected void initBufNl(int aThreadID, int aI, boolean aRequireForce) {
         final DoubleList rNlDx = mNlDxParRaw[aThreadID], rNlDy = mNlDyParRaw[aThreadID], rNlDz = mNlDzParRaw[aThreadID];
         final IntList rNlType = mNlTypeParRaw[aThreadID], rNlIdx = mNlIdxParRaw[aThreadID];
         rNlDx.clear(); rNlDy.clear(); rNlDz.clear();
@@ -257,7 +257,7 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
             mGradNlDzPar[aThreadID].setInternalData(rGradNlDz);
         }
     }
-    protected final void initBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
+    protected void initBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
         final int tNumThreads = nthreads();
         if (aRequireTotalEnergy) {
             for (int i = 0; i < tNumThreads; ++i) {
@@ -303,7 +303,7 @@ public abstract class AbstractPairPotential extends AbstractPotential implements
             }
         }
     }
-    protected final void collectBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
+    protected void collectBufPar(boolean aRequireTotalEnergy, boolean aRequirePerAtomEnergy, boolean aRequireForce, boolean aRequireTotalStress, boolean aRequirePerAtomStress) {
         final int tNumThreads = nthreads();
         if (aRequireTotalEnergy) {
             mEnergy = 0.0;
