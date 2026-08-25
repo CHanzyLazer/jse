@@ -85,10 +85,6 @@ public class Chebyshev extends WTypeBasis {
         return aNlSize*mSizeNP;
     }
     
-    @Override public int forwardCacheSizeGpu() {
-        return 0;
-    }
-    
     @Override public void updateGenMap(Map<String, Object> rGenMap, int aGenIdxType, int aGenIdxMerge) {
         super.updateGenMap(rGenMap, aGenIdxType, aGenIdxMerge);
         rGenMap.put("[FP USE "+aGenIdxType+":"+aGenIdxMerge+"]", "chebyshev");

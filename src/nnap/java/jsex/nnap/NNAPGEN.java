@@ -144,7 +144,6 @@ class NNAPGEN {
     IJITEngine initEngineCuda(boolean aSingle) throws Exception {
         Map<String, Object> rGenMap = initGenMap_();
         rGenMap.put("NNAPGEN_CUDA_BLOCKSIZE", NNAP.Conf.CUDA_BLOCKSIZE);
-        rGenMap.put("NNAPGEN_GPU_CACHE_FORWARD", NNAP.Conf.GPU_CACHE_FORWARD?1:0);
         rGenMap.put("[PRECISION]", aSingle?"single":"double");
         rGenMap.put("[ARCH]", "cuda");
         String tUniqueID = UT.Code.uniqueID(OS.OS_NAME, Compiler.EXE_PATH, JAVA_HOME, VERSION_NUMBER, VERSION_MASK, NNAP.VERSION,

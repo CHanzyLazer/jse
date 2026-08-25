@@ -191,14 +191,6 @@ public class MergedBasis extends Basis {
         return rSize;
     }
     
-    @Override public int forwardCacheSizeGpu() {
-        int rSize = 0;
-        for (MergeableBasis tBasis : mMergedBasis) {
-            rSize += tBasis.forwardCacheSizeGpu();
-        }
-        return rSize;
-    }
-    
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
         rSaveTo.put("type", "merge");

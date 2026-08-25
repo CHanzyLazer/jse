@@ -46,11 +46,6 @@ public class NNAP extends AbstractPairPotential {
          * 默认为 {@code 256}
          */
         public static int CUDA_BLOCKSIZE = OS.envI("JSE_NNAP_CUDA_BLOCKSIZE", 256);
-        /**
-         * 自定义 nnap cuda 是否缓存前向过程的中间值，这个会略微提升速度但是会增大显存占用；
-         * 默认为 {@code false}
-         */
-        public static boolean GPU_CACHE_FORWARD = OS.envZ("JSE_NNAP_GPU_CACHE_FORWARD", false);
         
         /**
          * 自定义构建 nnap 的 cmake 参数设置，
@@ -118,9 +113,7 @@ public class NNAP extends AbstractPairPotential {
     private IntCudaPointer mCudaNMerges = null, mCudaLmpType2NNAPType = null;
     private CudaPointer mCudaMergeSorted = null, mCudaCutsq = null;
     private CudaPointer mCudaFpHyperParam = null, mCudaFpParam = null, mCudaNnParam = null, mCudaNormParam = null;
-    private FloatCudaPointer mCudaCache = null;
     private CudaNeighborListGetter mCudaNlGetter = null;
-    private int mCudaFpForwardCacheSize = -1;
     
     @SuppressWarnings({"unchecked", "resource"})
     NNAP(@Nullable String aLibDir, @Nullable String aProjectName, Map<?, ?> aModelInfo, @Range(from=1, to=Integer.MAX_VALUE) int aNumThreads, String aArch) throws Exception {
@@ -296,11 +289,6 @@ public class NNAP extends AbstractPairPotential {
         }
         // 这里初始化 cuda 数据
         if (mCuda) {
-            int tCudaFpForwardCacheSize = 0;
-            for (int i = 0; i < tModelSize; ++i) {
-                tCudaFpForwardCacheSize = Math.max(tCudaFpForwardCacheSize, mBasis[i].forwardCacheSizeGpu());
-            }
-            mCudaFpForwardCacheSize = tCudaFpForwardCacheSize;
             AnyCPointer tCudaFpHyperParam = AnyCPointer.calloc(tModelSize);
             AnyCPointer tCudaFpParam = AnyCPointer.calloc(tModelSize);
             AnyCPointer tCudaNnParam = AnyCPointer.calloc(tModelSize);
@@ -935,7 +923,6 @@ public class NNAP extends AbstractPairPotential {
         mCudaGradNlDx = mPtrMngTot.newFloatCudaPointer();
         mCudaGradNlDy = mPtrMngTot.newFloatCudaPointer();
         mCudaGradNlDz = mPtrMngTot.newFloatCudaPointer();
-        mCudaCache = mPtrMngTot.newFloatCudaPointer();
         
         mCudaNlGetter = new CudaNeighborListGetter(mRCutMax);
         mCudaLmpType2NNAPType = mPtrMngTot.newIntCudaPointer(aPair.mNumTypes+1);
@@ -955,9 +942,6 @@ public class NNAP extends AbstractPairPotential {
         mPtrMngTot.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
         mPtrMngTot.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
         mPtrMngTot.ensureCapacity(mCudaMgNlSize, (long)nlocal*(mNMergesMax+1));
-        if (Conf.GPU_CACHE_FORWARD) {
-            mPtrMngTot.ensureCapacity(mCudaCache, (long)nlocal*mCudaFpForwardCacheSize);
-        }
         // GPU 近邻列表构建
         mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
@@ -978,7 +962,6 @@ public class NNAP extends AbstractPairPotential {
             mCudaNlGetter.posX(), mCudaNlGetter.posY(), mCudaNlGetter.posZ(), mCudaNlGetter.type(),
             mCudaNMerges, mCudaMergeSorted, mCudaCutsq, mCudaNlGetter.nlSize(), mCudaNlGetter.nlIdx(), mCudaLmpType2NNAPType,
             mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
-            mCudaCache,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
             mCudaGradNlDx, mCudaGradNlDy, mCudaGradNlDz,
             mCudaMgNlSize, mCudaMgNlIdx

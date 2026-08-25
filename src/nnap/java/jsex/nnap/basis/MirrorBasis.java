@@ -52,10 +52,6 @@ public class MirrorBasis extends Basis {
         return mMirrorBasis.backwardBackwardCacheSize(aNlSize);
     }
     
-    @Override public int forwardCacheSizeGpu() {
-        return mMirrorBasis.forwardCacheSizeGpu();
-    }
-    
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override public void save(Map rSaveTo) {
         rSaveTo.put("type", "mirror");
